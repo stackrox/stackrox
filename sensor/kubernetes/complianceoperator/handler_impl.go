@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -66,6 +66,8 @@ type handlerImpl struct {
 	mcpInformerSynced           cache.InformerSynced
 	roleReconcileTrigger        chan struct{}
 	nodeRoleReconcilePassBudget time.Duration
+	// nodeRoleReconcileInterval is the period of the safety-net reconcile tick in run(); overridable in tests.
+	nodeRoleReconcileInterval time.Duration
 }
 
 func (m *handlerImpl) Name() string {
@@ -99,6 +101,7 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 
 		roleReconcileTrigger:        make(chan struct{}, 1),
 		nodeRoleReconcilePassBudget: defaultNodeRoleReconcilePassBudget,
+		nodeRoleReconcileInterval:   resolveNodeRoleReconcileInterval(),
 	}
 }
 
@@ -114,7 +117,19 @@ func (m *handlerImpl) Start() error {
 	// initial cache sync can take several seconds (or longer on a slow/unreachable API server), and must never
 	// delay Sensor's sequential component startup. See startMCPRoleInformer for how it degrades gracefully.
 	go m.startMCPRoleInformer()
+	// Early sync-time informer triggers can land before complianceIsReady, where reconcileNodeRoles drops them. This
+	// one-shot re-triggers once ready so the first reconcile isn't deferred to the periodic tick.
+	go m.reconcileOnceReady()
 	return nil
+}
+
+// reconcileOnceReady requests one reconcile when compliance becomes ready, or returns if the handler stops first.
+func (m *handlerImpl) reconcileOnceReady() {
+	select {
+	case <-m.complianceIsReady.Done():
+		m.requestReconcile()
+	case <-m.stopSignal.Done():
+	}
 }
 
 func (m *handlerImpl) Stop() {
@@ -165,6 +180,10 @@ func (m *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (m *handlerImpl) run() {
+	// Safety-net reconcile tick: catches passes skipped or cut short between MachineConfigPool events.
+	// reconcileNodeRoles is idempotent and a no-op once converged (and when the feature is off).
+	reconcileTicker := time.NewTicker(m.nodeRoleReconcileInterval)
+	defer reconcileTicker.Stop()
 	for !m.stopSignal.IsDone() {
 		select {
 		case req := <-m.request:
@@ -190,6 +209,9 @@ func (m *handlerImpl) run() {
 			}
 		case <-m.roleReconcileTrigger:
 			log.Debugf("Node-role reconcile triggered by MachineConfigPool informer")
+			m.reconcileNodeRoles()
+		case <-reconcileTicker.C:
+			log.Debugf("Node-role reconcile triggered by the periodic safety-net tick")
 			m.reconcileNodeRoles()
 		case <-m.stopSignal.Done():
 			return
@@ -253,7 +275,7 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), m.defaultNodeRoles())
+	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), m.discoverDefaultNodeRoles().rolesForCreate())
 }
 
 func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string, roles []string) bool {
@@ -315,10 +337,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		log.Warn(err)
 	}
 
-	// Compute the node roles once for this request and reuse them below. If discovery fails and ssObj already
-	// exists, its current roles are preserved instead of being replaced by the static fallback.
-	discoveredRoles, discoverErr := m.adaptiveDefaultNodeRoles()
-	roles := resolveNodeRolesForUpdate(discoveredRoles, discoverErr, ssObj)
+	// Compute the node roles once for this request and reuse them below. If discovery is not authoritative and ssObj
+	// already exists, its current roles are preserved instead of being replaced by the static fallback.
+	roles := m.discoverDefaultNodeRoles().rolesForUpdate(ssObj)
 
 	if ssObj == nil && ssbObj == nil {
 		// This is an add instead
@@ -803,15 +824,15 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		return errors.New("Compliance operator namespace not known")
 	}
 
-	// Run discovery once for this sync batch and reuse the outcome for every ScanSetting below. If discovery
-	// fails, an existing ScanSetting keeps its current roles instead of losing them to the static fallback; a new
-	// one still gets the fallback.
-	discoveredRoles, discoverErr := m.adaptiveDefaultNodeRoles()
+	// Run discovery once for this sync batch and reuse the outcome for every ScanSetting below. When discovery is
+	// not authoritative, an existing ScanSetting keeps its current roles instead of losing them to the static
+	// fallback; a new one still gets the fallback.
+	disc := m.discoverDefaultNodeRoles()
 	convertScanSetting := func(namespace string, req *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
-		return convertCentralRequestToScanSetting(namespace, req, cron, resolveNodeRolesForUpdate(discoveredRoles, discoverErr, nil))
+		return convertCentralRequestToScanSetting(namespace, req, cron, disc.rolesForUpdate(nil))
 	}
 	updateScanSetting := func(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
-		return updateScanSettingFromUpdateRequest(obj, req, resolveNodeRolesForUpdate(discoveredRoles, discoverErr, obj))
+		return updateScanSettingFromUpdateRequest(obj, req, disc.rolesForUpdate(obj))
 	}
 
 	// Compare with the ScanConfig in the request.

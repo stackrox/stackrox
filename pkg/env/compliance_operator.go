@@ -18,6 +18,10 @@ var (
 	// Kill-switch: discovery only exists on OpenShift and always falls back to master+worker on any error.
 	ComplianceAutodiscoverNodeRoles = RegisterBooleanSetting("ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES", true)
 
+	// ComplianceNodeRoleReconcileInterval is the period of the node-role safety-net reconcile that catches passes
+	// skipped or cut short between MachineConfigPool events. The consumer clamps it, see minNodeRoleReconcileInterval.
+	ComplianceNodeRoleReconcileInterval = registerDurationSetting("ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL", 10*time.Minute)
+
 	// ComplianceScanWatcherTimeout defines the timeout for a compliance scan watcher.
 	// If the scan results have not been received by then, it will be aborted.
 	// The default is 40 mins.

@@ -58,7 +58,9 @@ func newTestHandler(client dynamic.Interface) *handlerImpl {
 		handlerAPICallTimeout:       500 * time.Millisecond,
 		handlerRetryTimeout:         2 * time.Second,
 		nodeRoleReconcilePassBudget: 2 * time.Second,
-		roleReconcileTrigger:        make(chan struct{}, 1),
+		// Large so the periodic safety-net tick never fires during a short test unless a test overrides it.
+		nodeRoleReconcileInterval: time.Hour,
+		roleReconcileTrigger:      make(chan struct{}, 1),
 	}
 }
 
@@ -96,7 +98,7 @@ func (explodingLister) ByNamespace(_ string) cache.GenericNamespaceLister {
 }
 
 // TestDiscoverNodeRoles exercises the raw cache read: it applies no fallback and no env-var gating (that policy
-// lives in adaptiveDefaultNodeRoles, see TestAdaptiveDefaultNodeRoles below), so an unavailable/unsynced informer
+// lives in discoverDefaultNodeRoles, see TestDiscoverDefaultNodeRoles below), so an unavailable/unsynced informer
 // or an empty cache is reported as-is.
 func TestDiscoverNodeRoles(t *testing.T) {
 	roleLabel := func(role string) map[string]string {
@@ -161,78 +163,108 @@ func TestDiscoverNodeRoles(t *testing.T) {
 	})
 }
 
-// TestAdaptiveDefaultNodeRoles covers the policy built on top of the raw cache read (TestDiscoverNodeRoles above):
-// the ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES gate, and the master+worker fallback on an empty result. An
-// unavailable informer is reported as an error rather than silently folded into a fallback — see TestDefaultNodeRoles
-// for the caller that turns that error into a fallback, and TestReconcileNodeRoles for the caller that skips on it
-// instead.
-func TestAdaptiveDefaultNodeRoles(t *testing.T) {
-	t.Run("env off returns master+worker without consulting the informer", func(t *testing.T) {
+// TestDiscoverDefaultNodeRoles covers the classification built on top of the raw cache read (TestDiscoverNodeRoles
+// above): the ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES gate, and the four outcomes (disabled, discovered, empty,
+// unavailable). The interpreters rolesForCreate / rolesForUpdate and the reconciler then apply their own policy to
+// these outcomes, see the tests below.
+func TestDiscoverDefaultNodeRoles(t *testing.T) {
+	t.Run("env off is reported as disabled without consulting the informer", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "false")
 		m := newTestHandler(fake.NewSimpleDynamicClient(runtime.NewScheme()))
 		// A lister that would panic if touched, and that would answer "infra" (changing the result) if it were.
 		m.mcpLister = explodingLister{}
 		m.mcpInformerSynced = func() bool { return true }
 
-		roles, err := m.adaptiveDefaultNodeRoles()
+		disc := m.discoverDefaultNodeRoles()
 
-		require.NoError(t, err)
-		assert.Equal(t, []string{masterRole, workerRole}, roles)
+		assert.Equal(t, nodeRolesDisabled, disc.outcome)
+		assert.Empty(t, disc.roles)
 	})
 
-	t.Run("env on discovers from the informer cache", func(t *testing.T) {
+	t.Run("env on with roles in the cache is reported as discovered", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newHandlerWithMCPs(newMCP("infra", map[string]string{nodeRolePrefix + "infra": ""}))
 
-		roles, err := m.adaptiveDefaultNodeRoles()
+		disc := m.discoverDefaultNodeRoles()
 
-		require.NoError(t, err)
-		assert.Equal(t, []string{"infra"}, roles)
+		assert.Equal(t, nodeRolesDiscovered, disc.outcome)
+		assert.Equal(t, []string{"infra"}, disc.roles)
 	})
 
-	t.Run("returns an error when the informer is unavailable, without applying a fallback itself", func(t *testing.T) {
+	t.Run("env on with an unavailable informer is reported as unavailable, with the error", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newTestHandler(fake.NewSimpleDynamicClient(runtime.NewScheme()))
 
-		roles, err := m.adaptiveDefaultNodeRoles()
+		disc := m.discoverDefaultNodeRoles()
 
-		assert.Error(t, err, "the caller (defaultNodeRoles or the reconciler) decides what to do about an unavailable informer")
-		assert.Empty(t, roles)
+		assert.Equal(t, nodeRolesUnavailable, disc.outcome)
+		assert.Error(t, disc.err)
+		assert.Empty(t, disc.roles)
 	})
 
-	t.Run("falls back to master+worker when no roles are discovered", func(t *testing.T) {
+	t.Run("env on with a synced but empty cache is reported as empty, not discovered", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m := newHandlerWithMCPs()
 
-		roles, err := m.adaptiveDefaultNodeRoles()
+		disc := m.discoverDefaultNodeRoles()
 
-		require.NoError(t, err, "an empty but successful list is not a failure")
-		assert.Equal(t, []string{masterRole, workerRole}, roles)
+		assert.Equal(t, nodeRolesEmpty, disc.outcome, "a synced-but-empty cache must be distinct from discovered, so callers can preserve existing roles")
+		assert.Empty(t, disc.roles)
 	})
 }
 
-// TestDefaultNodeRoles covers the create path's policy on top of adaptiveDefaultNodeRoles: it never fails, falling
-// back to master+worker when the informer is unavailable. It also pins the exact text of the warning it logs: a
-// downstream e2e test matches this same text against live Sensor logs to detect a silent fallback, so a wording
-// change here must be deliberate, not an accidental drift.
-func TestDefaultNodeRoles(t *testing.T) {
-	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
-	m := newTestHandler(fake.NewSimpleDynamicClient(runtime.NewScheme()))
+// TestRolesForCreate covers the create path's policy: discovered roles win, every non-authoritative outcome falls back
+// to master+worker. It also pins the exact text of the warning it logs for a fallback: a downstream e2e test matches
+// this same text against live Sensor logs to detect a silent fallback, so a wording change here must be deliberate.
+func TestRolesForCreate(t *testing.T) {
+	cases := map[string]struct {
+		disc       nodeRoleDiscovery
+		want       []string
+		wantWarnFB bool // expect the "Could not auto-discover node roles, falling back to" warning
+	}{
+		"discovered: use the discovered roles": {
+			disc: nodeRoleDiscovery{roles: []string{"infra"}, outcome: nodeRolesDiscovered},
+			want: []string{"infra"},
+		},
+		"disabled: fallback, no warning (flag off is intentional)": {
+			disc: nodeRoleDiscovery{outcome: nodeRolesDisabled},
+			want: []string{masterRole, workerRole},
+		},
+		"empty: fallback with warning": {
+			disc:       nodeRoleDiscovery{outcome: nodeRolesEmpty},
+			want:       []string{masterRole, workerRole},
+			wantWarnFB: true,
+		},
+		"unavailable: fallback with warning": {
+			disc:       nodeRoleDiscovery{outcome: nodeRolesUnavailable, err: errors.New("informer not available")},
+			want:       []string{masterRole, workerRole},
+			wantWarnFB: true,
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			core, logs := observer.New(zap.WarnLevel)
+			origLog := log
+			log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+			t.Cleanup(func() { log = origLog })
 
-	core, logs := observer.New(zap.WarnLevel)
-	origLog := log
-	log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
-	t.Cleanup(func() { log = origLog })
+			assert.Equal(t, c.want, c.disc.rolesForCreate())
 
-	assert.Equal(t, []string{masterRole, workerRole}, m.defaultNodeRoles())
-	assert.Equal(t, 1, logs.FilterMessageSnippet("Could not auto-discover node roles, falling back to").Len(),
-		"a downstream e2e test matches this exact text against live Sensor logs; keep the two in sync")
+			warns := logs.FilterMessageSnippet("Could not auto-discover node roles, falling back to").Len()
+			if c.wantWarnFB {
+				assert.Equal(t, 1, warns, "a downstream e2e test matches this exact text against live Sensor logs; keep the two in sync")
+			} else {
+				assert.Zero(t, warns)
+			}
+		})
+	}
 }
 
-// TestResolveNodeRolesForUpdate covers the update/sync path's policy: on a discovery failure, an existing
-// ScanSetting keeps its current roles instead of losing them to the static fallback, but a ScanSetting that doesn't
-// exist yet (or has no roles) still gets the fallback.
-func TestResolveNodeRolesForUpdate(t *testing.T) {
+// TestRolesForUpdate covers the update/sync path's policy. Discovered roles win; the flag being off overwrites with the
+// static fallback (legacy behavior). When discovery is not authoritative (empty OR unavailable) an existing ScanSetting
+// keeps its current roles, but one that doesn't exist yet (or has no roles) still gets the fallback. The empty-but-has
+// -existing case is the regression guard: a synced cache that momentarily reports no roles must not strip custom roles.
+func TestRolesForUpdate(t *testing.T) {
 	newScanSettingObj := func(roles []string) *unstructured.Unstructured {
 		obj := &unstructured.Unstructured{Object: map[string]interface{}{}}
 		if roles != nil {
@@ -240,38 +272,53 @@ func TestResolveNodeRolesForUpdate(t *testing.T) {
 		}
 		return obj
 	}
-	discoverErr := errors.New("MachineConfigPool informer is not available")
+	unavailable := nodeRoleDiscovery{outcome: nodeRolesUnavailable, err: errors.New("MachineConfigPool informer is not available")}
+	empty := nodeRoleDiscovery{outcome: nodeRolesEmpty}
 
 	cases := map[string]struct {
-		discoveredRoles []string
-		discoverErr     error
-		existing        *unstructured.Unstructured
-		want            []string
+		disc     nodeRoleDiscovery
+		existing *unstructured.Unstructured
+		want     []string
 	}{
-		"discovery succeeded: use the discovered roles regardless of existing state": {
-			discoveredRoles: []string{"infra"},
-			existing:        newScanSettingObj([]string{masterRole, workerRole}),
-			want:            []string{"infra"},
+		"discovered: use the discovered roles regardless of existing state": {
+			disc:     nodeRoleDiscovery{roles: []string{"infra"}, outcome: nodeRolesDiscovered},
+			existing: newScanSettingObj([]string{masterRole, workerRole}),
+			want:     []string{"infra"},
 		},
-		"discovery failed, no existing ScanSetting: falls back": {
-			discoverErr: discoverErr,
-			existing:    nil,
-			want:        []string{masterRole, workerRole},
+		"disabled: overwrite existing roles with the fallback (legacy behavior)": {
+			disc:     nodeRoleDiscovery{outcome: nodeRolesDisabled},
+			existing: newScanSettingObj([]string{"infra"}),
+			want:     []string{masterRole, workerRole},
 		},
-		"discovery failed, existing ScanSetting has no roles: falls back": {
-			discoverErr: discoverErr,
-			existing:    newScanSettingObj(nil),
-			want:        []string{masterRole, workerRole},
+		"unavailable, no existing ScanSetting: falls back": {
+			disc:     unavailable,
+			existing: nil,
+			want:     []string{masterRole, workerRole},
 		},
-		"discovery failed, existing ScanSetting has roles: preserves them": {
-			discoverErr: discoverErr,
-			existing:    newScanSettingObj([]string{"infra"}),
-			want:        []string{"infra"},
+		"unavailable, existing ScanSetting has no roles: falls back": {
+			disc:     unavailable,
+			existing: newScanSettingObj(nil),
+			want:     []string{masterRole, workerRole},
+		},
+		"unavailable, existing ScanSetting has roles: preserves them": {
+			disc:     unavailable,
+			existing: newScanSettingObj([]string{"infra"}),
+			want:     []string{"infra"},
+		},
+		"empty, existing ScanSetting has roles: preserves them (regression guard)": {
+			disc:     empty,
+			existing: newScanSettingObj([]string{"infra"}),
+			want:     []string{"infra"},
+		},
+		"empty, no existing ScanSetting: falls back": {
+			disc:     empty,
+			existing: nil,
+			want:     []string{masterRole, workerRole},
 		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := resolveNodeRolesForUpdate(c.discoveredRoles, c.discoverErr, c.existing)
+			got := c.disc.rolesForUpdate(c.existing)
 			assert.Equal(t, c.want, got)
 		})
 	}
@@ -356,7 +403,9 @@ func newReconcileHandler(namespace string, mcps []*unstructured.Unstructured, sc
 		handlerAPICallTimeout:       500 * time.Millisecond,
 		handlerRetryTimeout:         2 * time.Second,
 		nodeRoleReconcilePassBudget: 2 * time.Second,
-		roleReconcileTrigger:        make(chan struct{}, 1),
+		// Large so the periodic safety-net tick never fires during a short test unless a test overrides it.
+		nodeRoleReconcileInterval: time.Hour,
+		roleReconcileTrigger:      make(chan struct{}, 1),
 	}
 	m.mcpLister = newMCPLister(mcps...)
 	m.mcpInformerSynced = func() bool { return true }
@@ -496,6 +545,21 @@ func TestReconcileNodeRoles(t *testing.T) {
 		assert.Zero(t, countActions(client.Actions(), "update", "scansettings"))
 	})
 
+	t.Run("does not clobber existing roles when discovery finds zero roles on a synced cache", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		// Synced cache (mcpInformerSynced true via newReconcileHandler) but no MachineConfigPools, so discovery is
+		// nodeRolesEmpty, not nodeRolesDiscovered. This is the regression guard: an empty-but-synced result must not be
+		// mistaken for "the cluster now has only master+worker" and strip the custom "infra" role.
+		m, client := newReconcileHandler(reconcileNamespace, nil, newScanSetting("ss", []string{"infra", masterRole, workerRole}, true))
+		client.ClearActions()
+
+		m.reconcileNodeRoles()
+
+		assert.Equal(t, []string{"infra", masterRole, workerRole}, scanSettingRoles(t, client, "ss"))
+		assert.Zero(t, countActions(client.Actions(), "list", "scansettings"), "reconciliation must bail out before listing ScanSettings")
+		assert.Zero(t, countActions(client.Actions(), "update", "scansettings"))
+	})
+
 	t.Run("logs and returns gracefully when ScanSetting listing fails", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		m, client := newReconcileHandler(reconcileNamespace, mcps("master", "worker"))
@@ -609,6 +673,101 @@ func TestReconcileNodeRolesBoundsSlowList(t *testing.T) {
 	assert.Zero(t, countActions(client.Actions(), "update", "scansettings"), "no update should be attempted when the list itself never succeeded")
 }
 
+// TestReconcileNodeRolesBudgetRequeue covers the re-queue on a budget-exhausted pass: a pass that is cut short before
+// every ScanSetting is processed must re-queue itself (one pending trigger) so the run() loop resumes the rest, while a
+// pass that finishes within budget must not re-queue.
+func TestReconcileNodeRolesBudgetRequeue(t *testing.T) {
+	t.Run("re-queues when the pass budget is exhausted before every ScanSetting is processed", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		const (
+			numScanSettings = 5
+			updateDelay     = 150 * time.Millisecond
+			passBudget      = 250 * time.Millisecond // fits ~2 updates, well under numScanSettings*updateDelay
+		)
+		var scanSettings []runtime.Object
+		for i := range numScanSettings {
+			scanSettings = append(scanSettings, newScanSetting(fmt.Sprintf("ss%d", i), []string{masterRole}, true))
+		}
+		m, client := newReconcileHandler(reconcileNamespace, mcps("master", "worker", "infra"), scanSettings...)
+		m.handlerAPICallTimeout = time.Second
+		m.handlerRetryTimeout = time.Second
+		m.nodeRoleReconcilePassBudget = passBudget
+		client.PrependReactor("update", "scansettings", func(k8stesting.Action) (bool, runtime.Object, error) {
+			time.Sleep(updateDelay)
+			return false, nil, nil
+		})
+		client.ClearActions()
+
+		m.reconcileNodeRoles()
+
+		assert.Len(t, m.roleReconcileTrigger, 1, "a budget-exhausted pass must re-queue itself to finish the remaining ScanSettings")
+	})
+
+	t.Run("does not re-queue when the pass finishes within budget", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		m, client := newReconcileHandler(reconcileNamespace, mcps("master", "worker", "infra"), newScanSetting("ss", []string{masterRole}, true))
+		client.ClearActions()
+
+		m.reconcileNodeRoles()
+
+		assert.Empty(t, m.roleReconcileTrigger, "a pass that completes within budget must not re-queue")
+	})
+}
+
+// TestReconcileOnceReady covers the startup-race one-shot: it requests a single reconcile once compliance becomes
+// ready, and returns without requesting one if the handler stops first.
+func TestReconcileOnceReady(t *testing.T) {
+	t.Run("requests a reconcile when compliance becomes ready", func(t *testing.T) {
+		m := newTestHandler(fake.NewSimpleDynamicClient(runtime.NewScheme()))
+		ready := concurrency.NewSignal()
+		m.complianceIsReady = &ready
+
+		done := make(chan struct{})
+		go func() { defer close(done); m.reconcileOnceReady() }()
+
+		assert.Empty(t, m.roleReconcileTrigger, "nothing should be queued before compliance is ready")
+		ready.Signal()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("reconcileOnceReady did not return after compliance became ready")
+		}
+		assert.Len(t, m.roleReconcileTrigger, 1, "becoming ready must request exactly one reconcile")
+	})
+
+	t.Run("returns without requesting a reconcile when the handler stops first", func(t *testing.T) {
+		m := newTestHandler(fake.NewSimpleDynamicClient(runtime.NewScheme()))
+		ready := concurrency.NewSignal()
+		m.complianceIsReady = &ready
+		m.stopSignal.Signal()
+
+		m.reconcileOnceReady()
+
+		assert.Empty(t, m.roleReconcileTrigger, "a stopped handler must not request a reconcile")
+	})
+}
+
+// TestRunPeriodicTickReconciles proves the safety-net tick in run() actually drives a reconcile: with a short interval
+// and no MachineConfigPool event or Central request, a drifted ScanSetting is still brought in line.
+func TestRunPeriodicTickReconciles(t *testing.T) {
+	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+	m, client := newReconcileHandler(reconcileNamespace, mcps("master", "worker", "infra"), newScanSetting("ss", []string{masterRole}, true))
+	m.nodeRoleReconcileInterval = 50 * time.Millisecond
+	defer m.stopSignal.Signal()
+
+	go m.run()
+
+	assert.Eventually(t, func() bool {
+		obj, err := client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).
+			Namespace(reconcileNamespace).Get(context.Background(), "ss", v1.GetOptions{})
+		if err != nil {
+			return false
+		}
+		roles, _, err := unstructured.NestedStringSlice(obj.Object, "roles")
+		return err == nil && assert.ObjectsAreEqual([]string{"infra", masterRole, workerRole}, roles)
+	}, 2*time.Second, 20*time.Millisecond, "the periodic tick should reconcile the drifted ScanSetting with no other trigger")
+}
+
 // TestRequestReconcileCoalescesAndNeverBlocks covers requestReconcile's non-blocking send: repeated calls with
 // nothing draining the channel must never block the caller (the informer's event-processing goroutine), and must
 // coalesce into a single pending reconcile.
@@ -706,7 +865,7 @@ func TestStartMCPRoleInformerGating(t *testing.T) {
 		assert.NotPanics(t, m.startMCPRoleInformer)
 
 		assert.Nil(t, m.mcpLister)
-		assert.Equal(t, []string{masterRole, workerRole}, m.defaultNodeRoles())
+		assert.Equal(t, []string{masterRole, workerRole}, m.discoverDefaultNodeRoles().rolesForCreate())
 	})
 
 	t.Run("OpenShift cluster: MCPs listable, informer starts and syncs", func(t *testing.T) {
