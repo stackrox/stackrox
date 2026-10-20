@@ -68,6 +68,11 @@ type handlerImpl struct {
 	nodeRoleReconcilePassBudget time.Duration
 	// nodeRoleReconcileInterval is the period of the safety-net reconcile tick in run(); overridable in tests.
 	nodeRoleReconcileInterval time.Duration
+
+	// backgroundWG tracks the goroutines Start() spawns (run, startMCPRoleInformer, reconcileOnceReady) so Stop()
+	// can wait for them to finish. Without the wait, a goroutine can still read the package-level log (e.g.
+	// startMCPRoleInformer's sync-timeout warning) after Stop() returns, which races tests that swap log.
+	backgroundWG sync.WaitGroup
 }
 
 func (m *handlerImpl) Name() string {
@@ -112,14 +117,18 @@ func (m *handlerImpl) Start() error {
 		return nil
 	}
 
+	// Add/Done are at the call site, not inside the functions, so tests can still call them directly without
+	// unbalancing backgroundWG.
+	m.backgroundWG.Add(3)
+
 	// TODO: create default scan setting for ad-hoc scan
-	go m.run()
+	go func() { defer m.backgroundWG.Done(); m.run() }()
 
 	// Runs in the background to avoid delaying Sensor's sequential component startup.
-	go m.startMCPRoleInformer()
+	go func() { defer m.backgroundWG.Done(); m.startMCPRoleInformer() }()
 
 	// One-shot reconcile in case informer triggers arrive before complianceIsReady
-	go m.reconcileOnceReady()
+	go func() { defer m.backgroundWG.Done(); m.reconcileOnceReady() }()
 
 	return nil
 }
@@ -135,6 +144,9 @@ func (m *handlerImpl) reconcileOnceReady() {
 
 func (m *handlerImpl) Stop() {
 	m.stopSignal.Signal()
+	// The background goroutines all derive their contexts from stopSignal, so this wait returns promptly once
+	// signalled. It makes Stop() a true join point: no goroutine from this handler outlives the Stop() call.
+	m.backgroundWG.Wait()
 }
 
 func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
