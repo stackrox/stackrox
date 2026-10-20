@@ -218,7 +218,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: stackrox/actions/test/junit2jira@v1.0.48
+      uses: stackrox/actions/test/junit2jira@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/test/junit2jira@v1.0.48
       with:
         dry-run: ${{ github.event_name != 'push' }}
         jira-user: ${{ secrets.JIRA_USER }}
