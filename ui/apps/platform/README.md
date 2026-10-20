@@ -29,8 +29,13 @@ will start the development server
 and forward all API requests to `https://8.8.8.8:443`. _Note that the protocol (https) is required to
 be set for this option._
 
-Note that `roxie` sets `$ROX_BASE_URL` in the environment automatically.
+Note that `roxie` sets `$ROX_BASE_URL` in the environment automatically in the subshell it launches
+at the end of `deploy`. You can also enter one with `roxie shell` if you see errors such as:
 
+```
+8:27:37 AM [vite] http proxy error: /v1/metadata
+AggregateError [ECONNREFUSED]:
+```
 
 #### UI_CUSTOM_PROXIES
 
