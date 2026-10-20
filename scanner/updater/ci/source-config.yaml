@@ -10,6 +10,14 @@
 # updaters: per-updater configuration. Each updater inherits from 'default'
 # unless it overrides a field. New configuration sections can be added here
 # as the pipeline evolves.
+#
+# interval: minimum age of the last successful upload before a refresh is due.
+#
+# attempt_cadence: optional spacing between eligible one-hour scheduling windows,
+# aligned to UTC epoch hours. Must be a positive whole-hour duration.
+# For example, 4h permits attempts during UTC hours 00, 04, 08, 12, 16, and 20.
+# If omitted, due refreshes may be attempted on every scheduler run.
+# Failed attempts do not change the windows or the last successful upload time.
 
 storage:
   bucket: definitions.stackrox.io
@@ -76,3 +84,6 @@ bundles:
 updaters:
   default:
     interval: 4h
+  oracle:
+    interval: 8h
+    attempt_cadence: 4h

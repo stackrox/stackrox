@@ -136,7 +136,7 @@ jobs:
 
       - name: Trigger cluster creation via infra
         if: inputs.cluster-provisioning-method == 'infra'
-        uses: stackrox/actions/infra/create-cluster@d624eeae7073b3acb838aab7705730b2de58a4a0 # ratchet:stackrox/actions/infra/create-cluster@v1
+        uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: ${{ inputs.infra-flavor }}
