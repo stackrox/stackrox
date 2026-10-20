@@ -121,8 +121,8 @@ describe('Listening endpoints pagination within a deployment', () => {
         // Expand deployment B — this should collapse deployment A
         cy.get(`${rowSelectorB} ${selectors.expandableRowToggle}`).click();
 
-        // Deployment A's endpoints table should no longer be rendered
-        cy.get(processTableA).should('not.exist');
+        // Deployment A's endpoints table should be collapsed
+        cy.get(processTableA).should('not.be.visible');
 
         // Deployment B should show its own page 1 starting with port 9000
         cy.get(`${processTableB} > tbody > tr`).should('have.length', 20);
