@@ -101,6 +101,7 @@ func TestReadVersionInvalidRecordsAreNotFresh(t *testing.T) {
 		"zero record":      {{Version: "0"}},
 		"negative minimum": {{Version: "4.10.0", SeqNum: 220, MinSeqNum: -1}},
 		"multiple records": {{Version: "4.10.0", SeqNum: 220}, {Version: "4.11.0", SeqNum: 225}},
+		"three records":    {{Version: "4.10.0", SeqNum: 220}, {Version: "4.11.0", SeqNum: 225}, {Version: "5.0.0", SeqNum: 227}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			db := openVersionDB(t)
@@ -110,6 +111,9 @@ func TestReadVersionInvalidRecordsAreNotFresh(t *testing.T) {
 			}
 			_, err := ReadVersionGormDB(context.Background(), db)
 			require.Error(t, err)
+			if len(records) > 1 {
+				require.ErrorContains(t, err, "multiple database version records")
+			}
 		})
 	}
 }

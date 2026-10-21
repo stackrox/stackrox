@@ -40,7 +40,7 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 	}
 	var records []pkgSchema.Versions
 	if exists {
-		if err := db.WithContext(ctx).Raw("SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 2").Scan(&records).Error; err != nil {
+		if err := db.WithContext(ctx).Raw("SELECT seqnum, version, minseqnum, lastpersisted FROM versions").Scan(&records).Error; err != nil {
 			return nil, errors.Wrap(err, "reading version metadata; manual recovery required")
 		}
 	}
@@ -48,6 +48,7 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 		return &migrations.MigrationVersion{MainVersion: "0"}, nil
 	}
 	if len(records) != 1 {
+		// Choosing an arbitrary record could approve an incompatible database.
 		return nil, errors.New("multiple database version records; contact support before repairing the database")
 	}
 	record := records[0]
