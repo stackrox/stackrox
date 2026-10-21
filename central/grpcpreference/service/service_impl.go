@@ -10,6 +10,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	authorizer = allow.Anonymous()
+)
+
 type serviceImpl struct {
 	v1.UnimplementedGRPCPreferencesServiceServer
 }
@@ -26,7 +30,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // Get implements v1.GRPCPreferencesServiceServer
