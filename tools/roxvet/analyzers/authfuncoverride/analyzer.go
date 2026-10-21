@@ -19,9 +19,25 @@ Every method named AuthFuncOverride must:
   - have body consisting of exactly one statement: return ctx, <authorizer>.Authorized(ctx, fullMethodName)
   - use an authorizer that satisfies the configured verifier (when one is provided)`
 
+var excludedPackagePaths = []string{
+	// Please keep this list sorted in path alphabetical order
+
+	// scanner services have a hook in the AuthFuncOverride to allow anonymous access
+	// based on service configuration.
+	"github.com/stackrox/rox/scanner/services",
+	// sensor has a few patterns that call errors.Wrap(f) on the outcome of the authorizer.
+	"github.com/stackrox/rox/sensor/common/admissioncontroller",
+	"github.com/stackrox/rox/sensor/common/compliance",
+	"github.com/stackrox/rox/sensor/common/deployment",
+	"github.com/stackrox/rox/sensor/common/filesystem",
+	"github.com/stackrox/rox/sensor/common/image",
+	"github.com/stackrox/rox/sensor/common/networkflow",
+	"github.com/stackrox/rox/sensor/common/signal",
+}
+
 // Analyzer checks AuthFuncOverride methods. It accepts any authorizer without additional
 // constraints; use NewAnalyzer to add authorizer constraints via a custom verifier.
-var Analyzer = NewAnalyzer(nil)
+var Analyzer = NewAnalyzer(UserAuthorizerVerifier, excludedPackagePaths...)
 
 // AuthorizerVerifier inspects the authorizer expression used inside an AuthFuncOverride
 // body. expr is the AST expression of the authorizer (the receiver of the .Authorized
