@@ -4,6 +4,12 @@
 # https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+registries:
+  quay-rhacs-eng:
+    type: docker-registry
+    url: quay.io
+    username: ${{secrets.DEPENDABOT_QUAY_RO_USERNAME}}
+    password: ${{secrets.DEPENDABOT_QUAY_RO_PASSWORD}}
 updates:
   - package-ecosystem: 'npm'
     directory: 'ui/apps/platform'
@@ -388,6 +394,8 @@ updates:
 
   - package-ecosystem: 'docker'
     directory: '.github/test-images'
+    registries:
+      - quay-rhacs-eng
     schedule:
       interval: 'weekly'
       day: 'wednesday'

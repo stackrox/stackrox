@@ -40,6 +40,24 @@ class SplunkUtil {
         // See https://github.com/splunk/splunk-ansible/issues/349
         "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",]
 
+    private static final String SPLUNK_IMAGE_FALLBACK = "quay.io/rhacs-eng/qa:splunk-ta-test-latest"
+    private static final String SPLUNK_IMAGE_PIN = "../.github/test-images/splunk-ta-test.dockerfile"
+    public static final String SPLUNK_IMAGE = resolveSplunkImage()
+
+    private static String resolveSplunkImage() {
+        File pin = new File(SPLUNK_IMAGE_PIN)
+        if (!pin.exists()) {
+            log.warn("Splunk image pin ${pin.absolutePath} not found, using floating tag ${SPLUNK_IMAGE_FALLBACK}")
+            return SPLUNK_IMAGE_FALLBACK
+        }
+        String from = pin.readLines().find { String line -> line.trim().startsWith("FROM ") }
+        if (!from) {
+            log.warn("No FROM line in ${pin.absolutePath}, using floating tag ${SPLUNK_IMAGE_FALLBACK}")
+            return SPLUNK_IMAGE_FALLBACK
+        }
+        return from.replaceFirst(/(?i)^\s*FROM\s+/, "").trim()
+    }
+
     private static RequestSpecification splunkAdminRequest() {
         given()
             .auth().basic("admin", SPLUNK_ADMIN_PASSWORD)
@@ -197,7 +215,7 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-latest")
+                            .setImage(SPLUNK_IMAGE)
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
