@@ -88,7 +88,7 @@ type ViolationsTablePanelProps = {
     hasActiveViolations: boolean;
     isTableDataUpdating: boolean;
     isLoading: boolean;
-    errorMessage: string;
+    error: Error | undefined;
 };
 
 function ViolationsTablePanel({
@@ -110,7 +110,7 @@ function ViolationsTablePanel({
     hasActiveViolations,
     isTableDataUpdating,
     isLoading,
-    errorMessage,
+    error,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -341,7 +341,7 @@ function ViolationsTablePanel({
                             tableState={getTableUIState({
                                 isLoading: isTableEmpty && isLoading,
                                 data: violations,
-                                error: errorMessage ? new Error(errorMessage) : undefined,
+                                error,
                                 searchFilter,
                             })}
                             colSpan={colSpan}

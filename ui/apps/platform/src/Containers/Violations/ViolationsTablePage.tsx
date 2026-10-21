@@ -141,7 +141,7 @@ function ViolationsTablePage(): ReactElement {
     // Handle changes in the currently displayed violations.
     const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
     const [currentPageAlerts, setCurrentPageAlerts] = useEntitiesByIdsCache();
-    const [currentPageAlertsErrorMessage, setCurrentPageAlertsErrorMessage] = useState('');
+    const [currentPageAlertsError, setCurrentPageAlertsError] = useState<Error | undefined>();
     const [alertCount, setAlertCount] = useState(0);
 
     // Flag to signal that the table is in an updating state
@@ -199,11 +199,26 @@ function ViolationsTablePage(): ReactElement {
         setPollEpoch(pollEpoch + 1);
     }, 5000);
 
+    // Clear stale rows when the user changes the table query. Polling keeps existing rows visible.
+    useEffect(() => {
+        setCurrentPageAlerts([]);
+    }, [
+        searchFilter,
+        page,
+        sortOption,
+        setCurrentPageAlerts,
+        perPage,
+        selectedViolationStateTab,
+        filteredWorkflowView,
+    ]);
+
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
+        let isActiveRequest = true; // Tracks whether the request is still active to avoid updating the state with a stale response.
+
         setIsLoadingAlerts(true);
         setIsTableDataUpdating(true);
-        setCurrentPageAlertsErrorMessage('');
+        setCurrentPageAlertsError(undefined);
         const filteredWorkflowFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
@@ -224,25 +239,30 @@ function ViolationsTablePage(): ReactElement {
 
         Promise.all([alertRequest, countRequest])
             .then(([alerts, counts]) => {
+                if (!isActiveRequest) {
+                    return;
+                }
                 setCurrentPageAlerts(alerts);
                 setAlertCount(counts);
-                setCurrentPageAlertsErrorMessage('');
+                setCurrentPageAlertsError(undefined);
             })
             .catch((error) => {
-                if (error instanceof CancelledPromiseError) {
+                if (error instanceof CancelledPromiseError || !isActiveRequest) {
                     return;
                 }
                 setCurrentPageAlerts([]);
                 setAlertCount(0);
-                const parsedMessage = getAxiosErrorMessage(error);
-                setCurrentPageAlertsErrorMessage(parsedMessage);
+                setCurrentPageAlertsError(new Error(getAxiosErrorMessage(error)));
             })
             .finally(() => {
-                setIsLoadingAlerts(false);
-                setIsTableDataUpdating(false);
+                if (isActiveRequest) {
+                    setIsLoadingAlerts(false);
+                    setIsTableDataUpdating(false);
+                }
             });
 
         return () => {
+            isActiveRequest = false;
             cancelAlertRequest();
             cancelCountRequest();
         };
@@ -252,7 +272,6 @@ function ViolationsTablePage(): ReactElement {
         sortOption,
         pollEpoch,
         setCurrentPageAlerts,
-        setCurrentPageAlertsErrorMessage,
         setAlertCount,
         perPage,
         selectedViolationStateTab,
@@ -353,7 +372,7 @@ function ViolationsTablePage(): ReactElement {
                 hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
                 isTableDataUpdating={isTableDataUpdating}
                 isLoading={isLoadingAlerts}
-                errorMessage={currentPageAlertsErrorMessage}
+                error={currentPageAlertsError}
             />
         </>
     );
