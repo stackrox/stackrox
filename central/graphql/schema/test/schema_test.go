@@ -1,14 +1,54 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestCVSSFieldsAreNullable(t *testing.T) {
+	schema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.NewMock())
+	require.NoError(t, err)
+	cases := map[string][]string{
+		"ImageCVEV2":           {"cvss", "nvdcvss"},
+		"ImageVulnerability":   {"cvss", "nvdCvss"},
+		"NodeCVE":              {"cvss"},
+		"NodeVulnerability":    {"cvss"},
+		"ClusterCVE":           {"cvss"},
+		"ClusterVulnerability": {"cvss"},
+	}
+	for name, fields := range cases {
+		t.Run(name, func(t *testing.T) {
+			response := schema.Exec(context.Background(), `query($name: String!) {
+				__type(name: $name) { fields { name type { kind name } } }
+			}`, "", map[string]interface{}{"name": name})
+			require.Empty(t, response.Errors)
+			var result struct {
+				Type struct {
+					Fields []struct {
+						Name string
+						Type struct{ Kind, Name string }
+					}
+				} `json:"__type"`
+			}
+			require.NoError(t, json.Unmarshal(response.Data, &result))
+			got := make(map[string]string)
+			for _, field := range result.Type.Fields {
+				got[field.Name] = field.Type.Kind + ":" + field.Type.Name
+			}
+			for _, field := range fields {
+				assert.Equal(t, "SCALAR:Float", got[field], "%s must be a nullable Float", field)
+			}
+		})
+	}
+}
 
 func TestSchemaGeneration(t *testing.T) {
 	s := resolvers.Schema()

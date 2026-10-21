@@ -20,6 +20,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddExtraResolver("ClusterCVE", "cvss: Float"),
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ClusterVulnerability",
 			append(commonVulnerabilitySubResolvers,
@@ -398,6 +399,10 @@ func (resolver *clusterCVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResol
 		}
 	}
 	return nil
+}
+
+func (resolver *clusterCVEResolver) Cvss(_ context.Context) *float64 {
+	return nullableCVSS(resolver.data.GetCvss())
 }
 
 func (resolver *clusterCVEResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {

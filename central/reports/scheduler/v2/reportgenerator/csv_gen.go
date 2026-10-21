@@ -62,6 +62,14 @@ func originDisplayName(origin storage.VulnOrigin) string {
 	return origin.String()
 }
 
+// FormatCVSSScore formats an optional score for vulnerability reports.
+func FormatCVSSScore(score *float64) string {
+	if score == nil {
+		return "Not Available"
+	}
+	return strconv.FormatFloat(*score, 'f', 2, 64)
+}
+
 func formatCSVRow(r *ImageCVEQueryResponse) []string {
 	var epssScore string
 	if r.GetEPSSProbability() != nil {
@@ -81,8 +89,8 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 		strconv.FormatBool(r.GetFixable()),
 		r.GetFixedByVersion(),
 		strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
-		strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
-		strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
+		FormatCVSSScore(r.GetCVSS()),
+		FormatCVSSScore(r.GetNVDCVSS()),
 		epssScore}
 
 	if features.KnownExploitedVulnerabilities.Enabled() {
@@ -154,8 +162,8 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			strconv.FormatBool(r.GetFixable()),
 			r.GetFixedByVersion(),
 			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
-			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
-			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
+			FormatCVSSScore(r.GetCVSS()),
+			FormatCVSSScore(r.GetNVDCVSS()),
 			epssScore,
 		}
 		if features.KnownExploitedVulnerabilities.Enabled() {

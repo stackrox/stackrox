@@ -22,6 +22,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddExtraResolver("NodeCVE", "cvss: Float"),
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("NodeVulnerability",
 			append(commonVulnerabilitySubResolvers,
@@ -424,6 +425,10 @@ func (resolver *nodeCVEResolver) Nodes(ctx context.Context, args PaginatedQuery)
 func (resolver *nodeCVEResolver) ID(_ context.Context) graphql.ID {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "ID")
 	return graphql.ID(resolver.data.GetId())
+}
+
+func (resolver *nodeCVEResolver) Cvss(_ context.Context) *float64 {
+	return nullableCVSS(resolver.data.GetCvss())
 }
 
 // CreatedAt is the time a node CVE first seen in the system
