@@ -16,7 +16,7 @@ var commonVulnerabilitySubResolvers = []string{
 	"createdAt: Time",
 	"cve: String!",
 	"cveBaseInfo: CVEInfo",
-	"cvss: Float!",
+	"cvss: Float",
 	"envImpact: Float!",
 	"fixedByVersion: String!",
 	"id: ID!",
@@ -43,7 +43,7 @@ type CommonVulnerabilityResolver interface {
 	CreatedAt(ctx context.Context) (*graphql.Time, error)
 	CVE(ctx context.Context) string
 	CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error)
-	Cvss(ctx context.Context) float64
+	Cvss(ctx context.Context) *float64
 	EnvImpact(ctx context.Context) (float64, error)
 	FixedByVersion(ctx context.Context) (string, error)
 	Id(ctx context.Context) graphql.ID
@@ -61,4 +61,12 @@ type CommonVulnerabilityResolver interface {
 	Suppressed(ctx context.Context) bool
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Vectors() *EmbeddedVulnerabilityVectorsResolver
+}
+
+// nullableCVSS treats the zero value used by stored CVEs for unavailable scores as absent.
+func nullableCVSS(score float32) *float64 {
+	if score == 0 {
+		return nil
+	}
+	return new(float64(score))
 }

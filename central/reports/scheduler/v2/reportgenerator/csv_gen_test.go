@@ -3,6 +3,7 @@ package reportgenerator
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/csv"
 	"strings"
 	"testing"
 	"time"
@@ -131,4 +132,48 @@ func TestCsvReportName(t *testing.T) {
 	longName := strings.Repeat("a", 100)
 	name = csvReportName(longName)
 	assert.Contains(t, name, "...")
+}
+
+func TestCVSSScoresInCSV(t *testing.T) {
+	cases := map[string]struct {
+		cvss        *float64
+		nvdCVSS     *float64
+		wantCVSS    string
+		wantNVDCVSS string
+	}{
+		"absent":        {wantCVSS: "Not Available", wantNVDCVSS: "Not Available"},
+		"stored zeros":  {cvss: new(0.0), nvdCVSS: new(0.0), wantCVSS: "Not Available", wantNVDCVSS: "Not Available"},
+		"populated":     {cvss: new(9.8), nvdCVSS: new(9.5), wantCVSS: "9.80", wantNVDCVSS: "9.50"},
+		"only CVSS":     {cvss: new(7.5), wantCVSS: "7.50", wantNVDCVSS: "Not Available"},
+		"only NVD CVSS": {nvdCVSS: new(6.9), wantCVSS: "Not Available", wantNVDCVSS: "6.90"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			for _, kev := range []string{"false", "true"} {
+				t.Run("KEV="+kev, func(t *testing.T) {
+					t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), kev)
+					r := &ImageCVEQueryResponse{CVSS: tc.cvss, NVDCVSS: tc.nvdCVSS}
+					row := formatCSVRow(r)
+					require.Len(t, row, len(formatCol()))
+					assert.Equal(t, tc.wantCVSS, row[10])
+					assert.Equal(t, tc.wantNVDCVSS, row[11])
+					assert.Equal(t, "Not Available", row[12])
+
+					buf, err := GenerateCSV([]*ImageCVEQueryResponse{r}, "test")
+					require.NoError(t, err)
+					reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+					require.NoError(t, err)
+					require.Len(t, reader.File, 1)
+					file, err := reader.File[0].Open()
+					require.NoError(t, err)
+					defer func() { assert.NoError(t, file.Close()) }()
+					records, err := csv.NewReader(file).ReadAll()
+					require.NoError(t, err)
+					require.Len(t, records, 2)
+					assert.Equal(t, formatCol(), records[0])
+					assert.Equal(t, row, records[1], "streamed and buffered reports must agree")
+				})
+			}
+		})
+	}
 }
