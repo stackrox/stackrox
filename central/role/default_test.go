@@ -37,5 +37,6 @@ func TestIsDefaultPermissionSet(t *testing.T) {
 
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithTraits))
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithoutTraits))
+	assert.True(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy}))
 	assert.False(t, IsDefaultPermissionSet(nonDefaultPermissionSet))
 }
