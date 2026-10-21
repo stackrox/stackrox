@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
+	deploymentOptions "github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/policycategory"
 )
 
@@ -32,7 +33,13 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ImageCvesV2Schema.OptionsMap,
 		schema.ImageComponentV2Schema.OptionsMap,
 		imageOptionsMap,
-		schema.DeploymentsSchema.OptionsMap,
+		// deploymentOptions.OptionsMap is DeploymentsSchema.OptionsMap with the process
+		// indicator and image options merged in. Referenced explicitly rather than via
+		// schema.DeploymentsSchema.OptionsMap because that merge mutates the shared schema
+		// map in place, so the fields present here used to depend on whether anything else
+		// in the binary happened to import the package. Compliance 1.0 provided that import
+		// transitively; naming it here keeps the option set the same for every binary.
+		deploymentOptions.OptionsMap,
 	)
 
 	nodeToVulnerabilitySearchOptions := search.CombineOptionsMaps(
