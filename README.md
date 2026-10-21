@@ -229,10 +229,10 @@ The `deploy` script will:
 2. Create a cluster configuration and a service identity
 3. Deploy the **StackRox Secured Cluster Services** using that configuration and those credentials
 
+If you check out a commit, the scripts will launch the image corresponding to that commit by default. The image will be pulled if needed.
+
 You can set the environment variable `MAIN_IMAGE_TAG` in your shell to
 ensure that you get the version you want.
-
-If you check out a commit, the scripts will launch the image corresponding to that commit by default. The image will be pulled if needed.
 
 Further steps are orchestrator specific.
 
@@ -250,12 +250,7 @@ cd stackrox
 MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 ```
 
-After a few minutes, all resources should be deployed.
-
-**Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
-
-> **Note:**
-> The password file is stored in plaintext on your local filesystem, but the Kubernetes Secret that StackRox creates from it is encrypted. You will not be able to alter the password at runtime. If you lose the password, you will have to redeploy central.
+After a few minutes, all resources should be deployed, and the command launches an interactive shell after printing connection instructions.
 
 </details>
 
@@ -275,12 +270,7 @@ cd stackrox
 MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 ```
 
-After a few minutes, all resources should be deployed. The process will complete with this message.
-
-**Credentials for the 'admin' user can be found in the `./deploy/openshift/central-deploy/password` file.**
-
-> **Note:**
-> While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
+After a few minutes, all resources should be deployed, and the command launches an interactive shell after printing connection instructions.
 
 </details>
 
@@ -296,9 +286,7 @@ cd stackrox
 MAIN_IMAGE_TAG=latest ./deploy/deploy-local.sh
 ```
 
-After a few minutes, all resources should be deployed.
-
-**Credentials for the 'admin' user can be found in the `./deploy/k8s/deploy-local/password` file.**
+After a few minutes, all resources should be deployed, and the command launches an interactive shell after printing connection instructions.
 
 </details>
 
@@ -306,19 +294,19 @@ After a few minutes, all resources should be deployed.
 
 <details><summary>Click to expand</summary>
 
-After the deployment has completed (operator, Helm or script install) a port-forward should exist, so you can connect to https://localhost:8000/. Run the following
+After the deployment has completed the deployment tool (`roxie`) creates a port-forward, for example:
 
-```sh
-kubectl port-forward -n 'stackrox' svc/central "8000:443"
+```text
+02:20 ✓ Port-forward active at https://127.0.0.1:34693
+[...]
+02:42 ⏳ Waiting for Central to be ready at 127.0.0.1:34693 (timeout: 5m0s)
+02:42 ✓ Central is ready and responding!
 ```
 
-Then go to https://localhost:8000/ in your web browser.
+Then go to that address in your web browser.
 
-**Username** = The default user is `admin`
-
-**Password (Helm)**   = The password is in `$ROX_ADMIN_PASSWORD` after a manual installation, or printed at the end of the quick installation script.
-
-**Password (Script)** = The password will be located in the `/deploy/<orchestrator>/central-deploy/password.txt` folder for the script install.
+- **Username** = The default user is `admin`
+- **Password** = The password is in `$ROX_ADMIN_PASSWORD` after installation.
 
 </details>
 
