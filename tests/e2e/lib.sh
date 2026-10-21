@@ -10,6 +10,8 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 # shellcheck source=../../scripts/ci/lib.sh
 source "$TEST_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/scanner-bundle.sh
+source "$TEST_ROOT/scripts/ci/scanner-bundle.sh"
 # shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
@@ -22,10 +24,6 @@ source "$TEST_ROOT/tests/e2e/lib-compat.sh"
 export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
-
-# Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
-# Can be overridden by individual jobs. Setting to "" will load data from all sources.
-export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
@@ -124,6 +122,47 @@ ensure_roxie_on_path() {
     check_for_roxie
 }
 
+_scanner_v4_install_bundle_values() {
+    local use_default_chart="${1:-true}"
+    if [[ "$use_default_chart" == false ]] || scanner_v4_use_full_bundle; then
+        echo "Scanner V4 bundle: production (deployed version default)" >&2
+        return 0
+    fi
+    local version
+    version="$(scanner_v4_ci_bundle_version "$TEST_ROOT")" || return 1
+    echo "Scanner V4 bundle: $version via Central" >&2
+    printf 'customize:\n  scanner-v4-matcher:\n    envVars:\n      SCANNER_V4_MATCHER_VULNERABILITY_VERSION: %s\n' "$version"
+}
+
+_configure_roxie_ci_vuln_bundle() {
+    local config_file="$1"
+    [[ "${CI:-}" == "true" ]] || return 0
+    if scanner_v4_use_full_bundle; then
+        echo "Scanner V4 bundle: production default unless explicitly overridden in Roxie config" >&2
+        return 0
+    fi
+
+    local scanner_v4_component
+    if ! scanner_v4_component="$(yq eval '.central.spec.scannerV4.scannerComponent // ""' "$config_file")"; then
+        return 1
+    fi
+    [[ "$scanner_v4_component" != "Disabled" ]] || return 0
+
+    local env_var_count
+    if ! env_var_count="$(yq eval '[((.central.spec.customize.envVars // [])[]) | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL" or .name == "SCANNER_V4_MATCHER_VULNERABILITY_VERSION")] | length' "$config_file")"; then
+        return 1
+    fi
+    if [[ "$env_var_count" != "0" ]]; then
+        echo "Scanner V4 bundle: explicit override $(yq eval '.central.spec.customize.envVars[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITIES_URL" or .name == "SCANNER_V4_MATCHER_VULNERABILITY_VERSION") | .value' "$config_file")" >&2
+        return 0
+    fi
+
+    local version
+    version="$(scanner_v4_ci_bundle_version "$TEST_ROOT")" || return 1
+    echo "Scanner V4 bundle: $version via Central" >&2
+    set_custom_env "$config_file" central SCANNER_V4_MATCHER_VULNERABILITY_VERSION "$version"
+}
+
 # Deploy StackRox using roxie.
 #
 # This is the preferred way of deploying StackRox for tests as of 2026Q2.
@@ -158,6 +197,10 @@ deploy_stackrox_with_roxie() {
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
 
     workaround_label_length_limitation "$config_file"
+
+    if ! _configure_roxie_ci_vuln_bundle "$config_file"; then
+        return 1
+    fi
 
     # Print out the config file in use for transparency.
     # This does not contain secrets.
@@ -629,6 +672,15 @@ deploy_central_via_operator() {
     esac
 
     if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        if [[ "${CI:-}" == true ]] && ! scanner_v4_use_full_bundle; then
+            local version
+            version="$(scanner_v4_ci_bundle_version "$TEST_ROOT")" || return 1
+            echo "Scanner V4 bundle: $version via Central" >&2
+            customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_VULNERABILITY_VERSION'
+            customize_envVars+=$'\n        value: "'"$version"'"'
+        else
+            echo "Scanner V4 bundle: production (deployed version default)" >&2
+        fi
         if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
             customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
             customize_envVars+=$'\n        value: "vulnerability"'

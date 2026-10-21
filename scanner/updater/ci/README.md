@@ -40,3 +40,22 @@ never overwritten. Publication verifies the public bytes, `Last-Modified`, and
 conditional HTTP requests. The workflow summary contains the published URL.
 The initial rollout publishes the bundle before a separate change enables CI
 consumers. Generator tests alone do not establish full e2e coverage.
+
+## CI selection
+
+Full-stack tests calculate the ZIP digest and pass its version to the matcher,
+which downloads through Central. Standalone Scanner tests use the same version
+at the public definitions endpoint. The standalone Helm chart itself defaults
+to production. No consumer URL pins need updating.
+
+Nightlies and older-chart installation tests retain production defaults. For a
+PR, add `ci-scanner-full-bundle` and rerun the desired tests, or set
+`SCANNER_V4_FULL_BUNDLE=true` locally/in CI. Full-bundle mode omits the automatic
+minimal override; explicit caller settings and allowlists remain effective.
+The Scanner functional workflow also exposes a `full_bundle` dispatch input.
+
+For future fixture-update PRs, use full-bundle mode for pre-merge e2e and run the
+offline fixture tests. The new minimal digest becomes downloadable only after
+merge and master publication, so minimal-mode jobs may fail during that short
+interval. There is no automatic production fallback. Validate the new minimal
+bundle with e2e after publication.
