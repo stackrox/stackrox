@@ -246,6 +246,9 @@ test_upgrade_paths() {
 
     wait_for_central_reconciliation
 
+    # Use a separate fixture so policy workloads exercise automatic deploy-time scanning.
+    wait_for_scored_image_scan "quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine"
+
     rm -f FAIL
     remove_qa_test_results
 
