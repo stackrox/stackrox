@@ -22,6 +22,19 @@ merge_yaml() {
     rm -f "$tmpfile"
 }
 
+# This differs from merge_yaml() in the precedence rules:
+# merge_yaml() unconditionally merges stdin into the provided config file, overwriting values in the config file.
+# merge_yaml_defaults() on the other hand only fills in missing pieces from stdin, which are not present in the config file.
+# See merge_yaml() definition for implementation notes.
+merge_yaml_defaults() {
+    local input="$1"
+    local tmpfile; tmpfile="$(mktemp)"
+
+    yq eval-all '(select(fi == 1) // {}) * (select(fi == 0) // {})' "$input" <(cat) > "$tmpfile"
+    cat "$tmpfile" > "$input"
+    rm -f "$tmpfile"
+}
+
 patch_yaml() {
     local input="$1"
     local patch="$2"

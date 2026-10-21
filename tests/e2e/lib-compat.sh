@@ -53,10 +53,13 @@ deploy_stackrox_with_roxie_compat() {
 
     info "Using config file ${config_file}"
 
-    # Prepare config file with some static settings coming from secured-cluster-cr.envsubst.yaml.
-    merge_yaml "$config_file" <<EOF
+    # Only fill in version if the config file doesn't come with one yet.
+    merge_yaml_defaults "$config_file" <<EOF
 roxie:
   version: "$MAIN_IMAGE_TAG"
+EOF
+    # Prepare config file with some static settings coming from secured-cluster-cr.envsubst.yaml.
+    merge_yaml "$config_file" <<EOF
 central:
   namespace: "$namespace"
 securedCluster:
