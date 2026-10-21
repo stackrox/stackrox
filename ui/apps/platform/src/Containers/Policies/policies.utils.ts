@@ -315,6 +315,7 @@ const nonStandardNumberFields = [
     'Container Memory Request',
     'Container Memory Limit',
     'NVD CVSS',
+    'EPSS',
     'Replicas',
     'Severity',
 ];
