@@ -14,9 +14,6 @@ func parseStream(value string) (productstreams.XYVersion, error) {
 	if err != nil {
 		return xy, err
 	}
-	if xy.X <= 0 || xy.Y < 0 {
-		return xy, fmt.Errorf("invalid product version %q", value)
-	}
 	// Unlike component compatibility, a migration must not accept phantom streams.
 	next := productstreams.GetNextYStream(xy)
 	previous, err := productstreams.GetPreviousYStream(next)
