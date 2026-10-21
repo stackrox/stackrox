@@ -69,7 +69,8 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 	return ver, nil
 }
 
-// UpdateVersionPostgres updates the existing version record, respecting an outer transaction.
+// UpdateVersionPostgres updates the existing version record in a single SQL statement.
+// If ctx carries an outer transaction, db.Exec uses it; otherwise the statement commits on its own.
 // A missing record is an error, not an invitation to initialize or repair metadata.
 func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) error {
 	result, err := db.Exec(ctx, "UPDATE versions SET seqnum = $1, version = $2, minseqnum = $3, lastpersisted = $4",
