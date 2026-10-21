@@ -24,7 +24,7 @@ function main() {
     local -r operator_channel="${5}"  # Unused in OLMv1, kept for signature compatibility
     ;;
   *)
-    echo -e "Usage:\n\t$0 [--allow-dirty-tag | -d] <operator_ns> <index-image-repo> <index-image-tag> <starting-csv-version> <install-channel>" >&2
+    echo -e "Usage:\n\t$0 [--allow-dirty-tag | -d] <operator_ns> <index-image-repo> <index-image-tag> <starting-csv-version> [<install-channel>]" >&2
     echo -e "Example:\n\t$0 -d rhacs-operator-system quay.io/rhacs-eng/stackrox-operator-index v5.1.0 v5.1.0 latest" >&2
     echo -e "Note: This script uses OLMv1 (ClusterExtension API). The install-channel parameter is ignored." >&2
     exit 1

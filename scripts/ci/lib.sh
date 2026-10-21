@@ -2776,25 +2776,26 @@ fi
 # OLM version detection for operator e2e tests
 
 get_ocp_version() {
-  # Returns OCP version as X.Y.Z, or empty string if not an OpenShift cluster
-  "${SCRIPTS_ROOT}/operator/hack/retry-kubectl.sh" < /dev/null get clusterversion -o jsonpath='{.items[0].status.desired.version}' 2>/dev/null || echo ""
+  # Returns OCP version as X.Y.Z
+  # Fails if not an OpenShift cluster or version cannot be retrieved
+  local version
+  if ! version=$("${SCRIPTS_ROOT}/operator/hack/retry-kubectl.sh" < /dev/null get clusterversion -o jsonpath='{.items[0].status.desired.version}' 2>/dev/null); then
+    die "Failed to get OpenShift version - cluster may not be OpenShift or clusterversion resource is unavailable"
+  fi
+  if [[ -z "$version" ]]; then
+    die "OpenShift version is empty - clusterversion resource may be misconfigured"
+  fi
+  echo "$version"
 }
 
 get_olm_version() {
   # Returns "v1" if OLMv1 should be used (OCP >= 4.20.1), "v0" otherwise
+  # Fails if OCP version cannot be determined
   local ocp_version
   ocp_version="$(get_ocp_version)"
 
-  if [[ -z "$ocp_version" ]]; then
-    info "Not an OpenShift cluster, using OLMv0" >&2
-    echo "v0"
-    return
-  fi
-
   if [[ ! "$ocp_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-    info "Could not parse OCP version '$ocp_version', defaulting to OLMv0" >&2
-    echo "v0"
-    return
+    die "Could not parse OCP version '$ocp_version' - expected format X.Y.Z"
   fi
 
   local major="${BASH_REMATCH[1]}"

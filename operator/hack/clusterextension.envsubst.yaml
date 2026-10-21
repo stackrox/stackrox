@@ -7,7 +7,7 @@ metadata:
   namespace: ${NAMESPACE}
 ---
 # ClusterRole with permissions needed to install the operator bundle
-# The installer SA needs broad permissions to create CRDs, ClusterRoles, webhooks, etc.
+# The installer SA needs broad permissions to create CRDs, ClusterRoles, etc.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -23,10 +23,6 @@ rules:
 # Need to create ClusterRoles and ClusterRoleBindings for the operator
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
-  verbs: ["*"]
-# Need to create ValidatingWebhookConfiguration
-- apiGroups: ["admissionregistration.k8s.io"]
-  resources: ["validatingwebhookconfigurations"]
   verbs: ["*"]
 # Need to create operator Deployment, Service, ServiceAccount with finalizers
 - apiGroups: ["apps"]
@@ -82,7 +78,6 @@ spec:
     type: Image
     image:
       ref: ${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}
-      pollIntervalMinutes: 10
 ---
 # ClusterExtension - installs the operator from the catalog
 apiVersion: olm.operatorframework.io/v1
@@ -101,7 +96,9 @@ spec:
   install:
     preflight:
       crdUpgradeSafety:
-        # Use None for CI tests to allow legitimate CRD schema evolution across version jumps
-        # Strict enforcement would block upgrades that add new validation rules or fields
-        # In production, upgrade constraints are managed via catalog metadata
+        # Use None (not Strict) because CI tests jump across many versions (e.g. 4.11.0 -> latest commit)
+        # and CRD schemas legitimately evolve over that range (new validation rules, fields, etc.)
+        # Strict would block these valid schema changes and fail CI unnecessarily.
+        # This still validates the OLMv1 upgrade mechanism itself.
+        # Production upgrades follow catalog-defined paths and don't need this preflight.
         enforcement: None

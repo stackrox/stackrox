@@ -4,9 +4,7 @@
 ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
 readonly ROOT_DIR
 
-# Source scripts/ci/lib.sh to get get_olm_version() without the ROOT_DIR conflict from common.sh
-# shellcheck source=../../scripts/lib.sh
-source "${ROOT_DIR}/scripts/lib.sh"
+# Source scripts/ci/lib.sh to get get_olm_version().
 # shellcheck source=../../scripts/ci/lib.sh
 source "${ROOT_DIR}/scripts/ci/lib.sh"
 
