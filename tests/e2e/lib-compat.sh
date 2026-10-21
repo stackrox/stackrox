@@ -412,27 +412,18 @@ EOF
     fi
 }
 
-# Returns success if the cluster's primary service network is IPv6, i.e. the
-# cluster runs in (dual-mode) IPv6-primary mode. On such clusters, services are
-# IPv6-family by default.
 ipv6_primary_service_network() {
     kubectl get network.config.openshift.io cluster \
         -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'
 }
 
-# On IPv6-primary clusters, the central-loadbalancer Service is IPv6-family, and
-# AWS provisions such services only as dualstack NLBs (classic ELBs have no IPv6
-# support). The Helm chart does not set the corresponding annotations, so inject
-# them via a Central CR overlay. This mirrors what the OpenShift ingress operator
-# does for its own router LoadBalancer service.
-# TODO: drop this once the chart sets these annotations for IPv6-family services.
+# AWS only provisions IPv6-family LoadBalancer services as dualstack NLBs, which the
+# chart does not request; an overlay is used because the CRD prunes spec.customize.other.
+# TODO: drop once the chart sets the annotations itself.
 handle_ipv6_primary_lb_annotations() {
     local config_file="$1"
 
-    if [[ "${LOAD_BALANCER:-}" != "lb" ]]; then
-        return 0
-    fi
-    if ! ipv6_primary_service_network; then
+    if [[ "${LOAD_BALANCER:-}" != "lb" ]] || ! ipv6_primary_service_network; then
         return 0
     fi
 
