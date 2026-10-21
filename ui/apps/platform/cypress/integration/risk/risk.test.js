@@ -5,7 +5,6 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import pf6 from '../../selectors/pf6';
 
 import {
-    clickTab,
     viewFirstRiskDeployment,
     viewRiskDeploymentInNetworkGraph,
     visitRiskDeployments,
@@ -72,7 +71,7 @@ describe('Risk', () => {
             visitRiskDeployments('Platform view');
             viewFirstRiskDeployment();
 
-            clickTab('Deployment details');
+            cy.get('*[role="tablist"] button:contains("Deployment details")').click();
 
             cy.contains('h3', 'Container configuration')
                 .parents(pf6.card)
