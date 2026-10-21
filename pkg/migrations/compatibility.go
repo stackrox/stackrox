@@ -86,19 +86,16 @@ func CheckUpgradeCompatibility(source MigrationVersion, target string, targetSeq
 		rejection := fmt.Sprintf("Central upgrade blocked: cannot determine the source ACS version from %q (database sequence %d) for target ACS %s. Resume the original migrator or contact support for recovery; do not infer a release from the sequence alone.", source.MainVersion, source.SeqNum, target)
 		return upgradeRejection(rejection, unsafe)
 	}
-	var rejection string
 	floor, _ := parseStream(minimum.Version)
 	if xy.Compare(floor) < 0 {
 		next := xy
 		for range AllowedUpgradeSkew {
 			next = productstreams.GetNextYStream(next)
 		}
-		rejection = fmt.Sprintf("Central upgrade blocked: cannot upgrade database from ACS %s to ACS %s. Minimum supported source: ACS %s. First upgrade through an intermediate Operator release, such as ACS %s, and wait for Central to become ready before retrying. Consult support before downgrading an Operator whose Scanner database has already upgraded.", xy, target, minimum.Version, next)
+		rejection := fmt.Sprintf("Central upgrade blocked: cannot upgrade database from ACS %s to ACS %s. Minimum supported source: ACS %s. First upgrade through an intermediate Operator release, such as ACS %s, and wait for Central to become ready before retrying. Consult support before downgrading an Operator whose Scanner database has already upgraded.", xy, target, minimum.Version, next)
+		return upgradeRejection(rejection, unsafe)
 	}
-	if rejection == "" {
-		return "", nil
-	}
-	return upgradeRejection(rejection, unsafe)
+	return "", nil
 }
 
 func upgradeRejection(message string, unsafe bool) (string, error) {
