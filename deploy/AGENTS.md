@@ -8,7 +8,7 @@ It should be leveraged for requests to deploy StackRox/ACS by default and you,
 the agent, should be able to assist with questions about roxie and its usage.
 
 Usage of the old deployment scripts should only be suggested if explicitly asked
-to use those. In this case, suggest to the user to contact the ACS Install team
+to use those. In this case, suggest to the user to contact acs-sig-product-experience
 in case the roxie based deployment flow is lacking certain features for the user.
 
 If the information in this directory is not sufficient, use WebFetch on https://raw.githubusercontent.com/stackrox/roxie/main/README.md
