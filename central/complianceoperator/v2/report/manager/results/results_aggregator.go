@@ -122,7 +122,16 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 		AddExactMatches(search.ClusterID, clusterID).
 		AddExactMatches(search.ComplianceOperatorScanName, successfulScanNames...).
 		ProtoQuery()
-	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.aggreateResults(ctx, clusterID, &ret, statuses))
+	walkFn := g.aggreateResults(ctx, clusterID, &ret, statuses)
+	filteredWalkFn := func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
+		if startTime := clusterData.ScanStartTimes[checkResult.GetScanName()]; startTime != nil {
+			if checkResult.GetLastStartedTime() == nil || checkResult.GetLastStartedTime().AsTime().Before(startTime.AsTime()) {
+				return nil
+			}
+		}
+		return walkFn(checkResult)
+	}
+	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, filteredWalkFn)
 	return ret, statuses, err
 }
 

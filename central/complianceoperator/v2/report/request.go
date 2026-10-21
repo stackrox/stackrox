@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Request holds the input data for a compliance report request
@@ -22,10 +23,11 @@ type Request struct {
 
 // ClusterData holds the metadata for the clusters
 type ClusterData struct {
-	ClusterId   string
-	ClusterName string
-	ScanNames   []string
-	FailedInfo  *FailedCluster
+	ClusterId      string
+	ClusterName    string
+	ScanNames      []string
+	FailedInfo     *FailedCluster
+	ScanStartTimes map[string]*timestamppb.Timestamp
 }
 
 // FailedCluster holds the information of a failed cluster
