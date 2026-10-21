@@ -249,6 +249,8 @@ function inject_test_env_vars() {
 
   # Patch the deployment to add NO_PROXY and ROX_ADMISSION_CONTROLLER_CONFIG env vars
   # These are required for operator e2e test assertions
+  # Note: This may produce "hides previous definition" warnings if vars already exist (e.g., after OLMv1 upgrade reconciliation)
+  # These warnings are harmless - the last value wins, which is what we want for test env injection
   if ! "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null patch deployment "${deployment_name}" -n "${operator_ns}" --type='json' -p='[
     {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "NO_PROXY", "value": "127.1.2.3/8"}},
     {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "ROX_ADMISSION_CONTROLLER_CONFIG", "value": "true"}}
