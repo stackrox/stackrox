@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -50,17 +51,17 @@ func TestInterruptedMigrationResumes(t *testing.T) {
 					VersionAfter:   &storage.Version{SeqNum: int32(seq + 1)},
 					Run: func(databases *types.Databases) error {
 						require.NoError(t, databases.DBCtx.Err())
-						if migrationContext == nil {
-							migrationContext = databases.DBCtx
-						} else {
-							require.Same(t, migrationContext, databases.DBCtx, "reuse the authorized context across migrations")
+						require.True(t, sac.GlobalAccessScopeChecker(databases.DBCtx).IsAllowed())
+						if migrationContext != nil {
+							require.NotSame(t, migrationContext, databases.DBCtx, "each migration gets a fresh authorized context")
 						}
+						migrationContext = databases.DBCtx
 						if interrupt && seq == 222 {
 							return errors.New("interrupted")
 						}
 						canceled, cancel := context.WithCancel(databases.DBCtx)
 						cancel()
-						databases.DBCtx = canceled
+						databases.DBCtx = sac.WithNoAccess(canceled)
 						return nil
 					},
 				}, true

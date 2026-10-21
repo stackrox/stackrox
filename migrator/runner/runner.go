@@ -106,9 +106,9 @@ func runMigrations(databases *types.Databases, source pkgMigrations.MigrationVer
 	if err != nil {
 		return errors.Wrap(err, "determining minimum supported database sequence")
 	}
-	ctx := sac.WithAllAccess(context.Background())
 	for seqNum := source.SeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
 		// Reset the context in case the previous migration replaced it.
+		ctx := sac.WithAllAccess(context.Background())
 		databases.DBCtx = ctx
 
 		migration, ok := lookup(seqNum)
