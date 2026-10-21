@@ -268,15 +268,16 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					DoAndReturn(func(ctx context.Context, _ string) (*storage.PermissionSet, bool, error) {
 						_, hasDeadline := ctx.Deadline()
 						assert.True(t, hasDeadline)
-						return &storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
-							"Image": storage.Access_READ_ACCESS,
-						}}, true, nil
+						return &storage.PermissionSet{
+							ResourceToAccess: centralproxy.ConsoleProxyPermissions(),
+							Traits:           &storage.Traits{Origin: storage.Traits_DEFAULT},
+						}, true, nil
 					})
 				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{
 						RoleName: centralproxy.ConsoleProxyRole,
 						Permissions: map[storage.Access][]string{
-							storage.Access_READ_ACCESS: {"Image"},
+							storage.Access_READ_ACCESS: {"Deployment", "Image"},
 						},
 						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}},
 					}},

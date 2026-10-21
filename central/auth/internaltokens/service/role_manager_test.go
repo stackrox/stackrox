@@ -33,10 +33,10 @@ func TestCreateSensorConsoleRole(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			roles := roleMocks.NewMockDataStore(ctrl)
 			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
-				Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
-					"Deployment": storage.Access_READ_ACCESS,
-					"Image":      storage.Access_READ_WRITE_ACCESS,
-				}}, true, nil)
+				Return(&storage.PermissionSet{
+					ResourceToAccess: centralproxy.ConsoleProxyPermissions(),
+					Traits:           &storage.Traits{Origin: storage.Traits_DEFAULT},
+				}, true, nil)
 
 			role, err := (&roleManager{}).createSensorConsoleRole(t.Context(), roles, tc.scopes)
 			require.NoError(t, err)
@@ -44,8 +44,7 @@ func TestCreateSensorConsoleRole(t *testing.T) {
 				RoleName: centralproxy.ConsoleProxyRole,
 				Clusters: tc.clusters,
 				Permissions: map[storage.Access][]string{
-					storage.Access_READ_ACCESS:       {"Deployment"},
-					storage.Access_READ_WRITE_ACCESS: {"Image"},
+					storage.Access_READ_ACCESS: {"Deployment", "Image"},
 				},
 			}, role)
 		})
@@ -62,4 +61,39 @@ func TestCreateSensorConsoleRoleFailsClosed(t *testing.T) {
 	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).Return(nil, false, nil)
 	_, err = manager.createSensorConsoleRole(t.Context(), roles, nil)
 	require.ErrorIs(t, err, errox.NotFound)
+}
+
+func TestCreateSensorConsoleRoleRejectsUnexpectedPermissionSet(t *testing.T) {
+	for name, ps := range map[string]*storage.PermissionSet{
+		"global permission": {
+			ResourceToAccess: map[string]storage.Access{
+				"Deployment": storage.Access_READ_ACCESS,
+				"Image":      storage.Access_READ_ACCESS,
+				"Access":     storage.Access_READ_ACCESS,
+			},
+			Traits: &storage.Traits{Origin: storage.Traits_DEFAULT},
+		},
+		"write permission": {
+			ResourceToAccess: map[string]storage.Access{
+				"Deployment": storage.Access_READ_ACCESS,
+				"Image":      storage.Access_READ_WRITE_ACCESS,
+			},
+			Traits: &storage.Traits{Origin: storage.Traits_DEFAULT},
+		},
+		"missing permission": {
+			ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+			Traits:           &storage.Traits{Origin: storage.Traits_DEFAULT},
+		},
+		"editable origin": {
+			ResourceToAccess: centralproxy.ConsoleProxyPermissions(),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
+				Return(ps, true, nil)
+			_, err := (&roleManager{}).createSensorConsoleRole(t.Context(), roles, nil)
+			require.ErrorIs(t, err, errox.NotAuthorized)
+		})
+	}
 }
