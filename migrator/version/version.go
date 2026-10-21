@@ -34,6 +34,8 @@ func ReadVersionPostgres(t context.Context, dbName string) (*migrations.Migratio
 // ReadVersionGormDB reads column-based version metadata without changing the schema.
 // A missing table or version record is treated as a fresh installation.
 func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationVersion, error) {
+	// A fresh installation may have no versions table. Check without creating or
+	// altering schema so compatibility is decided before any database changes.
 	var exists bool
 	if err := db.WithContext(ctx).Raw("SELECT to_regclass('versions') IS NOT NULL").Scan(&exists).Error; err != nil {
 		return nil, errors.Wrap(err, "checking version metadata table")
