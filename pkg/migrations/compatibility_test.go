@@ -80,15 +80,19 @@ func TestCheckUpgradeCompatibility(t *testing.T) {
 		unsafe, blocked bool
 		wantBypass      bool
 	}{
-		"N-3":                     {source: "4.10.0", seq: 220},
-		"N-2":                     {source: "4.11.3", seq: 225},
-		"N-1":                     {source: "5.0.x-1-gabc", seq: 227},
-		"same stream":             {source: "5.1.2", seq: 227},
-		"N-4 same sequence":       {source: "4.9.0", seq: 227, blocked: true},
-		"missing source":          {seq: 220, blocked: true},
-		"malformed source":        {source: "invalid", seq: 220, blocked: true},
-		"override old source":     {source: "4.9.0", seq: 213, unsafe: true, wantBypass: true},
-		"override missing source": {seq: 220, unsafe: true, wantBypass: true},
+		"N-3":                       {source: "4.10.0", seq: 220},
+		"N-2":                       {source: "4.11.3", seq: 225},
+		"N-1":                       {source: "5.0.x-1-gabc", seq: 227},
+		"same stream":               {source: "5.1.2", seq: 227},
+		"supported with override":   {source: "4.10.0", seq: 220, unsafe: true},
+		"N-4 same sequence":         {source: "4.9.0", seq: 227, blocked: true},
+		"missing source":            {seq: 220, blocked: true},
+		"malformed source":          {source: "invalid", seq: 220, blocked: true},
+		"override malformed source": {source: "invalid", seq: 220, unsafe: true, wantBypass: true},
+		"override invalid sequence": {source: "4.10.0", seq: -1, unsafe: true, blocked: true},
+		"override invalid minimum":  {source: "4.10.0", seq: 220, minimum: -1, unsafe: true, blocked: true},
+		"override old source":       {source: "4.9.0", seq: 213, unsafe: true, wantBypass: true},
+		"override missing source":   {seq: 220, unsafe: true, wantBypass: true},
 		"override cannot bypass rollback minimum": {source: "5.2.0", seq: 230, minimum: 228, unsafe: true, blocked: true},
 		"supported rollback":                      {source: "5.2.0", seq: 230, minimum: 220},
 		"fresh":                                   {source: "0"},
@@ -102,6 +106,9 @@ func TestCheckUpgradeCompatibility(t *testing.T) {
 				require.NoError(t, err)
 			}
 			assert.Equal(t, tc.wantBypass, bypassed != "")
+			if tc.wantBypass {
+				assert.Contains(t, bypassed, "Central upgrade blocked:")
+			}
 		})
 	}
 }
