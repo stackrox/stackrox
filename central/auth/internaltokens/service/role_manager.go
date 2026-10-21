@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"maps"
 
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -29,6 +30,10 @@ func (rm *roleManager) createSensorConsoleRole(
 	}
 	if !found || permissionSet == nil {
 		return nil, errox.NotFound.New("Sensor proxy permission set not found")
+	}
+	if permissionSet.GetTraits().GetOrigin() != storage.Traits_DEFAULT ||
+		!maps.Equal(permissionSet.GetResourceToAccess(), centralproxy.ConsoleProxyPermissions()) {
+		return nil, errox.NotAuthorized.New("Sensor console proxy permission set does not match the fixed permissions")
 	}
 
 	role := &tokens.InternalRole{
