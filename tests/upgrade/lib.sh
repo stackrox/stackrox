@@ -36,7 +36,9 @@ wait_for_central_reconciliation() {
     [[ "$success" == 1 ]]
 }
 
-# wait_for_scored_image_scan verifies Central can produce data for the Fixable CVSS >= 7 policy.
+# wait_for_scored_image_scan works around ROX-36688 in upgrade CI: matcher readiness can
+# precede NVD enrichment, leaving fixable CVEs with CVSS zero. A separate fixture
+# checks usable scan data through Central before policy workloads are deployed.
 wait_for_scored_image_scan() {
     local image="$1"
     local max_seconds="${SCANNER_V4_SCAN_READINESS_TIMEOUT:-600}"
