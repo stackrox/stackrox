@@ -35,8 +35,8 @@ var excludedPackagePaths = []string{
 	"github.com/stackrox/rox/sensor/common/signal",
 }
 
-// Analyzer checks AuthFuncOverride methods. It accepts any authorizer without additional
-// constraints; use NewAnalyzer to add authorizer constraints via a custom verifier.
+// Analyzer checks AuthFuncOverride methods.
+// It uses the UserAuthorizerVerifier; use NewAnalyzer to add authorizer constraints via another custom verifier.
 var Analyzer = NewAnalyzer(UserAuthorizerVerifier, excludedPackagePaths...)
 
 // AuthorizerVerifier inspects the authorizer expression used inside an AuthFuncOverride
