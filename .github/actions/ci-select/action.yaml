@@ -1,0 +1,10 @@
+name: Build CI selector
+description: Build the Go CI selection prototype before gated setup steps
+runs:
+  using: composite
+  steps:
+    - name: Build CI selector
+      shell: bash
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        GOTOOLCHAIN=auto ci/select/build.sh

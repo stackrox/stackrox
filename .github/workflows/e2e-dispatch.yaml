@@ -13,6 +13,8 @@ on:
     - reopened
     - synchronize
     - ready_for_review
+    - labeled
+    - unlabeled
 
 permissions:
   contents: read
@@ -30,112 +32,50 @@ jobs:
   # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
   should-dispatch:
     needs: [ detect-changes ]
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-24.04
     outputs:
       wait-for-gha-images: ${{ steps.determine.outputs.wait-for-gha-images }}
       wait-for-konflux-images: ${{ steps.determine.outputs.wait-for-konflux-images }}
       jobs: ${{ steps.determine.outputs.jobs }}
     steps:
-    - name: Determine whether should dispatch workflows
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+
+    - uses: ./.github/actions/ci-select
+
+    - name: Print the CI decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/gha-gate.sh
+
+    - name: Determine whether to dispatch workflows
       id: determine
-      shell: python
       env:
         GH_TOKEN: ${{ github.token }}
-        PYTHONUNBUFFERED: "1"
-        input__event_name: ${{ github.event_name }}
-        input__is_fork: ${{ github.event.pull_request.head.repo.fork }}
-        input__is_draft: ${{ github.event.pull_request.draft }}
-        input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
-        input__repo: ${{ github.repository }}
-        input__pr_number: ${{ github.event.pull_request.number }}
-      run: |
-        import json
-        import os
-        import subprocess
-        from types import SimpleNamespace
-        from dataclasses import dataclass
-
-        @dataclass
-        class Job:
-            name: str
-            require_pr_label: bool = False
-            require_konflux_build: bool = False
-
-            def should_run(self, input):
-                if input.is_fork == 'true':
-                    return False
-
-                if input.event_name != 'pull_request':
-                    return True
-                elif self.name in input.pr_labels:
-                    return True
-
-                # We are in a PR context, job is not explicitly listed among the PR labels.
-
-                # TODO(ROX-21073): re-enable Konflux for all PR branches
-                if self.require_konflux_build and 'konflux-build' not in input.pr_labels:
-                    return False
-
-                if input.ui_only_change == 'true':
-                    # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
-                    # As we add more E2E test workflows, we may want to make this more flexible.
-                    return False
-                if self.require_pr_label:
-                    return False
-                if input.is_draft != 'true':
-                    return True
-
-                return False
-
-
-        input = SimpleNamespace(**{
-            key.removeprefix('input__'): val
-            for (key, val) in os.environ.items()
-            if key.startswith('input__')})
-
-        if input.event_name != 'pull_request':
-            input.pr_labels = []
-        else:
-            p = subprocess.run(
-                ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
-                check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
-            input.pr_labels = p.stdout.strip().splitlines()
-
-        for k, v in vars(input).items():
-            print(f'{k} = {v}')
-
-        jobs_registry = [
-            Job(name='e2e-byodb-tests', require_pr_label=True),
-            Job(name='e2e-db-backup-restore-tests'),
-            Job(name='e2e-gke-upgrade-tests'),
-            Job(name='e2e-nongroovy-tests-gke'),
-            Job(name='e2e-nongroovy-tests-gke-konflux', require_konflux_build=True),
-            Job(name='e2e-qa-tests-gke', require_pr_label=True),
-            Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
-            Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
-        ]
-
-        with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
-            def write(job, val):
-                line = f'{job}={val}'
-                print(line)
-                file.write(line + '\n')
-
-            jobs = {job.name: job.should_run(input) for job in jobs_registry}
-
-            write('jobs', json.dumps(jobs))
-
-            # Find out when we can complete the workflow early by not even waiting for GHA-built images.
-            wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
-            write('wait-for-gha-images', str(wait_for_gha_images).lower())
-
-            # Waiting for konflux-built images in PR request context requires the 'konflux-build' PR label.
-            wait_for_konflux_images = input.event_name != 'pull_request' or ('konflux-build' in input.pr_labels and any(jobs.values()))
-            write('wait-for-konflux-images', str(wait_for_konflux_images).lower())
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        CI_IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        CI_IS_DRAFT: ${{ github.event.pull_request.draft }}
+        CI_UI_ONLY: ${{ needs.detect-changes.outputs.ui_only }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/bin/ci-select gha-dispatch-ci
 
   wait-for-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "."
@@ -152,13 +92,16 @@ jobs:
       cancel-in-progress: true
     steps:
     - name: Checkout repo
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
     - name: Determine image references
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
       id: image-references
       run: &image-references |
         IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C "$MAIN_IMAGE_TAG_DIR" --quiet --no-print-directory tag)"}"
@@ -181,6 +124,7 @@ jobs:
         echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
 
     - name: Wait for images
+      if: ${{ needs.should-dispatch.outputs.wait-for-gha-images == 'true' }}
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -198,7 +142,6 @@ jobs:
 
   wait-for-konflux-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "operator"
@@ -213,17 +156,21 @@ jobs:
       cancel-in-progress: true
     steps:
     - name: Checkout repo
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
     - name: Determine image references
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
       id: image-references
       run: *image-references
 
     - name: Wait for Konflux images
+      if: ${{ needs.should-dispatch.outputs.wait-for-konflux-images == 'true' }}
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
