@@ -24,7 +24,10 @@ func TestConsoleProxyDefaultPermissionSet(t *testing.T) {
 	require.NotNil(t, consoleProxy)
 	assert.Equal(t, accesscontrol.ConsoleProxy, consoleProxy.GetName())
 	assert.Equal(t, storage.Traits_DEFAULT, consoleProxy.GetTraits().GetOrigin())
-	assert.Equal(t, centralproxy.ConsoleProxyPermissions(), consoleProxy.GetResourceToAccess())
+	assert.Equal(t, map[string]storage.Access{
+		"Deployment": storage.Access_READ_ACCESS,
+		"Image":      storage.Access_READ_ACCESS,
+	}, consoleProxy.GetResourceToAccess())
 	assert.True(t, accesscontrol.IsDefaultPermissionSet(consoleProxy.GetName()))
 	assert.Error(t, verifyNotDefaultPermissionSet(consoleProxy))
 	assert.False(t, declarativeconfig.CanModifyResource(context.Background(), consoleProxy))
