@@ -96,6 +96,7 @@ roxie_config_from_environment_compat() {
 
     info "Configuring load balancer..."
     handle_load_balancer_setting "$config_file"
+    handle_ipv6_primary_lb_annotations "$config_file"
 
     handle_endpoints_for_test "$config_file" # Echoes info internally.
 
@@ -409,6 +410,47 @@ central:
         name: "${central_default_tls_secret_name}"
 EOF
     fi
+}
+
+# Returns success if the cluster's primary service network is IPv6, i.e. the
+# cluster runs in (dual-mode) IPv6-primary mode. On such clusters, services are
+# IPv6-family by default.
+ipv6_primary_service_network() {
+    kubectl get network.config.openshift.io cluster \
+        -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'
+}
+
+# On IPv6-primary clusters, the central-loadbalancer Service is IPv6-family, and
+# AWS provisions such services only as dualstack NLBs (classic ELBs have no IPv6
+# support). The Helm chart does not set the corresponding annotations, so inject
+# them via a Central CR overlay. This mirrors what the OpenShift ingress operator
+# does for its own router LoadBalancer service.
+# TODO: drop this once the chart sets these annotations for IPv6-family services.
+handle_ipv6_primary_lb_annotations() {
+    local config_file="$1"
+
+    if [[ "${LOAD_BALANCER:-}" != "lb" ]]; then
+        return 0
+    fi
+    if ! ipv6_primary_service_network; then
+        return 0
+    fi
+
+    info "IPv6-primary service network: annotating central-loadbalancer for a dualstack NLB"
+    merge_yaml "$config_file" <<'EOF'
+central:
+  spec:
+    overlays:
+    - apiVersion: v1
+      kind: Service
+      name: central-loadbalancer
+      optional: true
+      patches:
+      - path: metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
+        value: nlb
+      - path: metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-ip-address-type
+        value: dualstack
+EOF
 }
 
 handle_load_balancer_setting() {

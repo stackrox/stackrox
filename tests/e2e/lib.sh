@@ -387,13 +387,21 @@ export_test_environment() {
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     local _lb_default="lb"
-    # Dual-mode/IPv6-primary OpenShift clusters expose Central via a route:
-    # LoadBalancer exposure there would need a dualstack NLB (classic LBs have
-    # no IPv6 support), which the route avoids entirely.
-    if kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
-        _lb_default="route"
-    elif [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
-        _lb_default="route"
+    # Dual-mode/IPv6-primary OpenShift clusters cannot expose Central through a
+    # plain LoadBalancer service: the service is IPv6-family and AWS provisions
+    # those only as dualstack NLBs. handle_ipv6_primary_lb_annotations() in
+    # lib-compat.sh injects the corresponding annotations, so "lb" keeps working
+    # on such clusters. Exposing Central via a route would avoid the LB entirely,
+    # but roxie does not support route-based Central exposure yet (it cannot
+    # resolve a route endpoint, and an unset exposure defaults to LoadBalancer).
+    # The route defaulting below therefore stays dormant until roxie gains route
+    # support; enable it with ENABLE_ROUTE_EXPOSURE=true.
+    if [[ "${ENABLE_ROUTE_EXPOSURE:-false}" == "true" ]]; then
+        if ipv6_primary_service_network; then
+            _lb_default="route"
+        elif [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+            _lb_default="route"
+        fi
     fi
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
