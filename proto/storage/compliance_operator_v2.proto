@@ -198,8 +198,8 @@ message ComplianceOperatorCheckResultV2 {
   }
   string id = 1; // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
   string check_id = 2; // @gotags: search:"Compliance Check ID,hidden"
-  string check_name = 3; // @gotags: search:"Compliance Check Name,hidden"
-  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string check_name = 3; // @gotags: search:"Compliance Check Name,hidden" sql:"index=name:complianceoperatorcheckresultv2_freshness;priority:4"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=name:complianceoperatorcheckresultv2_freshness;priority:3"
   CheckStatus status = 5; // @gotags: search:"Compliance Check Status,hidden"
   RuleSeverity severity = 6; // @gotags: search:"Compliance Rule Severity,hidden"
   string description = 7;
@@ -211,12 +211,12 @@ message ComplianceOperatorCheckResultV2 {
   repeated string warnings = 13;
   string scan_name = 14;
   string cluster_name = 15;
-  string scan_config_name = 16; // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
+  string scan_config_name = 16; // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint,index=name:complianceoperatorcheckresultv2_freshness;priority:2"
   string rationale = 17; // @gotags: search:"Compliance Check Rationale,hidden"
-  string scan_ref_id = 18; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
+  string scan_ref_id = 18; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid),index=name:complianceoperatorcheckresultv2_freshness;priority:1"
   string rule_ref_id = 19; // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
   // last_started_time is the last time the Scan resource was triggered
-  google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time,hidden"
+  google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time,hidden" sql:"index=name:complianceoperatorcheckresultv2_freshness;priority:5"
 }
 
 //Next Tag: 4
