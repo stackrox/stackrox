@@ -1,6 +1,12 @@
 import { Component } from 'react';
 import type { ComponentProps, ComponentType, ElementType } from 'react';
-import Loader from 'Components/Loader';
+import { Bullseye, Spinner } from '@patternfly/react-core';
+
+const componentNotMounted = (
+    <Bullseye>
+        <Spinner />
+    </Bullseye>
+);
 
 type State = {
     component: ElementType | null;
@@ -34,7 +40,7 @@ export default function asyncComponent<T extends ElementType>(
 
         render() {
             const C = this.state.component;
-            return C ? <C {...this.props} /> : <Loader />;
+            return C ? <C {...this.props} /> : componentNotMounted;
         }
     }
 
