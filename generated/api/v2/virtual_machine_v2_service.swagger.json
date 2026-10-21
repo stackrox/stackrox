@@ -882,6 +882,10 @@
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "scanPending": {
+          "type": "boolean",
+          "description": "True while Central processes a scan, including before any components exist."
         }
       }
     },

@@ -559,6 +559,7 @@ func (m *ListVMComponentsResponse) CloneVT() *ListVMComponentsResponse {
 	}
 	r := new(ListVMComponentsResponse)
 	r.TotalCount = m.TotalCount
+	r.ScanPending = m.ScanPending
 	if rhs := m.Components; rhs != nil {
 		tmpContainer := make([]*VMComponentRow, len(rhs))
 		for k, v := range rhs {
@@ -1475,6 +1476,9 @@ func (this *ListVMComponentsResponse) EqualVT(that *ListVMComponentsResponse) bo
 		}
 	}
 	if this.TotalCount != that.TotalCount {
+		return false
+	}
+	if this.ScanPending != that.ScanPending {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3250,6 +3254,16 @@ func (m *ListVMComponentsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.ScanPending {
+		i--
+		if m.ScanPending {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.TotalCount != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.TotalCount))
 		i--
@@ -4241,6 +4255,9 @@ func (m *ListVMComponentsResponse) SizeVT() (n int) {
 	}
 	if m.TotalCount != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.TotalCount))
+	}
+	if m.ScanPending {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8760,6 +8777,26 @@ func (m *ListVMComponentsResponse) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanPending", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ScanPending = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14198,6 +14235,26 @@ func (m *ListVMComponentsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanPending", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ScanPending = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

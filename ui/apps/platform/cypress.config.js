@@ -80,6 +80,13 @@ module.exports = {
         devServer: {
             framework: 'react',
             bundler: 'vite',
+            viteConfig: {
+                configFile: path.resolve(__dirname, 'vite.config.js'),
+                optimizeDeps: {
+                    // Avoid rebuilding dependencies while loading the VM component spec.
+                    include: ['lodash/findIndex', 'react-feather'],
+                },
+            },
         },
         viewportHeight: 600,
         viewportWidth: 800,
