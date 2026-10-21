@@ -412,18 +412,17 @@ EOF
     fi
 }
 
-ipv6_primary_service_network() {
-    kubectl get network.config.openshift.io cluster \
-        -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'
-}
-
 # AWS only provisions IPv6-family LoadBalancer services as dualstack NLBs, which the
 # chart does not request; an overlay is used because the CRD prunes spec.customize.other.
 # TODO: drop once the chart sets the annotations itself.
 handle_ipv6_primary_lb_annotations() {
     local config_file="$1"
+    # serviceNetwork[0] is the cluster's primary IP family.
+    local service_network
+    service_network="$(kubectl get network.config.openshift.io cluster \
+        -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null || true)"
 
-    if [[ "${LOAD_BALANCER:-}" != "lb" ]] || ! ipv6_primary_service_network; then
+    if [[ "${LOAD_BALANCER:-}" != "lb" || "$service_network" != *:* ]]; then
         return 0
     fi
 
