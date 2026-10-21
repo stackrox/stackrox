@@ -46,6 +46,14 @@ func createBaseEvaluator(fieldName string, fieldType reflect.Type, values []stri
 	if err != nil {
 		return nil, err
 	}
+	// Resolve the kind's matcher first. Every field needs that lookup, and an
+	// unknown kind must fail here. EPSS Probability is a float, so the lookup
+	// returns generateFloatMatcher; replace it so this field prints 5 decimal places.
+	if fieldName == search.EPSSProbablity.String() {
+		generatorForKind = func(value string, _ reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
+			return newFloatMatcher(value, matchAll, epssProbabilityDisplayPrecision)
+		}
+	}
 
 	if matchAll {
 		m, err := generatorForKind("", fieldType, matchAll)
@@ -381,7 +389,19 @@ func generateUintMatcher(value string, _ reflect.Type, matchAll bool) (baseMatch
 	}, nil
 }
 
+const (
+	defaultFloatDisplayPrecision = 3
+	// EPSS probabilities are small decimals (for example 0.00042). Three places
+	// would render those as 0 in the violation message. FIRST publishes these
+	// scores to five decimal places: https://www.first.org/epss/data
+	epssProbabilityDisplayPrecision = 5
+)
+
 func generateFloatMatcher(value string, _ reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
+	return newFloatMatcher(value, matchAll, defaultFloatDisplayPrecision)
+}
+
+func newFloatMatcher(value string, matchAll bool, maxPlaces int) (baseMatcherAndExtractor, error) {
 	var baseMatcher func(float64) bool
 	if matchAll && value != "" {
 		return nil, errors.New("non-empty value for matchAll")
@@ -397,7 +417,7 @@ func generateFloatMatcher(value string, _ reflect.Type, matchAll bool) (baseMatc
 		switch instance.Kind() {
 		case reflect.Float32, reflect.Float64:
 			asFloat := instance.Float()
-			return []valueMatchedPair{{value: readable.Float(asFloat, 3), matched: matchAll || baseMatcher(asFloat)}}
+			return []valueMatchedPair{{value: readable.Float(asFloat, maxPlaces), matched: matchAll || baseMatcher(asFloat)}}
 		}
 		return nil
 	}, nil

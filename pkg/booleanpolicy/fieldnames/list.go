@@ -27,6 +27,7 @@ var (
 	DisallowedImageLabel           = newFieldName("Disallowed Image Label")
 	DockerfileLine                 = newFieldName("Dockerfile Line")
 	DropCaps                       = newFieldName("Drop Capabilities")
+	EPSS                           = newFieldName("EPSS")
 	EnvironmentVariable            = newFieldName("Environment Variable")
 	ExposedNodePort                = newFieldName("Exposed Node Port")
 	ExposedPort                    = newFieldName("Exposed Port")

@@ -13,11 +13,13 @@ const (
 )
 
 var (
-	keyValueValueRegex                       = createRegex("[^=]+=.*")
-	booleanValueRegex                        = createRegex("(?i:(true|false))")
-	stringValueRegex                         = createRegex(".*[^[:space:]]+.*")
-	integerValueRegex                        = createRegex("([[:digit:]]+)")
-	comparatorDecimalValueRegex              = createRegex(`(<|>|<=|>=)?[[:space:]]*[[:digit:]]*\.?[[:digit:]]+`)
+	keyValueValueRegex          = createRegex("[^=]+=.*")
+	booleanValueRegex           = createRegex("(?i:(true|false))")
+	stringValueRegex            = createRegex(".*[^[:space:]]+.*")
+	integerValueRegex           = createRegex("([[:digit:]]+)")
+	comparatorDecimalValueRegex = createRegex(`(<|>|<=|>=)?[[:space:]]*[[:digit:]]*\.?[[:digit:]]+`)
+	// Whole-number percent in [0, 100], with an optional numeric comparator.
+	comparatorEPSSPercentRegex               = createRegex(`(<=|>=|<|>)?[[:space:]]*(100|[1-9][0-9]|[0-9])`)
 	environmentVariableWithSourceStrictRegex = createRegex("(?i:(UNSET|RAW|UNKNOWN|^)=([^=]*)=.*)|((SECRET_KEY|CONFIG_MAP_KEY|FIELD|RESOURCE_FIELD)=([^=]*)=$)")
 	environmentVariableWithSourceRegex       = createRegex("(?i:(UNSET|RAW|SECRET_KEY|CONFIG_MAP_KEY|FIELD|RESOURCE_FIELD|UNKNOWN|^)=[^=]*=.*)")
 	dockerfileLineValueRegex                 = createRegex("(?i:(ADD|ARG|CMD|COPY|ENTRYPOINT|ENV|EXPOSE|FROM|LABEL|MAINTAINER|ONBUILD|RUN|STOPSIGNAL|USER|VOLUME|WORKDIR|^)=).*")

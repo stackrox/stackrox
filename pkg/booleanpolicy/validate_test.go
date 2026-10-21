@@ -36,6 +36,12 @@ func (s *PolicyValueValidator) TestRegex() {
 			r:       comparatorDecimalValueRegex,
 		},
 		{
+			name:    "EPSS percent",
+			valid:   []string{"0", "75", "100", ">0", ">= 75", "<=100", "< 1", "> 100"},
+			invalid: []string{"", ">", "101", "-1", "75.5", "00", "075", "=75", "100.0"},
+			r:       comparatorEPSSPercentRegex,
+		},
+		{
 			name:    "Integer",
 			valid:   []string{"0", "12", "1", "111111"},
 			invalid: []string{"", "0<", ">", "3>0", ".", ".1", "0.1"},
@@ -216,6 +222,19 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 			},
 		}, ValidateEnvVarSourceRestrictions()))
 	}
+}
+
+func (s *PolicyValueValidator) TestValidateEPSS() {
+	valid := policyWithSingleKeyValue(fieldnames.EPSS, ">= 75", false)
+	s.NoError(Validate(valid))
+
+	for _, value := range []string{"0", "100", "< 1", "<=100"} {
+		s.NoError(Validate(policyWithSingleKeyValue(fieldnames.EPSS, value, false)), value)
+	}
+	for _, value := range []string{"101", "75.5", "-1", ""} {
+		s.Error(Validate(policyWithSingleKeyValue(fieldnames.EPSS, value, false)), value)
+	}
+	s.Error(Validate(policyWithSingleKeyValue(fieldnames.EPSS, ">= 50", true)))
 }
 
 func (s *PolicyValueValidator) TestValidateMultipleSections() {

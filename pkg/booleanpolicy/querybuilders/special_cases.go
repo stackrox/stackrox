@@ -3,6 +3,7 @@ package querybuilders
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -87,6 +88,30 @@ func ForNvdCVSS() QueryBuilder {
 			fieldQueryFromGroup(group, search.NVDCVSS, nil),
 		}
 	})
+}
+
+// ForEPSS returns a query builder for EPSS probability.
+// Policy values are whole-number percents. Scan data stores probability in [0, 1].
+func ForEPSS() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.EPSSProbablity, scaleEPSSPercentToProbability),
+		}
+	})
+}
+
+// scaleEPSSPercentToProbability converts a policy percent such as ">= 75" into a
+// probability comparison such as ">=0.75". The threshold is rounded to float32,
+// which is how Scanner stores EPSS, so boundary comparisons use the same value
+// the matcher reads from the scan.
+func scaleEPSSPercentToProbability(value string) string {
+	prefix, number := basematchers.ParseNumericPrefix(strings.TrimSpace(value))
+	percent, err := strconv.Atoi(number)
+	if err != nil {
+		return value
+	}
+	scaled := float64(float32(float64(percent) / 100))
+	return prefix + strconv.FormatFloat(scaled, 'f', -1, 64)
 }
 
 // ForCVSS returns a query builder for CVSS scores.
