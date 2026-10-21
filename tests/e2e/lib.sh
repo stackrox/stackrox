@@ -386,16 +386,7 @@ export_test_environment() {
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-core_bpf}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
-    local _lb_default="lb"
-    # roxie forces LoadBalancer exposure and cannot address a route endpoint yet;
-    # route stays off until it can (ENABLE_ROUTE_EXPOSURE=true).
-    if [[ "${ENABLE_ROUTE_EXPOSURE:-false}" == "true" ]]; then
-        if ipv6_primary_service_network ||
-            [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
-            _lb_default="route"
-        fi
-    fi
-    ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
+    ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
