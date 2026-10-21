@@ -121,11 +121,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 }
 
 var (
-	autocompleteCategories = func() set.Set[v1.SearchCategory] {
-		s := centralsearch.GetGlobalSearchCategories().Clone()
-		s.Add(v1.SearchCategory_COMPLIANCE)
-		return s
-	}()
+	autocompleteCategories = centralsearch.GetGlobalSearchCategories().Clone()
 )
 
 // SearchService provides APIs for search.
