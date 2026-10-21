@@ -1149,7 +1149,6 @@ module.exports = [
             'src/Containers/AccessControl/AuthProviders/AuthProviderForm.tsx', // replace
             'src/Containers/AccessControl/AuthProviders/AuthProviders.tsx', // replace
             'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx', // replace
-            'src/Containers/Clusters/DownloadHelmValues.tsx', // replace
             'src/Containers/Login/LoginPage.jsx', // replace
             'src/Containers/Login/TestLoginResultsPage.jsx', // replace
             'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace
