@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -869,20 +870,73 @@ func TestStartMCPRoleInformerGating(t *testing.T) {
 		assert.Empty(t, roles)
 	})
 
-	t.Run("other list failure: informer also does not start, but create/update still falls back safely", func(t *testing.T) {
+	t.Run("transient list failure is retried until the probe recovers, then the informer starts", func(t *testing.T) {
+		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+		client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+			machineConfigPoolGVR: "MachineConfigPoolList",
+		}, newMCP("infra", map[string]string{nodeRolePrefix + "infra": ""}))
+		// Fail the first few probes with a transient (non-NotFound) error, then recover. A NotFound would instead
+		// disable discovery permanently (non-OpenShift), which is covered above.
+		var listCalls atomic.Int32
+		client.PrependReactor("list", "machineconfigpools", func(k8stesting.Action) (bool, runtime.Object, error) {
+			if listCalls.Add(1) <= 5 {
+				return true, nil, errors.New("connection refused")
+			}
+			return false, nil, nil // let the real tracker serve the probe and the informer's list/watch
+		})
+		m := newTestHandler(client)
+		m.handlerMaxRetries = 1
+		m.handlerRetryTimeout = 50 * time.Millisecond
+		m.nodeRoleReconcileInterval = 50 * time.Millisecond // fast re-probe between exhausted fast-retries
+		defer m.stopSignal.Signal()
+
+		done := make(chan struct{})
+		go func() { defer close(done); m.startMCPRoleInformer() }()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Fatal("startMCPRoleInformer did not finish after the probe recovered")
+		}
+
+		require.NotNil(t, m.getMCPLister(), "informer must start once the probe recovers, not stay disabled")
+		require.True(t, m.waitForMCPCacheSync(time.Second))
+		roles, err := m.discoverNodeRoles()
+		require.NoError(t, err)
+		assert.Equal(t, []string{"infra"}, roles)
+	})
+
+	t.Run("persistent non-NotFound failure keeps retrying until stop, never permanently disabling discovery", func(t *testing.T) {
 		t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
 		client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
 			machineConfigPoolGVR: "MachineConfigPoolList",
 		})
+		var listCalls atomic.Int32
 		client.PrependReactor("list", "machineconfigpools", func(k8stesting.Action) (bool, runtime.Object, error) {
+			listCalls.Add(1)
 			return true, nil, errors.New("connection refused")
 		})
 		m := newTestHandler(client)
+		m.handlerMaxRetries = 1
+		m.handlerRetryTimeout = 20 * time.Millisecond
+		m.nodeRoleReconcileInterval = 20 * time.Millisecond
 
-		assert.NotPanics(t, m.startMCPRoleInformer)
+		done := make(chan struct{})
+		go func() { defer close(done); m.startMCPRoleInformer() }()
 
-		assert.Nil(t, m.mcpLister)
+		// It must keep re-probing instead of giving up after the first exhausted retry, while discovery stays
+		// unavailable and create/update safely fall back.
+		require.Eventually(t, func() bool { return listCalls.Load() >= 4 }, 2*time.Second, 10*time.Millisecond,
+			"startMCPRoleInformer must keep re-probing MachineConfigPools, not disable discovery after one failure")
+		assert.Nil(t, m.getMCPLister(), "informer must not start while the probe keeps failing")
 		assert.Equal(t, []string{masterRole, workerRole}, m.discoverDefaultNodeRoles().rolesForCreate())
+
+		// ...and it must exit promptly once the handler stops.
+		m.stopSignal.Signal()
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Fatal("startMCPRoleInformer did not return after stopSignal")
+		}
 	})
 
 	t.Run("OpenShift cluster: MCPs listable, informer starts and syncs", func(t *testing.T) {

@@ -242,17 +242,31 @@ func (m *handlerImpl) startMCPRoleInformer() {
 		return
 	}
 
-	// A single, non-retried probe first: on non-OpenShift clusters the MachineConfigPool CRD is permanently
-	// absent (NotFound).
-	if err := m.probeMachineConfigPools(m.ctx()); err != nil {
+	// Probe for MachineConfigPools before starting the informer, and keep probing until it succeeds or the handler
+	// stops. A permanent NotFound (the MachineConfigPool CRD is absent, i.e. not an OpenShift cluster) disables
+	// discovery for good. Any other error may be transient (e.g. the API server unreachable at startup): retry
+	// rather than disabling discovery until the next Sensor restart, so roles are picked up once the API recovers.
+	for {
+		// A single, non-retried probe first so the permanent NotFound case is detected without burning the retry
+		// budget below.
+		err := m.probeMachineConfigPools(m.ctx())
+		if err == nil {
+			break
+		}
 		if kubeAPIErr.IsNotFound(err) {
 			log.Infof("MachineConfigPools are not available, likely not an OpenShift cluster; node-role auto-discovery disabled, using %v", fallbackDefaultNodeRoles())
 			return
 		}
-		// Anything else might be transient (e.g. the API server briefly unreachable during startup): retry
-		// before giving up, unlike the permanent case above.
-		if err := m.callWithRetry(m.probeMachineConfigPools); err != nil {
-			log.Warnf("Could not list MachineConfigPools, node-role auto-discovery disabled, using %v: %v", fallbackDefaultNodeRoles(), err)
+		// Fast-retry a few times for a brief blip; if it still fails, wait and re-probe at the reconcile cadence.
+		if err := m.callWithRetry(m.probeMachineConfigPools); err == nil {
+			break
+		}
+		log.Warnf("Could not list MachineConfigPools; node-role auto-discovery will use %v until the API recovers, retrying in %s: %v", fallbackDefaultNodeRoles(), m.nodeRoleReconcileInterval, err)
+		timer := time.NewTimer(m.nodeRoleReconcileInterval)
+		select {
+		case <-timer.C:
+		case <-m.stopSignal.Done():
+			timer.Stop()
 			return
 		}
 	}
