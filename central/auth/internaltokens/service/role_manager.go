@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"maps"
+	"slices"
 
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -43,6 +44,9 @@ func (rm *roleManager) createSensorConsoleRole(
 	}
 	for resource, access := range permissionSet.GetResourceToAccess() {
 		role.Permissions[access] = append(role.Permissions[access], resource)
+	}
+	for _, resources := range role.Permissions {
+		slices.Sort(resources)
 	}
 	return role, nil
 }
