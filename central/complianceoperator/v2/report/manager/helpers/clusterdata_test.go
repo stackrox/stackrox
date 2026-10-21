@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestGetFailedClusters(t *testing.T) {
@@ -143,25 +145,31 @@ func TestGetClusterData(t *testing.T) {
 		assert.Nil(tt, clusterData)
 	})
 	t.Run("no failed clusters", func(tt *testing.T) {
+		scan1Time := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
+		scan2Time := timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC))
 		gomock.InOrder(
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
 				{
-					ScanName: "scan-1",
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
 				},
 				{
-					ScanName: "scan-2",
+					ScanName:        "scan-2",
+					LastStartedTime: scan2Time,
 				},
 			}, nil),
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
 				{
-					ScanName: "scan-1",
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
 				},
 				{
-					ScanName: "scan-2",
+					ScanName:        "scan-2",
+					LastStartedTime: scan2Time,
 				},
 			}, nil),
 		)
@@ -170,11 +178,19 @@ func TestGetClusterData(t *testing.T) {
 				ClusterId:   "cluster-1",
 				ClusterName: "cluster-1",
 				ScanNames:   []string{"scan-1", "scan-2"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+					"scan-2": scan2Time,
+				},
 			},
 			"cluster-2": {
 				ClusterId:   "cluster-2",
 				ClusterName: "cluster-2",
 				ScanNames:   []string{"scan-1", "scan-2"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+					"scan-2": scan2Time,
+				},
 			},
 		}
 		clusterData, err := GetClusterData(ctx, reportData, nil, scanStore)
@@ -182,25 +198,31 @@ func TestGetClusterData(t *testing.T) {
 		assertClusterData(tt, expectedClusterData, clusterData)
 	})
 	t.Run("with failed clusters", func(tt *testing.T) {
+		scan1Time := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
+		scan2Time := timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC))
 		gomock.InOrder(
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
 				{
-					ScanName: "scan-1",
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
 				},
 				{
-					ScanName: "scan-2",
+					ScanName:        "scan-2",
+					LastStartedTime: scan2Time,
 				},
 			}, nil),
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
 				{
-					ScanName: "scan-1",
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
 				},
 				{
-					ScanName: "scan-2",
+					ScanName:        "scan-2",
+					LastStartedTime: scan2Time,
 				},
 			}, nil),
 		)
@@ -209,11 +231,19 @@ func TestGetClusterData(t *testing.T) {
 				ClusterId:   "cluster-1",
 				ClusterName: "cluster-1",
 				ScanNames:   []string{"scan-1", "scan-2"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+					"scan-2": scan2Time,
+				},
 			},
 			"cluster-2": {
 				ClusterId:   "cluster-2",
 				ClusterName: "cluster-2",
 				ScanNames:   []string{"scan-1", "scan-2"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+					"scan-2": scan2Time,
+				},
 				FailedInfo: &report.FailedCluster{
 					ClusterId:       "cluster-2",
 					ClusterName:     "cluster-2",
@@ -244,6 +274,18 @@ func assertClusterData(t *testing.T, expected map[string]*report.ClusterData, ac
 		assert.Equal(t, expectedCluster.ClusterId, actualCluster.ClusterId)
 		assert.Equal(t, expectedCluster.ClusterName, actualCluster.ClusterName)
 		assert.ElementsMatch(t, expectedCluster.ScanNames, actualCluster.ScanNames)
+		if len(expectedCluster.ScanStartTimes) > 0 {
+			require.Len(t, actualCluster.ScanStartTimes, len(expectedCluster.ScanStartTimes))
+			for scanName, expectedTime := range expectedCluster.ScanStartTimes {
+				actualTime, ok := actualCluster.ScanStartTimes[scanName]
+				require.True(t, ok, "missing ScanStartTimes entry for scan %s in cluster %s", scanName, clusterID)
+				assert.True(t, expectedTime.AsTime().Equal(actualTime.AsTime()),
+					"ScanStartTimes mismatch for scan %s in cluster %s: expected %v, got %v",
+					scanName, clusterID, expectedTime.AsTime(), actualTime.AsTime())
+			}
+		} else {
+			assert.Empty(t, actualCluster.ScanStartTimes)
+		}
 		if expectedCluster.FailedInfo != nil {
 			require.NotNil(t, actualCluster.FailedInfo)
 			assert.Equal(t, expectedCluster.FailedInfo.ClusterId, actualCluster.FailedInfo.ClusterId)

@@ -9,6 +9,7 @@ import (
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // GetFailedClusters returns the failed clusters metadata associated with a ScanConfiguration
@@ -74,6 +75,12 @@ func populateScanNames(ctx context.Context, data *report.ClusterData, reportData
 	}
 	for _, scan := range scans {
 		data.ScanNames = append(data.ScanNames, scan.GetScanName())
+		if t := scan.GetLastStartedTime(); t != nil {
+			if data.ScanStartTimes == nil {
+				data.ScanStartTimes = make(map[string]*timestamppb.Timestamp)
+			}
+			data.ScanStartTimes[scan.GetScanName()] = t
+		}
 	}
 	return data, nil
 }
