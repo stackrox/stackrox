@@ -259,6 +259,7 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 		DisableAPI:          true,
 		Repo2CPEMappingURL:  cfg.Repo2CPEMappingURL,
 		Repo2CPEMappingFile: cfg.Repo2CPEMappingFile,
+		MaxRetries:          3,
 		Timeout:             cfg.Timeout,
 	}
 

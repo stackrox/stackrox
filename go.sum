@@ -1161,8 +1161,6 @@ github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/procfs v0.0.8/go.mod h1:7Qr8sr6344vo1JqZ6HhLceV9o3AJ1Ff+GxbHq6oeK9A=
 github.com/prometheus/procfs v0.22.0 h1:6q9+/JL9IKAPbCmBrv9n5O5Ty3NKnciV5X7YGw0oics=
 github.com/prometheus/procfs v0.22.0/go.mod h1:CvmFr/GVhIjIvWJZW3tgkODBQMRIf0EyWMQLHCHab58=
-github.com/quay/claircore v1.6.1-0.20260916195820-3902930ff815 h1:jCU2qfY0HKDxhgnsn5tuZ3qaAE/C3r2neX+TYhcJwEo=
-github.com/quay/claircore v1.6.1-0.20260916195820-3902930ff815/go.mod h1:fdao6wPVC6bYZk3DOuUQDGjxhYVL9codeSnmx/nqlo0=
 github.com/quay/claircore/toolkit v1.0.0/go.mod h1:3ELtgf92x7o1JCTSKVOAqhcnCTXc4s5qiGaEDx62i20=
 github.com/quay/claircore/toolkit v1.7.0 h1:flobJ7hTofiArNSBs1SKq8vDZ9h57dW02RxLyYn+bMw=
 github.com/quay/claircore/toolkit v1.7.0/go.mod h1:1AzB56krwmcpGUak0hAOVbSrtzGywDQu5OTooDlKcb0=
@@ -1378,6 +1376,8 @@ github.com/ulikunitz/xz v0.5.15 h1:9DNdB5s+SgV3bQ2ApL10xRc35ck0DuIX/isZvIk+ubY=
 github.com/ulikunitz/xz v0.5.15/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/vbauerster/mpb/v4 v4.12.2 h1:TsBs1nWRYF0m8cUH13pxNhOUqY6yKcOr2PeSYxp2L3I=
 github.com/vbauerster/mpb/v4 v4.12.2/go.mod h1:LVRGvMch8T4HQO3eg2pFPsACH9kO/O6fT/7vhGje3QE=
+github.com/vikin91/claircore v1.6.2-0.20261014152103-1b43496b2029 h1:56UHFttVcilzOhLBL7/+IYrvEQ0qte34rvb5JDMjaNY=
+github.com/vikin91/claircore v1.6.2-0.20261014152103-1b43496b2029/go.mod h1:3M9bC+vQIHZtHwmmzRQbjIbHCRHMbPZUe6FDAqFhzNE=
 github.com/vladimirvivien/gexe v0.5.0 h1:AWBVaYnrTsGYBktXvcO0DfWPeSiZxn6mnQ5nvL+A1/A=
 github.com/vladimirvivien/gexe v0.5.0/go.mod h1:3gjgTqE2c0VyHnU5UOIwk7gyNzZDGulPb/DJPgcw64E=
 github.com/weppos/publicsuffix-go v0.13.0/go.mod h1:z3LCPQ38eedDQSwmsSRW4Y7t2L8Ln16JPQ02lHAdn5k=
