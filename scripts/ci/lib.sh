@@ -43,6 +43,18 @@ if is_CI; then
     ensure_writable_bash_env
 fi
 
+# validate_image_tag rejects empty tags and tags that contain whitespace.
+# Docker and Kubernetes reject image references with leading or trailing whitespace.
+validate_image_tag() {
+    local tag="${1:-}"
+    if [[ -z "$tag" ]]; then
+        die "image tag is not provided or empty"
+    fi
+    if [[ "$tag" =~ [[:space:]] ]]; then
+        die "image tag '$(printf %q "$tag")' contains whitespace; image tags must not include spaces, tabs, or newlines"
+    fi
+}
+
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."

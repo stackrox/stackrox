@@ -54,7 +54,7 @@ jobs:
     - name: Validate input tag
       env:
         TAG: ${{ inputs.tag }}
-      run: scripts/lib.sh validate_image_tag "$TAG"
+      run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -236,7 +236,7 @@ jobs:
     - name: Validate input tag
       env:
         TAG: ${{ inputs.tag }}
-      run: scripts/lib.sh validate_image_tag "$TAG"
+      run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -400,7 +400,7 @@ jobs:
     - name: Validate input tag
       env:
         TAG: ${{ inputs.tag }}
-      run: scripts/lib.sh validate_image_tag "$TAG"
+      run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
       with:
