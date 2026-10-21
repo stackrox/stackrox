@@ -75,6 +75,48 @@ func TestCollectIndexes(t *testing.T) {
 				{Name: "composite_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS composite_idx ON test_table USING btree (col1, col2)"},
 			},
 		},
+		"priority reorders composite columns": {
+			schema: &walker.Schema{
+				Table: "test_table",
+				Fields: []walker.Field{
+					{ColumnName: "Col1", Options: walker.PostgresOptions{
+						PrimaryKey: true,
+						Index:      []*walker.PostgresIndexOptions{{IndexName: "prio_idx", IndexType: "btree", IndexPriority: "3"}},
+					}},
+					{ColumnName: "Col2", Search: walker.SearchField{Enabled: true}, Options: walker.PostgresOptions{
+						Index: []*walker.PostgresIndexOptions{{IndexName: "prio_idx", IndexType: "btree", IndexPriority: "1"}},
+					}},
+					{ColumnName: "Col3", Search: walker.SearchField{Enabled: true}, Options: walker.PostgresOptions{
+						Index: []*walker.PostgresIndexOptions{{IndexName: "prio_idx", IndexType: "btree", IndexPriority: "2"}},
+					}},
+				},
+			},
+			obj: object{storageType: "storage.Deployment"},
+			expected: []IndexInfo{
+				{Name: "prio_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS prio_idx ON test_table USING btree (col2, col3, col1)"},
+			},
+		},
+		"mixed priority keeps unprioritized columns in field order": {
+			schema: &walker.Schema{
+				Table: "test_table",
+				Fields: []walker.Field{
+					{ColumnName: "Col1", Options: walker.PostgresOptions{
+						PrimaryKey: true,
+						Index:      []*walker.PostgresIndexOptions{{IndexName: "mixed_idx", IndexType: "btree"}},
+					}},
+					{ColumnName: "Col2", Search: walker.SearchField{Enabled: true}, Options: walker.PostgresOptions{
+						Index: []*walker.PostgresIndexOptions{{IndexName: "mixed_idx", IndexType: "btree", IndexPriority: "1"}},
+					}},
+					{ColumnName: "Col3", Search: walker.SearchField{Enabled: true}, Options: walker.PostgresOptions{
+						Index: []*walker.PostgresIndexOptions{{IndexName: "mixed_idx", IndexType: "btree"}},
+					}},
+				},
+			},
+			obj: object{storageType: "storage.Deployment"},
+			expected: []IndexInfo{
+				{Name: "mixed_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS mixed_idx ON test_table USING btree (col2, col1, col3)"},
+			},
+		},
 		"SAC filter btree": {
 			schema: &walker.Schema{
 				Table: "deployments",

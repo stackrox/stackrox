@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"unicode"
@@ -168,24 +171,51 @@ type IndexInfo struct {
 
 var safeIdentifier = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 
+// indexColumn is a single column participating in an index. priority comes from the
+// optional index `priority:` option; order is the column's position in proto field
+// order. Columns are sorted by (priority asc, order asc) at build time, so columns
+// without an explicit priority (sentinel noIndexPriority) sort after prioritized ones
+// while keeping field order among themselves.
+type indexColumn struct {
+	name     string
+	priority int
+	order    int
+}
+
+// noIndexPriority is the sentinel used for columns that declare no `priority:` option.
+// It sorts after any real priority, so indexes that never use priority stay byte-identical.
+const noIndexPriority = math.MaxInt32
+
 // indexBuilder accumulates columns for a single index (which may span multiple fields
 // in the case of composite indexes) and produces the final IndexInfo.
 type indexBuilder struct {
 	name      string
 	table     string
-	columns   []string
+	columns   []indexColumn
 	indexType string
 }
 
-func (b *indexBuilder) addColumn(col string) {
+func (b *indexBuilder) addColumn(col string, priority, order int) {
 	if !safeIdentifier.MatchString(col) {
 		log.Fatalf("column name %q in index %q contains unsafe characters", col, b.name)
 	}
-	b.columns = append(b.columns, col)
+	b.columns = append(b.columns, indexColumn{name: col, priority: priority, order: order})
 }
 
 func (b *indexBuilder) build() IndexInfo {
-	cols := strings.Join(b.columns, ", ")
+	sorted := make([]indexColumn, len(b.columns))
+	copy(sorted, b.columns)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		if sorted[i].priority != sorted[j].priority {
+			return sorted[i].priority < sorted[j].priority
+		}
+		return sorted[i].order < sorted[j].order
+	})
+	names := make([]string, 0, len(sorted))
+	for _, c := range sorted {
+		names = append(names, c.name)
+	}
+	cols := strings.Join(names, ", ")
 	createSQL := fmt.Sprintf("CREATE INDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING %s (%s)", b.name, b.table, b.indexType, cols)
 
 	return IndexInfo{
@@ -207,8 +237,14 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 	idxNameToBuilder := make(map[string]*indexBuilder)
 	// idxBuildOrder is used to consistently iterator of idxNameToBuilder
 	var idxBuildOrder []string
+	// fieldOrder is a monotonic counter over proto field order. It is the tiebreaker
+	// used to keep composite-index columns in field order when they share a priority
+	// (including the no-priority sentinel), so output stays byte-identical today.
+	fieldOrder := 0
 	for _, field := range schema.DBColumnFields() {
 		col := strings.ToLower(field.ColumnName)
+		order := fieldOrder
+		fieldOrder++
 
 		for _, idx := range field.Options.Index {
 			if idx.IndexCategory == "unique" {
@@ -222,8 +258,17 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 				log.Fatalf("index name %q contains unsafe characters — must match [a-z_][a-z0-9_]*", name)
 			}
 
+			prio := noIndexPriority
+			if idx.IndexPriority != "" {
+				p, err := strconv.Atoi(idx.IndexPriority)
+				if err != nil {
+					log.Fatalf("index %q: non-integer priority %q", name, idx.IndexPriority)
+				}
+				prio = p
+			}
+
 			if b, ok := idxNameToBuilder[name]; ok {
-				b.addColumn(col)
+				b.addColumn(col, prio, order)
 			} else {
 				indexType := idx.IndexType
 				if indexType == "" {
@@ -237,7 +282,7 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 					table:     table,
 					indexType: indexType,
 				}
-				b.addColumn(col)
+				b.addColumn(col, prio, order)
 				idxNameToBuilder[name] = b
 				idxBuildOrder = append(idxBuildOrder, name)
 			}
@@ -268,12 +313,14 @@ func buildSACFilterIndex(schema *walker.Schema, obj object, tablePrefix, table s
 		b.indexType = "hash"
 	}
 
+	order := 0
 	for _, field := range schema.DBColumnFields() {
 		if field.Options.PrimaryKey {
 			continue
 		}
 		if field.Search.FieldName == search.ClusterID.String() || field.Search.FieldName == search.Namespace.String() {
-			b.addColumn(strings.ToLower(field.ColumnName))
+			b.addColumn(strings.ToLower(field.ColumnName), noIndexPriority, order)
+			order++
 		}
 	}
 
