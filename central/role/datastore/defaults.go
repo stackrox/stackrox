@@ -139,6 +139,14 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.View(resources.Cluster),
 		},
 	},
+	accesscontrol.ConsoleProxy: {
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+		description: "Access for Sensor-proxied OpenShift console requests",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image),
+		},
+	},
 }
 
 func getDefaultRoles() []*storage.Role {

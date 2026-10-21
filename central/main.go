@@ -599,7 +599,6 @@ func startGRPCServer() {
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	openshiftAuth.SeedMetricsAuthProvider(authProviderRegisteringCtx, registry, roleDataStore.Singleton(), groupDataStore.Singleton())
-	openshiftAuth.SeedConsoleProxyPermissionSet(authProviderRegisteringCtx, roleDataStore.Singleton())
 
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
