@@ -515,11 +515,11 @@ replace github.com/operator-framework/helm-operator-plugins => github.com/stackr
 
 // @stackrox/sensor-ecosystem
 replace (
-	// Our fok has following features:
+	// Our fork has following features:
 	// - console log field ordering
 	// - not verbose error logging
 	// TODO(ROX-23217): upgrade to latest version
-	go.uber.org/zap => github.com/stackrox/zap v1.18.2-0.20240314134248-5f932edd0404
+	go.uber.org/zap => github.com/stackrox/zap v1.18.2-0.20261021135019-8d0dc65f1abb
 
 	// Our fork has a change exposing a method to do generic POST requests
 	// against the OAuth server in order to realize the refresh token flow.
