@@ -37,8 +37,8 @@ sleep() {
             0) echo 'rpc error: code = Unavailable desc = no children to pick from'; return 1 ;;
             1) echo '{"scan":{"scanTime":"2026-10-21T00:00:00Z","components":[{"vulns":[{"fixedBy":"2.0","cvss":0}]}]}}' ;;
             2) echo '{"scan":{"scanTime":"2026-10-21T00:00:00Z","components":[{"vulns":[{"fixedBy":"2.0","cvss":6.9}]}]}}' ;;
-            3) echo '{"scan":{"scanTime":"2026-10-21T00:00:00Z","components":[{"vulns":[{"cvss":9.8}]}]}}' ;;
-            *) echo '{"scan":{"scanTime":"2026-10-21T00:00:00Z","components":[{"vulns":[{"fixedBy":"2.0","cvss":9.8}]}]}}' ;;
+            3) echo '{"scan":{"scanTime":"2026-10-21T00:00:00Z","components":[{"vulns":[{"cvss":9.8},{"fixedBy":"2.0","cvss":6.9}]}]}}' ;;
+            *) echo '{"scan":{"scanTime":"2026-10-21T00:00:00Z","components":[{"vulns":[{"fixedBy":"2.0","cvss":7}]}]}}' ;;
         esac
     }
 
@@ -48,6 +48,24 @@ sleep() {
     assert_output --partial "no fixable CVEs with CVSS >= 7 yet"
     assert_output --partial "completed the scanner preflight"
     [[ "$(cat "${preflight_attempts}")" == 5 ]]
+}
+
+@test "scanner preflight retries invalid responses and requires a completed scan" {
+    roxcurl() {
+        local attempt
+        attempt="$(cat "${preflight_attempts}")"
+        echo "$((attempt + 1))" >"${preflight_attempts}"
+        case "$attempt" in
+            0) echo '<html>Bad Gateway</html>' ;;
+            1) echo '{"scan":{"components":[{"vulns":[{"fixedBy":"2.0","cvss":9.8}]}]}}' ;;
+            *) echo '{"scan":{"scanTime":"2026-10-21T00:00:00Z","components":[{"vulns":[{"fixedBy":"2.0","cvss":9.8}]}]}}' ;;
+        esac
+    }
+
+    run wait_for_scored_image_scan example.com/preflight:latest
+    assert_success
+    assert_output --partial "invalid scan response"
+    [[ "$(cat "${preflight_attempts}")" == 3 ]]
 }
 
 @test "scanner preflight fails within its deadline when scores remain unavailable" {
