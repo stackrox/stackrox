@@ -404,6 +404,10 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
+			// Recompute roles from the freshly fetched object. rolesForUpdate preserves the current roles when
+			// discovery is not authoritative, so reusing the roles captured from the pre-conflict object would
+			// overwrite a concurrent role change (e.g. from reconcileNodeRoles or a sync) with stale values.
+			roles = m.discoverDefaultNodeRoles().rolesForUpdate(ssObj)
 			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request, roles)
 			if err != nil {
 				return err
@@ -842,15 +846,15 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		return errors.New("Compliance operator namespace not known")
 	}
 
-	// Run discovery once for this sync batch and reuse the outcome for every ScanSetting below. When discovery is
-	// not authoritative, an existing ScanSetting keeps its current roles instead of losing them to the static
-	// fallback; a new one still gets the fallback.
-	disc := m.discoverDefaultNodeRoles()
+	// Discovery runs per call, not once for the batch, so a conflict retry (which re-invokes these with the freshly
+	// fetched object) re-derives roles from current state. When discovery is not authoritative, an existing
+	// ScanSetting keeps its current roles instead of losing them to the static fallback; a new one still gets the
+	// fallback.
 	convertScanSetting := func(namespace string, req *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
-		return convertCentralRequestToScanSetting(namespace, req, cron, disc.rolesForUpdate(nil))
+		return convertCentralRequestToScanSetting(namespace, req, cron, m.discoverDefaultNodeRoles().rolesForUpdate(nil))
 	}
 	updateScanSetting := func(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
-		return updateScanSettingFromUpdateRequest(obj, req, disc.rolesForUpdate(obj))
+		return updateScanSettingFromUpdateRequest(obj, req, m.discoverDefaultNodeRoles().rolesForUpdate(obj))
 	}
 
 	// Compare with the ScanConfig in the request.

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -15,10 +16,13 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 type expectedResponse struct {
@@ -484,6 +488,56 @@ func (s *HandlerTestSuite) TestProcessApplyScheduledScanLegacyProfilesOnly() {
 		s.Equal(complianceoperator.Profile.Kind, ref.Kind,
 			"legacy profiles should default to Profile kind, got %q for %q", ref.Kind, ref.Name)
 	}
+}
+
+// TestProcessUpdateScheduledScanConflictPreservesFreshRoles proves the conflict-retry path recomputes node roles
+// from the freshly fetched ScanSetting, not from the object read before the conflict. This suite's cluster has no
+// MachineConfigPools, so discovery is non-authoritative and rolesForUpdate preserves the object's current roles. A
+// concurrent writer that changes the roles between the initial read and the update must therefore survive the retry
+// instead of being clobbered by the pre-conflict roles.
+func (s *HandlerTestSuite) TestProcessUpdateScheduledScanConflictPreservesFreshRoles() {
+	s.statusInfo.EXPECT().GetNamespace().Return("ns").AnyTimes()
+
+	// Create a scheduled scan so the ScanSetting and its binding exist. Discovery is non-authoritative, so it is
+	// created with the fallback roles.
+	s.sendMessage(1, getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis"))
+	s.Require().ElementsMatch([]string{masterRole, workerRole}, s.getScanSettingRoles("midnight"))
+
+	gvr := complianceoperator.ScanSetting.GroupVersionResource()
+	concurrentRoles := []string{"infra", masterRole, workerRole}
+
+	// On the first ScanSetting update, mimic a concurrent writer changing the roles in the store, then force a
+	// Conflict so the handler re-fetches and retries. The retry must preserve the concurrently-written roles.
+	var updateAttempts int
+	s.client.PrependReactor("update", "scansettings", func(k8stesting.Action) (bool, runtime.Object, error) {
+		updateAttempts++
+		if updateAttempts == 1 {
+			cur, err := s.client.Tracker().Get(gvr, "ns", "midnight")
+			s.Require().NoError(err)
+			u := cur.(*unstructured.Unstructured)
+			s.Require().NoError(unstructured.SetNestedStringSlice(u.Object, concurrentRoles, "roles"))
+			s.Require().NoError(s.client.Tracker().Update(gvr, u, "ns"))
+			return true, nil, k8serrors.NewConflict(gvr.GroupResource(), "midnight", errors.New("concurrent modification"))
+		}
+		return false, nil, nil
+	})
+
+	updateMsg := getTestUpdateScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	actual := s.sendMessage(1, updateMsg)
+	s.assert(expectedResponse{id: updateMsg.GetComplianceRequest().GetApplyScanConfig().GetId()}, actual)
+
+	s.Equal(2, updateAttempts, "expected exactly one retry after the injected conflict")
+	s.ElementsMatch(concurrentRoles, s.getScanSettingRoles("midnight"),
+		"the conflict retry must preserve the concurrently-written roles, not overwrite them with the pre-conflict roles")
+}
+
+func (s *HandlerTestSuite) getScanSettingRoles(name string) []string {
+	obj, err := s.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).
+		Namespace("ns").Get(context.Background(), name, v1.GetOptions{})
+	s.Require().NoError(err)
+	roles, _, err := unstructured.NestedStringSlice(obj.Object, "roles")
+	s.Require().NoError(err)
+	return roles
 }
 
 func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
