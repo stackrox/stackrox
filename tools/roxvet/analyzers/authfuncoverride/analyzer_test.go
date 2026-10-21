@@ -9,9 +9,15 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
+func TestAnalyzerWithoutVerifier(t *testing.T) {
+	testdata := analysistest.TestData()
+	noVerifierAnalyzer := NewAnalyzer(nil)
+	analysistest.Run(t, testdata, noVerifierAnalyzer, "a")
+}
+
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, Analyzer, "a")
+	analysistest.Run(t, testdata, Analyzer, "c")
 }
 
 // TestAnalyzerWithPackageLevelVerifier demonstrates NewAnalyzer with a verifier that
