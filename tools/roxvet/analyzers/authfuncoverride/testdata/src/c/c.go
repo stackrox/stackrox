@@ -142,25 +142,25 @@ func (s *svc13) AuthFuncOverride(ctx context.Context, fullMethodName string) (co
 	return ctx, authAdmCtrl.Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline idcheck calls ----
+// ---- Fail: inline idcheck calls (not a package-level variable) ----
 
 type svc14 struct{}
 
-func (s *svc14) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svc14) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 }
 
 type svc15 struct{}
 
-func (s *svc15) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svc15) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline deny.Everyone ----
+// ---- Fail: inline deny.Everyone (not a package-level variable) ----
 
 type svc16 struct{}
 
-func (s *svc16) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svc16) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, deny.Everyone().Authorized(ctx, fullMethodName)
 }
 
@@ -172,11 +172,11 @@ func (s *svc17) AuthFuncOverride(ctx context.Context, fullMethodName string) (co
 	return ctx, authPerRPC.Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline perrpc.FromMap ----
+// ---- Fail: inline perrpc.FromMap (not a package-level variable) ----
 
 type svc18 struct{}
 
-func (s *svc18) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svc18) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, perrpc.FromMap(map[authz.Authorizer][]string{
 		user.WithRole("Admin"):         {"/svc/MethodA"},
 		idcheck.ScannerV4IndexerOnly(): {"/svc/MethodB"},
@@ -200,11 +200,11 @@ func (s *svc20) AuthFuncOverride(ctx context.Context, fullMethodName string) (co
 	return ctx, authScannerV4Or.Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline or.ScannerV4 ----
+// ---- Fail: inline or.ScannerV4 (not a package-level variable) ----
 
 type svc21 struct{}
 
-func (s *svc21) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svc21) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, authzor.ScannerV4().Authorized(ctx, fullMethodName)
 }
 
@@ -216,11 +216,11 @@ func (s *svcSensorOrNamed) AuthFuncOverride(ctx context.Context, fullMethodName 
 	return ctx, authSensorOr.Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline or.SensorOr with valid inner authorizer ----
+// ---- Fail: inline or.SensorOr (not a package-level variable) ----
 
 type svcSensorOrInline struct{}
 
-func (s *svcSensorOrInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svcSensorOrInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, authzor.SensorOr(user.WithRole("ReadOnly")).Authorized(ctx, fullMethodName)
 }
 
@@ -232,11 +232,11 @@ func (s *svcScannerOrNamed) AuthFuncOverride(ctx context.Context, fullMethodName
 	return ctx, authScannerOr.Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline or.ScannerOr with valid inner authorizer ----
+// ---- Fail: inline or.ScannerOr (not a package-level variable) ----
 
 type svcScannerOrInline struct{}
 
-func (s *svcScannerOrInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svcScannerOrInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, authzor.ScannerOr(allow.Anonymous()).Authorized(ctx, fullMethodName)
 }
 
@@ -256,11 +256,11 @@ func (s *svcOrNamed) AuthFuncOverride(ctx context.Context, fullMethodName string
 	return ctx, authOrComposite.Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline or.Or with all valid args ----
+// ---- Fail: inline or.Or (not a package-level variable) ----
 
 type svcOrInline struct{}
 
-func (s *svcOrInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svcOrInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, authzor.Or(user.WithRole("Admin"), deny.Everyone(), idcheck.SensorsOnly()).Authorized(ctx, fullMethodName)
 }
 
@@ -272,11 +272,11 @@ func (s *svcAndNamed) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authAndComposite.Authorized(ctx, fullMethodName)
 }
 
-// ---- Correct: inline and.And with all valid args ----
+// ---- Fail: inline and.And (not a package-level variable) ----
 
 type svcAndInline struct{}
 
-func (s *svcAndInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *svcAndInline) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
 	return ctx, authzand.And(user.Authenticated(), allow.Anonymous()).Authorized(ctx, fullMethodName)
 }
 
@@ -325,4 +325,18 @@ func (s *svc24) AuthFuncOverride(ctx context.Context, fullMethodName string) (co
 	return ctx, perrpc.FromMap(map[authz.Authorizer][]string{
 		badNamedKey: {"/svc/MethodA"},
 	}).Authorized(ctx, fullMethodName)
+}
+
+// ---- Fail: package-level variable that is reassigned in an init function ----
+
+var reassignableAuth authz.Authorizer = user.WithRole("Admin")
+
+func init() {
+	reassignableAuth = user.WithRole("User")
+}
+
+type svc25 struct{}
+
+func (s *svc25) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { // want `does not satisfy the required constraints`
+	return ctx, reassignableAuth.Authorized(ctx, fullMethodName)
 }

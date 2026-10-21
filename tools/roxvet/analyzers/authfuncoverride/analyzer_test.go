@@ -51,3 +51,11 @@ func TestExcludedPkgPaths(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, NewAnalyzer(UserAuthorizerVerifier, "d"), "d")
 }
+
+// TestUserAuthorizerVerifierCrossPackage verifies that explicitly allow-listed
+// cross-package variables (e.g. internal.Authorizer) are accepted, while other
+// SelectorExpr forms (struct fields, untrusted packages) are rejected.
+func TestUserAuthorizerVerifierCrossPackage(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, NewAnalyzer(UserAuthorizerVerifier), "github.com/stackrox/rox/central/externalbackups/service/svc")
+}

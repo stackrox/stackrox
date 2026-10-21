@@ -189,7 +189,6 @@ func (b *serviceBuilder) Build() Service {
 		categories:        b.categories,
 		imageIntegrations: b.imageIntegrations,
 	}
-	s.initializeAuthorizer()
 	return &s
 }
 

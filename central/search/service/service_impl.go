@@ -53,6 +53,13 @@ const (
 )
 
 var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.Authenticated(): {
+			v1.SearchService_Search_FullMethodName,
+			v1.SearchService_Options_FullMethodName,
+			v1.SearchService_Autocomplete_FullMethodName,
+		},
+	})
 	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
 		result := make(map[v1.SearchCategory]search.OptionsMultiMap)
 		for cat, optMap := range mapping.GetEntityOptionsMap() {
@@ -317,19 +324,9 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 	return v1.RegisterSearchServiceHandler(ctx, mux, conn)
 }
 
-func (s *serviceImpl) initializeAuthorizer() {
-	s.authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.Authenticated(): {
-			v1.SearchService_Search_FullMethodName,
-			v1.SearchService_Options_FullMethodName,
-			v1.SearchService_Autocomplete_FullMethodName,
-		},
-	})
-}
-
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, s.authorizer.Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // Special case alerts because they have a default search param of state:unresolved

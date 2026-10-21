@@ -41,6 +41,8 @@ var (
 )
 
 var (
+	sensorsOrRegistrants = or.Or(idcheck.SensorsOnly(), idcheck.SensorRegistrantsOnly())
+
 	clusterDSSAC = sac.WithAllAccess(context.Background())
 )
 
@@ -81,7 +83,6 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	sensorsOrRegistrants := or.Or(idcheck.SensorsOnly(), idcheck.SensorRegistrantsOnly())
 	return ctx, sensorsOrRegistrants.Authorized(ctx, fullMethodName)
 }
 
