@@ -15,6 +15,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Added Features
 
 - ROX-33524: New predefined User PKI auth provider, role, empty permission set and a Central cluster access scope for OpenShift Prometheus server access to custom metrics. Administrator action required: grant the permission set read access to the resources user by custom metrics you want to collect.
+- ROX-34293: Policies can exclude Jobs and CronJobs by workload kind. Enabled by default (`ROX_POLICY_WORKLOAD_KIND_EXCLUSION`).
 
 ### Removed Features
 
