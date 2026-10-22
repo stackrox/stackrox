@@ -297,7 +297,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Permissions:       deploymentPermission,
 				ClusterScopes:     []*v1.ClusterScope{requestSingleNamespace},
 				Lifetime:          testExpirationDuration,
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/v1/deployments"}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
 			},
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {

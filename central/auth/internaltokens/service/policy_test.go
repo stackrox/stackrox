@@ -173,7 +173,7 @@ func TestEnforce(t *testing.T) {
 		"console permission set can request approved scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetId:   centralproxy.ConsoleProxyPermissionSetID,
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
@@ -181,7 +181,7 @@ func TestEnforce(t *testing.T) {
 		"legacy permissions can request independent scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:       map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/v1/deployments"}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
@@ -189,7 +189,7 @@ func TestEnforce(t *testing.T) {
 		"legacy permissions reject invalid scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:       map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/%6detrics"}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/%6detrics", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,

@@ -16,43 +16,48 @@ func TestApprovedHTTPScopes(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissionSet string
 		requested     []*apiV1.HTTPRequestScope
-		expected      []tokens.HTTPRequestScope
+		expected      tokens.HTTPRequestScopes
 		invalid       bool
 	}{
 		"older console sensor": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
-			expected:      centralproxy.ConsoleHTTPScopes,
+			expected:      tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes),
 		},
 		"console subset": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
-			requested:     []*apiV1.HTTPRequestScope{{Method: "POST", Path: "/api/graphql"}},
-			expected:      []tokens.HTTPRequestScope{{Method: "POST", Path: "/api/graphql"}},
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
+			expected:      tokens.HTTPRequestScopes{"/api/graphql": {"POST"}},
+		},
+		"console deny-all subset": {
+			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql"}},
+			expected:      tokens.HTTPRequestScopes{"/api/graphql": {}},
 		},
 		"future metrics profile": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
-			expected:      centralproxy.MetricsHTTPScopes,
+			expected:      tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes),
 		},
 		"metrics cannot ask for console": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
-			requested:     []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}},
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 			invalid:       true,
 		},
 		"metrics cannot ask for POST": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
-			requested:     []*apiV1.HTTPRequestScope{{Method: "POST", Path: "/metrics"}},
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"POST"}}},
 			invalid:       true,
 		},
-		"duplicate scope": {
+		"duplicate path": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
 			requested: []*apiV1.HTTPRequestScope{
-				{Method: "POST", Path: "/api/graphql"},
-				{Method: "POST", Path: "/api/graphql"},
+				{Path: "/api/graphql", Methods: []string{"POST"}},
+				{Path: "/api/graphql"},
 			},
 			invalid: true,
 		},
 		"wildcard path": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
-			requested:     []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/*"}},
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/*", Methods: []string{"GET"}}},
 			invalid:       true,
 		},
 		"unsupported set": {permissionSet: "unknown", invalid: true},

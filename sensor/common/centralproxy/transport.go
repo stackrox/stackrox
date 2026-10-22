@@ -322,8 +322,14 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 
 func consoleRequestScopes() []*apiV1.HTTPRequestScope {
 	result := make([]*apiV1.HTTPRequestScope, 0, len(centralproxy.ConsoleHTTPScopes))
+	indices := make(map[string]int, len(centralproxy.ConsoleHTTPScopes))
 	for _, scope := range centralproxy.ConsoleHTTPScopes {
-		result = append(result, &apiV1.HTTPRequestScope{Method: scope.Method, Path: scope.Path})
+		if index, found := indices[scope.Path]; found {
+			result[index].Methods = append(result[index].Methods, scope.Method)
+			continue
+		}
+		indices[scope.Path] = len(result)
+		result = append(result, &apiV1.HTTPRequestScope{Path: scope.Path, Methods: []string{scope.Method}})
 	}
 	return result
 }
