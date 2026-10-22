@@ -14,6 +14,12 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
+# realpath binary might be missing on MacOS
+function realpath {
+	[[ -n "$1" ]] || return 0
+	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
+}
+
 function hotload_binary {
   local binary_name="$1"
   local local_name="$2"
