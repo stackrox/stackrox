@@ -118,7 +118,7 @@ class Env {
         }
         LOG.debug System.getenv().toMapString()
 
-        mustGet("ROX_ADMIN_PASSWORD")
+        mustGetInternal("ROX_ADMIN_PASSWORD")
         if (isEnvVarEmpty("CLUSTER")) {
             envVars.put("CLUSTER", OrchestratorTypes.K8S.toString())
         }
