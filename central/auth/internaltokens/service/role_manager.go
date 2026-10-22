@@ -7,6 +7,7 @@ import (
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 )
@@ -45,11 +46,53 @@ func (rm *roleManager) createSensorRole(
 	if err != nil {
 		return nil, err
 	}
+	for _, permissionSet := range permissionSets {
+		if err := permissionsUtils.ValidateScopedReadOnlyPermissions(permissionSet.GetResourceToAccess()); err != nil {
+			return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q: %v", permissionSet.GetName(), err)
+		}
+	}
 	return &tokens.InternalRole{
 		RoleName:    internalRoleName,
 		Clusters:    clusterScopesFromRequest(req.GetClusterScopes()),
 		Permissions: permissionsFromSets(permissionSets),
 	}, nil
+}
+
+func (rm *roleManager) createScopedRoles(
+	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
+) ([]*tokens.InternalRole, error) {
+	if rm.roleStore == nil {
+		return nil, errox.ServerError.New("Sensor proxy permission set store unavailable")
+	}
+	names := make([]string, 0, len(req.GetScopedPermissionSets()))
+	for _, grant := range req.GetScopedPermissionSets() {
+		names = append(names, grant.GetPermissionSetName())
+	}
+	sets, err := rm.getPermissionSetsByNames(ctx, names)
+	if err != nil {
+		return nil, err
+	}
+	byName := make(map[string]*storage.PermissionSet, len(sets))
+	for _, permissionSet := range sets {
+		if err := permissionsUtils.ValidateScopedReadOnlyPermissions(permissionSet.GetResourceToAccess()); err != nil {
+			return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q: %v", permissionSet.GetName(), err)
+		}
+		byName[permissionSet.GetName()] = permissionSet
+	}
+	roles := make([]*tokens.InternalRole, 0, len(names))
+	for _, grant := range req.GetScopedPermissionSets() {
+		// The policy validated each scope before the permission sets were loaded.
+		scopes, err := tokens.HTTPRequestScopesFromProto(grant.GetHttpRequestScopes())
+		if err != nil {
+			return nil, errox.InvalidArgs.CausedBy(err)
+		}
+		roles = append(roles, &tokens.InternalRole{
+			RoleName:          internalRoleName,
+			Permissions:       permissionsFromSets([]*storage.PermissionSet{byName[grant.GetPermissionSetName()]}),
+			HTTPRequestScopes: scopes,
+		})
+	}
+	return roles, nil
 }
 
 func (rm *roleManager) getPermissionSetsByNames(ctx context.Context, permissionSetNames []string) ([]*storage.PermissionSet, error) {
