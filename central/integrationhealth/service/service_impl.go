@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -96,9 +97,13 @@ func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, _ *v1.Empty) (*
 }
 
 func (s *serviceImpl) GetVulnDefinitionsInfo(_ context.Context, req *v1.VulnDefinitionsInfoRequest) (*v1.VulnDefinitionsInfo, error) {
-	scannerType := types.Clairify
-	if req.GetComponent() == v1.VulnDefinitionsInfoRequest_SCANNER_V4 {
-		scannerType = types.ScannerV4
+	// Scanner V4 is the only scanner shipped since 5.0, so it is the default. The
+	// legacy StackRox Scanner (Scanner V2 / Clairify) is only resolvable when it is
+	// explicitly requested and still enabled for backward compatibility; it must
+	// never be the default (the proto zero value for Component is SCANNER).
+	scannerType := types.ScannerV4
+	if req.GetComponent() == v1.VulnDefinitionsInfoRequest_SCANNER && features.LegacyScanner.Enabled() {
+		scannerType = types.Clairify
 	}
 
 	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo(scannerType)
