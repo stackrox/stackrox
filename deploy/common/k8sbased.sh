@@ -2,6 +2,24 @@
 
 # shellcheck source=./feature-flag-env.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/feature-flag-env.sh"
+# shellcheck source=../../scripts/ci/scanner-bundle.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../scripts/ci/scanner-bundle.sh"
+
+_scanner_v4_ci_helm_values() {
+    local values_file="$1"
+    local disabled explicit
+    disabled="$(yq eval '.scannerV4.disable // false' "$values_file")" || return 1
+    explicit="$(yq eval '(.customize."scanner-v4-matcher".envVars // {}) | (has("SCANNER_V4_MATCHER_VULNERABILITIES_URL") or has("SCANNER_V4_MATCHER_VULNERABILITY_VERSION"))' "$values_file")" || return 1
+    if scanner_v4_use_full_bundle || [[ "${ROX_SCANNER_V4:-}" == false || "$disabled" == true || "$explicit" == true ]]; then
+        cat "$values_file"
+        return
+    fi
+    local root version
+    root="$(cd "$(dirname "$values_file")/../.." && pwd)"
+    version="$(scanner_v4_ci_bundle_version "$root")" || return 1
+    echo "Scanner V4 bundle: $version via Central" >&2
+    SCANNER_INSTALL_BUNDLE_VERSION="$version" yq eval '.customize."scanner-v4-matcher".envVars.SCANNER_V4_MATCHER_VULNERABILITY_VERSION = strenv(SCANNER_INSTALL_BUNDLE_VERSION)' "$values_file"
+}
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -512,7 +530,8 @@ function launch_central {
       if [[ "${is_local_dev}" == "true" ]]; then
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
       elif [[ -n "$CI" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
+        _scanner_v4_ci_helm_values "${COMMON_DIR}/ci-values.yaml" > "${unzip_dir}/ci-scanner-values.yaml" || return 1
+        helm_args+=(-f "${unzip_dir}/ci-scanner-values.yaml")
       fi
 
       if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
