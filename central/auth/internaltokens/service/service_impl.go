@@ -109,15 +109,19 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
 		var tokenRole *tokens.InternalRole
 		roleReq := req
-		if slices.Contains(req.GetPermissionSetNames(), centralproxy.MetricsPermissionSetName) {
+		includesMetrics := slices.Contains(req.GetPermissionSetNames(), centralproxy.MetricsPermissionSetName)
+		if includesMetrics {
 			roleReq = req.CloneVT()
 			roleReq.ClusterScopes = []*v1.ClusterScope{{
 				ClusterId: authn.IdentityFromContextOrNil(ctx).Service().GetId(), FullClusterAccess: true,
 			}}
 		}
 		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, roleReq)
-		if err == nil && roleReq != req {
-			tokenRole.RoleName = centralproxy.SecuredClusterMetricsRole
+		if err == nil && includesMetrics {
+			err = validateSensorMetricsRole(tokenRole)
+			if err == nil {
+				tokenRole.RoleName = centralproxy.SecuredClusterMetricsRole
+			}
 		}
 		tokenRoles = []*tokens.InternalRole{tokenRole}
 	} else {
