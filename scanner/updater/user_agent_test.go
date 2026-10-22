@@ -17,38 +17,38 @@ func TestUpdaterUserAgent(t *testing.T) {
 	}{
 		"release": {
 			version: "5.1.0",
-			want:    "Stackrox/Scanner/5.1.0",
+			want:    "stackrox-updater/5.1.0",
 		},
 		"v prefix": {
 			version: "v5.1.0",
-			want:    "Stackrox/Scanner/5.1.0",
+			want:    "stackrox-updater/5.1.0",
 		},
 		"git describe": {
 			version: "5.1.0-12-g0123456789",
-			want:    "Stackrox/Scanner/5.1.0",
+			want:    "stackrox-updater/5.1.0",
 		},
 		"dirty build": {
 			version: "5.1.0-12-g0123456789-dirty",
-			want:    "Stackrox/Scanner/5.1.0",
+			want:    "stackrox-updater/5.1.0",
 		},
 		"prerelease": {
 			version: "5.1.0-rc.1",
-			want:    "Stackrox/Scanner/5.1.0",
+			want:    "stackrox-updater/5.1.0",
 		},
 		"build metadata": {
 			version: "5.1.0+private-build",
-			want:    "Stackrox/Scanner/5.1.0",
+			want:    "stackrox-updater/5.1.0",
 		},
 		"empty": {
-			want: "Stackrox/Scanner/unknown",
+			want: "stackrox-updater/unknown",
 		},
 		"unrecognized": {
 			version: "custom-build",
-			want:    "Stackrox/Scanner/unknown",
+			want:    "stackrox-updater/unknown",
 		},
 		"invalid suffix": {
 			version: "5.1.0private",
-			want:    "Stackrox/Scanner/unknown",
+			want:    "stackrox-updater/unknown",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -79,11 +79,11 @@ func TestUserAgentTransport(t *testing.T) {
 			response := &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}
 			calls := 0
 			tr := &userAgentTransport{
-				userAgent: "Stackrox/Scanner/5.1.0",
+				userAgent: "stackrox-updater/5.1.0",
 				transport: httputil.RoundTripperFunc(func(got *http.Request) (*http.Response, error) {
 					calls++
 					assert.NotSame(t, req, got)
-					assert.Equal(t, []string{"Stackrox/Scanner/5.1.0"}, got.Header.Values("User-Agent"))
+					assert.Equal(t, []string{"stackrox-updater/5.1.0"}, got.Header.Values("User-Agent"))
 					assert.Equal(t, req.Header.Get("Accept"), got.Header.Get("Accept"))
 					assert.Equal(t, req.URL, got.URL)
 					assert.Equal(t, req.Method, got.Method)
@@ -103,7 +103,7 @@ func TestUserAgentTransport(t *testing.T) {
 func TestUserAgentTransportError(t *testing.T) {
 	wantErr := errors.New("request failed")
 	tr := &userAgentTransport{
-		userAgent: "Stackrox/Scanner/5.1.0",
+		userAgent: "stackrox-updater/5.1.0",
 		transport: httputil.RoundTripperFunc(func(*http.Request) (*http.Response, error) {
 			return nil, wantErr
 		}),

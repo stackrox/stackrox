@@ -14,7 +14,7 @@ func updaterUserAgent(buildVersion string) string {
 	if match := releaseVersionPattern.FindStringSubmatch(buildVersion); match != nil {
 		releaseVersion = match[1]
 	}
-	return "Stackrox/Scanner/" + releaseVersion
+	return "stackrox-updater/" + releaseVersion
 }
 
 type userAgentTransport struct {
