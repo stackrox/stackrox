@@ -7,7 +7,6 @@
 package v1
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -84,11 +83,11 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// For example, to grant read access to deployment-like objects,
 	// create a message of the form (example in golang):
 	//
-	//   &v1.GenerateTokenForPermissionsAndScopeRequest {
-	//     Permissions: map[string]v1.Access{
-	//       "Deployment": v1.Access_READ_ACCESS,
-	//     },
-	//   }
+	//	&v1.GenerateTokenForPermissionsAndScopeRequest {
+	//	  Permissions: map[string]v1.Access{
+	//	    "Deployment": v1.Access_READ_ACCESS,
+	//	  },
+	//	}
 	//
 	// Resources are listed in pkg/sac/resources/list.go
 	// The resource names can either be passed as direct string, or
@@ -106,10 +105,8 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// recognize this field. Console requests may specify cluster_scopes
 	// within the authenticated Sensor's cluster.
 	PermissionSetId string `protobuf:"bytes,5,opt,name=permission_set_id,json=permissionSetId,proto3" json:"permission_set_id,omitempty"`
-	// Optional HTTP method/path restrictions for this token.
-	HttpRequestScopes []*v1.HTTPRequestScope `protobuf:"bytes,6,rep,name=http_request_scopes,json=httpRequestScopes,proto3" json:"http_request_scopes,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GenerateTokenForPermissionsAndScopeRequest) Reset() {
@@ -175,13 +172,6 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSetId() string
 		return x.PermissionSetId
 	}
 	return ""
-}
-
-func (x *GenerateTokenForPermissionsAndScopeRequest) GetHttpRequestScopes() []*v1.HTTPRequestScope {
-	if x != nil {
-		return x.HttpRequestScopes
-	}
-	return nil
 }
 
 // ClusterScope represents the access scope of a role within a cluster.
@@ -301,14 +291,13 @@ var File_internalapi_central_v1_token_service_proto protoreflect.FileDescriptor
 const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\n" +
 	"*internalapi/central/v1/token_service.proto\x12\n" +
-	"central.v1\x1a\x13api/v1/common.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xf3\x03\n" +
+	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xad\x03\n" +
 	"*GenerateTokenForPermissionsAndScopeRequest\x12i\n" +
 	"\vpermissions\x18\x01 \x03(\v2G.central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntryR\vpermissions\x12?\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\x18.central.v1.ClusterScopeR\rclusterScopes\x125\n" +
 	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1c\n" +
 	"\trequester\x18\x04 \x01(\tR\trequester\x12*\n" +
-	"\x11permission_set_id\x18\x05 \x01(\tR\x0fpermissionSetId\x12D\n" +
-	"\x13http_request_scopes\x18\x06 \x03(\v2\x14.v1.HTTPRequestScopeR\x11httpRequestScopes\x1aR\n" +
+	"\x11permission_set_id\x18\x05 \x01(\tR\x0fpermissionSetId\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"}\n" +
@@ -326,7 +315,7 @@ const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\vREAD_ACCESS\x10\x01\x12\x15\n" +
 	"\x11READ_WRITE_ACCESS\x10\x022\xc3\x01\n" +
 	"\fTokenService\x12\xb2\x01\n" +
-	"#GenerateTokenForPermissionsAndScope\x126.central.v1.GenerateTokenForPermissionsAndScopeRequest\x1a7.central.v1.GenerateTokenForPermissionsAndScopeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/internal/v1/tokenB\x1dZ\x1b./internalapi/central/v1;v1X\x01b\x06proto3"
+	"#GenerateTokenForPermissionsAndScope\x126.central.v1.GenerateTokenForPermissionsAndScopeRequest\x1a7.central.v1.GenerateTokenForPermissionsAndScopeResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/internal/v1/tokenB\x1dZ\x1b./internalapi/central/v1;v1X\x00b\x06proto3"
 
 var (
 	file_internalapi_central_v1_token_service_proto_rawDescOnce sync.Once
@@ -349,21 +338,19 @@ var file_internalapi_central_v1_token_service_proto_goTypes = []any{
 	(*GenerateTokenForPermissionsAndScopeResponse)(nil), // 3: central.v1.GenerateTokenForPermissionsAndScopeResponse
 	nil,                         // 4: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
 	(*durationpb.Duration)(nil), // 5: google.protobuf.Duration
-	(*v1.HTTPRequestScope)(nil), // 6: v1.HTTPRequestScope
 }
 var file_internalapi_central_v1_token_service_proto_depIdxs = []int32{
 	4, // 0: central.v1.GenerateTokenForPermissionsAndScopeRequest.permissions:type_name -> central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
 	2, // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.v1.ClusterScope
 	5, // 2: central.v1.GenerateTokenForPermissionsAndScopeRequest.lifetime:type_name -> google.protobuf.Duration
-	6, // 3: central.v1.GenerateTokenForPermissionsAndScopeRequest.http_request_scopes:type_name -> v1.HTTPRequestScope
-	0, // 4: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry.value:type_name -> central.v1.Access
-	1, // 5: central.v1.TokenService.GenerateTokenForPermissionsAndScope:input_type -> central.v1.GenerateTokenForPermissionsAndScopeRequest
-	3, // 6: central.v1.TokenService.GenerateTokenForPermissionsAndScope:output_type -> central.v1.GenerateTokenForPermissionsAndScopeResponse
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	0, // 3: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry.value:type_name -> central.v1.Access
+	1, // 4: central.v1.TokenService.GenerateTokenForPermissionsAndScope:input_type -> central.v1.GenerateTokenForPermissionsAndScopeRequest
+	3, // 5: central.v1.TokenService.GenerateTokenForPermissionsAndScope:output_type -> central.v1.GenerateTokenForPermissionsAndScopeResponse
+	5, // [5:6] is the sub-list for method output_type
+	4, // [4:5] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_v1_token_service_proto_init() }
