@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -289,7 +290,8 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+		PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
+		HttpRequestScopes: consoleRequestScopes(),
 		// Older Centrals ignore the permission set IDs and use these permissions.
 		Permissions: map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
@@ -316,4 +318,12 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	return req, nil
+}
+
+func consoleRequestScopes() []*apiV1.HTTPRequestScope {
+	result := make([]*apiV1.HTTPRequestScope, 0, len(centralproxy.ConsoleHTTPScopes))
+	for _, scope := range centralproxy.ConsoleHTTPScopes {
+		result = append(result, &apiV1.HTTPRequestScope{Method: scope.Method, Path: scope.Path})
+	}
+	return result
 }

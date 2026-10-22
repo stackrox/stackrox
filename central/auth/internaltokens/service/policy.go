@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -139,13 +140,53 @@ func (p *tokenPolicy) enforce(
 				return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 			}
 		}
+		if _, err := approvedHTTPScopes(req); err != nil {
+			return nil, err
+		}
 	} else {
 		if err := p.validatePermissions(req.GetPermissions()); err != nil {
 			return nil, err
+		}
+		if _, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes()); err != nil {
+			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 		return nil, err
 	}
 	return p.enforceLifetimeLimit(req)
+}
+
+func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) ([]tokens.HTTPRequestScope, error) {
+	var allowed []tokens.HTTPRequestScope
+	switch req.GetPermissionSetId() {
+	case centralproxy.ConsoleProxyPermissionSetID:
+		allowed = centralproxy.ConsoleHTTPScopes
+	case centralproxy.MetricsPermissionSetID:
+		allowed = centralproxy.MetricsHTTPScopes
+	default:
+		return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+	}
+
+	requested, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
+	if err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+	// Older Sensors do not specify HTTP scopes; Central still signs its own profile.
+	if len(requested) == 0 {
+		return append([]tokens.HTTPRequestScope(nil), allowed...), nil
+	}
+	for _, scope := range requested {
+		found := false
+		for _, permitted := range allowed {
+			if scope == permitted {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, errox.InvalidArgs.New("requested HTTP scope exceeds Central's profile")
+		}
+	}
+	return requested, nil
 }

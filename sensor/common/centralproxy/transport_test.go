@@ -374,6 +374,7 @@ func TestBuildTokenRequest(t *testing.T) {
 		req, err := provider.buildTokenRequest("")
 		require.NoError(t, err)
 		assert.Equal(t, []string{centralproxy.ConsoleProxyPermissionSetID}, req.GetPermissionSetIds())
+		assert.Len(t, req.GetHttpRequestScopes(), len(centralproxy.ConsoleHTTPScopes))
 		assert.Equal(t, map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,
