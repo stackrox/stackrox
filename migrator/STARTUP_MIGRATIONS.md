@@ -1,5 +1,7 @@
 # Startup Migrations Guide
 
+Testing docs only change
+
 Startup migrations run during the Central upgrade process, **before** a new Central version
 starts serving traffic. With the Recreate rollout strategy they directly extend upgrade
 downtime; with RollingUpdate they extend the startup time of the new pod while the old pod
