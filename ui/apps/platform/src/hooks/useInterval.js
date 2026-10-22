@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 /**
  * This hook is an implementation of Dan Abramov's blog post "Making setInterval Declarative with React Hooks".
- * https://overreacted.io/making-setinterval-declarative-with-@eslint-react/
+ * https://overreacted.io/making-setinterval-declarative-with-react-hooks/
  *
  * @param   {function}  callback  the code you want called at every interval
  * @param   {number | null}  delay     the number of milliseconds between function executions
