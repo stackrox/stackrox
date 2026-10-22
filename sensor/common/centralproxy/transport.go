@@ -294,7 +294,7 @@ func (p *tokenProvider) requestPermissionSetToken(ctx context.Context, client ce
 	response, err := client.GenerateTokenForPermissionsAndScope(ctx, &centralv1.GenerateTokenForPermissionsAndScopeRequest{
 		PermissionSetId:   permissionSetID,
 		Lifetime:          durationpb.New(metricsTokenTTL),
-		HttpRequestScopes: []*centralv1.HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
+		HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "requesting metrics permission set token")
