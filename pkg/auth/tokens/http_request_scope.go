@@ -72,7 +72,7 @@ func AllowsHTTPRequest(scopes HTTPRequestScopes, ri requestinfo.RequestInfo) boo
 	}
 	var bestPath string
 	for scopedPath := range scopes {
-		if !ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: scopedPath}) {
+		if !validHTTPRequestPath(scopedPath) {
 			continue
 		}
 		if scopedPath != u.Path && !(strings.HasSuffix(scopedPath, "/") && strings.HasPrefix(u.Path, scopedPath)) {
@@ -93,7 +93,11 @@ func AllowsHTTPRequest(scopes HTTPRequestScopes, ri requestinfo.RequestInfo) boo
 // ValidHTTPRequestScope accepts only canonical, uppercase-method scope entries.
 func ValidHTTPRequestScope(scope HTTPRequestScope) bool {
 	return scope.Method != "" && strings.Trim(scope.Method, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") == "" &&
-		canonicalHTTPPath(&url.URL{Path: scope.Path})
+		validHTTPRequestPath(scope.Path)
+}
+
+func validHTTPRequestPath(p string) bool {
+	return canonicalHTTPPath(&url.URL{Path: p})
 }
 
 func canonicalHTTPPath(u *url.URL) bool {
