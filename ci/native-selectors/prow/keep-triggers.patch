@@ -1,0 +1,16 @@
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
+@@ -44,9 +44,10 @@
+       memory: 4000Mi
+ test_binary_build_commands: .openshift-ci/dispatch.sh test-binary-build-commands
+ tests:
+-- as: gke-qa-e2e-tests
+-  optional: true
+-  skip_if_only_changed: ^ui/
++- always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
++  as: gke-qa-e2e-tests
++  optional: true
+   steps:
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false

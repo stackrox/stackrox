@@ -1,0 +1,57 @@
+package main
+
+import (
+	"encoding/json"
+	"os"
+	"slices"
+	"testing"
+)
+
+// TestNativeOracle records the pinned implementation's decisions for external comparison.
+func TestNativeOracle(t *testing.T) {
+	type scenario struct {
+		Name     string   `json:"name"`
+		Files    []string `json:"files"`
+		Labels   []string `json:"labels"`
+		Event    string   `json:"event"`
+		Draft    bool     `json:"draft"`
+		Fork     bool     `json:"fork"`
+		Enforced bool     `json:"enforced"`
+		Unknown  bool     `json:"unknown"`
+	}
+	input, err := os.ReadFile(os.Getenv("NATIVE_SCENARIOS"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var scenarios []scenario
+	if err := json.Unmarshal(input, &scenarios); err != nil {
+		t.Fatal(err)
+	}
+	outcomes := map[string]any{}
+	for _, s := range scenarios {
+		plan, defaults, err := openDecision("../test-domains.yaml", "../decision-defaults", s.Files, s.Labels, s.Unknown, metadata{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		jobs := []string{}
+		for name, run := range plan.jobs {
+			if run {
+				jobs = append(jobs, name)
+			}
+		}
+		slices.Sort(jobs)
+		uiOnly := len(s.Files) > 0
+		for _, path := range s.Files {
+			uiOnly = uiOnly && len(path) >= 3 && path[:3] == "ui/"
+		}
+		dispatch := dispatchPlan(dispatchInput{pullRequest: s.Event == "pull_request", fork: s.Fork, draft: s.Draft, uiOnly: uiOnly, enforce: s.Enforced, labels: s.Labels}, &plan, defaults)
+		outcomes[s.Name] = map[string]any{"selected": jobs, "dispatch": dispatch}
+	}
+	output, err := json.MarshalIndent(outcomes, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(os.Getenv("NATIVE_EXPECTED"), append(output, '\n'), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}

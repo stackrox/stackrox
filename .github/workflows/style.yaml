@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -19,12 +21,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  native-selection:
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/native-ci-selection.yaml
+
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
   check-generated-files:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [ detect-changes, native-selection ]
+    if: >-
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.ui_only) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.check-generated-files != 'false') }}
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-24.04
@@ -156,8 +168,12 @@ jobs:
         run: make style-slim
 
   golangci-lint:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [ detect-changes, native-selection ]
+    if: >-
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.ui_only) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.golangci-lint != 'false') }}
     timeout-minutes: 240
     runs-on: ubuntu-24.04
     steps:
@@ -203,8 +219,12 @@ jobs:
       run: make golangci-lint-cache-status
 
   check-dependent-images-exist:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [ detect-changes, native-selection ]
+    if: >-
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.ui_only) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.check-dependent-images-exist != 'false') }}
     # This job ensures that COLLECTOR_VERSION or FACT_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
@@ -249,10 +269,12 @@ jobs:
             rhacs-eng/release-fact:${{ env.fact_tag }}-fast
 
   github-actions-lint:
-    needs: detect-changes
+    needs: [ detect-changes, native-selection ]
     if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^.github/')
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^.github/')) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.github-actions-lint != 'false') }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -277,10 +299,12 @@ jobs:
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
   openshift-ci-lint:
-    needs: detect-changes
+    needs: [ detect-changes, native-selection ]
     if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^.openshift-ci/')
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^.openshift-ci/')) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.openshift-ci-lint != 'false') }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout

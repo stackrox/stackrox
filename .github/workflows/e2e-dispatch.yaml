@@ -13,6 +13,8 @@ on:
     - reopened
     - synchronize
     - ready_for_review
+    - labeled
+    - unlabeled
 
 permissions:
   contents: read
@@ -23,119 +25,81 @@ defaults:
     shell: bash
 
 jobs:
+  native-selection:
+    uses: ./.github/workflows/native-ci-selection.yaml
+    with:
+      live-labels: true
+
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
-  # Determines whether we should dispatch jobs that call real E2E workflows.
-  # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
+  # Fork, draft, and image restrictions remain explicit native conditions.
   should-dispatch:
-    needs: [ detect-changes ]
+    needs: [ detect-changes, native-selection ]
+    if: ${{ !cancelled() && needs.detect-changes.result == 'success' }}
     runs-on: ubuntu-slim
+    env:
+      PR_LABELS: ${{ needs.native-selection.outputs.labels || toJSON(github.event.pull_request.labels.*.name || fromJSON('[]')) }}
     outputs:
-      wait-for-gha-images: ${{ steps.determine.outputs.wait-for-gha-images }}
-      wait-for-konflux-images: ${{ steps.determine.outputs.wait-for-konflux-images }}
-      jobs: ${{ steps.determine.outputs.jobs }}
+      jobs: ${{ steps.dispatch.outputs.jobs }}
+      wait-for-gha-images: ${{ steps.waits.outputs.wait-for-gha-images }}
+      wait-for-konflux-images: ${{ steps.waits.outputs.wait-for-konflux-images }}
     steps:
-    - name: Determine whether should dispatch workflows
-      id: determine
-      shell: python
-      env:
-        GH_TOKEN: ${{ github.token }}
-        PYTHONUNBUFFERED: "1"
-        input__event_name: ${{ github.event_name }}
-        input__is_fork: ${{ github.event.pull_request.head.repo.fork }}
-        input__is_draft: ${{ github.event.pull_request.draft }}
-        input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
-        input__repo: ${{ github.repository }}
-        input__pr_number: ${{ github.event.pull_request.number }}
-      run: |
-        import json
-        import os
-        import subprocess
-        from types import SimpleNamespace
-        from dataclasses import dataclass
-
-        @dataclass
-        class Job:
-            name: str
-            require_pr_label: bool = False
-            require_konflux_build: bool = False
-
-            def should_run(self, input):
-                if input.is_fork == 'true':
-                    return False
-
-                if input.event_name != 'pull_request':
-                    return True
-                elif self.name in input.pr_labels:
-                    return True
-
-                # We are in a PR context, job is not explicitly listed among the PR labels.
-
-                # TODO(ROX-21073): re-enable Konflux for all PR branches
-                if self.require_konflux_build and 'konflux-build' not in input.pr_labels:
-                    return False
-
-                if input.ui_only_change == 'true':
-                    # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
-                    # As we add more E2E test workflows, we may want to make this more flexible.
-                    return False
-                if self.require_pr_label:
-                    return False
-                if input.is_draft != 'true':
-                    return True
-
-                return False
-
-
-        input = SimpleNamespace(**{
-            key.removeprefix('input__'): val
-            for (key, val) in os.environ.items()
-            if key.startswith('input__')})
-
-        if input.event_name != 'pull_request':
-            input.pr_labels = []
-        else:
-            p = subprocess.run(
-                ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
-                check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
-            input.pr_labels = p.stdout.strip().splitlines()
-
-        for k, v in vars(input).items():
-            print(f'{k} = {v}')
-
-        jobs_registry = [
-            Job(name='e2e-byodb-tests', require_pr_label=True),
-            Job(name='e2e-db-backup-restore-tests'),
-            Job(name='e2e-gke-upgrade-tests'),
-            Job(name='e2e-nongroovy-tests-gke'),
-            Job(name='e2e-nongroovy-tests-gke-konflux', require_konflux_build=True),
-            Job(name='e2e-qa-tests-gke', require_pr_label=True),
-            Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
-            Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
-        ]
-
-        with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
-            def write(job, val):
-                line = f'{job}={val}'
-                print(line)
-                file.write(line + '\n')
-
-            jobs = {job.name: job.should_run(input) for job in jobs_registry}
-
-            write('jobs', json.dumps(jobs))
-
-            # Find out when we can complete the workflow early by not even waiting for GHA-built images.
-            wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
-            write('wait-for-gha-images', str(wait_for_gha_images).lower())
-
-            # Waiting for konflux-built images in PR request context requires the 'konflux-build' PR label.
-            wait_for_konflux_images = input.event_name != 'pull_request' or ('konflux-build' in input.pr_labels and any(jobs.values()))
-            write('wait-for-konflux-images', str(wait_for_konflux_images).lower())
+      - name: Evaluate E2E conditions
+        id: dispatch
+        env:
+          SELECT_e2e_byodb_tests: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-byodb-tests != 'false') ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-byodb-tests')))) }}
+          SELECT_e2e_db_backup_restore_tests: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-db-backup-restore-tests != 'false') ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-db-backup-restore-tests') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+          SELECT_e2e_gke_upgrade_tests: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-gke-upgrade-tests != 'false') ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-gke-upgrade-tests') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+          SELECT_e2e_nongroovy_tests_gke: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-nongroovy-tests-gke != 'false') ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-nongroovy-tests-gke') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+          SELECT_e2e_nongroovy_tests_gke_konflux: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-nongroovy-tests-gke-konflux != 'false' && contains(fromJSON(env.PR_LABELS), 'konflux-build')) ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-nongroovy-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(env.PR_LABELS), 'konflux-build'))))) }}
+          SELECT_e2e_qa_tests_gke: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-qa-tests-gke != 'false') ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-qa-tests-gke')))) }}
+          SELECT_e2e_qa_tests_gke_konflux: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-qa-tests-gke-konflux != 'false' && contains(fromJSON(env.PR_LABELS), 'konflux-build')) ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-qa-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(env.PR_LABELS), 'konflux-build'))))) }}
+          SELECT_e2e_qa_tests_ocp_fips_konflux: >-
+            ${{ !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+              (needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.e2e-qa-tests-ocp-fips-konflux != 'false' && contains(fromJSON(env.PR_LABELS), 'konflux-build')) ||
+              (needs.native-selection.outputs.enforced != 'true' && (contains(fromJSON(env.PR_LABELS), 'e2e-qa-tests-ocp-fips-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(env.PR_LABELS), 'konflux-build'))))) }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          jobs = {key[7:].replace('_', '-'): value == 'true'
+                  for key, value in os.environ.items() if key.startswith('SELECT_')}
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('jobs=' + json.dumps(jobs), file=output)
+          PYTHON
+      - name: Evaluate image waits
+        id: waits
+        env:
+          WAIT_GHA: ${{ !github.event.pull_request.head.repo.fork && ((needs.native-selection.outputs.enforced == 'true' && needs.native-selection.outputs.wait-for-images != 'false') || (needs.native-selection.outputs.enforced != 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.draft || contains(fromJSON(steps.dispatch.outputs.jobs).*, true)))) }}
+          WAIT_KONFLUX: ${{ (needs.native-selection.outputs.enforced == 'true' && !github.event.pull_request.head.repo.fork && contains(fromJSON(env.PR_LABELS), 'konflux-build') && needs.native-selection.outputs.wait-for-konflux-images != 'false') || (needs.native-selection.outputs.enforced != 'true' && (github.event_name != 'pull_request' || (contains(fromJSON(env.PR_LABELS), 'konflux-build') && contains(fromJSON(steps.dispatch.outputs.jobs).*, true)))) }}
+        run: |
+          echo "wait-for-gha-images=$WAIT_GHA" >> "$GITHUB_OUTPUT"
+          echo "wait-for-konflux-images=$WAIT_KONFLUX" >> "$GITHUB_OUTPUT"
 
   wait-for-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "."
@@ -152,13 +116,16 @@ jobs:
       cancel-in-progress: true
     steps:
     - name: Checkout repo
+      if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     - name: Determine image references
+      if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
       id: image-references
       run: &image-references |
         IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C "$MAIN_IMAGE_TAG_DIR" --quiet --no-print-directory tag)"}"
@@ -181,6 +148,7 @@ jobs:
         echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
 
     - name: Wait for images
+      if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -198,7 +166,6 @@ jobs:
 
   wait-for-konflux-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "operator"
@@ -213,17 +180,21 @@ jobs:
       cancel-in-progress: true
     steps:
     - name: Checkout repo
+      if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     - name: Determine image references
+      if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
       id: image-references
       run: *image-references
 
     - name: Wait for Konflux images
+      if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}

@@ -1,0 +1,44 @@
+{
+  "build.yaml": {
+    "push-main-manifests": [
+      "push-main-manifests (STACKROX_BRANDING)",
+      "push-main-manifests (RHACS_BRANDING)"
+    ],
+    "build-and-push-main": [
+      "build-and-push-main (STACKROX_BRANDING, amd64)",
+      "build-and-push-main (RHACS_BRANDING, amd64)"
+    ],
+    "build-and-push-scanner": [
+      "build-and-push-scanner (default, linux, amd64, quay.io/stackrox-io)",
+      "build-and-push-scanner (default, linux, amd64, quay.io/rhacs-eng)"
+    ],
+    "push-operator-manifests": [
+      "push-operator-manifests (RHACS_BRANDING, amd64,arm64)"
+    ]
+  },
+  "unit-tests.yaml": {
+    "go": ["go (GOTAGS=\"\")"],
+    "go-postgres": ["go-postgres (GOTAGS=\"\", 16)"],
+    "go-bench": ["go-bench"],
+    "ui": ["ui"],
+    "local-roxctl-tests": ["local-roxctl-tests"]
+  },
+  "style.yaml": {
+    "check-generated-files": ["check-generated-files"],
+    "golangci-lint": ["golangci-lint"],
+    "misc-checks": ["misc-checks"],
+    "check-dependent-images-exist": ["check-dependent-images-exist"],
+    "style-check": ["style-check"]
+  },
+  "check-crd-compatibility.yaml": {
+    "check-crd-compatibility": ["check-crd-compatibility"]
+  },
+  "e2e-dispatch.yaml": {
+    "wait-for-images": ["wait-for-images"],
+    "e2e-gke-upgrade-tests": [
+      "e2e-gke-upgrade-tests / gke-upgrade-tests-central",
+      "e2e-gke-upgrade-tests / gke-upgrade-tests-postgres",
+      "e2e-gke-upgrade-tests / gke-upgrade-tests-sensor"
+    ]
+  }
+}

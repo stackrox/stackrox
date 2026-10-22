@@ -1,0 +1,110 @@
+{
+  "id": 6059294,
+  "name": "Protect default branch",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "~DEFAULT_BRANCH"
+      ]
+    }
+  },
+  "observed_on": "2026-10-22",
+  "source": "https://api.github.com/repos/stackrox/stackrox/rulesets/6059294",
+  "required_status_checks": [
+    {
+      "context": "check-generated-files",
+      "integration_id": 15368
+    },
+    {
+      "context": "check-crd-compatibility",
+      "integration_id": 15368
+    },
+    {
+      "context": "ci/prow/gke-ui-e2e-tests",
+      "integration_id": 91280
+    },
+    {
+      "context": "ui",
+      "integration_id": 15368
+    },
+    {
+      "context": "push-main-manifests (STACKROX_BRANDING)",
+      "integration_id": 15368
+    },
+    {
+      "context": "build-and-push-scanner (default, linux, amd64, quay.io/stackrox-io)",
+      "integration_id": 15368
+    },
+    {
+      "context": "golangci-lint",
+      "integration_id": 15368
+    },
+    {
+      "context": "go-bench",
+      "integration_id": 15368
+    },
+    {
+      "context": "misc-checks",
+      "integration_id": 15368
+    },
+    {
+      "context": "check-dependent-images-exist",
+      "integration_id": 15368
+    },
+    {
+      "context": "local-roxctl-tests",
+      "integration_id": 15368
+    },
+    {
+      "context": "push-main-manifests (RHACS_BRANDING)",
+      "integration_id": 15368
+    },
+    {
+      "context": "push-operator-manifests (RHACS_BRANDING, amd64,arm64)",
+      "integration_id": 15368
+    },
+    {
+      "context": "build-and-push-main (STACKROX_BRANDING, amd64)",
+      "integration_id": 15368
+    },
+    {
+      "context": "build-and-push-scanner (default, linux, amd64, quay.io/rhacs-eng)",
+      "integration_id": 15368
+    },
+    {
+      "context": "style-check",
+      "integration_id": 15368
+    },
+    {
+      "context": "build-and-push-main (RHACS_BRANDING, amd64)",
+      "integration_id": 15368
+    },
+    {
+      "context": "go (GOTAGS=\"\")",
+      "integration_id": 15368
+    },
+    {
+      "context": "wait-for-images",
+      "integration_id": 15368
+    },
+    {
+      "context": "e2e-gke-upgrade-tests / gke-upgrade-tests-central",
+      "integration_id": 15368
+    },
+    {
+      "context": "e2e-gke-upgrade-tests / gke-upgrade-tests-postgres",
+      "integration_id": 15368
+    },
+    {
+      "context": "e2e-gke-upgrade-tests / gke-upgrade-tests-sensor",
+      "integration_id": 15368
+    },
+    {
+      "context": "go-postgres (GOTAGS=\"\", 16)",
+      "integration_id": 15368
+    }
+  ]
+}

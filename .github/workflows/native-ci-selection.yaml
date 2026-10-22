@@ -1,0 +1,443 @@
+name: Native CI selection
+
+# Path facts are data. Labels, policy, and dependency unions use Actions expressions.
+on:
+  workflow_call:
+    inputs:
+      live-labels:
+        description: Refresh labels for E2E dispatch; ordinary gates use the event snapshot.
+        type: boolean
+        default: false
+    outputs:
+      enforced:
+        description: Selection context.
+        value: ${{ jobs.select.outputs.enforced }}
+      labels:
+        description: Selection context.
+        value: ${{ jobs.select.outputs.labels }}
+      known:
+        description: Selection context.
+        value: ${{ jobs.select.outputs.known }}
+      style-check:
+        description: Whether the pinned policy selects style-check.
+        value: ${{ jobs.select.outputs.style-check }}
+      selector-tests:
+        description: Whether the pinned policy selects selector-tests.
+        value: ${{ jobs.select.outputs.selector-tests }}
+      go:
+        description: Whether the pinned policy selects go.
+        value: ${{ jobs.select.outputs.go }}
+      go-postgres:
+        description: Whether the pinned policy selects go-postgres.
+        value: ${{ jobs.select.outputs.go-postgres }}
+      go-bench:
+        description: Whether the pinned policy selects go-bench.
+        value: ${{ jobs.select.outputs.go-bench }}
+      build-images:
+        description: Whether the pinned policy selects build-images.
+        value: ${{ jobs.select.outputs.build-images }}
+      check-dependent-images-exist:
+        description: Whether the pinned policy selects check-dependent-images-exist.
+        value: ${{ jobs.select.outputs.check-dependent-images-exist }}
+      sensor-integration-tests:
+        description: Whether the pinned policy selects sensor-integration-tests.
+        value: ${{ jobs.select.outputs.sensor-integration-tests }}
+      should-dispatch:
+        description: Whether the pinned policy selects should-dispatch.
+        value: ${{ jobs.select.outputs.should-dispatch }}
+      wait-for-images:
+        description: Whether the pinned policy selects wait-for-images.
+        value: ${{ jobs.select.outputs.wait-for-images }}
+      wait-for-konflux-images:
+        description: Whether the pinned policy selects wait-for-konflux-images.
+        value: ${{ jobs.select.outputs.wait-for-konflux-images }}
+      e2e-byodb-tests:
+        description: Whether the pinned policy selects e2e-byodb-tests.
+        value: ${{ jobs.select.outputs.e2e-byodb-tests }}
+      e2e-db-backup-restore-tests:
+        description: Whether the pinned policy selects e2e-db-backup-restore-tests.
+        value: ${{ jobs.select.outputs.e2e-db-backup-restore-tests }}
+      e2e-gke-upgrade-tests:
+        description: Whether the pinned policy selects e2e-gke-upgrade-tests.
+        value: ${{ jobs.select.outputs.e2e-gke-upgrade-tests }}
+      e2e-nongroovy-tests-gke:
+        description: Whether the pinned policy selects e2e-nongroovy-tests-gke.
+        value: ${{ jobs.select.outputs.e2e-nongroovy-tests-gke }}
+      e2e-nongroovy-tests-gke-konflux:
+        description: Whether the pinned policy selects e2e-nongroovy-tests-gke-konflux.
+        value: ${{ jobs.select.outputs.e2e-nongroovy-tests-gke-konflux }}
+      e2e-qa-tests-gke:
+        description: Whether the pinned policy selects e2e-qa-tests-gke.
+        value: ${{ jobs.select.outputs.e2e-qa-tests-gke }}
+      e2e-qa-tests-gke-konflux:
+        description: Whether the pinned policy selects e2e-qa-tests-gke-konflux.
+        value: ${{ jobs.select.outputs.e2e-qa-tests-gke-konflux }}
+      e2e-qa-tests-ocp-fips-konflux:
+        description: Whether the pinned policy selects e2e-qa-tests-ocp-fips-konflux.
+        value: ${{ jobs.select.outputs.e2e-qa-tests-ocp-fips-konflux }}
+      gke-nongroovy-e2e-tests:
+        description: Whether the pinned policy selects gke-nongroovy-e2e-tests.
+        value: ${{ jobs.select.outputs.gke-nongroovy-e2e-tests }}
+      gke-qa-e2e-tests:
+        description: Whether the pinned policy selects gke-qa-e2e-tests.
+        value: ${{ jobs.select.outputs.gke-qa-e2e-tests }}
+      gke-ui-e2e-tests:
+        description: Whether the pinned policy selects gke-ui-e2e-tests.
+        value: ${{ jobs.select.outputs.gke-ui-e2e-tests }}
+      ocp-vm-scanning-e2e-tests:
+        description: Whether the pinned policy selects ocp-vm-scanning-e2e-tests.
+        value: ${{ jobs.select.outputs.ocp-vm-scanning-e2e-tests }}
+      check-generated-files:
+        description: Whether the pinned policy selects check-generated-files.
+        value: ${{ jobs.select.outputs.check-generated-files }}
+      check-crd-compatibility:
+        description: Whether the pinned policy selects check-crd-compatibility.
+        value: ${{ jobs.select.outputs.check-crd-compatibility }}
+      golangci-lint:
+        description: Whether the pinned policy selects golangci-lint.
+        value: ${{ jobs.select.outputs.golangci-lint }}
+      github-actions-lint:
+        description: Whether the pinned policy selects github-actions-lint.
+        value: ${{ jobs.select.outputs.github-actions-lint }}
+      openshift-ci-lint:
+        description: Whether the pinned policy selects openshift-ci-lint.
+        value: ${{ jobs.select.outputs.openshift-ci-lint }}
+      shell-unit-tests:
+        description: Whether the pinned policy selects shell-unit-tests.
+        value: ${{ jobs.select.outputs.shell-unit-tests }}
+      ui:
+        description: Whether the pinned policy selects ui.
+        value: ${{ jobs.select.outputs.ui }}
+      ui-component:
+        description: Whether the pinned policy selects ui-component.
+        value: ${{ jobs.select.outputs.ui-component }}
+      local-roxctl-tests:
+        description: Whether the pinned policy selects local-roxctl-tests.
+        value: ${{ jobs.select.outputs.local-roxctl-tests }}
+      db-integration-tests:
+        description: Whether the pinned policy selects db-integration-tests.
+        value: ${{ jobs.select.outputs.db-integration-tests }}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      enforced: ${{ steps.context.outputs.enforced }}
+      labels: ${{ steps.context.outputs.labels }}
+      known: ${{ steps.paths.outputs.known }}
+      style-check: ${{ steps.policy.outputs.style-check }}
+      selector-tests: ${{ steps.policy.outputs.selector-tests }}
+      go: ${{ steps.policy.outputs.go }}
+      go-postgres: ${{ steps.policy.outputs.go-postgres }}
+      go-bench: ${{ steps.policy.outputs.go-bench }}
+      build-images: ${{ steps.policy.outputs.build-images }}
+      check-dependent-images-exist: ${{ steps.policy.outputs.check-dependent-images-exist }}
+      sensor-integration-tests: ${{ steps.policy.outputs.sensor-integration-tests }}
+      should-dispatch: ${{ steps.policy.outputs.should-dispatch }}
+      wait-for-images: ${{ steps.policy.outputs.wait-for-images }}
+      wait-for-konflux-images: ${{ steps.policy.outputs.wait-for-konflux-images }}
+      e2e-byodb-tests: ${{ steps.policy.outputs.e2e-byodb-tests }}
+      e2e-db-backup-restore-tests: ${{ steps.policy.outputs.e2e-db-backup-restore-tests }}
+      e2e-gke-upgrade-tests: ${{ steps.policy.outputs.e2e-gke-upgrade-tests }}
+      e2e-nongroovy-tests-gke: ${{ steps.policy.outputs.e2e-nongroovy-tests-gke }}
+      e2e-nongroovy-tests-gke-konflux: ${{ steps.policy.outputs.e2e-nongroovy-tests-gke-konflux }}
+      e2e-qa-tests-gke: ${{ steps.policy.outputs.e2e-qa-tests-gke }}
+      e2e-qa-tests-gke-konflux: ${{ steps.policy.outputs.e2e-qa-tests-gke-konflux }}
+      e2e-qa-tests-ocp-fips-konflux: ${{ steps.policy.outputs.e2e-qa-tests-ocp-fips-konflux }}
+      gke-nongroovy-e2e-tests: ${{ steps.policy.outputs.gke-nongroovy-e2e-tests }}
+      gke-qa-e2e-tests: ${{ steps.policy.outputs.gke-qa-e2e-tests }}
+      gke-ui-e2e-tests: ${{ steps.policy.outputs.gke-ui-e2e-tests }}
+      ocp-vm-scanning-e2e-tests: ${{ steps.policy.outputs.ocp-vm-scanning-e2e-tests }}
+      check-generated-files: ${{ steps.policy.outputs.check-generated-files }}
+      check-crd-compatibility: ${{ steps.policy.outputs.check-crd-compatibility }}
+      golangci-lint: ${{ steps.policy.outputs.golangci-lint }}
+      github-actions-lint: ${{ steps.policy.outputs.github-actions-lint }}
+      openshift-ci-lint: ${{ steps.policy.outputs.openshift-ci-lint }}
+      shell-unit-tests: ${{ steps.policy.outputs.shell-unit-tests }}
+      ui: ${{ steps.policy.outputs.ui }}
+      ui-component: ${{ steps.policy.outputs.ui-component }}
+      local-roxctl-tests: ${{ steps.policy.outputs.local-roxctl-tests }}
+      db-integration-tests: ${{ steps.policy.outputs.db-integration-tests }}
+    steps:
+      - name: Checkout the tested head
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Collect path facts
+        id: paths
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          CI_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 ci/native-selectors/path_facts.py
+
+      - name: Refresh dispatcher labels
+        id: live
+        if: github.event_name == 'pull_request' && inputs.live-labels
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          labels=$(gh pr view "$PR_NUMBER" --json labels --jq '[.labels[].name] | @json')
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
+          echo "known=true" >> "$GITHUB_OUTPUT"
+
+      - name: Selection context
+        id: context
+        env:
+          LABELS: ${{ steps.live.outputs.labels || toJSON(github.event.pull_request.labels.*.name || fromJSON('[]')) }}
+          ENFORCED: >-
+            ${{ github.event_name == 'pull_request' &&
+            (!inputs.live-labels || steps.live.outputs.known == 'true') &&
+            contains(fromJSON(steps.live.outputs.labels || toJSON(github.event.pull_request.labels.*.name || fromJSON('[]'))), 'ci-dispatcher-enforce') }}
+          ALL: >-
+            ${{ contains(fromJSON(steps.live.outputs.labels || toJSON(github.event.pull_request.labels.*.name || fromJSON('[]'))), 'ci-run-all-tests') ||
+            contains(fromJSON(steps.paths.outputs.any || '[]'), 'broad') || contains(fromJSON(steps.paths.outputs.any || '[]'), 'proto') }}
+        run: |
+          {
+            echo "labels=$LABELS"
+            echo "enforced=$ENFORCED"
+            echo "all=$ALL"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Evaluate native selection expressions
+        id: policy
+        env:
+          SELECT_style_check: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              true
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_selector_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'selector')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_go: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'go') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'scanner') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'operator') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'roxctl')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_go_postgres: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/central') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'central') ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'shared') ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'central-communication') ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'sensor-communication')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_go_bench: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'bench')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_build_images: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-byodb-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-db-backup-restore-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-gke-upgrade-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-nongroovy-tests-gke') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'roxctl') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-gke')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_check_dependent_images_exist: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'image-versions')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_sensor_integration_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/sensor') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'sensor') ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'shared') ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'central-communication') ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'sensor-communication')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_should_dispatch: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-byodb-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-db-backup-restore-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-gke-upgrade-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-nongroovy-tests-gke') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'roxctl') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-gke') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-nongroovy-tests-gke-konflux') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-gke-konflux')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_wait_for_images: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-byodb-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-db-backup-restore-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-gke-upgrade-tests') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-nongroovy-tests-gke') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'roxctl') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-gke')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_wait_for_konflux_images: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-nongroovy-tests-gke-konflux') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux') ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-gke-konflux')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_e2e_byodb_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-byodb-tests')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_e2e_db_backup_restore_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-db-backup-restore-tests')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_e2e_gke_upgrade_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-gke-upgrade-tests')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_e2e_nongroovy_tests_gke: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-nongroovy-tests-gke') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'roxctl')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_e2e_nongroovy_tests_gke_konflux: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-nongroovy-tests-gke-konflux')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_e2e_qa_tests_gke: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-gke')
+            )) || (steps.paths.outputs.known != 'true' && false) }}
+          SELECT_e2e_qa_tests_gke_konflux: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-gke-konflux')
+            )) || (steps.paths.outputs.known != 'true' && false) }}
+          SELECT_e2e_qa_tests_ocp_fips_konflux: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux')
+            )) || (steps.paths.outputs.known != 'true' && false) }}
+          SELECT_gke_nongroovy_e2e_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true'
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_gke_qa_e2e_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true'
+            )) || (steps.paths.outputs.known != 'true' && false) }}
+          SELECT_gke_ui_e2e_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/ui') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'ui')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_ocp_vm_scanning_e2e_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true'
+            )) || (steps.paths.outputs.known != 'true' && false) }}
+          SELECT_check_generated_files: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true'
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_check_crd_compatibility: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/operator') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'operator')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_golangci_lint: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'go-lint')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_github_actions_lint: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'gha')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_openshift_ci_lint: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'prow')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_shell_unit_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.paths.outputs.any || '[]'), 'shell')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_ui: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/ui') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'ui')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_ui_component: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/ui') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'ui')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_local_roxctl_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/roxctl') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'roxctl')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+          SELECT_db_integration_tests: >-
+            ${{ (steps.paths.outputs.known == 'true' && (
+              steps.context.outputs.all == 'true' ||
+              contains(fromJSON(steps.context.outputs.labels), 'area/scanner') ||
+              contains(fromJSON(steps.paths.outputs.every || '[]'), 'scanner')
+            )) || (steps.paths.outputs.known != 'true' && true) }}
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              for key, value in sorted(os.environ.items()):
+                  if key.startswith('SELECT_'):
+                      print(f"{key[7:].replace('_', '-')}={value}", file=output)
+          PYTHON
+
+      - name: Explain candidate selection
+        env:
+          FACTS: ${{ toJSON(steps.paths.outputs) }}
+          CONTEXT: ${{ toJSON(steps.context.outputs) }}
+          CANDIDATES: ${{ toJSON(steps.policy.outputs) }}
+          COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              print('## Native CI selection', file=summary)
+              print(f"Commit: `{os.environ['COMMIT']}`", file=summary)
+              print('Candidates remain subject to each workflow condition, fork restrictions, and Konflux availability.', file=summary)
+              for heading in ('FACTS', 'CONTEXT', 'CANDIDATES'):
+                  print(f"\n### {heading.lower()}\n\n```json", file=summary)
+                  print(json.dumps(json.loads(os.environ[heading]), indent=2), file=summary)
+                  print('```', file=summary)
+          PYTHON

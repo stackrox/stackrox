@@ -1,0 +1,114 @@
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
+@@ -44,9 +44,10 @@
+       memory: 4000Mi
+ test_binary_build_commands: .openshift-ci/dispatch.sh test-binary-build-commands
+ tests:
+-- as: gke-qa-e2e-tests
+-  optional: true
+-  skip_if_only_changed: ^ui/
++- always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
++  as: gke-qa-e2e-tests
++  optional: true
+   steps:
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false
+@@ -55,6 +56,7 @@
+   steps:
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: gke-oldest-qa-e2e-tests
+   optional: true
+   steps:
+@@ -63,6 +65,7 @@
+       TEST_SUITE: gke-qa-e2e-tests
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: gke-latest-qa-e2e-tests
+   optional: true
+   steps:
+@@ -91,11 +94,13 @@
+       TEST_SUITE: gke-ui-e2e-tests
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: gke-nongroovy-e2e-tests
+   optional: true
+   steps:
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: gke-oldest-nongroovy-e2e-tests
+   optional: true
+   steps:
+@@ -104,6 +109,7 @@
+       TEST_SUITE: gke-nongroovy-e2e-tests
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: gke-latest-nongroovy-e2e-tests
+   optional: true
+   steps:
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-14.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-14.yaml
+@@ -16,6 +16,7 @@
+ test_binary_build_commands: .openshift-ci/dispatch.sh test-binary-build-commands
+ tests:
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: vm-scanning-e2e-tests
+   optional: true
+   steps:
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-18.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-18.yaml
+@@ -16,6 +16,7 @@
+ test_binary_build_commands: .openshift-ci/dispatch.sh test-binary-build-commands
+ tests:
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: vm-scanning-e2e-tests
+   optional: true
+   steps:
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-22.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-22.yaml
+@@ -85,6 +85,7 @@
+       TEST_SUITE: ocp-compliance-e2e-tests
+     workflow: stackrox-automation-flavors-ocp-4-e2e
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: vm-scanning-e2e-tests
+   optional: true
+   steps:
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-5-0.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-5-0.yaml
+@@ -73,6 +73,7 @@
+       TEST_SUITE: ocp-nongroovy-e2e-tests
+     workflow: stackrox-automation-flavors-ocp-4-e2e
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: vm-scanning-e2e-tests
+   optional: true
+   steps:
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-dev-preview.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-dev-preview.yaml
+@@ -73,6 +73,7 @@
+       TEST_SUITE: ocp-compliance-e2e-tests
+     workflow: stackrox-automation-flavors-ocp-4-e2e
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: vm-scanning-e2e-tests
+   optional: true
+   steps:
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-next-candidate.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-next-candidate.yaml
+@@ -73,6 +73,7 @@
+       TEST_SUITE: ocp-compliance-e2e-tests
+     workflow: stackrox-automation-flavors-ocp-4-e2e
+ - always_run: false
++  run_if_changed: ^go\.(mod|sum)$|^proto/|^generated/|\.proto$
+   as: vm-scanning-e2e-tests
+   optional: true
+   steps:

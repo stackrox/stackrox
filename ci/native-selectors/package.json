@@ -1,0 +1,13 @@
+{
+  "name": "stackrox-native-ci-selector-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "python3 -m unittest discover -s . -p '*_test.py' && esbuild verify.mjs --bundle --platform=node --format=cjs --outfile=.test-build/verify.cjs && node .test-build/verify.cjs"
+  },
+  "devDependencies": {
+    "@actions/expressions": "0.3.0",
+    "esbuild": "0.25.12",
+    "yaml": "2.9.1"
+  }
+}

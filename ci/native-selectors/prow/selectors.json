@@ -1,0 +1,39 @@
+{
+  "release_sha": "3960ba6dc20f554e15fcf839e562a6d28353a2f3",
+  "run_if_changed": "^go\\.(mod|sum)$|^proto/|^generated/|\\.proto$",
+  "filtered_suites": [
+    "gke-qa-e2e-tests",
+    "gke-nongroovy-e2e-tests",
+    "ocp-vm-scanning-e2e-tests"
+  ],
+  "required_always_run": [
+    "gke-ui-e2e-tests"
+  ],
+  "commands": {
+    "gke-qa-e2e-tests": "/test gke-qa-e2e-tests",
+    "gke-ui-e2e-tests": "/test gke-ui-e2e-tests",
+    "gke-nongroovy-e2e-tests": "/test gke-nongroovy-e2e-tests",
+    "ocp-4-14-vm-scanning-e2e-tests": "/test ocp-4-14-vm-scanning-e2e-tests",
+    "ocp-4-18-vm-scanning-e2e-tests": "/test ocp-4-18-vm-scanning-e2e-tests",
+    "ocp-4-22-vm-scanning-e2e-tests": "/test ocp-4-22-vm-scanning-e2e-tests",
+    "ocp-5-0-vm-scanning-e2e-tests": "/test ocp-5-0-vm-scanning-e2e-tests",
+    "ocp-dev-preview-vm-scanning-e2e-tests": "/test ocp-dev-preview-vm-scanning-e2e-tests",
+    "ocp-next-candidate-vm-scanning-e2e-tests": "/test ocp-next-candidate-vm-scanning-e2e-tests",
+    "gke-oldest-qa-e2e-tests": "/test gke-oldest-qa-e2e-tests",
+    "gke-latest-qa-e2e-tests": "/test gke-latest-qa-e2e-tests",
+    "gke-oldest-nongroovy-e2e-tests": "/test gke-oldest-nongroovy-e2e-tests",
+    "gke-latest-nongroovy-e2e-tests": "/test gke-latest-nongroovy-e2e-tests",
+    "gke-oldest-ui-e2e-tests": "/test gke-oldest-ui-e2e-tests",
+    "gke-latest-ui-e2e-tests": "/test gke-latest-ui-e2e-tests"
+  },
+  "sources": {
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml": "8608916df86a28fc77bd8ef5ab5a5269c91286cdeba93325ffee0fca072e76d2",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-14.yaml": "f984dae1076d4f8a9c46ef98dbdbe4060baa4d48f9bdea9fab0d95171b15f060",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-18.yaml": "7e2c6f9ad88b2332e20b3ad60c56881f612d3b5da6254287292c05feb28af28c",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-22.yaml": "b15fd302ea45bb29dcb1f365e6151d2d4bc29bea999336e418834dcda6ac9856",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-5-0.yaml": "356624e74997eb63e092a8d288673658c727adc7e583e771aca12fa1b5432f5b",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-dev-preview.yaml": "128b30167fcd602d06a79dd8bd96b65fc6948c63fa21bd581e4ab82bdc6f7d02",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-next-candidate.yaml": "23077aeaf17fe91adec36c26a3cdaa940d9ddf73569574b316e3f3ab13890236"
+  },
+  "matcher_sha256": "cc9865f7e0b5429aac825f6f889eb7ed8e88488440fb6bac73ac817f237d88a2"
+}

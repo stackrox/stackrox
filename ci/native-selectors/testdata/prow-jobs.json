@@ -1,0 +1,182 @@
+{
+  "ci/prow/gke-latest-nongroovy-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-latest-nongroovy-e2e-tests",
+    "context": "ci/prow/gke-latest-nongroovy-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )gke-latest-nongroovy-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-latest-nongroovy-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-latest-qa-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-latest-qa-e2e-tests",
+    "context": "ci/prow/gke-latest-qa-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )gke-latest-qa-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-latest-qa-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-latest-ui-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-latest-ui-e2e-tests",
+    "context": "ci/prow/gke-latest-ui-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )gke-latest-ui-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-latest-ui-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-nongroovy-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-nongroovy-e2e-tests",
+    "context": "ci/prow/gke-nongroovy-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )gke-nongroovy-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-nongroovy-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-oldest-nongroovy-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-oldest-nongroovy-e2e-tests",
+    "context": "ci/prow/gke-oldest-nongroovy-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )gke-oldest-nongroovy-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-oldest-nongroovy-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-oldest-qa-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-oldest-qa-e2e-tests",
+    "context": "ci/prow/gke-oldest-qa-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )gke-oldest-qa-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-oldest-qa-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-oldest-ui-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-oldest-ui-e2e-tests",
+    "context": "ci/prow/gke-oldest-ui-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )gke-oldest-ui-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-oldest-ui-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-qa-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-qa-e2e-tests",
+    "context": "ci/prow/gke-qa-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "skip_if_only_changed": "^ui/",
+    "trigger": "(?m)^/test( | .* )gke-qa-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-qa-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/gke-ui-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-gke-ui-e2e-tests",
+    "context": "ci/prow/gke-ui-e2e-tests",
+    "always_run": true,
+    "trigger": "(?m)^/test( | .* )gke-ui-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test gke-ui-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/ocp-4-14-vm-scanning-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-ocp-4-14-vm-scanning-e2e-tests",
+    "context": "ci/prow/ocp-4-14-vm-scanning-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )ocp-4-14-vm-scanning-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test ocp-4-14-vm-scanning-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/ocp-4-18-vm-scanning-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-ocp-4-18-vm-scanning-e2e-tests",
+    "context": "ci/prow/ocp-4-18-vm-scanning-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )ocp-4-18-vm-scanning-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test ocp-4-18-vm-scanning-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/ocp-4-22-vm-scanning-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-ocp-4-22-vm-scanning-e2e-tests",
+    "context": "ci/prow/ocp-4-22-vm-scanning-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )ocp-4-22-vm-scanning-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test ocp-4-22-vm-scanning-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/ocp-5-0-vm-scanning-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-ocp-5-0-vm-scanning-e2e-tests",
+    "context": "ci/prow/ocp-5-0-vm-scanning-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )ocp-5-0-vm-scanning-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test ocp-5-0-vm-scanning-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/ocp-dev-preview-vm-scanning-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-ocp-dev-preview-vm-scanning-e2e-tests",
+    "context": "ci/prow/ocp-dev-preview-vm-scanning-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )ocp-dev-preview-vm-scanning-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test ocp-dev-preview-vm-scanning-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  },
+  "ci/prow/ocp-next-candidate-vm-scanning-e2e-tests": {
+    "name": "pull-ci-stackrox-stackrox-master-ocp-next-candidate-vm-scanning-e2e-tests",
+    "context": "ci/prow/ocp-next-candidate-vm-scanning-e2e-tests",
+    "always_run": false,
+    "optional": true,
+    "trigger": "(?m)^/test( | .* )ocp-next-candidate-vm-scanning-e2e-tests,?($|\\s.*)",
+    "rerun_command": "/test ocp-next-candidate-vm-scanning-e2e-tests",
+    "branches": [
+      "^master$",
+      "^master-"
+    ]
+  }
+}

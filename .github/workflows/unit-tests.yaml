@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -24,6 +26,12 @@ env:
   SHORTCOMMIT: "0000000"
 
 jobs:
+  native-selection:
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/native-ci-selection.yaml
+
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
     with:
@@ -34,7 +42,8 @@ jobs:
         ^.github/actions/job-preamble/
 
   go:
-    needs: detect-changes
+    if: ${{ !cancelled() && needs.detect-changes.result == 'success' }}
+    needs: [ detect-changes, native-selection ]
     strategy:
       fail-fast: false
       matrix:
@@ -46,57 +55,66 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
+      if: &go >-
+        ${{ (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go != 'false') }}
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
     - uses: ./.github/actions/job-preamble
+      if: *go
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
     - name: Cache Go dependencies
+      if: *go
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
+      if: *go
       run: ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
+      if: *go
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
     - name: Generate junit report
-      if: always()
+      if: ${{ (always()) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go != 'false') }}
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: ${{ (always()) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go != 'false') }}
       with:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
+      if: *go
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
+      if: *go
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
+      if: *go
       run: ${{ matrix.gotags }} make -C operator/ test-helm
 
     - name: Generate junit report
-      if: always()
+      if: ${{ (always()) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go != 'false') }}
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: ${{ (always()) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go != 'false') }}
       with:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled())
+      if: ${{ ((!cancelled())) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go != 'false') }}
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -107,7 +125,8 @@ jobs:
         directory: 'junit-reports'
 
   go-postgres:
-    needs: detect-changes
+    if: ${{ !cancelled() && needs.detect-changes.result == 'success' }}
+    needs: [ detect-changes, native-selection ]
     strategy:
       fail-fast: false
       matrix:
@@ -122,12 +141,14 @@ jobs:
       POSTGRES_PASSWORD: testpassword
     steps:
     - name: Checkout
+      if: &go-postgres >-
+        ${{ (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go-postgres != 'false') }}
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
     # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
     # Tests (e.g. central/splunk) require byte-order collation.
     - name: Start Postgres (pre-installed)
-      if: matrix.pg == 'default'
+      if: ${{ (matrix.pg == 'default') && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go-postgres != 'false') }}
       run: |
         # Run on tmpfs to avoid disk I/O overhead in tests.
         PG_VER=$(pg_lsclusters -h | awk '{print $1}')
@@ -140,7 +161,7 @@ jobs:
 
     # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
-      if: matrix.pg != 'default'
+      if: ${{ (matrix.pg != 'default') && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go-postgres != 'false') }}
       run: |
         docker build -t postgres-test -f .github/test-images/postgres.dockerfile .
         docker run --rm -d --name postgres --network=host \
@@ -151,15 +172,18 @@ jobs:
           postgres-test
 
     - uses: ./.github/actions/job-preamble
+      if: *go-postgres
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
+      if: *go-postgres
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
+      if: *go-postgres
       run: |
         if [ "${{ matrix.pg }}" = "default" ]; then
           timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
@@ -170,25 +194,27 @@ jobs:
         fi
 
     - name: Go Unit Tests
+      if: *go-postgres
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
     - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
+      if: *go-postgres
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
     - name: Generate junit report
-      if: always()
+      if: ${{ (always()) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go-postgres != 'false') }}
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: ${{ (always()) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go-postgres != 'false') }}
       with:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: ${{ ((!cancelled())) && (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go-postgres != 'false') }}
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -202,8 +228,12 @@ jobs:
   # they compile and execute without errors. A single postgres version is
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [ detect-changes, native-selection ]
+    if: >-
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.ui_only) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.go-bench != 'false') }}
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
@@ -258,11 +288,12 @@ jobs:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
-    needs: detect-changes
+    needs: [ detect-changes, native-selection ]
     if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^ui/') || contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.ui != 'false') }}
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -312,11 +343,12 @@ jobs:
         directory: 'ui/apps/platform/test-results/reports'
 
   ui-component:
-    needs: detect-changes
+    needs: [ detect-changes, native-selection ]
     if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^ui/') || contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.ui-component != 'false') }}
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -377,8 +409,12 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [ detect-changes, native-selection ]
+    if: >-
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.ui_only) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.local-roxctl-tests != 'false') }}
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -423,8 +459,12 @@ jobs:
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [ detect-changes, native-selection ]
+    if: >-
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.ui_only) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.shell-unit-tests != 'false') }}
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -481,8 +521,12 @@ jobs:
         run: make -C .openshift-ci test
 
   sensor-integration-tests:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [ detect-changes, native-selection ]
+    if: >-
+      ${{ !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (!needs.detect-changes.outputs.ui_only) &&
+      (needs.native-selection.outputs.enforced != 'true' || needs.native-selection.outputs.sensor-integration-tests != 'false') }}
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-24.04
