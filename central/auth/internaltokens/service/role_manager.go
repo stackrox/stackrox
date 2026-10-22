@@ -35,8 +35,20 @@ func (rm *roleManager) createSensorMetricsRole(
 	if err != nil {
 		return nil, err
 	}
+	if err := validateSensorMetricsRole(role); err != nil {
+		return nil, err
+	}
 	role.RoleName = centralproxy.SecuredClusterMetricsRole
 	return role, nil
+}
+
+func validateSensorMetricsRole(role *tokens.InternalRole) error {
+	for access := range role.Permissions {
+		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
+			return errox.InvalidArgs.New("Sensor metrics permission set grants non-read-only access")
+		}
+	}
+	return nil
 }
 
 func (rm *roleManager) createRoleForRoxClaims(
