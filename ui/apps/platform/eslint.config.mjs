@@ -1007,7 +1007,6 @@ export default [
             'src/Components/visuals/Sunburst.jsx', // deprecated
             'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
             'src/Containers/Login/LoginPage.jsx', // rewrite
-            'src/Containers/MainPage/asyncComponent.tsx', // replace
             'src/Containers/Risk/KeyValuePairs.jsx', // rewrite?
         ],
 
