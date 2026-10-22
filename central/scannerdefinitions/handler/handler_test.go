@@ -321,7 +321,30 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 		s.Equalf(http.StatusBadRequest, w.Result().StatusCode, "body: %s", w.Body.String())
 		s.Contains(w.Body.String(), "the uploaded bundle is incompatible with release version number")
 	})
-	s.T().Run("missing v2 definition", func(t *testing.T) {
+	s.T().Run("missing v2 definition is accepted when legacy scanner is disabled", func(t *testing.T) {
+		// Scanner V2 is removed in 5.0; a V4-only offline bundle must be accepted
+		// when the legacy scanner is disabled (the default).
+		h := New(s.datastore, handlerOpts{})
+		w := httptest.NewRecorder()
+		prev := mainVersionVariants
+		mainVersionVariants = map[string]bool{"development": true}
+		t.Cleanup(func() {
+			mainVersionVariants = prev
+		})
+
+		req := s.postRequestV4(newZipBuilder(t).
+			addFile("v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder(t).
+				addFile("manifest.json", "Scanner V4 manifest", []byte(`{
+  "version": "dev",
+  "release_versions": "development"
+}`)).
+				buildBuffer().Bytes()).
+			buildBuffer())
+		h.ServeHTTP(w, req)
+		s.Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
+	})
+	s.T().Run("missing v2 definition is rejected when legacy scanner is enabled", func(t *testing.T) {
+		t.Setenv(features.LegacyScanner.EnvVar(), "true")
 		h := New(s.datastore, handlerOpts{})
 		w := httptest.NewRecorder()
 
