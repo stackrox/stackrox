@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralproxy"
@@ -169,32 +168,6 @@ func TestEnforce(t *testing.T) {
 				Lifetime:         durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
-		},
-		"console permission set cannot request generic scope": {
-			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetId:   centralproxy.ConsoleProxyPermissionSetID,
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}},
-				Lifetime:          durationpb.New(30 * time.Minute),
-			},
-			clusterID:   fixtureconsts.Cluster1,
-			expectError: true,
-		},
-		"legacy permissions can request independent scope": {
-			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				Permissions:       map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/v1/deployments"}},
-				Lifetime:          durationpb.New(30 * time.Minute),
-			},
-			clusterID: fixtureconsts.Cluster1,
-		},
-		"legacy permissions reject invalid scope": {
-			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				Permissions:       map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/%6detrics"}},
-				Lifetime:          durationpb.New(30 * time.Minute),
-			},
-			clusterID:   fixtureconsts.Cluster1,
-			expectError: true,
 		},
 		"console permission set with namespace scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{

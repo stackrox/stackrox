@@ -8,7 +8,6 @@ import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	durationpb1 "github.com/planetscale/vtprotobuf/types/known/durationpb"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
@@ -48,17 +47,6 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenFor
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
 		r.PermissionSetIds = tmpContainer
-	}
-	if rhs := m.HttpRequestScopes; rhs != nil {
-		tmpContainer := make([]*v1.HTTPRequestScope, len(rhs))
-		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *v1.HTTPRequestScope }); ok {
-				tmpContainer[k] = vtpb.CloneVT()
-			} else {
-				tmpContainer[k] = proto.Clone(v).(*v1.HTTPRequestScope)
-			}
-		}
-		r.HttpRequestScopes = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -161,29 +149,6 @@ func (this *GenerateTokenForPermissionsAndScopeRequest) EqualVT(that *GenerateTo
 			return false
 		}
 	}
-	if len(this.HttpRequestScopes) != len(that.HttpRequestScopes) {
-		return false
-	}
-	for i, vx := range this.HttpRequestScopes {
-		vy := that.HttpRequestScopes[i]
-		if p, q := vx, vy; p != q {
-			if p == nil {
-				p = &v1.HTTPRequestScope{}
-			}
-			if q == nil {
-				q = &v1.HTTPRequestScope{}
-			}
-			if equal, ok := interface{}(p).(interface {
-				EqualVT(*v1.HTTPRequestScope) bool
-			}); ok {
-				if !equal.EqualVT(q) {
-					return false
-				}
-			} else if !proto.Equal(p, q) {
-				return false
-			}
-		}
-	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -273,30 +238,6 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.HttpRequestScopes) > 0 {
-		for iNdEx := len(m.HttpRequestScopes) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.HttpRequestScopes[iNdEx]).(interface {
-				MarshalToSizedBufferVT([]byte) (int, error)
-			}); ok {
-				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-			} else {
-				encoded, err := proto.Marshal(m.HttpRequestScopes[iNdEx])
-				if err != nil {
-					return 0, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			}
-			i--
-			dAtA[i] = 0x32
-		}
 	}
 	if len(m.PermissionSetIds) > 0 {
 		for iNdEx := len(m.PermissionSetIds) - 1; iNdEx >= 0; iNdEx-- {
@@ -486,18 +427,6 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 	if len(m.PermissionSetIds) > 0 {
 		for _, s := range m.PermissionSetIds {
 			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
-	}
-	if len(m.HttpRequestScopes) > 0 {
-		for _, e := range m.HttpRequestScopes {
-			if size, ok := interface{}(e).(interface {
-				SizeVT() int
-			}); ok {
-				l = size.SizeVT()
-			} else {
-				l = proto.Size(e)
-			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
@@ -817,48 +746,6 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			m.PermissionSetIds = append(m.PermissionSetIds, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HttpRequestScopes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.HttpRequestScopes = append(m.HttpRequestScopes, &v1.HTTPRequestScope{})
-			if unmarshal, ok := interface{}(m.HttpRequestScopes[len(m.HttpRequestScopes)-1]).(interface {
-				UnmarshalVT([]byte) error
-			}); ok {
-				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.HttpRequestScopes[len(m.HttpRequestScopes)-1]); err != nil {
-					return err
-				}
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1387,48 +1274,6 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []by
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.PermissionSetIds = append(m.PermissionSetIds, stringValue)
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HttpRequestScopes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.HttpRequestScopes = append(m.HttpRequestScopes, &v1.HTTPRequestScope{})
-			if unmarshal, ok := interface{}(m.HttpRequestScopes[len(m.HttpRequestScopes)-1]).(interface {
-				UnmarshalVTUnsafe([]byte) error
-			}); ok {
-				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.HttpRequestScopes[len(m.HttpRequestScopes)-1]); err != nil {
-					return err
-				}
-			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

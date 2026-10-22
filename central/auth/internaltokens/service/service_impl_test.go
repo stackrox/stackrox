@@ -9,7 +9,6 @@ import (
 
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
-	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -317,12 +316,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "combined-token"},
 		},
-		"success - legacy permissions with HTTP scope": {
+		"success - standard request": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				Permissions:       deploymentPermission,
-				ClusterScopes:     []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:          testExpirationDuration,
-				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/v1/deployments"}},
+				Permissions:   deploymentPermission,
+				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:      testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {
@@ -343,7 +341,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
-					HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}},
 				}
 				mocks.issuer.EXPECT().
 					Issue(gomock.Any(), expectedClaims, gomock.Any()).
