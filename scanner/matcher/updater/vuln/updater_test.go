@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/klauspost/compress/zstd"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -798,6 +799,30 @@ func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
 	err = u.Update(test.Logging(t))
 	assert.ErrorContains(t, err, "nvd.json.zst")
 	assert.Equal(t, 3, importCallCount, "all three bundles must be attempted")
+
+	families, gatherErr := prometheus.DefaultGatherer.Gather()
+	require.NoError(t, gatherErr)
+	outcomes := make(map[string]string)
+	var candidateSHA string
+	for _, family := range families {
+		if family.GetName() != "rox_scanner_vulnerability_bundle_import_result" {
+			continue
+		}
+		for _, metric := range family.GetMetric() {
+			labels := make(map[string]string)
+			for _, label := range metric.GetLabel() {
+				labels[label.GetName()] = label.GetValue()
+			}
+			require.Equal(t, 64, len(labels["sha256"]))
+			if candidateSHA == "" {
+				candidateSHA = labels["sha256"]
+			}
+			assert.Equal(t, candidateSHA, labels["sha256"])
+			assert.Equal(t, float64(1), metric.GetGauge().GetValue())
+			outcomes[labels["source"]] = labels["status"]
+		}
+	}
+	assert.Equal(t, map[string]string{"alpine": "success", "nvd": "failure", "rhel-vex": "success"}, outcomes)
 }
 
 func TestIsRetryableDialError(t *testing.T) {
