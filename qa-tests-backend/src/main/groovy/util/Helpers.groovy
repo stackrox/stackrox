@@ -180,7 +180,9 @@ class Helpers {
         try {
             Path imageScans = Paths.get(Env.QA_TEST_DEBUG_LOGS).resolve('image-scans')
             Files.createDirectories(imageScans)
-            Files.writeString(imageScans.resolve(saveName), JsonFormat.printer().print(message))
+            Path snapshot = imageScans.resolve(saveName)
+            Files.writeString(snapshot, JsonFormat.printer().print(message))
+            log.info("Saved diagnostic snapshot to ${snapshot.toAbsolutePath()}")
         } catch (Exception e) {
             log.warn("Could not save diagnostic snapshot ${saveName}", e)
         }
