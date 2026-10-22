@@ -74,8 +74,12 @@ function PolicyScopeForm(): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const { values, handleChange, setFieldValue } = useFormikContext<ClientPolicy>();
-    const { scope, excludedDeploymentScopes, excludedImageNames } = values;
-    const excludedWorkloadKinds = values.excludedWorkloadKinds ?? [];
+    const {
+        scope,
+        excludedDeploymentScopes,
+        excludedImageNames,
+        excludedWorkloadKinds = [],
+    } = values;
 
     const showWorkloadKindExclusion = isFeatureFlagEnabled('ROX_POLICY_WORKLOAD_KIND_EXCLUSION');
 
