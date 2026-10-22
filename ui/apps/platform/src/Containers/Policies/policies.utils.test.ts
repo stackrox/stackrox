@@ -959,7 +959,7 @@ describe('policies.utils', () => {
         });
     });
 
-    describe('workload kind exclusion copy', () => {
+    describe('workload kind exclusion displayed text', () => {
         test('formats review labels and wizard info text', () => {
             expect(formatWorkloadKindList(['JOB', 'CRON_JOB'])).toEqual('CronJobs, Jobs');
             expect(formatWorkloadKindExclusionMessage([])).toEqual(
