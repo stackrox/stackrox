@@ -32,7 +32,7 @@ func TestExtractorEnforcesHTTPRequestScope(t *testing.T) {
 	scopedToken := &tokens.TokenInfo{
 		Claims: &tokens.Claims{RoxClaims: tokens.RoxClaims{
 			InternalRoles:     []*tokens.InternalRole{{RoleName: "metrics"}},
-			HTTPRequestScopes: []tokens.HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/metrics": {"GET"}},
 		}},
 		Sources: []tokens.Source{provider},
 	}

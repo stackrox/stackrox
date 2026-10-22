@@ -28,6 +28,18 @@ func HTTPRequestScopesFromProto(requested []*v1.HTTPRequestScope) ([]HTTPRequest
 	return scopes, nil
 }
 
+// HTTPRequestScopesByPath groups validated method/path pairs for signing.
+func HTTPRequestScopesByPath(scopes []HTTPRequestScope) HTTPRequestScopes {
+	if len(scopes) == 0 {
+		return nil
+	}
+	byPath := make(HTTPRequestScopes)
+	for _, scope := range scopes {
+		byPath[scope.Path] = append(byPath[scope.Path], scope.Method)
+	}
+	return byPath
+}
+
 // ValidateHTTPRequestScopes checks an optional list of token restrictions.
 // Callers must validate scopes before signing them into a token.
 func ValidateHTTPRequestScopes(scopes []HTTPRequestScope) error {
@@ -49,7 +61,7 @@ func ValidateHTTPRequestScopes(scopes []HTTPRequestScope) error {
 
 // AllowsHTTPRequest checks the signed HTTP scope against trusted request information.
 // A malformed scope or ambiguous URL fails closed.
-func AllowsHTTPRequest(scopes []HTTPRequestScope, ri requestinfo.RequestInfo) bool {
+func AllowsHTTPRequest(scopes HTTPRequestScopes, ri requestinfo.RequestInfo) bool {
 	if len(scopes) == 0 || ri.HTTPRequest == nil || ri.HTTPRequest.URL == nil {
 		return false
 	}
@@ -57,12 +69,14 @@ func AllowsHTTPRequest(scopes []HTTPRequestScope, ri requestinfo.RequestInfo) bo
 	if !canonicalHTTPPath(u) {
 		return false
 	}
-	for _, scope := range scopes {
-		if !ValidHTTPRequestScope(scope) || scope.Method != ri.HTTPRequest.Method {
+	for scopedPath, methods := range scopes {
+		if scopedPath != u.Path && !(strings.HasSuffix(scopedPath, "/") && strings.HasPrefix(u.Path, scopedPath)) {
 			continue
 		}
-		if scope.Path == u.Path || (strings.HasSuffix(scope.Path, "/") && strings.HasPrefix(u.Path, scope.Path)) {
-			return true
+		for _, method := range methods {
+			if ValidHTTPRequestScope(HTTPRequestScope{Method: method, Path: scopedPath}) && method == ri.HTTPRequest.Method {
+				return true
+			}
 		}
 	}
 	return false

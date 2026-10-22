@@ -18,7 +18,7 @@ func TestIssueRoleTokenHTTPRequestScope(t *testing.T) {
 	issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 		RoleNames:         []string{"Analyst"},
 		Name:              "test",
-		HTTPRequestScopes: scopes,
+		HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
 	}).Return(nil, issueError)
 	backend := &backendImpl{issuer: issuer}
 	_, _, err := backend.IssueRoleToken(t.Context(), "test", []string{"Analyst"}, nil, scopes)

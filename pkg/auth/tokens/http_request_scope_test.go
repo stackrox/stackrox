@@ -10,10 +10,10 @@ import (
 )
 
 func TestAllowsHTTPRequest(t *testing.T) {
-	scopes := []HTTPRequestScope{
-		{Method: "GET", Path: "/metrics"},
-		{Method: "GET", Path: "/v1/telemetry/"},
-		{Method: "POST", Path: "/api/graphql"},
+	scopes := HTTPRequestScopes{
+		"/metrics":       {"GET"},
+		"/v1/telemetry/": {"GET"},
+		"/api/graphql":   {"POST"},
 	}
 	for name, tc := range map[string]struct {
 		method  string
@@ -80,4 +80,16 @@ func TestValidHTTPRequestScope(t *testing.T) {
 	}
 	assert.True(t, ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: "/metrics"}))
 	assert.True(t, ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: "/v1/telemetry/"}))
+}
+
+func TestHTTPRequestScopesByPath(t *testing.T) {
+	assert.Equal(t, HTTPRequestScopes{
+		"/v1/metadata": {"GET", "HEAD"},
+		"/api/graphql": {"POST"},
+	}, HTTPRequestScopesByPath([]HTTPRequestScope{
+		{Method: "GET", Path: "/v1/metadata"},
+		{Method: "HEAD", Path: "/v1/metadata"},
+		{Method: "POST", Path: "/api/graphql"},
+	}))
+	assert.Nil(t, HTTPRequestScopesByPath(nil))
 }
