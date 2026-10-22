@@ -3,6 +3,7 @@ package tokenbased
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -24,6 +25,42 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/metadata"
 )
+
+func TestExtractorEnforcesHTTPRequestScope(t *testing.T) {
+	te := getTestExtractor(t)
+	provider := createEnabledMockAuthProvider(te.mockCtrl)
+	scopedToken := &tokens.TokenInfo{
+		Claims: &tokens.Claims{RoxClaims: tokens.RoxClaims{
+			InternalRoles:     []*tokens.InternalRole{{RoleName: "metrics"}},
+			HTTPRequestScopes: []tokens.HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
+		}},
+		Sources: []tokens.Source{provider},
+	}
+	te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").AnyTimes().Return(scopedToken, nil)
+	for name, tc := range map[string]struct {
+		request *requestinfo.HTTPRequest
+		allowed bool
+	}{
+		"metrics HTTP route": {request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/metrics"}}, allowed: true},
+		"wrong method":       {request: &requestinfo.HTTPRequest{Method: "POST", URL: &url.URL{Path: "/metrics"}}},
+		"wrong route":        {request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/v1/metadata"}}},
+		"direct gRPC":        {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			id, err := te.extractor.IdentityForRequest(t.Context(), requestinfo.RequestInfo{
+				Metadata:    map[string][]string{"authorization": {"Bearer token"}},
+				HTTPRequest: tc.request,
+			})
+			if tc.allowed {
+				assert.Nil(t, err)
+				assert.NotNil(t, id)
+			} else {
+				assert.Nil(t, id)
+				assert.Error(t, err)
+			}
+		})
+	}
+}
 
 const (
 	mockSourceID  = "mock source ID"
