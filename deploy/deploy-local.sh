@@ -8,4 +8,4 @@ export MONITORING_SUPPORT="${MONITORING_SUPPORT:-false}"
 export POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
 export LOCAL_DEPLOYMENT="true"
 
-exec "${DIR}/deploy.sh"
+exec "${DIR}/deploy.sh" "$@"
