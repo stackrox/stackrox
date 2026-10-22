@@ -4,6 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -39,6 +42,14 @@ func TestIssueTokenJSON(t *testing.T) {
 		}
 		info, err := issuer.Issue(context.Background(), roxClaims)
 		require.NoError(t, err, "Should successfully encode InternalRole to JWT")
+		parts := strings.Split(info.Token, ".")
+		require.Len(t, parts, 3)
+		payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+		require.NoError(t, err)
+		var signedClaims map[string]json.RawMessage
+		require.NoError(t, json.Unmarshal(payload, &signedClaims))
+		assert.Contains(t, signedClaims, "http")
+		assert.NotContains(t, signedClaims, "http_request_scopes")
 
 		parsed, err := validator.Validate(context.Background(), info.Token)
 		require.NoError(t, err)
