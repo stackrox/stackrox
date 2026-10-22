@@ -23,6 +23,7 @@ import (
 	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
+	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
 
@@ -116,8 +117,11 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	// The http client for pulling data from security sources.
 	httpClient := &http.Client{
 		Transport: &rateLimitedTransport{
-			limiter:   rate.NewLimiter(rate.Every(interval), 1),
-			transport: http.DefaultTransport,
+			limiter: rate.NewLimiter(rate.Every(interval), 1),
+			transport: &userAgentTransport{
+				transport: http.DefaultTransport,
+				userAgent: updaterUserAgent(version.Version),
+			},
 		},
 	}
 
