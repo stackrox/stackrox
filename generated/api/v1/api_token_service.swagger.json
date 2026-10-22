@@ -291,15 +291,18 @@
     "v1HTTPRequestScope": {
       "type": "object",
       "properties": {
-        "method": {
-          "type": "string"
-        },
         "path": {
           "type": "string",
           "description": "A trailing slash denotes a path prefix; otherwise the path matches exactly."
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
-      "description": "HTTPRequestScope restricts a token to an HTTP method and path."
+      "description": "HTTPRequestScope restricts a token to the given methods on a path.\nAn empty methods list denies all methods on this path."
     },
     "v1ListAllowedTokenRolesResponse": {
       "type": "object",

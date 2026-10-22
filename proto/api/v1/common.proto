@@ -9,11 +9,12 @@ message ResourceByID {
   string id = 1;
 }
 
-// HTTPRequestScope restricts a token to an HTTP method and path.
+// HTTPRequestScope restricts a token to the given methods on a path.
+// An empty methods list denies all methods on this path.
 message HTTPRequestScope {
-  string method = 1;
   // A trailing slash denotes a path prefix; otherwise the path matches exactly.
-  string path = 2;
+  string path = 1;
+  repeated string methods = 2;
 }
 
 // EXPERIMENTAL.

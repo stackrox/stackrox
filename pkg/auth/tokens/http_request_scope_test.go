@@ -78,18 +78,31 @@ func TestAllowsHTTPRequestMostSpecificPath(t *testing.T) {
 
 func TestHTTPRequestScopesFromProto(t *testing.T) {
 	for name, requested := range map[string][]*v1.HTTPRequestScope{
-		"duplicate": {{Method: "GET", Path: "/metrics"}, {Method: "GET", Path: "/metrics"}},
-		"invalid":   {{Method: "GET", Path: "/%6detrics"}},
-		"nil entry": {nil},
+		"duplicate path":   {{Path: "/metrics", Methods: []string{"GET"}}, {Path: "/metrics", Methods: []string{"POST"}}},
+		"duplicate method": {{Path: "/metrics", Methods: []string{"GET", "GET"}}},
+		"invalid path":     {{Path: "/%6detrics", Methods: []string{"GET"}}},
+		"invalid method":   {{Path: "/metrics", Methods: []string{"Get"}}},
+		"empty method":     {{Path: "/metrics", Methods: []string{""}}},
+		"nil entry":        {nil},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := HTTPRequestScopesFromProto(requested)
 			assert.Error(t, err)
 		})
 	}
-	scopes, err := HTTPRequestScopesFromProto([]*v1.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}})
+	scopes, err := HTTPRequestScopesFromProto([]*v1.HTTPRequestScope{
+		{Path: "/v1/metadata", Methods: []string{"GET", "HEAD"}},
+		{Path: "/v1/blocked/"},
+	})
 	assert.NoError(t, err)
-	assert.Equal(t, []HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}}, scopes)
+	assert.Equal(t, HTTPRequestScopes{
+		"/v1/metadata": {"GET", "HEAD"},
+		"/v1/blocked/": {},
+	}, scopes)
+	assert.NotNil(t, scopes["/v1/blocked/"])
+	assert.False(t, AllowsHTTPRequest(scopes, requestinfo.RequestInfo{
+		HTTPRequest: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/v1/blocked/item"}},
+	}))
 	scopes, err = HTTPRequestScopesFromProto(nil)
 	assert.NoError(t, err)
 	assert.Nil(t, scopes)

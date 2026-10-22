@@ -14,7 +14,7 @@ import (
 func TestIssueRoleTokenHTTPRequestScope(t *testing.T) {
 	issuer := tokensMocks.NewMockIssuer(gomock.NewController(t))
 	issueError := errors.New("issue failed")
-	scopes := []tokens.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}}
+	scopes := tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}}
 	issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 		RoleNames:         []string{"Analyst"},
 		Name:              "test",
@@ -25,6 +25,14 @@ func TestIssueRoleTokenHTTPRequestScope(t *testing.T) {
 	assert.ErrorIs(t, err, issueError)
 
 	_, _, err = backend.IssueRoleToken(t.Context(), "test", []string{"Analyst"}, nil,
-		[]tokens.HTTPRequestScope{{Method: "POST", Path: "/v1/../admin"}})
+		tokens.HTTPRequestScopes{"/v1/../admin": {"POST"}})
 	assert.ErrorIs(t, err, errox.InvalidArgs)
+
+	issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+		RoleNames: []string{"Analyst"}, Name: "test",
+		HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/metadata": {}},
+	}).Return(nil, issueError)
+	_, _, err = backend.IssueRoleToken(t.Context(), "test", []string{"Analyst"}, nil,
+		tokens.HTTPRequestScopes{"/v1/metadata": {}})
+	assert.ErrorIs(t, err, issueError)
 }

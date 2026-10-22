@@ -11,16 +11,22 @@ import (
 )
 
 // HTTPRequestScopesFromProto converts and validates optional request scopes.
-func HTTPRequestScopesFromProto(requested []*v1.HTTPRequestScope) ([]HTTPRequestScope, error) {
+func HTTPRequestScopesFromProto(requested []*v1.HTTPRequestScope) (HTTPRequestScopes, error) {
 	if len(requested) == 0 {
 		return nil, nil
 	}
 	if len(requested) > 32 {
 		return nil, fmt.Errorf("too many HTTP request scopes: %d", len(requested))
 	}
-	scopes := make([]HTTPRequestScope, 0, len(requested))
+	scopes := make(HTTPRequestScopes, len(requested))
 	for _, scope := range requested {
-		scopes = append(scopes, HTTPRequestScope{Method: scope.GetMethod(), Path: scope.GetPath()})
+		if scope == nil {
+			return nil, fmt.Errorf("nil HTTP request scope")
+		}
+		if _, found := scopes[scope.GetPath()]; found {
+			return nil, fmt.Errorf("duplicate HTTP request path %q", scope.GetPath())
+		}
+		scopes[scope.GetPath()] = append([]string{}, scope.GetMethods()...)
 	}
 	if err := ValidateHTTPRequestScopes(scopes); err != nil {
 		return nil, err
@@ -40,21 +46,31 @@ func HTTPRequestScopesByPath(scopes []HTTPRequestScope) HTTPRequestScopes {
 	return byPath
 }
 
-// ValidateHTTPRequestScopes checks an optional list of token restrictions.
+// ValidateHTTPRequestScopes checks optional path-to-method restrictions.
 // Callers must validate scopes before signing them into a token.
-func ValidateHTTPRequestScopes(scopes []HTTPRequestScope) error {
+func ValidateHTTPRequestScopes(scopes HTTPRequestScopes) error {
 	if len(scopes) > 32 {
 		return fmt.Errorf("too many HTTP request scopes: %d", len(scopes))
 	}
-	seen := make(map[HTTPRequestScope]struct{}, len(scopes))
-	for _, scope := range scopes {
-		if !ValidHTTPRequestScope(scope) {
-			return fmt.Errorf("invalid HTTP request scope %q %q", scope.Method, scope.Path)
+	methodCount := 0
+	for path, methods := range scopes {
+		if !validHTTPRequestPath(path) {
+			return fmt.Errorf("invalid HTTP request path %q", path)
 		}
-		if _, found := seen[scope]; found {
-			return fmt.Errorf("duplicate HTTP request scope %q %q", scope.Method, scope.Path)
+		seen := make(map[string]struct{}, len(methods))
+		for _, method := range methods {
+			methodCount++
+			if methodCount > 32 {
+				return fmt.Errorf("too many HTTP request methods")
+			}
+			if !ValidHTTPRequestScope(HTTPRequestScope{Method: method, Path: path}) {
+				return fmt.Errorf("invalid HTTP request method %q for path %q", method, path)
+			}
+			if _, found := seen[method]; found {
+				return fmt.Errorf("duplicate HTTP request method %q for path %q", method, path)
+			}
+			seen[method] = struct{}{}
 		}
-		seen[scope] = struct{}{}
 	}
 	return nil
 }

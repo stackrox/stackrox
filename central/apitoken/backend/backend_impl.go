@@ -27,15 +27,14 @@ func (c *backendImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest
 	return c.tokenStore.GetTokens(ctx, req)
 }
 
-func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time, httpScopes []tokens.HTTPRequestScope) (string, *storage.TokenMetadata, error) {
+func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time, httpScopes tokens.HTTPRequestScopes) (string, *storage.TokenMetadata, error) {
 	if expireAt != nil && expireAt.Before(time.Now()) {
 		return "", nil, errox.InvalidArgs.New("Expiration date cannot be in the past")
 	}
 	if err := tokens.ValidateHTTPRequestScopes(httpScopes); err != nil {
 		return "", nil, errox.InvalidArgs.CausedBy(err)
 	}
-	claims := tokens.RoxClaims{RoleNames: roleNames, Name: name,
-		HTTPRequestScopes: tokens.HTTPRequestScopesByPath(httpScopes)}
+	claims := tokens.RoxClaims{RoleNames: roleNames, Name: name, HTTPRequestScopes: httpScopes}
 	var opts []tokens.Option
 	if expireAt != nil {
 		opts = append(opts, tokens.WithExpiry(*expireAt))

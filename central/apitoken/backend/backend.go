@@ -15,7 +15,7 @@ type Backend interface {
 	GetTokenOrNil(ctx context.Context, tokenID string) (*storage.TokenMetadata, error)
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 
-	IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time, httpScopes []tokens.HTTPRequestScope) (string, *storage.TokenMetadata, error)
+	IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time, httpScopes tokens.HTTPRequestScopes) (string, *storage.TokenMetadata, error)
 	RevokeToken(ctx context.Context, tokenID string) (bool, error)
 }
 
