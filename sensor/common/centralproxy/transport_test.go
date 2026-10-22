@@ -146,6 +146,7 @@ func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, calls.Load())
 	assert.Equal(t, centralproxy.MetricsPermissionSetID, client.lastRequest.GetPermissionSetId())
+	assert.Equal(t, []*centralv1.HTTPRequestScope{{Method: "GET", Path: "/metrics"}}, client.lastRequest.GetHttpRequestScopes())
 	assert.Empty(t, client.lastRequest.GetPermissions())
 	assert.Empty(t, client.lastRequest.GetClusterScopes())
 
