@@ -50,6 +50,7 @@ func TestAllowsHTTPRequest(t *testing.T) {
 
 func TestAllowsHTTPRequestMostSpecificPath(t *testing.T) {
 	scopes := HTTPRequestScopes{
+		"/":              {"GET"},
 		"/path/":         {"GET", "POST"},
 		"/path/subpath":  {"GET"},
 		"/path/blocked/": {},
@@ -57,8 +58,13 @@ func TestAllowsHTTPRequestMostSpecificPath(t *testing.T) {
 	for name, tc := range map[string]struct {
 		method  string
 		path    string
+		rawPath string
 		allowed bool
 	}{
+		"root path":            {method: "GET", path: "/", allowed: true},
+		"root prefix":          {method: "GET", path: "/other", allowed: true},
+		"root wrong method":    {method: "POST", path: "/other"},
+		"root encoded path":    {method: "GET", path: "/metrics", rawPath: "/%6detrics"},
 		"exact path GET":       {method: "GET", path: "/path/subpath", allowed: true},
 		"exact path POST":      {method: "POST", path: "/path/subpath"},
 		"prefix descendant":    {method: "POST", path: "/path/another", allowed: true},
@@ -70,7 +76,7 @@ func TestAllowsHTTPRequestMostSpecificPath(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.allowed, AllowsHTTPRequest(scopes, requestinfo.RequestInfo{
-				HTTPRequest: &requestinfo.HTTPRequest{Method: tc.method, URL: &url.URL{Path: tc.path}},
+				HTTPRequest: &requestinfo.HTTPRequest{Method: tc.method, URL: &url.URL{Path: tc.path, RawPath: tc.rawPath}},
 			}))
 		})
 	}
@@ -99,6 +105,9 @@ func TestHTTPRequestScopesFromProto(t *testing.T) {
 		"/v1/metadata": {"GET", "HEAD"},
 		"/v1/blocked/": {},
 	}, scopes)
+	root, err := HTTPRequestScopesFromProto([]*v1.HTTPRequestScope{{Path: "/", Methods: []string{"GET"}}})
+	assert.NoError(t, err)
+	assert.Equal(t, HTTPRequestScopes{"/": {"GET"}}, root)
 	assert.NotNil(t, scopes["/v1/blocked/"])
 	assert.False(t, AllowsHTTPRequest(scopes, requestinfo.RequestInfo{
 		HTTPRequest: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/v1/blocked/item"}},
@@ -120,6 +129,7 @@ func TestValidHTTPRequestScope(t *testing.T) {
 		t.Run(name, func(t *testing.T) { assert.False(t, ValidHTTPRequestScope(scope)) })
 	}
 	assert.True(t, ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: "/metrics"}))
+	assert.True(t, ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: "/"}))
 	assert.True(t, ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: "/v1/telemetry/"}))
 }
 
