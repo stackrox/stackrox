@@ -627,7 +627,8 @@ shell-unit-tests:
 		scanner/image/db/bats \
 		image/postgres/scripts \
 		scripts \
-		tests/e2e/bats
+		tests/e2e/bats \
+		scanner/updater/ci
 
 .PHONY: ui-build
 ui-build:
