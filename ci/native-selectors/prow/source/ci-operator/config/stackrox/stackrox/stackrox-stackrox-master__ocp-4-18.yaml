@@ -1,0 +1,31 @@
+base_images:
+  ocp-4:
+    name: automation-flavors
+    namespace: stackrox
+    tag: openshift-4-stable
+build_root:
+  image_stream_tag:
+    name: apollo-ci
+    namespace: stackrox
+    tag: stackrox-ui-test-stable
+resources:
+  '*':
+    requests:
+      cpu: 2000m
+      memory: 4000Mi
+test_binary_build_commands: .openshift-ci/dispatch.sh test-binary-build-commands
+tests:
+- always_run: false
+  as: vm-scanning-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_VERSION: ocp/stable-4.18
+      TEST_SUITE: ocp-vm-scanning-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+  timeout: 7h0m0s
+zz_generated_metadata:
+  branch: master
+  org: stackrox
+  repo: stackrox
+  variant: ocp-4-18

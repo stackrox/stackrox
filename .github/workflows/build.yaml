@@ -25,7 +25,13 @@ defaults:
     shell: bash
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
   define-job-matrix:
+    needs: detect-changes
+    # Image production must survive a failed optional metadata dependency.
+    if: ${{ !cancelled() }}
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
       build-tag: ${{ steps.build-tag.outputs.tag }}
@@ -33,12 +39,33 @@ jobs:
       gotags: ${{ steps.gotags.outputs.gotags }}
       quay-tag-expiration: ${{ steps.quay-tag-expiration.outputs.expiration }}
     runs-on: ubuntu-slim
+    env:
+      CI_FILE_FACTS: ${{ needs.detect-changes.outputs.facts || '{}' }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Explain selection
+        id: selection
+        continue-on-error: true
+        uses: ./.github/actions/ci-selection-summary
+        with:
+          candidate: >-
+            ${{ !fromJSON(env.CI_FILE_FACTS).complete ||
+            contains(github.event.pull_request.labels.*.name, 'ci-run-all-tests') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'broad') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'proto') ||
+            contains(fromJSON(env.CI_FILE_FACTS).every, 'roxctl') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-byodb-tests') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-tests') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests-gke') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-gke') }}
+          enforced: ${{ false }}
+          note: Image builds stay enabled until all Prow and manual consumers are accounted for.
 
       - uses: ./.github/actions/handle-tagged-build
 

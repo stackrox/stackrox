@@ -1,0 +1,347 @@
+{
+  "base": "0a48209ff09e12c09dd250cd7c8cab64bc851965",
+  "jobs": {
+    "unit-tests.yaml/go": {
+      "structure": "adff45d11ba60c330ebc2f81741fbec4cb4a1baf1017ea4fd002c8c14cb0b8c1",
+      "steps": "13fc0ec2489fe0d962a4069fd598fbbd2491efd7a84d54995cba2fc97a510b25",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "always()",
+        "always()",
+        "success()",
+        "success()",
+        "success()",
+        "always()",
+        "always()",
+        "(!cancelled())"
+      ],
+      "needs": "detect-changes"
+    },
+    "unit-tests.yaml/go-postgres": {
+      "structure": "ee0564b094a0181b0efc5c140a86f7a9cc1e8ed3356a004ccd4c07b66e5a3bd3",
+      "steps": "3064eb17cfd54cd419e2bb45bb8171d38cafe9a97a50e1ebdc6d92310b0e8269",
+      "conditions": [
+        "success()",
+        "matrix.pg == 'default'",
+        "matrix.pg != 'default'",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "always()",
+        "always()",
+        "(!cancelled())"
+      ],
+      "needs": "detect-changes"
+    },
+    "unit-tests.yaml/sensor-integration-tests": {
+      "structure": "c41e4c22c00cd593b156514bc207731de8f290a973c0423b0e672742f4cf8731",
+      "steps": "9addfc2503e99411e2e585b94550df9652cfce3f9bff9bd537e5c43ec941875f",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "always()",
+        "always()",
+        "(!cancelled())"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "unit-tests.yaml/go-bench": {
+      "structure": "e6073a0a916c3535076aee172c827b8e51f5d0a33fd067592bc28272aa663a1d",
+      "steps": "f31568b482dff2fa71d86ead633440242d3e592f2e54a0bf06b96e9c802baa3c",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "failure()",
+        "always()",
+        "always()"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "unit-tests.yaml/ui": {
+      "structure": "289ef18817e73ca1816b30e67857b45322782d49c8f8cc6ee4a418288ff73b21",
+      "steps": "3883f4485e6a7731f81d64bbd058d82d5f734f352fa468cebbca7ebeae2350e1",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "steps.cache-ui.outputs.cache-hit != 'true'",
+        "steps.cache-ui.outputs.cache-hit == 'true'",
+        "success()",
+        "always()",
+        "(!cancelled())"
+      ],
+      "if": "!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^ui/') || contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')",
+      "needs": "detect-changes"
+    },
+    "unit-tests.yaml/ui-component": {
+      "structure": "289ef18817e73ca1816b30e67857b45322782d49c8f8cc6ee4a418288ff73b21",
+      "steps": "1ec539bf4ca88ce786d4ff84dc14741637a00c735d98a11a1b34a7e865b3fef5",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "steps.cache-ui.outputs.cache-hit != 'true'",
+        "steps.cache-ui.outputs.cache-hit == 'true'",
+        "success()",
+        "always()",
+        "always()",
+        "(!cancelled())"
+      ],
+      "if": "!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^ui/') || contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')",
+      "needs": "detect-changes"
+    },
+    "unit-tests.yaml/local-roxctl-tests": {
+      "structure": "b1cbc79b705795458b9f74fa6b953a888b0d994e549865dfafe38da03dfa7ae3",
+      "steps": "78be3f0f592c7557526102928d604b2b3ab448a5b047b1a14d2dc6bd3eac2232",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "always()",
+        "(!cancelled())"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "unit-tests.yaml/shell-unit-tests": {
+      "structure": "4913d0bb6565cf20e8b1b7c6c536fd96a9089a2ab9828a93e60e8dcb140bf3e9",
+      "steps": "2f274c981f10b19c850b36958eb1dc80ecdb73370c03f5b5df9ebcc32bae1372",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "always()",
+        "(!cancelled())"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "style.yaml/style-check": {
+      "structure": "c66916d6c28770a3df90edf0cb4c05edfcc6aa1ee805fb76a0ce4ce4d478499b",
+      "steps": "d0ffd992faed97668185fbd6b4946eee783de330a57224753b82be7b6a5d365e",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "steps.cache-ui.outputs.cache-hit != 'true'",
+        "steps.cache-ui.outputs.cache-hit == 'true'",
+        "success()",
+        "success()"
+      ]
+    },
+    "style.yaml/check-generated-files": {
+      "structure": "beed93089610bcd17710c8aee1c51e4a2b27e8c242f236c761350d9a883610ad",
+      "steps": "8c7a66050900436378bea48155fa1dcb67369e19640c63303f399c4182ac9586",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "style.yaml/golangci-lint": {
+      "structure": "7ac5ced4a335740ed2b6858cc23b09cff3a7b541d7c2c9438c7d0aa3c2580082",
+      "steps": "6c6f79c4ff11e013c8136eefc59784d17ade0fbc565c109f8d52ad98fb0a5ebe",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "github.event_name == 'push' && github.ref_name == github.event.repository.default_branch",
+        "${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}",
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "style.yaml/check-dependent-images-exist": {
+      "structure": "e6073a0a916c3535076aee172c827b8e51f5d0a33fd067592bc28272aa663a1d",
+      "steps": "bf0e45c7907be6ad8f454a87966552c3fd8fa143017859a316c977ed648d7e1c",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "github.event_name == 'push' || !github.event.pull_request.head.repo.fork\n",
+        "github.event_name == 'push' || !github.event.pull_request.head.repo.fork\n"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "style.yaml/github-actions-lint": {
+      "structure": "20710ff612fef2354ab555dfb9a3a1aa5877665b221075a85a61b653ba29c589",
+      "steps": "7ebd011618c0ef0a3102343e2037346cf6327c336d737117a03bcb1f77b5182f",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^.github/')",
+      "needs": "detect-changes"
+    },
+    "style.yaml/openshift-ci-lint": {
+      "structure": "8b58952a41d7f62a4034083ff06ec545e582da7718f12423d8f6136e9fc6c183",
+      "steps": "05ea5e75228517aaa343bc57b4996a8b21d2183dbc1db408b789eecef602f801",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files, '^.openshift-ci/')",
+      "needs": "detect-changes"
+    },
+    "check-crd-compatibility.yaml/check-crd-compatibility": {
+      "structure": "0a83ab9033327015c0ded3178fc2ae14205eff550401dabbb20f69b105edcd97",
+      "steps": "5bcbfbf64c1d7b4c0422ce775100f8e3c9ec5f679272bae346b151b60ab6d35e",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "scanner-db-integration-tests.yaml/db-integration-tests": {
+      "structure": "75b800854fda91233745b8bc229a5f0421bcd3b22d5708b4b4e93249adb4b8f3",
+      "steps": "c6c03f88c9626643f34f9aac53bff062306dff730f2304c654ae351b40726041",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "${{ !needs.detect-changes.outputs.ui_only }}",
+      "needs": "detect-changes"
+    },
+    "build.yaml/define-job-matrix": {
+      "structure": "495198ddc058f8774f929e9796da41f8896cb74882a5b98576c62a0a15e3bc91",
+      "steps": "fdc141fed8edb1b02f910a9d8845428da8ad1e5a7da848d383af0fc7c76ff948",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ]
+    },
+    "e2e-dispatch.yaml/wait-for-images": {
+      "structure": "e8dafd13c056fa36a735dd8d5914c408e8374e14185e35e1f89d14ec750d3c33",
+      "steps": "b3f528927955cb9ba2c69f0d749245800afd1088d54e693b0dd1c5bd0d0ff84b",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "needs.should-dispatch.outputs.wait-for-gha-images == 'true'",
+      "needs": [
+        "should-dispatch"
+      ]
+    },
+    "e2e-dispatch.yaml/wait-for-konflux-images": {
+      "structure": "69431d3950c6ca26731ce75a64f19571be0641e5eeb24542da949f2e7b7e964b",
+      "steps": "aefbbea4d2a3e3bc33c2c4d57938cd2644b144c62fa6a6ce0e758dc7e7dd3dbe",
+      "conditions": [
+        "success()",
+        "success()",
+        "success()",
+        "success()"
+      ],
+      "if": "needs.should-dispatch.outputs.wait-for-konflux-images == 'true'",
+      "needs": [
+        "should-dispatch"
+      ]
+    }
+  },
+  "headers": {
+    "unit-tests.yaml": "2e807d670a8699f42bd7f43152bcf3d2c61d517a0a8271b1675b9df3aaa3150a",
+    "style.yaml": "8a9852c032cf350db585c4ad35caa4ddd2bacd28f68a12344946dcf3c035b44f",
+    "check-crd-compatibility.yaml": "d444a2c2dd3556fa8d064e4d635fd4c5d8a48efce77300e8209aa52052da5fbc",
+    "scanner-db-integration-tests.yaml": "e1c0ae82814106e56efcb773d58c3ac6d0cba014683babd612a778ca62e32706",
+    "build.yaml": "4d3912a85473541e62b07119a23372b7f380a17790b5896c913c67d1b297917e",
+    "e2e-dispatch.yaml": "6a22545e8c13d45ec756e1323b5e34864eb5b9d6a4e5cf29959538c7fa0ea86e"
+  },
+  "unchangedJobs": {
+    "unit-tests.yaml/detect-changes": "ee0654f5ed8dbe512e6b25f5f42040441782cb2ef27283342ed40a6ef9cb69fd",
+    "unit-tests.yaml/openshift-ci-unit-tests": "e5bfcfb049710f816194b9b93a3c1e8b3afaf69e9682ab169888106edaa06768",
+    "unit-tests.yaml/slack-on-unit-tests-failure": "97c116790e471bbf1b96c4139ee722f4c614fbb6f1596f35cafa1edc3bddffa4",
+    "style.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0",
+    "style.yaml/misc-checks": "d0845df1d1bae97541272a0c707bf66fd83d406534d5ade3325d9fa5367a6659",
+    "style.yaml/github-actions-shellcheck": "87a8173a82a393c32b33efc5ca15b1ec981209816e0ba6d22a90e290242f80a7",
+    "style.yaml/slack-on-style-failure": "43e77f7dfc7c4eb1cb4a05bb4a7d53b65df40f0f27f2589ccc44e922550dfc77",
+    "check-crd-compatibility.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0",
+    "scanner-db-integration-tests.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0",
+    "build.yaml/pre-build-ui": "c8eb1b67dbdbe6648274027fb895eab00120677310d531c8fa49e3f603789046",
+    "build.yaml/pre-build-cli": "e5abca7f61ad322dc0919d94afbc9613fa6ccfe7abd22168eaa9b9908478c801",
+    "build.yaml/pre-build-go-binaries": "7b6854ce23de924aa91748d6666ce9f5aea56e3c4298fae203c04d1817f0b439",
+    "build.yaml/pre-build-docs": "ded3782c511ceeca8319174bf28c0a8cae074cf92c54403a089aa94a70844884",
+    "build.yaml/pre-build-oss-notice": "242528d1806bc6ca0873ebd4b374fedcec8cfbc742074bb3f94a2db732853ad5",
+    "build.yaml/build-and-push-db": "7e94c3d1159418a47b14ef61d74c7324c140c18d5b11620997b05c9ac76f9af5",
+    "build.yaml/build-operator-bundle": "0ead056899d7f6b14fdee0f0d4533c5f2556468d4ecad9e50d518e164a6dfeae",
+    "build.yaml/build-and-push-main": "e3a404475796ad04925261c9c23e88634e2df8538a9d86f5b4907a6adafea3f2",
+    "build.yaml/push-matching-collector-scanner": "aca21184647d999ccfe6f54b4f9ce391793a244559ab95bd2cd2da9c704006ad",
+    "build.yaml/push-main-manifests": "4501da11a973e218d5ffd89656554e2381f09580b806504ae9c7c308556abd92",
+    "build.yaml/build-and-push-operator": "59e9b963b3ef63d2b309fe92c83b666bd21c3b4fd9a04d943081e8a74769a28b",
+    "build.yaml/build-and-push-scanner": "bd6aded5eec777ddf2c1b57ae2052c567d98194533e230e011149a1632c8c785",
+    "build.yaml/push-scanner-manifests": "f9e2cd7944b4b3468bbcf96fcc65f4d55f5776a07f0ba5ca04d8d3b9dcce2d26",
+    "build.yaml/push-operator-manifests": "96be4d131765941f5237685f9f5f85105d198c32cfd0201fcf3cbe5ec7bd3f5c",
+    "build.yaml/scan-go-binaries": "1bdb35417d6322b2f3d8b1f9244af383c9b66b11c100afe3e90497c10f8b9828",
+    "build.yaml/slack-on-build-failure": "3339d3c4b16e2b516fde607310cba4ce6b5c4369c411cadfcf78b84eb09c0a69",
+    "e2e-dispatch.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0"
+  },
+  "children": {
+    "e2e-byodb-tests.yaml": "675840b47b7baaea0f7cba732e280c20d3136e5af43e6d94832bf0a35d54f7ea",
+    "e2e-db-backup-restore-tests.yaml": "370a3c5115642c2962075d56f6fbaf4cff4d09ea4647e132e0a103f4b011e77d",
+    "e2e-gke-upgrade-tests.yaml": "8b47a13fb94879dada18fb82e3b86a098cdc1f761a77f06f7205d9dd1f749914",
+    "e2e-nongroovy-tests-gke.yaml": "019a23b2d36b27db35c1cfd412eb8bee06b58a7d2a36976296ec04e66f2ea9d5",
+    "e2e-nongroovy-tests-gke-konflux.yaml": "b3b0d24a23d04206792f5f2b8288a40341a6ee609352b8f63ead1c81b7f46723",
+    "e2e-qa-tests-gke.yaml": "c506ffc52b12a886d4adcbc9d297556991ab2cd9860ba269e35e509f95f2d86c",
+    "e2e-qa-tests-ocp-fips-konflux.yaml": "f9f1b97a6f796749bb80a0c0bb641a228714ab359ab070cb23f951b4e8d5aca8",
+    "e2e-qa-tests-gke-konflux.yaml": "061c6743ca9ce11d1fd062718ea460155d5fe5d74ae7102b2798877d94484068"
+  }
+}

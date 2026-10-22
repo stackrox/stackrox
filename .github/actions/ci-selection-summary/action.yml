@@ -1,0 +1,38 @@
+name: Explain native CI selection
+description: Report an already evaluated candidate and expose the native enforcement condition.
+inputs:
+  candidate:
+    description: Candidate selected by the owning job's Actions expression.
+    required: true
+  enforced:
+    description: Whether the owning workflow requests enforcement for this PR.
+    required: true
+  note:
+    description: Why a prerequisite or reporting job retains work independently of its candidate.
+    default: ''
+  eligible:
+    description: Whether the owning job's event, trust, and image restrictions permit work.
+    default: 'true'
+outputs:
+  run:
+    description: Whether selection permits the job's test steps to execute.
+    value: ${{ steps.report.outputs.run }}
+runs:
+  using: composite
+  steps:
+    - id: report
+      shell: bash
+      env:
+        CANDIDATE: ${{ inputs.candidate }}
+        ENFORCED: ${{ inputs.enforced }}
+        RUN: ${{ inputs.eligible != 'false' && (inputs.enforced != 'true' || inputs.candidate != 'false') }}
+        NOTE: ${{ inputs.note }}
+      run: |
+        printf 'run=%s\n' "$RUN" >> "$GITHUB_OUTPUT"
+        printf '### Native CI selection\n\nCandidate: `%s`  \nEnforced: `%s`  \nTest steps permitted: `%s`\n\n' \
+          "$CANDIDATE" "$ENFORCED" "$RUN" >> "$GITHUB_STEP_SUMMARY"
+        printf 'This is a selection decision. Test steps and reports show which tests actually ran.\n' \
+          >> "$GITHUB_STEP_SUMMARY"
+        printf 'Inspect this job\047s Explain selection input for its rule, and detect-changes logs for the filenames.\n' \
+          >> "$GITHUB_STEP_SUMMARY"
+        printf '%s\n' "$NOTE" >> "$GITHUB_STEP_SUMMARY"

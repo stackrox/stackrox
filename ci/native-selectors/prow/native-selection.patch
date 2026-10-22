@@ -1,0 +1,39 @@
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-18.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-18.yaml
+@@ -18,6 +18,7 @@
+ - always_run: false
+   as: vm-scanning-e2e-tests
+   optional: true
++  run_if_changed: ^(central|sensor|pkg|roxctl|compliance/virtualmachines|scanner|proto|generated|operator|image|deploy|make|tests|scripts/ci|\.openshift-ci)/|^(Makefile|go\.(mod|sum)|COLLECTOR_VERSION|FACT_VERSION|ROXIE_VERSION|scripts/(lib|roxie)\.sh|\.github/workflows/build\.yaml)$|^\.github/actions/(job-preamble|handle-tagged-build)/|\.proto$
+   steps:
+     env:
+       OCP_VERSION: ocp/stable-4.18
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-22.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-22.yaml
+@@ -87,6 +87,7 @@
+ - always_run: false
+   as: vm-scanning-e2e-tests
+   optional: true
++  run_if_changed: ^(central|sensor|pkg|roxctl|compliance/virtualmachines|scanner|proto|generated|operator|image|deploy|make|tests|scripts/ci|\.openshift-ci)/|^(Makefile|go\.(mod|sum)|COLLECTOR_VERSION|FACT_VERSION|ROXIE_VERSION|scripts/(lib|roxie)\.sh|\.github/workflows/build\.yaml)$|^\.github/actions/(job-preamble|handle-tagged-build)/|\.proto$
+   steps:
+     env:
+       OCP_VERSION: ocp/candidate-4.22
+--- a/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
++++ b/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
+@@ -46,7 +46,7 @@
+ tests:
+ - as: gke-qa-e2e-tests
+   optional: true
+-  skip_if_only_changed: ^ui/
++  run_if_changed: (^go\.(mod|sum)$|^(proto|generated)/|\.proto$)
+   steps:
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false
+@@ -93,6 +93,7 @@
+ - always_run: false
+   as: gke-nongroovy-e2e-tests
+   optional: true
++  run_if_changed: (^go\.(mod|sum)$|^(proto|generated)/|\.proto$)
+   steps:
+     workflow: stackrox-stackrox-e2e-job
+ - always_run: false

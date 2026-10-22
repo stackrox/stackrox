@@ -1,0 +1,94 @@
+{
+  "broad": [
+    "^go\\.mod$",
+    "^go\\.sum$",
+    "^proto/",
+    "^generated/"
+  ],
+  "selector": [
+    "^\\.github/actions/ci-select/",
+    "^\\.github/workflows/(build|unit-tests|style|e2e-dispatch|check-crd-compatibility|scanner-db-integration-tests|ci-select-tests|ci-decision)\\.yaml$",
+    "^ci/select/",
+    "^ci/test-domains\\.(toml|yaml)$",
+    "^ci/decision-defaults$",
+    "^ci/native-selectors/",
+    "^\\.github/workflows/(native-ci-tests\\.yaml|detect-changes\\.yml)$",
+    "^\\.github/actions/ci-selection-summary/"
+  ],
+  "shell": [
+    "\\.sh$",
+    "^scripts/",
+    "^tests/.*\\.sh$"
+  ],
+  "gha": [
+    "^\\.github/workflows/"
+  ],
+  "prow": [
+    "^\\.openshift-ci/"
+  ],
+  "go": [
+    "\\.go$"
+  ],
+  "go-lint": [
+    "\\.go$",
+    "^\\.golangci\\.yml$"
+  ],
+  "bench": [
+    "^(central|sensor|pkg|roxctl|operator|scanner)/.*\\.go$"
+  ],
+  "image-versions": [
+    "^COLLECTOR_VERSION$",
+    "^FACT_VERSION$"
+  ],
+  "proto": [
+    "^proto/",
+    "^generated/",
+    "\\.proto$"
+  ],
+  "ui": [
+    "^ui/"
+  ],
+  "scanner": [
+    "^scanner/"
+  ],
+  "operator": [
+    "^operator/",
+    "\\.crd\\.yaml$",
+    "^config-controller/"
+  ],
+  "roxctl": [
+    "^roxctl/"
+  ],
+  "central": [
+    "^central/(sac|search|auth|authprovider|apitoken|user|group|role|rbac|jwt|serviceidentities)/",
+    "^central/(postgres|globaldb|globalindex|graphdb|dackbox|blob|views)/",
+    "^central/(notifier|notifiers|reports|reportconfigurations)/",
+    "^central/(externalbackups|declarativeconfig|config|installation)/",
+    "^central/(ui|graphql|grpc|endpoints)/",
+    "^central/(featureflags|development|audit|logimbue|trace)/",
+    "^central/(helmcharts|ping|version|systeminfo|docs|internal)/",
+    "^pkg/(sac|search|postgres|notifiers|migrations|renderer|backup)/"
+  ],
+  "sensor": [
+    "^sensor/(admission-control|upgrader|debugger|testutils|tests)/",
+    "^sensor/kubernetes/(fake|client|enforcer)/",
+    "^pkg/(admissioncontrol|docker|enforcers|complianceoperator|k8sintrospect|protocompat|compliance/checks|binenc)/"
+  ],
+  "shared": [
+    "^pkg/(grpc|sync|concurrency|features|logging|utils|set|retry|env|errorhelpers|testutils|mtls|x509utils|buildinfo|version|cryptoutils|urlfmt|stringutils|timestamps|cloudproviders|cloudsources|roxctl)/",
+    "^pkg/(centralsensor|kubernetes|detection|networkgraph|protoconv|sensor|alerts|images|metrics|telemetry)/"
+  ],
+  "central-communication": [
+    "^central/(cluster|deployment|image|baseimage|node|pod|namespace|secret|serviceaccount|virtualmachine)/",
+    "^central/(alert|detection|policy|policycat)/",
+    "^central/(networkbaseline|networkgraph|networkpolicies)/",
+    "^central/(complianceoperator|processindicator)/",
+    "^central/(imageintegration|delegatedregistryconfig|enrichment|reprocessor)/",
+    "^central/(sensor|sensorupgrade|clusterinit|securedclustercertgen)/",
+    "^central/(metrics|telemetry|debug|scrape|vulnmgmt|hash)/"
+  ],
+  "sensor-communication": [
+    "^sensor/common/(admissioncontroller|centralclient|centralproxy|compliance|config|detector|enforcer|networkflow|sensor|image|scannerclient|virtualmachine)/",
+    "^sensor/kubernetes/(eventpipeline|listener|complianceoperator|networkpolicies|telemetry|upgrade|clusterhealth|clustermetrics|clusterstatus|certrefresh)/"
+  ]
+}
