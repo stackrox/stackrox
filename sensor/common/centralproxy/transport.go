@@ -294,8 +294,9 @@ func (p *tokenProvider) requestPermissionSetToken(ctx context.Context, client ce
 		return "", errors.Wrap(errServiceUnavailable, "cluster ID not available")
 	}
 	response, err := client.GenerateTokenForPermissionsAndScope(ctx, &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSetId: permissionSetID,
-		Lifetime:        durationpb.New(metricsTokenTTL),
+		PermissionSetId:   permissionSetID,
+		Lifetime:          durationpb.New(metricsTokenTTL),
+		HttpRequestScopes: []*centralv1.HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "requesting metrics permission set token")
