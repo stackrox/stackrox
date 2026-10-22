@@ -27,7 +27,7 @@ spec:
           hostnames: [ "scanner-v4-indexer.com" ]
       resources:
         requests:
-          cpu: 400m
+          cpu: 200m
           memory: 1Gi
         limits:
           cpu: 1
@@ -41,7 +41,7 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: 400m
+          cpu: 200m
           memory: 1Gi
         limits:
           cpu: 1
@@ -52,7 +52,7 @@ spec:
           hostnames: [ "scanner-v4-db.com" ]
       resources:
         requests:
-          cpu: 300m
+          cpu: 200m
           memory: 500Mi
         limits:
           cpu: 1000m

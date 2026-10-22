@@ -12,7 +12,7 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: "400m"
+          cpu: 200m
           memory: "1500Mi"
         limits:
           cpu: "1000m"
@@ -24,7 +24,7 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: "400m"
+          cpu: 200m
           memory: "2Gi"
         limits:
           cpu: "1000m"
@@ -32,7 +32,7 @@ spec:
     db:
       resources:
         requests:
-          cpu: "400m"
+          cpu: 200m
           memory: "2Gi"
         limits:
           cpu: "1000m"
