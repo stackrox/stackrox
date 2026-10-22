@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.26.7
+go 1.26.10
 
 require (
 	cloud.google.com/go/artifactregistry v1.28.0
