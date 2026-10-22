@@ -1,0 +1,73 @@
+# Splunk + StackRox TA test fixture, applied by SplunkUtil.createSplunk via Fabric8 into a
+# per-test namespace. Defines the Splunk Deployment plus the collector (HEC, :8088) and
+# syslog (:514) Services the Splunk/syslog E2E tests post to; the :8089 management API is
+# reached via a client-side port-forward set up in SplunkUtil (not a cluster resource).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: splunk
+  labels:
+    app: splunk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: splunk
+  template:
+    metadata:
+      labels:
+        app: splunk
+        name: splunk
+    spec:
+      containers:
+        - name: splunk
+          image: quay.io/rhacs-eng/qa:splunk-ta-test-dev-image-update
+          ports:
+            - containerPort: 8000
+            - containerPort: 8088
+            - containerPort: 8089
+            - containerPort: 514
+          env:
+            - name: SPLUNK_START_ARGS
+              value: "--accept-license"
+            - name: SPLUNK_USER
+              value: "root"
+            - name: SPLUNK_PASSWORD
+              value: "helloworld"
+            - name: SPLUNK_LAUNCH_CONF
+              value: "OPTIMISTIC_ABOUT_FILE_LOCKING=1"
+          resources:
+            requests:
+              cpu: "500m"
+            limits:
+              memory: "3Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: splunk-collector
+  labels:
+    app: splunk
+spec:
+  type: ClusterIP
+  selector:
+    app: splunk
+  ports:
+    - port: 8088
+      targetPort: 8088
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: splunk-syslog
+  labels:
+    app: splunk
+spec:
+  type: ClusterIP
+  selector:
+    app: splunk
+  ports:
+    - port: 514
+      targetPort: 514
+      protocol: TCP

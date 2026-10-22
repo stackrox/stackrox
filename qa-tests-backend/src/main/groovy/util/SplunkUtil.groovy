@@ -5,6 +5,7 @@ import static util.Helpers.withRetry
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
 import groovy.util.logging.Slf4j
@@ -31,32 +32,12 @@ import org.junit.AssumptionViolatedException
 class SplunkUtil {
     public static final String SPLUNK_ADMIN_PASSWORD = "helloworld"
     private static final Gson GSON = new GsonBuilder().create()
-    private static final Map<String, String> ENV_VARIABLES = ["SPLUNK_START_ARGS" : "--accept-license",
-        "SPLUNK_USER": "root",
-        "SPLUNK_PASSWORD"   : SPLUNK_ADMIN_PASSWORD,
-        // This is required to get splunk 8.1.2 to start in an OpenShift crio environment
-        // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
-        // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
-        // See https://github.com/splunk/splunk-ansible/issues/349
-        "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",]
-
-    private static final String SPLUNK_IMAGE_FALLBACK = "quay.io/rhacs-eng/qa:splunk-ta-test-latest"
-    private static final String SPLUNK_IMAGE_PIN = "../.github/test-images/splunk-ta-test.dockerfile"
-    public static final String SPLUNK_IMAGE = resolveSplunkImage()
-
-    private static String resolveSplunkImage() {
-        File pin = new File(SPLUNK_IMAGE_PIN)
-        if (!pin.exists()) {
-            log.warn("Splunk image pin ${pin.absolutePath} not found, using floating tag ${SPLUNK_IMAGE_FALLBACK}")
-            return SPLUNK_IMAGE_FALLBACK
-        }
-        String from = pin.readLines().find { String line -> line.trim().startsWith("FROM ") }
-        if (!from) {
-            log.warn("No FROM line in ${pin.absolutePath}, using floating tag ${SPLUNK_IMAGE_FALLBACK}")
-            return SPLUNK_IMAGE_FALLBACK
-        }
-        return from.replaceFirst(/(?i)^\s*FROM\s+/, "").trim()
-    }
+    // Splunk Deployment + Services manifest; path is relative to the qa-tests-backend working dir.
+    private static final String SPLUNK_MANIFEST = "src/k8s/splunk-deployment.yaml"
+    // Names must match metadata.name in SPLUNK_MANIFEST.
+    private static final String SPLUNK_DEPLOYMENT_NAME = "splunk"
+    private static final String SPLUNK_COLLECTOR_SVC = "splunk-collector"
+    private static final String SPLUNK_SYSLOG_SVC = "splunk-syslog"
 
     private static RequestSpecification splunkAdminRequest() {
         given()
@@ -202,57 +183,39 @@ class SplunkUtil {
     }
 
     static SplunkDeployment createSplunk(Kubernetes orchestrator, String namespace) {
+        // uid is kept only for StackRox-side names (policy/token) that must be unique per run;
+        // the k8s objects use the fixed names defined in SPLUNK_MANIFEST.
         UUID uid = UUID.randomUUID()
-        String deploymentName = "splunk-" + uid
-        Deployment deployment
-        Service collectorSvc
-        Service syslogSvc
+        Deployment deployment = new Deployment()
+        deployment.setNamespace(namespace)
+        deployment.setName(SPLUNK_DEPLOYMENT_NAME)
+        Service collectorSvc = new Service(SPLUNK_COLLECTOR_SVC, namespace)
+        Service syslogSvc = new Service(SPLUNK_SYSLOG_SVC, namespace)
         LocalPortForward splunkPortForward
         try {
-            // No TCP readiness probe: Splunk binds 8089 after the container is
-            // running, and waitForSplunkBoot already waits on the health API.
-            deployment =
-                    new Deployment()
-                            .setNamespace(namespace)
-                            .setName(deploymentName)
-                            .setImage(SPLUNK_IMAGE)
-                            .addPort(8000)
-                            .addPort(8088)
-                            .addPort(8089)
-                            .addPort(514)
-                            .setEnv(ENV_VARIABLES)
-                            .addLabel("app", deploymentName)
-                            .addRequest("cpu", "500m")
-                            .addLimits("memory", "3Gi")
-            orchestrator.createDeployment(deployment)
-
-            collectorSvc = new Service("splunk-collector-" + uid, namespace)
-            collectorSvc.addLabel("app", deploymentName)
-            collectorSvc.addPort(8088, "TCP")
-            collectorSvc.setType(Service.Type.CLUSTERIP)
-            orchestrator.createService(collectorSvc)
-
-            syslogSvc = new Service("splunk-syslog-" + uid, namespace)
-            syslogSvc.addLabel("app", deploymentName)
-            syslogSvc.addPort(514, "TCP")
-            syslogSvc.setType(Service.Type.CLUSTERIP)
-            orchestrator.createService(syslogSvc)
-
+            applySplunkManifest(orchestrator, namespace)
+            // Populates deployment.deploymentUid and deployment.pods (needed by the port-forward,
+            // execInContainer, and StackRox alert lookups).
+            orchestrator.waitForDeploymentAndPopulateInfo(deployment)
             splunkPortForward = orchestrator.createPortForward(8089, deployment)
         } catch (Exception e) {
             log.info("Something bad happened, will run cleanup before failing", e)
-            if (syslogSvc) {
-                orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
-            }
-            if (collectorSvc) {
-                orchestrator.deleteService(collectorSvc.name, collectorSvc.namespace)
-            }
-            if (deployment) {
-                orchestrator.deleteDeployment(deployment)
-            }
+            orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
+            orchestrator.deleteService(collectorSvc.name, collectorSvc.namespace)
+            orchestrator.deleteDeployment(deployment)
             throw e
         }
         return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
+    }
+
+    // Applies the Splunk Deployment + Services manifest into the given namespace.
+    // @CompileDynamic because Fabric8's load().inNamespace().createOrReplace() generics do not
+    // play well with @CompileStatic.
+    @CompileDynamic
+    private static void applySplunkManifest(Kubernetes orchestrator, String namespace) {
+        new File(SPLUNK_MANIFEST).withInputStream { stream ->
+            orchestrator.client.load(stream).inNamespace(namespace).createOrReplace()
+        }
     }
 
     static void waitForSplunkReady(int port) {
