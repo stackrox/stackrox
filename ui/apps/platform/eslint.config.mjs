@@ -1,35 +1,34 @@
-'use strict';
+import path from 'node:path';
 
-const path = require('node:path');
+import parserTypeScriptESLint from '@typescript-eslint/parser';
 
-const parserTypeScriptESLint = require('@typescript-eslint/parser');
+import pluginCypress from 'eslint-plugin-cypress';
+import pluginCSS from '@eslint/css';
+import pluginESLint from '@eslint/js';
+import pluginJSON from '@eslint/json';
+import pluginMarkdown from '@eslint/markdown';
+import pluginESLintComments from '@eslint-community/eslint-plugin-eslint-comments';
+import pluginImport from 'eslint-plugin-import';
+import pluginJestDOM from 'eslint-plugin-jest-dom';
+import pluginPrettier from 'eslint-plugin-prettier';
+import pluginReact from 'eslint-plugin-react';
+import pluginReactHooks from 'eslint-plugin-react-hooks';
+import pluginTestingLibrary from 'eslint-plugin-testing-library';
+import pluginTypeScriptESLint from '@typescript-eslint/eslint-plugin';
+import pluginVitest from '@vitest/eslint-plugin';
 
-const pluginCypress = require('eslint-plugin-cypress');
-const pluginCSS = require('@eslint/css').default;
-const pluginESLint = require('@eslint/js');
-const pluginJSON = require('@eslint/json').default;
-const pluginMarkdown = require('@eslint/markdown').default; // ECMAScript module requires Node.js 22.12.0 or later
-const pluginESLintComments = require('@eslint-community/eslint-plugin-eslint-comments');
-const pluginImport = require('eslint-plugin-import');
-const pluginJestDOM = require('eslint-plugin-jest-dom');
-const pluginPrettier = require('eslint-plugin-prettier');
-const pluginReact = require('eslint-plugin-react');
-const pluginReactHooks = require('eslint-plugin-react-hooks');
-const pluginTestingLibrary = require('eslint-plugin-testing-library');
-const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
-const pluginVitest = require('@vitest/eslint-plugin');
+import globals from 'globals';
+const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = globals;
 
-const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = require('globals');
-
-const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
-const pluginGeneric = require('./eslint-plugins/pluginGeneric');
-const pluginLimited = require('./eslint-plugins/pluginLimited');
-const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
+import pluginAccessibility from './eslint-plugins/pluginAccessibility.js';
+import pluginGeneric from './eslint-plugins/pluginGeneric.js';
+import pluginLimited from './eslint-plugins/pluginLimited.js';
+import pluginPatternFly from './eslint-plugins/pluginPatternFly.js';
 
 const parser = parserTypeScriptESLint;
 const parserOptions = {
     project: './tsconfig.eslint.json',
-    tsconfigRootDir: __dirname,
+    tsconfigRootDir: import.meta.dirname,
 };
 
 const parserAndOptions = {
@@ -37,7 +36,7 @@ const parserAndOptions = {
     parserOptions,
 };
 
-module.exports = [
+export default [
     {
         // Supersede .eslintignore file.
         // ESLint provides ["**/node_modules/", ".git/"] as default ignores.
@@ -643,7 +642,7 @@ module.exports = [
                 'error',
                 {
                     devDependencies: [
-                        path.join(__dirname, 'src/test-utils/*'), // TODO delete renderWithRedux.js
+                        path.join(import.meta.dirname, 'src/test-utils/*'), // TODO delete renderWithRedux.js
                     ],
                 },
             ],
@@ -1149,7 +1148,6 @@ module.exports = [
             'src/Containers/AccessControl/AuthProviders/AuthProviderForm.tsx', // replace
             'src/Containers/AccessControl/AuthProviders/AuthProviders.tsx', // replace
             'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx', // replace
-            'src/Containers/Clusters/DownloadHelmValues.tsx', // replace
             'src/Containers/Login/LoginPage.jsx', // replace
             'src/Containers/Login/TestLoginResultsPage.jsx', // replace
             'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace
@@ -1204,12 +1202,12 @@ module.exports = [
                 'error',
                 {
                     devDependencies: [
-                        path.join(__dirname, 'eslint.config.js'),
-                        path.join(__dirname, 'postcss.config.js'),
-                        path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
-                        path.join(__dirname, 'webpack.ocp-plugin.config.js'),
-                        path.join(__dirname, 'vite.config.js'),
-                        path.join(__dirname, 'cypress.config.js'),
+                        path.join(import.meta.dirname, 'eslint.config.js'),
+                        path.join(import.meta.dirname, 'postcss.config.js'),
+                        path.join(import.meta.dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
+                        path.join(import.meta.dirname, 'webpack.ocp-plugin.config.js'),
+                        path.join(import.meta.dirname, 'vite.config.js'),
+                        path.join(import.meta.dirname, 'cypress.config.js'),
                     ],
                 },
             ],
@@ -1236,7 +1234,7 @@ module.exports = [
             'import/no-extraneous-dependencies': [
                 'error',
                 {
-                    devDependencies: [path.join(__dirname, 'src/**/*.test.*')],
+                    devDependencies: [path.join(import.meta.dirname, 'src/**/*.test.*')],
                 },
             ],
 

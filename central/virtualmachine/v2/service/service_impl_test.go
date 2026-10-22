@@ -12,6 +12,7 @@ import (
 	cveViewMocks "github.com/stackrox/rox/central/views/vmcve/mocks"
 	componentDSMocks "github.com/stackrox/rox/central/virtualmachine/component/v2/datastore/mocks"
 	cveDSMocks "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore/mocks"
+	"github.com/stackrox/rox/central/virtualmachine/scan"
 	scanDSMocks "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore/mocks"
 	vmDSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
 	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
@@ -529,6 +530,57 @@ func TestListVMComponents(t *testing.T) {
 					assert.Equal(t, v2.SourceType_OS, row.GetSource())
 					assert.Equal(t, int32(2), row.GetCveCount())
 				}
+			}
+		})
+	}
+}
+
+func TestListVMComponents_PendingScan(t *testing.T) {
+	tests := map[string]struct {
+		components  []*storage.VirtualMachineComponentV2
+		vmFound     bool
+		wantPending bool
+	}{
+		"rescan": {
+			components:  []*storage.VirtualMachineComponentV2{{Id: "comp-1", CveCount: 2}},
+			wantPending: true,
+		},
+		"first scan":      {vmFound: true, wantPending: true},
+		"inaccessible VM": {},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			ctrl := gomock.NewController(t)
+			components := componentDSMocks.NewMockDataStore(ctrl)
+			vms := vmDSMocks.NewMockDataStore(ctrl)
+			tracker := &scan.Tracker{}
+			s := &serviceImpl{vmDS: vms, componentDS: components, pendingScans: tracker}
+			components.EXPECT().Count(ctx, gomock.Any()).Return(len(tt.components), nil).Times(2)
+			components.EXPECT().SearchRawVMComponents(ctx, gomock.Any()).Return(tt.components, nil).Times(2)
+			if len(tt.components) == 0 {
+				vms.EXPECT().GetVirtualMachine(ctx, fixtureconsts.VirtualMachine1).
+					Return(&storage.VirtualMachineV2{Id: fixtureconsts.VirtualMachine1}, tt.vmFound, nil)
+			}
+			request := &v2.ListVMComponentsRequest{VmId: fixtureconsts.VirtualMachine1}
+			finish := tracker.Start(request.GetVmId())
+			defer finish()
+			result, err := s.ListVMComponents(ctx, request)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantPending, result.GetScanPending())
+			require.Len(t, result.GetComponents(), len(tt.components))
+			if len(tt.components) > 0 {
+				assert.Equal(t, v2.ScanStatus_SCAN_PENDING, result.GetComponents()[0].GetScanStatus())
+				assert.Equal(t, int32(2), result.GetComponents()[0].GetCveCount(), "keep the previous completed scan's findings")
+			}
+			finish()
+
+			result, err = s.ListVMComponents(ctx, request)
+			require.NoError(t, err)
+			assert.False(t, result.GetScanPending())
+			require.Len(t, result.GetComponents(), len(tt.components))
+			if len(tt.components) > 0 {
+				assert.Equal(t, v2.ScanStatus_SCANNED, result.GetComponents()[0].GetScanStatus())
 			}
 		})
 	}

@@ -19,11 +19,14 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Removed Features
 
 - ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
+- ROX-36856: The Compliance 1.0 API has been removed. The `ComplianceService` and `ComplianceManagementService` gRPC services, their `/v1/compliance/*` REST equivalents, and the `/api/compliance/export/csv` export endpoint are no longer served. Use Compliance (v2), backed by the Compliance Operator, instead.
+- ROX-36856: The Splunk TA Compliance feed at `/api/splunk/ta/compliance` has been retired and now responds with HTTP 410 Gone rather than returning data, so that stale feed configurations fail loudly instead of silently reporting zero compliance findings. Remove the Compliance modular input from your Splunk TA configuration. **There is no Splunk replacement for this feed.** Note that this also affects Compliance Operator results: those were previously routed into Compliance 1.0 storage and surfaced through this feed, and they are no longer delivered to Splunk. Compliance Operator results remain available in the product through Compliance (v2).
 
 ### Deprecated Features
 
 ### Technical Changes
 
+- ROX-33976: Virtual machine components now report pending scans and distinguish missing CPEs from missing repository metadata.
 - ROX-36950: Central DB cleans up recognized physical backups from earlier PostgreSQL major-version upgrades after verifying the new backup, or earlier if needed to reclaim upgrade space. The current upgrade's rollback backup is retained without age-based expiration.
 - ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
 - ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.

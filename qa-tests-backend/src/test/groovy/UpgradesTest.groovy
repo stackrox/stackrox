@@ -31,20 +31,6 @@ class UpgradesTest extends BaseSpecification {
 
     private static final String COMPONENT_RESOURCE_TYPE = "nodeComponents"
 
-    private static final COMPLIANCE_QUERY = """query getAggregatedResults(
-        \$groupBy: [ComplianceAggregation_Scope!],
-        \$unit: ComplianceAggregation_Scope!,
-        \$where: String) {
-            results: aggregatedResults(groupBy: \$groupBy, unit: \$unit, where: \$where) {
-                results {
-                    aggregationKeys {
-                          id
-                    }
-                    unit
-                }
-            }
-        }"""
-
     @Tag("Upgrade")
     def "Verify cluster has listen on exec/pf webhook turned on"() {
         expect:
@@ -135,31 +121,6 @@ class UpgradesTest extends BaseSpecification {
                      id
                 }
             }"""
-    }
-
-    @Unroll
-    @Tag("Upgrade")
-    def "verify that we find the correct number of compliance results"() {
-        when:
-        "Fetch the compliance results by #unit from GraphQL"
-        def gqlService = new GraphQLService()
-        def resultRet = gqlService.Call(COMPLIANCE_QUERY, [ groupBy: groupBy, unit: unit ])
-        assert resultRet.getCode() == 200
-        log.info "return code " + resultRet.getCode()
-
-        then:
-        "Check that we got the correct number of #unit from GraphQL "
-        assert resultRet.getValue() != null
-        def resultList = resultRet.getValue()["results"]
-        assert resultList.size() >= numResults
-
-        where:
-        "Data Inputs Are:"
-        groupBy                   | unit      | numResults
-        ["STANDARD", "CLUSTER"]   | "CHECK"   | 1
-        ["STANDARD", "NAMESPACE"] | "CHECK"   | 1
-        ["STANDARD", "CLUSTER"]   | "CONTROL" | 1
-        ["STANDARD", "NAMESPACE"] | "CONTROL" | 1
     }
 
     static private class KnownPolicyDiffs {
