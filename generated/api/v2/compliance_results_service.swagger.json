@@ -911,6 +911,10 @@
         "lastScanTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceDataFreshness",
+          "description": "Rolled-up freshness across all check results for this cluster and\nprofile (not limited to the current page): STALE if any result is stale\n(STALE > CURRENT > UNKNOWN)."
         }
       }
     },
