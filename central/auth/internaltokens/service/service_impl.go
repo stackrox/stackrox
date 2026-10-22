@@ -116,18 +116,15 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		Requester:     req.GetRequester(),
 	}
 	if req.GetPermissionSetId() == "" {
-		var httpScopes []tokens.HTTPRequestScope
-		httpScopes, err = tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
+		roxClaims.HTTPRequestScopes, err = tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
 		if err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
-		roxClaims.HTTPRequestScopes = tokens.HTTPRequestScopesByPath(httpScopes)
 	} else {
-		httpScopes, scopeErr := approvedHTTPScopes(req)
-		if scopeErr != nil {
-			return nil, scopeErr
+		roxClaims.HTTPRequestScopes, err = approvedHTTPScopes(req)
+		if err != nil {
+			return nil, err
 		}
-		roxClaims.HTTPRequestScopes = tokens.HTTPRequestScopesByPath(httpScopes)
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {

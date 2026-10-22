@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -157,13 +158,13 @@ func (p *tokenPolicy) enforce(
 	return p.enforceLifetimeLimit(req)
 }
 
-func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) ([]tokens.HTTPRequestScope, error) {
-	var allowed []tokens.HTTPRequestScope
+func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tokens.HTTPRequestScopes, error) {
+	var allowed tokens.HTTPRequestScopes
 	switch req.GetPermissionSetId() {
 	case centralproxy.ConsoleProxyPermissionSetID:
-		allowed = centralproxy.ConsoleHTTPScopes
+		allowed = tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
 	case centralproxy.MetricsPermissionSetID:
-		allowed = centralproxy.MetricsHTTPScopes
+		allowed = tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes)
 	default:
 		return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 	}
@@ -174,18 +175,17 @@ func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) ([]t
 	}
 	// Older Sensors do not specify HTTP scopes; Central still signs its own profile.
 	if len(requested) == 0 {
-		return append([]tokens.HTTPRequestScope(nil), allowed...), nil
+		return allowed, nil
 	}
-	for _, scope := range requested {
-		found := false
-		for _, permitted := range allowed {
-			if scope == permitted {
-				found = true
-				break
-			}
-		}
+	for path, methods := range requested {
+		permitted, found := allowed[path]
 		if !found {
 			return nil, errox.InvalidArgs.New("requested HTTP scope exceeds Central's profile")
+		}
+		for _, method := range methods {
+			if !slices.Contains(permitted, method) {
+				return nil, errox.InvalidArgs.New("requested HTTP scope exceeds Central's profile")
+			}
 		}
 	}
 	return requested, nil
