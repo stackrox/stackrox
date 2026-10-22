@@ -61,7 +61,8 @@ func ValidateHTTPRequestScopes(scopes []HTTPRequestScope) error {
 
 // AllowsHTTPRequest checks the signed HTTP scope against trusted request information.
 // The most specific matching path determines the permitted methods. An
-// ambiguous URL fails closed.
+// empty method list denies that path, even if a broader prefix allows it.
+// An ambiguous URL fails closed.
 func AllowsHTTPRequest(scopes HTTPRequestScopes, ri requestinfo.RequestInfo) bool {
 	if len(scopes) == 0 || ri.HTTPRequest == nil || ri.HTTPRequest.URL == nil {
 		return false

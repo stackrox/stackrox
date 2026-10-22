@@ -50,19 +50,23 @@ func TestAllowsHTTPRequest(t *testing.T) {
 
 func TestAllowsHTTPRequestMostSpecificPath(t *testing.T) {
 	scopes := HTTPRequestScopes{
-		"/path/":        {"GET", "POST"},
-		"/path/subpath": {"GET"},
+		"/path/":         {"GET", "POST"},
+		"/path/subpath":  {"GET"},
+		"/path/blocked/": {},
 	}
 	for name, tc := range map[string]struct {
 		method  string
 		path    string
 		allowed bool
 	}{
-		"exact path GET":     {method: "GET", path: "/path/subpath", allowed: true},
-		"exact path POST":    {method: "POST", path: "/path/subpath"},
-		"prefix descendant":  {method: "POST", path: "/path/another", allowed: true},
-		"prefix itself":      {method: "POST", path: "/path/", allowed: true},
-		"unrelated endpoint": {method: "POST", path: "/pathology"},
+		"exact path GET":       {method: "GET", path: "/path/subpath", allowed: true},
+		"exact path POST":      {method: "POST", path: "/path/subpath"},
+		"prefix descendant":    {method: "POST", path: "/path/another", allowed: true},
+		"prefix itself":        {method: "POST", path: "/path/", allowed: true},
+		"empty methods GET":    {method: "GET", path: "/path/blocked/item"},
+		"empty methods POST":   {method: "POST", path: "/path/blocked/item"},
+		"empty methods prefix": {method: "GET", path: "/path/blocked/"},
+		"unrelated endpoint":   {method: "POST", path: "/pathology"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.allowed, AllowsHTTPRequest(scopes, requestinfo.RequestInfo{
