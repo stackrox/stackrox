@@ -83,6 +83,10 @@ class DefaultPoliciesTest extends BaseSpecification {
             "tunnelfront - Secure Shell Server (sshd) Execution",
             "tunnelfront - Docker CIS 4.7: Alert on Update Instruction",
             "webhookserver - Kubernetes Actions: Port Forward to Pod",
+            // Newer EKS ebs-csi-node DaemonSets use bidirectional mount propagation.
+            "ebs-csi-node - Docker CIS 5.19: Ensure mount propagation mode is not enabled",
+            // GKE filestore-node DaemonSets use bidirectional mount propagation.
+            "filestore-node - Docker CIS 5.19: Ensure mount propagation mode is not enabled",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
@@ -459,11 +463,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "Port 80 is exposed in the cluster"  | null | []
 
         "Image Vulnerabilities"           | 4.0f     | null |
-                // StackRox Scanner reports 100+ CVEs between Low and Critical.
-                // Scanner V4 reports fewer CVEs (~78) and a different minimum
-                // severity (Moderate in this case). Using \\d{2,} and \\w+ to accept both outcomes.
+                // Scanner versions report different counts of distinct CVEs and minimum
+                // severities. Use a regex to accept both outcomes.
                 "Image \"" + STRUTS_IMAGE + "\\\"" +
-                     " contains \\d{2,} CVEs with severities ranging between " +
+                     " contains \\d{2,} distinct CVEs with severities ranging between " +
                      "\\w+ and \\w+" | []
 
         "Service Configuration"           | 2.0f     |

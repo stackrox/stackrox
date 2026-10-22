@@ -9,7 +9,6 @@ import { SUBJECT_FRAGMENT, SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject
 import { K8S_ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
-import { CONTROL_FRAGMENT } from 'queries/controls';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
 import {
@@ -144,9 +143,6 @@ function getListFieldName(entityType, listType, useCase) {
         if (listType === entityTypes.ROLE) {
             return 'k8sRoles';
         }
-        if (listType === entityTypes.CONTROL) {
-            return 'complianceResults';
-        }
     }
 
     if (entityType === entityTypes.NODE) {
@@ -218,8 +214,6 @@ function getFragmentName(listType) {
             return 'policyFields';
         case entityTypes.SERVICE_ACCOUNT:
             return 'serviceAccountFields';
-        case entityTypes.CONTROL:
-            return 'controlFields';
         case entityTypes.IMAGE_CVE:
             return 'imageCVEFields';
         case entityTypes.NODE_CVE:
@@ -246,7 +240,6 @@ function getFragment(entityType, listType, useCase) {
         [entityTypes.SECRET]: SECRET_FRAGMENT,
         [entityTypes.POLICY]: POLICY_FRAGMENT,
         [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_FRAGMENT,
-        [entityTypes.CONTROL]: CONTROL_FRAGMENT,
     };
 
     const fragmentsByUseCase = {

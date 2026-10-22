@@ -4,6 +4,14 @@ collectors:
 - type: pod
   selector: app=central
   tail: -1
+- type: pod
+  selector: app=central-db
+  tail: -1
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central-db
+- command: retry-kubectl.sh describe pv
+- command: retry-kubectl.sh describe pvc -n $NAMESPACE
+- command: retry-kubectl.sh describe central.platform.stackrox.io -n $NAMESPACE stackrox-central-services
 ---
 apiVersion: apps/v1
 kind: Deployment

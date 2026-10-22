@@ -4,7 +4,7 @@ import { Banner } from '@patternfly/react-core';
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
-import type { PageActions } from './compliance.scanConfigs.utils';
+import type { SchedulePageAction } from './compliance.scanConfigs.utils';
 import CreateScanConfigPage from './CreateScanConfigPage';
 import ComplianceNotFoundPage from '../ComplianceNotFoundPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';
@@ -17,7 +17,7 @@ function ScanConfigsPage() {
      * /main/compliance-enhanced/scan-configs?action=create
      * /main/compliance-enhanced/scan-configs/configId
      */
-    const { pageAction } = usePageAction<PageActions>();
+    const { pageAction } = usePageAction<SchedulePageAction>();
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');

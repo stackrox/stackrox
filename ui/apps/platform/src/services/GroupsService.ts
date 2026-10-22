@@ -48,14 +48,3 @@ export function getDefaultGroup({
             response: response.data?.groups[0],
         }));
 }
-
-/**
- * Deletes a group rule.
- */
-export function deleteRuleGroup(data: Group) {
-    const { key, authProviderId, value, id } = data.props;
-    return axios.delete(
-        `${url}?authProviderId=${authProviderId}&key=${key}&value=${value}&id=${id}`,
-        {}
-    );
-}

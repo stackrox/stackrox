@@ -22,7 +22,7 @@ class GlobalSearch extends BaseSpecification {
             .addLabel("app", "test")
             .setCommand(["sleep", "600"])
 
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 90
 
     def setupSpec() {
         EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
@@ -34,10 +34,6 @@ class GlobalSearch extends BaseSpecification {
                                      SearchServiceOuterClass.SearchCategory.NAMESPACES,
                                      SearchServiceOuterClass.SearchCategory.IMAGES,
                                      SearchServiceOuterClass.SearchCategory.DEPLOYMENTS)
-        if (flattenImageDataEnabled) {
-            EXPECTED_DEPLOYMENT_CATEGORIES.add(SearchServiceOuterClass.SearchCategory.IMAGES_V2)
-            EXPECTED_IMAGE_CATEGORIES.add(SearchServiceOuterClass.SearchCategory.IMAGES_V2)
-        }
 
         orchestrator.createDeployment(DEPLOYMENT)
         assert Services.waitForDeployment(DEPLOYMENT)

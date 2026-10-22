@@ -2,7 +2,6 @@
 export type UseCase =
     | 'ACCESS_CONTROL'
     | 'CLUSTERS'
-    | 'COMPLIANCE'
     | 'CONFIG_MANAGEMENT'
     | 'DEPLOYMENT'
     | 'POLICY'
@@ -17,7 +16,6 @@ const useCaseTypes = {
     ACCESS_CONTROL: 'access-control',
     CONFIG_MANAGEMENT: 'configmanagement',
     VULN_MANAGEMENT: 'vulnerability-management',
-    COMPLIANCE: 'compliance',
     CLUSTERS: 'clusters',
     RISK: 'risk',
     SECRET: 'secrets',

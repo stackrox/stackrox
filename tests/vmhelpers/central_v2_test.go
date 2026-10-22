@@ -340,6 +340,35 @@ func TestVulnCountBySeverityTotal(t *testing.T) {
 	}
 }
 
+func TestCountVMCVERowsBySeverity(t *testing.T) {
+	tests := map[string]struct {
+		in   []*v2.VMCVERow
+		want *v2.VulnCountBySeverity
+	}{
+		"empty": {in: nil, want: &v2.VulnCountBySeverity{}},
+		"by max severity": {in: []*v2.VMCVERow{
+			{Cve: "CVE-1", Severity: v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, IsFixable: true},
+			{Cve: "CVE-2", Severity: v2.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY},
+			{Cve: "CVE-3", Severity: v2.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY, IsFixable: true},
+		}, want: &v2.VulnCountBySeverity{
+			Critical: &v2.VulnFixableCount{Total: 1, Fixable: 1},
+			Moderate: &v2.VulnFixableCount{Total: 2, Fixable: 1},
+		}},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := CountVMCVERowsBySeverity(tc.in)
+			require.Equal(t, tc.want.GetCritical().GetTotal(), got.GetCritical().GetTotal())
+			require.Equal(t, tc.want.GetCritical().GetFixable(), got.GetCritical().GetFixable())
+			require.Equal(t, tc.want.GetImportant().GetTotal(), got.GetImportant().GetTotal())
+			require.Equal(t, tc.want.GetModerate().GetTotal(), got.GetModerate().GetTotal())
+			require.Equal(t, tc.want.GetModerate().GetFixable(), got.GetModerate().GetFixable())
+			require.Equal(t, tc.want.GetLow().GetTotal(), got.GetLow().GetTotal())
+			require.Equal(t, tc.want.GetUnknown().GetTotal(), got.GetUnknown().GetTotal())
+		})
+	}
+}
+
 func TestWaitForV2ScanMissingComponent(t *testing.T) {
 	ctx := t.Context()
 	opts := WaitOptions{Timeout: 400 * time.Millisecond, PollInterval: 5 * time.Millisecond}

@@ -73,7 +73,6 @@ export const resourceLabels = Object.freeze({
     NODE: 'node',
     DEPLOYMENT: 'deployment',
     SECRET: 'secret',
-    CONTROL: 'control',
     CVE: 'CVE',
     IMAGE_CVE: 'Image CVE',
     NODE_CVE: 'Node CVE',
@@ -83,7 +82,6 @@ export const resourceLabels = Object.freeze({
     IMAGE_COMPONENT: 'image component',
     IMAGE: 'image',
     POLICY: 'policy',
-    CHECK: 'check',
     ROLE: 'role',
 });
 

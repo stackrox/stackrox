@@ -47,6 +47,8 @@ spec:
               value: "true"
             - name: ROX_LEGACY_SCANNER
               value: "false"
+            - name: ROX_CENTRAL_WORKER_ENABLED
+              value: "true"
             - name: NO_PROXY
               valueFrom:
                 secretKeyRef:

@@ -85,6 +85,9 @@ roxie_config_from_environment_compat() {
 
     handle_pod_security_policies
 
+    info "Configuring Konflux images..."
+    handle_konflux_images "$config_file"
+
     info "Configuring TRUSTED_CA_FILE..."
     handle_trusted_ca_file "$config_file"
 
@@ -93,6 +96,13 @@ roxie_config_from_environment_compat() {
 
     info "Configuring load balancer..."
     handle_load_balancer_setting "$config_file"
+
+    handle_endpoints_for_test "$config_file" # Echoes info internally.
+
+    if [[ -n "${EXTERNAL_DB:-}" ]]; then
+        info "Configuring external database..."
+        handle_external_database_settings "$config_file" "$namespace"
+    fi
 
     info "Configuring custom central environment..."
     while read -r var_val; do
@@ -153,6 +163,10 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
         env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
 
+        # Scan every 9-11 minutes in roxie-deployed QA tests, including GHA.
+        env_with_default ROX_NODE_SCANNING_INTERVAL "10m"
+        env_with_default ROX_NODE_SCANNING_INTERVAL_DEVIATION "60s"
+
         collect_feature_flags
     )
 
@@ -176,10 +190,18 @@ roxie_config_from_environment_compat() {
         fi
     )
 
+    info "Configuring storage classes..."
+    handle_storage_classes "$config_file"
+
     info "Configuring scanner V4..."
-    handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
-    handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
-    handle_scanner_v4_vuln_readiness "$config_file"
+    if [[ ${ROX_SCANNER_V4:-} == false ]]; then
+        handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Disabled"
+        handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "Disabled"
+    else
+        handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent" "Enabled"
+        handle_scanner_v4_setting "$config_file" ".securedCluster.spec.scannerV4.scannerComponent" "AutoSense"
+        handle_scanner_v4_vuln_readiness "$config_file"
+    fi
 
     info "Configuring declarative configuration..."
     handle_declarative_configuration "$config_file"
@@ -191,6 +213,32 @@ roxie_config_from_environment_compat() {
     handle_virtual_machines_configuration "$config_file"
 }
 
+handle_external_database_settings() {
+    local config_file="$1"
+    local namespace="$2"
+
+    merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    central:
+      db:
+        connectionString: "host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+        passwordSecret:
+          name: "central-external-db-password"
+EOF
+    retrying_kubectl -n "${namespace}" apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: central-external-db-password
+  labels:
+    app.kubernetes.io/managed-by: "${managed_by}"
+data:
+  password: $(echo -n "${EXTERNAL_DB_PASSWORD}" | base64 | tr -d '\n')
+EOF
+}
+
 # Emit feature flags, enabling injection into a roxie configuration, rendering them overwritable using
 # environment variables.
 collect_feature_flags() {
@@ -200,11 +248,16 @@ collect_feature_flags() {
     env_with_default ROX_NODE_VULNERABILITY_REPORTS "true"
     env_with_default ROX_TAILORED_PROFILES "true"
     env_with_default ROX_INIT_CONTAINER_SUPPORT "true"
+    env_with_default ROX_POLICY_WORKLOAD_KIND_EXCLUSION "true"
     env_with_default ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL "true"
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
-    env_with_default ROX_POLICY_CRITERIA_MODAL "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
+    env_with_default ROX_COMPLIANCE_SURFACE_STALE_DATA "true"
+    env_with_default ROX_COMPLIANCE_CUSTOM_NODE_ROLES "true"
+    env_with_default ROX_UI_SECRETS_PAGE_MIGRATION "true"
+    env_with_default ROX_AI_INTEGRATIONS "true"
+    env_with_default ROX_LIGHTSPEED_RISK_SUMMARY "true"
 
     # Enabled by default in StackRox, but disabled by default for test deployments.
     env_with_default ROX_NETWORK_GRAPH_EXTERNAL_IPS "false"
@@ -214,6 +267,15 @@ collect_feature_flags() {
     env_with_default ROX_BASE_IMAGE_DETECTION
 }
 
+handle_konflux_images() {
+    local config_file="$1"
+
+    if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+        info "USE_KONFLUX_IMAGES=true: deploying with Konflux-built images"
+        patch_yaml "$config_file" ".roxie.konfluxImages = true"
+    fi
+}
+
 handle_pod_security_policies() {
     local pod_security_policies="${POD_SECURITY_POLICIES:-false}"
     if [[ "$pod_security_policies" == "true" ]]; then
@@ -221,6 +283,28 @@ handle_pod_security_policies() {
     fi
     export POD_SECURITY_POLICIES="false"
     ci_export POD_SECURITY_POLICIES "$POD_SECURITY_POLICIES"
+}
+
+handle_storage_classes() {
+    local config_file="$1"
+    local storage_class="${STORAGE_CLASS:-}"
+    local scanner_v4_db_storage_class="${SCANNER_V4_DB_STORAGE_CLASS:-}"
+
+    if [[ "$storage_class" == "faster" || "$scanner_v4_db_storage_class" == "faster" ]]; then
+        info "  applying SSD StorageClass manifest"
+        retrying_kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml" </dev/null
+    fi
+
+    if [[ -n "$storage_class" ]]; then
+        info "  central DB storageClassName=${storage_class}"
+        patch_yaml "$config_file" ".central.spec.central.db.persistence.persistentVolumeClaim.storageClassName = \"${storage_class}\""
+    fi
+
+    if [[ -n "$scanner_v4_db_storage_class" ]]; then
+        info "  scanner V4 DB storageClassName=${scanner_v4_db_storage_class}"
+        patch_yaml "$config_file" ".central.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName = \"${scanner_v4_db_storage_class}\""
+        patch_yaml "$config_file" ".securedCluster.spec.scannerV4.db.persistence.persistentVolumeClaim.storageClassName = \"${scanner_v4_db_storage_class}\""
+    fi
 }
 
 # handle_scanner_v4_setting patches scannerV4.scannerComponent. enabled_value is
@@ -344,6 +428,44 @@ handle_load_balancer_setting() {
         die "Unsupported value for LOAD_BALANCER: $load_balancer"
         ;;
     esac
+}
+
+# Populate a roxie config file with the endpoint settings required by endpoints_test.go:
+# plaintext endpoints (8080/8081) and the full central-endpoints ConfigMap (8082, 8444-8448).
+# Values are taken from the ROX_PLAINTEXT_ENDPOINTS and ROXDEPLOY_CONFIG_FILE_MAP env vars,
+# which are exported by test_preamble() of the jobs that run endpoints_test.go. Jobs that do
+# not set these are left untouched, so this is safe to call unconditionally from such a job.
+handle_endpoints_for_test() {
+    local config_file="$1"
+
+    # Expose plaintext endpoints required by endpoints_test.go.
+    if [[ -n "${ROX_PLAINTEXT_ENDPOINTS:-}" ]]; then
+        info "Configuring central ROX_PLAINTEXT_ENDPOINTS to ${ROX_PLAINTEXT_ENDPOINTS}..."
+        set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "${ROX_PLAINTEXT_ENDPOINTS}"
+    fi
+
+    # Inject the full endpoint config into the central-endpoints ConfigMap so that
+    # Central also listens on ports 8082 and 8444-8448 (used by endpoints_test.go).
+    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" && -f "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
+        info "Configuring central-endpoints ConfigMap from ${ROXDEPLOY_CONFIG_FILE_MAP}..."
+        local overlay_tmp; overlay_tmp="$(mktemp)"
+        # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
+        # single ConfigMap key rather than a path separator. verbatim preserves newlines.
+        cat > "$overlay_tmp" <<'OVERLAY'
+central:
+  spec:
+    overlays:
+    - apiVersion: v1
+      kind: ConfigMap
+      name: central-endpoints
+      patches:
+      - path: data.endpoints\.yaml
+        verbatim: |
+OVERLAY
+        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
+        merge_yaml "$config_file" < "$overlay_tmp"
+        rm -f "$overlay_tmp"
+    fi
 }
 
 handle_declarative_configuration() {

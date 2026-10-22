@@ -40,7 +40,7 @@ concurrency: Release automation ${{ inputs.milestone }}
 jobs:
   properties:
     name: Read repository properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.dry-slack-channel, steps.properties.outputs.slack-channel))[inputs.dry-run != 'true'] }}
     steps:
@@ -52,7 +52,7 @@ jobs:
 
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
@@ -66,13 +66,13 @@ jobs:
   create-clusters:
     needs: [properties]
     if: github.event.inputs.dry-run != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         name: [test1, test2]
     steps:
       - name: Create the ${{ matrix.name }} cluster
-        uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
+        uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
@@ -83,7 +83,7 @@ jobs:
 
   prepare-clusters:
     needs: [properties, create-clusters]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -136,7 +136,7 @@ jobs:
     name: Notify about failed cluster creation
     needs: [properties, prepare-clusters]
     if: always() && needs.prepare-clusters.result == 'failure'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Post to Slack
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # ratchet:slackapi/slack-github-action@v3.0.3

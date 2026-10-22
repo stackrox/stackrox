@@ -61,8 +61,7 @@ const (
 	logImbueGCFreq     = 24 * time.Hour
 	logImbueWindow     = 24 * 7 * time.Hour
 
-	alertQueryTimeout    = 10 * time.Minute
-	alertDeleteBatchSize = 5000
+	alertQueryTimeout = 10 * time.Minute
 
 	flowsSemaphoreWeight = 5
 
@@ -74,14 +73,13 @@ const (
 )
 
 var (
-	log                       = logging.LoggerForModule()
-	pruningCtx                = sac.WithAllAccess(context.Background())
-	lastClusterPruneTime      time.Time
-	lastLogImbuePruneTime     time.Time
-	lastV1ImagePruneTime      time.Time
-	lastPrunedV1ImageID       string
-	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
-	prunedPLOPsWithoutPodUIDs = false
+	log                   = logging.LoggerForModule()
+	pruningCtx            = sac.WithAllAccess(context.Background())
+	lastClusterPruneTime  time.Time
+	lastLogImbuePruneTime time.Time
+	lastV1ImagePruneTime  time.Time
+	lastPrunedV1ImageID   string
+	pruningTimeout        = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
 
 	pruneInterval = env.PruneInterval.DurationSetting()
 	orphanWindow  = env.PruneOrphanedWindow.DurationSetting()
@@ -515,6 +513,30 @@ func (g *garbageCollectorImpl) removeOrphanedPods() {
 	}
 }
 
+// Remove deployments whose cluster has been deleted: fire-and-forget cluster-deletion cleanup can orphan them. No orphan window needed - cluster deletion is a hard delete that
+// never re-adopts its deployments.
+func (g *garbageCollectorImpl) removeOrphanedDeployments() {
+	defer metrics.SetPruningDuration(time.Now(), "Deployments")
+	deploymentsToRemove, err := postgres.GetOrphanedDeploymentIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned deployments: %v", err)
+		return
+	}
+
+	if len(deploymentsToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned deployments...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned deployments (from formerly deleted clusters). Deleting...",
+		len(deploymentsToRemove))
+
+	for _, d := range deploymentsToRemove {
+		if err := g.deployments.RemoveDeployment(pruningCtx, d.ClusterID, d.ID); err != nil {
+			log.Errorf("Failed to remove deployment with id %s: %v", d.ID, err)
+		}
+	}
+}
+
 // Remove nodes where the cluster has been deleted.
 func (g *garbageCollectorImpl) removeOrphanedNodes() {
 	defer metrics.SetPruningDuration(time.Now(), "Nodes")
@@ -588,6 +610,10 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
 
+	// Before the deploymentSet snapshot and alert/process/risk sweeps so they observe the
+	// deletions this cycle. Child rows (deployments_containers, etc.) cascade.
+	g.removeOrphanedDeployments()
+
 	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
@@ -643,9 +669,6 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 	defer metrics.SetPruningDuration(time.Now(), "Processes")
-	g.plops.PruneOrphanedPLOPsByProcessIndicators(pruningCtx, orphanWindow)
-
-	log.Info("[PLOP pruning by processes] Pruning of orphaned PLOPs by processes complete")
 
 	// Prune processes in chunks.  First get the ones orphaned by deployments and then go back and
 	// do the same for those orphaned by pod
@@ -762,15 +785,6 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 		log.Errorf("error removing PLOPs with no matching process indicator or process information: %v", err)
 	}
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
-
-	// Only run once since we don't expect any new PLOPs without poduids.
-	if !prunedPLOPsWithoutPodUIDs {
-		prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
-		if err != nil {
-			log.Errorf("error removing PLOPs without poduid: %v", err)
-		}
-		log.Infof("[PLOP pruning] Prunned %d orphaned PLOPs with no poduid", prunedCount)
-	}
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {

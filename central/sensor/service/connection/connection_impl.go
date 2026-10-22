@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/pkg/errors"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -544,6 +545,13 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 		// Otherwise, sensor supports the same version or newer as central
 	}
 
+	// Remove exclude_by_kind exclusions before syncing to a Sensor that
+	// lacks WorkloadKindExclusionCap. Sensor forwards this same list to
+	// the admission controller, so AC evaluates the same copy.
+	if !c.HasCapability(centralsensor.WorkloadKindExclusionCap) {
+		policies = stripExcludeByKindExclusions(policies)
+	}
+
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_PolicySync{
 			PolicySync: &central.PolicySync{
@@ -551,6 +559,32 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 			},
 		},
 	}, nil
+}
+
+// stripExcludeByKindExclusions returns a copy of policies with every exclusion
+// that sets exclude_by_kind removed. Stored policies are not mutated. An old
+// Sensor compiles an exclude_by_kind item as an unconstrained exclusion (nil
+// name and nil scope match every workload). Sensor does not evaluate image
+// exclusions, so an image+kind item with only the kind matcher removed is that
+// same unconstrained exclusion and is removed entirely. An exclusion with no
+// kind matcher is kept, including an image combined with a deployment name or
+// scope.
+func stripExcludeByKindExclusions(policies []*storage.Policy) []*storage.Policy {
+	out := make([]*storage.Policy, 0, len(policies))
+	for _, p := range policies {
+		if !slices.ContainsFunc(p.GetExclusions(), exclusionSetsExcludeByKind) {
+			out = append(out, p)
+			continue
+		}
+		cloned := p.CloneVT()
+		cloned.Exclusions = slices.DeleteFunc(cloned.GetExclusions(), exclusionSetsExcludeByKind)
+		out = append(out, cloned)
+	}
+	return out
+}
+
+func exclusionSetsExcludeByKind(e *storage.Exclusion) bool {
+	return e.GetExcludeByKind() != nil
 }
 
 func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {

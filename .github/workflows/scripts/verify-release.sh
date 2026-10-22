@@ -102,7 +102,7 @@ validate_images() {
 
 validate_docs() {
     RELEASE="$1"
-    check_url_page_exists "https://docs.openshift.com/acs/${RELEASE}/welcome/index.html"
+    check_url_page_exists "https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/${RELEASE}"
 }
 
 validate_jira_release() {

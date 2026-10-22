@@ -27,7 +27,6 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
@@ -46,10 +45,7 @@ import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
-import ImageDetailBadges, {
-    imageDetailsFragment,
-    imageV2DetailsFragment,
-} from '../components/ImageDetailBadges';
+import ImageDetailBadges, { imageV2DetailsFragment } from '../components/ImageDetailBadges';
 import type { ImageDetails } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -60,22 +56,6 @@ import type { defaultColumns as deploymentResourcesDefaultColumns } from './Depl
 import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
-
-const imageDetailsQuery = gql`
-    ${imageDetailsFragment}
-    query getImageDetails($id: ID!) {
-        image(id: $id) {
-            id
-            name {
-                registry
-                remote
-                tag
-                fullName
-            }
-            ...ImageDetails
-        }
-    }
-`;
 
 const imageV2DetailsQuery = gql`
     ${imageV2DetailsFragment}
@@ -130,23 +110,13 @@ function ImagePage({
     deploymentResourceColumnOverrides,
 }: ImagePageProps) {
     const navigate = useNavigate();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
 
-    const v1Query = useQuery<{ image: ImageData }, { id: string }>(imageDetailsQuery, {
+    const { data, error } = useQuery<{ image: ImageData }, { id: string }>(imageV2DetailsQuery, {
         variables: { id: imageId },
-        skip: isNewImageDataModelEnabled,
     });
 
-    const v2Query = useQuery<{ image: ImageData }, { id: string }>(imageV2DetailsQuery, {
-        variables: { id: imageId },
-        skip: !isNewImageDataModelEnabled,
-    });
-
-    const data = isNewImageDataModelEnabled ? v2Query.data : v1Query.data;
-    const error = isNewImageDataModelEnabled ? v2Query.error : v1Query.error;
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
@@ -172,7 +142,7 @@ function ImagePage({
     // Create a scoped search filter that includes the image SHA filter plus any applied search filters.
     const imageScopedSearchFilterForReport = {
         ...baseSearchFilter,
-        ...(isNewImageDataModelEnabled ? { 'Image ID': [imageId] } : { 'Image SHA': [imageId] }),
+        'Image ID': [imageId],
         ...querySearchFilter,
         'Vulnerability State': [vulnerabilityState],
     };

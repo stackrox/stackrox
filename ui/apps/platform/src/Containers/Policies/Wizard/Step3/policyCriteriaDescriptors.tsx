@@ -684,26 +684,25 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'CISA KEV',
+        label: 'Known Exploited CVE',
         name: 'CISA KEV',
-        shortName: 'CISA KEV',
-        longName: 'CISA Known Exploited Vulnerabilities catalog',
+        shortName: 'Known exploited CVE',
+        longName: 'Known exploited vulnerabilities from the CISA KEV catalog',
         category: policyCriteriaCategories.IMAGE_SCANNING,
         type: 'radioGroup',
         radioButtons: [
             {
-                text: 'CVE is in CISA KEV catalog (known exploited)',
+                text: 'Yes',
                 value: true,
             },
             {
-                text: 'CVE is not in CISA KEV catalog',
+                text: 'No',
                 value: false,
             },
         ],
         defaultValue: true,
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_CISA_KEV'],
     },
     {
         label: 'Fixed by',
@@ -748,7 +747,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         placeholder: '0',
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_CVE_FIX_TIMESTAMP'],
     },
     {
         label: 'Days Since CVE Was First Discovered In Image',

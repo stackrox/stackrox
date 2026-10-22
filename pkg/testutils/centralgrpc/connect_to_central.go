@@ -72,7 +72,7 @@ func RoxAPIEndpoint(t testutils.T) string {
 // UnauthenticatedGRPCConnectionToCentral is like GRPCConnectionToCentral,
 // but does not inject credentials into the request.
 func UnauthenticatedGRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
-	return grpcConnectionToCentral(t, nil)
+	return grpcConnectionToCentral(t)
 }
 
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.

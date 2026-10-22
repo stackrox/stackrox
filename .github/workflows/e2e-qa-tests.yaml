@@ -72,7 +72,7 @@ defaults:
 jobs:
   qa-e2e-tests:
     if: inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
@@ -136,7 +136,7 @@ jobs:
 
       - name: Trigger cluster creation via infra
         if: inputs.cluster-provisioning-method == 'infra'
-        uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
+        uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: ${{ inputs.infra-flavor }}
@@ -189,9 +189,10 @@ jobs:
         run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Install roxie
-        uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
+        uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
         with:
           version: "v${{ steps.roxie-version.outputs.version }}"
+          gh-token: ${{ github.token }}
 
       - name: Install oc
         if: startsWith(inputs.infra-flavor, 'openshift')

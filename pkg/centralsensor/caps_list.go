@@ -109,4 +109,9 @@ const (
 	// VirtualMachineTelemetryCap lets Central distinguish "VM scanning off on
 	// a new Sensor" from "old Sensor that predates VM telemetry fields."
 	VirtualMachineTelemetryCap SensorCapability = "VirtualMachineTelemetry"
+
+	// WorkloadKindExclusionCap identifies the capability of Sensor to honor
+	// Exclusion.exclude_by_kind rules. Central strips those rules when syncing
+	// policies to Sensors that lack this capability.
+	WorkloadKindExclusionCap SensorCapability = "WorkloadKindExclusion"
 )

@@ -21,7 +21,6 @@ func getBaseConfig() Config {
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:      "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
-				ScannerImage:   "stackrox.io/scanner:0.4.2",
 				ScannerV4Image: "stackrox.io/scanner-v4:0.5.0",
 			},
 		},
@@ -136,9 +135,9 @@ func (suite *renderSuite) TestRenderFailsForOpenShift3() {
 
 func (suite *renderSuite) TestRenderWithBadImage() {
 	conf := getBaseConfig()
-	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
+	conf.K8sConfig.MainImage = "invalid-image#!@$"
 	_, err := Render(conf, suite.testFlavor)
-	suite.Error(err)
+	suite.ErrorContains(err, "error parsing image name")
 }
 
 func (suite *renderSuite) TestRenderWithBadV4Image() {

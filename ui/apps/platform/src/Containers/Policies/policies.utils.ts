@@ -82,6 +82,18 @@ export const initialPolicy: ClientPolicy = {
     },
 };
 
+// Container type filters apply to deploy-time policies and to runtime policies
+// whose event source is deployment events.
+export function containerTypeFilterApplies(
+    lifecycleStages: LifecycleStage[],
+    eventSource: PolicyEventSource
+): boolean {
+    return (
+        lifecycleStages.includes('DEPLOY') ||
+        (lifecycleStages.includes('RUNTIME') && eventSource === 'DEPLOYMENT_EVENT')
+    );
+}
+
 export type PoliciesSearch = {
     pageAction?: ExtendedPageAction;
     searchFilter?: SearchFilter;

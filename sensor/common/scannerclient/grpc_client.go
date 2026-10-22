@@ -3,24 +3,18 @@ package scannerclient
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/sensor/common/centralcabundle"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 var (
@@ -43,13 +37,6 @@ type ImageAnalysis struct {
 	// and Scanner V4 (v4 proto).
 	V1Components *scannerV1.Components
 	V4Contents   *v4.Contents
-}
-
-// v2Client is the client for StackRox Scanner based on Clair V2, also
-// known as Scanner V2.
-type v2Client struct {
-	scannerV1.ImageScanServiceClient
-	conn *grpc.ClientConn
 }
 
 // v4Client is the client for StackRox Scanner Indexer, also
@@ -103,57 +90,6 @@ func (i *ImageAnalysis) GetIndexerVersion() string {
 	return ""
 }
 
-// getScannerEndpoint reads and validate the Scanner gRPC endpoint setting. If
-// the endpoint is empty or not configured properly (invalid) the value is
-// returned and error will be set.
-func getScannerEndpoint(s env.Setting) (string, error) {
-	e := s.Setting()
-	if e == "" {
-		return e, errors.Errorf("%s is not set or empty", s.EnvVar())
-	}
-	e = strings.TrimPrefix(e, "https://")
-	if strings.Contains(e, "://") {
-		return e, errors.Errorf("%s has unsupported scheme: %s", s.EnvVar(), e)
-	}
-	return e, nil
-}
-
-// dial the scanner and returns a new ScannerClient.  The function is non-blocking and
-// returns a non-nil error upon configuration error.
-func dial(endpoint string, certID mtls.Subject) (*grpc.ClientConn, error) {
-	tlsConfig, err := clientconn.TLSConfig(certID, clientconn.TLSConfigOptions{
-		UseClientCert: clientconn.MustUseClientCert,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("TLS config failed: %w", err)
-	}
-	// This is non-blocking. If we ever want this to block, then add the
-	// grpc.WithBlock() DialOption.
-	log.Infof("dialing scanner at %s", endpoint)
-	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	if err != nil {
-		return nil, fmt.Errorf("grpc dial failed: %w", err)
-	}
-	return conn, nil
-}
-
-// dialV2 connect to scanner V1 gRPC and return a new ScannerClient.
-func dialV2() (ScannerClient, error) {
-	endpoint, err := getScannerEndpoint(env.ScannerSlimGRPCEndpoint)
-	if err != nil {
-		return nil, err
-	}
-	log.Infof("dialing scanner-v2 client: %s", endpoint)
-	conn, err := dial(endpoint, mtls.ScannerSubject)
-	if err != nil {
-		return nil, err
-	}
-	return &v2Client{
-		ImageScanServiceClient: scannerV1.NewImageScanServiceClient(conn),
-		conn:                   conn,
-	}, nil
-}
-
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
 func dialV4() (ScannerClient, error) {
 	ctx := context.Background()
@@ -170,45 +106,6 @@ func dialV4() (ScannerClient, error) {
 		return nil, errors.Wrap(err, "dialing scanner V4 gRPC client")
 	}
 	return &v4Client{client: c}, nil
-}
-
-// GetImageAnalysis retrieves the image analysis results for the given image.
-func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*ImageAnalysis, error) {
-	imgName := image.GetName().GetFullName()
-
-	// The WaitForReady option will cause invocations to block (until server ready or
-	// ctx done/expires) This was added so that on fresh installation of sensor when
-	// scanner is not ready yet, local scans will not all fail and have to wait for
-	// next reprocess to succeed
-	resp, err := c.GetImageComponents(ctx, &scannerV1.GetImageComponentsRequest{
-		Image: utils.GetFullyQualifiedFullName(image),
-		Registry: &scannerV1.RegistryData{
-			Url:      cfg.URL,
-			Username: cfg.Username,
-			Password: cfg.Password,
-			Insecure: cfg.Insecure,
-		},
-	}, grpc.WaitForReady(true))
-	if err != nil {
-		log.Debugf("Unable to get image components from local Scanner for image %s: %v", imgName, err)
-		return nil, errors.Wrap(err, "getting image components from scanner")
-	}
-
-	log.Debugf("Received image components from local Scanner for image: %q", imgName)
-
-	return &ImageAnalysis{
-		ScanStatus:   resp.GetStatus(),
-		ScanNotes:    resp.GetNotes(),
-		V1Components: resp.GetComponents(),
-	}, nil
-}
-
-// Close closes and cleanup the client connection.
-func (c *v2Client) Close() error {
-	if err := c.conn.Close(); err != nil {
-		return errors.Wrap(err, "closing v2 scanner gRPC connection")
-	}
-	return nil
 }
 
 func convertIndexReportToAnalysis(ir *v4.IndexReport, indexerVersion string) *ImageAnalysis {

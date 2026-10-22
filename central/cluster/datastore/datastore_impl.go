@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
@@ -207,18 +208,23 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 		ds.idToNameCache.Add(c.GetId(), c.GetName())
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 
-		if filter := clusterPkg.GetNamespaceFilter(c); filter != nil {
+		configuredFilterErr := clusterPkg.ValidateConfiguredNamespaceFilter(c)
+		if configuredFilterErr != nil {
+			log.Errorf("Could not compile filter regexp: %v", configuredFilterErr)
+		}
+		// Keep NoPersistence in effect even when the stored filter is invalid.
+		filter := clusterPkg.GetNamespaceFilter(c)
+		if filter != nil && (configuredFilterErr == nil || clusterPkg.IsNoPersistenceEnabled(c)) {
 			compiledFilter, err := regexp.Compile(*filter)
 
 			if err == nil {
 				ds.idToNamespaceFilterCache.Add(c.GetId(), compiledFilter)
 			} else {
 				log.Errorf("Could not compile filter regexp: %v", err)
+				ds.idToNamespaceFilterCache.Remove(c.GetId())
 			}
 		} else {
-			// We got empty filter building the cluster. There should be no
-			// prior cache at this point, but just in case make sure it's
-			// invalidated.
+			// Empty or invalid filters must not leave a stale cache entry.
 			ds.idToNamespaceFilterCache.Remove(c.GetId())
 		}
 
@@ -658,7 +664,9 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 		return err
 	}
 
+	release := lifecycle.Singleton().BeginDeletion(id)
 	if err := ds.clusterStorage.Delete(ctx, id); err != nil {
+		release()
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 	ds.idToNameCache.Remove(id)
@@ -666,11 +674,12 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	ds.nameToIDCache.Remove(cluster.GetName())
 
 	deleteRelatedCtx := sac.WithAllAccess(context.Background())
-	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
+	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done, release)
 	return nil
 }
 
-func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
+func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal, release func()) {
+	defer release()
 	// Terminate the cluster connection to prevent new data from being stored.
 	if ds.cm != nil {
 		ds.cm.CloseConnection(cluster.GetId())
@@ -1054,6 +1063,7 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 			ds.idToNamespaceFilterCache.Add(cluster.GetId(), compiledFilter)
 		} else {
 			log.Errorf("Could not compile filter regexp: %v", err)
+			ds.idToNamespaceFilterCache.Remove(cluster.GetId())
 		}
 	} else {
 		// We got empty filter updating the cluster. Make sure the cache is

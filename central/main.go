@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	authDS "github.com/stackrox/rox/central/auth/datastore"
 	internalTokenAuthService "github.com/stackrox/rox/central/auth/internaltokens/service"
+	openshiftAuth "github.com/stackrox/rox/central/auth/openshift"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
@@ -47,10 +48,6 @@ import (
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
-	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
-	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
-	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
-	complianceService "github.com/stackrox/rox/central/compliance/service"
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
@@ -218,6 +215,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/grpc/versionheader"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -430,8 +428,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		clusterInitService.Singleton(),
 		clusterService.Singleton(),
 		collectionService.Singleton(),
-		complianceManagerService.Singleton(),
-		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
 		debugService.Singleton(),
@@ -602,6 +598,8 @@ func startGRPCServer() {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
+	openshiftAuth.SeedMetricsAuthProvider(authProviderRegisteringCtx, registry, roleDataStore.Singleton(), groupDataStore.Singleton())
+
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
 	if err != nil {
@@ -660,6 +658,8 @@ func startGRPCServer() {
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
+
+	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.CentralVersionServerInterceptor())
 
 	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
@@ -826,12 +826,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/api/compliance/export/csv",
-			Authorizer:    user.With(permissions.View(resources.Compliance)),
-			ServerHandler: complianceHandlers.CSVHandler(),
-			Compression:   true,
-		},
-		{
 			Route:         "/api/risk/timeline/export/csv",
 			Authorizer:    user.With(permissions.View(resources.Deployment), permissions.View(resources.DeploymentExtension)),
 			ServerHandler: timeline.CSVHandler(),
@@ -864,7 +858,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/splunk/ta/compliance",
 			Authorizer:    user.With(permissions.View(resources.Compliance)),
-			ServerHandler: splunk.NewComplianceHandler(complianceDatastore.Singleton()),
+			ServerHandler: splunk.NewComplianceHandler(),
 			Compression:   true,
 		},
 		{
