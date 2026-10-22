@@ -1,0 +1,47 @@
+digraph NativeCI {
+  graph [rankdir=TB, newrank=true, bgcolor="white", pad="0.35", nodesep="0.65", ranksep="0.48", fontname="Helvetica", fontsize=20, dpi=160];
+  node [shape=box, style="rounded,filled", fillcolor="white", color="#CBD5E1", fontname="Helvetica", fontsize=16, fontcolor="#172033", penwidth=1.5, margin="0.22,0.16"];
+  edge [color="#64748B", penwidth=1.5, arrowsize=0.75];
+
+  pr [label="Pull request\nChanged files and labels", fillcolor="#F1F5F9", width=4.5];
+
+  subgraph cluster_actions {
+    label="GitHub Actions";
+    labelloc=t;
+    style="rounded,filled";
+    color="#BFDBFE";
+    fillcolor="#EFF6FF";
+    fontcolor="#1E40AF";
+    margin=22;
+    facts [label="Small helper\nDescribe the changed files", width=3.65];
+    conditions [label="Native workflow conditions\nCombine file facts and labels", width=3.65];
+    action_work [label="Run selected work\nKeep required checks present", width=3.65, fillcolor="#DBEAFE"];
+    facts -> conditions -> action_work;
+  }
+
+  subgraph cluster_prow {
+    label="Prow";
+    labelloc=t;
+    style="rounded,filled";
+    color="#FED7AA";
+    fillcolor="#FFF7ED";
+    fontcolor="#9A3412";
+    margin=22;
+    filters [label="Native file filters\nChoose which jobs to start", width=3.65];
+    gate [label="Small gate where needed\nHandle rules filters cannot express", width=3.65, style="rounded,filled,dashed"];
+    prow_work [label="Run selected work\nKeep required UI check present", width=3.65, fillcolor="#FFEDD5"];
+    filters -> gate -> prow_work;
+  }
+
+  safeguards [label="Across both systems\nKeep image builds needed by selected tests\nPreserve existing execution restrictions", fillcolor="#F1F5F9", width=7.4];
+  note [label="Target design after rollout.\nProw's smaller gate and automatic label requests still need implementation.", shape=plaintext, fillcolor="white", color="white", fontsize=12, fontcolor="#475569"];
+
+  {rank=same; facts; filters;}
+  {rank=same; conditions; gate;}
+  {rank=same; action_work; prow_work;}
+  pr -> facts;
+  pr -> filters;
+  action_work -> safeguards;
+  prow_work -> safeguards;
+  safeguards -> note [style=invis];
+}
