@@ -36,6 +36,11 @@ on:
           'true' when every changed file is under ui/, empty
           otherwise. Skip non-UI jobs with: if: !needs.X.outputs.ui_only
         value: ${{ jobs.detect.outputs.ui_only }}
+      docs_only:
+        description: >
+          'true' when every changed file is a doc (.md or .adoc),
+          empty otherwise. Skip jobs with: if: !needs.X.outputs.docs_only
+        value: ${{ jobs.detect.outputs.docs_only }}
 
 jobs:
   detect:
@@ -43,6 +48,7 @@ jobs:
     outputs:
       files: ${{ steps.list.outputs.files }}
       ui_only: ${{ steps.list.outputs.ui_only }}
+      docs_only: ${{ steps.list.outputs.docs_only }}
     steps:
       - name: List changed files
         id: list
@@ -102,5 +108,10 @@ jobs:
             if ! echo "${anchored}" | grep -qv '^\^ui/'; then
               echo "All changed files are under ui/" >&2
               echo "ui_only=true" >> "${GITHUB_OUTPUT}"
+            fi
+
+            if ! echo "${anchored}" | grep -qvE '\.(md|adoc)\$$'; then
+              echo "All changed files are docs (.md/.adoc)" >&2
+              echo "docs_only=true" >> "${GITHUB_OUTPUT}"
             fi
           fi
