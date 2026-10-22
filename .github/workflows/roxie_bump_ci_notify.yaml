@@ -1,0 +1,168 @@
+name: Notify roxie bump CI failures
+
+on:
+  # GHA jobs report via the Checks API (fires check_suite),
+  # Prow jobs report via the commit status API (fires status).
+  # We need both to catch CI failures regardless of which system ran the job.
+  check_suite:
+    types: [completed]
+  status:
+  workflow_dispatch:
+
+jobs:
+  find-prs:
+    # Filter to roxie bump branches before a runner is allocated.
+    # check_suite carries the branch name directly; status carries a
+    # branches array that we match with contains() on the serialized JSON.
+    if: >-
+      github.repository_owner == 'stackrox'
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'check_suite'
+              && startsWith(github.event.check_suite.head_branch, 'update_roxie_version_'))
+          || (github.event_name == 'status'
+              && contains(toJSON(github.event.branches), 'update_roxie_version_')))
+    runs-on: ubuntu-24.04
+    outputs:
+      pr-numbers: '${{ steps.find.outputs.pr_numbers }}'
+    steps:
+    - name: Find roxie bump PRs
+      id: find
+      env:
+        GH_TOKEN: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+      run: |
+        pr_numbers=$(gh pr list \
+          --repo "${{ github.repository }}" \
+          --search "head:update_roxie_version_" \
+          --state open \
+          --json number \
+          --jq '[.[].number]')
+        echo "pr_numbers=${pr_numbers}" >> "$GITHUB_OUTPUT"
+        echo "Found PRs: ${pr_numbers}"
+
+  notify:
+    needs: find-prs
+    if: needs.find-prs.outputs.pr-numbers != '[]'
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        pr-number: ${{ fromJSON(needs.find-prs.outputs.pr-numbers) }}
+    env:
+      PR_URL: "https://github.com/${{ github.repository }}/pull/${{ matrix.pr-number }}"
+    steps:
+    - name: Check CI status
+      id: ci-status
+      env:
+        GH_TOKEN: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+      run: |
+        checks_json=$(gh pr checks \
+          "${{ matrix.pr-number }}" \
+          --repo "${{ github.repository }}" \
+          --json name,state,link)
+
+        total_count=$(echo "${checks_json}" | jq 'length')
+        if [[ "${total_count}" -eq 0 ]]; then
+          echo "No checks found yet, skipping."
+          exit 0
+        fi
+
+        pending_count=$(echo "${checks_json}" | jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length')
+        passed_count=$(echo "${checks_json}" | jq '[.[] | select(.state == "SUCCESS" or .state == "SKIPPED")] | length')
+        failed_checks=$(echo "${checks_json}" | jq -c '[.[] | select(.state == "FAILURE" or .state == "ERROR" or .state == "TIMED_OUT" or .state == "STARTUP_FAILURE" or .state == "CANCELLED")]')
+        failed_count=$(echo "${failed_checks}" | jq 'length')
+
+        echo "total_count=${total_count}" >> "$GITHUB_OUTPUT"
+        echo "pending_count=${pending_count}" >> "$GITHUB_OUTPUT"
+        echo "passed_count=${passed_count}" >> "$GITHUB_OUTPUT"
+        echo "failed_count=${failed_count}" >> "$GITHUB_OUTPUT"
+
+        if [[ "${failed_count}" -eq 0 ]]; then
+          echo "outcome=passed" >> "$GITHUB_OUTPUT"
+        else
+          echo "outcome=failed" >> "$GITHUB_OUTPUT"
+          echo "failed_checks=${failed_checks}" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Get Slack thread info from PR
+      if: steps.ci-status.outputs.outcome != ''
+      id: slack-thread
+      env:
+        GH_TOKEN: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+        BOT_USERNAME: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }}'
+      run: |
+        comment_body=$(gh api "repos/${{ github.repository }}/issues/${{ matrix.pr-number }}/comments" \
+          --jq "[.[] | select(.user.login == \"${BOT_USERNAME}\" and (.body | startswith(\"Slack thread/\")))] | last | .body // empty")
+
+        if [[ -z "${comment_body}" ]]; then
+          echo "No Slack thread reference found on PR."
+          echo "has_thread=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        json="${comment_body#Slack thread/}"
+        ts=$(echo "${json}" | jq -r '.ts')
+        channel=$(echo "${json}" | jq -r '.channel')
+
+        if [[ -z "${ts}" || "${ts}" == "null" || -z "${channel}" ]]; then
+          echo "Could not parse Slack thread info."
+          echo "has_thread=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "has_thread=true" >> "$GITHUB_OUTPUT"
+        echo "ts=${ts}" >> "$GITHUB_OUTPUT"
+        echo "channel=${channel}" >> "$GITHUB_OUTPUT"
+
+    - name: Build Slack payload
+      id: payload
+      if: >-
+        steps.ci-status.outputs.outcome != ''
+        && steps.slack-thread.outputs.has_thread == 'true'
+      env:
+        OUTCOME: '${{ steps.ci-status.outputs.outcome }}'
+        FAILURES_JSON: '${{ steps.ci-status.outputs.failed_checks }}'
+        TOTAL_COUNT: '${{ steps.ci-status.outputs.total_count }}'
+        PENDING_COUNT: '${{ steps.ci-status.outputs.pending_count }}'
+        PASSED_COUNT: '${{ steps.ci-status.outputs.passed_count }}'
+        FAILED_COUNT: '${{ steps.ci-status.outputs.failed_count }}'
+        PR_NUMBER: '${{ matrix.pr-number }}'
+        PR_URL: '${{ env.PR_URL }}'
+        SLACK_CHANNEL: '${{ steps.slack-thread.outputs.channel }}'
+        SLACK_TS: '${{ steps.slack-thread.outputs.ts }}'
+      run: |
+        if [[ "${OUTCOME}" == "passed" ]]; then
+          mrkdwn="All ${TOTAL_COUNT} checks passed on <${PR_URL}|roxie bump PR #${PR_NUMBER}>."
+          fallback="All ${TOTAL_COUNT} checks passed on roxie bump PR #${PR_NUMBER}."
+        else
+          mrkdwn="*CI failures on <${PR_URL}|roxie bump PR #${PR_NUMBER}>:*"
+          fallback="CI failures on roxie bump PR #${PR_NUMBER}:"
+          while IFS=$'\t' read -r name link; do
+            mrkdwn="${mrkdwn}"$'\n'"• <${link}|${name}>"
+            fallback="${fallback} ${name},"
+          done < <(echo "${FAILURES_JSON}" | jq -r '.[] | [.name, .link] | @tsv')
+          fallback="${fallback%,}"
+        fi
+
+        payload=$(jq -n \
+          --arg channel "${SLACK_CHANNEL}" \
+          --arg thread_ts "${SLACK_TS}" \
+          --arg text "${fallback}" \
+          --arg mrkdwn "${mrkdwn}" \
+          '{
+            channel: $channel,
+            thread_ts: $thread_ts,
+            text: $text,
+            blocks: [{type: "section", text: {type: "mrkdwn", text: $mrkdwn}}]
+          }')
+        echo "slack_payload<<EOF" >> "$GITHUB_OUTPUT"
+        echo "${payload}" >> "$GITHUB_OUTPUT"
+        echo "EOF" >> "$GITHUB_OUTPUT"
+
+    - name: Post CI result to Slack
+      if: >-
+        steps.ci-status.outputs.outcome != ''
+        && steps.slack-thread.outputs.has_thread == 'true'
+      uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # ratchet:slackapi/slack-github-action@v3.0.3
+      with:
+        method: chat.postMessage
+        token: '${{ secrets.SLACK_BOT_TOKEN }}'
+        payload: '${{ steps.payload.outputs.slack_payload }}'
