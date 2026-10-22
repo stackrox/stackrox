@@ -99,6 +99,42 @@ func TestPartialValidation(t *testing.T) {
 				cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
 			},
 		},
+		"Invalid manual namespace filter should fail": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.DynamicConfig = &storage.DynamicClusterConfig{
+					ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{ExcludeNamespaceFilter: "["},
+				}
+			},
+			expectedErrors: []string{"invalid excluded namespaces filter", "missing closing ]"},
+		},
+		"Invalid Helm namespace filter should fail": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.ManagedBy = storage.ManagerType_MANAGER_TYPE_HELM_CHART
+				cluster.HelmConfig = &storage.CompleteClusterConfig{DynamicConfig: &storage.DynamicClusterConfig{
+					ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{ExcludeNamespaceFilter: "["},
+				}}
+			},
+			expectedErrors: []string{"invalid excluded namespaces filter"},
+		},
+		"Invalid namespace filter should fail even with no persistence": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.DynamicConfig = &storage.DynamicClusterConfig{
+					ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+						ExcludeNamespaceFilter: "[", NoPersistence: true,
+					},
+				}
+			},
+			expectedErrors: []string{"invalid excluded namespaces filter"},
+		},
+		"Valid combined namespace filter should pass": {
+			configureClusterFn: func(cluster *storage.Cluster) {
+				cluster.DynamicConfig = &storage.DynamicClusterConfig{
+					ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+						ExcludeNamespaceFilter: "test-.*", ExcludeOpenshiftNs: true,
+					},
+				}
+			},
+		},
 	}
 
 	for name, c := range cases {
