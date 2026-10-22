@@ -38,7 +38,7 @@ func TestIssueTokenJSON(t *testing.T) {
 		roxClaims := RoxClaims{
 			InternalRoles:     []*InternalRole{internalRole},
 			Name:              "token-with-internal-role",
-			HTTPRequestScopes: []HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
+			HTTPRequestScopes: HTTPRequestScopes{"/metrics": {"GET"}},
 		}
 		info, err := issuer.Issue(context.Background(), roxClaims)
 		require.NoError(t, err, "Should successfully encode InternalRole to JWT")
@@ -50,6 +50,9 @@ func TestIssueTokenJSON(t *testing.T) {
 		require.NoError(t, json.Unmarshal(payload, &signedClaims))
 		assert.Contains(t, signedClaims, "http")
 		assert.NotContains(t, signedClaims, "http_request_scopes")
+		var signedHTTP HTTPRequestScopes
+		require.NoError(t, json.Unmarshal(signedClaims["http"], &signedHTTP))
+		assert.Equal(t, roxClaims.HTTPRequestScopes, signedHTTP)
 
 		parsed, err := validator.Validate(context.Background(), info.Token)
 		require.NoError(t, err)

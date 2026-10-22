@@ -34,7 +34,8 @@ func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames
 	if err := tokens.ValidateHTTPRequestScopes(httpScopes); err != nil {
 		return "", nil, errox.InvalidArgs.CausedBy(err)
 	}
-	claims := tokens.RoxClaims{RoleNames: roleNames, Name: name, HTTPRequestScopes: httpScopes}
+	claims := tokens.RoxClaims{RoleNames: roleNames, Name: name,
+		HTTPRequestScopes: tokens.HTTPRequestScopesByPath(httpScopes)}
 	var opts []tokens.Option
 	if expireAt != nil {
 		opts = append(opts, tokens.WithExpiry(*expireAt))

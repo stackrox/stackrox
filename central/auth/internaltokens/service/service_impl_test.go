@@ -343,7 +343,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
-					HTTPRequestScopes: []tokens.HTTPRequestScope{{Method: "GET", Path: "/v1/deployments"}},
+					HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}},
 				}
 				mocks.issuer.EXPECT().
 					Issue(gomock.Any(), expectedClaims, gomock.Any()).
