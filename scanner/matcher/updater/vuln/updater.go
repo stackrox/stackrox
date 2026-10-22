@@ -480,6 +480,12 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	// last known update time to preserve aggregate timestamp accuracy.
 	for _, f := range bundles {
 		if _, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(ctx, f.Name, prevTime); err != nil {
+			for _, bundle := range bundles {
+				source := strings.TrimSuffix(path.Base(bundle.Name), ".json.zst")
+				if u.sourceResults[source] == "pending" {
+					u.setSourceResult(zipSHA, source, "failure")
+				}
+			}
 			return false, fmt.Errorf("setting last update-time for bundle %s: %w", f.Name, err)
 		}
 	}

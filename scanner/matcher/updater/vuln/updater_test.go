@@ -825,6 +825,58 @@ func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
 	assert.Equal(t, map[string]string{"alpine": "success", "nvd": "failure", "rhel-vex": "success"}, outcomes)
 }
 
+func TestRunMultiBundleUpdate_PreRegistrationFailure(t *testing.T) {
+	bundleNames := []string{"alpine.json.zst", "nvd.json.zst"}
+	srv, _ := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		for _, name := range bundleNames {
+			_, err := zw.Create(name)
+			require.NoError(t, err)
+		}
+		require.NoError(t, zw.Close())
+		return bytes.NewReader(buf.Bytes())
+	})
+
+	ctrl := gomock.NewController(t)
+	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+	prevTime := time.Now().Add(-time.Hour)
+	metadataStore.EXPECT().GetLastVulnerabilityUpdate(gomock.Any()).Return(prevTime, nil)
+	metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleNames[0], prevTime).Return(prevTime, nil)
+	metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleNames[1], prevTime).Return(time.Time{}, errors.New("metadata unavailable"))
+
+	u := &Updater{
+		metadataStore: metadataStore,
+		client:        srv.Client(),
+		urls:          []string{srv.URL},
+		root:          t.TempDir(),
+		retryMax:      1,
+		retryDelay:    time.Millisecond,
+	}
+	updated, err := u.runMultiBundleUpdate(test.Logging(t))
+	require.ErrorContains(t, err, "metadata unavailable")
+	assert.False(t, updated)
+	assert.Equal(t, map[string]string{"alpine": "failure", "nvd": "failure"}, u.sourceResults)
+
+	families, err := prometheus.DefaultGatherer.Gather()
+	require.NoError(t, err)
+	outcomes := make(map[string]string)
+	for _, family := range families {
+		if family.GetName() != "rox_scanner_vulnerability_bundle_import_result" {
+			continue
+		}
+		for _, metric := range family.GetMetric() {
+			labels := make(map[string]string)
+			for _, label := range metric.GetLabel() {
+				labels[label.GetName()] = label.GetValue()
+			}
+			assert.Equal(t, float64(1), metric.GetGauge().GetValue())
+			outcomes[labels["source"]] = labels["status"]
+		}
+	}
+	assert.Equal(t, map[string]string{"alpine": "failure", "nvd": "failure"}, outcomes)
+}
+
 func TestIsRetryableDialError(t *testing.T) {
 	testCases := map[string]struct {
 		err  error
