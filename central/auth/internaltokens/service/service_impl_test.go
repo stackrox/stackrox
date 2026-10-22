@@ -9,6 +9,7 @@ import (
 
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -20,6 +21,7 @@ import (
 	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -48,6 +50,41 @@ func sensorContext(t testing.TB, ctrl *gomock.Controller, clusterID string) cont
 		Type: storage.ServiceType_SENSOR_SERVICE,
 	}).AnyTimes()
 	return authn.ContextWithIdentity(t.Context(), mockIdentity, t)
+}
+
+func TestGenerateTokenWithPerAccessPermissions(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	store := roleDataStoreMocks.NewMockDataStore(ctrl)
+	expectPermissionSetLookup(t, store, []string{"Deployment Reader", "Image Reader"}, []*storage.PermissionSet{
+		{Name: "Image Reader", ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS}},
+		{Name: "Deployment Reader", ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS}},
+	}, nil)
+	issuer := tokensMocks.NewMockIssuer(ctrl)
+	issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+		InternalRoles: []*tokens.InternalRole{
+			{RoleName: internalRoleName, Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+				HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}}},
+			{RoleName: internalRoleName, Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Image"}},
+				HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}}},
+		},
+		Clusters:  tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}},
+		Name:      fmt.Sprintf(claimNameFormat, internalRoleName, testTokenExpiry.Format(time.RFC3339Nano)),
+		Requester: "test-client",
+	}, gomock.Any()).Return(&tokens.TokenInfo{Token: "scoped-token"}, nil)
+	svc := &serviceImpl{issuer: issuer, roleManager: &roleManager{roleStore: store},
+		policy: defaultTokenPolicy(), now: testClock}
+	response, err := svc.GenerateTokenForPermissionsAndScope(sensorContext(t, ctrl, fixtureconsts.Cluster1),
+		&v1.GenerateTokenForPermissionsAndScopeRequest{
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"namespace A"}}},
+			Lifetime:      testExpirationDuration,
+			Requester:     "test-client",
+			ScopedPermissionSets: []*v1.ScopedPermissionSet{
+				{PermissionSetName: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
+				{PermissionSetName: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
+			},
+		})
+	require.NoError(t, err)
+	assert.Equal(t, "scoped-token", response.GetToken())
 }
 
 func TestGetExpiresAt(t *testing.T) {
@@ -258,6 +295,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{centralproxy.ConsoleProxyPermissionSetName},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 				Permissions:        map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
 				ClusterScopes:      []*v1.ClusterScope{requestSingleNamespace},
 				Lifetime:           testExpirationDuration,
@@ -288,6 +326,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					}},
 					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
+					HTTPRequestScopes: tokens.HTTPRequestScopes{"/api/graphql": {"POST"}},
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-token"},
@@ -295,6 +334,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"success - duplicate permission set names": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{centralproxy.ConsoleProxyPermissionSetName, centralproxy.ConsoleProxyPermissionSetName},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 				ClusterScopes:      []*v1.ClusterScope{requestSingleNamespace},
 				Lifetime:           testExpirationDuration,
 			},
@@ -318,15 +358,17 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					}},
 					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
+					HTTPRequestScopes: tokens.HTTPRequestScopes{"/api/graphql": {"POST"}},
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "combined-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "combined-token"},
 		},
-		"success - standard request": {
+		"success - legacy permissions with HTTP scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				Permissions:   deploymentPermission,
-				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:      testExpirationDuration,
+				Permissions:       deploymentPermission,
+				ClusterScopes:     []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:          testExpirationDuration,
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
 			},
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {
@@ -347,6 +389,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
+					HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}},
 				}
 				mocks.issuer.EXPECT().
 					Issue(gomock.Any(), expectedClaims, gomock.Any()).

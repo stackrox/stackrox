@@ -93,6 +93,15 @@ const (
 	// Paths that do not end with a slash must be an exact match.
 	CentralProxyPathFiltering CentralCapability = "CentralProxyPathFiltering"
 
+	// CentralProxyPerAccessTokens identifies Centrals that issue and enforce
+	// separate HTTP scopes for each permission set in a proxy token.
+	CentralProxyPerAccessTokens CentralCapability = "CentralProxyPerAccessTokens"
+
+	// CentralProxyScopedReadOnlyTokens identifies Centrals that accept named
+	// Sensor proxy permission sets after validating read-only, cluster-scoped
+	// permissions and that enforce signed HTTP method and path scopes.
+	CentralProxyScopedReadOnlyTokens CentralCapability = "CentralProxyScopedReadOnlyTokens"
+
 	// ComplianceV2TailoredProfiles identifies the capability of Central to handle
 	// tailored profile tracking and scan configurations referencing tailored profiles.
 	ComplianceV2TailoredProfiles = "ComplianceV2TailoredProfiles"
