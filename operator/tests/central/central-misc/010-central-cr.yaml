@@ -4,6 +4,15 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
+  overlays:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: central-worker
+    patches:
+    - path: spec.template.spec.containers[name:central-worker].env[-1]
+      value: |
+        name: GOMEMLIMIT
+        value: 100MiB
   imagePullSecrets:
   - name: e2e-test-pull-secret
   # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
