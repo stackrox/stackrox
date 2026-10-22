@@ -19,6 +19,9 @@ die() {
     exit 1
 }
 
+# sleep replaces the preflight's retry delay in these tests. Advancing SECONDS,
+# which the preflight uses for its deadline, lets timeout tests reach that
+# deadline without waiting in real time.
 sleep() {
     SECONDS=$((SECONDS + $1))
 }
