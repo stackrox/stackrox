@@ -42,7 +42,13 @@ EOF
     if [[ "${1:-}" == "shell" ]]; then
         "${ROOT}/scripts/roxie.sh" shell
     else
-        "${ROOT}/scripts/roxie.sh" --config "${ROOT}/deploy/roxie-config.yaml" deploy "$@"
+        if [[ "${1:-}" == "teardown" ]]; then
+            shift
+            cmd="teardown"
+        else
+            cmd="deploy"
+        fi
+        "${ROOT}/scripts/roxie.sh" --config "${ROOT}/deploy/roxie-config.yaml" "${cmd}" "$@"
     fi
     exit $?
 fi

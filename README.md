@@ -294,7 +294,19 @@ After a few minutes, all resources should be deployed, and the command launches 
 
 <details><summary>Click to expand</summary>
 
-After the deployment has completed the deployment tool (`roxie`) creates a port-forward, for example:
+After the deployment has completed, the deployment tool (`roxie`) either exposes central (for on-cloud clusters)
+or creates a port-forward (for local deployments), for example:
+
+```text
+02:24 ✓ Central is ready at: 34.70.21.23:443
+[...]
+04:07 ⏳ Waiting for Central to be ready at 34.70.21.23:443 (timeout: 5m0s)
+04:07 ✓ Central is ready and responding!
+[...]
+[roxie] Central UI: https://34.70.21.23:443
+```
+
+or
 
 ```text
 02:20 ✓ Port-forward active at https://127.0.0.1:34693

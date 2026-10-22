@@ -220,7 +220,7 @@ for a production-grade example that models realistic data distributions.
 
 1. Create a PR with your migration to build a CI image
 2. Checkout the commit **before** the migration: `make clean image`
-3. Deploy: `./scripts/roxie.sh teardown && ./deploy/deploy-local.sh`
+3. Deploy: `./deploy/deploy-local.sh teardown && ./deploy/deploy-local.sh`
 4. Create test data via Central UI or REST API
 5. Checkout your migration commit
 6. Update Central image: `kubectl -n stackrox set image deploy/central central=stackrox/main:$(make tag)`
