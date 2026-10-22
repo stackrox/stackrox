@@ -40,7 +40,7 @@ func main() {
 	})
 
 	// Build test specs from ACS scenarios (following Ori's adapter pattern)
-	specs, err := adapter.BuildExtensionTestSpecsFromACSScenarios(acs.ACSScenarios, nil)
+	specs, err := adapter.BuildExtensionTestSpecsFromACSScenarios(acs.ACSScenarios, acs.ScriptFS)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't build extension test specs from ACS scenarios: %+v", err.Error()))
 	}

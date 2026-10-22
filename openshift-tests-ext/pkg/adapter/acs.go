@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
@@ -149,11 +150,72 @@ func resolveTimeoutStr(timeoutStr string) string {
 	return timeoutStr
 }
 
+// materializeScripts extracts embedded scripts from scriptFS to a temporary directory.
+// Returns the path to the materialized directory and a cleanup function.
+// If scriptFS is nil, returns ("", nil, nil) to allow scripts to be found via PATH or current directory.
+func materializeScripts(scriptFS fs.FS) (string, func(), error) {
+	if scriptFS == nil {
+		return "", nil, nil
+	}
+
+	tmpDir, err := os.MkdirTemp("", "acs-scripts-*")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to create temp directory for scripts: %w", err)
+	}
+
+	cleanup := func() {
+		_ = os.RemoveAll(tmpDir)
+	}
+
+	// Walk the embedded FS and materialize all files
+	err = fs.WalkDir(scriptFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		// Read embedded file
+		data, err := fs.ReadFile(scriptFS, path)
+		if err != nil {
+			return fmt.Errorf("failed to read embedded file %s: %w", path, err)
+		}
+
+		// Write to temp directory
+		targetPath := filepath.Join(tmpDir, filepath.Base(path))
+		if err := os.WriteFile(targetPath, data, 0755); err != nil {
+			return fmt.Errorf("failed to write file %s: %w", targetPath, err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		cleanup()
+		return "", nil, fmt.Errorf("failed to materialize scripts: %w", err)
+	}
+
+	return tmpDir, cleanup, nil
+}
+
 // runACSScenario executes a single test scenario by running its entrypoint command with a timeout.
 // It returns an ExtensionTestResult indicating pass, fail, or error with captured output.
 func runACSScenario(ctx context.Context, sc ScenarioSpec, scriptFS fs.FS, timeout time.Duration) *ext.ExtensionTestResult {
 	result := &ext.ExtensionTestResult{
 		Name: sc.Name,
+	}
+
+	// Materialize embedded scripts to a temporary directory
+	scriptsDir, cleanup, err := materializeScripts(scriptFS)
+	if err != nil {
+		result.Result = ext.ResultFailed
+		result.Error = fmt.Sprintf("failed to materialize scripts: %v", err)
+		return result
+	}
+	if cleanup != nil {
+		defer cleanup()
 	}
 
 	argv := append([]string{sc.Entrypoint}, sc.Args...)
@@ -165,6 +227,12 @@ func runACSScenario(ctx context.Context, sc ScenarioSpec, scriptFS fs.FS, timeou
 
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Env = buildEnv(sc.EnvVars, sc.EnvFrom)
+
+	// Set INTEROP_SCRIPTS_DIR to point to materialized scripts directory
+	if scriptsDir != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("INTEROP_SCRIPTS_DIR=%s", scriptsDir))
+	}
+
 	cmd.Dir = sc.WorkDir
 	cmd.Stdout = out
 	cmd.Stderr = out

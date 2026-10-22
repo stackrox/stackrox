@@ -1,6 +1,11 @@
 package acs
 
-import _ "embed"
+import (
+	"embed"
+)
 
 //go:embed scenarios.json
 var ACSScenarios []byte
+
+//go:embed scripts
+var ScriptFS embed.FS
