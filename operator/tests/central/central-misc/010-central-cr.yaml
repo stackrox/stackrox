@@ -6,12 +6,12 @@ metadata:
 spec:
   imagePullSecrets:
   - name: e2e-test-pull-secret
-  # Small CPU requests let parallel CI stacks fit; limits still allow capped bursts.
+  # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
   central:
     resources:
       requests:
         memory: 1Gi
-        cpu: 250m
+        cpu: 500m
       limits:
         memory: 4Gi
         cpu: 1
@@ -19,7 +19,7 @@ spec:
       resources:
         requests:
           memory: 1Gi
-          cpu: 250m
+          cpu: 500m
         limits:
           memory: 4Gi
           cpu: 1
@@ -29,11 +29,10 @@ spec:
     enabled: true
     resources:
       requests:
-        cpu: 100m
-        memory: 1Gi
+        cpu: 10m
+        memory: 128Mi
       limits:
-        cpu: "2000m"
-        memory: 4Gi
+        memory: 128Mi
   scannerV4:
     indexer:
       scaling:
@@ -42,7 +41,7 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: 200m
+          cpu: "400m"
           memory: "1500Mi"
         limits:
           cpu: "1000m"
@@ -54,7 +53,7 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: 200m
+          cpu: "400m"
           memory: "2Gi"
         limits:
           cpu: "1000m"
@@ -62,7 +61,7 @@ spec:
     db:
       resources:
         requests:
-          cpu: 200m
+          cpu: "400m"
           memory: "2Gi"
         limits:
           cpu: "1000m"
