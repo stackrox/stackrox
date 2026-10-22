@@ -26,8 +26,17 @@ func (rm *roleManager) createSensorMetricsRole(
 	if sensorClusterID == "" {
 		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	return rm.createSensorRole(ctx, roles, centralproxy.MetricsPermissionSetID,
+	role, err := rm.createSensorRole(ctx, roles, centralproxy.MetricsPermissionSetID,
 		centralproxy.SecuredClusterMetricsRole, tokens.ClusterScopes{sensorClusterID: {"*"}})
+	if err != nil {
+		return nil, err
+	}
+	for access := range role.Permissions {
+		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
+			return nil, errox.InvalidArgs.New("Sensor metrics permission set grants non-read-only access")
+		}
+	}
+	return role, nil
 }
 
 func (rm *roleManager) createSensorConsoleRole(

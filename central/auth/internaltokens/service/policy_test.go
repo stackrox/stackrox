@@ -165,10 +165,20 @@ func TestEnforce(t *testing.T) {
 	}{
 		"metrics permission set": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetId: centralproxy.MetricsPermissionSetID,
-				Lifetime:        durationpb.New(30 * time.Minute),
+				PermissionSetId:   centralproxy.MetricsPermissionSetID,
+				HttpRequestScopes: []*v1.HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
+		},
+		"metrics permission set cannot request extra route": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetId:   centralproxy.MetricsPermissionSetID,
+				HttpRequestScopes: []*v1.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
 		},
 		"metrics permission set ignores client permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{

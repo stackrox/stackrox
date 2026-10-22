@@ -111,7 +111,7 @@ func TestCreateSensorMetricsRole(t *testing.T) {
 	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
 		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
 			"Deployment":     storage.Access_READ_ACCESS,
-			"Administration": storage.Access_READ_WRITE_ACCESS,
+			"Administration": storage.Access_READ_ACCESS,
 		}}, true, nil)
 
 	role, err := (&roleManager{}).createSensorMetricsRole(t.Context(), roles, "sensor-cluster")
@@ -120,10 +120,27 @@ func TestCreateSensorMetricsRole(t *testing.T) {
 		RoleName: centralproxy.SecuredClusterMetricsRole,
 		Clusters: tokens.ClusterScopes{"sensor-cluster": {"*"}},
 		Permissions: map[storage.Access][]string{
-			storage.Access_READ_ACCESS:       {"Deployment"},
-			storage.Access_READ_WRITE_ACCESS: {"Administration"},
+			storage.Access_READ_ACCESS: {"Administration", "Deployment"},
 		},
 	}, role)
+}
+
+func TestCreateSensorMetricsRoleRejectsStoredWriteOrUnknownAccess(t *testing.T) {
+	for name, access := range map[string]storage.Access{
+		"write":   storage.Access_READ_WRITE_ACCESS,
+		"unknown": storage.Access(99),
+	} {
+		t.Run(name, func(t *testing.T) {
+			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
+				Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+					"Administration": access,
+				}}, true, nil)
+			role, err := (&roleManager{}).createSensorMetricsRole(t.Context(), roles, "sensor-cluster")
+			assert.Nil(t, role)
+			assert.ErrorIs(t, err, errox.InvalidArgs)
+		})
+	}
 }
 
 func TestCreateSensorMetricsRoleFailsClosed(t *testing.T) {
