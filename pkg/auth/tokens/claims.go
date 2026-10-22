@@ -32,6 +32,15 @@ type RoxClaims struct {
 	Name string `json:"name,omitempty"`
 	// Requester represents the name of the token requester, assigned by the creator.
 	Requester string `json:"req,omitempty"`
+	// HTTPRequestScopes restricts the token to the listed HTTP method/path pairs.
+	HTTPRequestScopes []HTTPRequestScope `json:"http_request_scopes,omitempty"`
+}
+
+// HTTPRequestScope binds a token to an HTTP method and an exact path, or a
+// prefix when Path ends in a slash.
+type HTTPRequestScope struct {
+	Method string `json:"method"`
+	Path   string `json:"path"`
 }
 
 // Claims are the claims contained in a token.

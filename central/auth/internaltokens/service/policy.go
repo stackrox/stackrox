@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -139,9 +140,15 @@ func (p *tokenPolicy) enforce(
 				return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 			}
 		}
+		if len(req.GetHttpRequestScopes()) != 0 {
+			return nil, errox.InvalidArgs.New("scopes for permission-set tokens require a Central-approved profile")
+		}
 	} else {
 		if err := p.validatePermissions(req.GetPermissions()); err != nil {
 			return nil, err
+		}
+		if _, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes()); err != nil {
+			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {

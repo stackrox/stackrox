@@ -33,8 +33,9 @@ func TestIssueTokenJSON(t *testing.T) {
 			},
 		}
 		roxClaims := RoxClaims{
-			InternalRoles: []*InternalRole{internalRole},
-			Name:          "token-with-internal-role",
+			InternalRoles:     []*InternalRole{internalRole},
+			Name:              "token-with-internal-role",
+			HTTPRequestScopes: []HTTPRequestScope{{Method: "GET", Path: "/metrics"}},
 		}
 		info, err := issuer.Issue(context.Background(), roxClaims)
 		require.NoError(t, err, "Should successfully encode InternalRole to JWT")
@@ -45,5 +46,6 @@ func TestIssueTokenJSON(t *testing.T) {
 		require.Len(t, parsed.RoxClaims.InternalRoles, 1)
 		assert.Equal(t, "test-internal-role", parsed.RoxClaims.InternalRoles[0].RoleName)
 		assert.Len(t, parsed.RoxClaims.InternalRoles[0].Permissions, 2)
+		assert.Equal(t, roxClaims.HTTPRequestScopes, parsed.RoxClaims.HTTPRequestScopes)
 	})
 }

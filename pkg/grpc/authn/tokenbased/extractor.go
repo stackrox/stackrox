@@ -54,6 +54,9 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if !authProviderSrc.Enabled() {
 		return nil, getExtractorError(fmt.Sprintf("auth provider %q is not enabled", authProviderSrc.Name()), nil)
 	}
+	if token.HTTPRequestScopes != nil && !tokens.AllowsHTTPRequest(token.HTTPRequestScopes, ri) {
+		return nil, getExtractorError("token is not valid for this HTTP method and path", nil)
+	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
 	// is not propagated to the user, so the user itself does not get any escalated privileges.
