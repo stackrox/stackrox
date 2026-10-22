@@ -101,6 +101,10 @@ message ListComplianceCheckResultResponse {
   string cluster_id = 3;
   int32 total_count = 4;
   google.protobuf.Timestamp last_scan_time = 5;
+  // Rolled-up freshness across all check results for this cluster and
+  // profile (not limited to the current page): STALE if any result is stale
+  // (STALE > CURRENT > UNKNOWN).
+  ComplianceDataFreshness data_freshness = 6;
 }
 
 message ComplianceScanResultsRequest {
