@@ -97,8 +97,8 @@ spec:
     preflight:
       crdUpgradeSafety:
         # Use None (not Strict) because CI tests jump across many versions (e.g. 4.11.0 -> latest commit)
-        # and CRD schemas legitimately evolve over that range (new validation rules, fields, etc.)
-        # Strict would block these valid schema changes and fail CI unnecessarily.
-        # This still validates the OLMv1 upgrade mechanism itself.
-        # Production upgrades follow catalog-defined paths and don't need this preflight.
+        # and CRD schemas evolve in ways that the strict validation does not support.
+        # We have another GHA-based check which does similar validation
+        # with special cases as appropriate.
+        # See /.github/workflows/check-crd-compatibility.yaml
         enforcement: None
