@@ -60,7 +60,8 @@ func ValidateHTTPRequestScopes(scopes []HTTPRequestScope) error {
 }
 
 // AllowsHTTPRequest checks the signed HTTP scope against trusted request information.
-// A malformed scope or ambiguous URL fails closed.
+// The most specific matching path determines the permitted methods. An
+// ambiguous URL fails closed.
 func AllowsHTTPRequest(scopes HTTPRequestScopes, ri requestinfo.RequestInfo) bool {
 	if len(scopes) == 0 || ri.HTTPRequest == nil || ri.HTTPRequest.URL == nil {
 		return false
@@ -69,14 +70,21 @@ func AllowsHTTPRequest(scopes HTTPRequestScopes, ri requestinfo.RequestInfo) boo
 	if !canonicalHTTPPath(u) {
 		return false
 	}
-	for scopedPath, methods := range scopes {
+	var bestPath string
+	for scopedPath := range scopes {
+		if !ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: scopedPath}) {
+			continue
+		}
 		if scopedPath != u.Path && !(strings.HasSuffix(scopedPath, "/") && strings.HasPrefix(u.Path, scopedPath)) {
 			continue
 		}
-		for _, method := range methods {
-			if ValidHTTPRequestScope(HTTPRequestScope{Method: method, Path: scopedPath}) && method == ri.HTTPRequest.Method {
-				return true
-			}
+		if len(scopedPath) > len(bestPath) {
+			bestPath = scopedPath
+		}
+	}
+	for _, method := range scopes[bestPath] {
+		if ValidHTTPRequestScope(HTTPRequestScope{Method: method, Path: bestPath}) && method == ri.HTTPRequest.Method {
+			return true
 		}
 	}
 	return false

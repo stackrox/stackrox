@@ -48,6 +48,30 @@ func TestAllowsHTTPRequest(t *testing.T) {
 	}}))
 }
 
+func TestAllowsHTTPRequestMostSpecificPath(t *testing.T) {
+	scopes := HTTPRequestScopes{
+		"/path/":        {"GET", "POST"},
+		"/path/subpath": {"GET"},
+	}
+	for name, tc := range map[string]struct {
+		method  string
+		path    string
+		allowed bool
+	}{
+		"exact path GET":     {method: "GET", path: "/path/subpath", allowed: true},
+		"exact path POST":    {method: "POST", path: "/path/subpath"},
+		"prefix descendant":  {method: "POST", path: "/path/another", allowed: true},
+		"prefix itself":      {method: "POST", path: "/path/", allowed: true},
+		"unrelated endpoint": {method: "POST", path: "/pathology"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.allowed, AllowsHTTPRequest(scopes, requestinfo.RequestInfo{
+				HTTPRequest: &requestinfo.HTTPRequest{Method: tc.method, URL: &url.URL{Path: tc.path}},
+			}))
+		})
+	}
+}
+
 func TestHTTPRequestScopesFromProto(t *testing.T) {
 	for name, requested := range map[string][]*v1.HTTPRequestScope{
 		"duplicate": {{Method: "GET", Path: "/metrics"}, {Method: "GET", Path: "/metrics"}},
