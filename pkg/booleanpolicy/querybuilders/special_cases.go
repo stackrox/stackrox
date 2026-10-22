@@ -2,6 +2,7 @@ package querybuilders
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -112,6 +113,31 @@ func scaleEPSSPercentToProbability(value string) string {
 	}
 	scaled := float64(float32(float64(percent) / 100))
 	return prefix + strconv.FormatFloat(scaled, 'f', -1, 64)
+}
+
+// ScaleEPSSProbabilityToPercent converts a search probability such as ">=0.75"
+// into a policy percent such as ">= 75". It inverts scaleEPSSPercentToProbability.
+// ok is false when the term is not a probability in [0, 1], or when ">" or ">="
+// would combine with 100 and match nothing.
+func ScaleEPSSProbabilityToPercent(value string) (string, bool) {
+	prefix, number := basematchers.ParseNumericPrefix(strings.TrimSpace(value))
+	probability, err := strconv.ParseFloat(number, 64)
+	if err != nil || math.IsNaN(probability) || probability < 0 || probability > 1 {
+		return "", false
+	}
+	// The forward scale stores the threshold as float32. Round back through that
+	// type so a value produced by scaleEPSSPercentToProbability returns the same percent.
+	percent := int(math.Round(float64(float32(probability)) * 100))
+	if percent < 0 || percent > 100 {
+		return "", false
+	}
+	if percent == 100 && (prefix == basematchers.GreaterThan || prefix == basematchers.GreaterThanOrEqualTo) {
+		return "", false
+	}
+	if prefix == "" {
+		return strconv.Itoa(percent), true
+	}
+	return prefix + " " + strconv.Itoa(percent), true
 }
 
 // ForCVSS returns a query builder for CVSS scores.

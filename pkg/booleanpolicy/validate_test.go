@@ -37,8 +37,8 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "EPSS percent",
-			valid:   []string{"0", "75", "100", ">0", ">= 75", "<=100", "< 1", "> 100"},
-			invalid: []string{"", ">", "101", "-1", "75.5", "00", "075", "=75", "100.0"},
+			valid:   []string{"0", "75", "100", ">0", ">= 75", "<=100", "< 1", "> 99", ">= 99", "< 100"},
+			invalid: []string{"", ">", "101", "-1", "75.5", "00", "075", "=75", "100.0", "> 100", ">100", ">= 100", ">=100"},
 			r:       comparatorEPSSPercentRegex,
 		},
 		{
@@ -228,11 +228,15 @@ func (s *PolicyValueValidator) TestValidateEPSS() {
 	valid := policyWithSingleKeyValue(fieldnames.EPSS, ">= 75", false)
 	s.NoError(Validate(valid))
 
-	for _, value := range []string{"0", "100", "< 1", "<=100"} {
+	for _, value := range []string{"0", "100", "< 1", "<=100", "> 99", ">= 99", "< 100"} {
 		s.NoError(Validate(policyWithSingleKeyValue(fieldnames.EPSS, value, false)), value)
 	}
 	for _, value := range []string{"101", "75.5", "-1", ""} {
 		s.Error(Validate(policyWithSingleKeyValue(fieldnames.EPSS, value, false)), value)
+	}
+	for _, value := range []string{"> 100", ">100", ">= 100", ">=100"} {
+		err := Validate(policyWithSingleKeyValue(fieldnames.EPSS, value, false))
+		s.ErrorContains(err, "at most 1", value)
 	}
 	s.Error(Validate(policyWithSingleKeyValue(fieldnames.EPSS, ">= 50", true)))
 }
