@@ -1,5 +1,4 @@
 import {
-    Alert,
     Form,
     FormGroup,
     FormHelperText,
@@ -12,29 +11,18 @@ import {
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SelectSingle from 'Components/SelectSingle';
 import useMetadata from 'hooks/useMetadata';
-import type { ClusterType, CompleteClusterConfig, DynamicClusterConfig } from 'types/cluster.proto';
+import type { CompleteClusterConfig, DynamicClusterConfig } from 'types/cluster.proto';
 import { getVersionedDocs } from 'utils/versioning';
 
 import HelmValueWarning from './Components/HelmValueWarning';
 
 export type DynamicConfigurationFormProps = {
-    clusterType: ClusterType;
     dynamicConfig: DynamicClusterConfig;
-    handleChange: (path: string, value: boolean | string) => void;
     helmConfig: CompleteClusterConfig | null;
-    isManagerTypeNonConfigurable: boolean;
 };
 
-function DynamicConfigurationForm({
-    clusterType,
-    dynamicConfig,
-    handleChange,
-    helmConfig,
-    isManagerTypeNonConfigurable,
-}: DynamicConfigurationFormProps) {
+function DynamicConfigurationForm({ dynamicConfig, helmConfig }: DynamicConfigurationFormProps) {
     const { version } = useMetadata();
-
-    const isLoggingSupported = clusterType === 'OPENSHIFT4_CLUSTER';
 
     // Assumptions:
     // TextInput element: property path is same as first argument of handleChange.
@@ -50,10 +38,7 @@ function DynamicConfigurationForm({
                     id="dynamicConfig.registryOverride"
                     type="text"
                     value={dynamicConfig.registryOverride}
-                    onChange={(_event, value) =>
-                        handleChange('dynamicConfig.registryOverride', value)
-                    }
-                    isDisabled={isManagerTypeNonConfigurable}
+                    isDisabled
                 />
                 <FormHelperText>
                     <HelperText>
@@ -71,8 +56,8 @@ function DynamicConfigurationForm({
                             ? 'disabled'
                             : 'enabled'
                     }
-                    handleSelect={(id, value) => handleChange(id, value === 'disabled')}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
@@ -110,8 +95,8 @@ function DynamicConfigurationForm({
                 <SelectSingle
                     id="dynamicConfig.disableAuditLogs"
                     value={dynamicConfig.disableAuditLogs ? 'disabled' : 'enabled'}
-                    handleSelect={(id, value) => handleChange(id, value === 'disabled')}
-                    isDisabled={isManagerTypeNonConfigurable || !isLoggingSupported}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
@@ -121,17 +106,6 @@ function DynamicConfigurationForm({
                     currentValue={dynamicConfig.disableAuditLogs}
                     helmValue={helmConfig?.dynamicConfig?.disableAuditLogs}
                 />
-                {!isLoggingSupported && (
-                    <Alert
-                        variant="warning"
-                        title="Kubernetes and Openshift compatibility"
-                        component="p"
-                        isInline
-                    >
-                        This setting will not work for Kubernetes or OpenShift 3.x. To enable
-                        logging, you must upgrade your cluster to OpenShift 4 or higher.
-                    </Alert>
-                )}
             </FormGroup>
             <FormGroup label="Automatically lock process baselines">
                 <SelectSingle
@@ -141,8 +115,8 @@ function DynamicConfigurationForm({
                             ? 'enabled'
                             : 'disabled'
                     }
-                    handleSelect={(id, value) => handleChange(id, value === 'enabled')}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
