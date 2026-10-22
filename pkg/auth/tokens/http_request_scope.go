@@ -120,6 +120,6 @@ func validHTTPRequestPath(p string) bool {
 func canonicalHTTPPath(u *url.URL) bool {
 	p := u.Path
 	return strings.HasPrefix(p, "/") && !strings.HasPrefix(p, "//") &&
-		!strings.Contains(p, "\\") && path.Clean(p) == strings.TrimSuffix(p, "/") &&
+		!strings.Contains(p, "\\") && (p == "/" || path.Clean(p) == strings.TrimSuffix(p, "/")) &&
 		u.EscapedPath() == p
 }
