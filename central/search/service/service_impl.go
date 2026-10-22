@@ -158,7 +158,6 @@ type serviceImpl struct {
 	clusters          clusterDataStore.DataStore
 	categories        categoriesDataStore.DataStore
 	aggregator        aggregation.Aggregator
-	authorizer        authz.Authorizer
 	imageIntegrations imageIntegrationDataStore.DataStore
 }
 
