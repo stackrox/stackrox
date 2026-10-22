@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
@@ -147,7 +148,7 @@ func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, calls.Load())
 	assert.Equal(t, centralproxy.MetricsPermissionSetID, client.lastRequest.GetPermissionSetId())
-	assert.Equal(t, []*centralv1.HTTPRequestScope{{Method: "GET", Path: "/metrics"}}, client.lastRequest.GetHttpRequestScopes())
+	assert.Equal(t, []*apiV1.HTTPRequestScope{{Method: "GET", Path: "/metrics"}}, client.lastRequest.GetHttpRequestScopes())
 	assert.Empty(t, client.lastRequest.GetPermissions())
 	assert.Empty(t, client.lastRequest.GetClusterScopes())
 
