@@ -16,10 +16,12 @@ func TestAllowedPathsForProfiles(t *testing.T) {
 	)
 	assert.ElementsMatch(t, []string{"/api/graphql", "/metrics"}, paths.AsSlice())
 
-	var consolePaths []string
-	for path := range ConsoleHTTPScopes {
-		consolePaths = append(consolePaths, path)
+	var advertisedPaths []string
+	for _, profile := range []tokens.HTTPRequestScopes{ConsoleHTTPScopes, MetricsHTTPScopes} {
+		for path := range profile {
+			advertisedPaths = append(advertisedPaths, path)
+		}
 	}
-	assert.ElementsMatch(t, consolePaths, AllowedProxyPaths.AsSlice())
+	assert.ElementsMatch(t, advertisedPaths, AllowedProxyPaths.AsSlice())
 	assert.True(t, AllowedProxyPaths.Contains("/metrics"))
 }
