@@ -23,10 +23,10 @@ import (
 
 type recordingTokenBackend struct {
 	backend.Backend
-	scopes []tokens.HTTPRequestScope
+	scopes tokens.HTTPRequestScopes
 }
 
-func (b *recordingTokenBackend) IssueRoleToken(_ context.Context, _ string, _ []string, _ *time.Time, scopes []tokens.HTTPRequestScope) (string, *storage.TokenMetadata, error) {
+func (b *recordingTokenBackend) IssueRoleToken(_ context.Context, _ string, _ []string, _ *time.Time, scopes tokens.HTTPRequestScopes) (string, *storage.TokenMetadata, error) {
 	b.scopes = scopes
 	return "token", &storage.TokenMetadata{}, nil
 }
@@ -46,15 +46,22 @@ func TestGenerateTokenHTTPRequestScope(t *testing.T) {
 
 	result, err := svc.GenerateToken(ctx, &v1.GenerateTokenRequest{
 		Name: "test", Roles: []string{"Analyst"},
-		HttpRequestScopes: []*v1.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}},
+		HttpRequestScopes: []*v1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "token", result.GetToken())
-	assert.Equal(t, []tokens.HTTPRequestScope{{Method: "GET", Path: "/v1/metadata"}}, b.scopes)
+	assert.Equal(t, tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}}, b.scopes)
 
 	_, err = svc.GenerateToken(ctx, &v1.GenerateTokenRequest{
 		Name: "test", Roles: []string{"Analyst"},
-		HttpRequestScopes: []*v1.HTTPRequestScope{{Method: "GET", Path: "/v1/%6detadata"}},
+		HttpRequestScopes: []*v1.HTTPRequestScope{{Path: "/v1/metadata"}},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, tokens.HTTPRequestScopes{"/v1/metadata": {}}, b.scopes)
+
+	_, err = svc.GenerateToken(ctx, &v1.GenerateTokenRequest{
+		Name: "test", Roles: []string{"Analyst"},
+		HttpRequestScopes: []*v1.HTTPRequestScope{{Path: "/v1/%6detadata", Methods: []string{"GET"}}},
 	})
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }

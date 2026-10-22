@@ -65,12 +65,13 @@ func (x *ResourceByID) GetId() string {
 	return ""
 }
 
-// HTTPRequestScope restricts a token to an HTTP method and path.
+// HTTPRequestScope restricts a token to the given methods on a path.
+// An empty methods list denies all methods on this path.
 type HTTPRequestScope struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Method string                 `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// A trailing slash denotes a path prefix; otherwise the path matches exactly.
-	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Path          string   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Methods       []string `protobuf:"bytes,2,rep,name=methods,proto3" json:"methods,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,18 +106,18 @@ func (*HTTPRequestScope) Descriptor() ([]byte, []int) {
 	return file_api_v1_common_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HTTPRequestScope) GetMethod() string {
-	if x != nil {
-		return x.Method
-	}
-	return ""
-}
-
 func (x *HTTPRequestScope) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
+}
+
+func (x *HTTPRequestScope) GetMethods() []string {
+	if x != nil {
+		return x.Methods
+	}
+	return nil
 }
 
 // EXPERIMENTAL.
@@ -180,10 +181,10 @@ const file_api_v1_common_proto_rawDesc = "" +
 	"\n" +
 	"\x13api/v1/common.proto\x12\x02v1\"\x1e\n" +
 	"\fResourceByID\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\">\n" +
-	"\x10HTTPRequestScope\x12\x16\n" +
-	"\x06method\x18\x01 \x01(\tR\x06method\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\";\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"@\n" +
+	"\x10HTTPRequestScope\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
+	"\amethods\x18\x02 \x03(\tR\amethods\";\n" +
 	"\x13DeleteByIDWithForce\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05force\x18\x02 \x01(\bR\x05forceB'\n" +
