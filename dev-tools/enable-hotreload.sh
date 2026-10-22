@@ -8,14 +8,50 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# shellcheck source=../deploy/common/k8sbased.sh
-source "${DIR}"/../deploy/common/k8sbased.sh
-
 if [[ -z "$1" ]]; then
   echo "Usage: $0 <component> [ <namespace> ]"
   echo "Available components: sensor, central, migrator, admission"
   exit 1
 fi
+
+function hotload_binary {
+  local binary_name="$1"
+  local local_name="$2"
+  local deployment="$3"
+  local namespace=${4:-stackrox}
+
+  echo
+  echo "**********"
+  echo "$binary_name binary is being hot reloaded"
+  echo "**********"
+  echo
+
+  goarch=$(go env GOARCH)
+  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_${goarch}/${local_name}")
+  # set custom source path, e.g. when StackRox source is mounted into kind.
+  if [[ -n "$ROX_LOCAL_SOURCE_PATH" ]]; then
+      echo "ROX_LOCAL_SOURCE_PATH is set to $ROX_LOCAL_SOURCE_PATH."
+      binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_${goarch}/${local_name}"
+  fi
+
+  kubectl -n "${namespace}" patch "deploy/${deployment}" --patch-file <(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: "${deployment}"
+          volumeMounts:
+            - mountPath: "/stackrox/${binary_name}"
+              name: "binary-${local_name}"
+      volumes:
+        - hostPath:
+            path: "${binary_path}"
+            type: ""
+          name: "binary-${local_name}"
+EOF
+)
+  kubectl -n "${namespace}" set env "deploy/${deployment}" "ROX_HOTRELOAD=true"
+}
 
 component="$1"
 namespace=${2:-stackrox}
