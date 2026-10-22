@@ -16,6 +16,12 @@ function main() {
   esac
 
   case $# in
+  4)
+    local -r operator_ns="${1}"
+    local -r index_image_repo="${2}"
+    local -r index_image_tag="${3}"
+    local -r starting_csv_version="${4}"
+    ;;
   5)
     local -r operator_ns="${1}"
     local -r index_image_repo="${2}"
