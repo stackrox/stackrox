@@ -14,14 +14,20 @@ The comparison combines positive votes, lets run win over skip, and finally skip
 | Positive every-file rules | UI-only selects UI/component; Scanner-only selects Go/Scanner DB; operator/config-controller/CRD-only selects Go/CRD checks; roxctl-only selects Go/local roxctl/Actions nongroovy. The classifier preserves the exact path groups. |
 | Subsystem-only versus shared paths | Central-only selects PostgreSQL; Sensor-only selects Sensor integration. Shared libraries and Central/Sensor communication paths select both, even in mixed diffs. |
 | All six area labels | Central, Sensor, Scanner, UI, operator, and roxctl labels select their respective candidates. The original outer conditions remain. |
-| All eight E2E job labels | Each consumer's own expression includes its job label; waiters and the image-build candidate include dependent consumers. |
+| All nine E2E job labels | Each consumer's own expression includes its job label; waiters and the image-build candidate include dependent consumers. |
 | Run-all, QA-group and enforcement labels | Run-all selects candidates; enforcement applies the decisions; `ci-all-qa-tests` changes the contents of an already-running QA workload. None grants trust or starts Prow jobs. |
 | Failure defaults | Unknown facts select ordinary Actions targets and nongroovy/other non-QA E2E targets; the three Actions QA/FIPS targets remain unselected. Labels do not override these unknown-data defaults. |
 | Non-PR events | Existing push, tag, reusable-call and manual triggers remain. PR enforcement is disabled. The existing matrix expansion and manual image-tag inputs remain. |
 | Selector changes | The comparison's selector-tool paths select regression tests. Paths for this native implementation additionally select those tests. This is an explicit extension. |
 | Explicit repository overrides | A validated match of a workflow's `run_all` patterns selects its candidates. Changing `detect-changes.yml` selects candidates in each calling workflow. This does not grant trust or override unknown-data defaults. |
 
-The saved comparison inputs and expected outcomes are unchanged. Tests compare all 29 Actions targets, including candidates that existing outer conditions prevent from executing. The four Prow groups below are accounted for through configuration and explicit gaps, rather than represented as unused Actions outputs.
+The saved comparison inputs and expected outcomes are unchanged. Tests compare all 29 reference Actions targets, including candidates that existing outer conditions prevent from executing. The four Prow groups below are accounted for through configuration and explicit gaps, rather than represented as unused Actions outputs.
+
+### Current backup/restore variants
+
+The current base splits database backup/restore into `e2e-db-backup-restore-tests-gke` and `e2e-db-backup-restore-tests-gke-konflux`. Each has its own matching label and image waiter. The ordinary variant carries the reference job's selection rules; the Konflux variant uses the same file rules and additionally requires `konflux-build` under enforcement. For example, `go.mod` plus `README.md` selects both, but only the ordinary variant can execute without the build label. An explicit Konflux job label alone also cannot supply images.
+
+The pinned comparison tests map the reference's old job and label to the ordinary GKE variant. Twenty separate scenarios cover the current variants, including shadow mode, drafts, forks, unknown files, live label removal, and image tags. The old label is not a runtime alias. These additions follow the current base, rather than a newer comparison revision.
 
 ### Intentional additions to the comparison
 

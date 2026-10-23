@@ -2,7 +2,7 @@
 
 Each Actions job decides whether it needs to run. Its condition combines changed-file facts with PR labels. Prow makes automatic scheduling decisions through path selectors in `openshift/release`. No runtime program produces a list of jobs.
 
-This is a discussion prototype. It exercises all 29 Actions job/helper targets and accounts for the four Prow suite groups in [PR #23403 at `34873a53e3b6`](https://github.com/stackrox/stackrox/commit/34873a53e3b60b5fc7b50b1446b02d11a1eb0fca). Actions preserves the saved E2E dispatch behavior, with explicit candidate additions for repository overrides and generated-file verification. **Prow does not have equivalent behavior.** The differences and concrete examples are in [cases.md](cases.md).
+This is a discussion prototype. It exercises 30 Actions job/helper targets: the 29 from [PR #23403 at `34873a53e3b6`](https://github.com/stackrox/stackrox/commit/34873a53e3b60b5fc7b50b1446b02d11a1eb0fca), plus the current base's Konflux database backup/restore variant. Actions preserves the saved E2E dispatch behavior after mapping the ordinary backup/restore job and label to their GKE names, with explicit candidate additions for repository overrides and generated-file verification. **Prow does not have equivalent behavior.** The differences and concrete examples are in [cases.md](cases.md).
 
 The [Granular Test Proposal](https://docs.google.com/document/d/1rpe0LZu39BLq9X_jUYH3iEWVmjqxkzIstQ8nwvMRv1I/edit) and [original CI design](https://docs.google.com/document/d/1qYJFtJr7_19X9nPliYgClDs-nNRRYA8FPe1bAg04jN0/edit) supply background proposals. Their unimplemented extensions are not attributed to the pinned comparison.
 
@@ -13,7 +13,7 @@ The [Granular Test Proposal](https://docs.google.com/document/d/1rpe0LZu39BLq9X_
 | Go, PostgreSQL, Sensor integration, benchmarks, UI, shell, local roxctl | [unit-tests.yaml](../../.github/workflows/unit-tests.yaml), the job's `Explain selection` input |
 | Style, generated files, Go/Actions/Prow lint, dependent image versions | [style.yaml](../../.github/workflows/style.yaml), the job's `Explain selection` input |
 | Operator/CRD and Scanner database tests | [check-crd-compatibility.yaml](../../.github/workflows/check-crd-compatibility.yaml), [scanner-db-integration-tests.yaml](../../.github/workflows/scanner-db-integration-tests.yaml) |
-| Eight Actions E2E consumers | [e2e-dispatch.yaml](../../.github/workflows/e2e-dispatch.yaml), each consumer's `should-run` condition |
+| Nine Actions E2E consumers | [e2e-dispatch.yaml](../../.github/workflows/e2e-dispatch.yaml), each consumer's `should-run` condition |
 | Image waits and their dependent jobs | The two waiter jobs in `e2e-dispatch.yaml`; advisory `explain-image-build-selection` job in [build.yaml](../../.github/workflows/build.yaml) |
 | Prototype regression tests | [native-ci-tests.yaml](../../.github/workflows/native-ci-tests.yaml) |
 | Definitions of named filename groups | [file-groups.json](file-groups.json); these contain paths, never jobs or labels |
@@ -75,7 +75,7 @@ go -C ci/native-selectors/testing test -count=1 -v ./...
 go -C ci/native-selectors/testing vet ./...
 ```
 
-On macOS, set `NATIVE_TEST_BASH=/opt/homebrew/bin/bash` if necessary. Go tests build the classifier and use `act`'s Go expression evaluator against the actual workflow conditions. The three saved comparison fixtures remain unchanged. Of 2,175 PR candidate comparisons across 29 Actions targets, 2,139 retain the pinned result and 36 record intentional candidate additions. All 83 saved E2E dispatch/waiter scenarios retain their results. Tests also check the actual classifier step and output mapping, explicit overrides, step gates, required-context structure, four actual build-matrix constructions, collector failures, label refresh, and selector-only external edits. Test dependencies live in a separate module; no verifier selects product jobs at runtime.
+On macOS, set `NATIVE_TEST_BASH=/opt/homebrew/bin/bash` if necessary. Go tests build the classifier and use `act`'s Go expression evaluator against the actual workflow conditions. The three saved comparison fixtures remain unchanged. Of 2,175 PR candidate comparisons across the 29 reference targets, 2,139 retain the pinned result and 36 record intentional candidate additions. All 83 saved E2E dispatch/waiter scenarios retain their results after the GKE name mapping. Twenty additional scenarios cover both current backup/restore variants and their image prerequisites. Tests also check the actual classifier step and output mapping, explicit overrides, step gates, required-context structure, four actual build-matrix constructions, collector failures, label refresh, and selector-only external edits. Test dependencies live in a separate module; no verifier selects product jobs at runtime.
 
 [The testing guide](testing/README.md) describes the test files and the known empty-label discrepancy between GitHub's expression library and `act`. It includes an expression that returns different results. The tests do not treat the evaluators as fully equivalent.
 

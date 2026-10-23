@@ -51,7 +51,7 @@ jobs:
             contains(fromJSON(env.CI_FILE_FACTS).any, 'proto') ||
             contains(fromJSON(env.CI_FILE_FACTS).every, 'roxctl') ||
             contains(github.event.pull_request.labels.*.name, 'e2e-byodb-tests') ||
-            contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-tests') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-tests-gke') ||
             contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests') ||
             contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests-gke') ||
             contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-gke') }}

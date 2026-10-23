@@ -22,7 +22,7 @@ func TestWorkflowPreservation(t *testing.T) {
 		Headers, UnchangedJobs, Children map[string]string
 	}
 	f.json(t, "testing/base-workflows.json", &baseline)
-	require.Equal(t, "0a48209ff09e12c09dd250cd7c8cab64bc851965", baseline.Base)
+	require.Equal(t, "74bfddc24b07e120a1522f2df8cf215c4ae0812c", baseline.Base)
 	require.Equal(t, "sorted-key JSON with Go encoding/json escaping", baseline.Serialization)
 	gates := 0
 	for key, saved := range baseline.Jobs {

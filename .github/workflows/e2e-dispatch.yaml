@@ -291,6 +291,7 @@ jobs:
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
           (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -451,7 +452,8 @@ jobs:
       - wait-for-images
       - wait-for-konflux-images
       - e2e-byodb-tests
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
       - e2e-gke-upgrade-tests
       - e2e-nongroovy-tests-gke
       - e2e-nongroovy-tests-gke-konflux

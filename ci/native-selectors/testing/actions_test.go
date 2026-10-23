@@ -20,7 +20,7 @@ func TestComparisonScenarios(t *testing.T) {
 	for file, hash := range comparison.Fixtures {
 		require.Equal(t, hash, digest(f.read(t, "ci/native-selectors/testing/fixtures/"+file)), "pinned fixture %s", file)
 	}
-	require.Equal(t, 29, len(f.local)+len(f.consumers))
+	require.Equal(t, 30, len(f.local)+len(f.consumers))
 	var scenarios []struct {
 		Name          string
 		Files, Labels []string
@@ -62,6 +62,12 @@ func TestComparisonScenarios(t *testing.T) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.Name, func(t *testing.T) {
 			labels := slices.Clone(scenario.Labels)
+			// The pinned label identifies the ordinary GKE variant on the current base.
+			for i, label := range labels {
+				if label == "e2e-db-backup-restore-tests" {
+					labels[i] = "e2e-db-backup-restore-tests-gke"
+				}
+			}
 			if scenario.Enforced {
 				labels = append(labels, "ci-dispatcher-enforce")
 			}
@@ -85,11 +91,19 @@ func TestComparisonScenarios(t *testing.T) {
 					targets = append(targets, name)
 				}
 				for _, target := range targets {
+					// The Konflux variant has no counterpart in the pinned reference.
+					if target == "e2e-db-backup-restore-tests-gke-konflux" {
+						continue
+					}
 					workflow := "e2e-dispatch.yaml"
 					if selected, ok := f.local[target]; ok {
 						workflow = selected.workflow
 					}
-					baseline := slices.Contains(want.Selected, target)
+					baselineTarget := target
+					if target == "e2e-db-backup-restore-tests-gke" {
+						baselineTarget = "e2e-db-backup-restore-tests"
+					}
+					baseline := slices.Contains(want.Selected, baselineTarget)
 					additional := slices.Contains(additions[scenario.Name], target)
 					if additional {
 						require.False(t, baseline, "departure must add a candidate: %s", target)
@@ -102,6 +116,9 @@ func TestComparisonScenarios(t *testing.T) {
 			jobs, ordinary, konflux := f.dispatch(t, context("e2e-dispatch.yaml"))
 			var expectedJobs map[string]bool
 			require.NoError(t, json.Unmarshal([]byte(want.Dispatch.Jobs), &expectedJobs))
+			expectedJobs["e2e-db-backup-restore-tests-gke"] = expectedJobs["e2e-db-backup-restore-tests"]
+			delete(expectedJobs, "e2e-db-backup-restore-tests")
+			delete(jobs, "e2e-db-backup-restore-tests-gke-konflux")
 			require.Equal(t, expectedJobs, jobs)
 			require.Equal(t, want.Dispatch.Ordinary == "true", ordinary)
 			require.Equal(t, want.Dispatch.Konflux == "true", konflux)
@@ -119,6 +136,98 @@ func TestComparisonScenarios(t *testing.T) {
 	require.Equal(t, 2175, compared)
 	require.Equal(t, 36, departures)
 	t.Logf("%d candidate comparisons across 29 targets: %d unchanged, %d intentional additions; %d dispatch/waiter scenarios", compared, compared-departures, departures, len(scenarios))
+}
+
+func TestBackupRestoreSelection(t *testing.T) {
+	f := newFixture(t)
+	const (
+		ordinary = "e2e-db-backup-restore-tests-gke"
+		konflux  = "e2e-db-backup-restore-tests-gke-konflux"
+	)
+	require.Equal(t, "${{ needs.wait-for-images.outputs.tag }}", lookup(f.jobs("e2e-dispatch.yaml"), ordinary, "with", "tag"))
+	require.Equal(t, "${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}", lookup(f.jobs("e2e-dispatch.yaml"), konflux, "with", "tag"))
+	for name, test := range map[string]struct {
+		files, labels                                            []string
+		opt                                                      options
+		shadow, ordinary, konflux, ordinaryImages, konfluxImages bool
+	}{
+		"unrelated changes": {},
+		"broad dependency without Konflux images": {
+			files: []string{"go.mod"}, ordinary: true, ordinaryImages: true,
+		},
+		"broad dependency with unrelated changes": {
+			files: []string{"go.mod", "README.md"}, labels: []string{"konflux-build"},
+			ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
+		},
+		"ordinary label on unrelated changes": {
+			labels: []string{ordinary}, ordinary: true, ordinaryImages: true,
+		},
+		"Konflux label with images on unrelated changes": {
+			labels: []string{konflux, "konflux-build"}, konflux: true, konfluxImages: true,
+		},
+		"Konflux label does not supply images": {labels: []string{konflux}},
+		"old label does not select the renamed job": {
+			labels: []string{"e2e-db-backup-restore-tests"},
+		},
+		"run-all with images": {
+			labels:   []string{"ci-run-all-tests", "konflux-build"},
+			ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
+		},
+		"detector override with images": {
+			files: []string{".github/workflows/detect-changes.yml"}, labels: []string{"konflux-build"},
+			ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
+		},
+		"failed classification with images": {
+			opt: options{Unknown: true}, labels: []string{"konflux-build"},
+			ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
+		},
+		"selected draft with images": {
+			files: []string{"go.mod"}, opt: options{Draft: true}, labels: []string{"konflux-build"},
+			ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
+		},
+		"fork remains blocked": {
+			files: []string{"go.mod"}, opt: options{Fork: true}, labels: []string{"ci-run-all-tests", "konflux-build"},
+		},
+		"shadow retains ready PR behavior": {
+			shadow: true, ordinary: true, ordinaryImages: true,
+		},
+		"shadow retains UI-only behavior": {
+			shadow: true, files: []string{"ui/package.json"}, ordinaryImages: true,
+		},
+		"shadow draft without labels": {shadow: true, opt: options{Draft: true}},
+		"shadow draft with ordinary label": {
+			shadow: true, opt: options{Draft: true}, labels: []string{ordinary}, ordinary: true, ordinaryImages: true,
+		},
+		"shadow draft with Konflux label and images": {
+			shadow: true, opt: options{Draft: true}, labels: []string{konflux, "konflux-build"},
+			konflux: true, ordinaryImages: true, konfluxImages: true,
+		},
+		"shadow Konflux request still needs its waiter": {
+			shadow: true, labels: []string{konflux}, ordinary: true, konflux: true, ordinaryImages: true,
+		},
+		"live label removal disables Konflux selection": {
+			labels: []string{konflux, "konflux-build"}, opt: options{liveLabels: []string{"ci-dispatcher-enforce"}},
+		},
+		"non-PR push retains execution": {
+			opt: options{Event: "push"}, ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if test.files == nil {
+				test.files = []string{"README.md"}
+			}
+			if !test.shadow {
+				test.labels = append(slices.Clone(test.labels), "ci-dispatcher-enforce")
+			}
+			test.opt.workflow = "e2e-dispatch.yaml"
+			ctx := f.context(t, test.files, test.labels, test.opt)
+			jobs, ordinaryImages, konfluxImages := f.dispatch(t, ctx)
+			require.Equal(t, test.ordinary, jobs[ordinary], "ordinary selection")
+			require.Equal(t, test.konflux, jobs[konflux], "Konflux selection")
+			require.Equal(t, test.ordinaryImages, ordinaryImages, "ordinary image waiter")
+			require.Equal(t, test.konfluxImages, konfluxImages, "Konflux image waiter")
+		})
+	}
 }
 
 func TestSelectionInteractions(t *testing.T) {

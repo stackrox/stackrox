@@ -1,5 +1,5 @@
 {
-  "base": "0a48209ff09e12c09dd250cd7c8cab64bc851965",
+  "base": "74bfddc24b07e120a1522f2df8cf215c4ae0812c",
   "jobs": {
     "unit-tests.yaml/go": {
       "structure": "efba904b6d984e5d4efd5a92a9db813ca7a337ac6884ef5023bbcc3eb7492d95",
@@ -336,13 +336,15 @@
   },
   "children": {
     "e2e-byodb-tests.yaml": "675840b47b7baaea0f7cba732e280c20d3136e5af43e6d94832bf0a35d54f7ea",
-    "e2e-db-backup-restore-tests.yaml": "370a3c5115642c2962075d56f6fbaf4cff4d09ea4647e132e0a103f4b011e77d",
+    "e2e-db-backup-restore-tests.yaml": "8ef708aaa16d06f9972a3824f02b285e3ef21125100545037e4216a2250ae27f",
     "e2e-gke-upgrade-tests.yaml": "8b47a13fb94879dada18fb82e3b86a098cdc1f761a77f06f7205d9dd1f749914",
     "e2e-nongroovy-tests-gke.yaml": "019a23b2d36b27db35c1cfd412eb8bee06b58a7d2a36976296ec04e66f2ea9d5",
     "e2e-nongroovy-tests-gke-konflux.yaml": "b3b0d24a23d04206792f5f2b8288a40341a6ee609352b8f63ead1c81b7f46723",
     "e2e-qa-tests-gke.yaml": "c506ffc52b12a886d4adcbc9d297556991ab2cd9860ba269e35e509f95f2d86c",
     "e2e-qa-tests-ocp-fips-konflux.yaml": "f9f1b97a6f796749bb80a0c0bb641a228714ab359ab070cb23f951b4e8d5aca8",
-    "e2e-qa-tests-gke-konflux.yaml": "061c6743ca9ce11d1fd062718ea460155d5fe5d74ae7102b2798877d94484068"
+    "e2e-qa-tests-gke-konflux.yaml": "061c6743ca9ce11d1fd062718ea460155d5fe5d74ae7102b2798877d94484068",
+    "e2e-db-backup-restore-tests-gke.yaml": "cd7051639f49ccfc78be6062ae4f50435637af1ad8ecf60e877621be93063dd6",
+    "e2e-db-backup-restore-tests-gke-konflux.yaml": "5d6b62a43099206cdae78df298c82804dddceef99d925f2ada53b97db5eaa9ee"
   },
   "serialization": "sorted-key JSON with Go encoding/json escaping"
 }
