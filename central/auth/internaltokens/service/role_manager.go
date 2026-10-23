@@ -18,13 +18,41 @@ const (
 
 type roleManager struct{}
 
+// createSensorMetricsRole uses the permission set shared with Central metrics,
+// but limits the token to the authenticated Sensor's cluster.
+func (rm *roleManager) createSensorMetricsRole(
+	ctx context.Context, roles roleDS.DataStore, sensorClusterID string,
+) (*tokens.InternalRole, error) {
+	if sensorClusterID == "" {
+		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+	}
+	role, err := rm.createSensorRole(ctx, roles, centralproxy.MetricsPermissionSetID,
+		centralproxy.SecuredClusterMetricsRole, tokens.ClusterScopes{sensorClusterID: {"*"}})
+	if err != nil {
+		return nil, err
+	}
+	for access := range role.Permissions {
+		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
+			return nil, errox.InvalidArgs.New("Sensor metrics permission set grants non-read-only access")
+		}
+	}
+	return role, nil
+}
+
 func (rm *roleManager) createSensorConsoleRole(
 	ctx context.Context, roles roleDS.DataStore, scopes []*v1.ClusterScope,
+) (*tokens.InternalRole, error) {
+	return rm.createSensorRole(ctx, roles, centralproxy.ConsoleProxyPermissionSetID,
+		centralproxy.ConsoleProxyRole, clusterScopesFromRequest(scopes))
+}
+
+func (rm *roleManager) createSensorRole(
+	ctx context.Context, roles roleDS.DataStore, permissionSetID, name string, scopes tokens.ClusterScopes,
 ) (*tokens.InternalRole, error) {
 	if roles == nil {
 		return nil, errox.NotAuthorized.New("Sensor proxy permission set store unavailable")
 	}
-	permissionSet, found, err := roles.GetPermissionSet(ctx, centralproxy.ConsoleProxyPermissionSetID)
+	permissionSet, found, err := roles.GetPermissionSet(ctx, permissionSetID)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +60,8 @@ func (rm *roleManager) createSensorConsoleRole(
 		return nil, errox.NotFound.New("Sensor proxy permission set not found")
 	}
 	role := &tokens.InternalRole{
-		RoleName:    centralproxy.ConsoleProxyRole,
-		Clusters:    clusterScopesFromRequest(scopes),
+		RoleName:    name,
+		Clusters:    scopes,
 		Permissions: make(map[storage.Access][]string),
 	}
 	for resource, access := range permissionSet.GetResourceToAccess() {

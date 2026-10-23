@@ -5,6 +5,9 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+// SecuredClusterMetricsRole names the internal role in Sensor-proxied OpenShift Prometheus tokens.
+const SecuredClusterMetricsRole = "OpenShift Secured Cluster Metrics Reader"
+
 // AllowedProxyPaths is the path-only projection of the supported proxy token
 // profiles. Central advertises it to Sensor via the CentralHello handshake.
 //
@@ -16,7 +19,7 @@ import (
 // IMPORTANT: The proxy buffers request bodies in memory for retry support.
 // When adding new paths, ensure the endpoints do not expect request bodies
 // exceeding the buffer limit.
-var AllowedProxyPaths = allowedPathsForProfiles(ConsoleHTTPScopes)
+var AllowedProxyPaths = allowedPathsForProfiles(ConsoleHTTPScopes, MetricsHTTPScopes)
 
 func allowedPathsForProfiles(profiles ...[]tokens.HTTPRequestScope) set.FrozenStringSet {
 	var paths []string
