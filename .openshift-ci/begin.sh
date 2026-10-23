@@ -66,7 +66,15 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
         # Selecting nodes with KVM support
         set_ci_shared_export WORKER_NODE_TYPE n2-standard-8
     else
-        set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+        case "${CLOUD_PROVIDER:-gcp}" in
+            aws)
+                # GCE instance types are invalid on AWS
+                set_ci_shared_export WORKER_NODE_TYPE m5.2xlarge
+                ;;
+            gcp|*)
+                set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+                ;;
+        esac
     fi
 fi
 
