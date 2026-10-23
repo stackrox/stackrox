@@ -250,7 +250,7 @@ jobs:
 
           PR_URL=$(gh pr create --repo openshift/release \
             --title "Stackrox release $RELEASE" \
-            --base "master" \
+            --base "main" \
             --body "CI configuration files to support Stackrox release \`$RELEASE\`.")
 
           PR_NUMBER="$(echo "${PR_URL}" | rev | cut -d '/' -f1 | rev)"
