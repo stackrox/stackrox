@@ -33,7 +33,10 @@ import type { Models } from './NetworkGraphContainer';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import NodeUpdateSection from './components/NodeUpdateSection';
 import NetworkSearch from './components/NetworkSearch';
-import { searchFilterConfig } from './components/searchFilterConfig';
+import {
+    getLegacySearchFilterAttributes,
+    searchFilterConfig,
+} from './components/searchFilterConfig';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect from './components/EdgeStateSelect';
 import DisplayOptionsSelect from './components/DisplayOptionsSelect';
@@ -401,7 +404,10 @@ function NetworkGraphPageContent() {
                                 )}
                                 <ToolbarGroup className="pf-v6-u-w-100">
                                     <CompoundSearchFilterLabels
-                                        attributesSeparateFromConfig={[]}
+                                        attributesSeparateFromConfig={getLegacySearchFilterAttributes(
+                                            searchFilter,
+                                            searchFilterConfig
+                                        )}
                                         config={searchFilterConfig}
                                         searchFilter={searchFilter}
                                         onFilterChange={setSearchFilter}
