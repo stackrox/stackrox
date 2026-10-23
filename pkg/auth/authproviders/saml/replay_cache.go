@@ -78,10 +78,11 @@ func (c *replayCache) start() {
 		return
 	}
 
+	c.stopSig = concurrency.NewSignal()
 	c.stopSig.Reset()
 	c.isRunning = true
 
-	go func() {
+	go func(sig *concurrency.Signal) {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
 
@@ -89,14 +90,11 @@ func (c *replayCache) start() {
 			select {
 			case <-ticker.C:
 				c.prune()
-			case <-c.stopSig.Done():
-				concurrency.WithLock(&c.cleanupMu, func() {
-					c.isRunning = false
-				})
+			case <-sig.Done():
 				return
 			}
 		}
-	}()
+	}(&c.stopSig)
 }
 
 // stop halts the pruning goroutine. Can be called multiple times safely.
@@ -104,4 +102,6 @@ func (c *replayCache) stop() {
 	c.cleanupMu.Lock()
 	defer c.cleanupMu.Unlock()
 	c.stopSig.Signal()
+	c.stopSig = concurrency.NewSignal()
+	c.isRunning = false
 }

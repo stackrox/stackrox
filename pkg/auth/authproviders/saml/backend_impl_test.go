@@ -138,14 +138,14 @@ type stubProvider struct {
 
 func (s *stubProvider) Name() string { return s.name }
 
-func newTestBackend(now time.Time, spAudience string) *backendImpl {
+func newTestBackend(clock *testClock, spAudience string) *backendImpl {
 	audienceURI := testAudience
 	audienceConfigured := false
 	if spAudience != "" {
 		audienceURI = spAudience
 		audienceConfigured = true
 	}
-	cache := newReplayCache()
+	cache := newReplayCacheWithClock(clock.Now)
 	cache.start()
 	return &backendImpl{
 		provider:           &stubProvider{name: "test-saml-provider"},
@@ -157,7 +157,7 @@ func newTestBackend(now time.Time, spAudience string) *backendImpl {
 			ServiceProviderIssuer:       testAudience,
 			AudienceURI:                 audienceURI,
 			SkipSignatureValidation:     true,
-			Clock:                       dsig.NewFakeClockAt(now),
+			Clock:                       dsig.NewFakeClockAt(clock.Now()),
 		},
 	}
 }
@@ -240,7 +240,7 @@ func TestConsumeSAMLResponse_AssertionValidityEnforcement(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			backend := newTestBackend(now, tc.spAudience)
+			backend := newTestBackend(newTestClock(now), tc.spAudience)
 			xml := samlResponseXML(t, samlResponseParams{
 				conditionsNotBefore:    tc.conditionsNotBefore,
 				conditionsNotOnOrAfter: tc.conditionsNotOnOrAfter,
@@ -276,7 +276,7 @@ func TestConsumeSAMLResponse_AssertionValidityEnforcement(t *testing.T) {
 // by tracking assertion IDs and rejecting duplicate assertions.
 func TestConsumeSAMLResponse_ReplayProtection(t *testing.T) {
 	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
-	backend := newTestBackend(now, testAudience)
+	backend := newTestBackend(newTestClock(now), testAudience)
 	defer backend.replayCache.stop()
 
 	xml := samlResponseXML(t, samlResponseParams{
@@ -310,11 +310,59 @@ func TestConsumeSAMLResponse_ReplayProtection(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+// TestConsumeSAMLResponse_ReplayProtection_ExpiresAtSubjectNotOnOrAfter verifies that
+// when conditionsNotOnOrAfter and subjectNotOnOrAfter both exceed the 1-hour session
+// default, and subjectNotOnOrAfter > conditionsNotOnOrAfter, the cache entry lives
+// until subjectNotOnOrAfter — not until conditionsNotOnOrAfter or the 1-hour default.
+func TestConsumeSAMLResponse_ReplayProtection_ExpiresAtSubjectNotOnOrAfter(t *testing.T) {
+	// Use real time so that the 1-hour session fallback (time.Now()+1h) inside
+	// consumeSAMLResponse stays below the 2h/3h offsets we set below.
+	now := time.Now().UTC().Truncate(time.Second)
+	conditionsNotOnOrAfter := now.Add(2 * time.Hour) // > 1h default
+	subjectNotOnOrAfter := now.Add(3 * time.Hour)    // > conditionsNotOnOrAfter
+
+	clock := newTestClock(now)
+	backend := newTestBackend(clock, testAudience)
+
+	xml := samlResponseXML(t, samlResponseParams{
+		conditionsNotBefore:    now.Add(-5 * time.Minute),
+		conditionsNotOnOrAfter: conditionsNotOnOrAfter,
+		subjectNotOnOrAfter:    subjectNotOnOrAfter,
+		audience:               testAudience,
+		responseID:             "_response_expiry_",
+		assertionID:            "_assertion_expiry_",
+		userEMail:              "user@example.com",
+	})
+	encoded := base64.StdEncoding.EncodeToString([]byte(xml))
+
+	// First consumption succeeds.
+	resp, err := backend.consumeSAMLResponse(encoded)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	// Immediate replay is rejected.
+	_, err = backend.consumeSAMLResponse(encoded)
+	require.ErrorIs(t, err, errAssertionReplay)
+
+	// After conditionsNotOnOrAfter the entry is NOT pruned: expiry is subjectNotOnOrAfter.
+	clock.SetTime(conditionsNotOnOrAfter.Add(time.Second))
+	backend.replayCache.prune()
+	_, err = backend.consumeSAMLResponse(encoded)
+	require.ErrorIs(t, err, errAssertionReplay)
+
+	// After subjectNotOnOrAfter the entry IS pruned: the assertion can be accepted again.
+	clock.SetTime(subjectNotOnOrAfter.Add(time.Second))
+	backend.replayCache.prune()
+	resp, err = backend.consumeSAMLResponse(encoded)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+}
+
 // TestConsumeSAMLResponse_DifferentAssertionsAccepted verifies that different
 // assertions are accepted even after one has been consumed.
 func TestConsumeSAMLResponse_DifferentAssertionsAccepted(t *testing.T) {
 	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
-	backend := newTestBackend(now, testAudience)
+	backend := newTestBackend(newTestClock(now), testAudience)
 	defer backend.replayCache.stop()
 
 	// First SAML response (with assertion ID "_assertion_1")

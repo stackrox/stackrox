@@ -182,9 +182,25 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 			)
 			return nil, errAssertionWithoutID
 		}
+
+		assertionExpiresAt := expiresAt
+		if assertion.Conditions != nil && assertion.Conditions.NotOnOrAfter != "" {
+			if t, err := time.Parse(time.RFC3339, assertion.Conditions.NotOnOrAfter); err == nil && t.After(assertionExpiresAt) {
+				assertionExpiresAt = t
+			}
+		}
+		if assertion.Subject != nil &&
+			assertion.Subject.SubjectConfirmation != nil &&
+			assertion.Subject.SubjectConfirmation.SubjectConfirmationData != nil &&
+			assertion.Subject.SubjectConfirmation.SubjectConfirmationData.NotOnOrAfter != "" {
+			if t, err := time.Parse(time.RFC3339, assertion.Subject.SubjectConfirmation.SubjectConfirmationData.NotOnOrAfter); err == nil && t.After(assertionExpiresAt) {
+				assertionExpiresAt = t
+			}
+		}
+
 		// If the cache already contains an entry for the assertion,
 		// we are in a replay attack scenario. Reject the authentication.
-		if !p.replayCache.add(assertion.ID, expiresAt) {
+		if !p.replayCache.add(assertion.ID, assertionExpiresAt) {
 			log.Warnw("SAML assertion replay detected, rejecting authentication.",
 				logging.ErrCode(codes.SAMLAssertionReplay),
 				logging.AuthProviderName(p.provider.Name()),
