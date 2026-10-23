@@ -251,12 +251,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
     excludedImageNames: yup.array().of(yup.string().trim().required()).required(),
     excludedWorkloadKinds: yup
         .array()
-        .of(
-            yup
-                .string()
-                .oneOf([...policyWorkloadKinds])
-                .required()
-        )
+        .of(yup.string().oneOf(policyWorkloadKinds).required())
         .optional(),
 });
 
