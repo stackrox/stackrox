@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
 import { Bullseye } from '@patternfly/react-core';

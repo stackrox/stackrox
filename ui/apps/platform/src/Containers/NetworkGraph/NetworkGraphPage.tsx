@@ -21,8 +21,7 @@ import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import usePermissions from 'hooks/usePermissions';
 import useAnalytics, { CIDR_BLOCK_FORM_OPENED } from 'hooks/useAnalytics';
 import { fetchNetworkFlowGraph } from 'services/NetworkService';
-import queryService from 'utils/queryService';
-import { isCompleteSearchFilter } from 'utils/searchUtils';
+import { getRequestQueryStringForSearchFilter, isCompleteSearchFilter } from 'utils/searchUtils';
 
 import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
@@ -176,7 +175,7 @@ function NetworkGraphPageContent() {
         if (isQueryFilterComplete && selectedClusterId && isClusterNamespaceSelected) {
             setIsLoading(true);
 
-            const queryToUse = queryService.objectToWhereClause(remainingQuery);
+            const queryToUse = getRequestQueryStringForSearchFilter(remainingQuery);
             const sinceTimestamp = timeWindowToISO(timeWindow);
 
             Promise.all([

@@ -181,7 +181,7 @@ function PolicyScopeForm(): ReactElement {
                 <FlexItem>
                     <Grid hasGutter md={6} xl2={4}>
                         {scope?.map((_, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
+                            // eslint-disable-next-line @eslint-react/no-array-index-key
                             <GridItem key={index}>
                                 {isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING') ? (
                                     <InclusionScopeCard
@@ -232,7 +232,7 @@ function PolicyScopeForm(): ReactElement {
                 <FlexItem>
                     <Grid hasGutter md={6} xl={4}>
                         {excludedDeploymentScopes?.map((_, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
+                            // eslint-disable-next-line @eslint-react/no-array-index-key
                             <GridItem key={index}>
                                 {isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING') ? (
                                     <ExclusionScopeCard

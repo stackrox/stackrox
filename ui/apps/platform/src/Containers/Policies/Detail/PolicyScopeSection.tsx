@@ -39,7 +39,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
                     <Title headingLevel="h3">Included resources</Title>
                     <Grid hasGutter md={12} xl={6}>
                         {scope.map((scopeItem, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
+                            // eslint-disable-next-line @eslint-react/no-array-index-key
                             <GridItem key={index}>
                                 <Card>
                                     <CardBody>
@@ -59,7 +59,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
                     <Title headingLevel="h3">Excluded resources</Title>
                     <Grid hasGutter md={12} xl={6}>
                         {excludedDeployments.map((excludedDeployment, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
+                            // eslint-disable-next-line @eslint-react/no-array-index-key
                             <GridItem key={index}>
                                 <Card>
                                     <CardBody>

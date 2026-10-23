@@ -66,7 +66,6 @@ const DefaultFakeGroup = ({
     return createElement(
         'g',
         { ref: labelHoverRef, onClick: onSelect, className: groupClassName },
-        // eslint-disable-next-line react/no-children-prop
         createElement(Layer, {
             id: 'groups',
             children: createElement(
