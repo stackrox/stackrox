@@ -37,21 +37,32 @@ class Clock:
         self.now += seconds
 
 
-class CollectionTest(unittest.TestCase):
-    def test_only_dedicated_true_enables_monitoring(self):
-        cases = {'unset': '', 'disabled': 'false', 'enabled': 'true'}
-        for name, value in cases.items():
-            with self.subTest(name=name), patch.dict(os.environ, {
-                    'GKE_SPOT': 'true', 'GKE_NODE_DISRUPTION_WATCH': value}):
-                self.assertEqual(monitor.enabled(), value == 'true')
+def kubectl_responses(responses):
+    """Emulate kubectl writing directly to the supplied artifact streams."""
+    responses = iter(responses)
 
+    def collect(*_args, **kwargs):
+        response = next(responses)
+        if isinstance(response, Exception):
+            if isinstance(response, subprocess.TimeoutExpired):
+                kwargs['stdout'].write((response.stdout or b'').decode())
+                kwargs['stderr'].write((response.stderr or b'').decode())
+            raise response
+        kwargs['stdout'].write(response.stdout)
+        kwargs['stderr'].write(response.stderr)
+        return response
+
+    return collect
+
+
+class CollectionTest(unittest.TestCase):
     def test_expected_count(self):
-        cases = {'unset': ({}, None), 'one': ({'NUM_NODES': '1'}, 1),
+        cases = {'unset': ({}, None), 'empty': ({'NUM_NODES': ''}, None), 'one': ({'NUM_NODES': '1'}, 1),
                  'many': ({'NUM_NODES': '3'}, 3)}
         for name, (env, expected) in cases.items():
             with self.subTest(name=name):
                 self.assertEqual(monitor.expected_node_count(env), expected)
-        invalid = {'empty': '', 'zero': '0', 'negative': '-1', 'text': 'three', 'fraction': '1.5'}
+        invalid = {'zero': '0', 'negative': '-1', 'text': 'three', 'fraction': '1.5'}
         for name, value in invalid.items():
             with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, 'positive integer'):
                 monitor.expected_node_count({'NUM_NODES': value})
@@ -61,8 +72,11 @@ class CollectionTest(unittest.TestCase):
                  'invalid node': {'items': [None]}, 'missing name': {'items': [{}]},
                  'invalid name': snapshot(''), 'multiline name': snapshot('node\nother')}
         for name, data in cases.items():
-            with self.subTest(name=name), self.assertRaises(ValueError):
-                monitor.node_names(data)
+            completed = subprocess.CompletedProcess('kubectl', 0, json.dumps(data), '')
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, \
+                    patch.object(monitor.subprocess, 'run', side_effect=kubectl_responses([completed])), \
+                    self.assertRaises((ValueError, KeyError, TypeError)):
+                monitor.sample_nodes(Path(directory), {})
 
     def test_names_only_verdict(self):
         cases = {
@@ -77,55 +91,40 @@ class CollectionTest(unittest.TestCase):
         }
         for name, (replies, expected, mismatch) in cases.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, \
-                    patch.dict(os.environ, ARTIFACT_DIR=directory), \
-                    patch.object(monitor.subprocess, 'run', side_effect=replies) as run:
-                poller = monitor.NodePoll({'KUBECONFIG': 'test-config'})
+                    patch.object(monitor.subprocess, 'run', side_effect=kubectl_responses(replies)) as run:
+                directory = Path(directory)
                 for _ in range(len(replies)):
-                    poller.sample()
-                verdict = poller.verdict(expected)
-                self.assertEqual(verdict['mismatch'], mismatch)
-                self.assertIn(f'Expected {expected}', verdict['summary'])
-                self.assertEqual(poller.errors, [])
-                records = [json.loads(line) for line in poller.snapshots.read_text().splitlines()]
-                self.assertEqual(len(records), len(replies))
-                self.assertIn('items', json.loads(records[0]['stdout']))
-                self.assertIn('timestamp', records[0])
+                    monitor.sample_nodes(directory, {'KUBECONFIG': 'test-config'})
+                failed = monitor.write_report(directory, expected, [], monitor.Cancellation(), '')
+                self.assertEqual(failed, mismatch)
+                report = ET.parse(directory / 'node-monitor.xml').getroot()
+                self.assertEqual(report.get('failures'), str(int(mismatch)))
+                self.assertEqual(len(list(directory.glob('node-snapshot-*.json'))), len(replies))
                 self.assertEqual(run.call_args.kwargs['env'], {'KUBECONFIG': 'test-config'})
                 self.assertEqual(run.call_args.kwargs['timeout'], 10)
                 self.assertEqual(run.call_args.args[0],
                                  ['kubectl', '--request-timeout=10s', 'get', 'nodes', '-o', 'json'])
 
-    def test_poll_errors_are_retained(self):
+    def test_poll_diagnostics_are_retained(self):
         cases = {
-            'exit': (reply(code=1, stderr='forbidden'), 'exited 1'),
-            'malformed': (subprocess.CompletedProcess('kubectl', 0, 'broken', ''), 'Expecting value'),
-            'timeout': (subprocess.TimeoutExpired('kubectl', 10, b'partial', b'timeout'), 'timed out'),
-            'missing executable': (FileNotFoundError('kubectl not found'), 'not found'),
+            'exit': reply(code=1, stderr='forbidden'),
+            'malformed': subprocess.CompletedProcess('kubectl', 0, 'broken', ''),
+            'timeout': subprocess.TimeoutExpired('kubectl', 10, b'partial', b'timeout'),
+            'missing executable': FileNotFoundError('kubectl not found'),
         }
-        for name, (response, error) in cases.items():
+        for name, response in cases.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, \
-                    patch.dict(os.environ, ARTIFACT_DIR=directory), \
-                    patch.object(monitor.subprocess, 'run', side_effect=[response]):
-                poller = monitor.NodePoll({})
-                self.assertIsNone(poller.sample())
-                self.assertIn(error, poller.errors[0])
-                record = json.loads(poller.snapshots.read_text())
-                self.assertIn(error, record['error'])
-                self.assertEqual(poller.names.read_text(), '')
-                if name == 'timeout':
-                    self.assertEqual(record['stdout'], 'partial')
-                    self.assertEqual(record['stderr'], 'timeout')
-                if name == 'exit':
-                    self.assertEqual(record['stderr'], 'forbidden')
-
-    def test_new_run_clears_old_observations(self):
-        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, ARTIFACT_DIR=directory):
-            poller = monitor.NodePoll({})
-            poller.names.write_text('old-node\n')
-            poller.snapshots.write_text('old snapshot')
-            fresh = monitor.NodePoll({})
-            self.assertEqual(fresh.names.read_text(), '')
-            self.assertEqual(fresh.snapshots.read_text(), '')
+                    patch.object(monitor.subprocess, 'run', side_effect=kubectl_responses([response])), \
+                    self.assertRaises((OSError, RuntimeError, ValueError, subprocess.TimeoutExpired)):
+                directory = Path(directory)
+                try:
+                    monitor.sample_nodes(directory, {})
+                finally:
+                    self.assertEqual(len(list(directory.glob('node-snapshot-*.json'))), 1)
+                    if name == 'timeout':
+                        self.assertIn('timeout', (directory / 'node-monitor.log').read_text())
+                    if name == 'exit':
+                        self.assertIn('forbidden', (directory / 'node-monitor.log').read_text())
 
 
 class NodeMonitorTest(unittest.TestCase):
@@ -142,16 +141,17 @@ class NodeMonitorTest(unittest.TestCase):
         test.poll.side_effect = product_poll
         with tempfile.TemporaryDirectory() as directory, \
                 patch.dict(os.environ, ARTIFACT_DIR=directory), \
-                patch.object(monitor.subprocess, 'run', side_effect=replies) as collect, \
+                patch.object(monitor.subprocess, 'run', side_effect=kubectl_responses(replies)) as collect, \
                 patch.object(monitor.subprocess, 'Popen', return_value=test) as launch, \
                 patch.object(monitor, 'terminate') as terminate, \
                 patch.object(monitor.time, 'monotonic', side_effect=clock.monotonic), \
                 patch.object(monitor.time, 'sleep', side_effect=clock.sleep):
-            result = monitor.run(['product'], timeout=options.get('timeout'), env=options.get('env', {}),
-                                 run_url='https://ci.example/run')
+            result = monitor.run(
+                ['product'], timeout=options.get('timeout'), env=options.get('env', {'NUM_NODES': '1'}),
+                run_url='https://ci.example/run')
             report = ET.parse(Path(directory) / 'node-monitor.xml').getroot()
-            records = [json.loads(line) for line in (Path(directory) / 'node-snapshots.jsonl').read_text().splitlines()]
-            names = (Path(directory) / 'node-names.txt').read_text()
+            records = list(Path(directory).glob('node-snapshot-*.json'))
+            names = (Path(directory) / 'node-names.txt').read_text() if records else ''
         return result, report, collect, launch, terminate, records, names
 
     def test_product_exit_codes_and_passing_junit(self):
@@ -165,7 +165,7 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertEqual(report.get('failures'), '0')
                 self.assertEqual(report.find('.//testcase').get('name'), 'NoNodeDisruption')
                 self.assertIn('https://ci.example/run', report.findtext('.//system-out'))
-                launch.assert_called_once_with(['product'], env={}, start_new_session=True)
+                launch.assert_called_once_with(['product'], env={'NUM_NODES': '1'}, start_new_session=True)
                 self.assertEqual(collect.call_count, 2)
                 self.assertEqual(len(records), 2)
                 self.assertEqual(names, 'a\na\n')
@@ -183,10 +183,9 @@ class NodeMonitorTest(unittest.TestCase):
         self.assertTrue(result.monitor_failed)
         self.assertIn('observed 2 unique names: a, b', report.findtext('.//failure'))
 
-    def test_expected_size_configuration_and_fallback(self):
+    def test_expected_size_configuration(self):
         cases = {'explicit match': ({'NUM_NODES': '2'}, ['a', 'b'], False),
-                 'explicit mismatch': ({'NUM_NODES': '2'}, ['a'], True),
-                 'fallback': ({}, ['a', 'b'], False)}
+                 'explicit mismatch': ({'NUM_NODES': '2'}, ['a'], True)}
         for name, (env, nodes, failed) in cases.items():
             with self.subTest(name=name):
                 result, _, _, launch, _, _, _ = self.run_fake([reply(*nodes), reply(*nodes)], env=env)
@@ -194,8 +193,8 @@ class NodeMonitorTest(unittest.TestCase):
                 launch.assert_called_once()  # Count mismatches are evaluated at the end.
 
     def test_startup_errors_do_not_launch_product(self):
-        cases = {'failed poll': ([reply(code=1)], {}, 'exited 1'),
-                 'empty baseline': ([reply()], {}, 'no nodes'),
+        cases = {'failed poll': ([reply(code=1)], {'NUM_NODES': '1'}, 'exited 1'),
+                 'empty baseline': ([reply()], {'NUM_NODES': '1'}, 'no nodes'),
                  'invalid configuration': ([], {'NUM_NODES': '0'}, 'positive integer')}
         for name, (replies, env, error) in cases.items():
             with self.subTest(name=name):
@@ -238,26 +237,44 @@ class NodeMonitorTest(unittest.TestCase):
         self.assertEqual(report.get('skipped'), '0')
 
     def test_cancellation_during_startup(self):
-        def cancel(_poller):
+        def cancel(_directory, _env):
             signal.getsignal(signal.SIGINT)(signal.SIGINT, None)
             return ['a']
 
-        with patch.object(monitor.NodePoll, 'sample', autospec=True, side_effect=cancel):
+        with patch.object(monitor, 'sample_nodes', autospec=True, side_effect=cancel):
             result, report, _, launch, _, _, _ = self.run_fake([])
         self.assertEqual(result.exit_code, 130)
         self.assertEqual(report.get('skipped'), '1')
         launch.assert_not_called()
 
+    def test_missing_node_count_skips_all_monitoring(self):
+        cases = {'unset success': ({}, 0), 'unset failure': ({}, 42),
+                 'empty': ({'NUM_NODES': ''}, 0)}
+        for name, (env, code) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, \
+                    patch.dict(os.environ, ARTIFACT_DIR=directory), \
+                    patch.object(monitor, 'sample_nodes') as poller, \
+                    patch.object(monitor, 'write_report') as report, \
+                    patch.object(monitor.subprocess, 'Popen', return_value=Mock(returncode=code)) as launch, \
+                    patch.object(monitor, 'terminate'):
+                result = monitor.run(['product'], env=env)
+                self.assertEqual(result.exit_code, code)
+                self.assertFalse(result.monitor_failed)
+                poller.assert_not_called()
+                report.assert_not_called()
+                launch.assert_called_once_with(['product'], env=env, start_new_session=True)
+                self.assertEqual(list(Path(directory).iterdir()), [])
+
     def test_cleanup_survives_report_write_failure(self):
         previous = signal.getsignal(signal.SIGTERM)
         with tempfile.TemporaryDirectory() as directory, \
                 patch.dict(os.environ, ARTIFACT_DIR=directory), \
-                patch.object(monitor.subprocess, 'run', return_value=reply('a')), \
+                patch.object(monitor.subprocess, 'run', side_effect=kubectl_responses([reply('a'), reply('a')])), \
                 patch.object(monitor.subprocess, 'Popen', return_value=Mock(returncode=0)) as launch, \
                 patch.object(monitor, 'write_report', side_effect=OSError('disk full')), \
                 patch.object(monitor, 'terminate') as terminate, \
                 self.assertRaisesRegex(OSError, 'disk full'):
-            monitor.run(['product'], env={})
+            monitor.run(['product'], env={'NUM_NODES': '1'})
         terminate.assert_called_once_with(launch.return_value)
         self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
 
@@ -266,7 +283,8 @@ class TerminationTest(unittest.TestCase):
     def test_termination_escalates_after_five_seconds(self):
         process = Mock(pid=123)
         process.wait.side_effect = [subprocess.TimeoutExpired('product', 5), -9]
-        with patch.object(monitor.os, 'killpg') as killpg:
+        with patch.object(monitor.os, 'killpg') as killpg, \
+                patch.object(monitor.time, 'monotonic', side_effect=[0, 5]):
             monitor.terminate(process)
         self.assertEqual(killpg.call_args_list[0].args, (123, signal.SIGTERM))
         self.assertEqual(killpg.call_args_list[-1].args, (123, signal.SIGKILL))
@@ -294,7 +312,10 @@ else:
             self.assertIsNotNone(process.returncode)
             self.assertGreaterEqual(time.monotonic() - start, 0.19)
         finally:
-            monitor.kill_group(process.pid, signal.SIGKILL)
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             process.wait()
             process.stdout.close()
 
@@ -313,19 +334,29 @@ class NonGroovyIntegrationTest(unittest.TestCase):
             with self.subTest(name=name), patch.dict(os.environ, env, clear=True):
                 self.assertEqual(NonGroovyE2e().run_url(), expected)
 
-    def test_disabled_path_is_unchanged(self):
-        test = NonGroovyE2e()
-        with patch.dict(os.environ, GKE_NODE_DISRUPTION_WATCH='false'), \
-                patch.object(test, 'run_with_graceful_kill') as run:
-            test.run()
-        run.assert_called_once_with(['tests/e2e/run.sh', test.TEST_OUTPUT_DIR],
-                                    test.TEST_TIMEOUT, output_dir=test.TEST_OUTPUT_DIR)
+    def test_shared_runner_is_used_independently_of_spot(self):
+        cases = {
+            'unset': {},
+            'gke non-spot': {'KUBERNETES_PROVIDER': 'gke', 'GKE_SPOT': 'false'},
+            'gke spot': {'KUBERNETES_PROVIDER': 'gke', 'GKE_SPOT': 'true'},
+            'openshift': {'KUBERNETES_PROVIDER': 'ocp'},
+            'legacy disabled flag': {'GKE_NODE_DISRUPTION_WATCH': 'false'},
+        }
+        for name, env in cases.items():
+            with self.subTest(name=name), patch.dict(os.environ, env, clear=True), \
+                    patch.object(monitor, 'run', return_value=monitor.RunResult(0, False)) as run:
+                test = NonGroovyE2e()
+                test.run()
+                run.assert_called_once_with(
+                    ['tests/e2e/run.sh', test.TEST_OUTPUT_DIR], timeout=test.TEST_TIMEOUT,
+                    env=dict(env, ROX_CI_OUTPUT_DIR=test.TEST_OUTPUT_DIR), run_url='')
+                self.assertIn(test.TEST_OUTPUT_DIR, test.test_outputs)
 
-    def test_enabled_path_preserves_outputs_timeout_and_failure(self):
-        for result in (monitor.RunResult(0, False), monitor.RunResult(42, False),
-                       monitor.RunResult(1, True), monitor.RunResult(124, False, True)):
-            with self.subTest(result=result), \
-                    patch.dict(os.environ, GKE_NODE_DISRUPTION_WATCH='true'), \
+    def test_monitoring_preserves_outputs_timeout_and_failure(self):
+        cases = {'passed': monitor.RunResult(0, False), 'product failure': monitor.RunResult(42, False),
+                 'monitor failure': monitor.RunResult(1, True), 'timeout': monitor.RunResult(124, False, True)}
+        for name, result in cases.items():
+            with self.subTest(name=name), \
                     patch.object(monitor, 'run', return_value=result) as run:
                 test = NonGroovyE2e()
                 if result.timed_out:
