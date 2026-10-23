@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
     Bullseye,
@@ -75,7 +75,7 @@ const SystemConfigPage = (): ReactElement => {
         setIsEditing(false);
     }
 
-    let content;
+    let content: ReactNode;
 
     if (isLoading || defaultRedHatLayeredProductsRuleIsLoading) {
         content = (
