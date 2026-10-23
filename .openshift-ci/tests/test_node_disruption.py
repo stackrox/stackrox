@@ -300,6 +300,18 @@ class NodeMonitorTest(unittest.TestCase):
                 launch.assert_called_once_with(['product'], env=env, start_new_session=True)
                 self.assertEqual(list(Path(directory).iterdir()), [])
 
+    def test_launch_error_is_logged_without_monitoring(self):
+        cases = {'unset': {}, 'empty': {'NUM_NODES': ''}}
+        for name, env in cases.items():
+            with self.subTest(name=name), \
+                    patch.object(monitor.subprocess, 'Popen', side_effect=FileNotFoundError('missing command')), \
+                    patch.object(monitor, 'write_report') as report, \
+                    patch('builtins.print') as log:
+                result = monitor.run(['missing-command'], env=env)
+                self.assertEqual(result.exit_code, 1)
+                report.assert_not_called()
+                log.assert_called_once_with('ERROR: Could not run test command: missing command', flush=True)
+
     def test_artifact_directory_error_is_advisory(self):
         with tempfile.TemporaryDirectory() as directory:
             blocked = Path(directory) / 'not-a-directory'
