@@ -1,0 +1,38 @@
+name: e2e-vm-scanning-tests-ocp-konflux
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: |
+          Konflux image tag to test. The caller needs to include the "-fast" suffix
+          when required for development builds.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: |
+          Konflux image tag to test. Include the "-fast" suffix when required for
+          development builds.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  run:
+    uses: ./.github/workflows/e2e-vm-scanning-tests.yaml
+    with:
+      tag: ${{ inputs.tag }}
+      should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
+      ci-job-name: ocp-vm-scanning-tests-konflux
+      use-konflux-images: true
+      cluster-name-prefix: e2e-vmscan-knflx
+    secrets: inherit
