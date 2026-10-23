@@ -92,6 +92,13 @@ spec:
                       - INIT
                       type: string
                     type: array
+                  skipImageLayers:
+                    description: SkipImageLayers selects which image layers to evaluate.
+                    enum:
+                    - SKIP_NONE
+                    - SKIP_BASE
+                    - SKIP_APP
+                    type: string
                 type: object
               eventSource:
                 description: EventSource describes which events should trigger execution
