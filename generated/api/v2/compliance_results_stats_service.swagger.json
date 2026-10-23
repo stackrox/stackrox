@@ -680,6 +680,10 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceDataFreshness",
+          "description": "Rolled-up freshness across all clusters reporting this check: STALE if\nany contributing cluster has stale data (STALE > CURRENT > UNKNOWN)."
         }
       },
       "title": "Group the number of occurrences by status"
@@ -733,6 +737,9 @@
         "lastScanTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceDataFreshness"
         }
       },
       "title": "ComplianceClusterOverallStats provides overall stats for cluster"
@@ -760,6 +767,16 @@
         }
       }
     },
+    "v2ComplianceDataFreshness": {
+      "type": "string",
+      "enum": [
+        "COMPLIANCE_DATA_FRESHNESS_UNKNOWN",
+        "COMPLIANCE_DATA_FRESHNESS_CURRENT",
+        "COMPLIANCE_DATA_FRESHNESS_STALE"
+      ],
+      "default": "COMPLIANCE_DATA_FRESHNESS_UNKNOWN",
+      "description": "ComplianceDataFreshness indicates whether compliance data is current relative\nto the scan configuration's schedule.\n\n - COMPLIANCE_DATA_FRESHNESS_UNKNOWN: Cannot evaluate: no schedule, unresolvable config, or no data.\n - COMPLIANCE_DATA_FRESHNESS_CURRENT: Data reflects the most recent expected scan cycle.\n - COMPLIANCE_DATA_FRESHNESS_STALE: Data predates the most recent expected scan cycle."
+    },
     "v2ComplianceProfileScanStats": {
       "type": "object",
       "properties": {
@@ -785,6 +802,16 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "staleClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of clusters with STALE data for this profile, across all clusters\n(not limited to a page). Non-zero signals the UI to show a stale-data\nbanner."
+        },
+        "staleCheckResultCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of stale check results (check x cluster units) for this profile,\nacross all clusters (not limited to a page)."
         }
       },
       "title": "ComplianceProfileScanStats provides scan stats overview based on profile"
