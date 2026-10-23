@@ -3,8 +3,10 @@ import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
 import type { ReportPageAction } from 'Components/Reports/reports.types';
+import type { SchedulePageAction } from 'Containers/ComplianceEnhanced/Schedules/compliance.scanConfigs.utils';
 import type { ImageType } from 'services/ReportsService.types';
 import type { Telemetry } from 'types/config.proto';
+import type { Schedule } from 'types/schedule.proto';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
@@ -12,9 +14,6 @@ import { getAnalytics } from 'init/initializeAnalytics';
 import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
-
-// clusters
-export const CLUSTER_CREATED = 'Cluster Created';
 
 // invite users
 export const INVITE_USERS_MODAL_OPENED = 'Invite Users Modal Opened';
@@ -71,12 +70,9 @@ export const NODE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
 export const VIEW_INIT_BUNDLES_CLICKED = 'View Init Bundles Clicked';
 export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
-export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
 export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
 export const DOWNLOAD_INIT_BUNDLE = 'Download Init Bundle';
 export const REVOKE_INIT_BUNDLE = 'Revoke Init Bundle';
-export const LEGACY_CLUSTER_DOWNLOAD_YAML = 'Legacy Cluster Download YAML';
-export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm Values';
 
 // cluster-registration-secrets
 export const CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED =
@@ -154,7 +150,6 @@ export type SearchCategoryWithFilter = UnionFrom<typeof searchCategoriesWithFilt
  * or an object with an event name and additional properties.
  */
 export type AnalyticsEvent =
-    | typeof CLUSTER_CREATED
     | typeof INVITE_USERS_MODAL_OPENED
     | typeof INVITE_USERS_SUBMITTED
     /** Tracks each time a cluster level simulator is opened on Network Graph */
@@ -391,7 +386,7 @@ export type AnalyticsEvent =
           properties: {
               action: ReportPageAction;
               cvesSince: 'allVuln'; // | 'sinceLastSentScheduledReport' | 'sinceStartDate'
-              intervalType: 'DAILY' | 'MONTHLY' | 'WEEKLY' | 'UNSET';
+              intervalType: Schedule['intervalType'];
               notifiers: number;
               resourceScope: string;
           };
@@ -444,15 +439,6 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the user clicks a link to visit the legacy installation method page
-     */
-    | {
-          event: typeof LEGACY_SECURE_A_CLUSTER_LINK_CLICKED;
-          properties: {
-              source: 'No Clusters' | 'Secure a Cluster Dropdown';
-          };
-      }
-    /**
      * Tracks each time the user downloads an init bundle
      */
     | typeof DOWNLOAD_INIT_BUNDLE
@@ -468,14 +454,6 @@ export type AnalyticsEvent =
      * Tracks each time the user revokes cluster registration secret
      */
     | typeof REVOKE_CLUSTER_REGISTRATION_SECRET
-    /**
-     * Tracks each time the user downloads a cluster's YAML file and keys
-     */
-    | typeof LEGACY_CLUSTER_DOWNLOAD_YAML
-    /**
-     * Tracks each time the user downloads a cluster's Helm values
-     */
-    | typeof LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES
     /**
      * Tracks each time the user selects a filtered workflow view
      */
@@ -548,6 +526,11 @@ export type AnalyticsEvent =
           properties: {
               success: true | false;
               errorMessage: string;
+              action: SchedulePageAction;
+              clusters: number;
+              intervalType: Schedule['intervalType'];
+              notifiers: number;
+              profiles: number;
           };
       }
     | {

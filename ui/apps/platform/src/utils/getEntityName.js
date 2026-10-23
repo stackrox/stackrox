@@ -31,12 +31,6 @@ const entityNameKeyMap = {
         return result;
     },
     [entityTypes.NODE]: (data) => resolvePath(data, 'node.name'),
-    [entityTypes.CONTROL]: (data) => {
-        if (!data.control) {
-            return null;
-        }
-        return `${data.control.name} - ${data.control.description}`;
-    },
     [entityTypes.IMAGE]: (data) => resolvePath(data, 'image.name.fullName'),
     [entityTypes.POLICY]: (data) => resolvePath(data, 'policy.name'),
     [entityTypes.SUBJECT]: (data) => resolvePath(data, 'subject.name'),

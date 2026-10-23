@@ -147,6 +147,11 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - **Secured Cluster Services**: Deployed per monitored cluster (Sensor, Admission Controller)
 - **Multi-cluster support**: One Central instance monitors multiple Kubernetes clusters
 
+### CI Image (Prow / OpenShift CI)
+- The CI image is built from the **[stackrox/rox-ci-image](https://github.com/stackrox/rox-ci-image)** repo, not this repo.
+- Tool versions bundled in the CI image (e.g. roxie, helm, docker) are pinned in Dockerfiles in that repo.
+- `.openshift-ci/Dockerfile.build_root` in this repo only references the resulting image for validation purposes.
+
 ### Key Directories
 - `/central/` - Central management service code
 - `/sensor/` - Sensor agent code for cluster monitoring

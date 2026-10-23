@@ -4,7 +4,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Content,
-    Divider,
     PageSection,
     Skeleton,
     Tab,
@@ -95,7 +94,7 @@ function VirtualMachinePageLegacy() {
     return (
         <>
             <PageTitle title={`Virtual Machine CVEs - Virtual Machine ${virtualMachine?.name}`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewPath}>
                         Virtual Machines
@@ -110,7 +109,6 @@ function VirtualMachinePageLegacy() {
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             <PageSection>
                 <VirtualMachinePageHeaderLegacy
                     virtualMachine={virtualMachine}
@@ -118,7 +116,7 @@ function VirtualMachinePageLegacy() {
                     error={error}
                 />
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
+            <PageSection type="tabs">
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={(_, key) => {

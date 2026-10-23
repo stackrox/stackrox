@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([\d])([\d]+)`)
+	rhcosOSImageRegexp       = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (4)(\d+)`)
+	rhcosDottedOSImageRegexp = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (\d+)\.(\d+)\b`)
 )
 
 const (
@@ -40,21 +41,18 @@ func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan 
 
 func toOperatingSystem(ref string) string {
 	r := rhcosOSImageRegexp.FindStringSubmatch(ref)
-	if len(r) != 5 {
-		return ""
+	if len(r) == 3 {
+		return fmt.Sprintf("rhcos:%s.%s", r[1], r[2])
 	}
-	return fmt.Sprintf("rhcos:%s.%s", r[3], r[4])
+	r = rhcosDottedOSImageRegexp.FindStringSubmatch(ref)
+	if len(r) == 3 {
+		return fmt.Sprintf("rhcos:%s.%s", r[1], r[2])
+	}
+	return ""
 }
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
-	packages := r.GetContents().GetPackages()
-	if len(packages) == 0 {
-		packages = make(map[string]*v4.Package, len(r.GetContents().GetPackagesDEPRECATED()))
-		// Fallback to the deprecated slice, if needed.
-		for _, pkg := range r.GetContents().GetPackagesDEPRECATED() {
-			packages[pkg.GetId()] = pkg
-		}
-	}
+	packages := packagesByID(r.GetContents())
 	result := make([]*storage.EmbeddedNodeScanComponent, 0, len(packages))
 
 	for id, pkg := range packages {

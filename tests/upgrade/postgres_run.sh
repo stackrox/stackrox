@@ -11,7 +11,7 @@ EARLIER_TAG="4.10.0"
 EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
-PREVIOUS_RELEASES=("4.10.7" "4.11.3")
+PREVIOUS_RELEASES=("4.10.10" "4.11.6")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -43,18 +43,13 @@ test_upgrade() {
 
     # repo for old version with legacy database
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-upgrade-test"
-    DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="stackrox-io"
+    QUAY_REPO="rhacs-eng"
     REGISTRY="quay.io/$QUAY_REPO"
 
-    export OUTPUT_FORMAT="helm"
-    export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
 
     if is_CI; then
         export ROXCTL_IMAGE_REPO="quay.io/$QUAY_REPO/roxctl"
-        require_environment "LONGTERM_LICENSE"
-        export ROX_LICENSE_KEY="${LONGTERM_LICENSE}"
     fi
 
     preamble
@@ -86,11 +81,18 @@ test_upgrade_paths() {
     export MAX_WAIT_SECONDS=600
 
     ########################################################################################
-    # Use roxctl to generate helm files and deploy older central                           #
+    # Use roxie to deploy older central                                                    #
     ########################################################################################
-    deploy_earlier_postgres_central
+    deploy_earlier_tag_central
     wait_for_api
     setup_client_TLS_certs
+
+    # Older checkouts force GOTOOLCHAIN=local during dependency checks.
+    # Put the toolchain selected for this checkout first on PATH for the build.
+    # Needed for restore_backup to find roxctl.
+    local build_goroot
+    build_goroot="$(go env GOROOT)"
+    PATH="${build_goroot}/bin:${PATH}" make cli
 
     restore_backup
     wait_for_api
@@ -130,8 +132,6 @@ test_upgrade_paths() {
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
     sensor_wait
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     # Verify data is still there
     checkForPostgresAccessScopes
@@ -213,33 +213,36 @@ test_upgrade_paths() {
 
     touch "${UPGRADE_PROGRESS_POSTGRES_ROLLBACK}"
 
-    # Now go back to the current release. The HEAD chart installs Scanner V4,
-    # which smoke test needs.
-    upgrade_central_helm_to_head
+    # Now go back to the current release. The HEAD installs Scanner V4,
+    # which smoke test needs. Secured cluster still has reconciliation paused at this point.
+    upgrade_operator_to_head
     wait_for_background_migrations
 
     # Cleanup the scaled sensor before smoke tests
-    helm uninstall -n stackrox stackrox-secured-cluster-services
+    roxie teardown secured-cluster --verbose --single-namespace
 
     # Remove scaled Sensor from Central
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name scale-remote
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name scale-remote
 
-    info "Fetching a sensor bundle for cluster 'remote'"
+    info "Fetching an init bundle for cluster 'remote'"
+    # This is necessary since the cluster already exists in the database restored from backup, so the CRS
+    # created by roxie is useless (you cannot re-register a cluster using CRS by design).
+    # TODO(ROX-37449): switch to just sensor cert when possible.
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
-    rm -rf sensor-remote
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify sensor get-bundle remote
-    [[ -d sensor-remote ]]
+    local init_bundle
+    init_bundle="$(mktemp)"
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" central init-bundles generate remote --output-secrets - > "${init_bundle}"
+    kubectl apply -n stackrox -f "${init_bundle}"
+    rm -f "${init_bundle}"
 
     info "Installing sensor"
-    ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:${COLLECTOR_TAG}" \
-        "compliance=$REGISTRY/main:$CURRENT_TAG"
+    roxie deploy secured-cluster --verbose \
+        --single-namespace \
+        --tag "${CURRENT_TAG}" \
+        --resources ci \
+        --set securedCluster.spec.clusterName=remote
 
     sensor_wait
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
     wait_for_central_reconciliation
 
@@ -283,50 +286,8 @@ force_rollback_to_previous_postgres() {
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
 
-    # Do not rollback central-db image, since downgrade from PG15 to PG13 is
-    # not possible.
-}
-
-deploy_scaled_workload() {
-    info "Deploying a scaled workload"
-
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
-
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output secured-cluster-services --image-defaults opensource --output-dir /tmp/early-stackrox-secured-services-chart --remove
-
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-        central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
-
-    helm install -n stackrox --create-namespace \
-        stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \
-        -f /tmp/cluster-init-bundle.yaml \
-        --set system.enablePodSecurityPolicies=false \
-        --set clusterName=scale-remote \
-        --set image.main.tag="${EARLIER_TAG}" \
-        --set image.collector.tag="${EARLIER_TAG}" \
-        --set centralEndpoint="$API_ENDPOINT"
-
-    sensor_wait
-
-    ./scale/launch_workload.sh scale-test
-
-    # The historical scale script requests 5 CPUs per component. Leave room for
-    # both scanners by reducing Central and Central DB's CPU reservations.
-    kubectl -n stackrox patch deploy/central --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
-    # Init-container requests also count toward the pod's CPU reservation.
-    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
-    wait_for_api
-
-    info "Sleep for a bit to let the scale build"
-    # shellcheck disable=SC2034
-    for i in $(seq 1 150); do
-        echo -n .
-        sleep 5
-    done
-
-    info "Done with our nap for scaling"
+    # Keep the upgraded central-db image when rolling Central back, since the
+    # upgraded data directory cannot be used by an older PostgreSQL major version.
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

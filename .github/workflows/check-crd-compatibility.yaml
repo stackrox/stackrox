@@ -23,7 +23,7 @@ jobs:
   check-crd-compatibility:
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     outputs:
@@ -88,19 +88,17 @@ jobs:
 
     - name: Run crdify for platform operator
       run: |
-        set -e
+        set -euo pipefail
         old_path="$PWD/.old-stackrox/operator/config/crd/bases"
         new_path="$PWD/operator/config/crd/bases"
-        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify --config=config.yaml"
-        set -x
-        $crdify "file://${old_path}/platform.stackrox.io_securedclusters.yaml" "file://${new_path}/platform.stackrox.io_securedclusters.yaml"
-        $crdify "file://${old_path}/platform.stackrox.io_centrals.yaml" "file://${new_path}/platform.stackrox.io_centrals.yaml"
+        crdify=".github/workflows/scripts/crdify.sh"
+        $crdify "${old_path}/platform.stackrox.io_securedclusters.yaml" "${new_path}/platform.stackrox.io_securedclusters.yaml"
+        $crdify "${old_path}/platform.stackrox.io_centrals.yaml" "${new_path}/platform.stackrox.io_centrals.yaml"
 
     - name: Run crdify for config operator
       run: |
-        set -e
+        set -euo pipefail
         old_path="$PWD/.old-stackrox/config-controller/config/crd/bases"
         new_path="$PWD/config-controller/config/crd/bases"
-        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify --config=config.yaml"
-        set -x
-        $crdify "file://${old_path}/config.stackrox.io_securitypolicies.yaml" "file://${new_path}/config.stackrox.io_securitypolicies.yaml"
+        crdify=".github/workflows/scripts/crdify.sh"
+        $crdify "${old_path}/config.stackrox.io_securitypolicies.yaml" "${new_path}/config.stackrox.io_securitypolicies.yaml"

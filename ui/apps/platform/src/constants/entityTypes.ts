@@ -15,8 +15,7 @@ export type ResourceType =
     | 'IMAGE_CVE'
     | 'NODE_CVE'
     | 'CLUSTER_CVE'
-    | 'POLICY'
-    | 'CONTROL';
+    | 'POLICY';
 
 export const resourceTypes = {
     NAMESPACE: 'NAMESPACE',
@@ -34,7 +33,6 @@ export const resourceTypes = {
     NODE_CVE: 'NODE_CVE',
     CLUSTER_CVE: 'CLUSTER_CVE',
     POLICY: 'POLICY',
-    CONTROL: 'CONTROL',
 } as const;
 
 export type RbacConfigType = 'SUBJECT' | 'SERVICE_ACCOUNT' | 'ROLE';
@@ -47,38 +45,10 @@ export const rbacConfigTypes: Record<RbacConfigType, RbacConfigType> = {
 
 export type AccessControlEntityType = 'ACCESS_SCOPE' | 'AUTH_PROVIDER' | 'PERMISSION_SET' | 'ROLE';
 
-export type StandardEntityType = 'CONTROL' | 'CATEGORY' | 'STANDARD' | 'CHECK';
-
-export const standardEntityTypes: Record<StandardEntityType, StandardEntityType> = {
-    CONTROL: 'CONTROL',
-    CATEGORY: 'CATEGORY',
-    STANDARD: 'STANDARD',
-    CHECK: 'CHECK',
-};
-
-export const standardTypes = {
-    PCI_DSS_3_2: 'PCI_DSS_3_2',
-    NIST_800_190: 'NIST_800_190',
-    NIST_SP_800_53_Rev_4: 'NIST_SP_800_53_Rev_4',
-    HIPAA_164: 'HIPAA_164',
-    CIS_Kubernetes_v1_5: 'CIS_Kubernetes_v1_5',
-    CIS_Docker_v1_1_0: 'CIS_Docker_v1_1_0',
-    CIS_Docker_v1_2_0: 'CIS_Docker_v1_2_0',
-};
-
-export const standardBaseTypes = {
-    [standardTypes.PCI_DSS_3_2]: 'PCI',
-    [standardTypes.NIST_800_190]: 'NIST SP 800-190',
-    [standardTypes.NIST_SP_800_53_Rev_4]: 'NIST SP 800-53',
-    [standardTypes.HIPAA_164]: 'HIPAA',
-    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s',
-};
-
 export const searchCategories: Record<string, SearchCategory> = {
     NAMESPACE: 'NAMESPACES',
     NODE: 'NODES',
     CLUSTER: 'CLUSTERS',
-    CONTROL: 'COMPLIANCE',
     CVE: 'VULNERABILITIES',
     CLUSTER_CVE: 'CLUSTER_VULNERABILITIES',
     IMAGE_CVE: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
@@ -98,7 +68,5 @@ export const searchCategories: Record<string, SearchCategory> = {
 
 export default {
     ...resourceTypes,
-    ...standardTypes,
-    ...standardEntityTypes,
     ...rbacConfigTypes,
 } as const;

@@ -6,6 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
+// unsetCPE is the wildcard value Scanner emits when no CPE is available.
+const unsetCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
+
 // ToVirtualMachineScan converts a scan report to the format needed to enrich a virtual machine with scan data.
 func ToVirtualMachineScan(r *v4.VulnerabilityReport) *storage.VirtualMachineScan {
 	return &storage.VirtualMachineScan{
@@ -33,33 +36,32 @@ func toVirtualMachineScanNotes(notes []v4.VulnerabilityReport_Note) []storage.Vi
 	return result
 }
 
-func hasValidCPE(repositories map[string]*v4.Repository, environments map[string]*v4.Environment_List, pkg *v4.Package) bool {
-	envList, ok := environments[pkg.GetId()]
-	if !ok {
-		return false
-	}
-
-	for _, env := range envList.GetEnvironments() {
+// componentScanNote distinguishes missing repository metadata from a repository
+// that is present but has no CPE for vulnerability matching.
+func componentScanNote(repositories map[string]*v4.Repository, environments map[string]*v4.Environment_List, pkg *v4.Package) storage.EmbeddedVirtualMachineScanComponent_Note {
+	knownRepository := false
+	for _, env := range environments[pkg.GetId()].GetEnvironments() {
 		for _, repoID := range env.GetRepositoryIds() {
-			if repositories[repoID].GetCpe() != "" {
-				// A valid CPE is found, therefore the package is scannable.
-				return true
+			repo := repositories[repoID]
+			if repo == nil {
+				continue
+			}
+			knownRepository = true
+			if cpe := repo.GetCpe(); cpe != "" && cpe != unsetCPE {
+				return storage.EmbeddedVirtualMachineScanComponent_UNSPECIFIED
 			}
 		}
 	}
-	return false
+	if knownRepository {
+		return storage.EmbeddedVirtualMachineScanComponent_CPE_MISSING
+	}
+	return storage.EmbeddedVirtualMachineScanComponent_REPO_UNKNOWN
 }
 
 func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVirtualMachineScanComponent {
 	repositories := r.GetContents().GetRepositories()
 	environments := r.GetContents().GetEnvironments()
-	packages := r.GetContents().GetPackages()
-	if len(packages) == 0 {
-		packages = make(map[string]*v4.Package, len(r.GetContents().GetPackagesDEPRECATED()))
-		for _, pkg := range r.GetContents().GetPackagesDEPRECATED() {
-			packages[pkg.GetId()] = pkg
-		}
-	}
+	packages := packagesByID(r.GetContents())
 	result := make([]*storage.EmbeddedVirtualMachineScanComponent, 0, len(packages))
 	for id, pkg := range packages {
 		vulnerabilityIDs := r.GetPackageVulnerabilities()[id].GetValues()
@@ -70,8 +72,11 @@ func toVirtualMachineComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedVi
 			// Architecture ?
 			Vulnerabilities: toVirtualMachineScanComponentVulnerabilities(vulnerabilitiesByID, vulnerabilityIDs),
 		}
-		if !hasValidCPE(repositories, environments, pkg) {
-			component.Notes = append(component.Notes, storage.EmbeddedVirtualMachineScanComponent_UNSCANNED)
+		if note := componentScanNote(repositories, environments, pkg); note != storage.EmbeddedVirtualMachineScanComponent_UNSPECIFIED {
+			// Keep UNSCANNED for existing consumers and component scan counts.
+			component.Notes = []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED, note,
+			}
 		}
 		result = append(result, component)
 	}

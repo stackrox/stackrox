@@ -27,7 +27,6 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddExtraResolvers("Deployment", []string{
 			"cluster: Cluster",
-			"complianceResults(query: String): [ControlResult!]!",
 			"containerRestartCount: Int!",
 			"containerTerminationCount: Int!",
 			"deployAlertCount(query: String): Int!",
@@ -464,25 +463,6 @@ func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage
 		return nil
 	}
 	return deployment
-}
-
-func (resolver *deploymentResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ComplianceResults")
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-
-	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
-	if err != nil {
-		return nil, err
-	}
-	output := newBulkControlResults()
-	deploymentID := resolver.data.GetId()
-	output.addDeploymentData(resolver.root, runResults, func(d *storage.ComplianceDomain_Deployment, _ *v1.ComplianceControl) bool {
-		return d.GetId() == deploymentID
-	})
-
-	return *output, nil
 }
 
 func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (string, error) {

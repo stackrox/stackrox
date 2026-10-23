@@ -12,7 +12,6 @@ import policy from 'images/side-panel-icons/policy.svg';
 import role from 'images/side-panel-icons/role.svg';
 import secrets from 'images/side-panel-icons/secrets.svg';
 import serviceAccount from 'images/side-panel-icons/service-account.svg';
-import control from 'images/side-panel-icons/control.svg';
 
 const imageMap = {
     [entityTypes.CLUSTER]: cluster,
@@ -32,7 +31,6 @@ const imageMap = {
     [entityTypes.ROLE]: role,
     [entityTypes.SECRET]: secrets,
     [entityTypes.SERVICE_ACCOUNT]: serviceAccount,
-    [entityTypes.CONTROL]: control,
 };
 
 const EntityIcon = ({ className, entityType }) => (

@@ -37,6 +37,8 @@ on:
         default: true
         type: boolean
 
+cache-mode: read
+
 env:
   main_branch: ${{github.event.repository.default_branch}}
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
@@ -60,7 +62,7 @@ concurrency: Release automation ${{ inputs.version }}
 
 jobs:
   properties:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
       jira-project: ${{ steps.fetch.outputs.jira-project }}
@@ -73,7 +75,7 @@ jobs:
 
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - run: |
           [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
@@ -96,7 +98,7 @@ jobs:
   check-jira:
     name: Check Jira tickets for release
     needs: [variables, properties]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Query JIRA
         # Checking unequal with "false" because closed milestones have unset input values.
@@ -117,7 +119,7 @@ jobs:
   postpone-prs:
     name: Postpone open PRs
     needs: variables
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check open PRs
         id: check
@@ -173,7 +175,7 @@ jobs:
 
   cut-rc:
     name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
@@ -308,7 +310,7 @@ jobs:
                     :arrow_right: Once all checks pass and you're ready for release, run the <${{ github.server_url }}/${{ github.repository }}/actions/workflows/finish-release.yml|Finish Release> workflow and delete the `${{ needs.variables.outputs.next-milestone }}` milestone to avoid confusion.
 
   trim-cluster-names:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
       cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
@@ -331,7 +333,7 @@ jobs:
     name: Setup demo clusters
     secrets: inherit
     needs: [variables, cut-rc, trim-cluster-names]
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@df8c8f5830fc09d37908be1a9744365a93c5b3cc # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
     if: >- # Skip if no clusters are going to be created. Checking unequal with "false" because closed milestones have unset input values.
       github.event.inputs.create-k8s-cluster != 'false' ||
       github.event.inputs.create-os4-cluster != 'false' ||

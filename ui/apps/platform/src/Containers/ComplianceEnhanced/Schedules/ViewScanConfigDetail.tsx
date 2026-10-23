@@ -5,8 +5,6 @@ import {
     AlertActionCloseButton,
     Breadcrumb,
     BreadcrumbItem,
-    Card,
-    CardBody,
     Flex,
     FlexItem,
     PageSection,
@@ -211,15 +209,7 @@ function ViewScanConfigDetail({
             </PageSection>
             {activeScanConfigTab === 'CONFIGURATION_DETAILS' && (
                 <PageSection hasBodyWrapper={false} isCenterAligned id={configDetailsTabId}>
-                    <Card>
-                        <CardBody>
-                            <ConfigDetails
-                                isLoading={isLoading}
-                                error={error}
-                                scanConfig={scanConfig}
-                            />
-                        </CardBody>
-                    </Card>
+                    <ConfigDetails isLoading={isLoading} error={error} scanConfig={scanConfig} />
                 </PageSection>
             )}
             {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (

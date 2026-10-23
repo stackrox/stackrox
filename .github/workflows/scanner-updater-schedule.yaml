@@ -16,12 +16,15 @@ permissions:
 
 jobs:
   build-matrix:
+    permissions:
+      contents: read
+      actions: read
     if: >-
       github.repository_owner == 'stackrox' && (
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
       )
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       needs-notification: ${{ steps.matrix-scheduled.outputs.has_errors }}
     steps:
@@ -48,6 +51,9 @@ jobs:
         SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
       run: |
         set -euo pipefail
+        # Keep cadence eligibility stable if this job is queued or rerun.
+        schedule_time=$(GH_TOKEN="${{ github.token }}" gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" --jq '.created_at')
+        export SCHEDULE_TIME="$schedule_time"
         result=$(./.github/workflows/scripts/scanner-updater-matrix.sh)
         {
           echo "has_errors=$(echo "$result" | jq -r '.has_errors')"
@@ -98,7 +104,7 @@ jobs:
 
   plan:
     needs: build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       has_due: ${{ steps.emit.outputs.has_due }}
       matrix: ${{ steps.emit.outputs.matrix }}
@@ -152,7 +158,7 @@ jobs:
     if: >-
       github.event_name != 'pull_request' &&
       (failure() || needs.build-matrix.outputs.needs-notification == 'true')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       checks: read

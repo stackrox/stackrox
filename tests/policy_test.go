@@ -519,12 +519,11 @@ func verifyExclusionsRemoved(t *testing.T) {
 	policy.Id = "verifyExcludedScopesRemoved policy ID"
 	policy.Name = "verifyExcludedScopesRemoved is a valid policy"
 	policy.Exclusions = []*storage.Exclusion{
-		{
-			Deployment: &storage.Exclusion_Deployment{
-				Scope: &storage.Scope{
-					Cluster: "This is not a cluster",
-				},
+		{Matcher: &storage.Exclusion_Deployment_{Deployment: &storage.Exclusion_Deployment{
+			Scope: &storage.Scope{
+				Cluster: "This is not a cluster",
 			},
+		}},
 		},
 	}
 

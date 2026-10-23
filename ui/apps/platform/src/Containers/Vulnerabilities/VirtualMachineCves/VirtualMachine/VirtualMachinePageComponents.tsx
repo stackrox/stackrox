@@ -17,6 +17,7 @@ import type {
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useInterval from 'hooks/useInterval';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -70,14 +71,23 @@ function VirtualMachinePageComponents({ virtualMachineId }: VirtualMachinePageCo
         () => listVMComponents(virtualMachineId, { searchFilter, page, perPage, sortOption }),
         [virtualMachineId, searchFilter, page, perPage, sortOption]
     );
-    const { data, isLoading, error } = useRestQuery(fetchComponents);
+    const { data, isLoading, error, refetch } = useRestQuery(fetchComponents);
+
+    useInterval(refetch, data?.scanPending ? 5000 : null);
 
     const tableState = getTableUIState({
         isLoading,
+        isPolling: Boolean(data?.scanPending),
         data: data?.components ?? [],
         error,
         searchFilter,
     });
+    const pendingEmptyProps = data?.scanPending
+        ? {
+              title: 'Scan in progress',
+              message: "Waiting for this virtual machine's scan to complete.",
+          }
+        : {};
 
     function onClearFilters() {
         setSearchFilter({});
@@ -147,8 +157,9 @@ function VirtualMachinePageComponents({ virtualMachineId }: VirtualMachinePageCo
                     }}
                     emptyProps={{
                         message: 'No components were detected for this virtual machine',
+                        ...pendingEmptyProps,
                     }}
-                    filteredEmptyProps={{ onClearFilters }}
+                    filteredEmptyProps={{ onClearFilters, ...pendingEmptyProps }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((componentRow) => (

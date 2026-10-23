@@ -34,6 +34,7 @@ class PostTestsConstants:
     DIAGNOSTIC_OUTPUT = "diagnostic-bundle"
     CENTRAL_DATA_OUTPUT = "central-data"
     STACKROX_LOG_DIR = "/tmp/stackrox-logs"
+    VM_GUEST_LOG_DIR = "/tmp/vm-diagnostics"
 
 
 class NullPostTest:
@@ -151,12 +152,13 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
 class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         collect_collector_metrics=True,
         collect_central_artifacts=True,
         collect_service_logs=True,
+        collect_vm_guest_logs=False,
         check_stackrox_logs=False,
         artifact_destination_prefix=None,
     ):
@@ -169,6 +171,7 @@ class PostClusterTest(StoreArtifacts):
             self.service_logs_destination = self.K8S_LOG_DIR
         self._collect_collector_metrics = collect_collector_metrics
         self._collect_service_logs = collect_service_logs
+        self._collect_vm_guest_logs = collect_vm_guest_logs
         self._check_stackrox_logs = check_stackrox_logs
         self.k8s_namespaces = [
             "stackrox",
@@ -202,6 +205,8 @@ class PostClusterTest(StoreArtifacts):
             self.grab_central_data()
         if self._collect_service_logs:
             self.collect_service_logs()
+        if self._collect_vm_guest_logs:
+            self.collect_vm_guest_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
         self.store_artifacts(test_outputs)
@@ -231,6 +236,23 @@ class PostClusterTest(StoreArtifacts):
             timeout=self.COLLECT_INFRA_TIMEOUT,
         )
         self.data_to_store.append(self.service_logs_destination)
+
+    def collect_vm_guest_logs(self):
+        # Per-VM virtctl ssh is capped in the script. Cleanup is a second
+        # process because a collect timeout SIGKILLs the first before it can
+        # delete namespaces.
+        self.run_with_best_effort(
+            [
+                "scripts/ci/collect-vm-guest-logs.sh",
+                self.VM_GUEST_LOG_DIR,
+            ],
+            timeout=10 * 60,
+        )
+        self.data_to_store.append(self.VM_GUEST_LOG_DIR)
+        self.run_with_best_effort(
+            ["scripts/ci/delete-vm-ns.sh"],
+            timeout=60,
+        )
 
     def collect_collector_metrics(self):
         self.run_with_best_effort(
