@@ -188,6 +188,11 @@ var (
 		},
 	}
 
+	freshnessUnknownTest = func() *storage.ComplianceDataFreshness {
+		f := storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+		return &f
+	}()
+
 	expectedClusterCounts = []*ResultStatusCountByCluster{
 		{
 			PassCount:          0,
@@ -199,6 +204,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -210,6 +216,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -221,6 +228,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -235,6 +243,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -246,6 +255,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -257,6 +267,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -271,6 +282,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -282,6 +294,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -296,6 +309,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -350,6 +364,7 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check-2",
 			RuleName:           "test-rule",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -362,6 +377,7 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check",
 			RuleName:           "test-rule",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -377,6 +393,7 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check",
 			RuleName:           "test-rule",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -389,6 +406,7 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check-2",
 			RuleName:           "test-rule",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -404,6 +422,7 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check",
 			RuleName:           "test-rule",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -419,6 +438,7 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check",
 			RuleName:           "test-rule",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -431,6 +451,7 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check-2",
 			RuleName:           "test-rule",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 )

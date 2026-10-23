@@ -167,6 +167,8 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		search.NewQuerySelect(search.ComplianceOperatorCheckName).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorCheckRationale).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorRuleName).Proto(),
+		search.NewQuerySelect(search.ComplianceDataFreshness).
+			AggrFunc(aggregatefunc.Max).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
@@ -219,6 +221,8 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorScanLastExecutedTime).
+			AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.ComplianceDataFreshness).
 			AggrFunc(aggregatefunc.Max).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{

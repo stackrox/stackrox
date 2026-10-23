@@ -217,7 +217,44 @@ func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query
 		}
 	}
 
-	return storagetov2.ComplianceV2ProfileStats(scanResults, profileMap, profileBenchmarksMap), count, nil
+	staleStats := make(map[string]complianceDS.ProfileStaleStats, len(scanResults))
+	for _, scan := range scanResults {
+		stats, err := s.profileStaleStats(ctx, countQuery, scan.ProfileName)
+		if err != nil {
+			return nil, 0, err
+		}
+		staleStats[scan.ProfileName] = stats
+	}
+
+	return storagetov2.ComplianceV2ProfileStats(scanResults, profileMap, profileBenchmarksMap, staleStats), count, nil
+}
+
+// profileStaleStats computes, for a single profile, the stale-data banner counts
+// across all clusters (not limited to a page): the number of stale check results
+// and the number of distinct clusters with any stale result. It filters the base
+// query by profile and the stored STALE freshness value, so the cost is a count,
+// not a scan of serialized blobs.
+func (s *serviceImpl) profileStaleStats(ctx context.Context, baseQuery *v1.Query, profileName string) (complianceDS.ProfileStaleStats, error) {
+	staleQuery := search.ConjunctionQuery(
+		baseQuery.CloneVT(),
+		search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorProfileName, profileName).
+			AddExactMatches(search.ComplianceDataFreshness, storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE.String()).
+			ProtoQuery(),
+	)
+
+	checkResultCount, err := s.complianceResultsDS.CountCheckResults(ctx, staleQuery)
+	if err != nil {
+		return complianceDS.ProfileStaleStats{}, errors.Wrap(err, "counting stale compliance check results")
+	}
+	clusterCount, err := s.complianceResultsDS.CountByField(ctx, staleQuery, search.ClusterID)
+	if err != nil {
+		return complianceDS.ProfileStaleStats{}, errors.Wrap(err, "counting clusters with stale compliance data")
+	}
+	return complianceDS.ProfileStaleStats{
+		StaleClusterCount:     clusterCount,
+		StaleCheckResultCount: checkResultCount,
+	}, nil
 }
 
 // GetComplianceClusterScanStats lists current scan stats for a cluster for each scan configuration

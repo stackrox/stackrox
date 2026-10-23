@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -388,13 +389,52 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		return nil, err
 	}
 
+	// Roll up freshness across ALL results for this cluster+profile (not just the
+	// current page), using the stored, searchable freshness column.
+	dataFreshness, err := s.rollupDataFreshness(ctx, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	return &v2.ListComplianceCheckResultResponse{
-		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
-		ProfileName:  request.GetProfileName(),
-		ClusterId:    request.GetClusterId(),
-		TotalCount:   int32(resultCount),
-		LastScanTime: lastExecutedTime,
+		CheckResults:  storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
+		ProfileName:   request.GetProfileName(),
+		ClusterId:     request.GetClusterId(),
+		TotalCount:    int32(resultCount),
+		LastScanTime:  lastExecutedTime,
+		DataFreshness: dataFreshness,
 	}, nil
+}
+
+// rollupDataFreshness returns the aggregate freshness over all results matching
+// baseQuery (unpaginated), with precedence STALE > CURRENT > UNKNOWN: STALE if
+// any result is stale, else CURRENT if any result is current, else UNKNOWN. It
+// relies on the stored data_freshness column, so the cost is a count, not a
+// per-row scan of the serialized blobs.
+func (s *serviceImpl) rollupDataFreshness(ctx context.Context, baseQuery *v1.Query) (v2.ComplianceDataFreshness, error) {
+	hasFreshness := func(f storage.ComplianceDataFreshness) (bool, error) {
+		q := search.ConjunctionQuery(
+			baseQuery.CloneVT(),
+			search.NewQueryBuilder().AddExactMatches(search.ComplianceDataFreshness, f.String()).ProtoQuery(),
+		)
+		count, err := s.complianceResultsDS.CountCheckResults(ctx, q)
+		if err != nil {
+			return false, errors.Wrap(err, "counting compliance results by freshness")
+		}
+		return count > 0, nil
+	}
+
+	if stale, err := hasFreshness(storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE); err != nil {
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN, err
+	} else if stale {
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE, nil
+	}
+	if current, err := hasFreshness(storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT); err != nil {
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN, err
+	} else if current {
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT, nil
+	}
+	return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN, nil
 }
 
 func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, request *v2.ComplianceCheckDetailRequest) (*v2.ComplianceClusterCheckStatus, error) {
