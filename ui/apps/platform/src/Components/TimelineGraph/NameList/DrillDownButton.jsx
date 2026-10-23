@@ -5,12 +5,10 @@ import { Tooltip } from '@patternfly/react-core';
 import Button from 'Components/Button';
 
 const DrillDownButton = ({ tooltip, onClick }) => {
-    let drillDownButton = null;
-
     // used to position the button in the center right of it's parent div
     const positionClassName = 'absolute center-y right-0 transform translate-x-1/2';
 
-    drillDownButton = (
+    let drillDownButton = (
         <Button
             dataTestId="timeline-drill-down-button"
             className={`${

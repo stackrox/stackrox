@@ -47,7 +47,7 @@ function CredentialExpiration({
         </span>
     );
 
-    let expirationElement = <></>;
+    let expirationElement;
     const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
     if (healthStatus === 'HEALTHY') {
         let tooltipText: string;
