@@ -61,15 +61,6 @@ func (m *MsgFromSensor_NetworkFlowUpdate) CloneVT() isMsgFromSensor_Msg {
 	return r
 }
 
-func (m *MsgFromSensor_ScrapeUpdate) CloneVT() isMsgFromSensor_Msg {
-	if m == nil {
-		return (*MsgFromSensor_ScrapeUpdate)(nil)
-	}
-	r := new(MsgFromSensor_ScrapeUpdate)
-	r.ScrapeUpdate = m.ScrapeUpdate.CloneVT()
-	return r
-}
-
 func (m *MsgFromSensor_NetworkPoliciesResponse) CloneVT() isMsgFromSensor_Msg {
 	if m == nil {
 		return (*MsgFromSensor_NetworkPoliciesResponse)(nil)
@@ -229,15 +220,6 @@ func (m *MsgToSensor_Enforcement) CloneVT() isMsgToSensor_Msg {
 	}
 	r := new(MsgToSensor_Enforcement)
 	r.Enforcement = m.Enforcement.CloneVT()
-	return r
-}
-
-func (m *MsgToSensor_ScrapeCommand) CloneVT() isMsgToSensor_Msg {
-	if m == nil {
-		return (*MsgToSensor_ScrapeCommand)(nil)
-	}
-	r := new(MsgToSensor_ScrapeCommand)
-	r.ScrapeCommand = m.ScrapeCommand.CloneVT()
 	return r
 }
 
@@ -786,31 +768,6 @@ func (this *MsgFromSensor_NetworkFlowUpdate) EqualVT(thatIface isMsgFromSensor_M
 	return true
 }
 
-func (this *MsgFromSensor_ScrapeUpdate) EqualVT(thatIface isMsgFromSensor_Msg) bool {
-	that, ok := thatIface.(*MsgFromSensor_ScrapeUpdate)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.ScrapeUpdate, that.ScrapeUpdate; p != q {
-		if p == nil {
-			p = &ScrapeUpdate{}
-		}
-		if q == nil {
-			q = &ScrapeUpdate{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
 func (this *MsgFromSensor_NetworkPoliciesResponse) EqualVT(thatIface isMsgFromSensor_Msg) bool {
 	that, ok := thatIface.(*MsgFromSensor_NetworkPoliciesResponse)
 	if !ok {
@@ -1198,31 +1155,6 @@ func (this *MsgToSensor_Enforcement) EqualVT(thatIface isMsgToSensor_Msg) bool {
 		}
 		if q == nil {
 			q = &SensorEnforcement{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *MsgToSensor_ScrapeCommand) EqualVT(thatIface isMsgToSensor_Msg) bool {
-	that, ok := thatIface.(*MsgToSensor_ScrapeCommand)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.ScrapeCommand, that.ScrapeCommand; p != q {
-		if p == nil {
-			p = &ScrapeCommand{}
-		}
-		if q == nil {
-			q = &ScrapeCommand{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -2307,29 +2239,6 @@ func (m *MsgFromSensor_NetworkFlowUpdate) MarshalToSizedBufferVT(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgFromSensor_ScrapeUpdate) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgFromSensor_ScrapeUpdate) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.ScrapeUpdate != nil {
-		size, err := m.ScrapeUpdate.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x1a
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x1a
-	}
-	return len(dAtA) - i, nil
-}
 func (m *MsgFromSensor_NetworkPoliciesResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
@@ -2750,29 +2659,6 @@ func (m *MsgToSensor_Enforcement) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
 		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-func (m *MsgToSensor_ScrapeCommand) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgToSensor_ScrapeCommand) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.ScrapeCommand != nil {
-		size, err := m.ScrapeCommand.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x12
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x12
 	}
 	return len(dAtA) - i, nil
 }
@@ -4015,20 +3901,6 @@ func (m *MsgFromSensor_NetworkFlowUpdate) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *MsgFromSensor_ScrapeUpdate) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ScrapeUpdate != nil {
-		l = m.ScrapeUpdate.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
 func (m *MsgFromSensor_NetworkPoliciesResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4245,20 +4117,6 @@ func (m *MsgToSensor_Enforcement) SizeVT() (n int) {
 	_ = l
 	if m.Enforcement != nil {
 		l = m.Enforcement.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
-func (m *MsgToSensor_ScrapeCommand) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ScrapeCommand != nil {
-		l = m.ScrapeCommand.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -4958,47 +4816,6 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgFromSensor_NetworkFlowUpdate{NetworkFlowUpdate: v}
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeUpdate", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgFromSensor_ScrapeUpdate); ok {
-				if err := oneof.ScrapeUpdate.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeUpdate{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgFromSensor_ScrapeUpdate{ScrapeUpdate: v}
 			}
 			iNdEx = postIndex
 		case 4:
@@ -5778,47 +5595,6 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToSensor_Enforcement{Enforcement: v}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeCommand", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToSensor_ScrapeCommand); ok {
-				if err := oneof.ScrapeCommand.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeCommand{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToSensor_ScrapeCommand{ScrapeCommand: v}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -8361,47 +8137,6 @@ func (m *MsgFromSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Msg = &MsgFromSensor_NetworkFlowUpdate{NetworkFlowUpdate: v}
 			}
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeUpdate", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgFromSensor_ScrapeUpdate); ok {
-				if err := oneof.ScrapeUpdate.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeUpdate{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgFromSensor_ScrapeUpdate{ScrapeUpdate: v}
-			}
-			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NetworkPoliciesResponse", wireType)
@@ -9187,47 +8922,6 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToSensor_Enforcement{Enforcement: v}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeCommand", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToSensor_ScrapeCommand); ok {
-				if err := oneof.ScrapeCommand.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeCommand{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToSensor_ScrapeCommand{ScrapeCommand: v}
 			}
 			iNdEx = postIndex
 		case 3:
