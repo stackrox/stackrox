@@ -1,17 +1,21 @@
 package centralproxy
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -24,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"google.golang.org/grpc"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -52,6 +57,7 @@ type Handler struct {
 	centralReachable atomic.Bool
 	clusterIDGetter  clusterIDGetter
 	authorizer       *k8sAuthorizer
+	policy           *ClientPolicy
 	transport        *scopedTokenTransport
 	proxy            *httputil.ReverseProxy
 	metricsEnabled   bool
@@ -94,10 +100,15 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	if err != nil {
 		return nil, errors.Wrap(err, "creating kubernetes client")
 	}
+	policy := NewClientPolicy(k8sClient)
+	if err := policy.EnsureDefaults(context.Background()); err != nil {
+		return nil, errors.Wrap(err, "initializing proxy client policy")
+	}
 
 	return &Handler{
 		clusterIDGetter: clusterIDGetter,
 		authorizer:      newK8sAuthorizer(k8sClient),
+		policy:          policy,
 		transport:       transport,
 		proxy:           proxy,
 		metricsEnabled:  env.SecuredClusterMetricsEnabled.BooleanSetting(),
@@ -213,6 +224,10 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
+	if h.policy != nil {
+		h.servePolicyRequest(writer, request, &result)
+		return
+	}
 
 	if err := h.validateRequest(request); err != nil {
 		result = requestResultValidationError
@@ -260,4 +275,110 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if statusCode := tracker.GetStatusCode(); statusCode != nil && *statusCode >= http.StatusBadRequest {
 		result = requestResultProxyError
 	}
+}
+
+func (h *Handler) servePolicyRequest(writer http.ResponseWriter, request *http.Request, result *string) {
+	if !h.centralReachable.Load() {
+		*result = requestResultValidationError
+		http.Error(writer, "Central is not reachable", http.StatusServiceUnavailable)
+		return
+	}
+	if isMetricsPath(request) && !h.metricsEnabled {
+		*result = requestResultValidationError
+		http.Error(writer, "secured-cluster metrics proxy unavailable", http.StatusForbidden)
+		return
+	}
+	if h.authorizer == nil {
+		*result = requestResultConfigError
+		http.Error(writer, "proxy authorizer not configured", http.StatusInternalServerError)
+		return
+	}
+	var userInfo *authenticationv1.UserInfo
+	if request.TLS == nil || len(request.TLS.PeerCertificates) == 0 {
+		var err error
+		userInfo, err = h.authorizer.authenticate(request.Context(), request)
+		if err != nil {
+			*result = requestResultAuthnError
+			http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+			return
+		}
+	}
+	grant, err := h.policy.Authorize(request.Context(), request, userInfo)
+	if err != nil {
+		*result = requestResultAuthzError
+		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+		return
+	}
+	if grant.PermissionSetName == centralproxy.ConsoleProxyPermissionSetName && !features.OCPConsoleIntegration.Enabled() {
+		*result = requestResultValidationError
+		http.Error(writer, "console proxy is disabled", http.StatusForbidden)
+		return
+	}
+	perAccess := centralcaps.Has(centralsensor.CentralProxyPerAccessTokens)
+	if !perAccess && (len(grant.ScopedPermissionSets) != 1 ||
+		(!centralcaps.Has(centralsensor.CentralProxyScopedReadOnlyTokens) && !legacyProxyGrantAllowed(grant, request))) {
+		*result = requestResultNotImplemented
+		http.Error(writer, "Central does not support this proxy client profile", http.StatusNotImplemented)
+		return
+	}
+	if userInfo != nil {
+		if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+			*result = requestResultAuthzError
+			http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+			return
+		}
+	}
+	profile := &proxyTokenProfile{
+		identity:          grant.AuthType + ":" + grant.Subject,
+		permissionSetName: grant.PermissionSetName,
+		httpScopes:        grant.HTTPRequestScopes,
+		legacyConsole:     len(grant.ScopedPermissionSets) == 1 && grant.PermissionSetName == centralproxy.ConsoleProxyPermissionSetName,
+	}
+	if perAccess {
+		profile.scopedPermissionSets = grant.ScopedPermissionSets
+	}
+	if userInfo == nil || grant.PermissionSetName == centralproxy.MetricsPermissionSetName {
+		profile.clusterScope = FullClusterAccessScope
+	} else {
+		profile.clusterScope = request.Header.Get(stackroxNamespaceHeader)
+		if profile.clusterScope == "" && !profile.legacyConsole {
+			*result = requestResultAuthzError
+			http.Error(writer, "namespace scope is required for custom bearer clients", http.StatusForbidden)
+			return
+		}
+	}
+	request = request.WithContext(withProxyTokenProfile(request.Context(), profile))
+	tracker := pkghttputil.NewStatusTrackingWriter(writer)
+	h.proxy.ServeHTTP(tracker, request)
+	if statusCode := tracker.GetStatusCode(); statusCode != nil && *statusCode >= http.StatusBadRequest {
+		*result = requestResultProxyError
+	}
+}
+
+func legacyProxyGrantAllowed(grant *ClientPolicyGrant, request *http.Request) bool {
+	if len(grant.ScopedPermissionSets) != 1 {
+		return false
+	}
+	var allowed tokens.HTTPRequestScopes
+	switch grant.PermissionSetName {
+	case centralproxy.ConsoleProxyPermissionSetName:
+		allowed = centralproxy.ConsoleHTTPScopes
+	default:
+		return false
+	}
+	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) && !allowedpaths.IsAllowed(request.URL.EscapedPath()) {
+		return false
+	}
+	for _, scope := range grant.HTTPRequestScopes {
+		methods, found := allowed[scope.GetPath()]
+		if !found {
+			return false
+		}
+		for _, method := range scope.GetMethods() {
+			if !slices.Contains(methods, method) {
+				return false
+			}
+		}
+	}
+	return true
 }
