@@ -1,6 +1,6 @@
 module github.com/stackrox/stackrox/tools/linters
 
-go 1.26.7
+go 1.26.10
 
 require (
 	actionlint.kjanat.dev v1.17.0
