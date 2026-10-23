@@ -58,20 +58,31 @@ Unset or any other value preserves the existing execution path. GHA nongroovy
 jobs explicitly enable it; Prow jobs remain opt-in. This setting is independent
 of `GKE_SPOT` and does not change cluster provisioning.
 
-The monitor establishes a healthy raw NodeList baseline and watches from its
-collection resourceVersion before starting `tests/e2e/run.sh`. A private Unix
-socket `kubectl proxy` handles kubeconfig authentication; no extra Python
-packages or network listener are needed. Deletion or a MODIFIED node without
-Ready=True fails fast; ADDED events are ignored. These events establish node
-disruption, not its cause or proof of Spot preemption. Baseline/watch errors
-also fail closed. Clean watch expiration resumes from the last event/bookmark
-resourceVersion (or the original collection version on an idle watch), without
-relisting. Renewal failures, including HTTP 410 history loss, fail closed rather
-than silently losing disruption coverage. Product processes receive TERM, then
-KILL after five seconds.
+The monitor collects node names immediately before `tests/e2e/run.sh`, every
+five minutes while it runs, and immediately after it completes. Each `kubectl`
+call has a ten-second timeout. Product tests continue even when a later poll
+fails; the monitoring verdict is decided at the end, not fail-fast.
+
+The number of unique names across all samples must equal `NUM_NODES`, when set
+to a positive integer. Otherwise the initial sample's node count is used. An
+invalid configuration, failed initial poll, or empty initial sample prevents
+tests from starting. Later polling errors also fail the final monitoring result.
+Readiness and per-snapshot node counts are not checked: disappearance without
+replacement, NotReady nodes with unchanged names, and transient replacements
+between polls may go undetected. Name changes do not establish Spot causality.
+
+`ARTIFACT_DIR/node-names.txt` contains the sampled names (including repetitions).
+`ARTIFACT_DIR/node-snapshots.jsonl` retains every poll's timestamp, raw JSON
+stdout, stderr, exit code, and any polling error, even on passing runs. Failure
+logs include the expected count, unique names, and evidence paths; detailed
+snapshots remain in artifacts rather than successful job logs. Product timeout
+and cancellation still terminate the process group with TERM, then KILL after
+five seconds.
 
 `ARTIFACT_DIR/node-monitor.xml` contains the stable testcase
-`ci.gke.node / NoNodeDisruption`: pass for healthy monitoring regardless of the
-product result, failure for disruption/monitor errors, skipped for cancellation.
+`ci.gke.node / NoNodeDisruption`: pass for a matching unique-name count and
+error-free polling regardless of the product result, failure for a count mismatch
+or monitor errors, skipped for
+cancellation unless a monitor failure has already been recorded.
 The GHA adapter alone publishes the `failed` step output used to skip recovery;
 ordinary product failures do not set that output to true.
