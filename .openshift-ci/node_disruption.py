@@ -1,28 +1,17 @@
-"""Opt-in node monitoring shared by nongroovy CI entrypoints.
-
-Use the raw NodeList: kubectl's generic JSON list printer discards collection
-metadata. Watches must start at the collection version, not a node's version.
-"""
+"""Opt-in node-name polling shared by nongroovy CI entrypoints."""
 
 from dataclasses import dataclass
-import http.client
 import json
 import os
 from pathlib import Path
-import queue
 import signal
-import socket
 import subprocess
-import tempfile
-import threading
 import time
 import xml.etree.ElementTree as ET
-from urllib.parse import urlencode
 
 API_TIMEOUT = 10
 TERM_GRACE = 5
-WATCH_TIMEOUT = 300
-WATCH_RENEW_DELAY = 0.1
+POLL_INTERVAL = 5 * 60
 
 
 def enabled():
@@ -46,38 +35,6 @@ class Cancellation:
 
     def handle(self, signum, _frame):
         self.signal = signum
-
-
-def ready_status(node):
-    for condition in node.get('status', {}).get('conditions', []):
-        if condition.get('type') == 'Ready':
-            return condition.get('status')
-    return 'Unknown'
-
-
-def disruption(event):
-    """Return concise detail for deletion or a MODIFIED node that is not Ready."""
-    if not isinstance(event, dict):
-        raise RuntimeError('Kubernetes watch event is not an object')
-
-    kind = event.get('type')
-    node = event.get('object', {})
-    if not isinstance(node, dict):
-        raise RuntimeError('Kubernetes watch event has no node object')
-    if kind == 'ERROR':
-        raise RuntimeError(node.get('message', 'Kubernetes watch returned an error'))
-    if kind in ('ADDED', 'BOOKMARK'):
-        return None
-    if kind not in ('DELETED', 'MODIFIED'):
-        raise RuntimeError(f'Unexpected Kubernetes watch event type: {kind!r}')
-
-    name = node.get('metadata', {}).get('name')
-    if not name:
-        raise RuntimeError(f'{kind} node event has no node name')
-    ready = ready_status(node)
-    if kind == 'DELETED' or ready != 'True':
-        return {'type': kind, 'node': name, 'ready': ready}
-    return None
 
 
 def terminate(process, grace=TERM_GRACE):
@@ -127,17 +84,15 @@ def kill_group(process_group, signum):
 
 
 def report_detail(result):
-    if result.get('event'):
-        event = result['event']
-        detail = (f"Node disruption during E2E tests: node={event['node']} "
-                  f"event={event['type']} ready={event['ready']}")
-        return 'failure', 'Node disruption during E2E tests', detail
+    detail = result.get('summary', '')
     if result.get('error'):
-        return 'failure', 'Node monitor error', f"Node monitor error: {result['error']}"
+        detail += f"\nNode monitor error: {result['error']}"
+    if result.get('error') or result.get('mismatch'):
+        return 'failure', 'Node name change or monitor error', detail.strip()
     if result.get('cancelled'):
         detail = f"Node monitoring cancelled (signal={result.get('signal', 'unknown')})"
         return 'skipped', 'Workflow cancelled', detail
-    return 'passed', '', 'No node disruption detected during E2E tests.'
+    return 'passed', '', 'No node name change detected. ' + detail
 
 
 def write_report(result):
@@ -172,231 +127,120 @@ def write_report(result):
     temporary.replace(artifact_dir / 'node-monitor.xml')
 
 
-class UnixConnection(http.client.HTTPConnection):
-    """HTTP over a private kubectl proxy socket; kubectl owns authentication."""
-
-    def __init__(self, path):
-        super().__init__('localhost', timeout=API_TIMEOUT)
-        self.path = str(path)
-        self.transport_socket = None
-
-    def connect(self):
-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.sock.settimeout(self.timeout)
-        self.transport_socket = self.sock
-        self.sock.connect(self.path)
-
-
-def baseline_resource_version(snapshot):
-    if not isinstance(snapshot, dict):
-        raise RuntimeError('node baseline is not an object')
-    nodes = snapshot.get('items', [])
-    if not nodes:
-        raise RuntimeError('node baseline returned no nodes')
-    version = snapshot.get('metadata', {}).get('resourceVersion')
-    if not isinstance(version, str) or not version:
-        raise RuntimeError('NodeList metadata.resourceVersion is missing')
-    not_ready = [node.get('metadata', {}).get('name', '<unnamed>')
-                 for node in nodes if ready_status(node) != 'True']
-    if not_ready:
-        raise RuntimeError('Nodes not Ready before E2E tests: ' + ', '.join(not_ready))
-    return version
-
-
-def response_or_error(connection, path):
-    connection.request('GET', path)
-    response = connection.getresponse()
-    if response.status != 200:
-        # Status/reason suffice; never dump authentication responses or headers.
-        raise RuntimeError(f'Kubernetes API HTTP {response.status} {response.reason}')
-    return response
-
-
-class NodeWatch:
-    """Own the proxy and blocking HTTP reader; deliver outcomes to the main thread."""
-
-    def __init__(self):
-        self.messages = queue.Queue(maxsize=256)
-        self.stopped = threading.Event()
-        self.connection = None
-        self.proxy = None
-        self.reader = None
-        self.temporary = None
-        self.stderr = None
-
-    def start(self, cancellation):
-        # Resources span startup, monitoring and close(), rather than one scope.
-        # pylint: disable=consider-using-with
-        self.temporary = tempfile.TemporaryDirectory(prefix='node-watch-')
-        path = Path(self.temporary.name) / 'api.sock'
-        self.stderr = tempfile.TemporaryFile()
-        self.proxy = subprocess.Popen(
-            ['kubectl', 'proxy', '--unix-socket', str(path),
-             '--accept-paths=^/api/v1/nodes$',
-             '--reject-methods=^(POST|PUT|PATCH|DELETE|CONNECT|OPTIONS|TRACE|HEAD)$'],
-            stdout=subprocess.DEVNULL, stderr=self.stderr, start_new_session=True,
-        )
-        deadline = time.monotonic() + API_TIMEOUT
-        while not path.exists():
-            if cancellation.requested:
-                return
-            if self.proxy.poll() is not None:
-                raise RuntimeError('kubectl proxy exited during startup')
-            if time.monotonic() >= deadline:
-                raise RuntimeError('kubectl proxy startup timed out')
-            time.sleep(0.05)
-        self.reader = threading.Thread(target=self.read, args=(path,), daemon=True)
-        self.reader.start()
-
-    def emit(self, kind, value=None):
-        while not self.stopped.is_set():
-            try:
-                self.messages.put((kind, value), timeout=0.1)
-                return
-            except queue.Full:
-                continue
-
-    def read(self, path):
-        phase = 'node baseline'
-        try:
-            self.connection = UnixConnection(path)
-            response = response_or_error(self.connection, '/api/v1/nodes')
-            version = baseline_resource_version(json.loads(response.read()))
-            self.connection.close()
-            phase = 'node watch'
-            self.read_watches(path, version)
-        except (OSError, ValueError, TypeError, AttributeError, RuntimeError,
-                http.client.HTTPException) as exc:
-            self.emit('error', f'{phase}: {exc}')
-
-    def read_watches(self, path, version):
-        """Resume cleanly expired watches without replacing the original baseline."""
-        first = True
-        while not self.stopped.is_set():
-            self.connection = UnixConnection(path)
-            query = urlencode({'watch': 'true', 'resourceVersion': version,
-                               'allowWatchBookmarks': 'true', 'timeoutSeconds': WATCH_TIMEOUT})
-            try:
-                response = response_or_error(self.connection, '/api/v1/nodes?' + query)
-                self.connection.transport_socket.settimeout(WATCH_TIMEOUT + API_TIMEOUT)
-                if first:
-                    self.emit('ready')
-                    first = False
-                version = self.read_events(response, version)
-            finally:
-                self.connection.close()
-            if version is None:
-                return
-            # Clean HTTP EOF is normal watch expiration. A bounded pause avoids
-            # spinning on servers that repeatedly return empty streams.
-            self.stopped.wait(WATCH_RENEW_DELAY)
-
-    def read_events(self, response, version):
-        while not self.stopped.is_set():
-            line = response.readline()
-            if not line:
-                return version
-            event = json.loads(line)
-            disrupted = disruption(event)
-            if disrupted:
-                self.emit('event', disrupted)
-                return None
-            current = event.get('object', {}).get('metadata', {}).get('resourceVersion')
-            if not isinstance(current, str) or not current:
-                raise RuntimeError('watch event metadata.resourceVersion is missing')
-            # Resource versions are opaque tokens, including on ignored ADDED
-            # events and BOOKMARKs. Never order them or relist after HTTP 410:
-            # relisting would hide disruptions in a lost-history interval.
-            version = current
+def expected_node_count(env):
+    value = env.get('NUM_NODES')
+    if value is None:
         return None
-
-    def diagnostic(self):
-        if self.stderr is None:
-            return ''
-        self.stderr.seek(0, os.SEEK_END)
-        size = self.stderr.tell()
-        self.stderr.seek(max(0, size - 1000))
-        return self.stderr.read().decode('utf-8', errors='replace').strip()
-
-    def close(self):
-        self.stopped.set()
-        # Stop upstream first, then unblock a reader even if HTTP handed socket
-        # ownership to a Connection: close response.
-        terminate(self.proxy, grace=1)
-        if self.connection is not None:
-            sock = self.connection.transport_socket
-            if sock is not None:
-                try:
-                    sock.shutdown(socket.SHUT_RDWR)
-                except OSError:
-                    pass
-        if self.reader is not None:
-            self.reader.join(timeout=API_TIMEOUT + 1)
-        if self.connection is not None:
-            self.connection.close()
-        if self.stderr is not None:
-            self.stderr.close()
-        if self.temporary is not None:
-            self.temporary.cleanup()
-
-
-def next_message(watch):
     try:
-        return watch.messages.get(timeout=0.1)
-    except queue.Empty:
-        if watch.proxy.poll() is not None:
-            return 'error', 'kubectl proxy exited unexpectedly'
-        return None, None
+        count = int(value)
+    except ValueError as exc:
+        raise RuntimeError('NUM_NODES must be a positive integer') from exc
+    if count <= 0:
+        raise RuntimeError('NUM_NODES must be a positive integer')
+    return count
 
 
-def await_ready(watch, result, cancellation):
-    # Both baseline and watch-header requests have their own ten-second timeout.
-    deadline = time.monotonic() + 2 * API_TIMEOUT + 1
-    while not cancellation.requested:
-        kind, value = next_message(watch)
-        if kind == 'ready':
-            # A buffered disruption/error must prevent launching product tests.
-            if not watch.messages.empty():
-                kind, value = watch.messages.get_nowait()
-                result[kind] = value
-                return False
-            return True
-        if kind == 'error' or time.monotonic() >= deadline:
-            result['error'] = value or 'node monitoring establishment timed out'
-            return False
-    return False
+def node_names(snapshot):
+    """Only names affect the verdict; readiness and per-snapshot counts do not."""
+    if not isinstance(snapshot, dict) or not isinstance(snapshot.get('items'), list):
+        raise ValueError('node snapshot must contain an items list')
+    names = []
+    for node in snapshot['items']:
+        name = node.get('metadata', {}).get('name') if isinstance(node, dict) else None
+        if not isinstance(name, str) or not name or any(char.isspace() for char in name):
+            raise ValueError('node snapshot contains an invalid node name')
+        names.append(name)
+    return names
 
 
-def monitor_test(test, watch, result, cancellation, timeout):
+def output_text(value):
+    # TimeoutExpired may hold bytes even when subprocess.run uses text=True.
+    return value.decode('utf-8', errors='replace') if isinstance(value, bytes) else value or ''
+
+
+class NodePoll:
+    def __init__(self, env):
+        self.env = env
+        artifact_dir = Path(os.getenv('ARTIFACT_DIR', 'junit-reports'))
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        self.names = artifact_dir / 'node-names.txt'
+        self.snapshots = artifact_dir / 'node-snapshots.jsonl'
+        self.errors = []
+        # Never mix observations from separate runs using the same artifact directory.
+        self.names.write_text('', encoding='utf-8')
+        self.snapshots.write_text('', encoding='utf-8')
+
+    def sample(self):
+        record = {'timestamp': time.time()}
+        names = None
+        try:
+            completed = subprocess.run(
+                ['kubectl', f'--request-timeout={API_TIMEOUT}s', 'get', 'nodes', '-o', 'json'],
+                env=self.env, capture_output=True, text=True, errors='replace',
+                timeout=API_TIMEOUT, check=False,
+            )
+            record.update(stdout=completed.stdout, stderr=completed.stderr,
+                          returncode=completed.returncode)
+            if completed.returncode != 0:
+                raise RuntimeError(f'kubectl get nodes exited {completed.returncode}')
+            names = node_names(json.loads(completed.stdout))
+        except subprocess.TimeoutExpired as exc:
+            record.update(error=f'kubectl get nodes timed out after {API_TIMEOUT}s',
+                          stdout=output_text(exc.stdout), stderr=output_text(exc.stderr))
+        except (OSError, ValueError, AttributeError, RuntimeError) as exc:
+            record['error'] = str(exc)
+
+        with self.snapshots.open('a', encoding='utf-8') as stream:
+            stream.write(json.dumps(record) + '\n')
+        if 'error' in record:
+            self.errors.append(record['error'])
+            return None
+        with self.names.open('a', encoding='utf-8') as stream:
+            stream.writelines(name + '\n' for name in names)
+        return names
+
+    def verdict(self, expected):
+        names = sorted(set(self.names.read_text(encoding='utf-8').splitlines()))
+        summary = (f'Expected {expected} nodes; observed {len(names)} unique names: '
+                   f"{', '.join(names)}. Evidence: {self.names}, {self.snapshots}")
+        return {'mismatch': len(names) != expected, 'summary': summary}
+
+
+def monitor_test(test, poller, result, cancellation, timeout):
     deadline = None if timeout is None else time.monotonic() + timeout
+    next_poll = time.monotonic() + POLL_INTERVAL
     while not cancellation.requested:
-        kind, value = next_message(watch)
-        if kind in ('error', 'event'):
-            result[kind] = value
+        if test.poll() is not None:
             return
-        if test.poll() is not None and watch.messages.empty():
-            return
-        if deadline is not None and time.monotonic() >= deadline:
+        now = time.monotonic()
+        if deadline is not None and now >= deadline:
             result['timed_out'] = True
             return
+        if now >= next_poll:
+            poller.sample()
+            next_poll = time.monotonic() + POLL_INTERVAL
+            continue
+        # Check cancellation promptly without adding threads or signal-driven I/O.
+        delay = min(0.1, next_poll - now)
+        if deadline is not None:
+            delay = min(delay, deadline - now)
+        time.sleep(delay)
 
 
-def cleanup(test, watch, previous):
+def cleanup(test, previous):
     try:
         terminate(test)
     finally:
-        try:
-            watch.close()
-        finally:
-            for sig, handler in previous.items():
-                signal.signal(sig, handler)
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
 
 
 def finish(result, test, cancellation):
-    failed = bool(result.get('error') or result.get('event'))
-    print(report_detail(result)[2], flush=True)
+    failed = bool(result.get('error') or result.get('mismatch'))
+    status, _, detail = report_detail(result)
+    print(('ERROR: ' if status == 'failure' else '') + detail, flush=True)
     if failed:
-        return RunResult(1, True)
+        return RunResult(1, True, timed_out=result.get('timed_out', False))
     if result.get('cancelled'):
         return RunResult(128 + cancellation.signal, False)
     if result.get('timed_out'):
@@ -406,36 +250,43 @@ def finish(result, test, cancellation):
 
 
 def run(command, timeout=None, env=None, run_url=''):
-    """Run an already opted-in command; monitor failures are distinct from its exit."""
+    """Sample names around a product command, deciding the verdict only at the end."""
     if not command:
         raise ValueError('node monitoring requires a product command')
     result = {'started_at': time.monotonic(), 'run_url': run_url}
     cancellation = Cancellation()
     previous = {sig: signal.signal(sig, cancellation.handle)
                 for sig in (signal.SIGTERM, signal.SIGINT)}
-    watch = NodeWatch()
-    test = None
+    test, poller, expected = None, None, None
     try:
-        watch.start(cancellation)
-        if await_ready(watch, result, cancellation) and not cancellation.requested:
+        environment = os.environ if env is None else env
+        poller = NodePoll(environment)
+        expected = expected_node_count(environment)
+        initial = poller.sample()
+        if initial == []:
+            raise RuntimeError('initial node sample returned no nodes')
+        if initial is not None and not cancellation.requested:
+            expected = expected or len(set(initial))
             # cleanup() owns this group, including descendants after leader exit.
             test = subprocess.Popen(  # pylint: disable=consider-using-with
                 command, env=env, start_new_session=True)
-            monitor_test(test, watch, result, cancellation, timeout)
-    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+            monitor_test(test, poller, result, cancellation, timeout)
+            if not cancellation.requested:
+                poller.sample()
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
         if not cancellation.requested:
             result['error'] = f'node monitor execution: {exc}'
     finally:
-        if result.get('error'):
-            diagnostic = watch.diagnostic()
-            if diagnostic:
-                result['error'] += '\n' + diagnostic
-        if cancellation.requested and not (result.get('error') or result.get('event')):
-            result.update(cancelled=True, signal=cancellation.signal)
-        result['duration_seconds'] = time.monotonic() - result['started_at']
         try:
-            # Publish evidence before potentially spending five seconds terminating tests.
+            if poller is not None:
+                if expected is not None and not cancellation.requested:
+                    result.update(poller.verdict(expected))
+                if poller.errors:
+                    result['error'] = '\n'.join(filter(None, [result.get('error'), *poller.errors]))
+            if cancellation.requested:
+                result.update(cancelled=True, signal=cancellation.signal)
+            result['duration_seconds'] = time.monotonic() - result['started_at']
             write_report(result)
         finally:
-            cleanup(test, watch, previous)
+            cleanup(test, previous)
     return finish(result, test, cancellation)

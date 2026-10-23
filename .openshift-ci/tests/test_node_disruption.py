@@ -1,9 +1,8 @@
-"""Cluster-free tests for the shared node monitor and framework integration."""
+"""Cluster-free tests for node-name polling and nongroovy integration."""
 
 import json
 import os
 from pathlib import Path
-import queue
 import signal
 import subprocess
 import sys
@@ -17,332 +16,253 @@ import node_disruption as monitor
 from ci_tests import NonGroovyE2e
 
 
-def node(ready='True'):
-    return {'metadata': {'name': 'worker-1', 'resourceVersion': 'event-43'},
-            'status': {'conditions': [{'type': 'Ready', 'status': ready}]}}
+def snapshot(*names, ready='True'):
+    return {'items': [{'metadata': {'name': name},
+                       'status': {'conditions': [{'type': 'Ready', 'status': ready}]}}
+                      for name in names]}
 
 
-def snapshot(ready='True'):
-    return {'kind': 'NodeList', 'metadata': {'resourceVersion': 'list-42'}, 'items': [node(ready)]}
+def reply(*names, ready='True', code=0, stderr=''):
+    return subprocess.CompletedProcess('kubectl', code, json.dumps(snapshot(*names, ready=ready)), stderr)
 
 
-class FakeWatch:
-    def __init__(self, messages):
-        self.messages = queue.Queue()
-        for message in messages:
-            self.messages.put(message)
-        self.proxy = Mock()
-        self.proxy.poll.return_value = None
-        self.start = Mock()
-        self.close = Mock()
-        self.diagnostic = Mock(return_value='')
+class Clock:
+    def __init__(self):
+        self.now = 0
+
+    def monotonic(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
 
 
-class BaselineAndEventTest(unittest.TestCase):
+class CollectionTest(unittest.TestCase):
     def test_only_dedicated_true_enables_monitoring(self):
-        for value in ('', 'false', 'true'):
-            with self.subTest(value=value), patch.dict(os.environ, {
+        cases = {'unset': '', 'disabled': 'false', 'enabled': 'true'}
+        for name, value in cases.items():
+            with self.subTest(name=name), patch.dict(os.environ, {
                     'GKE_SPOT': 'true', 'GKE_NODE_DISRUPTION_WATCH': value}):
                 self.assertEqual(monitor.enabled(), value == 'true')
 
-    def test_baseline_uses_collection_version(self):
-        data = snapshot()
-        data['items'][0]['metadata']['resourceVersion'] = 'node-7'
-        self.assertEqual(monitor.baseline_resource_version(data), 'list-42')
-
-    def test_invalid_baselines(self):
-        cases = {
-            'no nodes': {'items': []},
-            'resourceVersion': {'metadata': {}, 'items': [node()]},
-            'not Ready': snapshot('False'),
-            'not an object': [],
-        }
-        for message, data in cases.items():
-            with self.subTest(message=message), self.assertRaisesRegex(RuntimeError, message):
-                monitor.baseline_resource_version(data)
-
-    def test_disruptions_and_ignored_events(self):
-        cases = {
-            'deleted': ('DELETED', 'True', True),
-            'false': ('MODIFIED', 'False', True),
-            'unknown': ('MODIFIED', 'Unknown', True),
-            'missing condition': ('MODIFIED', None, True),
-            'healthy': ('MODIFIED', 'True', False),
-            'added unhealthy': ('ADDED', 'False', False),
-            'bookmark': ('BOOKMARK', 'True', False),
-        }
-        for name, (kind, ready, expected) in cases.items():
+    def test_expected_count(self):
+        cases = {'unset': ({}, None), 'one': ({'NUM_NODES': '1'}, 1),
+                 'many': ({'NUM_NODES': '3'}, 3)}
+        for name, (env, expected) in cases.items():
             with self.subTest(name=name):
-                result = monitor.disruption({'type': kind, 'object': node(ready)})
-                self.assertEqual(bool(result), expected)
-        with self.assertRaisesRegex(RuntimeError, 'expired'):
-            monitor.disruption({'type': 'ERROR', 'object': {'message': 'expired'}})
-        with self.assertRaisesRegex(RuntimeError, 'name'):
-            monitor.disruption({'type': 'DELETED', 'object': {}})
+                self.assertEqual(monitor.expected_node_count(env), expected)
+        invalid = {'empty': '', 'zero': '0', 'negative': '-1', 'text': 'three', 'fraction': '1.5'}
+        for name, value in invalid.items():
+            with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, 'positive integer'):
+                monitor.expected_node_count({'NUM_NODES': value})
+
+    def test_invalid_snapshots(self):
+        cases = {'not an object': [], 'missing items': {}, 'invalid items': {'items': None},
+                 'invalid node': {'items': [None]}, 'missing name': {'items': [{}]},
+                 'invalid name': snapshot(''), 'multiline name': snapshot('node\nother')}
+        for name, data in cases.items():
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                monitor.node_names(data)
+
+    def test_names_only_verdict(self):
+        cases = {
+            'stable duplicates': ([reply('a', 'b'), reply('b', 'a')], 2, False),
+            'replacement': ([reply('a'), reply('b')], 1, True),
+            'too few': ([reply('a')], 2, True),
+            'too many': ([reply('a', 'b')], 1, True),
+            'not ready is ignored': ([reply('a', ready='False')], 1, False),
+            'disappearance is ignored': ([reply('a', 'b'), reply('a')], 2, False),
+            'empty later sample is ignored': ([reply('a'), reply()], 1, False),
+            'unobserved transient is ignored': ([reply('a'), reply('a')], 1, False),
+        }
+        for name, (replies, expected, mismatch) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, \
+                    patch.dict(os.environ, ARTIFACT_DIR=directory), \
+                    patch.object(monitor.subprocess, 'run', side_effect=replies) as run:
+                poller = monitor.NodePoll({'KUBECONFIG': 'test-config'})
+                for _ in range(len(replies)):
+                    poller.sample()
+                verdict = poller.verdict(expected)
+                self.assertEqual(verdict['mismatch'], mismatch)
+                self.assertIn(f'Expected {expected}', verdict['summary'])
+                self.assertEqual(poller.errors, [])
+                records = [json.loads(line) for line in poller.snapshots.read_text().splitlines()]
+                self.assertEqual(len(records), len(replies))
+                self.assertIn('items', json.loads(records[0]['stdout']))
+                self.assertIn('timestamp', records[0])
+                self.assertEqual(run.call_args.kwargs['env'], {'KUBECONFIG': 'test-config'})
+                self.assertEqual(run.call_args.kwargs['timeout'], 10)
+                self.assertEqual(run.call_args.args[0],
+                                 ['kubectl', '--request-timeout=10s', 'get', 'nodes', '-o', 'json'])
+
+    def test_poll_errors_are_retained(self):
+        cases = {
+            'exit': (reply(code=1, stderr='forbidden'), 'exited 1'),
+            'malformed': (subprocess.CompletedProcess('kubectl', 0, 'broken', ''), 'Expecting value'),
+            'timeout': (subprocess.TimeoutExpired('kubectl', 10, b'partial', b'timeout'), 'timed out'),
+            'missing executable': (FileNotFoundError('kubectl not found'), 'not found'),
+        }
+        for name, (response, error) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, \
+                    patch.dict(os.environ, ARTIFACT_DIR=directory), \
+                    patch.object(monitor.subprocess, 'run', side_effect=[response]):
+                poller = monitor.NodePoll({})
+                self.assertIsNone(poller.sample())
+                self.assertIn(error, poller.errors[0])
+                record = json.loads(poller.snapshots.read_text())
+                self.assertIn(error, record['error'])
+                self.assertEqual(poller.names.read_text(), '')
+                if name == 'timeout':
+                    self.assertEqual(record['stdout'], 'partial')
+                    self.assertEqual(record['stderr'], 'timeout')
+                if name == 'exit':
+                    self.assertEqual(record['stderr'], 'forbidden')
+
+    def test_new_run_clears_old_observations(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, ARTIFACT_DIR=directory):
+            poller = monitor.NodePoll({})
+            poller.names.write_text('old-node\n')
+            poller.snapshots.write_text('old snapshot')
+            fresh = monitor.NodePoll({})
+            self.assertEqual(fresh.names.read_text(), '')
+            self.assertEqual(fresh.snapshots.read_text(), '')
 
 
 class NodeMonitorTest(unittest.TestCase):
-    def run_fake(self, messages, code=0, cancel=False, timeout=None):
-        watch = FakeWatch(messages)
-        test = Mock(pid=123, returncode=code)
-        test.poll.return_value = code
+    def run_fake(self, replies, **options):
+        clock = Clock()
+        test = Mock(pid=123, returncode=options.get('code', 0))
+
+        def product_poll():
+            cancel_at = options.get('cancel_at')
+            if cancel_at is not None and clock.now >= cancel_at:
+                signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
+            return options.get('code', 0) if clock.now >= options.get('duration', 0) else None
+
+        test.poll.side_effect = product_poll
         with tempfile.TemporaryDirectory() as directory, \
                 patch.dict(os.environ, ARTIFACT_DIR=directory), \
-                patch.object(monitor, 'NodeWatch', return_value=watch), \
-                patch.object(monitor.subprocess, 'Popen', return_value=test) as popen, \
-                patch.object(monitor, 'terminate') as terminate:
-            if cancel:
-                watch.start.side_effect = lambda c: c.handle(signal.SIGTERM, None)
-            result = monitor.run(['product'], timeout=timeout, run_url='https://ci.example/run')
+                patch.object(monitor.subprocess, 'run', side_effect=replies) as collect, \
+                patch.object(monitor.subprocess, 'Popen', return_value=test) as launch, \
+                patch.object(monitor, 'terminate') as terminate, \
+                patch.object(monitor.time, 'monotonic', side_effect=clock.monotonic), \
+                patch.object(monitor.time, 'sleep', side_effect=clock.sleep):
+            result = monitor.run(['product'], timeout=options.get('timeout'), env=options.get('env', {}),
+                                 run_url='https://ci.example/run')
             report = ET.parse(Path(directory) / 'node-monitor.xml').getroot()
-        watch.close.assert_called_once()
-        return result, report, popen, terminate
+            records = [json.loads(line) for line in (Path(directory) / 'node-snapshots.jsonl').read_text().splitlines()]
+            names = (Path(directory) / 'node-names.txt').read_text()
+        return result, report, collect, launch, terminate, records, names
 
     def test_product_exit_codes_and_passing_junit(self):
-        for code in (0, 42, -signal.SIGTERM):
-            with self.subTest(code=code):
-                result, report, popen, _ = self.run_fake([('ready', None)], code)
+        cases = {'success': 0, 'failure': 42, 'signal': -signal.SIGTERM}
+        for name, code in cases.items():
+            with self.subTest(name=name):
+                result, report, collect, launch, _, records, names = self.run_fake(
+                    [reply('a'), reply('a')], code=code)
                 self.assertEqual(result.exit_code, code if code >= 0 else 128 - code)
                 self.assertFalse(result.monitor_failed)
                 self.assertEqual(report.get('failures'), '0')
+                self.assertEqual(report.find('.//testcase').get('name'), 'NoNodeDisruption')
                 self.assertIn('https://ci.example/run', report.findtext('.//system-out'))
-                popen.assert_called_once_with(['product'], env=None, start_new_session=True)
+                launch.assert_called_once_with(['product'], env={}, start_new_session=True)
+                self.assertEqual(collect.call_count, 2)
+                self.assertEqual(len(records), 2)
+                self.assertEqual(names, 'a\na\n')
+
+    def test_five_minute_cadence_and_final_sample(self):
+        self.assertEqual(monitor.POLL_INTERVAL, 300)
+        result, _, collect, _, _, _, _ = self.run_fake(
+            [reply('a'), reply('a'), reply('b'), reply('b')], duration=601)
+        self.assertEqual(collect.call_count, 4)  # Initial, 5m, 10m, final.
+        self.assertTrue(result.monitor_failed)
+
+    def test_short_test_still_has_final_sample(self):
+        result, report, collect, _, _, _, _ = self.run_fake([reply('a'), reply('b')], duration=1)
+        self.assertEqual(collect.call_count, 2)
+        self.assertTrue(result.monitor_failed)
+        self.assertIn('observed 2 unique names: a, b', report.findtext('.//failure'))
+
+    def test_expected_size_configuration_and_fallback(self):
+        cases = {'explicit match': ({'NUM_NODES': '2'}, ['a', 'b'], False),
+                 'explicit mismatch': ({'NUM_NODES': '2'}, ['a'], True),
+                 'fallback': ({}, ['a', 'b'], False)}
+        for name, (env, nodes, failed) in cases.items():
+            with self.subTest(name=name):
+                result, _, _, launch, _, _, _ = self.run_fake([reply(*nodes), reply(*nodes)], env=env)
+                self.assertEqual(result.monitor_failed, failed)
+                launch.assert_called_once()  # Count mismatches are evaluated at the end.
 
     def test_startup_errors_do_not_launch_product(self):
-        for error in ('missing metadata.resourceVersion', 'HTTP 403 Forbidden', 'watch timeout'):
-            with self.subTest(error=error):
-                result, report, popen, _ = self.run_fake([('error', error)])
+        cases = {'failed poll': ([reply(code=1)], {}, 'exited 1'),
+                 'empty baseline': ([reply()], {}, 'no nodes'),
+                 'invalid configuration': ([], {'NUM_NODES': '0'}, 'positive integer')}
+        for name, (replies, env, error) in cases.items():
+            with self.subTest(name=name):
+                result, report, _, launch, _, _, _ = self.run_fake(replies, env=env)
                 self.assertTrue(result.monitor_failed)
                 self.assertIn(error, report.findtext('.//failure'))
-                popen.assert_not_called()
+                launch.assert_not_called()
 
-    def test_buffered_disruption_prevents_product_start(self):
-        event = {'type': 'DELETED', 'node': 'worker-1', 'ready': 'True'}
-        result, report, popen, _ = self.run_fake([('ready', None), ('event', event)])
-        self.assertTrue(result.monitor_failed)
-        self.assertIn('worker-1', report.findtext('.//failure'))
-        popen.assert_not_called()
-
-    def test_cancellation_is_skipped(self):
-        result, report, popen, _ = self.run_fake([], cancel=True)
-        self.assertEqual(result.exit_code, 143)
-        self.assertEqual(report.get('skipped'), '1')
-        self.assertIsNotNone(report.find('.//skipped'))
-        popen.assert_not_called()
-
-    def test_errors_and_disruptions_stop_running_product(self):
-        for kind, value in {'error': 'watch ended', 'event': {
-                'type': 'MODIFIED', 'node': 'worker-1', 'ready': 'False'}}.items():
-            with self.subTest(kind=kind):
-                watch = FakeWatch([(kind, value)])
-                result = {}
-                test = Mock()
-                monitor.monitor_test(test, watch, result, monitor.Cancellation(), None)
-                self.assertEqual(result[kind], value)
-                test.poll.assert_not_called()
-
-    def test_timeout_and_running_cancellation(self):
-        watch = FakeWatch([])
-        test = Mock()
-        test.poll.return_value = None
-        result = {}
-        monitor.monitor_test(test, watch, result, monitor.Cancellation(), 0)
-        self.assertTrue(result['timed_out'])
-        cancellation = monitor.Cancellation()
-        cancellation.handle(signal.SIGINT, None)
-        monitor.monitor_test(test, watch, {}, cancellation, None)
-
-    def test_watch_establishment_deadline(self):
-        watch = FakeWatch([])
-        result = {}
-        with patch.object(monitor.time, 'monotonic', side_effect=[0, 100]):
-            self.assertFalse(monitor.await_ready(watch, result, monitor.Cancellation()))
-        self.assertIn('timed out', result['error'])
-
-    def test_http_failure_diagnostic(self):
-        connection = Mock()
-        connection.getresponse.return_value.status = 403
-        connection.getresponse.return_value.reason = 'Forbidden'
-        with self.assertRaisesRegex(RuntimeError, 'HTTP 403 Forbidden'):
-            monitor.response_or_error(connection, '/api/v1/nodes')
-
-    def test_raw_list_watch_reader(self):
-        baseline = Mock(status=200)
-        baseline.read.return_value = json.dumps(snapshot()).encode()
-        response = Mock(status=200)
-        response.readline.side_effect = [
-            json.dumps({'type': 'ADDED', 'object': node('False')}).encode() + b'\n',
-            json.dumps({'type': 'DELETED', 'object': node()}).encode() + b'\n',
-        ]
-        connections = [Mock(), Mock()]
-        for connection, reply in zip(connections, (baseline, response)):
-            connection.getresponse.return_value = reply
-        watch = monitor.NodeWatch()
-        with patch.object(monitor, 'UnixConnection', side_effect=connections):
-            watch.read('/unused')
-        self.assertEqual(watch.messages.get_nowait(), ('ready', None))
-        self.assertEqual(watch.messages.get_nowait()[0], 'event')
-        query = connections[1].request.call_args.args[1]
-        self.assertIn('resourceVersion=list-42', query)
-        self.assertIn('watch=true', query)
-
-    def test_reader_malformed_json_and_api_error(self):
-        for line in (b'broken\n', b'{"type":"ERROR","object":{"message":"expired"}}\n'):
-            with self.subTest(line=line):
-                baseline = Mock(status=200)
-                baseline.read.return_value = json.dumps(snapshot()).encode()
-                response = Mock(status=200)
-                response.readline.return_value = line
-                connection = Mock()
-                connection.getresponse.side_effect = [baseline, response]
-                watch = monitor.NodeWatch()
-                with patch.object(monitor, 'UnixConnection', return_value=connection):
-                    watch.read('/unused')
-                self.assertEqual(watch.messages.get_nowait()[0], 'ready')
-                self.assertEqual(watch.messages.get_nowait()[0], 'error')
-
-    def test_clean_expiration_resumes_from_last_event_or_baseline(self):
-        cases = {
-            'idle': ([], 'list-42'),
-            'modified': ([{'type': 'MODIFIED', 'object': node()}], 'event-43'),
-            'added': ([{'type': 'ADDED', 'object': node('False')}], 'event-43'),
-            'bookmark': ([{'type': 'BOOKMARK', 'object': {
-                'metadata': {'resourceVersion': 'bookmark-opaque'}}}], 'bookmark-opaque'),
-        }
-        for name, (events, expected) in cases.items():
+    def test_failed_polls_do_not_stop_product_and_never_pass(self):
+        cases = {'intermediate': ([reply('a'), reply(code=1), reply('a')], 301),
+                 'final': ([reply('a'), reply(code=1)], 0)}
+        for name, (replies, duration) in cases.items():
             with self.subTest(name=name):
-                baseline = Mock(status=200)
-                baseline.read.return_value = json.dumps(snapshot()).encode()
-                expired = Mock(status=200)
-                expired.readline.side_effect = [json.dumps(event).encode() + b'\n' for event in events] + [b'']
-                resumed = Mock(status=200)
-                resumed.readline.return_value = json.dumps({'type': 'DELETED', 'object': node()}).encode()
-                connections = [Mock(), Mock(), Mock()]
-                for connection, response in zip(connections, (baseline, expired, resumed)):
-                    connection.getresponse.return_value = response
-                watch = monitor.NodeWatch()
-                with patch.object(monitor, 'UnixConnection', side_effect=connections), \
-                        patch.object(watch.stopped, 'wait'):
-                    watch.read('/unused')
-                self.assertIn('resourceVersion=' + expected, connections[2].request.call_args.args[1])
-                self.assertIn('timeoutSeconds=300', connections[1].request.call_args.args[1])
-                messages = list(watch.messages.queue)
-                self.assertEqual([kind for kind, _ in messages], ['ready', 'event'])
-                self.assertEqual(messages[1][1]['type'], 'DELETED')
-                for connection in connections:
-                    connection.close.assert_called_once()
+                result, report, collect, launch, _, _, _ = self.run_fake(replies, duration=duration)
+                self.assertEqual(collect.call_count, len(replies))
+                self.assertTrue(result.monitor_failed)
+                self.assertIn('exited 1', report.findtext('.//failure'))
+                launch.assert_called_once()
 
-    def test_renewal_failure_does_not_relist(self):
-        for status in (403, 410, 500):
-            with self.subTest(status=status):
-                baseline = Mock(status=200)
-                baseline.read.return_value = json.dumps(snapshot()).encode()
-                expired = Mock(status=200)
-                expired.readline.return_value = b''
-                failed = Mock(status=status, reason='renewal rejected')
-                connection = Mock()
-                connection.getresponse.side_effect = [baseline, expired, failed]
-                watch = monitor.NodeWatch()
-                with patch.object(monitor, 'UnixConnection', return_value=connection), \
-                        patch.object(watch.stopped, 'wait'):
-                    watch.read('/unused')
-                self.assertEqual([kind for kind, _ in watch.messages.queue], ['ready', 'error'])
-                self.assertIn(f'HTTP {status}', list(watch.messages.queue)[1][1])
-                self.assertEqual(connection.request.call_count, 3)
+    def test_timeout_and_cancellation(self):
+        cases = {'timeout': (1, None, 124, '0', 2),
+                 'cancelled': (None, 1, 143, '1', 1)}
+        for name, (timeout, cancel_at, code, skipped, polls) in cases.items():
+            with self.subTest(name=name):
+                previous = signal.getsignal(signal.SIGTERM)
+                result, report, collect, _, terminate, _, _ = self.run_fake(
+                    [reply('a')] * polls, duration=100, timeout=timeout, cancel_at=cancel_at)
+                self.assertEqual(result.exit_code, code)
+                self.assertEqual(result.timed_out, timeout is not None)
+                self.assertEqual(report.get('skipped'), skipped)
+                self.assertEqual(collect.call_count, polls)
+                terminate.assert_called_once()
+                self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
 
-    def test_invalid_resume_version_fails_closed(self):
-        for event in ({'type': 'BOOKMARK'}, {'type': 'ADDED', 'object': {'metadata': {}}}):
-            with self.subTest(event=event):
-                response = Mock()
-                response.readline.return_value = json.dumps(event).encode()
-                with self.assertRaisesRegex(RuntimeError, 'resourceVersion'):
-                    monitor.NodeWatch().read_events(response, 'list-42')
+    def test_cancellation_does_not_hide_recorded_poll_error(self):
+        result, report, _, _, _, _, _ = self.run_fake(
+            [reply('a'), reply(code=1)], duration=999, cancel_at=301)
+        self.assertTrue(result.monitor_failed)
+        self.assertEqual(report.get('failures'), '1')
+        self.assertEqual(report.get('skipped'), '0')
 
-    def test_cancellation_during_renewal_stops_reconnecting(self):
-        response = Mock(status=200)
-        response.readline.return_value = b''
-        connection = Mock()
-        connection.getresponse.return_value = response
-        watch = monitor.NodeWatch()
-        with patch.object(monitor, 'UnixConnection', return_value=connection), \
-                patch.object(watch.stopped, 'wait', side_effect=lambda _: watch.stopped.set()):
-            watch.read_watches('/unused', 'list-42')
-        connection.request.assert_called_once()
-        self.assertEqual([kind for kind, _ in watch.messages.queue], ['ready'])
+    def test_cancellation_during_startup(self):
+        def cancel(_poller):
+            signal.getsignal(signal.SIGINT)(signal.SIGINT, None)
+            return ['a']
 
-
-class LifecycleTest(unittest.TestCase):
-    def test_running_monitor_failure_terminates_product_and_restores_handlers(self):
-        watch = FakeWatch([('ready', None)])
-        test = Mock(pid=123, returncode=-15)
-        previous = signal.getsignal(signal.SIGTERM)
-
-        def launch(*_args, **_kwargs):
-            watch.messages.put(('error', 'stream failed after launch'))
-            return test
-
-        with tempfile.TemporaryDirectory() as directory, \
-                patch.dict(os.environ, ARTIFACT_DIR=directory), \
-                patch.object(monitor, 'NodeWatch', return_value=watch), \
-                patch.object(monitor.subprocess, 'Popen', side_effect=launch), \
-                patch.object(monitor, 'terminate') as terminate:
-            result = monitor.run(['product'])
-            self.assertTrue(result.monitor_failed)
-            terminate.assert_called_once_with(test)
-            self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
-            self.assertIn('after launch', ET.parse(Path(directory) / 'node-monitor.xml').findtext('.//failure'))
-
-    def test_running_cancellation_terminates_product_and_skips_junit(self):
-        watch = FakeWatch([('ready', None)])
-        test = Mock(pid=123, returncode=-15)
-        test.poll.return_value = None
-        original_next = monitor.next_message
-
-        def next_then_cancel(current):
-            if current.messages.empty():
-                signal.getsignal(signal.SIGINT)(signal.SIGINT, None)
-                return None, None
-            return original_next(current)
-
-        with tempfile.TemporaryDirectory() as directory, \
-                patch.dict(os.environ, ARTIFACT_DIR=directory), \
-                patch.object(monitor, 'NodeWatch', return_value=watch), \
-                patch.object(monitor, 'next_message', side_effect=next_then_cancel), \
-                patch.object(monitor.subprocess, 'Popen', return_value=test), \
-                patch.object(monitor, 'terminate') as terminate:
-            result = monitor.run(['product'])
-            self.assertEqual(result.exit_code, 130)
-            self.assertFalse(result.monitor_failed)
-            terminate.assert_called_once_with(test)
-            report = ET.parse(Path(directory) / 'node-monitor.xml').getroot()
-            self.assertEqual(report.get('skipped'), '1')
-            self.assertEqual(report.get('failures'), '0')
+        with patch.object(monitor.NodePoll, 'sample', autospec=True, side_effect=cancel):
+            result, report, _, launch, _, _, _ = self.run_fake([])
+        self.assertEqual(result.exit_code, 130)
+        self.assertEqual(report.get('skipped'), '1')
+        launch.assert_not_called()
 
     def test_cleanup_survives_report_write_failure(self):
-        watch = FakeWatch([('ready', None)])
-        test = Mock(pid=123, returncode=0)
-        test.poll.return_value = 0
         previous = signal.getsignal(signal.SIGTERM)
-        with patch.object(monitor, 'NodeWatch', return_value=watch), \
-                patch.object(monitor.subprocess, 'Popen', return_value=test), \
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.dict(os.environ, ARTIFACT_DIR=directory), \
+                patch.object(monitor.subprocess, 'run', return_value=reply('a')), \
+                patch.object(monitor.subprocess, 'Popen', return_value=Mock(returncode=0)) as launch, \
                 patch.object(monitor, 'write_report', side_effect=OSError('disk full')), \
                 patch.object(monitor, 'terminate') as terminate, \
                 self.assertRaisesRegex(OSError, 'disk full'):
-            monitor.run(['product'])
-        terminate.assert_called_once_with(test)
-        watch.close.assert_called_once()
+            monitor.run(['product'], env={})
+        terminate.assert_called_once_with(launch.return_value)
         self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
 
-    def test_reader_baseline_errors_are_phase_specific(self):
-        for error in (TimeoutError('request timed out'), OSError('connection refused')):
-            with self.subTest(error=error):
-                watch = monitor.NodeWatch()
-                with patch.object(monitor, 'UnixConnection', side_effect=error):
-                    watch.read('/unused')
-                kind, detail = watch.messages.get_nowait()
-                self.assertEqual(kind, 'error')
-                self.assertIn('node baseline:', detail)
 
+class TerminationTest(unittest.TestCase):
     def test_termination_escalates_after_five_seconds(self):
         process = Mock(pid=123)
         process.wait.side_effect = [subprocess.TimeoutExpired('product', 5), -9]
