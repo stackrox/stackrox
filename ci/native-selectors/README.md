@@ -64,6 +64,8 @@ Label add/remove events reevaluate the selectable test workflows. This can resta
 
 Decision summaries print already-evaluated candidates and permission to execute. The E2E report prints existing workflow results. Neither recomputes selection rules or claims tests ran from a successful wrapper/no-op check. There is no unified plan comment publisher.
 
+A final job in each PR workflow calls the shared [timing reporter](timing-report/README.md), a temporary experiment restricted to PR #23602. The GitHub Actions bot updates one marked PR comment with the wall-clock wait for each commit's initial checks, including failures and green skips. Each workflow contributes its start and finish; labels and reruns do not extend the measurement. Local commands can preview only.
+
 ## Validation
 
 From the repository root, with Go 1.26.7, Git, jq, and Bash 4 or newer:

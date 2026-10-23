@@ -70,3 +70,13 @@ jobs:
     - name: DB Integration tests
       if: steps.selection.outputs.run != 'false'
       run: make -C scanner db-integration-test
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [detect-changes, db-integration-tests]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

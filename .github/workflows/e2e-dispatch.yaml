@@ -442,3 +442,26 @@ jobs:
       run: |
         printf '### E2E workflow outcomes\n\n    %s\n' "$OUTCOMES" >> "$GITHUB_STEP_SUMMARY"
         printf 'These are workflow results. A successful wrapper or skipped check does not prove that tests ran. Inspect the child test reports.\n' >> "$GITHUB_STEP_SUMMARY"
+
+  report-ci-timing:
+    name: CI timing report
+    needs:
+      - detect-changes
+      - should-dispatch
+      - wait-for-images
+      - wait-for-konflux-images
+      - e2e-byodb-tests
+      - e2e-db-backup-restore-tests
+      - e2e-gke-upgrade-tests
+      - e2e-nongroovy-tests-gke
+      - e2e-nongroovy-tests-gke-konflux
+      - e2e-qa-tests-gke
+      - e2e-qa-tests-ocp-fips-konflux
+      - e2e-qa-tests-gke-konflux
+      - explain-dispatch
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

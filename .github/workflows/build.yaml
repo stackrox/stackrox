@@ -1347,3 +1347,32 @@ jobs:
         run: |
           source scripts/ci/lib.sh
           slack_workflow_failure
+
+  report-ci-timing:
+    name: CI timing report
+    needs:
+      - detect-changes
+      - explain-image-build-selection
+      - define-job-matrix
+      - pre-build-ui
+      - pre-build-cli
+      - pre-build-go-binaries
+      - pre-build-docs
+      - pre-build-oss-notice
+      - build-and-push-db
+      - build-operator-bundle
+      - build-and-push-main
+      - push-matching-collector-scanner
+      - push-main-manifests
+      - build-and-push-operator
+      - build-and-push-scanner
+      - push-scanner-manifests
+      - push-operator-manifests
+      - scan-go-binaries
+      - slack-on-build-failure
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

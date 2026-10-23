@@ -19,6 +19,7 @@ The tests read conditions from the actual workflows. [`act` v0.2.89](https://git
 | `compatibility_test.go` | The empty-label discrepancy below and 17 status/prerequisite cases. |
 | `prow_test.go` | The unapplied external patch and native selectors; optional execution of five pinned upstream matcher methods. |
 | `workflow_test.go` | Shared file loading, fixture contexts, process helpers, and expression evaluation. It contains no path or job-selection policy. |
+| `timing_test.go` | Every PR workflow calls the shared bot reporter after its other jobs; bot token, permissions, fork guard, serialized publication, and initial-event conditions excluding labels and reruns. Wall-clock calculations and simulated comment updates are tested beside the reporting helper. |
 
 The three comparison fixtures are pinned to #23403 at `34873a53e3b6`, with their bytes verified by `comparison.json`. `TestComparisonScenarios` lists intentional candidate additions for explicit repository overrides and Go generated-file verification. It checks that each addition differs from the baseline and reports both counts: 2,139 unchanged candidates and 36 additions across 16 scenarios. All 83 saved E2E dispatch/waiter results remain unchanged. Each workflow gets its own collector inputs, so unit-workflow overrides cannot leak into E2E expectations.
 

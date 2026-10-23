@@ -50,3 +50,13 @@ jobs:
         slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures in this and previous week" "${is_test}"
         slack_top_n_failures ${n} "go" ":github: Top ${n} unit test failures in this and previous week" "${is_test}"
         slack_test_failure_streaks 3 ${n} ":fire: Top ${n} tests failing 3+ times in a row (still failing today)" "${is_test}"
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [report-e2e-failures-to-slack]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

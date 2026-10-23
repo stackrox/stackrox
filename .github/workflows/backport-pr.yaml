@@ -62,3 +62,13 @@ jobs:
           else
             >&2 echo "Warning: Author ${ORIGINAL_AUTHOR} cannot be assigned to PRs in this repository"
           fi
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [backport]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

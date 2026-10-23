@@ -200,3 +200,13 @@ jobs:
           message-id: performance-evaluation
           message-path: |
             pr-comment.md
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [wait-for-images, run-k6-performance-tests]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

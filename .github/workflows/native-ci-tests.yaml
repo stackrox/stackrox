@@ -46,3 +46,18 @@ jobs:
       - run: go vet ./...
         if: steps.selection.outputs.run != 'false'
         working-directory: ci/native-selectors/testing
+      - name: Test timing reporter
+        if: steps.selection.outputs.run != 'false'
+        run: |
+          go test ./ci/native-selectors/timing-report
+          go vet ./ci/native-selectors/timing-report
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [detect-changes, selector-tests]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

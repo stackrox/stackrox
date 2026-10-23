@@ -126,3 +126,13 @@ jobs:
                 text:
                   type: "mrkdwn"
                   text: "${{ steps.context.outputs.jira-info}}"
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [properties, notify]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

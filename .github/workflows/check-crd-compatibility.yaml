@@ -130,3 +130,13 @@ jobs:
         new_path="$PWD/config-controller/config/crd/bases"
         crdify=".github/workflows/scripts/crdify.sh"
         $crdify "${old_path}/config.stackrox.io_securitypolicies.yaml" "${new_path}/config.stackrox.io_securitypolicies.yaml"
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [detect-changes, check-crd-compatibility]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

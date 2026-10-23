@@ -767,3 +767,24 @@ jobs:
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
+
+  report-ci-timing:
+    name: CI timing report
+    needs:
+      - detect-changes
+      - go
+      - go-postgres
+      - go-bench
+      - ui
+      - ui-component
+      - local-roxctl-tests
+      - shell-unit-tests
+      - openshift-ci-unit-tests
+      - sensor-integration-tests
+      - slack-on-unit-tests-failure
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

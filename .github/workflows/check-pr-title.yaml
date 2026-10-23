@@ -44,3 +44,13 @@ jobs:
             echo "::error::Please shorten the PR title from $TITLE_LENGTH to at most $LENGTH characters."
             exit 1
           fi
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [check-title]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml
