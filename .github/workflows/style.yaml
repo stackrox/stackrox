@@ -22,7 +22,7 @@ jobs:
   check-generated-files:
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
     steps:
@@ -48,7 +48,7 @@ jobs:
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
     steps:
@@ -89,7 +89,7 @@ jobs:
       run: scripts/ci/jobs/check-dependabot-pinned-image.sh
 
   style-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
       volumes:
@@ -124,7 +124,7 @@ jobs:
 
   golangci-lint:
     timeout-minutes: 240
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -162,7 +162,7 @@ jobs:
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         image: ["collector", "fact", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
@@ -207,7 +207,7 @@ jobs:
           limit: 300
 
   github-actions-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/job-preamble
@@ -222,7 +222,7 @@ jobs:
         shell: bash
 
   github-actions-shellcheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/job-preamble
@@ -232,7 +232,7 @@ jobs:
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
 
   openshift-ci-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
     steps:
@@ -263,7 +263,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
       )
     name: Post failure message to Slack
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - check-generated-files
       - misc-checks
