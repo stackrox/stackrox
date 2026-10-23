@@ -200,7 +200,7 @@ function PolicyScopeForm(): ReactElement {
                         <Flex direction={{ default: 'column' }}>
                             <Title headingLevel="h3">Included resources</Title>
                             <div>
-                                Define one or more clusters, namespaces of workloads (if applicable)
+                                Define one or more clusters, namespaces or workloads (if applicable)
                                 to apply this policy to. If no inclusions are configured, the policy
                                 will apply to all resources in your environment, except those
                                 excluded.
@@ -369,7 +369,7 @@ function PolicyScopeForm(): ReactElement {
                     <div className="pf-v6-u-mt-sm">
                         The exclude images setting only applies when you check images in a
                         continuous integration system (the Build lifecycle stage). It won&apos;t
-                        have any effect if you use this policy to check running deployments (the
+                        have any effect if you use this policy to check running workloads (the
                         Deploy lifecycle stage) or runtime activities (the Run lifecycle stage).
                     </div>
                 </FlexItem>
