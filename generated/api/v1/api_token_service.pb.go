@@ -28,11 +28,13 @@ type GenerateTokenRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Deprecated: Marked as deprecated in api/v1/api_token_service.proto.
-	Role          string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
-	Roles         []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
-	Expiration    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration,proto3" json:"expiration,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Role       string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	Roles      []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
+	Expiration *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration,proto3" json:"expiration,omitempty"`
+	// Optional HTTP method/path restrictions. Omit for a token usable on any route.
+	HttpRequestScopes []*HTTPRequestScope `protobuf:"bytes,5,rep,name=http_request_scopes,json=httpRequestScopes,proto3" json:"http_request_scopes,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GenerateTokenRequest) Reset() {
@@ -90,6 +92,13 @@ func (x *GenerateTokenRequest) GetRoles() []string {
 func (x *GenerateTokenRequest) GetExpiration() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Expiration
+	}
+	return nil
+}
+
+func (x *GenerateTokenRequest) GetHttpRequestScopes() []*HTTPRequestScope {
+	if x != nil {
+		return x.HttpRequestScopes
 	}
 	return nil
 }
@@ -304,14 +313,15 @@ var File_api_v1_api_token_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_api_token_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/api_token_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17storage/api_token.proto\"\x94\x01\n" +
+	"\x1eapi/v1/api_token_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17storage/api_token.proto\"\xda\x01\n" +
 	"\x14GenerateTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x04role\x18\x02 \x01(\tB\x02\x18\x01R\x04role\x12\x14\n" +
 	"\x05roles\x18\x03 \x03(\tR\x05roles\x12:\n" +
 	"\n" +
 	"expiration\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"expiration\"a\n" +
+	"expiration\x12D\n" +
+	"\x13http_request_scopes\x18\x05 \x03(\v2\x14.v1.HTTPRequestScopeR\x11httpRequestScopes\"a\n" +
 	"\x15GenerateTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x122\n" +
 	"\bmetadata\x18\x02 \x01(\v2\x16.storage.TokenMetadataR\bmetadata\"B\n" +
@@ -350,29 +360,31 @@ var file_api_v1_api_token_service_proto_goTypes = []any{
 	(*GetAPITokensResponse)(nil),          // 3: v1.GetAPITokensResponse
 	(*ListAllowedTokenRolesResponse)(nil), // 4: v1.ListAllowedTokenRolesResponse
 	(*timestamppb.Timestamp)(nil),         // 5: google.protobuf.Timestamp
-	(*storage.TokenMetadata)(nil),         // 6: storage.TokenMetadata
-	(*ResourceByID)(nil),                  // 7: v1.ResourceByID
-	(*Empty)(nil),                         // 8: v1.Empty
+	(*HTTPRequestScope)(nil),              // 6: v1.HTTPRequestScope
+	(*storage.TokenMetadata)(nil),         // 7: storage.TokenMetadata
+	(*ResourceByID)(nil),                  // 8: v1.ResourceByID
+	(*Empty)(nil),                         // 9: v1.Empty
 }
 var file_api_v1_api_token_service_proto_depIdxs = []int32{
 	5, // 0: v1.GenerateTokenRequest.expiration:type_name -> google.protobuf.Timestamp
-	6, // 1: v1.GenerateTokenResponse.metadata:type_name -> storage.TokenMetadata
-	6, // 2: v1.GetAPITokensResponse.tokens:type_name -> storage.TokenMetadata
-	7, // 3: v1.APITokenService.GetAPIToken:input_type -> v1.ResourceByID
-	2, // 4: v1.APITokenService.GetAPITokens:input_type -> v1.GetAPITokensRequest
-	0, // 5: v1.APITokenService.GenerateToken:input_type -> v1.GenerateTokenRequest
-	7, // 6: v1.APITokenService.RevokeToken:input_type -> v1.ResourceByID
-	8, // 7: v1.APITokenService.ListAllowedTokenRoles:input_type -> v1.Empty
-	6, // 8: v1.APITokenService.GetAPIToken:output_type -> storage.TokenMetadata
-	3, // 9: v1.APITokenService.GetAPITokens:output_type -> v1.GetAPITokensResponse
-	1, // 10: v1.APITokenService.GenerateToken:output_type -> v1.GenerateTokenResponse
-	8, // 11: v1.APITokenService.RevokeToken:output_type -> v1.Empty
-	4, // 12: v1.APITokenService.ListAllowedTokenRoles:output_type -> v1.ListAllowedTokenRolesResponse
-	8, // [8:13] is the sub-list for method output_type
-	3, // [3:8] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	6, // 1: v1.GenerateTokenRequest.http_request_scopes:type_name -> v1.HTTPRequestScope
+	7, // 2: v1.GenerateTokenResponse.metadata:type_name -> storage.TokenMetadata
+	7, // 3: v1.GetAPITokensResponse.tokens:type_name -> storage.TokenMetadata
+	8, // 4: v1.APITokenService.GetAPIToken:input_type -> v1.ResourceByID
+	2, // 5: v1.APITokenService.GetAPITokens:input_type -> v1.GetAPITokensRequest
+	0, // 6: v1.APITokenService.GenerateToken:input_type -> v1.GenerateTokenRequest
+	8, // 7: v1.APITokenService.RevokeToken:input_type -> v1.ResourceByID
+	9, // 8: v1.APITokenService.ListAllowedTokenRoles:input_type -> v1.Empty
+	7, // 9: v1.APITokenService.GetAPIToken:output_type -> storage.TokenMetadata
+	3, // 10: v1.APITokenService.GetAPITokens:output_type -> v1.GetAPITokensResponse
+	1, // 11: v1.APITokenService.GenerateToken:output_type -> v1.GenerateTokenResponse
+	9, // 12: v1.APITokenService.RevokeToken:output_type -> v1.Empty
+	4, // 13: v1.APITokenService.ListAllowedTokenRoles:output_type -> v1.ListAllowedTokenRolesResponse
+	9, // [9:14] is the sub-list for method output_type
+	4, // [4:9] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_api_token_service_proto_init() }
