@@ -93,11 +93,12 @@ type Updater struct {
 	locker        updates.LockSource
 	metadataStore postgres.MatcherMetadataStore
 
-	client         *http.Client
-	urls           []string
-	root           string
-	updateInterval time.Duration
-	initialized    atomic.Bool
+	client            *http.Client
+	urls              []string
+	root              string
+	updateInterval    time.Duration
+	initialized       atomic.Bool
+	bundlesRegistered atomic.Bool
 
 	skipGC          bool
 	updateRetention int
@@ -341,11 +342,16 @@ func (u *Updater) Start() error {
 	}
 }
 
-// Initialized returns true if the vulnerability updater has fully initialized
-// the vulnerability store.
+// Initialized reports whether this process has discovered all required bundles
+// and each has been imported at least once. Readiness persists during refreshes.
 func (u *Updater) Initialized(ctx context.Context) bool {
 	if u.initialized.Load() {
 		return true
+	}
+	// Existing timestamps cannot establish completeness until this process has
+	// discovered and registered every bundle required by its configuration.
+	if !u.bundlesRegistered.Load() {
+		return false
 	}
 	ts, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
@@ -396,7 +402,12 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "previous vuln update", "timestamp", prevTime)
 
-	zipFile, zipTime, err := u.fetch(ctx, prevTime)
+	fetchTime := prevTime
+	if !u.bundlesRegistered.Load() {
+		// Discover the bundle set even when the stored data is as recent as the archive.
+		fetchTime = time.Time{}
+	}
+	zipFile, zipTime, err := u.fetch(ctx, fetchTime)
 	if err != nil {
 		return false, err
 	}
@@ -433,13 +444,14 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		bundles = append(bundles, f)
 	}
 
-	// Create update-time rows for new bundles since they don't have one yet, using the
-	// last known update time to preserve aggregate timestamp accuracy.
+	// A new bundle must keep readiness false until a matcher finishes importing it.
+	// Existing bundles retain their timestamps while their updates are in progress.
 	for _, f := range bundles {
-		if _, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(ctx, f.Name, prevTime); err != nil {
+		if _, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(ctx, f.Name, time.Time{}); err != nil {
 			return false, fmt.Errorf("setting last update-time for bundle %s: %w", f.Name, err)
 		}
 	}
+	u.bundlesRegistered.Store(len(bundles) > 0)
 	slog.InfoContext(ctx, "pre-registered vulnerability bundles", "count", len(bundles))
 
 	// Process each vulnerability bundle in the .zip archive.
@@ -453,7 +465,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	for _, bundleF := range bundles {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
-		if err := u.updateBundle(bundleCtx, bundleF, prevTime); err != nil {
+		if err := u.updateBundle(bundleCtx, bundleF); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
 			bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
 			continue
@@ -493,7 +505,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	return true, errors.Join(bundleErrs...)
 }
 
-func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, prevTime time.Time) error {
+func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File) error {
 	// Use TryLock to prevent simultaneous updates for the same bundle.
 	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
 	defer lDone()
@@ -504,7 +516,7 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, prevTime tim
 
 	// Get the last update timestamp for this bundle and check if it's newer
 	// than this update.
-	lastTime, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(lCtx, zipF.Name, prevTime)
+	lastTime, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(lCtx, zipF.Name, time.Time{})
 	if err != nil {
 		return fmt.Errorf("querying last update: %w", err)
 	}
@@ -615,7 +627,9 @@ func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp ti
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
+		if !prevTimestamp.IsZero() {
+			req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
+		}
 		req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 		resp, err = u.client.Do(req)
 		if attempt < u.retryMax && isRetryableDialError(err) {
