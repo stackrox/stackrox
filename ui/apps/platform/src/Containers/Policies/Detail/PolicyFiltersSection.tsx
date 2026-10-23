@@ -27,6 +27,17 @@ function getContainerTypeLabel(
     return null;
 }
 
+function getImageLayerLabel(evaluationFilter: EvaluationFilter | null): string | null {
+    switch (evaluationFilter?.skipImageLayers) {
+        case 'SKIP_BASE':
+            return 'Application layers only';
+        case 'SKIP_APP':
+            return 'Base layers only';
+        default:
+            return null;
+    }
+}
+
 function PolicyFiltersSection({
     evaluationFilter,
     lifecycleStages,
@@ -40,7 +51,11 @@ function PolicyFiltersSection({
             ? getContainerTypeLabel(evaluationFilter, lifecycleStages, eventSource)
             : null;
 
-    if (!containerTypeLabel) {
+    const imageLayerLabel = isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER')
+        ? getImageLayerLabel(evaluationFilter)
+        : null;
+
+    if (!containerTypeLabel && !imageLayerLabel) {
         return null;
     }
 
@@ -50,7 +65,12 @@ function PolicyFiltersSection({
             <Card>
                 <CardBody>
                     <DescriptionList isCompact isHorizontal>
-                        <DescriptionListItem term="Container types" desc={containerTypeLabel} />
+                        {containerTypeLabel && (
+                            <DescriptionListItem term="Container types" desc={containerTypeLabel} />
+                        )}
+                        {imageLayerLabel && (
+                            <DescriptionListItem term="Image layers" desc={imageLayerLabel} />
+                        )}
                     </DescriptionList>
                 </CardBody>
             </Card>
