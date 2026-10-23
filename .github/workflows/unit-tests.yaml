@@ -33,7 +33,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -119,7 +119,7 @@ jobs:
         pg: [ '15' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -190,7 +190,7 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
       volumes:
@@ -243,7 +243,7 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -285,7 +285,7 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -329,7 +329,7 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -374,7 +374,7 @@ jobs:
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -411,7 +411,7 @@ jobs:
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
@@ -434,7 +434,7 @@ jobs:
       # Stable version ldflags for test caching (see go job comment).
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
@@ -515,7 +515,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
       )
     name: Post failure message to Slack
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - go
       - go-bench
