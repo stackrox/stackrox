@@ -191,6 +191,7 @@ When making code changes, keep this in-code documentation up-to-date.
 
 ### Style and Conventions
 - Go code follows golangci-lint standards
+- Keep behavioral documentation with the implementation that owns it. Call-site comments should explain why a call is made, not restate what the callee does; duplicated behavior descriptions can become stale when the implementation changes.
 - Additional project specific style guide in `.github/go-coding-style.md`
 - Protocol buffers have enforced style guidelines
 - Shell scripts are checked with shellcheck
