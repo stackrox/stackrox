@@ -224,3 +224,19 @@ jobs:
     - uses: ./.github/actions/notify-slack-on-failure
       with:
         slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+
+  report-ci-timing:
+    name: CI timing report
+    needs:
+      - fetch-nvd-feeds
+      - fetch-nvd-api
+      - upload-pr-nvd-feeds
+      - upload-nvd-feeds
+      - upload-nvd-api
+      - send-notification
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

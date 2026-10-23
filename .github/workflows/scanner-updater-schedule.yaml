@@ -170,3 +170,13 @@ jobs:
       with:
         slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
         include-successful-jobs: "true"
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [build-matrix, plan, update, send-notification]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

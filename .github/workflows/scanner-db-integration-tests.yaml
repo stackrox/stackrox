@@ -12,6 +12,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 
 jobs:
   detect-changes:
@@ -23,26 +25,58 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
+    env:
+      CI_FILE_FACTS: ${{ needs.detect-changes.outputs.facts || '{}' }}
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
+    - name: Explain selection
+      id: selection
+      continue-on-error: true
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        candidate: >-
+          ${{ !fromJSON(env.CI_FILE_FACTS).complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
+          contains(github.event.pull_request.labels.*.name, 'ci-run-all-tests') ||
+          contains(fromJSON(env.CI_FILE_FACTS).any, 'broad') ||
+          contains(fromJSON(env.CI_FILE_FACTS).any, 'proto') ||
+          contains(github.event.pull_request.labels.*.name, 'area/scanner') ||
+          contains(fromJSON(env.CI_FILE_FACTS).every, 'scanner') }}
+        enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+
     - uses: ./.github/actions/job-preamble
+      if: steps.selection.outputs.run != 'false'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
+      if: steps.selection.outputs.run != 'false'
       run: |
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
+      if: steps.selection.outputs.run != 'false'
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
+      if: steps.selection.outputs.run != 'false'
       run: pg_isready -h 127.0.0.1
 
     - name: DB Integration tests
+      if: steps.selection.outputs.run != 'false'
       run: make -C scanner db-integration-test
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [detect-changes, db-integration-tests]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

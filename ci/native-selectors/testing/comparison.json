@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/stackrox/stackrox/pull/23403",
+  "sha": "34873a53e3b60b5fc7b50b1446b02d11a1eb0fca",
+  "fixtures": {
+    "expected.json": "f77bfc3a3b5dac14b6f3c00172fa3635845ea34e99390035f0b75a2e8643e660",
+    "scenarios.json": "547fdd4bd70a06d8bff8f8d5d794409555b8112ecb5805fb96f22ef86283c93f",
+    "required-gha-checks.json": "a698aa37b38423e9893b8c8c165f50b5d14579bf22dce77d05dfb33d1dd488aa"
+  }
+}

@@ -25,6 +25,39 @@ defaults:
     shell: bash
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
+  explain-image-build-selection:
+    needs: detect-changes
+    runs-on: ubuntu-slim
+    env:
+      CI_FILE_FACTS: ${{ needs.detect-changes.outputs.facts || '{}' }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Explain selection
+        id: selection
+        continue-on-error: true
+        uses: ./.github/actions/ci-selection-summary
+        with:
+          candidate: >-
+            ${{ !fromJSON(env.CI_FILE_FACTS).complete ||
+            needs.detect-changes.outputs.run_all == 'true' ||
+            contains(github.event.pull_request.labels.*.name, 'ci-run-all-tests') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'broad') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'proto') ||
+            contains(fromJSON(env.CI_FILE_FACTS).every, 'roxctl') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-byodb-tests') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-tests-gke') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests-gke') ||
+            contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-gke') }}
+          enforced: ${{ false }}
+          note: Image builds stay enabled until all Prow and manual consumers are accounted for.
+
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
@@ -1314,3 +1347,32 @@ jobs:
         run: |
           source scripts/ci/lib.sh
           slack_workflow_failure
+
+  report-ci-timing:
+    name: CI timing report
+    needs:
+      - detect-changes
+      - explain-image-build-selection
+      - define-job-matrix
+      - pre-build-ui
+      - pre-build-cli
+      - pre-build-go-binaries
+      - pre-build-docs
+      - pre-build-oss-notice
+      - build-and-push-db
+      - build-operator-bundle
+      - build-and-push-main
+      - push-matching-collector-scanner
+      - push-main-manifests
+      - build-and-push-operator
+      - build-and-push-scanner
+      - push-scanner-manifests
+      - push-operator-manifests
+      - scan-go-binaries
+      - slack-on-build-failure
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

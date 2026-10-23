@@ -1,0 +1,332 @@
+base_images:
+  aks:
+    name: automation-flavors
+    namespace: stackrox
+    tag: aks-stable
+  aro:
+    name: automation-flavors
+    namespace: stackrox
+    tag: aro-stable
+  eks:
+    name: automation-flavors
+    namespace: stackrox
+    tag: eks-stable
+  ibmcloudz:
+    name: automation-flavors
+    namespace: stackrox
+    tag: ibmcloudz-0.10.38
+  osd:
+    name: automation-flavors
+    namespace: stackrox
+    tag: osd-stable
+  rosa:
+    name: automation-flavors
+    namespace: stackrox
+    tag: rosa-stable
+  rosa-hcp:
+    name: automation-flavors
+    namespace: stackrox
+    tag: rosa-stable
+build_root:
+  image_stream_tag:
+    name: apollo-ci
+    namespace: stackrox
+    tag: stackrox-ui-test-stable
+releases:
+  latest:
+    release:
+      channel: fast
+      version: "4.12"
+resources:
+  '*':
+    requests:
+      cpu: 2000m
+      memory: 4000Mi
+test_binary_build_commands: .openshift-ci/dispatch.sh test-binary-build-commands
+tests:
+- as: gke-qa-e2e-tests
+  optional: true
+  skip_if_only_changed: ^ui/
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-external-pg-17-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-oldest-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: oldest
+      TEST_SUITE: gke-qa-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-latest-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: latest
+      TEST_SUITE: gke-qa-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: true
+  as: gke-ui-e2e-tests
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-oldest-ui-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: oldest
+      TEST_SUITE: gke-ui-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-latest-ui-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: latest
+      TEST_SUITE: gke-ui-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-nongroovy-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-oldest-nongroovy-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: oldest
+      TEST_SUITE: gke-nongroovy-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-latest-nongroovy-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: latest
+      TEST_SUITE: gke-nongroovy-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-nongroovy-compatibility-tests
+  optional: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: gke-operator-e2e-tests
+  optional: true
+  run_if_changed: ^((generated|image|operator|pkg|make|deploy|scripts)/.*|Makefile|status\.sh|[A-Z_]+_VERSION)
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-oldest-operator-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: oldest
+      TEST_SUITE: gke-operator-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-latest-operator-e2e-tests
+  optional: true
+  steps:
+    env:
+      GKE_CLUSTER_VERSION: latest
+      TEST_SUITE: gke-operator-e2e-tests
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-version-compatibility-tests
+  optional: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-race-condition-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: gke-scale-tests
+  optional: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: gke-scanner-v4-install-tests
+  optional: true
+  run_if_changed: ^(scanner|image|central/localscanner|sensor/kubernetes/localscanner|operator|roxctl|deploy|proto|scripts/ci|tests/e2e)/.*
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: eks-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-automation-flavors-eks-e2e
+- always_run: false
+  as: osd-aws-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-automation-flavors-osd-aws-e2e
+- always_run: false
+  as: osd-gcp-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-automation-flavors-osd-gcp-e2e
+- always_run: false
+  as: aro-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-automation-flavors-aro-e2e
+- always_run: false
+  as: rosa-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-automation-flavors-rosa-e2e
+- always_run: false
+  as: rosa-fips-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      FIPS_ENABLED: "true"
+      TEST_SUITE: rosa-qa-e2e-tests
+    workflow: stackrox-automation-flavors-rosa-e2e
+- always_run: false
+  as: rosa-hcp-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      TEST_SUITE: rosa-qa-e2e-tests
+    workflow: stackrox-automation-flavors-rosa-hcp-e2e
+- always_run: false
+  as: aks-qa-e2e-tests
+  optional: true
+  steps:
+    workflow: stackrox-automation-flavors-aks-e2e
+- as: merge-gke-operator-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: merge-gke-qa-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: merge-gke-ui-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: merge-gke-nongroovy-compatibility-tests
+  max_concurrency: 6
+  postsubmit: true
+  skip_if_only_changed: ^ui/
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: merge-gke-scanner-v4-install-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: merge-gke-version-compatibility-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- always_run: false
+  as: powervs-4-18-qa-corebpf-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_CLUSTER_VERSION: stable-4.18
+      TEST_SUITE: powervs-qa-e2e-tests
+    workflow: stackrox-automation-flavors-powervs-e2e
+- always_run: false
+  as: powervs-4-19-qa-corebpf-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_CLUSTER_VERSION: stable-4.19
+      TEST_SUITE: powervs-qa-e2e-tests
+    workflow: stackrox-automation-flavors-powervs-e2e
+- always_run: false
+  as: powervs-4-20-qa-corebpf-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_CLUSTER_VERSION: stable-4.20
+      TEST_SUITE: powervs-qa-e2e-tests
+    workflow: stackrox-automation-flavors-powervs-e2e
+- always_run: false
+  as: powervs-4-21-qa-corebpf-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_CLUSTER_VERSION: stable-4.21
+      TEST_SUITE: powervs-qa-e2e-tests
+    workflow: stackrox-automation-flavors-powervs-e2e
+- always_run: false
+  as: powervs-4-22-qa-corebpf-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_CLUSTER_VERSION: stable-4.22
+      TEST_SUITE: powervs-qa-e2e-tests
+    workflow: stackrox-automation-flavors-powervs-e2e
+- as: daily-powervs-stable-corebpf-qa-e2e-tests
+  cron: 0 0 31 2 *
+  steps:
+    env:
+      OCP_CLUSTER_VERSION: stable
+      TEST_SUITE: powervs-qa-e2e-tests
+    workflow: stackrox-automation-flavors-powervs-e2e
+- always_run: false
+  as: ibmcloudz-4-14-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      IBM_CLOUD_OPENSHIFT_CHANNEL: stable-4.14
+      TEST_SUITE: ibmcloudz-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ibmcloudz-e2e
+- always_run: false
+  as: ibmcloudz-4-15-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      IBM_CLOUD_OPENSHIFT_CHANNEL: stable-4.15
+      TEST_SUITE: ibmcloudz-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ibmcloudz-e2e
+- always_run: false
+  as: ibmcloudz-4-16-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      IBM_CLOUD_OPENSHIFT_CHANNEL: stable-4.16
+      TEST_SUITE: ibmcloudz-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ibmcloudz-e2e
+- always_run: false
+  as: ibmcloudz-4-17-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      IBM_CLOUD_OPENSHIFT_CHANNEL: stable-4.17
+      TEST_SUITE: ibmcloudz-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ibmcloudz-e2e
+- as: daily-ibmcloudz-lts-qa-e2e-tests
+  cron: 0 0 31 2 *
+  steps:
+    env:
+      IBM_CLOUD_OPENSHIFT_CHANNEL: stable-4.14
+      TEST_SUITE: ibmcloudz-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ibmcloudz-e2e
+- as: daily-ibmcloudz-latest-qa-e2e-tests
+  cron: 0 0 31 2 *
+  steps:
+    env:
+      IBM_CLOUD_OPENSHIFT_CHANNEL: stable-4.17
+      TEST_SUITE: ibmcloudz-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ibmcloudz-e2e
+zz_generated_metadata:
+  branch: master
+  org: stackrox
+  repo: stackrox

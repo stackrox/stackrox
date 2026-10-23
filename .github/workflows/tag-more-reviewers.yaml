@@ -24,3 +24,13 @@ jobs:
       run: |
         gh pr --repo "${{ github.repository }}" edit "${{ github.event.pull_request.number }}" \
           --add-reviewer stackrox/konflux-maintainers
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [tag-konflux-maintainers]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

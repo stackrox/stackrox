@@ -1,7 +1,9 @@
 name: Detect changed files
 
 # Outputs the list of files changed in a PR, one per line, wrapped
-# with ^ and $ anchors (e.g. ^ui/src/App.tsx$). Jobs match with
+# with ^ and $ anchors (e.g. ^ui/src/App.tsx$). Renames include
+# both filenames so moving a file out of a selected path still matches.
+# Jobs match with
 # contains() using anchors for precise substring matching:
 #   '^scripts/'  — full tree under a root directory
 #   '.go$'       — file extension (won't match .gotmpl)
@@ -37,12 +39,21 @@ on:
           otherwise. Skip non-UI jobs with: if: !needs.X.outputs.ui_only
         value: ${{ jobs.detect.outputs.ui_only }}
 
+      facts:
+        description: Version 1 JSON path facts; complete=false means classification is unavailable.
+        value: ${{ jobs.detect.outputs.facts }}
+      run_all:
+        description: 'true when a validated diff matches an explicit run_all pattern or changes this detector.'
+        value: ${{ jobs.detect.outputs.run_all }}
+
 jobs:
   detect:
     runs-on: ubuntu-24.04
     outputs:
       files: ${{ steps.list.outputs.files }}
       ui_only: ${{ steps.list.outputs.ui_only }}
+      run_all: ${{ steps.list.outputs.run_all }}
+      facts: ${{ steps.classify.outputs.facts || '{"version":1,"complete":false,"any":[],"every":[]}' }}
     steps:
       - name: List changed files
         id: list
@@ -50,6 +61,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
           RUN_ALL: ${{ inputs.run_all }}
           WORKFLOW_FILE_PATH: ".github/workflows/detect-changes.yml"
         shell: bash
@@ -61,32 +74,59 @@ jobs:
             exit 0
           fi
 
-          if ! output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
+          if ! pages="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --slurp)"; then
             echo "::warning::GitHub API call failed" >&2
             exit 0
           fi
 
-          mapfile -t files < <(echo -n "${output}")
-          echo "Changed files (${#files[@]}):" >&2
-          printf '  %s\n' "${files[@]}" >&2
-
-          if [[ ${#files[@]} -ge 3000 ]]; then
-            echo "::warning::PR has 3000+ changed files" >&2
+          # Legacy outputs are line-oriented; facts use the same validated collection.
+          if ! filenames="$(jq -ce '
+            [.[][] | .filename, (.previous_filename // empty)] |
+            if any(.[]; type != "string" or . == "" or test("[\r\n]")) then error("invalid filename")
+            else unique end
+          ' <<< "${pages}")"; then
+            echo "::warning::Changed filenames are unavailable or cannot be represented" >&2
             exit 0
           fi
 
+          if ! revisions="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}" --jq '[.head.sha, .base.sha] | @tsv')"; then
+            echo "::warning::PR revisions could not be verified" >&2
+            exit 0
+          fi
+          IFS=$'\t' read -r current_head current_base <<< "$revisions"
+          if [[ "$current_head" != "$EXPECTED_HEAD" || "$current_base" != "$BASE_SHA" ]]; then
+            echo "::warning::PR head or base changed during collection" >&2
+            exit 0
+          fi
+
+          count="$(jq length <<< "${filenames}")"
+          if [[ ${count} -ge 3000 || ${#filenames} -gt 200000 ]]; then
+            echo "::warning::Changed-file result exceeds the safe output limit" >&2
+            exit 0
+          fi
+
+          jq -cn --arg base "$BASE_SHA" --arg head "$EXPECTED_HEAD" --argjson files "$filenames" \
+            '{base:$base, head:$head, files:$files}' > "$RUNNER_TEMP/native-ci-files.json"
+          echo 'collected=true' >> "$GITHUB_OUTPUT"
+          [[ "$count" -gt 0 ]] || exit 0
+          mapfile -t files < <(jq -r '.[]' <<< "$filenames")
+          echo "Changed files (${#files[@]}):" >&2
+          printf '  %s\n' "${files[@]}" >&2
+
           anchored=$(printf '^%s$\n' "${files[@]}")
 
-          if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
+          if grep -qF "^${WORKFLOW_FILE_PATH}$" <<< "${anchored}"; then
             echo "detect-changes.yml modified, running all jobs" >&2
+            echo 'run_all=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [[ -n "${RUN_ALL}" ]]; then
             while IFS= read -r pattern; do
               [[ -z "$pattern" ]] && continue
-              if echo "${anchored}" | grep -qF "$pattern"; then
+              if grep -qF "$pattern" <<< "${anchored}"; then
                 echo "run_all: matched '${pattern}', running all jobs" >&2
+                echo 'run_all=true' >> "$GITHUB_OUTPUT"
                 exit 0
               fi
             done <<< "${RUN_ALL}"
@@ -99,8 +139,34 @@ jobs:
               echo "EOF"
             } >> "${GITHUB_OUTPUT}"
 
-            if ! echo "${anchored}" | grep -qv '^\^ui/'; then
+            if ! grep -qv '^\^ui/' <<< "${anchored}"; then
               echo "All changed files are under ui/" >&2
               echo "ui_only=true" >> "${GITHUB_OUTPUT}"
             fi
           fi
+
+      - name: Checkout path classifier
+        id: classifier-checkout
+        if: steps.list.outputs.collected == 'true'
+        continue-on-error: true
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Go for path classification
+        if: steps.list.outputs.collected == 'true'
+        continue-on-error: true
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Classify collected filenames
+        id: classify
+        if: steps.list.outputs.collected == 'true' && steps.classifier-checkout.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          facts="$(go run ./ci/native-selectors/file-facts < "$RUNNER_TEMP/native-ci-files.json")"
+          printf 'facts=%s\n' "$facts" >> "$GITHUB_OUTPUT"
+          printf '### Changed-file facts\n\n    %s\n' "$facts" >> "$GITHUB_STEP_SUMMARY"

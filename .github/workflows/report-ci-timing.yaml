@@ -1,0 +1,40 @@
+# Temporary timing experiment for stackrox/stackrox#23602.
+name: Report CI timing
+
+on:
+  workflow_call:
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.repository == 'stackrox/stackrox' &&
+      github.event.pull_request.number == 23602 &&
+      !github.event.pull_request.head.repo.fork &&
+      (github.event.action == 'opened' || github.event.action == 'synchronize') &&
+      github.run_attempt == '1'
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: ci-timing-comment-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Update timing comment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: go run ./ci/native-selectors/timing-report --repo "$GITHUB_REPOSITORY" --pr "$PR_NUMBER" --run "$GITHUB_RUN_ID" --post

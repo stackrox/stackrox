@@ -1,0 +1,155 @@
+base_images:
+  cli:
+    name: "4.22"
+    namespace: ocp
+    tag: cli
+  ocp-4:
+    name: automation-flavors
+    namespace: stackrox
+    tag: openshift-4-stable
+build_root:
+  image_stream_tag:
+    name: apollo-ci
+    namespace: stackrox
+    tag: stackrox-ui-test-stable
+resources:
+  '*':
+    requests:
+      cpu: 2000m
+      memory: 4000Mi
+test_binary_build_commands: .openshift-ci/dispatch.sh test-binary-build-commands
+tests:
+- as: qa-e2e-tests
+  optional: true
+  run_if_changed: ^((generated|image|operator|pkg|make|deploy|scripts)/.*|Makefile|status\.sh|[A-Z_]+_VERSION)
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- always_run: false
+  as: scanner-v4-install-tests
+  optional: true
+  run_if_changed: ^(scanner|image|central/localscanner|sensor/kubernetes/localscanner|operator|roxctl|deploy|proto|scripts/ci|tests/e2e)/.*
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-scanner-v4-install-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: operator-e2e-tests
+  optional: true
+  run_if_changed: ^((generated|image|operator|pkg|make|deploy|scripts)/.*|Makefile|status\.sh|[A-Z_]+_VERSION)
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-operator-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: ui-e2e-tests
+  optional: true
+  run_if_changed: ^(ui|proto/(storage|api)|central/.+?/service|pkg/features/list.go|tests/e2e/lib.sh)
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-ui-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- always_run: true
+  as: nongroovy-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-nongroovy-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- always_run: false
+  as: fips-qa-e2e-tests
+  optional: true
+  steps:
+    env:
+      FIPS_ENABLED: "true"
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: compliance-e2e-tests
+  optional: true
+  run_if_changed: ^(compliance|central\/compliance.*)
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-compliance-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- always_run: false
+  as: vm-scanning-e2e-tests
+  optional: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-vm-scanning-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+  timeout: 7h0m0s
+- as: merge-qa-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-qa-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: merge-scanner-v4-install-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-scanner-v4-install-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: merge-operator-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-operator-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: merge-ui-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-ui-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: merge-nongroovy-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-nongroovy-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: merge-compliance-e2e-tests
+  max_concurrency: 6
+  postsubmit: true
+  steps:
+    env:
+      OCP_VERSION: ocp/candidate-4.22
+      OS_IMAGE_STREAM: rhel-10
+      TEST_SUITE: ocp-compliance-e2e-tests
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+zz_generated_metadata:
+  branch: master
+  org: stackrox
+  repo: stackrox
+  variant: ocp-4-22

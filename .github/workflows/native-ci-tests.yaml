@@ -1,0 +1,63 @@
+name: Native CI selector tests
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
+  selector-tests:
+    needs: detect-changes
+    env:
+      CI_FILE_FACTS: ${{ needs.detect-changes.outputs.facts || '{}' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+      - name: Explain selection
+        id: selection
+        continue-on-error: true
+        uses: ./.github/actions/ci-selection-summary
+        with:
+          candidate: >-
+            ${{ !fromJSON(env.CI_FILE_FACTS).complete ||
+            needs.detect-changes.outputs.run_all == 'true' ||
+            contains(github.event.pull_request.labels.*.name, 'ci-run-all-tests') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'broad') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'proto') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'selector') }}
+          enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        if: steps.selection.outputs.run != 'false'
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go test -count=1 -v ./...
+        if: steps.selection.outputs.run != 'false'
+        working-directory: ci/native-selectors/testing
+      - run: go vet ./...
+        if: steps.selection.outputs.run != 'false'
+        working-directory: ci/native-selectors/testing
+      - name: Test timing reporter
+        if: steps.selection.outputs.run != 'false'
+        run: |
+          go test ./ci/native-selectors/timing-report
+          go vet ./ci/native-selectors/timing-report
+
+  report-ci-timing:
+    name: CI timing report
+    needs: [detect-changes, selector-tests]
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/report-ci-timing.yaml

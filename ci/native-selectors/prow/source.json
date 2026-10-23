@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/openshift/release",
+  "sha": "3960ba6dc20f554e15fcf839e562a6d28353a2f3",
+  "sources": {
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-18.yaml": "7e2c6f9ad88b2332e20b3ad60c56881f612d3b5da6254287292c05feb28af28c",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master__ocp-4-22.yaml": "b15fd302ea45bb29dcb1f365e6151d2d4bc29bea999336e418834dcda6ac9856",
+    "ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml": "8608916df86a28fc77bd8ef5ab5a5269c91286cdeba93325ffee0fca072e76d2"
+  },
+  "matcher": {
+    "repository": "https://github.com/kubernetes-sigs/prow",
+    "sha": "3f5cc7178d5a85a64fcf32c9cab401c937ee7218",
+    "jobs_go_sha256": "cc9865f7e0b5429aac825f6f889eb7ed8e88488440fb6bac73ac817f237d88a2"
+  }
+}
