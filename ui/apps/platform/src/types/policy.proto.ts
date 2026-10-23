@@ -104,7 +104,7 @@ export type PolicyExcludeByKindExclusion = {
 } & PolicyBaseExclusion;
 
 export function isPolicyWorkloadKind(value: string): value is PolicyWorkloadKind {
-    return (policyWorkloadKinds as readonly string[]).includes(value);
+    return policyWorkloadKinds.some((kind) => kind === value);
 }
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
