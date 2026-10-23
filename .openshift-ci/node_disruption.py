@@ -94,7 +94,7 @@ def write_report(directory, expected, errors, cancellation):
     skipped = cancellation.requested and not failed
     detail = (f'Expected {expected} nodes; observed {len(names)} unique names: '
               f"{', '.join(names)}.\n" + '\n'.join(errors))
-    print(('ERROR: ' if failed else '') + detail.strip(), flush=True)
+    print(('WARNING: ' if failed else '') + detail.strip(), flush=True)
     suite = ET.Element('testsuite', name='ci.gke.node', tests='1',
                        failures=str(int(failed)), skipped=str(int(skipped)))
     case = ET.SubElement(suite, 'testcase', classname='ci.gke.node', name='NoNodeDisruption')
@@ -131,9 +131,7 @@ def cleanup(test, previous):
 
 
 def finish(test, cancellation, timed_out, failed):
-    if failed:
-        code = 1
-    elif cancellation.requested:
+    if cancellation.requested:
         code = 128 + cancellation.signal
     elif timed_out:
         code = 124
@@ -142,8 +140,23 @@ def finish(test, cancellation, timed_out, failed):
     return RunResult(code if code >= 0 else 128 - code, failed, timed_out)
 
 
+def prepare_monitor(directory, env, sample, errors):
+    try:
+        expected = expected_node_count(env)
+        if expected is not None:
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / 'node-names.txt').write_text('', encoding='utf-8')
+            (directory / 'node-monitor.log').write_text('', encoding='utf-8')
+            if sample() == []:
+                errors.append('initial node sample returned no nodes')
+        return expected
+    except (OSError, ValueError, RuntimeError) as exc:
+        errors.append(str(exc))
+        return None
+
+
 def run(command, timeout=None, env=None):
-    """Run tests; poll node names only when NUM_NODES is supplied."""
+    """Run tests with advisory node monitoring when NUM_NODES is supplied."""
     if not command:
         raise ValueError('a product command is required')
     env = os.environ if env is None else env
@@ -161,13 +174,7 @@ def run(command, timeout=None, env=None):
             return None
 
     try:
-        expected = expected_node_count(env)
-        if expected is not None:
-            directory.mkdir(parents=True, exist_ok=True)
-            (directory / 'node-names.txt').write_text('', encoding='utf-8')
-            (directory / 'node-monitor.log').write_text('', encoding='utf-8')
-            if not sample():
-                raise RuntimeError('initial node sample failed or returned no nodes')
+        expected = prepare_monitor(directory, env, sample, errors)
         if not cancellation.requested:
             test = subprocess.Popen(  # pylint: disable=consider-using-with
                 command, env=env, start_new_session=True)
@@ -180,19 +187,15 @@ def run(command, timeout=None, env=None):
     finally:
         try:
             if env.get('NUM_NODES'):
-                directory.mkdir(parents=True, exist_ok=True)
-                failed = write_report(directory, expected, errors, cancellation)
+                try:
+                    directory.mkdir(parents=True, exist_ok=True)
+                    failed = write_report(directory, expected, errors, cancellation)
+                except (OSError, ValueError, RuntimeError) as exc:
+                    failed = True
+                    print(f'WARNING: Could not write node monitor report: {exc}', flush=True)
         finally:
             cleanup(test, previous)
     return finish(test, cancellation, timed_out, failed)
-
-
-def publish_output(failed):
-    output = os.getenv('GITHUB_OUTPUT')
-    if not output:
-        return
-    with open(output, 'a', encoding='utf-8') as stream:
-        stream.write(f"failed={str(failed).lower()}\n")
 
 
 def main():
@@ -203,16 +206,7 @@ def main():
     command = args.command[1:] if args.command[:1] == ['--'] else args.command
     if not command:
         parser.error('a command is required after --')
-    try:
-        result = run(command)
-    except (OSError, RuntimeError) as exc:
-        publish_output(True)
-        print(f'::error::Node monitor could not finish: {exc}', flush=True)
-        return 1
-    publish_output(result.monitor_failed)
-    if result.monitor_failed:
-        print('::error::Node disruption or monitor error; see node-monitor.xml', flush=True)
-    return result.exit_code
+    return run(command).exit_code
 
 
 if __name__ == '__main__':

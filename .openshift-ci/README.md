@@ -62,9 +62,10 @@ There is no separate monitoring flag or initial-count fallback.
 
 The monitor samples nodes before tests, every five minutes while tests run, and
 once at the end. It then compares the number of unique observed names with
-`NUM_NODES`. A mismatch or polling error produces an error log and JUnit failure.
-Later polling failures do not stop the product tests early. Invalid configuration,
-a failed initial poll, or an empty initial sample prevents tests from starting.
+`NUM_NODES`. A mismatch or polling error produces a warning and diagnostic JUnit failure,
+but never changes the product exit code or prevents tests from starting.
+Invalid configuration, failed initial polls, empty samples, and report-writing
+errors are advisory too; unavailable artifacts are reported in logs.
 Each `kubectl` invocation is limited to ten seconds.
 
 Artifacts under `ARTIFACT_DIR` (default `junit-reports`):
@@ -84,7 +85,8 @@ This checks names, not readiness or per-snapshot counts. NotReady nodes with
 unchanged names, disappearance without replacement, and transient nodes between
 polls may go undetected. A replacement is not proof of Spot preemption.
 
-GHA invokes `python3 .openshift-ci/node_disruption.py run -- <command>`. The CLI
-publishes `failed=true` only for monitor failures, allowing later workflow steps
-to skip recovery. Prow imports `run()` directly. Both paths retain product exit
-codes, timeout handling, and process-group cleanup on cancellation.
+GHA invokes `python3 .openshift-ci/node_disruption.py run -- <command>`; Prow
+imports `run()` directly. Monitoring writes only logs and JUnit, without GitHub
+step outputs or workflow annotations, and does not skip post-test steps. Both
+paths retain product exit codes, timeout handling, and process-group cleanup on
+cancellation.
