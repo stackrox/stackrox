@@ -184,6 +184,8 @@ def run(command, timeout=None, env=None):
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
         if not cancellation.requested:
             errors.append(str(exc))
+            if not env.get('NUM_NODES'):
+                print(f'ERROR: Could not run test command: {exc}', flush=True)
     finally:
         try:
             if env.get('NUM_NODES'):
