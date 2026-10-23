@@ -179,6 +179,10 @@ export function formatKubernetesVersion(orchestratorMetadata: { version: string 
     return orchestratorMetadata?.version || 'Not available';
 }
 
+export function formatOpenShiftVersion(orchestratorMetadata: { openshiftVersion?: string }) {
+    return orchestratorMetadata?.openshiftVersion || 'Not available';
+}
+
 export function formatBuildDate(orchestratorMetadata) {
     return orchestratorMetadata?.buildDate
         ? getDate(orchestratorMetadata.buildDate)
