@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -55,8 +54,7 @@ func checkClusterWriteAccess(ctx context.Context, clusterID string) error {
 }
 
 type connectionAndUpgradeController struct {
-	connection  *sensorConnection
-	upgradeCtrl upgradecontroller.UpgradeController
+	connection *sensorConnection
 }
 
 type manager struct {
@@ -109,22 +107,8 @@ func newVMIndexReportRateLimiter() *rate.Limiter {
 }
 
 func (m *manager) initializeUpgradeControllers() error {
-	clusters, err := m.clusters.GetClusters(managerCtx)
-	if err != nil {
-		return err
-	}
-
-	m.connectionsByClusterIDMutex.Lock()
-	defer m.connectionsByClusterIDMutex.Unlock()
-	for _, cluster := range clusters {
-		upgradeCtrl, err := upgradecontroller.New(cluster.GetId(), m.clusters, m.autoTriggerUpgrades)
-		if err != nil {
-			return err
-		}
-		m.connectionsByClusterID[cluster.GetId()] = connectionAndUpgradeController{
-			upgradeCtrl: upgradeCtrl,
-		}
-	}
+	// Auto-upgrade feature removed (ROX-37646)
+	// This method is now a no-op but kept for compatibility
 	return nil
 }
 
@@ -241,21 +225,8 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 		return nil, errors.Wrap(err, "updating deployment identification")
 	}
 
-	upgradeCtrl := connAndUpgradeCtrl.upgradeCtrl
-
-	if upgradeCtrl == nil {
-		upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
-		if err != nil {
-			return nil, err
-		}
-	}
-	upgradeCtrlErrSig := upgradeCtrl.RegisterConnection(ctx, newConnection)
-	if upgradeCtrlErrSig != nil {
-		go newConnection.stopSig.SignalWhen(upgradeCtrlErrSig, concurrency.Never())
-	}
 	m.connectionsByClusterID[clusterID] = connectionAndUpgradeController{
-		connection:  newConnection,
-		upgradeCtrl: upgradeCtrl,
+		connection: newConnection,
 	}
 
 	return oldConnection, nil
@@ -371,72 +342,28 @@ func (m *manager) GetConnectionPreference(clusterID string) Preferences {
 	return p
 }
 
-func (m *manager) getOrCreateUpgradeCtrl(clusterID string) (upgradecontroller.UpgradeController, error) {
-	m.connectionsByClusterIDMutex.Lock()
-	defer m.connectionsByClusterIDMutex.Unlock()
-
-	connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]
-	if connAndUpgradeCtrl.upgradeCtrl == nil {
-		var err error
-		connAndUpgradeCtrl.upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
-		if err != nil {
-			return nil, err
-		}
-		m.connectionsByClusterID[clusterID] = connAndUpgradeCtrl
-	}
-	return connAndUpgradeCtrl.upgradeCtrl, nil
-}
+// getOrCreateUpgradeCtrl removed - auto-upgrade feature deleted (ROX-37646)
 
 func (m *manager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
-	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
-		return nil, err
-	}
-	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
-	if err != nil {
-		return nil, err
-	}
-	return upgradeCtrl.ProcessCheckInFromUpgrader(req)
+	// Auto-upgrade feature removed (ROX-37646)
+	return nil, errors.New("auto-upgrade feature has been removed")
 }
 
 func (m *manager) ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error {
-	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
-		return err
-	}
-	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
-	if err != nil {
-		return err
-	}
-	return upgradeCtrl.ProcessCheckInFromSensor(req)
+	// Auto-upgrade feature removed (ROX-37646)
+	return errors.New("auto-upgrade feature has been removed")
 }
 
-func (m *manager) checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx context.Context, clusterID string) (upgradecontroller.UpgradeController, error) {
-	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
-		return nil, err
-	}
-
-	upgradeCtrl := concurrency.WithRLock1(&m.connectionsByClusterIDMutex, func() upgradecontroller.UpgradeController {
-		return m.connectionsByClusterID[clusterID].upgradeCtrl
-	})
-	if upgradeCtrl == nil {
-		return nil, errors.Errorf("no upgrade controller found for cluster ID %s; either the sensor has not checked in or the clusterID is invalid. Cannot trigger upgrade", clusterID)
-	}
-	return upgradeCtrl, nil
-}
+// checkClusterWriteAccessAndRetrieveUpgradeCtrl removed - auto-upgrade feature deleted (ROX-37646)
 
 func (m *manager) TriggerUpgrade(ctx context.Context, clusterID string) error {
-	upgradeCtrl, err := m.checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx, clusterID)
-	if err != nil {
-		return err
-	}
-	return upgradeCtrl.Trigger(ctx)
+	// Auto-upgrade feature removed (ROX-37646)
+	return errors.New("auto-upgrade feature has been removed")
 }
 
 func (m *manager) TriggerCertRotation(ctx context.Context, clusterID string) error {
-	upgradeCtrl, err := m.checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx, clusterID)
-	if err != nil {
-		return err
-	}
-	return upgradeCtrl.TriggerCertRotation(ctx)
+	// Auto-upgrade feature removed (ROX-37646)
+	return errors.New("auto-upgrade feature has been removed")
 }
 
 func (m *manager) GetActiveConnections() []SensorConnection {

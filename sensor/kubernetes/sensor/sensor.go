@@ -63,7 +63,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
-	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
 	"github.com/stackrox/rox/sensor/kubernetes/virtualmachine/vsockdialer"
 )
 
@@ -253,14 +252,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	coReadySignal := concurrency.NewSignal()
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
 	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
-
-	if !cfg.localSensor {
-		upgradeCmdHandler, err := upgrade.NewCommandHandler(clusterID, configHandler)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating upgrade command handler")
-		}
-		components = append(components, upgradeCmdHandler)
-	}
 
 	sensorNamespace := pods.GetPodNamespace()
 
