@@ -2,6 +2,7 @@
 
 import json
 import os
+import subprocess
 from pathlib import Path
 import sys
 import tempfile
@@ -48,17 +49,15 @@ class PollingTransportTest(unittest.TestCase):
         kubectl.write_text(KUBECTL.format(python=sys.executable))
         kubectl.chmod(0o755)
         self.env = dict(os.environ, ARTIFACT_DIR=str(self.root / 'artifacts'),
-                        FAKE_KUBECTL_ROOT=str(self.root),
+                        NUM_NODES='1', FAKE_KUBECTL_ROOT=str(self.root),
                         PATH=str(self.root) + os.pathsep + os.environ.get('PATH', ''))
-        self.env.pop('NUM_NODES', None)
 
     def run_monitor(self, responses, script='pass', timeout=None):
         (self.root / 'responses.json').write_text(json.dumps(responses))
         with patch.dict(os.environ, self.env, clear=True):
             result = monitor.run([sys.executable, '-c', script], env=self.env, timeout=timeout)
         report = ET.parse(self.root / 'artifacts/node-monitor.xml').getroot()
-        records = [json.loads(line) for line in
-                   (self.root / 'artifacts/node-snapshots.jsonl').read_text().splitlines()]
+        records = [path.read_text() for path in sorted((self.root / 'artifacts').glob('node-snapshot-*.json'))]
         return result, report, records
 
     def test_initial_and_final_snapshots_and_product_failure(self):
@@ -70,6 +69,12 @@ class PollingTransportTest(unittest.TestCase):
         self.assertEqual((self.root / 'artifacts/node-names.txt').read_text(), 'a\na\n')
         calls = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
         self.assertEqual(calls, [['--request-timeout=10s', 'get', 'nodes', '-o', 'json']] * 2)
+
+    def test_repeated_run_does_not_reuse_old_names(self):
+        self.run_monitor([response('old')])
+        result, _, _ = self.run_monitor([response('new')])
+        self.assertFalse(result.monitor_failed)
+        self.assertEqual((self.root / 'artifacts/node-names.txt').read_text(), 'new\nnew\n')
 
     def test_replacement_fails_after_product_finishes(self):
         marker = self.root / 'finished'
@@ -89,7 +94,7 @@ class PollingTransportTest(unittest.TestCase):
         self.assertTrue(result.monitor_failed)
         self.assertGreaterEqual(len(records), 3)
         self.assertIn('exited 1', report.findtext('.//failure'))
-        self.assertTrue(any('forbidden' in record['stderr'] for record in records))
+        self.assertIn('forbidden', (self.root / 'artifacts/node-monitor.log').read_text())
 
     def test_initial_errors_prevent_product_launch(self):
         marker = self.root / 'started'
@@ -99,7 +104,7 @@ class PollingTransportTest(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertEqual(report.get('failures'), '1')
         self.assertEqual(len(records), 1)
-        self.assertEqual(records[0]['stdout'].strip(), 'broken JSON')
+        self.assertEqual(records[0].strip(), 'broken JSON')
 
     def test_poll_subprocess_timeout_is_bounded(self):
         with patch.object(monitor, 'API_TIMEOUT', 0.5):
@@ -107,7 +112,53 @@ class PollingTransportTest(unittest.TestCase):
         self.assertTrue(result.monitor_failed)
         self.assertIn('timed out', report.findtext('.//failure'))
         self.assertEqual(len(records), 1)
-        self.assertIn('error', records[0])
+        self.assertTrue((self.root / 'artifacts/node-monitor.log').exists())
+
+    def test_cli_entrypoint_preserves_exit_code_junit_and_github_output(self):
+        cases = {'product failure': ([response('a'), response('a')], 42, False),
+                 'replacement': ([response('old'), response('new')], 1, True)}
+        for name, (replies, code, failed) in cases.items():
+            with self.subTest(name=name):
+                (self.root / 'responses.json').write_text(json.dumps(replies))
+                (self.root / 'counter').write_text('0')
+                output = self.root / 'github-output'
+                output.write_text('')
+                env = dict(self.env, GITHUB_OUTPUT=str(output), GITHUB_RUN_ID='123',
+                           GITHUB_REPOSITORY='stackrox/stackrox', GITHUB_RUN_ATTEMPT='2',
+                           GITHUB_SERVER_URL='https://github.com')
+                completed = subprocess.run(
+                    [sys.executable, str(Path(monitor.__file__).resolve()), 'run', '--',
+                     sys.executable, '-c', 'raise SystemExit(42)'],
+                    env=env, capture_output=True, text=True, timeout=10, check=False)
+                self.assertEqual(completed.returncode, code, completed.stderr)
+                self.assertEqual(output.read_text(), f'failed={str(failed).lower()}\n')
+                report = ET.parse(self.root / 'artifacts/node-monitor.xml').getroot()
+                self.assertEqual(report.get('failures'), str(int(failed)))
+                self.assertIn('actions/runs/123/attempts/2', report.findtext('.//system-out'))
+                self.assertEqual('::error::' in completed.stdout, failed)
+
+    def test_cli_skips_monitoring_without_num_nodes(self):
+        self.env.pop('NUM_NODES')
+        output = self.root / 'github-output'
+        self.env['GITHUB_OUTPUT'] = str(output)
+        completed = subprocess.run(
+            [sys.executable, str(Path(monitor.__file__).resolve()), 'run', '--',
+             sys.executable, '-c', 'raise SystemExit(42)'],
+            env=self.env, capture_output=True, text=True, timeout=10, check=False)
+        self.assertEqual(completed.returncode, 42, completed.stderr)
+        self.assertEqual(output.read_text(), 'failed=false\n')
+        self.assertFalse((self.root / 'requests.jsonl').exists())
+        self.assertFalse((self.root / 'artifacts').exists())
+
+    def test_without_node_count_still_enforces_product_timeout(self):
+        self.env.pop('NUM_NODES')
+        result = monitor.run([sys.executable, '-c', 'import time; time.sleep(60)'],
+                             env=self.env, timeout=0.1)
+        self.assertEqual(result.exit_code, 124)
+        self.assertTrue(result.timed_out)
+        self.assertFalse(result.monitor_failed)
+        self.assertFalse((self.root / 'requests.jsonl').exists())
+        self.assertFalse((self.root / 'artifacts').exists())
 
     def test_product_timeout_keeps_final_sample(self):
         result, _, records = self.run_monitor([response('a')], 'import time; time.sleep(60)', timeout=0.1)

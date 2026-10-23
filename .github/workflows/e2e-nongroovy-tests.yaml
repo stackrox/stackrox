@@ -47,7 +47,6 @@ jobs:
       SCANNER_V4_DB_STORAGE_CLASS: faster
       ROX_SCANNER_V4: "true"
       GKE_SPOT: ${{ github.event_name == 'pull_request' && inputs.should-run }}
-      GKE_NODE_DISRUPTION_WATCH: "true"
       NUM_NODES: "1"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 361
@@ -154,7 +153,7 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       timeout-minutes: 245
       # Node name changes do not establish whether Spot caused a replacement.
-      shell: python3 scripts/ci/spot_monitor.py run -- bash --noprofile --norc -e -o pipefail {0}
+      shell: python3 .openshift-ci/node_disruption.py run -- bash --noprofile --norc -e -o pipefail {0}
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Quick node disruption diagnostics

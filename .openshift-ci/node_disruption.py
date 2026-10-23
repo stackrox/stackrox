@@ -1,5 +1,6 @@
-"""Opt-in node-name polling shared by nongroovy CI entrypoints."""
+"""Node-name polling shared by nongroovy CI entrypoints."""
 
+import argparse
 from dataclasses import dataclass
 import json
 import os
@@ -12,10 +13,6 @@ import xml.etree.ElementTree as ET
 API_TIMEOUT = 10
 TERM_GRACE = 5
 POLL_INTERVAL = 5 * 60
-
-
-def enabled():
-    return os.getenv('GKE_NODE_DISRUPTION_WATCH') == 'true'
 
 
 @dataclass
@@ -38,193 +35,92 @@ class Cancellation:
 
 
 def terminate(process, grace=TERM_GRACE):
-    """Stop a subprocess group with TERM, escalating to KILL after grace."""
+    """Stop the whole product process group, including surviving descendants."""
     if process is None:
         return
-
     deadline = time.monotonic() + grace
     try:
         os.killpg(process.pid, signal.SIGTERM)
+        try:
+            process.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            pass
+        # A shell may exit before its children. Give the group the remaining grace.
+        os.killpg(process.pid, 0)
+        time.sleep(max(0, deadline - time.monotonic()))
+        os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError:
-        return
-
-    try:
-        process.wait(timeout=grace)
-    except subprocess.TimeoutExpired:
         pass
-    else:
-        if not wait_for_group_exit(process.pid, deadline):
-            kill_group(process.pid, signal.SIGKILL)
-            if process.poll() is None:
-                process.wait()
-        return
-
-    kill_group(process.pid, signal.SIGKILL)
     process.wait()
-
-
-def wait_for_group_exit(process_group, deadline):
-    """Wait out the grace period if descendants outlive the group leader."""
-    try:
-        os.killpg(process_group, 0)
-    except ProcessLookupError:
-        return True
-
-    remaining = deadline - time.monotonic()
-    if remaining > 0:
-        time.sleep(remaining)
-    return False
-
-
-def kill_group(process_group, signum):
-    try:
-        os.killpg(process_group, signum)
-    except ProcessLookupError:
-        pass
-
-
-def report_detail(result):
-    detail = result.get('summary', '')
-    if result.get('error'):
-        detail += f"\nNode monitor error: {result['error']}"
-    if result.get('error') or result.get('mismatch'):
-        return 'failure', 'Node name change or monitor error', detail.strip()
-    if result.get('cancelled'):
-        detail = f"Node monitoring cancelled (signal={result.get('signal', 'unknown')})"
-        return 'skipped', 'Workflow cancelled', detail
-    return 'passed', '', 'No node name change detected. ' + detail
-
-
-def write_report(result):
-    """Write the single stable JUnit result for node monitoring."""
-    status, message, detail = report_detail(result)
-    duration = f"{result.get('duration_seconds', 0):.3f}"
-    suite = ET.Element(
-        'testsuite', name='ci.gke.node', tests='1',
-        failures=str(int(status == 'failure')),
-        skipped=str(int(status == 'skipped')), time=duration,
-    )
-    case = ET.SubElement(
-        suite, 'testcase', classname='ci.gke.node',
-        name='NoNodeDisruption', time=duration,
-    )
-
-    if status == 'failure':
-        ET.SubElement(case, 'failure', message=message).text = detail
-    elif status == 'skipped':
-        ET.SubElement(case, 'skipped', message=message).text = detail
-
-    link = result.get('run_url', '')
-    if link:
-        detail += f'\nRun: {link}'
-    ET.SubElement(case, 'system-out').text = detail
-
-    artifact_dir = Path(os.getenv('ARTIFACT_DIR', 'junit-reports'))
-    artifact_dir.mkdir(parents=True, exist_ok=True)
-    temporary = artifact_dir / 'node-monitor.xml.tmp'
-    temporary.write_text(ET.tostring(suite, encoding='unicode', xml_declaration=True),
-                         encoding='utf-8')
-    temporary.replace(artifact_dir / 'node-monitor.xml')
 
 
 def expected_node_count(env):
     value = env.get('NUM_NODES')
-    if value is None:
+    if not value:
         return None
     try:
         count = int(value)
-    except ValueError as exc:
-        raise RuntimeError('NUM_NODES must be a positive integer') from exc
-    if count <= 0:
-        raise RuntimeError('NUM_NODES must be a positive integer')
-    return count
+        if count > 0:
+            return count
+    except ValueError:
+        pass
+    raise RuntimeError('NUM_NODES must be a positive integer')
 
 
-def node_names(snapshot):
-    """Only names affect the verdict; readiness and per-snapshot counts do not."""
-    if not isinstance(snapshot, dict) or not isinstance(snapshot.get('items'), list):
-        raise ValueError('node snapshot must contain an items list')
-    names = []
-    for node in snapshot['items']:
-        name = node.get('metadata', {}).get('name') if isinstance(node, dict) else None
-        if not isinstance(name, str) or not name or any(char.isspace() for char in name):
-            raise ValueError('node snapshot contains an invalid node name')
-        names.append(name)
+def sample_nodes(directory, env):
+    """Keep raw kubectl output for diagnosis and append names for the final check."""
+    snapshot = directory / f'node-snapshot-{time.time_ns()}.json'
+    with snapshot.open('w', encoding='utf-8') as stdout, \
+            (directory / 'node-monitor.log').open('a', encoding='utf-8') as stderr:
+        stderr.write(f'\nCollecting {snapshot.name}\n')
+        stderr.flush()
+        completed = subprocess.run(
+            ['kubectl', f'--request-timeout={API_TIMEOUT}s', 'get', 'nodes', '-o', 'json'],
+            env=env, stdout=stdout, stderr=stderr, timeout=API_TIMEOUT, check=False)
+    if completed.returncode:
+        raise RuntimeError(f'kubectl get nodes exited {completed.returncode}')
+    names = [node['metadata']['name'] for node in json.loads(snapshot.read_text(encoding='utf-8'))['items']]
+    if any(not isinstance(name, str) or not name or any(char.isspace() for char in name) for name in names):
+        raise ValueError('node snapshot contains an invalid name')
+    with (directory / 'node-names.txt').open('a', encoding='utf-8') as stream:
+        stream.writelines(name + '\n' for name in names)
     return names
 
 
-def output_text(value):
-    # TimeoutExpired may hold bytes even when subprocess.run uses text=True.
-    return value.decode('utf-8', errors='replace') if isinstance(value, bytes) else value or ''
+def write_report(directory, expected, errors, cancellation, run_url):
+    names_file = directory / 'node-names.txt'
+    names = sorted(set(names_file.read_text(encoding='utf-8').splitlines())) if names_file.exists() else []
+    failed = bool(errors) or (not cancellation.requested and len(names) != expected)
+    skipped = cancellation.requested and not failed
+    detail = (f'Expected {expected} nodes; observed {len(names)} unique names: '
+              f"{', '.join(names)}. Evidence: {directory}\n" + '\n'.join(errors))
+    if run_url:
+        detail += f'\nRun: {run_url}'
+    print(('ERROR: ' if failed else '') + detail.strip(), flush=True)
+    suite = ET.Element('testsuite', name='ci.gke.node', tests='1',
+                       failures=str(int(failed)), skipped=str(int(skipped)))
+    case = ET.SubElement(suite, 'testcase', classname='ci.gke.node', name='NoNodeDisruption')
+    if failed or skipped:
+        ET.SubElement(case, 'failure' if failed else 'skipped').text = detail
+    ET.SubElement(case, 'system-out').text = detail
+    temporary = directory / 'node-monitor.xml.tmp'
+    temporary.write_text(ET.tostring(suite, encoding='unicode', xml_declaration=True), encoding='utf-8')
+    temporary.replace(directory / 'node-monitor.xml')
+    return failed
 
 
-class NodePoll:
-    def __init__(self, env):
-        self.env = env
-        artifact_dir = Path(os.getenv('ARTIFACT_DIR', 'junit-reports'))
-        artifact_dir.mkdir(parents=True, exist_ok=True)
-        self.names = artifact_dir / 'node-names.txt'
-        self.snapshots = artifact_dir / 'node-snapshots.jsonl'
-        self.errors = []
-        # Never mix observations from separate runs using the same artifact directory.
-        self.names.write_text('', encoding='utf-8')
-        self.snapshots.write_text('', encoding='utf-8')
-
-    def sample(self):
-        record = {'timestamp': time.time()}
-        names = None
-        try:
-            completed = subprocess.run(
-                ['kubectl', f'--request-timeout={API_TIMEOUT}s', 'get', 'nodes', '-o', 'json'],
-                env=self.env, capture_output=True, text=True, errors='replace',
-                timeout=API_TIMEOUT, check=False,
-            )
-            record.update(stdout=completed.stdout, stderr=completed.stderr,
-                          returncode=completed.returncode)
-            if completed.returncode != 0:
-                raise RuntimeError(f'kubectl get nodes exited {completed.returncode}')
-            names = node_names(json.loads(completed.stdout))
-        except subprocess.TimeoutExpired as exc:
-            record.update(error=f'kubectl get nodes timed out after {API_TIMEOUT}s',
-                          stdout=output_text(exc.stdout), stderr=output_text(exc.stderr))
-        except (OSError, ValueError, AttributeError, RuntimeError) as exc:
-            record['error'] = str(exc)
-
-        with self.snapshots.open('a', encoding='utf-8') as stream:
-            stream.write(json.dumps(record) + '\n')
-        if 'error' in record:
-            self.errors.append(record['error'])
-            return None
-        with self.names.open('a', encoding='utf-8') as stream:
-            stream.writelines(name + '\n' for name in names)
-        return names
-
-    def verdict(self, expected):
-        names = sorted(set(self.names.read_text(encoding='utf-8').splitlines()))
-        summary = (f'Expected {expected} nodes; observed {len(names)} unique names: '
-                   f"{', '.join(names)}. Evidence: {self.names}, {self.snapshots}")
-        return {'mismatch': len(names) != expected, 'summary': summary}
-
-
-def monitor_test(test, poller, result, cancellation, timeout):
-    deadline = None if timeout is None else time.monotonic() + timeout
+def wait_for_test(test, sample, cancellation, timeout):
+    deadline = float('inf') if timeout is None else time.monotonic() + timeout
     next_poll = time.monotonic() + POLL_INTERVAL
-    while not cancellation.requested:
-        if test.poll() is not None:
-            return
+    while not cancellation.requested and test.poll() is None:
         now = time.monotonic()
-        if deadline is not None and now >= deadline:
-            result['timed_out'] = True
-            return
-        if now >= next_poll:
-            poller.sample()
+        if now >= deadline:
+            return True
+        if sample and now >= next_poll:
+            sample()
             next_poll = time.monotonic() + POLL_INTERVAL
-            continue
-        # Check cancellation promptly without adding threads or signal-driven I/O.
-        delay = min(0.1, next_poll - now)
-        if deadline is not None:
-            delay = min(delay, deadline - now)
-        time.sleep(delay)
+        time.sleep(min(0.1, max(0, deadline - time.monotonic())))
+    return False
 
 
 def cleanup(test, previous):
@@ -235,58 +131,100 @@ def cleanup(test, previous):
             signal.signal(sig, handler)
 
 
-def finish(result, test, cancellation):
-    failed = bool(result.get('error') or result.get('mismatch'))
-    status, _, detail = report_detail(result)
-    print(('ERROR: ' if status == 'failure' else '') + detail, flush=True)
+def finish(test, cancellation, timed_out, failed):
     if failed:
-        return RunResult(1, True, timed_out=result.get('timed_out', False))
-    if result.get('cancelled'):
-        return RunResult(128 + cancellation.signal, False)
-    if result.get('timed_out'):
-        return RunResult(124, False, timed_out=True)
-    code = test.returncode
-    return RunResult(code if code >= 0 else 128 - code, False)
+        code = 1
+    elif cancellation.requested:
+        code = 128 + cancellation.signal
+    elif timed_out:
+        code = 124
+    else:
+        code = test.returncode if test else 1
+    return RunResult(code if code >= 0 else 128 - code, failed, timed_out)
 
 
 def run(command, timeout=None, env=None, run_url=''):
-    """Sample names around a product command, deciding the verdict only at the end."""
+    """Run tests; poll node names only when NUM_NODES is supplied."""
     if not command:
-        raise ValueError('node monitoring requires a product command')
-    result = {'started_at': time.monotonic(), 'run_url': run_url}
+        raise ValueError('a product command is required')
+    env = os.environ if env is None else env
+    directory = Path(os.getenv('ARTIFACT_DIR', 'junit-reports'))
     cancellation = Cancellation()
-    previous = {sig: signal.signal(sig, cancellation.handle)
-                for sig in (signal.SIGTERM, signal.SIGINT)}
-    test, poller, expected = None, None, None
+    errors = []
+    previous = {sig: signal.signal(sig, cancellation.handle) for sig in (signal.SIGTERM, signal.SIGINT)}
+    test, expected, timed_out, failed = None, None, False, False
+
+    def sample():
+        try:
+            return sample_nodes(directory, env)
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as exc:
+            errors.append(str(exc))
+            return None
+
     try:
-        environment = os.environ if env is None else env
-        poller = NodePoll(environment)
-        expected = expected_node_count(environment)
-        initial = poller.sample()
-        if initial == []:
-            raise RuntimeError('initial node sample returned no nodes')
-        if initial is not None and not cancellation.requested:
-            expected = expected or len(set(initial))
-            # cleanup() owns this group, including descendants after leader exit.
+        expected = expected_node_count(env)
+        if expected is not None:
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / 'node-names.txt').write_text('', encoding='utf-8')
+            (directory / 'node-monitor.log').write_text('', encoding='utf-8')
+            if not sample():
+                raise RuntimeError('initial node sample failed or returned no nodes')
+        if not cancellation.requested:
             test = subprocess.Popen(  # pylint: disable=consider-using-with
                 command, env=env, start_new_session=True)
-            monitor_test(test, poller, result, cancellation, timeout)
-            if not cancellation.requested:
-                poller.sample()
+            timed_out = wait_for_test(test, sample if expected else None, cancellation, timeout)
+            if expected and not cancellation.requested:
+                sample()
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
         if not cancellation.requested:
-            result['error'] = f'node monitor execution: {exc}'
+            errors.append(str(exc))
     finally:
         try:
-            if poller is not None:
-                if expected is not None and not cancellation.requested:
-                    result.update(poller.verdict(expected))
-                if poller.errors:
-                    result['error'] = '\n'.join(filter(None, [result.get('error'), *poller.errors]))
-            if cancellation.requested:
-                result.update(cancelled=True, signal=cancellation.signal)
-            result['duration_seconds'] = time.monotonic() - result['started_at']
-            write_report(result)
+            if env.get('NUM_NODES'):
+                directory.mkdir(parents=True, exist_ok=True)
+                failed = write_report(directory, expected, errors, cancellation, run_url)
         finally:
             cleanup(test, previous)
-    return finish(result, test, cancellation)
+    return finish(test, cancellation, timed_out, failed)
+
+
+def run_link():
+    run_id = os.getenv('GITHUB_RUN_ID')
+    if not run_id:
+        return ''
+    server = os.getenv('GITHUB_SERVER_URL', 'https://github.com').rstrip('/')
+    repository = os.getenv('GITHUB_REPOSITORY', '')
+    attempt = os.getenv('GITHUB_RUN_ATTEMPT', '1')
+    return f'{server}/{repository}/actions/runs/{run_id}/attempts/{attempt}'
+
+
+def publish_output(failed):
+    output = os.getenv('GITHUB_OUTPUT')
+    if not output:
+        return
+    with open(output, 'a', encoding='utf-8') as stream:
+        stream.write(f"failed={str(failed).lower()}\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=['run'])
+    parser.add_argument('command', nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+    command = args.command[1:] if args.command[:1] == ['--'] else args.command
+    if not command:
+        parser.error('a command is required after --')
+    try:
+        result = run(command, run_url=run_link())
+    except (OSError, RuntimeError) as exc:
+        publish_output(True)
+        print(f'::error::Node monitor could not finish: {exc}', flush=True)
+        return 1
+    publish_output(result.monitor_failed)
+    if result.monitor_failed:
+        print('::error::Node disruption or monitor error; see node-monitor.xml', flush=True)
+    return result.exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

@@ -209,26 +209,18 @@ class NonGroovyE2e(BaseTest):
     def run(self):
         print("Executing the E2e Test")
 
-        if node_disruption.enabled():
-            if self.TEST_OUTPUT_DIR not in self.test_outputs:
-                self.test_outputs.append(self.TEST_OUTPUT_DIR)
-            result = node_disruption.run(
-                ["tests/e2e/run.sh", self.TEST_OUTPUT_DIR],
-                timeout=self.TEST_TIMEOUT,
-                env=dict(os.environ, ROX_CI_OUTPUT_DIR=self.TEST_OUTPUT_DIR),
-                run_url=self.run_url(),
-            )
-            if result.timed_out:
-                raise subprocess.TimeoutExpired("tests/e2e/run.sh", self.TEST_TIMEOUT)
-            if result.exit_code != 0:
-                raise RuntimeError(f"Test failed: exit {result.exit_code}")
-            return
-
-        self.run_with_graceful_kill(
+        if self.TEST_OUTPUT_DIR not in self.test_outputs:
+            self.test_outputs.append(self.TEST_OUTPUT_DIR)
+        result = node_disruption.run(
             ["tests/e2e/run.sh", self.TEST_OUTPUT_DIR],
-            self.TEST_TIMEOUT,
-            output_dir=self.TEST_OUTPUT_DIR,
+            timeout=self.TEST_TIMEOUT,
+            env=dict(os.environ, ROX_CI_OUTPUT_DIR=self.TEST_OUTPUT_DIR),
+            run_url=self.run_url(),
         )
+        if result.timed_out:
+            raise subprocess.TimeoutExpired("tests/e2e/run.sh", self.TEST_TIMEOUT)
+        if result.exit_code != 0:
+            raise RuntimeError(f"Test failed: exit {result.exit_code}")
 
 
 class VMScanningE2e(BaseTest):

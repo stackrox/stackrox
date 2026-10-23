@@ -51,38 +51,37 @@ Path in artifacts:
 download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artifacts/howto-locate-other-artifacts-summary.html
 ```
 
-## Nongroovy node-disruption monitoring
+## Nongroovy node-name monitoring
 
-Set `GKE_NODE_DISRUPTION_WATCH=true` to monitor nodes during `NonGroovyE2e`.
-Unset or any other value preserves the existing execution path. GHA nongroovy
-jobs explicitly enable it; Prow jobs remain opt-in. This setting is independent
-of `GKE_SPOT` and does not change cluster provisioning.
+Set `NUM_NODES` to the expected positive node count to enable monitoring during
+`NonGroovyE2e`. When it is unset or empty, tests run normally without node polls,
+node artifacts, or a node-monitor JUnit report. Monitoring is independent of
+`GKE_SPOT`; it works for regular and Spot nodes alike. Python's
+`GKECluster(num_nodes=...)` exports the same `NUM_NODES` used for provisioning.
+There is no separate monitoring flag or initial-count fallback.
 
-The monitor collects node names immediately before `tests/e2e/run.sh`, every
-five minutes while it runs, and immediately after it completes. Each `kubectl`
-call has a ten-second timeout. Product tests continue even when a later poll
-fails; the monitoring verdict is decided at the end, not fail-fast.
+The monitor samples nodes before tests, every five minutes while tests run, and
+once at the end. It then compares the number of unique observed names with
+`NUM_NODES`. A mismatch or polling error produces an error log and JUnit failure.
+Later polling failures do not stop the product tests early. Invalid configuration,
+a failed initial poll, or an empty initial sample prevents tests from starting.
+Each `kubectl` invocation is limited to ten seconds.
 
-The number of unique names across all samples must equal `NUM_NODES`, when set
-to a positive integer. Otherwise the initial sample's node count is used. An
-invalid configuration, failed initial poll, or empty initial sample prevents
-tests from starting. Later polling errors also fail the final monitoring result.
-Readiness and per-snapshot node counts are not checked: disappearance without
-replacement, NotReady nodes with unchanged names, and transient replacements
-between polls may go undetected. Name changes do not establish Spot causality.
+Artifacts under `ARTIFACT_DIR` (default `junit-reports`):
+- `node-names.txt`: sampled names, including repetitions.
+- `node-snapshot-<timestamp>.json`: raw node JSON from each poll, retained even
+  on passing runs. Failed calls may leave partial or empty snapshots.
+- `node-monitor.log`: timestamped poll attempts and kubectl stderr. Poll errors
+  and the final verdict are included in the JUnit report and job log.
+- `node-monitor.xml`: testcase `ci.gke.node / NoNodeDisruption`. It passes for a
+  matching unique-name count and error-free polling, independently of the product
+  result; cancellation is skipped unless a monitor error was already recorded.
 
-`ARTIFACT_DIR/node-names.txt` contains the sampled names (including repetitions).
-`ARTIFACT_DIR/node-snapshots.jsonl` retains every poll's timestamp, raw JSON
-stdout, stderr, exit code, and any polling error, even on passing runs. Failure
-logs include the expected count, unique names, and evidence paths; detailed
-snapshots remain in artifacts rather than successful job logs. Product timeout
-and cancellation still terminate the process group with TERM, then KILL after
-five seconds.
+This checks names, not readiness or per-snapshot counts. NotReady nodes with
+unchanged names, disappearance without replacement, and transient nodes between
+polls may go undetected. A replacement is not proof of Spot preemption.
 
-`ARTIFACT_DIR/node-monitor.xml` contains the stable testcase
-`ci.gke.node / NoNodeDisruption`: pass for a matching unique-name count and
-error-free polling regardless of the product result, failure for a count mismatch
-or monitor errors, skipped for
-cancellation unless a monitor failure has already been recorded.
-The GHA adapter alone publishes the `failed` step output used to skip recovery;
-ordinary product failures do not set that output to true.
+GHA invokes `python3 .openshift-ci/node_disruption.py run -- <command>`. The CLI
+publishes `failed=true` only for monitor failures, allowing later workflow steps
+to skip recovery. Prow imports `run()` directly. Both paths retain product exit
+codes, timeout handling, and process-group cleanup on cancellation.
