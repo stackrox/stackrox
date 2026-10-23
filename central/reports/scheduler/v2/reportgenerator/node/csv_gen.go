@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -42,7 +43,7 @@ func generateCSV(cveResponses []*NodeCVEQueryResponse, configName string) (*byte
 			strconv.FormatBool(r.GetFixable()),
 			r.GetFixedByVersion(),
 			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
-			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
+			reportGen.FormatCVSSScore(r.GetCVSS()),
 			r.GetFirstOccurrence(),
 			r.GetLink(),
 		}

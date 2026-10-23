@@ -144,7 +144,7 @@ func TestGenerateCSV_NilFieldsProduceDefaults(t *testing.T) {
 	assert.Equal(t, "false", row[6])          // Fixable
 	assert.Equal(t, "", row[7])               // FixedBy
 	assert.Equal(t, "UNKNOWN", row[8])        // Severity
-	assert.Equal(t, "0.00", row[9])           // CVSS
+	assert.Equal(t, "Not Available", row[9])  // CVSS
 	assert.Equal(t, "Not Available", row[10]) // First System Occurrence
 	assert.Equal(t, "", row[11])              // Link
 }
@@ -171,4 +171,19 @@ func TestGenerateCSV_EmptyOperatingSystemProducesDefault(t *testing.T) {
 	require.Len(t, records, 2)
 
 	assert.Equal(t, "Not Available", records[1][2])
+}
+
+func TestGenerateCSV_ZeroCVSSIsUnavailable(t *testing.T) {
+	buf, err := generateCSV([]*NodeCVEQueryResponse{{CVSS: new(0.0)}}, "test")
+	require.NoError(t, err)
+	reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	require.NoError(t, err)
+	require.Len(t, reader.File, 1)
+	file, err := reader.File[0].Open()
+	require.NoError(t, err)
+	defer func() { assert.NoError(t, file.Close()) }()
+	records, err := csv.NewReader(file).ReadAll()
+	require.NoError(t, err)
+	require.Len(t, records, 2)
+	assert.Equal(t, "Not Available", records[1][9])
 }
