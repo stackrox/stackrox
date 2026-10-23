@@ -46,19 +46,18 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(cm.Data[ClientPolicyDataKey]), &defaults))
 	require.Equal(t, clientPolicyVersion, defaults.Version)
 	require.Len(t, defaults.Clients, 2)
+	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"httpRequestScopes":{"/metrics":["GET"]}`)
 	assert.Equal(t, env.SecureMetricsClientCertCN.Setting(), defaults.Clients[0].Subject)
 	assert.Equal(t, centralproxy.MetricsPermissionSetID, defaults.Clients[0].PermissionSetID)
 	assert.Equal(t, "*", defaults.Clients[1].Subject)
 	assert.Equal(t, centralproxy.ConsoleProxyPermissionSetID, defaults.Clients[1].PermissionSetID)
-	consoleScopes, err := tokens.HTTPRequestScopesFromProto(defaults.Clients[1].HTTPScopes)
-	require.NoError(t, err)
-	assert.Equal(t, tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes), consoleScopes)
+	assert.Equal(t, tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes), defaults.Clients[1].HTTPScopes)
 	grant, err := policy.Authorize(ctx, request, user)
 	require.NoError(t, err)
 	assert.Equal(t, clientAuthKubernetesBearer, grant.AuthType)
 	assert.Equal(t, "alice", grant.Subject)
 	assert.Equal(t, centralproxy.ConsoleProxyPermissionSetID, grant.PermissionSetID)
-	assert.Equal(t, defaults.Clients[1].HTTPScopes, grant.HTTPRequestScopes)
+	assert.Equal(t, clientPolicyScopesToProto(defaults.Clients[1].HTTPScopes), grant.HTTPRequestScopes)
 
 	// A new exact user policy overrides the wildcard, without weakening other users.
 	defaults.Clients = append(defaults.Clients, clientPolicyEntry{
@@ -125,6 +124,20 @@ func TestClientPolicyEmptyEntriesDisableClients(t *testing.T) {
 	r.Header.Set("Authorization", "Bearer token")
 	_, err := policy.Authorize(ctx, r, &authenticationv1.UserInfo{Username: "alice"})
 	require.Error(t, err)
+}
+
+func TestClientPolicyScopesToProtoUsesStablePathOrderAndCopiesMethods(t *testing.T) {
+	scopes := tokens.HTTPRequestScopes{
+		"/v1/z": {"POST", "GET"},
+		"/v1/a": {"GET"},
+	}
+	result := clientPolicyScopesToProto(scopes)
+	require.Len(t, result, 2)
+	assert.Equal(t, "/v1/a", result[0].GetPath())
+	assert.Equal(t, "/v1/z", result[1].GetPath())
+	assert.Equal(t, []string{"POST", "GET"}, result[1].GetMethods())
+	scopes["/v1/z"][0] = "DELETE"
+	assert.Equal(t, "POST", result[1].GetMethods()[0])
 }
 
 func TestClientPolicyMTLSMatchesOnlyReferencedCA(t *testing.T) {
@@ -209,6 +222,7 @@ func TestClientPolicyMTLSMatchesOnlyReferencedCA(t *testing.T) {
 func TestClientPolicyRejectsMalformedPolicies(t *testing.T) {
 	defaults, err := json.Marshal(defaultClientPolicy())
 	require.NoError(t, err)
+	require.Contains(t, string(defaults), `"httpRequestScopes":{"/metrics":["GET"]}`)
 	for name, change := range map[string]func(*clientPolicyDocument){
 		"unsupported version": func(p *clientPolicyDocument) { p.Version++ },
 		"duplicate identity":  func(p *clientPolicyDocument) { p.Clients = append(p.Clients, p.Clients[0]) },
@@ -216,12 +230,10 @@ func TestClientPolicyRejectsMalformedPolicies(t *testing.T) {
 		"missing CA":          func(p *clientPolicyDocument) { p.Clients[0].CARef = nil },
 		"bearer CA":           func(p *clientPolicyDocument) { p.Clients[1].CARef = p.Clients[0].CARef },
 		"empty scopes":        func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes = nil },
-		"empty methods":       func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes[0].Methods = nil },
-		"invalid method":      func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes[0].Methods = []string{"Get"} },
-		"noncanonical path":   func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes[0].Path = "/%6detrics" },
-		"duplicate scope": func(p *clientPolicyDocument) {
-			p.Clients[0].HTTPScopes = append(p.Clients[0].HTTPScopes, p.Clients[0].HTTPScopes[0])
-		},
+		"empty methods":       func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes["/metrics"] = nil },
+		"invalid method":      func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes["/metrics"] = []string{"Get"} },
+		"duplicate method":    func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes["/metrics"] = []string{"GET", "GET"} },
+		"noncanonical path":   func(p *clientPolicyDocument) { p.Clients[0].HTTPScopes["/%6detrics"] = []string{"GET"} },
 	} {
 		t.Run(name, func(t *testing.T) {
 			var p clientPolicyDocument
@@ -238,6 +250,8 @@ func TestClientPolicyRejectsMalformedPolicies(t *testing.T) {
 		"unknown nested field": strings.Replace(string(defaults), `"authType":"mtls"`, `"authType":"mtls","unrecognized":true`, 1),
 		"duplicate top key":    strings.Replace(string(defaults), `"version":1`, `"version":1,"version":1`, 1),
 		"duplicate nested key": strings.Replace(string(defaults), `"authType":"mtls"`, `"authType":"mtls","authType":"mtls"`, 1),
+		"duplicate path":       strings.Replace(string(defaults), `"/metrics":["GET"]`, `"/metrics":["GET"],"/metrics":["POST"]`, 1),
+		"legacy scope list":    strings.Replace(string(defaults), `"httpRequestScopes":{"/metrics":["GET"]}`, `"httpRequestScopes":[{"path":"/metrics","methods":["GET"]}]`, 1),
 		"trailing JSON":        string(defaults) + `{}`,
 		"null document":        `null`,
 		"missing data key":     "",
@@ -245,6 +259,9 @@ func TestClientPolicyRejectsMalformedPolicies(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := parseClientPolicy(&corev1.ConfigMap{Data: map[string]string{ClientPolicyDataKey: data}})
 			require.Error(t, err)
+			if name == "duplicate path" {
+				require.ErrorContains(t, err, `duplicate JSON key "/metrics"`)
+			}
 		})
 	}
 }

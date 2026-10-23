@@ -8,7 +8,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -46,13 +48,12 @@ type clientPolicyDocument struct {
 }
 
 type clientPolicyEntry struct {
-	AuthType        string                    `json:"authType"`
-	Subject         string                    `json:"subject"`
-	CARef           json.RawMessage           `json:"caRef,omitempty"`
-	PermissionSetID string                    `json:"permissionSetID"`
-	HTTPScopes      []*apiV1.HTTPRequestScope `json:"httpRequestScopes"`
+	AuthType        string                   `json:"authType"`
+	Subject         string                   `json:"subject"`
+	CARef           json.RawMessage          `json:"caRef,omitempty"`
+	PermissionSetID string                   `json:"permissionSetID"`
+	HTTPScopes      tokens.HTTPRequestScopes `json:"httpRequestScopes"`
 	caRef           clientPolicyCARef
-	scopes          tokens.HTTPRequestScopes
 }
 
 type clientPolicyCARef struct {
@@ -135,7 +136,7 @@ func defaultClientPolicy() clientPolicyDocument {
 		{
 			AuthType: clientAuthMTLS, Subject: env.SecureMetricsClientCertCN.Setting(), CARef: caRef,
 			PermissionSetID: centralproxy.MetricsPermissionSetID,
-			HTTPScopes:      []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{http.MethodGet}}},
+			HTTPScopes:      tokens.HTTPRequestScopes{"/metrics": {http.MethodGet}},
 		},
 		{
 			AuthType: clientAuthKubernetesBearer, Subject: "*",
@@ -145,18 +146,8 @@ func defaultClientPolicy() clientPolicyDocument {
 	}}
 }
 
-func consolePolicyHTTPScopes() []*apiV1.HTTPRequestScope {
-	result := make([]*apiV1.HTTPRequestScope, 0, len(centralproxy.ConsoleHTTPScopes))
-	indices := make(map[string]int, len(centralproxy.ConsoleHTTPScopes))
-	for _, scope := range centralproxy.ConsoleHTTPScopes {
-		if index, exists := indices[scope.Path]; exists {
-			result[index].Methods = append(result[index].Methods, scope.Method)
-			continue
-		}
-		indices[scope.Path] = len(result)
-		result = append(result, &apiV1.HTTPRequestScope{Path: scope.Path, Methods: []string{scope.Method}})
-	}
-	return result
+func consolePolicyHTTPScopes() tokens.HTTPRequestScopes {
+	return tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
 }
 
 // Authorize matches the presented certificate or an already TokenReview-validated
@@ -203,7 +194,7 @@ func (p *ClientPolicy) Authorize(ctx context.Context, r *http.Request, userInfo 
 			matched = entry
 		}
 	}
-	if matched == nil || !tokens.AllowsHTTPRequest(matched.scopes, requestinfo.RequestInfo{
+	if matched == nil || !tokens.AllowsHTTPRequest(matched.HTTPScopes, requestinfo.RequestInfo{
 		HTTPRequest: &requestinfo.HTTPRequest{Method: r.Method, URL: r.URL},
 	}) {
 		return nil, pkghttputil.NewError(http.StatusForbidden, "client policy does not allow request")
@@ -217,14 +208,14 @@ func (p *ClientPolicy) Authorize(ctx context.Context, r *http.Request, userInfo 
 		AuthType:          matched.AuthType,
 		Subject:           subject,
 		PermissionSetID:   matched.PermissionSetID,
-		HTTPRequestScopes: cloneClientPolicyScopes(matched.HTTPScopes),
+		HTTPRequestScopes: clientPolicyScopesToProto(matched.HTTPScopes),
 	}, nil
 }
 
-func cloneClientPolicyScopes(scopes []*apiV1.HTTPRequestScope) []*apiV1.HTTPRequestScope {
-	result := make([]*apiV1.HTTPRequestScope, len(scopes))
-	for i, scope := range scopes {
-		result[i] = &apiV1.HTTPRequestScope{Path: scope.Path, Methods: append([]string(nil), scope.Methods...)}
+func clientPolicyScopesToProto(scopes tokens.HTTPRequestScopes) []*apiV1.HTTPRequestScope {
+	result := make([]*apiV1.HTTPRequestScope, 0, len(scopes))
+	for _, path := range slices.Sorted(maps.Keys(scopes)) {
+		result = append(result, &apiV1.HTTPRequestScope{Path: path, Methods: append([]string(nil), scopes[path]...)})
 	}
 	return result
 }
@@ -293,16 +284,14 @@ func parseClientPolicy(cm *corev1.ConfigMap) (*clientPolicyDocument, error) {
 		if len(entry.HTTPScopes) == 0 {
 			return nil, fmt.Errorf("missing HTTP scopes at entry %d", i)
 		}
-		scopes, err := tokens.HTTPRequestScopesFromProto(entry.HTTPScopes)
-		if err != nil {
+		if err := tokens.ValidateHTTPRequestScopes(entry.HTTPScopes); err != nil {
 			return nil, fmt.Errorf("invalid HTTP scopes at entry %d: %w", i, err)
 		}
-		for _, methods := range scopes {
+		for _, methods := range entry.HTTPScopes {
 			if len(methods) == 0 {
 				return nil, fmt.Errorf("empty HTTP methods at entry %d", i)
 			}
 		}
-		entry.scopes = scopes
 	}
 	return &policy, nil
 }

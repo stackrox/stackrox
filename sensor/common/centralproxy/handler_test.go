@@ -16,6 +16,7 @@ import (
 
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
@@ -42,7 +43,7 @@ func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {
 	doc := defaultClientPolicy()
 	doc.Clients = append(doc.Clients, clientPolicyEntry{
 		AuthType: clientAuthKubernetesBearer, Subject: "test-user", PermissionSetID: "custom-read-only-set",
-		HTTPScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/custom", Methods: []string{"GET"}}},
+		HTTPScopes: tokens.HTTPRequestScopes{"/v1/custom": {"GET"}},
 	})
 	data, err := json.Marshal(doc)
 	require.NoError(t, err)
@@ -232,7 +233,7 @@ func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
 		AuthType:        clientAuthKubernetesBearer,
 		Subject:         "system:serviceaccount:observability:scraper",
 		PermissionSetID: centralproxy.MetricsPermissionSetID,
-		HTTPScopes:      []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
+		HTTPScopes:      tokens.HTTPRequestScopes{"/metrics": {"GET"}},
 	})
 	setClientPolicyConfigMap(t, context.Background(), client, doc)
 	client.PrependReactor("create", "tokenreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
@@ -289,7 +290,7 @@ func TestPolicyHandlerPreservesBuiltInClientOnOlderCentral(t *testing.T) {
 	doc := defaultClientPolicy()
 	doc.Clients = append(doc.Clients, clientPolicyEntry{
 		AuthType: clientAuthKubernetesBearer, Subject: "test-user", PermissionSetID: "custom-read-only-set",
-		HTTPScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/custom", Methods: []string{"GET"}}},
+		HTTPScopes: tokens.HTTPRequestScopes{"/v1/custom": {"GET"}},
 	})
 	setClientPolicyConfigMap(t, context.Background(), client, doc)
 	f.proxyCalled = false

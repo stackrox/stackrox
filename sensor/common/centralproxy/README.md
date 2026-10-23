@@ -25,22 +25,22 @@ The default document has this shape (the actual CN and CA reference come from
         "key": "client-ca-file"
       },
       "permissionSetID": "b3070020-ecc3-4f34-a3f6-ad28ffc9b80e",
-      "httpRequestScopes": [{"path": "/metrics", "methods": ["GET"]}]
+      "httpRequestScopes": {"/metrics": ["GET"]}
     },
     {
       "authType": "kubernetesBearer",
       "subject": "*",
       "permissionSetID": "b3070020-ecc3-4f34-a3f6-ad28ffc9b80b",
-      "httpRequestScopes": [
-        {"path": "/api/graphql", "methods": ["POST"]},
-        {"path": "/static/ocp-plugin/", "methods": ["GET"]},
-        {"path": "/v1/config/public", "methods": ["GET"]},
-        {"path": "/v1/deployments", "methods": ["GET"]},
-        {"path": "/v1/featureflags", "methods": ["GET"]},
-        {"path": "/v1/metadata", "methods": ["GET"]},
-        {"path": "/v1/mypermissions", "methods": ["GET"]},
-        {"path": "/v1/telemetry/", "methods": ["GET"]}
-      ]
+      "httpRequestScopes": {
+        "/api/graphql": ["POST"],
+        "/static/ocp-plugin/": ["GET"],
+        "/v1/config/public": ["GET"],
+        "/v1/deployments": ["GET"],
+        "/v1/featureflags": ["GET"],
+        "/v1/metadata": ["GET"],
+        "/v1/mypermissions": ["GET"],
+        "/v1/telemetry/": ["GET"]
+      }
     }
   ]
 }
@@ -59,9 +59,11 @@ against **only its entry's CA reference**, fetched from Kubernetes on each
 request; it does not rely on TLS `VerifiedChains` from a different CA bundle.
 Missing, invalid, or inaccessible CA data fails closed. Method/path scopes are
 validated and checked locally and must also be included in the token request to
-Central. An entry must have at least one canonical path and a nonempty method
-list for every path. Unsupported versions, unknown/duplicate JSON fields, and
-malformed entries reject the entire policy.
+Central. `httpRequestScopes` is a map from canonical paths to nonempty method
+lists; repeated JSON path keys are rejected rather than silently overwritten.
+An entry must have at least one path. Unsupported versions, unknown/duplicate
+JSON fields, and malformed entries reject the entire policy. Policies using the
+earlier list form must be changed to the map form before upgrading Sensor.
 
 Sensor authenticates bearer clients via Kubernetes TokenReview and keeps the
 existing namespace SubjectAccessReview. Each policy entry's permission set and
