@@ -35,6 +35,7 @@ message KubernetesEvent {
       SECURITY_CONTEXT_CONSTRAINTS = 8;
       EGRESS_FIREWALLS = 9;
       PODS_ATTACH = 10;
+      EVENTS = 11;
     }
 
     string name = 1; // @gotags: policy:"Kubernetes Resource Name"
