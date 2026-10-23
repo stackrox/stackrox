@@ -47,6 +47,7 @@ func TestCollector(t *testing.T) {
 		require.Empty(t, f.collect(t, append([]string{"central/main.go"}, many...), options{}).uiOnly)
 		override := f.collect(t, append([]string{"Makefile"}, many...), options{})
 		require.Empty(t, override.files)
+		require.Equal(t, "true", override.runAll)
 		require.Equal(t, true, facts(t, override.facts)["complete"], "run_all must retain classified facts")
 	})
 	t.Run("known empty diff is complete", func(t *testing.T) {
@@ -76,9 +77,49 @@ func TestCollector(t *testing.T) {
 			result := f.collect(t, test.paths, test.opt)
 			require.Empty(t, result.files)
 			require.Empty(t, result.uiOnly)
+			require.Empty(t, result.runAll)
 			require.Equal(t, unknownFacts, result.facts)
 		})
 	}
+}
+
+func TestClassifierHandoff(t *testing.T) {
+	f := newFixture(t)
+	workflow := f.workflow(t, "detect-changes.yml")
+	job := obj(lookup(workflow, "jobs", "detect"))
+	var classify object
+	for _, step := range steps(job) {
+		if step["id"] == "classify" {
+			classify = step
+		}
+	}
+	require.NotEmpty(t, classify)
+	collected := f.collect(t, []string{"ui/App.tsx", "sensor/main.go"}, options{})
+	output := filepath.Join(collected.dir, "classified")
+	command(t, f.root, "", map[string]string{
+		"RUNNER_TEMP": collected.dir, "GITHUB_OUTPUT": output,
+		"GITHUB_STEP_SUMMARY": filepath.Join(collected.dir, "summary"),
+	}, bash(), "-c", str(classify["run"]))
+	data, err := os.ReadFile(output)
+	require.NoError(t, err)
+	reported, ok := strings.CutPrefix(strings.TrimSpace(string(data)), "facts=")
+	require.True(t, ok)
+	require.JSONEq(t, collected.facts, reported)
+	for name, test := range map[string]struct {
+		outputs object
+		want    string
+	}{
+		"publishes classifier output": {outputs: object{"facts": reported}, want: reported},
+		"missing output falls back":   {outputs: object{}, want: unknownFacts},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := object{"steps": object{str(classify["id"]): object{"outputs": test.outputs}}}
+			require.JSONEq(t, test.want, evaluate(t, lookup(job, "outputs", "facts"), ctx))
+		})
+	}
+	require.Equal(t, "${{ jobs.detect.outputs.facts }}", lookup(workflow, "on", "workflow_call", "outputs", "facts", "value"))
+	require.Equal(t, "${{ steps.list.outputs.run_all }}", lookup(job, "outputs", "run_all"))
+	require.Equal(t, "${{ jobs.detect.outputs.run_all }}", lookup(workflow, "on", "workflow_call", "outputs", "run_all", "value"))
 }
 
 func TestFileClassifier(t *testing.T) {

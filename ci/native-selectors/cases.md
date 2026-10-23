@@ -9,7 +9,7 @@ The comparison combines positive votes, lets run win over skip, and finally skip
 | Rule family | Implementation and example |
 | --- | --- |
 | Always-run style | `style-check` has candidate `true`, including docs-only PRs. |
-| Any-file rules | `.go` selects Go; product-root `.go` selects benchmarks; `.golangci.yml` selects Go lint; shell/scripts and workflow/Prow tooling select their own checks; version files select the dependent-image check. |
+| Any-file rules | `.go` selects Go and generated-file verification; product-root `.go` selects benchmarks; `.golangci.yml` selects Go lint; shell/scripts and workflow/Prow tooling select their own checks; version files select the dependent-image check. |
 | Broad rules | `go.mod`, `go.sum`, `proto/`, `generated/`, or any `.proto` selects every enrolled candidate when facts are complete. Existing job restrictions can still block execution. |
 | Positive every-file rules | UI-only selects UI/component; Scanner-only selects Go/Scanner DB; operator/config-controller/CRD-only selects Go/CRD checks; roxctl-only selects Go/local roxctl/Actions nongroovy. The classifier preserves the exact path groups. |
 | Subsystem-only versus shared paths | Central-only selects PostgreSQL; Sensor-only selects Sensor integration. Shared libraries and Central/Sensor communication paths select both, even in mixed diffs. |
@@ -19,8 +19,19 @@ The comparison combines positive votes, lets run win over skip, and finally skip
 | Failure defaults | Unknown facts select ordinary Actions targets and nongroovy/other non-QA E2E targets; the three Actions QA/FIPS targets remain unselected. Labels do not override these unknown-data defaults. |
 | Non-PR events | Existing push, tag, reusable-call and manual triggers remain. PR enforcement is disabled. The existing matrix expansion and manual image-tag inputs remain. |
 | Selector changes | The comparison's selector-tool paths select regression tests. Paths for this native implementation additionally select those tests. This is an explicit extension. |
+| Explicit repository overrides | A validated match of a workflow's `run_all` patterns selects its candidates. Changing `detect-changes.yml` selects candidates in each calling workflow. This does not grant trust or override unknown-data defaults. |
 
 The saved comparison inputs and expected outcomes are unchanged. Tests compare all 29 Actions targets, including candidates that existing outer conditions prevent from executing. The four Prow groups below are accounted for through configuration and explicit gaps, rather than represented as unused Actions outputs.
+
+### Intentional additions to the comparison
+
+Two repository coverage requirements add 36 candidates across 16 saved scenarios. The tests record these additions separately from the immutable comparison fixtures; the other 2,139 candidate results and all 83 E2E dispatch/waiter results retain the pinned behavior.
+
+First, the unit workflow's existing overrides cover `Makefile`, `make/`, its own workflow, and `.github/actions/job-preamble/`. For example, `Makefile` plus `README.md` selects its unit-test candidates under enforcement. The pinned comparison selects only style for `Makefile`. An override belongs to its calling workflow: the unit workflow's match does not force E2E candidates. A change to the reusable detector itself does match the detector's built-in override in every caller.
+
+Second, any `.go` change selects generated-file verification, because Go interface and generator changes can require regenerated mocks or strings. For example, `sensor/kubernetes/client/client.go` plus `README.md` selects that check. The comparison's broad/proto-only rule misses it. Existing outer conditions still apply, including the UI-only guard.
+
+An empty legacy `files` output is insufficient evidence of an override. It can also mean a known empty diff or failed collection. The separate `run_all` output records only an explicit match after revision and filename validation. Classification can still fail afterward; the three QA/FIPS candidates then retain their skip default.
 
 ### Adding an unrelated file can remove a candidate
 
@@ -41,6 +52,8 @@ Native Actions string comparisons are case-insensitive. The repository's existin
 All builds remain enabled because Prow and manually requested tests also consume them. Skipping a build based only on the Actions dependency graph could leave `/test ocp-4-22-vm-scanning-e2e-tests` waiting for images that nobody builds. An inventory of all consumers is the smallest prerequisite for safely enforcing build skips; this prototype does not claim that audit is complete.
 
 Build retains its existing event subscriptions. A new test label uses the images built for that PR head; it does not launch another image build. Its candidate summary describes the build event's label snapshot.
+
+The build candidate is advisory and lives in `explain-image-build-selection`. That job waits for classification; the image matrix and producers do not. The report has no outputs that control the build jobs.
 
 ### Candidate, image permission and execution differ
 
@@ -96,6 +109,8 @@ Docs-only QA demonstrates the conflict. Desired per-PR shadow behavior would rep
 The comparison selects UI for `ui/package.json` and stops selecting it when `OWNERS` is added. `run_if_changed: ^ui/` selects both. `skip_if_only_changed: ^ui/` excludes the first and permits the second. The native matcher runs when any file matches the run regex or any file fails the skip regex; adding a file cannot remove an existing reason to run.
 
 Exact behavior needs an always-scheduled job that evaluates all files before executing, or changed selection semantics. The prototype implements neither workaround and preserves the required UI context by leaving it unconditional. Making UI conditional would also require coordinating GitHub's independently required check.
+
+The same limitation leaves a nongroovy coverage gap. `roxctl/main.go` alone selects Actions `e2e-nongroovy-tests-gke`, but the proposed Prow `gke-nongroovy-e2e-tests` filter does not match it. Adding `README.md` removes the Actions roxctl-only match; the Prow filter matches neither diff. Adding `^roxctl/` to Prow would select both and change the mixed-diff behavior. The patch leaves this gap visible; `/test gke-nongroovy-e2e-tests` remains available for either diff.
 
 ### Arbitrary CI labels cannot schedule native Prow jobs
 

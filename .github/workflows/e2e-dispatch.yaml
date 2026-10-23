@@ -60,6 +60,7 @@ jobs:
       with:
         candidate: >-
           ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(steps.labels.outputs.labels || toJSON(github.event.pull_request.labels.*.name) || '[]'), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -109,6 +110,7 @@ jobs:
       with:
         candidate: >-
           ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -201,6 +203,7 @@ jobs:
       with:
         candidate: >-
           ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -244,6 +247,7 @@ jobs:
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
           (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -265,6 +269,7 @@ jobs:
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
           (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -307,6 +312,7 @@ jobs:
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
           (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -328,6 +334,7 @@ jobs:
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
           (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -350,6 +357,7 @@ jobs:
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
           (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
@@ -370,7 +378,8 @@ jobs:
           ${{ !github.event.pull_request.head.repo.fork && (
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
+          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke')))) ||
@@ -390,7 +399,8 @@ jobs:
           ${{ !github.event.pull_request.head.repo.fork && (
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
+          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux'))) && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build')) ||
@@ -410,7 +420,8 @@ jobs:
           ${{ !github.event.pull_request.head.repo.fork && (
           github.event_name != 'pull_request' ||
           ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
+          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
           contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke-konflux'))) && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build')) ||

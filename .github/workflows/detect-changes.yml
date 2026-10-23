@@ -42,6 +42,9 @@ on:
       facts:
         description: Version 1 JSON path facts; complete=false means classification is unavailable.
         value: ${{ jobs.detect.outputs.facts }}
+      run_all:
+        description: 'true when a validated diff matches an explicit run_all pattern or changes this detector.'
+        value: ${{ jobs.detect.outputs.run_all }}
 
 jobs:
   detect:
@@ -49,6 +52,7 @@ jobs:
     outputs:
       files: ${{ steps.list.outputs.files }}
       ui_only: ${{ steps.list.outputs.ui_only }}
+      run_all: ${{ steps.list.outputs.run_all }}
       facts: ${{ steps.classify.outputs.facts || '{"version":1,"complete":false,"any":[],"every":[]}' }}
     steps:
       - name: List changed files
@@ -113,6 +117,7 @@ jobs:
 
           if grep -qF "^${WORKFLOW_FILE_PATH}$" <<< "${anchored}"; then
             echo "detect-changes.yml modified, running all jobs" >&2
+            echo 'run_all=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -121,6 +126,7 @@ jobs:
               [[ -z "$pattern" ]] && continue
               if grep -qF "$pattern" <<< "${anchored}"; then
                 echo "run_all: matched '${pattern}', running all jobs" >&2
+                echo 'run_all=true' >> "$GITHUB_OUTPUT"
                 exit 0
               fi
             done <<< "${RUN_ALL}"

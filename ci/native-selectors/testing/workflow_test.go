@@ -29,9 +29,12 @@ type (
 		local            map[string]selection
 		consumers        []string
 	}
-	selection struct{ job, step object }
-	decision  struct{ candidate, enforced, run bool }
-	options   struct {
+	selection struct {
+		workflow  string
+		job, step object
+	}
+	decision struct{ candidate, enforced, run bool }
+	options  struct {
 		Event                                   string `json:"event"`
 		Draft                                   bool   `json:"draft"`
 		Fork                                    bool   `json:"fork"`
@@ -39,8 +42,9 @@ type (
 		liveLabels                              []string
 		labelFailure, failure, stale, staleBase bool
 		pages                                   string
+		workflow                                string
 	}
-	collected  struct{ files, uiOnly, facts string }
+	collected  struct{ files, uiOnly, facts, runAll, dir string }
 	actContext struct {
 		Github *model.GithubContext         `json:"github"`
 		Env    map[string]string            `json:"env"`
@@ -57,16 +61,16 @@ func newFixture(t *testing.T) *fixture {
 	require.NoError(t, err)
 	f := &fixture{root: root, binary: filepath.Join(t.TempDir(), "file-facts"), workflows: map[string]object{}, local: map[string]selection{}}
 	command(t, root, "", nil, "go", "build", "-o", f.binary, "./ci/native-selectors/file-facts")
-	for _, name := range []string{"unit-tests.yaml", "style.yaml", "check-crd-compatibility.yaml", "scanner-db-integration-tests.yaml", "build.yaml", "native-ci-tests.yaml", "e2e-dispatch.yaml"} {
-		f.workflows[name] = f.workflow(t, name)
-		for name, value := range obj(f.workflows[name]["jobs"]) {
+	for _, workflow := range []string{"unit-tests.yaml", "style.yaml", "check-crd-compatibility.yaml", "scanner-db-integration-tests.yaml", "build.yaml", "native-ci-tests.yaml", "e2e-dispatch.yaml"} {
+		f.workflows[workflow] = f.workflow(t, workflow)
+		for name, value := range obj(f.workflows[workflow]["jobs"]) {
 			job := obj(value)
 			for _, step := range steps(job) {
 				if step["id"] == "selection" {
-					if name == "define-job-matrix" {
+					if name == "explain-image-build-selection" {
 						name = "build-images"
 					}
-					f.local[name] = selection{job: job, step: step}
+					f.local[name] = selection{workflow: workflow, job: job, step: step}
 				}
 			}
 		}
@@ -203,6 +207,10 @@ func (f *fixture) classify(t *testing.T, paths []string) string {
 
 func (f *fixture) collect(t *testing.T, paths []string, opt options) collected {
 	t.Helper()
+	workflow := opt.workflow
+	if workflow == "" {
+		workflow = "unit-tests.yaml"
+	}
 	dir := t.TempDir()
 	output := filepath.Join(dir, "detected")
 	require.NoError(t, os.WriteFile(output, nil, 0o600))
@@ -235,18 +243,21 @@ func (f *fixture) collect(t *testing.T, paths []string, opt options) collected {
 	command(t, f.root, "", map[string]string{
 		"GH_REPO": "fixture/repo", "GH_TOKEN": "", "PR_NUMBER": pr, "BASE_SHA": "fixture-base", "EXPECTED_HEAD": "fixture-head",
 		"RUNNER_TEMP": dir, "FIXTURE_HEAD": head, "FIXTURE_BASE": base, "FIXTURE_FAILURE": strconv.FormatBool(opt.failure), "FIXTURE_PAGES_FILE": pageFile,
-		"RUN_ALL":            str(lookup(f.jobs("unit-tests.yaml"), "detect-changes", "with", "run_all")),
+		"RUN_ALL":            str(lookup(f.jobs(workflow), "detect-changes", "with", "run_all")),
 		"WORKFLOW_FILE_PATH": str(lookup(f.detector, "env", "WORKFLOW_FILE_PATH")), "GITHUB_OUTPUT": output,
 	}, bash(), "-c", mock+str(f.detector["run"]))
 	data, err := os.ReadFile(output)
 	require.NoError(t, err)
-	result := collected{facts: unknownFacts}
+	result := collected{facts: unknownFacts, dir: dir}
 	text := string(data)
 	if _, after, ok := strings.Cut(text, "files<<EOF\n"); ok {
 		result.files, _, _ = strings.Cut(after, "\nEOF")
 	}
 	if strings.Contains(text, "ui_only=true\n") {
 		result.uiOnly = "true"
+	}
+	if strings.Contains(text, "run_all=true\n") {
+		result.runAll = "true"
 	}
 	raw, err := os.ReadFile(filepath.Join(dir, "native-ci-files.json"))
 	if err == nil && !opt.Unknown {
@@ -288,7 +299,7 @@ func (f *fixture) context(t *testing.T, paths, labels []string, opt options) obj
 	}
 	ctx := object{
 		"github": object{"event_name": event, "ref": "refs/pull/1/merge", "event": object{"pull_request": object{"labels": items, "draft": opt.Draft, "head": object{"repo": object{"fork": opt.Fork}}}}},
-		"needs":  object{"detect-changes": object{"result": "success", "outputs": object{"files": files.files, "ui_only": files.uiOnly, "facts": files.facts}}},
+		"needs":  object{"detect-changes": object{"result": "success", "outputs": object{"files": files.files, "ui_only": files.uiOnly, "facts": files.facts, "run_all": files.runAll}}},
 		"steps":  object{"labels": object{"outcome": labelStatus, "outputs": object{"labels": labelOutput}}}, "matrix": object{"pg": "16"},
 	}
 	f.dispatchOutputs(t, ctx)

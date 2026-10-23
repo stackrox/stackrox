@@ -29,6 +29,7 @@ jobs:
         with:
           candidate: >-
             ${{ !fromJSON(env.CI_FILE_FACTS).complete ||
+            needs.detect-changes.outputs.run_all == 'true' ||
             contains(github.event.pull_request.labels.*.name, 'ci-run-all-tests') ||
             contains(fromJSON(env.CI_FILE_FACTS).any, 'broad') ||
             contains(fromJSON(env.CI_FILE_FACTS).any, 'proto') ||

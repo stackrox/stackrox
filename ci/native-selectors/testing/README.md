@@ -13,14 +13,18 @@ The tests read conditions from the actual workflows. [`act` v0.2.89](https://git
 
 | File | Checks |
 | --- | --- |
-| `collector_test.go` | Real collector with simulated GitHub responses; classifier groups and invalid inputs. Large responses use a temporary file, avoiding process environment limits. |
-| `actions_test.go` | All 83 saved scenarios, 2,175 candidate comparisons, and label, enforcement, draft/fork, failure, and image interactions. |
+| `collector_test.go` | Real collector with simulated GitHub responses; actual classifier-step execution and output mapping; classifier groups and invalid inputs. Large responses use a temporary file, avoiding process environment limits. |
+| `actions_test.go` | All 83 saved scenarios and 2,175 candidate comparisons, including 36 explicit additions to pinned results; workflow-scoped overrides, labels, enforcement, draft/fork, failure, and image interactions. |
 | `preservation_test.go` | Existing commands, matrices, outer conditions, triggers, required-check structure, and image prerequisites. |
 | `compatibility_test.go` | The empty-label discrepancy below and 17 status/prerequisite cases. |
 | `prow_test.go` | The unapplied external patch and native selectors; optional execution of five pinned upstream matcher methods. |
 | `workflow_test.go` | Shared file loading, fixture contexts, process helpers, and expression evaluation. It contains no path or job-selection policy. |
 
-The three comparison fixtures are pinned to #23403 at `34873a53e3b6`, with their bytes verified by `comparison.json`. Structural snapshots in `base-workflows.json` describe the original repository base `0a48209ff09e`; their hashes use sorted-key JSON from Go's `encoding/json`. Candidates and permission to execute are separate assertions. No test result proves that a product test ran.
+The three comparison fixtures are pinned to #23403 at `34873a53e3b6`, with their bytes verified by `comparison.json`. `TestComparisonScenarios` lists intentional candidate additions for explicit repository overrides and Go generated-file verification. It checks that each addition differs from the baseline and reports both counts: 2,139 unchanged candidates and 36 additions across 16 scenarios. All 83 saved E2E dispatch/waiter results remain unchanged. Each workflow gets its own collector inputs, so unit-workflow overrides cannot leak into E2E expectations.
+
+`TestClassifierHandoff` runs the actual workflow's classifier script on the collector's temporary JSON file, then evaluates the job's `facts` output mapping. It checks the reusable workflow mapping and missing-output fallback too. The scenario suite builds the classifier once and invokes that binary directly to avoid recompiling it for each case.
+
+Structural snapshots in `base-workflows.json` describe the original repository base `0a48209ff09e`; their hashes use sorted-key JSON from Go's `encoding/json`. Candidates and permission to execute are separate assertions. No test result proves that a product test ran.
 
 ## Empty-label compatibility boundary
 

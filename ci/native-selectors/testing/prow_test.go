@@ -95,7 +95,8 @@ func TestProwSelectors(t *testing.T) {
 	require.True(t, pathMatch(qa, []string{"go.mod", "README.md"}))
 	require.False(t, pathMatch(qa, []string{"README.md"}))
 	require.True(t, pathMatch(nongroovy, []string{"elsewhere/schema.proto", "README.md"}))
-	require.False(t, pathMatch(nongroovy, []string{"roxctl/main.go"}), "Prow nongroovy has no positive roxctl rule in the comparison")
+	require.False(t, pathMatch(nongroovy, []string{"roxctl/main.go"}), "native Prow cannot express the Actions roxctl-only rule")
+	require.False(t, pathMatch(nongroovy, []string{"roxctl/main.go", "README.md"}))
 	master := f.yaml(t, "ci/native-selectors/prow/source/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml")
 	uiFound := false
 	for _, job := range array(master["tests"]) {

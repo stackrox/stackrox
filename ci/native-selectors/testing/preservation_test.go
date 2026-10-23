@@ -43,10 +43,6 @@ func TestWorkflowPreservation(t *testing.T) {
 			}
 			delete(job, "steps")
 			waiter := strings.HasPrefix(name, "wait-for-")
-			if name == "define-job-matrix" {
-				require.Equal(t, "${{ !cancelled() }}", job["if"])
-				delete(job, "if")
-			}
 			if waiter {
 				require.Equal(t, []any{"detect-changes", "should-dispatch"}, job["needs"])
 				require.Equal(t, "false", evaluate(t, job["if"], f.context(t, nil, nil, options{Fork: true})))
@@ -118,6 +114,12 @@ func TestWorkflowPreservation(t *testing.T) {
 
 func TestRequiredChecksAndImageGates(t *testing.T) {
 	f := newFixture(t)
+	matrix := obj(f.jobs("build.yaml")["define-job-matrix"])
+	require.Nil(t, matrix["needs"], "image production must not wait for classification")
+	require.Nil(t, lookup(matrix, "env", "CI_FILE_FACTS"))
+	report := obj(f.jobs("build.yaml")["explain-image-build-selection"])
+	require.Equal(t, "detect-changes", report["needs"])
+	require.Nil(t, report["outputs"], "the advisory report must not control image production")
 	var requirements map[string]map[string][]string
 	f.json(t, "testing/fixtures/required-gha-checks.json", &requirements)
 	contexts := 0
