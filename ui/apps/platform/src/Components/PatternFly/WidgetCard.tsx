@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Card, CardBody, CardHeader, Skeleton } from '@patternfly/react-core';
 
 import { defaultChartHeight } from 'utils/chartUtils';
@@ -45,7 +45,7 @@ function WidgetCard({
             </CardHeader>
             <CardBody
                 className="pf-v6-u-min-height"
-                style={{ '--pf-v6-u-min-height--MinHeight': height } as CSSProperties}
+                style={{ '--pf-v6-u-min-height--MinHeight': height }}
             >
                 {cardContent}
             </CardBody>
