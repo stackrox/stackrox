@@ -29,7 +29,7 @@ func ToEffectiveAccessScope(tree *ScopeTree) (*storage.EffectiveAccessScope, err
 			cluster.Namespaces = make([]*storage.EffectiveAccessScope_Namespace, 0, len(clusterSubTree.Namespaces))
 		}
 
-		for _, namespaceSubTree := range clusterSubTree.Namespaces {
+		appendNamespace := func(namespaceSubTree *namespacesScopeSubTree) {
 			namespace := &storage.EffectiveAccessScope_Namespace{
 				Id:     namespaceSubTree.Attributes.ID,
 				Name:   namespaceSubTree.Attributes.Name,
@@ -38,6 +38,15 @@ func ToEffectiveAccessScope(tree *ScopeTree) (*storage.EffectiveAccessScope, err
 			}
 
 			cluster.Namespaces = append(cluster.Namespaces, namespace)
+		}
+		if clusterSubTree.namespaceDefault == Included {
+			for name := range clusterSubTree.AllowedNamespaceNames() {
+				appendNamespace(clusterSubTree.GetNamespaceByName(name))
+			}
+		} else {
+			for _, namespace := range clusterSubTree.Namespaces {
+				appendNamespace(namespace)
+			}
 		}
 
 		response.Clusters = append(response.Clusters, cluster)
