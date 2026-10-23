@@ -1,13 +1,16 @@
 import type { ClientPolicy, Policy } from 'types/policy.proto';
 import {
     containerTypeFilterApplies,
+    formatValueStr,
     getClientWizardPolicy,
+    getEmptyPolicyFieldCard,
     getLifeCyclesUpdates,
     getPolicyOriginLabel,
     getServerPolicy,
     initialExcludedDeployment,
     initialScope,
     isExcludedDeploymentScopeEmpty,
+    parseValueStr,
 } from './policies.utils';
 
 describe('policies.utils', () => {
@@ -884,6 +887,20 @@ describe('policies.utils', () => {
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
             });
+        });
+    });
+
+    describe('EPSS policy values', () => {
+        it('parses and formats a percent comparison', () => {
+            expect(parseValueStr('>=75', 'EPSS')).toEqual({ key: '>=', value: '75' });
+            expect(parseValueStr('75', 'EPSS')).toEqual({ key: '=', value: '75' });
+            expect(formatValueStr({ key: '=', value: '75' }, 'EPSS')).toEqual('75');
+            expect(formatValueStr({ key: '>=', value: '50' }, 'EPSS')).toEqual('>=50');
+        });
+
+        it('starts a new EPSS criterion with an empty comparator and value', () => {
+            const card = getEmptyPolicyFieldCard({ name: 'EPSS' });
+            expect(card.values).toEqual([{ value: '' }]);
         });
     });
 
