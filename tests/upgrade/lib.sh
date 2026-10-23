@@ -41,19 +41,23 @@ wait_for_central_reconciliation() {
 # waits for usable scan data through Central: a fixable CVE with CVSS >= 7.
 wait_for_scored_image_scan() {
     local image="$1"
-    local max_seconds="${SCANNER_V4_SCAN_READINESS_TIMEOUT:-600}"
+    # Initial vulnerability imports can take much longer than a scan. Use the
+    # matcher's CI readiness budget unless this preflight has its own override.
+    local max_seconds="${SCANNER_V4_SCAN_READINESS_TIMEOUT:-${SCANNER_V4_VULN_READINESS_TIMEOUT:-7200}}"
     local deadline=$((SECONDS + max_seconds))
     local request
     request="$(jq -n --arg image "$image" '{imageName: $image, force: true}')"
     local response=""
 
-    info "Waiting for Central to scan ${image} with CVSS enrichment"
+    info "Waiting for Central to scan ${image} with CVSS enrichment (timeout: ${max_seconds}s)"
     while (( SECONDS < deadline )); do
         local remaining=$((deadline - SECONDS))
         if (( remaining <= 0 )); then
             break
         fi
-        if response="$(roxcurl /v1/images/scan --silent --show-error --fail-with-body --max-time "$remaining" \
+        # Bound each request so a stalled scan cannot consume the entire retry budget.
+        local request_timeout=$((remaining < 60 ? remaining : 60))
+        if response="$(roxcurl /v1/images/scan --silent --show-error --fail-with-body --max-time "$request_timeout" \
             -H 'Content-Type: application/json' -d "$request" 2>&1)"; then
             if jq -e '.scan.scanTime != null and
                 any(.scan.components[]?.vulns[]?; (.cvss // 0) >= 7 and (.fixedBy // "") != "")' \
