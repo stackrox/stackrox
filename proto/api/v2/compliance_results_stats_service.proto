@@ -25,6 +25,13 @@ message ComplianceProfileScanStats {
   string title = 3;
   string version = 4;
   repeated ComplianceBenchmark benchmarks = 5;
+  // Number of clusters with STALE data for this profile, across all clusters
+  // (not limited to a page). Non-zero signals the UI to show a stale-data
+  // banner.
+  int32 stale_cluster_count = 6;
+  // Number of stale check results (check x cluster units) for this profile,
+  // across all clusters (not limited to a page).
+  int32 stale_check_result_count = 7;
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
