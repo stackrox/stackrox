@@ -38,6 +38,41 @@ function setup() {
   assert_output --partial "release-roxctl ${tag}"
 }
 
+@test "get images for VM scanning test" {
+  local tag
+  tag="$(make --quiet --no-print-directory tag)"
+  local image_list
+  image_list="$(mktemp)"
+  CI_JOB_NAME="ocp-vm-scanning-tests" populate_stackrox_image_list "$image_list"
+  run cat "${image_list}"
+  assert_success
+  assert_output --partial "main ${tag}"
+  assert_output --partial "central-db ${tag}"
+  assert_output --partial "collector ${tag}"
+  assert_output --partial "fact ${tag}"
+  assert_output --partial "scanner-v4 ${tag}"
+  assert_output --partial "scanner-v4-db ${tag}"
+  assert_output --partial "roxctl ${tag}"
+  refute_output --partial "release-"
+}
+
+@test "get Konflux images for VM scanning test" {
+  local tag
+  tag="$(make --quiet --no-print-directory tag)-fast"
+  local image_list
+  image_list="$(mktemp)"
+  USE_KONFLUX_IMAGES=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="ocp-vm-scanning-tests-konflux" populate_stackrox_image_list "$image_list"
+  run cat "${image_list}"
+  assert_success
+  assert_output --partial "release-main ${tag}"
+  assert_output --partial "release-central-db ${tag}"
+  assert_output --partial "release-collector ${tag}"
+  assert_output --partial "release-fact ${tag}"
+  assert_output --partial "release-scanner-v4 ${tag}"
+  assert_output --partial "release-scanner-v4-db ${tag}"
+  assert_output --partial "release-roxctl ${tag}"
+}
+
 @test "get images for rcd test" {
   local tag
   tag="$(make --quiet --no-print-directory tag)"

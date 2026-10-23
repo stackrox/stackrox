@@ -72,6 +72,8 @@ def main():
         Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
         Job(name='e2e-ui-tests-gke', require_pr_label=True, is_ui_test=True),
         Job(name='e2e-ui-tests-gke-konflux', require_konflux_build=True, is_ui_test=True),
+        Job(name='e2e-vm-scanning-tests-ocp'),
+        Job(name='e2e-vm-scanning-tests-ocp-konflux', require_konflux_build=True),
     ]
 
     with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
