@@ -64,6 +64,20 @@ echo \"$new_version\" > \"\$datadir/PG_VERSION\""
     esac
 }
 
+# given_pending_statistics prepares a cluster that owes a statistics refresh,
+# at a version the upgrade path will not touch. Each mock leaves a file behind
+# so tests can tell what ran; vacuumdb only does so for the expected flags,
+# and otherwise fails the way a real one would.
+given_pending_statistics() {
+    init_pgdata
+    given_data_version "$PGDATA" 16
+    given_binary_version "$NEW_BINARIES" 16
+    mock_executable "$NEW_BINARIES/pg_ctl" 'touch "$TEST_DIR/started"'
+    mock_executable "$NEW_BINARIES/vacuumdb" \
+        '[[ "$*" == *--all* && "$*" == *--analyze-only* ]] && touch "$TEST_DIR/analyzed"'
+    touch "$PGDATA/.stats-pending"
+}
+
 assert_upgrade() {
     local expected_version=$1
     [ -f "$PGDATA/.init-ready" ] || return 1
@@ -206,6 +220,67 @@ assert_upgrade() {
     assert_success
     [[ "$output" == *"No usable transfer mode"* ]]
     assert_upgrade "15"
+}
+
+# Optimizer statistics
+@test "upgrade - marks statistics pending" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+
+    run maybe-upgrade "$TEST_DIR/pgsql"
+    assert_success
+    assert_upgrade "16"
+    [ -e "$PGDATA/.stats-pending" ]
+}
+
+@test "statistics - refreshes and clears the marker" {
+    given_pending_statistics
+
+    run maybe-refresh-statistics
+    assert_success
+    [ -e "$TEST_DIR/analyzed" ]
+    [ ! -e "$PGDATA/.stats-pending" ]
+}
+
+@test "statistics - does nothing without the marker" {
+    given_pending_statistics
+    rm -f "$PGDATA/.stats-pending"
+
+    run maybe-refresh-statistics
+    assert_success
+    [ ! -e "$TEST_DIR/started" ]
+    [ ! -e "$TEST_DIR/analyzed" ]
+}
+
+@test "statistics - keeps the marker when vacuumdb fails" {
+    given_pending_statistics
+    mock_executable "$NEW_BINARIES/vacuumdb" 'exit 1'
+
+    run maybe-refresh-statistics
+    assert_success
+    [ -e "$PGDATA/.stats-pending" ]
+}
+
+@test "statistics - keeps the marker when the cluster will not start" {
+    given_pending_statistics
+    mock_executable "$NEW_BINARIES/pg_ctl" 'exit 1'
+
+    run maybe-refresh-statistics
+    assert_success
+    [ ! -e "$TEST_DIR/analyzed" ]
+    [ -e "$PGDATA/.stats-pending" ]
+}
+
+@test "statistics - a pending refresh is retried on a later start" {
+    given_pending_statistics
+
+    # The whole point of a separate marker: by now maybe-upgrade sees matching
+    # versions and returns early, so _main has to drive the refresh.
+    run _main
+    assert_success
+    [ -e "$TEST_DIR/analyzed" ]
+    [ ! -e "$PGDATA/.stats-pending" ]
 }
 
 # Clean shutdown
