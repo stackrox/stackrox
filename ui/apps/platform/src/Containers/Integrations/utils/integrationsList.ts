@@ -69,10 +69,7 @@ export type ImageIntegrationDescriptor = {
 } & BaseIntegrationDescriptor;
 
 export type ImageIntegrationCategories =
-    | 'Image Scanner + Node Scanner'
-    | 'Registry'
-    | 'Registry + Scanner'
-    | 'Scanner';
+    'Image Scanner + Node Scanner' | 'Registry' | 'Registry + Scanner' | 'Scanner';
 
 export type NotifierIntegrationDescriptor = {
     type: NotifierIntegrationType;

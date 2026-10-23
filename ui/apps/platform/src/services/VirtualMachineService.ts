@@ -181,11 +181,7 @@ export type VMVulnSummary = {
 };
 
 export type VMComponentScanStatus =
-    | 'NOT_SCANNED'
-    | 'SCAN_PENDING'
-    | 'CPE_MISSING'
-    | 'REPO_UNKNOWN'
-    | 'SCANNED';
+    'NOT_SCANNED' | 'SCAN_PENDING' | 'CPE_MISSING' | 'REPO_UNKNOWN' | 'SCANNED';
 
 export type VMComponentRow = {
     id: string;
@@ -206,9 +202,7 @@ export type ListVMComponentsResponse = {
 export type VirtualMachineV2State = 'VM_STATE_UNKNOWN' | 'VM_STATE_STOPPED' | 'VM_STATE_RUNNING';
 
 export type VMScanNote =
-    | 'VM_SCAN_NOTE_UNSET'
-    | 'VM_SCAN_NOTE_OS_UNKNOWN'
-    | 'VM_SCAN_NOTE_OS_UNSUPPORTED';
+    'VM_SCAN_NOTE_UNSET' | 'VM_SCAN_NOTE_OS_UNKNOWN' | 'VM_SCAN_NOTE_OS_UNSUPPORTED';
 
 export type VMNote =
     | 'VM_NOTE_MISSING_METADATA'

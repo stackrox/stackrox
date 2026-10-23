@@ -18,10 +18,7 @@ import ApprovedFalsePositives from './ApprovedFalsePositives';
 import DeniedRequests from './DeniedRequests';
 
 type TabKey =
-    | 'PENDING_REQUESTS'
-    | 'APPROVED_DEFERRALS'
-    | 'APPROVED_FALSE_POSITIVES'
-    | 'DENIED_REQUESTS';
+    'PENDING_REQUESTS' | 'APPROVED_DEFERRALS' | 'APPROVED_FALSE_POSITIVES' | 'DENIED_REQUESTS';
 
 const pendingRequestsURL = `${exceptionManagementPath}/pending-requests`;
 const approvedDeferralsURL = `${exceptionManagementPath}/approved-deferrals`;

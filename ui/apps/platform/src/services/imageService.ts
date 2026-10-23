@@ -80,7 +80,4 @@ export type WatchImageResponse = {
 };
 
 export type WatchImageErrorType =
-    | 'NO_ERROR'
-    | 'INVALID_IMAGE_NAME'
-    | 'NO_VALID_INTEGRATION'
-    | 'SCAN_FAILED';
+    'NO_ERROR' | 'INVALID_IMAGE_NAME' | 'NO_VALID_INTEGRATION' | 'SCAN_FAILED';
