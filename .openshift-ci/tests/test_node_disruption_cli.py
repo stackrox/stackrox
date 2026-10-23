@@ -21,29 +21,18 @@ class CLITest(unittest.TestCase):
                 self.assertEqual(monitor.main(), 42)
                 run.assert_called_once_with(['product'])
 
-    def test_output_distinguishes_product_failure_from_monitor_failure(self):
-        cases = {'product failure': (False, 42), 'monitor failure': (True, 1), 'cancelled': (False, 143)}
+    def test_monitor_findings_do_not_change_exit_code_or_publish_outputs(self):
+        cases = {'passed with disruption': (True, 0), 'failed with disruption': (True, 42),
+                 'product failure': (False, 42), 'cancelled': (False, 143)}
         for name, (failed, code) in cases.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
                 output = Path(directory) / 'output'
-                with patch.dict(os.environ, {
-                        'GKE_SPOT': 'false',
-                        'GITHUB_OUTPUT': str(output)}), \
+                with patch.dict(os.environ, GITHUB_OUTPUT=str(output)), \
                         patch('sys.argv', ['node_disruption.py', 'run', '--', 'product']), \
-                        patch.object(monitor, 'run',
-                                     return_value=monitor.RunResult(code, failed)) as run:
+                        patch.object(monitor, 'run', return_value=monitor.RunResult(code, failed)) as run:
                     self.assertEqual(monitor.main(), code)
-                self.assertEqual(output.read_text(), f'failed={str(failed).lower()}\n')
+                self.assertFalse(output.exists())
                 run.assert_called_once_with(['product'])
-
-    def test_reporting_failure_still_sets_recovery_skip_output(self):
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / 'output'
-            with patch.dict(os.environ, GITHUB_OUTPUT=str(output)), \
-                    patch('sys.argv', ['node_disruption.py', 'run', '--', 'product']), \
-                    patch.object(monitor, 'run', side_effect=OSError('disk full')):
-                self.assertEqual(monitor.main(), 1)
-            self.assertEqual(output.read_text(), 'failed=true\n')
 
     def test_missing_command_is_rejected(self):
         with patch('sys.argv', ['node_disruption.py', 'run', '--']), self.assertRaises(SystemExit):

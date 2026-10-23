@@ -127,7 +127,6 @@ jobs:
         sudo ln -s /usr/local/lib/node_modules/bats-assert /usr/lib/node_modules/bats-assert
 
     - name: Run e2e tests with node name polling
-      id: e2e
       # SETUP_WORKLOAD_IDENTITIES is intentionally omitted; WIF tests run in the Prow pipeline.
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -156,24 +155,14 @@ jobs:
       shell: python3 .openshift-ci/node_disruption.py run -- bash --noprofile --norc -e -o pipefail {0}
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
-    - name: Quick node disruption diagnostics
-      if: always() && steps.e2e.outputs.failed == 'true'
-      run: |
-        mkdir -p spot-evidence
-        timeout --kill-after=5s 115s bash -c '
-          kubectl --request-timeout=30s get nodes -o wide
-          kubectl --request-timeout=30s get events -A --sort-by=.metadata.creationTimestamp
-          kubectl --request-timeout=30s get pods -A -o wide
-        ' > spot-evidence/kubernetes.txt 2>&1
-
     - name: Ensure central stability before post-test
-      if: always() && steps.e2e.outputs.failed != 'true' && !cancelled()
+      if: always() && !cancelled()
       run: |
         source tests/e2e/lib.sh
         wait_for_api
 
     - name: Run post-test
-      if: always() && steps.e2e.outputs.failed != 'true' && !cancelled()
+      if: always() && !cancelled()
       shell: python
       env:
         ROX_USERNAME: admin
@@ -189,7 +178,7 @@ jobs:
         post.run(['/tmp/e2e-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
-      if: always() && steps.e2e.outputs.failed != 'true' && !cancelled()
+      if: always() && !cancelled()
       shell: python
       run: |
         import sys
@@ -197,13 +186,12 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False, handle_e2e_progress_failures=False).run()
 
-    - name: Upload available Spot and test artifacts
+    - name: Upload test and node monitoring artifacts
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
         name: nongroovy-spot-${{ github.run_id }}-${{ github.run_attempt }}
         path: |
-          spot-evidence/
           ${{ env.ARTIFACT_DIR }}/
           /tmp/e2e-test-logs/
         if-no-files-found: ignore

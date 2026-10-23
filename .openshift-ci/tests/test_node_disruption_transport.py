@@ -96,14 +96,15 @@ class PollingTransportTest(unittest.TestCase):
         self.assertIn('exited 1', report.findtext('.//failure'))
         self.assertIn('forbidden', (self.root / 'artifacts/node-monitor.log').read_text())
 
-    def test_initial_errors_prevent_product_launch(self):
+    def test_initial_errors_do_not_prevent_product_launch(self):
         marker = self.root / 'started'
         script = f'from pathlib import Path; Path({str(marker)!r}).touch()'
         result, report, records = self.run_monitor([{'stdout': 'broken JSON'}], script)
         self.assertTrue(result.monitor_failed)
-        self.assertFalse(marker.exists())
+        self.assertTrue(marker.exists())
         self.assertEqual(report.get('failures'), '1')
-        self.assertEqual(len(records), 1)
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(len(records), 2)
         self.assertEqual(records[0].strip(), 'broken JSON')
 
     def test_poll_subprocess_timeout_is_bounded(self):
@@ -111,12 +112,15 @@ class PollingTransportTest(unittest.TestCase):
             result, report, records = self.run_monitor([{'delay': 60}])
         self.assertTrue(result.monitor_failed)
         self.assertIn('timed out', report.findtext('.//failure'))
-        self.assertEqual(len(records), 1)
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(len(records), 2)
         self.assertTrue((self.root / 'artifacts/node-monitor.log').exists())
 
-    def test_cli_entrypoint_preserves_exit_code_junit_and_github_output(self):
+    def test_cli_entrypoint_preserves_exit_code_without_outputs(self):
         cases = {'product failure': ([response('a'), response('a')], 42, False),
-                 'replacement': ([response('old'), response('new')], 1, True)}
+                 'passed with replacement': ([response('old'), response('new')], 0, True),
+                 'initial poll error': ([{'returncode': 1, 'stderr': 'forbidden'}, response('a')], 0, True),
+                 'failed with replacement': ([response('old'), response('new')], 42, True)}
         for name, (replies, code, failed) in cases.items():
             with self.subTest(name=name):
                 (self.root / 'responses.json').write_text(json.dumps(replies))
@@ -126,15 +130,16 @@ class PollingTransportTest(unittest.TestCase):
                 env = dict(self.env, GITHUB_OUTPUT=str(output))
                 completed = subprocess.run(
                     [sys.executable, str(Path(monitor.__file__).resolve()), 'run', '--',
-                     sys.executable, '-c', 'raise SystemExit(42)'],
+                     sys.executable, '-c', f'raise SystemExit({code})'],
                     env=env, capture_output=True, text=True, timeout=10, check=False)
                 self.assertEqual(completed.returncode, code, completed.stderr)
-                self.assertEqual(output.read_text(), f'failed={str(failed).lower()}\n')
+                self.assertEqual(output.read_text(), '')
                 report = ET.parse(self.root / 'artifacts/node-monitor.xml').getroot()
                 self.assertEqual(report.get('failures'), str(int(failed)))
                 self.assertIsNone(report.find('.//system-out'))
                 self.assertNotIn('Run:', completed.stdout)
-                self.assertEqual('::error::' in completed.stdout, failed)
+                self.assertNotIn('::error::', completed.stdout)
+                self.assertNotIn('::warning::', completed.stdout)
 
     def test_cli_skips_monitoring_without_num_nodes(self):
         self.env.pop('NUM_NODES')
@@ -145,7 +150,7 @@ class PollingTransportTest(unittest.TestCase):
              sys.executable, '-c', 'raise SystemExit(42)'],
             env=self.env, capture_output=True, text=True, timeout=10, check=False)
         self.assertEqual(completed.returncode, 42, completed.stderr)
-        self.assertEqual(output.read_text(), 'failed=false\n')
+        self.assertFalse(output.exists())
         self.assertFalse((self.root / 'requests.jsonl').exists())
         self.assertFalse((self.root / 'artifacts').exists())
 
