@@ -42,6 +42,29 @@ tests:
     .servicemonitors["sensor-central-metrics-stackrox"] | assertThat(. == null)
     [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_SECURED_CLUSTER_METRICS_ENABLED")] | length | assertThat(. == 0)
 
+- name: "Central proxy can be opted in without either built-in client"
+  set:
+    env.openshift: 4
+    monitoring.openshift.enabled: false
+    monitoring.openshift.custom.enabled: false
+    sensor.centralProxy.enabled: true
+  expect: |
+    .services["sensor-proxy"] | assertThat(. != null)
+    .deployments.sensor.spec.template.spec.containers[0].env[] |
+      select(.name == "ROX_CENTRAL_PROXY_ENABLED") | assertThat(.value == "true")
+    .deployments.sensor.spec.template.spec.containers[0].volumeMounts[] |
+      select(.name == "proxy-tls-volume") | assertThat(.readOnly == true)
+    .networkpolicys["sensor-proxy"] | assertThat(. != null)
+    .servicemonitors["sensor-central-metrics-stackrox"] | assertThat(. == null)
+
+- name: "Central proxy opt-in is ignored outside OpenShift"
+  set:
+    env.openshift: false
+    sensor.centralProxy.enabled: true
+  expect: |
+    .services["sensor-proxy"] | assertThat(. == null)
+    [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_CENTRAL_PROXY_ENABLED")] | length | assertThat(. == 0)
+
 - name: "When enabled (legacy)"
   set:
     enableOpenShiftMonitoring: true

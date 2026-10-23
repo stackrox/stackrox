@@ -140,6 +140,13 @@
   {{ include "srox.warn" (list . "Central custom metrics scraping is supported only on OpenShift 4; disabling monitoring.openshift.custom.enabled.") }}
   {{ $_ := set $._rox.monitoring.openshift.custom "enabled" false }}
 {{ end }}
+{{ if kindIs "invalid" $._rox.sensor.centralProxy.enabled }}
+  {{ $_ := set $._rox.sensor.centralProxy "enabled" false }}
+{{ end }}
+{{ if and $._rox.sensor.centralProxy.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "The Sensor Central proxy is supported only on OpenShift 4; disabling sensor.centralProxy.enabled.") }}
+  {{ $_ := set $._rox.sensor.centralProxy "enabled" false }}
+{{ end }}
 
 [<- if .AutoSensePodSecurityPolicies >]
 {{/* Detect enablePodSecurityPolicies */}}
