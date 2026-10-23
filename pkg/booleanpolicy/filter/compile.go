@@ -6,17 +6,21 @@ import (
 )
 
 // CompileEvaluationFilter converts a proto EvaluationFilter into a slice of
-// EvaluationFilters. Returns nil if the feature is disabled or the proto is
+// EvaluationFilters. Returns nil if all features are disabled or the proto is
 // nil. Every filter in the returned slice is guaranteed to be non-default
 // (i.e. IsNonDefault() == true), so callers can treat a non-empty slice as
 // an indication that filtering is active.
 func CompileEvaluationFilter(proto *storage.EvaluationFilter) []EvaluationFilter {
-	if !features.EvaluationFilter.Enabled() {
-		return nil
-	}
 	var filters []EvaluationFilter
-	if f := newContainerTypeFilter(proto.GetSkipContainerTypes()); f != nil {
-		filters = append(filters, *f)
+	if features.EvaluationFilter.Enabled() {
+		if f := newContainerTypeFilter(proto.GetSkipContainerTypes()); f != nil {
+			filters = append(filters, *f)
+		}
+	}
+	if features.ImageLayerFilter.Enabled() {
+		if f := newImageLayerFilter(proto.GetSkipImageLayers()); f != nil {
+			filters = append(filters, *f)
+		}
 	}
 	return filters
 }
