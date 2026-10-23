@@ -65,9 +65,3 @@ scannerV4:
       limits:
         cpu: "1000m"
         memory: "2500Mi"
-
-customize:
-  other:
-    deployment/central-worker:
-      envVars:
-        GOMEMLIMIT: 100MiB
