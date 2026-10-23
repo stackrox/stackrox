@@ -22,6 +22,12 @@ var (
 	// The default is 45 mins.
 	ComplianceScanScheduleWatcherTimeout = registerDurationSetting("ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT", 45*time.Minute)
 
+	// ComplianceFreshnessSweepInterval is how often the compliance freshness sweeper re-evaluates
+	// stored check results against their scan schedules. It must be well under the grace window
+	// (ComplianceScanScheduleWatcherTimeout + ComplianceScanWatcherTimeout), otherwise results may
+	// appear current longer than intended. The default is 5 mins.
+	ComplianceFreshnessSweepInterval = registerDurationSetting("ROX_COMPLIANCE_FRESHNESS_SWEEP_INTERVAL", 5*time.Minute)
+
 	// ComplianceMaxNumberOfErrorsInReport defines the max number of errors that a report will store. This is done to avoid overwhelming the UI with many errors.
 	// The default is 4
 	ComplianceMaxNumberOfErrorsInReport = RegisterIntegerSetting("ROX_COMPLIANCE_MAX_NUMBER_OF_ERRORS_IN_REPORT", 4)

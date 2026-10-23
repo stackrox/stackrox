@@ -51,6 +51,7 @@ import (
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
+	complianceFreshness "github.com/stackrox/rox/central/complianceoperator/v2/freshness"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
@@ -393,6 +394,10 @@ func startServices() {
 
 	if features.PlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
+	}
+
+	if features.ComplianceSurfaceStaleData.Enabled() {
+		complianceFreshness.Singleton().Start()
 	}
 
 	// If we have no delayed integrations, we can skip spawning the goroutine
@@ -1084,6 +1089,11 @@ func waitForTerminationSignal() {
 	if features.PlatformComponents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
+	}
+
+	if features.ComplianceSurfaceStaleData.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{complianceFreshness.Singleton(), "compliance freshness sweeper"})
 	}
 
 	if features.BackgroundMigration.Enabled() {
