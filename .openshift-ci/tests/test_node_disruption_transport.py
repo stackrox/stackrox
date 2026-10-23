@@ -123,9 +123,7 @@ class PollingTransportTest(unittest.TestCase):
                 (self.root / 'counter').write_text('0')
                 output = self.root / 'github-output'
                 output.write_text('')
-                env = dict(self.env, GITHUB_OUTPUT=str(output), GITHUB_RUN_ID='123',
-                           GITHUB_REPOSITORY='stackrox/stackrox', GITHUB_RUN_ATTEMPT='2',
-                           GITHUB_SERVER_URL='https://github.com')
+                env = dict(self.env, GITHUB_OUTPUT=str(output))
                 completed = subprocess.run(
                     [sys.executable, str(Path(monitor.__file__).resolve()), 'run', '--',
                      sys.executable, '-c', 'raise SystemExit(42)'],
@@ -134,7 +132,8 @@ class PollingTransportTest(unittest.TestCase):
                 self.assertEqual(output.read_text(), f'failed={str(failed).lower()}\n')
                 report = ET.parse(self.root / 'artifacts/node-monitor.xml').getroot()
                 self.assertEqual(report.get('failures'), str(int(failed)))
-                self.assertIn('actions/runs/123/attempts/2', report.findtext('.//system-out'))
+                self.assertIsNone(report.find('.//system-out'))
+                self.assertNotIn('Run:', completed.stdout)
                 self.assertEqual('::error::' in completed.stdout, failed)
 
     def test_cli_skips_monitoring_without_num_nodes(self):

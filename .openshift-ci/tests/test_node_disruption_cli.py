@@ -19,7 +19,7 @@ class CLITest(unittest.TestCase):
                     patch.object(monitor, 'run',
                                  return_value=monitor.RunResult(42, False)) as run:
                 self.assertEqual(monitor.main(), 42)
-                run.assert_called_once_with(['product'], run_url='')
+                run.assert_called_once_with(['product'])
 
     def test_output_distinguishes_product_failure_from_monitor_failure(self):
         cases = {'product failure': (False, 42), 'monitor failure': (True, 1), 'cancelled': (False, 143)}
@@ -28,16 +28,13 @@ class CLITest(unittest.TestCase):
                 output = Path(directory) / 'output'
                 with patch.dict(os.environ, {
                         'GKE_SPOT': 'false',
-                        'GITHUB_OUTPUT': str(output), 'GITHUB_RUN_ID': '123',
-                        'GITHUB_RUN_ATTEMPT': '2', 'GITHUB_REPOSITORY': 'stackrox/stackrox',
-                        'GITHUB_SERVER_URL': 'https://github.com'}), \
+                        'GITHUB_OUTPUT': str(output)}), \
                         patch('sys.argv', ['node_disruption.py', 'run', '--', 'product']), \
                         patch.object(monitor, 'run',
                                      return_value=monitor.RunResult(code, failed)) as run:
                     self.assertEqual(monitor.main(), code)
                 self.assertEqual(output.read_text(), f'failed={str(failed).lower()}\n')
-                run.assert_called_once_with(
-                    ['product'], run_url='https://github.com/stackrox/stackrox/actions/runs/123/attempts/2')
+                run.assert_called_once_with(['product'])
 
     def test_reporting_failure_still_sets_recovery_skip_output(self):
         with tempfile.TemporaryDirectory() as directory:
