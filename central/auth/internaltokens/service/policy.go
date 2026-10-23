@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -35,14 +36,14 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 	}
 }
 
-// defaultTokenPolicy returns the hardcoded policy for internal tokens issued
-// to sensors. It caps lifetime to 1 hour and allows read access to Deployment
-// and Image resources.
-// This policy should be kept in sync with the needs of the ocp console plugin.
+// defaultTokenPolicy retains the hardcoded permission allowlist for older Sensors.
+// Console requests use the Central-managed permission set instead when selected.
+// This policy caps lifetime to 1 hour and should remain compatible with the
+// OCP console plugin.
 func defaultTokenPolicy() *tokenPolicy {
 	// defaultAllowedPermissions lists the resource permissions that the default
-	// policy allows sensors to request. These must stay in sync with the needs
-	// of the known token consumers (including the OCP console plugin).
+	// policy allows older Sensors to request. These must stay in sync with the
+	// needs of the known token consumers (including the OCP console plugin).
 	defaultAllowedPermissions := map[string]v1.Access{
 		"Deployment": v1.Access_READ_ACCESS,
 		"Image":      v1.Access_READ_ACCESS,
@@ -129,8 +130,17 @@ func (p *tokenPolicy) enforce(
 	if err != nil {
 		return nil, err
 	}
-	if err := p.validatePermissions(req.GetPermissions()); err != nil {
-		return nil, err
+	if sensorClusterID == "" {
+		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+	}
+	if req.GetPermissionSetId() != "" {
+		if req.GetPermissionSetId() != centralproxy.ConsoleProxyPermissionSetID {
+			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+		}
+	} else {
+		if err := p.validatePermissions(req.GetPermissions()); err != nil {
+			return nil, err
+		}
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 		return nil, err

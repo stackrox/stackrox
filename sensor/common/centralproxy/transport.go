@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -26,9 +27,9 @@ import (
 
 const (
 	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
-	// These tokens carry narrowly scoped permissions and are not directly exposed
-	// to users. The longer cache window trades minimal revocation latency for
-	// significantly lower load on Central in clusters with many proxied requests.
+	// Console tokens contain administrator-managed permissions. A longer cache
+	// window reduces token requests but delays permission reductions for up to
+	// the token lifetime.
 	tokenCacheTTL = 55 * time.Minute
 
 	// tokenTTL is the requested token lifetime.
@@ -47,12 +48,6 @@ const (
 	// FullClusterAccessScope is the namespace scope value that indicates full cluster access.
 	FullClusterAccessScope = "*"
 )
-
-// tokenPermissions defines the required read permissions for proxy requests.
-var tokenPermissions = map[string]centralv1.Access{
-	"Deployment": centralv1.Access_READ_ACCESS,
-	"Image":      centralv1.Access_READ_ACCESS,
-}
 
 // errServiceUnavailable indicates the proxy is temporarily unavailable,
 // typically during sensor startup before Central connection is established.
@@ -294,8 +289,13 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		Permissions: tokenPermissions,
-		Lifetime:    durationpb.New(tokenTTL),
+		PermissionSetId: centralproxy.ConsoleProxyPermissionSetID,
+		// Older Centrals ignore the permission set ID and use these permissions.
+		Permissions: map[string]centralv1.Access{
+			"Deployment": centralv1.Access_READ_ACCESS,
+			"Image":      centralv1.Access_READ_ACCESS,
+		},
+		Lifetime: durationpb.New(tokenTTL),
 	}
 
 	switch namespaceScope {
