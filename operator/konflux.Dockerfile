@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.26@sha256:51535211e8d770213a586cd557492eaa56458652933688f4eb6366c4f68877ff AS builder
+FROM registry.redhat.io/openshift/golang-builder:golang-builder-v1.26-rhel8@sha256:cad2a0217b8b3c6f2a0f98046d6346dd2fd6c78d4c1a955e046f580371b22515 AS builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
