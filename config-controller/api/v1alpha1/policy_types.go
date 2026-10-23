@@ -170,11 +170,18 @@ type MitreAttackVectors struct {
 // +kubebuilder:validation:Enum=REGULAR;INIT
 type ContainerType string
 
+// SkipImageLayers controls which image layers a policy evaluates.
+// +kubebuilder:validation:Enum=SKIP_NONE;SKIP_BASE;SKIP_APP
+type SkipImageLayers string
+
 // EvaluationFilter pre-filters which entities a policy evaluates.
 type EvaluationFilter struct {
 	// SkipContainerTypes lists container kinds to skip during evaluation.
 	// +optional
 	SkipContainerTypes []ContainerType `json:"skipContainerTypes,omitempty"`
+	// SkipImageLayers selects which image layers to evaluate.
+	// +optional
+	SkipImageLayers SkipImageLayers `json:"skipImageLayers,omitempty"`
 }
 
 type SecurityPolicyConditionType string
@@ -474,12 +481,19 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
 	}
 
-	if p.EvaluationFilter != nil && len(p.EvaluationFilter.SkipContainerTypes) > 0 {
+	if p.EvaluationFilter != nil &&
+		(len(p.EvaluationFilter.SkipContainerTypes) > 0 || p.EvaluationFilter.SkipImageLayers != "") {
 		protoFilter := &storage.EvaluationFilter{}
 		for _, ct := range p.EvaluationFilter.SkipContainerTypes {
 			val, found := storage.ContainerType_value[string(ct)]
 			if found {
 				protoFilter.SkipContainerTypes = append(protoFilter.SkipContainerTypes, storage.ContainerType(val))
+			}
+		}
+		if p.EvaluationFilter.SkipImageLayers != "" {
+			val, found := storage.SkipImageLayers_value[string(p.EvaluationFilter.SkipImageLayers)]
+			if found {
+				protoFilter.SkipImageLayers = storage.SkipImageLayers(val)
 			}
 		}
 		proto.EvaluationFilter = protoFilter
