@@ -170,11 +170,22 @@ type MitreAttackVectors struct {
 // +kubebuilder:validation:Enum=REGULAR;INIT
 type ContainerType string
 
-// EvaluationFilter pre-filters which entities a policy evaluates.
+// SkipImageLayers controls which image layers a policy skips during evaluation.
+// +kubebuilder:validation:Enum=SKIP_NONE;SKIP_BASE;SKIP_APP
+type SkipImageLayers string
+
+// EvaluationFilter pre-filters which entities a policy evaluates. Its filters are
+// independent and composable: SkipContainerTypes restricts which containers are
+// evaluated, and SkipImageLayers restricts which image layers' contents (components,
+// CVEs, and Dockerfile instructions) are evaluated. The two are not mutually exclusive;
+// when both are set, both apply.
 type EvaluationFilter struct {
 	// SkipContainerTypes lists container kinds to skip during evaluation.
 	// +optional
 	SkipContainerTypes []ContainerType `json:"skipContainerTypes,omitempty"`
+	// SkipImageLayers selects which image layers to skip during evaluation.
+	// +optional
+	SkipImageLayers SkipImageLayers `json:"skipImageLayers,omitempty"`
 }
 
 type SecurityPolicyConditionType string
@@ -474,15 +485,24 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
 	}
 
-	if p.EvaluationFilter != nil && len(p.EvaluationFilter.SkipContainerTypes) > 0 {
+	if p.EvaluationFilter != nil {
 		protoFilter := &storage.EvaluationFilter{}
+		// The CRD enum rejects unknown container types at admission; drop any that
+		// still slip through rather than failing the whole conversion.
 		for _, ct := range p.EvaluationFilter.SkipContainerTypes {
-			val, found := storage.ContainerType_value[string(ct)]
-			if found {
+			if val, found := storage.ContainerType_value[string(ct)]; found {
 				protoFilter.SkipContainerTypes = append(protoFilter.SkipContainerTypes, storage.ContainerType(val))
 			}
 		}
-		proto.EvaluationFilter = protoFilter
+		// SKIP_NONE is the proto default, so leave it unset when the CR omits the field.
+		if skipLayers := p.EvaluationFilter.SkipImageLayers; skipLayers != "" {
+			protoFilter.SkipImageLayers = storage.SkipImageLayers(storage.SkipImageLayers_value[string(skipLayers)])
+		}
+		// An empty filter filters nothing; leave the proto field unset instead of
+		// storing a non-nil no-op.
+		if len(protoFilter.GetSkipContainerTypes()) > 0 || protoFilter.GetSkipImageLayers() != storage.SkipImageLayers_SKIP_NONE {
+			proto.EvaluationFilter = protoFilter
+		}
 	}
 
 	return &proto, nil
