@@ -65,6 +65,11 @@ jobs:
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # ratchet:helm/kind-action@v1
         with:
           cluster_name: kind
+      - name: Install roxie
+        uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
+        with:
+          version: v0.4.13
+          gh-token: ${{ github.token }}
       - name: Run Test
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
