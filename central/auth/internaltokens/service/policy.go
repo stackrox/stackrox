@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -39,7 +38,7 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 }
 
 // defaultTokenPolicy retains the hardcoded permission allowlist for older Sensors.
-// Console requests use the Central-managed permission set instead when selected.
+// Permission-set requests use Central-managed permissions instead when selected.
 // This policy caps lifetime to 1 hour and should remain compatible with the
 // OCP console plugin.
 func defaultTokenPolicy() *tokenPolicy {
@@ -146,7 +145,12 @@ func (p *tokenPolicy) enforce(
 				return nil, err
 			}
 		default:
-			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+			if len(req.GetClusterScopes()) == 0 {
+				return nil, errox.InvalidArgs.New("generic Sensor proxy tokens require a cluster scope")
+			}
+			if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+				return nil, err
+			}
 		}
 		if _, err := approvedHTTPScopes(req); err != nil {
 			return nil, err
@@ -172,8 +176,6 @@ func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tok
 		allowed = tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
 	case centralproxy.MetricsPermissionSetID:
 		allowed = tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes)
-	default:
-		return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 	}
 
 	requested, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
@@ -182,18 +184,15 @@ func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tok
 	}
 	// Older Sensors do not specify HTTP scopes; Central still signs its own profile.
 	if len(requested) == 0 {
-		return allowed, nil
-	}
-	for path, methods := range requested {
-		permitted, found := allowed[path]
-		if !found {
-			return nil, errox.InvalidArgs.New("requested HTTP scope exceeds Central's profile")
+		if allowed != nil {
+			return allowed, nil
 		}
-		for _, method := range methods {
-			if !slices.Contains(permitted, method) {
-				return nil, errox.InvalidArgs.New("requested HTTP scope exceeds Central's profile")
-			}
+		return nil, errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
+	}
+	for _, methods := range requested {
+		if len(methods) > 0 {
+			return requested, nil
 		}
 	}
-	return requested, nil
+	return nil, errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
 }

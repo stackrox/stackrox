@@ -31,19 +31,46 @@ func (rm *roleManager) createSensorMetricsRole(
 	if err != nil {
 		return nil, err
 	}
-	for access := range role.Permissions {
-		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
-			return nil, errox.InvalidArgs.New("Sensor metrics permission set grants non-read-only access")
-		}
+	if !readOnlyRole(role) {
+		return nil, errox.InvalidArgs.New("Sensor metrics permission set grants non-read-only access")
 	}
 	return role, nil
+}
+
+func (rm *roleManager) createSensorGenericRole(
+	ctx context.Context, roles roleDS.DataStore, permissionSetID string, scopes []*v1.ClusterScope,
+) (*tokens.InternalRole, error) {
+	role, err := rm.createSensorRole(ctx, roles, permissionSetID, internalRoleName, clusterScopesFromRequest(scopes))
+	if err != nil {
+		return nil, err
+	}
+	if !readOnlyRole(role) {
+		return nil, errox.InvalidArgs.New("Sensor proxy permission set grants non-read-only access")
+	}
+	return role, nil
+}
+
+func readOnlyRole(role *tokens.InternalRole) bool {
+	for access := range role.Permissions {
+		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
+			return false
+		}
+	}
+	return true
 }
 
 func (rm *roleManager) createSensorConsoleRole(
 	ctx context.Context, roles roleDS.DataStore, scopes []*v1.ClusterScope,
 ) (*tokens.InternalRole, error) {
-	return rm.createSensorRole(ctx, roles, centralproxy.ConsoleProxyPermissionSetID,
+	role, err := rm.createSensorRole(ctx, roles, centralproxy.ConsoleProxyPermissionSetID,
 		centralproxy.ConsoleProxyRole, clusterScopesFromRequest(scopes))
+	if err != nil {
+		return nil, err
+	}
+	if !readOnlyRole(role) {
+		return nil, errox.InvalidArgs.New("Sensor console permission set grants non-read-only access")
+	}
+	return role, nil
 }
 
 func (rm *roleManager) createSensorRole(

@@ -108,7 +108,12 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	case centralproxy.ConsoleProxyPermissionSetID:
 		tokenRole, err = s.roleManager.createSensorConsoleRole(roleReadCtx, s.roles, req.GetClusterScopes())
 	default:
-		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+		if req.GetPermissionSetId() == "" {
+			tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+		} else {
+			tokenRole, err = s.roleManager.createSensorGenericRole(roleReadCtx, s.roles,
+				req.GetPermissionSetId(), req.GetClusterScopes())
+		}
 	}
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
