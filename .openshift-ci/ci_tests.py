@@ -196,16 +196,6 @@ class NonGroovyE2e(BaseTest):
     TEST_TIMEOUT = 3 * 60 * 60
     TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
 
-    def run_url(self):
-        if os.getenv("JOB_URL"):
-            return os.environ["JOB_URL"]
-        job, build = os.getenv("JOB_NAME"), os.getenv("BUILD_ID")
-        if not job or not build:
-            return ""
-        pull = os.getenv("PULL_NUMBER")
-        prefix = f"pr-logs/pull/stackrox_stackrox/{pull}" if pull else "logs"
-        return f"https://prow.ci.openshift.org/view/gs/origin-ci-test/{prefix}/{job}/{build}"
-
     def run(self):
         print("Executing the E2e Test")
 
@@ -215,7 +205,6 @@ class NonGroovyE2e(BaseTest):
             ["tests/e2e/run.sh", self.TEST_OUTPUT_DIR],
             timeout=self.TEST_TIMEOUT,
             env=dict(os.environ, ROX_CI_OUTPUT_DIR=self.TEST_OUTPUT_DIR),
-            run_url=self.run_url(),
         )
         if result.timed_out:
             raise subprocess.TimeoutExpired("tests/e2e/run.sh", self.TEST_TIMEOUT)

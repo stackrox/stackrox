@@ -67,6 +67,28 @@ class CollectionTest(unittest.TestCase):
             with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, 'positive integer'):
                 monitor.expected_node_count({'NUM_NODES': value})
 
+    def test_junit_contains_only_outcome_and_failure_explanation(self):
+        cases = {'passed': ([], False, None), 'failed': (['kubectl failed'], False, 'failure'),
+                 'cancelled': ([], True, 'skipped')}
+        for name, (errors, cancelled, outcome) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, \
+                    patch('builtins.print') as log:
+                directory = Path(directory)
+                (directory / 'node-names.txt').write_text('a\n')
+                cancellation = monitor.Cancellation()
+                if cancelled:
+                    cancellation.handle(signal.SIGTERM, None)
+                monitor.write_report(directory, 1, errors, cancellation)
+                case = ET.parse(directory / 'node-monitor.xml').find('.//testcase')
+                self.assertEqual([child.tag for child in case], [outcome] if outcome else [])
+                log.assert_called_once()
+                self.assertIn('Expected 1 nodes; observed 1 unique names: a', log.call_args.args[0])
+                if outcome == 'failure':
+                    self.assertIn('kubectl failed', case.findtext('failure'))
+                    self.assertIn('kubectl failed', log.call_args.args[0])
+                if outcome == 'skipped':
+                    self.assertIsNone(case.find('skipped').text)
+
     def test_invalid_snapshots(self):
         cases = {'not an object': [], 'missing items': {}, 'invalid items': {'items': None},
                  'invalid node': {'items': [None]}, 'missing name': {'items': [{}]},
@@ -95,7 +117,7 @@ class CollectionTest(unittest.TestCase):
                 directory = Path(directory)
                 for _ in range(len(replies)):
                     monitor.sample_nodes(directory, {'KUBECONFIG': 'test-config'})
-                failed = monitor.write_report(directory, expected, [], monitor.Cancellation(), '')
+                failed = monitor.write_report(directory, expected, [], monitor.Cancellation())
                 self.assertEqual(failed, mismatch)
                 report = ET.parse(directory / 'node-monitor.xml').getroot()
                 self.assertEqual(report.get('failures'), str(int(mismatch)))
@@ -147,8 +169,7 @@ class NodeMonitorTest(unittest.TestCase):
                 patch.object(monitor.time, 'monotonic', side_effect=clock.monotonic), \
                 patch.object(monitor.time, 'sleep', side_effect=clock.sleep):
             result = monitor.run(
-                ['product'], timeout=options.get('timeout'), env=options.get('env', {'NUM_NODES': '1'}),
-                run_url='https://ci.example/run')
+                ['product'], timeout=options.get('timeout'), env=options.get('env', {'NUM_NODES': '1'}))
             report = ET.parse(Path(directory) / 'node-monitor.xml').getroot()
             records = list(Path(directory).glob('node-snapshot-*.json'))
             names = (Path(directory) / 'node-names.txt').read_text() if records else ''
@@ -164,7 +185,7 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertFalse(result.monitor_failed)
                 self.assertEqual(report.get('failures'), '0')
                 self.assertEqual(report.find('.//testcase').get('name'), 'NoNodeDisruption')
-                self.assertIn('https://ci.example/run', report.findtext('.//system-out'))
+                self.assertEqual(list(report.find('.//testcase')), [])
                 launch.assert_called_once_with(['product'], env={'NUM_NODES': '1'}, start_new_session=True)
                 self.assertEqual(collect.call_count, 2)
                 self.assertEqual(len(records), 2)
@@ -321,19 +342,6 @@ else:
 
 
 class NonGroovyIntegrationTest(unittest.TestCase):
-    def test_prow_run_links(self):
-        cases = {
-            'explicit': ({'JOB_URL': 'https://ci.example/job'}, 'https://ci.example/job'),
-            'periodic': ({'JOB_NAME': 'gke', 'BUILD_ID': '123'},
-                         'https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/gke/123'),
-            'pull': ({'JOB_NAME': 'gke', 'BUILD_ID': '123', 'PULL_NUMBER': '42'},
-                     'https://prow.ci.openshift.org/view/gs/origin-ci-test/pr-logs/pull/stackrox_stackrox/42/gke/123'),
-            'missing': ({}, ''),
-        }
-        for name, (env, expected) in cases.items():
-            with self.subTest(name=name), patch.dict(os.environ, env, clear=True):
-                self.assertEqual(NonGroovyE2e().run_url(), expected)
-
     def test_shared_runner_is_used_independently_of_spot(self):
         cases = {
             'unset': {},
@@ -349,7 +357,7 @@ class NonGroovyIntegrationTest(unittest.TestCase):
                 test.run()
                 run.assert_called_once_with(
                     ['tests/e2e/run.sh', test.TEST_OUTPUT_DIR], timeout=test.TEST_TIMEOUT,
-                    env=dict(env, ROX_CI_OUTPUT_DIR=test.TEST_OUTPUT_DIR), run_url='')
+                    env=dict(env, ROX_CI_OUTPUT_DIR=test.TEST_OUTPUT_DIR))
                 self.assertIn(test.TEST_OUTPUT_DIR, test.test_outputs)
 
     def test_monitoring_preserves_outputs_timeout_and_failure(self):

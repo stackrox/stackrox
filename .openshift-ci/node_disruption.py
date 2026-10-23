@@ -87,22 +87,21 @@ def sample_nodes(directory, env):
     return names
 
 
-def write_report(directory, expected, errors, cancellation, run_url):
+def write_report(directory, expected, errors, cancellation):
     names_file = directory / 'node-names.txt'
     names = sorted(set(names_file.read_text(encoding='utf-8').splitlines())) if names_file.exists() else []
     failed = bool(errors) or (not cancellation.requested and len(names) != expected)
     skipped = cancellation.requested and not failed
     detail = (f'Expected {expected} nodes; observed {len(names)} unique names: '
-              f"{', '.join(names)}. Evidence: {directory}\n" + '\n'.join(errors))
-    if run_url:
-        detail += f'\nRun: {run_url}'
+              f"{', '.join(names)}.\n" + '\n'.join(errors))
     print(('ERROR: ' if failed else '') + detail.strip(), flush=True)
     suite = ET.Element('testsuite', name='ci.gke.node', tests='1',
                        failures=str(int(failed)), skipped=str(int(skipped)))
     case = ET.SubElement(suite, 'testcase', classname='ci.gke.node', name='NoNodeDisruption')
-    if failed or skipped:
-        ET.SubElement(case, 'failure' if failed else 'skipped').text = detail
-    ET.SubElement(case, 'system-out').text = detail
+    if failed:
+        ET.SubElement(case, 'failure').text = detail
+    elif skipped:
+        ET.SubElement(case, 'skipped')
     temporary = directory / 'node-monitor.xml.tmp'
     temporary.write_text(ET.tostring(suite, encoding='unicode', xml_declaration=True), encoding='utf-8')
     temporary.replace(directory / 'node-monitor.xml')
@@ -143,7 +142,7 @@ def finish(test, cancellation, timed_out, failed):
     return RunResult(code if code >= 0 else 128 - code, failed, timed_out)
 
 
-def run(command, timeout=None, env=None, run_url=''):
+def run(command, timeout=None, env=None):
     """Run tests; poll node names only when NUM_NODES is supplied."""
     if not command:
         raise ValueError('a product command is required')
@@ -182,20 +181,10 @@ def run(command, timeout=None, env=None, run_url=''):
         try:
             if env.get('NUM_NODES'):
                 directory.mkdir(parents=True, exist_ok=True)
-                failed = write_report(directory, expected, errors, cancellation, run_url)
+                failed = write_report(directory, expected, errors, cancellation)
         finally:
             cleanup(test, previous)
     return finish(test, cancellation, timed_out, failed)
-
-
-def run_link():
-    run_id = os.getenv('GITHUB_RUN_ID')
-    if not run_id:
-        return ''
-    server = os.getenv('GITHUB_SERVER_URL', 'https://github.com').rstrip('/')
-    repository = os.getenv('GITHUB_REPOSITORY', '')
-    attempt = os.getenv('GITHUB_RUN_ATTEMPT', '1')
-    return f'{server}/{repository}/actions/runs/{run_id}/attempts/{attempt}'
 
 
 def publish_output(failed):
@@ -215,7 +204,7 @@ def main():
     if not command:
         parser.error('a command is required after --')
     try:
-        result = run(command, run_url=run_link())
+        result = run(command)
     except (OSError, RuntimeError) as exc:
         publish_output(True)
         print(f'::error::Node monitor could not finish: {exc}', flush=True)
