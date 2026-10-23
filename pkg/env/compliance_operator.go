@@ -30,6 +30,7 @@ var (
 	// This value can be customized via the ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION environment variable.
 	// If the environment variable is unset, contains an invalid version, or is lower than the default value, the default value "v1.6.0" will be used.
 	ComplianceMinimalSupportedVersion = RegisterVersionSetting("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", "v1.6.0", "v1.6.0")
+
 	// ComplianceScansRunningInParallelMetricObservationPeriod defines an observation window for the compliance operator metrics in Central.
 	// For example, a metric output like this:
 	// rox_central_complianceoperator_num_scans_running_in_parallel_bucket{le="0"} 0

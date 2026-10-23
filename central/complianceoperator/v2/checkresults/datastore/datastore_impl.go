@@ -392,6 +392,66 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
+func (d *datastoreImpl) MinLastStartedTimeByConfigCluster(ctx context.Context, query *v1.Query) ([]*MinLastStartedTimeByConfigCluster, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "MinLastStartedTimeByConfigCluster")
+
+	cloned := query.CloneVT()
+	cloned.Pagination = nil // Aggregate query — pagination must not apply.
+	// Group by the contract key only: (scan_config_name, cluster_id). Cluster NAME
+	// must NOT be a grouping key — a cluster rename would otherwise split one
+	// (config, cluster_id) into multiple rows, and downstream code that indexes by
+	// scan_config_name would let one freshness state overwrite another.
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorScanConfigName).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckLastStartedTime).AggrFunc(aggregatefunc.Min).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorScanConfigName.String(),
+			search.ClusterID.String(),
+		},
+	}
+
+	results, err := pgSearch.RunSelectRequestForSchema[MinLastStartedTimeByConfigCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, cloned)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query MIN(last_started_time) by config and cluster")
+	}
+
+	return results, nil
+}
+
+func (d *datastoreImpl) MinLastStartedTimeByCheckCluster(ctx context.Context, query *v1.Query) ([]*MinLastStartedTimeByCheckCluster, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "MinLastStartedTimeByCheckCluster")
+
+	cloned := query.CloneVT()
+	cloned.Pagination = nil // Aggregate query — pagination must not apply.
+	// Group by (scan_config_name, cluster_id, check_name). check_name is what makes
+	// the per-check rollup correct: MINing across all checks in a cluster would mark
+	// a current check OUTDATED because a sibling check is stale. cluster_id (not name)
+	// keeps a rename from splitting a group (see MinLastStartedTimeByConfigCluster).
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorScanConfigName).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckName).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckLastStartedTime).AggrFunc(aggregatefunc.Min).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorScanConfigName.String(),
+			search.ClusterID.String(),
+			search.ComplianceOperatorCheckName.String(),
+		},
+	}
+
+	results, err := pgSearch.RunSelectRequestForSchema[MinLastStartedTimeByCheckCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, cloned)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query MIN(last_started_time) by check and cluster")
+	}
+
+	return results, nil
+}
+
 func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
 	if scanRefID == "" || lastStartedTimestamp == nil {
 		return nil
