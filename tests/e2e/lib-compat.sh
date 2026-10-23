@@ -412,9 +412,13 @@ EOF
     fi
 }
 
-# AWS only provisions IPv6-family LoadBalancer services as dualstack NLBs, which the
-# chart does not request; an overlay is used because the CRD prunes spec.customize.other.
-# TODO: drop once the chart sets the annotations itself.
+# OCP's AWS provider provisions an IPv6-family LoadBalancer service only when the
+# service itself is dual-stack (the ingress operator's router Service is the known-
+# working recipe: ipFamilies [IPv6, IPv4] + RequireDualStack + an NLB). The chart
+# leaves the Service on the cluster's primary family (single-stack IPv6), so patch
+# it via an overlay; spec.customize.other would be pruned by the CRD. The
+# ip-address-type annotation is AWS Load Balancer Controller-only and inert on OCP.
+# TODO: drop once the chart supports dual-stack LoadBalancer services.
 handle_ipv6_primary_lb_annotations() {
     local config_file="$1"
     # serviceNetwork[0] is the cluster's primary IP family.
@@ -426,7 +430,7 @@ handle_ipv6_primary_lb_annotations() {
         return 0
     fi
 
-    info "IPv6-primary service network: annotating central-loadbalancer for a dualstack NLB"
+    info "IPv6-primary service network: making central-loadbalancer dual-stack for NLB provisioning"
     merge_yaml "$config_file" <<'EOF'
 central:
   spec:
@@ -436,10 +440,12 @@ central:
       name: central-loadbalancer
       optional: true
       patches:
+      - path: spec.ipFamilies
+        value: '["IPv6", "IPv4"]'
+      - path: spec.ipFamilyPolicy
+        value: RequireDualStack
       - path: metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
         value: nlb
-      - path: metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-ip-address-type
-        value: dualstack
 EOF
 }
 
