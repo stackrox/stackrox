@@ -729,6 +729,7 @@ func (s *PolicyValidatorTestSuite) TestValidateExcludeByKind() {
 		}
 	}
 
+	testutils.MustUpdateFeature(s.T(), features.PolicyWorkloadKindExclusion, false)
 	s.ErrorContains(s.validator.validateExclusions(deployPolicy(kindExclusion(storage.Exclusion_JOB))), "ROX_POLICY_WORKLOAD_KIND_EXCLUSION")
 
 	testutils.MustUpdateFeature(s.T(), features.PolicyWorkloadKindExclusion, true)
