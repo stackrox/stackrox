@@ -76,6 +76,9 @@ Artifacts under `ARTIFACT_DIR` (default `junit-reports`):
 - `node-monitor.xml`: testcase `ci.gke.node / NoNodeDisruption`. It passes for a
   matching unique-name count and error-free polling, independently of the product
   result; cancellation is skipped unless a monitor error was already recorded.
+  The report contains only the outcome and failure explanation, without run links
+  or extra output metadata. Job logs show the expected count, observed names, and
+  polling errors.
 
 This checks names, not readiness or per-snapshot counts. NotReady nodes with
 unchanged names, disappearance without replacement, and transient nodes between
