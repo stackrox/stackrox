@@ -35,9 +35,11 @@ jobs:
 
     - name: Resolve run configuration
       run: |
-        echo "DRY_RUN=${{ inputs.dry-run }}" >> "$GITHUB_ENV"
-        echo "SKIP_SLACK=${{ inputs.skip-slack }}" >> "$GITHUB_ENV"
-        echo "INPUT_VERSION=${{ inputs.version }}" >> "$GITHUB_ENV"
+        {
+          echo "DRY_RUN=${{ inputs.dry-run }}"
+          echo "SKIP_SLACK=${{ inputs.skip-slack }}"
+          echo "INPUT_VERSION=${{ inputs.version }}"
+        } >> "$GITHUB_ENV"
 
     - name: Determine target version
       id: version
@@ -72,10 +74,12 @@ jobs:
           echo "needed=false" >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        echo "needed=true" >> "$GITHUB_OUTPUT"
-        echo "current=${current}" >> "$GITHUB_OUTPUT"
-        echo "target=${target}" >> "$GITHUB_OUTPUT"
-        echo "branch=update_roxie_version_${target}" >> "$GITHUB_OUTPUT"
+        {
+          echo "needed=true"
+          echo "current=${current}"
+          echo "target=${target}"
+          echo "branch=update_roxie_version_${target}"
+        } >> "$GITHUB_OUTPUT"
         echo "ROXIE_VERSION update needed: ${current} -> ${target}"
 
     - name: Dry run summary
@@ -141,9 +145,11 @@ jobs:
             text: $text,
             blocks: [{type: "section", text: {type: "mrkdwn", text: $mrkdwn}}]
           }')
-        echo "slack_payload<<EOF" >> "$GITHUB_OUTPUT"
-        echo "${payload}" >> "$GITHUB_OUTPUT"
-        echo "EOF" >> "$GITHUB_OUTPUT"
+        {
+          echo "slack_payload<<EOF"
+          echo "${payload}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
 
     # The CI notify workflow reads this comment to post failures as
     # threaded replies under the original Slack announcement.

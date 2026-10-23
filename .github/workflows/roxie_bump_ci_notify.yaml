@@ -70,10 +70,12 @@ jobs:
         failed_checks=$(echo "${checks_json}" | jq -c '[.[] | select(.state == "FAILURE" or .state == "ERROR" or .state == "TIMED_OUT" or .state == "STARTUP_FAILURE" or .state == "CANCELLED")]')
         failed_count=$(echo "${failed_checks}" | jq 'length')
 
-        echo "total_count=${total_count}" >> "$GITHUB_OUTPUT"
-        echo "pending_count=${pending_count}" >> "$GITHUB_OUTPUT"
-        echo "passed_count=${passed_count}" >> "$GITHUB_OUTPUT"
-        echo "failed_count=${failed_count}" >> "$GITHUB_OUTPUT"
+        {
+          echo "total_count=${total_count}"
+          echo "pending_count=${pending_count}"
+          echo "passed_count=${passed_count}"
+          echo "failed_count=${failed_count}"
+        } >> "$GITHUB_OUTPUT"
 
         if [[ "${failed_count}" -eq 0 ]]; then
           echo "outcome=passed" >> "$GITHUB_OUTPUT"
@@ -108,9 +110,11 @@ jobs:
           exit 0
         fi
 
-        echo "has_thread=true" >> "$GITHUB_OUTPUT"
-        echo "ts=${ts}" >> "$GITHUB_OUTPUT"
-        echo "channel=${channel}" >> "$GITHUB_OUTPUT"
+        {
+          echo "has_thread=true"
+          echo "ts=${ts}"
+          echo "channel=${channel}"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Build Slack payload
       id: payload
@@ -153,9 +157,11 @@ jobs:
             text: $text,
             blocks: [{type: "section", text: {type: "mrkdwn", text: $mrkdwn}}]
           }')
-        echo "slack_payload<<EOF" >> "$GITHUB_OUTPUT"
-        echo "${payload}" >> "$GITHUB_OUTPUT"
-        echo "EOF" >> "$GITHUB_OUTPUT"
+        {
+          echo "slack_payload<<EOF"
+          echo "${payload}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Post CI result to Slack
       if: >-
