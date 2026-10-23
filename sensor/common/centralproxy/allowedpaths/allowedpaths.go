@@ -15,8 +15,8 @@ var (
 
 // Set stores the allowed proxy paths received from Central.
 // Entries ending with "/" are treated as prefixes; all others require an exact
-// match. An empty or nil slice means no path filtering is applied (backward
-// compat).
+// match. An empty or nil slice denies all paths when Central advertises path
+// filtering. Older Centrals without the capability are handled by the proxy.
 func Set(paths []string) {
 	pathsMutex.Lock()
 	defer pathsMutex.Unlock()
@@ -41,8 +41,7 @@ func Set(paths []string) {
 // IsAllowed returns true if the given path matches any of the allowed paths.
 // Entries ending with "/" are treated as prefixes (any path starting with that
 // prefix is allowed). Entries without a trailing "/" require an exact match.
-// If no paths have been configured, all paths are allowed for backward
-// compatibility.
+// If no paths have been configured, all paths are denied.
 //
 // The caller must pass a pure path (no query string); IsAllowed does not strip
 // query parameters.
@@ -50,7 +49,7 @@ func IsAllowed(path string) bool {
 	pathsMutex.RLock()
 	defer pathsMutex.RUnlock()
 	if exactPaths == nil && prefixPaths == nil {
-		return true
+		return false
 	}
 	if exactPaths.Contains(path) {
 		return true

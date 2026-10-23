@@ -129,20 +129,24 @@ func (h *Handler) validateRequest(request *http.Request) error {
 		return pkghttputil.NewError(http.StatusServiceUnavailable, "central not reachable")
 	}
 
-	// Only enforce path filtering when Central advertises the capability.
-	// Otherwise allow the request for backwards compatibility.
-	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
-		normalizedPath := request.URL.EscapedPath()
-		if normalizedPath == "" {
-			normalizedPath = "/"
-		}
-		if !allowedpaths.IsAllowed(normalizedPath) {
-			return pkghttputil.Errorf(http.StatusForbidden,
-				"path %q is not allowed by the proxy allow-list", request.URL.Path)
-		}
+	normalizedPath := request.URL.EscapedPath()
+	if normalizedPath == "" {
+		normalizedPath = "/"
+	}
+	if !isProxyPathAllowed(normalizedPath) {
+		return pkghttputil.Errorf(http.StatusForbidden,
+			"path %q is not allowed by the proxy allow-list", request.URL.Path)
 	}
 
 	return nil
+}
+
+func isProxyPathAllowed(path string) bool {
+	if !centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
+		// Older Centrals cannot advertise paths and issue only hardcoded read-only console tokens.
+		return true
+	}
+	return allowedpaths.IsAllowed(path)
 }
 
 // checkInternalTokenAPISupport checks if Central supports the internal token API capability.

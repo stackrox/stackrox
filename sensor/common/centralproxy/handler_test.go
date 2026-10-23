@@ -101,6 +101,51 @@ func TestValidateRequest(t *testing.T) {
 	}
 }
 
+func TestProxyPathFilteringCompatibility(t *testing.T) {
+	for name, tc := range map[string]struct {
+		advertisesFiltering bool
+		allowedPaths        []string
+		path                string
+		allowed             bool
+	}{
+		"older Central without path filtering": {
+			allowedPaths: []string{"/v1/deployments"}, path: "/v1/alerts", allowed: true,
+		},
+		"advertised path is allowed": {
+			advertisesFiltering: true, allowedPaths: []string{"/v1/deployments"},
+			path: "/v1/deployments", allowed: true,
+		},
+		"unadvertised path is denied": {
+			advertisesFiltering: true, allowedPaths: []string{"/v1/deployments"}, path: "/v1/alerts",
+		},
+		"empty advertised list denies paths": {
+			advertisesFiltering: true, path: "/v1/alerts",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			centralcaps.Set(nil)
+			if tc.advertisesFiltering {
+				centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPathFiltering})
+			}
+			allowedpaths.Set(tc.allowedPaths)
+			t.Cleanup(func() {
+				centralcaps.Set(nil)
+				allowedpaths.Reset()
+			})
+
+			h := &Handler{}
+			h.centralReachable.Store(true)
+			err := h.validateRequest(httptest.NewRequest(http.MethodGet, tc.path, nil))
+			if tc.allowed {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+				assert.Equal(t, http.StatusForbidden, pkghttputil.StatusFromError(err))
+			}
+		})
+	}
+}
+
 func TestServeHTTP(t *testing.T) {
 	t.Run("validation fails, proxy not called", func(t *testing.T) {
 		setupCentralCapsForTest(t)

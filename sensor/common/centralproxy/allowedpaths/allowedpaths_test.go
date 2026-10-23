@@ -10,25 +10,25 @@ func TestIsAllowed_NoPaths(t *testing.T) {
 	Reset()
 	t.Cleanup(Reset)
 
-	assert.True(t, IsAllowed("/v1/alerts"), "all paths should be allowed when no paths are configured")
-	assert.True(t, IsAllowed("/anything"), "all paths should be allowed when no paths are configured")
-	assert.True(t, IsAllowed("/"), "all paths should be allowed when no paths are configured")
+	assert.False(t, IsAllowed("/v1/alerts"))
+	assert.False(t, IsAllowed("/anything"))
+	assert.False(t, IsAllowed("/"))
 }
 
 func TestIsAllowed_EmptySlice(t *testing.T) {
 	Set([]string{})
 	t.Cleanup(Reset)
 
-	assert.True(t, IsAllowed("/v1/alerts"), "all paths should be allowed when empty slice is set")
-	assert.True(t, IsAllowed("/anything"), "all paths should be allowed when empty slice is set")
+	assert.False(t, IsAllowed("/v1/alerts"))
+	assert.False(t, IsAllowed("/anything"))
 }
 
 func TestIsAllowed_NilSlice(t *testing.T) {
 	Set(nil)
 	t.Cleanup(Reset)
 
-	assert.True(t, IsAllowed("/v1/alerts"), "all paths should be allowed when nil slice is set")
-	assert.True(t, IsAllowed("/anything"), "all paths should be allowed when nil slice is set")
+	assert.False(t, IsAllowed("/v1/alerts"))
+	assert.False(t, IsAllowed("/anything"))
 }
 
 func TestIsAllowed_PrefixMatch(t *testing.T) {
@@ -67,5 +67,5 @@ func TestReset(t *testing.T) {
 	assert.False(t, IsAllowed("/admin/secret"))
 
 	Reset()
-	assert.True(t, IsAllowed("/admin/secret"), "after reset all paths should be allowed")
+	assert.False(t, IsAllowed("/admin/secret"), "after reset no paths are advertised")
 }
