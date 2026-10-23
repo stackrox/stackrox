@@ -2,12 +2,12 @@ package mapping
 
 import (
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
-	"github.com/stackrox/rox/central/compliance/standards/index"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
+	deploymentOptions "github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/policycategory"
 )
 
@@ -33,7 +33,13 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		schema.ImageCvesV2Schema.OptionsMap,
 		schema.ImageComponentV2Schema.OptionsMap,
 		imageOptionsMap,
-		schema.DeploymentsSchema.OptionsMap,
+		// deploymentOptions.OptionsMap is DeploymentsSchema.OptionsMap with the process
+		// indicator and image options merged in. Referenced explicitly rather than via
+		// schema.DeploymentsSchema.OptionsMap because that merge mutates the shared schema
+		// map in place, so the fields present here used to depend on whether anything else
+		// in the binary happened to import the package. Compliance 1.0 provided that import
+		// transitively; naming it here keeps the option set the same for every binary.
+		deploymentOptions.OptionsMap,
 	)
 
 	nodeToVulnerabilitySearchOptions := search.CombineOptionsMaps(
@@ -65,8 +71,6 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTER_VULN_EDGE:       clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
-		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
-		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
 		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
 		v1.SearchCategory_NAMESPACES:              schema.NamespacesSchema.OptionsMap,
