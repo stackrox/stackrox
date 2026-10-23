@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import {
     Content,
     Divider,
@@ -86,12 +85,10 @@ function DashboardPage() {
             <PageSection hasBodyWrapper={false}>
                 <Gallery
                     id="main-dashboard-widget-gallery"
-                    style={
-                        {
-                            // Ensure the grid has never grows large enough to show 4 columns
-                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-v6-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
-                        } as CSSProperties
-                    }
+                    style={{
+                        // Ensure the grid has never grows large enough to show 4 columns
+                        maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-v6-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
+                    }}
                     hasGutter
                     minWidths={{ default: `${minWidgetWidth}px` }}
                 >

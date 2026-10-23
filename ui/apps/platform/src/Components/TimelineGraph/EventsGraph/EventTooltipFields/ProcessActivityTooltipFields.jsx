@@ -17,8 +17,7 @@ const ProcessActivityTooltipFields = ({ name, args, uid, parentName, parentUid, 
     let uidType;
     if (hasParent && isParentUidUnknown && hasUidChanged) {
         uidType = 'warning';
-    }
-    if (hasParent && hasUidChanged) {
+    } else if (hasParent && hasUidChanged) {
         uidType = 'danger';
     } else {
         uidType = null;

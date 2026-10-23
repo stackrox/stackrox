@@ -39,10 +39,7 @@ export type ExtraneousNodeModel = Override<NodeModel, { data: ExtraneousData }>;
 export type CustomGroupNodeData = NamespaceData | ExternalGroupData;
 
 export type CustomSingleNodeData =
-    | DeploymentData
-    | ExternalEntitiesData
-    | CIDRBlockData
-    | InternalEntitiesData;
+    DeploymentData | ExternalEntitiesData | CIDRBlockData | InternalEntitiesData;
 
 export type CustomNodeData =
     | NamespaceData

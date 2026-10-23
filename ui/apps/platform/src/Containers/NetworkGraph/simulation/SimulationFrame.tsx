@@ -9,7 +9,7 @@ type SimulationFrameProps = {
 };
 
 function SimulationFrame({ isSimulating, children }: SimulationFrameProps): ReactElement {
-    let style = {};
+    let style;
     if (isSimulating) {
         style = {
             position: 'relative',

@@ -1,11 +1,7 @@
 export type SensorHealthStatus = 'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNINITIALIZED';
 
 export type ClusterHealthItemStatus =
-    | 'HEALTHY'
-    | 'UNHEALTHY'
-    | 'DEGRADED'
-    | 'UNINITIALIZED'
-    | 'UNAVAILABLE';
+    'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNINITIALIZED' | 'UNAVAILABLE';
 
 export type ClusterHealthStatus = {
     admissionControlHealthStatus?: ClusterHealthItemStatus;

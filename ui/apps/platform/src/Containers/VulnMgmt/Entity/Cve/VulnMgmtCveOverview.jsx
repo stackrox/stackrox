@@ -106,7 +106,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const newEntityContext = { ...entityContext, [splitCveType]: cve };
 
     const cveType = Object.keys(newEntityContext).shift();
-    let legacyTypeList = [];
+    let legacyTypeList;
     if (cveType === entityTypes.CLUSTER && splitCveType === entityTypes.CLUSTER_CVE) {
         legacyTypeList = vulnerabilityTypes;
     } else if (splitCveType === entityTypes.IMAGE_CVE || splitCveType === entityTypes.NODE_CVE) {

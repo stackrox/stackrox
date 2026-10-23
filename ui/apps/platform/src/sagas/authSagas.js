@@ -201,7 +201,7 @@ function* handleTestLoginAuthResponse(location, type, result) {
     };
 
     if (result?.user) {
-        let user = {};
+        let user;
         try {
             user = JSON.parse(Base64.decode(result.user)); // built-in atob not URL or UTF safe
         } catch {

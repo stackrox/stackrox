@@ -10,9 +10,7 @@ export type BaseBackupIntegration = {
 };
 
 export type BackupIntegration =
-    | GCSBackupIntegration
-    | S3BackupIntegration
-    | S3CompatibleBackupIntegration;
+    GCSBackupIntegration | S3BackupIntegration | S3CompatibleBackupIntegration;
 
 export type GCSConfig = {
     bucket: string;
@@ -43,9 +41,7 @@ export type S3BackupIntegration = {
 } & BaseBackupIntegration;
 
 export type S3URLStyle =
-    | 'S3_URL_STYLE_UNSPECIFIED'
-    | 'S3_URL_STYLE_VIRTUAL_HOST'
-    | 'S3_URL_STYLE_PATH';
+    'S3_URL_STYLE_UNSPECIFIED' | 'S3_URL_STYLE_VIRTUAL_HOST' | 'S3_URL_STYLE_PATH';
 
 export type S3CompatibleConfig = {
     bucket: string;

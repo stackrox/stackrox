@@ -132,7 +132,7 @@ describe('useRestMutation hook', () => {
         expect(result.current.isSuccess).toBe(false);
         expect(result.current.isError).toBe(true);
         expect(result.current.data).toBe(undefined);
-        expect(result.current.error as string).toBe('error with "test"');
+        expect(result.current.error).toBe('error with "test"');
 
         expect(callbackResults).toEqual([
             'global error: error with "test"',

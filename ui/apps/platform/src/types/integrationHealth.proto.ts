@@ -1,8 +1,7 @@
 export type IntegrationHealthStatus = 'UNINITIALIZED' | 'UNHEALTHY' | 'HEALTHY';
 
 // Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
-// prettier-ignore
-export type IntegrationHealthType =
+export /* prettier-ignore */ type IntegrationHealthType =
     | 'UNKNOWN'
     | 'IMAGE_INTEGRATION'
     | 'NOTIFIER'

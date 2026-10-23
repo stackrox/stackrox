@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -166,7 +166,7 @@ function ImagePage({
 
     const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
 
-    let mainContent: ReactNode | null = null;
+    let mainContent;
 
     if (error) {
         mainContent = (

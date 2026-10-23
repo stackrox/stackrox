@@ -11,11 +11,7 @@ import FilteredEntity from 'images/network-graph/filtered-entity.svg?react';
 import { CidrBlockIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 
 export type DisplayOption =
-    | 'policyStatusBadge'
-    | 'externalBadge'
-    | 'edgeLabel'
-    | 'selectionIndicator'
-    | 'objectTypeLabel';
+    'policyStatusBadge' | 'externalBadge' | 'edgeLabel' | 'selectionIndicator' | 'objectTypeLabel';
 
 type DisplayOptionsSelectProps = {
     selectedOptions: DisplayOption[];

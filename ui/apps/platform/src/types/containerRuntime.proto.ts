@@ -4,6 +4,4 @@ export type ContainerRuntimeInfo = {
 };
 
 export type ContainerRuntimeType =
-    | 'UNKNOWN_CONTAINER_RUNTIME'
-    | 'DOCKER_CONTAINER_RUNTIME'
-    | 'CRIO_CONTAINER_RUNTIME';
+    'UNKNOWN_CONTAINER_RUNTIME' | 'DOCKER_CONTAINER_RUNTIME' | 'CRIO_CONTAINER_RUNTIME';

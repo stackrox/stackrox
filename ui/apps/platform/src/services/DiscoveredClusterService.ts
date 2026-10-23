@@ -41,10 +41,7 @@ export type DiscoveredClusterType = (typeof types)[number];
 // providerType
 
 export type DiscoveredClusterProviderType =
-    | 'PROVIDER_TYPE_AWS'
-    | 'PROVIDER_TYPE_AZURE'
-    | 'PROVIDER_TYPE_GCP'
-    | 'PROVIDER_TYPE_UNSPECIFIED';
+    'PROVIDER_TYPE_AWS' | 'PROVIDER_TYPE_AZURE' | 'PROVIDER_TYPE_GCP' | 'PROVIDER_TYPE_UNSPECIFIED';
 
 // status
 

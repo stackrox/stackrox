@@ -60,9 +60,7 @@ export function getClusterStatusCounts(clusters: Cluster[]): ClusterStatusCounts
 }
 
 export type ClusterHealthStatusKey =
-    | 'sensorHealthStatus'
-    | 'collectorHealthStatus'
-    | 'admissionControlHealthStatus';
+    'sensorHealthStatus' | 'collectorHealthStatus' | 'admissionControlHealthStatus';
 
 export function getClusterBecauseOfStatusCounts(
     clusters: Cluster[],

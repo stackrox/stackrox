@@ -157,8 +157,7 @@ type RouteRequirements = {
 
 // Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
 // However, add strings in alphabetical order to minimize merge conflicts when multiple people add strings.
-// prettier-ignore
-export type RouteKey =
+export /* prettier-ignore */ type RouteKey =
     | 'access-control'
     | 'administration-events'
     | 'apidocs'

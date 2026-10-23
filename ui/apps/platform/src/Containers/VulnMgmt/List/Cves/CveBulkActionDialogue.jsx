@@ -51,7 +51,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
     const [policies, setPolicies] = useState([]);
 
     // use GraphQL to get the (hopefully cached) cve summaries to display in the dialog
-    let CVE_QUERY = '';
+    let CVE_QUERY;
 
     switch (cveType) {
         case entityTypes.NODE_CVE: {

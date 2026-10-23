@@ -180,14 +180,7 @@ export type SyslogBase = {
 };
 
 export type SyslogLocalFacility =
-    | 'LOCAL0'
-    | 'LOCAL1'
-    | 'LOCAL2'
-    | 'LOCAL3'
-    | 'LOCAL4'
-    | 'LOCAL5'
-    | 'LOCAL6'
-    | 'LOCAL7';
+    'LOCAL0' | 'LOCAL1' | 'LOCAL2' | 'LOCAL3' | 'LOCAL4' | 'LOCAL5' | 'LOCAL6' | 'LOCAL7';
 
 export type SyslogTCP = {
     tcpConfig: SyslogTCPConfig;
