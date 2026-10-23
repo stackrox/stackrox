@@ -2,16 +2,16 @@ name: Explain native CI selection
 description: Report an already evaluated candidate and expose the native enforcement condition.
 inputs:
   candidate:
-    description: Candidate selected by the owning job's Actions expression.
+    description: Whether the job's file, label, or fallback rule selects it.
     required: true
   enforced:
-    description: Whether the owning workflow requests enforcement for this PR.
+    description: Whether to apply the candidate decision or only report it in shadow mode.
     required: true
   note:
     description: Why a prerequisite or reporting job retains work independently of its candidate.
     default: ''
   eligible:
-    description: Whether the owning job's event, trust, and image restrictions permit work.
+    description: Whether the execution restrictions checked by this step permit work; outer job conditions and dependencies still apply.
     default: 'true'
 outputs:
   run:
@@ -24,15 +24,23 @@ runs:
       shell: bash
       env:
         CANDIDATE: ${{ inputs.candidate }}
+        ELIGIBLE: ${{ inputs.eligible }}
         ENFORCED: ${{ inputs.enforced }}
         RUN: ${{ inputs.eligible != 'false' && (inputs.enforced != 'true' || inputs.candidate != 'false') }}
         NOTE: ${{ inputs.note }}
       run: |
         printf 'run=%s\n' "$RUN" >> "$GITHUB_OUTPUT"
-        printf '### Native CI selection\n\nCandidate: `%s`  \nEnforced: `%s`  \nTest steps permitted: `%s`\n\n' \
-          "$CANDIDATE" "$ENFORCED" "$RUN" >> "$GITHUB_STEP_SUMMARY"
-        printf 'This is a selection decision. Test steps and reports show which tests actually ran.\n' \
-          >> "$GITHUB_STEP_SUMMARY"
-        printf 'Inspect this job\047s Explain selection input for its rule, and detect-changes logs for the filenames.\n' \
-          >> "$GITHUB_STEP_SUMMARY"
-        printf '%s\n' "$NOTE" >> "$GITHUB_STEP_SUMMARY"
+        # shellcheck disable=SC2016 # Markdown backticks are literal text.
+        {
+          printf '### Native CI selection\n\n'
+          printf '**Candidate:** `%s`\n\n' "$CANDIDATE"
+          printf '`true` means this job\047s selection rule requests work based on changed files, labels, or a fallback when file data is unavailable.\n\n'
+          printf '**Eligible:** `%s`\n\n' "$ELIGIBLE"
+          printf '`true` means this step\047s execution restrictions permit work. These can include fork, draft, or Konflux build requirements. If the job supplies no extra restriction, this defaults to `true`. Outer job conditions and dependencies still apply.\n\n'
+          printf '**Enforced:** `%s`\n\n' "$ENFORCED"
+          printf '`true` applies the candidate decision. `false` reports it in shadow mode and keeps existing execution rules.\n\n'
+          printf '**Test steps permitted:** `%s`\n\n' "$RUN"
+          printf 'With enforcement enabled, candidate and eligible must both be `true`. In shadow mode, only eligible is required here. Permission to execute does not confirm that tests ran; inspect the test steps and reports.\n\n'
+          printf 'Inspect this job\047s Explain selection input for its rule, and detect-changes logs for the filenames.\n'
+          printf '%s\n' "$NOTE"
+        } | tee -a "$GITHUB_STEP_SUMMARY"
