@@ -145,7 +145,7 @@ function formatSort(sort?: ParsedQs | ParsedQs[]): Record<string, unknown>[] | n
         return {
             id,
             desc: JSON.parse(desc as string),
-        } as Record<string, unknown>;
+        };
     });
 }
 
