@@ -12,7 +12,7 @@ on:
 
 jobs:
   fetch-nvd-feeds:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: >
       github.repository_owner == 'stackrox' &&
       github.event_name == 'schedule' ||
@@ -51,7 +51,7 @@ jobs:
         if-no-files-found: error
 
   fetch-nvd-api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: >
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -94,7 +94,7 @@ jobs:
   upload-pr-nvd-feeds:
     needs:
     - fetch-nvd-feeds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
     steps:
     # Checkout master to get the latest local actions
@@ -153,7 +153,7 @@ jobs:
   upload-nvd-feeds:
     needs:
     - fetch-nvd-feeds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
@@ -182,7 +182,7 @@ jobs:
   upload-nvd-api:
     needs:
     - fetch-nvd-api
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
@@ -212,7 +212,7 @@ jobs:
     needs:
       - upload-nvd-feeds
       - upload-nvd-api
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ failure() && github.ref_name == 'master' }}
     permissions:
       contents: read

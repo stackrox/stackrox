@@ -72,7 +72,7 @@ defaults:
 jobs:
   qa-e2e-tests:
     if: inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
