@@ -10,7 +10,9 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/coalescer"
@@ -57,9 +59,11 @@ func (f *fakeTokenServiceClient) GenerateTokenForPermissionsAndScope(
 // newTestTokenProvider creates a tokenProvider for testing with the given client.
 func newTestTokenProvider(client centralv1.TokenServiceClient, clusterID string) *tokenProvider {
 	tp := &tokenProvider{
-		clusterIDGetter: &fakeClusterIDGetter{clusterID: clusterID},
-		tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		tokenGroup:      coalescer.New[string](),
+		clusterIDGetter:   &fakeClusterIDGetter{clusterID: clusterID},
+		tokenCache:        expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
+		metricsTokenCache: expiringcache.NewExpiringCache[string, string](metricsTokenCacheTTL),
+		tokenGroup:        coalescer.New[string](),
+		metricsTokenGroup: coalescer.New[string](),
 	}
 	if client != nil {
 		tp.client.Store(&client)
@@ -128,6 +132,39 @@ func TestScopedTokenTransport_RoundTrip(t *testing.T) {
 			assert.Equal(t, "Bearer "+tt.expectedToken, capturedAuthHeader)
 		})
 	}
+}
+
+func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
+	var calls atomic.Int32
+	client := &fakeTokenServiceClient{
+		response:  &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "metrics-token"},
+		callCount: &calls,
+	}
+	provider := newTestTokenProvider(client, "sensor-cluster")
+	_, err := provider.getTokenForScope(context.Background(), "")
+	require.NoError(t, err)
+	_, err = provider.getTokenForPermissionSet(context.Background(), centralproxy.MetricsPermissionSetID)
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, calls.Load())
+	assert.Equal(t, centralproxy.MetricsPermissionSetID, client.lastRequest.GetPermissionSetId())
+	assert.Equal(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}}, client.lastRequest.GetHttpRequestScopes())
+	assert.Empty(t, client.lastRequest.GetPermissions())
+	assert.Empty(t, client.lastRequest.GetClusterScopes())
+
+	transport := &scopedTokenTransport{
+		base: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			assert.Empty(t, req.Header.Get(stackroxNamespaceHeader))
+			assert.Equal(t, "Bearer metrics-token", req.Header.Get("Authorization"))
+			return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+		}),
+		tokenProvider: provider,
+	}
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.Header.Set(stackroxNamespaceHeader, "other-cluster")
+	req = req.WithContext(withMetricsScrape(req.Context()))
+	_, err = transport.RoundTrip(req)
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, calls.Load())
 }
 
 func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
@@ -655,7 +692,7 @@ func TestTokenProvider_InvalidateToken(t *testing.T) {
 		assert.Equal(t, 1, callCount)
 
 		// Invalidate
-		provider.invalidateToken("my-scope")
+		provider.invalidateToken("my-scope", "")
 
 		// Get again - should fetch new token
 		token3, err := provider.getTokenForScope(context.Background(), "my-scope")
@@ -683,7 +720,7 @@ func TestTokenProvider_InvalidateToken(t *testing.T) {
 		assert.Equal(t, 2, callCount)
 
 		// Invalidate only scope-a
-		provider.invalidateToken("scope-a")
+		provider.invalidateToken("scope-a", "")
 
 		// scope-a should get new token
 		tokenA, err := provider.getTokenForScope(context.Background(), "scope-a")
@@ -696,6 +733,30 @@ func TestTokenProvider_InvalidateToken(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "token-2", tokenB)
 		assert.Equal(t, 3, callCount)
+	})
+
+	t.Run("metrics invalidation leaves an equal-named scope cached", func(t *testing.T) {
+		var calls atomic.Int32
+		client := &dynamicFakeTokenServiceClient{
+			getToken: func() string { return fmt.Sprintf("token-%d", calls.Add(1)) },
+		}
+		provider := newTestTokenProvider(client, "test-cluster-id")
+		const key = "shared-key"
+
+		scopeToken, err := provider.getTokenForScope(context.Background(), key)
+		require.NoError(t, err)
+		metricsToken, err := provider.getTokenForPermissionSet(context.Background(), key)
+		require.NoError(t, err)
+		require.NotEqual(t, scopeToken, metricsToken)
+
+		provider.invalidateToken(key, key)
+		cachedScopeToken, err := provider.getTokenForScope(context.Background(), key)
+		require.NoError(t, err)
+		assert.Equal(t, scopeToken, cachedScopeToken)
+		freshMetricsToken, err := provider.getTokenForPermissionSet(context.Background(), key)
+		require.NoError(t, err)
+		assert.NotEqual(t, metricsToken, freshMetricsToken)
+		assert.EqualValues(t, 3, calls.Load())
 	})
 }
 
@@ -895,6 +956,37 @@ func (b *barrierFakeTokenServiceClient) GenerateTokenForPermissionsAndScope(
 }
 
 func TestTokenProvider_Coalescing(t *testing.T) {
+	t.Run("equal scope and permission-set keys do not coalesce", func(t *testing.T) {
+		client := &fakeTokenServiceClient{
+			response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "metrics-token"},
+		}
+		provider := newTestTokenProvider(client, "test-cluster-id")
+		const key = "shared-key"
+		started := make(chan struct{})
+		release := make(chan struct{})
+		finished := make(chan struct{})
+		defer func() {
+			close(release)
+			<-finished
+		}()
+		go func() {
+			defer close(finished)
+			_, _ = provider.tokenGroup.Coalesce(context.Background(), key, func() (string, error) {
+				close(started)
+				<-release
+				return "console-token", nil
+			})
+		}()
+		<-started
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		token, err := provider.getTokenForPermissionSet(ctx, key)
+		require.NoError(t, err)
+		assert.Equal(t, "metrics-token", token)
+		assert.Equal(t, key, client.lastRequest.GetPermissionSetId())
+	})
+
 	t.Run("concurrent requests for same scope make only one RPC call", func(t *testing.T) {
 		var callCount atomic.Int32
 		var wg sync.WaitGroup
@@ -990,7 +1082,7 @@ func TestTokenProvider_Coalescing(t *testing.T) {
 		assert.Equal(t, int32(1), callCount.Load())
 
 		// Invalidate
-		provider.invalidateToken("invalidate-scope")
+		provider.invalidateToken("invalidate-scope", "")
 
 		// Second request should trigger new RPC
 		token2, err := provider.getTokenForScope(context.Background(), "invalidate-scope")
