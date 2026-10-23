@@ -7,6 +7,7 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -159,10 +160,11 @@ func TestEnforce(t *testing.T) {
 	metricsScope := []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}}
 
 	for name, tc := range map[string]struct {
-		req          *v1.GenerateTokenForPermissionsAndScopeRequest
-		clusterID    string
-		expectError  bool
-		expectCapped bool
+		req            *v1.GenerateTokenForPermissionsAndScopeRequest
+		clusterID      string
+		expectedScopes tokens.HTTPRequestScopes
+		expectError    bool
+		expectCapped   bool
 	}{
 		"metrics permission set": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -171,17 +173,17 @@ func TestEnforce(t *testing.T) {
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
-			clusterID: fixtureconsts.Cluster1,
+			clusterID:      fixtureconsts.Cluster1,
+			expectedScopes: tokens.HTTPRequestScopes{"/metrics": {"GET"}},
 		},
-		"metrics permission set cannot request extra route": {
+		"metrics permission set can request explicit read route": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
 				ClusterScopes:     metricsScope,
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
-			clusterID:   fixtureconsts.Cluster1,
-			expectError: true,
+			clusterID: fixtureconsts.Cluster1,
 		},
 		"metrics permission set ignores client permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -190,7 +192,8 @@ func TestEnforce(t *testing.T) {
 				Permissions:      map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
 				Lifetime:         durationpb.New(30 * time.Minute),
 			},
-			clusterID: fixtureconsts.Cluster1,
+			clusterID:      fixtureconsts.Cluster1,
+			expectedScopes: tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes),
 		},
 		"metrics permission set cannot access another cluster": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -245,7 +248,8 @@ func TestEnforce(t *testing.T) {
 				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
 				Lifetime:         durationpb.New(30 * time.Minute),
 			},
-			clusterID: fixtureconsts.Cluster1,
+			clusterID:      fixtureconsts.Cluster1,
+			expectedScopes: tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes),
 		},
 		"console permission set can request approved scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -261,7 +265,8 @@ func TestEnforce(t *testing.T) {
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
-			clusterID: fixtureconsts.Cluster1,
+			clusterID:      fixtureconsts.Cluster1,
+			expectedScopes: tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}},
 		},
 		"legacy permissions reject invalid scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -305,19 +310,75 @@ func TestEnforce(t *testing.T) {
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
-		"unsupported permission set": {
+		"generic permission set accepts canonical scopes outside built-in profiles": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{"unknown"},
-				Permissions:      map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				PermissionSetIds: []string{"custom-read-only-set"},
+				Permissions:      map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{
+					{Path: "/v1/images/", Methods: []string{"GET", "HEAD"}},
+					{Path: "/v1/images/private", Methods: nil},
+				},
+				Lifetime: durationpb.New(2 * time.Hour),
+			},
+			clusterID:      fixtureconsts.Cluster1,
+			expectedScopes: tokens.HTTPRequestScopes{"/v1/images/": {"GET", "HEAD"}, "/v1/images/private": {}},
+			expectCapped:   true,
+		},
+		"generic permission set requires cluster scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds:  []string{"unknown"},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"generic permission set cannot access other cluster": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds:  []string{"custom-read-only-set"},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"generic permission set requires HTTP scopes": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{"custom-read-only-set"},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
 				Lifetime:         durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
-		"unsupported permission set alongside console": {
+		"generic permission set requires at least one HTTP method": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID, "unknown"},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{"custom-read-only-set"},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images"}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"generic permission set rejects noncanonical path": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds:  []string{"custom-read-only-set"},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/../metrics", Methods: []string{"GET"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"generic permission set rejects noncanonical method": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds:  []string{"custom-read-only-set"},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"get"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
@@ -395,13 +456,17 @@ func TestEnforce(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			ctx := sensorContext(t, gomock.NewController(t), tc.clusterID)
-			result, err := policy.enforce(ctx, tc.req)
+			result, scopes, err := policy.enforce(ctx, tc.req)
 			if tc.expectError {
 				assert.ErrorIs(t, err, errox.InvalidArgs)
 				assert.Nil(t, result)
+				assert.Nil(t, scopes)
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, result)
+				if tc.expectedScopes != nil {
+					assert.Equal(t, tc.expectedScopes, scopes)
+				}
 				if tc.expectCapped {
 					assert.Equal(t, durationpb.New(policyDuration), result.GetLifetime())
 				} else {
@@ -417,9 +482,10 @@ func TestEnforce(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
-		result, err := policy.enforce(t.Context(), req)
+		result, scopes, err := policy.enforce(t.Context(), req)
 		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, result)
+		assert.Nil(t, scopes)
 	})
 
 	t.Run("identity with nil service rejects request", func(t *testing.T) {
@@ -433,9 +499,10 @@ func TestEnforce(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
-		result, err := policy.enforce(ctx, req)
+		result, scopes, err := policy.enforce(ctx, req)
 		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, result)
+		assert.Nil(t, scopes)
 	})
 
 	t.Run("non-sensor service identity rejects request", func(t *testing.T) {
@@ -448,13 +515,15 @@ func TestEnforce(t *testing.T) {
 		ctx := authn.ContextWithIdentity(t.Context(), mockIdentity, t)
 
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
-			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
-			Lifetime:      durationpb.New(5 * time.Minute),
+			PermissionSetIds:  []string{"custom-read-only-set"},
+			ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
+			HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}},
+			Lifetime:          durationpb.New(5 * time.Minute),
 		}
-		result, err := policy.enforce(ctx, req)
+		result, scopes, err := policy.enforce(ctx, req)
 		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, result)
+		assert.Nil(t, scopes)
 	})
 
 	t.Run("zero maxLifetime applies no cap", func(t *testing.T) {
@@ -465,7 +534,7 @@ func TestEnforce(t *testing.T) {
 			Lifetime:      durationpb.New(2 * time.Hour),
 		}
 		ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
-		result, err := p.enforce(ctx, req)
+		result, _, err := p.enforce(ctx, req)
 		require.NoError(t, err)
 		assert.Equal(t, 2*time.Hour, result.GetLifetime().AsDuration())
 	})
@@ -478,7 +547,7 @@ func TestEnforce(t *testing.T) {
 			Lifetime:      durationpb.New(2 * time.Hour),
 		}
 		ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
-		result, err := p.enforce(ctx, req)
+		result, _, err := p.enforce(ctx, req)
 		require.NoError(t, err)
 		assert.Equal(t, 2*time.Hour, result.GetLifetime().AsDuration())
 	})

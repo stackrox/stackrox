@@ -28,24 +28,29 @@ func TestApprovedHTTPScopes(t *testing.T) {
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 			expected:      tokens.HTTPRequestScopes{"/api/graphql": {"POST"}},
 		},
-		"console deny-all subset": {
+		"console accepts explicit non-profile route": {
+			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}},
+			expected:      tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+		},
+		"console needs an allowed method": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql"}},
-			expected:      tokens.HTTPRequestScopes{"/api/graphql": {}},
+			invalid:       true,
 		},
 		"future metrics profile": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
 			expected:      centralproxy.MetricsHTTPScopes,
 		},
-		"metrics cannot ask for console": {
+		"metrics accepts explicit non-profile read route": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
-			invalid:       true,
+			expected:      tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
 		},
-		"metrics cannot ask for POST": {
+		"metrics accepts explicit POST route": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"POST"}}},
-			invalid:       true,
+			expected:      tokens.HTTPRequestScopes{"/metrics": {"POST"}},
 		},
 		"duplicate path": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
@@ -55,12 +60,32 @@ func TestApprovedHTTPScopes(t *testing.T) {
 			},
 			invalid: true,
 		},
-		"wildcard path": {
+		"escaped path": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
-			requested:     []*apiV1.HTTPRequestScope{{Path: "/*", Methods: []string{"GET"}}},
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/%2A", Methods: []string{"GET"}}},
 			invalid:       true,
 		},
-		"unsupported set": {permissionSet: "unknown", invalid: true},
+		"generic set can use non-profile route": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images/", Methods: []string{"GET", "HEAD"}}},
+			expected:      tokens.HTTPRequestScopes{"/v1/images/": {"GET", "HEAD"}},
+		},
+		"generic set needs HTTP scope": {permissionSet: "custom-read-only-set", invalid: true},
+		"generic set cannot have only deny rules": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images"}},
+			invalid:       true,
+		},
+		"generic set rejects escaped path": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/%69mages", Methods: []string{"GET"}}},
+			invalid:       true,
+		},
+		"generic set rejects invalid method": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET /"}}},
+			invalid:       true,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			actual, err := approvedHTTPScopes(&v1.GenerateTokenForPermissionsAndScopeRequest{

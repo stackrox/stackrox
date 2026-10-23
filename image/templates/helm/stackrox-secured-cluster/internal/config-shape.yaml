@@ -69,6 +69,8 @@ env:
 ca:
   cert: null # string
 sensor:
+  centralProxy:
+    enabled: null # bool
   imagePullPolicy: null # string
   endpoint: null # string
   affinity: null # dict
