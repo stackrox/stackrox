@@ -725,6 +725,10 @@ func getTestRecMultiCluster() *storage.ComplianceOperatorScanConfigurationV2 {
 }
 
 func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
+	// Enable the flag so the on-demand stamping path runs. The flag-off behavior
+	// (no stamping call) is asserted separately in TestProcessRescanRequestFlagOff.
+	suite.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+
 	multiCluster := getTestRec()
 	multiCluster.Clusters = append(multiCluster.Clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: testconsts.Cluster3})
 	cases := []processScanConfigTestCase{
@@ -732,6 +736,16 @@ func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
 			desc: "Rerun existing scan config succeeds",
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateScanConfigLastScanRequestedTime(gomock.Any(), mockScanID, gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+			},
+			isErrorTest: false,
+		},
+		{
+			desc: "Rerun succeeds even when recording scan request time fails (best-effort)",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateScanConfigLastScanRequestedTime(gomock.Any(), mockScanID, gomock.Any()).Return(errors.New("db write failed")).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 			},
 			isErrorTest: false,
@@ -754,6 +768,7 @@ func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
 			desc: "Rerun scan config continues when sensor message fails and logs message",
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(multiCluster, true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateScanConfigLastScanRequestedTime(gomock.Any(), mockScanID, gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Failed to send message to sensor")).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster3, gomock.Any()).Return(nil).Times(1)
 			},
@@ -772,6 +787,19 @@ func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
 			}
 		})
 	}
+}
+
+// TestProcessRescanRequestFlagOff verifies that with ROX_COMPLIANCE_SURFACE_STALE_DATA
+// off, a rescan does NOT stamp last_scan_requested_time: the strict mock controller would
+// fail if UpdateScanConfigLastScanRequestedTime were called (no expectation is set), so the
+// absence of that expectation asserts the flag-off path is byte-for-byte master behavior.
+func (suite *complianceManagerTestSuite) TestProcessRescanRequestFlagOff() {
+	suite.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "false")
+
+	suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+	suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+
+	suite.Require().NoError(suite.manager.ProcessRescanRequest(suite.hasWriteCtx, mockScanID))
 }
 
 func getTestRecNoID() *storage.ComplianceOperatorScanConfigurationV2 {

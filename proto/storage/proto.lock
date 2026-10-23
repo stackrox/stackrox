@@ -4684,6 +4684,11 @@
                 "name": "notifiers",
                 "type": "NotifierConfiguration",
                 "is_repeated": true
+              },
+              {
+                "id": 19,
+                "name": "last_scan_requested_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
