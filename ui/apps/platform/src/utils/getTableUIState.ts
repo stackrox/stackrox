@@ -23,11 +23,7 @@ export type ErrorState = {
 };
 
 export type TableUIState<DataType> =
-    | IdleState
-    | LoadingState
-    | CompleteState<DataType>
-    | EmptyState
-    | ErrorState;
+    IdleState | LoadingState | CompleteState<DataType> | EmptyState | ErrorState;
 
 export type GetTableUIStateProps<DataType> = {
     isLoading: boolean;

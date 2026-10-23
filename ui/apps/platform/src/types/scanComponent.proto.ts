@@ -16,11 +16,4 @@ export type ScanComponent = {
 type Note = 'UNSPECIFIED' | 'UNSCANNED';
 
 export type SourceType =
-    | 'OS'
-    | 'PYTHON'
-    | 'JAVA'
-    | 'RUBY'
-    | 'NODEJS'
-    | 'GO'
-    | 'DOTNETCORERUNTIME'
-    | 'INFRASTRUCTURE';
+    'OS' | 'PYTHON' | 'JAVA' | 'RUBY' | 'NODEJS' | 'GO' | 'DOTNETCORERUNTIME' | 'INFRASTRUCTURE';

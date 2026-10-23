@@ -253,11 +253,7 @@ export type ScopeEntity =
     | 'SCOPE_ENTITY_CLUSTER';
 
 export type ScopeField =
-    | 'FIELD_UNSET'
-    | 'FIELD_ID'
-    | 'FIELD_NAME'
-    | 'FIELD_LABEL'
-    | 'FIELD_ANNOTATION';
+    'FIELD_UNSET' | 'FIELD_ID' | 'FIELD_NAME' | 'FIELD_LABEL' | 'FIELD_ANNOTATION';
 
 export type CollectionSnapshot = {
     id: string;
@@ -298,9 +294,7 @@ export type ConfiguredReportSnapshot = Snapshot & {
 };
 
 export type ReportSnapshot =
-    | ConfiguredReportSnapshot
-    | ViewBasedReportSnapshot
-    | NodeViewBasedReportSnapshot;
+    ConfiguredReportSnapshot | ViewBasedReportSnapshot | NodeViewBasedReportSnapshot;
 
 // Type guard functions
 

@@ -88,9 +88,7 @@ export type ByLabelResourceSelector = {
     rules: LabelSelectorRule[];
 };
 export type ScopedResourceSelector =
-    | NoneSpecifiedResourceSelector
-    | ByNameResourceSelector
-    | ByLabelResourceSelector;
+    NoneSpecifiedResourceSelector | ByNameResourceSelector | ByLabelResourceSelector;
 
 /**
  * `ClientCollection` is the front end representation of a valid collection, which is more

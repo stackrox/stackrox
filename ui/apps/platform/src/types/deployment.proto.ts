@@ -80,13 +80,7 @@ export type EnvironmentConfig = {
 };
 
 export type EnvVarSource =
-    | 'UNSET'
-    | 'RAW'
-    | 'SECRET_KEY'
-    | 'CONFIG_MAP_KEY'
-    | 'FIELD'
-    | 'RESOURCE_FIELD'
-    | 'UNKNOWN';
+    'UNSET' | 'RAW' | 'SECRET_KEY' | 'CONFIG_MAP_KEY' | 'FIELD' | 'RESOURCE_FIELD' | 'UNKNOWN';
 
 export type ContainerImage = {
     id: string;

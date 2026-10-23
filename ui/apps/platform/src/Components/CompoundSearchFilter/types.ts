@@ -57,8 +57,7 @@ export type SelectExclusiveSingleSearchFilterAttribute = {
 } & BaseSearchFilterAttribute;
 
 export type SelectSingleSearchFilterAttribute =
-    | SelectSearchFilterAttribute
-    | SelectExclusiveSingleSearchFilterAttribute;
+    SelectSearchFilterAttribute | SelectExclusiveSingleSearchFilterAttribute;
 
 export type SelectExclusiveDoubleSearchFilterAttribute = {
     inputType: 'select-exclusive-double';
@@ -103,9 +102,7 @@ export function isOnSearchPayload(payload: OnSearchPayloadItem[]): payload is On
 }
 
 export type OnSearchPayloadItem =
-    | OnSearchPayloadItemAdd
-    | OnSearchPayloadItemDelete
-    | OnSearchPayloadItemRemove;
+    OnSearchPayloadItemAdd | OnSearchPayloadItemDelete | OnSearchPayloadItemRemove;
 
 export type OnSearchPayloadItemAdd =
     | OnSearchPayloadItemAppend

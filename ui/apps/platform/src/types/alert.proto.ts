@@ -100,10 +100,7 @@ export type BaseAlert = {
 };
 
 export type Violation =
-    | GenericViolation
-    | K8sEventViolation
-    | NetworkFlowViolation
-    | FileAccessViolation;
+    GenericViolation | K8sEventViolation | NetworkFlowViolation | FileAccessViolation;
 
 export type GenericViolation = {
     type: 'GENERIC';
@@ -153,11 +150,7 @@ type BaseViolation = {
 };
 
 export type ViolationType =
-    | 'GENERIC'
-    | 'K8S_EVENT'
-    | 'NETWORK_FLOW'
-    | 'NETWORK_POLICY'
-    | 'FILE_ACCESS';
+    'GENERIC' | 'K8S_EVENT' | 'NETWORK_FLOW' | 'NETWORK_POLICY' | 'FILE_ACCESS';
 
 export type ProcessViolation = {
     message: string;
