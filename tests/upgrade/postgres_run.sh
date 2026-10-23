@@ -246,6 +246,11 @@ test_upgrade_paths() {
 
     wait_for_central_reconciliation
 
+    # This nginx image is expected to have fixable CVEs with CVSS >= 7 once score
+    # enrichment is available. It differs from the policy test's nginx-2.0.3 image,
+    # so that workload still exercises automatic scanning on deployment.
+    wait_for_scored_image_scan "quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine"
+
     rm -f FAIL
     remove_qa_test_results
 
