@@ -8,7 +8,7 @@ on:
 jobs:
   auto-merge-minor:
     name: Auto-merge semver minor and patch bumps
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge'
     steps:
     - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
@@ -20,7 +20,7 @@ jobs:
 
   auto-merge-any:
     name: Auto-merge any version bumps
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge-any'
     steps:
     - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
