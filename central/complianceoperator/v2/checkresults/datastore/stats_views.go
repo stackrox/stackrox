@@ -2,6 +2,8 @@ package datastore
 
 import (
 	"time"
+
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // ResourceResultCountByClusterScan represents shape of the stats query for compliance operator results
@@ -31,6 +33,10 @@ type ResultStatusCountByCluster struct {
 	ClusterID          string     `db:"cluster_id"`
 	ClusterName        string     `db:"cluster"`
 	LastScanTime       *time.Time `db:"compliance_scan_last_executed_time_max"`
+	// DataFreshness is MAX(data_freshness) over the cluster's results. Because the
+	// enum orders UNKNOWN(0) < CURRENT(1) < STALE(2), the max yields the correct
+	// rollup precedence: STALE if any result is stale, else CURRENT, else UNKNOWN.
+	DataFreshness *storage.ComplianceDataFreshness `db:"compliance_data_freshness_max"`
 }
 
 // ResourceResultCountByProfile represents shape of the stats query for compliance operator results
@@ -43,6 +49,14 @@ type ResourceResultCountByProfile struct {
 	NotApplicableCount int    `db:"compliance_not_applicable_count"`
 	InconsistentCount  int    `db:"compliance_inconsistent_count"`
 	ProfileName        string `db:"compliance_profile_name"`
+}
+
+// ProfileStaleStats holds the profile-scoped stale-data banner counts: how many
+// clusters have any stale result and how many stale check results exist, across
+// all clusters (not limited to a page).
+type ProfileStaleStats struct {
+	StaleClusterCount     int
+	StaleCheckResultCount int
 }
 
 // ResourceResultsByProfile represents shape of the stats query for compliance operator results
