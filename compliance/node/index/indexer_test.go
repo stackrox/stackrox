@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,8 +16,10 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/toolkit/types"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -268,6 +271,131 @@ func (s *nodeIndexerSuite) TestFilterPackages() {
 		s.Same(b, in[1])
 		s.Len(in, 2)
 	})
+}
+
+func (s *nodeIndexerSuite) TestRunCoalescerRepositoryMapping() {
+	const (
+		appstreamRepo = "rhel-9-for-aarch64-appstream-e4s-debug-rpms"
+		baseOSRepo    = "rhel-9-for-aarch64-baseos-rpms"
+		baseOSCPE     = "cpe:/o:redhat:enterprise_linux:9::baseos"
+	)
+	appstreamCPEs := []string{
+		"cpe:/a:redhat:rhel_e4s:9.0::appstream",
+		"cpe:/a:redhat:rhel_e4s:9.2::appstream",
+		"cpe:/a:redhat:rhel_e4s:9.4::appstream",
+		"cpe:/a:redhat:rhel_e4s:9.6::appstream",
+		"cpe:/a:redhat:rhel_e4s:9.8::appstream",
+		"cpe:/a:redhat:rhel_eus:9.0::appstream",
+		"cpe:/a:redhat:rhel_eus:9.2::appstream",
+		"cpe:/a:redhat:rhel_eus:9.4::appstream",
+		"cpe:/a:redhat:rhel_eus:9.6::appstream",
+		"cpe:/a:redhat:rhel_eus:9.8::appstream",
+	}
+	type repositoryMapping struct {
+		CPEs []string `json:"cpes"`
+	}
+	mappingData, err := json.Marshal(map[string]map[string]repositoryMapping{
+		"data": {
+			appstreamRepo: {CPEs: appstreamCPEs},
+			baseOSRepo:    {CPEs: []string{baseOSCPE}},
+		},
+	})
+	s.Require().NoError(err)
+	mappingPath := filepath.Join(s.T().TempDir(), "repo2cpe.json")
+	s.Require().NoError(os.WriteFile(mappingPath, mappingData, 0600))
+
+	hostPath := s.T().TempDir()
+	buildInfoPath := filepath.Join(hostPath, "usr", "share", "buildinfo")
+	s.Require().NoError(os.MkdirAll(buildInfoPath, 0755))
+	manifestData, err := json.Marshal(map[string][]string{"content_sets": {appstreamRepo, baseOSRepo}})
+	s.Require().NoError(err)
+	s.Require().NoError(os.WriteFile(filepath.Join(buildInfoPath, "content_manifest.json"), manifestData, 0600))
+
+	repos, err := runRepositoryScanner(s.T().Context(), NodeIndexerConfig{
+		Client:              http.DefaultClient,
+		Repo2CPEMappingFile: mappingPath,
+	}, s.mustCreateLayer(hostPath))
+	s.Require().NoError(err)
+	s.Require().Len(repos, 11)
+
+	allCPEs := append(slices.Clone(appstreamCPEs), baseOSCPE)
+	tests := map[string]struct {
+		repositoryHint string
+		wantCPEs       []string
+	}{
+		"should associate every CPE of the hinted repository": {
+			repositoryHint: url.Values{"repoid": {appstreamRepo}}.Encode(),
+			wantCPEs:       appstreamCPEs,
+		},
+		"should associate every layer repository when no hint is present": {
+			wantCPEs: allCPEs,
+		},
+		"should restrict associations to the other hinted repository": {
+			repositoryHint: url.Values{"repoid": {baseOSRepo}}.Encode(),
+			wantCPEs:       []string{baseOSCPE},
+		},
+		"should leave associations empty when the hint matches no repository": {
+			repositoryHint: "repoid=unmapped-repository",
+		},
+	}
+	for name, tc := range tests {
+		s.Run(name, func() {
+			pkgs := []*claircore.Package{
+				{
+					ID: "0", Name: "bash", Version: "1", Kind: types.BinaryPackage, Arch: "aarch64",
+					PackageDB: "sqlite:usr/share/rpm", RepositoryHint: tc.repositoryHint,
+				},
+				{
+					ID: "1", Name: "glibc", Version: "1", Kind: types.BinaryPackage, Arch: "aarch64",
+					PackageDB: "sqlite:usr/share/rpm", RepositoryHint: tc.repositoryHint,
+				},
+			}
+			report, err := runCoalescer(s.T().Context(), ccLayerDigest, repos, pkgs)
+			s.Require().NoError(err)
+			s.Len(report.Repositories, 11)
+			s.Len(report.Packages, len(pkgs))
+			s.Len(report.Environments, len(pkgs))
+
+			protoReport, err := mappers.ToProtoV4IndexReport(report)
+			s.Require().NoError(err)
+			contents := protoReport.GetContents()
+			s.Len(contents.GetRepositories(), 11)
+			s.Len(contents.GetPackages(), len(pkgs))
+
+			wantCPEs := make([]string, 0, len(tc.wantCPEs))
+			for _, uri := range tc.wantCPEs {
+				parsed, err := cpe.Unbind(uri)
+				s.Require().NoError(err)
+				encoded, err := parsed.AppendText(nil)
+				s.Require().NoError(err)
+				wantCPEs = append(wantCPEs, string(encoded))
+			}
+			for _, pkg := range pkgs {
+				envs := report.Environments[pkg.ID]
+				s.Require().Len(envs, 1)
+				env := envs[0]
+				s.Equal(pkg.PackageDB, env.PackageDB)
+				s.Equal(ccLayerDigest, env.IntroducedIn)
+				s.Len(env.RepositoryIDs, len(tc.wantCPEs))
+				gotCPEs := make([]string, 0, len(env.RepositoryIDs))
+				for _, repoID := range env.RepositoryIDs {
+					repo := report.Repositories[repoID]
+					s.Require().NotNil(repo)
+					encoded, err := repo.CPE.AppendText(nil)
+					s.Require().NoError(err)
+					gotCPEs = append(gotCPEs, string(encoded))
+					protoRepo := contents.GetRepositories()[repoID]
+					s.Require().NotNil(protoRepo)
+					s.Equal(string(encoded), protoRepo.GetCpe())
+				}
+				s.ElementsMatch(wantCPEs, gotCPEs, "package %s must retain all applicable CPEs", pkg.Name)
+				protoEnvs := contents.GetEnvironments()[pkg.ID].GetEnvironments()
+				s.Require().Len(protoEnvs, 1)
+				s.ElementsMatch(env.RepositoryIDs, protoEnvs[0].GetRepositoryIds())
+				s.T().Logf("%s: repository IDs %v; CPEs: %v", pkg.Name, env.RepositoryIDs, gotCPEs)
+			}
+		})
+	}
 }
 
 func (s *nodeIndexerSuite) TestBuildMappingURL() {
