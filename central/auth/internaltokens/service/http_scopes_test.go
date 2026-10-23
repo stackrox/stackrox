@@ -16,37 +16,79 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-func TestNamedProxyTokenScopes(t *testing.T) {
+func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissionSet string
 		requested     []*apiV1.HTTPRequestScope
 		expected      tokens.HTTPRequestScopes
 		invalid       bool
 	}{
-		"console scope": {
+		"console permission set requires explicit scopes": {
+			permissionSet: centralproxy.ConsoleProxyPermissionSetName,
+			invalid:       true,
+		},
+		"console subset": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetName,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 			expected:      tokens.HTTPRequestScopes{"/api/graphql": {"POST"}},
 		},
-		"custom scope outside console profile": {
-			permissionSet: "custom read-only set",
-			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images/", Methods: []string{"GET"}}},
-			expected:      tokens.HTTPRequestScopes{"/v1/images/": {"GET"}},
+		"console accepts explicit non-profile route": {
+			permissionSet: centralproxy.ConsoleProxyPermissionSetName,
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}},
+			expected:      tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
 		},
-		"no scope": {permissionSet: "custom read-only set", invalid: true},
-		"no method": {
-			permissionSet: "custom read-only set",
-			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images/"}}, invalid: true,
+		"console needs an allowed method": {
+			permissionSet: centralproxy.ConsoleProxyPermissionSetName,
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql"}},
+			invalid:       true,
+		},
+		"metrics permission set requires explicit scopes": {
+			permissionSet: centralproxy.MetricsPermissionSetName,
+			invalid:       true,
+		},
+		"metrics rejects non-profile read route": {
+			permissionSet: centralproxy.MetricsPermissionSetName,
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+			invalid:       true,
+		},
+		"metrics rejects POST route": {
+			permissionSet: centralproxy.MetricsPermissionSetName,
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"POST"}}},
+			invalid:       true,
 		},
 		"duplicate path": {
-			permissionSet: "custom read-only set",
+			permissionSet: centralproxy.ConsoleProxyPermissionSetName,
 			requested: []*apiV1.HTTPRequestScope{
-				{Path: "/v1/images/", Methods: []string{"GET"}}, {Path: "/v1/images/", Methods: []string{"HEAD"}},
-			}, invalid: true,
+				{Path: "/api/graphql", Methods: []string{"POST"}},
+				{Path: "/api/graphql"},
+			},
+			invalid: true,
 		},
-		"invalid path": {
-			permissionSet: "custom read-only set",
-			requested:     []*apiV1.HTTPRequestScope{{Path: "/%6detrics", Methods: []string{"GET"}}}, invalid: true,
+		"escaped path": {
+			permissionSet: centralproxy.ConsoleProxyPermissionSetName,
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/%2A", Methods: []string{"GET"}}},
+			invalid:       true,
+		},
+		"generic set can use non-profile route": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images/", Methods: []string{"GET", "HEAD"}}},
+			expected:      tokens.HTTPRequestScopes{"/v1/images/": {"GET", "HEAD"}},
+		},
+		"generic set needs HTTP scope": {permissionSet: "custom-read-only-set", invalid: true},
+		"generic set cannot have only deny rules": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images"}},
+			invalid:       true,
+		},
+		"generic set rejects escaped path": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/%69mages", Methods: []string{"GET"}}},
+			invalid:       true,
+		},
+		"generic set rejects invalid method": {
+			permissionSet: "custom-read-only-set",
+			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET /"}}},
+			invalid:       true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -65,4 +107,14 @@ func TestNamedProxyTokenScopes(t *testing.T) {
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
+}
+
+func TestEnforceLegacyPermissionsWithoutHTTPScopes(t *testing.T) {
+	ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
+	_, scopes, err := defaultTokenPolicy().enforce(ctx, &v1.GenerateTokenForPermissionsAndScopeRequest{
+		Permissions: map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+		Lifetime:    durationpb.New(time.Minute),
+	})
+	require.NoError(t, err)
+	assert.Nil(t, scopes)
 }

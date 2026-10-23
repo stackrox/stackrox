@@ -1617,6 +1617,14 @@ spec:
             displayName: Expose Endpoint
             path: scannerV4.monitoring.exposeEndpoint
           - description: |-
+              Enables the OpenShift Sensor Central API proxy for configured clients. Clients also need ingress access
+              and an entry in the Sensor namespace's proxy client policy ConfigMap.
+              The default is: false.
+            displayName: Central API Proxy
+            path: sensor.centralProxyEnabled
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: |-
               Allows overriding the default resource settings for this component. Please consult the documentation
               for an overview of default resource requirements and a sizing guide.
             displayName: Resources

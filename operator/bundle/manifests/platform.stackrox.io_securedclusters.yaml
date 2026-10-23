@@ -1732,6 +1732,12 @@ spec:
               sensor:
                 description: Settings for the Sensor component.
                 properties:
+                  centralProxyEnabled:
+                    description: |-
+                      Enables the OpenShift Sensor Central API proxy for configured clients. Clients also need ingress access
+                      and an entry in the Sensor namespace's proxy client policy ConfigMap.
+                      The default is: false.
+                    type: boolean
                   hostAliases:
                     description: HostAliases allows configuring additional hostnames
                       to resolve in the pod's hosts file.
