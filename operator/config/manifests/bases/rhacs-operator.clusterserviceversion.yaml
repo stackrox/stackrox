@@ -1255,6 +1255,14 @@ spec:
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
       - description: |-
+          Enables the OpenShift Sensor Central API proxy for configured clients. Clients also need ingress access
+          and an entry in the Sensor namespace's proxy client policy ConfigMap.
+          The default is: false.
+        displayName: Central API Proxy
+        path: sensor.centralProxyEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: |-
           Maximum response size in KB from a virtual machine agent.
           Responses larger than this are rejected and that virtual machine is skipped until the next poll.
           The default is: 16384.

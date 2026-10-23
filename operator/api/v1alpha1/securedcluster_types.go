@@ -150,6 +150,12 @@ type ProcessBaselinesSpec struct {
 type SensorComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	DeploymentSpec `json:",inline"`
+
+	// Enables the OpenShift Sensor Central API proxy for configured clients. Clients also need ingress access
+	// and an entry in the Sensor namespace's proxy client policy ConfigMap.
+	// The default is: false.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Central API Proxy",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	CentralProxyEnabled *bool `json:"centralProxyEnabled,omitempty"`
 }
 
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.

@@ -88,7 +88,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	pruning.EnableDynamicRBACPruning()
 
 	// Validate request against policy and modify request if necessary.
-	req, err := s.policy.enforce(ctx, req)
+	req, httpScopes, err := s.policy.enforce(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,12 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	case centralproxy.ConsoleProxyPermissionSetID:
 		tokenRole, err = s.roleManager.createSensorConsoleRole(roleReadCtx, s.roles, req.GetClusterScopes())
 	default:
-		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+		if req.GetPermissionSetId() == "" {
+			tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+		} else {
+			tokenRole, err = s.roleManager.createSensorGenericRole(roleReadCtx, s.roles,
+				req.GetPermissionSetId(), req.GetClusterScopes())
+		}
 	}
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
@@ -117,20 +122,10 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	roleName := tokenRole.GetRoleName()
 	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{
-		InternalRoles: []*tokens.InternalRole{tokenRole},
-		Name:          claimName,
-		Requester:     req.GetRequester(),
-	}
-	if req.GetPermissionSetId() == "" {
-		roxClaims.HTTPRequestScopes, err = tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
-		if err != nil {
-			return nil, errox.InvalidArgs.CausedBy(err)
-		}
-	} else {
-		roxClaims.HTTPRequestScopes, err = approvedHTTPScopes(req)
-		if err != nil {
-			return nil, err
-		}
+		InternalRoles:     []*tokens.InternalRole{tokenRole},
+		Name:              claimName,
+		Requester:         req.GetRequester(),
+		HTTPRequestScopes: httpScopes,
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {

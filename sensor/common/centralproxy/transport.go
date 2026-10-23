@@ -3,7 +3,9 @@ package centralproxy
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -126,6 +128,7 @@ func (t *scopedTokenTransport) SetClient(conn grpc.ClientConnInterface) {
 func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	scope := req.Header.Get(stackroxNamespaceHeader)
 	permissionSetID := proxyPermissionSetFromContext(req.Context())
+	profile := proxyTokenProfileFromContext(req.Context())
 
 	// Buffer the request body upfront so we can replay it on retry.
 	var bodyBytes []byte
@@ -142,7 +145,13 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
-	resp, err := t.doRoundTrip(req, scope, permissionSetID)
+	var resp *http.Response
+	var err error
+	if profile != nil {
+		resp, err = t.doProfileRoundTrip(req, profile)
+	} else {
+		resp, err = t.doRoundTrip(req, scope, permissionSetID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -161,11 +170,26 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
 
+		if profile != nil {
+			t.tokenProvider.invalidateProfile(profile)
+			return t.doProfileRoundTrip(req, profile)
+		}
 		t.tokenProvider.invalidateToken(scope, permissionSetID)
 		return t.doRoundTrip(req, scope, permissionSetID)
 	}
 
 	return resp, nil
+}
+
+func (t *scopedTokenTransport) doProfileRoundTrip(req *http.Request, profile *proxyTokenProfile) (*http.Response, error) {
+	token, err := t.tokenProvider.getTokenForProfile(req.Context(), profile)
+	if err != nil {
+		return nil, errors.Wrap(err, "obtaining proxy client token")
+	}
+	reqCopy := req.Clone(req.Context())
+	reqCopy.Header.Del(stackroxNamespaceHeader)
+	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	return t.base.RoundTrip(reqCopy) //nolint:wrapcheck
 }
 
 // doRoundTrip performs a single round trip with token injection.
@@ -199,9 +223,11 @@ type tokenProvider struct {
 	clusterIDGetter   clusterIDGetter
 	tokenCache        expiringcache.Cache[string, string]
 	metricsTokenCache expiringcache.Cache[string, string]
+	profileTokenCache expiringcache.Cache[string, string]
 	// Each token type has its own coalescer, so equal scope and permission-set IDs cannot share a request.
 	tokenGroup        *coalescer.Coalescer[string]
 	metricsTokenGroup *coalescer.Coalescer[string]
+	profileTokenGroup *coalescer.Coalescer[string]
 }
 
 // newTokenProvider creates a new tokenProvider.
@@ -210,8 +236,10 @@ func newTokenProvider(clusterIDGetter clusterIDGetter) *tokenProvider {
 		clusterIDGetter:   clusterIDGetter,
 		tokenCache:        expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
 		metricsTokenCache: expiringcache.NewExpiringCache[string, string](metricsTokenCacheTTL),
+		profileTokenCache: expiringcache.NewExpiringCache[string, string](metricsTokenCacheTTL),
 		tokenGroup:        coalescer.New[string](),
 		metricsTokenGroup: coalescer.New[string](),
+		profileTokenGroup: coalescer.New[string](),
 	}
 }
 
@@ -238,6 +266,100 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 
 func (p *tokenProvider) getTokenForPermissionSet(ctx context.Context, permissionSetID string) (string, error) {
 	return p.getToken(ctx, permissionSetID, permissionSetID, p.metricsTokenCache, p.metricsTokenGroup)
+}
+
+func profileCacheKey(profile *proxyTokenProfile) string {
+	// Include the identity, scope and all signed claims. Different clients must
+	// never reuse each other's bearer tokens, even with the same permission set.
+	type httpScope struct {
+		Path    string
+		Methods []string
+	}
+	httpScopes := make([]httpScope, len(profile.httpScopes))
+	for i, scope := range profile.httpScopes {
+		httpScopes[i] = httpScope{Path: scope.Path, Methods: scope.Methods}
+	}
+	data, _ := json.Marshal(struct {
+		Identity        string
+		PermissionSetID string
+		HTTPScopes      []httpScope
+		ClusterScope    string
+		LegacyConsole   bool
+	}{profile.identity, profile.permissionSetID, httpScopes, profile.clusterScope, profile.legacyConsole})
+	return fmt.Sprintf("%x", sha256.Sum256(data))
+}
+
+func (p *tokenProvider) getTokenForProfile(ctx context.Context, profile *proxyTokenProfile) (string, error) {
+	client := p.client.Load()
+	if client == nil {
+		return "", errors.Wrap(errServiceUnavailable, "token provider not initialized")
+	}
+	key := p.clusterIDGetter.GetNoWait() + ":" + profileCacheKey(profile)
+	if token, ok := p.profileTokenCache.Get(key); ok {
+		incrementTokenRequest(tokenResultCacheHit)
+		return token, nil
+	}
+	return p.profileTokenGroup.Coalesce(ctx, key, func() (string, error) { //nolint:wrapcheck
+		if token, ok := p.profileTokenCache.Get(key); ok {
+			incrementTokenRequest(tokenResultCacheHit)
+			return token, nil
+		}
+		requestCtx, cancel := context.WithTimeout(context.Background(), tokenRequestTimeout)
+		defer cancel()
+		token, err := p.requestProfileToken(requestCtx, *client, profile)
+		if err != nil {
+			incrementTokenRequest(tokenResultError)
+			return "", err
+		}
+		p.profileTokenCache.Add(key, token)
+		incrementTokenRequest(tokenResultSuccess)
+		return token, nil
+	})
+}
+
+func (p *tokenProvider) requestProfileToken(ctx context.Context, client centralv1.TokenServiceClient,
+	profile *proxyTokenProfile,
+) (string, error) {
+	clusterID := p.clusterIDGetter.GetNoWait()
+	if clusterID == "" {
+		return "", errors.Wrap(errServiceUnavailable, "cluster ID not available")
+	}
+	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
+		PermissionSetId:   profile.permissionSetID,
+		HttpRequestScopes: profile.httpScopes,
+		Requester:         profile.identity,
+		Lifetime:          durationpb.New(metricsTokenTTL),
+	}
+	if profile.legacyConsole {
+		// Older Centrals use these read-only permissions in place of the ID.
+		req.Permissions = map[string]centralv1.Access{
+			"Deployment": centralv1.Access_READ_ACCESS,
+			"Image":      centralv1.Access_READ_ACCESS,
+		}
+	}
+	if scope := profile.clusterScope; scope != "" {
+		clusterScope := &centralv1.ClusterScope{ClusterId: clusterID}
+		if scope == FullClusterAccessScope {
+			clusterScope.FullClusterAccess = true
+		} else {
+			clusterScope.Namespaces = []string{scope}
+		}
+		req.ClusterScopes = []*centralv1.ClusterScope{clusterScope}
+	}
+	response, err := client.GenerateTokenForPermissionsAndScope(ctx, req)
+	if err != nil {
+		return "", errors.Wrap(err, "requesting proxy client token")
+	}
+	if response.GetToken() == "" {
+		return "", errors.New("received empty proxy client token from Central")
+	}
+	return response.GetToken(), nil
+}
+
+func (p *tokenProvider) invalidateProfile(profile *proxyTokenProfile) {
+	key := p.clusterIDGetter.GetNoWait() + ":" + profileCacheKey(profile)
+	p.profileTokenCache.Remove(key)
+	p.profileTokenGroup.Forget(key)
 }
 
 func (p *tokenProvider) getToken(ctx context.Context, cacheKey, permissionSetID string,

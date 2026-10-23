@@ -570,3 +570,73 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateTokenForGenericPermissionSet(t *testing.T) {
+	const permissionSetID = "custom-read-only-set"
+	for name, tc := range map[string]struct {
+		permissions map[string]storage.Access
+		expectedErr error
+	}{
+		"read-only set is signed": {
+			permissions: map[string]storage.Access{
+				"Image": storage.Access_READ_ACCESS, "Administration": storage.Access_NO_ACCESS,
+			},
+		},
+		"write permission is not signed": {
+			permissions: map[string]storage.Access{"Image": storage.Access_READ_WRITE_ACCESS},
+			expectedErr: errox.InvalidArgs,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			roles := roleDataStoreMocks.NewMockDataStore(ctrl)
+			issuer := tokensMocks.NewMockIssuer(ctrl)
+			roles.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).
+				Return(&storage.PermissionSet{ResourceToAccess: tc.permissions}, true, nil)
+			if tc.expectedErr == nil {
+				issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName: internalRoleName,
+						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"prod"}},
+						Permissions: map[storage.Access][]string{
+							storage.Access_READ_ACCESS: {"Image"}, storage.Access_NO_ACCESS: {"Administration"},
+						},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
+						testClock().Add(time.Hour).Format(time.RFC3339Nano)),
+					Requester: "sensor proxy",
+					HTTPRequestScopes: tokens.HTTPRequestScopes{
+						"/v1/images/": {"GET"}, "/v1/images/private": {},
+					},
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "generic-token"}, nil)
+			}
+			svc := &serviceImpl{
+				issuer: issuer, roles: roles, roleManager: &roleManager{},
+				now: testClock, policy: defaultTokenPolicy(),
+			}
+			req := &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetId: permissionSetID,
+				Permissions:     map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes: []*v1.ClusterScope{{
+					ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"prod"},
+				}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{
+					{Path: "/v1/images/", Methods: []string{"GET"}},
+					{Path: "/v1/images/private"},
+				},
+				Lifetime:  durationpb.New(2 * time.Hour),
+				Requester: "sensor proxy",
+			}
+			ctx := sensorContext(t, ctrl, fixtureconsts.Cluster1)
+			response, err := svc.GenerateTokenForPermissionsAndScope(ctx, req)
+			if tc.expectedErr != nil {
+				assert.Nil(t, response)
+				assert.ErrorIs(t, err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, "generic-token", response.GetToken())
+			assert.Equal(t, 2*time.Hour, req.GetLifetime().AsDuration())
+		})
+	}
+}

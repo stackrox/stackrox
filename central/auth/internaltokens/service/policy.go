@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -39,7 +38,7 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 }
 
 // defaultTokenPolicy retains the hardcoded permission allowlist for older Sensors.
-// Console requests use the Central-managed permission set instead when selected.
+// Permission-set requests use Central-managed permissions instead when selected.
 // This policy caps lifetime to 1 hour and should remain compatible with the
 // OCP console plugin.
 func defaultTokenPolicy() *tokenPolicy {
@@ -122,47 +121,59 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 	return identity.Service().GetId(), nil
 }
 
-// enforce validates the request against all policy checks and returns the
-// request with a capped lifetime if necessary.
+// enforce validates the request and returns its approved HTTP scopes alongside
+// the request with a capped lifetime if necessary.
 func (p *tokenPolicy) enforce(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
-) (*v1.GenerateTokenForPermissionsAndScopeRequest, error) {
+) (*v1.GenerateTokenForPermissionsAndScopeRequest, tokens.HTTPRequestScopes, error) {
 	sensorClusterID, err := p.validateSensorIdentity(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if sensorClusterID == "" {
-		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+		return nil, nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
+	var scopes tokens.HTTPRequestScopes
 	if req.GetPermissionSetId() != "" {
 		switch req.GetPermissionSetId() {
 		case centralproxy.MetricsPermissionSetID:
 			if len(req.GetClusterScopes()) != 0 {
-				return nil, errox.InvalidArgs.New("metrics permission set requests must not specify scopes")
+				return nil, nil, errox.InvalidArgs.New("metrics permission set requests must not specify scopes")
 			}
 		case centralproxy.ConsoleProxyPermissionSetID:
 			if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		default:
-			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+			if len(req.GetClusterScopes()) == 0 {
+				return nil, nil, errox.InvalidArgs.New("generic Sensor proxy tokens require a cluster scope")
+			}
+			if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+				return nil, nil, err
+			}
 		}
-		if _, err := approvedHTTPScopes(req); err != nil {
-			return nil, err
+		scopes, err = approvedHTTPScopes(req)
+		if err != nil {
+			return nil, nil, err
 		}
-		return p.enforceLifetimeLimit(req)
+	} else {
+		if err := p.validatePermissions(req.GetPermissions()); err != nil {
+			return nil, nil, err
+		}
+		scopes, err = tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
+		if err != nil {
+			return nil, nil, errox.InvalidArgs.CausedBy(err)
+		}
+		if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+			return nil, nil, err
+		}
 	}
-	if err := p.validatePermissions(req.GetPermissions()); err != nil {
-		return nil, err
+	req, err = p.enforceLifetimeLimit(req)
+	if err != nil {
+		return nil, nil, err
 	}
-	if _, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes()); err != nil {
-		return nil, errox.InvalidArgs.CausedBy(err)
-	}
-	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
-		return nil, err
-	}
-	return p.enforceLifetimeLimit(req)
+	return req, scopes, nil
 }
 
 func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tokens.HTTPRequestScopes, error) {
@@ -172,8 +183,6 @@ func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tok
 		allowed = tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
 	case centralproxy.MetricsPermissionSetID:
 		allowed = tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes)
-	default:
-		return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 	}
 
 	requested, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
@@ -182,18 +191,15 @@ func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tok
 	}
 	// Older Sensors do not specify HTTP scopes; Central still signs its own profile.
 	if len(requested) == 0 {
-		return allowed, nil
-	}
-	for path, methods := range requested {
-		permitted, found := allowed[path]
-		if !found {
-			return nil, errox.InvalidArgs.New("requested HTTP scope exceeds Central's profile")
+		if allowed != nil {
+			return allowed, nil
 		}
-		for _, method := range methods {
-			if !slices.Contains(permitted, method) {
-				return nil, errox.InvalidArgs.New("requested HTTP scope exceeds Central's profile")
-			}
+		return nil, errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
+	}
+	for _, methods := range requested {
+		if len(methods) > 0 {
+			return requested, nil
 		}
 	}
-	return requested, nil
+	return nil, errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
 }

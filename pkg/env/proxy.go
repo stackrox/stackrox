@@ -15,4 +15,7 @@ var (
 	// SecuredClusterMetricsEnabled opts this Sensor into proxying Central custom
 	// metrics for the OpenShift Prometheus service account.
 	SecuredClusterMetricsEnabled = RegisterBooleanSetting("ROX_SECURED_CLUSTER_METRICS_ENABLED", false)
+
+	// CentralProxyEnabled opts Sensor into serving configured Central API proxy clients on OpenShift.
+	CentralProxyEnabled = RegisterBooleanSetting("ROX_CENTRAL_PROXY_ENABLED", false)
 )

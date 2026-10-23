@@ -167,6 +167,76 @@ func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
 	assert.EqualValues(t, 2, calls.Load())
 }
 
+func TestProfileTokenIsBoundToConfiguredClaimsInCache(t *testing.T) {
+	var calls atomic.Int32
+	client := &fakeTokenServiceClient{
+		response:  &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "profile-token"},
+		callCount: &calls,
+	}
+	provider := newTokenProvider(&fakeClusterIDGetter{clusterID: "sensor-cluster"})
+	var serviceClient centralv1.TokenServiceClient = client
+	provider.client.Store(&serviceClient)
+	profile := &proxyTokenProfile{
+		identity:        "system:serviceaccount:observability:reader",
+		permissionSetID: "read-only-set",
+		httpScopes:      []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+		clusterScope:    FullClusterAccessScope,
+	}
+	token, err := provider.getTokenForProfile(context.Background(), profile)
+	require.NoError(t, err)
+	assert.Equal(t, "profile-token", token)
+	assert.Equal(t, profile.identity, client.lastRequest.GetRequester())
+	assert.Equal(t, profile.httpScopes, client.lastRequest.GetHttpRequestScopes())
+	assert.Equal(t, profile.permissionSetID, client.lastRequest.GetPermissionSetId())
+	require.Len(t, client.lastRequest.GetClusterScopes(), 1)
+	assert.Equal(t, "sensor-cluster", client.lastRequest.GetClusterScopes()[0].GetClusterId())
+	assert.True(t, client.lastRequest.GetClusterScopes()[0].GetFullClusterAccess())
+	_, err = provider.getTokenForProfile(context.Background(), profile)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, calls.Load())
+
+	other := *profile
+	other.identity = "system:serviceaccount:observability:other"
+	_, err = provider.getTokenForProfile(context.Background(), &other)
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, calls.Load())
+	other = *profile
+	other.httpScopes = []*apiV1.HTTPRequestScope{{Path: "/v1/alerts", Methods: []string{"GET"}}}
+	_, err = provider.getTokenForProfile(context.Background(), &other)
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, calls.Load())
+}
+
+func TestProfileTransportReplacesCallerCredentials(t *testing.T) {
+	client := &fakeTokenServiceClient{
+		response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "issued-token"},
+	}
+	provider := newTokenProvider(&fakeClusterIDGetter{clusterID: "sensor-cluster"})
+	var serviceClient centralv1.TokenServiceClient = client
+	provider.client.Store(&serviceClient)
+	transport := &scopedTokenTransport{
+		base: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			assert.Equal(t, "Bearer issued-token", req.Header.Get("Authorization"))
+			assert.Empty(t, req.Header.Get(stackroxNamespaceHeader))
+			return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+		}),
+		tokenProvider: provider,
+	}
+	profile := &proxyTokenProfile{
+		identity:        "user:test-user",
+		permissionSetID: "read-only-set",
+		httpScopes:      []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+	req.Header.Set("Authorization", "Bearer caller-kubernetes-token")
+	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+	req = req.WithContext(withProxyTokenProfile(req.Context(), profile))
+	response, err := transport.RoundTrip(req)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+	assert.Equal(t, "Bearer caller-kubernetes-token", req.Header.Get("Authorization"))
+}
+
 func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
 	t.Run("token provider error propagates", func(t *testing.T) {
 		mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {

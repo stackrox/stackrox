@@ -86,7 +86,7 @@ spec:
   policyTypes:
     - Ingress
 {{- end }}
-{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled) }}
+{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled ._rox.sensor.centralProxy.enabled) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -98,6 +98,7 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "sensor-proxy") | nindent 4 }}
 spec:
+  {{- if or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled }}
   ingress:
     [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
     - from:
@@ -123,6 +124,9 @@ spec:
         - port: 9444
           protocol: TCP
     {{- end }}
+  {{- else }}
+  ingress: []
+  {{- end }}
   podSelector:
     matchLabels:
       app: sensor

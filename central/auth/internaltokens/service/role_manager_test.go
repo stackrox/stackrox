@@ -70,6 +70,7 @@ func TestCreateSensorConsoleRoleUsesStoredPermissions(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissions map[string]storage.Access
 		expected    map[storage.Access][]string
+		denied      bool
 	}{
 		"global permission": {
 			permissions: map[string]storage.Access{
@@ -88,6 +89,7 @@ func TestCreateSensorConsoleRoleUsesStoredPermissions(t *testing.T) {
 				storage.Access_READ_ACCESS:       {"Deployment"},
 				storage.Access_READ_WRITE_ACCESS: {"Image"},
 			},
+			denied: true,
 		},
 		"missing permission": {
 			permissions: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
@@ -99,6 +101,11 @@ func TestCreateSensorConsoleRoleUsesStoredPermissions(t *testing.T) {
 			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
 				Return(&storage.PermissionSet{ResourceToAccess: tc.permissions}, true, nil)
 			role, err := (&roleManager{}).createSensorConsoleRole(t.Context(), roles, nil)
+			if tc.denied {
+				require.ErrorIs(t, err, errox.InvalidArgs)
+				assert.Nil(t, role)
+				return
+			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, role.Permissions)
 		})
@@ -152,4 +159,61 @@ func TestCreateSensorMetricsRoleFailsClosed(t *testing.T) {
 	require.ErrorIs(t, err, errox.NotFound)
 	_, err = manager.createSensorMetricsRole(t.Context(), roles, "")
 	require.ErrorIs(t, err, errox.NotAuthorized)
+}
+
+func TestCreateSensorGenericRole(t *testing.T) {
+	const permissionSetID = "custom-read-only-set"
+	for name, tc := range map[string]struct {
+		permissions map[string]storage.Access
+		expected    map[storage.Access][]string
+		invalid     bool
+	}{
+		"read and no access to arbitrary resources": {
+			permissions: map[string]storage.Access{
+				"Image": storage.Access_READ_ACCESS, "Administration": storage.Access_NO_ACCESS,
+			},
+			expected: map[storage.Access][]string{
+				storage.Access_READ_ACCESS: {"Image"}, storage.Access_NO_ACCESS: {"Administration"},
+			},
+		},
+		"empty set": {expected: map[storage.Access][]string{}},
+		"write access": {
+			permissions: map[string]storage.Access{"Image": storage.Access_READ_ACCESS, "Deployment": storage.Access_READ_WRITE_ACCESS},
+			invalid:     true,
+		},
+		"unknown access": {
+			permissions: map[string]storage.Access{"Image": storage.Access(99)},
+			invalid:     true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+			roles.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).
+				Return(&storage.PermissionSet{ResourceToAccess: tc.permissions}, true, nil)
+			role, err := (&roleManager{}).createSensorGenericRole(t.Context(), roles, permissionSetID,
+				[]*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"prod"}}})
+			if tc.invalid {
+				assert.Nil(t, role)
+				assert.ErrorIs(t, err, errox.InvalidArgs)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, &tokens.InternalRole{
+				RoleName:    internalRoleName,
+				Clusters:    tokens.ClusterScopes{"sensor-cluster": {"prod"}},
+				Permissions: tc.expected,
+			}, role)
+		})
+	}
+}
+
+func TestCreateSensorGenericRoleFailsClosed(t *testing.T) {
+	manager := &roleManager{}
+	_, err := manager.createSensorGenericRole(t.Context(), nil, "missing", nil)
+	require.ErrorIs(t, err, errox.NotAuthorized)
+
+	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+	roles.EXPECT().GetPermissionSet(gomock.Any(), "missing").Return(nil, false, nil)
+	_, err = manager.createSensorGenericRole(t.Context(), roles, "missing", nil)
+	require.ErrorIs(t, err, errox.NotFound)
 }
