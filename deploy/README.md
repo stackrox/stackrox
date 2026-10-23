@@ -34,8 +34,6 @@ so you can use roxie CLI flags even with `deploy.sh`, e.g.:
 ./deploy/deploy.sh --tag 4.11.0
 ```
 
-The legacy deployment scripts will be removed entirely soon.
-
 If you would like to use roxie directly, but roxie is not installed on your system, all `roxie`
 commands below can also be run via `scripts/roxie.sh` instead:
 

@@ -8,19 +8,8 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [[ -z "$1" ]]; then
-  echo "Usage: $0 <component> [ <namespace> ]"
-  echo "Available components: sensor, central, migrator, admission"
-  exit 1
-fi
-
-# realpath binary might be missing on MacOS
-function realpath {
-	[[ -n "$1" ]] || return 0
-	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
-}
-
-function hotload_binary {
+# hotload_binary function (extracted from deleted deploy/common/k8sbased.sh)
+hotload_binary() {
   local binary_name="$1"
   local local_name="$2"
   local deployment="$3"
@@ -52,12 +41,19 @@ spec:
       volumes:
         - hostPath:
             path: "${binary_path}"
-            type: ""
+            type: File
           name: "binary-${local_name}"
 EOF
 )
-  kubectl -n "${namespace}" set env "deploy/${deployment}" "ROX_HOTRELOAD=true"
+
+  kubectl -n "${namespace}" delete "pod" -l "app=${deployment}"
 }
+
+if [[ -z "$1" ]]; then
+  echo "Usage: $0 <component> [ <namespace> ]"
+  echo "Available components: sensor, central, migrator, admission"
+  exit 1
+fi
 
 component="$1"
 namespace=${2:-stackrox}
