@@ -401,7 +401,7 @@ func generateFloatMatcher(value string, _ reflect.Type, matchAll bool) (baseMatc
 	return newFloatMatcher(value, matchAll, defaultFloatDisplayPrecision)
 }
 
-func newFloatMatcher(value string, matchAll bool, maxPlaces int) (baseMatcherAndExtractor, error) {
+func newFloatMatcher(value string, matchAll bool, displayPrecision int) (baseMatcherAndExtractor, error) {
 	var baseMatcher func(float64) bool
 	if matchAll && value != "" {
 		return nil, errors.New("non-empty value for matchAll")
@@ -417,7 +417,7 @@ func newFloatMatcher(value string, matchAll bool, maxPlaces int) (baseMatcherAnd
 		switch instance.Kind() {
 		case reflect.Float32, reflect.Float64:
 			asFloat := instance.Float()
-			return []valueMatchedPair{{value: readable.Float(asFloat, maxPlaces), matched: matchAll || baseMatcher(asFloat)}}
+			return []valueMatchedPair{{value: readable.Float(asFloat, displayPrecision), matched: matchAll || baseMatcher(asFloat)}}
 		}
 		return nil
 	}, nil
