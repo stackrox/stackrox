@@ -208,7 +208,10 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 		expiresAt = *ai.SessionNotOnOrAfter
 	} else {
 		// If no session expiration is set, use a default expiration of 1 hour
-		expiresAt = time.Now().Add(1 * time.Hour)
+		// The SAML ServiceProvider clock is used for consistency with the
+		// assertion warnings (that clock is the standard clock
+		// from the time package in production code).
+		expiresAt = p.sp.Clock.Now().Add(1 * time.Hour)
 	}
 
 	for _, assertion := range ai.Assertions {
