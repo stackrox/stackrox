@@ -197,7 +197,8 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-latest")
+                            // TODO(ROX-34425): update the image after https://github.com/stackrox/splunk-ta/pull/28 merge.
+                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-v3.0.1-dev-image-update-20-g6500942")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
