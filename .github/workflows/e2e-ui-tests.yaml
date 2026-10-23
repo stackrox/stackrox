@@ -35,7 +35,7 @@ defaults:
 jobs:
   gke-ui-e2e-tests:
     if: inputs.should-run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
@@ -44,7 +44,8 @@ jobs:
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
       KUBERNETES_PROVIDER: gke
-      STORAGE_CLASS: faster
+      STORAGE_CLASS: stackrox-gke-ssd
+      SCANNER_V4_DB_STORAGE_CLASS: stackrox-gke-ssd
       USE_ROXIE_DEPLOY: "true"
       PYTHONUNBUFFERED: "1"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -89,16 +90,6 @@ jobs:
       run: |
         scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
-
-    - name: Build roxctl
-      run: |
-        if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]] || [[ "${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-release-build') }}" == "true" ]]; then
-          export GOTAGS=release
-          echo "Building release roxctl (tag or ci-release-build)"
-        fi
-        make roxctl_linux-amd64
-        sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
-        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
     - name: Retrieving roxie version from repository
       id: roxie-version
