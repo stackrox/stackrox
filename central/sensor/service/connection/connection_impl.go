@@ -945,18 +945,6 @@ func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, boo
 	return c.sensorEventHandler.reconciliationMap.DeletedElementsByType()
 }
 
-func (c *sensorConnection) CheckAutoUpgradeSupport() error {
-	if c.sensorHello.GetHelmManagedConfigInit() != nil {
-		switch c.sensorHello.GetHelmManagedConfigInit().GetManagedBy() {
-		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
-			return errors.New("Helm controls the secured cluster version.")
-		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
-			return errors.New("Operator controls the secured cluster version.")
-		}
-	}
-	return nil
-}
-
 func (c *sensorConnection) SensorVersion() string {
 	return c.sensorHello.GetSensorVersion()
 }

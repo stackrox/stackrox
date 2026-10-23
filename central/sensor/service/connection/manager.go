@@ -44,7 +44,8 @@ type Manager interface {
 	SendMessage(clusterID string, msg *central.MsgToSensor) error
 	GetConnectionPreference(clusterID string) Preferences
 
-	// Upgrade-related methods.
+	// Upgrade-related methods (deprecated - auto-upgrade feature removed in ROX-37646)
+	// These remain in the interface for API compatibility but return errors
 	TriggerUpgrade(ctx context.Context, clusterID string) error
 	TriggerCertRotation(ctx context.Context, clusterID string) error
 	ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)

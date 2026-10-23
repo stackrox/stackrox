@@ -157,8 +157,6 @@ import (
 	sensorService "github.com/stackrox/rox/central/sensor/service"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
-	sensorUpgradeControlService "github.com/stackrox/rox/central/sensorupgrade/controlservice"
-	sensorUpgradeService "github.com/stackrox/rox/central/sensorupgrade/service"
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
@@ -465,8 +463,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton(), clusterInitStore.Singleton()),
-		sensorUpgradeControlService.Singleton(),
-		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
 		siService.Singleton(),
 		signatureIntegrationService.Singleton(),
@@ -515,7 +511,8 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 	}
 
-	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
+	// Auto-upgrade feature removed (ROX-37646) - pass disabled flag
+	autoTriggerUpgrades := concurrency.NewFlag()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
 		networkEntityDataStore.Singleton(),
