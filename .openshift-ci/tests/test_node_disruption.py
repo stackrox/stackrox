@@ -213,16 +213,17 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertEqual(result.monitor_failed, failed)
                 launch.assert_called_once()  # Count mismatches are evaluated at the end.
 
-    def test_startup_errors_do_not_launch_product(self):
-        cases = {'failed poll': ([reply(code=1)], {'NUM_NODES': '1'}, 'exited 1'),
-                 'empty baseline': ([reply()], {'NUM_NODES': '1'}, 'no nodes'),
+    def test_startup_errors_are_advisory(self):
+        cases = {'failed poll': ([reply(code=1), reply('a')], {'NUM_NODES': '1'}, 'exited 1'),
+                 'empty baseline': ([reply(), reply('a')], {'NUM_NODES': '1'}, 'no nodes'),
                  'invalid configuration': ([], {'NUM_NODES': '0'}, 'positive integer')}
         for name, (replies, env, error) in cases.items():
             with self.subTest(name=name):
                 result, report, _, launch, _, _, _ = self.run_fake(replies, env=env)
                 self.assertTrue(result.monitor_failed)
                 self.assertIn(error, report.findtext('.//failure'))
-                launch.assert_not_called()
+                self.assertEqual(result.exit_code, 0)
+                launch.assert_called_once()
 
     def test_failed_polls_do_not_stop_product_and_never_pass(self):
         cases = {'intermediate': ([reply('a'), reply(code=1), reply('a')], 301),
@@ -233,6 +234,19 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertEqual(collect.call_count, len(replies))
                 self.assertTrue(result.monitor_failed)
                 self.assertIn('exited 1', report.findtext('.//failure'))
+                launch.assert_called_once()
+
+    def test_monitor_findings_preserve_product_exit_code(self):
+        cases = {'passed with replacement': (0, [reply('a'), reply('b')]),
+                 'failed with replacement': (42, [reply('a'), reply('b')]),
+                 'passed with poll error': (0, [reply(code=1), reply('a')]),
+                 'failed with poll error': (42, [reply(code=1), reply('a')])}
+        for name, (code, replies) in cases.items():
+            with self.subTest(name=name):
+                result, report, _, launch, _, _, _ = self.run_fake(replies, code=code)
+                self.assertEqual(result.exit_code, code)
+                self.assertTrue(result.monitor_failed)
+                self.assertEqual(report.get('failures'), '1')
                 launch.assert_called_once()
 
     def test_timeout_and_cancellation(self):
@@ -286,6 +300,19 @@ class NodeMonitorTest(unittest.TestCase):
                 launch.assert_called_once_with(['product'], env=env, start_new_session=True)
                 self.assertEqual(list(Path(directory).iterdir()), [])
 
+    def test_artifact_directory_error_is_advisory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            blocked = Path(directory) / 'not-a-directory'
+            blocked.write_text('preserve')
+            with patch.dict(os.environ, ARTIFACT_DIR=str(blocked)), \
+                    patch.object(monitor.subprocess, 'Popen', return_value=Mock(returncode=0)) as launch, \
+                    patch.object(monitor, 'terminate'):
+                result = monitor.run(['product'], env={'NUM_NODES': '1'})
+            self.assertEqual(result.exit_code, 0)
+            self.assertTrue(result.monitor_failed)
+            launch.assert_called_once()
+            self.assertEqual(blocked.read_text(), 'preserve')
+
     def test_cleanup_survives_report_write_failure(self):
         previous = signal.getsignal(signal.SIGTERM)
         with tempfile.TemporaryDirectory() as directory, \
@@ -293,9 +320,10 @@ class NodeMonitorTest(unittest.TestCase):
                 patch.object(monitor.subprocess, 'run', side_effect=kubectl_responses([reply('a'), reply('a')])), \
                 patch.object(monitor.subprocess, 'Popen', return_value=Mock(returncode=0)) as launch, \
                 patch.object(monitor, 'write_report', side_effect=OSError('disk full')), \
-                patch.object(monitor, 'terminate') as terminate, \
-                self.assertRaisesRegex(OSError, 'disk full'):
-            monitor.run(['product'], env={'NUM_NODES': '1'})
+                patch.object(monitor, 'terminate') as terminate:
+            result = monitor.run(['product'], env={'NUM_NODES': '1'})
+            self.assertEqual(result.exit_code, 0)
+            self.assertTrue(result.monitor_failed)
         terminate.assert_called_once_with(launch.return_value)
         self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
 
@@ -362,7 +390,7 @@ class NonGroovyIntegrationTest(unittest.TestCase):
 
     def test_monitoring_preserves_outputs_timeout_and_failure(self):
         cases = {'passed': monitor.RunResult(0, False), 'product failure': monitor.RunResult(42, False),
-                 'monitor failure': monitor.RunResult(1, True), 'timeout': monitor.RunResult(124, False, True)}
+                 'monitor failure': monitor.RunResult(0, True), 'timeout': monitor.RunResult(124, False, True)}
         for name, result in cases.items():
             with self.subTest(name=name), \
                     patch.object(monitor, 'run', return_value=result) as run:
