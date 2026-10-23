@@ -25,8 +25,9 @@ var (
 type writerImpl struct {
 	mutex sync.Mutex
 
-	buffer map[string]*storage.AdministrationEvent
-	store  store.Store
+	buffer           map[string]*storage.AdministrationEvent
+	droppedResources map[string]struct{}
+	store            store.Store
 }
 
 func (c *writerImpl) readNoLock(id string) (*storage.AdministrationEvent, bool) {
@@ -91,6 +92,10 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	if _, dropped := c.droppedResources[enrichedEvent.GetResource().GetId()]; dropped {
+		return nil
+	}
+
 	if len(c.buffer) >= maxWriterSize {
 		if err := c.flushNoLock(ctx); err != nil {
 			return errors.Wrap(err, "failed to flush events when buffer was full")
@@ -120,6 +125,20 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	return c.flushNoLock(ctx)
+}
+
+func (c *writerImpl) DropForResource(resourceID string) {
+	if resourceID == "" {
+		return
+	}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.droppedResources[resourceID] = struct{}{}
+	for id, event := range c.buffer {
+		if event.GetResource().GetId() == resourceID {
+			delete(c.buffer, id)
+		}
+	}
 }
 
 // Modifies `updated` with the values of the base event and returns the merged event.

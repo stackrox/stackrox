@@ -72,6 +72,20 @@ func (mr *MockDataStoreMockRecorder) CountEvents(ctx, query any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountEvents", reflect.TypeOf((*MockDataStore)(nil).CountEvents), ctx, query)
 }
 
+// DeleteEventsForResource mocks base method.
+func (m *MockDataStore) DeleteEventsForResource(ctx context.Context, resourceID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteEventsForResource", ctx, resourceID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteEventsForResource indicates an expected call of DeleteEventsForResource.
+func (mr *MockDataStoreMockRecorder) DeleteEventsForResource(ctx, resourceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteEventsForResource", reflect.TypeOf((*MockDataStore)(nil).DeleteEventsForResource), ctx, resourceID)
+}
+
 // Flush mocks base method.
 func (m *MockDataStore) Flush(ctx context.Context) error {
 	m.ctrl.T.Helper()
