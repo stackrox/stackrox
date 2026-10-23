@@ -334,7 +334,7 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1792425967@sha256:68d6b72cc3eb4c7975b2aca2451f6601c048c095d6b5fc2a310ce3df5ef2ada6
+          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1792671270@sha256:edb9452603fa48e9882063f001ecd7d322add20f1564a4f05f38f6683be5ea94
           imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
