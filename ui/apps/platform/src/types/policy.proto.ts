@@ -165,8 +165,7 @@ export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';
 
 export type EvaluationFilter = {
     skipContainerTypes: ContainerType[];
-    // TODO: reimplement once backend support is available - demo code was deleted at the same time this comment was added
-    // skipImageLayers: SkipImageLayers;
+    skipImageLayers: SkipImageLayers;
 };
 
 export type PolicyCategory = {
