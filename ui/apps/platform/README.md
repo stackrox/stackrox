@@ -581,10 +581,11 @@ Read and obey comments to add strings or properties **in alphabetical order to m
 
         ```ts
         'whatevers': {
-            component: asyncComponent(
+            component: lazy(
                 () => import('Containers/Whatevers/WhateversRoute')
             ),
             path: whateversPathWithParam,
+            props: optionalPropsToPassToComponent,
         },
         ```
 

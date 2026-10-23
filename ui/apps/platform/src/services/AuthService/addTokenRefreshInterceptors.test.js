@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-restricted-imports, import/no-named-default
+// eslint-disable-next-line no-restricted-imports, import-x/no-named-default
 import { default as axiosGlobal } from 'axios';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,

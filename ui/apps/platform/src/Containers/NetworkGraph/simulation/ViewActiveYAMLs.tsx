@@ -27,7 +27,7 @@ function ViewActiveYAMLs({
         if (networkPolicies?.length && !selectedNetworkPolicy) {
             setSelectedNetworkPolicy(networkPolicies[0]);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line @eslint-react/exhaustive-deps
     }, [networkPolicies]);
 
     function handleSelectedNetworkPolicy(_, value: string) {
