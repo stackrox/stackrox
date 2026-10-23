@@ -27,6 +27,14 @@ spec:
           cpu: 1
     telemetry:
       enabled: false
+  centralWorker:
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 128Mi
   scannerV4:
     scannerComponent: Enabled
     indexer:
