@@ -148,28 +148,30 @@ func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTi
 			ClusterId:   incoming.GetClusterId(),
 			ClusterName: incoming.GetClusterName(),
 		},
-		Status:       convertComplianceCheckStatus(incoming.GetStatus()),
-		CreatedTime:  incoming.GetCreatedTime(),
-		CheckUid:     incoming.GetId(),
-		LastScanTime: lastScanTime,
+		Status:        convertComplianceCheckStatus(incoming.GetStatus()),
+		CreatedTime:   incoming.GetCreatedTime(),
+		CheckUid:      incoming.GetId(),
+		LastScanTime:  lastScanTime,
+		DataFreshness: convertComplianceDataFreshness(incoming.GetDataFreshness()),
 	}
 }
 
 func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceCheckResult {
 	return &v2.ComplianceCheckResult{
-		CheckId:      incoming.GetCheckId(),
-		CheckName:    incoming.GetCheckName(),
-		CheckUid:     incoming.GetId(),
-		Description:  incoming.GetDescription(),
-		Instructions: incoming.GetInstructions(),
-		Controls:     GetControls(ruleName, controlResults),
-		Rationale:    incoming.GetRationale(),
-		ValuesUsed:   incoming.GetValuesUsed(),
-		Warnings:     incoming.GetWarnings(),
-		Status:       convertComplianceCheckStatus(incoming.GetStatus()),
-		RuleName:     ruleName,
-		Labels:       incoming.GetLabels(),
-		Annotations:  incoming.GetAnnotations(),
+		CheckId:       incoming.GetCheckId(),
+		CheckName:     incoming.GetCheckName(),
+		CheckUid:      incoming.GetId(),
+		Description:   incoming.GetDescription(),
+		Instructions:  incoming.GetInstructions(),
+		Controls:      GetControls(ruleName, controlResults),
+		Rationale:     incoming.GetRationale(),
+		ValuesUsed:    incoming.GetValuesUsed(),
+		Warnings:      incoming.GetWarnings(),
+		Status:        convertComplianceCheckStatus(incoming.GetStatus()),
+		RuleName:      ruleName,
+		Labels:        incoming.GetLabels(),
+		Annotations:   incoming.GetAnnotations(),
+		DataFreshness: convertComplianceDataFreshness(incoming.GetDataFreshness()),
 	}
 }
 

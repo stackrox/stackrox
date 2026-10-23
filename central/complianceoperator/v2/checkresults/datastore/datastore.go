@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -60,6 +61,12 @@ type DataStore interface {
 
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
+
+	// UpdateFreshnessByScanConfig recomputes data_freshness for all check results of a scan
+	// configuration. A result is STALE when its last started time predates staleBefore, else
+	// CURRENT. Only rows whose stored value changes are written. Returns the number of rows
+	// updated.
+	UpdateFreshnessByScanConfig(ctx context.Context, scanConfigName string, staleBefore time.Time) (int64, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results

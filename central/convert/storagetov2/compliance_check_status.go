@@ -7,6 +7,20 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+func convertComplianceDataFreshness(freshness storage.ComplianceDataFreshness) v2.ComplianceDataFreshness {
+	switch freshness {
+	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT:
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT
+	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE:
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN:
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+	default:
+		utils.Should(errors.Errorf("unhandled compliance data freshness encountered %s", freshness))
+		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+	}
+}
+
 func convertComplianceCheckStatus(status storage.ComplianceOperatorCheckResultV2_CheckStatus) v2.ComplianceCheckStatus {
 	switch status {
 	case storage.ComplianceOperatorCheckResultV2_PASS:

@@ -455,6 +455,8 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis-node").ProtoQuery()).Return(profiles, nil).Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), gomock.Any(), search.ClusterID).Return(0, nil).AnyTimes()
 			},
 		},
 		{
@@ -485,6 +487,8 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 					Title:          "test_title_ocp4-cis-node",
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Return(profiles, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), gomock.Any(), search.ClusterID).Return(0, nil).AnyTimes()
 			},
 		},
 		{
@@ -564,6 +568,8 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").ProtoQuery()).Return(profilesOcp, nil).Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), gomock.Any(), search.ClusterID).Return(0, nil).AnyTimes()
 			},
 		},
 		{
@@ -602,6 +608,8 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 				}}
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis-node").ProtoQuery()).Return(profiles, nil).Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), gomock.Any(), search.ClusterID).Return(0, nil).AnyTimes()
 			},
 		},
 		{
@@ -679,6 +687,8 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").ProtoQuery()).Return(profilesOcp, nil).Times(1)
 				s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), gomock.Any(), search.ClusterID).Return(0, nil).AnyTimes()
 			},
 		},
 		{
@@ -718,6 +728,8 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 				s.profileDS.EXPECT().SearchProfiles(gomock.Any(), search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis-node").ProtoQuery()).Return(profiles, nil).Times(1)
 				s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), gomock.Any(), search.ClusterID).Return(0, nil).AnyTimes()
 			},
 		},
 		{

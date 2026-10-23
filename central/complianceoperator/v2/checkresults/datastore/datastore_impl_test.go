@@ -188,6 +188,11 @@ var (
 		},
 	}
 
+	freshnessUnknownTest = func() *storage.ComplianceDataFreshness {
+		f := storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+		return &f
+	}()
+
 	expectedClusterCounts = []*ResultStatusCountByCluster{
 		{
 			PassCount:          0,
@@ -199,6 +204,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -210,6 +216,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -221,6 +228,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -235,6 +243,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -246,6 +255,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -257,6 +267,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -271,6 +282,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -282,6 +294,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -296,6 +309,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
+			DataFreshness:      freshnessUnknownTest,
 		},
 	}
 
@@ -506,6 +520,65 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	s.Require().NoError(err)
 	s.Require().True(found)
 	protoassert.Equal(s.T(), rec1, retrieveRec1)
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestUpdateFreshnessByScanConfig() {
+	now := time.Now()
+	grace := 85 * time.Minute
+	staleBefore := now.Add(-grace)
+
+	// A result whose laststartedtime is older than staleBefore must become STALE; a recent one
+	// must become CURRENT. Both start at the zero value (UNKNOWN), as a freshly inserted row does.
+	oldTime := now.Add(-10 * time.Hour)
+	recentTime := now.Add(-5 * time.Minute)
+	staleRec := getTestRecForScan("sc-sweep", testconsts.Cluster1, "scan-stale")
+	staleRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	currentRec := getTestRecForScan("sc-sweep", testconsts.Cluster2, "scan-current")
+	currentRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&recentTime)
+	// A result of a different scan config must be left untouched.
+	otherRec := getTestRecForScan("sc-other", testconsts.Cluster1, "scan-other")
+	otherRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, staleRec))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, currentRec))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, otherRec))
+
+	// Write context is required.
+	_, err := s.dataStore.UpdateFreshnessByScanConfig(s.hasReadCtx, "sc-sweep", staleBefore)
+	s.Require().Error(err)
+
+	// First sweep flips both sc-sweep rows (UNKNOWN -> STALE / CURRENT).
+	updated, err := s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-sweep", staleBefore)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(2), updated)
+
+	s.assertFreshness(staleRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+	s.assertFreshness(currentRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT)
+	// The other scan config is untouched (still UNKNOWN).
+	s.assertFreshness(otherRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN)
+
+	// Second sweep with no change writes zero rows (the IS DISTINCT FROM guard).
+	updated, err = s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-sweep", staleBefore)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+
+	// Moving the cutoff forward so the previously-current row is now stale flips exactly one row.
+	updated, err = s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-sweep", now.Add(1*time.Hour))
+	s.Require().NoError(err)
+	s.Require().Equal(int64(1), updated)
+	s.assertFreshness(currentRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+
+	// An empty scan config name is a no-op.
+	updated, err = s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "", staleBefore)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) assertFreshness(id string, expected storage.ComplianceDataFreshness) {
+	rec, found, err := s.storage.Get(s.hasReadCtx, id)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal(expected, rec.GetDataFreshness())
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
