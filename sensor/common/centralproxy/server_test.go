@@ -139,6 +139,36 @@ func TestProxyTLSVerifiesOptionalPrometheusCertificate(t *testing.T) {
 	}
 }
 
+func TestPolicyTLSAcceptsCertificatesFromReferencedCAs(t *testing.T) {
+	serverCA, serverKey, _ := clientPolicyTestCA(t)
+	clientCA, clientKey, _ := clientPolicyTestCA(t)
+	serverCert := signedTestCertificate(t, serverCA, serverKey, "localhost", x509.ExtKeyUsageServerAuth)
+	clientCert := signedTestCertificate(t, clientCA, clientKey, "custom-client", x509.ExtKeyUsageClientAuth)
+	config, _, _ := proxyTLSConfig(serverCert)
+	allowPolicyClientCertificates(config)
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
+			http.Error(w, "missing certificate", http.StatusUnauthorized)
+			return
+		}
+		assert.Empty(t, r.TLS.VerifiedChains)
+		assert.Equal(t, "custom-client", r.TLS.PeerCertificates[0].Subject.CommonName)
+		w.WriteHeader(http.StatusOK)
+	}))
+	server.TLS = config
+	server.StartTLS()
+	t.Cleanup(server.Close)
+	roots := x509.NewCertPool()
+	roots.AddCert(serverCA)
+	transport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: roots, ServerName: "localhost",
+		Certificates: []tls.Certificate{clientCert}, MinVersion: tls.VersionTLS12}}
+	t.Cleanup(transport.CloseIdleConnections)
+	response, err := (&http.Client{Transport: transport}).Get(server.URL)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, response.StatusCode)
+	require.NoError(t, response.Body.Close())
+}
+
 func signedTestCertificate(t *testing.T, ca *x509.Certificate, caKey *ecdsa.PrivateKey, cn string,
 	usage x509.ExtKeyUsage, expiry ...time.Time,
 ) tls.Certificate {
