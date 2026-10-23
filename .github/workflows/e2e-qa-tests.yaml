@@ -173,11 +173,7 @@ jobs:
         env:
           EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
         run: |
-          while IFS= read -r line; do
-            if [[ -n "$line" ]]; then
-              echo "$line" >> "$GITHUB_ENV"
-            fi
-          done <<< "$EXTRA_ENV_VARS"
+          printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
       - name: Install roxctl
         uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
