@@ -2,8 +2,8 @@
   "base": "0a48209ff09e12c09dd250cd7c8cab64bc851965",
   "jobs": {
     "unit-tests.yaml/go": {
-      "structure": "adff45d11ba60c330ebc2f81741fbec4cb4a1baf1017ea4fd002c8c14cb0b8c1",
-      "steps": "13fc0ec2489fe0d962a4069fd598fbbd2491efd7a84d54995cba2fc97a510b25",
+      "structure": "efba904b6d984e5d4efd5a92a9db813ca7a337ac6884ef5023bbcc3eb7492d95",
+      "steps": "69f4325ae66d9d231b83b656d6dba80c714e54934d39b9858c592d5e101e0c32",
       "conditions": [
         "success()",
         "success()",
@@ -22,8 +22,8 @@
       "needs": "detect-changes"
     },
     "unit-tests.yaml/go-postgres": {
-      "structure": "ee0564b094a0181b0efc5c140a86f7a9cc1e8ed3356a004ccd4c07b66e5a3bd3",
-      "steps": "3064eb17cfd54cd419e2bb45bb8171d38cafe9a97a50e1ebdc6d92310b0e8269",
+      "structure": "ad863e4f5b2f8c7b8c303e41bc6ed70c4db70a15952f81553a9234fbd291fea8",
+      "steps": "3fd9f4cc6e330369a2f8843cf5f830f84c78dd14175bfa0478c7ca666e600687",
       "conditions": [
         "success()",
         "matrix.pg == 'default'",
@@ -40,8 +40,8 @@
       "needs": "detect-changes"
     },
     "unit-tests.yaml/sensor-integration-tests": {
-      "structure": "c41e4c22c00cd593b156514bc207731de8f290a973c0423b0e672742f4cf8731",
-      "steps": "9addfc2503e99411e2e585b94550df9652cfce3f9bff9bd537e5c43ec941875f",
+      "structure": "d4f11db1289f6d1d44e8a29adb8c36a57f88cfa49606152245b0005af3b21063",
+      "steps": "f6b815d2b5a6e89f95e1adabf42389efb8af7da034c6e60d6d5a55b4075560b7",
       "conditions": [
         "success()",
         "success()",
@@ -58,7 +58,7 @@
       "needs": "detect-changes"
     },
     "unit-tests.yaml/go-bench": {
-      "structure": "e6073a0a916c3535076aee172c827b8e51f5d0a33fd067592bc28272aa663a1d",
+      "structure": "02991d5f8e3bd6eb47b7812019da2bf4cd9e91b095d4e7e6489af269a3c1f515",
       "steps": "f31568b482dff2fa71d86ead633440242d3e592f2e54a0bf06b96e9c802baa3c",
       "conditions": [
         "success()",
@@ -75,8 +75,8 @@
       "needs": "detect-changes"
     },
     "unit-tests.yaml/ui": {
-      "structure": "289ef18817e73ca1816b30e67857b45322782d49c8f8cc6ee4a418288ff73b21",
-      "steps": "3883f4485e6a7731f81d64bbd058d82d5f734f352fa468cebbca7ebeae2350e1",
+      "structure": "fefab9a26d0f540b920c12a3c5e0d6a6b996e2f97251937f5d815460a61b2ecf",
+      "steps": "1bc8102a3b36933c56a977e33363afe53f541f97e9165cac4007f6571a09f258",
       "conditions": [
         "success()",
         "success()",
@@ -92,8 +92,8 @@
       "needs": "detect-changes"
     },
     "unit-tests.yaml/ui-component": {
-      "structure": "289ef18817e73ca1816b30e67857b45322782d49c8f8cc6ee4a418288ff73b21",
-      "steps": "1ec539bf4ca88ce786d4ff84dc14741637a00c735d98a11a1b34a7e865b3fef5",
+      "structure": "fefab9a26d0f540b920c12a3c5e0d6a6b996e2f97251937f5d815460a61b2ecf",
+      "steps": "3e747a8d679dcebd43e9957c35c54bcf0fafee2405d814a95850cbe6e3106d3a",
       "conditions": [
         "success()",
         "success()",
@@ -110,8 +110,8 @@
       "needs": "detect-changes"
     },
     "unit-tests.yaml/local-roxctl-tests": {
-      "structure": "b1cbc79b705795458b9f74fa6b953a888b0d994e549865dfafe38da03dfa7ae3",
-      "steps": "78be3f0f592c7557526102928d604b2b3ab448a5b047b1a14d2dc6bd3eac2232",
+      "structure": "62e6c3bd64ad84e973ecc9fad1fdac852317167ffb204674f9551f8f46ff957b",
+      "steps": "23a6ff6ab89eebec2abfc83309b91844f33444dd5389c323b7e0d254da541233",
       "conditions": [
         "success()",
         "success()",
@@ -125,8 +125,8 @@
       "needs": "detect-changes"
     },
     "unit-tests.yaml/shell-unit-tests": {
-      "structure": "4913d0bb6565cf20e8b1b7c6c536fd96a9089a2ab9828a93e60e8dcb140bf3e9",
-      "steps": "2f274c981f10b19c850b36958eb1dc80ecdb73370c03f5b5df9ebcc32bae1372",
+      "structure": "31bdb1aaa98151b42421d765f783ca72ee94312c927dee3911d41c6a7417a761",
+      "steps": "88e23ca0def42b2f3875a02a66fdd327319adaa9b1f4f9c6f37c25c9927f3124",
       "conditions": [
         "success()",
         "success()",
@@ -139,7 +139,7 @@
     },
     "style.yaml/style-check": {
       "structure": "c66916d6c28770a3df90edf0cb4c05edfcc6aa1ee805fb76a0ce4ce4d478499b",
-      "steps": "d0ffd992faed97668185fbd6b4946eee783de330a57224753b82be7b6a5d365e",
+      "steps": "bbbd44e22dcf4568d271ea62d9635ac889581e7c30a807fad92f75129342bc2d",
       "conditions": [
         "success()",
         "success()",
@@ -158,7 +158,7 @@
       ]
     },
     "style.yaml/check-generated-files": {
-      "structure": "beed93089610bcd17710c8aee1c51e4a2b27e8c242f236c761350d9a883610ad",
+      "structure": "7ddf3ea4f7e23f876f2135bd9de2570df5c1009dcd7ac1d2db11ac98b79e0dd2",
       "steps": "8c7a66050900436378bea48155fa1dcb67369e19640c63303f399c4182ac9586",
       "conditions": [
         "success()",
@@ -171,8 +171,8 @@
       "needs": "detect-changes"
     },
     "style.yaml/golangci-lint": {
-      "structure": "7ac5ced4a335740ed2b6858cc23b09cff3a7b541d7c2c9438c7d0aa3c2580082",
-      "steps": "6c6f79c4ff11e013c8136eefc59784d17ade0fbc565c109f8d52ad98fb0a5ebe",
+      "structure": "02630add1878dd1cebfb86340fe6f9df6dae56aa86edbe877773c6e03dd002ac",
+      "steps": "c15de730b02625af09bf07b2cf05f743da2b6cc6da7fa2b90b3f4c268e8b8b34",
       "conditions": [
         "success()",
         "success()",
@@ -188,8 +188,8 @@
       "needs": "detect-changes"
     },
     "style.yaml/check-dependent-images-exist": {
-      "structure": "e6073a0a916c3535076aee172c827b8e51f5d0a33fd067592bc28272aa663a1d",
-      "steps": "bf0e45c7907be6ad8f454a87966552c3fd8fa143017859a316c977ed648d7e1c",
+      "structure": "02991d5f8e3bd6eb47b7812019da2bf4cd9e91b095d4e7e6489af269a3c1f515",
+      "steps": "8eedeca35e28782d0da204923a76519fd6f151a0a62a455e93e82a2be840fbca",
       "conditions": [
         "success()",
         "success()",
@@ -201,7 +201,7 @@
       "needs": "detect-changes"
     },
     "style.yaml/github-actions-lint": {
-      "structure": "20710ff612fef2354ab555dfb9a3a1aa5877665b221075a85a61b653ba29c589",
+      "structure": "72759dfdbeca647cd2a7dbe6950403498ecb2c78120927315ade83df1a12c939",
       "steps": "7ebd011618c0ef0a3102343e2037346cf6327c336d737117a03bcb1f77b5182f",
       "conditions": [
         "success()",
@@ -212,7 +212,7 @@
       "needs": "detect-changes"
     },
     "style.yaml/openshift-ci-lint": {
-      "structure": "8b58952a41d7f62a4034083ff06ec545e582da7718f12423d8f6136e9fc6c183",
+      "structure": "0196820f00c8d83fde439eadb97f9a42183f9ebeb86d911f3ac37563cf822086",
       "steps": "05ea5e75228517aaa343bc57b4996a8b21d2183dbc1db408b789eecef602f801",
       "conditions": [
         "success()",
@@ -225,8 +225,8 @@
       "needs": "detect-changes"
     },
     "check-crd-compatibility.yaml/check-crd-compatibility": {
-      "structure": "0a83ab9033327015c0ded3178fc2ae14205eff550401dabbb20f69b105edcd97",
-      "steps": "5bcbfbf64c1d7b4c0422ce775100f8e3c9ec5f679272bae346b151b60ab6d35e",
+      "structure": "c68936bb00f7a8e243e57f3e5e24ba790bc76284efeb1221177c9e0580e3abb9",
+      "steps": "216a43daaf4714197a55baf07f1d658ccc31e0e42ea62c55791dc163f4e507dc",
       "conditions": [
         "success()",
         "success()",
@@ -243,7 +243,7 @@
       "needs": "detect-changes"
     },
     "scanner-db-integration-tests.yaml/db-integration-tests": {
-      "structure": "75b800854fda91233745b8bc229a5f0421bcd3b22d5708b4b4e93249adb4b8f3",
+      "structure": "3d692ac8ff251429fd6c398ab86ac1616f85bf024a7884f93f0ac65b2962b6f7",
       "steps": "c6c03f88c9626643f34f9aac53bff062306dff730f2304c654ae351b40726041",
       "conditions": [
         "success()",
@@ -257,8 +257,8 @@
       "needs": "detect-changes"
     },
     "build.yaml/define-job-matrix": {
-      "structure": "495198ddc058f8774f929e9796da41f8896cb74882a5b98576c62a0a15e3bc91",
-      "steps": "fdc141fed8edb1b02f910a9d8845428da8ad1e5a7da848d383af0fc7c76ff948",
+      "structure": "3a30cdc6d6d8b586186bf524a0951210dd680a8c683ccbf9cf2a7b08fc001504",
+      "steps": "5ebbd6bfacd98e0675cfb231e774fbdf8ffbd04ed945e1ac62b239999f9b403e",
       "conditions": [
         "success()",
         "success()",
@@ -270,8 +270,8 @@
       ]
     },
     "e2e-dispatch.yaml/wait-for-images": {
-      "structure": "e8dafd13c056fa36a735dd8d5914c408e8374e14185e35e1f89d14ec750d3c33",
-      "steps": "b3f528927955cb9ba2c69f0d749245800afd1088d54e693b0dd1c5bd0d0ff84b",
+      "structure": "8dd36a8a16c93ff5e5acf3ddd82634be8a0cb26a91a31237f9d4407222b4678f",
+      "steps": "cadd5c43d0027128a6ca903b0d29b3199feed74e040add466293a4bb5e713fbc",
       "conditions": [
         "success()",
         "success()",
@@ -284,8 +284,8 @@
       ]
     },
     "e2e-dispatch.yaml/wait-for-konflux-images": {
-      "structure": "69431d3950c6ca26731ce75a64f19571be0641e5eeb24542da949f2e7b7e964b",
-      "steps": "aefbbea4d2a3e3bc33c2c4d57938cd2644b144c62fa6a6ce0e758dc7e7dd3dbe",
+      "structure": "c1be6c3aba9af5987e36c4c837d18dee7c1789b4091b365329a0c4d1f23f63cd",
+      "steps": "df754f3a2b1ab045dd2c916225fcd4f43e585cf1c365a5849e836f4f173cb0bd",
       "conditions": [
         "success()",
         "success()",
@@ -299,39 +299,39 @@
     }
   },
   "headers": {
-    "unit-tests.yaml": "2e807d670a8699f42bd7f43152bcf3d2c61d517a0a8271b1675b9df3aaa3150a",
-    "style.yaml": "8a9852c032cf350db585c4ad35caa4ddd2bacd28f68a12344946dcf3c035b44f",
-    "check-crd-compatibility.yaml": "d444a2c2dd3556fa8d064e4d635fd4c5d8a48efce77300e8209aa52052da5fbc",
-    "scanner-db-integration-tests.yaml": "e1c0ae82814106e56efcb773d58c3ac6d0cba014683babd612a778ca62e32706",
-    "build.yaml": "4d3912a85473541e62b07119a23372b7f380a17790b5896c913c67d1b297917e",
-    "e2e-dispatch.yaml": "6a22545e8c13d45ec756e1323b5e34864eb5b9d6a4e5cf29959538c7fa0ea86e"
+    "unit-tests.yaml": "9cefff389d2d8774d4e194c0c1c1471fabff36473e044950689e379e8ea8a605",
+    "style.yaml": "0646c515b6029e5a70b35be47c9642423fa98f0b5eaca6b970a72d0269662603",
+    "check-crd-compatibility.yaml": "d0afc7195441bfc84f60ec74d55ebab3225bcc558e47ed8e73412c5e524e7e9d",
+    "scanner-db-integration-tests.yaml": "ddb9091d259712ef9b7b2f5d2b945a1b6ddc7c25989ff74eaa89dd6e063332fe",
+    "build.yaml": "25aa2c5cab9331850debf6e731dc4e3beec5f9b550fc48f48a1892505659b47f",
+    "e2e-dispatch.yaml": "257958046da10bf600e8194dc4ac09be29b7c3380d0b40a56f51ae0b41cf897b"
   },
   "unchangedJobs": {
     "unit-tests.yaml/detect-changes": "ee0654f5ed8dbe512e6b25f5f42040441782cb2ef27283342ed40a6ef9cb69fd",
-    "unit-tests.yaml/openshift-ci-unit-tests": "e5bfcfb049710f816194b9b93a3c1e8b3afaf69e9682ab169888106edaa06768",
-    "unit-tests.yaml/slack-on-unit-tests-failure": "97c116790e471bbf1b96c4139ee722f4c614fbb6f1596f35cafa1edc3bddffa4",
+    "unit-tests.yaml/openshift-ci-unit-tests": "6ffb9fcc59591f9a63e2819a5535ef293a8418afc99c1bcf16678fe8fa54198c",
+    "unit-tests.yaml/slack-on-unit-tests-failure": "8815b5c089c8640b0243c4c57a9b1adbf792e2cd0e4a168c515d5e6080610fb8",
     "style.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0",
-    "style.yaml/misc-checks": "d0845df1d1bae97541272a0c707bf66fd83d406534d5ade3325d9fa5367a6659",
-    "style.yaml/github-actions-shellcheck": "87a8173a82a393c32b33efc5ca15b1ec981209816e0ba6d22a90e290242f80a7",
-    "style.yaml/slack-on-style-failure": "43e77f7dfc7c4eb1cb4a05bb4a7d53b65df40f0f27f2589ccc44e922550dfc77",
+    "style.yaml/misc-checks": "6e8a56fa86794f22c72cd2cfb3466a792ad9f953281c03d022b52a16d6c4d4f4",
+    "style.yaml/github-actions-shellcheck": "8df0c0bbff4dc8c93479ac3799c09d52d292236195d5dc7738729c4e629560d6",
+    "style.yaml/slack-on-style-failure": "debf911b1a6064056e5787204de6511425cf96e8a3426bf3627417d6d2cf71d9",
     "check-crd-compatibility.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0",
     "scanner-db-integration-tests.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0",
-    "build.yaml/pre-build-ui": "c8eb1b67dbdbe6648274027fb895eab00120677310d531c8fa49e3f603789046",
-    "build.yaml/pre-build-cli": "e5abca7f61ad322dc0919d94afbc9613fa6ccfe7abd22168eaa9b9908478c801",
-    "build.yaml/pre-build-go-binaries": "7b6854ce23de924aa91748d6666ce9f5aea56e3c4298fae203c04d1817f0b439",
+    "build.yaml/pre-build-ui": "b5b62f198033da7326977f710e7980acaa5d2d5fcf3ee4a61f846ac1ae6d0cde",
+    "build.yaml/pre-build-cli": "305378745d938fbb968f7c4406fd9d49d154e1fda5ba456517909a6ddaad95a8",
+    "build.yaml/pre-build-go-binaries": "0707403fbb1ae2792c556f16d4d26c38bde2ada60739eb26f861511a771eed3d",
     "build.yaml/pre-build-docs": "ded3782c511ceeca8319174bf28c0a8cae074cf92c54403a089aa94a70844884",
-    "build.yaml/pre-build-oss-notice": "242528d1806bc6ca0873ebd4b374fedcec8cfbc742074bb3f94a2db732853ad5",
-    "build.yaml/build-and-push-db": "7e94c3d1159418a47b14ef61d74c7324c140c18d5b11620997b05c9ac76f9af5",
-    "build.yaml/build-operator-bundle": "0ead056899d7f6b14fdee0f0d4533c5f2556468d4ecad9e50d518e164a6dfeae",
-    "build.yaml/build-and-push-main": "e3a404475796ad04925261c9c23e88634e2df8538a9d86f5b4907a6adafea3f2",
-    "build.yaml/push-matching-collector-scanner": "aca21184647d999ccfe6f54b4f9ce391793a244559ab95bd2cd2da9c704006ad",
-    "build.yaml/push-main-manifests": "4501da11a973e218d5ffd89656554e2381f09580b806504ae9c7c308556abd92",
-    "build.yaml/build-and-push-operator": "59e9b963b3ef63d2b309fe92c83b666bd21c3b4fd9a04d943081e8a74769a28b",
-    "build.yaml/build-and-push-scanner": "bd6aded5eec777ddf2c1b57ae2052c567d98194533e230e011149a1632c8c785",
-    "build.yaml/push-scanner-manifests": "f9e2cd7944b4b3468bbcf96fcc65f4d55f5776a07f0ba5ca04d8d3b9dcce2d26",
-    "build.yaml/push-operator-manifests": "96be4d131765941f5237685f9f5f85105d198c32cfd0201fcf3cbe5ec7bd3f5c",
-    "build.yaml/scan-go-binaries": "1bdb35417d6322b2f3d8b1f9244af383c9b66b11c100afe3e90497c10f8b9828",
-    "build.yaml/slack-on-build-failure": "3339d3c4b16e2b516fde607310cba4ce6b5c4369c411cadfcf78b84eb09c0a69",
+    "build.yaml/pre-build-oss-notice": "ed7fd4141530089e830115a335f2ac43736541df56b001724e338d5eeb1c5dd6",
+    "build.yaml/build-and-push-db": "93ab776b74b847c29c21fc91a0810771e432a75bf69f291d1da2c67355a20979",
+    "build.yaml/build-operator-bundle": "ce29e2c376c73cc67ae266f0cb3792c3fe5136a51a0d0f8c5ff753cdd299e3d6",
+    "build.yaml/build-and-push-main": "ab33b92712e0ffae402852fec3f353a489b54438041b327555a8e6af18b58245",
+    "build.yaml/push-matching-collector-scanner": "bea1181ab8d2a38f8689c9a75ad87f23cf948a6361221b3617060d75561e529d",
+    "build.yaml/push-main-manifests": "8bfbe61a5094ede22428f05f8824434e1f07d7d950a4a51422369f282365b5d1",
+    "build.yaml/build-and-push-operator": "bbe8b3ee4098c2635a82b4cb841a4f1a870173f3399207e7d552c9abbb9d4be4",
+    "build.yaml/build-and-push-scanner": "c65aa9d34760f15182d84e3c84e55b4ef42ab7564574755387e5e0c030213f03",
+    "build.yaml/push-scanner-manifests": "8640455430bfc4c7360ab064480e482fb8dfdf957c1f5d735182942696518582",
+    "build.yaml/push-operator-manifests": "24b8361026c423290a8e9ce29355192bd942ae96c16b614f02d9bd88222081c1",
+    "build.yaml/scan-go-binaries": "32b6a4d34d4a7774bad56b07890dd48175ceb8547535ce03e24eafe8ad2d047a",
+    "build.yaml/slack-on-build-failure": "8100934f950db91def24dc5168f78e0f70b4828da373355f8d73d241e2cfc223",
     "e2e-dispatch.yaml/detect-changes": "b1671cc28f775d920eb646185c382164f87482926ae777609c072e5ddc3b32d0"
   },
   "children": {
@@ -343,5 +343,6 @@
     "e2e-qa-tests-gke.yaml": "c506ffc52b12a886d4adcbc9d297556991ab2cd9860ba269e35e509f95f2d86c",
     "e2e-qa-tests-ocp-fips-konflux.yaml": "f9f1b97a6f796749bb80a0c0bb641a228714ab359ab070cb23f951b4e8d5aca8",
     "e2e-qa-tests-gke-konflux.yaml": "061c6743ca9ce11d1fd062718ea460155d5fe5d74ae7102b2798877d94484068"
-  }
+  },
+  "serialization": "sorted-key JSON with Go encoding/json escaping"
 }

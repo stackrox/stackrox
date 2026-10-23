@@ -39,13 +39,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
+      - run: go test -count=1 -v ./...
         if: steps.selection.outputs.run != 'false'
-        with:
-          node-version-file: ui/package.json
-      - run: npm ci --ignore-scripts
+        working-directory: ci/native-selectors/testing
+      - run: go vet ./...
         if: steps.selection.outputs.run != 'false'
-        working-directory: ci/native-selectors
-      - run: npm test
-        if: steps.selection.outputs.run != 'false'
-        working-directory: ci/native-selectors
+        working-directory: ci/native-selectors/testing

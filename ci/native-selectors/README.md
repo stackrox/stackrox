@@ -63,19 +63,21 @@ Decision summaries print already-evaluated candidates and permission to execute.
 
 ## Validation
 
-From this directory, with Go 1.26.7, Node/npm, Git, jq, and Bash 4 or newer:
+From the repository root, with Go 1.26.7, Git, jq, and Bash 4 or newer:
 
 ```sh
-npm ci --ignore-scripts
-npm test
+go -C ci/native-selectors/testing test -count=1 -v ./...
+go -C ci/native-selectors/testing vet ./...
 ```
 
-On macOS, set `NATIVE_TEST_BASH=/opt/homebrew/bin/bash` if necessary. Tests build the classifier, evaluate the actual Actions expressions, and retain the three saved fixtures unchanged. They cover all 29 Actions targets: 2,175 PR candidate comparisons and 83 E2E dispatch/waiter scenarios. They also check step gates, required-context structure, four actual build-matrix constructions, collector failures, label refresh, and selector-only external edits. The tests do not select product jobs at runtime.
+On macOS, set `NATIVE_TEST_BASH=/opt/homebrew/bin/bash` if necessary. Go tests build the classifier and use `act`'s Go expression evaluator against the actual workflow conditions. The three saved comparison fixtures remain unchanged: 2,175 PR candidate comparisons across 29 Actions targets and 83 E2E dispatch/waiter scenarios. Tests also check step gates, required-context structure, four actual build-matrix constructions, collector failures, label refresh, and selector-only external edits. Test dependencies live in a separate module; no verifier selects product jobs at runtime.
+
+[The testing guide](testing/README.md) describes the test files and the known empty-label discrepancy between GitHub's expression library and `act`. It includes an expression that returns different results. The tests do not treat the evaluators as fully equivalent.
 
 The optional focused Prow experiment uses the five unmodified matcher methods from the revision recorded in `prow/source.json`:
 
 ```sh
-NATIVE_PROW_JOBS_GO=/path/to/pinned/prow/pkg/config/jobs.go npm test
+NATIVE_PROW_JOBS_GO=/path/to/pinned/prow/pkg/config/jobs.go go -C ci/native-selectors/testing test -count=1 -v ./...
 ```
 
 Executed locally: those comparisons, 16 upstream matcher cases, focused repository-selected actionlint, Go build/vet and configured golangci-lint including unused checks, and whitespace checks. No CI time or cost savings were measured.
