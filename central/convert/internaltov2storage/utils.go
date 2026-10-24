@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -34,6 +35,16 @@ func BuildNameRefID(clusterID string, name string) string {
 func idToDNSFriendlyName(id string) string {
 	const ssgPrefix = "xccdf_org.ssgproject.content_rule_"
 	return strings.ToLower(strings.ReplaceAll(strings.TrimPrefix(id, ssgPrefix), "_", "-"))
+}
+
+// BuildCheckResultID generates a deterministic ID for a check result that is unique per scan run.
+// It combines the original K8s UID with the scan's lastStartedTimestamp so that each scan run
+// produces distinct rows while maintaining idempotency within the same run.
+func BuildCheckResultID(originalID string, lastStartedTimestamp *protocompat.Timestamp) string {
+	if lastStartedTimestamp == nil {
+		return originalID
+	}
+	return buildDeterministicID(originalID, protocompat.ConvertTimestampToTimeOrNil(lastStartedTimestamp).String())
 }
 
 func buildDeterministicID(part1 string, part2 string) string {
