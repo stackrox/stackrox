@@ -8,11 +8,16 @@ import type { DryRunAlert } from 'services/PoliciesService';
 import type { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { getServerPolicy } from '../../policies.utils';
+import { getServerPolicy, isRuntimePolicy } from '../../policies.utils';
 import PolicyDetailContent from '../../Detail/PolicyDetailContent';
 import PreviewViolations from './PreviewViolations';
 
 import './ReviewPolicyForm.css';
+
+const buildAndDeployPreviewMessage =
+    'The policy settings you have selected will generate violations for the Build or Deploy lifecycle stages. Runtime violations are not available in this preview because they are generated in response to future events.';
+const runtimeOnlyPreviewMessage =
+    'Runtime violations are not available in this preview because they are generated in response to future events.';
 
 type ReviewPolicyFormProps = {
     isBadRequest: boolean;
@@ -37,6 +42,8 @@ function ReviewPolicyForm({
     const [counterToCheckDryRun, setCounterToCheckDryRun] = useState(0);
     const [checkDryRunErrorMessage, setCheckDryRunErrorMessage] = useState('');
     const [alertsFromDryRun, setAlertsFromDryRun] = useState<DryRunAlert[]>([]);
+
+    const isRuntimeOnlyPolicy = isRuntimePolicy(values.lifecycleStages);
 
     // Start "dry run" job for preview of violations.
     useEffect(() => {
@@ -152,13 +159,16 @@ function ReviewPolicyForm({
                     >
                         <Title headingLevel="h2">Preview violations</Title>
                         <div className="pf-v6-u-mb-md pf-v6-u-mt-sm">
-                            The policy settings you have selected will generate violations for the
-                            Build or Deploy lifecycle stages. Runtime violations are not available
-                            in this preview because they are generated in response to future events.
+                            {isRuntimeOnlyPolicy
+                                ? runtimeOnlyPreviewMessage
+                                : buildAndDeployPreviewMessage}
                         </div>
-                        <div className="pf-v6-u-mb-md">
-                            Before you save the policy, verify that the violations seem accurate.
-                        </div>
+                        {!isRuntimeOnlyPolicy && (
+                            <div className="pf-v6-u-mb-md">
+                                Before you save the policy, verify that the violations seem
+                                accurate.
+                            </div>
+                        )}
                         {values.disabled && (
                             <Alert
                                 className="pf-v6-u-mb-md"
@@ -171,7 +181,17 @@ function ReviewPolicyForm({
                             </Alert>
                         )}
                         <Divider component="div" />
-                        {isRunningDryRun ? (
+                        {isRuntimeOnlyPolicy ? (
+                            <Alert
+                                title="Preview inactive for runtime policies"
+                                component="p"
+                                variant="info"
+                                isInline
+                            >
+                                Runtime policy violations will be generated only after the policy is
+                                saved and enabled.
+                            </Alert>
+                        ) : isRunningDryRun ? (
                             <Flex justifyContent={{ default: 'justifyContentCenter' }}>
                                 <FlexItem>
                                     <Spinner />
@@ -187,7 +207,10 @@ function ReviewPolicyForm({
                                 {checkDryRunErrorMessage}
                             </Alert>
                         ) : (
-                            <PreviewViolations alertsFromDryRun={alertsFromDryRun} />
+                            <PreviewViolations
+                                alertsFromDryRun={alertsFromDryRun}
+                                noViolationsMessage="No deployments have Build or Deploy type violations."
+                            />
                         )}
                     </Flex>
                 </>
