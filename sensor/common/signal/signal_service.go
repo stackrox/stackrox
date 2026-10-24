@@ -21,8 +21,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const maxBufferSize = 10000
-
 var (
 	log = logging.LoggerForModule()
 )
@@ -57,7 +55,6 @@ type serviceImpl struct {
 
 	sensorAPI.UnimplementedSignalServiceServer
 
-	queue      chan *v1.Signal
 	indicators chan *message.ExpiringMessage
 
 	processPipeline  Pipeline
