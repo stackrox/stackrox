@@ -166,6 +166,11 @@ and the workaround code replaced.
 All indexes are managed through proto tags and the code generator. Add `sql:"index"` to
 the proto field, then run `make proto-generated-srcs && make go-generated-srcs`.
 
+The generator omits a single-column B-tree index when the column is already the table's
+sole primary key. Keep the index tag if the field also needs an index when embedded with
+`ignore_pk`, such as `Policy.id` in an alert's policy snapshot. Composite indexes and
+indexes using other methods are preserved.
+
 | Index type | Proto tag | Created when | Created by |
 |---|---|---|---|
 | Non-unique | `sql:"index=btree"` | After startup, after all background migrations | Background runner via `CREATE INDEX CONCURRENTLY` |
