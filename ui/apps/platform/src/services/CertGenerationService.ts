@@ -18,11 +18,3 @@ export function generateCertSecretForComponent(component: CertExpiryComponent) {
         data: null,
     });
 }
-
-export function generateSecuredClusterCertSecret(clusterId) {
-    return saveFile({
-        method: 'post',
-        url: `${certGenBaseURL}/cluster`,
-        data: { id: clusterId },
-    });
-}
