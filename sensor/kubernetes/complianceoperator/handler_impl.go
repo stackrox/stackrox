@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/pointer"
 )
 
@@ -51,6 +53,26 @@ type handlerImpl struct {
 	handlerMaxRetries     int
 	handlerAPICallTimeout time.Duration
 	handlerRetryTimeout   time.Duration
+
+	// Node-role auto-discovery (ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES). mcpLister and mcpInformerSynced are set
+	// by startMCPRoleInformer, which runs in its own goroutine (see Start()) so a slow or unreachable API server
+	// can never delay the rest of Sensor's startup. They stay nil when MachineConfigPools aren't listable
+	// (non-OpenShift) or discovery failed to start, and discoverNodeRoles reports an error so every caller falls
+	// back to master+worker. mcpMu guards both fields: they are written from the startMCPRoleInformer goroutine
+	// and read from run() (triggered independently by the informer's own event handlers), so plain field access
+	// would be a data race.
+	mcpMu                       sync.RWMutex
+	mcpLister                   cache.GenericLister
+	mcpInformerSynced           cache.InformerSynced
+	roleReconcileTrigger        chan struct{}
+	nodeRoleReconcilePassBudget time.Duration
+	// nodeRoleReconcileInterval is the period of the safety-net reconcile tick in run(); overridable in tests.
+	nodeRoleReconcileInterval time.Duration
+
+	// backgroundWG tracks the goroutines Start() spawns (run, startMCPRoleInformer, reconcileOnceReady) so Stop()
+	// can wait for them to finish. Without the wait, a goroutine can still read the package-level log (e.g.
+	// startMCPRoleInformer's sync-timeout warning) after Stop() returns, which races tests that swap log.
+	backgroundWG sync.WaitGroup
 }
 
 func (m *handlerImpl) Name() string {
@@ -81,18 +103,50 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		handlerMaxRetries:     defaultMaxRetries,
 		handlerAPICallTimeout: defaultAPICallTimeout,
 		handlerRetryTimeout:   defaultRetryTimeout,
+
+		roleReconcileTrigger:        make(chan struct{}, 1),
+		nodeRoleReconcilePassBudget: defaultNodeRoleReconcilePassBudget,
+		nodeRoleReconcileInterval:   resolveNodeRoleReconcileInterval(),
 	}
 }
 
 func (m *handlerImpl) Start() error {
-	defer m.started.Store(true)
+	// Guards against a double-Start leaking a second run() goroutine and starting a second MachineConfigPool
+	// informer.
+	if !m.started.CompareAndSwap(false, true) {
+		return nil
+	}
+
+	// Add/Done are at the call site, not inside the functions, so tests can still call them directly without
+	// unbalancing backgroundWG.
+	m.backgroundWG.Add(3)
+
 	// TODO: create default scan setting for ad-hoc scan
-	go m.run()
+	go func() { defer m.backgroundWG.Done(); m.run() }()
+
+	// Runs in the background to avoid delaying Sensor's sequential component startup.
+	go func() { defer m.backgroundWG.Done(); m.startMCPRoleInformer() }()
+
+	// One-shot reconcile in case informer triggers arrive before complianceIsReady
+	go func() { defer m.backgroundWG.Done(); m.reconcileOnceReady() }()
+
 	return nil
+}
+
+// reconcileOnceReady requests one reconcile when compliance becomes ready, or returns if the handler stops first.
+func (m *handlerImpl) reconcileOnceReady() {
+	select {
+	case <-m.complianceIsReady.Done():
+		m.requestReconcile()
+	case <-m.stopSignal.Done():
+	}
 }
 
 func (m *handlerImpl) Stop() {
 	m.stopSignal.Signal()
+	// The background goroutines all derive their contexts from stopSignal, so this wait returns promptly once
+	// signalled. It makes Stop() a true join point: no goroutine from this handler outlives the Stop() call.
+	m.backgroundWG.Wait()
 }
 
 func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
@@ -139,6 +193,11 @@ func (m *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (m *handlerImpl) run() {
+	// Safety-net reconcile tick: catches passes skipped or cut short between MachineConfigPool events.
+	// reconcileNodeRoles is idempotent and a no-op once converged.
+	reconcileTicker := time.NewTicker(m.nodeRoleReconcileInterval)
+	defer reconcileTicker.Stop()
+
 	for !m.stopSignal.IsDone() {
 		select {
 		case req := <-m.request:
@@ -162,6 +221,12 @@ func (m *handlerImpl) run() {
 			if !requestProcessed {
 				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
 			}
+		case <-m.roleReconcileTrigger:
+			log.Debugf("Node-role reconcile triggered by MachineConfigPool informer")
+			m.reconcileNodeRoles()
+		case <-reconcileTicker.C:
+			log.Debugf("Node-role reconcile triggered by the periodic safety-net tick")
+			m.reconcileNodeRoles()
 		case <-m.stopSignal.Done():
 			return
 		}
@@ -170,6 +235,10 @@ func (m *handlerImpl) run() {
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
 	m.disabled.Reset()
+	// Any MachineConfigPool events that arrived while compliance was disabled were dropped by
+	// reconcileNodeRoles' gate, so request one reconcile now that it's active again. This mirrors
+	// reconcileOnceReady, which covers the other gate: compliance not yet ready at startup.
+	m.requestReconcile()
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 
@@ -224,11 +293,11 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+	return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), m.discoverDefaultNodeRoles().rolesForCreate())
 }
 
-func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
+func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string, roles []string) bool {
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron, roles))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -286,9 +355,13 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		log.Warn(err)
 	}
 
+	// Compute the node roles once for this request and reuse them below. If discovery is not authoritative and ssObj
+	// already exists, its current roles are preserved instead of being replaced by the static fallback.
+	roles := m.discoverDefaultNodeRoles().rolesForUpdate(ssObj)
+
 	if ssObj == nil && ssbObj == nil {
 		// This is an add instead
-		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron())
+		return m.createScanResources(requestID, ns, request.GetScanSettings(), request.GetCron(), roles)
 	}
 
 	// Invalid case because scan setting is created first, so we should not have a situation where
@@ -298,7 +371,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request)
+	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request, roles)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -331,7 +404,11 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
-			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
+			// Recompute roles from the freshly fetched object. rolesForUpdate preserves the current roles when
+			// discovery is not authoritative, so reusing the roles captured from the pre-conflict object would
+			// overwrite a concurrent role change (e.g. from reconcileNodeRoles or a sync) with stale values.
+			roles = m.discoverDefaultNodeRoles().rolesForUpdate(ssObj)
+			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request, roles)
 			if err != nil {
 				return err
 			}
@@ -621,6 +698,11 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 	}
 }
 
+// handleSyncScanCfgRequest spawns its own goroutine (pre-existing, kept as-is here) that calls processSyncScanCfg
+// directly instead of going through the single-writer run() loop, so it can race reconcileNodeRoles (also writing
+// ScanSettings) on the same objects. This is an accepted trade-off, not a bug: both paths go through
+// callWithRetryWithOnConflictCallback, so a lost race surfaces as a Conflict that gets retried with the latest
+// object, and the two converge on a consistent final state instead of silently clobbering each other.
 func (m *handlerImpl) handleSyncScanCfgRequest(request *central.SyncComplianceScanConfigRequest) error {
 	go func() {
 		select {
@@ -645,9 +727,16 @@ func generateScanIndex(namespace string, scanName string) string {
 }
 
 func (m *handlerImpl) getResourcesInCluster(api k8sapi.APIResource) (map[string]unstructured.Unstructured, error) {
+	return m.getResourcesInClusterCtx(m.ctx(), api)
+}
+
+// getResourcesInClusterCtx is getResourcesInCluster with an explicit parent context, so a caller can bound the
+// retry window tighter than handlerRetryTimeout (e.g. a reconcile pass with its own overall deadline, see
+// nodeRoleReconcilePassBudget), instead of always retrying against the handler's full lifetime context.
+func (m *handlerImpl) getResourcesInClusterCtx(ctx context.Context, api k8sapi.APIResource) (map[string]unstructured.Unstructured, error) {
 	resourceInterface := m.client.Resource(api.GroupVersionResource())
 	var resourcesInCluster *unstructured.UnstructuredList
-	err := m.callWithRetry(func(ctx context.Context) error {
+	err := m.callWithRetryCtx(ctx, func(ctx context.Context) error {
 		var err error
 		resourcesInCluster, err = resourceInterface.List(ctx, v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
 		return errors.Wrap(err, "listing resources in cluster")
@@ -757,6 +846,17 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 		return errors.New("Compliance operator namespace not known")
 	}
 
+	// Discovery runs per call, not once for the batch, so a conflict retry (which re-invokes these with the freshly
+	// fetched object) re-derives roles from current state. When discovery is not authoritative, an existing
+	// ScanSetting keeps its current roles instead of losing them to the static fallback; a new one still gets the
+	// fallback.
+	convertScanSetting := func(namespace string, req *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
+		return convertCentralRequestToScanSetting(namespace, req, cron, m.discoverDefaultNodeRoles().rolesForUpdate(nil))
+	}
+	updateScanSetting := func(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+		return updateScanSettingFromUpdateRequest(obj, req, m.discoverDefaultNodeRoles().rolesForUpdate(obj))
+	}
+
 	// Compare with the ScanConfig in the request.
 	var errList errorhelpers.ErrorList
 	inCentralSet := set.NewStringSet()
@@ -771,8 +871,8 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			complianceNamespace,
 			scanCfg.GetUpdateScan(),
 			scanSettingsInCluster,
-			updateScanSettingFromUpdateRequest,
-			convertCentralRequestToScanSetting,
+			updateScanSetting,
+			convertScanSetting,
 			complianceoperator.ScanSetting,
 		); err != nil {
 			errList.AddError(err)
@@ -913,13 +1013,23 @@ func onConflictErrorWrapper(fn onConflictCall) onRetriableCallError {
 }
 
 func (m *handlerImpl) callWithRetry(fn retriableCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	return m.callWithRetryCtx(m.ctx(), fn)
+}
+
+// callWithRetryCtx is callWithRetry with an explicit parent context.
+func (m *handlerImpl) callWithRetryCtx(ctx context.Context, fn retriableCall) error {
+	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, nil)
 }
 
 func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onConflict onConflictCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	return m.callWithRetryWithOnConflictCallbackCtx(m.ctx(), fn, onConflict)
+}
+
+// callWithRetryWithOnConflictCallbackCtx is callWithRetryWithOnConflictCallback with an explicit parent context.
+func (m *handlerImpl) callWithRetryWithOnConflictCallbackCtx(ctx context.Context, fn retriableCall, onConflict onConflictCall) error {
+	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, onConflictErrorWrapper(onConflict))
 }
