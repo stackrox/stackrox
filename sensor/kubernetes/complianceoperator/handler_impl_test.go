@@ -9,10 +9,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -653,6 +656,56 @@ func getTestRerunScanMsg(name string) *central.MsgToSensor {
 			},
 		},
 	}
+}
+
+func TestClampNodeRoleReconcileInterval(t *testing.T) {
+	cases := map[string]struct {
+		in   time.Duration
+		want time.Duration
+	}{
+		"zero is clamped to the minimum": {
+			in:   0,
+			want: minNodeRoleReconcileInterval,
+		},
+		"below the minimum is clamped": {
+			in:   time.Second,
+			want: minNodeRoleReconcileInterval,
+		},
+		"exactly the minimum is unchanged": {
+			in:   minNodeRoleReconcileInterval,
+			want: minNodeRoleReconcileInterval,
+		},
+		"above the minimum is unchanged": {
+			in:   5 * time.Minute,
+			want: 5 * time.Minute,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, clampNodeRoleReconcileInterval(tc.in))
+		})
+	}
+}
+
+// TestStartIsIdempotent covers the CompareAndSwap guard in Start(): a second call must not spawn a second run()
+// goroutine or orphan the first reconcileTicker (Stop() can only stop whichever ticker is currently in the field).
+func TestStartIsIdempotent(t *testing.T) {
+	t.Setenv(env.ComplianceAutodiscoverNodeRoles.EnvVar(), "true")
+	client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{
+		machineConfigPoolGVR: "MachineConfigPoolList",
+	})
+	ready := concurrency.NewSignal()
+	sensorComponent := NewRequestHandler(client, fakeStatusInfo{namespace: reconcileNamespace}, &ready)
+	m, ok := sensorComponent.(*handlerImpl)
+	require.True(t, ok)
+	defer sensorComponent.Stop()
+
+	require.NoError(t, sensorComponent.Start())
+	firstTicker := m.reconcileTicker
+	require.NotNil(t, firstTicker, "the ticker should have been created on the first Start()")
+
+	require.NoError(t, sensorComponent.Start())
+	assert.Same(t, firstTicker, m.reconcileTicker, "a second Start() must not replace (and thus orphan) the first ticker")
 }
 
 func getTestSuspendScanMsg(name string) *central.MsgToSensor {

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -35,6 +36,18 @@ const (
 	defaultMaxRetries     = 5
 	defaultAPICallTimeout = 5 * time.Second
 	defaultRetryTimeout   = 30 * time.Second
+
+	// minNodeRoleReconcileInterval clamps ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL to avoid excessive
+	// MachineConfigPool/ScanSetting polling if misconfigured.
+	minNodeRoleReconcileInterval = 30 * time.Second
+
+	// defaultNodeRoleReconcilePassBudget bounds how long a single reconcileNodeRoles pass may run across all
+	// ScanSettings. Reconciliation runs on the same single-writer loop that processes Central requests, so an
+	// unbounded pass (one retry-timeout-bounded update per ScanSetting) would delay request processing by
+	// multiples of handlerRetryTimeout as the number of managed ScanSettings grows. Kept below
+	// componentProcessTimeout (sensor/common/sensor/component_queue.go, 30s, not exported) so a request already
+	// queued when a reconcile pass starts still gets handled before its own ProcessMessage deadline expires.
+	defaultNodeRoleReconcilePassBudget = 20 * time.Second
 )
 
 type handlerImpl struct {
@@ -51,6 +64,23 @@ type handlerImpl struct {
 	handlerMaxRetries     int
 	handlerAPICallTimeout time.Duration
 	handlerRetryTimeout   time.Duration
+
+	roleReconcileTrigger        chan struct{}
+	reconcileTicker             *time.Ticker
+	reconcileInterval           time.Duration
+	nodeRoleReconcilePassBudget time.Duration
+}
+
+// clampNodeRoleReconcileInterval enforces minNodeRoleReconcileInterval on the
+// ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL value so a misconfigured env var can't make the reconciler poll the
+// MachineConfigPool/ScanSetting APIs excessively.
+func clampNodeRoleReconcileInterval(interval time.Duration) time.Duration {
+	if interval < minNodeRoleReconcileInterval {
+		log.Warnf("%s=%v is below the minimum of %v; using %v", env.ComplianceNodeRoleReconcileInterval.EnvVar(),
+			interval, minNodeRoleReconcileInterval, minNodeRoleReconcileInterval)
+		return minNodeRoleReconcileInterval
+	}
+	return interval
 }
 
 func (m *handlerImpl) Name() string {
@@ -74,24 +104,40 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
 
-		started:               &atomic.Bool{},
-		disabled:              concurrency.NewSignal(),
-		stopSignal:            concurrency.NewSignal(),
-		complianceIsReady:     coIsReady,
-		handlerMaxRetries:     defaultMaxRetries,
-		handlerAPICallTimeout: defaultAPICallTimeout,
-		handlerRetryTimeout:   defaultRetryTimeout,
+		roleReconcileTrigger: make(chan struct{}),
+		reconcileInterval:    clampNodeRoleReconcileInterval(env.ComplianceNodeRoleReconcileInterval.DurationSetting()),
+
+		started:                     &atomic.Bool{},
+		disabled:                    concurrency.NewSignal(),
+		stopSignal:                  concurrency.NewSignal(),
+		complianceIsReady:           coIsReady,
+		handlerMaxRetries:           defaultMaxRetries,
+		handlerAPICallTimeout:       defaultAPICallTimeout,
+		handlerRetryTimeout:         defaultRetryTimeout,
+		nodeRoleReconcilePassBudget: defaultNodeRoleReconcilePassBudget,
 	}
 }
 
 func (m *handlerImpl) Start() error {
-	defer m.started.Store(true)
+	// Guards against a double-Start leaking a second run() goroutine and orphaning a previous reconcileTicker.
+	if !m.started.CompareAndSwap(false, true) {
+		return nil
+	}
+
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
+
+	if env.ComplianceAutodiscoverNodeRoles.BooleanSetting() {
+		m.reconcileTicker = time.NewTicker(m.reconcileInterval)
+		go m.runNodeRoleReconciler(m.reconcileTicker.C)
+	}
 	return nil
 }
 
 func (m *handlerImpl) Stop() {
+	if m.reconcileTicker != nil {
+		m.reconcileTicker.Stop()
+	}
 	m.stopSignal.Signal()
 }
 
@@ -161,6 +207,24 @@ func (m *handlerImpl) run() {
 
 			if !requestProcessed {
 				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
+			}
+		case <-m.roleReconcileTrigger:
+			m.reconcileNodeRoles()
+		case <-m.stopSignal.Done():
+			return
+		}
+	}
+}
+
+// runNodeRoleReconciler signals the run() loop to reconcile node roles on every tick.
+func (m *handlerImpl) runNodeRoleReconciler(tickerC <-chan time.Time) {
+	for {
+		select {
+		case <-tickerC:
+			select {
+			case m.roleReconcileTrigger <- struct{}{}:
+			case <-m.stopSignal.Done():
+				return
 			}
 		case <-m.stopSignal.Done():
 			return
@@ -935,7 +999,14 @@ func (m *handlerImpl) callWithRetry(fn retriableCall) error {
 }
 
 func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onConflict onConflictCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	return m.callWithRetryWithOnConflictCallbackCtx(m.ctx(), fn, onConflict)
+}
+
+// callWithRetryWithOnConflictCallbackCtx is callWithRetryWithOnConflictCallback with an explicit parent context,
+// so a caller can bound the retry window tighter than handlerRetryTimeout (e.g. a reconcile pass with its own
+// overall deadline), instead of always retrying against the handler's full lifetime context.
+func (m *handlerImpl) callWithRetryWithOnConflictCallbackCtx(ctx context.Context, fn retriableCall, onConflict onConflictCall) error {
+	retryCtx, cancel := context.WithTimeout(ctx, m.handlerRetryTimeout)
 	defer cancel()
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, onConflictErrorWrapper(onConflict))
 }
