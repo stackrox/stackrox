@@ -63,10 +63,7 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	// Use of pgSearch.NewGloballyScopedGenericStoreWithCache can be dangerous with high cardinality stores,
-	// and be the source of memory pressure. Think twice about the need for in-memory caching
-	// of the whole store.
-	return pgSearch.NewGloballyScopedGenericStoreWithCache[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -74,7 +71,6 @@ func New(db postgres.DB) Store {
 		nil,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		metricsSetCacheOperationDurationTime,
 		targetResource,
 		nil,
 		nil,
@@ -93,10 +89,6 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
-}
-
-func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetCacheOperationDurationTime(start, op, storeName)
 }
 
 func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error {

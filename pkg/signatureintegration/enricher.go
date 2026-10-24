@@ -16,6 +16,24 @@ type Getter interface {
 	GetSignatureIntegration(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error)
 }
 
+// Lister provides access to all signature integrations.
+type Lister interface {
+	GetAllSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error)
+}
+
+// GetVerifierNames loads verifier names for a single request before streaming images.
+func GetVerifierNames(ctx context.Context, lister Lister) (map[string]string, error) {
+	integrations, err := lister.GetAllSignatureIntegrations(integrationReadContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	names := make(map[string]string, len(integrations))
+	for _, integration := range integrations {
+		names[integration.GetId()] = integration.GetName()
+	}
+	return names, nil
+}
+
 // integrationReadContext creates a SAC context with Integration read access.
 func integrationReadContext(ctx context.Context) context.Context {
 	return sac.WithGlobalAccessScopeChecker(ctx,
