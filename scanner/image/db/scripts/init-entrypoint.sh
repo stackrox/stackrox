@@ -14,6 +14,9 @@ set -Eeo pipefail
 # File flag that marks $PGDATA as initialized.
 INIT_READY_FILE=".init-ready"
 
+# File flag that marks a statistics refresh is needed.
+STATS_PENDING_FILE=".stats-pending"
+
 # load-init-bundle calls pg_restore on the database init bundle.
 load-init-bundle() {
     local db=${1:?missing first required argument: db}
@@ -99,6 +102,27 @@ pg-upgrade() {
             --new-datadir="$NEW_DATADIR" \
             -j 4 \
             "$@"
+}
+
+# maybe-refresh-statistics runs the analyze an upgrade left pending.
+maybe-refresh-statistics() {
+    local pending="$PGDATA/$STATS_PENDING_FILE"
+
+    [ -e "$pending" ] || return 0
+
+    echo "Refreshing optimizer statistics."
+    if ! pg_ctl -D "$PGDATA" start -w --timeout 86400 -o "-h 127.0.0.1"; then
+        echo "Could not start the upgraded cluster, retrying on the next start."
+        return 0
+    fi
+    if PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+            vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4; then
+        rm -f "$pending" || true
+        echo "Statistics refreshed, shutting down the cluster."
+    else
+        echo "vacuumdb failed, retrying on the next start."
+    fi
+    pg_ctl -D "$PGDATA" stop -w --timeout 600 || true
 }
 
 # recover-interrupted-upgrade cleans up upgrade artifacts left behind by pod
@@ -225,6 +249,9 @@ maybe-upgrade() {
     # state recover-interrupted-upgrade can undo.
     touch "$NEW_DATADIR/$INIT_READY_FILE" ||
         { echo "Could not mark $NEW_DATADIR ready, aborting."; return 1; }
+    # Mark statistics pending; the refresh clears it on success.
+    touch "$NEW_DATADIR/$STATS_PENDING_FILE" ||
+        { echo "Could not mark statistics pending, aborting."; return 1; }
     mv "$PGDATA" "$old_datadir" ||
         { echo "Could not move $PGDATA aside, aborting."; return 1; }
     mv "$NEW_DATADIR" "$PGDATA" ||
@@ -246,6 +273,7 @@ _main() {
 
     if [ -e "$init_check" ]; then
         maybe-upgrade /usr/lib64/pgsql
+        maybe-refresh-statistics
         return
     fi
 
