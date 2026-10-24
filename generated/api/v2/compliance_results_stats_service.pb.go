@@ -30,6 +30,7 @@ type ComplianceScanStatsShim struct {
 	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
 	LastScan      *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=last_scan,json=lastScan,proto3" json:"last_scan,omitempty"`
 	ScanConfigId  string                        `protobuf:"bytes,4,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty"`
+	DataState     ComplianceDataState           `protobuf:"varint,5,opt,name=data_state,json=dataState,proto3,enum=v2.ComplianceDataState" json:"data_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -90,6 +91,13 @@ func (x *ComplianceScanStatsShim) GetScanConfigId() string {
 		return x.ScanConfigId
 	}
 	return ""
+}
+
+func (x *ComplianceScanStatsShim) GetDataState() ComplianceDataState {
+	if x != nil {
+		return x.DataState
+	}
+	return ComplianceDataState_COMPLIANCE_DATA_STATE_UNKNOWN
 }
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
@@ -453,13 +461,15 @@ var File_api_v2_compliance_results_stats_service_proto protoreflect.FileDescript
 
 const file_api_v2_compliance_results_stats_service_proto_rawDesc = "" +
 	"\n" +
-	"-api/v2/compliance_results_stats_service.proto\x12\x02v2\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd6\x01\n" +
+	"-api/v2/compliance_results_stats_service.proto\x12\x02v2\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8e\x02\n" +
 	"\x17ComplianceScanStatsShim\x12\x1b\n" +
 	"\tscan_name\x18\x01 \x01(\tR\bscanName\x12?\n" +
 	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x127\n" +
 	"\tlast_scan\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\blastScan\x12$\n" +
-	"\x0escan_config_id\x18\x04 \x01(\tR\fscanConfigId\"\xe9\x01\n" +
+	"\x0escan_config_id\x18\x04 \x01(\tR\fscanConfigId\x126\n" +
+	"\n" +
+	"data_state\x18\x05 \x01(\x0e2\x17.v2.ComplianceDataStateR\tdataState\"\xe9\x01\n" +
 	"\x1aComplianceProfileScanStats\x12?\n" +
 	"\vcheck_stats\x18\x01 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x12!\n" +
@@ -528,44 +538,46 @@ var file_api_v2_compliance_results_stats_service_proto_goTypes = []any{
 	(*ListComplianceClusterScanStatsResponse)(nil),    // 6: v2.ListComplianceClusterScanStatsResponse
 	(*ComplianceCheckStatusCount)(nil),                // 7: v2.ComplianceCheckStatusCount
 	(*timestamppb.Timestamp)(nil),                     // 8: google.protobuf.Timestamp
-	(*ComplianceBenchmark)(nil),                       // 9: v2.ComplianceBenchmark
-	(*ComplianceScanCluster)(nil),                     // 10: v2.ComplianceScanCluster
-	(*RawQuery)(nil),                                  // 11: v2.RawQuery
-	(*ComplianceProfileResultsRequest)(nil),           // 12: v2.ComplianceProfileResultsRequest
-	(*ComplianceProfileCheckRequest)(nil),             // 13: v2.ComplianceProfileCheckRequest
-	(*ListComplianceProfileResults)(nil),              // 14: v2.ListComplianceProfileResults
-	(*ListComplianceClusterOverallStatsResponse)(nil), // 15: v2.ListComplianceClusterOverallStatsResponse
+	(ComplianceDataState)(0),                          // 9: v2.ComplianceDataState
+	(*ComplianceBenchmark)(nil),                       // 10: v2.ComplianceBenchmark
+	(*ComplianceScanCluster)(nil),                     // 11: v2.ComplianceScanCluster
+	(*RawQuery)(nil),                                  // 12: v2.RawQuery
+	(*ComplianceProfileResultsRequest)(nil),           // 13: v2.ComplianceProfileResultsRequest
+	(*ComplianceProfileCheckRequest)(nil),             // 14: v2.ComplianceProfileCheckRequest
+	(*ListComplianceProfileResults)(nil),              // 15: v2.ListComplianceProfileResults
+	(*ListComplianceClusterOverallStatsResponse)(nil), // 16: v2.ListComplianceClusterOverallStatsResponse
 }
 var file_api_v2_compliance_results_stats_service_proto_depIdxs = []int32{
 	7,  // 0: v2.ComplianceScanStatsShim.check_stats:type_name -> v2.ComplianceCheckStatusCount
 	8,  // 1: v2.ComplianceScanStatsShim.last_scan:type_name -> google.protobuf.Timestamp
-	7,  // 2: v2.ComplianceProfileScanStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	9,  // 3: v2.ComplianceProfileScanStats.benchmarks:type_name -> v2.ComplianceBenchmark
-	0,  // 4: v2.ComplianceClusterScanStats.scan_stats:type_name -> v2.ComplianceScanStatsShim
-	10, // 5: v2.ComplianceClusterScanStats.cluster:type_name -> v2.ComplianceScanCluster
-	11, // 6: v2.ComplianceScanClusterRequest.query:type_name -> v2.RawQuery
-	1,  // 7: v2.ListComplianceProfileScanStatsResponse.scan_stats:type_name -> v2.ComplianceProfileScanStats
-	1,  // 8: v2.ListComplianceClusterProfileStatsResponse.scan_stats:type_name -> v2.ComplianceProfileScanStats
-	2,  // 9: v2.ListComplianceClusterScanStatsResponse.scan_stats:type_name -> v2.ComplianceClusterScanStats
-	12, // 10: v2.ComplianceResultsStatsService.GetComplianceProfileStats:input_type -> v2.ComplianceProfileResultsRequest
-	11, // 11: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:input_type -> v2.RawQuery
-	3,  // 12: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:input_type -> v2.ComplianceScanClusterRequest
-	13, // 13: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:input_type -> v2.ComplianceProfileCheckRequest
-	3,  // 14: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:input_type -> v2.ComplianceScanClusterRequest
-	11, // 15: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:input_type -> v2.RawQuery
-	12, // 16: v2.ComplianceResultsStatsService.GetComplianceClusterStats:input_type -> v2.ComplianceProfileResultsRequest
-	4,  // 17: v2.ComplianceResultsStatsService.GetComplianceProfileStats:output_type -> v2.ListComplianceProfileScanStatsResponse
-	4,  // 18: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:output_type -> v2.ListComplianceProfileScanStatsResponse
-	5,  // 19: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:output_type -> v2.ListComplianceClusterProfileStatsResponse
-	14, // 20: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:output_type -> v2.ListComplianceProfileResults
-	6,  // 21: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:output_type -> v2.ListComplianceClusterScanStatsResponse
-	15, // 22: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
-	15, // 23: v2.ComplianceResultsStatsService.GetComplianceClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
-	17, // [17:24] is the sub-list for method output_type
-	10, // [10:17] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	9,  // 2: v2.ComplianceScanStatsShim.data_state:type_name -> v2.ComplianceDataState
+	7,  // 3: v2.ComplianceProfileScanStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	10, // 4: v2.ComplianceProfileScanStats.benchmarks:type_name -> v2.ComplianceBenchmark
+	0,  // 5: v2.ComplianceClusterScanStats.scan_stats:type_name -> v2.ComplianceScanStatsShim
+	11, // 6: v2.ComplianceClusterScanStats.cluster:type_name -> v2.ComplianceScanCluster
+	12, // 7: v2.ComplianceScanClusterRequest.query:type_name -> v2.RawQuery
+	1,  // 8: v2.ListComplianceProfileScanStatsResponse.scan_stats:type_name -> v2.ComplianceProfileScanStats
+	1,  // 9: v2.ListComplianceClusterProfileStatsResponse.scan_stats:type_name -> v2.ComplianceProfileScanStats
+	2,  // 10: v2.ListComplianceClusterScanStatsResponse.scan_stats:type_name -> v2.ComplianceClusterScanStats
+	13, // 11: v2.ComplianceResultsStatsService.GetComplianceProfileStats:input_type -> v2.ComplianceProfileResultsRequest
+	12, // 12: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:input_type -> v2.RawQuery
+	3,  // 13: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:input_type -> v2.ComplianceScanClusterRequest
+	14, // 14: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:input_type -> v2.ComplianceProfileCheckRequest
+	3,  // 15: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:input_type -> v2.ComplianceScanClusterRequest
+	12, // 16: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:input_type -> v2.RawQuery
+	13, // 17: v2.ComplianceResultsStatsService.GetComplianceClusterStats:input_type -> v2.ComplianceProfileResultsRequest
+	4,  // 18: v2.ComplianceResultsStatsService.GetComplianceProfileStats:output_type -> v2.ListComplianceProfileScanStatsResponse
+	4,  // 19: v2.ComplianceResultsStatsService.GetComplianceProfilesStats:output_type -> v2.ListComplianceProfileScanStatsResponse
+	5,  // 20: v2.ComplianceResultsStatsService.GetComplianceProfilesClusterStats:output_type -> v2.ListComplianceClusterProfileStatsResponse
+	15, // 21: v2.ComplianceResultsStatsService.GetComplianceProfileCheckStats:output_type -> v2.ListComplianceProfileResults
+	6,  // 22: v2.ComplianceResultsStatsService.GetComplianceClusterScanStats:output_type -> v2.ListComplianceClusterScanStatsResponse
+	16, // 23: v2.ComplianceResultsStatsService.GetComplianceOverallClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
+	16, // 24: v2.ComplianceResultsStatsService.GetComplianceClusterStats:output_type -> v2.ListComplianceClusterOverallStatsResponse
+	18, // [18:25] is the sub-list for method output_type
+	11, // [11:18] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_results_stats_service_proto_init() }

@@ -34,6 +34,7 @@ import {
     isScanConfigurationDisabled,
 } from './compliance.coverage.utils';
 import CheckDetailsInfo from './components/CheckDetailsInfo';
+import OutdatedDataBanner from './components/OutdatedDataBanner';
 import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { CLUSTER_QUERY } from './compliance.coverage.constants';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
@@ -187,6 +188,11 @@ function CheckDetailsPage() {
             </Tabs>
             <PageSection hasBodyWrapper={false}>
                 <div>
+                    {activeTabKey === RESULTS_TAB && (
+                        <OutdatedDataBanner
+                            outdatedClusterCount={checkResultsResponse?.outdatedClusterCount ?? 0}
+                        />
+                    )}
                     {activeTabKey === RESULTS_TAB && (
                         <CheckDetailsTable
                             checkResultsCount={checkResultsResponse?.totalCount ?? 0}
