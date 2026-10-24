@@ -49,6 +49,18 @@ ensure_CI() {
     fi
 }
 
+# validate_image_tag rejects empty tags and tags that contain whitespace.
+# Docker and Kubernetes reject image references with leading or trailing whitespace.
+validate_image_tag() {
+    local tag="${1:-}"
+    if [[ -z "$tag" ]]; then
+        die "image tag is not provided or empty"
+    fi
+    if [[ "$tag" =~ [[:space:]] ]]; then
+        die "image tag '$(printf %q "$tag")' contains whitespace; image tags must not include spaces, tabs, or newlines"
+    fi
+}
+
 ci_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: ci_export <env-name> <env-value>"
