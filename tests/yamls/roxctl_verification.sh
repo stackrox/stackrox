@@ -106,7 +106,7 @@ for yaml_file in "${!TEST_CASES[@]}"; do
         # Verify each expected policy was found
         all_found=true
         for expected_policy in "${expected_array[@]}"; do
-            if ! echo "$matching_policies" | grep -Fq "$expected_policy"; then
+            if ! grep -Fq "$expected_policy" <<< "$matching_policies"; then
                 >&2 echo "FAILED: $yaml_file - missing expected policy: $expected_policy"
                 all_found=false
             fi
