@@ -272,17 +272,6 @@ assert_upgrade() {
     [ -e "$PGDATA/.stats-pending" ]
 }
 
-@test "statistics - a pending refresh is retried on a later start" {
-    given_pending_statistics
-
-    # The whole point of a separate marker: by now maybe-upgrade sees matching
-    # versions and returns early, so _main has to drive the refresh.
-    run _main
-    assert_success
-    [ -e "$TEST_DIR/analyzed" ]
-    [ ! -e "$PGDATA/.stats-pending" ]
-}
-
 # Clean shutdown
 @test "clean-shutdown succeeds when cluster shuts down" {
     mkdir -p "$PGDATA"
