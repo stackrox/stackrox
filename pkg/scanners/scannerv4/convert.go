@@ -35,7 +35,8 @@ const (
 // digitSegment matches contiguous runs of digits for numeric segment comparisons.
 var digitSegment = regexp.MustCompile(`\d+`)
 
-func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
+// ImageScan converts a v4.VulnerabilityReport to storage.ImageScan.
+func ImageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 	if features.ScannerV4RedHatLayers.Enabled() {
 		filterRedHatLayerVulnerabilities(report, layerSHAToIndex)
