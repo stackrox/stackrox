@@ -10,7 +10,7 @@ Note: These tests always run on CI unless explicitly labeled otherwise.
 
 1. Run `make -C .. proto-generated-srcs` to make sure the protos are up-to-date
 1. Deploy the StackRox platform
-    ex: `../deploy/k8s/deploy-local.sh`
+    ex: `../deploy/deploy-local.sh`
 
 **Note: There may not be any running deployments called `nginx`, as it will collide with the tests.**
 
