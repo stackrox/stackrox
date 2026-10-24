@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	securitycenter "cloud.google.com/go/securitycenter/apiv2"
 	googleStorage "cloud.google.com/go/storage"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
