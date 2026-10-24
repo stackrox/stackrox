@@ -19,4 +19,21 @@ var (
 	// NodeIndexCachePath defines the path to the file where the node index wrap cache will be written to.
 	// This path is expected to be writable inside the Compliance container.
 	NodeIndexCachePath = RegisterSetting("ROX_NODE_INDEX_CACHE_PATH", WithDefault("/tmp/node-index"))
+
+	// NodeIndexReportRateLimit is the maximum number of node index reports per second Central
+	// accepts across all sensors that send them. Each such sensor gets an equal share (1/N) of
+	// this global capacity. The split happens when a new client ID registers in the node index
+	// report pipeline.
+	// Supports fractional rates (e.g., "0.5" for one request every 2 seconds).
+	// Set to "0" to disable rate limiting (unlimited).
+	//
+	// Default 0.2 (one report every 5 seconds) stays under the ~1 req/s Scanner V4
+	// matcher budget after VM scanning's 0.3 share.
+	NodeIndexReportRateLimit = RegisterFloatSetting("ROX_NODE_INDEX_REPORT_RATE_LIMIT", 0.2).WithMinimum(0)
+
+	// NodeIndexReportBucketCapacity is the token-bucket capacity for node index report rate limiting.
+	// The global capacity is divided equally among connected sensors.
+	// Default 50 absorbs a typical cluster reconnect wave; a tiny bucket would
+	// leave each sensor with a burst of 1.
+	NodeIndexReportBucketCapacity = RegisterIntegerSetting("ROX_NODE_INDEX_REPORT_BUCKET_CAPACITY", 50).WithMinimum(1)
 )
