@@ -3,9 +3,6 @@ package util
 import groovy.transform.CompileStatic
 import orchestratormanager.OrchestratorTypes
 
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.attribute.FileTime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -110,28 +107,6 @@ class Env {
         return (envVars.get(key) ?: "null") == "null"
     }
 
-    private static OrchestratorTypes inferOrchestratorType() {
-        // Infer the orchestrator type from the local deployment, by looking at which
-        // `deploy/<orchestrator>/central-deploy/password` file was most recently written to.
-        OrchestratorTypes selected = null
-        FileTime mostRecent = null
-        for (def orchestratorType : OrchestratorTypes.values()) {
-            def passwordPath = "../deploy/${orchestratorType.toString().toLowerCase()}" +
-                    "/central-deploy/password"
-            try {
-                def modTime = Files.getLastModifiedTime(Paths.get(passwordPath))
-                if (mostRecent == null || modTime > mostRecent) {
-                    selected = orchestratorType
-                    mostRecent = modTime
-                }
-            } catch (Exception ex) {
-                LOG.debug("error inferOrchestratorType", ex) // no-op
-            }
-        }
-
-        return selected ?: OrchestratorTypes.K8S
-    }
-
     private void assignFallbackValues() {
         for (def entry : DEFAULT_VALUES.entrySet()) {
             if (isEnvVarEmpty(entry.key)) {
@@ -140,26 +115,7 @@ class Env {
         }
         LOG.debug System.getenv().toMapString()
 
-        if (isEnvVarEmpty("ROX_ADMIN_PASSWORD")) {
-            if (isEnvVarEmpty("CLUSTER")) {
-                envVars.put("CLUSTER", inferOrchestratorType().toString())
-            }
-
-            String password = null
-            try {
-                def passwordPath = "../deploy/${envVars.get("CLUSTER").toString().toLowerCase()}" +
-                        "/central-deploy/password"
-                BufferedReader br = new BufferedReader(new FileReader(passwordPath))
-                password = br.readLine()
-            } catch (Exception ex) {
-                LOG.warn("Failed to load password for current deployment", ex)
-            }
-
-            if (password != null) {
-                envVars.put("ROX_ADMIN_PASSWORD", password)
-            }
-        }
-
+        mustGetInternal("ROX_ADMIN_PASSWORD")
         if (isEnvVarEmpty("CLUSTER")) {
             envVars.put("CLUSTER", OrchestratorTypes.K8S.toString())
         }
