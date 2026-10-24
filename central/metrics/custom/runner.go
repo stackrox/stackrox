@@ -2,10 +2,13 @@ package custom
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	dto "github.com/prometheus/client_model/go"
 	adminEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -28,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgmetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
@@ -37,6 +41,31 @@ type trackerRunner []struct {
 	// getGroupConfig returns the storage configuration associated to the
 	// tracker.
 	getGroupConfig func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group
+}
+
+type permittedGlobalGatherer struct {
+	registry prometheus.Gatherer
+	prefixes []string
+}
+
+func (g permittedGlobalGatherer) Gather() ([]*dto.MetricFamily, error) {
+	if len(g.prefixes) == 0 {
+		return nil, nil
+	}
+	families, err := g.registry.Gather()
+	if err != nil {
+		return nil, err
+	}
+	var permitted []*dto.MetricFamily
+	for _, family := range families {
+		for _, prefix := range g.prefixes {
+			if strings.HasPrefix(family.GetName(), prefix) {
+				permitted = append(permitted, family)
+				break
+			}
+		}
+	}
+	return permitted, nil
 }
 
 // RunnerConfiguration is a composition of tracker configurations.
@@ -173,13 +202,23 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	var userID string
 	reqCtx := req.Context()
+	var permittedGlobalPrefixes []string
+	for _, tracker := range tr {
+		if tracker.IsGlobal() && tracker.CanView(reqCtx) {
+			permittedGlobalPrefixes = append(permittedGlobalPrefixes,
+				fmt.Sprintf("%s_%s_%s_", pkgmetrics.PrometheusNamespace,
+					pkgmetrics.CentralSubsystem, tracker.GetPrefix()))
+		}
+	}
 	if id := authn.IdentityFromContextOrNil(reqCtx); id != nil {
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		newCtx := authn.CopyContextIdentity(context.Background(), reqCtx)
 		newCtx = sac.CopyAccessScopeCheckerCore(newCtx, reqCtx)
 		for _, tracker := range tr {
-			go tracker.Gather(newCtx)
+			if tracker.CanView(reqCtx) {
+				go tracker.Gather(newCtx)
+			}
 		}
 	}
 
@@ -201,7 +240,7 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer globalRegistry.Unlock()
 
 	promhttp.HandlerFor(
-		prometheus.Gatherers{userRegistry, globalRegistry},
+		prometheus.Gatherers{userRegistry, permittedGlobalGatherer{globalRegistry, permittedGlobalPrefixes}},
 		promhttp.HandlerOpts{}).ServeHTTP(w, req)
 
 	go phonehome()
