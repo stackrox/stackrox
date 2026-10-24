@@ -12,7 +12,7 @@ var CategorySearchOptions search.OptionsMap
 // init populates CategorySearchOptions from the PolicyCategoriesSchema at startup.
 func init() {
 	CategorySearchOptions = search.NewOptionsMap(v1.SearchCategory_POLICIES).
-		Add(search.Category, schema.PolicyCategoriesSchema.OptionsMap.MustGet(search.PolicyCategoryName.String()))
+		Add(search.Category, schema.PolicyCategoriesSchema().OptionsMap.MustGet(search.PolicyCategoryName.String()))
 }
 
 // TransformCategoryNameFieldsQuery transforms category name fields for the new data layout for categories in postgres.

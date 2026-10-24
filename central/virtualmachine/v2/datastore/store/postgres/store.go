@@ -45,7 +45,7 @@ const (
 )
 
 var (
-	schema = pkgSchema.VirtualMachineV2Schema
+  schema = pkgSchema.VirtualMachineV2Schema()
 	vmSAC  = sac.ForResource(resources.VirtualMachine)
 )
 

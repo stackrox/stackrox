@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ListeningEndpointsSchema() })
+}
 
 var (
 	// CreateTableListeningEndpointsStmt holds the create statement for table `listening_endpoints`.
@@ -31,16 +36,16 @@ var (
 	}
 
 	// ListeningEndpointsSchema is the go schema for table `listening_endpoints`.
-	ListeningEndpointsSchema = func() *walker.Schema {
+	ListeningEndpointsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("listening_endpoints")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "listening_endpoints")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ProcessIndicator": ProcessIndicatorsSchema,
-			"storage.Deployment":       DeploymentsSchema,
-			"storage.Pod":              PodsSchema,
+			"storage.ProcessIndicator": ProcessIndicatorsSchema(),
+			"storage.Deployment":       DeploymentsSchema(),
+			"storage.Pod":              PodsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -51,7 +56,7 @@ var (
 		RegisterTable(schema, CreateTableListeningEndpointsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, schema)
 		return schema
-	}()
+	})
 )
 
 const (

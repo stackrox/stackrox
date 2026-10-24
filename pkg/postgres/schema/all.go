@@ -21,7 +21,20 @@ var (
 	log = logging.LoggerForModule()
 	// registeredTables is map of sql table name to go schema of the sql table.
 	registeredTables = make(map[string]*registeredTable)
+	// lazySchemas collects schema init functions registered during package init.
+	// ensureAllRegistered triggers them before code that needs registeredTables to be complete.
+	lazySchemas []func()
 )
+
+func registerLazySchema(f func()) {
+	lazySchemas = append(lazySchemas, f)
+}
+
+func ensureAllRegistered() {
+	for _, f := range lazySchemas {
+		f()
+	}
+}
 
 type registeredTable struct {
 	Schema             *walker.Schema
@@ -93,6 +106,7 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTa
 
 // ApplyAllSchemas creates or auto migrate according to the current schema
 func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
+	ensureAllRegistered()
 	for _, rt := range getAllRegisteredTablesInOrder() {
 		// Exclude tests
 		if strings.HasPrefix(rt.Schema.Table, "test_") {
@@ -105,6 +119,7 @@ func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
 
 // ApplyAllSchemasIncludingTests creates or auto migrate according to the current schema including test schemas
 func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, _ testing.TB) {
+	ensureAllRegistered()
 	for _, rt := range getAllRegisteredTablesInOrder() {
 		log.Debugf("Applying schema for table %s", rt.Schema.Table)
 		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
@@ -163,6 +178,7 @@ func ApplyAllIndexes(ctx context.Context, db postgres.DB, stmtTimeout time.Durat
 
 // GetAllIndexDefinitions returns all index definitions across all registered tables.
 func GetAllIndexDefinitions() []*postgres.IndexDefinition {
+	ensureAllRegistered()
 	var all []*postgres.IndexDefinition
 	for _, rt := range getAllRegisteredTablesInOrder() {
 		if strings.HasPrefix(rt.Schema.Table, "test_") {

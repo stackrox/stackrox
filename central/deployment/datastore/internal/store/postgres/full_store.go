@@ -71,7 +71,7 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 
 	// Fetch results using the search framework
 	viewMap := make(map[string]*views.ListDeploymentView)
-	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, query,
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema(), query,
 		func(view *views.ListDeploymentView) error {
 			viewMap[view.ID] = view
 			return nil
@@ -110,7 +110,7 @@ func (f *fullStoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) 
 	query.Selects = views.ListDeploymentViewSelects()
 
 	var listDeployments []*storage.ListDeployment
-	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, query,
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema(), query,
 		func(view *views.ListDeploymentView) error {
 			listDeployments = append(listDeployments, view.ToListDeployment())
 			return nil
@@ -151,7 +151,7 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 	defer cancel()
 
 	var results []*views.ContainerImageView
-	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, cloned, func(response *views.ContainerImageView) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema(), cloned, func(response *views.ContainerImageView) error {
 		results = append(results, response)
 		return nil
 	})

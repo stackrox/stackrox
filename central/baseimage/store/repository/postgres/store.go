@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.BaseImageRepositoriesSchema
+	schema         = pkgSchema.BaseImageRepositoriesSchema()
 	targetResource = resources.ImageAdministration
 )
 

@@ -30,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NetworkpoliciesSchema
+	schema         = pkgSchema.NetworkpoliciesSchema()
 	targetResource = resources.NetworkPolicy
 )
 

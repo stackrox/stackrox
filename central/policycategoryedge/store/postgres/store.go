@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PolicyCategoryEdgesSchema
+	schema         = pkgSchema.PolicyCategoryEdgesSchema()
 	targetResource = resources.WorkflowAdministration
 )
 
@@ -72,7 +72,7 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
 		nil,
-		pkgSchema.PolicyCategoriesSchema.OptionsMap,
+		pkgSchema.PolicyCategoriesSchema().OptionsMap,
 	)
 }
 

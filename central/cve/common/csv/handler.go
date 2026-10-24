@@ -26,42 +26,42 @@ var (
 )
 
 func init() {
-	NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
+	NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema().OptionsMap, schema.ClustersSchema().OptionsMap)
 	var imageOptionsMap search.OptionsMap
 	if features.FlattenImageData.Enabled() {
-		imageOptionsMap = schema.ImagesV2Schema.OptionsMap
+		imageOptionsMap = schema.ImagesV2Schema().OptionsMap
 	} else {
-		imageOptionsMap = schema.ImagesSchema.OptionsMap
+		imageOptionsMap = schema.ImagesSchema().OptionsMap
 	}
 	DeploymentOnlyOptionsMap = search.Difference(
-		schema.DeploymentsSchema.OptionsMap,
+		schema.DeploymentsSchema().OptionsMap,
 		search.CombineOptionsMaps(
-			schema.ClustersSchema.OptionsMap,
-			schema.NamespacesSchema.OptionsMap,
+			schema.ClustersSchema().OptionsMap,
+			schema.NamespacesSchema().OptionsMap,
 			imageOptionsMap,
 		),
 	)
 	ImageOnlyOptionsMap = search.Difference(
-		schema.ImagesSchema.OptionsMap,
+		schema.ImagesSchema().OptionsMap,
 		search.CombineOptionsMaps(
-			schema.ImageComponentV2Schema.OptionsMap,
-			schema.ImageCvesV2Schema.OptionsMap,
+			schema.ImageComponentV2Schema().OptionsMap,
+			schema.ImageCvesV2Schema().OptionsMap,
 		),
 	)
 	ImageV2OnlyOptionsMap = search.Difference(
-		schema.ImagesV2Schema.OptionsMap,
+		schema.ImagesV2Schema().OptionsMap,
 		search.CombineOptionsMaps(
-			schema.ImageComponentV2Schema.OptionsMap,
-			schema.ImageCvesV2Schema.OptionsMap,
+			schema.ImageComponentV2Schema().OptionsMap,
+			schema.ImageCvesV2Schema().OptionsMap,
 		),
 	)
 	NodeOnlyOptionsMap = search.Difference(
-		schema.NodesSchema.OptionsMap,
+		schema.NodesSchema().OptionsMap,
 		search.CombineOptionsMaps(
-			schema.NodeComponentEdgesSchema.OptionsMap,
-			schema.NodeComponentsSchema.OptionsMap,
-			schema.NodeComponentsCvesEdgesSchema.OptionsMap,
-			schema.NodeCvesSchema.OptionsMap,
+			schema.NodeComponentEdgesSchema().OptionsMap,
+			schema.NodeComponentsSchema().OptionsMap,
+			schema.NodeComponentsCvesEdgesSchema().OptionsMap,
+			schema.NodeCvesSchema().OptionsMap,
 		),
 	)
 }

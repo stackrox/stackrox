@@ -1,4 +1,4 @@
-{{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
+{{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema(){{end}}
 {{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}

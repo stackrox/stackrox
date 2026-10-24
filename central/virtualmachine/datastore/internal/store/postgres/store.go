@@ -30,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.VirtualMachinesSchema
+	schema         = pkgSchema.VirtualMachinesSchema()
 	targetResource = resources.VirtualMachine
 )
 

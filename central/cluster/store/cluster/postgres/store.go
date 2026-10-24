@@ -30,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ClustersSchema
+	schema         = pkgSchema.ClustersSchema()
 	targetResource = resources.Cluster
 )
 

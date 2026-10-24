@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.HashesSchema
+	schema         = pkgSchema.HashesSchema()
 	targetResource = resources.Hash
 )
 

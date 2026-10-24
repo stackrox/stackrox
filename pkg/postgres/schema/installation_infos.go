@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { InstallationInfosSchema() })
+}
 
 var (
 	// CreateTableInstallationInfosStmt holds the create statement for table `installation_infos`.
@@ -22,7 +27,7 @@ var (
 	}
 
 	// InstallationInfosSchema is the go schema for table `installation_infos`.
-	InstallationInfosSchema = func() *walker.Schema {
+	InstallationInfosSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("installation_infos")
 		if schema != nil {
 			return schema
@@ -31,7 +36,7 @@ var (
 		schema.ScopingResource = resources.InstallationInfo
 		RegisterTable(schema, CreateTableInstallationInfosStmt)
 		return schema
-	}()
+	})
 )
 
 const (
