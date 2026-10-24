@@ -380,7 +380,11 @@ func main() {
 	if localConfig.PprofServer {
 		go func() {
 			log.Printf("Started pprof server in port :6060\n")
-			err := http.ListenAndServe("localhost:6060", nil)
+			pprofSrv := &http.Server{
+				Addr:              "localhost:6060",
+				ReadHeaderTimeout: 5 * time.Second,
+			}
+			err := pprofSrv.ListenAndServe()
 			if err != nil {
 				log.Fatalf("%s\n", err)
 			}
