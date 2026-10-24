@@ -48,6 +48,7 @@ import {
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesPlatformPath,
+    vulnerabilitiesOperatorRemediationPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
     vulnerabilitiesWorkloadCvesPath,
@@ -254,6 +255,15 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         componentKey: 'vulnerabilities/platform',
         props: { view: 'platform' },
         path: vulnerabilitiesPlatformPath,
+    },
+    'vulnerabilities/operator-remediation': {
+        component: asyncComponent(
+            () =>
+                import(
+                    'Containers/Vulnerabilities/OperatorRemediation/OperatorRemediationPage'
+                )
+        ),
+        path: vulnerabilitiesOperatorRemediationPath,
     },
     'vulnerabilities/all-images': {
         component: WorkloadCvesPage,
