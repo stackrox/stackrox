@@ -8,16 +8,21 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/central/credentialexpiry/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
 
-var errTest = errors.New("test")
+var (
+	authorizer = allow.Anonymous()
+
+	errTest = errors.New("test")
+)
 
 type mockService struct{}
 
-func (ms *mockService) AuthFuncOverride(context.Context, string) (context.Context, error) {
-	panic("unimplemented")
+func (ms *mockService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (ms *mockService) GetCertExpiry(_ context.Context, req *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {

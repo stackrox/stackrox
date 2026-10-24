@@ -21,16 +21,14 @@ import (
 )
 
 var (
-	authorizer = func() authz.Authorizer {
-		return perrpc.FromMap(map[authz.Authorizer][]string{
-			and.And(
-				user.With(permissions.Modify(resources.VulnerabilityManagementRequests)),
-				user.With(permissions.Modify(resources.VulnerabilityManagementApprovals))): {
-				v1.NodeCVEService_SuppressCVEs_FullMethodName,
-				v1.NodeCVEService_UnsuppressCVEs_FullMethodName,
-			},
-		})
-	}()
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		and.And(
+			user.With(permissions.Modify(resources.VulnerabilityManagementRequests)),
+			user.With(permissions.Modify(resources.VulnerabilityManagementApprovals))): {
+			v1.NodeCVEService_SuppressCVEs_FullMethodName,
+			v1.NodeCVEService_UnsuppressCVEs_FullMethodName,
+		},
+	})
 )
 
 // serviceImpl provides APIs for CVEs.
