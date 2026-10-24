@@ -10,7 +10,6 @@ import EmailSvg from 'images/email.svg?react';
 import GhcrSvg from 'images/ghcr.svg?react';
 import GoogleSvg from 'images/google-cloud.svg?react';
 import GoogleArtifactSvg from 'images/google-artifact.svg?react';
-import GoogleRegistrySvg from 'images/google-container.svg?react';
 import IbmSvg from 'images/ibm-ccr.svg?react';
 import JiraSvg from 'images/jira.svg?react';
 import LogoSvg from 'images/StackRox-integration-logo.svg?react';
@@ -176,18 +175,6 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         label: '[DEPRECATED] StackRox Scanner',
         type: 'clairify',
         featureFlagDependency: ['ROX_LEGACY_SCANNER'],
-    },
-    {
-        categories: 'Scanner',
-        Logo: ClairSvg,
-        label: '[DEPRECATED] CoreOS Clair',
-        type: 'clair',
-    },
-    {
-        categories: 'Registry + Scanner',
-        Logo: GoogleRegistrySvg,
-        label: '[DEPRECATED] Google Container Registry',
-        type: 'google',
     },
 ];
 
