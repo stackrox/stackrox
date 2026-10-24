@@ -22,7 +22,7 @@ os.environ["STORE_METRICS"] = os.environ["COMPARISON_METRICS"]
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 
 ClusterTestRunner(
-    cluster=GKECluster("scale-test", machine_type="e2-standard-8"),
+    cluster=GKECluster("scale-test", machine_type="e2-standard-8", sample_resources=True),
     pre_test=PreSystemTests(),
     test=ScaleTest(),
     post_test=PostClusterTest(

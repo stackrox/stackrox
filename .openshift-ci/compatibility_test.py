@@ -46,7 +46,7 @@ def run_compatibility_tests(testfunc, cluster_name):
             )
         ClusterTestSetsRunner(
             cluster=GKECluster(cluster_name,
-                               machine_type="e2-standard-8", num_nodes=2),
+                               machine_type="e2-standard-8", num_nodes=2, sample_resources=True),
             initial_pre_test=PreSystemTests(),
             sets=sets,
             final_post=FinalPost(

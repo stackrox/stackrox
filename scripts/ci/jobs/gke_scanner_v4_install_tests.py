@@ -17,7 +17,7 @@ os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["SCANNER_V4_VULN_READINESS"] = "false"
 
 ClusterTestRunner(
-    cluster=GKECluster("scanner-v4-install-test", machine_type="e2-standard-8"),
+    cluster=GKECluster("scanner-v4-install-test", machine_type="e2-standard-8", sample_resources=True),
     pre_test=PreSystemTests(),
     test=ScannerV4InstallTest(),
     post_test=PostClusterTest(
