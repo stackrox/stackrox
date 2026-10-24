@@ -220,7 +220,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	request.Id = ""
 	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "Scan configuration ID is required: invalid arguments")
+	s.Require().Contains(err.Error(), "Scan configuration ID is required")
 
 	// Test Case 3: No ScanConfig
 	request = getTestAPIRec()

@@ -53,14 +53,14 @@ type serviceImpl struct {
 
 func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*storage.TokenMetadata, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "empty id passed")
+		return nil, errox.InvalidArgs.New("empty id passed")
 	}
 	token, err := s.backend.GetTokenOrNil(ctx, req.GetId())
 	if err != nil {
 		return nil, errors.Errorf("token retrieval failed: %s", err)
 	}
 	if token == nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "token with id '%s' does not exist", req.GetId())
+		return nil, errox.InvalidArgs.Newf("token with id '%s' does not exist", req.GetId())
 	}
 	return token, nil
 }
@@ -88,12 +88,12 @@ func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*v
 
 func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRequest) (*v1.GenerateTokenResponse, error) {
 	if req.GetName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "token name cannot be empty")
+		return nil, errox.InvalidArgs.New("token name cannot be empty")
 	}
 
 	if req.GetRole() != "" {
 		if len(req.GetRoles()) > 0 {
-			return nil, errors.Wrap(errox.InvalidArgs, "must use either role or roles, but not both")
+			return nil, errox.InvalidArgs.New("must use either role or roles, but not both")
 		}
 		req.Roles = []string{req.GetRole()}
 		req.Role = ""
@@ -104,7 +104,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, errors.Wrap(err, "unable to fetch roles")
 	}
 	if len(missingIndices) > 0 {
-		return nil, errors.Wrapf(errox.InvalidArgs, "role(s) %s don't exist", strings.Join(sliceutils.Select(req.GetRoles(), missingIndices...), ","))
+		return nil, errox.InvalidArgs.Newf("role(s) %s don't exist", strings.Join(sliceutils.Select(req.GetRoles(), missingIndices...), ","))
 	}
 
 	id, err := authn.IdentityFromContext(ctx)

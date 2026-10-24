@@ -234,7 +234,7 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 func containerImage(params apiparams.SBOMRequestBody) (*storage.ContainerImage, error) {
 	ci, err := utils.GenerateImageFromString(params.ImageName)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Populate the image IDs if a digest was provided and the IDs

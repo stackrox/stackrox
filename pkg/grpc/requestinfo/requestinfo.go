@@ -265,7 +265,7 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		// This should only happen if someone is trying to spoof a RequestInfo. Log, but don't return any details in the
 		// error message.
 		log.Errorf("error extracting RequestInfo from incoming metadata: %v", err)
-		return nil, errors.Wrap(errox.InvalidArgs, "malformed request")
+		return nil, errox.InvalidArgs.New("malformed request")
 	}
 
 	tlsState := tlsStateFromContext(ctx)

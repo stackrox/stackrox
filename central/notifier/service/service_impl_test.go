@@ -97,7 +97,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	updateReq := createUpdateNotifierRequest("generic")
 	updateReq.GetNotifier().GetGeneric().Password = "updatePassword"
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
-	s.EqualError(err, errors.Wrap(errox.InvalidArgs, "non-zero or unmasked credential field 'Notifier.Notifier_Generic.Generic.Password'").Error())
+	s.EqualError(err, errox.InvalidArgs.New("non-zero or unmasked credential field 'Notifier.Notifier_Generic.Generic.Password'").Error())
 
 	updateReq.UpdatePassword = true
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
@@ -112,7 +112,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	secrets.ScrubSecretsFromStructWithReplacement(updateDependentReq, secrets.ScrubReplacementStr)
 	updateDependentReq.UpdatePassword = false
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateDependentReq)
-	s.EqualError(err, errors.Wrap(errox.InvalidArgs, "credentials required to update field 'Notifier.Notifier_Generic.Generic.Endpoint'").Error())
+	s.EqualError(err, errox.InvalidArgs.New("credentials required to update field 'Notifier.Notifier_Generic.Generic.Endpoint'").Error())
 
 	updateBasic := createUpdateNotifierRequest("generic")
 	updateBasic.GetNotifier().GetGeneric().AuditLoggingEnabled = true

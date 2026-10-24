@@ -55,8 +55,8 @@ var (
 	log                             = logging.LoggerForModule()
 	_   common.CentralGRPCConnAware = (*detectorImpl)(nil)
 
-	deploymentNotFoundErr     = errors.Wrap(errox.NotFound, "deployment entity")
-	externalEntityNotFoundErr = errors.Wrap(errox.NotFound, "external entity")
+	deploymentNotFoundErr     = errox.NotFound.New("deployment entity")
+	externalEntityNotFoundErr = errox.NotFound.New("external entity")
 )
 
 // Detector is the sensor component that syncs policies from Central and runs detection

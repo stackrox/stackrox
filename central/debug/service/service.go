@@ -233,7 +233,7 @@ func (s *serviceImpl) GetLogLevel(_ context.Context, req *v1.GetLogLevelRequest)
 	logging.ForEachModule(forEachModule, req.GetModules())
 
 	if len(unknownModules) > 0 {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unknown module(s): %s",
+		return nil, errox.InvalidArgs.Newf("Unknown module(s): %s",
 			strings.Join(unknownModules, ", "))
 	}
 
@@ -245,7 +245,7 @@ func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*
 	levelStr := req.GetLevel()
 	zapLevel, ok := logging.LevelForLabel(levelStr)
 	if !ok {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unknown log level %s", levelStr)
+		return nil, errox.InvalidArgs.Newf("Unknown log level %s", levelStr)
 	}
 
 	// If this is a global request, then set the global level and return
@@ -264,7 +264,7 @@ func (s *serviceImpl) SetLogLevel(_ context.Context, req *v1.LogLevelRequest) (*
 	}, req.GetModules())
 
 	if len(unknownModules) > 0 {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unknown module(s): %s",
+		return nil, errox.InvalidArgs.Newf("Unknown module(s): %s",
 			strings.Join(unknownModules, ", "))
 	}
 

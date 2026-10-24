@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -94,7 +93,7 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "secret with id '%s' does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("secret with id '%s' does not exist", request.GetId())
 	}
 
 	deployments, err := s.getDeploymentRelationships(ctx, secret)
@@ -113,7 +112,7 @@ func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	numSecrets, err := s.secrets.Count(ctx, parsedQuery)
@@ -128,7 +127,7 @@ func (s *serviceImpl) listSecrets(ctx context.Context, request *v1.ListSecretsEx
 	// Fill in query.
 	parsedQuery, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Fill in pagination.
