@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +26,20 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategoryEdge)(nil)), "policy_category_edges")
+		schema = &walker.Schema{
+			Table:    "policy_category_edges",
+			Type:     "*storage.PolicyCategoryEdge",
+			TypeName: "PolicyCategoryEdge",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}},
+			{Schema: schema, Name: "PolicyId", ProtoBufName: "policy_id", ColumnName: "PolicyId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPolicyId()", false), Search: walker.SearchField{FieldName: "Policy ID", Enabled: true}},
+			{Schema: schema, Name: "CategoryId", ProtoBufName: "category_id", ColumnName: "CategoryId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCategoryId()", false)},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("Policy", "id", false, false, false, false)
+		schema.Fields[2].SetReference("PolicyCategory", "id", false, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Policy":         PoliciesSchema,
 			"storage.PolicyCategory": PolicyCategoriesSchema,
@@ -37,7 +48,9 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORY_EDGE, "policycategoryedge", (*storage.PolicyCategoryEdge)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICY_CATEGORY_EDGE, map[search.FieldLabel]*search.Field{
+			"Policy ID": {FieldPath: "policycategoryedge.policy_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_POLICY_CATEGORY_EDGE},
+		}))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_POLICY_CATEGORY_EDGE,
 			v1.SearchCategory_POLICY_CATEGORIES,

@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -37,8 +37,104 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.Alert)(nil)))
+		schema = &walker.Schema{
+			Table:    "alerts",
+			Type:     "*storage.Alert",
+			TypeName: "Alert",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Alert ID", Enabled: true}},
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Policy_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetId()", false), Search: walker.SearchField{FieldName: "Policy ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Policy_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetName()", false), Search: walker.SearchField{FieldName: "Policy", Enabled: true}},
+			{Schema: schema, Name: "Description", ProtoBufName: "description", ColumnName: "Policy_Description", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetDescription()", false), Search: walker.SearchField{FieldName: "Description", Enabled: true}},
+			{Schema: schema, Name: "Disabled", ProtoBufName: "disabled", ColumnName: "Policy_Disabled", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetDisabled()", false), Search: walker.SearchField{FieldName: "Disabled", Enabled: true}},
+			{Schema: schema, Name: "Categories", ProtoBufName: "categories", ColumnName: "Policy_Categories", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetCategories()", false), Search: walker.SearchField{FieldName: "Category", Enabled: true}},
+			{Schema: schema, Name: "Severity", ProtoBufName: "severity", ColumnName: "Policy_Severity", Type: "storage.Severity", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.Severity", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetSeverity()", false), Search: walker.SearchField{FieldName: "Severity", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "critical severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "unknown severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "moderate severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable unknown severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable moderate severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "low severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "important severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable critical severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable low severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "severity max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}, {DerivedFrom: "fixable important severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}}},
+			{Schema: schema, Name: "EnforcementActions", ProtoBufName: "enforcement_actions", ColumnName: "Policy_EnforcementActions", Type: "[]storage.EnforcementAction", DataType: postgres.EnumArray, SQLType: "int[]", ModelType: "*pq.Int32Array", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetEnforcementActions()", false), Search: walker.SearchField{FieldName: "Enforcement", Enabled: true}},
+			{Schema: schema, Name: "LastUpdated", ProtoBufName: "last_updated", ColumnName: "Policy_LastUpdated", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetLastUpdated()", false), Search: walker.SearchField{FieldName: "Policy Last Updated", Enabled: true}},
+			{Schema: schema, Name: "SORTName", ProtoBufName: "SORT_name", ColumnName: "Policy_SORTName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetSORTName()", false), Search: walker.SearchField{FieldName: "SORT_Policy", Enabled: true}},
+			{Schema: schema, Name: "SORTLifecycleStage", ProtoBufName: "SORT_lifecycleStage", ColumnName: "Policy_SORTLifecycleStage", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetSORTLifecycleStage()", false), Search: walker.SearchField{FieldName: "SORT_Lifecycle Stage", Enabled: true}},
+			{Schema: schema, Name: "SORTEnforcement", ProtoBufName: "SORT_enforcement", ColumnName: "Policy_SORTEnforcement", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetPolicy().GetSORTEnforcement()", false), Search: walker.SearchField{FieldName: "SORT_Enforcement", Enabled: true}},
+			{Schema: schema, Name: "LifecycleStage", ProtoBufName: "lifecycle_stage", ColumnName: "LifecycleStage", Type: "storage.LifecycleStage", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.LifecycleStage", ObjectGetter: walker.MakeObjectGetter("GetLifecycleStage()", false), Search: walker.SearchField{FieldName: "Lifecycle Stage", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "NamespaceId", ProtoBufName: "namespace_id", ColumnName: "NamespaceId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespaceId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Namespace ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "namespace count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Deployment_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeployment().GetId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Deployment ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "deployment count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Deployment_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeployment().GetName()", false), Search: walker.SearchField{FieldName: "Deployment", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Deployment_Type", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDeployment().GetType()", false), Search: walker.SearchField{FieldName: "Deployment Type", Enabled: true}},
+			{Schema: schema, Name: "Inactive", ProtoBufName: "inactive", ColumnName: "Deployment_Inactive", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetDeployment().GetInactive()", false), Search: walker.SearchField{FieldName: "Inactive Deployment", Enabled: true}},
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Image_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetId()", false), Search: walker.SearchField{FieldName: "Image Sha", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "image count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Registry", ProtoBufName: "registry", ColumnName: "Image_Name_Registry", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetRegistry()", false), Search: walker.SearchField{FieldName: "Image Registry", Enabled: true}},
+			{Schema: schema, Name: "Remote", ProtoBufName: "remote", ColumnName: "Image_Name_Remote", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetRemote()", false), Search: walker.SearchField{FieldName: "Image Remote", Enabled: true}},
+			{Schema: schema, Name: "Tag", ProtoBufName: "tag", ColumnName: "Image_Name_Tag", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetTag()", false), Search: walker.SearchField{FieldName: "Image Tag", Enabled: true}},
+			{Schema: schema, Name: "FullName", ProtoBufName: "full_name", ColumnName: "Image_Name_FullName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetName().GetFullName()", false), Search: walker.SearchField{FieldName: "Image", Enabled: true}},
+			{Schema: schema, Name: "IdV2", ProtoBufName: "id_v2", ColumnName: "Image_IdV2", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetImage().GetIdV2()", false), Search: walker.SearchField{FieldName: "Image ID", Enabled: true}},
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Node_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNode().GetId()", false), Search: walker.SearchField{FieldName: "Node ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "node count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Node_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNode().GetName()", false), Search: walker.SearchField{FieldName: "Node", Enabled: true}},
+			{Schema: schema, Name: "ResourceType", ProtoBufName: "resource_type", ColumnName: "Resource_ResourceType", Type: "storage.Alert_Resource_ResourceType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.Alert_Resource_ResourceType", ObjectGetter: walker.MakeObjectGetter("GetResource().GetResourceType()", false), Search: walker.SearchField{FieldName: "Resource Type", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Resource_Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetResource().GetName()", false), Search: walker.SearchField{FieldName: "Resource", Enabled: true}},
+			{Schema: schema, Name: "Action", ProtoBufName: "action", ColumnName: "Enforcement_Action", Type: "storage.EnforcementAction", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.EnforcementAction", ObjectGetter: walker.MakeObjectGetter("GetEnforcement().GetAction()", false), Search: walker.SearchField{FieldName: "Enforcement Action", Enabled: true}},
+			{Schema: schema, Name: "Time", ProtoBufName: "time", ColumnName: "Time", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTime()", false), Search: walker.SearchField{FieldName: "Violation Time", Enabled: true}},
+			{Schema: schema, Name: "State", ProtoBufName: "state", ColumnName: "State", Type: "storage.ViolationState", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.ViolationState", ObjectGetter: walker.MakeObjectGetter("GetState()", false), Search: walker.SearchField{FieldName: "Violation State", Enabled: true}},
+			{Schema: schema, Name: "PlatformComponent", ProtoBufName: "platform_component", ColumnName: "PlatformComponent", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetPlatformComponent()", false), Search: walker.SearchField{FieldName: "Platform Component", Enabled: true}},
+			{Schema: schema, Name: "EntityType", ProtoBufName: "entity_type", ColumnName: "EntityType", Type: "storage.Alert_EntityType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.Alert_EntityType", ObjectGetter: walker.MakeObjectGetter("GetEntityType()", false), Search: walker.SearchField{FieldName: "Entity Type", Enabled: true}},
+			{Schema: schema, Name: "EnforcementCount", ProtoBufName: "enforcement_count", ColumnName: "EnforcementCount", Type: "int32", DataType: postgres.Integer, SQLType: "integer", ModelType: "int32", ObjectGetter: walker.MakeObjectGetter("GetEnforcementCount()", false), Search: walker.SearchField{FieldName: "Enforcement Count", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ALERTS, map[search.FieldLabel]*search.Field{
+			"Alert ID":             {FieldPath: "alert.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Category":             {FieldPath: "alert.policy.categories", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Cluster":              {FieldPath: "alert.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Cluster ID":           {FieldPath: "alert.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Deployment":           {FieldPath: "alert.Entity.Deployment.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Deployment ID":        {FieldPath: "alert.Entity.Deployment.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ALERTS},
+			"Deployment Type":      {FieldPath: "alert.Entity.Deployment.type", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Description":          {FieldPath: "alert.policy.description", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Disabled":             {FieldPath: "alert.policy.disabled", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_ALERTS},
+			"Enforcement":          {FieldPath: "alert.policy.enforcement_actions", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ALERTS},
+			"Enforcement Action":   {FieldPath: "alert.enforcement.action", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ALERTS},
+			"Enforcement Count":    {FieldPath: "alert.enforcement_count", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_ALERTS},
+			"Entity Type":          {FieldPath: "alert.entity_type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ALERTS},
+			"Image":                {FieldPath: "alert.Entity.Image.name.full_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS, Analyzer: "standard"},
+			"Image ID":             {FieldPath: "alert.Entity.Image.id_v2", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ALERTS},
+			"Image Registry":       {FieldPath: "alert.Entity.Image.name.registry", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Image Remote":         {FieldPath: "alert.Entity.Image.name.remote", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Image Sha":            {FieldPath: "alert.Entity.Image.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ALERTS},
+			"Image Tag":            {FieldPath: "alert.Entity.Image.name.tag", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Inactive Deployment":  {FieldPath: "alert.Entity.Deployment.inactive", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_ALERTS},
+			"Lifecycle Stage":      {FieldPath: "alert.lifecycle_stage", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ALERTS},
+			"Namespace":            {FieldPath: "alert.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Namespace ID":         {FieldPath: "alert.namespace_id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Node":                 {FieldPath: "alert.Entity.Node.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Node ID":              {FieldPath: "alert.Entity.Node.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Platform Component":   {FieldPath: "alert.platform_component", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_ALERTS},
+			"Policy":               {FieldPath: "alert.policy.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Policy ID":            {FieldPath: "alert.policy.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ALERTS},
+			"Policy Last Updated":  {FieldPath: "alert.policy.last_updated.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_ALERTS},
+			"Resource":             {FieldPath: "alert.Entity.Resource.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_ALERTS},
+			"Resource Type":        {FieldPath: "alert.Entity.Resource.resource_type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ALERTS},
+			"SORT_Enforcement":     {FieldPath: "alert.policy.SORT_enforcement", Type: v1.SearchDataType_SEARCH_BOOL, Hidden: true, Category: v1.SearchCategory_ALERTS},
+			"SORT_Lifecycle Stage": {FieldPath: "alert.policy.SORT_lifecycleStage", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ALERTS},
+			"SORT_Policy":          {FieldPath: "alert.policy.SORT_name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ALERTS, Analyzer: "keyword"},
+			"Severity":             {FieldPath: "alert.policy.severity", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ALERTS},
+			"Violation State":      {FieldPath: "alert.state", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_ALERTS},
+			"Violation Time":       {FieldPath: "alert.time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_ALERTS},
+		}))
+		enumregistry.AddValues("alert.Entity.Resource.resource_type", map[string]int32{"CLUSTER_ROLES": 3, "CLUSTER_ROLE_BINDINGS": 4, "CONFIGMAPS": 2, "EGRESS_FIREWALLS": 7, "NETWORK_POLICIES": 5, "SECRETS": 1, "SECURITY_CONTEXT_CONSTRAINTS": 6, "UNKNOWN": 0})
+		enumregistry.AddValues("alert.enforcement.action", map[string]int32{"FAIL_BUILD_ENFORCEMENT": 4, "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT": 6, "FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT": 7, "FAIL_KUBE_REQUEST_ENFORCEMENT": 5, "KILL_POD_ENFORCEMENT": 3, "SCALE_TO_ZERO_ENFORCEMENT": 1, "UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT": 2, "UNSET_ENFORCEMENT": 0})
+		enumregistry.AddValues("alert.entity_type", map[string]int32{"CONTAINER_IMAGE": 2, "DEPLOYMENT": 1, "NODE": 4, "RESOURCE": 3, "UNSET": 0})
+		enumregistry.AddValues("alert.lifecycle_stage", map[string]int32{"BUILD": 1, "DEPLOY": 0, "RUNTIME": 2})
+		enumregistry.AddValues("alert.policy.enforcement_actions", map[string]int32{"FAIL_BUILD_ENFORCEMENT": 4, "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT": 6, "FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT": 7, "FAIL_KUBE_REQUEST_ENFORCEMENT": 5, "KILL_POD_ENFORCEMENT": 3, "SCALE_TO_ZERO_ENFORCEMENT": 1, "UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT": 2, "UNSET_ENFORCEMENT": 0})
+		enumregistry.AddValues("alert.policy.evaluation_filter.skip_container_types", map[string]int32{"INIT": 1, "REGULAR": 0})
+		enumregistry.AddValues("alert.policy.event_source", map[string]int32{"AUDIT_LOG_EVENT": 2, "DEPLOYMENT_EVENT": 1, "NODE_EVENT": 3, "NOT_APPLICABLE": 0})
+		enumregistry.AddValues("alert.policy.lifecycle_stages", map[string]int32{"BUILD": 1, "DEPLOY": 0, "RUNTIME": 2})
+		enumregistry.AddValues("alert.policy.policy_sections.policy_groups.boolean_operator", map[string]int32{"AND": 1, "OR": 0})
+		enumregistry.AddValues("alert.policy.severity", map[string]int32{"CRITICAL_SEVERITY": 4, "HIGH_SEVERITY": 3, "LOW_SEVERITY": 1, "MEDIUM_SEVERITY": 2, "UNSET_SEVERITY": 0})
+		enumregistry.AddValues("alert.policy.source", map[string]int32{"DECLARATIVE": 1, "IMPERATIVE": 0})
+		enumregistry.AddValues("alert.state", map[string]int32{"ACTIVE": 0, "ATTEMPTED": 3, "RESOLVED": 2})
+
 		schema.ScopingResource = resources.Alert
 		RegisterTable(schema, CreateTableAlertsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, schema)

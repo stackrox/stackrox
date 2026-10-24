@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -41,8 +41,65 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Secret)(nil)), "secrets")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SECRETS, "secret", (*storage.Secret)(nil)))
+		schema = &walker.Schema{
+			Table:    "secrets",
+			Type:     "*storage.Secret",
+			TypeName: "Secret",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "secrets_files",
+			Type:         "*storage.SecretDataFile",
+			TypeName:     "SecretDataFile",
+			ObjectGetter: "GetFiles()",
+		}
+		child0_child0 := &walker.Schema{
+			Parent:       child0,
+			Table:        "secrets_files_registries",
+			Type:         "*storage.ImagePullSecret_Registry",
+			TypeName:     "ImagePullSecret_Registry",
+			ObjectGetter: "GetImagePullSecret().GetRegistries()",
+		}
+		child0_child0.Fields = []walker.Field{
+			{Schema: child0_child0, Name: "secretID", ProtoBufName: "", ColumnName: "secrets_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("secretID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "secretFileIdx", ProtoBufName: "", ColumnName: "secrets_files_idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("secretFileIdx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Image Pull Secret Registry", Enabled: true}},
+		}
+		child0_child0.Fields[0].SetParentReference(child0, "secrets_Id")
+		child0_child0.Fields[1].SetParentReference(child0, "idx")
+		child0.Children = []*walker.Schema{child0_child0}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "secretID", ProtoBufName: "", ColumnName: "secrets_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("secretID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "storage.SecretType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.SecretType", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Secret Type", Enabled: true}},
+			{Schema: child0, Name: "EndDate", ProtoBufName: "end_date", ColumnName: "Cert_EndDate", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCert().GetEndDate()", false), Search: walker.SearchField{FieldName: "Cert Expiration", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Secret ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Secret", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "CreatedAt", ProtoBufName: "created_at", ColumnName: "CreatedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCreatedAt()", false), Search: walker.SearchField{FieldName: "Created Time", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SECRETS, map[search.FieldLabel]*search.Field{
+			"Cert Expiration":            {FieldPath: "secret.files.Metadata.Cert.end_date.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_SECRETS},
+			"Cluster":                    {FieldPath: "secret.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SECRETS},
+			"Cluster ID":                 {FieldPath: "secret.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_SECRETS},
+			"Created Time":               {FieldPath: "secret.created_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_SECRETS},
+			"Image Pull Secret Registry": {FieldPath: "secret.files.Metadata.ImagePullSecret.registries.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SECRETS},
+			"Namespace":                  {FieldPath: "secret.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SECRETS},
+			"Secret":                     {FieldPath: "secret.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SECRETS},
+			"Secret ID":                  {FieldPath: "secret.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_SECRETS},
+			"Secret Type":                {FieldPath: "secret.files.type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_SECRETS},
+		}))
+		enumregistry.AddValues("secret.files.type", map[string]int32{"CERTIFICATE_REQUEST": 2, "CERT_PRIVATE_KEY": 9, "DSA_PRIVATE_KEY": 8, "EC_PRIVATE_KEY": 6, "ENCRYPTED_PRIVATE_KEY": 10, "IMAGE_PULL_SECRET": 11, "OPENSSH_PRIVATE_KEY": 4, "PGP_PRIVATE_KEY": 5, "PRIVACY_ENHANCED_MESSAGE": 3, "PUBLIC_CERTIFICATE": 1, "RSA_PRIVATE_KEY": 7, "UNDETERMINED": 0})
+
 		schema.ScopingResource = resources.Secret
 		RegisterTable(schema, CreateTableSecretsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SECRETS, schema)
