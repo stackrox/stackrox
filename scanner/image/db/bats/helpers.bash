@@ -16,6 +16,19 @@ given_binary_version() {
     mock_executable "${dir}/postgres" "echo 'postgres (PostgreSQL) ${major}.2'"
 }
 
+# given_initdb mocks initdb: it creates the --pgdata directory and stamps it
+# with the given major version, the way a real initialization would.
+given_initdb() {
+    local dir="$1" major="$2"
+    mock_executable "${dir}/initdb" "datadir=
+while [ \$# -gt 0 ]; do
+    [ \"\$1\" = --pgdata ] && datadir=\"\$2\"
+    shift
+done
+mkdir -p \"\$datadir\"
+echo '${major}' > \"\$datadir/PG_VERSION\""
+}
+
 # given_data_version writes PG_VERSION in the given directory.
 given_data_version() {
     local dir="$1" version="$2"

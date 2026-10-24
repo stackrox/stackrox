@@ -37,16 +37,7 @@ setup_binaries() {
     mock_executable "$old_bin/pg_ctl" ''
     mock_executable "$old_bin/pg_isready" ''
     mock_executable "$old_bin/pg_controldata" "echo 'Database cluster state:               shutdown'"
-    mock_executable "$NEW_BINARIES/initdb" "while [[ \$# -gt 0 ]]; do
-    if [[ \"\$1\" == --pgdata ]]; then
-        datadir=\"\$2\"
-        shift 2
-    else
-        shift
-    fi
-done
-mkdir -p \"\$datadir\"
-echo \"$new_version\" > \"\$datadir/PG_VERSION\""
+    given_initdb "$NEW_BINARIES" "$new_version"
 
     case "$pg_upgrade_mode" in
         fail)
@@ -74,9 +65,10 @@ assert_upgrade() {
 
 # Fresh initialization
 @test "fresh init creates database" {
-    mkdir -p "$PGDATA"
+    given_initdb "$NEW_BINARIES" 16
+
     init-cluster "$PGDATA"
-    [ -f "$PGDATA/PG_VERSION" ]
+    [[ "$(cat "$PGDATA/PG_VERSION")" == 16 ]]
 }
 
 # Normal boot
@@ -179,6 +171,7 @@ assert_upgrade() {
     init_pgdata
     given_data_version "$PGDATA" 15
     setup_binaries 15 16 fail-clone-only
+    given_available_space "$NEW_BINARIES" 1000 1000000
 
     run maybe-upgrade "$TEST_DIR/pgsql"
     assert_success
