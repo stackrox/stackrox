@@ -4,9 +4,10 @@
 # existing cluster in place when this image ships PostgreSQL binaries newer
 # than the data directory on disk.
 #
-# Upgrade failures do not fail the container. An upgrade Failure leaves
-# $PGDATA untouched and returns 0; the server starts with matching binaries
-# and the upgrade is retried on restart.
+# A failed upgrade leaves $PGDATA untouched and returns 0; the server starts
+# with matching binaries and the upgrade is retried on restart. A failed file
+# system operation returns non-zero instead, because a volume that cannot be
+# written to cannot host a running server either.
 
 set -Eeo pipefail
 
@@ -101,27 +102,33 @@ pg-upgrade() {
 }
 
 # recover-interrupted-upgrade cleans up upgrade artifacts left behind by pod
-# crashes. It restores the pre-upgrade data directory if the crash happened
-# mid-swap, or discards the new directory if it happened before the swap.
+# crashes. It discards the new directory, and restores the pre-upgrade one if
+# the crash happened mid-swap. It returns non-zero when a directory can be
+# neither removed nor restored.
 recover-interrupted-upgrade() {
     local new_datadir="${PGDATA}-new"
     local old_datadir="${PGDATA}-old"
 
     # Discard orphaned new directory
-    [ -d "$new_datadir" ] && rm -rf "$new_datadir"
+    rm -rf "$new_datadir" || { echo "Could not remove $new_datadir."; return 1; }
 
-    # Restore old directory
     [ -d "$old_datadir" ] || return 0
 
     if [ -e "$PGDATA/$INIT_READY_FILE" ]; then
         echo "Removing the pre-upgrade data directory $old_datadir."
-        rm -rf "$old_datadir"
+        rm -rf "$old_datadir" || { echo "Could not remove $old_datadir."; return 1; }
         return 0
     fi
 
-    echo "An upgrade was interrupted mid-swap, restoring $old_datadir."
-    rm -rf "$PGDATA"
-    mv "$old_datadir" "$PGDATA"
+    # $PGDATA is missing, so restore the old directory, but only the one this
+    # script moved aside.
+    if [ -e "$old_datadir/$INIT_READY_FILE" ]; then
+        echo "An upgrade was interrupted mid-swap, restoring $old_datadir."
+        rm -rf "$PGDATA" && mv "$old_datadir" "$PGDATA" && return 0
+    fi
+
+    echo "Could not restore from $old_datadir, refusing to start without $PGDATA."
+    return 1
 }
 
 # maybe-upgrade upgrades $PGDATA in place when this image's binaries are newer
@@ -166,7 +173,10 @@ maybe-upgrade() {
     echo "Data is PostgreSQL $data_version, binaries are PostgreSQL $binary_version: upgrading..."
 
     # pg_upgrade rejects group permissions on the data directory.
-    chmod 0700 "$PGDATA"
+    if ! chmod 0700 "$PGDATA"; then
+        echo "Could not set permissions on $PGDATA, staying on PostgreSQL $data_version."
+        return 0
+    fi
 
     echo "Making sure PostgreSQL is shut down cleanly."
     if ! PATH="$OLD_BINDIR:$PATH" clean-shutdown; then
@@ -174,8 +184,6 @@ maybe-upgrade() {
         return 0
     fi
 
-    # Guard init-cluster for initdb failures.
-    # Log and continue to boot from existing data.
     if ! init-cluster "$NEW_DATADIR"; then
         echo "Could not initialize $NEW_DATADIR, staying on PostgreSQL $data_version."
         rm -rf "$NEW_DATADIR"
@@ -213,15 +221,15 @@ maybe-upgrade() {
         return 0
     fi
 
-    # The server reads config_file and hba_file from outside the data
-    # directory, so $PGDATA/*.conf is not carried over.
-    #
     # The sentinel is written before the swap so that an interruption leaves a
     # state recover-interrupted-upgrade can undo.
-    touch "$NEW_DATADIR/$INIT_READY_FILE"
-    mv "$PGDATA" "$old_datadir"
-    mv "$NEW_DATADIR" "$PGDATA"
-    rm -rf "$old_datadir"
+    touch "$NEW_DATADIR/$INIT_READY_FILE" ||
+        { echo "Could not mark $NEW_DATADIR ready, aborting."; return 1; }
+    mv "$PGDATA" "$old_datadir" ||
+        { echo "Could not move $PGDATA aside, aborting."; return 1; }
+    mv "$NEW_DATADIR" "$PGDATA" ||
+        { echo "Could not move $NEW_DATADIR into place, restoring $old_datadir on the next start."; return 1; }
+    rm -rf "$old_datadir" || echo "Could not remove $old_datadir, removing it on the next start."
 
     echo "Upgraded to PostgreSQL $binary_version."
 }

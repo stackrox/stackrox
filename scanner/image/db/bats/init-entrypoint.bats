@@ -226,6 +226,7 @@ assert_upgrade() {
 # Recovery from interrupts
 @test "recover-interrupted-upgrade - restore pre-upgrade dir" {
     mkdir -p "$PGDATA-old"
+    touch "$PGDATA-old/.init-ready"
     echo "data" > "$PGDATA-old/file.txt"
 
     recover-interrupted-upgrade
