@@ -133,7 +133,7 @@ message ComplianceOperatorScanConfigurationV2 {
   // Stored in the serialized blob only (not indexed); populated on create/update so the
   // startup sync path can forward correct kinds to Sensor on reconnect.
   repeated ProfileReference profile_refs = 18;
-  repeated NodeRole node_roles = 9;
+  reserved 9; // was repeated NodeRole node_roles, never populated
   // Will be configurable via env var
   bool strict_node_scan = 10;
   // Starting point for schedule will probably have to build upon it
@@ -145,6 +145,8 @@ message ComplianceOperatorScanConfigurationV2 {
   string description = 15;
   message Cluster {
     string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+    // node_roles are the node roles this cluster's compliance node scans target.
+    repeated string node_roles = 2;
   }
   repeated Cluster clusters = 16;
   repeated NotifierConfiguration notifiers = 17;

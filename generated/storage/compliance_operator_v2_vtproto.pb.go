@@ -251,6 +251,11 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) CloneVT() *ComplianceOpe
 	}
 	r := new(ComplianceOperatorScanConfigurationV2_Cluster)
 	r.ClusterId = m.ClusterId
+	if rhs := m.NodeRoles; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.NodeRoles = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -305,11 +310,6 @@ func (m *ComplianceOperatorScanConfigurationV2) CloneVT() *ComplianceOperatorSca
 			tmpContainer[k] = v.CloneVT()
 		}
 		r.ProfileRefs = tmpContainer
-	}
-	if rhs := m.NodeRoles; rhs != nil {
-		tmpContainer := make([]NodeRole, len(rhs))
-		copy(tmpContainer, rhs)
-		r.NodeRoles = tmpContainer
 	}
 	if rhs := m.Clusters; rhs != nil {
 		tmpContainer := make([]*ComplianceOperatorScanConfigurationV2_Cluster, len(rhs))
@@ -1197,6 +1197,15 @@ func (this *ComplianceOperatorScanConfigurationV2_Cluster) EqualVT(that *Complia
 	if this.ClusterId != that.ClusterId {
 		return false
 	}
+	if len(this.NodeRoles) != len(that.NodeRoles) {
+		return false
+	}
+	for i, vx := range this.NodeRoles {
+		vy := that.NodeRoles[i]
+		if vx != vy {
+			return false
+		}
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -1267,15 +1276,6 @@ func (this *ComplianceOperatorScanConfigurationV2) EqualVT(that *ComplianceOpera
 			if !p.EqualVT(q) {
 				return false
 			}
-		}
-	}
-	if len(this.NodeRoles) != len(that.NodeRoles) {
-		return false
-	}
-	for i, vx := range this.NodeRoles {
-		vy := that.NodeRoles[i]
-		if vx != vy {
-			return false
 		}
 	}
 	if this.StrictNodeScan != that.StrictNodeScan {
@@ -2838,6 +2838,15 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) MarshalToSizedBufferVT(d
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.NodeRoles) > 0 {
+		for iNdEx := len(m.NodeRoles) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.NodeRoles[iNdEx])
+			copy(dAtA[i:], m.NodeRoles[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.NodeRoles[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
 	if len(m.ClusterId) > 0 {
 		i -= len(m.ClusterId)
 		copy(dAtA[i:], m.ClusterId)
@@ -2976,27 +2985,6 @@ func (m *ComplianceOperatorScanConfigurationV2) MarshalToSizedBufferVT(dAtA []by
 		}
 		i--
 		dAtA[i] = 0x50
-	}
-	if len(m.NodeRoles) > 0 {
-		var pksize2 int
-		for _, num := range m.NodeRoles {
-			pksize2 += protohelpers.SizeOfVarint(uint64(num))
-		}
-		i -= pksize2
-		j1 := i
-		for _, num1 := range m.NodeRoles {
-			num := uint64(num1)
-			for num >= 1<<7 {
-				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
-				num >>= 7
-				j1++
-			}
-			dAtA[j1] = uint8(num)
-			j1++
-		}
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
-		i--
-		dAtA[i] = 0x4a
 	}
 	if len(m.Profiles) > 0 {
 		for iNdEx := len(m.Profiles) - 1; iNdEx >= 0; iNdEx-- {
@@ -4977,6 +4965,12 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if len(m.NodeRoles) > 0 {
+		for _, s := range m.NodeRoles {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5025,13 +5019,6 @@ func (m *ComplianceOperatorScanConfigurationV2) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
-	}
-	if len(m.NodeRoles) > 0 {
-		l = 0
-		for _, e := range m.NodeRoles {
-			l += protohelpers.SizeOfVarint(uint64(e))
-		}
-		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
 	}
 	if m.StrictNodeScan {
 		n += 2
@@ -8009,6 +7996,38 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) UnmarshalVT(dAtA []byte)
 			}
 			m.ClusterId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeRoles", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NodeRoles = append(m.NodeRoles, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -8472,75 +8491,6 @@ func (m *ComplianceOperatorScanConfigurationV2) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
-			if wireType == 0 {
-				var v NodeRole
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= NodeRole(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				m.NodeRoles = append(m.NodeRoles, v)
-			} else if wireType == 2 {
-				var packedLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					packedLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if packedLen < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				postIndex := iNdEx + packedLen
-				if postIndex < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				if postIndex > l {
-					return io.ErrUnexpectedEOF
-				}
-				var elementCount int
-				if elementCount != 0 && len(m.NodeRoles) == 0 {
-					m.NodeRoles = make([]NodeRole, 0, elementCount)
-				}
-				for iNdEx < postIndex {
-					var v NodeRole
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return protohelpers.ErrIntOverflow
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						v |= NodeRole(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					m.NodeRoles = append(m.NodeRoles, v)
-				}
-			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field NodeRoles", wireType)
-			}
 		case 10:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StrictNodeScan", wireType)
@@ -16499,6 +16449,42 @@ func (m *ComplianceOperatorScanConfigurationV2_Cluster) UnmarshalVTUnsafe(dAtA [
 			}
 			m.ClusterId = stringValue
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeRoles", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.NodeRoles = append(m.NodeRoles, stringValue)
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -16986,75 +16972,6 @@ func (m *ComplianceOperatorScanConfigurationV2) UnmarshalVTUnsafe(dAtA []byte) e
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
-			if wireType == 0 {
-				var v NodeRole
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= NodeRole(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				m.NodeRoles = append(m.NodeRoles, v)
-			} else if wireType == 2 {
-				var packedLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					packedLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if packedLen < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				postIndex := iNdEx + packedLen
-				if postIndex < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				if postIndex > l {
-					return io.ErrUnexpectedEOF
-				}
-				var elementCount int
-				if elementCount != 0 && len(m.NodeRoles) == 0 {
-					m.NodeRoles = make([]NodeRole, 0, elementCount)
-				}
-				for iNdEx < postIndex {
-					var v NodeRole
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return protohelpers.ErrIntOverflow
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						v |= NodeRole(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					m.NodeRoles = append(m.NodeRoles, v)
-				}
-			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field NodeRoles", wireType)
-			}
 		case 10:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StrictNodeScan", wireType)
