@@ -16,8 +16,9 @@ All kuttl tests are in the [tests](.) directory. It contains the following tests
   3. verifies that the stackrox installation was upgraded and is still healthy.
 
 Note that the `deploy-via-olm` and `deploy-previous-via-olm` targets in `Makefile` also use `kuttl` internally.
-- `deploy-via-olm` is used by the `qa-e2e` CI jobs to deploy stackrox
-- `deploy-previous-via-olm` is used by the `operator-e2e` CI jobs as described in the next section
+- `deploy-via-olm` is used by the `qa-e2e` CI jobs to deploy stackrox (backwards-compatible stub for `deploy-via-olmv0`)
+- `deploy-previous-via-olm` is used by the `operator-e2e` CI jobs as described in the next section (backwards-compatible stub for `deploy-previous-via-olmv0`)
+- The actual implementation targets are `*-olmv0` (OLMv0/Subscription API) and `*-olmv1` (OLMv1/ClusterExtension API)
 
 ## How these tests are run
 
