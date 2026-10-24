@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -268,6 +270,20 @@ func init() {
 	memlimit.SetMemoryLimit()
 }
 
+func wasteCPU() {
+	n := runtime.NumCPU()
+	log.Infof("PERF TEST: wasting CPU on %d goroutines", n)
+	for range n {
+		go func() {
+			x := 1.0
+			for {
+				x = math.Sqrt(x+1) * math.Log(x+2)
+				runtime.Gosched()
+			}
+		}()
+	}
+}
+
 func runSafeMode() {
 	log.Info("Started Central up in safe mode. Sleeping forever...")
 
@@ -306,6 +322,7 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
+	wasteCPU()
 	ensureDB(ctx)
 
 	if !pgconfig.IsExternalDatabase() {
