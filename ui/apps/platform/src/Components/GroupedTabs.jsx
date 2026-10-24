@@ -67,7 +67,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
         <div className="relative">
             <ul
                 data-testid="grouped-tabs"
-                className="flex border-b border-base-400 px-4 text-sm ignore-react-onclickoutside"
+                className="flex border-b border-base-400 px-4 text-sm"
             >
                 {result}
             </ul>
