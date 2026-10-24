@@ -123,13 +123,13 @@ arches:
     name: bzip2-libs
     evr: 1.0.6-28.el8_10
     sourcerpm: bzip2-1.0.6-28.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.noarch.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 1048264
-    checksum: sha256:01d249b3d9889ab05adea246a1e84571e817013e06b24bbfc4bb42a1d7d8aa50
+    size: 1074220
+    checksum: sha256:75938ad190c2b7abb2b634df393ae4ea8759178f2361ce56ee85afc422a620bc
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
-    sourcerpm: ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
+    sourcerpm: ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/c/chkconfig-1.19.2-1.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 201832
@@ -1291,12 +1291,12 @@ arches:
     checksum: sha256:9c1d697f675f5889c57e7f983afa4b3e3f6e2334887ded9d7c10c5a205d1b06a
     name: bzip2
     evr: 1.0.6-28.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 742547
-    checksum: sha256:879547af21a33e8e0a2356bc7cbd8c4fdc17d4830fbcadbf9aac1cfbbcf140f5
+    size: 768526
+    checksum: sha256:6806b2a5a2cb762db208cc66aa91b1d85d32d14c11b8376a22a36e16dd10ae46
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/c/chkconfig-1.19.2-1.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 221618
@@ -1916,10 +1916,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/532e8c30c56f878cb7a2376e82221a18fcdb3bb18f8d8eae5b7a4fd296c20b94-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/881808349f8adb001d3d32cd74417dbe8bf3961e1c0c40c644e7fbb031058468-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 860119
-    checksum: sha256:532e8c30c56f878cb7a2376e82221a18fcdb3bb18f8d8eae5b7a4fd296c20b94
+    size: 860820
+    checksum: sha256:881808349f8adb001d3d32cd74417dbe8bf3961e1c0c40c644e7fbb031058468
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-12.el8_10.ppc64le.rpm
@@ -2041,13 +2041,13 @@ arches:
     name: bzip2-libs
     evr: 1.0.6-28.el8_10
     sourcerpm: bzip2-1.0.6-28.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.noarch.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 1048264
-    checksum: sha256:01d249b3d9889ab05adea246a1e84571e817013e06b24bbfc4bb42a1d7d8aa50
+    size: 1074220
+    checksum: sha256:75938ad190c2b7abb2b634df393ae4ea8759178f2361ce56ee85afc422a620bc
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
-    sourcerpm: ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
+    sourcerpm: ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/c/chkconfig-1.19.2-1.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 209036
@@ -3216,12 +3216,12 @@ arches:
     checksum: sha256:9c1d697f675f5889c57e7f983afa4b3e3f6e2334887ded9d7c10c5a205d1b06a
     name: bzip2
     evr: 1.0.6-28.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 742547
-    checksum: sha256:879547af21a33e8e0a2356bc7cbd8c4fdc17d4830fbcadbf9aac1cfbbcf140f5
+    size: 768526
+    checksum: sha256:6806b2a5a2cb762db208cc66aa91b1d85d32d14c11b8376a22a36e16dd10ae46
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/c/chkconfig-1.19.2-1.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 221618
@@ -3847,10 +3847,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/c6c29e646723b562b5475a1d1ee0fe6a069c187a56a3d358ed11333bbad4b285-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/eb007456ab0c8d4a579bb0d8ee1efaeb244538c5a24c1fbc93fee78c5178eb7c-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 851814
-    checksum: sha256:c6c29e646723b562b5475a1d1ee0fe6a069c187a56a3d358ed11333bbad4b285
+    size: 853624
+    checksum: sha256:eb007456ab0c8d4a579bb0d8ee1efaeb244538c5a24c1fbc93fee78c5178eb7c
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-12.el8_10.s390x.rpm
@@ -4021,13 +4021,13 @@ arches:
     name: bzip2-libs
     evr: 1.0.6-28.el8_10
     sourcerpm: bzip2-1.0.6-28.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.noarch.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 1048264
-    checksum: sha256:01d249b3d9889ab05adea246a1e84571e817013e06b24bbfc4bb42a1d7d8aa50
+    size: 1074220
+    checksum: sha256:75938ad190c2b7abb2b634df393ae4ea8759178f2361ce56ee85afc422a620bc
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
-    sourcerpm: ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
+    sourcerpm: ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/c/chkconfig-1.19.2-1.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 201200
@@ -5378,12 +5378,12 @@ arches:
     checksum: sha256:9c1d697f675f5889c57e7f983afa4b3e3f6e2334887ded9d7c10c5a205d1b06a
     name: bzip2
     evr: 1.0.6-28.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 742547
-    checksum: sha256:879547af21a33e8e0a2356bc7cbd8c4fdc17d4830fbcadbf9aac1cfbbcf140f5
+    size: 768526
+    checksum: sha256:6806b2a5a2cb762db208cc66aa91b1d85d32d14c11b8376a22a36e16dd10ae46
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/c/chkconfig-1.19.2-1.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 221618
@@ -6147,10 +6147,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/ecc4acb2909c1e1d8a4b56878c8dff04861c7ed5985dccf99c50636df93bd31b-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/82a580917a13f9d05d34acf73b836a0306e257ec363535a54d94248a09489fa6-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 854805
-    checksum: sha256:ecc4acb2909c1e1d8a4b56878c8dff04861c7ed5985dccf99c50636df93bd31b
+    size: 856421
+    checksum: sha256:82a580917a13f9d05d34acf73b836a0306e257ec363535a54d94248a09489fa6
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-12.el8_10.x86_64.rpm
@@ -6272,13 +6272,13 @@ arches:
     name: bzip2-libs
     evr: 1.0.6-28.el8_10
     sourcerpm: bzip2-1.0.6-28.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.noarch.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 1048264
-    checksum: sha256:01d249b3d9889ab05adea246a1e84571e817013e06b24bbfc4bb42a1d7d8aa50
+    size: 1074220
+    checksum: sha256:75938ad190c2b7abb2b634df393ae4ea8759178f2361ce56ee85afc422a620bc
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
-    sourcerpm: ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
+    sourcerpm: ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/c/chkconfig-1.19.2-1.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 203364
@@ -7440,12 +7440,12 @@ arches:
     checksum: sha256:9c1d697f675f5889c57e7f983afa4b3e3f6e2334887ded9d7c10c5a205d1b06a
     name: bzip2
     evr: 1.0.6-28.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/c/ca-certificates-2025.2.80_v9.0.304-80.2.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/c/ca-certificates-2026.2.92_v9.0.319-81.3.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 742547
-    checksum: sha256:879547af21a33e8e0a2356bc7cbd8c4fdc17d4830fbcadbf9aac1cfbbcf140f5
+    size: 768526
+    checksum: sha256:6806b2a5a2cb762db208cc66aa91b1d85d32d14c11b8376a22a36e16dd10ae46
     name: ca-certificates
-    evr: 2025.2.80_v9.0.304-80.2.el8_10
+    evr: 2026.2.92_v9.0.319-81.3.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/c/chkconfig-1.19.2-1.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 221618
@@ -8065,7 +8065,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/4d3ef6ae5b3f0b9d8eacce91f2f18caf80eedc7358f5bd9d0da2d5174fb4c5b8-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/1689d4ebd3daf0df2c45e1557584de5774d5993676e4ac22a070ede8887ed16b-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 880929
-    checksum: sha256:4d3ef6ae5b3f0b9d8eacce91f2f18caf80eedc7358f5bd9d0da2d5174fb4c5b8
+    size: 882498
+    checksum: sha256:1689d4ebd3daf0df2c45e1557584de5774d5993676e4ac22a070ede8887ed16b
