@@ -44,7 +44,6 @@ func BenchmarkEndpointsStoreAddToHistory(b *testing.B) {
 	} {
 		b.Run(tc.name, func(b *testing.B) {
 			store, deploymentID, endpoint := benchmarkSeedEndpointsStore(tc.numEndpoints)
-			b.ResetTimer()
 			for b.Loop() {
 				// Keep the current-map shape constant and measure addToHistory only.
 				store.historicalEndpoints = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]*entityStatus)
