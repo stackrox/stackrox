@@ -1,0 +1,185 @@
+name: Update roxie version
+
+env:
+  SLACK_CHANNEL_ID: "C0A452FS85V" # acs-roxie
+
+on:
+  # Fired by the roxie repo's release workflow for immediate reaction.
+  repository_dispatch:
+    types: [roxie-release]
+  # Manual trigger for testing — supports version override, dry-run, and skip-slack.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'roxie version (bare semver, e.g. 1.2.3) or empty for auto-detecting latest release.'
+        required: false
+        type: string
+      dry-run:
+        description: 'Log what would happen without creating a PR or posting to Slack.'
+        type: boolean
+        default: false
+      skip-slack:
+        description: 'Skip Slack notification (useful for testing PR creation only).'
+        type: boolean
+        default: false
+
+jobs:
+  update-roxie:
+    if: github.repository_owner == 'stackrox'
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        ref: master
+        fetch-depth: 0
+
+    - name: Resolve run configuration
+      run: |
+        {
+          echo "DRY_RUN=${{ inputs.dry-run }}"
+          echo "SKIP_SLACK=${{ inputs.skip-slack }}"
+          echo "INPUT_VERSION=${{ inputs.version }}"
+        } >> "$GITHUB_ENV"
+
+    - name: Determine target version
+      id: version
+      env:
+        GH_TOKEN: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+        EVENT_NAME: '${{ github.event_name }}'
+        DISPATCH_VERSION: '${{ github.event.client_payload.version }}'
+      run: |
+        if [[ -n "${INPUT_VERSION}" ]]; then
+          version="${INPUT_VERSION}"
+        elif [[ "${EVENT_NAME}" == "repository_dispatch" ]]; then
+          version="${DISPATCH_VERSION#v}"
+        else
+          version=$(gh api repos/stackrox/roxie/releases/latest --jq '.tag_name | ltrimstr("v")')
+        fi
+        if ! [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+          echo "::error::Invalid version format: ${version}"
+          exit 1
+        fi
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "Resolved target version: ${version}"
+
+    - name: Check if update is needed
+      id: check
+      env:
+        TARGET: ${{ steps.version.outputs.version }}
+      run: |
+        current=$(tr -d '[:space:]' < ROXIE_VERSION)
+        target="${TARGET}"
+        if [[ "${current}" == "${target}" ]]; then
+          echo "ROXIE_VERSION is already at ${current}, no update needed."
+          echo "needed=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        {
+          echo "needed=true"
+          echo "current=${current}"
+          echo "target=${target}"
+          echo "branch=update_roxie_version_${target}"
+        } >> "$GITHUB_OUTPUT"
+        echo "ROXIE_VERSION update needed: ${current} -> ${target}"
+
+    - name: Dry run summary
+      if: env.DRY_RUN == 'true'
+      run: |
+        if [[ "${{ steps.check.outputs.needed }}" == "true" ]]; then
+          echo "DRY RUN: Would update ROXIE_VERSION from ${{ steps.check.outputs.current }} to ${{ steps.check.outputs.target }}"
+          echo "DRY RUN: Would create PR on branch ${{ steps.check.outputs.branch }}"
+          echo "DRY RUN: Would post to #acs-roxie Slack channel"
+        else
+          echo "DRY RUN: No update needed"
+        fi
+
+    - name: Update ROXIE_VERSION
+      if: steps.check.outputs.needed == 'true' && env.DRY_RUN != 'true'
+      run: echo "${{ steps.check.outputs.target }}" > ROXIE_VERSION
+
+    - name: Create Pull Request
+      if: steps.check.outputs.needed == 'true' && env.DRY_RUN != 'true'
+      id: cpr
+      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # ratchet:peter-evans/create-pull-request@v8
+      with:
+        token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+        commit-message: 'chore(roxie): bump ROXIE_VERSION to ${{ steps.check.outputs.target }}'
+        committer: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
+        author: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
+        branch: ${{ steps.check.outputs.branch }}
+        signoff: false
+        delete-branch: true
+        title: 'chore(roxie): Update ROXIE_VERSION to ${{ steps.check.outputs.target }}'
+        body: |
+          Automated update of ROXIE_VERSION from `${{ steps.check.outputs.current }}` to `${{ steps.check.outputs.target }}`.
+
+          This PR validates that the new roxie release is compatible with the current stackrox master CI.
+        labels: |
+          ci-all-qa-tests
+          dependencies
+          konflux-build
+        team-reviewers: |
+          stackrox/sig-product-experience
+        draft: false
+
+    - name: Build Slack payload
+      if: >-
+        steps.check.outputs.needed == 'true'
+        && steps.cpr.outputs.pull-request-operation == 'created'
+        && env.DRY_RUN != 'true'
+        && env.SKIP_SLACK != 'true'
+      id: payload
+      env:
+        PR_URL: '${{ steps.cpr.outputs.pull-request-url }}'
+        PR_NUMBER: ${{ steps.cpr.outputs.pull-request-number }}
+        CURRENT: ${{ steps.check.outputs.current }}
+        TARGET: ${{ steps.check.outputs.target }}
+      run: |
+        summary="New roxie bump PR created"
+        payload=$(jq -n \
+          --arg channel "${SLACK_CHANNEL_ID}" \
+          --arg text "${summary}: ${CURRENT} -> ${TARGET}" \
+          --arg mrkdwn "*roxie version bump:* \`${CURRENT}\` -> \`${TARGET}\`"$'\n'"<${PR_URL}|PR #${PR_NUMBER}>"$'\n'"CI is running — failures will be posted in this thread." \
+          '{
+            channel: $channel,
+            text: $text,
+            blocks: [{type: "section", text: {type: "mrkdwn", text: $mrkdwn}}]
+          }')
+        {
+          echo "slack_payload<<EOF"
+          echo "${payload}"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    # The CI notify workflow reads this comment to post failures as
+    # threaded replies under the original Slack announcement.
+    - name: Post to Slack
+      if: >-
+        steps.check.outputs.needed == 'true'
+        && steps.cpr.outputs.pull-request-operation == 'created'
+        && env.DRY_RUN != 'true'
+        && env.SKIP_SLACK != 'true'
+      id: slack-post
+      uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # ratchet:slackapi/slack-github-action@v3.0.3
+      with:
+        method: chat.postMessage
+        token: '${{ secrets.SLACK_BOT_TOKEN }}'
+        payload: '${{ steps.payload.outputs.slack_payload }}'
+
+    - name: Parse Slack
+      id: slack-parse
+      if: steps.slack-post.outcome == 'success'
+      env:
+        SLACK_RESPONSE: '${{ steps.slack-post.outputs.response }}'
+      run: |
+        echo "ok=$(echo "$SLACK_RESPONSE" | jq .ok)" >> "$GITHUB_OUTPUT"
+
+    - name: Store Slack thread reference on PR
+      if: steps.slack-parse.outputs.ok == 'true'
+      env:
+        GH_TOKEN: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+        SLACK_RESPONSE: '${{ steps.slack-post.outputs.response }}'
+        PR_NUMBER: '${{ steps.cpr.outputs.pull-request-number }}'
+      run: |
+        slack_ref=$(echo "${SLACK_RESPONSE}" | jq -c '{ts, channel}')
+        gh pr comment "${PR_NUMBER}" --body "Slack thread/${slack_ref}"
