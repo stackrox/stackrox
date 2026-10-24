@@ -1,0 +1,88 @@
+name: make-tests-report
+description: Generate HTML report from JUnit XML files and upload as GitHub artifact.
+inputs:
+  directory:
+    description: Directory with Junit XML files.
+    required: true
+  output-file:
+    description: Path of the output HTML file. If not provided, will be ${directory}/report.html
+    required: false
+  report-title:
+    description: Title to put in the HTML report file.
+    required: false
+  artifact-retention-days:
+    description: How many days to store the report file. By default, use repository setting.
+    required: false
+    default: '0'
+  show-preview:
+    description: >
+      Which tests to show in GitHub summary. By default only the failing ones.
+      Set to 'none' in order to only get the circle diagram.
+      For other possible values see description of `show` option under https://github.com/test-summary/action#options.
+    required: false
+    default: 'fail'
+runs:
+  using: composite
+  steps:
+
+  - id: generate-report
+    name: Generate HTML report
+    shell: bash
+    env:
+      INPUT_DIR: ${{ inputs.directory }}
+      OUTPUT_FILE: ${{ inputs.output-file }}
+      REPORT_TITLE: ${{ inputs.report-title }}
+      __META_PR_URL: ${{ github.event.pull_request.html_url }}
+      __META_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      __META_COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha || github.sha }}
+      __META_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      __META_REF: ${{ github.ref }}
+      __META_BASE_REF: ${{ github.base_ref }}
+      __META_HEAD_REF: ${{ github.head_ref }}
+    run: |
+      set -u
+      actual_output_file="${OUTPUT_FILE:-${INPUT_DIR}/report.html}"
+
+      title_arg=""
+      if [[ -n "${REPORT_TITLE:-}" ]]; then
+        title_arg="--title=${REPORT_TITLE}"
+      fi
+
+      meta_args=()
+      while IFS= read -r -d '' name_value; do
+        if [[ "${name_value}" =~ ^__META_ ]]; then
+          meta_args+=("--meta=${name_value#__META_}")
+        fi
+      done < <(env -0)
+
+      "${GITHUB_ACTION_PATH}/junit2html.py" "${INPUT_DIR}" "${actual_output_file}" "${title_arg}" "${meta_args[@]}"
+
+      echo "output-file=${actual_output_file}" | tee -a "${GITHUB_OUTPUT}"
+
+  - id: upload-artifact
+    name: Upload HTML report as artifact
+    uses: ./.github/actions/upload-artifact-with-retry
+    with:
+      name: ${{ inputs.report-title }}
+      path: ${{ steps.generate-report.outputs.output-file }}
+      if-no-files-found: 'error'
+      archive: 'false'
+      retention-days: ${{ inputs.artifact-retention-days }}
+
+  - name: Add report URL to job summary
+    shell: bash
+    env:
+      REPORT_TITLE: ${{ inputs.report-title }}
+      ARTIFACT_URL: ${{ steps.upload-artifact.outputs.artifact-url }}
+    run: |
+      set -u
+      if [[ -n "${REPORT_TITLE:-}" ]]; then
+        echo "## ${REPORT_TITLE}" | tee -a "${GITHUB_STEP_SUMMARY}"
+      fi
+      echo "Detailed test report: <${ARTIFACT_URL}>" | tee -a "${GITHUB_STEP_SUMMARY}"
+
+  - name: Add short test summary
+    uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+    with:
+      paths: ${{ inputs.directory }}/**/*.xml
+      show: ${{ inputs.show-preview }}
