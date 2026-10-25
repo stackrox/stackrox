@@ -375,7 +375,7 @@ def write_doc_start(out, title):
 
 
 def esc(t):
-    return html.escape(str(t), quote=False)
+    return html.escape(str(t), quote=True)
 
 
 def write_doc_end(out):
