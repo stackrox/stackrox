@@ -35,7 +35,7 @@ runs:
       OUTPUT_FILE: ${{ inputs.output-file }}
       REPORT_TITLE: ${{ inputs.report-title }}
       __META_PR_URL: ${{ github.event.pull_request.html_url }}
-      __META_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      __META_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
       __META_COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha || github.sha }}
       __META_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       __META_REF: ${{ github.ref }}
