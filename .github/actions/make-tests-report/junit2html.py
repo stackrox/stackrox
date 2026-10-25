@@ -247,12 +247,12 @@ def text_of(el):
 
 
 def extract_props(el):
-    out = []
+    res = []
     for p in el.findall('property'):
         name = p.get('name', '')
         val = (p.get('value', '') or text_of(p)).strip()
-        out.append((name, val))
-    return out
+        res.append((name, val))
+    return res
 
 
 def classify_case(testcase_el):
