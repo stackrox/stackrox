@@ -178,12 +178,12 @@ jobs:
           exit 6
         fi
 
-    - name: Publish summary for all tests
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+    - name: Publish Test Report
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: all
+        directory: ${{ env.ARTIFACT_DIR }}
+        report-title: ${{ env.CI_JOB_NAME }}
 
     - name: Report junit failures in jira
       if: (!cancelled())
