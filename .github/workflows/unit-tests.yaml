@@ -85,7 +85,7 @@ jobs:
       with:
         directory: junit-reports
         artifact-retention-days: '7'
-        report-title: Unit tests
+        report-title: Go tests
 
     - name: Report test failures to Jira
       if: (!cancelled())
