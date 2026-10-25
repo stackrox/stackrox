@@ -5,7 +5,9 @@ inputs:
     description: Directory with Junit XML files.
     required: true
   output-file:
-    description: Path of the output HTML file. If not provided, will be ${directory}/report.html
+    description: >
+      Path of the output HTML file. If not provided, the report will be put in ${directory}/ and named as report-title
+      parameter (with potentially unsafe characters coerced to _) or just 'report.html' if report-title is not provided.
     required: false
   report-title:
     description: Title to put in the HTML report file.
@@ -41,7 +43,15 @@ runs:
       __META_HEAD_REF: ${{ github.head_ref }}
     run: |
       set -u
-      actual_output_file="${OUTPUT_FILE:-${INPUT_DIR}/report.html}"
+
+      if [[ -n "${OUTPUT_FILE:-}" ]]; then
+        actual_output_file="${OUTPUT_FILE}"
+      elif [[ -n "${REPORT_TITLE:-}" ]]; then
+        sanitized_report_title="$(printf '%s' "${REPORT_TITLE}" | tr -c '[:alnum:] _-' '_')"
+        actual_output_file="${INPUT_DIR}/${sanitized_report_title}.html"
+      else
+        actual_output_file="${INPUT_DIR}/report.html"
+      fi
 
       title_arg=""
       if [[ -n "${REPORT_TITLE:-}" ]]; then
