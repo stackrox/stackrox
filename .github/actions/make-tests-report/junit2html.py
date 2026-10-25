@@ -198,11 +198,13 @@ def pass1_parse_file(file):
                     assert (test_suite.counts[Kind.TESTS] * 2 ==
                             sum(test_suite.counts.values())), 'something is wrong with our tests counting'
                     test_suite = None
+                    elem.clear()
                 elif tag == 'testcase':
                     test_case = None
                     test_suite.counts[Kind.TESTS] += 1
                     status, _ = classify_case(elem)
                     test_suite.counts[status] += 1
+                    elem.clear()
                 elif tag == 'system-out':
                     if test_case is None:
                         assert not test_suite.sysout, 'multiple system-out elements are not supported'
@@ -453,12 +455,14 @@ def pass2_render_file(out, file, suites, suite_counter, case_counter):
         else:  # event == 'end'
             if tag == 'testsuite':
                 write_suite_end(out)
+                elem.clear()
             elif tag == 'testcase':
                 if not header_written:
                     header_written = True
                     write_cases_header(out)
                 write_case(out, elem, suite.name, case_counter.value)
                 case_counter.inc()
+                elem.clear()
 
     assert suite_idx == len(suites), 'error: not all suites were iterated'
 
@@ -477,7 +481,7 @@ def write_suite_start(out, suite, file, suite_index):
     """)
 
     out.write('<details class="io mb-2"><summary>Meta</summary>')
-    write_key_value_table(out, suite.props + [('xml', file)])
+    write_key_value_table(out, suite.props + [('xml', str(file))])
     out.write('</details>')
 
     if suite.sysout:
@@ -507,10 +511,9 @@ def write_key_value_table(out, props):
         if k.lower().endswith('_url'):
             parsed = urlparse(v)
             if parsed.scheme and parsed.scheme in {'http', 'https'}:
-                value = f'<a href="{esc(v)}" target="_blank">{esc(v)}</a>'
+                value = f'<a href="{esc(v)}" target="_blank" rel="noopener noreferrer">{esc(v)}</a>'
         out.write(f'<tr><td>{esc(k)}</td><td>{value}</td></tr>')
     out.write('</tbody></table>')
-    pass
 
 
 def write_cases_header(out):
@@ -579,7 +582,7 @@ def get_case_display_name(suite_name, name, classname):
         # <testsuite name="github.com/stackrox/rox/central/administration/events/handler" ...
         #   <testcase name="TestEventsHandler" classname="github.com/stackrox/rox/central/administration/events/handler" ...
         return name
-    elif name in classname:
+    elif classname.startswith(name) or classname.endswith(name):
         # UI tests tend to do this.
         # <testsuite name="Dashboard SummaryCounts" ...
         #   <testcase name="should display 6 counts for Analyst role" classname="Dashboard SummaryCounts should display 6 counts for Analyst role">
