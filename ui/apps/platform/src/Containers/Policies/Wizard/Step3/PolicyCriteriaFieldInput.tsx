@@ -193,7 +193,7 @@ function PolicyCriteriaFieldInput({
                 </FormGroup>
             );
         case 'group': {
-            /* eslint-disable react/no-array-index-key */
+            /* eslint-disable @eslint-react/no-array-index-key */
             return (
                 <>
                     {descriptor.subComponents?.map((subComponent, index) => (
@@ -206,7 +206,7 @@ function PolicyCriteriaFieldInput({
                     ))}
                 </>
             );
-            /* eslint-enable react/no-array-index-key */
+            /* eslint-enable @eslint-react/no-array-index-key */
         }
         case 'tableModal': {
             return (
