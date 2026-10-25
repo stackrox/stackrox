@@ -53,19 +53,19 @@ runs:
         actual_output_file="${INPUT_DIR}/report.html"
       fi
 
-      title_arg=""
+      extra_args=()
+
       if [[ -n "${REPORT_TITLE:-}" ]]; then
-        title_arg="--title=${REPORT_TITLE}"
+        extra_args+=("--title=${REPORT_TITLE}")
       fi
 
-      meta_args=()
       while IFS= read -r -d '' name_value; do
         if [[ "${name_value}" =~ ^__META_ ]]; then
-          meta_args+=("--meta=${name_value#__META_}")
+          extra_args+=("--meta=${name_value#__META_}")
         fi
       done < <(env -0)
 
-      "${GITHUB_ACTION_PATH}/junit2html.py" "${INPUT_DIR}" "${actual_output_file}" "${title_arg}" "${meta_args[@]}"
+      "${GITHUB_ACTION_PATH}/junit2html.py" "${INPUT_DIR}" "${actual_output_file}" "${extra_args[@]}"
 
       echo "output-file=${actual_output_file}" | tee -a "${GITHUB_OUTPUT}"
 
@@ -73,7 +73,6 @@ runs:
     name: Upload HTML report as artifact
     uses: ./.github/actions/upload-artifact-with-retry
     with:
-      name: ${{ inputs.report-title }}
       path: ${{ steps.generate-report.outputs.output-file }}
       if-no-files-found: 'error'
       archive: 'false'
