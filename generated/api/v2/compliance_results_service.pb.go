@@ -25,13 +25,13 @@ const (
 
 // ClusterCheckStatus groups the result of the check by cluster
 type ClusterCheckStatus struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	Cluster       *ComplianceScanCluster  `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	Status        ComplianceCheckStatus   `protobuf:"varint,2,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
-	CreatedTime   *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	CheckUid      string                  `protobuf:"bytes,4,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
-	LastScanTime  *timestamppb.Timestamp  `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
-	DataFreshness ComplianceDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceDataFreshness" json:"data_freshness,omitempty"`
+	state         protoimpl.MessageState       `protogen:"open.v1"`
+	Cluster       *ComplianceScanCluster       `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Status        ComplianceCheckStatus        `protobuf:"varint,2,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
+	CreatedTime   *timestamppb.Timestamp       `protobuf:"bytes,3,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	CheckUid      string                       `protobuf:"bytes,4,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
+	LastScanTime  *timestamppb.Timestamp       `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	DataFreshness ComplianceCheckDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceCheckDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -101,11 +101,11 @@ func (x *ClusterCheckStatus) GetLastScanTime() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *ClusterCheckStatus) GetDataFreshness() ComplianceDataFreshness {
+func (x *ClusterCheckStatus) GetDataFreshness() ComplianceCheckDataFreshness {
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+	return ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
 }
 
 // ComplianceCheckResult details of an instance of a compliance check result
@@ -126,7 +126,7 @@ type ComplianceCheckResult struct {
 	Controls     []*ComplianceControl   `protobuf:"bytes,15,rep,name=controls,proto3" json:"controls,omitempty"`
 	// Per-check freshness for this cluster: STALE if the check's assessment
 	// time predates the config's most recent expected scan.
-	DataFreshness ComplianceDataFreshness `protobuf:"varint,16,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceDataFreshness" json:"data_freshness,omitempty"`
+	DataFreshness ComplianceCheckDataFreshness `protobuf:"varint,16,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceCheckDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -252,11 +252,11 @@ func (x *ComplianceCheckResult) GetControls() []*ComplianceControl {
 	return nil
 }
 
-func (x *ComplianceCheckResult) GetDataFreshness() ComplianceDataFreshness {
+func (x *ComplianceCheckResult) GetDataFreshness() ComplianceCheckDataFreshness {
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+	return ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
 }
 
 type ComplianceCheckData struct {
@@ -698,7 +698,7 @@ type ListComplianceCheckResultResponse struct {
 	// Rolled-up freshness across all check results for this cluster and
 	// profile (not limited to the current page): STALE if any result is stale
 	// (STALE > CURRENT > UNKNOWN).
-	DataFreshness ComplianceDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceDataFreshness" json:"data_freshness,omitempty"`
+	DataFreshness ComplianceAggregateDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceAggregateDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -768,11 +768,11 @@ func (x *ListComplianceCheckResultResponse) GetLastScanTime() *timestamppb.Times
 	return nil
 }
 
-func (x *ListComplianceCheckResultResponse) GetDataFreshness() ComplianceDataFreshness {
+func (x *ListComplianceCheckResultResponse) GetDataFreshness() ComplianceAggregateDataFreshness {
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 }
 
 type ComplianceScanResultsRequest struct {
@@ -951,14 +951,14 @@ var File_api_v2_compliance_results_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"\n" +
-	"'api/v2/compliance_results_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xde\x02\n" +
+	"'api/v2/compliance_results_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe3\x02\n" +
 	"\x12ClusterCheckStatus\x123\n" +
 	"\acluster\x18\x01 \x01(\v2\x19.v2.ComplianceScanClusterR\acluster\x121\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x19.v2.ComplianceCheckStatusR\x06status\x12=\n" +
 	"\fcreated_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vcreatedTime\x12\x1b\n" +
 	"\tcheck_uid\x18\x04 \x01(\tR\bcheckUid\x12@\n" +
-	"\x0elast_scan_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x12B\n" +
-	"\x0edata_freshness\x18\x06 \x01(\x0e2\x1b.v2.ComplianceDataFreshnessR\rdataFreshness\"\xe9\x05\n" +
+	"\x0elast_scan_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x12G\n" +
+	"\x0edata_freshness\x18\x06 \x01(\x0e2 .v2.ComplianceCheckDataFreshnessR\rdataFreshness\"\xee\x05\n" +
 	"\x15ComplianceCheckResult\x12\x19\n" +
 	"\bcheck_id\x18\x01 \x01(\tR\acheckId\x12\x1d\n" +
 	"\n" +
@@ -976,8 +976,8 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"\trule_name\x18\f \x01(\tR\bruleName\x12=\n" +
 	"\x06labels\x18\r \x03(\v2%.v2.ComplianceCheckResult.LabelsEntryR\x06labels\x12L\n" +
 	"\vannotations\x18\x0e \x03(\v2*.v2.ComplianceCheckResult.AnnotationsEntryR\vannotations\x121\n" +
-	"\bcontrols\x18\x0f \x03(\v2\x15.v2.ComplianceControlR\bcontrols\x12B\n" +
-	"\x0edata_freshness\x18\x10 \x01(\x0e2\x1b.v2.ComplianceDataFreshnessR\rdataFreshness\x1a9\n" +
+	"\bcontrols\x18\x0f \x03(\v2\x15.v2.ComplianceControlR\bcontrols\x12G\n" +
+	"\x0edata_freshness\x18\x10 \x01(\x0e2 .v2.ComplianceCheckDataFreshnessR\rdataFreshness\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -1029,7 +1029,7 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"check_name\x18\x03 \x01(\tR\tcheckName\x12\x1f\n" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x121\n" +
-	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\"\xcc\x02\n" +
+	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\"\xd5\x02\n" +
 	"!ListComplianceCheckResultResponse\x12>\n" +
 	"\rcheck_results\x18\x01 \x03(\v2\x19.v2.ComplianceCheckResultR\fcheckResults\x12!\n" +
 	"\fprofile_name\x18\x02 \x01(\tR\vprofileName\x12\x1d\n" +
@@ -1037,8 +1037,8 @@ const file_api_v2_compliance_results_service_proto_rawDesc = "" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1f\n" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x12@\n" +
-	"\x0elast_scan_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x12B\n" +
-	"\x0edata_freshness\x18\x06 \x01(\x0e2\x1b.v2.ComplianceDataFreshnessR\rdataFreshness\"l\n" +
+	"\x0elast_scan_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x12K\n" +
+	"\x0edata_freshness\x18\x06 \x01(\x0e2$.v2.ComplianceAggregateDataFreshnessR\rdataFreshness\"l\n" +
 	"\x1cComplianceScanResultsRequest\x12(\n" +
 	"\x10scan_config_name\x18\x01 \x01(\tR\x0escanConfigName\x12\"\n" +
 	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query\"\x87\x01\n" +
@@ -1095,25 +1095,26 @@ var file_api_v2_compliance_results_service_proto_goTypes = []any{
 	(*ComplianceScanCluster)(nil),              // 16: v2.ComplianceScanCluster
 	(ComplianceCheckStatus)(0),                 // 17: v2.ComplianceCheckStatus
 	(*timestamppb.Timestamp)(nil),              // 18: google.protobuf.Timestamp
-	(ComplianceDataFreshness)(0),               // 19: v2.ComplianceDataFreshness
+	(ComplianceCheckDataFreshness)(0),          // 19: v2.ComplianceCheckDataFreshness
 	(*ComplianceControl)(nil),                  // 20: v2.ComplianceControl
-	(*RawQuery)(nil),                           // 21: v2.RawQuery
-	(*ResourceByID)(nil),                       // 22: v2.ResourceByID
-	(*ComplianceProfileResultsRequest)(nil),    // 23: v2.ComplianceProfileResultsRequest
-	(*ComplianceProfileCheckRequest)(nil),      // 24: v2.ComplianceProfileCheckRequest
-	(*ListComplianceProfileResults)(nil),       // 25: v2.ListComplianceProfileResults
+	(ComplianceAggregateDataFreshness)(0),      // 21: v2.ComplianceAggregateDataFreshness
+	(*RawQuery)(nil),                           // 22: v2.RawQuery
+	(*ResourceByID)(nil),                       // 23: v2.ResourceByID
+	(*ComplianceProfileResultsRequest)(nil),    // 24: v2.ComplianceProfileResultsRequest
+	(*ComplianceProfileCheckRequest)(nil),      // 25: v2.ComplianceProfileCheckRequest
+	(*ListComplianceProfileResults)(nil),       // 26: v2.ListComplianceProfileResults
 }
 var file_api_v2_compliance_results_service_proto_depIdxs = []int32{
 	16, // 0: v2.ClusterCheckStatus.cluster:type_name -> v2.ComplianceScanCluster
 	17, // 1: v2.ClusterCheckStatus.status:type_name -> v2.ComplianceCheckStatus
 	18, // 2: v2.ClusterCheckStatus.created_time:type_name -> google.protobuf.Timestamp
 	18, // 3: v2.ClusterCheckStatus.last_scan_time:type_name -> google.protobuf.Timestamp
-	19, // 4: v2.ClusterCheckStatus.data_freshness:type_name -> v2.ComplianceDataFreshness
+	19, // 4: v2.ClusterCheckStatus.data_freshness:type_name -> v2.ComplianceCheckDataFreshness
 	17, // 5: v2.ComplianceCheckResult.status:type_name -> v2.ComplianceCheckStatus
 	12, // 6: v2.ComplianceCheckResult.labels:type_name -> v2.ComplianceCheckResult.LabelsEntry
 	13, // 7: v2.ComplianceCheckResult.annotations:type_name -> v2.ComplianceCheckResult.AnnotationsEntry
 	20, // 8: v2.ComplianceCheckResult.controls:type_name -> v2.ComplianceControl
-	19, // 9: v2.ComplianceCheckResult.data_freshness:type_name -> v2.ComplianceDataFreshness
+	19, // 9: v2.ComplianceCheckResult.data_freshness:type_name -> v2.ComplianceCheckDataFreshness
 	1,  // 10: v2.ComplianceCheckData.result:type_name -> v2.ComplianceCheckResult
 	0,  // 11: v2.ComplianceClusterCheckStatus.clusters:type_name -> v2.ClusterCheckStatus
 	14, // 12: v2.ComplianceClusterCheckStatus.labels:type_name -> v2.ComplianceClusterCheckStatus.LabelsEntry
@@ -1126,21 +1127,21 @@ var file_api_v2_compliance_results_service_proto_depIdxs = []int32{
 	20, // 19: v2.ListComplianceCheckClusterResponse.controls:type_name -> v2.ComplianceControl
 	1,  // 20: v2.ListComplianceCheckResultResponse.check_results:type_name -> v2.ComplianceCheckResult
 	18, // 21: v2.ListComplianceCheckResultResponse.last_scan_time:type_name -> google.protobuf.Timestamp
-	19, // 22: v2.ListComplianceCheckResultResponse.data_freshness:type_name -> v2.ComplianceDataFreshness
-	21, // 23: v2.ComplianceScanResultsRequest.query:type_name -> v2.RawQuery
-	21, // 24: v2.ComplianceProfileClusterRequest.query:type_name -> v2.RawQuery
-	21, // 25: v2.ComplianceCheckDetailRequest.query:type_name -> v2.RawQuery
-	22, // 26: v2.ComplianceResultsService.GetComplianceScanCheckResult:input_type -> v2.ResourceByID
-	21, // 27: v2.ComplianceResultsService.GetComplianceScanResults:input_type -> v2.RawQuery
+	21, // 22: v2.ListComplianceCheckResultResponse.data_freshness:type_name -> v2.ComplianceAggregateDataFreshness
+	22, // 23: v2.ComplianceScanResultsRequest.query:type_name -> v2.RawQuery
+	22, // 24: v2.ComplianceProfileClusterRequest.query:type_name -> v2.RawQuery
+	22, // 25: v2.ComplianceCheckDetailRequest.query:type_name -> v2.RawQuery
+	23, // 26: v2.ComplianceResultsService.GetComplianceScanCheckResult:input_type -> v2.ResourceByID
+	22, // 27: v2.ComplianceResultsService.GetComplianceScanResults:input_type -> v2.RawQuery
 	9,  // 28: v2.ComplianceResultsService.GetComplianceScanConfigurationResults:input_type -> v2.ComplianceScanResultsRequest
-	23, // 29: v2.ComplianceResultsService.GetComplianceProfileResults:input_type -> v2.ComplianceProfileResultsRequest
-	24, // 30: v2.ComplianceResultsService.GetComplianceProfileCheckResult:input_type -> v2.ComplianceProfileCheckRequest
+	24, // 29: v2.ComplianceResultsService.GetComplianceProfileResults:input_type -> v2.ComplianceProfileResultsRequest
+	25, // 30: v2.ComplianceResultsService.GetComplianceProfileCheckResult:input_type -> v2.ComplianceProfileCheckRequest
 	10, // 31: v2.ComplianceResultsService.GetComplianceProfileClusterResults:input_type -> v2.ComplianceProfileClusterRequest
 	11, // 32: v2.ComplianceResultsService.GetComplianceProfileCheckDetails:input_type -> v2.ComplianceCheckDetailRequest
 	3,  // 33: v2.ComplianceResultsService.GetComplianceScanCheckResult:output_type -> v2.ComplianceClusterCheckStatus
 	6,  // 34: v2.ComplianceResultsService.GetComplianceScanResults:output_type -> v2.ListComplianceResultsResponse
 	6,  // 35: v2.ComplianceResultsService.GetComplianceScanConfigurationResults:output_type -> v2.ListComplianceResultsResponse
-	25, // 36: v2.ComplianceResultsService.GetComplianceProfileResults:output_type -> v2.ListComplianceProfileResults
+	26, // 36: v2.ComplianceResultsService.GetComplianceProfileResults:output_type -> v2.ListComplianceProfileResults
 	7,  // 37: v2.ComplianceResultsService.GetComplianceProfileCheckResult:output_type -> v2.ListComplianceCheckClusterResponse
 	8,  // 38: v2.ComplianceResultsService.GetComplianceProfileClusterResults:output_type -> v2.ListComplianceCheckResultResponse
 	3,  // 39: v2.ComplianceResultsService.GetComplianceProfileCheckDetails:output_type -> v2.ComplianceClusterCheckStatus

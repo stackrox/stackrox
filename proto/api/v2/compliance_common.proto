@@ -73,7 +73,7 @@ message ComplianceCheckResultStatusCount {
   repeated ComplianceControl controls = 5;
   // Rolled-up freshness across all clusters reporting this check: STALE if
   // any contributing cluster has stale data (STALE > CURRENT > UNKNOWN).
-  ComplianceDataFreshness data_freshness = 6;
+  ComplianceAggregateDataFreshness data_freshness = 6;
 }
 
 message ComplianceControl {
@@ -98,15 +98,30 @@ message ListComplianceProfileResults {
   int32 total_count = 3;
 }
 
-// ComplianceDataFreshness indicates whether compliance data is current relative
-// to the scan configuration's schedule.
-enum ComplianceDataFreshness {
+// ComplianceCheckDataFreshness indicates whether a single compliance check
+// result is current relative to the scan configuration's schedule.
+enum ComplianceCheckDataFreshness {
   // Cannot evaluate: no schedule, unresolvable config, or no data.
-  COMPLIANCE_DATA_FRESHNESS_UNKNOWN = 0;
+  COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN = 0;
   // Data reflects the most recent expected scan cycle.
-  COMPLIANCE_DATA_FRESHNESS_CURRENT = 1;
+  COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT = 1;
   // Data predates the most recent expected scan cycle.
-  COMPLIANCE_DATA_FRESHNESS_STALE = 2;
+  COMPLIANCE_CHECK_DATA_FRESHNESS_STALE = 2;
+}
+
+// ComplianceAggregateDataFreshness indicates the freshness of compliance data
+// aggregated over many checks (a cluster, a scan, or a cross-cluster rollup of
+// a single check). Unlike a single check, an aggregate can mix fresh and stale
+// results.
+enum ComplianceAggregateDataFreshness {
+  // Cannot evaluate: no schedule, unresolvable config, or no data.
+  COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN = 0;
+  // All contributing checks reflect the most recent expected scan cycle.
+  COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT = 1;
+  // All contributing checks predate the most recent expected scan cycle.
+  COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE = 2;
+  // Contributing checks are a mix of stale and current data.
+  COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT = 3;
 }
 
 // ComplianceClusterOverallStats provides overall stats for cluster
@@ -115,7 +130,7 @@ message ComplianceClusterOverallStats {
   repeated ComplianceCheckStatusCount check_stats = 2;
   repeated string cluster_errors = 3;
   google.protobuf.Timestamp last_scan_time = 4;
-  ComplianceDataFreshness data_freshness = 5;
+  ComplianceAggregateDataFreshness data_freshness = 5;
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster

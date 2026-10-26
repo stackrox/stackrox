@@ -18,7 +18,7 @@ message ClusterCheckStatus {
   google.protobuf.Timestamp created_time = 3;
   string check_uid = 4;
   google.protobuf.Timestamp last_scan_time = 5;
-  ComplianceDataFreshness data_freshness = 6;
+  ComplianceCheckDataFreshness data_freshness = 6;
 }
 
 // ComplianceCheckResult details of an instance of a compliance check result
@@ -40,7 +40,7 @@ message ComplianceCheckResult {
   repeated ComplianceControl controls = 15;
   // Per-check freshness for this cluster: STALE if the check's assessment
   // time predates the config's most recent expected scan.
-  ComplianceDataFreshness data_freshness = 16;
+  ComplianceCheckDataFreshness data_freshness = 16;
 }
 
 message ComplianceCheckData {
@@ -104,7 +104,7 @@ message ListComplianceCheckResultResponse {
   // Rolled-up freshness across all check results for this cluster and
   // profile (not limited to the current page): STALE if any result is stale
   // (STALE > CURRENT > UNKNOWN).
-  ComplianceDataFreshness data_freshness = 6;
+  ComplianceAggregateDataFreshness data_freshness = 6;
 }
 
 message ComplianceScanResultsRequest {
