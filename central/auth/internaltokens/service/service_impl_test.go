@@ -274,13 +274,13 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					})
 				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{
-						RoleName: centralproxy.SecuredClusterMetricsRole,
+						RoleName: internalRoleName,
 						Permissions: map[storage.Access][]string{
 							storage.Access_READ_ACCESS: {"Deployment"},
 						},
 						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"*"}},
 					}},
-					Name: fmt.Sprintf(claimNameFormat, centralproxy.SecuredClusterMetricsRole,
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
 					HTTPRequestScopes: tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes),
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "cluster-metrics-token"}, nil)
@@ -596,4 +596,27 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			assert.NoError(it, err)
 		})
 	}
+}
+
+func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	roleStore := roleDataStoreMocks.NewMockDataStore(ctrl)
+	roleStore.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
+		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+			deploymentResource: storage.Access_READ_WRITE_ACCESS,
+		}}, true, nil)
+	svc := &serviceImpl{
+		issuer:      tokensMocks.NewMockIssuer(ctrl),
+		roleManager: &roleManager{roleStore},
+		now:         testClock,
+		policy:      permissivePolicy,
+	}
+
+	rsp, err := svc.GenerateTokenForPermissionsAndScope(sensorContext(t, ctrl, fixtureconsts.Cluster1),
+		&v1.GenerateTokenForPermissionsAndScopeRequest{
+			PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+			Lifetime:         testExpirationDuration,
+		})
+	assert.Nil(t, rsp)
+	assert.ErrorIs(t, err, errox.InvalidArgs)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
 const (
@@ -23,13 +24,13 @@ type roleManager struct {
 // createSensorMetricsRole uses the permission set shared with Central metrics,
 // but limits the token to the authenticated Sensor's cluster.
 func (rm *roleManager) createSensorMetricsRole(
-	ctx context.Context, roles roleDS.DataStore, sensorClusterID string,
+	ctx context.Context, sensorClusterID string,
 ) (*tokens.InternalRole, error) {
 	if sensorClusterID == "" {
 		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	role, err := rm.createSensorRole(ctx, roles, []string{centralproxy.MetricsPermissionSetID},
-		centralproxy.SecuredClusterMetricsRole, tokens.ClusterScopes{sensorClusterID: {"*"}})
+	role, err := rm.createSensorRole(ctx, []string{centralproxy.MetricsPermissionSetID},
+		tokens.ClusterScopes{sensorClusterID: {"*"}})
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +47,26 @@ func validateSensorMetricsRole(role *tokens.InternalRole) error {
 		}
 	}
 	return nil
+}
+
+func (rm *roleManager) createRoleFromPermissionSets(
+	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
+) (*tokens.InternalRole, error) {
+	scopes := clusterScopesFromRequest(req.GetClusterScopes())
+	includesMetrics := slices.Contains(req.GetPermissionSetIds(), centralproxy.MetricsPermissionSetID)
+	if includesMetrics {
+		scopes = tokens.ClusterScopes{authn.IdentityFromContextOrNil(ctx).Service().GetId(): {"*"}}
+	}
+	role, err := rm.createSensorRole(ctx, req.GetPermissionSetIds(), scopes)
+	if err != nil {
+		return nil, err
+	}
+	if includesMetrics {
+		if err := validateSensorMetricsRole(role); err != nil {
+			return nil, err
+		}
+	}
+	return role, nil
 }
 
 func (rm *roleManager) createSensorRole(

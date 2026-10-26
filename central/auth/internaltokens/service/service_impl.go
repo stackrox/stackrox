@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -12,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -101,15 +99,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	var tokenRole *tokens.InternalRole
 	if len(req.GetPermissionSetIds()) > 0 {
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
-		scopes := clusterScopesFromRequest(req.GetClusterScopes())
-		includesMetrics := slices.Contains(req.GetPermissionSetIds(), centralproxy.MetricsPermissionSetID)
-		if includesMetrics {
-			scopes = tokens.ClusterScopes{authn.IdentityFromContextOrNil(ctx).Service().GetId(): {"*"}}
-		}
-		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req.GetPermissionSetIds(), scopes)
-		if err == nil && includesMetrics {
-			err = validateSensorMetricsRole(tokenRole)
-		}
+		tokenRole, err = s.roleManager.createRoleFromPermissionSets(roleReadCtx, req)
 	} else {
 		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
 	}
