@@ -9,6 +9,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_renderOutput(t *testing.T) {
+	matrix := JobMatrix{
+		Tests: []JobMatrixEntry{{Name: "test with <script> content"}},
+	}
+
+	jsonOutput, err := renderOutput(matrix, "json", "")
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"tests":[{"name":"test with <script> content","source":"","source_ref":"","cluster_type":"","triggers":null,"description":""}],"duplicate_families":null}`, string(jsonOutput))
+
+	htmlOutput, err := renderOutput(matrix, "html", "job-matrix.html")
+	require.NoError(t, err)
+	assert.Contains(t, string(htmlOutput), "const data = {")
+	assert.Contains(t, string(htmlOutput), `\u003cscript\u003e`)
+	assert.NotContains(t, string(htmlOutput), "fetch(")
+
+	_, err = renderOutput(matrix, "xml", "job-matrix.html")
+	assert.ErrorContains(t, err, `invalid output format "xml"`)
+}
+
+func Test_writeOutput(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "output")
+	require.NoError(t, writeOutput(path, []byte("output")))
+	contents, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "output", string(contents))
+}
+
 type fakeProwSource struct {
 	tests []ProwTest
 	err   error

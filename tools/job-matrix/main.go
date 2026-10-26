@@ -1,15 +1,18 @@
 // Command job-matrix inventories every test that runs in CI for
 // stackrox/stackrox -- across both GitHub Actions and Prow -- into a single
-// JSON file, so redundant or near-duplicate test coverage (the same suite
+// JSON or standalone HTML document, so redundant or near-duplicate test coverage (the same suite
 // run against several cluster providers or versions) can be spotted.
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 // JobMatrixEntry is the common shape both Prow tests and GitHub Actions
@@ -44,7 +47,10 @@ type JobMatrix struct {
 func main() {
 	prowHTMLPath := flag.String("prow-html", "tmp/prow-jobs.html", "path to the Prow ci-operator test-matrix HTML export")
 	workflowsDir := flag.String("workflows-dir", ".github/workflows", "directory containing GitHub Actions workflow files")
-	outPath := flag.String("out", "tmp/job-matrix.json", "path to write the resulting job matrix JSON to")
+	var output string
+	flag.StringVar(&output, "o", "json", "output format: json or html")
+	flag.StringVar(&output, "output", "json", "output format: json or html")
+	outPath := flag.String("out", "", "optional path to write the output instead of stdout")
 	flag.Parse()
 
 	matrix, err := buildJobMatrix(NewHTMLFileProwSource(*prowHTMLPath), *workflowsDir)
@@ -52,17 +58,49 @@ func main() {
 		log.Fatal(err)
 	}
 
-	data, err := json.MarshalIndent(matrix, "", "  ")
+	data, err := renderOutput(matrix, output, "tools/job-matrix/job-matrix.html.tmpl")
 	if err != nil {
-		log.Fatalf("marshaling job matrix: %v", err)
-	}
-	data = append(data, '\n')
-
-	if err := os.WriteFile(*outPath, data, 0o644); err != nil {
-		log.Fatalf("writing %s: %v", *outPath, err)
+		log.Fatal(err)
 	}
 
-	fmt.Printf("wrote %d tests (%d duplicate families) to %s\n", len(matrix.Tests), len(matrix.DuplicateFamilies), *outPath)
+	if err := writeOutput(*outPath, data); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func renderOutput(matrix JobMatrix, output, templatePath string) ([]byte, error) {
+	jsonData, err := json.MarshalIndent(matrix, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshaling job matrix: %w", err)
+	}
+	jsonData = append(jsonData, '\n')
+	if output == "json" {
+		return jsonData, nil
+	}
+	if output != "html" {
+		return nil, fmt.Errorf("invalid output format %q: must be json or html", output)
+	}
+
+	tmpl, err := template.ParseFiles(templatePath)
+	if err != nil {
+		return nil, fmt.Errorf("parsing HTML template %s: %w", templatePath, err)
+	}
+	var renderedOutput bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&renderedOutput, filepath.Base(templatePath), template.JS(jsonData)); err != nil {
+		return nil, fmt.Errorf("rendering HTML template %s: %w", templatePath, err)
+	}
+	return renderedOutput.Bytes(), nil
+}
+
+func writeOutput(outPath string, data []byte) error {
+	if outPath == "" {
+		_, err := os.Stdout.Write(data)
+		return err
+	}
+	if err := os.WriteFile(outPath, data, 0o644); err != nil {
+		return fmt.Errorf("writing %s: %w", outPath, err)
+	}
+	return nil
 }
 
 func buildJobMatrix(prowSource ProwSource, workflowsDir string) (JobMatrix, error) {
