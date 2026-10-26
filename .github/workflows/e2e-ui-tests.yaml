@@ -133,6 +133,7 @@ jobs:
 
     - name: Run post-test
       if: always() && env.KUBECONFIG != ''
+      continue-on-error: true
       shell: python
       run: |
         import sys
@@ -145,6 +146,7 @@ jobs:
 
     - name: Run final-post
       if: always() && env.KUBECONFIG != ''
+      continue-on-error: true
       shell: python
       run: |
         import sys
