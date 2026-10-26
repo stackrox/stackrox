@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
 const (
@@ -23,12 +24,12 @@ type roleManager struct {
 // createSensorMetricsRole uses the permission set shared with Central metrics,
 // but limits the token to the authenticated Sensor's cluster.
 func (rm *roleManager) createSensorMetricsRole(
-	ctx context.Context, roles roleDS.DataStore, sensorClusterID string,
+	ctx context.Context, sensorClusterID string,
 ) (*tokens.InternalRole, error) {
 	if sensorClusterID == "" {
 		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	role, err := (&roleManager{roleStore: roles}).createSensorRole(ctx, &v1.GenerateTokenForPermissionsAndScopeRequest{
+	role, err := rm.createSensorRole(ctx, &v1.GenerateTokenForPermissionsAndScopeRequest{
 		PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
 		ClusterScopes:      []*v1.ClusterScope{{ClusterId: sensorClusterID, FullClusterAccess: true}},
 	})
@@ -38,7 +39,6 @@ func (rm *roleManager) createSensorMetricsRole(
 	if err := validateSensorMetricsRole(role); err != nil {
 		return nil, err
 	}
-	role.RoleName = centralproxy.SecuredClusterMetricsRole
 	return role, nil
 }
 
@@ -51,6 +51,21 @@ func validateSensorMetricsRole(role *tokens.InternalRole) error {
 	return nil
 }
 
+func (rm *roleManager) createRoleFromPermissionSets(
+	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
+) (*tokens.InternalRole, error) {
+	role, err := rm.createSensorRole(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if slices.Contains(req.GetPermissionSetNames(), centralproxy.MetricsPermissionSetName) {
+		role.Clusters = tokens.ClusterScopes{authn.IdentityFromContextOrNil(ctx).Service().GetId(): {"*"}}
+		if err := validateSensorMetricsRole(role); err != nil {
+			return nil, err
+		}
+	}
+	return role, nil
+}
 func (rm *roleManager) createRoleForRoxClaims(
 	_ context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
