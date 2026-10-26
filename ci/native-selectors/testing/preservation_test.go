@@ -128,7 +128,7 @@ func TestRequiredChecksAndImageGates(t *testing.T) {
 	require.Equal(t, "detect-changes", report["needs"])
 	require.Nil(t, report["outputs"], "the advisory report must not control image production")
 	var requirements map[string]map[string][]string
-	f.json(t, "testing/fixtures/required-gha-checks.json", &requirements)
+	f.json(t, "testing/required-gha-checks.json", &requirements)
 	contexts := 0
 	for file, jobs := range requirements {
 		for name, checks := range jobs {
@@ -136,16 +136,18 @@ func TestRequiredChecksAndImageGates(t *testing.T) {
 			contexts += len(checks)
 		}
 	}
-	require.Equal(t, 22, contexts)
+	require.Equal(t, 23, contexts)
 	for _, name := range f.consumers {
 		job := obj(f.jobs("e2e-dispatch.yaml")[name])
 		child := f.workflow(t, filepath.Base(str(job["uses"])))
 		require.Equal(t, "boolean", lookup(child, "on", "workflow_call", "inputs", "should-run", "type"))
-		needs := object{}
-		for _, name := range array(job["needs"]) {
-			needs[str(name)] = object{"outputs": object{"run": "false"}}
+		ctx := f.context(t, []string{"ci/native-selectors/file-groups.json"}, []string{"ci-dispatcher-enforce"}, options{workflow: "e2e-dispatch.yaml"})
+		for _, dependency := range array(job["needs"]) {
+			obj(ctx["needs"])[str(dependency)] = object{"result": "success", "outputs": object{"run": "false"}}
 		}
-		require.Equal(t, "false", evaluate(t, job["if"], object{"needs": needs}), "consumer %s", name)
+		obj(ctx["needs"])["select-"+name] = object{"result": "success", "outputs": f.preparationOutputs(t, name, "false", ctx)}
+		require.Equal(t, "true", evaluate(t, job["if"], ctx), "unselected consumer %s must publish child checks", name)
+		require.Equal(t, "false", evaluate(t, lookup(job, "with", "should-run"), ctx), "consumer %s must not execute tests", name)
 	}
 	require.NoFileExists(t, filepath.Join(f.root, ".github/workflows/native-ci-selection.yaml"))
 	require.NoFileExists(t, filepath.Join(f.root, "ci/native-selectors/path_facts.py"))

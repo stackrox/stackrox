@@ -51,6 +51,7 @@ type (
 	collected  struct{ files, uiOnly, facts, runAll, dir string }
 	actContext struct {
 		Github *model.GithubContext         `json:"github"`
+		Job    *model.JobContext            `json:"job"`
 		Env    map[string]string            `json:"env"`
 		Steps  map[string]*model.StepResult `json:"steps"`
 		Needs  map[string]exprparser.Needs  `json:"needs"`
@@ -196,9 +197,12 @@ func evaluate(t *testing.T, source any, context object) string {
 	}
 	var ctx actContext
 	require.NoError(t, json.Unmarshal([]byte(encode(t, context)), &ctx))
+	if ctx.Job == nil {
+		ctx.Job = &model.JobContext{Status: "success"}
+	}
 	interpreter := exprparser.NewInterpeter(&exprparser.EvaluationEnvironment{
 		Github: ctx.Github, Env: ctx.Env, Steps: ctx.Steps, Needs: ctx.Needs, Inputs: ctx.Inputs, Matrix: ctx.Matrix,
-		Job: &model.JobContext{Status: "success"},
+		Job: ctx.Job,
 	}, exprparser.Config{Context: "step"})
 	value, err := interpreter.Evaluate(text, exprparser.DefaultStatusCheckNone)
 	require.NoError(t, err, "expression: %s", text)
@@ -369,6 +373,17 @@ func (f *fixture) dispatch(t *testing.T, ctx object) (map[string]bool, bool, boo
 	return jobs, !fork && f.explain(t, "wait-for-images", ctx).run, !fork && f.explain(t, "wait-for-konflux-images", ctx).run
 }
 
+func (f *fixture) preparationOutputs(t *testing.T, name, run string, ctx object) object {
+	t.Helper()
+	ctx = clone(t, ctx)
+	ctx["steps"] = object{"selection": object{"outputs": object{"run": run}}}
+	outputs := object{}
+	for key, value := range obj(f.preparations[name].job["outputs"]) {
+		outputs[key] = evaluate(t, value, ctx)
+	}
+	return outputs
+}
+
 // execution follows successful image/preparation jobs through the actual caller gates.
 func (f *fixture) execution(t *testing.T, name string, ctx object) bool {
 	t.Helper()
@@ -376,7 +391,7 @@ func (f *fixture) execution(t *testing.T, name string, ctx object) bool {
 	for _, waiter := range []string{"wait-for-images", "wait-for-konflux-images"} {
 		obj(ctx["needs"])[waiter] = object{"result": "success", "outputs": object{"run": str(f.explain(t, waiter, ctx).run)}}
 	}
-	obj(ctx["needs"])["select-"+name] = object{"result": "success", "outputs": object{"run": str(f.explain(t, name, ctx).run)}}
+	obj(ctx["needs"])["select-"+name] = object{"result": "success", "outputs": f.preparationOutputs(t, name, str(f.explain(t, name, ctx).run), ctx)}
 	job := obj(f.jobs("e2e-dispatch.yaml")[name])
 	return evaluate(t, job["if"], ctx) == "true" && evaluate(t, lookup(job, "with", "should-run"), ctx) == "true"
 }

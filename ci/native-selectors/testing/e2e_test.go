@@ -3,6 +3,7 @@ package testing_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,9 +15,10 @@ func TestE2EDecisionsBeforeGates(t *testing.T) {
 	for _, target := range f.consumers {
 		preparation := f.preparations[target]
 		require.Equal(t, target, lookup(preparation.step, "with", "target"))
-		require.Equal(t, "${{ steps.selection.outputs.run }}", lookup(preparation.job, "outputs", "run"))
+		require.Contains(t, obj(preparation.job["outputs"]), "run-tests")
+		require.Contains(t, obj(preparation.job["outputs"]), "report-skipped-checks")
 		require.Nil(t, preparation.job["continue-on-error"], "failed preparation must block execution")
-		require.Equal(t, "${{ needs.select-"+target+".outputs.run == 'true' }}", lookup(f.jobs("e2e-dispatch.yaml"), target, "with", "should-run"))
+		require.Equal(t, "${{ needs.select-"+target+".outputs.run-tests == 'true' }}", lookup(f.jobs("e2e-dispatch.yaml"), target, "with", "should-run"))
 	}
 	for name, test := range map[string]struct {
 		target, kind, failed string
@@ -65,7 +67,7 @@ func TestE2EDecisionsBeforeGates(t *testing.T) {
 			require.Equal(t, test.kind, result.kind)
 			require.Equal(t, test.run, result.run)
 			prepName := "select-" + test.target
-			obj(ctx["needs"])[prepName] = object{"result": "success", "outputs": object{"run": str(result.run)}}
+			obj(ctx["needs"])[prepName] = object{"result": "success", "outputs": f.preparationOutputs(t, test.target, str(result.run), ctx)}
 			consumer := obj(f.jobs("e2e-dispatch.yaml")[test.target])
 			require.Contains(t, array(consumer["needs"]), prepName)
 			require.Equal(t, str(test.run), evaluate(t, lookup(consumer, "with", "should-run"), ctx), "call must consume the emitted execution output")
@@ -97,4 +99,112 @@ func TestE2EDecisionsBeforeGates(t *testing.T) {
 			require.Equal(t, "run="+str(test.run)+"\ndecision="+test.kind+"\n", string(output))
 		})
 	}
+}
+
+func TestE2ECallerCheckPublication(t *testing.T) {
+	f := newFixture(t)
+	base := f.context(t, []string{"ci/native-selectors/file-groups.json"}, []string{"ci-dispatcher-enforce"}, options{workflow: "e2e-dispatch.yaml"})
+	for _, target := range f.consumers {
+		t.Run(target, func(t *testing.T) {
+			caller := obj(f.jobs("e2e-dispatch.yaml")[target])
+			var waiter string
+			for _, dependency := range array(caller["needs"]) {
+				if strings.HasPrefix(str(dependency), "wait-for-") {
+					waiter = str(dependency)
+				}
+			}
+			require.NotEmpty(t, waiter)
+			for name, test := range map[string]struct {
+				run, image, imageRun, preparation, failedMetadata, event string
+				cancelled, invoke                                        bool
+			}{
+				"unselected PR publishes skips without images":             {run: "false", image: "success", imageRun: "false", invoke: true},
+				"unselected PR publishes skips after skipped image waiter": {run: "false", image: "skipped", invoke: true},
+				"unselected PR publishes skips after failed image waiter":  {run: "false", image: "failure", invoke: true},
+				"selected PR requires ready images":                        {run: "true", image: "success", imageRun: "true", invoke: true},
+				"selected PR rejects unselected images":                    {run: "true", image: "success", imageRun: "false"},
+				"selected PR rejects failed images":                        {run: "true", image: "failure", imageRun: "true"},
+				"selected PR rejects skipped images":                       {run: "true", image: "skipped", imageRun: "true"},
+				"failed preparation is not a selection skip":               {run: "false", image: "success", imageRun: "true", preparation: "failure"},
+				"missing preparation output is not a selection skip":       {image: "success", imageRun: "true"},
+				"failed detector cannot publish a successful skip":         {run: "false", image: "success", failedMetadata: "detect-changes"},
+				"failed dispatcher cannot publish a successful skip":       {run: "false", image: "success", failedMetadata: "should-dispatch"},
+				"failed detector cannot request tests":                     {run: "true", image: "success", imageRun: "true", failedMetadata: "detect-changes"},
+				"failed dispatcher cannot request tests":                   {run: "true", image: "success", imageRun: "true", failedMetadata: "should-dispatch"},
+				"cancellation stops child publication":                     {run: "false", image: "success", cancelled: true},
+				"unselected manual event cannot invoke manual defaults":    {run: "false", image: "success", imageRun: "true", event: "workflow_dispatch"},
+				"unselected push retains execution guards":                 {run: "false", image: "success", imageRun: "true", event: "push"},
+				"selected push retains execution":                          {run: "true", image: "success", imageRun: "true", event: "push", invoke: true},
+				"selected manual event retains execution":                  {run: "true", image: "success", imageRun: "true", event: "workflow_dispatch", invoke: true},
+			} {
+				t.Run(name, func(t *testing.T) {
+					ctx := clone(t, base)
+					preparation := test.preparation
+					if preparation == "" {
+						preparation = "success"
+					}
+					obj(ctx["needs"])[waiter] = object{"result": test.image, "outputs": object{"run": test.imageRun}}
+					if test.failedMetadata != "" {
+						obj(lookup(ctx, "needs", test.failedMetadata))["result"] = "failure"
+					}
+					if test.event != "" {
+						obj(ctx["github"])["event_name"] = test.event
+					}
+					if test.cancelled {
+						ctx["job"] = object{"status": "cancelled"}
+					}
+					outputs := f.preparationOutputs(t, target, test.run, ctx)
+					obj(ctx["needs"])["select-"+target] = object{"result": preparation, "outputs": outputs}
+					require.Equal(t, str(test.invoke), evaluate(t, caller["if"], ctx))
+					require.Equal(t, str(test.run == "true" && test.failedMetadata == ""), evaluate(t, lookup(caller, "with", "should-run"), ctx))
+					require.False(t, outputs["run-tests"] == "true" && outputs["report-skipped-checks"] == "true", "a preparation cannot request tests and skipped checks together")
+				})
+			}
+		})
+	}
+}
+
+func TestRequiredE2EChildrenCanReportSkipped(t *testing.T) {
+	f := newFixture(t)
+	var requirements map[string]map[string][]string
+	f.json(t, "testing/required-gha-checks.json", &requirements)
+	base := f.context(t, []string{"ci/native-selectors/file-groups.json"}, []string{"ci-dispatcher-enforce"}, options{workflow: "e2e-dispatch.yaml"})
+	checked := 0
+	for caller, checks := range requirements["e2e-dispatch.yaml"] {
+		for _, check := range checks {
+			parts := strings.Split(check, " / ")
+			if len(parts) == 1 {
+				continue
+			}
+			t.Run(check, func(t *testing.T) {
+				ctx := clone(t, base)
+				job := obj(f.jobs("e2e-dispatch.yaml")[caller])
+				for _, dependency := range array(job["needs"]) {
+					obj(ctx["needs"])[str(dependency)] = object{"result": "success", "outputs": object{"run": "false"}}
+				}
+				obj(ctx["needs"])["select-"+caller] = object{"result": "success", "outputs": f.preparationOutputs(t, caller, "false", ctx)}
+				require.Equal(t, "true", evaluate(t, job["if"], ctx), "the caller must instantiate its child checks")
+				for i, part := range parts[1:] {
+					child := f.workflow(t, filepath.Base(str(job["uses"])))
+					require.Equal(t, "boolean", lookup(child, "on", "workflow_call", "inputs", "should-run", "type"))
+					require.Equal(t, "false", evaluate(t, lookup(job, "with", "should-run"), ctx), "each reusable-workflow boundary must preserve the rejection")
+					ctx["inputs"], ctx["needs"] = object{"should-run": false}, object{}
+					job = obj(lookup(child, "jobs", part))
+					require.NotEmpty(t, job, "required check component %s", part)
+					for _, dependency := range arrayNeeds(job["needs"]) {
+						prerequisite := obj(lookup(child, "jobs", str(dependency)))
+						require.Equal(t, "false", evaluate(t, prerequisite["if"], ctx), "a skipped suite must not provision its prerequisites")
+						obj(ctx["needs"])[str(dependency)] = object{"result": "skipped", "outputs": object{}}
+					}
+					condition := job["if"]
+					if condition == nil {
+						condition = "success()"
+					}
+					require.Equal(t, str(i < len(parts)-2), evaluate(t, condition, ctx), "intermediate calls must expand; required leaf jobs must skip")
+				}
+			})
+			checked++
+		}
+	}
+	require.Equal(t, 4, checked)
 }

@@ -252,13 +252,20 @@ jobs:
         limit: 14100 # Seconds, corresponding to 3h55m, which is the timeout for building the operator-index (.tekton/operator-index-build.yaml) + 5m buffer.
 
   # Each preparation records its decision before the adjacent reusable workflow can skip.
-  # Image waiters remain separate execution prerequisites.
+  # Unselected PR calls publish skipped child checks; selected work still requires images.
   select-e2e-byodb-tests:
     needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -290,12 +297,17 @@ jobs:
       run: ':'
 
   e2e-byodb-tests:
-    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-byodb-tests.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-byodb-tests.result == 'success' &&
+      (needs.select-e2e-byodb-tests.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-byodb-tests.outputs.run-tests == 'true' &&
+          needs.wait-for-images.result == 'success' &&
+          needs.wait-for-images.outputs.run == 'true'))
     needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-byodb-tests ]
     uses: ./.github/workflows/e2e-byodb-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.select-e2e-byodb-tests.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-byodb-tests.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-byodb-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -306,7 +318,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -338,12 +357,17 @@ jobs:
       run: ':'
 
   e2e-db-backup-restore-tests-gke:
-    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-db-backup-restore-tests-gke.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-db-backup-restore-tests-gke.result == 'success' &&
+      (needs.select-e2e-db-backup-restore-tests-gke.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-db-backup-restore-tests-gke.outputs.run-tests == 'true' &&
+          needs.wait-for-images.result == 'success' &&
+          needs.wait-for-images.outputs.run == 'true'))
     needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-db-backup-restore-tests-gke ]
     uses: ./.github/workflows/e2e-db-backup-restore-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.select-e2e-db-backup-restore-tests-gke.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-db-backup-restore-tests-gke.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-db-backup-restore-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -354,7 +378,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -386,12 +417,17 @@ jobs:
       run: ':'
 
   e2e-db-backup-restore-tests-gke-konflux:
-    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-db-backup-restore-tests-gke-konflux.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-db-backup-restore-tests-gke-konflux.result == 'success' &&
+      (needs.select-e2e-db-backup-restore-tests-gke-konflux.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-db-backup-restore-tests-gke-konflux.outputs.run-tests == 'true' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          needs.wait-for-konflux-images.outputs.run == 'true'))
     needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-db-backup-restore-tests-gke-konflux ]
     uses: ./.github/workflows/e2e-db-backup-restore-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: ${{ needs.select-e2e-db-backup-restore-tests-gke-konflux.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-db-backup-restore-tests-gke-konflux.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-db-backup-restore-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -402,7 +438,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -434,12 +477,17 @@ jobs:
       run: ':'
 
   e2e-gke-upgrade-tests:
-    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-gke-upgrade-tests.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-gke-upgrade-tests.result == 'success' &&
+      (needs.select-e2e-gke-upgrade-tests.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-gke-upgrade-tests.outputs.run-tests == 'true' &&
+          needs.wait-for-images.result == 'success' &&
+          needs.wait-for-images.outputs.run == 'true'))
     needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-gke-upgrade-tests ]
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.select-e2e-gke-upgrade-tests.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-gke-upgrade-tests.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-gke-upgrade-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -450,7 +498,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -483,12 +538,17 @@ jobs:
       run: ':'
 
   e2e-nongroovy-tests-gke:
-    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-nongroovy-tests-gke.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-nongroovy-tests-gke.result == 'success' &&
+      (needs.select-e2e-nongroovy-tests-gke.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-nongroovy-tests-gke.outputs.run-tests == 'true' &&
+          needs.wait-for-images.result == 'success' &&
+          needs.wait-for-images.outputs.run == 'true'))
     needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-nongroovy-tests-gke ]
     uses: ./.github/workflows/e2e-nongroovy-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.select-e2e-nongroovy-tests-gke.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-nongroovy-tests-gke.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -499,7 +559,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -531,12 +598,17 @@ jobs:
       run: ':'
 
   e2e-nongroovy-tests-gke-konflux:
-    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-nongroovy-tests-gke-konflux.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-nongroovy-tests-gke-konflux.result == 'success' &&
+      (needs.select-e2e-nongroovy-tests-gke-konflux.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-nongroovy-tests-gke-konflux.outputs.run-tests == 'true' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          needs.wait-for-konflux-images.outputs.run == 'true'))
     needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-nongroovy-tests-gke-konflux ]
     uses: ./.github/workflows/e2e-nongroovy-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: ${{ needs.select-e2e-nongroovy-tests-gke-konflux.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-nongroovy-tests-gke-konflux.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -547,7 +619,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -578,12 +657,17 @@ jobs:
       run: ':'
 
   e2e-qa-tests-gke:
-    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-qa-tests-gke.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-qa-tests-gke.result == 'success' &&
+      (needs.select-e2e-qa-tests-gke.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-qa-tests-gke.outputs.run-tests == 'true' &&
+          needs.wait-for-images.result == 'success' &&
+          needs.wait-for-images.outputs.run == 'true'))
     needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-qa-tests-gke ]
     uses: ./.github/workflows/e2e-qa-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.select-e2e-qa-tests-gke.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-qa-tests-gke.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-qa-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -594,7 +678,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -625,12 +716,17 @@ jobs:
       run: ':'
 
   e2e-qa-tests-ocp-fips-konflux:
-    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-qa-tests-ocp-fips-konflux.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-qa-tests-ocp-fips-konflux.result == 'success' &&
+      (needs.select-e2e-qa-tests-ocp-fips-konflux.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-qa-tests-ocp-fips-konflux.outputs.run-tests == 'true' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          needs.wait-for-konflux-images.outputs.run == 'true'))
     needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-qa-tests-ocp-fips-konflux ]
     uses: ./.github/workflows/e2e-qa-tests-ocp-fips-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: ${{ needs.select-e2e-qa-tests-ocp-fips-konflux.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-qa-tests-ocp-fips-konflux.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-qa-tests-ocp-fips-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -641,7 +737,14 @@ jobs:
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
-      run: ${{ steps.selection.outputs.run }}
+      run-tests: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        steps.selection.outputs.run == 'true' }}
+      report-skipped-checks: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        needs.should-dispatch.result == 'success' &&
+        github.event_name == 'pull_request' && steps.selection.outputs.run == 'false' }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -672,12 +775,17 @@ jobs:
       run: ':'
 
   e2e-qa-tests-gke-konflux:
-    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-qa-tests-gke-konflux.result == 'success'
+    if: >-
+      !cancelled() && needs.select-e2e-qa-tests-gke-konflux.result == 'success' &&
+      (needs.select-e2e-qa-tests-gke-konflux.outputs.report-skipped-checks == 'true' ||
+        (needs.select-e2e-qa-tests-gke-konflux.outputs.run-tests == 'true' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          needs.wait-for-konflux-images.outputs.run == 'true'))
     needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-qa-tests-gke-konflux ]
     uses: ./.github/workflows/e2e-qa-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: ${{ needs.select-e2e-qa-tests-gke-konflux.outputs.run == 'true' }}
+      should-run: ${{ needs.select-e2e-qa-tests-gke-konflux.outputs.run-tests == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-qa-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}

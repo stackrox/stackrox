@@ -54,16 +54,18 @@ Go and generated-file selection excludes `ci/` and `tools/roxvet/`. Interface/CR
 
 Without `ci-dispatcher-enforce`, Actions reports decisions and retains existing per-run test eligibility. With that label, native conditions apply selection. Ordinary jobs retain their check names and matrices; expensive steps become successful no-ops when unselected. Existing outer conditions still apply. Style remains selected. Jobs outside the comparison inventory retain their behavior.
 
-E2E consumers keep their existing reusable workflows. Each consumer owns its native condition; `should-dispatch` only reads current labels and reports its own prerequisite candidacy. It exports no per-job plan. Consumers require a successful image waiter that permits execution. Waiters include the union of their consumers' rules. This duplication is necessary because Actions does not infer prerequisites from selected consumers.
+E2E consumers keep their existing reusable workflows. Each consumer owns its native condition; `should-dispatch` only reads current labels and reports its own prerequisite candidacy. It exports no per-job plan. Selected consumers require a successful image waiter that permits execution. Waiters include the union of their consumers' rules. This duplication is necessary because Actions does not infer prerequisites from selected consumers.
 
-Each E2E call has an adjacent `select-e2e-…` preparation job. It runs after file detection and label refresh, without waiting for images, and records the native candidate and execution restrictions through the explanation action. Its single `run` output controls that call's existing `should-run` input. The call still requires its images and successful preparation. An early permission record can therefore be followed by a skipped call if an image prerequisite fails; permission does not confirm execution.
+Each E2E call has an adjacent `select-e2e-…` preparation job. It runs after file detection and label refresh, without waiting for images, and records the native candidate and execution restrictions through the explanation action. It exposes two native output flags: `run-tests` requests execution subject to images, while `report-skipped-checks` requests only skipped child checks on a PR. Both require successful metadata collection and an explicit explanation result. Missing decisions leave both flags false.
+
+The caller invokes its reusable workflow when `report-skipped-checks` is true, or when `run-tests` is true and its image waiter succeeds with permission to execute. It passes `run-tests` as the child's existing `should-run` input. The reporting path therefore starts no tests or clusters and needs no images. Skipping the entire call would leave nested required check names unreported and GitHub waiting for results. A preparation failure or cancellation blocks either path. Non-PR events retain their image gates because some child workflows run unconditionally on manual dispatch. Permission to run still does not confirm execution: a later image failure can block a selected call.
 
 This adds nine runner starts and a prerequisite failure point. Preparations check out only the explanation action. A preparation failure blocks its call. Queueing can delay both the decision and the dependent call.
 
 ```mermaid
 flowchart LR
   F[File facts and current labels] --> S[Adjacent E2E preparation]
-  S -->|run output| E[Existing reusable E2E call]
+  S -->|Named decision outputs| E[Existing reusable E2E call]
   I[Image waiter result] --> E
   S -->|Completed metadata step| A[Live Actions Jobs API]
   A --> R[Bounded selection observer]

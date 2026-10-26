@@ -42,7 +42,7 @@ Execution details remain in each linked job summary, including whether fork, dra
 
 The observer checks every five seconds for at most ten minutes after starting its command. The whole job has a twelve-minute timeout. Runner startup, API latency, and runner queues add delay; five seconds is a polling interval, not a delivery guarantee. One runner remains occupied during this bounded window. Conditional GETs reuse unchanged API responses.
 
-For example, a Go job can record permission, start its tests, and appear in the comment at the next observation without waiting for those tests to finish. An E2E preparation can permit a call before images are available. If the image waiter later fails, the call still skips: the record establishes permission, not execution.
+For example, a Go job can record permission, start its tests, and appear in the comment at the next observation without waiting for those tests to finish. An E2E preparation can permit a call before images are available. If the image waiter later fails, the selected call still skips: the record establishes permission, not execution. An unselected PR call uses `should-run: false` to publish skipped child checks without running tests.
 
 The report marks its observation window ended. Decisions made later require rerunning **Live native CI selection log**. A new head stops the old observer; its own run starts a fresh report. API errors and cancellation stop reporting and remain visible in the observer log. The comment does not claim a complete inventory: jobs skipped before any explanation have no record and cannot be assigned a selection reason from a skipped status alone. A report with no records says it is waiting rather than claiming zero selection skips.
 

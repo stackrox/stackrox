@@ -85,7 +85,9 @@ Classifier failure can leave legacy `ui_only` available; collection failure cann
 
 ### Skipped checks are not test results
 
-Ordinary required jobs keep their IDs, matrix expansion, checkout and summary. Their expensive steps can skip and the check can succeed without executing tests. Reusable E2E child jobs keep their existing conditional checks; callers require successful eligible image waiters. Tests check structural preservation of 22 recorded required contexts, not GitHub's live branch-protection behavior. Real CI must confirm the exact reported contexts, particularly nested reusable jobs and skipped image waits.
+Ordinary required jobs keep their IDs, matrix expansion, checkout and summary. Their expensive steps can skip and the check can succeed without executing tests. Selected E2E callers require successful eligible image waiters. An unselected PR suite instead invokes its reusable workflow with `should-run: false`, so the nested jobs can report skipped checks. It does not need images or start tests. Skipping the whole call would leave its nested required checks missing.
+
+The current requirements snapshot covers 23 GHA contexts. Regression tests follow all four nested required E2E check paths through the reusable workflows and verify that they expand to skipped leaf jobs. They also cover image failures, missing or failed preparation, cancellation, and non-PR events across all nine callers. The pinned comparison's 22-context snapshot remains unchanged. Local expression tests cannot prove GitHub's check publication: the next CI run must confirm those four exact names. The separate required Prow UI check is outside this GHA fix.
 
 ## Prow: configuration, changed behavior and exact gaps
 
