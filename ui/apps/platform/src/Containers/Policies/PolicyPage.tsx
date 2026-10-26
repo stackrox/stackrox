@@ -122,12 +122,9 @@ function PolicyPage({
                     setPolicy(getClientWizardPolicy(data.policy ?? {}));
                 })
                 .catch((err) => {
-                    // to get the actual error returned by the server, we have to dereference the response object first
-                    //   because err.message is the generic Axios error message,
-                    //   https://github.com/axios/axios/issues/960#issuecomment-309287911
                     setErrorsForGeneratedPolicy({
                         alteredSearchTerms: [],
-                        errorFromCatch: err?.response?.data || 'An unrecognized error occurred.',
+                        errorFromCatch: getAxiosErrorMessage(err),
                         hasNestedFields: false,
                     });
                 });

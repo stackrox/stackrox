@@ -344,6 +344,7 @@ type BaseDescriptor = {
     shortName: string;
     longName?: string;
     infoText?: string;
+    infoDocsPath?: string;
     category: string;
     type: DescriptorType;
     disabled?: boolean;
@@ -630,6 +631,33 @@ export const policyCriteriaDescriptors: Descriptor[] = [
                 max: 10.0,
                 min: 0.0,
                 step: 0.1,
+                subpath: 'value',
+            },
+        ],
+        canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'EPSS',
+        name: 'EPSS',
+        shortName: 'EPSS',
+        longName: 'EPSS probability',
+        infoText: 'EPSS scores require Scanner V4',
+        infoDocsPath: 'operating/managing-vulnerabilities',
+        category: policyCriteriaCategories.IMAGE_SCANNING,
+        type: 'group',
+        subComponents: [
+            {
+                type: 'select',
+                options: equalityOptions,
+                subpath: 'key',
+            },
+            {
+                type: 'number',
+                placeholder: '(ex. 75)',
+                max: 100,
+                min: 0,
+                step: 1,
                 subpath: 'value',
             },
         ],
