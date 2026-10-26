@@ -636,7 +636,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				ClusterId:     testconsts.Cluster1,
 				TotalCount:    7,
 				LastScanTime:  scan1.GetLastExecutedTime(),
-				DataFreshness: apiV2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE,
+				DataFreshness: apiV2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE,
 			},
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
@@ -661,6 +661,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				)
 				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), staleQuery).Return(1, nil).Times(1)
 
+				currentQuery := search.ConjunctionQuery(
+					countQuery.CloneVT(),
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceDataFreshness, storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT.String()).ProtoQuery(),
+				)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), currentQuery).Return(0, nil).Times(1)
+
 				scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery()
 				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
 
@@ -681,7 +687,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 				ClusterId:     testconsts.Cluster1,
 				TotalCount:    3,
 				LastScanTime:  scan1.GetLastExecutedTime(),
-				DataFreshness: apiV2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE,
+				DataFreshness: apiV2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE,
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "check-name").ProtoQuery()
@@ -706,6 +712,12 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceDataFreshness, storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE.String()).ProtoQuery(),
 				)
 				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), staleQuery).Return(1, nil).Times(1)
+
+				currentQuery := search.ConjunctionQuery(
+					countQuery.CloneVT(),
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceDataFreshness, storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT.String()).ProtoQuery(),
+				)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), currentQuery).Return(0, nil).Times(1)
 
 				scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery()
 				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)

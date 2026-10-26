@@ -67,9 +67,13 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 
 	for _, resultCount := range resultCounts {
 		controls := GetControls(resultCount.RuleName, controlResults)
-		dataFreshness := v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
-		if resultCount.DataFreshness != nil {
-			dataFreshness = convertComplianceDataFreshness(*resultCount.DataFreshness)
+		dataFreshness := v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
+		if resultCount.DataFreshnessMax != nil {
+			minF := storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+			if resultCount.DataFreshnessMin != nil {
+				minF = *resultCount.DataFreshnessMin
+			}
+			dataFreshness = deriveAggregateDataFreshness(minF, *resultCount.DataFreshnessMax)
 		}
 
 		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
@@ -157,7 +161,7 @@ func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTi
 		CreatedTime:   incoming.GetCreatedTime(),
 		CheckUid:      incoming.GetId(),
 		LastScanTime:  lastScanTime,
-		DataFreshness: convertComplianceDataFreshness(incoming.GetDataFreshness()),
+		DataFreshness: convertComplianceCheckDataFreshness(incoming.GetDataFreshness()),
 	}
 }
 
@@ -176,7 +180,7 @@ func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName str
 		RuleName:      ruleName,
 		Labels:        incoming.GetLabels(),
 		Annotations:   incoming.GetAnnotations(),
-		DataFreshness: convertComplianceDataFreshness(incoming.GetDataFreshness()),
+		DataFreshness: convertComplianceCheckDataFreshness(incoming.GetDataFreshness()),
 	}
 }
 

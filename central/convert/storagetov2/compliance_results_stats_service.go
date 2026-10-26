@@ -66,9 +66,13 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 		if resultCount.LastScanTime != nil {
 			lastScanTime = protoconv.ConvertTimeToTimestampOrNil(*resultCount.LastScanTime)
 		}
-		dataFreshness := v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
-		if resultCount.DataFreshness != nil {
-			dataFreshness = convertComplianceDataFreshness(*resultCount.DataFreshness)
+		dataFreshness := v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
+		if resultCount.DataFreshnessMax != nil {
+			minF := storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+			if resultCount.DataFreshnessMin != nil {
+				minF = *resultCount.DataFreshnessMin
+			}
+			dataFreshness = deriveAggregateDataFreshness(minF, *resultCount.DataFreshnessMax)
 		}
 		convertedResults = append(convertedResults, &v2.ComplianceClusterOverallStats{
 			Cluster: &v2.ComplianceScanCluster{

@@ -33,10 +33,13 @@ type ResultStatusCountByCluster struct {
 	ClusterID          string     `db:"cluster_id"`
 	ClusterName        string     `db:"cluster"`
 	LastScanTime       *time.Time `db:"compliance_scan_last_executed_time_max"`
-	// DataFreshness is MAX(data_freshness) over the cluster's results. Because the
-	// enum orders UNKNOWN(0) < CURRENT(1) < STALE(2), the max yields the correct
-	// rollup precedence: STALE if any result is stale, else CURRENT, else UNKNOWN.
-	DataFreshness *storage.ComplianceDataFreshness `db:"compliance_data_freshness_max"`
+	// DataFreshnessMax and DataFreshnessMin are the MAX and MIN of data_freshness
+	// over the cluster's results. Together they are used to derive the v2 aggregate
+	// freshness: INCONSISTENT when the min is CURRENT and the max is STALE (a mix of
+	// fresh and stale data), otherwise the max alone gives the rollup precedence
+	// (STALE if any result is stale, else CURRENT, else UNKNOWN).
+	DataFreshnessMax *storage.ComplianceDataFreshness `db:"compliance_data_freshness_max"`
+	DataFreshnessMin *storage.ComplianceDataFreshness `db:"compliance_data_freshness_min"`
 }
 
 // ResourceResultCountByProfile represents shape of the stats query for compliance operator results
@@ -72,8 +75,12 @@ type ResourceResultsByProfile struct {
 	CheckName          string `db:"compliance_check_name"`
 	RuleName           string `db:"compliance_rule_name"`
 	CheckRationale     string `db:"compliance_check_rationale"`
-	// DataFreshness is MAX(data_freshness) across all clusters reporting this
-	// check. The enum orders UNKNOWN(0) < CURRENT(1) < STALE(2), so the max is
-	// the correct rollup: STALE if any contributing cluster is stale.
-	DataFreshness *storage.ComplianceDataFreshness `db:"compliance_data_freshness_max"`
+	// DataFreshnessMax and DataFreshnessMin are the MAX and MIN of data_freshness
+	// across all clusters reporting this check. Together they are used to derive
+	// the v2 aggregate freshness: INCONSISTENT when the min is CURRENT and the max
+	// is STALE (a mix of fresh and stale data), otherwise the max alone gives the
+	// rollup precedence (STALE if any contributing cluster is stale, else CURRENT,
+	// else UNKNOWN).
+	DataFreshnessMax *storage.ComplianceDataFreshness `db:"compliance_data_freshness_max"`
+	DataFreshnessMin *storage.ComplianceDataFreshness `db:"compliance_data_freshness_min"`
 }

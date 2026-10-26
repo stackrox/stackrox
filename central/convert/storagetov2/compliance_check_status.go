@@ -7,17 +7,45 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func convertComplianceDataFreshness(freshness storage.ComplianceDataFreshness) v2.ComplianceDataFreshness {
+// convertComplianceCheckDataFreshness converts the stored per-check freshness to the
+// v2 check-level freshness. This is a straight passthrough since a single check result
+// can never be INCONSISTENT.
+func convertComplianceCheckDataFreshness(freshness storage.ComplianceDataFreshness) v2.ComplianceCheckDataFreshness {
 	switch freshness {
 	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT:
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT
 	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE:
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE
 	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN:
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
 	default:
 		utils.Should(errors.Errorf("unhandled compliance data freshness encountered %s", freshness))
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
+	}
+}
+
+// deriveAggregateDataFreshness computes the aggregate freshness over a set of
+// check results from the MIN and MAX of their stored (check-level) freshness.
+// INCONSISTENT means the set mixes stale and non-stale (current) data, which
+// points at a partial problem (some results arrived, some are stale) rather than
+// a whole-set problem (all stale). UNKNOWN rows (not yet evaluated) do not by
+// themselves make an otherwise-uniform set inconsistent.
+func deriveAggregateDataFreshness(minF, maxF storage.ComplianceDataFreshness) v2.ComplianceAggregateDataFreshness {
+	// A genuine mix of CURRENT and STALE present together.
+	if maxF == storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE &&
+		minF == storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT {
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT
+	}
+	switch maxF {
+	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE
+	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT
+	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
+	default:
+		utils.Should(errors.Errorf("unhandled compliance data freshness encountered %s", maxF))
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 	}
 }
 

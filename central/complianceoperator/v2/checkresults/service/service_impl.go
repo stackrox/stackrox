@@ -407,11 +407,11 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 }
 
 // rollupDataFreshness returns the aggregate freshness over all results matching
-// baseQuery (unpaginated), with precedence STALE > CURRENT > UNKNOWN: STALE if
-// any result is stale, else CURRENT if any result is current, else UNKNOWN. It
-// relies on the stored data_freshness column, so the cost is a count, not a
-// per-row scan of the serialized blobs.
-func (s *serviceImpl) rollupDataFreshness(ctx context.Context, baseQuery *v1.Query) (v2.ComplianceDataFreshness, error) {
+// baseQuery (unpaginated): INCONSISTENT if the results mix stale and current
+// data, else STALE if any result is stale, else CURRENT if any result is
+// current, else UNKNOWN. It relies on the stored data_freshness column, so the
+// cost is a count, not a per-row scan of the serialized blobs.
+func (s *serviceImpl) rollupDataFreshness(ctx context.Context, baseQuery *v1.Query) (v2.ComplianceAggregateDataFreshness, error) {
 	hasFreshness := func(f storage.ComplianceDataFreshness) (bool, error) {
 		q := search.ConjunctionQuery(
 			baseQuery.CloneVT(),
@@ -424,17 +424,25 @@ func (s *serviceImpl) rollupDataFreshness(ctx context.Context, baseQuery *v1.Que
 		return count > 0, nil
 	}
 
-	if stale, err := hasFreshness(storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE); err != nil {
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN, err
-	} else if stale {
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE, nil
+	stale, err := hasFreshness(storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+	if err != nil {
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN, err
 	}
-	if current, err := hasFreshness(storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT); err != nil {
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN, err
-	} else if current {
-		return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT, nil
+	current, err := hasFreshness(storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT)
+	if err != nil {
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN, err
 	}
-	return v2.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN, nil
+
+	switch {
+	case stale && current:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT, nil
+	case stale:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE, nil
+	case current:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT, nil
+	default:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN, nil
+	}
 }
 
 func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, request *v2.ComplianceCheckDetailRequest) (*v2.ComplianceClusterCheckStatus, error) {
