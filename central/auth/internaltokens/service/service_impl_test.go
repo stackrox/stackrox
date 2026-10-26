@@ -547,7 +547,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				issuer:       tokensMocks.NewMockIssuer(mockCtrl),
 			}
 			svc := createService(it, mocks.issuer, tc.policy)
-			svc.roles = mocks.roleStore
+			svc.roleManager = &roleManager{mocks.roleStore}
 			if tc.setup != nil {
 				tc.setup(it, mocks)
 			}
