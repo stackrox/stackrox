@@ -105,7 +105,7 @@ func (x *ClusterCheckStatus) GetDataFreshness() ComplianceCheckDataFreshness {
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
+	return ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED
 }
 
 // ComplianceCheckResult details of an instance of a compliance check result
@@ -256,7 +256,7 @@ func (x *ComplianceCheckResult) GetDataFreshness() ComplianceCheckDataFreshness 
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
+	return ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED
 }
 
 type ComplianceCheckData struct {
@@ -772,7 +772,7 @@ func (x *ListComplianceCheckResultResponse) GetDataFreshness() ComplianceAggrega
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
+	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED
 }
 
 type ComplianceScanResultsRequest struct {
