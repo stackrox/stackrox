@@ -5,9 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// SecuredClusterMetricsRole names the internal role in Sensor-proxied OpenShift Prometheus tokens.
-const SecuredClusterMetricsRole = "OpenShift Secured Cluster Metrics Reader"
-
 // AllowedProxyPaths is the console path compatibility contract for older
 // Sensors. Central advertises it in CentralHello because Sensors that predate
 // locally configured proxy-client policy enforce these paths before forwarding
