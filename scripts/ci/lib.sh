@@ -1205,7 +1205,7 @@ push_helm_charts() {
     local secured_cluster_services_chart_dir
     local operator_chart_dir
     operator_chart_dir="$(mktemp -d)"
-    if [[ $(printf '%s\n' "5.1.0" "${RELEASE_PATCH}" | sort -V | head -n1) != 5.1.0 ]]; then
+    if [[ $(printf '%s\n' "5.1.0" "${tag}" | sort -V | head -n1) != 5.1.0 ]]; then
         # Earlier than 5.1.0
         echo "Publish Helm charts (including legacy) to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
         central_services_chart_dir="$(mktemp -d)"
