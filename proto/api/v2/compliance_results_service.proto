@@ -99,6 +99,8 @@ message ListComplianceCheckResultResponse {
   string cluster_id = 3;
   int32 total_count = 4;
   google.protobuf.Timestamp last_scan_time = 5;
+  // Rolled up across all check results for this cluster and profile, not just
+  // the current page.
   ComplianceAggregateDataFreshness data_freshness = 6;
 }
 

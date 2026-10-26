@@ -687,12 +687,14 @@ func (x *ListComplianceCheckClusterResponse) GetControls() []*ComplianceControl 
 }
 
 type ListComplianceCheckResultResponse struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	CheckResults  []*ComplianceCheckResult         `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
-	ProfileName   string                           `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	ClusterId     string                           `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	TotalCount    int32                            `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	LastScanTime  *timestamppb.Timestamp           `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	state        protoimpl.MessageState   `protogen:"open.v1"`
+	CheckResults []*ComplianceCheckResult `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
+	ProfileName  string                   `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	ClusterId    string                   `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	TotalCount   int32                    `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	LastScanTime *timestamppb.Timestamp   `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	// Rolled up across all check results for this cluster and profile, not just
+	// the current page.
 	DataFreshness ComplianceAggregateDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceAggregateDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
