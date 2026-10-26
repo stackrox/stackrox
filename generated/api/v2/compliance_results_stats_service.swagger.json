@@ -644,7 +644,7 @@
         "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT"
       ],
       "default": "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED",
-      "description": "ComplianceAggregateDataFreshness indicates the freshness of compliance data\naggregated over many checks (a cluster, a scan, or a cross-cluster rollup of\na single check). Unlike a single check, an aggregate can mix fresh and stale\nresults.\n\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED: No value set.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN: Cannot evaluate: no schedule, unresolvable config, or no data.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT: All contributing checks reflect the most recent expected scan cycle.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE: All contributing checks predate the most recent expected scan cycle.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT: Contributing checks are a mix of stale and current data."
+      "description": "ComplianceAggregateDataFreshness indicates the freshness of compliance data\naggregated over multiple checks (a cluster, a scan, or a cross-cluster rollup of\na single check). Unlike a single check, an aggregate can mix fresh and stale\nresults.\n\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN: Cannot evaluate: no schedule, unresolvable config, or no data.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT: All contributing checks are current.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE: All contributing checks are stale.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT: Contributing checks are a mix of stale and current data."
     },
     "v2ComplianceBenchmark": {
       "type": "object",
@@ -694,8 +694,7 @@
           }
         },
         "dataFreshness": {
-          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness",
-          "description": "Rolled-up freshness across all clusters reporting this check: STALE if\nany contributing cluster has stale data (STALE > CURRENT > UNKNOWN)."
+          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness"
         }
       },
       "title": "Group the number of occurrences by status"
@@ -805,15 +804,15 @@
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
         },
-        "staleClusterCount": {
+        "noncurrentClusterCount": {
           "type": "integer",
           "format": "int32",
-          "description": "Number of clusters with STALE data for this profile, across all clusters\n(not limited to a page). Non-zero signals the UI to show a stale-data\nbanner."
+          "description": "Number of clusters with data status != CURRENT for this profile, across\nall clusters (not limited to a page)."
         },
-        "staleCheckResultCount": {
+        "noncurrentCheckResultCount": {
           "type": "integer",
           "format": "int32",
-          "description": "Number of stale check results (check x cluster units) for this profile,\nacross all clusters (not limited to a page)."
+          "description": "Number of check results (check x cluster units) with data status != CURRENT\nfor this profile, across all clusters (not limited to a page)."
         }
       },
       "title": "ComplianceProfileScanStats provides scan stats overview based on profile"
