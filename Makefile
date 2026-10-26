@@ -910,3 +910,13 @@ print-image-prefetcher-deploy-bin:
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
+########################################
+# CI Test Selection (Native Approach) #
+########################################
+
+.PHONY: generate-ci-selection
+generate-ci-selection:
+	@echo "+ $@"
+	@cd ci/select/generator && go build -o generator .
+	@./ci/select/generator/generator ci/test-selection-rules.yaml
+	@echo "Generated CI test selection files from ci/test-selection-rules.yaml"

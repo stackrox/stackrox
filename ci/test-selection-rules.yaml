@@ -1,0 +1,263 @@
+# CI Test Selection Rules
+# Single source of truth for GitHub Actions and Prow test selection
+#
+# Rules are evaluated in order. Multiple rules can vote on the same job.
+# Clash resolution: if any rule says "run" and another says "skip" → job RUNS
+# (false positives better than false negatives)
+#
+# Generation: Run `make generate-ci-selection` to regenerate:
+#   - .github/workflows/detect-changes.yml (enhanced with domain flags)
+#   - ci/select/prow-native-gate.sh (bash gate function)
+
+version: 1
+
+# All known CI jobs (used for validation)
+jobs:
+  # GitHub Actions
+  - style-check
+  - check-generated-files
+  - go
+  - go-postgres
+  - sensor-integration-tests
+  - shell-unit-tests
+  - ui
+  - ui-component
+  - golangci-lint
+  - check-crd-compatibility
+  - db-integration-tests
+
+  # Prow / OpenShift CI
+  - gke-qa-e2e-tests
+  - gke-upgrade-tests
+  - gke-nongroovy-e2e-tests
+  - ocp-qa-e2e-tests
+  - sensor-integration-tests-openshift
+
+  # Image building (special handling)
+  - wait-for-images
+  - should-dispatch
+
+# Default behavior when no rules match
+# "run" means job runs on every PR, "skip" means job only runs on master/releases
+defaults:
+  style-check: run
+  check-generated-files: run
+  go: run
+  go-postgres: run
+  sensor-integration-tests: run
+  shell-unit-tests: run
+  ui: run
+  ui-component: run
+  golangci-lint: run
+  check-crd-compatibility: skip
+  db-integration-tests: skip
+  gke-qa-e2e-tests: skip
+  gke-upgrade-tests: skip
+  gke-nongroovy-e2e-tests: run
+  ocp-qa-e2e-tests: skip
+  sensor-integration-tests-openshift: skip
+  wait-for-images: run
+  should-dispatch: run
+
+# Rules (evaluated top to bottom)
+rules:
+  # Label overrides - highest priority
+  - name: ci-run-all-tests-label
+    description: Force run all tests when label present
+    when:
+      label: ci-run-all-tests
+    action:
+      run: all
+
+  - name: area-sensor-label
+    description: Run sensor-related tests when area/sensor label present
+    when:
+      label: area/sensor
+    action:
+      run:
+        - sensor-integration-tests
+        - sensor-integration-tests-openshift
+        - go  # Sensor tests need Go unit tests too
+
+  - name: area-central-label
+    description: Run central-related tests when area/central label present
+    when:
+      label: area/central
+    action:
+      run:
+        - go-postgres
+        - go
+
+  - name: area-ui-label
+    description: Run UI tests when area/ui label present
+    when:
+      label: area/ui
+    action:
+      run:
+        - ui
+        - ui-component
+
+  # High-impact changes - run everything
+  - name: go-mod-changes
+    description: go.mod/go.sum changes affect all Go code
+    when:
+      any_file_matches:
+        - '^go\.mod$'
+        - '^go\.sum$'
+    action:
+      run: all
+
+  - name: proto-changes
+    description: Proto changes affect generated code across codebase
+    when:
+      any_file_matches:
+        - '^proto/'
+    action:
+      run: all
+
+  - name: generated-code-changes
+    description: Generated code changes need full validation
+    when:
+      any_file_matches:
+        - '^generated/'
+    action:
+      run: all
+
+  # Docs-only - aggressive skip
+  - name: docs-only-skip
+    description: Skip most tests for docs-only changes
+    when:
+      every_file_matches:
+        - '\.md$'
+        - '^docs/'
+        - '^CHANGELOG'
+    action:
+      skip: all
+      except:
+        - style-check  # Always check style
+        - wait-for-images  # Keep for now (can optimize later)
+        - should-dispatch
+
+  # UI-only changes
+  - name: ui-only-skip-backend
+    description: Skip backend tests for UI-only changes
+    when:
+      every_file_matches:
+        - '^ui/'
+    action:
+      skip:
+        - go-postgres
+        - sensor-integration-tests
+        - sensor-integration-tests-openshift
+        - gke-qa-e2e-tests
+        - gke-upgrade-tests
+        - ocp-qa-e2e-tests
+      run:
+        - ui
+        - ui-component
+        - style-check
+
+  # Subsystem-specific rules
+  - name: sensor-subsystem
+    description: Sensor code changes need sensor tests
+    when:
+      any_file_matches:
+        - '^sensor/'
+        - '^pkg/sensor/'
+    action:
+      run:
+        - sensor-integration-tests
+        - go
+      skip:
+        - go-postgres  # Sensor doesn't use Postgres
+
+  - name: central-subsystem
+    description: Central code changes need central tests
+    when:
+      any_file_matches:
+        - '^central/'
+        - '^pkg/central/'
+    action:
+      run:
+        - go-postgres
+        - go
+      skip:
+        - sensor-integration-tests  # Central changes don't need sensor tests
+
+  - name: scanner-subsystem
+    description: Scanner code changes
+    when:
+      any_file_matches:
+        - '^scanner/'
+        - '^pkg/scanner/'
+    action:
+      run:
+        - db-integration-tests
+        - go
+
+  - name: operator-subsystem
+    description: Operator code changes
+    when:
+      any_file_matches:
+        - '^operator/'
+    action:
+      run:
+        - check-crd-compatibility
+        - go
+
+  # CI infrastructure changes
+  - name: ci-tooling-changes
+    description: CI tooling changes need validation but can skip E2E
+    when:
+      any_file_matches:
+        - '^\.github/workflows/'
+        - '^\.openshift-ci/'
+        - '^ci/select/'
+        - '^scripts/ci/'
+    action:
+      run:
+        - style-check
+        - go
+        - shell-unit-tests
+      skip:
+        - gke-qa-e2e-tests
+        - gke-upgrade-tests
+        - ocp-qa-e2e-tests
+
+  # Baseline rules - apply to many files
+  - name: go-sources
+    description: Any .go file change needs Go tests
+    when:
+      any_file_matches:
+        - '\.go$'
+    action:
+      run:
+        - go
+
+  - name: shell-scripts
+    description: Shell script changes need shell tests
+    when:
+      any_file_matches:
+        - '\.sh$'
+    action:
+      run:
+        - shell-unit-tests
+
+  - name: ui-sources
+    description: UI source changes need UI tests
+    when:
+      any_file_matches:
+        - '^ui/.*\.(tsx?|jsx?|css|scss)$'
+    action:
+      run:
+        - ui
+        - ui-component
+
+  # Always run style on any change
+  - name: style-always
+    description: Style checks run on every PR
+    when:
+      any_file_changed: true
+    action:
+      run:
+        - style-check
