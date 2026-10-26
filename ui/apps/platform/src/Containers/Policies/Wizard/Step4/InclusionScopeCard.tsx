@@ -162,10 +162,10 @@ function InclusionScopeCard({
                         )}
                     </Flex>
                 </FormGroup>
-                <FormGroup label="Deployment label">
+                <FormGroup label="Workload label">
                     <Flex direction={{ default: 'row' }} flexWrap={{ default: 'nowrap' }}>
                         <TextInput
-                            aria-label="Deployment label key"
+                            aria-label="Workload label key"
                             name={`${scopePath}.label.key`}
                             onChange={handleChange}
                             placeholder="Label key"
@@ -173,7 +173,7 @@ function InclusionScopeCard({
                             value={scope.label?.key ?? ''}
                         />
                         <TextInput
-                            aria-label="Deployment label value"
+                            aria-label="Workload label value"
                             name={`${scopePath}.label.value`}
                             onChange={handleChange}
                             placeholder="Label value"

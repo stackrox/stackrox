@@ -26,14 +26,14 @@ function PreviewViolations({ alertsFromDryRun }: PreviewViolationsProps): ReactE
                     alertIndex === 0 ? 'pf-v6-u-mb-sm' : 'pf-v6-u-mb-sm pf-v6-u-mt-md';
 
                 return (
-                    // eslint-disable-next-line react/no-array-index-key
+                    // eslint-disable-next-line @eslint-react/no-array-index-key
                     <div key={alertIndex}>
                         <Title headingLevel="h3" className={className}>
                             {deployment}
                         </Title>
                         <List>
                             {violations.map((violation, violationIndex) => (
-                                // eslint-disable-next-line react/no-array-index-key
+                                // eslint-disable-next-line @eslint-react/no-array-index-key
                                 <ListItem key={violationIndex}>{violation}</ListItem>
                             ))}
                         </List>
