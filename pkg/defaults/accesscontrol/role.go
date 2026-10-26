@@ -37,15 +37,11 @@ const (
 
 	// ConfigController is a role that grants the config-controller exactly the access it needs
 	ConfigController = "Configuration Controller"
-
-	// ConsoleProxyRole names the internal role in Sensor-proxied OpenShift console tokens.
-	// Its permissions come from the configurable console proxy permission set, not the role name.
-	ConsoleProxy = "OpenShift Secured Cluster Console Proxy"
 )
 
 var (
 	// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-	DefaultRoleNames = set.NewStringSet(Admin, Analyst, NetworkGraphViewer, None, ContinuousIntegration, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter, ConfigController, ConsoleProxy)
+	DefaultRoleNames = set.NewStringSet(Admin, Analyst, NetworkGraphViewer, None, ContinuousIntegration, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter, ConfigController)
 )
 
 // IsDefaultRole will return true if the given role name is a default role.
