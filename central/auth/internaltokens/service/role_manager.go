@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -18,25 +17,36 @@ const (
 
 type roleManager struct{}
 
-func (rm *roleManager) createSensorConsoleRole(
-	ctx context.Context, roleStore roleDS.DataStore, scopes []*v1.ClusterScope,
+func (rm *roleManager) createSensorRole(
+	ctx context.Context, roleStore roleDS.DataStore, permissionSetIDs []string, name string, scopes tokens.ClusterScopes,
 ) (*tokens.InternalRole, error) {
+	if len(permissionSetIDs) == 0 {
+		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
+	}
 	if roleStore == nil {
 		return nil, errox.NotAuthorized.New("Sensor proxy permission set store unavailable")
 	}
-	permissionSet, found, err := roleStore.GetPermissionSet(ctx, centralproxy.ConsoleProxyPermissionSetID)
-	if err != nil {
-		return nil, err
-	}
-	if !found || permissionSet == nil {
-		return nil, errox.NotFound.New("Sensor proxy permission set not found")
-	}
 	role := &tokens.InternalRole{
-		RoleName:    centralproxy.ConsoleProxyRole,
-		Clusters:    clusterScopesFromRequest(scopes),
+		RoleName:    name,
+		Clusters:    scopes,
 		Permissions: make(map[storage.Access][]string),
 	}
-	for resource, access := range permissionSet.GetResourceToAccess() {
+	permissions := make(map[string]storage.Access)
+	for _, permissionSetID := range permissionSetIDs {
+		permissionSet, found, err := roleStore.GetPermissionSet(ctx, permissionSetID)
+		if err != nil {
+			return nil, err
+		}
+		if !found || permissionSet == nil {
+			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetID)
+		}
+		for resource, access := range permissionSet.GetResourceToAccess() {
+			if current, found := permissions[resource]; !found || access > current {
+				permissions[resource] = access
+			}
+		}
+	}
+	for resource, access := range permissions {
 		role.Permissions[access] = append(role.Permissions[access], resource)
 	}
 	for _, resources := range role.Permissions {
