@@ -11,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -101,7 +100,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	if len(req.GetPermissionSetIds()) > 0 {
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
 		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req.GetPermissionSetIds(),
-			centralproxy.ConsoleProxyRole, clusterScopesFromRequest(req.GetClusterScopes()))
+			clusterScopesFromRequest(req.GetClusterScopes()))
 	} else {
 		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
 	}
