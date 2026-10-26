@@ -265,11 +265,8 @@ reach out to the **ACS Install team**.
 
 ```
 # Deploy scripts should be used from the git root of this repo
-# Deploy StackRox locally on Kubernetes
-$ ./deploy/k8s/deploy-local.sh
-
-# Deploy StackRox locally on OpenShift
-$ ./deploy/openshift/deploy-local.sh
+# Deploy StackRox locally
+$ USE_ROXIE_DEPLOY=false ./deploy/deploy-local.sh
 
 # Deploy StackRox on a remote OpenShift cluster with an exposed route
 $ LOAD_BALANCER=route ./deploy/openshift/deploy.sh
