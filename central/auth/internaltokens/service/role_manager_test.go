@@ -262,7 +262,10 @@ func TestCreateRoleFromMetricsPermissionSet(t *testing.T) {
 		}}, true, nil)
 
 	role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
-		&v1.GenerateTokenForPermissionsAndScopeRequest{PermissionSetIds: []string{centralproxy.MetricsPermissionSetID}})
+		&v1.GenerateTokenForPermissionsAndScopeRequest{
+			PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+			ClusterScopes:    []*v1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+		})
 	require.NoError(t, err)
 	assert.Equal(t, &tokens.InternalRole{
 		RoleName: internalRoleName,
@@ -286,7 +289,10 @@ func TestCreateRoleFromMetricsPermissionSetRejectsStoredWriteOrUnknownAccess(t *
 					"Administration": access,
 				}}, true, nil)
 			role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
-				&v1.GenerateTokenForPermissionsAndScopeRequest{PermissionSetIds: []string{centralproxy.MetricsPermissionSetID}})
+				&v1.GenerateTokenForPermissionsAndScopeRequest{
+					PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+					ClusterScopes:    []*v1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+				})
 			assert.Nil(t, role)
 			assert.ErrorIs(t, err, errox.InvalidArgs)
 		})
@@ -299,6 +305,9 @@ func TestCreateRoleFromMetricsPermissionSetFailsClosed(t *testing.T) {
 	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).Return(nil, false, nil)
 	manager := &roleManager{roles}
 	_, err := manager.createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
-		&v1.GenerateTokenForPermissionsAndScopeRequest{PermissionSetIds: []string{centralproxy.MetricsPermissionSetID}})
+		&v1.GenerateTokenForPermissionsAndScopeRequest{
+			PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+			ClusterScopes:    []*v1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+		})
 	require.ErrorIs(t, err, errox.NotFound)
 }
