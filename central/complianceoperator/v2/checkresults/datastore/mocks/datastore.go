@@ -222,6 +222,21 @@ func (mr *MockDataStoreMockRecorder) GetComplianceCheckResult(ctx, complianceRes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceCheckResult", reflect.TypeOf((*MockDataStore)(nil).GetComplianceCheckResult), ctx, complianceResultID)
 }
 
+// MarkStaleByScanRef mocks base method.
+func (m *MockDataStore) MarkStaleByScanRef(ctx context.Context, scanRefID string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkStaleByScanRef", ctx, scanRefID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarkStaleByScanRef indicates an expected call of MarkStaleByScanRef.
+func (mr *MockDataStoreMockRecorder) MarkStaleByScanRef(ctx, scanRefID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkStaleByScanRef", reflect.TypeOf((*MockDataStore)(nil).MarkStaleByScanRef), ctx, scanRefID)
+}
+
 // SearchComplianceCheckResults mocks base method.
 func (m *MockDataStore) SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
 	m.ctrl.T.Helper()

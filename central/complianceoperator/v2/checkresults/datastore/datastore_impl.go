@@ -484,6 +484,50 @@ func (d *datastoreImpl) UpdateFreshnessByScanConfig(ctx context.Context, scanCon
 }
 
 // freshnessFor returns the freshness a result should have given the staleBefore cutoff.
+func (d *datastoreImpl) MarkStaleByScanRef(ctx context.Context, scanRefID string) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanRefID == "" {
+		return 0, nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		ProtoQuery()
+
+	// Collect-then-upsert, for the same reason as UpdateFreshnessByScanConfig:
+	// upserting inside the GetByQueryFn callback deadlocks at scale (the write
+	// needs a second pool connection while the read stream still holds the first).
+	var changed []*storage.ComplianceOperatorCheckResultV2
+	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
+		if result.GetDataFreshness() == storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE {
+			return nil
+		}
+		result.DataFreshness = storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+		changed = append(changed, result)
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrap(err, "marking compliance check results stale")
+	}
+
+	var updated int64
+	for start := 0; start < len(changed); start += freshnessUpdateBatchSize {
+		end := start + freshnessUpdateBatchSize
+		if end > len(changed) {
+			end = len(changed)
+		}
+		if err := d.store.UpsertMany(ctx, changed[start:end]); err != nil {
+			return updated, errors.Wrap(err, "marking compliance check results stale")
+		}
+		updated += int64(end - start)
+	}
+	return updated, nil
+}
+
 func freshnessFor(result *storage.ComplianceOperatorCheckResultV2, staleBefore time.Time) storage.ComplianceDataFreshness {
 	started := result.GetLastStartedTime()
 	if started != nil && started.AsTime().Before(staleBefore) {

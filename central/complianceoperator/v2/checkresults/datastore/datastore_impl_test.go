@@ -581,6 +581,43 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpdateFreshnessByScanConfi
 	s.Require().Zero(updated)
 }
 
+func (s *complianceCheckResultDataStoreTestSuite) TestMarkStaleByScanRef() {
+	// Two results share a scan (same cluster + scan name => same scan ref); a third
+	// result belongs to a different scan and must be left untouched.
+	rec1 := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
+	rec2 := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
+	otherRec := getTestRecForScan("sc-timeout", testconsts.Cluster2, "scan-healthy")
+	s.Require().Equal(rec1.GetScanRefId(), rec2.GetScanRefId())
+	s.Require().NotEqual(rec1.GetScanRefId(), otherRec.GetScanRefId())
+
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, otherRec))
+
+	// Write context is required.
+	_, err := s.dataStore.MarkStaleByScanRef(s.hasReadCtx, rec1.GetScanRefId())
+	s.Require().Error(err)
+
+	// An empty scan ref is a no-op.
+	updated, err := s.dataStore.MarkStaleByScanRef(s.hasWriteCtx, "")
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+
+	// Marking the timed-out scan flips both its rows (UNKNOWN -> STALE).
+	updated, err = s.dataStore.MarkStaleByScanRef(s.hasWriteCtx, rec1.GetScanRefId())
+	s.Require().NoError(err)
+	s.Require().Equal(int64(2), updated)
+	s.assertFreshness(rec1.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+	s.assertFreshness(rec2.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+	// The other scan is untouched.
+	s.assertFreshness(otherRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN)
+
+	// Marking again is idempotent: already-STALE rows are not rewritten.
+	updated, err = s.dataStore.MarkStaleByScanRef(s.hasWriteCtx, rec1.GetScanRefId())
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) assertFreshness(id string, expected storage.ComplianceDataFreshness) {
 	rec, found, err := s.storage.Get(s.hasReadCtx, id)
 	s.Require().NoError(err)
