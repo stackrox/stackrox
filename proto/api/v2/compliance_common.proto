@@ -71,6 +71,7 @@ message ComplianceCheckResultStatusCount {
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
   repeated ComplianceControl controls = 5;
+  // Rolled up across all clusters reporting this check.
   ComplianceAggregateDataFreshness data_freshness = 6;
 }
 
@@ -114,11 +115,11 @@ enum ComplianceCheckDataFreshness {
 // results.
 enum ComplianceAggregateDataFreshness {
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED = 0;
-  // Cannot evaluate: no schedule, unresolvable config, or no data.
+  // No contributing check could be resolved to current or stale.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN = 1;
-  // All contributing checks are current.
+  // At least one contributing check is current and none are stale.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT = 2;
-  // All contributing checks are stale.
+  // At least one contributing check is stale and none are current.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE = 3;
   // Contributing checks are a mix of stale and current data.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT = 4;

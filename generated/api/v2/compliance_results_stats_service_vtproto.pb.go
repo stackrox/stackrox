@@ -56,8 +56,8 @@ func (m *ComplianceProfileScanStats) CloneVT() *ComplianceProfileScanStats {
 	r.ProfileName = m.ProfileName
 	r.Title = m.Title
 	r.Version = m.Version
-	r.NoncurrentClusterCount = m.NoncurrentClusterCount
-	r.NoncurrentCheckResultCount = m.NoncurrentCheckResultCount
+	r.StaleClusterCount = m.StaleClusterCount
+	r.StaleCheckResultCount = m.StaleCheckResultCount
 	if rhs := m.CheckStats; rhs != nil {
 		tmpContainer := make([]*ComplianceCheckStatusCount, len(rhs))
 		for k, v := range rhs {
@@ -284,10 +284,10 @@ func (this *ComplianceProfileScanStats) EqualVT(that *ComplianceProfileScanStats
 			}
 		}
 	}
-	if this.NoncurrentClusterCount != that.NoncurrentClusterCount {
+	if this.StaleClusterCount != that.StaleClusterCount {
 		return false
 	}
-	if this.NoncurrentCheckResultCount != that.NoncurrentCheckResultCount {
+	if this.StaleCheckResultCount != that.StaleCheckResultCount {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -557,13 +557,13 @@ func (m *ComplianceProfileScanStats) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.NoncurrentCheckResultCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.NoncurrentCheckResultCount))
+	if m.StaleCheckResultCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.StaleCheckResultCount))
 		i--
 		dAtA[i] = 0x38
 	}
-	if m.NoncurrentClusterCount != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.NoncurrentClusterCount))
+	if m.StaleClusterCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.StaleClusterCount))
 		i--
 		dAtA[i] = 0x30
 	}
@@ -940,11 +940,11 @@ func (m *ComplianceProfileScanStats) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
-	if m.NoncurrentClusterCount != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.NoncurrentClusterCount))
+	if m.StaleClusterCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.StaleClusterCount))
 	}
-	if m.NoncurrentCheckResultCount != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.NoncurrentCheckResultCount))
+	if m.StaleCheckResultCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.StaleCheckResultCount))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1431,9 +1431,9 @@ func (m *ComplianceProfileScanStats) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 6:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NoncurrentClusterCount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleClusterCount", wireType)
 			}
-			m.NoncurrentClusterCount = 0
+			m.StaleClusterCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1443,16 +1443,16 @@ func (m *ComplianceProfileScanStats) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NoncurrentClusterCount |= int32(b&0x7F) << shift
+				m.StaleClusterCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 7:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NoncurrentCheckResultCount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleCheckResultCount", wireType)
 			}
-			m.NoncurrentCheckResultCount = 0
+			m.StaleCheckResultCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1462,7 +1462,7 @@ func (m *ComplianceProfileScanStats) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NoncurrentCheckResultCount |= int32(b&0x7F) << shift
+				m.StaleCheckResultCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -2507,9 +2507,9 @@ func (m *ComplianceProfileScanStats) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 6:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NoncurrentClusterCount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleClusterCount", wireType)
 			}
-			m.NoncurrentClusterCount = 0
+			m.StaleClusterCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2519,16 +2519,16 @@ func (m *ComplianceProfileScanStats) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NoncurrentClusterCount |= int32(b&0x7F) << shift
+				m.StaleClusterCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 7:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NoncurrentCheckResultCount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleCheckResultCount", wireType)
 			}
-			m.NoncurrentCheckResultCount = 0
+			m.StaleCheckResultCount = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2538,7 +2538,7 @@ func (m *ComplianceProfileScanStats) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NoncurrentCheckResultCount |= int32(b&0x7F) << shift
+				m.StaleCheckResultCount |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
