@@ -290,11 +290,13 @@ func (p *tokenProvider) getToken(ctx context.Context, cacheKey, permissionSetID 
 }
 
 func (p *tokenProvider) requestPermissionSetToken(ctx context.Context, client centralv1.TokenServiceClient, permissionSetID string) (string, error) {
-	if p.clusterIDGetter.GetNoWait() == "" {
+	clusterID := p.clusterIDGetter.GetNoWait()
+	if clusterID == "" {
 		return "", errors.Wrap(errServiceUnavailable, "cluster ID not available")
 	}
 	response, err := client.GenerateTokenForPermissionsAndScope(ctx, &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSetId:   permissionSetID,
+		PermissionSetIds:  []string{permissionSetID},
+		ClusterScopes:     []*centralv1.ClusterScope{{ClusterId: clusterID, FullClusterAccess: true}},
 		Lifetime:          durationpb.New(metricsTokenTTL),
 		HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 	})

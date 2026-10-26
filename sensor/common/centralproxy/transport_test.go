@@ -147,10 +147,11 @@ func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
 	_, err = provider.getTokenForPermissionSet(context.Background(), centralproxy.MetricsPermissionSetID)
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, calls.Load())
-	assert.Equal(t, centralproxy.MetricsPermissionSetID, client.lastRequest.GetPermissionSetId())
+	assert.Equal(t, []string{centralproxy.MetricsPermissionSetID}, client.lastRequest.GetPermissionSetIds())
 	assert.Equal(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}}, client.lastRequest.GetHttpRequestScopes())
 	assert.Empty(t, client.lastRequest.GetPermissions())
-	assert.Empty(t, client.lastRequest.GetClusterScopes())
+	assert.Equal(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+		client.lastRequest.GetClusterScopes())
 
 	transport := &scopedTokenTransport{
 		base: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -1000,7 +1001,7 @@ func TestTokenProvider_Coalescing(t *testing.T) {
 		token, err := provider.getTokenForPermissionSet(ctx, key)
 		require.NoError(t, err)
 		assert.Equal(t, "metrics-token", token)
-		assert.Equal(t, key, client.lastRequest.GetPermissionSetId())
+		assert.Equal(t, []string{key}, client.lastRequest.GetPermissionSetIds())
 	})
 
 	t.Run("concurrent requests for same scope make only one RPC call", func(t *testing.T) {
