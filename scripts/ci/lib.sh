@@ -1201,17 +1201,22 @@ push_helm_charts() {
 
     local tag="$1"
 
-    echo "Publish Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
-
     local central_services_chart_dir
     local secured_cluster_services_chart_dir
-    central_services_chart_dir="$(mktemp -d)"
-    secured_cluster_services_chart_dir="$(mktemp -d)"
+    local operator_chart_dir
     operator_chart_dir="$(mktemp -d)"
-    roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
-    roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
-    roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
-    roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
+    if [[ $(printf '%s\n' "5.1.0" "${RELEASE_PATCH}" | sort -V | head -n1) != 5.1.0 ]]; then
+        # Earlier than 5.1.0
+        echo "Publish Helm charts (including legacy) to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
+        central_services_chart_dir="$(mktemp -d)"
+        secured_cluster_services_chart_dir="$(mktemp -d)"
+        roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
+        roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
+        roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
+        roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
+    else
+        echo "Publish Helm charts (OMITTING legacy) to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
+    fi
     ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/opensource"
     # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.

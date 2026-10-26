@@ -79,6 +79,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
+      # TODO: clean up unused cli-build artifacts here and in following step,
+      # once release 5.0 (last one to ship legacy helm charts) is EOL
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
