@@ -38,6 +38,11 @@ const (
 	// - view, request, and approve/deny vulnerability deferrals or false positives.
 	// - view and create vulnerability report configurations.
 	VulnerabilityManagementAdmin = "Vulnerability Management Admin"
+
+	// ConsoleProxy permission set provides necessary privileges to OpenShift Console users.
+	// This includes priveleges to:
+	// - view deployments and images.
+	ConsoleProxy = "OpenShift Secured Cluster Console Proxy"
 )
 
 var (
