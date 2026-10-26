@@ -3088,7 +3088,7 @@ func (m *ComplianceCheckResultStatusCount) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DataFreshness |= ComplianceDataFreshness(b&0x7F) << shift
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -3758,7 +3758,7 @@ func (m *ComplianceClusterOverallStats) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DataFreshness |= ComplianceDataFreshness(b&0x7F) << shift
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -5568,7 +5568,7 @@ func (m *ComplianceCheckResultStatusCount) UnmarshalVTUnsafe(dAtA []byte) error 
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DataFreshness |= ComplianceDataFreshness(b&0x7F) << shift
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -6274,7 +6274,7 @@ func (m *ComplianceClusterOverallStats) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DataFreshness |= ComplianceDataFreshness(b&0x7F) << shift
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

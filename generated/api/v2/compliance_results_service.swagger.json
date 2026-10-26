@@ -623,10 +623,21 @@
           "format": "date-time"
         },
         "dataFreshness": {
-          "$ref": "#/definitions/v2ComplianceDataFreshness"
+          "$ref": "#/definitions/v2ComplianceCheckDataFreshness"
         }
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"
+    },
+    "v2ComplianceAggregateDataFreshness": {
+      "type": "string",
+      "enum": [
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT"
+      ],
+      "default": "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+      "description": "ComplianceAggregateDataFreshness indicates the freshness of compliance data\naggregated over many checks (a cluster, a scan, or a cross-cluster rollup of\na single check). Unlike a single check, an aggregate can mix fresh and stale\nresults.\n\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN: Cannot evaluate: no schedule, unresolvable config, or no data.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT: All contributing checks reflect the most recent expected scan cycle.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE: All contributing checks predate the most recent expected scan cycle.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT: Contributing checks are a mix of stale and current data."
     },
     "v2ComplianceCheckData": {
       "type": "object",
@@ -641,6 +652,16 @@
           "$ref": "#/definitions/v2ComplianceCheckResult"
         }
       }
+    },
+    "v2ComplianceCheckDataFreshness": {
+      "type": "string",
+      "enum": [
+        "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
+        "COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT",
+        "COMPLIANCE_CHECK_DATA_FRESHNESS_STALE"
+      ],
+      "default": "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
+      "description": "ComplianceCheckDataFreshness indicates whether a single compliance check\nresult is current relative to the scan configuration's schedule.\n\n - COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN: Cannot evaluate: no schedule, unresolvable config, or no data.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT: Data reflects the most recent expected scan cycle.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_STALE: Data predates the most recent expected scan cycle."
     },
     "v2ComplianceCheckResult": {
       "type": "object",
@@ -701,7 +722,7 @@
           }
         },
         "dataFreshness": {
-          "$ref": "#/definitions/v2ComplianceDataFreshness",
+          "$ref": "#/definitions/v2ComplianceCheckDataFreshness",
           "description": "Per-check freshness for this cluster: STALE if the check's assessment\ntime predates the config's most recent expected scan."
         }
       },
@@ -734,7 +755,7 @@
           }
         },
         "dataFreshness": {
-          "$ref": "#/definitions/v2ComplianceDataFreshness",
+          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness",
           "description": "Rolled-up freshness across all clusters reporting this check: STALE if\nany contributing cluster has stale data (STALE > CURRENT > UNKNOWN)."
         }
       },
@@ -837,16 +858,6 @@
         }
       }
     },
-    "v2ComplianceDataFreshness": {
-      "type": "string",
-      "enum": [
-        "COMPLIANCE_DATA_FRESHNESS_UNKNOWN",
-        "COMPLIANCE_DATA_FRESHNESS_CURRENT",
-        "COMPLIANCE_DATA_FRESHNESS_STALE"
-      ],
-      "default": "COMPLIANCE_DATA_FRESHNESS_UNKNOWN",
-      "description": "ComplianceDataFreshness indicates whether compliance data is current relative\nto the scan configuration's schedule.\n\n - COMPLIANCE_DATA_FRESHNESS_UNKNOWN: Cannot evaluate: no schedule, unresolvable config, or no data.\n - COMPLIANCE_DATA_FRESHNESS_CURRENT: Data reflects the most recent expected scan cycle.\n - COMPLIANCE_DATA_FRESHNESS_STALE: Data predates the most recent expected scan cycle."
-    },
     "v2ComplianceScanCluster": {
       "type": "object",
       "properties": {
@@ -913,7 +924,7 @@
           "format": "date-time"
         },
         "dataFreshness": {
-          "$ref": "#/definitions/v2ComplianceDataFreshness",
+          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness",
           "description": "Rolled-up freshness across all check results for this cluster and\nprofile (not limited to the current page): STALE if any result is stale\n(STALE > CURRENT > UNKNOWN)."
         }
       }
