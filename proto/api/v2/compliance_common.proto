@@ -101,7 +101,6 @@ message ListComplianceProfileResults {
 // ComplianceCheckDataFreshness indicates whether a single compliance check
 // result is current relative to the scan configuration's schedule.
 enum ComplianceCheckDataFreshness {
-  // No value set.
   COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED = 0;
   // Cannot evaluate: no schedule, unresolvable config, or no data.
   COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN = 1;
@@ -112,17 +111,16 @@ enum ComplianceCheckDataFreshness {
 }
 
 // ComplianceAggregateDataFreshness indicates the freshness of compliance data
-// aggregated over many checks (a cluster, a scan, or a cross-cluster rollup of
+// aggregated over multiple checks (a cluster, a scan, or a cross-cluster rollup of
 // a single check). Unlike a single check, an aggregate can mix fresh and stale
 // results.
 enum ComplianceAggregateDataFreshness {
-  // No value set.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED = 0;
   // Cannot evaluate: no schedule, unresolvable config, or no data.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN = 1;
-  // All contributing checks reflect the most recent expected scan cycle.
+  // All contributing checks are current.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT = 2;
-  // All contributing checks predate the most recent expected scan cycle.
+  // All contributing checks are stale.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE = 3;
   // Contributing checks are a mix of stale and current data.
   COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT = 4;
