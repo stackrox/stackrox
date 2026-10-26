@@ -5,7 +5,7 @@
 central:
   resources:
     requests:
-      cpu: 500m
+      cpu: 250m
       memory: 1Gi
     limits:
       cpu: 1
@@ -14,7 +14,7 @@ central:
   db:
     resources:
       requests:
-        cpu: 500m
+        cpu: 250m
         memory: 1Gi
       limits:
         cpu: 1
