@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
@@ -21,7 +22,7 @@ func HTTPRequestScopesFromProto(requested []*v1.HTTPRequestScope) (HTTPRequestSc
 	scopes := make(HTTPRequestScopes, len(requested))
 	for _, scope := range requested {
 		if scope == nil {
-			return nil, fmt.Errorf("nil HTTP request scope")
+			return nil, errors.New("nil HTTP request scope")
 		}
 		if _, found := scopes[scope.GetPath()]; found {
 			return nil, fmt.Errorf("duplicate HTTP request path %q", scope.GetPath())
@@ -61,7 +62,7 @@ func ValidateHTTPRequestScopes(scopes HTTPRequestScopes) error {
 		for _, method := range methods {
 			methodCount++
 			if methodCount > 32 {
-				return fmt.Errorf("too many HTTP request methods")
+				return errors.New("too many HTTP request methods")
 			}
 			if !ValidHTTPRequestScope(HTTPRequestScope{Method: method, Path: path}) {
 				return fmt.Errorf("invalid HTTP request method %q for path %q", method, path)
