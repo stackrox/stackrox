@@ -257,10 +257,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	}{
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetId: centralproxy.ConsoleProxyPermissionSetID,
-				Permissions:     map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
-				ClusterScopes:   []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:        testExpirationDuration,
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+				Permissions:      map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes:    []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:         testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {
@@ -289,6 +289,32 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-token"},
+		},
+		"success - multiple permission set IDs": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID, centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:    []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:         testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(_ *testing.T, mocks *mockContainer) {
+				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
+					Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+						"Deployment": storage.Access_READ_ACCESS,
+					}}, true, nil).Times(2)
+				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName: centralproxy.ConsoleProxyRole,
+						Permissions: map[storage.Access][]string{
+							storage.Access_READ_ACCESS: {"Deployment"},
+						},
+						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, centralproxy.ConsoleProxyRole,
+						testTokenExpiry.Format(time.RFC3339Nano)),
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "combined-token"}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "combined-token"},
 		},
 		"success - standard request": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
