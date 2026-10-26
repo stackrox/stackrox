@@ -1,0 +1,29 @@
+name: CI selection verification
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+    - name: Test classification and actual CI wiring
+      run: go test -race -cover ./ci/selection
+    - name: Analyze selection code
+      run: go vet ./ci/selection
+    - name: Check Go formatting
+      run: test -z "$(gofmt -l ci/selection/*.go)"
+    - name: Check shell adapters
+      run: shellcheck -e SC1091 ci/selection/prow.sh .openshift-ci/dispatch.sh .openshift-ci/end.sh scripts/ci/jobs/test-binary-build-commands.sh

@@ -17,6 +17,10 @@ name: Detect changed files
 on:
   workflow_call:
     inputs:
+      classify:
+        description: Expose filename facts for product-test selection.
+        type: boolean
+        default: false
       run_all:
         description: >
           Newline-separated list of patterns (same ^/$ anchored
@@ -26,6 +30,9 @@ on:
         required: false
         default: ''
     outputs:
+      facts:
+        description: Versioned filename facts; incomplete data preserves existing execution.
+        value: ${{ jobs.detect.outputs.facts }}
       files:
         description: >
           Newline-separated list of changed filenames, or empty
@@ -41,6 +48,7 @@ jobs:
   detect:
     runs-on: ubuntu-24.04
     outputs:
+      facts: ${{ steps.classify.outputs.facts || '{"version":1,"complete":false,"any":[],"every":[]}' }}
       files: ${{ steps.list.outputs.files }}
       ui_only: ${{ steps.list.outputs.ui_only }}
     steps:
@@ -50,6 +58,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
           RUN_ALL: ${{ inputs.run_all }}
           WORKFLOW_FILE_PATH: ".github/workflows/detect-changes.yml"
         shell: bash
@@ -61,23 +71,50 @@ jobs:
             exit 0
           fi
 
-          if ! output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
-            echo "::warning::GitHub API call failed" >&2
+          if ! before="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}")"; then
+            echo "::warning::PR revisions unavailable"
             exit 0
           fi
-
-          mapfile -t files < <(echo -n "${output}")
-          echo "Changed files (${#files[@]}):" >&2
-          printf '  %s\n' "${files[@]}" >&2
-
-          if [[ ${#files[@]} -ge 3000 ]]; then
-            echo "::warning::PR has 3000+ changed files" >&2
+          if ! jq -e --arg base "$EXPECTED_BASE" --arg head "$EXPECTED_HEAD" '
+            .base.sha == $base and .head.sha == $head and
+            (.changed_files | type == "number" and . >= 0 and . < 3000)
+          ' <<< "$before" > /dev/null; then
+            echo "::warning::PR revisions or file count cannot be verified"
             exit 0
           fi
+          if ! pages="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --slurp)"; then
+            echo "::warning::Changed-file API failed"
+            exit 0
+          fi
+          if ! after="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}")"; then
+            echo "::warning::PR revisions unavailable after collection"
+            exit 0
+          fi
+          if ! filenames="$(jq -ce --argjson before "$before" --argjson after "$after" '
+            if type != "array" or any(.[]; type != "array") then error("invalid pages") else . end |
+            if ($before.base.sha != $after.base.sha or $before.head.sha != $after.head.sha or
+                $before.changed_files != $after.changed_files or
+                ([.[][]] | length) != $before.changed_files) then error("incomplete or stale diff") else . end |
+            [.[][] | .filename, (.previous_filename // empty)] |
+            if any(.[]; type != "string" or . == "" or test("[\\r\\n]")) then error("invalid path") else unique end
+          ' <<< "$pages")"; then
+            echo "::warning::Changed-file data is incomplete or invalid"
+            exit 0
+          fi
+          if [[ ${#filenames} -gt 200000 ]]; then
+            echo "::warning::Changed-file output exceeds the safe size limit"
+            exit 0
+          fi
+          jq -cn --arg base "$EXPECTED_BASE" --arg head "$EXPECTED_HEAD" --argjson files "$filenames" \
+            '{base:$base, head:$head, files:$files}' > "$RUNNER_TEMP/ci-selection-files.json"
+          echo 'collected=true' >> "$GITHUB_OUTPUT"
+          [[ "$(jq length <<< "$filenames")" -gt 0 ]] || exit 0
+          mapfile -t files < <(jq -r '.[]' <<< "$filenames")
+          printf 'Changed path: %s\n' "${files[@]}"
 
           anchored=$(printf '^%s$\n' "${files[@]}")
 
-          if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
+          if grep -qF "^${WORKFLOW_FILE_PATH}$" <<< "${anchored}"; then
             echo "detect-changes.yml modified, running all jobs" >&2
             exit 0
           fi
@@ -85,7 +122,7 @@ jobs:
           if [[ -n "${RUN_ALL}" ]]; then
             while IFS= read -r pattern; do
               [[ -z "$pattern" ]] && continue
-              if echo "${anchored}" | grep -qF "$pattern"; then
+              if grep -qF "$pattern" <<< "${anchored}"; then
                 echo "run_all: matched '${pattern}', running all jobs" >&2
                 exit 0
               fi
@@ -99,8 +136,35 @@ jobs:
               echo "EOF"
             } >> "${GITHUB_OUTPUT}"
 
-            if ! echo "${anchored}" | grep -qv '^\^ui/'; then
+            if ! grep -qv '^\^ui/' <<< "${anchored}"; then
               echo "All changed files are under ui/" >&2
               echo "ui_only=true" >> "${GITHUB_OUTPUT}"
             fi
           fi
+
+      - name: Checkout filename selection
+        id: selection-checkout
+        if: inputs.classify && steps.list.outputs.collected == 'true'
+        continue-on-error: true
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up selection Go toolchain
+        id: selection-go
+        if: inputs.classify && steps.selection-checkout.outcome == 'success'
+        continue-on-error: true
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Classify filenames
+        id: classify
+        if: inputs.classify && steps.selection-go.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          facts="$(go run ./ci/selection --ignore ci/selection/demo-ignore.json < "$RUNNER_TEMP/ci-selection-files.json")"
+          printf 'facts=%s\n' "$facts" >> "$GITHUB_OUTPUT"
+          printf '### Filename selection facts\n\n    %s\n' "$facts" >> "$GITHUB_STEP_SUMMARY"

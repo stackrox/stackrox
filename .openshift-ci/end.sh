@@ -34,7 +34,11 @@ end() {
         cut_kernel_version "${cut_kernel_version:-NULL}" \
         cut_container_runtime_version "${cut_container_runtime_version:-NULL}"
 
-    post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}" "${END_JUNIT2JIRA_SUMMARY_FILE}"
+    if [[ "${CI_SELECTION_SKIPPED:-}" == true && "${OVERALL_JOB_OUTCOME}" == "${OUTCOME_PASSED}" ]]; then
+        info "Product tests intentionally skipped by docs-only selection"
+    else
+        post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}" "${END_JUNIT2JIRA_SUMMARY_FILE}"
+    fi
 
     if [[ "${OVERALL_JOB_OUTCOME}" == "${OUTCOME_FAILED}" ]]; then
         (send_slack_failure_summary) || { echo >&2 "ERROR: Could not slack a test failure message"; }
@@ -47,6 +51,21 @@ determine_an_overall_job_outcome() {
     # undefined value. This handles steps that are canceled by openshift-ci and
     # that do not terminate within the termination grace period. In these cases
     # SHARED_DIR state is not propagated.
+
+    if [[ "${CI_SELECTION_SKIPPED:-}" == true && "${JOB_DISPATCH_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
+        # Missing cluster outcomes mean no cluster setup was entered by dispatch.
+        # A created cluster still requires successful teardown.
+        if [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_FAILED}" || "${DESTROY_CLUSTER_OUTCOME:-}" == "${OUTCOME_FAILED}" ]]; then
+            export OVERALL_JOB_OUTCOME="${OUTCOME_FAILED}"
+        elif [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_CANCELED}" || "${DESTROY_CLUSTER_OUTCOME:-}" == "${OUTCOME_CANCELED}" ||
+            ( "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" && -z "${DESTROY_CLUSTER_OUTCOME:-}" ) ]]; then
+            export OVERALL_JOB_OUTCOME="${OUTCOME_CANCELED}"
+        else
+            export OVERALL_JOB_OUTCOME="${OUTCOME_PASSED}"
+        fi
+        info "Intentional test skip; overall job outcome: ${OVERALL_JOB_OUTCOME}"
+        return
+    fi
 
     combined="${CREATE_CLUSTER_OUTCOME:-${OUTCOME_CANCELED}}-${JOB_DISPATCH_OUTCOME:-${OUTCOME_CANCELED}}-${DESTROY_CLUSTER_OUTCOME:-${OUTCOME_CANCELED}}"
 
@@ -101,6 +120,10 @@ _JUNIT_CLUSTER_DESTROY_DESCRIPTION="Destroy"
 # generate_cluster_junit() - generate junit records for cluster create & destroy
 # pass & fail.
 generate_cluster_junit() {
+    if [[ "${CI_SELECTION_SKIPPED:-}" == true && -z "${CREATE_CLUSTER_OUTCOME:-}" ]]; then
+        return
+    fi
+
     # Change the presentation for cluster types
     local cluster_flavor_variant="${CLUSTER_FLAVOR_VARIANT:-unknown}"
     if [[ ${#cluster_flavor_variant} -le 5 ]]; then

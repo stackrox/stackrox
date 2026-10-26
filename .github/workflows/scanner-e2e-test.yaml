@@ -9,22 +9,36 @@ on:
     - synchronize
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      classify: true
+
   scanner-ft-images:
+    needs: detect-changes
     name: Wait for images
     if: >
       github.event_name != 'pull_request'
       || contains(github.event.pull_request.labels.*.name, 'scanner-functional-tests')
     runs-on: ubuntu-24.04
+    env:
+      CI_DOCS_ONLY: ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').version == 1 && fromJSON(needs.detect-changes.outputs.facts || '{}').complete == true && contains(fromJSON(needs.detect-changes.outputs.facts || '{}').every, 'docs') }}
     steps:
+      - name: Explain docs-only selection
+        if: env.CI_DOCS_ONLY == 'true'
+        run: echo 'Product work intentionally skipped by docs-only selection.' >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repo
+        if: env.CI_DOCS_ONLY != 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: "${{ github.event.pull_request.head.sha }}"
       - name: Get tag
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           echo "tag=$(make --quiet --no-print-directory tag)" >> "$GITHUB_ENV"
       - name: Wait for images
+        if: env.CI_DOCS_ONLY != 'true'
         uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -35,26 +49,34 @@ jobs:
   scanner-ft-run:
     name: Deploy and run
     needs:
+      - detect-changes
       - scanner-ft-images
     runs-on: ubuntu-24.04
     env:
+      CI_DOCS_ONLY: ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').version == 1 && fromJSON(needs.detect-changes.outputs.facts || '{}').complete == true && contains(fromJSON(needs.detect-changes.outputs.facts || '{}').every, 'docs') }}
       SCANNER_E2E_QUAY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       SCANNER_E2E_QUAY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       # TODO Add registry.redhat.io secrets.
       SCANNER_E2E_REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
       SCANNER_E2E_REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
     steps:
+      - name: Explain docs-only selection
+        if: env.CI_DOCS_ONLY == 'true'
+        run: echo 'Product work intentionally skipped by docs-only selection.' >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout
+        if: env.CI_DOCS_ONLY != 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: "${{ github.event.pull_request.head.sha }}"
 
       - uses: ./.github/actions/job-preamble
+        if: env.CI_DOCS_ONLY != 'true'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Create cluster (minikube)
+        if: env.CI_DOCS_ONLY != 'true'
         uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # ratchet:medyagh/setup-minikube@latest
         with:
           driver: docker
@@ -64,6 +86,7 @@ jobs:
           container-runtime: cri-o
 
       - name: Deploy scanner
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           mkdir -m 777 "${{ runner.temp }}"/pgdata
           # TODO(ROX-28174) Rename the targets and charts to "scanner functional
@@ -71,6 +94,7 @@ jobs:
           make -C scanner e2e-deploy db-host-path="/runner/pgdata"
 
       - name: Wait for deployments
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           info() { echo >&2 ">>> INFO (Wait for deployments): $*"; }
           timeout=1m
@@ -92,6 +116,7 @@ jobs:
           done
 
       - name: Run tests
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           kubectl -n stackrox expose deployment scanner-v4
           kubectl -n stackrox get svc
@@ -120,7 +145,7 @@ jobs:
           PGPASSWORD="$PGPASSWORD" make -C scanner e2e-run NODEPS=1
 
       - name: Describe and show logs
-        if: failure() || success()
+        if: ${{ (failure() || success()) && env.CI_DOCS_ONLY != 'true' }}
         run: |
           info() { echo >&2 ">>> INFO (Describe and show logs): $*"; }
           info "Describing all pods:"

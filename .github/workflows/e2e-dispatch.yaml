@@ -25,6 +25,8 @@ defaults:
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
+    with:
+      classify: true
 
   # Determines whether we should dispatch jobs that call real E2E workflows.
   # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
@@ -42,6 +44,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         PYTHONUNBUFFERED: "1"
+        input__file_facts: ${{ needs.detect-changes.outputs.facts || '{}' }}
         input__event_name: ${{ github.event_name }}
         input__is_fork: ${{ github.event.pull_request.head.repo.fork }}
         input__is_draft: ${{ github.event.pull_request.draft }}
@@ -67,6 +70,8 @@ jobs:
 
                 if input.event_name != 'pull_request':
                     return True
+                elif input.docs_only:
+                    return False
                 elif self.name in input.pr_labels:
                     return True
 
@@ -92,6 +97,9 @@ jobs:
             key.removeprefix('input__'): val
             for (key, val) in os.environ.items()
             if key.startswith('input__')})
+
+        facts = json.loads(input.file_facts)
+        input.docs_only = facts.get('version') == 1 and facts.get('complete') is True and 'docs' in facts.get('every', [])
 
         if input.event_name != 'pull_request':
             input.pr_labels = []

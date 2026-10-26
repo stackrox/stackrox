@@ -1,0 +1,7 @@
+{
+  "docs": {
+    "include": [
+      "^(README\\.md|CHANGELOG\\.md)$"
+    ]
+  }
+}

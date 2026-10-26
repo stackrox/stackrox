@@ -8,21 +8,35 @@ on:
       - synchronize
 concurrency: performance-tests-${{ github.ref }}
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      classify: true
+
   wait-for-images:
+    needs: detect-changes
     name: Wait for images
     runs-on: ubuntu-24.04
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
+    env:
+      CI_DOCS_ONLY: ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').version == 1 && fromJSON(needs.detect-changes.outputs.facts || '{}').complete == true && contains(fromJSON(needs.detect-changes.outputs.facts || '{}').every, 'docs') }}
     steps:
+      - name: Explain docs-only selection
+        if: env.CI_DOCS_ONLY == 'true'
+        run: echo 'Product work intentionally skipped by docs-only selection.' >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repo
+        if: env.CI_DOCS_ONLY != 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Get PR image tag
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           MAIN_IMAGE_TAG="$(make --quiet --no-print-directory tag)"
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
       - name: Wait for images
+        if: env.CI_DOCS_ONLY != 'true'
         uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -31,11 +45,12 @@ jobs:
             rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
 
   run-k6-performance-tests:
-    needs: [wait-for-images]
+    needs: [wait-for-images, detect-changes]
     name: Run k6 performance tests
     runs-on: ubuntu-24.04
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     env:
+      CI_DOCS_ONLY: ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').version == 1 && fromJSON(needs.detect-changes.outputs.facts || '{}').complete == true && contains(fromJSON(needs.detect-changes.outputs.facts || '{}').every, 'docs') }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       KUBECONFIG: artifacts/kubeconfig
@@ -45,23 +60,30 @@ jobs:
       SCALE_WORKLOAD_TYPE: default
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
+      - name: Explain docs-only selection
+        if: env.CI_DOCS_ONLY == 'true'
+        run: echo 'Product work intentionally skipped by docs-only selection.' >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repo
+        if: env.CI_DOCS_ONLY != 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout workflow scripts
+        if: env.CI_DOCS_ONLY != 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           repository: "stackrox/workflow"
           path: workflow
 
       - name: Retrieve roxie version from repository
+        if: env.CI_DOCS_ONLY != 'true'
         id: roxie-version
         run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Install roxie
+        if: env.CI_DOCS_ONLY != 'true'
         uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
         with:
           version: "v${{ steps.roxie-version.outputs.version }}"
@@ -69,6 +91,7 @@ jobs:
 
       # Create scale cluster with larger nodes.
       - name: Create testing cluster
+        if: env.CI_DOCS_ONLY != 'true'
         uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
@@ -80,24 +103,30 @@ jobs:
 
       # Fetch infractl artifacts
       - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
+        if: env.CI_DOCS_ONLY != 'true'
       - uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
+        if: env.CI_DOCS_ONLY != 'true'
         with:
           credentials_json: "${{ secrets.GCP_PERFORMANCE_TESTER_CI_SA }}"
       - name: "Set up Cloud SDK"
+        if: env.CI_DOCS_ONLY != 'true'
         uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3
         with:
           install_components: "gke-gcloud-auth-plugin"
       - name: Test cluster readiness
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           STATUS=$(infractl get "${SCALE_CLUSTER_NAME//./-}" --json | jq -r .Status)
           if [ "$STATUS" != "READY" ]; then
             exit 1
           fi
       - name: Fetch infra artifacts
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts > /dev/null
 
       - name: Add Docker login for Quay.io
+        if: env.CI_DOCS_ONLY != 'true'
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -105,18 +134,21 @@ jobs:
           docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
       - name: Clean previous installation
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           source ./workflow/env.sh
           roxie teardown central --single-namespace
           ./scale/dev/kill-sensors.sh
 
       - name: Get PR image tag
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           MAIN_IMAGE_TAG="$(make tag)"
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
 
       # Install Central + CentralDB
       - name: Launch central services
+        if: env.CI_DOCS_ONLY != 'true'
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -135,6 +167,7 @@ jobs:
           echo "::add-mask::${API_ENDPOINT}"
 
       - name: Generate workload
+        if: env.CI_DOCS_ONLY != 'true'
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -149,26 +182,31 @@ jobs:
           ./scale/dev/wait-for-deployments.sh "${max_deployments}"
 
       - name: Stop workload generation
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           source ./workflow/env.sh
           ./scale/dev/kill-sensors.sh
 
       - name: Create result directory
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           mkdir -p performance-results
 
       - name: Run local k6 test
+        if: env.CI_DOCS_ONLY != 'true'
         uses: grafana/k6-action@e4714b734f2b0afaabeb7b4a69142745548ab9ec # ratchet:grafana/k6-action@v0.3.1
         with:
           filename: ./tests/performance/tests/testK6Integration.js
           flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m --tag github_run_id=${{ github.run_id }} --tag github_ref=${{ github.ref }} --tag github_sha=${{ github.sha }}
 
       - name: Publish JUnit test report in job summary
+        if: env.CI_DOCS_ONLY != 'true'
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
         with:
           paths: performance-results/report.xml
 
       - name: Upload results to GCS
+        if: env.CI_DOCS_ONLY != 'true'
         uses: google-github-actions/upload-cloud-storage@6397bd7208e18d13ba2619ee21b9873edc94427a # ratchet:google-github-actions/upload-cloud-storage@v3
         with:
           path: performance-results
@@ -177,6 +215,7 @@ jobs:
           process_gcloudignore: false
 
       - name: Render PR comment from text report and links
+        if: env.CI_DOCS_ONLY != 'true'
         run: |
           report_txt=$(cat performance-results/report.txt)
           cat <<EOF > pr-comment.md
@@ -195,6 +234,7 @@ jobs:
           cat pr-comment.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Add text report and links as PR comment
+        if: env.CI_DOCS_ONLY != 'true'
         uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # ratchet:mshick/add-pr-comment@v3
         with:
           message-id: performance-evaluation

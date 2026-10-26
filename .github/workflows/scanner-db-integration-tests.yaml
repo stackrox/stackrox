@@ -16,6 +16,8 @@ on:
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
+    with:
+      classify: true
 
   db-integration-tests:
     needs: detect-changes
@@ -23,26 +25,38 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
+    env:
+      CI_DOCS_ONLY: ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').version == 1 && fromJSON(needs.detect-changes.outputs.facts || '{}').complete == true && contains(fromJSON(needs.detect-changes.outputs.facts || '{}').every, 'docs') }}
     steps:
+    - name: Explain docs-only selection
+      if: env.CI_DOCS_ONLY == 'true'
+      run: echo 'Product work intentionally skipped by docs-only selection. See detector facts for demo exclusions.' >> "$GITHUB_STEP_SUMMARY"
+
     - name: Checkout
+      if: env.CI_DOCS_ONLY != 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
+      if: env.CI_DOCS_ONLY != 'true'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
+      if: env.CI_DOCS_ONLY != 'true'
       run: |
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
+      if: env.CI_DOCS_ONLY != 'true'
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
+      if: env.CI_DOCS_ONLY != 'true'
       run: pg_isready -h 127.0.0.1
 
     - name: DB Integration tests
+      if: env.CI_DOCS_ONLY != 'true'
       run: make -C scanner db-integration-test

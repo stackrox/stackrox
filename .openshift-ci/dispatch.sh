@@ -47,6 +47,19 @@ export ROX_SCANNER_V4=true
 
 ci_export CI_JOB_NAME "$ci_job"
 
+# Classification gates test work, never Prow scheduling or build preparation.
+# shellcheck source=../ci/selection/prow.sh
+source "$ROOT/ci/selection/prow.sh"
+set_ci_shared_export CI_SELECTION_SKIPPED false
+if ci_selection_should_skip "$ci_job"; then
+    set_ci_shared_export CI_SELECTION_SKIPPED true
+    set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_PASSED}"
+    # No product processes were started; final reporting and external teardown still run.
+    trap - EXIT
+    info "Intentionally skipping $ci_job: docs-only selection"
+    exit 0
+fi
+
 case "$ci_job" in
     gke*qa-e2e-tests|gke*nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
     eks-qa-e2e-tests|osd*qa-e2e-tests|\

@@ -9,6 +9,7 @@ set -euo pipefail
 make_test_bin() {
     info "Making test-bin"
 
+    go build -o "$(go env GOPATH)/bin/ci-selection" ./ci/selection
     make cli_host-arch upgrader
     make cli-install
     (cd ./tools/check-workflow-run && go install .)
