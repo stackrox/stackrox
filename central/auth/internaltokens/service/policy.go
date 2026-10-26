@@ -139,8 +139,11 @@ func (p *tokenPolicy) enforce(
 		for _, permissionSetID := range req.GetPermissionSetIds() {
 			switch permissionSetID {
 			case centralproxy.MetricsPermissionSetID:
-				if len(req.GetClusterScopes()) != 0 {
-					return nil, errox.InvalidArgs.New("metrics permission set requests must not specify scopes")
+				if len(req.GetClusterScopes()) != 1 ||
+					req.GetClusterScopes()[0].GetClusterId() != sensorClusterID ||
+					!req.GetClusterScopes()[0].GetFullClusterAccess() ||
+					len(req.GetClusterScopes()[0].GetNamespaces()) != 0 {
+					return nil, errox.InvalidArgs.New("metrics permission set requests require full access to the Sensor's cluster")
 				}
 			case centralproxy.ConsoleProxyPermissionSetID:
 				if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {

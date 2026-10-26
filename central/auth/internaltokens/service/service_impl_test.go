@@ -259,6 +259,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"success - secured-cluster metrics permission set": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
 				Permissions:      map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
 				Lifetime:         testExpirationDuration,
 			},
@@ -615,6 +616,7 @@ func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(
 	rsp, err := svc.GenerateTokenForPermissionsAndScope(sensorContext(t, ctrl, fixtureconsts.Cluster1),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
 			PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+			ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
 			Lifetime:         testExpirationDuration,
 		})
 	assert.Nil(t, rsp)

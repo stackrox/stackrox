@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
 const (
@@ -33,12 +32,8 @@ func validateSensorMetricsRole(role *tokens.InternalRole) error {
 func (rm *roleManager) createRoleFromPermissionSets(
 	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*tokens.InternalRole, error) {
-	scopes := clusterScopesFromRequest(req.GetClusterScopes())
 	includesMetrics := slices.Contains(req.GetPermissionSetIds(), centralproxy.MetricsPermissionSetID)
-	if includesMetrics {
-		scopes = tokens.ClusterScopes{authn.IdentityFromContextOrNil(ctx).Service().GetId(): {"*"}}
-	}
-	role, err := rm.createSensorRole(ctx, req.GetPermissionSetIds(), scopes)
+	role, err := rm.createSensorRole(ctx, req.GetPermissionSetIds(), clusterScopesFromRequest(req.GetClusterScopes()))
 	if err != nil {
 		return nil, err
 	}

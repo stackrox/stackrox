@@ -43,8 +43,9 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // permission_set_ids request permissions from Central-managed permission sets.
   // When set, Central uses the permission sets instead of permissions.
   // permissions may carry fallback values for older Centrals that do not
-  // recognize this field. Metrics requests omit cluster_scopes; console
-  // requests may specify scopes within the authenticated Sensor's cluster.
+  // recognize this field. Metrics requests require a full-cluster scope for
+  // the authenticated Sensor's cluster; console requests may specify scopes
+  // within that cluster.
   repeated string permission_set_ids = 5;
   // Optional HTTP method/path restrictions for this token.
   repeated .v1.HTTPRequestScope http_request_scopes = 6;
