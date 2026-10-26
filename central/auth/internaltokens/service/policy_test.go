@@ -216,6 +216,7 @@ func TestEnforce(t *testing.T) {
 	policy := newTokenPolicy(policyDuration, map[string]v1.Access{
 		"Deployment": v1.Access_READ_ACCESS,
 	})
+	metricsScope := []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}}
 
 	for name, tc := range map[string]struct {
 		req          *v1.GenerateTokenForPermissionsAndScopeRequest
@@ -226,6 +227,7 @@ func TestEnforce(t *testing.T) {
 		"metrics permission set": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     metricsScope,
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
@@ -234,6 +236,7 @@ func TestEnforce(t *testing.T) {
 		"metrics permission set cannot request extra route": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     metricsScope,
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
@@ -243,16 +246,56 @@ func TestEnforce(t *testing.T) {
 		"metrics permission set ignores client permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:    metricsScope,
 				Permissions:      map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
 				Lifetime:         durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
-		"metrics permission set cannot carry client scopes": {
+		"metrics permission set cannot access another cluster": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2}},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
 				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics permission set requires a scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics permission set cannot use a namespace scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"prod"}}},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics permission set cannot mix full cluster and namespaces": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1,
+					FullClusterAccess: true, Namespaces: []string{"prod"}}},
+				Lifetime: durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics permission set cannot include additional scopes": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes: []*v1.ClusterScope{
+					{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true},
+					{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true},
+				},
+				Lifetime: durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
