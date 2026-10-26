@@ -33,7 +33,8 @@ paths so the filtered input is visible. The independent `CI selection verificati
 workflow never uses the product selection result and tests the complete machinery.
 
 This is a demo configuration, not a claim that CI changes are documentation.
-**Before production merge, empty the demo exclusion array.** Keep the regression
+**Before production merge, empty the demo exclusion array.** Verification fails
+for a non-draft PR or a master push while exclusions remain enabled. Keep the regression
 cases that verify full-diff production behavior. No temporary base branch is
 needed for the demo.
 

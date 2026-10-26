@@ -43,6 +43,10 @@ end() {
     if [[ "${OVERALL_JOB_OUTCOME}" == "${OUTCOME_FAILED}" ]]; then
         (send_slack_failure_summary) || { echo >&2 "ERROR: Could not slack a test failure message"; }
     fi
+
+    if [[ "${CI_SELECTION_SKIPPED:-}" == true && "${OVERALL_JOB_OUTCOME}" != "${OUTCOME_PASSED}" ]]; then
+        return 1
+    fi
 }
 
 determine_an_overall_job_outcome() {

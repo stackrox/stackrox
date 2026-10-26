@@ -320,10 +320,18 @@ func TestVerificationCannotBeSkippedByProductSelection(t *testing.T) {
 	job := object(object(w["jobs"])["verify"])
 	require.NotContains(t, job, "needs")
 	require.NotContains(t, job, "if")
+	guardFound := false
 	for _, value := range job["steps"].([]any) {
 		step := object(value)
+		if step["name"] == "Require full-diff policy outside a draft demo" {
+			guardFound = true
+			require.Equal(t, "github.event_name != 'pull_request' || !github.event.pull_request.draft", step["if"])
+			require.Equal(t, "jq -e 'length == 0' ci/selection/demo-ignore.json", step["run"])
+			continue
+		}
 		require.NotContains(t, step, "if")
 	}
+	require.True(t, guardFound, "demo exclusions must be rejected outside a draft")
 }
 
 func TestActualClassifierHandoff(t *testing.T) {
@@ -352,5 +360,39 @@ func TestActualClassifierHandoff(t *testing.T) {
 	require.True(t, facts.Complete)
 	if len(facts.Ignored) > 0 {
 		require.Contains(t, facts.Every, "docs")
+	}
+}
+
+func TestSkipFinalizerExitStatus(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join(repositoryRoot(t), ".openshift-ci/end.sh"))
+	require.NoError(t, err)
+	start := strings.Index(string(data), "end() {")
+	end := strings.Index(string(data)[start:], "\ndetermine_an_overall_job_outcome() {")
+	function := string(data)[start : start+end]
+	for name, outcome := range map[string]string{
+		"should accept a successful intentional skip": "passed",
+		"should fail when cleanup failed":             "failed",
+		"should not accept an interrupted lifecycle":  "canceled",
+	} {
+		t.Run(name, func(t *testing.T) {
+			script := `set -euo pipefail
+info() { :; }
+openshift_ci_mods() { :; }
+openshift_ci_import_creds() { :; }
+determine_an_overall_job_outcome() { :; }
+generate_cluster_junit() { :; }
+save_job_record() { :; }
+post_process_test_results() { :; }
+send_slack_failure_summary() { :; }
+OUTCOME_PASSED=passed
+OUTCOME_FAILED=failed
+` + function + "\nend\n"
+			output, err := runShell(t, script, repositoryRoot(t), []string{"SHARED_DIR=" + t.TempDir(), "CI_SELECTION_SKIPPED=true", "OVERALL_JOB_OUTCOME=" + outcome, "END_SLACK_FAILURE_ATTACHMENTS=unused", "END_JUNIT2JIRA_SUMMARY_FILE=unused"})
+			if outcome == "passed" {
+				require.NoError(t, err, output)
+			} else {
+				require.Error(t, err, output)
+			}
+		})
 	}
 }
