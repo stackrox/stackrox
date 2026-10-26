@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -108,21 +107,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	} else if len(req.GetPermissionSetNames()) > 0 {
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
 		var tokenRole *tokens.InternalRole
-		roleReq := req
-		includesMetrics := slices.Contains(req.GetPermissionSetNames(), centralproxy.MetricsPermissionSetName)
-		if includesMetrics {
-			roleReq = req.CloneVT()
-			roleReq.ClusterScopes = []*v1.ClusterScope{{
-				ClusterId: authn.IdentityFromContextOrNil(ctx).Service().GetId(), FullClusterAccess: true,
-			}}
-		}
-		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, roleReq)
-		if err == nil && includesMetrics {
-			err = validateSensorMetricsRole(tokenRole)
-			if err == nil {
-				tokenRole.RoleName = centralproxy.SecuredClusterMetricsRole
-			}
-		}
+		tokenRole, err = s.roleManager.createRoleFromPermissionSets(roleReadCtx, req)
 		tokenRoles = []*tokens.InternalRole{tokenRole}
 	} else {
 		var tokenRole *tokens.InternalRole
