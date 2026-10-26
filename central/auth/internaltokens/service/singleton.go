@@ -28,8 +28,7 @@ func Singleton() Service {
 	once.Do(func() {
 		s = &serviceImpl{
 			issuer:      getTokenIssuer(jwt.IssuerFactorySingleton()),
-			roles:       roleDS.Singleton(),
-			roleManager: &roleManager{},
+			roleManager: &roleManager{roleDS.Singleton()},
 			now:         time.Now,
 			policy:      defaultTokenPolicy(),
 		}

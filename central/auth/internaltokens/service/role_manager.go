@@ -15,15 +15,17 @@ const (
 	internalRoleName = "internal role"
 )
 
-type roleManager struct{}
+type roleManager struct {
+	roleStore roleDS.DataStore
+}
 
 func (rm *roleManager) createSensorRole(
-	ctx context.Context, roleStore roleDS.DataStore, permissionSetIDs []string, name string, scopes tokens.ClusterScopes,
+	ctx context.Context, permissionSetIDs []string, name string, scopes tokens.ClusterScopes,
 ) (*tokens.InternalRole, error) {
 	if len(permissionSetIDs) == 0 {
 		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
 	}
-	if roleStore == nil {
+	if rm.roleStore == nil {
 		return nil, errox.NotAuthorized.New("Sensor proxy permission set store unavailable")
 	}
 	role := &tokens.InternalRole{
@@ -33,7 +35,7 @@ func (rm *roleManager) createSensorRole(
 	}
 	permissions := make(map[string]storage.Access)
 	for _, permissionSetID := range permissionSetIDs {
-		permissionSet, found, err := roleStore.GetPermissionSet(ctx, permissionSetID)
+		permissionSet, found, err := rm.roleStore.GetPermissionSet(ctx, permissionSetID)
 		if err != nil {
 			return nil, err
 		}
