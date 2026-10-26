@@ -63,6 +63,7 @@ var (
 		fieldnames.MountPropagation:               {{required: set.NewStringSet(search.MountPropagation.String()), printerFuncKey: printer.VolumeKey}},
 		fieldnames.Namespace:                      {{required: set.NewStringSet(search.Namespace.String()), printerFuncKey: printer.NamespaceKey}},
 		fieldnames.NvdCvss:                        {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
+		fieldnames.EPSS:                           {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.PortExposure:                   {{required: set.NewStringSet(search.ExposureLevel.String()), printerFuncKey: printer.PortExposureKey}},
 		fieldnames.PrivilegedContainer:            {{required: set.NewStringSet(search.Privileged.String()), printerFuncKey: printer.PrivilegedKey}},
 		fieldnames.ExposedPortProtocol:            {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},

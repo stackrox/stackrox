@@ -164,6 +164,8 @@ linters:
         - backoff.Retry.*
         - concurrency\.WithLock.*
         - errox\..+\.CausedBy(f)?
+        - \(\*github\.com\/stackrox\/rox\/pkg\/errox\.RoxError\)\.New(f)?
+        - github\.com\/stackrox\/rox\/pkg\/httputil\.NewError
         - policy\.NewErr.*
         - retry\.MakeRetryable
         - retry\.WithRetry

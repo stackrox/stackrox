@@ -1,13 +1,15 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { getInputByLabel } from '../../helpers/formHelpers';
-import { deletePolicyIfExists, visitPolicies } from './Policies.helpers';
+import { goToWizardStep } from '../../helpers/wizard';
+import { deletePolicyIfExists, doPolicyPageAction, visitPolicies } from './Policies.helpers';
 import { selectors } from './Policies.selectors';
 import {
     addExclusionWithDeployment,
     addInclusionWithNamespace,
     assertCriteriaCategories,
     assertStepHeading,
+    assertWorkloadKindExclusion,
     clickNext,
     clickSave,
     dragFieldIntoSection,
@@ -15,6 +17,7 @@ import {
     expandCriteriaCategory,
     selectCategory,
     startPolicyWizard,
+    toggleWorkloadKindExclusion,
     verifyPolicyDetails,
     verifyPolicyInTable,
 } from './policyWizard.helpers';
@@ -168,6 +171,13 @@ describe('Policy creation workflow', () => {
         assertStepHeading('Resources');
         addInclusionWithNamespace('test-namespace');
         addExclusionWithDeployment('system-admin');
+        const hasWorkloadKindExclusion = hasFeatureFlag('ROX_POLICY_WORKLOAD_KIND_EXCLUSION');
+        if (hasWorkloadKindExclusion) {
+            toggleWorkloadKindExclusion('CronJobs');
+            assertWorkloadKindExclusion('CronJobs', true);
+            assertWorkloadKindExclusion('Jobs', false);
+            cy.contains('Policy will exclude CronJobs.');
+        }
         clickNext();
 
         // Filters (container type filter enabled for Deploy lifecycle)
@@ -196,9 +206,21 @@ describe('Policy creation workflow', () => {
             response: 'Enforce',
             enforcement: 'Deploy',
             criteria: ['Privileged'],
-            scope: ['test-namespace', 'system-admin'],
+            scope: [
+                'test-namespace',
+                'system-admin',
+                ...(hasWorkloadKindExclusion ? ['Workload kind', 'CronJobs'] : []),
+            ],
             ...(hasFiltersStep ? { filters: { containerTypes: 'Skip init containers' } } : {}),
         });
+
+        if (hasWorkloadKindExclusion) {
+            doPolicyPageAction('Edit policy');
+            goToWizardStep('Resources', 'Policy behavior');
+            assertWorkloadKindExclusion('CronJobs', true);
+            assertWorkloadKindExclusion('Jobs', false);
+            cy.get('[aria-label="Workload name"]').should('have.value', 'system-admin');
+        }
     });
 
     it('should create a Runtime policy with Process name criteria and inform-only response', () => {
