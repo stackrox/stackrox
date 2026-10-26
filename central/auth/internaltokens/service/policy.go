@@ -160,13 +160,15 @@ func (p *tokenPolicy) enforce(
 
 func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tokens.HTTPRequestScopes, error) {
 	var allowed tokens.HTTPRequestScopes
-	switch req.GetPermissionSetId() {
-	case centralproxy.ConsoleProxyPermissionSetID:
-		allowed = tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
-	case centralproxy.MetricsPermissionSetID:
-		allowed = tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes)
-	default:
-		return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+	for _, ps := range req.GetPermissionSetIds() {
+		switch ps {
+		case centralproxy.ConsoleProxyPermissionSetID:
+			allowed = tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
+		case centralproxy.MetricsPermissionSetID:
+			allowed = tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes)
+		default:
+			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+		}
 	}
 
 	requested, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())

@@ -64,7 +64,7 @@ func TestApprovedHTTPScopes(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			actual, err := approvedHTTPScopes(&v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetId:   tc.permissionSet,
+				PermissionSetIds:  []string{tc.permissionSet},
 				HttpRequestScopes: tc.requested,
 			})
 			if tc.invalid {

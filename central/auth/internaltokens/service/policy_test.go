@@ -172,7 +172,7 @@ func TestEnforce(t *testing.T) {
 		},
 		"console permission set can request approved scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetId:   centralproxy.ConsoleProxyPermissionSetID,
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},

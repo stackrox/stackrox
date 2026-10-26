@@ -115,7 +115,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		Name:          claimName,
 		Requester:     req.GetRequester(),
 	}
-	if req.GetPermissionSetId() == "" {
+	if len(req.GetPermissionSetIds()) == 0 {
 		roxClaims.HTTPRequestScopes, err = tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
 		if err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
