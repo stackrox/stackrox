@@ -36,6 +36,49 @@ wait_for_central_reconciliation() {
     [[ "$success" == 1 ]]
 }
 
+# wait_for_scored_image_scan works around ROX-36688 in upgrade CI: matcher readiness
+# can precede NVD enrichment, leaving fixable CVEs with CVSS zero. This function
+# waits for usable scan data through Central: a fixable CVE with CVSS >= 7.
+wait_for_scored_image_scan() {
+    local image="$1"
+    # Initial vulnerability imports can take much longer than a scan. Use the
+    # matcher's CI readiness budget unless this preflight has its own override.
+    local max_seconds="${SCANNER_V4_SCAN_READINESS_TIMEOUT:-${SCANNER_V4_VULN_READINESS_TIMEOUT:-7200}}"
+    local deadline=$((SECONDS + max_seconds))
+    local request
+    request="$(jq -n --arg image "$image" '{imageName: $image, force: true}')"
+    local response=""
+
+    info "Waiting for Central to scan ${image} with CVSS enrichment (timeout: ${max_seconds}s)"
+    while (( SECONDS < deadline )); do
+        local remaining=$((deadline - SECONDS))
+        if (( remaining <= 0 )); then
+            break
+        fi
+        # Bound each request so a stalled scan cannot consume the entire retry budget.
+        local request_timeout=$((remaining < 60 ? remaining : 60))
+        if response="$(roxcurl /v1/images/scan --silent --show-error --fail-with-body --max-time "$request_timeout" \
+            -H 'Content-Type: application/json' -d "$request" 2>&1)"; then
+            if jq -e '.scan.scanTime != null and
+                any(.scan.components[]?.vulns[]?; (.cvss // 0) >= 7 and (.fixedBy // "") != "")' \
+                <<<"$response" >/dev/null 2>&1; then
+                info "Central completed the scanner preflight with CVSS enrichment"
+                return 0
+            fi
+            info "Scanner preflight has no fixable CVEs with CVSS >= 7 yet: $(jq -c \
+                '{scanTime: .scan.scanTime, notes: .notes, scanNotes: .scan.notes}' \
+                <<<"$response" 2>/dev/null || echo 'invalid scan response')"
+        else
+            info "Scanner preflight request failed: ${response}"
+        fi
+        remaining=$((deadline - SECONDS))
+        if (( remaining > 0 )); then
+            sleep "$((remaining < 10 ? remaining : 10))"
+        fi
+    done
+    die "Central could not scan ${image} with CVSS enrichment within ${max_seconds}s"
+}
+
 validate_upgrade() {
     if [[ "$#" -ne 3 ]]; then
         die "missing args. usage: validate_upgrade <stage name> <stage description> <upgrade_cluster_id>"

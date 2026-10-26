@@ -2,11 +2,10 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
-# shellcheck source=./detect.sh
-source "${DIR}/detect.sh"
 
-if is_openshift; then
-    "${DIR}/openshift/deploy-local.sh"
-else
-    "${DIR}/k8s/deploy-local.sh"
-fi
+export COLLECTION_METHOD="${COLLECTION_METHOD:-core_bpf}"
+export MONITORING_SUPPORT="${MONITORING_SUPPORT:-false}"
+export POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
+export LOCAL_DEPLOYMENT="true"
+
+exec "${DIR}/deploy.sh"

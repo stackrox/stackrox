@@ -66,9 +66,9 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 }
 
 if [[ -z "$ROX_USERNAME" || -z "$ROX_ADMIN_PASSWORD" ]]; then
-  # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
-  # shellcheck source=../../../../scripts/k8s/export-basic-auth-creds.sh
-  source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
+    echo >&2 "$0 requires \$ROX_USERNAME and \$ROX_ADMIN_PASSWORD to be set."
+    echo >&2 "Are you executing within a roxie shell? See deploy/README.md for more information."
+    exit 1
 fi
 
 # Fetch feature flags directly from Central rather than through the OCP Console proxy
