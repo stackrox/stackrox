@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"slices"
@@ -67,7 +68,7 @@ func collect(ctx context.Context, a *api, opt options) ([]record, error) {
 		return nil, errNewHead
 	}
 	if pr.Head.Repo.FullName != opt.repo {
-		return nil, fmt.Errorf("selection comments require a same-repository PR")
+		return nil, errors.New("selection comments require a same-repository PR")
 	}
 	latest := map[int64]workflowRun{}
 	for page := 1; ; page++ {
