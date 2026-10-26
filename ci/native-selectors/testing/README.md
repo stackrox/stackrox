@@ -27,7 +27,7 @@ The three comparison fixtures are pinned to #23403 at `34873a53e3b6`, with their
 
 `TestClassifierHandoff` runs the actual workflow's classifier script on the collector's temporary JSON file, then evaluates the job's `facts` output mapping. It checks the reusable workflow mapping and missing-output fallback too. The scenario suite builds the classifier once and invokes that binary directly to avoid recompiling it for each case.
 
-Structural snapshots in `base-workflows.json` describe repository base `74bfddc24b07`, including both backup/restore wrappers and their shared test workflow; their hashes use sorted-key JSON from Go's `encoding/json`. Candidates and permission to execute are separate assertions. No test result proves that a product test ran.
+Structural snapshots in `base-workflows.json` cover individual job definitions, execution commands, step conditions, and workflow headers at repository base `74bfddc24b07`; their hashes use sorted-key JSON from Go's `encoding/json`. E2E tests evaluate the current caller gates, reusable-workflow inputs, and required child-job conditions. Candidates and permission to execute are separate assertions. No test result proves that a product test ran.
 
 [`required-gha-checks.json`](required-gha-checks.json) records the 23 GHA contexts required by `master` rulesets, checked through `GET /repos/stackrox/stackrox/rules/branches/master` on 2026-10-26. It includes the nested nongroovy context as well as the three upgrade contexts. The separate `fixtures/required-gha-checks.json` remains the immutable 22-context snapshot from #23403. Tests check current required jobs and follow their nested conditions; GitHub must still confirm actual check publication. Prow and Konflux requirements are outside this GHA snapshot.
 

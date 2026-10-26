@@ -19,7 +19,7 @@ func TestWorkflowPreservation(t *testing.T) {
 			Conditions       []string
 			If, Needs        any
 		}
-		Headers, UnchangedJobs, Children map[string]string
+		Headers, UnchangedJobs map[string]string
 	}
 	f.json(t, "testing/base-workflows.json", &baseline)
 	require.Equal(t, "74bfddc24b07e120a1522f2df8cf215c4ae0812c", baseline.Base)
@@ -111,9 +111,6 @@ func TestWorkflowPreservation(t *testing.T) {
 			continue
 		}
 		require.Equal(t, hash, digest([]byte(encode(t, f.jobs(file)[name]))), key)
-	}
-	for file, hash := range baseline.Children {
-		require.Equal(t, hash, digest(f.read(t, ".github/workflows/"+file)), file)
 	}
 	require.Equal(t, 438, gates)
 	t.Logf("%d preserved-step checks", gates)
