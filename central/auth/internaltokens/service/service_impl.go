@@ -8,7 +8,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/pruning"
-	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -52,7 +51,6 @@ var (
 
 type serviceImpl struct {
 	issuer tokens.Issuer
-	roles  roleDS.DataStore
 
 	roleManager *roleManager
 
@@ -102,7 +100,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	var tokenRole *tokens.InternalRole
 	if len(req.GetPermissionSetIds()) > 0 {
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
-		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, s.roles, req.GetPermissionSetIds(),
+		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req.GetPermissionSetIds(),
 			centralproxy.ConsoleProxyRole, clusterScopesFromRequest(req.GetClusterScopes()))
 	} else {
 		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
