@@ -38,8 +38,6 @@ message ComplianceCheckResult {
   map<string, string> labels = 13;
   map<string, string> annotations = 14;
   repeated ComplianceControl controls = 15;
-  // Per-check freshness for this cluster: STALE if the check's assessment
-  // time predates the config's most recent expected scan.
   ComplianceCheckDataFreshness data_freshness = 16;
 }
 
@@ -101,9 +99,6 @@ message ListComplianceCheckResultResponse {
   string cluster_id = 3;
   int32 total_count = 4;
   google.protobuf.Timestamp last_scan_time = 5;
-  // Rolled-up freshness across all check results for this cluster and
-  // profile (not limited to the current page): STALE if any result is stale
-  // (STALE > CURRENT > UNKNOWN).
   ComplianceAggregateDataFreshness data_freshness = 6;
 }
 
