@@ -20,7 +20,7 @@ func TestComparisonScenarios(t *testing.T) {
 	for file, hash := range comparison.Fixtures {
 		require.Equal(t, hash, digest(f.read(t, "ci/native-selectors/testing/fixtures/"+file)), "pinned fixture %s", file)
 	}
-	require.Equal(t, 30, len(f.local)+len(f.consumers))
+	require.Equal(t, 31, len(f.local)+len(f.consumers))
 	var scenarios []struct {
 		Name          string
 		Files, Labels []string
@@ -41,8 +41,7 @@ func TestComparisonScenarios(t *testing.T) {
 	// additions records intentional departures without modifying the pinned evidence.
 	additions := map[string][]string{
 		"makefile":              {"go", "go-postgres", "go-bench", "sensor-integration-tests", "ui", "ui-component", "local-roxctl-tests", "shell-unit-tests"},
-		"CI workflow":           {"go", "go-postgres", "go-bench", "sensor-integration-tests", "ui", "ui-component", "local-roxctl-tests", "shell-unit-tests"},
-		"mixed CI and product":  {"go-postgres", "sensor-integration-tests", "ui", "ui-component", "local-roxctl-tests", "shell-unit-tests", "check-generated-files"},
+		"mixed CI and product":  {"check-generated-files"},
 		"UI Go file":            {"check-generated-files"},
 		"scanner":               {"check-generated-files"},
 		"scanner and docs":      {"check-generated-files"},
@@ -55,8 +54,9 @@ func TestComparisonScenarios(t *testing.T) {
 		"shared":                {"check-generated-files"},
 		"central communication": {"check-generated-files"},
 		"sensor communication":  {"check-generated-files"},
-		"legacy selector files": {"check-generated-files"},
 	}
+	// removals keep CI-only Go changes out of the ACS Go test and lint suites.
+	removals := map[string][]string{"legacy selector files": {"go", "golangci-lint"}}
 	compared := 0
 	departures := 0
 	for _, scenario := range scenarios {
@@ -91,8 +91,8 @@ func TestComparisonScenarios(t *testing.T) {
 					targets = append(targets, name)
 				}
 				for _, target := range targets {
-					// The Konflux variant has no counterpart in the pinned reference.
-					if target == "e2e-db-backup-restore-tests-gke-konflux" {
+					// These targets have no counterpart in the pinned reference.
+					if target == "e2e-db-backup-restore-tests-gke-konflux" || target == "roxvet-tests" {
 						continue
 					}
 					workflow := "e2e-dispatch.yaml"
@@ -105,11 +105,16 @@ func TestComparisonScenarios(t *testing.T) {
 					}
 					baseline := slices.Contains(want.Selected, baselineTarget)
 					additional := slices.Contains(additions[scenario.Name], target)
+					removed := slices.Contains(removals[scenario.Name], target)
 					if additional {
 						require.False(t, baseline, "departure must add a candidate: %s", target)
 						departures++
 					}
-					require.Equal(t, baseline || additional, f.candidate(t, target, context(workflow)), "candidate %s", target)
+					if removed {
+						require.True(t, baseline, "departure must remove a candidate: %s", target)
+						departures++
+					}
+					require.Equal(t, baseline && !removed || additional, f.candidate(t, target, context(workflow)), "candidate %s", target)
 					compared++
 				}
 			}
@@ -139,8 +144,8 @@ func TestComparisonScenarios(t *testing.T) {
 		})
 	}
 	require.Equal(t, 2175, compared)
-	require.Equal(t, 36, departures)
-	t.Logf("%d candidate comparisons across 29 targets: %d unchanged, %d intentional additions; %d dispatch/waiter scenarios", compared, compared-departures, departures, len(scenarios))
+	require.Equal(t, 23, departures)
+	t.Logf("%d candidate comparisons across 29 targets: %d unchanged, 21 additions and 2 removals; %d dispatch/waiter scenarios", compared, compared-departures, len(scenarios))
 }
 
 func TestBackupRestoreSelection(t *testing.T) {
@@ -178,9 +183,8 @@ func TestBackupRestoreSelection(t *testing.T) {
 			labels:   []string{"ci-run-all-tests", "konflux-build"},
 			ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
 		},
-		"detector override with images": {
+		"detector changes do not request product tests": {
 			files: []string{".github/workflows/detect-changes.yml"}, labels: []string{"konflux-build"},
-			ordinary: true, konflux: true, ordinaryImages: true, konfluxImages: true,
 		},
 		"failed classification with images": {
 			opt: options{Unknown: true}, labels: []string{"konflux-build"},
@@ -317,7 +321,6 @@ func TestExplicitOverrides(t *testing.T) {
 	for name, paths := range map[string][]string{
 		"Makefile":      {"Makefile", "README.md"},
 		"make includes": {"make/gotools.mk", "README.md"},
-		"unit workflow": {".github/workflows/unit-tests.yaml", "README.md"},
 		"job preamble":  {".github/actions/job-preamble/action.yml", "README.md"},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -332,17 +335,19 @@ func TestExplicitOverrides(t *testing.T) {
 			require.Empty(t, lookup(ctx, "needs", "detect-changes", "outputs", "run_all"), "overrides belong to the calling workflow")
 		})
 	}
-	t.Run("detector changes select every candidate", func(t *testing.T) {
+	t.Run("detector and unit workflow changes select CI verification", func(t *testing.T) {
 		for workflow := range f.workflows {
-			ctx := f.context(t, []string{".github/workflows/detect-changes.yml", "README.md"}, labels, options{workflow: workflow})
+			ctx := f.context(t, []string{".github/workflows/detect-changes.yml", ".github/workflows/unit-tests.yaml", "README.md"}, labels, options{workflow: workflow})
+			require.Empty(t, lookup(ctx, "needs", "detect-changes", "outputs", "run_all"))
 			for target, selected := range f.local {
 				if selected.workflow == workflow {
-					require.True(t, f.candidate(t, target, ctx), target)
+					want := slices.Contains([]string{"style-check", "selector-tests", "github-actions-lint"}, target)
+					require.Equal(t, want, f.candidate(t, target, ctx), target)
 				}
 			}
 			if workflow == "e2e-dispatch.yaml" {
 				for _, target := range f.consumers {
-					require.True(t, f.candidate(t, target, ctx), target)
+					require.False(t, f.candidate(t, target, ctx), target)
 				}
 			}
 		}
@@ -355,7 +360,7 @@ func TestExplicitOverrides(t *testing.T) {
 	})
 	t.Run("classification failure retains per-job defaults", func(t *testing.T) {
 		ctx := f.context(t, []string{".github/workflows/detect-changes.yml"}, labels, options{Unknown: true, workflow: "e2e-dispatch.yaml"})
-		require.Equal(t, "true", lookup(ctx, "needs", "detect-changes", "outputs", "run_all"))
+		require.Empty(t, lookup(ctx, "needs", "detect-changes", "outputs", "run_all"))
 		jobs, _, _ := f.dispatch(t, ctx)
 		require.True(t, jobs["e2e-byodb-tests"])
 		require.False(t, jobs["e2e-qa-tests-gke"])
@@ -364,7 +369,7 @@ func TestExplicitOverrides(t *testing.T) {
 	})
 	t.Run("overrides do not authorize forks or supply Konflux images", func(t *testing.T) {
 		for _, fork := range []bool{false, true} {
-			ctx := f.context(t, []string{".github/workflows/detect-changes.yml"}, labels, options{Fork: fork, Draft: true, workflow: "e2e-dispatch.yaml"})
+			ctx := f.context(t, []string{"README.md"}, append(slices.Clone(labels), "ci-run-all-tests"), options{Fork: fork, Draft: true, workflow: "e2e-dispatch.yaml"})
 			jobs, _, konflux := f.dispatch(t, ctx)
 			require.Equal(t, !fork, jobs["e2e-byodb-tests"])
 			require.False(t, konflux)

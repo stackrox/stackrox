@@ -9,7 +9,7 @@ The comparison combines positive votes, lets run win over skip, and finally skip
 | Rule family | Implementation and example |
 | --- | --- |
 | Always-run style | `style-check` has candidate `true`, including docs-only PRs. |
-| Any-file rules | `.go` selects Go and generated-file verification; product-root `.go` selects benchmarks; `.golangci.yml` selects Go lint; shell/scripts and workflow/Prow tooling select their own checks; version files select the dependent-image check. |
+| Any-file rules | Go outside `ci/` and `tools/roxvet/` selects ACS Go and generated-file verification; product-root `.go` selects benchmarks; `.golangci.yml` selects Go lint; shell/scripts and workflow/Prow tooling select their own checks; version files select the dependent-image check. |
 | Broad rules | `go.mod`, `go.sum`, `proto/`, `generated/`, or any `.proto` selects every enrolled candidate when facts are complete. Existing job restrictions can still block execution. |
 | Positive every-file rules | UI-only selects UI/component; Scanner-only selects Go/Scanner DB; operator/config-controller/CRD-only selects Go/CRD checks; roxctl-only selects Go/local roxctl/Actions nongroovy. The classifier preserves the exact path groups. |
 | Subsystem-only versus shared paths | Central-only selects PostgreSQL; Sensor-only selects Sensor integration. Shared libraries and Central/Sensor communication paths select both, even in mixed diffs. |
@@ -19,7 +19,7 @@ The comparison combines positive votes, lets run win over skip, and finally skip
 | Failure defaults | Unknown facts select ordinary Actions targets and nongroovy/other non-QA E2E targets; the three Actions QA/FIPS targets remain unselected. Labels do not override these unknown-data defaults. |
 | Non-PR events | Existing push, tag, reusable-call and manual triggers remain. PR enforcement is disabled. The existing matrix expansion and manual image-tag inputs remain. |
 | Selector changes | The comparison's selector-tool paths select regression tests. Paths for this native implementation additionally select those tests. This is an explicit extension. |
-| Explicit repository overrides | A validated match of a workflow's `run_all` patterns selects its candidates. Changing `detect-changes.yml` selects candidates in each calling workflow. This does not grant trust or override unknown-data defaults. |
+| Explicit repository overrides | A validated match of a workflow's `run_all` patterns selects its candidates. Detector and unit-workflow edits select CI verification without forcing ACS work. Overrides do not grant trust or change unknown-data defaults. |
 
 The saved comparison inputs and expected outcomes are unchanged. Tests compare all 29 reference Actions targets, including candidates that existing outer conditions prevent from executing. The four Prow groups below are accounted for through configuration and explicit gaps, rather than represented as unused Actions outputs.
 
@@ -29,15 +29,19 @@ The current base splits database backup/restore into `e2e-db-backup-restore-test
 
 The pinned comparison tests map the reference's old job and label to the ordinary GKE variant. Twenty separate scenarios cover the current variants, including shadow mode, drafts, forks, unknown files, live label removal, and image tags. The old label is not a runtime alias. These additions follow the current base, rather than a newer comparison revision.
 
-### Intentional additions to the comparison
+### Intentional differences from the comparison
 
-Two repository coverage requirements add 36 candidates across 16 saved scenarios. The tests record these additions separately from the immutable comparison fixtures; the other 2,139 candidate results and all 83 E2E dispatch/waiter results retain the pinned behavior.
+The tests record 21 additions and 2 removals separately from the immutable comparison fixtures; the other 2,152 candidate results and all 83 E2E dispatch/waiter results retain the pinned behavior.
 
-First, the unit workflow's existing overrides cover `Makefile`, `make/`, its own workflow, and `.github/actions/job-preamble/`. For example, `Makefile` plus `README.md` selects its unit-test candidates under enforcement. The pinned comparison selects only style for `Makefile`. An override belongs to its calling workflow: the unit workflow's match does not force E2E candidates. A change to the reusable detector itself does match the detector's built-in override in every caller.
+The unit workflow's overrides cover `Makefile`, `make/`, and `.github/actions/job-preamble/`. For example, `Makefile` plus `README.md` selects its unit-test candidates under enforcement. The pinned comparison selects only style for `Makefile`. An override belongs to its calling workflow: the unit workflow's match does not force E2E candidates.
 
-Second, any `.go` change selects generated-file verification, because Go interface and generator changes can require regenerated mocks or strings. For example, `sensor/kubernetes/client/client.go` plus `README.md` selects that check. The comparison's broad/proto-only rule misses it. Existing outer conditions still apply, including the UI-only guard.
+Go changes outside the recognized CI-only trees select generated-file verification, because interface and generator changes can require regenerated mocks or strings. For example, `sensor/kubernetes/client/client.go` plus `README.md` selects that check. The comparison's broad/proto-only rule misses it. Existing outer conditions still apply, including the UI-only guard.
 
-An empty legacy `files` output is insufficient evidence of an override. It can also mean a known empty diff or failed collection. The separate `run_all` output records only an explicit match after revision and filename validation. Classification can still fail afterward; the three QA/FIPS candidates then retain their skip default.
+The two removals are ACS Go tests and Go lint for the saved `legacy selector files` scenario. Files under `ci/` and `tools/roxvet/` select their CI tooling tests instead of ACS Go checks. The exclusions also keep interface/CRD fixtures there from requesting ACS work. They apply per filename: adding `ci/native-selectors/file-facts/main.go` cannot remove the Go or integration votes from `pkg/concurrency/context.go`. Other Go tooling retains conservative ACS checks rather than treating every generator as CI-only.
+
+Detector and unit-workflow edits do not produce a native run-all request. Their `selector` fact selects native regression tests. A CI-only diff covering those workflows, native-selector Go code, roxvet, and documentation selects style, Actions lint, selector tests, and roxvet tests. It does not select ACS unit, integration, benchmark, UI, or E2E work. No representative E2E job is requested. Explicit E2E labels and `ci-run-all-tests` still add coverage within their existing restrictions; shadow mode retains legacy execution.
+
+An empty legacy `files` output is insufficient evidence of an override. It can also mean a detector edit, known empty diff, or failed collection. The separate `run_all` output records only an explicit caller-pattern match after revision and filename validation. Build-input matches are checked before the detector's legacy fallback, so adding a detector edit does not hide a real override. Classification can still fail afterward; the three QA/FIPS candidates then retain their skip default.
 
 ### Adding an unrelated file can remove a candidate
 

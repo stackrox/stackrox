@@ -43,7 +43,7 @@ on:
         description: Version 1 JSON path facts; complete=false means classification is unavailable.
         value: ${{ jobs.detect.outputs.facts }}
       run_all:
-        description: 'true when a validated diff matches an explicit run_all pattern or changes this detector.'
+        description: 'true when a validated diff matches an explicit run_all input pattern.'
         value: ${{ jobs.detect.outputs.run_all }}
 
 jobs:
@@ -115,12 +115,6 @@ jobs:
 
           anchored=$(printf '^%s$\n' "${files[@]}")
 
-          if grep -qF "^${WORKFLOW_FILE_PATH}$" <<< "${anchored}"; then
-            echo "detect-changes.yml modified, running all jobs" >&2
-            echo 'run_all=true' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
           if [[ -n "${RUN_ALL}" ]]; then
             while IFS= read -r pattern; do
               [[ -z "$pattern" ]] && continue
@@ -130,6 +124,13 @@ jobs:
                 exit 0
               fi
             done <<< "${RUN_ALL}"
+          fi
+
+          if grep -qF "^${WORKFLOW_FILE_PATH}$" <<< "${anchored}"; then
+            # Empty legacy outputs preserve existing callers' detector safeguard.
+            # Native jobs use the selector file fact to validate CI changes.
+            echo "detect-changes.yml modified; retaining the legacy file-output fallback" >&2
+            exit 0
           fi
 
           if [[ ${#files[@]} -gt 0 ]]; then

@@ -32,7 +32,6 @@ jobs:
       run_all: |
         ^Makefile$
         ^make/
-        ^.github/workflows/unit-tests.yaml$
         ^.github/actions/job-preamble/
 
   go:

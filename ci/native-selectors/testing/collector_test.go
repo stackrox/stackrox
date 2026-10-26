@@ -53,6 +53,11 @@ func TestCollector(t *testing.T) {
 	t.Run("known empty diff is complete", func(t *testing.T) {
 		require.Equal(t, true, facts(t, f.collect(t, nil, options{}).facts)["complete"])
 	})
+	t.Run("detector edits do not hide explicit product build overrides", func(t *testing.T) {
+		result := f.collect(t, []string{".github/workflows/detect-changes.yml", "Makefile"}, options{})
+		require.Equal(t, "true", result.runAll)
+		require.Equal(t, true, facts(t, result.facts)["complete"])
+	})
 	paths := make([]string, 3000)
 	for i := range paths {
 		paths[i] = "ui/" + strconv.Itoa(i) + ".tsx"
@@ -124,22 +129,28 @@ func TestClassifierHandoff(t *testing.T) {
 
 func TestFileClassifier(t *testing.T) {
 	f := newFixture(t)
-	var groups map[string][]string
+	var groups map[string]struct {
+		Include, Exclude []string
+	}
 	f.json(t, "file-groups.json", &groups)
-	require.Len(t, groups, 19)
+	require.Len(t, groups, 20)
 	paths := map[string][]string{
 		"empty": {}, "UI only": {"ui/a.tsx"}, "mixed UI": {"ui/a.tsx", "OWNERS"},
 		"Scanner only": {"scanner/config.yaml"}, "mixed Scanner": {"scanner/config.yaml", "README.md"},
 		"Central and Sensor": {"central/sac/store.go", "sensor/kubernetes/client/client.go"},
 		"shared dependency":  {"pkg/concurrency/context.go"}, "proto outside known directories": {"elsewhere/schema.proto"},
 		"Go-like extension": {"elsewhere/foo.go.txt"}, "JSON filename encoding": {"line\nbreak.go"},
+		"CI Go and docs":        {"ci/native-selectors/file-facts/main.go", "README.md"},
+		"CI and product Go":     {"ci/native-selectors/file-facts/main.go", "central/sac/store.go", "README.md"},
+		"roxvet and product Go": {"tools/roxvet/roxvet.go", "sensor/common/centralclient/client.go"},
 	}
 	for name, paths := range paths {
 		t.Run(name, func(t *testing.T) {
 			result := facts(t, f.classify(t, paths))
 			for group, patterns := range groups {
 				matches := func(file string) bool {
-					return slices.ContainsFunc(patterns, func(pattern string) bool { return regexp.MustCompile(pattern).MatchString(file) })
+					match := func(pattern string) bool { return regexp.MustCompile(pattern).MatchString(file) }
+					return slices.ContainsFunc(patterns.Include, match) && !slices.ContainsFunc(patterns.Exclude, match)
 				}
 				require.Equal(t, slices.ContainsFunc(paths, matches), slices.Contains(array(result["any"]), any(group)), "any/%s", group)
 				require.Equal(t, len(paths) > 0 && !slices.ContainsFunc(paths, func(file string) bool { return !matches(file) }), slices.Contains(array(result["every"]), any(group)), "every/%s", group)
@@ -155,7 +166,7 @@ func TestFileClassifier(t *testing.T) {
 			require.Error(t, err)
 		})
 	}
-	for _, groups := range []string{`{"invalid":["["]}`, "null", "{}", `{"empty":[]}`, `{"":["^ui/"]}`} {
+	for _, groups := range []string{`{"invalid":{"include":["["]}}`, `{"invalid":{"include":[".*"],"exclude":["["]}}`, `null`, `{}`, `{"empty":{"include":[]}}`, `{"":{"include":["^ui/"]}}`} {
 		t.Run("reject groups "+groups, func(t *testing.T) {
 			file := filepath.Join(t.TempDir(), "groups.json")
 			require.NoError(t, os.WriteFile(file, []byte(groups), 0o600))

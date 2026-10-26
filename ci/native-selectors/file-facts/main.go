@@ -20,6 +20,12 @@ type (
 		Files []string `json:"files"`
 	}
 
+	// pathGroup matches included filenames that do not match an exclusion.
+	pathGroup struct {
+		Include []string `json:"include"`
+		Exclude []string `json:"exclude,omitempty"`
+	}
+
 	// fileFacts reports nonempty any/every matches for named path groups.
 	fileFacts struct {
 		Version  int      `json:"version"`
@@ -33,7 +39,7 @@ type (
 
 func main() {
 	input, output, diagnostic := os.Stdin, os.Stdout, os.Stderr //nolint:forbidigo // This filter's interface is process JSON input and output.
-	groupsPath := flag.String("groups", "ci/native-selectors/file-groups.json", "JSON object mapping path group names to Go regular expressions")
+	groupsPath := flag.String("groups", "ci/native-selectors/file-groups.json", "JSON object mapping path groups to include/exclude Go regular expressions")
 	flag.Parse()
 	if flag.NArg() != 0 {
 		fmt.Fprintln(diagnostic, "file-facts accepts only --groups; supply the collected diff as JSON on stdin")
@@ -66,7 +72,7 @@ func run(input io.Reader, output io.Writer, groupsPath string) error {
 	if err != nil {
 		return fmt.Errorf("read path groups: %w", err)
 	}
-	var groups map[string][]string
+	var groups map[string]pathGroup
 	if err := json.Unmarshal(encoded, &groups); err != nil {
 		return fmt.Errorf("decode path groups: %w", err)
 	}
@@ -81,7 +87,7 @@ func run(input io.Reader, output io.Writer, groupsPath string) error {
 }
 
 // classify treats an empty diff as complete, with no positive every-file matches.
-func classify(diff changedFiles, groups map[string][]string) (fileFacts, error) {
+func classify(diff changedFiles, groups map[string]pathGroup) (fileFacts, error) {
 	facts := fileFacts{
 		Version: 1, Complete: true, Base: diff.Base, Head: diff.Head,
 		Any: []string{}, Every: []string{},
@@ -89,23 +95,24 @@ func classify(diff changedFiles, groups map[string][]string) (fileFacts, error) 
 	if len(groups) == 0 {
 		return fileFacts{}, errors.New("path groups must not be empty")
 	}
-	for name, patterns := range groups {
-		if name == "" || len(patterns) == 0 {
+	for name, group := range groups {
+		if name == "" || len(group.Include) == 0 {
 			return fileFacts{}, errors.New("each path group needs a name and at least one expression")
 		}
-		var expressions []*regexp.Regexp
-		for _, pattern := range patterns {
-			expression, err := regexp.Compile(pattern)
-			if err != nil {
-				return fileFacts{}, fmt.Errorf("path group %q: %w", name, err)
-			}
-			expressions = append(expressions, expression)
+		included, err := compilePatterns(group.Include)
+		if err != nil {
+			return fileFacts{}, fmt.Errorf("path group %q includes: %w", name, err)
+		}
+		excluded, err := compilePatterns(group.Exclude)
+		if err != nil {
+			return fileFacts{}, fmt.Errorf("path group %q excludes: %w", name, err)
 		}
 		anyMatch, everyMatch := false, len(diff.Files) > 0
 		for _, filename := range diff.Files {
-			matched := slices.ContainsFunc(expressions, func(expression *regexp.Regexp) bool {
+			matches := func(expression *regexp.Regexp) bool {
 				return expression.MatchString(filename)
-			})
+			}
+			matched := slices.ContainsFunc(included, matches) && !slices.ContainsFunc(excluded, matches)
 			anyMatch = anyMatch || matched
 			everyMatch = everyMatch && matched
 		}
@@ -119,4 +126,16 @@ func classify(diff changedFiles, groups map[string][]string) (fileFacts, error) 
 	slices.Sort(facts.Any)
 	slices.Sort(facts.Every)
 	return facts, nil
+}
+
+func compilePatterns(patterns []string) ([]*regexp.Regexp, error) {
+	var expressions []*regexp.Regexp
+	for _, pattern := range patterns {
+		expression, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("compile %q: %w", pattern, err)
+		}
+		expressions = append(expressions, expression)
+	}
+	return expressions, nil
 }

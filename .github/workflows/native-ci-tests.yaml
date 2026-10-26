@@ -56,3 +56,39 @@ jobs:
         run: |
           go test ./ci/native-selectors/selection-report
           go vet ./ci/native-selectors/selection-report
+
+  roxvet-tests:
+    needs: detect-changes
+    env:
+      CI_FILE_FACTS: ${{ needs.detect-changes.outputs.facts || '{}' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+      - name: Explain selection
+        id: selection
+        continue-on-error: true
+        uses: ./.github/actions/ci-selection-summary
+        with:
+          candidate: >-
+            ${{ !fromJSON(env.CI_FILE_FACTS).complete ||
+            contains(github.event.pull_request.labels.*.name, 'ci-run-all-tests') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'broad') ||
+            contains(fromJSON(env.CI_FILE_FACTS).any, 'roxvet') }}
+          enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+      - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+        id: selection-record
+        if: ${{ !cancelled() }}
+        run: ':'
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        if: steps.selection.outputs.run != 'false'
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Test roxvet
+        if: steps.selection.outputs.run != 'false'
+        run: go test ./tools/roxvet/...
+      - name: Vet roxvet
+        if: steps.selection.outputs.run != 'false'
+        run: go vet ./tools/roxvet/...

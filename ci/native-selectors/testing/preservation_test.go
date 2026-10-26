@@ -103,6 +103,13 @@ func TestWorkflowPreservation(t *testing.T) {
 	}
 	for key, hash := range baseline.UnchangedJobs {
 		file, name, _ := strings.Cut(key, "/")
+		if key == "unit-tests.yaml/detect-changes" {
+			require.Equal(t, object{
+				"uses": "./.github/workflows/detect-changes.yml",
+				"with": object{"run_all": "^Makefile$\n^make/\n^.github/actions/job-preamble/\n"},
+			}, f.jobs(file)[name], "only product-build overrides belong to this caller")
+			continue
+		}
 		require.Equal(t, hash, digest([]byte(encode(t, f.jobs(file)[name]))), key)
 	}
 	for file, hash := range baseline.Children {
