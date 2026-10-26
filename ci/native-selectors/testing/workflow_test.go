@@ -27,14 +27,18 @@ type (
 		workflows        map[string]object
 		report, detector object
 		local            map[string]selection
+		preparations     map[string]selection
 		consumers        []string
 	}
 	selection struct {
 		workflow  string
 		job, step object
 	}
-	decision struct{ candidate, enforced, run bool }
-	options  struct {
+	decision struct {
+		candidate, enforced, run bool
+		kind                     string
+	}
+	options struct {
 		Event                                   string `json:"event"`
 		Draft                                   bool   `json:"draft"`
 		Fork                                    bool   `json:"fork"`
@@ -59,7 +63,7 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	root, err := filepath.Abs("../../..")
 	require.NoError(t, err)
-	f := &fixture{root: root, binary: filepath.Join(t.TempDir(), "file-facts"), workflows: map[string]object{}, local: map[string]selection{}}
+	f := &fixture{root: root, binary: filepath.Join(t.TempDir(), "file-facts"), workflows: map[string]object{}, local: map[string]selection{}, preparations: map[string]selection{}}
 	command(t, root, "", nil, "go", "build", "-o", f.binary, "./ci/native-selectors/file-facts")
 	for _, workflow := range []string{"unit-tests.yaml", "style.yaml", "check-crd-compatibility.yaml", "scanner-db-integration-tests.yaml", "build.yaml", "native-ci-tests.yaml", "e2e-dispatch.yaml"} {
 		f.workflows[workflow] = f.workflow(t, workflow)
@@ -67,6 +71,10 @@ func newFixture(t *testing.T) *fixture {
 			job := obj(value)
 			for _, step := range steps(job) {
 				if step["id"] == "selection" {
+					if strings.HasPrefix(name, "select-e2e-") {
+						f.preparations[str(lookup(step, "with", "target"))] = selection{workflow: workflow, job: job, step: step}
+						continue
+					}
 					if name == "explain-image-build-selection" {
 						name = "build-images"
 					}
@@ -318,6 +326,9 @@ func (f *fixture) dispatchOutputs(t *testing.T, ctx object) {
 func (f *fixture) explain(t *testing.T, name string, ctx object) decision {
 	t.Helper()
 	selected := f.local[name]
+	if preparation, ok := f.preparations[name]; ok {
+		selected = preparation
+	}
 	context := clone(t, ctx)
 	if value := lookup(selected.job, "env", "CI_FILE_FACTS"); value != nil {
 		context["env"] = object{"CI_FILE_FACTS": evaluate(t, value, ctx)}
@@ -327,39 +338,45 @@ func (f *fixture) explain(t *testing.T, name string, ctx object) decision {
 		inputs[key] = str(obj(value)["default"])
 	}
 	for key, value := range obj(selected.step["with"]) {
-		if key == "note" {
+		if key == "note" || key == "target" {
 			inputs[key] = value
 		} else {
 			inputs[key] = evaluate(t, value, context)
 		}
 	}
 	run := evaluate(t, lookup(steps(obj(f.report["runs"]))[0], "env", "RUN"), object{"inputs": inputs})
-	return decision{candidate: inputs["candidate"] == "true", enforced: inputs["enforced"] == "true", run: run == "true"}
+	kind := evaluate(t, lookup(steps(obj(f.report["runs"]))[0], "env", "DECISION"), object{"inputs": inputs})
+	return decision{candidate: inputs["candidate"] == "true", enforced: inputs["enforced"] == "true", run: run == "true", kind: kind}
 }
 
 func (f *fixture) candidate(t *testing.T, name string, ctx object) bool {
 	t.Helper()
-	if _, ok := f.local[name]; ok {
-		return f.explain(t, name, ctx).candidate
-	}
-	ctx = clone(t, ctx)
-	obj(ctx["github"])["event_name"] = "pull_request"
-	// Candidate checks remove execution restrictions; dispatch tests exercise them separately.
-	obj(lookup(ctx, "github", "event", "pull_request", "head", "repo"))["fork"] = false
-	outputs := obj(lookup(ctx, "needs", "should-dispatch", "outputs"))
-	outputs["enforced"] = "true"
-	var labels []string
-	require.NoError(t, json.Unmarshal([]byte(str(outputs["labels"])), &labels))
-	outputs["labels"] = encode(t, append(labels, "konflux-build"))
-	return evaluate(t, lookup(f.jobs("e2e-dispatch.yaml"), name, "with", "should-run"), ctx) == "true"
+	return f.explain(t, name, ctx).candidate
 }
 
 func (f *fixture) dispatch(t *testing.T, ctx object) (map[string]bool, bool, bool) {
 	t.Helper()
 	jobs := map[string]bool{}
+	// The pinned dispatch contract reports requests separately from image availability.
+	ctx = clone(t, ctx)
+	for _, waiter := range []string{"wait-for-images", "wait-for-konflux-images"} {
+		obj(ctx["needs"])[waiter] = object{"result": "success", "outputs": object{"run": "true"}}
+	}
 	for _, name := range f.consumers {
-		jobs[name] = evaluate(t, lookup(f.jobs("e2e-dispatch.yaml"), name, "with", "should-run"), ctx) == "true"
+		jobs[name] = f.explain(t, name, ctx).run
 	}
 	fork := lookup(ctx, "github", "event", "pull_request", "head", "repo", "fork") == true
 	return jobs, !fork && f.explain(t, "wait-for-images", ctx).run, !fork && f.explain(t, "wait-for-konflux-images", ctx).run
+}
+
+// execution follows successful image/preparation jobs through the actual caller gates.
+func (f *fixture) execution(t *testing.T, name string, ctx object) bool {
+	t.Helper()
+	ctx = clone(t, ctx)
+	for _, waiter := range []string{"wait-for-images", "wait-for-konflux-images"} {
+		obj(ctx["needs"])[waiter] = object{"result": "success", "outputs": object{"run": str(f.explain(t, waiter, ctx).run)}}
+	}
+	obj(ctx["needs"])["select-"+name] = object{"result": "success", "outputs": object{"run": str(f.explain(t, name, ctx).run)}}
+	job := obj(f.jobs("e2e-dispatch.yaml")[name])
+	return evaluate(t, job["if"], ctx) == "true" && evaluate(t, lookup(job, "with", "should-run"), ctx) == "true"
 }

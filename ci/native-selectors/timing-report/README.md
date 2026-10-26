@@ -31,17 +31,23 @@ All 23 current PR workflows have the final call; only workflows triggered by the
 
 ## Recorded selection decisions
 
-Each timing row has an expandable summary with job links in three categories:
+Each timing row states how many recorded decisions permitted work, then lists exceptions with job links in three categories:
 
 - **Skipped by selection:** the job's explanation recorded that enforcement rejected its candidate while execution restrictions permitted work.
 - **Blocked by execution:** the explanation recorded an execution restriction, such as missing `konflux-build`. This category takes precedence when the candidate also did not match.
-- **No recorded decision:** a whole job skipped, its explanation did not succeed, or its decision log was unavailable, missing, malformed, or ambiguous. This includes skipped E2E callers that never reached an explanation. Their status alone does not identify a cause.
+- **Explanation step present, decision unavailable:** an instrumented job's explanation did not run or succeed, or its decision log was unavailable, missing, malformed, or ambiguous.
 
 The existing `Explain selection` action emits exactly one timestamped log record through GitHub's log capture: `STACKROX_CI_SELECTION_V1 permitted`, `skipped-by-selection`, or `blocked-by-execution`. Its native expression classifies the same inputs that control the action's execution output. The reporter reads that result; it never evaluates filename groups, labels, or job-selection expressions. Human-readable explanations remain available beside each job.
 
-The reporter requests the first 1 MiB of logs only for jobs with a successful `Explain selection` step. Other skipped jobs enter the unknown category without a log request. A missing record beyond the excerpt is unknown, not a guessed decision. Log failures do not discard timing measurements. Uninstrumented jobs that completed without a selection explanation are omitted; canceled jobs and timing reporters remain excluded.
+For E2E, nine adjacent preparation jobs run before the reusable test calls can skip. Each uses the same action with an optional `target` input containing its call's job ID. The action also emits `STACKROX_CI_SELECTION_TARGET_V1 JOB_ID`; its existing `run` output controls the call. The reporter uses the target to associate a recorded rejection with the skipped call and its nested jobs, rather than counting them again as unknown. Links lead to the preparation's explanation. The target is reporting metadata, not another selection rule.
+
+Preparations run after their image waiters with `always() && !cancelled()`. They record failed prerequisites and execution restrictions before the test call is gated. Under enforcement, a successful image waiter that intentionally selected no work does not obscure a consumer's own selection rejection. For example, a docs-only PR with enforcement and `konflux-build` records E2E selection skips; a broad change without `konflux-build` records Konflux execution blocks. A preparation failure blocks its call and leaves its explanation unknown. Cancellations can prevent records and remain excluded from timing.
+
+The reporter requests the first 1 MiB of logs only for jobs with a successful `Explain selection` step. A missing record beyond the excerpt is unknown, not a guessed decision. Log failures do not discard timing measurements. Skipped jobs without explanation steps, such as success-path Slack notifications and scheduled scanner maintenance, contribute only to a separate unattributed-skip count. Their statuses cannot establish selection reasons. Completed uninstrumented jobs are omitted; canceled jobs and timing reporters remain excluded.
 
 Counts and lists cover only contributions received so far. Permission to execute does not prove that tests ran, and these lists do not estimate time saved. Label changes and reruns do not amend the initial-execution summary. Historical timing rows without decision contributions say that no decision summary was recorded.
+
+The E2E preparations add nine runner starts and a possible failure before each test call. That execution overhead counts toward wall-clock wait. The temporary timing publisher's own overhead remains excluded.
 
 For the first push containing this comment format, let older reporting workflows finish first. A reporter running older code can rebuild the same comment without retaining the decision fields it does not understand.
 

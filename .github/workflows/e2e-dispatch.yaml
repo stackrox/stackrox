@@ -236,197 +236,406 @@ jobs:
         image: *stackrox-required-images
         limit: 14100 # Seconds, corresponding to 3h55m, which is the timeout for building the operator-index (.tekton/operator-index-build.yaml) + 5m buffer.
 
+  # Each preparation records its decision before the adjacent reusable workflow can skip.
+  # A selection-skipped image wait does not obscure the consumer's own selection rejection.
+  select-e2e-byodb-tests:
+    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-byodb-tests
+        candidate: >-
+          ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-byodb-tests') }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-images.result == 'success' &&
+          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          needs.should-dispatch.outputs.enforced == 'true' ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-byodb-tests')))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-byodb-tests:
-    if: needs.wait-for-images.outputs.run == 'true'
-    needs: [ wait-for-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-byodb-tests.result == 'success'
+    needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-byodb-tests ]
     uses: ./.github/workflows/e2e-byodb-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
-          needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-byodb-tests'))) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-byodb-tests')))) }}
+      should-run: ${{ needs.select-e2e-byodb-tests.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-byodb-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
+  select-e2e-db-backup-restore-tests-gke:
+    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-db-backup-restore-tests-gke
+        candidate: >-
+          ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-db-backup-restore-tests-gke') }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-images.result == 'success' &&
+          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          needs.should-dispatch.outputs.enforced == 'true' ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-db-backup-restore-tests-gke') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-db-backup-restore-tests-gke:
-    if: needs.wait-for-images.outputs.run == 'true'
-    needs: [ wait-for-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-db-backup-restore-tests-gke.result == 'success'
+    needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-db-backup-restore-tests-gke ]
     uses: ./.github/workflows/e2e-db-backup-restore-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
-          needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-db-backup-restore-tests-gke'))) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-db-backup-restore-tests-gke') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+      should-run: ${{ needs.select-e2e-db-backup-restore-tests-gke.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-db-backup-restore-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
+  select-e2e-db-backup-restore-tests-gke-konflux:
+    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-db-backup-restore-tests-gke-konflux
+        candidate: >-
+          ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-db-backup-restore-tests-gke-konflux') }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-db-backup-restore-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-db-backup-restore-tests-gke-konflux:
-    if: needs.wait-for-konflux-images.outputs.run == 'true'
-    needs: [ wait-for-konflux-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-db-backup-restore-tests-gke-konflux.result == 'success'
+    needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-db-backup-restore-tests-gke-konflux ]
     uses: ./.github/workflows/e2e-db-backup-restore-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
-          needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-db-backup-restore-tests-gke-konflux')) && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build')) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-db-backup-restore-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build'))))) }}
+      should-run: ${{ needs.select-e2e-db-backup-restore-tests-gke-konflux.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-db-backup-restore-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
+  select-e2e-gke-upgrade-tests:
+    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-gke-upgrade-tests
+        candidate: >-
+          ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-gke-upgrade-tests') }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-images.result == 'success' &&
+          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          needs.should-dispatch.outputs.enforced == 'true' ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-gke-upgrade-tests') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-gke-upgrade-tests:
-    if: needs.wait-for-images.outputs.run == 'true'
-    needs: [ wait-for-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-gke-upgrade-tests.result == 'success'
+    needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-gke-upgrade-tests ]
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
-          needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-gke-upgrade-tests'))) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-gke-upgrade-tests') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+      should-run: ${{ needs.select-e2e-gke-upgrade-tests.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-gke-upgrade-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-nongroovy-tests-gke:
-    if: needs.wait-for-images.outputs.run == 'true'
-    needs: [ wait-for-images, should-dispatch, detect-changes ]
-    uses: ./.github/workflows/e2e-nongroovy-tests-gke.yaml
-    with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+  select-e2e-nongroovy-tests-gke:
+    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-nongroovy-tests-gke
+        candidate: >-
+          ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
           needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
           contains(fromJSON(needs.detect-changes.outputs.facts || '{}').every, 'roxctl') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-nongroovy-tests-gke'))) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-nongroovy-tests-gke') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-nongroovy-tests-gke') }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-images.result == 'success' &&
+          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          needs.should-dispatch.outputs.enforced == 'true' ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-nongroovy-tests-gke') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
+  e2e-nongroovy-tests-gke:
+    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-nongroovy-tests-gke.result == 'success'
+    needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-nongroovy-tests-gke ]
+    uses: ./.github/workflows/e2e-nongroovy-tests-gke.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ needs.select-e2e-nongroovy-tests-gke.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
+  select-e2e-nongroovy-tests-gke-konflux:
+    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-nongroovy-tests-gke-konflux
+        candidate: >-
+          ${{ !fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
+          needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-nongroovy-tests-gke-konflux') }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-nongroovy-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-nongroovy-tests-gke-konflux:
-    if: needs.wait-for-konflux-images.outputs.run == 'true'
-    needs: [ wait-for-konflux-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-nongroovy-tests-gke-konflux.result == 'success'
+    needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-nongroovy-tests-gke-konflux ]
     uses: ./.github/workflows/e2e-nongroovy-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (!fromJSON(needs.detect-changes.outputs.facts || '{}').complete ||
-          needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-nongroovy-tests-gke-konflux')) && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build')) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-nongroovy-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build'))))) }}
+      should-run: ${{ needs.select-e2e-nongroovy-tests-gke-konflux.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
+  select-e2e-qa-tests-gke:
+    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-qa-tests-gke
+        candidate: >-
+          ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-gke')) }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-images.result == 'success' &&
+          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          needs.should-dispatch.outputs.enforced == 'true' ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-gke')))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-qa-tests-gke:
-    if: needs.wait-for-images.outputs.run == 'true'
-    needs: [ wait-for-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-qa-tests-gke.result == 'success'
+    needs: [ wait-for-images, should-dispatch, detect-changes, select-e2e-qa-tests-gke ]
     uses: ./.github/workflows/e2e-qa-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke')))) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke')))) }}
+      should-run: ${{ needs.select-e2e-qa-tests-gke.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-qa-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
+  select-e2e-qa-tests-ocp-fips-konflux:
+    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-qa-tests-ocp-fips-konflux
+        candidate: >-
+          ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-ocp-fips-konflux')) }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-ocp-fips-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-qa-tests-ocp-fips-konflux:
-    if: needs.wait-for-konflux-images.outputs.run == 'true'
-    needs: [ wait-for-konflux-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-qa-tests-ocp-fips-konflux.result == 'success'
+    needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-qa-tests-ocp-fips-konflux ]
     uses: ./.github/workflows/e2e-qa-tests-ocp-fips-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux'))) && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build')) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build'))))) }}
+      should-run: ${{ needs.select-e2e-qa-tests-ocp-fips-konflux.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-qa-tests-ocp-fips-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
+  select-e2e-qa-tests-gke-konflux:
+    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-slim
+    outputs:
+      run: ${{ steps.selection.outputs.run }}
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+        sparse-checkout: .github/actions/ci-selection-summary
+    - name: Explain selection
+      id: selection
+      uses: ./.github/actions/ci-selection-summary
+      with:
+        target: e2e-qa-tests-gke-konflux
+        candidate: >-
+          ${{ fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'ci-run-all-tests') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
+          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
+          contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-gke-konflux')) }}
+        enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
+        eligible: >-
+          ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
+          needs.wait-for-konflux-images.result == 'success' &&
+          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
+          !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
+          (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
+          (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
+        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+
   e2e-qa-tests-gke-konflux:
-    if: needs.wait-for-konflux-images.outputs.run == 'true'
-    needs: [ wait-for-konflux-images, should-dispatch, detect-changes ]
+    if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-qa-tests-gke-konflux.result == 'success'
+    needs: [ wait-for-konflux-images, should-dispatch, detect-changes, select-e2e-qa-tests-gke-konflux ]
     uses: ./.github/workflows/e2e-qa-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
-      should-run: >-
-          ${{ !github.event.pull_request.head.repo.fork && (
-          github.event_name != 'pull_request' ||
-          ((needs.should-dispatch.outputs.enforced == 'true') &&
-          (fromJSON(needs.detect-changes.outputs.facts || '{}').complete && (needs.detect-changes.outputs.run_all == 'true' ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'ci-run-all-tests') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'broad') ||
-          contains(fromJSON(needs.detect-changes.outputs.facts || '{}').any, 'proto') ||
-          contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke-konflux'))) && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build')) ||
-          ((needs.should-dispatch.outputs.enforced != 'true') && (contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels), 'konflux-build'))))) }}
+      should-run: ${{ needs.select-e2e-qa-tests-gke-konflux.outputs.run == 'true' }}
     secrets: inherit
     concurrency:
       group: e2e-qa-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -451,14 +660,23 @@ jobs:
       - should-dispatch
       - wait-for-images
       - wait-for-konflux-images
+      - select-e2e-byodb-tests
       - e2e-byodb-tests
+      - select-e2e-db-backup-restore-tests-gke
       - e2e-db-backup-restore-tests-gke
+      - select-e2e-db-backup-restore-tests-gke-konflux
       - e2e-db-backup-restore-tests-gke-konflux
+      - select-e2e-gke-upgrade-tests
       - e2e-gke-upgrade-tests
+      - select-e2e-nongroovy-tests-gke
       - e2e-nongroovy-tests-gke
+      - select-e2e-nongroovy-tests-gke-konflux
       - e2e-nongroovy-tests-gke-konflux
+      - select-e2e-qa-tests-gke
       - e2e-qa-tests-gke
+      - select-e2e-qa-tests-ocp-fips-konflux
       - e2e-qa-tests-ocp-fips-konflux
+      - select-e2e-qa-tests-gke-konflux
       - e2e-qa-tests-gke-konflux
       - explain-dispatch
     if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}

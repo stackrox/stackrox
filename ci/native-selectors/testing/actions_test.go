@@ -123,6 +123,11 @@ func TestComparisonScenarios(t *testing.T) {
 			require.Equal(t, want.Dispatch.Ordinary == "true", ordinary)
 			require.Equal(t, want.Dispatch.Konflux == "true", konflux)
 			for name, runs := range jobs {
+				images := want.Dispatch.Ordinary == "true"
+				if strings.Contains(name, "konflux") {
+					images = want.Dispatch.Konflux == "true"
+				}
+				require.Equal(t, expectedJobs[name] && images, f.execution(t, name, context("e2e-dispatch.yaml")), "actual caller execution for %s", name)
 				if runs && scenario.Enforced {
 					if strings.Contains(name, "konflux") {
 						require.True(t, konflux, "image prerequisite for %s", name)
@@ -226,6 +231,8 @@ func TestBackupRestoreSelection(t *testing.T) {
 			require.Equal(t, test.konflux, jobs[konflux], "Konflux selection")
 			require.Equal(t, test.ordinaryImages, ordinaryImages, "ordinary image waiter")
 			require.Equal(t, test.konfluxImages, konfluxImages, "Konflux image waiter")
+			require.Equal(t, test.ordinary && test.ordinaryImages, f.execution(t, ordinary, ctx), "ordinary caller execution")
+			require.Equal(t, test.konflux && test.konfluxImages, f.execution(t, konflux, ctx), "Konflux caller execution")
 		})
 	}
 }

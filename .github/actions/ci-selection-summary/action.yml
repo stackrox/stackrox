@@ -7,6 +7,9 @@ inputs:
   enforced:
     description: Whether to apply the candidate decision or only report it in shadow mode.
     required: true
+  target:
+    description: Optional reusable-workflow job ID whose execution this decision controls.
+    default: ''
   note:
     description: Why a prerequisite or reporting job retains work independently of its candidate.
     default: ''
@@ -28,13 +31,20 @@ runs:
         ENFORCED: ${{ inputs.enforced }}
         RUN: ${{ inputs.eligible != 'false' && (inputs.enforced != 'true' || inputs.candidate != 'false') }}
         DECISION: ${{ inputs.eligible == 'false' && 'blocked-by-execution' || inputs.enforced == 'true' && inputs.candidate == 'false' && 'skipped-by-selection' || 'permitted' }}
+        TARGET: ${{ inputs.target }}
         NOTE: ${{ inputs.note }}
       run: |
         printf 'run=%s\n' "$RUN" >> "$GITHUB_OUTPUT"
         printf 'STACKROX_CI_SELECTION_V1 %s\n' "$DECISION"
+        if [[ -n "$TARGET" ]]; then
+          printf 'STACKROX_CI_SELECTION_TARGET_V1 %s\n' "$TARGET"
+        fi
         # shellcheck disable=SC2016 # Markdown backticks are literal text.
         {
           printf '### Native CI selection\n\n'
+          if [[ -n "$TARGET" ]]; then
+            printf '**E2E workflow call:** `%s`\n\n' "$TARGET"
+          fi
           printf '**Candidate:** `%s`\n\n' "$CANDIDATE"
           printf '`true` means this job\047s selection rule requests work based on changed files, labels, or a fallback when file data is unavailable.\n\n'
           printf '**Eligible:** `%s`\n\n' "$ELIGIBLE"

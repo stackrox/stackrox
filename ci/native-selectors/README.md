@@ -13,7 +13,7 @@ The [Granular Test Proposal](https://docs.google.com/document/d/1rpe0LZu39BLq9X_
 | Go, PostgreSQL, Sensor integration, benchmarks, UI, shell, local roxctl | [unit-tests.yaml](../../.github/workflows/unit-tests.yaml), the job's `Explain selection` input |
 | Style, generated files, Go/Actions/Prow lint, dependent image versions | [style.yaml](../../.github/workflows/style.yaml), the job's `Explain selection` input |
 | Operator/CRD and Scanner database tests | [check-crd-compatibility.yaml](../../.github/workflows/check-crd-compatibility.yaml), [scanner-db-integration-tests.yaml](../../.github/workflows/scanner-db-integration-tests.yaml) |
-| Nine Actions E2E consumers | [e2e-dispatch.yaml](../../.github/workflows/e2e-dispatch.yaml), each consumer's `should-run` condition |
+| Nine Actions E2E consumers | [e2e-dispatch.yaml](../../.github/workflows/e2e-dispatch.yaml), each adjacent `select-e2e-…` job's `Explain selection` inputs |
 | Image waits and their dependent jobs | The two waiter jobs in `e2e-dispatch.yaml`; advisory `explain-image-build-selection` job in [build.yaml](../../.github/workflows/build.yaml) |
 | Prototype regression tests | [native-ci-tests.yaml](../../.github/workflows/native-ci-tests.yaml) |
 | Definitions of named filename groups | [file-groups.json](file-groups.json); these contain paths, never jobs or labels |
@@ -53,6 +53,18 @@ The detector also exposes `run_all`: `true` when the validated filenames match a
 Without `ci-dispatcher-enforce`, Actions reports decisions and retains existing per-run test eligibility. With that label, native conditions apply selection. Ordinary jobs retain their check names and matrices; expensive steps become successful no-ops when unselected. Existing outer conditions still apply. Style remains selected. Jobs outside the comparison inventory retain their behavior.
 
 E2E consumers keep their existing reusable workflows. Each consumer owns its native condition; `should-dispatch` only reads current labels and reports its own prerequisite candidacy. It exports no per-job plan. Consumers require a successful image waiter that permits execution. Waiters include the union of their consumers' rules. This duplication is necessary because Actions does not infer prerequisites from selected consumers.
+
+Each E2E call has an adjacent `select-e2e-…` preparation job. It runs after its image waiter, including after a failed or skipped waiter, and records the native candidate and execution restrictions through the existing explanation action. Its single `run` output controls that call's existing `should-run` input. The call retains its image guard and requires successful preparation; no rule is copied into the reporting code.
+
+This adds nine runner starts and a prerequisite failure point. Preparations check out only the explanation action. A preparation failure blocks its call and leaves the missing explanation visible. Their queue and execution time count toward the user's wall-clock wait; the jobs are part of execution, not timing-publisher overhead.
+
+```mermaid
+flowchart LR
+  F[File facts and current labels] --> S[Adjacent E2E preparation]
+  I[Image waiter result] --> S
+  S -->|run output| E[Existing reusable E2E call]
+  S -->|decision and target log records| R[Timing comment reporter]
+```
 
 Image builds **always remain enabled**. The separate `explain-image-build-selection` job reports candidacy but does not enforce it: the comparison's dependency graph does not account for Prow and manual image consumers. Image production has no dependency on the detector or advisory report. The execution scripts, build matrices, and child test workflows are unchanged.
 

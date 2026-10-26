@@ -109,7 +109,8 @@ func TestRefreshDecisionSummary(t *testing.T) {
 	assert.Contains(t, output.String(), "15m0s")
 	assert.Contains(t, output.String(), "**Skipped by selection (1)**")
 	assert.Contains(t, output.String(), "**Blocked by execution (1)**")
-	assert.Contains(t, output.String(), "**No recorded decision (2)**")
+	assert.Contains(t, output.String(), "**Explanation step present, decision unavailable (1)**")
+	assert.Contains(t, output.String(), "1 additional jobs were skipped without selection records")
 	assert.Contains(t, output.String(), "decision log unavailable")
 }
 

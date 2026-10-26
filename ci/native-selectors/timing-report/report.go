@@ -48,7 +48,7 @@ func (m measurement) valid() bool {
 		return false
 	}
 	for _, report := range m.Reports {
-		if report.RunID <= 0 || report.Recorded < 0 {
+		if report.RunID <= 0 || report.Recorded < 0 || report.UnattributedSkips < 0 {
 			return false
 		}
 		for _, job := range report.Jobs {
