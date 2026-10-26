@@ -71,8 +71,6 @@ message ComplianceCheckResultStatusCount {
   string rule_name = 3;
   repeated ComplianceCheckStatusCount check_stats = 4;
   repeated ComplianceControl controls = 5;
-  // Rolled-up freshness across all clusters reporting this check: STALE if
-  // any contributing cluster has stale data (STALE > CURRENT > UNKNOWN).
   ComplianceAggregateDataFreshness data_freshness = 6;
 }
 
