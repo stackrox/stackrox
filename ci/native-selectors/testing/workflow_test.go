@@ -65,7 +65,7 @@ func newFixture(t *testing.T) *fixture {
 	require.NoError(t, err)
 	f := &fixture{root: root, binary: filepath.Join(t.TempDir(), "file-facts"), workflows: map[string]object{}, local: map[string]selection{}, preparations: map[string]selection{}}
 	command(t, root, "", nil, "go", "build", "-o", f.binary, "./ci/native-selectors/file-facts")
-	for _, workflow := range []string{"unit-tests.yaml", "style.yaml", "check-crd-compatibility.yaml", "scanner-db-integration-tests.yaml", "build.yaml", "native-ci-tests.yaml", "e2e-dispatch.yaml"} {
+	for _, workflow := range []string{"unit-tests.yaml", "style.yaml", "check-crd-compatibility.yaml", "scanner-db-integration-tests.yaml", "build.yaml", "native-ci-tests.yaml", "e2e-dispatch.yaml", "ci-selection-report.yaml"} {
 		f.workflows[workflow] = f.workflow(t, workflow)
 		for name, value := range obj(f.workflows[workflow]["jobs"]) {
 			job := obj(value)

@@ -35,6 +35,11 @@ jobs:
             contains(fromJSON(env.CI_FILE_FACTS).any, 'proto') ||
             contains(fromJSON(env.CI_FILE_FACTS).any, 'selector') }}
           enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+      - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+        id: selection-record
+        if: ${{ !cancelled() }}
+        run: ':'
+
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
         if: steps.selection.outputs.run != 'false'
         with:
@@ -46,18 +51,8 @@ jobs:
       - run: go vet ./...
         if: steps.selection.outputs.run != 'false'
         working-directory: ci/native-selectors/testing
-      - name: Test timing reporter
+      - name: Test selection reporter
         if: steps.selection.outputs.run != 'false'
         run: |
-          go test ./ci/native-selectors/timing-report
-          go vet ./ci/native-selectors/timing-report
-
-  report-ci-timing:
-    name: CI timing report
-    needs: [detect-changes, selector-tests]
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml
+          go test ./ci/native-selectors/selection-report
+          go vet ./ci/native-selectors/selection-report

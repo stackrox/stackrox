@@ -28,13 +28,3 @@ jobs:
         gh pr merge ${{ github.event.pull_request.number }} \
           --auto --delete-branch --squash \
           --repo "${{ github.repository }}"
-
-  report-ci-timing:
-    name: CI timing report
-    needs: [mintmaker-auto-approve-and-merge]
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

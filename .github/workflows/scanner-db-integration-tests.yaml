@@ -48,6 +48,11 @@ jobs:
           contains(fromJSON(env.CI_FILE_FACTS).every, 'scanner') }}
         enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
+
     - uses: ./.github/actions/job-preamble
       if: steps.selection.outputs.run != 'false'
       with:
@@ -70,13 +75,3 @@ jobs:
     - name: DB Integration tests
       if: steps.selection.outputs.run != 'false'
       run: make -C scanner db-integration-test
-
-  report-ci-timing:
-    name: CI timing report
-    needs: [detect-changes, db-integration-tests]
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

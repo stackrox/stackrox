@@ -54,6 +54,11 @@ jobs:
           contains(fromJSON(env.CI_FILE_FACTS).every, 'operator') }}
         enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
+
     - uses: ./.github/actions/job-preamble
       if: steps.selection.outputs.run != 'false'
       with:
@@ -130,13 +135,3 @@ jobs:
         new_path="$PWD/config-controller/config/crd/bases"
         crdify=".github/workflows/scripts/crdify.sh"
         $crdify "${old_path}/config.stackrox.io_securitypolicies.yaml" "${new_path}/config.stackrox.io_securitypolicies.yaml"
-
-  report-ci-timing:
-    name: CI timing report
-    needs: [detect-changes, check-crd-compatibility]
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

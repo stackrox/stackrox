@@ -137,17 +137,3 @@ jobs:
     - uses: ./.github/actions/notify-slack-on-failure
       with:
         slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-
-  report-ci-timing:
-    name: CI timing report
-    needs:
-      - offline-bundle-matrix
-      - offline-bundle-generate
-      - offline-bundle-upload
-      - offline-bundle-notification
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

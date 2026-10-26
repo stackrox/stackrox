@@ -89,13 +89,3 @@ jobs:
           name: logs-directory-${{ github.sha }}
           path: logs/
           retention-days: 3
-
-  report-ci-timing:
-    name: CI timing report
-    needs: [e2e-test-on-kind]
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

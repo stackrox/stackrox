@@ -36,8 +36,8 @@ func TestE2EDecisionsBeforeGates(t *testing.T) {
 		"should retain the QA unavailable-file default":         {target: "e2e-qa-tests-gke", opt: options{Unknown: true}, kind: "skipped-by-selection"},
 		"should retain the BYODB unavailable-file default":      {opt: options{Unknown: true}, kind: "permitted", run: true},
 		"should permit a non-PR event":                          {opt: options{Event: "push"}, kind: "permitted", run: true},
-		"should record an image-wait failure":                   {files: []string{"go.mod"}, failed: "wait-for-images", kind: "blocked-by-execution"},
-		"should record a skipped image prerequisite":            {files: []string{"go.mod"}, failed: "skipped-image", kind: "blocked-by-execution"},
+		"should decide before a failing image waiter":           {files: []string{"go.mod"}, failed: "wait-for-images", kind: "permitted", run: true},
+		"should decide before a skipped image waiter":           {files: []string{"go.mod"}, failed: "skipped-image", kind: "permitted", run: true},
 		"should record a detector job failure":                  {failed: "detect-changes", kind: "blocked-by-execution"},
 		"should record a label-collection job failure":          {failed: "should-dispatch", kind: "blocked-by-execution"},
 	} {
@@ -69,6 +69,9 @@ func TestE2EDecisionsBeforeGates(t *testing.T) {
 			consumer := obj(f.jobs("e2e-dispatch.yaml")[test.target])
 			require.Contains(t, array(consumer["needs"]), prepName)
 			require.Equal(t, str(test.run), evaluate(t, lookup(consumer, "with", "should-run"), ctx), "call must consume the emitted execution output")
+			if test.failed == "wait-for-images" || test.failed == "skipped-image" {
+				require.Equal(t, "false", evaluate(t, consumer["if"], ctx), "an early permission record must not bypass failed images")
+			}
 			obj(ctx["needs"])[prepName] = object{"result": "failure", "outputs": object{}}
 			require.Equal(t, "false", evaluate(t, consumer["if"], ctx), "a preparation failure must block the call")
 
@@ -91,7 +94,7 @@ func TestE2EDecisionsBeforeGates(t *testing.T) {
 			require.Contains(t, log, "STACKROX_CI_SELECTION_TARGET_V1 "+test.target+"\n")
 			output, err := os.ReadFile(env["GITHUB_OUTPUT"])
 			require.NoError(t, err)
-			require.Equal(t, "run="+str(test.run)+"\n", string(output))
+			require.Equal(t, "run="+str(test.run)+"\ndecision="+test.kind+"\n", string(output))
 		})
 	}
 }

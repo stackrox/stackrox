@@ -52,6 +52,11 @@ jobs:
           contains(fromJSON(env.CI_FILE_FACTS).any, 'go') }}
         enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
+
     - uses: ./.github/actions/job-preamble
       if: steps.selection.outputs.run != 'false'
       with:
@@ -138,6 +143,11 @@ jobs:
             ${{ true }}
           enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+      - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+        id: selection-record
+        if: ${{ !cancelled() }}
+        run: ':'
+
       - uses: ./.github/actions/job-preamble
         with:
           free-disk-space: '30'
@@ -213,6 +223,11 @@ jobs:
           contains(fromJSON(env.CI_FILE_FACTS).any, 'go-lint') }}
         enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
+
     - uses: ./.github/actions/job-preamble
       if: steps.selection.outputs.run != 'false'
       with:
@@ -284,6 +299,11 @@ jobs:
             contains(fromJSON(env.CI_FILE_FACTS).any, 'image-versions') }}
           enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+      - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+        id: selection-record
+        if: ${{ !cancelled() }}
+        run: ':'
+
       - uses: ./.github/actions/job-preamble
         if: steps.selection.outputs.run != 'false'
         with:
@@ -343,6 +363,11 @@ jobs:
             contains(fromJSON(env.CI_FILE_FACTS).any, 'gha') }}
           enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+      - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+        id: selection-record
+        if: ${{ !cancelled() }}
+        run: ':'
+
       - uses: ./.github/actions/job-preamble
         if: steps.selection.outputs.run != 'false'
         with:
@@ -394,6 +419,11 @@ jobs:
             contains(fromJSON(env.CI_FILE_FACTS).any, 'prow') }}
           enforced: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
 
+      - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+        id: selection-record
+        if: ${{ !cancelled() }}
+        run: ':'
+
       - uses: ./.github/actions/job-preamble
         if: steps.selection.outputs.run != 'false'
         with:
@@ -444,23 +474,3 @@ jobs:
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
-
-  report-ci-timing:
-    name: CI timing report
-    needs:
-      - detect-changes
-      - check-generated-files
-      - misc-checks
-      - style-check
-      - golangci-lint
-      - check-dependent-images-exist
-      - github-actions-lint
-      - github-actions-shellcheck
-      - openshift-ci-lint
-      - slack-on-style-failure
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

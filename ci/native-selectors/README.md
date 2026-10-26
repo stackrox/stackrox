@@ -54,16 +54,18 @@ Without `ci-dispatcher-enforce`, Actions reports decisions and retains existing 
 
 E2E consumers keep their existing reusable workflows. Each consumer owns its native condition; `should-dispatch` only reads current labels and reports its own prerequisite candidacy. It exports no per-job plan. Consumers require a successful image waiter that permits execution. Waiters include the union of their consumers' rules. This duplication is necessary because Actions does not infer prerequisites from selected consumers.
 
-Each E2E call has an adjacent `select-e2e-…` preparation job. It runs after its image waiter, including after a failed or skipped waiter, and records the native candidate and execution restrictions through the existing explanation action. Its single `run` output controls that call's existing `should-run` input. The call retains its image guard and requires successful preparation; no rule is copied into the reporting code.
+Each E2E call has an adjacent `select-e2e-…` preparation job. It runs after file detection and label refresh, without waiting for images, and records the native candidate and execution restrictions through the explanation action. Its single `run` output controls that call's existing `should-run` input. The call still requires its images and successful preparation. An early permission record can therefore be followed by a skipped call if an image prerequisite fails; permission does not confirm execution.
 
-This adds nine runner starts and a prerequisite failure point. Preparations check out only the explanation action. A preparation failure blocks its call and leaves the missing explanation visible. Their queue and execution time count toward the user's wall-clock wait; the jobs are part of execution, not timing-publisher overhead.
+This adds nine runner starts and a prerequisite failure point. Preparations check out only the explanation action. A preparation failure blocks its call. Queueing can delay both the decision and the dependent call.
 
 ```mermaid
 flowchart LR
   F[File facts and current labels] --> S[Adjacent E2E preparation]
-  I[Image waiter result] --> S
   S -->|run output| E[Existing reusable E2E call]
-  S -->|decision and target log records| R[Timing comment reporter]
+  I[Image waiter result] --> E
+  S -->|Completed metadata step| A[Live Actions Jobs API]
+  A --> R[Bounded selection observer]
+  R --> C[One bot comment]
 ```
 
 Image builds **always remain enabled**. The separate `explain-image-build-selection` job reports candidacy but does not enforce it: the comparison's dependency graph does not account for Prow and manual image consumers. Image production has no dependency on the detector or advisory report. The execution scripts, build matrices, and child test workflows are unchanged.
@@ -76,7 +78,9 @@ Label add/remove events reevaluate the selectable test workflows. This can resta
 
 Decision summaries print already-evaluated candidates and permission to execute. The E2E report prints existing workflow results. Neither recomputes selection rules or claims tests ran from a successful wrapper/no-op check.
 
-A final job in each PR workflow calls the shared [timing reporter](timing-report/README.md), a temporary experiment restricted to PR #23602. The GitHub Actions bot updates one marked PR comment with the wall-clock wait and recorded selection exceptions for up to five recent commits' initial checks. Expand a commit's summary to see jobs skipped by selection, blocked by execution restrictions, or lacking a recorded decision. The reporter reads job-emitted decisions without recomputing selection rules. Each workflow contributes its start and finish; labels and reruns do not extend the measurement. Local commands can preview only.
+A single [selection observer](selection-report/README.md) starts alongside CI, without test dependencies. For ten minutes it checks the live Actions Jobs API every five seconds and updates one bot comment when records change. Each explanation exposes its already-evaluated outputs in a metadata-only step name, so the observer can read a decision while the test job is still running. It never evaluates selection rules. The comment shows permission, selection skips, execution restrictions, and pending or unavailable records for the current head's latest workflow runs. It contains no timing measurement or commit history.
+
+This experiment publishes only on same-repository PR #23602; local commands preview only. Runner startup, API latency, and queueing affect visibility. Decisions made after the bounded window require an observer rerun. Jobs skipped before any explanation have no record and cannot be classified from their status alone. [The observer guide](selection-report/README.md) describes these limits and its metadata interface.
 
 ## Validation
 

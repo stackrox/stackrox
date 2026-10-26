@@ -138,13 +138,3 @@ jobs:
         fi
 
         echo "No platform/config CRD schema changes detected. CRDs are frozen. ✅"
-
-  report-ci-timing:
-    name: CI timing report
-    needs: [check-crds-frozen]
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

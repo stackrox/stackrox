@@ -33,7 +33,7 @@ func TestWorkflowPreservation(t *testing.T) {
 			var commands []object
 			var preserved []object
 			for _, step := range steps(job) {
-				if step["id"] == "selection" {
+				if step["id"] == "selection" || step["id"] == "selection-record" {
 					continue
 				}
 				preserved = append(preserved, step)

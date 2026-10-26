@@ -77,6 +77,11 @@ jobs:
         enforced: ${{ false }}
         note: Context collection stays enabled; consumers and image waiters apply selection locally.
 
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
+
   wait-for-images:
     needs: [ detect-changes, should-dispatch ]
     if: ${{ !github.event.pull_request.head.repo.fork }}
@@ -131,6 +136,11 @@ jobs:
             contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-nongroovy-tests-gke-konflux') ||
             contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke-konflux') ||
             contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux')) }}
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
     - uses: ./.github/actions/handle-tagged-build
     - name: Determine image references
@@ -223,6 +233,11 @@ jobs:
             contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-gke-konflux') ||
             contains(fromJSON(needs.should-dispatch.outputs.labels), 'e2e-qa-tests-ocp-fips-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft))))) }}
 
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
+
     - uses: ./.github/actions/handle-tagged-build
     - name: Determine image references
       id: image-references
@@ -237,9 +252,9 @@ jobs:
         limit: 14100 # Seconds, corresponding to 3h55m, which is the timeout for building the operator-index (.tekton/operator-index-build.yaml) + 5m buffer.
 
   # Each preparation records its decision before the adjacent reusable workflow can skip.
-  # A selection-skipped image wait does not obscure the consumer's own selection rejection.
+  # Image waiters remain separate execution prerequisites.
   select-e2e-byodb-tests:
-    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -264,12 +279,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-images.result == 'success' &&
-          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           needs.should-dispatch.outputs.enforced == 'true' ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-byodb-tests')))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-byodb-tests:
     if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-byodb-tests.result == 'success'
@@ -284,7 +302,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-db-backup-restore-tests-gke:
-    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -309,12 +327,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-images.result == 'success' &&
-          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           needs.should-dispatch.outputs.enforced == 'true' ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-db-backup-restore-tests-gke') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-db-backup-restore-tests-gke:
     if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-db-backup-restore-tests-gke.result == 'success'
@@ -329,7 +350,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-db-backup-restore-tests-gke-konflux:
-    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -354,12 +375,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-konflux-images.result == 'success' &&
-          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-db-backup-restore-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-db-backup-restore-tests-gke-konflux:
     if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-db-backup-restore-tests-gke-konflux.result == 'success'
@@ -374,7 +398,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-gke-upgrade-tests:
-    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -399,12 +423,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-images.result == 'success' &&
-          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           needs.should-dispatch.outputs.enforced == 'true' ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-gke-upgrade-tests') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-gke-upgrade-tests:
     if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-gke-upgrade-tests.result == 'success'
@@ -419,7 +446,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-nongroovy-tests-gke:
-    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -445,12 +472,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-images.result == 'success' &&
-          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           needs.should-dispatch.outputs.enforced == 'true' ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-nongroovy-tests-gke') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft)))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-nongroovy-tests-gke:
     if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-nongroovy-tests-gke.result == 'success'
@@ -465,7 +495,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-nongroovy-tests-gke-konflux:
-    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -490,12 +520,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-konflux-images.result == 'success' &&
-          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-nongroovy-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-nongroovy-tests-gke-konflux:
     if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-nongroovy-tests-gke-konflux.result == 'success'
@@ -510,7 +543,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-qa-tests-gke:
-    needs: [ detect-changes, should-dispatch, wait-for-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -534,12 +567,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-images.result == 'success' &&
-          (needs.wait-for-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           needs.should-dispatch.outputs.enforced == 'true' ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-gke')))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-qa-tests-gke:
     if: needs.wait-for-images.result == 'success' && needs.wait-for-images.outputs.run == 'true' && needs.select-e2e-qa-tests-gke.result == 'success'
@@ -554,7 +590,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-qa-tests-ocp-fips-konflux:
-    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -578,12 +614,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-konflux-images.result == 'success' &&
-          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-ocp-fips-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-qa-tests-ocp-fips-konflux:
     if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-qa-tests-ocp-fips-konflux.result == 'success'
@@ -598,7 +637,7 @@ jobs:
       cancel-in-progress: true
 
   select-e2e-qa-tests-gke-konflux:
-    needs: [ detect-changes, should-dispatch, wait-for-konflux-images ]
+    needs: [ detect-changes, should-dispatch ]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-slim
     outputs:
@@ -622,12 +661,15 @@ jobs:
         enforced: ${{ needs.should-dispatch.outputs.enforced == 'true' }}
         eligible: >-
           ${{ needs.detect-changes.result == 'success' && needs.should-dispatch.result == 'success' &&
-          needs.wait-for-konflux-images.result == 'success' &&
-          (needs.wait-for-konflux-images.outputs.run == 'true' || needs.should-dispatch.outputs.enforced == 'true') &&
           !github.event.pull_request.head.repo.fork && (github.event_name != 'pull_request' ||
           (needs.should-dispatch.outputs.enforced == 'true' && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build')) ||
           (needs.should-dispatch.outputs.enforced != 'true' && (contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'e2e-qa-tests-gke-konflux') || (!needs.detect-changes.outputs.ui_only && !github.event.pull_request.draft && contains(fromJSON(needs.should-dispatch.outputs.labels || '[]'), 'konflux-build'))))) }}
-        note: This decision controls the adjacent E2E call. A preparation failure blocks that call.
+        note: This early decision controls the adjacent E2E call. Image prerequisites still apply; permission is not proof that tests ran.
+
+    - name: "CI selection: ${{ steps.selection.outputs.decision || 'unavailable' }} | ${{ steps.selection.outputs.target || github.job }} | candidate=${{ steps.selection.outputs.candidate }} | eligible=${{ steps.selection.outputs.eligible }} | enforced=${{ steps.selection.outputs.enforced }}"
+      id: selection-record
+      if: ${{ !cancelled() }}
+      run: ':'
 
   e2e-qa-tests-gke-konflux:
     if: needs.wait-for-konflux-images.result == 'success' && needs.wait-for-konflux-images.outputs.run == 'true' && needs.select-e2e-qa-tests-gke-konflux.result == 'success'
@@ -652,36 +694,3 @@ jobs:
       run: |
         printf '### E2E workflow outcomes\n\n    %s\n' "$OUTCOMES" >> "$GITHUB_STEP_SUMMARY"
         printf 'These are workflow results. A successful wrapper or skipped check does not prove that tests ran. Inspect the child test reports.\n' >> "$GITHUB_STEP_SUMMARY"
-
-  report-ci-timing:
-    name: CI timing report
-    needs:
-      - detect-changes
-      - should-dispatch
-      - wait-for-images
-      - wait-for-konflux-images
-      - select-e2e-byodb-tests
-      - e2e-byodb-tests
-      - select-e2e-db-backup-restore-tests-gke
-      - e2e-db-backup-restore-tests-gke
-      - select-e2e-db-backup-restore-tests-gke-konflux
-      - e2e-db-backup-restore-tests-gke-konflux
-      - select-e2e-gke-upgrade-tests
-      - e2e-gke-upgrade-tests
-      - select-e2e-nongroovy-tests-gke
-      - e2e-nongroovy-tests-gke
-      - select-e2e-nongroovy-tests-gke-konflux
-      - e2e-nongroovy-tests-gke-konflux
-      - select-e2e-qa-tests-gke
-      - e2e-qa-tests-gke
-      - select-e2e-qa-tests-ocp-fips-konflux
-      - e2e-qa-tests-ocp-fips-konflux
-      - select-e2e-qa-tests-gke-konflux
-      - e2e-qa-tests-gke-konflux
-      - explain-dispatch
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

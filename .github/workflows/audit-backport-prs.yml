@@ -116,13 +116,3 @@ jobs:
           else
             echo "⚠️ Slack payload file not found, skipping Slack post"
           fi
-
-  report-ci-timing:
-    name: CI timing report
-    needs: [properties, audit]
-    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/report-ci-timing.yaml

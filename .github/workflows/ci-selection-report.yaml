@@ -1,0 +1,43 @@
+name: Native CI selection report
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  selection-report:
+    name: Live native CI selection log
+    if: >-
+      github.event_name == 'pull_request' && github.repository == 'stackrox/stackrox' &&
+      github.event.pull_request.number == 23602 && !github.event.pull_request.head.repo.fork
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: ci-selection-comment-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Observe native decisions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          OBSERVER_JOB: ${{ job.check_run_id }}
+        run: >-
+          go run ./ci/native-selectors/selection-report --repo "$GITHUB_REPOSITORY"
+          --pr "$PR_NUMBER" --sha "$HEAD_SHA" --run "$GITHUB_RUN_ID" --job "$OBSERVER_JOB"
+          --watch 10m --interval 5s --post

@@ -17,6 +17,21 @@ inputs:
     description: Whether the execution restrictions checked by this step permit work; outer job conditions and dependencies still apply.
     default: 'true'
 outputs:
+  candidate:
+    description: The native candidate input, for reporting without re-evaluation.
+    value: ${{ inputs.candidate }}
+  eligible:
+    description: The native execution restriction input.
+    value: ${{ inputs.eligible }}
+  enforced:
+    description: Whether native enforcement is enabled.
+    value: ${{ inputs.enforced }}
+  decision:
+    description: The recorded native execution decision.
+    value: ${{ steps.report.outputs.decision }}
+  target:
+    description: The job or reusable workflow call described by this record.
+    value: ${{ inputs.target || github.job }}
   run:
     description: Whether selection permits the job's test steps to execute.
     value: ${{ steps.report.outputs.run }}
@@ -35,6 +50,7 @@ runs:
         NOTE: ${{ inputs.note }}
       run: |
         printf 'run=%s\n' "$RUN" >> "$GITHUB_OUTPUT"
+        printf 'decision=%s\n' "$DECISION" >> "$GITHUB_OUTPUT"
         printf 'STACKROX_CI_SELECTION_V1 %s\n' "$DECISION"
         if [[ -n "$TARGET" ]]; then
           printf 'STACKROX_CI_SELECTION_TARGET_V1 %s\n' "$TARGET"
