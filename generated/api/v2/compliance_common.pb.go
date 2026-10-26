@@ -91,7 +91,6 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 type ComplianceCheckDataFreshness int32
 
 const (
-	// No value set.
 	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED ComplianceCheckDataFreshness = 0
 	// Cannot evaluate: no schedule, unresolvable config, or no data.
 	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN ComplianceCheckDataFreshness = 1
@@ -145,19 +144,18 @@ func (ComplianceCheckDataFreshness) EnumDescriptor() ([]byte, []int) {
 }
 
 // ComplianceAggregateDataFreshness indicates the freshness of compliance data
-// aggregated over many checks (a cluster, a scan, or a cross-cluster rollup of
+// aggregated over multiple checks (a cluster, a scan, or a cross-cluster rollup of
 // a single check). Unlike a single check, an aggregate can mix fresh and stale
 // results.
 type ComplianceAggregateDataFreshness int32
 
 const (
-	// No value set.
 	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED ComplianceAggregateDataFreshness = 0
 	// Cannot evaluate: no schedule, unresolvable config, or no data.
 	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN ComplianceAggregateDataFreshness = 1
-	// All contributing checks reflect the most recent expected scan cycle.
+	// All contributing checks are current.
 	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT ComplianceAggregateDataFreshness = 2
-	// All contributing checks predate the most recent expected scan cycle.
+	// All contributing checks are stale.
 	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE ComplianceAggregateDataFreshness = 3
 	// Contributing checks are a mix of stale and current data.
 	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT ComplianceAggregateDataFreshness = 4
@@ -581,14 +579,12 @@ func (x *ComplianceCheckStatusCount) GetStatus() ComplianceCheckStatus {
 
 // Group the number of occurrences by status
 type ComplianceCheckResultStatusCount struct {
-	state      protoimpl.MessageState        `protogen:"open.v1"`
-	CheckName  string                        `protobuf:"bytes,1,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	Rationale  string                        `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	RuleName   string                        `protobuf:"bytes,3,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	CheckStats []*ComplianceCheckStatusCount `protobuf:"bytes,4,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	Controls   []*ComplianceControl          `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
-	// Rolled-up freshness across all clusters reporting this check: STALE if
-	// any contributing cluster has stale data (STALE > CURRENT > UNKNOWN).
+	state         protoimpl.MessageState           `protogen:"open.v1"`
+	CheckName     string                           `protobuf:"bytes,1,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	Rationale     string                           `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	RuleName      string                           `protobuf:"bytes,3,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
+	CheckStats    []*ComplianceCheckStatusCount    `protobuf:"bytes,4,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	Controls      []*ComplianceControl             `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
 	DataFreshness ComplianceAggregateDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceAggregateDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

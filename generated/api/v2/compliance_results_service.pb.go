@@ -110,22 +110,20 @@ func (x *ClusterCheckStatus) GetDataFreshness() ComplianceCheckDataFreshness {
 
 // ComplianceCheckResult details of an instance of a compliance check result
 type ComplianceCheckResult struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	CheckId      string                 `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
-	CheckName    string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	CheckUid     string                 `protobuf:"bytes,3,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
-	Description  string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Instructions string                 `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	Rationale    string                 `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	ValuesUsed   []string               `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
-	Warnings     []string               `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
-	Status       ComplianceCheckStatus  `protobuf:"varint,11,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
-	RuleName     string                 `protobuf:"bytes,12,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	Labels       map[string]string      `protobuf:"bytes,13,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations  map[string]string      `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Controls     []*ComplianceControl   `protobuf:"bytes,15,rep,name=controls,proto3" json:"controls,omitempty"`
-	// Per-check freshness for this cluster: STALE if the check's assessment
-	// time predates the config's most recent expected scan.
+	state         protoimpl.MessageState       `protogen:"open.v1"`
+	CheckId       string                       `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
+	CheckName     string                       `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	CheckUid      string                       `protobuf:"bytes,3,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
+	Description   string                       `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Instructions  string                       `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	Rationale     string                       `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	ValuesUsed    []string                     `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
+	Warnings      []string                     `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Status        ComplianceCheckStatus        `protobuf:"varint,11,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
+	RuleName      string                       `protobuf:"bytes,12,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
+	Labels        map[string]string            `protobuf:"bytes,13,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations   map[string]string            `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Controls      []*ComplianceControl         `protobuf:"bytes,15,rep,name=controls,proto3" json:"controls,omitempty"`
 	DataFreshness ComplianceCheckDataFreshness `protobuf:"varint,16,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceCheckDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -689,15 +687,12 @@ func (x *ListComplianceCheckClusterResponse) GetControls() []*ComplianceControl 
 }
 
 type ListComplianceCheckResultResponse struct {
-	state        protoimpl.MessageState   `protogen:"open.v1"`
-	CheckResults []*ComplianceCheckResult `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
-	ProfileName  string                   `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	ClusterId    string                   `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	TotalCount   int32                    `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	LastScanTime *timestamppb.Timestamp   `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
-	// Rolled-up freshness across all check results for this cluster and
-	// profile (not limited to the current page): STALE if any result is stale
-	// (STALE > CURRENT > UNKNOWN).
+	state         protoimpl.MessageState           `protogen:"open.v1"`
+	CheckResults  []*ComplianceCheckResult         `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
+	ProfileName   string                           `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	ClusterId     string                           `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	TotalCount    int32                            `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	LastScanTime  *timestamppb.Timestamp           `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
 	DataFreshness ComplianceAggregateDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceAggregateDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
