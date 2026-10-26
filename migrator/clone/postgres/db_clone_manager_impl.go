@@ -103,6 +103,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		d.cloneMap[RestoreClone] = metadata.NewPostgres(ver, RestoreClone)
 	}
 	restoreClone, restoreExists := d.cloneMap[RestoreClone]
+	selected := ver
 	if restoreExists {
 		// Restore from a newer version of central
 		if restoreClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(restoreClone.GetVersion(), version.GetMainVersion()) > 0 {
@@ -117,9 +118,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 			return &migrations.CompatibilityError{Message: fmt.Sprintf("Restoring from version %q (sequence number %d) is not supported. The minimum supported version is %s (sequence number %d)",
 				restoreClone.GetVersion(), restoreClone.GetSeqNum(), minimum.Version, minimum.Sequence)}
 		}
-	}
-	selected := ver
-	if restoreExists {
 		selected = restoreClone.GetMigVersion()
 	}
 	if err := migVer.CheckCompatibility(selected); err != nil {
