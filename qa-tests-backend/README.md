@@ -22,9 +22,7 @@ another method e.g. helm, or want to test against an existing cluster, or want t
 need to consider the following environment variables:
 - API_HOSTNAME: defaults to 'localhost' because `deploy.sh` creates a proxy to central at localhost:8000
 - API_PORT: defaults to 8000
-- CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy`
-  dir, so if you are deploying another way or have more than 1 cluster type deployed then you will
-  need to set this appropriately.
+- CLUSTER: For local runs, an empty value defaults to `K8S`. Set this to `OPENSHIFT` when testing an OpenShift cluster.
 - ROX_ADMIN_PASSWORD: Set this in the environment or `qa-test-settings.properties`. It is not inferred from the deployment password file.
 
 When deploying using `deploy/{k8s,openshift}/deploy.sh` scripts you may need:
@@ -52,7 +50,7 @@ or `qa-test-settings.properties`.
   - Script path : `github.com/stackrox/stackrox/qa-tests-backend/src/test/groovy/<Groovy class name>.groovy`
   - Working Directory : `github.com/stackrox/stackrox/qa-tests-backend`
   - Environment Variables:
-    - `CLUSTER`: Either `OPENSHIFT` or `K8S`
+    - `CLUSTER`: Set to `OPENSHIFT` for OpenShift; an empty value defaults to `K8S` for local runs.
     - `API_HOSTNAME`: hostname central is running; default `localhost`
     - `API_PORT`: central port; default `8000`
     - `ROX_USERNAME`: default `admin`
