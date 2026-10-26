@@ -1,5 +1,5 @@
 tests :
-  - name : 24-node-scale-cdv2
+  - name : berserker-perfscale
     index: {{ es_metadata_index }}
     benchmarkIndex: {{ es_benchmark_index }}
     metadata:
@@ -9,7 +9,7 @@ tests :
       masterNodesCount: 3
       workerNodesType: m6a.xlarge
       workerNodesCount: 24
-      benchmark.keyword: berserker
+      benchmark.keyword: berserker-load
       ocpVersion: {{ version }}
       networkType: OVNKubernetes
       jobType: {{ jobtype | default('periodic') }}
