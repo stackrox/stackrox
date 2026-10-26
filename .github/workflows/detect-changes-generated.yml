@@ -26,60 +26,60 @@ on:
           'true' when every changed file is under ui/, empty
           otherwise. Skip non-UI jobs with: if: !needs.X.outputs.ui_only
         value: ${{ jobs.detect.outputs.ui_only }}
-      scanner_subsystem:
-        description: 'true' if Scanner code changes
-        value: ${{ jobs.detect.outputs.scanner_subsystem }}
-      area_ui_label:
-        description: 'true' if Run UI tests when area/ui label present
-        value: ${{ jobs.detect.outputs.area_ui_label }}
-      proto_changes:
-        description: 'true' if Proto changes affect generated code across codebase
-        value: ${{ jobs.detect.outputs.proto_changes }}
+      area_sensor_label:
+        description: 'true' if Run sensor-related tests when area/sensor label present
+        value: ${{ jobs.detect.outputs.area_sensor_label }}
+      ci_run_all_tests_label:
+        description: 'true' if Force run all tests when label present
+        value: ${{ jobs.detect.outputs.ci_run_all_tests_label }}
+      generated_code_changes:
+        description: 'true' if Generated code changes need full validation
+        value: ${{ jobs.detect.outputs.generated_code_changes }}
+      ui_only_skip_backend:
+        description: 'true' if Skip backend tests for UI-only changes
+        value: ${{ jobs.detect.outputs.ui_only_skip_backend }}
       sensor_subsystem:
         description: 'true' if Sensor code changes need sensor tests
         value: ${{ jobs.detect.outputs.sensor_subsystem }}
       go_sources:
         description: 'true' if Any .go file change needs Go tests
         value: ${{ jobs.detect.outputs.go_sources }}
-      area_central_label:
-        description: 'true' if Run central-related tests when area/central label present
-        value: ${{ jobs.detect.outputs.area_central_label }}
-      central_subsystem:
-        description: 'true' if Central code changes need central tests
-        value: ${{ jobs.detect.outputs.central_subsystem }}
+      shell_scripts:
+        description: 'true' if Shell script changes need shell tests
+        value: ${{ jobs.detect.outputs.shell_scripts }}
+      area_ui_label:
+        description: 'true' if Run UI tests when area/ui label present
+        value: ${{ jobs.detect.outputs.area_ui_label }}
+      docs_only_skip:
+        description: 'true' if Skip most tests for docs-only changes
+        value: ${{ jobs.detect.outputs.docs_only_skip }}
+      scanner_subsystem:
+        description: 'true' if Scanner code changes
+        value: ${{ jobs.detect.outputs.scanner_subsystem }}
       operator_subsystem:
         description: 'true' if Operator code changes
         value: ${{ jobs.detect.outputs.operator_subsystem }}
       ci_tooling_changes:
         description: 'true' if CI tooling changes need validation but can skip E2E
         value: ${{ jobs.detect.outputs.ci_tooling_changes }}
-      ci_run_all_tests_label:
-        description: 'true' if Force run all tests when label present
-        value: ${{ jobs.detect.outputs.ci_run_all_tests_label }}
-      area_sensor_label:
-        description: 'true' if Run sensor-related tests when area/sensor label present
-        value: ${{ jobs.detect.outputs.area_sensor_label }}
+      area_central_label:
+        description: 'true' if Run central-related tests when area/central label present
+        value: ${{ jobs.detect.outputs.area_central_label }}
       go_mod_changes:
         description: 'true' if go.mod/go.sum changes affect all Go code
         value: ${{ jobs.detect.outputs.go_mod_changes }}
-      generated_code_changes:
-        description: 'true' if Generated code changes need full validation
-        value: ${{ jobs.detect.outputs.generated_code_changes }}
-      docs_only_skip:
-        description: 'true' if Skip most tests for docs-only changes
-        value: ${{ jobs.detect.outputs.docs_only_skip }}
-      shell_scripts:
-        description: 'true' if Shell script changes need shell tests
-        value: ${{ jobs.detect.outputs.shell_scripts }}
-      style_always:
-        description: 'true' if Style checks run on every PR
-        value: ${{ jobs.detect.outputs.style_always }}
-      ui_only_skip_backend:
-        description: 'true' if Skip backend tests for UI-only changes
-        value: ${{ jobs.detect.outputs.ui_only_skip_backend }}
+      proto_changes:
+        description: 'true' if Proto changes affect generated code across codebase
+        value: ${{ jobs.detect.outputs.proto_changes }}
+      central_subsystem:
+        description: 'true' if Central code changes need central tests
+        value: ${{ jobs.detect.outputs.central_subsystem }}
       ui_sources:
         description: 'true' if UI source changes need UI tests
         value: ${{ jobs.detect.outputs.ui_sources }}
+      style_always:
+        description: 'true' if Style checks run on every PR
+        value: ${{ jobs.detect.outputs.style_always }}
 
 jobs:
   detect:
@@ -87,24 +87,24 @@ jobs:
     outputs:
       files: ${{ steps.list.outputs.files }}
       ui_only: ${{ steps.list.outputs.ui_only }}
-      scanner_subsystem: ${{ steps.evaluate.outputs.scanner_subsystem }}
-      area_ui_label: ${{ steps.evaluate.outputs.area_ui_label }}
-      proto_changes: ${{ steps.evaluate.outputs.proto_changes }}
+      area_sensor_label: ${{ steps.evaluate.outputs.area_sensor_label }}
+      ci_run_all_tests_label: ${{ steps.evaluate.outputs.ci_run_all_tests_label }}
+      generated_code_changes: ${{ steps.evaluate.outputs.generated_code_changes }}
+      ui_only_skip_backend: ${{ steps.evaluate.outputs.ui_only_skip_backend }}
       sensor_subsystem: ${{ steps.evaluate.outputs.sensor_subsystem }}
       go_sources: ${{ steps.evaluate.outputs.go_sources }}
-      area_central_label: ${{ steps.evaluate.outputs.area_central_label }}
-      central_subsystem: ${{ steps.evaluate.outputs.central_subsystem }}
+      shell_scripts: ${{ steps.evaluate.outputs.shell_scripts }}
+      area_ui_label: ${{ steps.evaluate.outputs.area_ui_label }}
+      docs_only_skip: ${{ steps.evaluate.outputs.docs_only_skip }}
+      scanner_subsystem: ${{ steps.evaluate.outputs.scanner_subsystem }}
       operator_subsystem: ${{ steps.evaluate.outputs.operator_subsystem }}
       ci_tooling_changes: ${{ steps.evaluate.outputs.ci_tooling_changes }}
-      ci_run_all_tests_label: ${{ steps.evaluate.outputs.ci_run_all_tests_label }}
-      area_sensor_label: ${{ steps.evaluate.outputs.area_sensor_label }}
+      area_central_label: ${{ steps.evaluate.outputs.area_central_label }}
       go_mod_changes: ${{ steps.evaluate.outputs.go_mod_changes }}
-      generated_code_changes: ${{ steps.evaluate.outputs.generated_code_changes }}
-      docs_only_skip: ${{ steps.evaluate.outputs.docs_only_skip }}
-      shell_scripts: ${{ steps.evaluate.outputs.shell_scripts }}
-      style_always: ${{ steps.evaluate.outputs.style_always }}
-      ui_only_skip_backend: ${{ steps.evaluate.outputs.ui_only_skip_backend }}
+      proto_changes: ${{ steps.evaluate.outputs.proto_changes }}
+      central_subsystem: ${{ steps.evaluate.outputs.central_subsystem }}
       ui_sources: ${{ steps.evaluate.outputs.ui_sources }}
+      style_always: ${{ steps.evaluate.outputs.style_always }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -233,23 +233,29 @@ jobs:
 
           # Evaluate rules and output domain flags
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              # scanner_subsystem: 'true' if Scanner code changes
-              scanner_subsystem_value = ((any_file_matches(["^scanner/", "^pkg/scanner/"]))
+              # area_sensor_label: 'true' if Run sensor-related tests when area/sensor label present
+              area_sensor_label_value = ((has_label("area/sensor"))
               )
-              print(f"scanner_subsystem={str(scanner_subsystem_value).lower()}", file=sys.stderr)
-              output.write(f"scanner_subsystem={str(scanner_subsystem_value).lower()}\n")
+              print(f"area_sensor_label={str(area_sensor_label_value).lower()}", file=sys.stderr)
+              output.write(f"area_sensor_label={str(area_sensor_label_value).lower()}\n")
 
-              # area_ui_label: 'true' if Run UI tests when area/ui label present
-              area_ui_label_value = ((has_label("area/ui"))
+              # ci_run_all_tests_label: 'true' if Force run all tests when label present
+              ci_run_all_tests_label_value = ((has_label("ci-run-all-tests"))
               )
-              print(f"area_ui_label={str(area_ui_label_value).lower()}", file=sys.stderr)
-              output.write(f"area_ui_label={str(area_ui_label_value).lower()}\n")
+              print(f"ci_run_all_tests_label={str(ci_run_all_tests_label_value).lower()}", file=sys.stderr)
+              output.write(f"ci_run_all_tests_label={str(ci_run_all_tests_label_value).lower()}\n")
 
-              # proto_changes: 'true' if Proto changes affect generated code across codebase
-              proto_changes_value = ((any_file_matches(["^proto/"]))
+              # generated_code_changes: 'true' if Generated code changes need full validation
+              generated_code_changes_value = ((any_file_matches(["^generated/"]))
               )
-              print(f"proto_changes={str(proto_changes_value).lower()}", file=sys.stderr)
-              output.write(f"proto_changes={str(proto_changes_value).lower()}\n")
+              print(f"generated_code_changes={str(generated_code_changes_value).lower()}", file=sys.stderr)
+              output.write(f"generated_code_changes={str(generated_code_changes_value).lower()}\n")
+
+              # ui_only_skip_backend: 'true' if Skip backend tests for UI-only changes
+              ui_only_skip_backend_value = ((every_file_matches(["^ui/"]))
+              )
+              print(f"ui_only_skip_backend={str(ui_only_skip_backend_value).lower()}", file=sys.stderr)
+              output.write(f"ui_only_skip_backend={str(ui_only_skip_backend_value).lower()}\n")
 
               # sensor_subsystem: 'true' if Sensor code changes need sensor tests
               sensor_subsystem_value = ((any_file_matches(["^sensor/", "^pkg/sensor/"]))
@@ -263,17 +269,29 @@ jobs:
               print(f"go_sources={str(go_sources_value).lower()}", file=sys.stderr)
               output.write(f"go_sources={str(go_sources_value).lower()}\n")
 
-              # area_central_label: 'true' if Run central-related tests when area/central label present
-              area_central_label_value = ((has_label("area/central"))
+              # shell_scripts: 'true' if Shell script changes need shell tests
+              shell_scripts_value = ((any_file_matches(["\.sh$"]))
               )
-              print(f"area_central_label={str(area_central_label_value).lower()}", file=sys.stderr)
-              output.write(f"area_central_label={str(area_central_label_value).lower()}\n")
+              print(f"shell_scripts={str(shell_scripts_value).lower()}", file=sys.stderr)
+              output.write(f"shell_scripts={str(shell_scripts_value).lower()}\n")
 
-              # central_subsystem: 'true' if Central code changes need central tests
-              central_subsystem_value = ((any_file_matches(["^central/", "^pkg/central/"]))
+              # area_ui_label: 'true' if Run UI tests when area/ui label present
+              area_ui_label_value = ((has_label("area/ui"))
               )
-              print(f"central_subsystem={str(central_subsystem_value).lower()}", file=sys.stderr)
-              output.write(f"central_subsystem={str(central_subsystem_value).lower()}\n")
+              print(f"area_ui_label={str(area_ui_label_value).lower()}", file=sys.stderr)
+              output.write(f"area_ui_label={str(area_ui_label_value).lower()}\n")
+
+              # docs_only_skip: 'true' if Skip most tests for docs-only changes
+              docs_only_skip_value = ((every_file_matches(["\.md$", "^docs/", "^CHANGELOG"]))
+              )
+              print(f"docs_only_skip={str(docs_only_skip_value).lower()}", file=sys.stderr)
+              output.write(f"docs_only_skip={str(docs_only_skip_value).lower()}\n")
+
+              # scanner_subsystem: 'true' if Scanner code changes
+              scanner_subsystem_value = ((any_file_matches(["^scanner/", "^pkg/scanner/"]))
+              )
+              print(f"scanner_subsystem={str(scanner_subsystem_value).lower()}", file=sys.stderr)
+              output.write(f"scanner_subsystem={str(scanner_subsystem_value).lower()}\n")
 
               # operator_subsystem: 'true' if Operator code changes
               operator_subsystem_value = ((any_file_matches(["^operator/"]))
@@ -287,17 +305,11 @@ jobs:
               print(f"ci_tooling_changes={str(ci_tooling_changes_value).lower()}", file=sys.stderr)
               output.write(f"ci_tooling_changes={str(ci_tooling_changes_value).lower()}\n")
 
-              # ci_run_all_tests_label: 'true' if Force run all tests when label present
-              ci_run_all_tests_label_value = ((has_label("ci-run-all-tests"))
+              # area_central_label: 'true' if Run central-related tests when area/central label present
+              area_central_label_value = ((has_label("area/central"))
               )
-              print(f"ci_run_all_tests_label={str(ci_run_all_tests_label_value).lower()}", file=sys.stderr)
-              output.write(f"ci_run_all_tests_label={str(ci_run_all_tests_label_value).lower()}\n")
-
-              # area_sensor_label: 'true' if Run sensor-related tests when area/sensor label present
-              area_sensor_label_value = ((has_label("area/sensor"))
-              )
-              print(f"area_sensor_label={str(area_sensor_label_value).lower()}", file=sys.stderr)
-              output.write(f"area_sensor_label={str(area_sensor_label_value).lower()}\n")
+              print(f"area_central_label={str(area_central_label_value).lower()}", file=sys.stderr)
+              output.write(f"area_central_label={str(area_central_label_value).lower()}\n")
 
               # go_mod_changes: 'true' if go.mod/go.sum changes affect all Go code
               go_mod_changes_value = ((any_file_matches(["^go\.mod$", "^go\.sum$"]))
@@ -305,39 +317,27 @@ jobs:
               print(f"go_mod_changes={str(go_mod_changes_value).lower()}", file=sys.stderr)
               output.write(f"go_mod_changes={str(go_mod_changes_value).lower()}\n")
 
-              # generated_code_changes: 'true' if Generated code changes need full validation
-              generated_code_changes_value = ((any_file_matches(["^generated/"]))
+              # proto_changes: 'true' if Proto changes affect generated code across codebase
+              proto_changes_value = ((any_file_matches(["^proto/"]))
               )
-              print(f"generated_code_changes={str(generated_code_changes_value).lower()}", file=sys.stderr)
-              output.write(f"generated_code_changes={str(generated_code_changes_value).lower()}\n")
+              print(f"proto_changes={str(proto_changes_value).lower()}", file=sys.stderr)
+              output.write(f"proto_changes={str(proto_changes_value).lower()}\n")
 
-              # docs_only_skip: 'true' if Skip most tests for docs-only changes
-              docs_only_skip_value = ((every_file_matches(["\.md$", "^docs/", "^CHANGELOG"]))
+              # central_subsystem: 'true' if Central code changes need central tests
+              central_subsystem_value = ((any_file_matches(["^central/", "^pkg/central/"]))
               )
-              print(f"docs_only_skip={str(docs_only_skip_value).lower()}", file=sys.stderr)
-              output.write(f"docs_only_skip={str(docs_only_skip_value).lower()}\n")
-
-              # shell_scripts: 'true' if Shell script changes need shell tests
-              shell_scripts_value = ((any_file_matches(["\.sh$"]))
-              )
-              print(f"shell_scripts={str(shell_scripts_value).lower()}", file=sys.stderr)
-              output.write(f"shell_scripts={str(shell_scripts_value).lower()}\n")
-
-              # style_always: 'true' if Style checks run on every PR
-              style_always_value = ((bool(files))
-              )
-              print(f"style_always={str(style_always_value).lower()}", file=sys.stderr)
-              output.write(f"style_always={str(style_always_value).lower()}\n")
-
-              # ui_only_skip_backend: 'true' if Skip backend tests for UI-only changes
-              ui_only_skip_backend_value = ((every_file_matches(["^ui/"]))
-              )
-              print(f"ui_only_skip_backend={str(ui_only_skip_backend_value).lower()}", file=sys.stderr)
-              output.write(f"ui_only_skip_backend={str(ui_only_skip_backend_value).lower()}\n")
+              print(f"central_subsystem={str(central_subsystem_value).lower()}", file=sys.stderr)
+              output.write(f"central_subsystem={str(central_subsystem_value).lower()}\n")
 
               # ui_sources: 'true' if UI source changes need UI tests
               ui_sources_value = ((any_file_matches(["^ui/.*\.(tsx?|jsx?|css|scss)$"]))
               )
               print(f"ui_sources={str(ui_sources_value).lower()}", file=sys.stderr)
               output.write(f"ui_sources={str(ui_sources_value).lower()}\n")
+
+              # style_always: 'true' if Style checks run on every PR
+              style_always_value = ((bool(files))
+              )
+              print(f"style_always={str(style_always_value).lower()}", file=sys.stderr)
+              output.write(f"style_always={str(style_always_value).lower()}\n")
 
