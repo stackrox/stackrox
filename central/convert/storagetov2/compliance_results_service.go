@@ -67,14 +67,7 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 
 	for _, resultCount := range resultCounts {
 		controls := GetControls(resultCount.RuleName, controlResults)
-		dataFreshness := v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
-		if resultCount.DataFreshnessMax != nil {
-			minF := storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
-			if resultCount.DataFreshnessMin != nil {
-				minF = *resultCount.DataFreshnessMin
-			}
-			dataFreshness = deriveAggregateDataFreshness(minF, *resultCount.DataFreshnessMax)
-		}
+		dataFreshness := DeriveAggregateDataFreshness(resultCount.StaleFreshnessCount, resultCount.CurrentFreshnessCount)
 
 		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
 			CheckName:     resultCount.CheckName,

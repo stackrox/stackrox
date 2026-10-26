@@ -726,6 +726,62 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceProfileClusterResul
 			},
 		},
 		{
+			// Both the STALE-filtered and CURRENT-filtered counts are positive, so the
+			// rollup must report INCONSISTENT rather than STALE (regression test for the
+			// bug where MIN/MAX of the stored freshness enum hid a genuine stale/current
+			// mix whenever UNKNOWN rows were also present).
+			desc: "Query with mixed stale and current results",
+			query: &apiV2.ComplianceProfileClusterRequest{
+				ProfileName: "ocp4-cis",
+				ClusterId:   testconsts.Cluster1,
+				Query:       &apiV2.RawQuery{Query: "Compliance Check Name:" + "check-name"},
+			},
+			expectedErr: nil,
+			expectedResp: &apiV2.ListComplianceCheckResultResponse{
+				CheckResults:  convertUtils.GetConvertedCheckResult(s.T()),
+				ProfileName:   "ocp4-cis",
+				ClusterId:     testconsts.Cluster1,
+				TotalCount:    3,
+				LastScanTime:  scan1.GetLastExecutedTime(),
+				DataFreshness: apiV2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT,
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "check-name").ProtoQuery()
+				expectedQ = search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").
+						AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery(),
+					expectedQ,
+				)
+				countQuery := expectedQ.CloneVT()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				ruleQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, "test-ref-id").ProtoQuery()
+				s.ruleDS.EXPECT().SearchRules(gomock.Any(), ruleQuery).Return([]*storage.ComplianceOperatorRuleV2{{Name: "rule-name"}}, nil).Times(1)
+
+				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).
+					Return([]*storage.ComplianceOperatorCheckResultV2{convertUtils.GetComplianceStorageResult(s.T())}, nil).
+					Times(1)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), countQuery).Return(3, nil).Times(1)
+
+				staleQuery := search.ConjunctionQuery(
+					countQuery.CloneVT(),
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceDataFreshness, storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE.String()).ProtoQuery(),
+				)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), staleQuery).Return(1, nil).Times(1)
+
+				currentQuery := search.ConjunctionQuery(
+					countQuery.CloneVT(),
+					search.NewQueryBuilder().AddExactMatches(search.ComplianceDataFreshness, storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT.String()).ProtoQuery(),
+				)
+				s.resultDatastore.EXPECT().CountCheckResults(gomock.Any(), currentQuery).Return(2, nil).Times(1)
+
+				scanQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-cis").AddExactMatches(search.ClusterID, testconsts.Cluster1).ProtoQuery()
+				s.scanDS.EXPECT().SearchScans(gomock.Any(), scanQuery).Return([]*storage.ComplianceOperatorScanV2{scan1}, nil).Times(1)
+
+				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), []string{"rule-name"}, []string{"CIS-OCP"}).Return(getExpectedControlResults(), nil).Times(1)
+			},
+		},
+		{
 			desc: "Request with missing field",
 			query: &apiV2.ComplianceProfileClusterRequest{
 				ProfileName: "",

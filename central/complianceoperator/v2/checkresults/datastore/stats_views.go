@@ -2,8 +2,6 @@ package datastore
 
 import (
 	"time"
-
-	"github.com/stackrox/rox/generated/storage"
 )
 
 // ResourceResultCountByClusterScan represents shape of the stats query for compliance operator results
@@ -33,13 +31,15 @@ type ResultStatusCountByCluster struct {
 	ClusterID          string     `db:"cluster_id"`
 	ClusterName        string     `db:"cluster"`
 	LastScanTime       *time.Time `db:"compliance_scan_last_executed_time_max"`
-	// DataFreshnessMax and DataFreshnessMin are the MAX and MIN of data_freshness
-	// over the cluster's results. Together they are used to derive the v2 aggregate
-	// freshness: INCONSISTENT when the min is CURRENT and the max is STALE (a mix of
-	// fresh and stale data), otherwise the max alone gives the rollup precedence
-	// (STALE if any result is stale, else CURRENT, else UNKNOWN).
-	DataFreshnessMax *storage.ComplianceDataFreshness `db:"compliance_data_freshness_max"`
-	DataFreshnessMin *storage.ComplianceDataFreshness `db:"compliance_data_freshness_min"`
+	// StaleFreshnessCount and CurrentFreshnessCount are counts, over the cluster's
+	// results, of rows with STALE and CURRENT stored data_freshness respectively
+	// (UNKNOWN rows are counted by neither). Together they derive the v2 aggregate
+	// freshness: INCONSISTENT when both counts are positive (a genuine mix of
+	// stale and current data), STALE when only StaleFreshnessCount is positive,
+	// CURRENT when only CurrentFreshnessCount is positive, else UNKNOWN. See
+	// storagetov2.DeriveAggregateDataFreshness.
+	StaleFreshnessCount   int `db:"compliance_data_freshness_stale_count"`
+	CurrentFreshnessCount int `db:"compliance_data_freshness_current_count"`
 }
 
 // ResourceResultCountByProfile represents shape of the stats query for compliance operator results
@@ -75,12 +75,14 @@ type ResourceResultsByProfile struct {
 	CheckName          string `db:"compliance_check_name"`
 	RuleName           string `db:"compliance_rule_name"`
 	CheckRationale     string `db:"compliance_check_rationale"`
-	// DataFreshnessMax and DataFreshnessMin are the MAX and MIN of data_freshness
-	// across all clusters reporting this check. Together they are used to derive
-	// the v2 aggregate freshness: INCONSISTENT when the min is CURRENT and the max
-	// is STALE (a mix of fresh and stale data), otherwise the max alone gives the
-	// rollup precedence (STALE if any contributing cluster is stale, else CURRENT,
-	// else UNKNOWN).
-	DataFreshnessMax *storage.ComplianceDataFreshness `db:"compliance_data_freshness_max"`
-	DataFreshnessMin *storage.ComplianceDataFreshness `db:"compliance_data_freshness_min"`
+	// StaleFreshnessCount and CurrentFreshnessCount are counts, across all
+	// clusters reporting this check, of rows with STALE and CURRENT stored
+	// data_freshness respectively (UNKNOWN rows are counted by neither).
+	// Together they derive the v2 aggregate freshness: INCONSISTENT when both
+	// counts are positive (a genuine mix of stale and current data), STALE when
+	// only StaleFreshnessCount is positive, CURRENT when only
+	// CurrentFreshnessCount is positive, else UNKNOWN. See
+	// storagetov2.DeriveAggregateDataFreshness.
+	StaleFreshnessCount   int `db:"compliance_data_freshness_stale_count"`
+	CurrentFreshnessCount int `db:"compliance_data_freshness_current_count"`
 }

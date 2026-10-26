@@ -385,6 +385,11 @@ var (
 	ComplianceManualCount        = newDerivedFieldLabelWithType("Compliance Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Compliance Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Compliance Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	// ComplianceDataFreshnessStaleCount and ComplianceDataFreshnessCurrentCount are
+	// per-group counts of stored (check-level) freshness values, used to derive
+	// the v2 aggregate freshness (including INCONSISTENT) at read time.
+	ComplianceDataFreshnessStaleCount   = newDerivedFieldLabelWithType("Compliance Data Freshness Stale Count", ComplianceDataFreshness, CustomFieldType, postgres.Integer)
+	ComplianceDataFreshnessCurrentCount = newDerivedFieldLabelWithType("Compliance Data Freshness Current Count", ComplianceDataFreshness, CustomFieldType, postgres.Integer)
 
 	// VM custom fields for sorting severity counts
 	CriticalSeverityCount         = newDerivedFieldLabelWithType("Critical Severity Count", Severity, CustomFieldType, postgres.Integer)

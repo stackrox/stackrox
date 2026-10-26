@@ -167,10 +167,6 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		search.NewQuerySelect(search.ComplianceOperatorCheckName).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorCheckRationale).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorRuleName).Proto(),
-		search.NewQuerySelect(search.ComplianceDataFreshness).
-			AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.ComplianceDataFreshness).
-			AggrFunc(aggregatefunc.Min).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
@@ -202,6 +198,7 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countQuery = d.withDataFreshnessCountSelectQuery(countQuery, search.ComplianceOperatorProfileName)
 	var results []*ResourceResultsByProfile
 	err := pgSearch.RunSelectRequestForSchemaFn[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultsByProfile) error {
 		results = append(results, r)
@@ -224,10 +221,6 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorScanLastExecutedTime).
 			AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.ComplianceDataFreshness).
-			AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.ComplianceDataFreshness).
-			AggrFunc(aggregatefunc.Min).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
@@ -251,6 +244,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
+	countQuery = d.withDataFreshnessCountSelectQuery(countQuery, search.ClusterID)
 	var countResults []*ResultStatusCountByCluster
 	err := pgSearch.RunSelectRequestForSchemaFn[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResultStatusCountByCluster) error {
 		countResults = append(countResults, r)
@@ -394,6 +388,38 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,
 						storage.ComplianceOperatorCheckResultV2_INCONSISTENT.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
+	return cloned
+}
+
+// withDataFreshnessCountSelectQuery appends per-group filtered COUNTs of stored
+// (check-level) data_freshness values, mirroring withCountByResultSelectQuery's
+// idiom for the check-status counts. STALE and CURRENT are counted separately
+// (UNKNOWN is deliberately not counted by either) so that the aggregate
+// freshness can be derived at read time: INCONSISTENT when both counts are
+// positive, STALE/CURRENT when only one is, else UNKNOWN. See
+// storagetov2.DeriveAggregateDataFreshness.
+func (d *datastoreImpl) withDataFreshnessCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceDataFreshnessStaleCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceDataFreshness,
+						storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceDataFreshnessCurrentCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceDataFreshness,
+						storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT.String(),
 					).ProtoQuery(),
 			).Proto(),
 	)

@@ -188,11 +188,6 @@ var (
 		},
 	}
 
-	freshnessUnknownTest = func() *storage.ComplianceDataFreshness {
-		f := storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
-		return &f
-	}()
-
 	expectedClusterCounts = []*ResultStatusCountByCluster{
 		{
 			PassCount:          0,
@@ -204,21 +199,19 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -230,8 +223,6 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 	}
 
@@ -246,8 +237,6 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 		{
 			PassCount:          0,
@@ -259,37 +248,35 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
 	expectedCluster2And3Counts = []*ResultStatusCountByCluster{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -301,24 +288,22 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 	}
 
 	expectedCluster2OnlyCounts = []*ResultStatusCountByCluster{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
@@ -373,39 +358,37 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check-2",
 			RuleName:           "test-rule",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  5,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     5,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
 	expectedProfileResults = []*ResourceResultsByProfile{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  5,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     5,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -418,42 +401,40 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check-2",
 			RuleName:           "test-rule",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 	}
 
 	expectedProfileResultsCluster2 = []*ResourceResultsByProfile{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
 	expectedProfileResultsCluster2And3 = []*ResourceResultsByProfile{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  4,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     4,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -466,8 +447,6 @@ var (
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check-2",
 			RuleName:           "test-rule",
-			DataFreshnessMax:   freshnessUnknownTest,
-			DataFreshnessMin:   freshnessUnknownTest,
 		},
 	}
 )
@@ -1448,6 +1427,14 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 		getTestRec(testconsts.Cluster3),
 		getTestRec2(testconsts.Cluster3),
 	}
+
+	// Give cluster2's "test-check" group both a STALE and a CURRENT result (the
+	// third stays UNKNOWN, the zero value). This exercises the count-based
+	// INCONSISTENT derivation end-to-end through real SQL: a naive MIN/MAX over
+	// {STALE, CURRENT, UNKNOWN} would report UNKNOWN as the minimum and hide the
+	// stale/current mix, which is exactly the bug the count-based aggregates fix.
+	recs[1].DataFreshness = storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+	recs[2].DataFreshness = storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT
 
 	profileCluster := map[string]string{
 		testconsts.Cluster1: internaltov2storage.BuildProfileRefID(testconsts.Cluster1, "ocp4-cis-node", "node"),

@@ -24,27 +24,29 @@ func convertComplianceCheckDataFreshness(freshness storage.ComplianceDataFreshne
 	}
 }
 
-// deriveAggregateDataFreshness computes the aggregate freshness over a set of
-// check results from the MIN and MAX of their stored (check-level) freshness.
-// INCONSISTENT means the set mixes stale and non-stale (current) data, which
-// points at a partial problem (some results arrived, some are stale) rather than
-// a whole-set problem (all stale). UNKNOWN rows (not yet evaluated) do not by
-// themselves make an otherwise-uniform set inconsistent.
-func deriveAggregateDataFreshness(minF, maxF storage.ComplianceDataFreshness) v2.ComplianceAggregateDataFreshness {
-	// A genuine mix of CURRENT and STALE present together.
-	if maxF == storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE &&
-		minF == storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT {
+// DeriveAggregateDataFreshness computes the aggregate freshness over a set of
+// check results from COUNTs of their stored (check-level) freshness: how many
+// results are STALE and how many are CURRENT. Counting (rather than taking the
+// MIN/MAX of the stored enum) is required because UNKNOWN sorts between CURRENT
+// and STALE: a group containing CURRENT, STALE, and UNKNOWN rows would have
+// MIN==UNKNOWN, which would hide the genuine CURRENT/STALE mix. Counts are
+// unaffected by how many UNKNOWN rows are present, since UNKNOWN rows are not
+// counted by either staleCount or currentCount.
+//
+// INCONSISTENT means the set mixes stale and current data, which points at a
+// partial problem (some results arrived, some are stale) rather than a
+// whole-set problem (all stale). This is the single source of truth for
+// deriving aggregate freshness: every read path (profile/cluster stats
+// dashboards, per-cluster check result rollups) must call this function.
+func DeriveAggregateDataFreshness(staleCount, currentCount int) v2.ComplianceAggregateDataFreshness {
+	switch {
+	case staleCount > 0 && currentCount > 0:
 		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT
-	}
-	switch maxF {
-	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE:
+	case staleCount > 0:
 		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE
-	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT:
+	case currentCount > 0:
 		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT
-	case storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN:
-		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 	default:
-		utils.Should(errors.Errorf("unhandled compliance data freshness encountered %s", maxF))
 		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 	}
 }
