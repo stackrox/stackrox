@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stretchr/testify/assert"
@@ -18,34 +17,34 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func metricsIdentity(t *testing.T, tokenID, clusterID string, access storage.Access) authn.Identity {
+func metricsIdentity(t *testing.T, tokenID, clusterID, resource string) authn.Identity {
 	t.Helper()
 	identity := identityMocks.NewMockIdentity(gomock.NewController(t))
 	identity.EXPECT().UID().AnyTimes().Return(tokenID)
 	identity.EXPECT().Roles().AnyTimes().Return([]permissions.ResolvedRole{&tokens.InternalRole{
-		RoleName: centralproxy.SecuredClusterMetricsRole,
+		RoleName: "internal role",
 		Clusters: tokens.ClusterScopes{clusterID: {"*"}},
 		Permissions: map[storage.Access][]string{
-			access: {"Deployment"},
+			storage.Access_READ_ACCESS: {resource},
 		},
 	}})
 	return identity
 }
 
 func TestRegistryKeyForMetricsToken(t *testing.T) {
-	first := metricsIdentity(t, "token-one", "cluster-one", storage.Access_READ_ACCESS)
-	renewed := metricsIdentity(t, "token-two", "cluster-one", storage.Access_READ_ACCESS)
-	otherCluster := metricsIdentity(t, "token-three", "cluster-two", storage.Access_READ_ACCESS)
-	changedPermissions := metricsIdentity(t, "token-four", "cluster-one", storage.Access_READ_WRITE_ACCESS)
+	first := metricsIdentity(t, "token-one", "cluster-one", "Deployment")
+	renewed := metricsIdentity(t, "token-two", "cluster-one", "Deployment")
+	otherCluster := metricsIdentity(t, "token-three", "cluster-two", "Deployment")
+	changedPermissions := metricsIdentity(t, "token-four", "cluster-one", "Image")
 	assert.Equal(t, registryKeyForIdentity(first), registryKeyForIdentity(renewed))
 	assert.NotEqual(t, registryKeyForIdentity(first), registryKeyForIdentity(otherCluster))
 	assert.NotEqual(t, registryKeyForIdentity(first), registryKeyForIdentity(changedPermissions))
 }
 
 func TestRunnerReusesMetricsRegistryAfterTokenRotation(t *testing.T) {
-	first := metricsIdentity(t, "token-one", "cluster-one", storage.Access_READ_ACCESS)
-	renewed := metricsIdentity(t, "token-two", "cluster-one", storage.Access_READ_ACCESS)
-	otherCluster := metricsIdentity(t, "token-three", "cluster-two", storage.Access_READ_ACCESS)
+	first := metricsIdentity(t, "token-one", "cluster-one", "Deployment")
+	renewed := metricsIdentity(t, "token-two", "cluster-one", "Deployment")
+	otherCluster := metricsIdentity(t, "token-three", "cluster-two", "Deployment")
 	const metric = "metrics_rotation_test"
 	registryKey := registryKeyForIdentity(first)
 	registry, err := metrics.GetCustomRegistry(registryKey)

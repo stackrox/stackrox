@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
@@ -21,7 +20,7 @@ func registryKeyForIdentity(id authn.Identity) string {
 		return id.UID()
 	}
 	role, ok := roles[0].(*tokens.InternalRole)
-	if !ok || role.GetRoleName() != centralproxy.SecuredClusterMetricsRole || len(role.Clusters) != 1 {
+	if !ok || len(role.Clusters) != 1 {
 		return id.UID()
 	}
 	var clusterID string
