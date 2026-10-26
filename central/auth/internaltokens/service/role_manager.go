@@ -21,27 +21,6 @@ type roleManager struct {
 	roleStore roleDS.DataStore
 }
 
-// createSensorMetricsRole uses the permission set shared with Central metrics,
-// but limits the token to the authenticated Sensor's cluster.
-func (rm *roleManager) createSensorMetricsRole(
-	ctx context.Context, sensorClusterID string,
-) (*tokens.InternalRole, error) {
-	if sensorClusterID == "" {
-		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
-	}
-	role, err := rm.createSensorRole(ctx, &v1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
-		ClusterScopes:      []*v1.ClusterScope{{ClusterId: sensorClusterID, FullClusterAccess: true}},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if err := validateSensorMetricsRole(role); err != nil {
-		return nil, err
-	}
-	return role, nil
-}
-
 func validateSensorMetricsRole(role *tokens.InternalRole) error {
 	for access := range role.Permissions {
 		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
