@@ -8,14 +8,15 @@ import pluginESLint from '@eslint/js';
 import pluginJSON from '@eslint/json';
 import pluginMarkdown from '@eslint/markdown';
 import pluginESLintComments from '@eslint-community/eslint-plugin-eslint-comments';
-import pluginImport from 'eslint-plugin-import';
+import { importX as pluginImportX } from 'eslint-plugin-import-x';
 import pluginJestDOM from 'eslint-plugin-jest-dom';
 import pluginPrettier from 'eslint-plugin-prettier';
-import pluginReact from 'eslint-plugin-react';
-import pluginReactHooks from 'eslint-plugin-react-hooks';
+import pluginReact from '@eslint-react/eslint-plugin';
 import pluginTestingLibrary from 'eslint-plugin-testing-library';
 import pluginTypeScriptESLint from '@typescript-eslint/eslint-plugin';
 import pluginVitest from '@vitest/eslint-plugin';
+
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 
 import globals from 'globals';
 const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = globals;
@@ -121,7 +122,7 @@ export default [
         // Key of plugin is namespace of its rules.
         plugins: {
             '@eslint-community/eslint-comments': pluginESLintComments,
-            import: pluginImport,
+            'import-x': pluginImportX,
             prettier: pluginPrettier,
         },
         rules: {
@@ -140,13 +141,13 @@ export default [
             // Turn off new rules until after we fix errors in follow-up contributions.
             '@eslint-community/eslint-comments/disable-enable-pair': 'off', // fix more than 50 errors
 
-            // https://github.com/import-js/eslint-plugin-import/blob/main/config/errors.js
-            ...pluginImport.configs.errors.rules, // depends on parsers and resolver in settings
+            // https://github.com/un-ts/eslint-plugin-import-x/blob/master/src/config/flat/errors.ts
+            ...pluginImportX.flatConfigs.errors.rules,
 
             // Turn off rules from import errors configuration.
-            'import/named': 'off',
+            'import-x/named': 'off',
 
-            'import/extensions': [
+            'import-x/extensions': [
                 'error',
                 'ignorePackages',
                 {
@@ -415,22 +416,22 @@ export default [
 
             // Turn on rules from airbnb import config that are not in import errors config.
             // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/imports.js
-            'import/first': 'error',
-            'import/newline-after-import': 'error',
-            'import/no-absolute-path': 'error',
-            'import/no-duplicates': 'error',
-            'import/no-dynamic-require': 'error',
-            // 'import/no-extraneous-dependencies' is specified in a more specific configuration
-            'import/no-import-module-exports': ['error', { exceptions: [] }],
-            'import/no-mutable-exports': 'error',
-            // 'import/no-named-as-default' is intentional omission
-            // 'import/no-named-as-default-member' is intentional omission
-            'import/no-named-default': 'error',
-            'import/no-relative-packages': 'error',
-            'import/no-self-import': 'error',
-            'import/no-useless-path-segments': ['error', { commonjs: true }],
-            'import/no-webpack-loader-syntax': 'error',
-            // 'import/prefer-default-export' is intentional omission
+            'import-x/first': 'error',
+            'import-x/newline-after-import': 'error',
+            'import-x/no-absolute-path': 'error',
+            'import-x/no-duplicates': 'error',
+            'import-x/no-dynamic-require': 'error',
+            // 'import-x/no-extraneous-dependencies' is specified in a more specific configuration
+            'import-x/no-import-module-exports': ['error', { exceptions: [] }],
+            'import-x/no-mutable-exports': 'error',
+            // 'import-x/no-named-as-default' is intentional omission
+            // 'import-x/no-named-as-default-member' is intentional omission
+            'import-x/no-named-default': 'error',
+            'import-x/no-relative-packages': 'error',
+            'import-x/no-self-import': 'error',
+            'import-x/no-useless-path-segments': ['error', { commonjs: true }],
+            'import-x/no-webpack-loader-syntax': 'error',
+            // 'import-x/prefer-default-export' is intentional omission
 
             // Turn on rules from airbnb style config that are not in ESLint recommended.
             // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/style.js
@@ -513,8 +514,8 @@ export default [
             'no-undef-init': 'error',
 
             // Turn on rules not from (or with difference options than) airbnb config.
-            'import/no-empty-named-blocks': 'error',
-            'import/order': [
+            'import-x/no-empty-named-blocks': 'error',
+            'import-x/order': [
                 'error',
                 { groups: [['builtin', 'external', 'internal', 'parent', 'sibling']] },
             ],
@@ -522,16 +523,16 @@ export default [
         },
 
         settings: {
-            'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
-            'import/parsers': {
+            'import-x/extensions': ['.js', '.jsx', '.ts', '.tsx'],
+            'import-x/parsers': {
                 '@typescript-eslint/parser': ['.js', '.jsx', '.ts', '.tsx'],
             },
-            'import/resolver': {
-                typescript: {
+            'import-x/resolver-next': [
+                createTypeScriptImportResolver({
                     alwaysTryTypes: true,
                     project: 'tsconfig.eslint.json',
-                },
-            },
+                }),
+            ],
             react: {
                 version: 'detect',
             },
@@ -609,11 +610,10 @@ export default [
         plugins: {
             accessibility: pluginAccessibility,
             generic: pluginGeneric,
-            import: pluginImport,
+            'import-x': pluginImportX,
             limited: pluginLimited,
             patternfly: pluginPatternFly,
-            react: pluginReact,
-            'react-hooks': pluginReactHooks,
+            '@eslint-react': pluginReact,
         },
         rules: {
             ...pluginAccessibility.configs.recommended.rules,
@@ -638,7 +638,7 @@ export default [
             // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/strict.js
             strict: ['error', 'never'], // babel inserts `'use strict';` for us
 
-            'import/no-extraneous-dependencies': [
+            'import-x/no-extraneous-dependencies': [
                 'error',
                 {
                     devDependencies: [
@@ -647,91 +647,26 @@ export default [
                 },
             ],
 
-            // https://github.com/jsx-eslint/eslint-plugin-react/blob/master/configs/recommended.js
+            // https://github.com/Rel1cx/eslint-react/blob/main/plugins/eslint-plugin/src/configs/recommended.ts
             ...pluginReact.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
-            'react/jsx-key': 'off', // more that 30 errors
+            '@eslint-react/no-missing-key': 'off', // recommended preset: more that 30 errors
+            '@eslint-react/no-nested-component-definitions': 'off', // 22 errors
+            '@eslint-react/static-components': 'off', // 14 errirs
 
             // Turn on rules from airbnb react config that are not in eslint-plugin-react recommended.
-            'react/button-has-type': [
-                'error',
-                {
-                    button: true,
-                    submit: true,
-                    reset: false,
-                },
-            ],
-            'react/forbid-prop-types': [
-                'error',
-                {
-                    forbid: ['any', 'array'], // allow object
-                },
-            ],
-            'react/jsx-boolean-value': ['error', 'never', { always: [] }],
-            'react/jsx-filename-extension': [
-                'error',
-                {
-                    extensions: ['.jsx', '.tsx'],
-                },
-            ],
-            'react/jsx-no-bind': [
-                'error',
-                {
-                    allowArrowFunctions: true,
-                    allowBind: false,
-                    allowFunctions: true,
-                    ignoreDOMComponents: true,
-                    ignoreRefs: true,
-                },
-            ],
-            'react/jsx-no-script-url': [
-                'error',
-                [
-                    {
-                        name: 'Link',
-                        props: ['to'],
-                    },
-                ],
-            ],
-            'react/jsx-pascal-case': [
-                'error',
-                {
-                    allowAllCaps: true,
-                    ignore: [],
-                },
-            ],
-            'react/no-array-index-key': 'error',
-            'react/no-danger': 'error',
-            'react/no-invalid-html-attribute': 'error',
-            'react/no-unused-prop-types': [
-                'error',
-                {
-                    customValidators: [],
-                    skipShapeProps: true,
-                },
-            ],
-            'react/no-unused-state': 'error',
-            'react/prop-types': [
-                'error',
-                {
-                    skipUndeclared: true, // more specific than eslint-plugin-react
-                },
-            ],
-            'react/static-property-placement': ['error', 'static public field'],
-            'react/style-prop-object': 'error',
-            'react/void-dom-elements-no-children': 'error',
+            '@eslint-react/dom-no-missing-button-type': 'error', // strict preset
+            '@eslint-react/no-unused-state': 'error', // experimental
+            '@eslint-react/dom-no-string-style-prop': 'error',
 
             // Report as error: React.Whatever
             'limited/no-qualified-name-react': 'error',
-            // Report as error: import React from 'react';
-            'react/jsx-uses-react': 'off',
-            'react/react-in-jsx-scope': 'off',
 
             // Explicit configuration because recommended includes React Compiler rules.
             // Core hooks rules
-            'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
-            'react-hooks/rules-of-hooks': 'error',
+            '@eslint-react/exhaustive-deps': 'error', // instead of 'warn'
+            '@eslint-react/rules-of-hooks': 'error',
         },
     },
     {
@@ -742,7 +677,7 @@ export default [
         // Key of plugin is namespace of its rules.
         plugins: {
             '@typescript-eslint': pluginTypeScriptESLint,
-            import: pluginImport,
+            'import-x': pluginImportX,
         },
         rules: {
             // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
@@ -768,7 +703,7 @@ export default [
             '@typescript-eslint/consistent-type-exports': 'error',
             '@typescript-eslint/consistent-type-imports': 'error',
 
-            'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+            'import-x/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
     },
     // Limited rules have specific files or have ignores for specific files or folders.
@@ -795,7 +730,7 @@ export default [
             limited: pluginLimited,
         },
         rules: {
-            'import/no-cycle': ['error', { maxDepth: '∞' }],
+            'import-x/no-cycle': ['error', { maxDepth: '∞' }],
             'limited/react-export-default': 'error',
         },
     },
@@ -1007,7 +942,6 @@ export default [
             'src/Components/visuals/Sunburst.jsx', // deprecated
             'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
             'src/Containers/Login/LoginPage.jsx', // rewrite
-            'src/Containers/MainPage/asyncComponent.tsx', // replace
             'src/Containers/Risk/KeyValuePairs.jsx', // rewrite?
         ],
 
@@ -1195,10 +1129,10 @@ export default [
 
         // Key of plugin is namespace of its rules.
         plugins: {
-            import: pluginImport,
+            'import-x': pluginImportX,
         },
         rules: {
-            'import/no-extraneous-dependencies': [
+            'import-x/no-extraneous-dependencies': [
                 'error',
                 {
                     devDependencies: [
@@ -1225,13 +1159,13 @@ export default [
 
         // Key of plugin is namespace of its rules.
         plugins: {
-            import: pluginImport,
+            'import-x': pluginImportX,
             'jest-dom': pluginJestDOM,
             'testing-library': pluginTestingLibrary,
             vitest: pluginVitest,
         },
         rules: {
-            'import/no-extraneous-dependencies': [
+            'import-x/no-extraneous-dependencies': [
                 'error',
                 {
                     devDependencies: [path.join(import.meta.dirname, 'src/**/*.test.*')],

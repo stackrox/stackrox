@@ -1,4 +1,4 @@
-/* eslint-disable import/no-duplicates */
+/* eslint-disable import-x/no-duplicates */
 import type { ComponentType, SVGProps } from 'react';
 import rhacsFavicon from 'images/rh-favicon.ico';
 import stackroxFavicon from 'images/sr-favicon.ico';
@@ -6,7 +6,7 @@ import rhacsLogoSvg from 'images/RHACS-Logo.svg';
 import RHACSLogoSvg from 'images/RHACS-Logo.svg?react';
 import stackroxLogoSvg from 'images/StackRox-Logo.svg';
 import StackRoxLogoSvg from 'images/StackRox-Logo.svg?react';
-/* eslint-enable import/no-duplicates */
+/* eslint-enable import-x/no-duplicates */
 
 export type ProductBranding = 'RHACS_BRANDING' | 'STACKROX_BRANDING';
 
