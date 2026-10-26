@@ -65,11 +65,11 @@ func TestObservePublishesBeforeTestsFinish(t *testing.T) {
 	err := observe(t.Context(), &api{request: f.request, cache: map[string]response{}}, options{repo: testRepo, pr: 23602, sha: testSHA, watch: 10 * time.Second, interval: 5 * time.Second, post: true}, clock, &output, &log)
 	require.NoError(t, err)
 	require.Len(t, f.writes, 2, "publish immediately, then mark the bounded window ended; no duplicate edits")
-	assert.Contains(t, f.bodies[0], "Work permitted")
+	assert.Contains(t, f.bodies[0], "| Allow |")
 	assert.Contains(t, f.bodies[0], "Watching for decisions")
 	assert.Contains(t, f.bodies[1], "Observation window ended")
 	assert.Equal(t, start.Add(10*time.Second), now)
-	assert.Contains(t, log.String(), "go | permitted")
+	assert.Contains(t, log.String(), "go | Allow")
 	for _, call := range f.calls {
 		assert.NotContains(t, call, "/logs", "running-job log downloads must not be needed")
 	}
@@ -84,7 +84,7 @@ func TestObservePublishesANewDecisionWhileTestsRun(t *testing.T) {
 	c := clock{now: func() time.Time { return now }, sleep: func(_ context.Context, duration time.Duration) error {
 		now = now.Add(duration)
 		if job.Steps[0].Name == "Explain selection" {
-			job.Steps = []workflowStep{{Name: recordPrefix + "skipped-by-selection | go | candidate=false | eligible=true | enforced=true", Status: "completed", Conclusion: "success", CompletedAt: now}}
+			job.Steps = []workflowStep{{Name: recordPrefix + "skipped-by-selection | go | candidate=false | eligible=true | enforced=true", Status: "completed", Conclusion: "success"}}
 			f.data[jobsPath] = map[string]any{"jobs": []workflowJob{job}}
 		}
 		return nil
@@ -92,8 +92,8 @@ func TestObservePublishesANewDecisionWhileTestsRun(t *testing.T) {
 	var output, log bytes.Buffer
 	require.NoError(t, observe(t.Context(), &api{request: f.request, cache: map[string]response{}}, options{repo: testRepo, pr: 23602, sha: testSHA, watch: 15 * time.Second, interval: 5 * time.Second, post: true}, c, &output, &log))
 	require.Len(t, f.bodies, 3, "pending, recorded, then window ended; unchanged observations do not write")
-	assert.Contains(t, f.bodies[0], "Decision pending")
-	assert.Contains(t, f.bodies[1], "Skipped by selection")
+	assert.Contains(t, f.bodies[0], "| Pending |")
+	assert.Contains(t, f.bodies[1], "| Skip |")
 	assert.Contains(t, f.bodies[2], "Observation window ended")
 	assert.Equal(t, "in_progress", job.Status, "publication must not wait for test completion")
 	assert.Contains(t, log.String(), "source=go (1.26)")

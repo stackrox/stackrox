@@ -44,17 +44,15 @@ type (
 		Steps   []workflowStep `json:"steps"`
 	}
 	workflowStep struct {
-		Name        string    `json:"name"`
-		Status      string    `json:"status"`
-		Conclusion  string    `json:"conclusion"`
-		CompletedAt time.Time `json:"completed_at"`
+		Name       string `json:"name"`
+		Status     string `json:"status"`
+		Conclusion string `json:"conclusion"`
 	}
 	// record contains only observed metadata; it never evaluates selection policy.
 	record struct {
 		id, run                              int64
 		workflow, name, source, kind, reason string
 		candidate, eligible, enforced        string
-		at                                   time.Time
 	}
 )
 
@@ -168,7 +166,7 @@ func readRecord(run workflowRun, job workflowJob) (record, bool) {
 			row.kind, row.reason = "unavailable", "metadata target is missing"
 			return row, true
 		}
-		row.kind, row.name, row.at = parts[0], parts[1], step.CompletedAt
+		row.kind, row.name = parts[0], parts[1]
 		row.candidate, row.eligible, row.enforced = flags[0], flags[1], flags[2]
 		return row, true
 	}
@@ -181,6 +179,7 @@ func readRecord(run workflowRun, job workflowJob) (record, bool) {
 func render(opt options, rows []record, active bool, deadline time.Time) string {
 	var body strings.Builder
 	fmt.Fprintf(&body, "%s\n### Native CI selection for [`%.12s`](https://github.com/%s/commit/%s)\n\n", commentMarker, opt.sha, opt.repo, opt.sha)
+	fmt.Fprintf(&body, "**Mode: %s** (requested for this report). Enforce applies selection; Shadow reports it without applying it.\n\n", cmp.Or(opt.mode, "Unknown"))
 	if active {
 		fmt.Fprintf(&body, "Watching for decisions every %s until **%s UTC**. Tests run independently.\n\n", opt.interval, deadline.UTC().Format("15:04:05"))
 	} else if opt.watch > 0 {
@@ -202,16 +201,9 @@ func render(opt options, rows []record, active bool, deadline time.Time) string 
 			fmt.Fprint(&body, "**No native decision records observed.** This does not mean that no jobs were selected.\n\n")
 		}
 	} else {
-		fmt.Fprintln(&body, "| Workflow | Job or workflow call | Decision | Rule matched (candidate) | Execution restrictions permit work (eligible) | Enforcement enabled | Recorded (UTC) |\n| --- | --- | --- | --- | --- | --- | --- |")
+		fmt.Fprintln(&body, "| Workflow | Job or workflow call | Selection |\n| --- | --- | --- |")
 		for i, row := range rows {
-			at := "—"
-			if !row.at.IsZero() {
-				at = row.at.UTC().Format("15:04:05")
-			}
-			label := map[string]string{
-				"permitted": "Work permitted; prerequisites still apply", "skipped-by-selection": "Skipped by selection",
-				"blocked-by-execution": "Blocked by execution restrictions", "pending": "Decision pending", "unavailable": "Decision unavailable",
-			}[row.kind]
+			label := selectionDecision(row)
 			if row.reason != "" {
 				label += ": " + row.reason
 			}
@@ -219,7 +211,7 @@ func render(opt options, rows []record, active bool, deadline time.Time) string 
 			if row.source != "" && row.source != row.name {
 				name += " (" + row.source + ")"
 			}
-			line := fmt.Sprintf("| %s | [%s](https://github.com/%s/actions/runs/%d/job/%d) | %s | %s | %s | %s | %s |\n", markdown(row.workflow), markdown(name), opt.repo, row.run, row.id, markdown(label), yesNo(row.candidate), yesNo(row.eligible), yesNo(row.enforced), at)
+			line := fmt.Sprintf("| %s | [%s](https://github.com/%s/actions/runs/%d/job/%d) | %s |\n", markdown(row.workflow), markdown(name), opt.repo, row.run, row.id, markdown(label))
 			if body.Len()+len(line) > 58000 {
 				fmt.Fprintf(&body, "\n%d additional records omitted to keep this comment small; inspect the linked decision log.\n", len(rows)-i)
 				break
@@ -227,7 +219,9 @@ func render(opt options, rows []record, active bool, deadline time.Time) string 
 			body.WriteString(line)
 		}
 	}
-	fmt.Fprintln(&body, "\nRecords come from the native explanation outputs. This reporter never evaluates paths, labels, or job rules. Permission is not proof that tests ran. Jobs skipped before an explanation cannot be assigned a selection reason from their status alone.")
+	fmt.Fprintln(&body, "\n**Allow** = selection requests this job. **Skip** = selection does not request this job. Pending = waiting for a decision; Unknown = no usable record.")
+	fmt.Fprintln(&body, "\nSelection says whether this job is wanted. Normal workflow requirements still determine whether it can run. These are selection decisions, not test results; inspect the linked jobs for execution details.")
+	fmt.Fprintln(&body, "\nRecords come directly from native job outputs. Jobs skipped before an explanation have no recorded decision.")
 	return body.String()
 }
 
@@ -236,12 +230,18 @@ func markdown(value string) string {
 	return strings.NewReplacer("\\", "\\\\", "[", "\\[", "]", "\\]", "|", "\\|", "*", "\\*", "_", "\\_", "`", "\\`").Replace(html.EscapeString(value))
 }
 
-func yesNo(value string) string {
-	if value == "true" {
-		return "Yes"
+// selectionDecision presents the recorded candidate without applying execution restrictions.
+func selectionDecision(row record) string {
+	switch {
+	case row.kind == "pending":
+		return "Pending"
+	case row.kind == "unavailable":
+		return "Unknown"
+	case row.candidate == "true":
+		return "Allow"
+	case row.candidate == "false":
+		return "Skip"
+	default:
+		return "Unknown"
 	}
-	if value == "false" {
-		return "No"
-	}
-	return "—"
 }

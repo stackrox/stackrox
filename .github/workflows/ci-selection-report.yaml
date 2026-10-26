@@ -37,7 +37,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           OBSERVER_JOB: ${{ job.check_run_id }}
+          SELECTION_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') && 'Enforce' || 'Shadow' }}
         run: >-
           go run ./ci/native-selectors/selection-report --repo "$GITHUB_REPOSITORY"
           --pr "$PR_NUMBER" --sha "$HEAD_SHA" --run "$GITHUB_RUN_ID" --job "$OBSERVER_JOB"
+          --mode "$SELECTION_MODE"
           --watch 10m --interval 5s --post

@@ -41,6 +41,7 @@ type (
 	}
 	options struct {
 		repo, sha string
+		mode      string
 		pr        int
 		run, job  int64
 		watch     time.Duration
@@ -74,6 +75,7 @@ func run(ctx context.Context, args []string, request requestFunc, output, diagno
 	flags.StringVar(&opt.repo, "repo", "stackrox/stackrox", "GitHub owner/repository")
 	flags.IntVar(&opt.pr, "pr", 0, "PR number")
 	flags.StringVar(&opt.sha, "sha", "", "expected PR head commit")
+	flags.StringVar(&opt.mode, "mode", "Unknown", "requested selection mode: Enforce or Shadow")
 	flags.Int64Var(&opt.run, "run", 0, "observer run ID, for a log link")
 	flags.Int64Var(&opt.job, "job", 0, "observer job ID, for a log link")
 	flags.DurationVar(&opt.watch, "watch", 0, "bounded observation window; zero previews once")
@@ -87,6 +89,9 @@ func run(ctx context.Context, args []string, request requestFunc, output, diagno
 	}
 	if flags.NArg() != 0 || !repoPattern.MatchString(opt.repo) || opt.pr <= 0 || !shaPattern.MatchString(opt.sha) || opt.watch < 0 || opt.watch > 10*time.Minute || opt.interval < time.Second || opt.run < 0 || opt.job < 0 {
 		return errors.New("supply --repo owner/repo, positive --pr, a full --sha, and a window between zero and 10m with interval >=1s")
+	}
+	if opt.mode != "Enforce" && opt.mode != "Shadow" && opt.mode != "Unknown" {
+		return errors.New("--mode must be Enforce, Shadow, or Unknown")
 	}
 	if opt.post && (os.Getenv("GITHUB_ACTIONS") != "true" || os.Getenv("GITHUB_TOKEN") == "" || opt.repo != "stackrox/stackrox" || opt.pr != 23602) {
 		return errors.New("publication is restricted to the Actions bot on stackrox/stackrox#23602; local commands preview only")
@@ -214,7 +219,7 @@ func observe(ctx context.Context, a *api, opt options, c clock, output, diagnost
 			return err
 		}
 		for _, row := range rows {
-			line := fmt.Sprintf("%s | %s | %s | candidate=%s eligible=%s enforced=%s | source=%s | job=%d", row.workflow, row.name, row.kind, row.candidate, row.eligible, row.enforced, row.source, row.id)
+			line := fmt.Sprintf("%s | %s | %s | source=%s | job=%d", row.workflow, row.name, selectionDecision(row), row.source, row.id)
 			if logged[row.id] != line {
 				fmt.Fprintln(diagnostic, line)
 				logged[row.id] = line

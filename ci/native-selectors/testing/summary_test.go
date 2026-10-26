@@ -15,16 +15,16 @@ func TestSelectionDecisionLogging(t *testing.T) {
 	step := steps(obj(f.report["runs"]))[0]
 	for name, test := range map[string]struct {
 		candidate, eligible, enforced, run bool
-		decision                           string
+		decision, summary                  string
 	}{
-		"selected under enforcement":               {candidate: true, eligible: true, enforced: true, run: true, decision: "permitted"},
-		"unselected under enforcement":             {eligible: true, enforced: true, decision: "skipped-by-selection"},
-		"selected but blocked under enforcement":   {candidate: true, enforced: true, decision: "blocked-by-execution"},
-		"unselected and blocked under enforcement": {enforced: true, decision: "blocked-by-execution"},
-		"selected in shadow":                       {candidate: true, eligible: true, run: true, decision: "permitted"},
-		"unselected in shadow":                     {eligible: true, run: true, decision: "permitted"},
-		"selected but blocked in shadow":           {candidate: true, decision: "blocked-by-execution"},
-		"unselected and blocked in shadow":         {decision: "blocked-by-execution"},
+		"selected under enforcement":               {candidate: true, eligible: true, enforced: true, run: true, decision: "permitted", summary: "| Yes | Allow | Enforce |"},
+		"unselected under enforcement":             {eligible: true, enforced: true, decision: "skipped-by-selection", summary: "| No | Allow | Enforce |"},
+		"selected but blocked under enforcement":   {candidate: true, enforced: true, decision: "blocked-by-execution", summary: "| Yes | Block | Enforce |"},
+		"unselected and blocked under enforcement": {enforced: true, decision: "blocked-by-execution", summary: "| No | Block | Enforce |"},
+		"selected in shadow":                       {candidate: true, eligible: true, run: true, decision: "permitted", summary: "| Yes | Allow | Shadow |"},
+		"unselected in shadow":                     {eligible: true, run: true, decision: "permitted", summary: "| No | Allow | Shadow |"},
+		"selected but blocked in shadow":           {candidate: true, decision: "blocked-by-execution", summary: "| Yes | Block | Shadow |"},
+		"unselected and blocked in shadow":         {decision: "blocked-by-execution", summary: "| No | Block | Shadow |"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			dir := t.TempDir()
@@ -35,6 +35,8 @@ func TestSelectionDecisionLogging(t *testing.T) {
 			}
 			output := command(t, f.root, "", env, bash(), "-c", str(step["run"]))
 			require.Contains(t, output, "STACKROX_CI_SELECTION_V1 "+test.decision+"\n")
+			require.Contains(t, output, test.summary)
+			require.Contains(t, output, "**Decision: "+map[string]string{"permitted": "Allow", "skipped-by-selection": "Skip", "blocked-by-execution": "Blocked"}[test.decision]+"**")
 			data, err := os.ReadFile(env["GITHUB_OUTPUT"])
 			require.NoError(t, err)
 			require.Equal(t, "run="+str(test.run)+"\ndecision="+test.decision+"\n", string(data), "reporting must preserve the execution output")
@@ -71,7 +73,20 @@ func TestLiveSelectionObserverIntegration(t *testing.T) {
 	observerSteps := steps(observer)
 	observe := observerSteps[len(observerSteps)-1]
 	require.Contains(t, str(observe["run"]), "--watch 10m --interval 5s --post")
+	require.Contains(t, str(observe["run"]), `--mode "$SELECTION_MODE"`)
 	require.Equal(t, "${{ github.token }}", lookup(observe, "env", "GITHUB_TOKEN"))
+	for name, test := range map[string]struct {
+		labels []any
+		mode   string
+	}{
+		"enforce requested": {labels: []any{object{"name": "ci-dispatcher-enforce"}}, mode: "Enforce"},
+		"shadow requested":  {labels: []any{}, mode: "Shadow"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := object{"github": object{"event": object{"pull_request": object{"labels": test.labels}}}}
+			require.Equal(t, test.mode, evaluate(t, lookup(observe, "env", "SELECTION_MODE"), ctx))
+		})
+	}
 	for name, test := range map[string]struct {
 		event, repo string
 		pr          int
