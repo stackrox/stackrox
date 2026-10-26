@@ -278,13 +278,13 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					})
 				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{
-						RoleName: centralproxy.ConsoleProxyRole,
+						RoleName: internalRoleName,
 						Permissions: map[storage.Access][]string{
 							storage.Access_READ_ACCESS: {"Deployment", "Image"},
 						},
 						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}},
 					}},
-					Name: fmt.Sprintf(claimNameFormat, centralproxy.ConsoleProxyRole,
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-token"}, nil)
 			},
@@ -304,13 +304,13 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					}}, true, nil).Times(2)
 				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{
-						RoleName: centralproxy.ConsoleProxyRole,
+						RoleName: internalRoleName,
 						Permissions: map[storage.Access][]string{
 							storage.Access_READ_ACCESS: {"Deployment"},
 						},
 						Clusters: tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}},
 					}},
-					Name: fmt.Sprintf(claimNameFormat, centralproxy.ConsoleProxyRole,
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "combined-token"}, nil)
 			},
