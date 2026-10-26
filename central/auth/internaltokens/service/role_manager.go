@@ -19,12 +19,12 @@ const (
 type roleManager struct{}
 
 func (rm *roleManager) createSensorConsoleRole(
-	ctx context.Context, roles roleDS.DataStore, scopes []*v1.ClusterScope,
+	ctx context.Context, roleStore roleDS.DataStore, scopes []*v1.ClusterScope,
 ) (*tokens.InternalRole, error) {
-	if roles == nil {
+	if roleStore == nil {
 		return nil, errox.NotAuthorized.New("Sensor proxy permission set store unavailable")
 	}
-	permissionSet, found, err := roles.GetPermissionSet(ctx, centralproxy.ConsoleProxyPermissionSetID)
+	permissionSet, found, err := roleStore.GetPermissionSet(ctx, centralproxy.ConsoleProxyPermissionSetID)
 	if err != nil {
 		return nil, err
 	}
