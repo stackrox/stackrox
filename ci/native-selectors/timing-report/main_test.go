@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -112,6 +113,46 @@ func TestRefreshDecisionSummary(t *testing.T) {
 	assert.Contains(t, output.String(), "**Explanation step present, decision unavailable (1)**")
 	assert.Contains(t, output.String(), "1 additional jobs were skipped without selection records")
 	assert.Contains(t, output.String(), "decision log unavailable")
+}
+
+func TestRefreshOversizedHistory(t *testing.T) {
+	fake := newFakeGitHub()
+	start := time.Date(2026, time.October, 23, 12, 0, 0, 0, time.UTC)
+	old := measurement{SHA: testSHA, Start: start, End: start.Add(time.Minute), Reports: []selectionReport{{
+		RunID: 2, Recorded: 1, Jobs: []jobDecision{{ID: 10, Name: strings.Repeat("previous-decision", 600), Kind: selectionSkip}},
+	}}}
+	body, err := renderRows("stackrox/stackrox", []measurement{old})
+	require.NoError(t, err)
+	require.LessOrEqual(t, len(body), maxCommentBytes, "the published comment fits before another workflow contributes")
+	comment := issueComment{ID: 42, Body: body}
+	comment.User.Login = "github-actions[bot]"
+	encoded, err := json.Marshal([][]issueComment{{comment}})
+	require.NoError(t, err)
+	fake.responses[testBase+"/issues/23602/comments?per_page=100"] = string(encoded)
+	jobs, err := json.Marshal([]map[string][]workflowJob{{"jobs": {{
+		ID: 11, Name: strings.Repeat("oversized-decision", 4000), Status: "completed", Conclusion: "success", CompletedAt: start.Add(15 * time.Minute),
+		Steps: []workflowStep{{Name: "Explain selection", Conclusion: "success"}},
+	}}}})
+	require.NoError(t, err)
+	fake.responses[testRun+"/jobs?per_page=100"] = string(jobs)
+	fake.responses[testBase+"/actions/jobs/11/logs"] = "2026-10-23T12:00:01Z " + decisionMarker + selectionSkip
+	var output, diagnostic bytes.Buffer
+	require.NoError(t, refresh(t.Context(), fake.request, "stackrox/stackrox", 23602, 1, true, &output, &diagnostic))
+	require.Equal(t, []string{"PATCH " + testBase + "/issues/comments/42"}, fake.writes)
+	assert.LessOrEqual(t, len(fake.bodies[0]), maxCommentBytes)
+	assert.Contains(t, fake.bodies[0], "Decision details omitted")
+	assert.NotContains(t, fake.bodies[0], "oversized-decision")
+	assert.NotContains(t, fake.bodies[0], "previous-decision")
+	rows := storedMeasurements(t, fake.bodies[0])
+	require.Len(t, rows, 1)
+	assert.True(t, rows[0].DetailsOmitted)
+	assert.Empty(t, rows[0].Reports)
+	assert.Equal(t, 15*time.Minute, rows[0].End.Sub(rows[0].Start))
+	late := measurement{SHA: testSHA, Start: start.Add(-time.Minute), End: start.Add(20 * time.Minute), Reports: old.Reports}
+	updated, err := render("stackrox/stackrox", fake.bodies[0], late)
+	require.NoError(t, err)
+	assert.NotContains(t, updated, "oversized-decision")
+	assert.Contains(t, updated, "21m0s")
 }
 
 func TestGHRequestLogArguments(t *testing.T) {

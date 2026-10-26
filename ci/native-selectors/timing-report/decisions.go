@@ -134,7 +134,9 @@ func decisionFromLog(data []byte) (logDecision, error) {
 // renderDecisions links observed exceptions to their jobs without claiming tests ran or time was saved.
 func renderDecisions(body *strings.Builder, repo string, row measurement) {
 	fmt.Fprintf(body, "\n<details>\n<summary>%.12s: selection decisions for the initial checks</summary>\n\n", row.SHA)
-	if len(row.Reports) == 0 {
+	if row.DetailsOmitted {
+		fmt.Fprintln(body, "Decision details omitted to keep this comment within its size limit. Timestamps continue updating; decision details for this commit remain omitted.")
+	} else if len(row.Reports) == 0 {
 		fmt.Fprintln(body, "No decision summary was recorded for this measurement.")
 	} else {
 		recorded, permitted, unattributed := 0, 0, 0

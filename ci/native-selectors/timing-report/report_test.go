@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -103,4 +105,91 @@ func TestRenderInvalidHistory(t *testing.T) {
 			require.Error(t, err)
 		})
 	}
+}
+
+func TestRenderHistoryRetention(t *testing.T) {
+	start := time.Date(2026, time.October, 23, 0, 0, 0, 0, time.UTC)
+	var rows []measurement
+	for i := 1; i <= 7; i++ {
+		rows = append(rows, measurement{
+			SHA: fmt.Sprintf("%040x", i), Start: start.Add(time.Duration(i) * time.Hour), End: start.Add(time.Duration(i)*time.Hour + time.Minute),
+			Reports: []selectionReport{{RunID: int64(i), Recorded: 1, Jobs: []jobDecision{{ID: int64(i), Name: fmt.Sprintf("job-for-commit-%d", i), Kind: selectionSkip}}}},
+		})
+	}
+	old, err := renderRows("stackrox/stackrox", rows[:6])
+	require.NoError(t, err)
+	body, err := render("stackrox/stackrox", old, rows[6])
+	require.NoError(t, err)
+	kept := storedMeasurements(t, body)
+	require.Len(t, kept, 5)
+	assert.Equal(t, rows[2:], kept)
+	for _, row := range rows[:2] {
+		assert.NotContains(t, body, row.SHA, "discard timestamps and serialized details together")
+		assert.NotContains(t, body, row.Reports[0].Jobs[0].Name)
+		late := row
+		late.End = late.End.Add(4 * time.Hour)
+		unchanged, err := render("stackrox/stackrox", body, late)
+		require.NoError(t, err)
+		assert.Equal(t, body, unchanged, "a late contribution to an evicted commit must not displace recent rows")
+	}
+	late := rows[3]
+	late.End = late.End.Add(time.Hour)
+	updated, err := render("stackrox/stackrox", body, late)
+	require.NoError(t, err)
+	kept = storedMeasurements(t, updated)
+	require.Len(t, kept, 5)
+	assert.Equal(t, late.End, kept[1].End)
+	unchanged, err := render("stackrox/stackrox", updated, late)
+	require.NoError(t, err)
+	assert.Equal(t, updated, unchanged)
+}
+
+func TestRenderCommentByteLimit(t *testing.T) {
+	start := time.Date(2026, time.October, 23, 0, 0, 0, 0, time.UTC)
+	var rows []measurement
+	for i := 1; i <= 5; i++ {
+		rows = append(rows, measurement{
+			SHA: fmt.Sprintf("%040x", i), Start: start.Add(time.Duration(i) * time.Hour), End: start.Add(time.Duration(i)*time.Hour + time.Minute),
+			Reports: []selectionReport{{RunID: int64(i), Recorded: 1, Jobs: []jobDecision{{ID: int64(i), Name: strings.Repeat(fmt.Sprintf("selection-%d ", i), 1000), Kind: executionBlock}}}},
+		})
+	}
+	oversized, err := renderRows("stackrox/stackrox", rows)
+	require.NoError(t, err)
+	require.Greater(t, len(oversized), maxCommentBytes, "five commits alone must not be assumed to fit")
+	body, err := render("stackrox/stackrox", oversized, rows[4])
+	require.NoError(t, err)
+	assert.LessOrEqual(t, len(body), maxCommentBytes)
+	kept := storedMeasurements(t, body)
+	require.Len(t, kept, 5, "byte compaction retains the timings")
+	assert.True(t, kept[0].DetailsOmitted)
+	assert.False(t, kept[4].DetailsOmitted, "omit older details before newer details")
+	for i, row := range kept {
+		assert.Equal(t, rows[i].Start, row.Start)
+		assert.Equal(t, rows[i].End, row.End)
+		if row.DetailsOmitted {
+			assert.Empty(t, row.Reports)
+			assert.NotContains(t, body, rows[i].Reports[0].Jobs[0].Name)
+		}
+	}
+	late := rows[0]
+	late.End = late.End.Add(10 * time.Hour)
+	updated, err := render("stackrox/stackrox", body, late)
+	require.NoError(t, err)
+	assert.LessOrEqual(t, len(updated), maxCommentBytes)
+	kept = storedMeasurements(t, updated)
+	assert.Equal(t, late.End, kept[0].End)
+	assert.True(t, kept[0].DetailsOmitted)
+	assert.Empty(t, kept[0].Reports, "late contributions must not regrow compacted detail history")
+}
+
+// storedMeasurements checks the hidden data as well as the visible Markdown.
+func storedMeasurements(t *testing.T, body string) []measurement {
+	t.Helper()
+	_, encoded, ok := strings.Cut(body, dataMarker)
+	require.True(t, ok)
+	encoded, _, ok = strings.Cut(encoded, " -->")
+	require.True(t, ok)
+	var rows []measurement
+	require.NoError(t, json.Unmarshal([]byte(encoded), &rows))
+	return rows
 }

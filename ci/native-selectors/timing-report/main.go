@@ -189,9 +189,6 @@ func refresh(ctx context.Context, request requestFunc, repo string, pr int, runI
 	if err != nil {
 		return err
 	}
-	if len(body) > 60000 {
-		return errors.New("timing comment exceeds 60,000 bytes; refusing to truncate history")
-	}
 	if !post {
 		if _, err := fmt.Fprintln(output, body); err != nil {
 			return fmt.Errorf("write timing preview: %w", err)
