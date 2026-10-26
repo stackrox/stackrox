@@ -38,9 +38,6 @@ const (
 	// - view, request, and approve/deny vulnerability deferrals or false positives.
 	// - view and create vulnerability report configurations.
 	VulnerabilityManagementAdmin = "Vulnerability Management Admin"
-
-	// ConsoleProxy is the fixed permission set for Sensor-proxied OpenShift console requests.
-	ConsoleProxy = "OpenShift Secured Cluster Console Proxy"
 )
 
 var (
