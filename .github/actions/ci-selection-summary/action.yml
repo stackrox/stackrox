@@ -27,9 +27,11 @@ runs:
         ELIGIBLE: ${{ inputs.eligible }}
         ENFORCED: ${{ inputs.enforced }}
         RUN: ${{ inputs.eligible != 'false' && (inputs.enforced != 'true' || inputs.candidate != 'false') }}
+        DECISION: ${{ inputs.eligible == 'false' && 'blocked-by-execution' || inputs.enforced == 'true' && inputs.candidate == 'false' && 'skipped-by-selection' || 'permitted' }}
         NOTE: ${{ inputs.note }}
       run: |
         printf 'run=%s\n' "$RUN" >> "$GITHUB_OUTPUT"
+        printf 'STACKROX_CI_SELECTION_V1 %s\n' "$DECISION"
         # shellcheck disable=SC2016 # Markdown backticks are literal text.
         {
           printf '### Native CI selection\n\n'

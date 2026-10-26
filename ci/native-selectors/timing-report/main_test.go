@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,6 +89,53 @@ func TestRefresh(t *testing.T) {
 				assert.Contains(t, diagnostic.String(), "#issuecomment-42")
 			}
 			assert.Contains(t, body, "| 2026-10-23 12:00:00 | 2026-10-23 12:15:00 | 15m0s |")
+		})
+	}
+}
+
+func TestRefreshDecisionSummary(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.responses[testRun+"/jobs?per_page=100"] = `[{"jobs":[
+		{"id":10,"name":"selection skip","status":"completed","conclusion":"success","completed_at":"2026-10-23T12:10:00Z","steps":[{"name":"Explain selection","conclusion":"success"}]},
+		{"id":11,"name":"execution block","status":"completed","conclusion":"success","completed_at":"2026-10-23T12:12:00Z","steps":[{"name":"Explain selection","conclusion":"success"}]},
+		{"id":12,"name":"skipped E2E caller","status":"completed","conclusion":"skipped","completed_at":"2026-10-23T12:15:00Z"},
+		{"id":13,"name":"unavailable log","status":"completed","conclusion":"success","completed_at":"2026-10-23T12:14:00Z","steps":[{"name":"Explain selection","conclusion":"success"}]}
+	]}]`
+	fake.responses[testBase+"/actions/jobs/10/logs"] = "2026-10-23T12:00:01Z " + decisionMarker + selectionSkip
+	fake.responses[testBase+"/actions/jobs/11/logs"] = "2026-10-23T12:00:01Z " + decisionMarker + executionBlock
+	var output, diagnostic bytes.Buffer
+	require.NoError(t, refresh(t.Context(), fake.request, "stackrox/stackrox", 23602, 1, false, &output, &diagnostic))
+	assert.Empty(t, fake.writes)
+	assert.Contains(t, output.String(), "15m0s")
+	assert.Contains(t, output.String(), "**Skipped by selection (1)**")
+	assert.Contains(t, output.String(), "**Blocked by execution (1)**")
+	assert.Contains(t, output.String(), "**No recorded decision (2)**")
+	assert.Contains(t, output.String(), "decision log unavailable")
+}
+
+func TestGHRequestLogArguments(t *testing.T) {
+	dir := t.TempDir()
+	arguments := filepath.Join(dir, "arguments")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "gh"), []byte("#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$ARGUMENTS_FILE\"\nprintf 'response'\n"), 0o700))
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("ARGUMENTS_FILE", arguments)
+	for name, path := range map[string]string{
+		"should read JSON through paginated slurp": testPR,
+		"should read bounded raw log text":         testBase + "/actions/jobs/10/logs",
+	} {
+		t.Run(name, func(t *testing.T) {
+			data, err := ghRequest(t.Context(), "GET", path, nil)
+			require.NoError(t, err)
+			assert.Equal(t, "response", string(data))
+			args, err := os.ReadFile(arguments)
+			require.NoError(t, err)
+			if strings.HasSuffix(path, "/logs") {
+				assert.Contains(t, string(args), "--allow-escape-sequences\n")
+				assert.Contains(t, string(args), "Range: bytes=0-1048575\n")
+				assert.NotContains(t, string(args), "--slurp")
+			} else {
+				assert.Contains(t, string(args), "--paginate\n--slurp\n")
+			}
 		})
 	}
 }

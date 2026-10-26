@@ -62,9 +62,9 @@ Enforced E2E selection can run a selected same-repository draft, as in #23403. F
 
 Label add/remove events reevaluate the selectable test workflows. This can restart work, including in shadow mode. Build keeps its original triggers because its images are retained; adding a label does not create another image build. Ordinary jobs use event labels, so rerunning an old event retains that event's labels. E2E refreshes current labels at the same head; refresh failure disables enforcement and uses event labels for legacy eligibility. [The cases](cases.md) explain this difference.
 
-Decision summaries print already-evaluated candidates and permission to execute. The E2E report prints existing workflow results. Neither recomputes selection rules or claims tests ran from a successful wrapper/no-op check. There is no unified plan comment publisher.
+Decision summaries print already-evaluated candidates and permission to execute. The E2E report prints existing workflow results. Neither recomputes selection rules or claims tests ran from a successful wrapper/no-op check.
 
-A final job in each PR workflow calls the shared [timing reporter](timing-report/README.md), a temporary experiment restricted to PR #23602. The GitHub Actions bot updates one marked PR comment with the wall-clock wait for each commit's initial checks, including failures and green skips. Each workflow contributes its start and finish; labels and reruns do not extend the measurement. Local commands can preview only.
+A final job in each PR workflow calls the shared [timing reporter](timing-report/README.md), a temporary experiment restricted to PR #23602. The GitHub Actions bot updates one marked PR comment with the wall-clock wait and recorded selection exceptions for each commit's initial checks. Expand a commit's summary to see jobs skipped by selection, blocked by execution restrictions, or lacking a recorded decision. The reporter reads job-emitted decisions without recomputing selection rules. Each workflow contributes its start and finish; labels and reruns do not extend the measurement. Local commands can preview only.
 
 ## Validation
 

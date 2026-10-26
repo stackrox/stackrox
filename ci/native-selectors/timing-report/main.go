@@ -52,10 +52,16 @@ type (
 	}
 
 	workflowJob struct {
-		Name        string    `json:"name"`
-		Status      string    `json:"status"`
-		Conclusion  string    `json:"conclusion"`
-		CompletedAt time.Time `json:"completed_at"`
+		ID          int64          `json:"id"`
+		Name        string         `json:"name"`
+		Status      string         `json:"status"`
+		Conclusion  string         `json:"conclusion"`
+		CompletedAt time.Time      `json:"completed_at"`
+		Steps       []workflowStep `json:"steps"`
+	}
+	workflowStep struct {
+		Name       string `json:"name"`
+		Conclusion string `json:"conclusion"`
 	}
 
 	issueComment struct {
@@ -108,7 +114,9 @@ func ghRequest(ctx context.Context, method, path string, body []byte) ([]byte, e
 	callCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	args := []string{"api", "--hostname", "github.com", "--method", method, path}
-	if method == "GET" {
+	if method == "GET" && strings.HasSuffix(path, "/logs") {
+		args = append(args, "--allow-escape-sequences", "--header", "Range: bytes=0-1048575")
+	} else if method == "GET" {
 		args = append(args, "--paginate", "--slurp")
 	} else {
 		args = append(args, "--input", "-")
@@ -249,5 +257,10 @@ func collect(ctx context.Context, request requestFunc, prefix string, pr int, he
 	for _, page := range pages {
 		jobs = append(jobs, page.Jobs...)
 	}
-	return measure(runs[0], jobs)
+	current, err := measure(runs[0], jobs)
+	if err != nil {
+		return measurement{}, err
+	}
+	current.Reports = []selectionReport{collectDecisions(ctx, request, prefix, runID, jobs)}
+	return current, nil
 }

@@ -98,3 +98,35 @@ func TestTimingWorkflowIntegration(t *testing.T) {
 		})
 	}
 }
+
+func TestSelectionDecisionLogging(t *testing.T) {
+	f := newFixture(t)
+	step := steps(obj(f.report["runs"]))[0]
+	for name, test := range map[string]struct {
+		candidate, eligible, enforced, run bool
+		decision                           string
+	}{
+		"selected under enforcement":               {candidate: true, eligible: true, enforced: true, run: true, decision: "permitted"},
+		"unselected under enforcement":             {eligible: true, enforced: true, decision: "skipped-by-selection"},
+		"selected but blocked under enforcement":   {candidate: true, enforced: true, decision: "blocked-by-execution"},
+		"unselected and blocked under enforcement": {enforced: true, decision: "blocked-by-execution"},
+		"selected in shadow":                       {candidate: true, eligible: true, run: true, decision: "permitted"},
+		"unselected in shadow":                     {eligible: true, run: true, decision: "permitted"},
+		"selected but blocked in shadow":           {candidate: true, decision: "blocked-by-execution"},
+		"unselected and blocked in shadow":         {decision: "blocked-by-execution"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			inputs := object{"inputs": object{"candidate": str(test.candidate), "eligible": str(test.eligible), "enforced": str(test.enforced), "note": ""}}
+			env := map[string]string{"GITHUB_OUTPUT": filepath.Join(dir, "output"), "GITHUB_STEP_SUMMARY": filepath.Join(dir, "summary")}
+			for key, value := range obj(step["env"]) {
+				env[key] = evaluate(t, value, inputs)
+			}
+			output := command(t, f.root, "", env, bash(), "-c", str(step["run"]))
+			require.Contains(t, output, "STACKROX_CI_SELECTION_V1 "+test.decision+"\n")
+			data, err := os.ReadFile(env["GITHUB_OUTPUT"])
+			require.NoError(t, err)
+			require.Equal(t, "run="+str(test.run)+"\n", string(data), "reporting must preserve the execution output")
+		})
+	}
+}
