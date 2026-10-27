@@ -133,6 +133,7 @@ ci_should_run_job() {
 
     # Apply rules in order
 {{ range .Rules }}
+    {{- if or .RunJobs .SkipJobs }}
     # Rule: {{ .Name }}{{ if .Description }} - {{ .Description }}{{ end }}
     if {{ .Condition }}; then
         {{- range .RunJobs }}
@@ -146,6 +147,7 @@ ci_should_run_job() {
         fi
         {{- end }}
     fi
+    {{- end }}
 {{ end }}
 
     # Clash resolution: run wins (false positives better than false negatives)
