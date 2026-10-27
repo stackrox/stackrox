@@ -35,6 +35,7 @@ jobs:
 
   go:
     needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.docs_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -108,6 +109,7 @@ jobs:
 
   go-postgres:
     needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.docs_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -203,7 +205,7 @@ jobs:
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: ${{ !needs.detect-changes.outputs.ui_only && !needs.detect-changes.outputs.docs_only }}
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
@@ -378,7 +380,7 @@ jobs:
 
   local-roxctl-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: ${{ !needs.detect-changes.outputs.ui_only && !needs.detect-changes.outputs.docs_only }}
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -424,7 +426,7 @@ jobs:
 
   shell-unit-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: ${{ !needs.detect-changes.outputs.ui_only && !needs.detect-changes.outputs.docs_only }}
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -462,7 +464,7 @@ jobs:
 
   openshift-ci-unit-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: ${{ !needs.detect-changes.outputs.ui_only && !needs.detect-changes.outputs.docs_only }}
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
@@ -482,7 +484,7 @@ jobs:
 
   sensor-integration-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: ${{ !needs.detect-changes.outputs.ui_only && !needs.detect-changes.outputs.docs_only }}
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-24.04

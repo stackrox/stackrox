@@ -46,6 +46,7 @@ jobs:
         input__is_fork: ${{ github.event.pull_request.head.repo.fork }}
         input__is_draft: ${{ github.event.pull_request.draft }}
         input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
+        input__docs_only_change: ${{ needs.detect-changes.outputs.docs_only }}
         input__repo: ${{ github.repository }}
         input__pr_number: ${{ github.event.pull_request.number }}
       run: |
@@ -79,6 +80,9 @@ jobs:
                 if input.ui_only_change == 'true':
                     # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
                     # As we add more E2E test workflows, we may want to make this more flexible.
+                    return False
+                if input.docs_only_change == 'true':
+                    # Docs-only PRs (.md/.adoc changes) don't affect E2E behavior, so skip all dispatched workflows.
                     return False
                 if self.require_pr_label:
                     return False
