@@ -91,28 +91,27 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 type ComplianceCheckDataFreshness int32
 
 const (
-	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED ComplianceCheckDataFreshness = 0
-	// Cannot evaluate: no schedule, unresolvable config, or no data.
-	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN ComplianceCheckDataFreshness = 1
+	// No freshness information available. Either the server could not evaluate
+	// freshness (no schedule, unresolvable config, or no data) or the field was
+	// not populated. This is the zero value.
+	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN ComplianceCheckDataFreshness = 0
 	// Data reflects the most recent expected scan cycle.
-	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT ComplianceCheckDataFreshness = 2
+	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT ComplianceCheckDataFreshness = 1
 	// Data predates the most recent expected scan cycle.
-	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE ComplianceCheckDataFreshness = 3
+	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE ComplianceCheckDataFreshness = 2
 )
 
 // Enum value maps for ComplianceCheckDataFreshness.
 var (
 	ComplianceCheckDataFreshness_name = map[int32]string{
-		0: "COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED",
-		1: "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
-		2: "COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT",
-		3: "COMPLIANCE_CHECK_DATA_FRESHNESS_STALE",
+		0: "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
+		1: "COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT",
+		2: "COMPLIANCE_CHECK_DATA_FRESHNESS_STALE",
 	}
 	ComplianceCheckDataFreshness_value = map[string]int32{
-		"COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED": 0,
-		"COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN":     1,
-		"COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT":     2,
-		"COMPLIANCE_CHECK_DATA_FRESHNESS_STALE":       3,
+		"COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN": 0,
+		"COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT": 1,
+		"COMPLIANCE_CHECK_DATA_FRESHNESS_STALE":   2,
 	}
 )
 
@@ -150,32 +149,31 @@ func (ComplianceCheckDataFreshness) EnumDescriptor() ([]byte, []int) {
 type ComplianceAggregateDataFreshness int32
 
 const (
-	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED ComplianceAggregateDataFreshness = 0
-	// No contributing check could be resolved to current or stale.
-	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN ComplianceAggregateDataFreshness = 1
+	// No freshness information available. Either no contributing check could be
+	// resolved to current or stale, or the field was not populated. This is the
+	// zero value.
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN ComplianceAggregateDataFreshness = 0
 	// At least one contributing check is current and none are stale.
-	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT ComplianceAggregateDataFreshness = 2
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT ComplianceAggregateDataFreshness = 1
 	// At least one contributing check is stale and none are current.
-	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE ComplianceAggregateDataFreshness = 3
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE ComplianceAggregateDataFreshness = 2
 	// Contributing checks are a mix of stale and current data.
-	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT ComplianceAggregateDataFreshness = 4
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT ComplianceAggregateDataFreshness = 3
 )
 
 // Enum value maps for ComplianceAggregateDataFreshness.
 var (
 	ComplianceAggregateDataFreshness_name = map[int32]string{
-		0: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED",
-		1: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
-		2: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT",
-		3: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE",
-		4: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT",
+		0: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+		1: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT",
+		2: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE",
+		3: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT",
 	}
 	ComplianceAggregateDataFreshness_value = map[string]int32{
-		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED":  0,
-		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN":      1,
-		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT":      2,
-		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE":        3,
-		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT": 4,
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN":      0,
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT":      1,
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE":        2,
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT": 3,
 	}
 )
 
@@ -660,7 +658,7 @@ func (x *ComplianceCheckResultStatusCount) GetDataFreshness() ComplianceAggregat
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED
+	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 }
 
 type ComplianceControl struct {
@@ -928,7 +926,7 @@ func (x *ComplianceClusterOverallStats) GetDataFreshness() ComplianceAggregateDa
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED
+	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster
@@ -1355,18 +1353,16 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\a*\xd4\x01\n" +
-	"\x1cComplianceCheckDataFreshness\x12/\n" +
-	"+COMPLIANCE_CHECK_DATA_FRESHNESS_UNSPECIFIED\x10\x00\x12+\n" +
-	"'COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN\x10\x01\x12+\n" +
-	"'COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT\x10\x02\x12)\n" +
-	"%COMPLIANCE_CHECK_DATA_FRESHNESS_STALE\x10\x03*\x9e\x02\n" +
-	" ComplianceAggregateDataFreshness\x123\n" +
-	"/COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNSPECIFIED\x10\x00\x12/\n" +
-	"+COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN\x10\x01\x12/\n" +
-	"+COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT\x10\x02\x12-\n" +
-	")COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE\x10\x03\x124\n" +
-	"0COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT\x10\x04B'\n" +
+	"\fINCONSISTENT\x10\a*\xa3\x01\n" +
+	"\x1cComplianceCheckDataFreshness\x12+\n" +
+	"'COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN\x10\x00\x12+\n" +
+	"'COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT\x10\x01\x12)\n" +
+	"%COMPLIANCE_CHECK_DATA_FRESHNESS_STALE\x10\x02*\xe9\x01\n" +
+	" ComplianceAggregateDataFreshness\x12/\n" +
+	"+COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN\x10\x00\x12/\n" +
+	"+COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT\x10\x01\x12-\n" +
+	")COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE\x10\x02\x124\n" +
+	"0COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT\x10\x03B'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2b\x06proto3"
 
 var (
