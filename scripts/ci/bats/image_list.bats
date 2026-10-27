@@ -61,7 +61,9 @@ function setup() {
   tag="$(make --quiet --no-print-directory tag)-fast"
   local image_list
   image_list="$(mktemp)"
-  USE_KONFLUX_IMAGES=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="ocp-vm-scanning-tests-konflux" populate_stackrox_image_list "$image_list"
+  # VM scanning always deploys via the operator, same as the real job
+  # (scripts/ci/jobs/ocp_vm_scanning_e2e_tests.py sets DEPLOY_STACKROX_VIA_OPERATOR=true).
+  USE_KONFLUX_IMAGES=true DEPLOY_STACKROX_VIA_OPERATOR=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="ocp-vm-scanning-tests-konflux" populate_stackrox_image_list "$image_list"
   run cat "${image_list}"
   assert_success
   assert_output --partial "release-main ${tag}"
@@ -71,6 +73,8 @@ function setup() {
   assert_output --partial "release-scanner-v4 ${tag}"
   assert_output --partial "release-scanner-v4-db ${tag}"
   assert_output --partial "release-roxctl ${tag}"
+  assert_output --partial "release-operator"
+  assert_output --partial "release-operator-bundle"
 }
 
 @test "get images for rcd test" {
