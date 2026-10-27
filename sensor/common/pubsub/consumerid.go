@@ -21,6 +21,7 @@ const (
 	NetworkFlowManagerResourceSyncConsumer
 	SensorSoftRestartConsumer
 	NodeRoleReconcilerConsumer
+	ComplianceOperatorUpdaterConsumer
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 		NetworkFlowManagerResourceSyncConsumer: "NetworkFlowManagerResourceSync",
 		SensorSoftRestartConsumer:              "SensorSoftRestart",
 		NodeRoleReconcilerConsumer:             "NodeRoleReconciler",
+		ComplianceOperatorUpdaterConsumer:      "ComplianceOperatorUpdater",
 	}
 )
 
