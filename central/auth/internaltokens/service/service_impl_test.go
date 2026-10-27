@@ -283,7 +283,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					}},
 					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
-					HTTPRequestScopes: tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes),
+					HTTPRequestScopes: centralproxy.MetricsHTTPScopes,
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "cluster-metrics-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "cluster-metrics-token"},
