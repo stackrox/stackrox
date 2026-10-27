@@ -456,7 +456,7 @@ function EmailIntegrationForm({
                     >
                         <SelectSingle
                             id="notifier.email.startTLSAuthMethod"
-                            value={values.notifier.email.startTLSAuthMethod as string}
+                            value={values.notifier.email.startTLSAuthMethod}
                             handleSelect={setFieldValue}
                             isDisabled={!isEditable || !values.notifier.email.disableTLS}
                             direction="up"

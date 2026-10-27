@@ -78,7 +78,7 @@ const getGroupedContent = (scopedPermissionsByCluster) => {
 };
 
 const NamespaceScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => {
-    let content = null;
+    let content;
 
     if (!scopedPermissionsByCluster || !scopedPermissionsByCluster.length) {
         content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;

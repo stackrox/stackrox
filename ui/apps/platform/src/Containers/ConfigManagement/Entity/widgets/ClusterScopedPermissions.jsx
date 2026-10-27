@@ -6,11 +6,10 @@ import ScopedPermissions from './ScopedPermissions';
 
 const getContent = (scopedPermissions) => {
     const clusterScopePermissions = scopedPermissions.filter((datum) => datum.scope === 'Cluster');
-    let content = null;
     const permissions = clusterScopePermissions.reduce((acc, curr) => {
         return [...acc, ...curr.permissions];
     }, []);
-    content = <ScopedPermissions permissions={permissions} />;
+    let content = <ScopedPermissions permissions={permissions} />;
     if (permissions.length === 0) {
         content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;
     }
@@ -31,7 +30,7 @@ const getGroupedContent = (scopedPermissionsByCluster) => {
 };
 
 const ClusterScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => {
-    let content = null;
+    let content;
 
     if (!scopedPermissionsByCluster || !scopedPermissionsByCluster.length) {
         content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;

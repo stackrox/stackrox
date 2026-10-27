@@ -5,13 +5,9 @@ import { ENFORCEMENT_ACTIONS, ENFORCEMENT_ACTIONS_AS_STRING } from 'constants/en
 import type { LifecycleStage } from 'types/policy.proto';
 
 function getDeployHeader(count) {
-    let message = '';
-    if (count && count > 0) {
-        message = 'on this deployment is enabled for this policy';
-    } else {
-        message = 'on this deployment is not enabled for this policy';
-    }
-    return message;
+    return count && count > 0
+        ? 'on this deployment is enabled for this policy'
+        : 'on this deployment is not enabled for this policy';
 }
 
 function getRuntimeHeader(enforcementAction, enforcementCount) {

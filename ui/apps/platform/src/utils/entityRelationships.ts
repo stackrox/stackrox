@@ -71,11 +71,7 @@ export function getVulnerabilityManagementEntityTypes(
 }
 
 export type EntityGroup =
-    | 'OVERVIEW'
-    | 'VIOLATIONS_AND_FINDINGS'
-    | 'APPLICATION_RESOURCES'
-    | 'RBAC_CONFIG'
-    | 'SECURITY';
+    'OVERVIEW' | 'VIOLATIONS_AND_FINDINGS' | 'APPLICATION_RESOURCES' | 'RBAC_CONFIG' | 'SECURITY';
 
 export const entityGroups: Record<EntityGroup, string> = {
     OVERVIEW: 'Overview',

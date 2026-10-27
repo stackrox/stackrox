@@ -32,9 +32,7 @@ export type NetworkPolicyEgressRule = {
 };
 
 export type NetworkPolicyType =
-    | 'UNSET_NETWORK_POLICY_TYPE'
-    | 'INGRESS_NETWORK_POLICY_TYPE'
-    | 'EGRESS_NETWORK_POLICY_TYPE';
+    'UNSET_NETWORK_POLICY_TYPE' | 'INGRESS_NETWORK_POLICY_TYPE' | 'EGRESS_NETWORK_POLICY_TYPE';
 
 export type NetworkPolicyPort = {
     protocol: Protocol;

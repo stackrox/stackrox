@@ -88,10 +88,7 @@ export const virtualMachineEntityTabValues = ['CVE', 'VirtualMachine'] as const;
 export type VirtualMachineEntityTab = (typeof virtualMachineEntityTabValues)[number];
 
 export type EntityTab =
-    | WorkloadEntityTab
-    | NodeEntityTab
-    | PlatformEntityTab
-    | VirtualMachineEntityTab;
+    WorkloadEntityTab | NodeEntityTab | PlatformEntityTab | VirtualMachineEntityTab;
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
 

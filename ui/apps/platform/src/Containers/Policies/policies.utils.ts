@@ -574,7 +574,7 @@ function getFormattedServerPolicyFields(policy: ClientPolicy): Policy['policySec
         ...policySection,
         policyGroups: policySection.policyGroups.map((policyGroup) => {
             const { fieldName } = policyGroup;
-            let values: PolicyGroup['values'] = [];
+            let values: PolicyGroup['values'];
             if (policyGroup.fieldName === imageSigningCriteriaName) {
                 const { arrayValue } = policyGroup.values[0];
                 values = arrayValue?.map((value) => ({ value })) ?? [];

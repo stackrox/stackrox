@@ -9,8 +9,7 @@ import type {
 import { ensureExhaustive } from 'utils/type.utils';
 
 export type ScopeContext =
-    | 'GLOBAL'
-    | { imageName: { registry: string; remote: string; tag: string } };
+    'GLOBAL' | { imageName: { registry: string; remote: string; tag: string } };
 
 const baseValidationSchema = yup.object({
     cves: yup

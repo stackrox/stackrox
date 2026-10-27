@@ -314,7 +314,7 @@ const VulnMgmtCves = ({
     // Always when the CVE is a Node or Platform CVE
     const shouldRenderGlobalSnoozeView = cveType !== entityTypes.IMAGE_CVE;
 
-    let cveQuery = '';
+    let cveQuery;
 
     switch (cveType) {
         case entityTypes.NODE_CVE: {

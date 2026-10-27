@@ -580,6 +580,7 @@ export default [
 
             // Turn off new rules until after we fix errors in follow-up contributions.
             'cypress/no-unnecessary-waiting': 'off', // disable or fix about 8 errors
+            'cypress/unsafe-to-chain-command': 'off', // fix getInputByLabel calls
 
             'cypress/no-chained-get': 'error',
             // 'cypress/no-force': 'error', // TODO fix errors

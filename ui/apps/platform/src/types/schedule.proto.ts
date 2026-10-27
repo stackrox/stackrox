@@ -31,8 +31,4 @@ export type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlyS
 
 // based on storage/schedule.proto
 export type LegacySchedule =
-    | UnsetSchedule
-    | DailySchedule
-    | WeeklySchedule
-    | LegacyWeeklySchedule
-    | MonthlySchedule;
+    UnsetSchedule | DailySchedule | WeeklySchedule | LegacyWeeklySchedule | MonthlySchedule;
