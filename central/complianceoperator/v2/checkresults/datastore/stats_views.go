@@ -31,6 +31,15 @@ type ResultStatusCountByCluster struct {
 	ClusterID          string     `db:"cluster_id"`
 	ClusterName        string     `db:"cluster"`
 	LastScanTime       *time.Time `db:"compliance_scan_last_executed_time_max"`
+	// StaleFreshnessCount and CurrentFreshnessCount are counts, over the cluster's
+	// results, of rows with STALE and CURRENT stored data_freshness respectively
+	// (UNKNOWN rows are counted by neither). Together they derive the v2 aggregate
+	// freshness: INCONSISTENT when both counts are positive (a genuine mix of
+	// stale and current data), STALE when only StaleFreshnessCount is positive,
+	// CURRENT when only CurrentFreshnessCount is positive, else UNKNOWN. See
+	// storagetov2.DeriveAggregateDataFreshness.
+	StaleFreshnessCount   int `db:"compliance_data_freshness_stale_count"`
+	CurrentFreshnessCount int `db:"compliance_data_freshness_current_count"`
 }
 
 // ResourceResultCountByProfile represents shape of the stats query for compliance operator results
@@ -43,6 +52,14 @@ type ResourceResultCountByProfile struct {
 	NotApplicableCount int    `db:"compliance_not_applicable_count"`
 	InconsistentCount  int    `db:"compliance_inconsistent_count"`
 	ProfileName        string `db:"compliance_profile_name"`
+}
+
+// ProfileStaleStats holds the profile-scoped stale-data banner counts: how many
+// clusters have any stale result and how many stale check results exist, across
+// all clusters (not limited to a page).
+type ProfileStaleStats struct {
+	StaleClusterCount     int
+	StaleCheckResultCount int
 }
 
 // ResourceResultsByProfile represents shape of the stats query for compliance operator results
@@ -58,4 +75,14 @@ type ResourceResultsByProfile struct {
 	CheckName          string `db:"compliance_check_name"`
 	RuleName           string `db:"compliance_rule_name"`
 	CheckRationale     string `db:"compliance_check_rationale"`
+	// StaleFreshnessCount and CurrentFreshnessCount are counts, across all
+	// clusters reporting this check, of rows with STALE and CURRENT stored
+	// data_freshness respectively (UNKNOWN rows are counted by neither).
+	// Together they derive the v2 aggregate freshness: INCONSISTENT when both
+	// counts are positive (a genuine mix of stale and current data), STALE when
+	// only StaleFreshnessCount is positive, CURRENT when only
+	// CurrentFreshnessCount is positive, else UNKNOWN. See
+	// storagetov2.DeriveAggregateDataFreshness.
+	StaleFreshnessCount   int `db:"compliance_data_freshness_stale_count"`
+	CurrentFreshnessCount int `db:"compliance_data_freshness_current_count"`
 }

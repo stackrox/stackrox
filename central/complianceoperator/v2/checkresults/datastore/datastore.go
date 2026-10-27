@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -60,6 +61,19 @@ type DataStore interface {
 
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
+
+	// UpdateFreshnessByScanConfig recomputes data_freshness for all check results of a scan
+	// configuration. A result is STALE when its last started time predates staleBefore, else
+	// CURRENT. Only rows whose stored value changes are written. Returns the number of rows
+	// updated.
+	UpdateFreshnessByScanConfig(ctx context.Context, scanConfigName string, staleBefore time.Time) (int64, error)
+
+	// MarkStaleByScanRef marks every check result of the given scan (identified by its scan
+	// ref ID) as STALE. It is the write-time complement to the freshness sweeper: when a scan
+	// times out, the expected fresh results never arrived, so the existing results for that
+	// scan are known-stale immediately instead of only after the sweeper's grace window. Only
+	// rows not already STALE are written. Returns the number of rows updated.
+	MarkStaleByScanRef(ctx context.Context, scanRefID string) (int64, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results

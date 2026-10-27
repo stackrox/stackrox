@@ -201,15 +201,17 @@ var (
 			ClusterName:        "cluster1",
 		},
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -248,29 +250,33 @@ var (
 			ClusterName:        "cluster1",
 		},
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
 	expectedCluster2And3Counts = []*ResultStatusCountByCluster{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -287,15 +293,17 @@ var (
 
 	expectedCluster2OnlyCounts = []*ResultStatusCountByCluster{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ClusterID:          testconsts.Cluster2,
-			ClusterName:        "cluster2",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ClusterID:             testconsts.Cluster2,
+			ClusterName:           "cluster2",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
@@ -352,31 +360,35 @@ var (
 			RuleName:           "test-rule",
 		},
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  5,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     5,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
 	expectedProfileResults = []*ResourceResultsByProfile{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  5,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     5,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -394,31 +406,35 @@ var (
 
 	expectedProfileResultsCluster2 = []*ResourceResultsByProfile{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  3,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     3,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 	}
 
 	expectedProfileResultsCluster2And3 = []*ResourceResultsByProfile{
 		{
-			PassCount:          0,
-			FailCount:          0,
-			ErrorCount:         0,
-			InfoCount:          0,
-			ManualCount:        0,
-			NotApplicableCount: 0,
-			InconsistentCount:  4,
-			ProfileName:        "ocp4-cis-node",
-			CheckName:          "test-check",
-			RuleName:           "test-rule",
+			PassCount:             0,
+			FailCount:             0,
+			ErrorCount:            0,
+			InfoCount:             0,
+			ManualCount:           0,
+			NotApplicableCount:    0,
+			InconsistentCount:     4,
+			ProfileName:           "ocp4-cis-node",
+			CheckName:             "test-check",
+			RuleName:              "test-rule",
+			StaleFreshnessCount:   1,
+			CurrentFreshnessCount: 1,
 		},
 		{
 			PassCount:          0,
@@ -506,6 +522,102 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	s.Require().NoError(err)
 	s.Require().True(found)
 	protoassert.Equal(s.T(), rec1, retrieveRec1)
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestUpdateFreshnessByScanConfig() {
+	now := time.Now()
+	grace := 85 * time.Minute
+	staleBefore := now.Add(-grace)
+
+	// A result whose laststartedtime is older than staleBefore must become STALE; a recent one
+	// must become CURRENT. Both start at the zero value (UNKNOWN), as a freshly inserted row does.
+	oldTime := now.Add(-10 * time.Hour)
+	recentTime := now.Add(-5 * time.Minute)
+	staleRec := getTestRecForScan("sc-sweep", testconsts.Cluster1, "scan-stale")
+	staleRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	currentRec := getTestRecForScan("sc-sweep", testconsts.Cluster2, "scan-current")
+	currentRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&recentTime)
+	// A result of a different scan config must be left untouched.
+	otherRec := getTestRecForScan("sc-other", testconsts.Cluster1, "scan-other")
+	otherRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, staleRec))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, currentRec))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, otherRec))
+
+	// Write context is required.
+	_, err := s.dataStore.UpdateFreshnessByScanConfig(s.hasReadCtx, "sc-sweep", staleBefore)
+	s.Require().Error(err)
+
+	// First sweep flips both sc-sweep rows (UNKNOWN -> STALE / CURRENT).
+	updated, err := s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-sweep", staleBefore)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(2), updated)
+
+	s.assertFreshness(staleRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+	s.assertFreshness(currentRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT)
+	// The other scan config is untouched (still UNKNOWN).
+	s.assertFreshness(otherRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN)
+
+	// Second sweep with no change writes zero rows (the IS DISTINCT FROM guard).
+	updated, err = s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-sweep", staleBefore)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+
+	// Moving the cutoff forward so the previously-current row is now stale flips exactly one row.
+	updated, err = s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-sweep", now.Add(1*time.Hour))
+	s.Require().NoError(err)
+	s.Require().Equal(int64(1), updated)
+	s.assertFreshness(currentRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+
+	// An empty scan config name is a no-op.
+	updated, err = s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "", staleBefore)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestMarkStaleByScanRef() {
+	// Two results share a scan (same cluster + scan name => same scan ref); a third
+	// result belongs to a different scan and must be left untouched.
+	rec1 := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
+	rec2 := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
+	otherRec := getTestRecForScan("sc-timeout", testconsts.Cluster2, "scan-healthy")
+	s.Require().Equal(rec1.GetScanRefId(), rec2.GetScanRefId())
+	s.Require().NotEqual(rec1.GetScanRefId(), otherRec.GetScanRefId())
+
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, otherRec))
+
+	// Write context is required.
+	_, err := s.dataStore.MarkStaleByScanRef(s.hasReadCtx, rec1.GetScanRefId())
+	s.Require().Error(err)
+
+	// An empty scan ref is a no-op.
+	updated, err := s.dataStore.MarkStaleByScanRef(s.hasWriteCtx, "")
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+
+	// Marking the timed-out scan flips both its rows (UNKNOWN -> STALE).
+	updated, err = s.dataStore.MarkStaleByScanRef(s.hasWriteCtx, rec1.GetScanRefId())
+	s.Require().NoError(err)
+	s.Require().Equal(int64(2), updated)
+	s.assertFreshness(rec1.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+	s.assertFreshness(rec2.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE)
+	// The other scan is untouched.
+	s.assertFreshness(otherRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN)
+
+	// Marking again is idempotent: already-STALE rows are not rewritten.
+	updated, err = s.dataStore.MarkStaleByScanRef(s.hasWriteCtx, rec1.GetScanRefId())
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) assertFreshness(id string, expected storage.ComplianceDataFreshness) {
+	rec, found, err := s.storage.Get(s.hasReadCtx, id)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal(expected, rec.GetDataFreshness())
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
@@ -1315,6 +1427,14 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 		getTestRec(testconsts.Cluster3),
 		getTestRec2(testconsts.Cluster3),
 	}
+
+	// Give cluster2's "test-check" group both a STALE and a CURRENT result (the
+	// third stays UNKNOWN, the zero value). This exercises the count-based
+	// INCONSISTENT derivation end-to-end through real SQL: a naive MIN/MAX over
+	// {STALE, CURRENT, UNKNOWN} would report UNKNOWN as the minimum and hide the
+	// stale/current mix, which is exactly the bug the count-based aggregates fix.
+	recs[1].DataFreshness = storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+	recs[2].DataFreshness = storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT
 
 	profileCluster := map[string]string{
 		testconsts.Cluster1: internaltov2storage.BuildProfileRefID(testconsts.Cluster1, "ocp4-cis-node", "node"),

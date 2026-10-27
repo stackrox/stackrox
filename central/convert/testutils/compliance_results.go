@@ -311,6 +311,10 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 					{Standard: "OCP-CIS", Control: "1.3.3"},
 					{Standard: "OCP-CIS", Control: "1.4.4"},
 				},
+				// GetComplianceStorageResults does not set a check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 		{
@@ -329,6 +333,10 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 					{Standard: "OCP-CIS", Control: "1.3.3"},
 					{Standard: "OCP-CIS", Control: "1.4.4"},
 				},
+				// GetComplianceStorageResults does not set a check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 		{
@@ -347,6 +355,10 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 					{Standard: "OCP-CIS", Control: "1.3.3"},
 					{Standard: "OCP-CIS", Control: "1.4.4"},
 				},
+				// GetComplianceStorageResults does not set a check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 		{
@@ -365,6 +377,10 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 					{Standard: "OCP-CIS", Control: "1.3.3"},
 					{Standard: "OCP-CIS", Control: "1.4.4"},
 				},
+				// GetComplianceStorageResults does not set a check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 		{
@@ -383,6 +399,10 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 					{Standard: "OCP-CIS", Control: "1.3.3"},
 					{Standard: "OCP-CIS", Control: "1.4.4"},
 				},
+				// GetComplianceStorageResults does not set a check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 		{
@@ -401,6 +421,10 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 					{Standard: "OCP-CIS", Control: "1.3.3"},
 					{Standard: "OCP-CIS", Control: "1.4.4"},
 				},
+				// GetComplianceStorageResults does not set a check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 		{
@@ -419,6 +443,10 @@ func GetConvertedComplianceData(_ *testing.T) []*v2.ComplianceCheckData {
 					{Standard: "OCP-CIS", Control: "1.3.3"},
 					{Standard: "OCP-CIS", Control: "1.4.4"},
 				},
+				// GetComplianceStorageResults does not set a check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 	}
@@ -600,6 +628,9 @@ func GetComplianceProfileResultsV2(_ *testing.T, profileName string) *v2.ListCom
 						Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 					},
 				},
+				// GetComplianceStorageProfileResults does not set Stale/CurrentFreshnessCount,
+				// so DeriveAggregateDataFreshness(0, 0) resolves to UNKNOWN.
+				DataFreshness: v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 	}
@@ -660,6 +691,9 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string, lastScanTime *t
 			},
 		},
 		LastScanTime: lastScanTime,
+		// GetComplianceStorageClusterCount does not set Stale/CurrentFreshnessCount,
+		// so DeriveAggregateDataFreshness(0, 0) resolves to UNKNOWN.
+		DataFreshness: v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN,
 	}
 }
 
@@ -694,6 +728,10 @@ func GetConvertedComplianceResult(_ *testing.T, lastScanTime *types.Timestamp) *
 				Status:       v2.ComplianceCheckStatus_INFO,
 				CheckUid:     complianceCheckUID1,
 				LastScanTime: lastScanTime,
+				// GetComplianceStorageResult does not set the check's stored
+				// data_freshness, so it defaults to storage UNKNOWN, which converts
+				// to v2 ComplianceCheckDataFreshness UNKNOWN.
+				DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 			},
 		},
 		Description:  "description 1",
@@ -722,6 +760,10 @@ func GetConvertedCheckResult(_ *testing.T) []*v2.ComplianceCheckResult {
 				{Standard: "OCP-CIS", Control: "1.3.3"},
 				{Standard: "OCP-CIS", Control: "1.4.4"},
 			},
+			// GetConvertedCheckResult is paired with storage fixtures that do not
+			// set data_freshness, so it defaults to storage UNKNOWN, which converts
+			// to v2 ComplianceCheckDataFreshness UNKNOWN.
+			DataFreshness: v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN,
 		},
 	}
 }

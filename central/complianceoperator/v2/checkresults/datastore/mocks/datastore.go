@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	datastore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -221,6 +222,21 @@ func (mr *MockDataStoreMockRecorder) GetComplianceCheckResult(ctx, complianceRes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceCheckResult", reflect.TypeOf((*MockDataStore)(nil).GetComplianceCheckResult), ctx, complianceResultID)
 }
 
+// MarkStaleByScanRef mocks base method.
+func (m *MockDataStore) MarkStaleByScanRef(ctx context.Context, scanRefID string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkStaleByScanRef", ctx, scanRefID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarkStaleByScanRef indicates an expected call of MarkStaleByScanRef.
+func (mr *MockDataStoreMockRecorder) MarkStaleByScanRef(ctx, scanRefID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkStaleByScanRef", reflect.TypeOf((*MockDataStore)(nil).MarkStaleByScanRef), ctx, scanRefID)
+}
+
 // SearchComplianceCheckResults mocks base method.
 func (m *MockDataStore) SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
 	m.ctrl.T.Helper()
@@ -234,6 +250,21 @@ func (m *MockDataStore) SearchComplianceCheckResults(ctx context.Context, query 
 func (mr *MockDataStoreMockRecorder) SearchComplianceCheckResults(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchComplianceCheckResults", reflect.TypeOf((*MockDataStore)(nil).SearchComplianceCheckResults), ctx, query)
+}
+
+// UpdateFreshnessByScanConfig mocks base method.
+func (m *MockDataStore) UpdateFreshnessByScanConfig(ctx context.Context, scanConfigName string, staleBefore time.Time) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateFreshnessByScanConfig", ctx, scanConfigName, staleBefore)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateFreshnessByScanConfig indicates an expected call of UpdateFreshnessByScanConfig.
+func (mr *MockDataStoreMockRecorder) UpdateFreshnessByScanConfig(ctx, scanConfigName, staleBefore any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFreshnessByScanConfig", reflect.TypeOf((*MockDataStore)(nil).UpdateFreshnessByScanConfig), ctx, scanConfigName, staleBefore)
 }
 
 // UpsertResult mocks base method.

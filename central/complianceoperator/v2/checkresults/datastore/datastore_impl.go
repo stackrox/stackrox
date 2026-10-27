@@ -198,6 +198,7 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countQuery = d.withDataFreshnessCountSelectQuery(countQuery, search.ComplianceOperatorProfileName)
 	var results []*ResourceResultsByProfile
 	err := pgSearch.RunSelectRequestForSchemaFn[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultsByProfile) error {
 		results = append(results, r)
@@ -243,6 +244,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
+	countQuery = d.withDataFreshnessCountSelectQuery(countQuery, search.ClusterID)
 	var countResults []*ResultStatusCountByCluster
 	err := pgSearch.RunSelectRequestForSchemaFn[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResultStatusCountByCluster) error {
 		countResults = append(countResults, r)
@@ -392,6 +394,38 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
+// withDataFreshnessCountSelectQuery appends per-group filtered COUNTs of stored
+// (check-level) data_freshness values, mirroring withCountByResultSelectQuery's
+// idiom for the check-status counts. STALE and CURRENT are counted separately
+// (UNKNOWN is deliberately not counted by either) so that the aggregate
+// freshness can be derived at read time: INCONSISTENT when both counts are
+// positive, STALE/CURRENT when only one is, else UNKNOWN. See
+// storagetov2.DeriveAggregateDataFreshness.
+func (d *datastoreImpl) withDataFreshnessCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceDataFreshnessStaleCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceDataFreshness,
+						storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE.String(),
+					).ProtoQuery(),
+			).Proto(),
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceDataFreshnessCurrentCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceDataFreshness,
+						storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
+	return cloned
+}
+
 func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
 	if scanRefID == "" || lastStartedTimestamp == nil {
 		return nil
@@ -411,4 +445,123 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 	)
 	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
 	return err
+}
+
+// freshnessUpdateBatchSize bounds how many changed results are re-serialized and upserted per
+// UpsertMany call, so a large churn tick does not issue one oversized write.
+const freshnessUpdateBatchSize = 1000
+
+// UpdateFreshnessByScanConfig recomputes data_freshness for every check result of the given scan
+// configuration. A result is STALE when its last started time predates staleBefore, else CURRENT.
+// Results whose last started time is nil take the CURRENT branch, matching DeleteOldResults, which
+// treats a nil timestamp as "not yet aged out", and avoiding flapping such rows on every sweep.
+//
+// Freshness is part of the serialized proto, so this follows the read-modify-upsert pattern used
+// by the CVE suppress sweeper (central/cve/node/datastore Unsuppress): load the objects, mutate
+// the proto, and re-upsert. A raw column-only UPDATE would leave the serialized blob stale, so
+// object reads would return the old value. The read stream is fully drained before any write (see
+// below), and only results whose freshness actually changes are upserted. Returns the number of
+// results updated.
+func (d *datastoreImpl) UpdateFreshnessByScanConfig(ctx context.Context, scanConfigName string, staleBefore time.Time) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanConfigName == "" {
+		return 0, nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).
+		ProtoQuery()
+
+	// Collect the rows whose freshness changes DURING the streaming read, then
+	// upsert them AFTER the read completes. Upserting inside the GetByQueryFn
+	// callback would issue writes on a second pool connection while the read
+	// stream still holds the first one open; under a large result set Postgres
+	// blocks writing to the client (full send buffer) while the client blocks
+	// acquiring a connection for the upsert, a deadlock. This matches the CVE
+	// suppress precedent (central/cve/node/datastore Unsuppress), which collects
+	// in the callback and upserts afterwards. Only CHANGED rows are retained, so
+	// memory stays proportional to churn, not to the whole result set.
+	var changed []*storage.ComplianceOperatorCheckResultV2
+	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
+		want := freshnessFor(result, staleBefore)
+		if result.GetDataFreshness() == want {
+			return nil
+		}
+		result.DataFreshness = want
+		changed = append(changed, result)
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrap(err, "updating compliance check result freshness")
+	}
+
+	var updated int64
+	for start := 0; start < len(changed); start += freshnessUpdateBatchSize {
+		end := start + freshnessUpdateBatchSize
+		if end > len(changed) {
+			end = len(changed)
+		}
+		if err := d.store.UpsertMany(ctx, changed[start:end]); err != nil {
+			return updated, errors.Wrap(err, "updating compliance check result freshness")
+		}
+		updated += int64(end - start)
+	}
+	return updated, nil
+}
+
+// freshnessFor returns the freshness a result should have given the staleBefore cutoff.
+func (d *datastoreImpl) MarkStaleByScanRef(ctx context.Context, scanRefID string) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanRefID == "" {
+		return 0, nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		ProtoQuery()
+
+	// Collect-then-upsert, for the same reason as UpdateFreshnessByScanConfig:
+	// upserting inside the GetByQueryFn callback deadlocks at scale (the write
+	// needs a second pool connection while the read stream still holds the first).
+	var changed []*storage.ComplianceOperatorCheckResultV2
+	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
+		if result.GetDataFreshness() == storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE {
+			return nil
+		}
+		result.DataFreshness = storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+		changed = append(changed, result)
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrap(err, "marking compliance check results stale")
+	}
+
+	var updated int64
+	for start := 0; start < len(changed); start += freshnessUpdateBatchSize {
+		end := start + freshnessUpdateBatchSize
+		if end > len(changed) {
+			end = len(changed)
+		}
+		if err := d.store.UpsertMany(ctx, changed[start:end]); err != nil {
+			return updated, errors.Wrap(err, "marking compliance check results stale")
+		}
+		updated += int64(end - start)
+	}
+	return updated, nil
+}
+
+func freshnessFor(result *storage.ComplianceOperatorCheckResultV2, staleBefore time.Time) storage.ComplianceDataFreshness {
+	started := result.GetLastStartedTime()
+	if started != nil && started.AsTime().Before(staleBefore) {
+		return storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+	}
+	return storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT
 }

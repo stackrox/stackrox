@@ -66,6 +66,7 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 		if resultCount.LastScanTime != nil {
 			lastScanTime = protoconv.ConvertTimeToTimestampOrNil(*resultCount.LastScanTime)
 		}
+		dataFreshness := DeriveAggregateDataFreshness(resultCount.StaleFreshnessCount, resultCount.CurrentFreshnessCount)
 		convertedResults = append(convertedResults, &v2.ComplianceClusterOverallStats{
 			Cluster: &v2.ComplianceScanCluster{
 				ClusterId:   resultCount.ClusterID,
@@ -102,22 +103,28 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 				},
 			},
-			LastScanTime: lastScanTime,
+			LastScanTime:  lastScanTime,
+			DataFreshness: dataFreshness,
 		})
 	}
 	return convertedResults
 }
 
-// ComplianceV2ProfileStats converts the counts to the v2 stats
-func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2, profileBenchmarkMap map[string][]*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceProfileScanStats {
+// ComplianceV2ProfileStats converts the counts to the v2 stats. staleStats holds
+// the per-profile stale-data banner counts (keyed by profile name); a missing
+// entry means zero stale data.
+func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2, profileBenchmarkMap map[string][]*storage.ComplianceOperatorBenchmarkV2, staleStats map[string]datastore.ProfileStaleStats) []*v2.ComplianceProfileScanStats {
 	convertedResults := make([]*v2.ComplianceProfileScanStats, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
+		stale := staleStats[resultCount.ProfileName]
 		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
-			ProfileName: resultCount.ProfileName,
-			Title:       profileMap[resultCount.ProfileName].GetTitle(),
-			Version:     profileMap[resultCount.ProfileName].GetProfileVersion(),
-			Benchmarks:  convertBenchmarks(profileBenchmarkMap[resultCount.ProfileName]),
+			ProfileName:           resultCount.ProfileName,
+			Title:                 profileMap[resultCount.ProfileName].GetTitle(),
+			Version:               profileMap[resultCount.ProfileName].GetProfileVersion(),
+			Benchmarks:            convertBenchmarks(profileBenchmarkMap[resultCount.ProfileName]),
+			StaleClusterCount:     int32(stale.StaleClusterCount),
+			StaleCheckResultCount: int32(stale.StaleCheckResultCount),
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
