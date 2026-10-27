@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"time"
 
@@ -159,13 +160,13 @@ func (p *tokenPolicy) enforce(
 }
 
 func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tokens.HTTPRequestScopes, error) {
-	var allowed tokens.HTTPRequestScopes
+	var allowed tokens.HTTPRequestScopes = make(tokens.HTTPRequestScopes)
 	for _, ps := range req.GetPermissionSetIds() {
 		switch ps {
 		case centralproxy.ConsoleProxyPermissionSetID:
-			allowed = centralproxy.ConsoleHTTPScopes
+			maps.Copy(allowed, centralproxy.ConsoleHTTPScopes)
 		case centralproxy.MetricsPermissionSetID:
-			allowed = centralproxy.MetricsHTTPScopes
+			maps.Copy(allowed, centralproxy.MetricsHTTPScopes)
 		default:
 			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 		}
