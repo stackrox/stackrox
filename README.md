@@ -684,3 +684,5 @@ The following table lists the browsers that can view the StackRox web user inter
 </details>
 
 ---
+
+<!-- CI-TEST: Validating docs-only rule - expect most tests to be skipped -->
