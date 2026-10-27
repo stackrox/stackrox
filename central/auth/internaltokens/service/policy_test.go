@@ -193,7 +193,7 @@ func TestEnforce(t *testing.T) {
 				Lifetime:         durationpb.New(30 * time.Minute),
 			},
 			clusterID:      fixtureconsts.Cluster1,
-			expectedScopes: tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes),
+			expectedScopes: centralproxy.MetricsHTTPScopes,
 		},
 		"metrics permission set cannot access another cluster": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -249,7 +249,7 @@ func TestEnforce(t *testing.T) {
 				Lifetime:         durationpb.New(30 * time.Minute),
 			},
 			clusterID:      fixtureconsts.Cluster1,
-			expectedScopes: tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes),
+			expectedScopes: centralproxy.ConsoleHTTPScopes,
 		},
 		"console permission set can request approved scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{

@@ -51,7 +51,7 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 	assert.Equal(t, centralproxy.MetricsPermissionSetID, defaults.Clients[0].PermissionSetID)
 	assert.Equal(t, "*", defaults.Clients[1].Subject)
 	assert.Equal(t, centralproxy.ConsoleProxyPermissionSetID, defaults.Clients[1].PermissionSetID)
-	assert.Equal(t, tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes), defaults.Clients[1].HTTPScopes)
+	assert.Equal(t, centralproxy.ConsoleHTTPScopes, defaults.Clients[1].HTTPScopes)
 	grant, err := policy.Authorize(ctx, request, user)
 	require.NoError(t, err)
 	assert.Equal(t, clientAuthKubernetesBearer, grant.AuthType)

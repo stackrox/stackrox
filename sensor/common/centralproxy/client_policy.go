@@ -147,7 +147,11 @@ func defaultClientPolicy() clientPolicyDocument {
 }
 
 func consolePolicyHTTPScopes() tokens.HTTPRequestScopes {
-	return tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
+	scopes := make(tokens.HTTPRequestScopes, len(centralproxy.ConsoleHTTPScopes))
+	for path, methods := range centralproxy.ConsoleHTTPScopes {
+		scopes[path] = slices.Clone(methods)
+	}
+	return scopes
 }
 
 // Authorize matches the presented certificate or an already TokenReview-validated

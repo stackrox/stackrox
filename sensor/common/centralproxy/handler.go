@@ -355,12 +355,12 @@ func legacyProxyGrantAllowed(grant *ClientPolicyGrant, request *http.Request) bo
 	var allowed tokens.HTTPRequestScopes
 	switch grant.PermissionSetID {
 	case centralproxy.ConsoleProxyPermissionSetID:
-		allowed = tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
+		allowed = centralproxy.ConsoleHTTPScopes
 	case centralproxy.MetricsPermissionSetID:
 		if !centralcaps.Has(centralsensor.CentralProxyPathFiltering) || !allowedpaths.IsExplicitlyAllowed("/metrics") {
 			return false
 		}
-		allowed = tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes)
+		allowed = centralproxy.MetricsHTTPScopes
 	default:
 		return false
 	}
