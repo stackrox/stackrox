@@ -68,7 +68,7 @@ func (cmd *centralVersionCommand) run(useJSON bool) error {
 	return nil
 }
 
-func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionCheckResult, error) {
+func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.CheckResult, error) {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return nil, errors.Wrap(err, "establishing gRPC connection to Central")
@@ -100,7 +100,7 @@ func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.VersionCheck
 	return result, nil
 }
 
-func (cmd *centralVersionCommand) printText(r *versioncheck.VersionCheckResult) {
+func (cmd *centralVersionCommand) printText(r *versioncheck.CheckResult) {
 	const labelFmt = "%-35s%s"
 	cmd.env.Logger().PrintfLn(labelFmt, "Central version:", r.CentralVersion)
 	cmd.env.Logger().PrintfLn(labelFmt, "roxctl version:", r.RoxctlVersion)
@@ -112,7 +112,7 @@ func (cmd *centralVersionCommand) printText(r *versioncheck.VersionCheckResult) 
 	}
 }
 
-func (cmd *centralVersionCommand) printJSON(r *versioncheck.VersionCheckResult) error {
+func (cmd *centralVersionCommand) printJSON(r *versioncheck.CheckResult) error {
 	enc := json.NewEncoder(cmd.env.InputOutput().Out())
 	enc.SetIndent("", "  ")
 	return errors.Wrap(enc.Encode(r), "encoding version information as JSON")

@@ -130,7 +130,7 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 	err := cmd.run(true)
 	c.Require().NoError(err)
 
-	var result versioncheck.VersionCheckResult
+	var result versioncheck.CheckResult
 	c.T().Log(stdout.String())
 	c.Require().NoError(json.Unmarshal(stdout.Bytes(), &result))
 
@@ -152,7 +152,7 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 	c.Assert().NoError(err)
 	c.Assert().Empty(interceptorOutput.String(), "version check interceptor warning should be suppressed")
 
-	var result versioncheck.VersionCheckResult
+	var result versioncheck.CheckResult
 	c.Require().NoError(json.Unmarshal(stdout.Bytes(), &result))
 
 	c.Assert().Equal("INCOMPATIBLE_AHEAD", result.Compatibility)

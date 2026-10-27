@@ -60,12 +60,12 @@ func checkAndWarn(centralVersion string, w io.Writer) {
 		result.RoxctlVersion, centralVersion, strings.Join(result.CompatibleCentralVersions, ", "))
 }
 
-// VersionCheckResult holds structured version and compatibility information
+// CheckResult holds structured version and compatibility information
 // for the running roxctl and a given Central.
 // JSON tags are required by the "roxctl central version --output=json" command.
 // The struct lives here rather than in roxctl/central/version to avoid a
 // circular dependency (versioncheck imports would break).
-type VersionCheckResult struct {
+type CheckResult struct {
 	CentralVersion            string   `json:"CentralVersion"`
 	RoxctlVersion             string   `json:"RoxctlVersion"`
 	CompatibleCentralVersions []string `json:"CompatibleCentralVersions"`
@@ -79,7 +79,7 @@ type VersionCheckResult struct {
 
 // CheckCentralVersion classifies the given Central version against
 // the running roxctl version and returns structured version info.
-func CheckCentralVersion(centralVersion string) (*VersionCheckResult, error) {
+func CheckCentralVersion(centralVersion string) (*CheckResult, error) {
 	centralXY, err := productstreams.ParseXYFromVersionString(centralVersion)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing Central version %q", centralVersion)
@@ -97,7 +97,7 @@ func CheckCentralVersion(centralVersion string) (*VersionCheckResult, error) {
 
 	summary, recommendation := guidance(compat)
 
-	return &VersionCheckResult{
+	return &CheckResult{
 		CentralVersion:            centralVersion,
 		RoxctlVersion:             version.GetMainVersion(),
 		CompatibleCentralVersions: sliceutils.StringSlice[productstreams.XYVersion](compatVersions...),
