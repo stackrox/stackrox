@@ -1147,11 +1147,18 @@ END
     esac
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
-        cat >> "${image_list}" << END
+        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+            cat >> "${image_list}" << END
+release-operator ${operator_controller_tag}
+release-operator-bundle ${operator_metadata_tag}
+END
+        else
+            cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
 stackrox-operator-index ${operator_metadata_tag}
 END
+        fi
     fi
 
     # Remove duplicates.
