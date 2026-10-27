@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# CI-TEST: Validating shell-scripts rule - any .sh file should trigger shell-unit-tests
+
 # sync-release-branch.sh
 # This script checks that all commits associated with a GitHub milestone have been cherry-picked into the release
 # branch. If this isn't the case, it will output a command to do so.

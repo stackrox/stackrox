@@ -1,5 +1,7 @@
 package main
 
+// CI-TEST: Validating central-subsystem rule - expect go-postgres and go tests to run
+
 import (
 	"context"
 	"net/http"

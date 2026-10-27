@@ -2,6 +2,8 @@
 // protoc-gen-go-vtproto version: v0.6.1-0.20240409071808-615f978279ca
 // source: test/test.proto
 
+// CI-TEST: Validating generated-code-changes rule - expect ALL tests to run
+
 package test
 
 import (
