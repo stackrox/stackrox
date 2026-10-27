@@ -21,7 +21,7 @@ func TestApprovedHTTPScopes(t *testing.T) {
 	}{
 		"older console sensor": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
-			expected:      tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes),
+			expected:      centralproxy.ConsoleHTTPScopes,
 		},
 		"console subset": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
@@ -35,7 +35,7 @@ func TestApprovedHTTPScopes(t *testing.T) {
 		},
 		"future metrics profile": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
-			expected:      tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes),
+			expected:      centralproxy.MetricsHTTPScopes,
 		},
 		"metrics cannot ask for console": {
 			permissionSet: centralproxy.MetricsPermissionSetID,

@@ -6,8 +6,10 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -322,14 +324,10 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 
 func consoleRequestScopes() []*apiV1.HTTPRequestScope {
 	result := make([]*apiV1.HTTPRequestScope, 0, len(centralproxy.ConsoleHTTPScopes))
-	indices := make(map[string]int, len(centralproxy.ConsoleHTTPScopes))
-	for _, scope := range centralproxy.ConsoleHTTPScopes {
-		if index, found := indices[scope.Path]; found {
-			result[index].Methods = append(result[index].Methods, scope.Method)
-			continue
-		}
-		indices[scope.Path] = len(result)
-		result = append(result, &apiV1.HTTPRequestScope{Path: scope.Path, Methods: []string{scope.Method}})
+	for _, path := range slices.Sorted(maps.Keys(centralproxy.ConsoleHTTPScopes)) {
+		result = append(result, &apiV1.HTTPRequestScope{
+			Path: path, Methods: slices.Clone(centralproxy.ConsoleHTTPScopes[path]),
+		})
 	}
 	return result
 }

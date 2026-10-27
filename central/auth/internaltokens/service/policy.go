@@ -163,9 +163,9 @@ func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tok
 	for _, ps := range req.GetPermissionSetIds() {
 		switch ps {
 		case centralproxy.ConsoleProxyPermissionSetID:
-			allowed = tokens.HTTPRequestScopesByPath(centralproxy.ConsoleHTTPScopes)
+			allowed = centralproxy.ConsoleHTTPScopes
 		case centralproxy.MetricsPermissionSetID:
-			allowed = tokens.HTTPRequestScopesByPath(centralproxy.MetricsHTTPScopes)
+			allowed = centralproxy.MetricsHTTPScopes
 		default:
 			return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 		}

@@ -18,11 +18,11 @@ import (
 // exceeding the buffer limit.
 var AllowedProxyPaths = allowedPathsForProfiles(ConsoleHTTPScopes)
 
-func allowedPathsForProfiles(profiles ...[]tokens.HTTPRequestScope) set.FrozenStringSet {
+func allowedPathsForProfiles(profiles ...tokens.HTTPRequestScopes) set.FrozenStringSet {
 	var paths []string
 	for _, profile := range profiles {
-		for _, scope := range profile {
-			paths = append(paths, scope.Path)
+		for path := range profile {
+			paths = append(paths, path)
 		}
 	}
 	return set.NewFrozenStringSet(paths...)

@@ -9,17 +9,16 @@ import (
 
 func TestAllowedPathsForProfiles(t *testing.T) {
 	paths := allowedPathsForProfiles(
-		[]tokens.HTTPRequestScope{
-			{Path: "/api/graphql", Method: "GET"},
-			{Path: "/api/graphql", Method: "POST"},
+		tokens.HTTPRequestScopes{
+			"/api/graphql": {"GET", "POST"},
 		},
-		[]tokens.HTTPRequestScope{{Path: "/metrics", Method: "GET"}},
+		tokens.HTTPRequestScopes{"/metrics": {"GET"}},
 	)
 	assert.ElementsMatch(t, []string{"/api/graphql", "/metrics"}, paths.AsSlice())
 
 	var consolePaths []string
-	for _, scope := range ConsoleHTTPScopes {
-		consolePaths = append(consolePaths, scope.Path)
+	for path := range ConsoleHTTPScopes {
+		consolePaths = append(consolePaths, path)
 	}
 	assert.ElementsMatch(t, consolePaths, AllowedProxyPaths.AsSlice())
 	assert.False(t, AllowedProxyPaths.Contains("/metrics"))
