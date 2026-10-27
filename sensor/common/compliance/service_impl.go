@@ -8,7 +8,6 @@ import (
 	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -33,7 +32,6 @@ type serviceImpl struct {
 	unimplemented.Receiver
 	sensor.UnimplementedComplianceServiceServer
 
-	output           chan *compliance.ComplianceReturn
 	auditEvents      chan *sensor.AuditEvents
 	nodeInventories  chan *storage.NodeInventory
 	indexReportWraps chan *index.IndexReportWrap
@@ -176,20 +174,6 @@ func (s *serviceImpl) handleSendingMessage(msg common.MessageToComplianceWithAdd
 	return nil
 }
 
-func (s *serviceImpl) RunScrape(msg *sensor.MsgToCompliance) int {
-	var count int
-
-	s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
-		err := server.Send(msg)
-		if err != nil {
-			log.Errorf("Error sending compliance request to node %q: %v", node, err)
-			return
-		}
-		count++
-	})
-	return count
-}
-
 func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateServer) error {
 	incomingMD := metautils.ExtractIncoming(server.Context())
 	hostname := incomingMD.Get("rox-compliance-nodename")
@@ -241,9 +225,6 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			return errors.Wrapf(err, "receiving from compliance %q", hostname)
 		}
 		switch t := msg.GetMsg().(type) {
-		case *sensor.MsgFromCompliance_Return:
-			log.Infof("Received compliance return from %q", msg.GetNode())
-			s.output <- t.Return
 		case *sensor.MsgFromCompliance_AuditEvents:
 			// if we are offline we do not send more audit logs to the manager nor the detector.
 			// Upon reconnection Central will sync the last state and Sensor will request to Compliance to start
@@ -288,10 +269,6 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, errors.Wrapf(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "compliance authorizing for %q", fullMethodName)
-}
-
-func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {
-	return s.output
 }
 
 func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
