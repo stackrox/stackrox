@@ -98,7 +98,7 @@ function useFetchNetworkBaselines(deploymentId: string): FetchNetworkBaselinesRe
         fetchBaselines();
 
         return () => setResult(defaultResultState);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line @eslint-react/exhaustive-deps
     }, [deploymentId]);
 
     return { ...result, refetchBaselines: fetchBaselines };

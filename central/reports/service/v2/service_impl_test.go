@@ -151,6 +151,34 @@ func (s *ReportServiceTestSuite) TestPostReportConfiguration_RejectsNodeType() {
 	s.Contains(err.Error(), "node report service")
 }
 
+func (s *ReportServiceTestSuite) TestUpdateReportConfiguration_RejectsNodeTypePayloadBeforeLookup() {
+	requestConfig := &apiV2.ReportConfiguration{
+		Id:   "node-config",
+		Name: "node report",
+		Type: apiV2.ReportConfiguration_NODE_VULNERABILITY,
+		Filter: &apiV2.ReportConfiguration_NodeVulnReportFilters{
+			NodeVulnReportFilters: &apiV2.NodeVulnerabilityReportFilters{
+				CvesSince: &apiV2.NodeVulnerabilityReportFilters_AllVuln{AllVuln: true},
+			},
+		},
+		ResourceScope: &apiV2.ResourceScope{
+			ScopeReference: &apiV2.ResourceScope_EntityScope{
+				EntityScope: &apiV2.EntityScope{
+					Rules: []*apiV2.EntityScopeRule{{
+						Entity: apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER,
+						Field:  apiV2.ScopeField_FIELD_NAME,
+						Values: []*apiV2.RuleValue{{Value: "cluster"}},
+					}},
+				},
+			},
+		},
+	}
+
+	_, err := s.service.UpdateReportConfiguration(s.ctx, requestConfig)
+	s.Error(err)
+	s.Contains(err.Error(), "node report service")
+}
+
 func (s *ReportServiceTestSuite) TestUpdateReportConfiguration_RejectsNodeType() {
 	protoReportConfig := &storage.ReportConfiguration{
 		Id:   "node-config",
