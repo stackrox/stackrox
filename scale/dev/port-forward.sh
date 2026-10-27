@@ -15,7 +15,6 @@
 #     $ export KUBE_COMMAND='kubectl --context prod-cluster'
 #     $ ./port-forward.sh 8443
 
-set -x
 
 local_port="$1"
 namespace=${2:-stackrox}

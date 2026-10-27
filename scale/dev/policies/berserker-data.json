@@ -1,0 +1,27 @@
+{
+  "name": "Berserker File Activity Test Policy",
+  "description": "Runtime file-activity policy for berserker performance testing - triggers on file access under /tmp/data/**",
+  "rationale": "Matches file activity to measure performance impact",
+  "remediation": "This is a test policy for performance testing with berserker",
+  "categories": ["Anomalous Activity"],
+  "lifecycleStages": ["RUNTIME"],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "disabled": false,
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "File Path",
+          "values": [
+            {
+              "value": "/tmp/data/**"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [],
+  "isDefault": false
+}

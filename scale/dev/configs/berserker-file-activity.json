@@ -1,0 +1,22 @@
+{
+  "name": "berserker-file-activity",
+  "loadType": "berserker",
+  "loadTemplate": "load-templates/berserker-file-activity.ber.tmpl",
+  "rateField": "__RATE__",
+  "numSensors": 1,
+  "runTime": "10m",
+  "numDeployments": 1,
+  "resultsBaseDir": "perf",
+  "rates": [
+    { "value": 16.67,  "rate": 100 },
+    { "value": 83.33,  "rate": 500 },
+    { "value": 166.67, "rate": 1000 },
+    { "value": 416.67, "rate": 2500 },
+    { "value": 833.33, "rate": 5000 }
+  ],
+  "policies": [
+    { "nickname": "baseline",   "file": null },
+    { "nickname": "alerting",   "file": "policies/berserker-data.json" },
+    { "nickname": "idlepolicy", "file": "policies/berserker-idle.json" }
+  ]
+}
