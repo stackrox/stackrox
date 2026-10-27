@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	nodeRoleDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/dispatcher"
@@ -63,6 +64,10 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorCustomRules() Dispatcher
 }
 
+type eventPublisher interface {
+	Publish(pubsub.Event) error
+}
+
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
 func NewDispatcherRegistry(
 	clusterID string,
@@ -73,6 +78,7 @@ func NewDispatcherRegistry(
 	traceWriter io.Writer,
 	storeProvider *StoreProvider,
 	k8sAPI kubernetes.Interface,
+	pubSubDispatcher eventPublisher,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
@@ -99,7 +105,7 @@ func NewDispatcherRegistry(
 		nodeDispatcher:              newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:    newServiceAccountDispatcher(serviceAccountStore),
 		clusterOperatorDispatcher:   newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
-		machineConfigPoolDispatcher: nodeRoleDispatcher.New(storeProvider.nodeRoleStore),
+		machineConfigPoolDispatcher: nodeRoleDispatcher.New(storeProvider.nodeRoleStore, pubSubDispatcher),
 		osRegistryMirrorDispatcher:  newRegistryMirrorDispatcher(registryMirrorStore),
 
 		traceWriter: traceWriter,

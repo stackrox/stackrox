@@ -19,6 +19,7 @@ const (
 	SoftRestartTopic
 	ResourceSyncFinishedTopic
 	FakeFileActivityTopic
+	NodeRoleChangeTopic
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 		SoftRestartTopic:                "SoftRestart",
 		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
 		FakeFileActivityTopic:           "FakeFileActivity",
+		NodeRoleChangeTopic:             "NodeRoleChange",
 	}
 )
 
