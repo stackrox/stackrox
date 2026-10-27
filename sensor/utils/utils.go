@@ -1,3 +1,4 @@
+// CI-TEST: Validating sensor-subsystem rule - expect sensor tests to run, postgres tests to be skipped
 package utils
 
 import (
