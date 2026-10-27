@@ -230,7 +230,9 @@ func extractDomainFlags(config *Config) []DomainFlag {
 	var flags []DomainFlag
 
 	// Add flags for common domains based on rules
+	// Track insertion order for deterministic output
 	domainMap := make(map[string]*DomainFlag)
+	domainOrder := []string{}
 
 	for _, rule := range config.Rules {
 		// Extract domain from rule
@@ -275,12 +277,13 @@ func extractDomainFlags(config *Config) []DomainFlag {
 				Description: fmt.Sprintf("'true' if %s", rule.Description),
 				Conditions:  conditions,
 			}
+			domainOrder = append(domainOrder, domain)
 		}
 	}
 
-	// Convert map to slice
-	for _, flag := range domainMap {
-		flags = append(flags, *flag)
+	// Convert map to slice in insertion order (deterministic)
+	for _, domain := range domainOrder {
+		flags = append(flags, *domainMap[domain])
 	}
 
 	return flags
