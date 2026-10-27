@@ -43,9 +43,9 @@ function ExclusionDeploymentDetails({
                     desc={`${namespaceLabel.key}=${namespaceLabel.value}`}
                 />
             )}
-            {deploymentName && <DescriptionListItem term="Deployment" desc={deploymentName} />}
+            {deploymentName && <DescriptionListItem term="Workload" desc={deploymentName} />}
             {label && (
-                <DescriptionListItem term="Deployment label" desc={`${label.key}=${label.value}`} />
+                <DescriptionListItem term="Workload label" desc={`${label.key}=${label.value}`} />
             )}
         </DescriptionList>
     );

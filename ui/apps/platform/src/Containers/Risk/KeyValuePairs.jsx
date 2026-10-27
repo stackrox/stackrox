@@ -68,10 +68,7 @@ class KeyValuePairs extends Component {
             }
 
             const usePlatformWorkloadCvePath =
-                typeof data === 'object' &&
-                'platformComponent' in data &&
-                // eslint-disable-next-line react/prop-types
-                data.platformComponent;
+                typeof data === 'object' && 'platformComponent' in data && data.platformComponent;
 
             const vulnMgmtBasePath = usePlatformWorkloadCvePath
                 ? vulnerabilitiesPlatformPath

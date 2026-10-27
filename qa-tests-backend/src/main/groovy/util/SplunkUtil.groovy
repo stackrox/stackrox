@@ -32,8 +32,8 @@ class SplunkUtil {
     public static final String SPLUNK_ADMIN_PASSWORD = "helloworld"
     private static final Gson GSON = new GsonBuilder().create()
     private static final Map<String, String> ENV_VARIABLES = ["SPLUNK_START_ARGS" : "--accept-license",
-        "SPLUNK_USER": "root",
         "SPLUNK_PASSWORD"   : SPLUNK_ADMIN_PASSWORD,
+        "SPLUNK_FIPS_VERSION": "140-3",
         // This is required to get splunk 8.1.2 to start in an OpenShift crio environment
         // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
         // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
@@ -197,7 +197,7 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-latest")
+                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-v3.0.1-dev-image-update-1-gcdaecf0")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
