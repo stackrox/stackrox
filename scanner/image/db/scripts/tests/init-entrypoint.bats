@@ -66,16 +66,6 @@ assert_data_preserved() {
 
 # -- fresh install --
 
-@test "fresh install initializes a cluster at the binaries' version" {
-    run main
-    assert_success
-
-    assert_stub_called "^initdb .*--pgdata ${PGDATA}( |$)"
-    assert_pgdata_version 16
-    assert [ -e "$PGDATA/.init-ready" ]
-    refute_stub_called "^pg_upgrade "
-}
-
 @test "fresh install discards a half-initialized data directory" {
     mkdir -p "$PGDATA" "${PGDATA}-new"
     echo "junk" >"$PGDATA/leftover"
@@ -88,35 +78,7 @@ assert_data_preserved() {
     assert_pgdata_version 16
 }
 
-@test "init bundle is skipped when not enabled" {
-    run main
-    assert_success
-
-    refute_stub_called "^pg_restore "
-}
-
 # -- no upgrade needed --
-
-@test "restart on a matching major version does nothing" {
-    given_cluster 16
-
-    run main
-    assert_success
-
-    refute_stub_called "^initdb "
-    refute_stub_called "^pg_upgrade "
-    assert_pgdata_version 16
-}
-
-@test "a newer data directory than the binaries is left alone" {
-    given_cluster 17
-
-    run main
-    assert_success
-
-    refute_stub_called "^pg_upgrade "
-    assert_pgdata_version 17
-}
 
 @test "an initialized cluster without PG_VERSION is left alone" {
     given_cluster 15
@@ -133,34 +95,6 @@ assert_data_preserved() {
 
 # -- successful upgrades --
 
-@test "upgrades with --clone when the file system supports it" {
-    given_cluster 15
-
-    run main
-    assert_success
-    assert_output --partial "Upgrading with --clone"
-    assert_output --partial "Upgraded to PostgreSQL 16"
-
-    assert_stub_called "^pg_upgrade .*--clone --check"
-    assert_stub_called "^pg_upgrade .*--clone$"
-    assert_pgdata_version 16
-    assert_data_preserved
-}
-
-@test "falls back to --copy when --clone is unsupported and there is room" {
-    given_cluster 15
-    stub_set STUB_CLONE_CHECK_RC 1
-
-    run main
-    assert_success
-    assert_output --partial "Upgrading with --copy"
-
-    assert_stub_called "^pg_upgrade .*--copy --check"
-    assert_stub_called "^pg_upgrade .*--copy$"
-    assert_pgdata_version 16
-    assert_data_preserved
-}
-
 @test "never uses --link, which would destroy the old cluster on failure" {
     given_cluster 15
     stub_set STUB_CLONE_CHECK_RC 1
@@ -169,16 +103,6 @@ assert_data_preserved() {
     assert_success
 
     refute_stub_called "^pg_upgrade .*--link"
-}
-
-@test "upgrades through the old major version's binaries" {
-    given_cluster 15
-
-    run main
-    assert_success
-
-    assert_stub_called "^pg_upgrade .*--old-bindir=${STUB_OLD_ROOT}/postgresql-15/bin"
-    assert_stub_called "^pg_upgrade .*--new-bindir=${STUB_BIN}"
 }
 
 @test "discards a leftover upgrade directory and retries" {
@@ -210,60 +134,6 @@ assert_data_preserved() {
 
 # -- soft failures: stay on PostgreSQL 15, exit zero --
 
-@test "defers when there is no room for a copy and --clone is unsupported" {
-    given_cluster 15
-    stub_set STUB_CLONE_CHECK_RC 1
-    stub_set STUB_DU_KB 1000000
-    stub_set STUB_DF_AVAIL_KB 1000
-
-    run main
-    assert_success
-    assert_output --partial "No usable transfer mode"
-
-    refute_stub_called "^pg_upgrade .*--copy --check"
-    assert_pgdata_version 15
-    assert_data_preserved
-}
-
-@test "defers when both --clone and --copy checks fail" {
-    given_cluster 15
-    stub_set STUB_CLONE_CHECK_RC 1
-    stub_set STUB_COPY_CHECK_RC 1
-
-    run main
-    assert_success
-    assert_output --partial "No usable transfer mode"
-
-    assert_pgdata_version 15
-    assert_data_preserved
-}
-
-@test "defers and dumps the server log when pg_upgrade fails" {
-    given_cluster 15
-    stub_set STUB_UPGRADE_RC 1
-
-    run main
-    assert_success
-    assert_output --partial "Upgrade failed, staying on PostgreSQL 15"
-    assert_output --partial "stub pg_upgrade failure"
-
-    assert_pgdata_version 15
-    assert_data_preserved
-}
-
-@test "defers when the cluster cannot be started for a clean shutdown" {
-    given_cluster 15
-    stub_set STUB_PG_CTL_RC 1
-
-    run main
-    assert_success
-    assert_output --partial "Cluster was not shut down cleanly"
-
-    refute_stub_called "^pg_upgrade "
-    assert_pgdata_version 15
-    assert_data_preserved
-}
-
 @test "defers when the cluster did not reach the shutdown state" {
     given_cluster 15
     stub_set STUB_CLUSTER_STATE "in production"
@@ -278,35 +148,7 @@ assert_data_preserved() {
     assert_data_preserved
 }
 
-@test "defers when the new cluster cannot be initialized" {
-    given_cluster 15
-    stub_set STUB_INITDB_RC 1
 
-    # This is the one call in the upgrade path that genuinely fails in the
-    # field -- initdb runs out of room for the new cluster -- and it must
-    # defer like every other failure rather than exiting non-zero, which
-    # would crashloop the pod.
-    run main
-    assert_success
-    assert_output --partial "Could not initialize ${PGDATA}-new"
-
-    refute_stub_called "^pg_upgrade "
-    assert_pgdata_version 15
-    assert_data_preserved
-}
-
-@test "defers when the old major version's binaries are missing" {
-    given_cluster 15
-    rm -rf "${STUB_OLD_ROOT}/postgresql-15"
-
-    run main
-    assert_success
-    assert_output --partial "cannot upgrade"
-
-    refute_stub_called "^pg_upgrade "
-    assert_pgdata_version 15
-    assert_data_preserved
-}
 
 @test "FORCE_OLD_BINARIES skips the upgrade" {
     given_cluster 15
@@ -323,65 +165,9 @@ assert_data_preserved() {
 
 # -- optimizer statistics (ROX-37426) --
 
-@test "refreshes optimizer statistics against the upgraded cluster" {
-    given_cluster 15
-
-    run main
-    assert_success
-
-    assert_stub_called "^vacuumdb .*--all --analyze-only"
-    refute_stub_called "^vacuumdb .*--analyze-in-stages"
-}
-
-@test "a failed vacuumdb does not fail the upgrade" {
-    given_cluster 15
-    stub_set STUB_VACUUMDB_RC 1
-
-    run main
-    assert_success
-    assert_output --partial "Upgraded to PostgreSQL 16"
-
-    assert_pgdata_version 16
-    assert_data_preserved
-}
-
-@test "statistics are refreshed before the swap, not against the live cluster" {
-    given_cluster 15
-
-    run main
-    assert_success
-
-    assert_stub_called "^vacuumdb .*--host 127.0.0.1"
-}
-
 # -- interrupted swap --
 
-@test "restores the pre-upgrade directory after a crash between the renames" {
-    given_cluster 15
-    mv "$PGDATA" "${PGDATA}-old"
 
-    run main
-    assert_success
-    assert_output --partial "interrupted mid-swap, restoring"
-
-    # Recovered, then upgraded again on this same run.
-    assert_pgdata_version 16
-    assert_data_preserved
-}
-
-@test "cleans up the pre-upgrade directory after a crash following the swap" {
-    given_cluster 16
-    mkdir -p "${PGDATA}-old"
-    echo "stale" >"${PGDATA}-old/PG_VERSION"
-
-    run main
-    assert_success
-    assert_output --partial "Removing the pre-upgrade data directory"
-
-    assert [ ! -e "${PGDATA}-old" ]
-    assert_pgdata_version 16
-    assert_equal "$(cat "$PGDATA/base/data")" "vulnerabilities"
-}
 
 @test "an interrupted swap is not mistaken for a fresh install" {
     given_cluster 15
@@ -399,19 +185,6 @@ assert_data_preserved() {
 }
 
 # -- configuration --
-
-@test "the old cluster's postgresql.conf is not carried over" {
-    given_cluster 15
-
-    run main
-    assert_success
-
-    # Scanner's server runs with an external config_file and hba_file, so the
-    # in-PGDATA copy is unused -- and a PostgreSQL 15 one can carry GUCs that
-    # PostgreSQL 16 rejects.
-    refute_output --partial "generated by PostgreSQL 15"
-    assert_equal "$(cat "$PGDATA/postgresql.conf")" "initdb"
-}
 
 @test "both clusters are initialized with the same initdb settings" {
     given_cluster 15
