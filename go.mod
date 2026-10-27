@@ -1,3 +1,4 @@
+// CI-TEST: Validating go-mod-changes rule - expect ALL tests to run
 module github.com/stackrox/rox
 
 go 1.26.7
