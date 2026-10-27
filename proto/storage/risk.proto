@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+// CI-TEST: Validating proto-changes rule - expect all tests to run
 package storage;
 
 option go_package = "./storage;storage";
