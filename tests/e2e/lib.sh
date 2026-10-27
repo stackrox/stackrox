@@ -487,14 +487,9 @@ deploy_central() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_central_via_operator "${central_namespace}"
     else
-        if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
-            if [[ "${CI:-}" == "true" ]] && pr_has_label ci-helm-deploy; then
-                ci_export OUTPUT_FORMAT helm
-            fi
-        fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
+        # ROX-37649: Legacy deployment scripts (deploy/k8s/central.sh, deploy/openshift/central.sh) were removed
+        # Use operator deployment or roxie instead
+        die "Legacy deployment scripts have been removed. Set DEPLOY_STACKROX_VIA_OPERATOR=true to use operator deployment, or use deploy_stackrox_with_roxie() instead."
     fi
 }
 
@@ -682,22 +677,9 @@ deploy_sensor() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else
-        if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
-            echo "Preparing deployment of Sensor using Helm ..."
-            ci_export SENSOR_HELM_DEPLOY "true"
-            ci_export ADMISSION_CONTROLLER "true"
-        else
-            echo "Preparing deployment of Sensor using kubectl ... "
-            if [[ -n "${IS_RACE_BUILD:-}" ]]; then
-                # builds with -race are slow at generating the sensor bundle
-                # https://stack-rox.atlassian.net/browse/ROX-6987
-                ci_export ROXCTL_TIMEOUT "60s"
-            fi
-        fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        ROX_CA_CERT_FILE="" # force sensor.sh to fetch the actual cert.
-        CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
+        # ROX-37649: Legacy deployment scripts (deploy/k8s/sensor.sh, deploy/openshift/sensor.sh) were removed
+        # Use operator deployment or roxie instead
+        die "Legacy deployment scripts have been removed. Set DEPLOY_STACKROX_VIA_OPERATOR=true to use operator deployment, or use deploy_stackrox_with_roxie() instead."
     fi
 }
 

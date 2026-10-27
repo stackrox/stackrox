@@ -47,9 +47,11 @@ config_part_1() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
+    DEPLOY_DIR="deploy"
 
-    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-false}"
+    # ROX-37649: Default to roxie since legacy deploy scripts were removed
+    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-true}"
     export_test_environment
 
     setup_gcp
@@ -117,7 +119,8 @@ EOF
 reuse_config_part_1() {
     info "Reusing config from a prior part 1 e2e test"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
+    DEPLOY_DIR="deploy"
 
     export_test_environment
     setup_deployment_env false false
