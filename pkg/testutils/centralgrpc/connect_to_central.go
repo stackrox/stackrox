@@ -31,7 +31,7 @@ const (
 
 	defaultUsername = "admin"
 	//#nosec G101 -- This is a false positive
-	defaultPasswordPath = "deploy/k8s/central-deploy/password"
+	defaultPasswordPath = "deploy/central-deploy/password"
 	defaultAPIEndpoint  = "localhost:8000"
 )
 
