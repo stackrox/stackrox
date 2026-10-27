@@ -205,6 +205,7 @@ linters:
           - forbidigo
         path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
     paths:
+      - ci/select/generator$
       - pkg/complianceoperator/api
       - third_party$
       - builtin$
@@ -219,6 +220,7 @@ formatters:
   exclusions:
     generated: lax
     paths:
+      - ci/select/generator$
       - pkg/complianceoperator/api
       - third_party$
       - builtin$
