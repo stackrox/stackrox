@@ -18,12 +18,11 @@ else
   killpf "${LOCAL_PORT}"
   "$DIR"/port-forward.sh "${LOCAL_PORT}"
 fi
+. .roxie.env
 echo "Set retention settings"
 roxcurl v1/config -X PUT -d @config.json
 
+"$DIR"/kill-sensors.sh ${2:-1}
 for i in $(seq 1 $2); do
-  namespace="stackrox$i"
-  kubectl get ns $namespace && kubectl delete ns $namespace
-  kubectl create ns $namespace
-  "$DIR"/launch_sensor.sh $1 $namespace
+  "$DIR"/launch_sensor.sh $1 "stackrox$i" || exit 1
 done

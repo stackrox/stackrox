@@ -624,13 +624,10 @@ shell-unit-tests:
 	@echo "+ $@"
 	$(SILENT)mkdir -p shell-test-output
 	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output \
+		scanner/image/db/bats \
+		image/postgres/scripts \
 		scripts \
-		scanner/image/db/scripts/tests \
 		tests/e2e/bats
-# TODO(cdu): review note, remove before the PR. I co-located the suite with
-# the script it tests rather than adding it under tests/e2e/bats, since it is
-# a unit test of an image's entrypoint, not an e2e helper. Easy to move if you
-# would rather keep all bats suites in the two existing directories.
 
 .PHONY: ui-build
 ui-build:

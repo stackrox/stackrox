@@ -11,12 +11,18 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Image tag to test.
+      ci-job-name:
+        description: Unique CI job name.
         type: string
-        required: true
+        default: gke-db-backup-restore-tests
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
+      cluster-name-prefix:
+        description: Prefix for the provisioned cluster name. Maximum 20 characters.
+        type: string
+        default: e2e-dbbr
 
 permissions:
   contents: read
@@ -33,15 +39,22 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: gke-db-backup-restore-tests
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      USE_KONFLUX_IMAGES: ${{ inputs.use-konflux-images }}
+      CLUSTER_NAME_PREFIX: ${{ inputs.cluster-name-prefix }}
       ARTIFACT_DIR: ./junit-reports
-      LOAD_BALANCER: lb
       ROX_SCANNER_V4: "false"
-      STORAGE: pvc
       STORAGE_CLASS: faster
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 60
     steps:
+
+    - name: Validate workflow input
+      run: |
+        if [[ "${#CLUSTER_NAME_PREFIX}" -gt 20 ]]; then
+          echo "::error::Workflow input cluster-name-prefix must not be larger than 20 characters."
+          exit 1
+        fi
 
     - name: Checkout repo
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -49,6 +62,11 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
+
+    - name: Validate input tag
+      env:
+        TAG: ${{ inputs.tag }}
+      run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -62,11 +80,11 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
+        NUM_NODES: "1"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        scripts/ci/gke.sh provision_gke_cluster dbbr
+        scripts/ci/gke.sh provision_gke_cluster "${CLUSTER_NAME_PREFIX}"
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
@@ -74,6 +92,16 @@ jobs:
       run: |
         make roxctl_linux-amd64
         echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
+
+    - name: Retrieve roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
@@ -101,16 +129,24 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        ORCHESTRATOR_FLAVOR: k8s
       run: |
         source tests/e2e/lib.sh
         source tests/scripts/setup-certs.sh
         source scripts/ci/sensor-wait.sh
+
         export_test_environment
         setup_deployment_env false false
-        deploy_stackrox
-        # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
-        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
+
+        roxie_config="$(mktemp)"
+        merge_yaml "$roxie_config" <<'EOF'
+        central:
+          resourceProfile: ci
+        securedCluster:
+          resourceProfile: ci
+        EOF
+        deploy_stackrox_with_roxie_compat "$roxie_config"
+        rm -f "$roxie_config"
+
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
     - name: Run post-test

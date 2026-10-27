@@ -1,11 +1,14 @@
 package util
 
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 
 import com.github.f4b6a3.uuid.UuidCreator
+import com.google.protobuf.Message
+import com.google.protobuf.util.JsonFormat
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -166,6 +169,22 @@ class Helpers {
         }
         catch (Exception e) {
             log.error("Could not collect image details", e)
+        }
+    }
+
+    // collectStoredProtoForDebug saves the observed state before cleanup or a rescan can change it.
+    static void collectStoredProtoForDebug(Message message, String saveName) {
+        if (!collectDebug()) {
+            return
+        }
+        try {
+            Path imageScans = Paths.get(Env.QA_TEST_DEBUG_LOGS).resolve('image-scans')
+            Files.createDirectories(imageScans)
+            Path snapshot = imageScans.resolve(saveName)
+            Files.writeString(snapshot, JsonFormat.printer().print(message))
+            log.info("Saved diagnostic snapshot to ${snapshot.toAbsolutePath()}")
+        } catch (Exception e) {
+            log.warn("Could not save diagnostic snapshot ${saveName}", e)
         }
     }
 

@@ -4,38 +4,18 @@
 # existing cluster in place when this image ships PostgreSQL binaries newer
 # than the data directory on disk.
 #
-# The upgrade is deliberately non-fatal. Whenever it cannot be performed
-# safely, $PGDATA is left untouched and this script still exits successfully:
-# docker-entrypoint.sh then starts the server with the binaries matching the
-# data directory, and the upgrade is retried on the next restart. Discarding
-# the database instead is not an option, since the matcher reports
-# FailedPrecondition while it reloads the vulnerability store, which fails
-# scans outright rather than merely slowing them down.
-#
-# Every soft-failure path must "return 0", because maybe-upgrade is called
-# unconditionally from main, which is the script's last command -- a non-zero
-# return would exit the init container non-zero and crashloop the pod, which
-# is precisely what this exists to prevent. Helpers that can fail
-# (clean-shutdown, pg-upgrade, analyze-cluster) are always called in a
-# conditional context, where bash disables "set -e" inside the function body;
-# they therefore use explicit "|| return 1" rather than relying on it.
+# A failed upgrade leaves $PGDATA untouched and returns 0; the server starts
+# with matching binaries and the upgrade is retried on restart. A failed file
+# system operation returns non-zero instead, because a volume that cannot be
+# written to cannot host a running server either.
 
 set -Eeo pipefail
 
-# TODO(cdu): review note, remove before the PR. OLD_BINARIES_ROOT is new in
-# this task -- the design doc interpolates /usr/lib64/pgsql inline in
-# maybe-upgrade, which cannot be redirected, so the upgrade path was
-# untestable without it. Production behaviour is unchanged; this is a
-# testability change to shipped code, so flagging it rather than burying it.
-#
-# Binaries of the PostgreSQL version this image is built on, and the root
-# under which the base image ships binaries of older major versions as
-# postgresql-<major>/bin (see POSTGRESQL_PREV_VERSION in the base image).
-#
-# These are named rather than inlined so that the bats suite in ./tests can
-# source this file and point them at stubs.
-NEW_BINARIES="/usr/bin"
-OLD_BINARIES_ROOT="/usr/lib64/pgsql"
+# File flag that marks $PGDATA as initialized.
+INIT_READY_FILE=".init-ready"
+
+# File flag that marks a statistics refresh is needed.
+STATS_PENDING_FILE=".stats-pending"
 
 # load-init-bundle calls pg_restore on the database init bundle.
 load-init-bundle() {
@@ -59,10 +39,7 @@ load-init-bundle() {
     rm -f "$dump"
 }
 
-# init-cluster creates an empty cluster in the given data directory. Both the
-# initial cluster and the target of an upgrade go through this function:
-# pg_upgrade compares the two clusters' initdb settings and refuses to run if
-# they differ, so they must not drift apart.
+# init-cluster creates an empty cluster in the given data directory.
 init-cluster() {
     local datadir=${1:?missing first required argument: datadir}
 
@@ -70,7 +47,7 @@ init-cluster() {
            --auth-host="$POSTGRES_HOST_AUTH_METHOD" \
            --auth-local="$POSTGRES_HOST_AUTH_METHOD" \
            --pwfile "$POSTGRES_PASSWORD_FILE" \
-           --data-checksums
+           --data-checksums 2>&1
 }
 
 # pg-major-version echoes the major version of the PostgreSQL binaries on PATH.
@@ -78,16 +55,16 @@ pg-major-version() {
     postgres -V | sed 's/postgres (PostgreSQL) \([0-9]*\).*/\1/'
 }
 
-# has-available-space succeeds if the file system holding the first argument
-# has at least as many free 1K blocks as the second argument asks for.
+# has-available-space returns 0 if the file system holding path has enough
+# free space to copy path's contents.
 has-available-space() {
     local path=${1:?missing first required argument: path}
-    local required=${2:?missing second required argument: required}
-    local available
+    local required available
 
+    required=$(du -sk "$path" | awk '{print $1}')
     available=$(df -Pk "$path" | tail -n 1 | awk '{print $4}')
     if [ -z "$available" ]; then
-        echo "Cannot determine the free space at $path."
+        echo "Cannot determine free space at $path."
         return 1
     fi
 
@@ -95,18 +72,16 @@ has-available-space() {
     [ "$available" -ge "$required" ]
 }
 
-# clean-shutdown brings the cluster up and down again using the binaries in the
-# given directory, so that pg_upgrade finds a cleanly shut down cluster. It
-# fails if the cluster cannot be brought into that state.
+# clean-shutdown starts and stops the cluster,
+# leaving it in the cleanly shut down state pg_upgrade requires.
 clean-shutdown() {
-    local bindir=${1:?missing first required argument: bindir}
     local state
 
-    "$bindir/pg_ctl" -D "$PGDATA" start -w --timeout 86400 -o "-h 127.0.0.1" || return 1
-    "$bindir/pg_isready" -h 127.0.0.1 || return 1
-    "$bindir/pg_ctl" -D "$PGDATA" stop -w || return 1
+    pg_ctl start -w --timeout 86400 -o "-h 127.0.0.1" 2>&1 || return 1
+    pg_isready -h 127.0.0.1 2>&1 || return 1
+    pg_ctl stop -w 2>&1 || return 1
 
-    state=$("$bindir/pg_controldata" -D "$PGDATA" |
+    state=$(pg_controldata -D "$PGDATA" 2>&1 |
                 grep "Database cluster state" |
                 awk -F ':' '{print $2}' |
                 tr -d '[:space:]')
@@ -117,233 +92,193 @@ clean-shutdown() {
     fi
 }
 
-# pg-upgrade runs pg_upgrade from the old binaries in $1 into the new data
-# directory $2. Remaining arguments carry the transfer mode and optionally
-# --check.
-#
-# pg_upgrade writes delete_old_cluster.sh into the current working directory
-# and defaults --socketdir to it as well, so both are pointed somewhere known
-# to be writable rather than relying on the image WORKDIR.
+# pg-upgrade runs pg_upgrade with the transfer mode and optionally --check.
 pg-upgrade() {
-    local old_bindir=${1:?missing first required argument: old-bindir}
-    local new_datadir=${2:?missing second required argument: new-datadir}
-    shift 2
-
-    (
-        cd /tmp || return 1
-        PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
-            "$NEW_BINARIES/pg_upgrade" \
-                --old-bindir="$old_bindir" \
-                --new-bindir="$NEW_BINARIES" \
-                --old-datadir="$PGDATA" \
-                --new-datadir="$new_datadir" \
-                --socketdir=/tmp \
-                --jobs 4 \
-                "$@"
-    )
+    PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+        "${NEW_BINDIR}/pg_upgrade" \
+            --old-bindir="$OLD_BINDIR" \
+            --new-bindir="$NEW_BINDIR" \
+            --old-datadir="$PGDATA" \
+            --new-datadir="$NEW_DATADIR" \
+            -j 4 \
+            "$@"
 }
 
-# TODO(cdu): review note, remove before the PR. Two judgement calls here that
-# the design doc states but does not argue hard, and which ROX-37428 may
-# overturn:
-#   1. One full-quality pass instead of --analyze-in-stages. If the rehearsal
-#      shows vacuumdb dominating the init container's wall clock, the fallback
-#      is --analyze-in-stages with only stage 1 run offline.
-#   2. vacuumdb is "|| true" but the surrounding pg_ctl start/stop is
-#      "|| return 1". Asymmetric on purpose: bad statistics are a performance
-#      problem, but a cluster left running or uncleanly stopped would corrupt
-#      the swap that follows. Worth a second opinion.
-#
-# analyze-cluster refreshes optimizer statistics in the given data directory,
-# which pg_upgrade does not carry over (statistics transfer only arrives in
-# PostgreSQL 18). Without this the first queries after an upgrade plan against
-# empty pg_statistic, and autovacuum will not analyze promptly because
-# pg_upgrade leaves no recorded row changes to trigger it.
-#
-# A single full-quality pass is preferred over --analyze-in-stages: the staged
-# variant exists to get rough statistics quickly on a live server, and we are
-# offline here, so three passes would only cost more wall clock.
-#
-# Best effort -- bad statistics are a performance problem, not a correctness
-# one -- but the surrounding start/stop is not, since leaving the cluster
-# running or unclean would break the swap that follows.
-analyze-cluster() {
-    local datadir=${1:?missing first required argument: datadir}
+# maybe-refresh-statistics runs the analyze an upgrade left pending.
+maybe-refresh-statistics() {
+    local pending="$PGDATA/$STATS_PENDING_FILE"
+
+    [ -e "$pending" ] || return 0
 
     echo "Refreshing optimizer statistics."
-    pg_ctl -D "$datadir" start -w --timeout 86400 -o "-h 127.0.0.1" || return 1
-    PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
-        vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4 || true
-    pg_ctl -D "$datadir" stop -w || return 1
+    if ! pg_ctl -D "$PGDATA" start -w --timeout 86400 -o "-h 127.0.0.1"; then
+        echo "Could not start the upgraded cluster, retrying on the next start."
+        return 0
+    fi
+    if PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+            vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4; then
+        rm -f "$pending" || true
+        echo "Statistics refreshed, shutting down the cluster."
+    else
+        echo "vacuumdb failed, retrying on the next start."
+    fi
+    pg_ctl -D "$PGDATA" stop -w --timeout 600 || true
 }
 
-# TODO(cdu): review note, remove before the PR. Open question for you: the
-# rm -rf and mv below are unguarded, as are the two renames in the swap at
-# the end of maybe-upgrade, so a failure there does exit non-zero and
-# crashloop. I left them that way deliberately -- if renaming a directory on
-# the data volume fails, the volume is broken and coming up on a half-swapped
-# state would be worse than not coming up. But it is the same class of thing
-# as the init-cluster guard below, so it is a judgement call, not an
-# oversight. This is the territory of T9 / ROX-37431.
-#
-# recover-interrupted-upgrade puts the pre-upgrade data directory back if the
-# pod died inside the final swap, in the window between renaming the old
-# directory aside and renaming the upgraded one into place. Without this, the
-# initialization path in main() would see no data directory and wipe the only
-# remaining copy of the database.
+# recover-interrupted-upgrade cleans up upgrade artifacts left behind by pod
+# crashes. It discards the new directory, and restores the pre-upgrade one if
+# the crash happened mid-swap. It returns non-zero when a directory can be
+# neither removed nor restored.
 recover-interrupted-upgrade() {
+    local new_datadir="${PGDATA}-new"
     local old_datadir="${PGDATA}-old"
+
+    # Discard orphaned new directory
+    rm -rf "$new_datadir" || { echo "Could not remove $new_datadir."; return 1; }
 
     [ -d "$old_datadir" ] || return 0
 
-    if [ -e "$PGDATA/.init-ready" ]; then
+    if [ -e "$PGDATA/$INIT_READY_FILE" ]; then
         echo "Removing the pre-upgrade data directory $old_datadir."
-        rm -rf "$old_datadir"
+        rm -rf "$old_datadir" || { echo "Could not remove $old_datadir."; return 1; }
         return 0
     fi
 
-    echo "An upgrade was interrupted mid-swap, restoring $old_datadir."
-    rm -rf "$PGDATA"
-    mv "$old_datadir" "$PGDATA"
+    # $PGDATA is missing, so restore the old directory, but only the one this
+    # script moved aside.
+    if [ -e "$old_datadir/$INIT_READY_FILE" ]; then
+        echo "An upgrade was interrupted mid-swap, restoring $old_datadir."
+        rm -rf "$PGDATA" && mv "$old_datadir" "$PGDATA" && return 0
+    fi
+
+    echo "Could not restore from $old_datadir, refusing to start without $PGDATA."
+    return 1
 }
 
 # maybe-upgrade upgrades $PGDATA in place when this image's binaries are newer
-# than the cluster on disk. See the note at the top of this file: every reason
-# not to upgrade is logged and returns successfully, leaving $PGDATA as it was.
+# than the cluster on disk.
 maybe-upgrade() {
-    local new_datadir="${PGDATA}-new"
+    # The base image ships the previous major under old_binaries_path.
+    local old_binaries_path=${1:-/usr/lib64/pgsql}
     local old_datadir="${PGDATA}-old"
-    local binary_version data_version old_bindir data_used mode
+    local major_regex='^[0-9]+$'
+    local binary_version data_version mode
+
+    export NEW_DATADIR="${PGDATA}-new"
 
     if [ ! -s "$PGDATA/PG_VERSION" ]; then
-        echo "No PG_VERSION in $PGDATA, skipping the upgrade check."
+        echo "Warning: PG_VERSION is missing or empty in $PGDATA, skipping upgrade."
         return 0
     fi
 
-    binary_version=$(pg-major-version)
-    data_version=$(cat "$PGDATA/PG_VERSION")
+    data_version=$(< "$PGDATA/PG_VERSION") || true
+    if ! [[ "$data_version" =~ $major_regex ]]; then
+        echo "Cannot read a valid major version from $PGDATA/PG_VERSION: \"$data_version\"."
+        return 0
+    fi
+
+    binary_version=$(pg-major-version) || true
+    if ! [[ "$binary_version" =~ $major_regex ]]; then
+        echo "Cannot read a valid major version from postgres -V: \"$binary_version\"."
+        return 0
+    fi
+    export NEW_BINDIR="${NEW_BINARIES:-/usr/bin}"
 
     if [ "$data_version" -ge "$binary_version" ]; then
+        echo "Data is PostgreSQL $data_version, binaries are PostgreSQL $binary_version: no upgrade needed."
         return 0
     fi
 
-    if [ "${FORCE_OLD_BINARIES:-}" = "true" ]; then
-        echo "FORCE_OLD_BINARIES is set, staying on PostgreSQL $data_version."
+    export OLD_BINDIR="${old_binaries_path}/postgresql-${data_version}/bin"
+    if [ ! -x "${OLD_BINDIR}/pg_ctl" ]; then
+        echo "No PostgreSQL $data_version binaries in $OLD_BINDIR, cannot upgrade."
         return 0
     fi
-
-    echo "Data directory is PostgreSQL $data_version, binaries are PostgreSQL $binary_version: upgrading."
-
-    # A leftover upgrade directory means an earlier attempt died before the
-    # swap. $PGDATA still holds the complete pre-upgrade cluster, because
-    # neither --clone nor --copy modifies it, so the leftover is discardable
-    # and the upgrade is simply retried from scratch. central-db exits 1 here
-    # and expects an operator to set FORCE_CLEANUP=true; that is a crashloop
-    # for what is an unambiguous situation.
-    if [ -e "$new_datadir" ]; then
-        echo "Discarding $new_datadir, left behind by an interrupted upgrade."
-        rm -rf "$new_datadir"
-    fi
-
-    old_bindir="$OLD_BINARIES_ROOT/postgresql-${data_version}/bin"
-    if [ ! -x "$old_bindir/pg_ctl" ]; then
-        echo "No PostgreSQL $data_version binaries in $old_bindir, cannot upgrade."
-        return 0
-    fi
+    echo "Data is PostgreSQL $data_version, binaries are PostgreSQL $binary_version: upgrading..."
 
     # pg_upgrade rejects group permissions on the data directory.
-    chmod 0700 "$PGDATA"
+    if ! chmod 0700 "$PGDATA"; then
+        echo "Could not set permissions on $PGDATA, staying on PostgreSQL $data_version."
+        return 0
+    fi
 
     echo "Making sure PostgreSQL is shut down cleanly."
-    if ! clean-shutdown "$old_bindir"; then
+    if ! PATH="$OLD_BINDIR:$PATH" clean-shutdown; then
         echo "Cluster was not shut down cleanly, cannot upgrade."
         return 0
     fi
 
-    # TODO(cdu): review note, remove before the PR. This guard is a deviation
-    # from the design doc, which calls init-cluster bare here (section 4.2).
-    # Bare is a real bug: maybe-upgrade is called from main as a plain
-    # command, and main is the script's last command, so under "set -e" a
-    # failing initdb exits the init container non-zero and crashloops the pod
-    # -- the one outcome section 3.2 forbids. Verified with a probe script.
-    # Covered by the "defers when the new cluster cannot be initialized" bats
-    # case in ROX-37427.
-    #
-    # Guarded like every other fallible step here, and for the same reason:
-    # an unguarded failure under "set -e" would exit this script non-zero and
-    # crashloop the pod. initdb is the one call in this path that genuinely
-    # fails in the field, when the volume has no room for the new cluster --
-    # which is exactly the case the upgrade is supposed to defer on.
-    if ! init-cluster "$new_datadir"; then
-        echo "Could not initialize $new_datadir, staying on PostgreSQL $data_version."
-        rm -rf "$new_datadir"
+    if ! init-cluster "$NEW_DATADIR"; then
+        echo "Could not initialize $NEW_DATADIR, staying on PostgreSQL $data_version."
+        rm -rf "$NEW_DATADIR"
         return 0
     fi
 
-    # Pick a transfer mode. --clone is close to free on file systems with
-    # copy-on-write support, and "pg_upgrade --check --clone" probes that for
-    # real rather than guessing from the file system type. --copy needs room
-    # for a second full copy of the data. --link is never used: it leaves the
-    # old cluster unusable if the upgrade fails halfway through, and with no
-    # backup in this path the old cluster is the only thing standing between a
-    # failed upgrade and a lost vulnerability store.
+    # Probe transfer modes: try --clone first, or --copy if space available.
+    # Link mode breaks the old cluster on upgrade failure; recovery requires
+    # backup restoration. With clone or copy mode, we keep old data safe, so the
+    # server can fallback to the old data.
     mode=""
-    if pg-upgrade "$old_bindir" "$new_datadir" --clone --check; then
+    if pg-upgrade --clone --check 2>&1; then
         mode="--clone"
     else
-        data_used=$(du -sk "$PGDATA" | awk '{print $1}')
-        if has-available-space "$PGDATA" "$data_used" &&
-               pg-upgrade "$old_bindir" "$new_datadir" --copy --check; then
+        if ! has-available-space "$PGDATA"; then
+            echo "Not enough free space to copy the cluster."
+        elif ! pg-upgrade --copy --check 2>&1; then
+            echo "pg_upgrade --copy --check failed; see logs above."
+        else
             mode="--copy"
         fi
     fi
 
     if [ -z "$mode" ]; then
         echo "No usable transfer mode, staying on PostgreSQL $data_version."
-        rm -rf "$new_datadir"
+        rm -rf "$NEW_DATADIR"
         return 0
     fi
 
     echo "Upgrading with $mode."
-    if ! pg-upgrade "$old_bindir" "$new_datadir" "$mode"; then
+    if ! pg-upgrade "$mode" 2>&1; then
         echo "Upgrade failed, staying on PostgreSQL $data_version."
-        find "$new_datadir" -name pg_upgrade_server.log -exec cat {} \; || true
-        rm -rf "$new_datadir"
+        find "$NEW_DATADIR" -name pg_upgrade_server.log -exec cat {} \; || true
+        rm -rf "$NEW_DATADIR"
         return 0
     fi
 
-    analyze-cluster "$new_datadir" || echo "Could not refresh statistics, continuing."
-
-    # $PGDATA/*.conf is deliberately not carried over, unlike in central-db.
-    # The server runs with an external config file and hba_file, so the copies
-    # inside the data directory are unused, and one written by PostgreSQL
-    # $data_version may contain settings PostgreSQL $binary_version rejects.
-    #
-    # The sentinel is written before the swap, and the swap itself is two
-    # renames, so an interruption can be recognized and undone. See
-    # recover-interrupted-upgrade.
-    touch "$new_datadir/.init-ready"
-    mv "$PGDATA" "$old_datadir"
-    mv "$new_datadir" "$PGDATA"
-    rm -rf "$old_datadir"
+    # The sentinel is written before the swap so that an interruption leaves a
+    # state recover-interrupted-upgrade can undo.
+    touch "$NEW_DATADIR/$INIT_READY_FILE" ||
+        { echo "Could not mark $NEW_DATADIR ready, aborting."; return 1; }
+    # Mark statistics pending; the refresh clears it on success.
+    touch "$NEW_DATADIR/$STATS_PENDING_FILE" ||
+        { echo "Could not mark statistics pending, aborting."; return 1; }
+    mv "$PGDATA" "$old_datadir" ||
+        { echo "Could not move $PGDATA aside, aborting."; return 1; }
+    mv "$NEW_DATADIR" "$PGDATA" ||
+        { echo "Could not move $NEW_DATADIR into place, restoring $old_datadir on the next start."; return 1; }
+    rm -rf "$old_datadir" || echo "Could not remove $old_datadir, removing it on the next start."
 
     echo "Upgraded to PostgreSQL $binary_version."
 }
 
-# main runs the main script.
-main() {
-    local init_check="$PGDATA/.init-ready"
+_is_sourced() {
+    [[ "${BASH_SOURCE[0]}" != "${0}" ]]
+}
+
+_main() {
+    local init_check="$PGDATA/$INIT_READY_FILE"
     local init_bundle="/db-init.dump.zst"
 
     recover-interrupted-upgrade
 
     if [ -e "$init_check" ]; then
-        maybe-upgrade
+        maybe-upgrade /usr/lib64/pgsql
+        maybe-refresh-statistics
         return
     fi
 
     # Ensure DB is clean to avoid blocking on failed initialization attempts.
-    rm -rf "$PGDATA" "${PGDATA}-new"
+    rm -rf "$PGDATA"
 
     # Create cluster.
     init-cluster "$PGDATA"
@@ -358,16 +293,6 @@ main() {
     touch "$init_check"
 }
 
-# TODO(cdu): review note, remove before the PR. Second change to shipped code
-# in this task. The design doc's "[ ... ] && main" (section 4.2) cannot
-# actually be sourced: the test is false when sourced, so the && list returns
-# 1 as the file's last command, which aborts the caller's source under
-# "set -e". Section 9 assumes the file is sourceable, so the doc contradicts
-# itself here. docker-entrypoint.sh in this image already uses the if form.
-#
-# Written as an if rather than "[ ... ] && main", so that sourcing this file
-# -- which the bats suite in ./tests does, to call the functions individually
-# -- does not end on a failed test and trip the caller's "set -e".
-if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-    main "$@"
+if ! _is_sourced; then
+    _main "$@"
 fi

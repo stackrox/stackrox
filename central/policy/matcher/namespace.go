@@ -46,6 +46,12 @@ func (m *namespaceMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) 
 }
 
 func (m *namespaceMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
+	// A kind exclusion does not take the policy off the namespace: other workload kinds there
+	// are still in scope. Image-only exclusions have no deployment scope, and a nil scope would
+	// otherwise match every namespace.
+	if exclusion.GetDeployment() == nil {
+		return false
+	}
 	return m.scopeMatches(exclusion.GetDeployment().GetScope())
 }
 

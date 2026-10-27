@@ -48,6 +48,12 @@ func (m *clusterMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bo
 }
 
 func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
+	// A kind exclusion does not take the policy off the cluster. Image-only exclusions have no
+	// deployment scope, and a nil scope would otherwise match every cluster.
+	if exclusion.GetDeployment() == nil {
+		return false
+	}
+
 	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope(), nil, nil)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "could not compile excluded scopes"))

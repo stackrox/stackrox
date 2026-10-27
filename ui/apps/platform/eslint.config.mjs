@@ -1,0 +1,1198 @@
+import path from 'node:path';
+
+import parserTypeScriptESLint from '@typescript-eslint/parser';
+
+import pluginCypress from 'eslint-plugin-cypress';
+import pluginCSS from '@eslint/css';
+import pluginESLint from '@eslint/js';
+import pluginJSON from '@eslint/json';
+import pluginMarkdown from '@eslint/markdown';
+import pluginESLintComments from '@eslint-community/eslint-plugin-eslint-comments';
+import { importX as pluginImportX } from 'eslint-plugin-import-x';
+import pluginJestDOM from 'eslint-plugin-jest-dom';
+import pluginPrettier from 'eslint-plugin-prettier';
+import pluginReact from '@eslint-react/eslint-plugin';
+import pluginTestingLibrary from 'eslint-plugin-testing-library';
+import pluginTypeScriptESLint from '@typescript-eslint/eslint-plugin';
+import pluginVitest from '@vitest/eslint-plugin';
+
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
+
+import globals from 'globals';
+const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = globals;
+
+import pluginAccessibility from './eslint-plugins/pluginAccessibility.js';
+import pluginGeneric from './eslint-plugins/pluginGeneric.js';
+import pluginLimited from './eslint-plugins/pluginLimited.js';
+import pluginPatternFly from './eslint-plugins/pluginPatternFly.js';
+
+const parser = parserTypeScriptESLint;
+const parserOptions = {
+    project: './tsconfig.eslint.json',
+    tsconfigRootDir: import.meta.dirname,
+};
+
+const parserAndOptions = {
+    parser,
+    parserOptions,
+};
+
+export default [
+    {
+        // Supersede .eslintignore file.
+        // ESLint provides ["**/node_modules/", ".git/"] as default ignores.
+        ignores: [
+            'build/**',
+            'coverage/**',
+            'scripts/**',
+            'src/setupProxy.js',
+            'src/setupTests.js',
+            'cypress.d.ts',
+        ],
+    },
+    {
+        // Only for lint commands.
+        // ESLint extension for VSCode does not probe css files.
+        files: ['src/**/*.css'],
+        ignores: ['src/app.tw.css'],
+
+        language: 'css/css',
+
+        plugins: {
+            css: pluginCSS,
+        },
+        rules: {
+            // https://github.com/eslint/css/blob/main/src/index.js
+            ...pluginCSS.configs.recommended.rules,
+
+            'css/no-important': 'off',
+            'css/no-invalid-properties': ['error', { allowUnknownVariables: true }], // allow --pf variables
+            'css/use-baseline': ['error', { available: 'newly' }],
+        },
+    },
+    {
+        files: ['*.json', 'cypress/**/*.json', 'src/**/*.json'], // JSON without comments
+        ignores: [
+            'package-lock.json', // ignore because it is auto-generated
+            'tsconfig.eslint.json', // contains comments, see below
+            'cypress/downloads/*.json', // StackRox_Exported_Policies_*.json
+            'cypress/tsconfig.json', // contains comments, see below
+        ],
+
+        language: 'json/json',
+
+        // https://github.com/eslint/json/blob/main/src/index.js
+        ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['tsconfig.eslint.json', 'cypress/tsconfig.json'], // JSON with comments
+
+        language: 'json/jsonc',
+
+        // https://github.com/eslint/json/blob/main/src/index.js
+        ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['*.md', 'src/**/*.md'],
+        // Beware that ui/README.md file is outside of scope of application lint.
+
+        language: 'markdown/gfm',
+
+        plugins: {
+            markdown: pluginMarkdown,
+        },
+        rules: {
+            // https://github.com/eslint/markdown/blob/main/src/index.js
+            ...pluginMarkdown.configs.recommended[0].rules, // recommended is array!
+        },
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+
+        // ESLint has cascade for rules (that is, last value for a rule wins).
+        // ESLint only replaces other properties (that is, does not spread nor merge).
+
+        // languageOptions are in specific configuration objects
+
+        linterOptions: {
+            reportUnusedDisableDirectives: 'error',
+            reportUnusedInlineConfigs: 'error',
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@eslint-community/eslint-comments': pluginESLintComments,
+            'import-x': pluginImportX,
+            prettier: pluginPrettier,
+        },
+        rules: {
+            // https://github.com/eslint/eslint/blob/main/packages/js/src/configs/eslint-recommended.js
+            ...pluginESLint.configs.recommended.rules,
+
+            // Require braces even when block has one statement.
+            curly: ['error', 'all'],
+
+            // Forbid use of console in favor of raven-js for error capturing.
+            'no-console': 'error',
+
+            // https://github.com/mysticatea/eslint-plugin-eslint-comments/blob/master/lib/configs/recommended.js
+            ...pluginESLintComments.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            '@eslint-community/eslint-comments/disable-enable-pair': 'off', // fix more than 50 errors
+
+            // https://github.com/un-ts/eslint-plugin-import-x/blob/master/src/config/flat/errors.ts
+            ...pluginImportX.flatConfigs.errors.rules,
+
+            // Turn off rules from import errors configuration.
+            'import-x/named': 'off',
+
+            'import-x/extensions': [
+                'error',
+                'ignorePackages',
+                {
+                    js: 'never',
+                    jsx: 'never',
+                    json: 'always',
+                    ts: 'never',
+                    tsx: 'never',
+                },
+            ],
+
+            // Turn on rules from airbnb best-practices config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/best-practices.js
+            'array-callback-return': ['error', { allowImplicit: true }],
+            'block-scoped-var': 'error',
+            // 'class-methods-use-this' is intentional omission
+            'consistent-return': 'error',
+            'default-case': ['error', { commentPattern: '^no default$' }],
+            'default-case-last': 'error',
+            // 'default-param-last' is intentional omission
+            'dot-notation': ['error', { allowKeywords: true }],
+            eqeqeq: ['error', 'always', { null: 'ignore' }],
+            'grouped-accessor-pairs': 'error',
+            'guard-for-in': 'error',
+            'max-classes-per-file': ['error', 1],
+            'no-alert': 'error', // instead of 'warn'
+            'no-caller': 'error',
+            'no-constructor-return': 'error',
+            'no-else-return': ['error', { allowElseIf: false }], // TODO
+            'no-empty-function': [
+                'error',
+                {
+                    allow: ['arrowFunctions', 'functions', 'methods'],
+                },
+            ],
+            'no-eval': 'error',
+            'no-extend-native': 'error',
+            'no-extra-bind': 'error',
+            'no-extra-label': 'error',
+            'no-implied-eval': 'error',
+            'no-iterator': 'error',
+            'no-labels': ['error', { allowLoop: false, allowSwitch: false }],
+            'no-lone-blocks': 'error',
+            'no-loop-func': 'error',
+            'no-multi-str': 'error',
+            'no-new': 'error',
+            'no-new-func': 'error',
+            'no-new-wrappers': 'error',
+            'no-octal-escape': 'error',
+            'no-param-reassign': [
+                'error',
+                {
+                    props: true,
+                    ignorePropertyModificationsFor: [
+                        'acc', // for reduce accumulators
+                        'accumulator', // for reduce accumulators
+                        'e', // for e.returnvalue
+                        'ctx', // for Koa routing
+                        'context', // for Koa routing
+                        'req', // for Express requests
+                        'request', // for Express requests
+                        'res', // for Express responses
+                        'response', // for Express responses
+                        '$scope', // for Angular 1 scopes
+                        'staticContext', // for ReactRouter context
+                    ],
+                },
+            ],
+            'no-proto': 'error',
+            'no-restricted-properties': [
+                'error',
+                {
+                    object: 'arguments',
+                    property: 'callee',
+                    message: 'arguments.callee is deprecated',
+                },
+                {
+                    object: 'global',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'self',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'window',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'global',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    object: 'self',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    object: 'window',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    property: 'function __defineGetter__() { [native code] }',
+                    message: 'Please use Object.defineProperty instead.',
+                },
+                {
+                    property: 'function __defineSetter__() { [native code] }',
+                    message: 'Please use Object.defineProperty instead.',
+                },
+                {
+                    object: 'Math',
+                    property: 'pow',
+                    message: 'Use the exponentiation operator (**) instead.',
+                },
+            ],
+            'no-return-assign': ['error', 'always'],
+            'no-script-url': 'error',
+            'no-self-compare': 'error',
+            'no-sequences': 'error',
+            'no-throw-literal': 'error',
+            'no-unused-expressions': [
+                'error',
+                {
+                    allowShortCircuit: false,
+                    allowTernary: false,
+                    allowTaggedTemplates: false,
+                },
+            ],
+            'no-useless-concat': 'error',
+            'no-useless-return': 'error',
+            'no-void': 'error',
+            'prefer-promise-reject-errors': ['error', { allowEmptyReject: true }],
+            /*
+            'prefer-regex-literals': [
+                'error',
+                {
+                    disallowRedundantWrapping: true,
+                },
+            ],
+            */ // decide either is omitted intentionally, fix 3 errors, or disable comments
+            // radix: 'error', // TODO comment in after making sure no semantic merge conflict
+            'vars-on-top': 'error',
+            yoda: 'error',
+
+            // Turn on rules from airbnb errors config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/errors.js
+            'for-direction': 'error',
+            'getter-return': ['error', { allowImplicit: true }],
+            'no-async-promise-executor': 'error',
+            'no-compare-neg-zero': 'error',
+            'no-cond-assign': ['error', 'always'],
+            'no-constant-condition': 'error', // instead of 'warn'
+            'no-control-regex': 'error',
+            'no-debugger': 'error',
+            'no-dupe-args': 'error',
+            'no-dupe-else-if': 'error',
+            'no-dupe-keys': 'error',
+            'no-duplicate-case': 'error',
+            'no-empty': 'error',
+            'no-empty-character-class': 'error',
+            'no-ex-assign': 'error',
+            'no-extra-boolean-cast': 'error',
+            'no-extra-semi': 'error',
+            'no-func-assign': 'error',
+            'no-import-assign': 'error',
+            'no-inner-declarations': 'error',
+            'no-invalid-regexp': 'error',
+            'no-irregular-whitespace': 'error',
+            'no-loss-of-precision': 'error',
+            'no-misleading-character-class': 'error',
+            'no-obj-calls': 'error',
+            'no-prototype-builtins': 'error',
+            'no-regex-spaces': 'error',
+            'no-setter-return': 'error',
+            'no-sparse-arrays': 'error',
+            'no-unexpected-multiline': 'error',
+            'no-unreachable': 'error',
+            'no-unsafe-finally': 'error',
+            'no-unsafe-negation': 'error',
+            'no-unsafe-optional-chaining': ['error', { disallowArithmeticOperators: true }],
+            'no-useless-backreference': 'error',
+            'use-isnan': 'error',
+            'valid-typeof': ['error', { requireStringLiterals: true }],
+
+            'no-await-in-loop': 'error',
+            // 'no-promise-executor-return': 'error', // fix 5 errors
+            'no-template-curly-in-string': 'error',
+            'no-unreachable-loop': [
+                'error',
+                {
+                    ignore: [],
+                },
+            ],
+
+            // Turn on rules from airbnb es6 config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/es6.js
+            // 'arrow-body-style' is intentional omission
+            'constructor-super': 'error',
+            'no-class-assign': 'error',
+            'no-const-assign': 'error',
+            'no-dupe-class-members': 'error',
+            'no-new-symbol': 'error',
+            'no-this-before-super': 'error',
+            'require-yield': 'error',
+            // 'no-restricted-exports' is intentional omission
+            'no-useless-computed-key': 'error',
+            'no-useless-constructor': 'error',
+            'no-useless-rename': [
+                'error',
+                {
+                    ignoreDestructuring: false,
+                    ignoreImport: false,
+                    ignoreExport: false,
+                },
+            ],
+            'no-var': 'error',
+            'object-shorthand': [
+                'error',
+                'always',
+                {
+                    ignoreConstructors: false,
+                    avoidQuotes: true,
+                },
+            ],
+            'prefer-arrow-callback': [
+                'error',
+                {
+                    allowNamedFunctions: false,
+                    allowUnboundThis: true,
+                },
+            ],
+            'prefer-const': [
+                'error',
+                {
+                    destructuring: 'any',
+                    ignoreReadBeforeAssign: true,
+                },
+            ],
+            'prefer-destructuring': [
+                'error',
+                {
+                    VariableDeclarator: {
+                        array: false,
+                        object: true,
+                    },
+                    AssignmentExpression: {
+                        array: true,
+                        object: false,
+                    },
+                },
+                {
+                    enforceForRenamedProperties: false,
+                },
+            ],
+            'prefer-numeric-literals': 'error',
+            'prefer-rest-params': 'error',
+            'prefer-spread': 'error',
+            'prefer-template': 'error',
+            'rest-spread-spacing': ['error', 'never'], // deprecated
+            'symbol-description': 'error',
+
+            // Turn on rules from airbnb import config that are not in import errors config.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/imports.js
+            'import-x/first': 'error',
+            'import-x/newline-after-import': 'error',
+            'import-x/no-absolute-path': 'error',
+            'import-x/no-duplicates': 'error',
+            'import-x/no-dynamic-require': 'error',
+            // 'import-x/no-extraneous-dependencies' is specified in a more specific configuration
+            'import-x/no-import-module-exports': ['error', { exceptions: [] }],
+            'import-x/no-mutable-exports': 'error',
+            // 'import-x/no-named-as-default' is intentional omission
+            // 'import-x/no-named-as-default-member' is intentional omission
+            'import-x/no-named-default': 'error',
+            'import-x/no-relative-packages': 'error',
+            'import-x/no-self-import': 'error',
+            'import-x/no-useless-path-segments': ['error', { commonjs: true }],
+            'import-x/no-webpack-loader-syntax': 'error',
+            // 'import-x/prefer-default-export' is intentional omission
+
+            // Turn on rules from airbnb style config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/style.js
+            // camelcase is intentional omission
+            /*
+            // Discuss with team whether or not to turn on this rule
+            'max-len': [
+                'error',
+                100,
+                2,
+                {
+                    ignoreUrls: true,
+                    ignoreComments: false,
+                    ignoreRegExpLiterals: true,
+                    ignoreStrings: true,
+                    ignoreTemplateLiterals: true,
+                },
+            ],
+            */
+            'new-cap': [
+                'error',
+                {
+                    newIsCap: true,
+                    newIsCapExceptions: [],
+                    capIsNew: false,
+                    capIsNewExceptions: ['Immutable.Map', 'Immutable.Set', 'Immutable.List'],
+                },
+            ],
+            'no-array-constructor': 'error',
+            'no-bitwise': 'error',
+            'no-continue': 'error',
+            'no-multi-assign': ['error'],
+            'no-plusplus': 'error',
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'ForInStatement',
+                    message:
+                        'for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array.',
+                },
+                {
+                    selector: 'ForOfStatement',
+                    message:
+                        'iterators/generators require regenerator-runtime, which is too heavyweight for this guide to allow them. Separately, loops should be avoided in favor of array iterations.',
+                },
+                {
+                    selector: 'LabeledStatement',
+                    message:
+                        'Labels are a form of GOTO; using them makes code confusing and hard to maintain and understand.',
+                },
+                {
+                    selector: 'WithStatement',
+                    message:
+                        '`with` is disallowed in strict mode because it makes code impossible to predict and optimize.',
+                },
+            ],
+            // 'no-underscore-dangle' is intentional omission
+            'no-unneeded-ternary': ['error', { defaultAssignment: false }],
+            'one-var': ['error', 'never'],
+            'operator-assignment': ['error', 'always'],
+            'prefer-exponentiation-operator': 'error',
+            'prefer-object-spread': 'error',
+            'unicode-bom': ['error', 'never'],
+
+            // Turn on rules from airbnb variables config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/variables.js
+            'no-label-var': 'error',
+            'no-restricted-globals': [
+                'error',
+                {
+                    name: 'isFinite',
+                    message: 'Use Number.isFinite instead',
+                },
+                {
+                    name: 'isNaN',
+                    message: 'Use Number.isNaN',
+                },
+            ],
+            // 'no-shadow': 'error', // fix 15 errors
+            'no-undef-init': 'error',
+
+            // Turn on rules not from (or with difference options than) airbnb config.
+            'import-x/no-empty-named-blocks': 'error',
+            'import-x/order': [
+                'error',
+                { groups: [['builtin', 'external', 'internal', 'parent', 'sibling']] },
+            ],
+            'prettier/prettier': 'error',
+        },
+
+        settings: {
+            'import-x/extensions': ['.js', '.jsx', '.ts', '.tsx'],
+            'import-x/parsers': {
+                '@typescript-eslint/parser': ['.js', '.jsx', '.ts', '.tsx'],
+            },
+            'import-x/resolver-next': [
+                createTypeScriptImportResolver({
+                    alwaysTryTypes: true,
+                    project: 'tsconfig.eslint.json',
+                }),
+            ],
+            react: {
+                version: 'detect',
+            },
+        },
+    },
+    {
+        files: ['cypress/**/*.{js,ts}'], // helpers (and so on) for integration tests
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
+                ...nodeGlobals, // mocha.config.js
+            },
+        },
+    },
+    {
+        files: [
+            'cypress/integration/**/*.test.{js,ts}', // integration tests
+            'src/**/*.cy.jsx', // component tests
+        ],
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
+            },
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            cypress: pluginCypress,
+            vitest: pluginVitest,
+        },
+        rules: {
+            // Turn off rules from ESLint recommended configuration.
+
+            // Allow chai-style expect(x).to.be.true chain.
+            'no-unused-expressions': 'off',
+
+            // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L45-L62
+            ...pluginCypress.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            'cypress/no-unnecessary-waiting': 'off', // disable or fix about 8 errors
+
+            'cypress/no-chained-get': 'error',
+            // 'cypress/no-force': 'error', // TODO fix errors
+
+            'vitest/no-focused-tests': 'error',
+        },
+    },
+    {
+        files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
+
+        languageOptions: {
+            parser,
+            parserOptions: {
+                ...parserOptions,
+
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+
+            globals: {
+                ...browserGlobals,
+                process: false, // for JavaScript files which have process.env.NODE_ENV and so on
+            },
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            accessibility: pluginAccessibility,
+            generic: pluginGeneric,
+            'import-x': pluginImportX,
+            limited: pluginLimited,
+            patternfly: pluginPatternFly,
+            '@eslint-react': pluginReact,
+        },
+        rules: {
+            ...pluginAccessibility.configs.recommended.rules,
+            ...pluginGeneric.configs.recommended.rules,
+            ...pluginPatternFly.configs.recommended.rules,
+
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: [
+                        {
+                            name: 'axios',
+                            importNames: ['default'],
+                            message:
+                                "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there.",
+                        },
+                    ],
+                },
+            ],
+
+            // Turn on rules from airbnb strict config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/strict.js
+            strict: ['error', 'never'], // babel inserts `'use strict';` for us
+
+            'import-x/no-extraneous-dependencies': [
+                'error',
+                {
+                    devDependencies: [
+                        path.join(import.meta.dirname, 'src/test-utils/*'), // TODO delete renderWithRedux.js
+                    ],
+                },
+            ],
+
+            // https://github.com/Rel1cx/eslint-react/blob/main/plugins/eslint-plugin/src/configs/recommended.ts
+            ...pluginReact.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            '@eslint-react/no-missing-key': 'off', // recommended preset: more that 30 errors
+            '@eslint-react/no-nested-component-definitions': 'off', // 22 errors
+            '@eslint-react/static-components': 'off', // 14 errirs
+
+            // Turn on rules from airbnb react config that are not in eslint-plugin-react recommended.
+            '@eslint-react/dom-no-missing-button-type': 'error', // strict preset
+            '@eslint-react/no-unused-state': 'error', // experimental
+            '@eslint-react/dom-no-string-style-prop': 'error',
+
+            // Report as error: React.Whatever
+            'limited/no-qualified-name-react': 'error',
+
+            // Explicit configuration because recommended includes React Compiler rules.
+            // Core hooks rules
+            '@eslint-react/exhaustive-deps': 'error', // instead of 'warn'
+            '@eslint-react/rules-of-hooks': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+            'import-x': pluginImportX,
+        },
+        rules: {
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
+            ...pluginTypeScriptESLint.configs['eslint-recommended'].overrides[0].rules,
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
+            ...pluginTypeScriptESLint.configs.recommended.rules,
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/recommended-type-checked.ts
+            ...pluginTypeScriptESLint.configs['recommended-type-checked'].rules,
+
+            // Turn off rules from recommended-type-checked configuration because of
+            // irrelevant problems when TypeScript modules import from JavaScript modules.
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            '@typescript-eslint/no-misused-promises': 'off', // more than 100 errors
+            '@typescript-eslint/no-unsafe-argument': 'off', // more than 300 errors
+            '@typescript-eslint/prefer-promise-reject-errors': 'off', // 9 errors
+            '@typescript-eslint/require-await': 'off', // about 20 errors
+
+            '@typescript-eslint/array-type': 'error',
+            '@typescript-eslint/consistent-type-exports': 'error',
+            '@typescript-eslint/consistent-type-imports': 'error',
+
+            'import-x/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+        },
+    },
+    // Limited rules have specific files or have ignores for specific files or folders.
+    {
+        files: ['src/types/featureFlag.ts'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/feature-flags': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'import-x/no-cycle': ['error', { maxDepth: '∞' }],
+            'limited/react-export-default': 'error',
+        },
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration includes cypress and src folders
+        ignores: [
+            'src/Containers/VulnMgmt/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+
+        // Separate from the following configuration to limit size of contributions.
+        rules: {
+            'limited/sort-named-imports': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-absolute-path-within-container-in-import': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/CompoundSearchFilter/attributes/imageCVE.ts', // refactor: originDisplayNames
+            'src/Components/CompoundSearchFilter/attributes/imageComponent.ts', // refactor: sourceTypeLabels, sourceTypes
+            'src/Components/CompoundSearchFilter/attributes/virtualMachine.ts', // refactor: sourceTypeLabels, sourceTypes
+            'src/Components/EmailNotifier/EmailNotifierForm.tsx', // refactor
+            'src/Components/EmailNotifier/EmailNotifierModal.tsx', // refactor
+            'src/Components/RelatedEntity.jsx', // deprecated
+            'src/Components/RelatedEntityListCount.jsx', // deprecated
+            'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
+            'src/Components/workflow/EntitiesMenu/EntitiesMenu.jsx', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-import-from-Containers-in-Components': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/GroupedTabs.jsx', // deprecated
+            'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
+            'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/sagas/authSagas.js', // deprecated
+            'src/sagas/groupSagas.js', // deprecated
+            'src/sagas/roleSagas.js', // deprecated
+            'src/utils/URLParser.ts', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/entityRelationships.ts', // deprecated
+            'src/utils/queryService.js', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-logical-or-preceding-array-or-object': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/*.{js,jsx}', // deprecated
+            'src/Components/Menu.tsx', // deprecated
+
+            'src/Components/BinderTabs/**', // deprecated
+            'src/Components/Button/**', // deprecated
+            'src/Components/ButtonLink/**', // deprecated
+            'src/Components/CVEStackedPill/**', // deprecated
+            'src/Components/CollapsibleSection/**', // deprecated
+            'src/Components/CveType/**', // deprecated
+            'src/Components/DashboardLayout/**', // deprecated
+            'src/Components/DashboardMenu/**', // deprecated
+            'src/Components/FixableCVECount/**', // deprecated
+            'src/Components/HeaderWithSubText/**', // deprecated
+            'src/Components/Labeled/**', // deprecated
+            'src/Components/Menu/**', // deprecated
+            'src/Components/Metadata/**', // deprecated
+            'src/Components/MetadataStatsList/**', // deprecated
+            'src/Components/NoComponentVulnMessage/**', // deprecated
+            'src/Components/PageHeader/**', // deprecated
+            'src/Components/Pagination/**', // deprecated
+            'src/Components/PanelButton/**', // deprecated
+            'src/Components/RiskScore/**', // deprecated
+            'src/Components/RowActionButton/**', // deprecated
+            'src/Components/StatsList/**', // deprecated
+            'src/Components/RadioButtonGroup/**', // deprecated
+            'src/Components/ReactSelect/**', // deprecated
+            'src/Components/ResourceCountPopper/**', // deprecated
+            'src/Components/SidePanelAbsoluteArea.tsx', // deprecated
+            'src/Components/SidePanelAdjacentArea.tsx', // deprecated
+            'src/Components/TableCellLink/**', // deprecated
+            'src/Components/TextSelect/**', // deprecated
+            'src/Components/TileContent/**', // deprecated
+            'src/Components/TileLink/**', // deprecated
+            'src/Components/TimelineGraph/**', // deprecated
+            'src/Components/TimelineOverview/**', // deprecated
+            'src/Components/ToggleSwitch/**', // deprecated
+            'src/Components/TooltipFieldValue/**', // deprecated
+            'src/Components/TopCvssLabel/**', // deprecated
+            'src/Components/Widget/**', // deprecated
+            'src/Components/animations/**', // deprecated
+            'src/Components/forms/**', // replace when we rewrite Login in PatternFly, and then delete
+            'src/Components/visuals/**', // deprecated
+            'src/Components/workflow/**', // deprecated
+
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/Header/Header.tsx', // investigate ignore-react-onclickoutside
+            'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-Tailwind': 'error',
+            'limited/no-feather-icons': 'error',
+        },
+    },
+    {
+        files: ['cypress/**/*.{js,ts}', 'src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'cypress/constants/**',
+            'cypress/integration/clusters/**', // delete obsolete tests
+            'cypress/integration/configmanagement/**', // deprecated/modernized
+            'cypress/integration/integrations/**', // replace
+            'cypress/integration/networkGraph/**', // replace
+            'cypress/integration/risk/**', // deprecated/modernized
+            'cypress/integration/systemConfig/**', // replace
+            'cypress/integration/vulnmanagement/**', // deprecated
+            'cypress/selectors/**',
+            'src/Components/**', // replace non-deprecated
+            'src/Containers/AccessControl/**', // replace
+            'src/Containers/Clusters/**', // delete obsolete tests
+            'src/Containers/ConfigManagement/**', // deprecated/modernized
+            'src/Containers/Integrations/**', // replace
+            'src/Containers/Login/**', // replace
+            'src/Containers/MainPage/**', // replace
+            'src/Containers/NetworkGraph/**', // replace
+            'src/Containers/Policies/**', // replace
+            'src/Containers/PolicyCategories/**', // replace
+            'src/Containers/Risk/**', // replace
+            'src/Containers/SystemConfig/**', // replace
+            'src/Containers/SystemHealth/**', // replace
+            'src/Containers/User/**', // replace
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/css/trumps.css', // delete or replace
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-data-testid': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/CheckboxTable.jsx', // deprecated
+            'src/Components/CollapsibleCard.jsx', // deprecated
+            'src/Components/ColorPicker.jsx', // rewrite
+            'src/Components/ExportButton.jsx', // deprecated
+            'src/Components/Popper.jsx', // replace or rewrite
+            'src/Components/SearchInput/SearchInput.jsx', // deprecated
+            'src/Components/Select.jsx', // deprecated
+            'src/Components/Table.jsx', // deprecated
+            'src/Components/Tabs.jsx', // deprecated
+            'src/Components/visuals/Sunburst.jsx', // deprecated
+            'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite
+            'src/Containers/Risk/KeyValuePairs.jsx', // rewrite?
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-Component': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx}'],
+        ignores: [
+            'src/**/*.test.js', // unit test
+            'src/**/*.test.jsx', // unit test
+            'src/**/*.cy.jsx', // component test
+            'src/Components/**', // research
+            'src/Containers/ConfigManagement/**', // deferred
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Risk/**', // rewrite in progress
+            'src/Containers/ThemeProvider.jsx', // deleted in PatternFly 6
+            'src/Containers/User/UserPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Violations/useEntitiesByIdsCache.js', // rewrite if still relevant
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+            'src/Containers/configMgmtPaginationContext.js', // deferred
+            'src/Containers/searchContext.js', // research
+            'src/Containers/workflowStateContext.js', // deprecated
+            'src/constants/complianceStates.js', // research
+            'src/constants/componentTypes.js', // research
+            'src/constants/entityPageProps.js', // research
+            'src/constants/lifecycleStages.js', // rewrite
+            'src/constants/listColumns.jsx', // deferred
+            'src/constants/networkStatuses.js', // deferred
+            'src/constants/pageTypes.js', // deprecated
+            'src/constants/reduxFormPropTypes.js', // deprecated
+            'src/constants/searchParams.js', // deferred
+            'src/constants/sortFields.js', // deferred
+            'src/constants/timelineTypes.js', // move into Containers/Risk/EventTimeline
+            'src/constants/url.js', // deprecated
+            'src/constants/useCaseTypes.js', // deprecated
+            'src/hooks/useEntityName.js', // deprecated
+            'src/hooks/useGraphHoverHint.js', // deprecated
+            'src/hooks/useInterval.js', // rewrite
+            'src/hooks/useTabs.js', // deprecated
+            'src/hooks/useWorkflowMatch.js', // deferred
+            'src/init/**', // JavaScript
+            'src/init/initializeAnalytics.js', // JavaScript
+            'src/init/installRaven.js', // JavaScript
+            'src/messages/entity.js', // deprecated
+            'src/messages/standards.js', // deferred
+            'src/messages/timeline.js', // move into Containers/Risk/EventTimeline
+            'src/messages/useCase.js', // deferred
+            'src/queries/**', // deprecated
+            'src/reducers/**', // deprecated
+            'src/sagas/**', // deprecated
+            'src/services/AttributesService.js', // deferred
+            'src/services/AuthService/AccessTokenManager.js', // deferred
+            'src/services/AuthService/RefreshTokenTimeout.js', // deferred
+            'src/services/AuthService/addTokenRefreshInterceptors.js', // deferred
+            'src/services/CLIService.js', // rewrite
+            'src/services/CSVDownloadService.js', // deprecated
+            'src/services/DownloadService.js', // rewrite
+            'src/services/NetworkService.js', // rewrite
+            'src/services/VulnerabilitiesService.js', // deprecated
+            'src/services/instance.js', // JavaScript
+            'src/services/serverErrorHandler.js', // JavaScript
+            'src/*', // JavaScript
+            'src/test-utils/**', // JavaScript
+            'src/utils/URLGenerator.js', // deprecated
+            'src/utils/URLService.js', // deprecated
+            'src/utils/WorkflowEntity.js', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/captureGraphQLErrors.js', // move into Containers/Risk/EventTimeline
+            'src/utils/d3Utils.js', // deprecated
+            'src/utils/download.js', // rewrite
+            'src/utils/flattenObject.js', // deprecated
+            'src/utils/getEntityName.js', // deprecated
+            'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
+            'src/utils/gqlLoading.js', // deferred
+            'src/utils/permissionRuleGroupUtils.js', // deferred
+            'src/utils/queryMap.js', // deprecated
+            'src/utils/queryService.js', // deferred
+            'src/utils/sagaEffects.js', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-JavaScript': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        // Overlaps with preceding non-deprecated rule.
+        ignores: [
+            'src/Components/**', // most or all deprecated
+            'src/constants/entityPageProps.js', // deprecated
+            'src/constants/reduxFormPropTypes.js', // deprecated
+            'src/Containers/ConfigManagement/**', // deprecated
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite in TypeScript
+            'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite in TypeScript
+            'src/Containers/MainPage/Header/UserMenu.tsx', // rewritten in TypeScript
+            'src/Containers/Risk/EventTimeline/**', // deprecated
+            'src/Containers/Risk/Process/Binaries.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/Process/BinaryCollapsible.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/Process/Signal.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/KeyValuePairs.jsx', // rewrite in TypeScript?
+            'src/Containers/User/UserPage.jsx', // rewrite in TypeScript
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow//**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-PropTypes': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/**', // deprecated
+            'src/Containers/AccessControl/AuthProviders/AuthProviderForm.tsx', // replace
+            'src/Containers/AccessControl/AuthProviders/AuthProviders.tsx', // replace
+            'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx', // replace
+            'src/Containers/Login/LoginPage.jsx', // replace
+            'src/Containers/Login/TestLoginResultsPage.jsx', // replace
+            'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace
+            'src/Containers/MainPage/AuthenticatedRoutes.tsx', // replace
+            'src/Containers/MainPage/Header/CLIDownloadMenu.tsx', // replace
+            'src/Containers/MainPage/Header/UserMenu.tsx', // replace
+            'src/Containers/MainPage/InviteUsers/InviteUsersModal.tsx', // replace
+            'src/Containers/ReduxUserPermissionProvider.tsx', // replace
+            'src/Containers/User/UserPage.jsx', // replace
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/hooks/useAuthStatus.ts', // replace
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-connect': 'error',
+            'limited/no-non-deprecated-reselect': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: ['src/**/*.test.*', 'src/**/*.cy.*'],
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-hardcoded-route-paths': 'error',
+        },
+    },
+    {
+        files: ['*.js', 'tailwind-plugins/*.js'], // non-product files
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                ...nodeGlobals,
+            },
+            sourceType: 'commonjs',
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            'import-x': pluginImportX,
+        },
+        rules: {
+            'import-x/no-extraneous-dependencies': [
+                'error',
+                {
+                    devDependencies: [
+                        path.join(import.meta.dirname, 'eslint.config.js'),
+                        path.join(import.meta.dirname, 'postcss.config.js'),
+                        path.join(import.meta.dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
+                        path.join(import.meta.dirname, 'webpack.ocp-plugin.config.js'),
+                        path.join(import.meta.dirname, 'vite.config.js'),
+                        path.join(import.meta.dirname, 'cypress.config.js'),
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        files: ['src/**/*.test.{js,jsx,ts,tsx}'], // unit tests
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                ...vitestGlobals,
+            },
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            'import-x': pluginImportX,
+            'jest-dom': pluginJestDOM,
+            'testing-library': pluginTestingLibrary,
+            vitest: pluginVitest,
+        },
+        rules: {
+            'import-x/no-extraneous-dependencies': [
+                'error',
+                {
+                    devDependencies: [path.join(import.meta.dirname, 'src/**/*.test.*')],
+                },
+            ],
+
+            ...pluginVitest.configs.recommended.rules,
+
+            'vitest/expect-expect': [
+                'error',
+                {
+                    assertFunctionNames: ['expect', 'expectSaga'], // authSagas.test.js integrationSagas.test.js
+                },
+            ],
+
+            ...pluginJestDOM.configs.recommended.rules,
+
+            // https://github.com/testing-library/eslint-plugin-testing-library/blob/main/lib/configs/react.ts
+            ...pluginTestingLibrary.configs.react.rules,
+
+            // TODO remove data-testid attributes from unit tests
+            'testing-library/consistent-data-testid': [
+                'error',
+                {
+                    testIdPattern: '^[A-Za-z]+[\\w\\-\\.]*$',
+                },
+            ],
+        },
+    },
+];
