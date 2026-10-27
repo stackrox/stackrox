@@ -62,16 +62,16 @@ describe('Risk', () => {
             visitRiskDeployments('Platform view');
             viewFirstRiskDeployment();
 
-            cy.get('[role="tab"]:contains("Risk indicators")');
-            cy.get('[role="tab"]:contains("Deployment details")');
-            cy.get('[role="tab"]:contains("Process discovery")');
+            cy.get(`${pf6.tabButton}:contains("Risk indicators")`);
+            cy.get(`${pf6.tabButton}:contains("Deployment details")`);
+            cy.get(`${pf6.tabButton}:contains("Process discovery")`);
         });
 
         it('should navigate from Risk Page to Vulnerability Management Image Page', () => {
             visitRiskDeployments('Platform view');
             viewFirstRiskDeployment();
 
-            cy.get('*[role="tablist"] button:contains("Deployment details")').click();
+            cy.get(`${pf6.tabButton}:contains("Deployment details")`).click();
 
             cy.contains('h3', 'Container configuration')
                 .parents(pf6.card)
