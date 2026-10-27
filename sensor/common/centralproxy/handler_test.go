@@ -61,7 +61,7 @@ func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {
 		return true, &authv1.SubjectAccessReview{Status: authv1.SubjectAccessReviewStatus{Allowed: true}}, nil
 	})
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyReadOnlyProfiles,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyCustomReadOnlyTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	var forwarded bool
@@ -154,7 +154,7 @@ func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
 	policy := NewClientPolicy(client)
 	require.NoError(t, policy.EnsureDefaults(context.Background()))
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyReadOnlyProfiles,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyCustomReadOnlyTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	var forwarded bool
@@ -212,7 +212,7 @@ func TestPolicyHandlerDoesNotEnableConsoleWhenOnlyMetricsEnabled(t *testing.T) {
 		}}, nil
 	})
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyReadOnlyProfiles,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyCustomReadOnlyTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	h := &Handler{policy: policy, authorizer: newK8sAuthorizer(client), metricsEnabled: true}
@@ -244,7 +244,7 @@ func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
 		}}, nil
 	})
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyReadOnlyProfiles,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyCustomReadOnlyTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	baseURL, err := url.Parse("https://central:443")

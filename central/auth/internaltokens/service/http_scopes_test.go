@@ -2,26 +2,30 @@ package service
 
 import (
 	"testing"
+	"time"
 
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-func TestApprovedHTTPScopes(t *testing.T) {
+func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissionSet string
 		requested     []*apiV1.HTTPRequestScope
 		expected      tokens.HTTPRequestScopes
 		invalid       bool
 	}{
-		"console permission set without requested HTTP scopes": {
+		"console permission set needs HTTP scopes": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
-			expected:      centralproxy.ConsoleHTTPScopes,
+			invalid:       true,
 		},
 		"console subset": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
@@ -38,9 +42,9 @@ func TestApprovedHTTPScopes(t *testing.T) {
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql"}},
 			invalid:       true,
 		},
-		"future metrics profile": {
+		"metrics permission set needs HTTP scopes": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
-			expected:      centralproxy.MetricsHTTPScopes,
+			invalid:       true,
 		},
 		"metrics accepts explicit non-profile read route": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
@@ -88,9 +92,12 @@ func TestApprovedHTTPScopes(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			actual, err := approvedHTTPScopes(&v1.GenerateTokenForPermissionsAndScopeRequest{
+			ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
+			_, actual, err := defaultTokenPolicy().enforce(ctx, &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds:  []string{tc.permissionSet},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
 				HttpRequestScopes: tc.requested,
+				Lifetime:          durationpb.New(time.Minute),
 			})
 			if tc.invalid {
 				assert.ErrorIs(t, err, errox.InvalidArgs)
@@ -100,4 +107,14 @@ func TestApprovedHTTPScopes(t *testing.T) {
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
+}
+
+func TestEnforceLegacyPermissionsWithoutHTTPScopes(t *testing.T) {
+	ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
+	_, scopes, err := defaultTokenPolicy().enforce(ctx, &v1.GenerateTokenForPermissionsAndScopeRequest{
+		Permissions: map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+		Lifetime:    durationpb.New(time.Minute),
+	})
+	require.NoError(t, err)
+	assert.Nil(t, scopes)
 }

@@ -258,10 +258,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	}{
 		"success - secured-cluster metrics permission set": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
-				Permissions:      map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
-				Lifetime:         testExpirationDuration,
+				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
+				Permissions:       map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:          testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {
@@ -290,10 +291,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		},
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
-				Permissions:      map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
-				ClusterScopes:    []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:         testExpirationDuration,
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
+				Permissions:       map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes:     []*v1.ClusterScope{requestSingleNamespace},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+				Lifetime:          testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {
@@ -319,16 +321,17 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					}},
 					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
-					HTTPRequestScopes: centralproxy.ConsoleHTTPScopes,
+					HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-token"},
 		},
 		"success - multiple permission set IDs": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID, centralproxy.ConsoleProxyPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:         testExpirationDuration,
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID, centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:     []*v1.ClusterScope{requestSingleNamespace},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+				Lifetime:          testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {
@@ -346,7 +349,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					}},
 					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano)),
-					HTTPRequestScopes: centralproxy.ConsoleHTTPScopes,
+					HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
 				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "combined-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "combined-token"},
@@ -615,9 +618,10 @@ func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(
 
 	rsp, err := svc.GenerateTokenForPermissionsAndScope(sensorContext(t, ctrl, fixtureconsts.Cluster1),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
-			PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-			ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
-			Lifetime:         testExpirationDuration,
+			PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+			ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+			HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
+			Lifetime:          testExpirationDuration,
 		})
 	assert.Nil(t, rsp)
 	assert.ErrorIs(t, err, errox.InvalidArgs)

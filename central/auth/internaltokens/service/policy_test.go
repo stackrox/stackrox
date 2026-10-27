@@ -158,6 +158,8 @@ func TestEnforce(t *testing.T) {
 		"Deployment": v1.Access_READ_ACCESS,
 	})
 	metricsScope := []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}}
+	metricsHTTPScopes := []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}}
+	consoleHTTPScopes := []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}}
 
 	for name, tc := range map[string]struct {
 		req            *v1.GenerateTokenForPermissionsAndScopeRequest
@@ -187,36 +189,40 @@ func TestEnforce(t *testing.T) {
 		},
 		"metrics permission set ignores client permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-				ClusterScopes:    metricsScope,
-				Permissions:      map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     metricsScope,
+				HttpRequestScopes: metricsHTTPScopes,
+				Permissions:       map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:      fixtureconsts.Cluster1,
-			expectedScopes: centralproxy.MetricsHTTPScopes,
+			expectedScopes: tokens.HTTPRequestScopes{"/metrics": {"GET"}},
 		},
 		"metrics permission set cannot access another cluster": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
+				HttpRequestScopes: metricsHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"metrics permission set requires a scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				HttpRequestScopes: metricsHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"metrics permission set cannot use a namespace scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"prod"}}},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"prod"}}},
+				HttpRequestScopes: metricsHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
@@ -226,7 +232,8 @@ func TestEnforce(t *testing.T) {
 				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
 				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1,
 					FullClusterAccess: true, Namespaces: []string{"prod"}}},
-				Lifetime: durationpb.New(30 * time.Minute),
+				HttpRequestScopes: metricsHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
@@ -238,18 +245,20 @@ func TestEnforce(t *testing.T) {
 					{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true},
 					{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true},
 				},
-				Lifetime: durationpb.New(30 * time.Minute),
+				HttpRequestScopes: metricsHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
-		"console permission set without scope": {
+		"console permission set without cluster scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
+				HttpRequestScopes: consoleHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:      fixtureconsts.Cluster1,
-			expectedScopes: centralproxy.ConsoleHTTPScopes,
+			expectedScopes: tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
 		},
 		"console permission set can request approved scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -279,34 +288,38 @@ func TestEnforce(t *testing.T) {
 		},
 		"console permission set with namespace scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
+				HttpRequestScopes: consoleHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
 		"console permission set with full cluster scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes: consoleHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
 		"console permission set cannot access other cluster": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:     []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
+				HttpRequestScopes: consoleHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"console permission set ignores fallback permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
-				Permissions:      map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSetIds:  []string{centralproxy.ConsoleProxyPermissionSetID},
+				Permissions:       map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
+				HttpRequestScopes: consoleHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},

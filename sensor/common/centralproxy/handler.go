@@ -315,7 +315,7 @@ func (h *Handler) servePolicyRequest(writer http.ResponseWriter, request *http.R
 		http.Error(writer, "console proxy is disabled", http.StatusForbidden)
 		return
 	}
-	if !centralcaps.Has(centralsensor.CentralProxyReadOnlyProfiles) && !legacyProxyGrantAllowed(grant, request) {
+	if !centralcaps.Has(centralsensor.CentralProxyCustomReadOnlyTokens) && !legacyProxyGrantAllowed(grant, request) {
 		*result = requestResultNotImplemented
 		http.Error(writer, "Central does not support this proxy client profile", http.StatusNotImplemented)
 		return

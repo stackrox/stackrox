@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -122,7 +121,7 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 	return identity.Service().GetId(), nil
 }
 
-// enforce validates the request and returns its approved HTTP scopes alongside
+// enforce validates the request and returns its HTTP scopes alongside
 // the request with a capped lifetime if necessary.
 func (p *tokenPolicy) enforce(
 	ctx context.Context,
@@ -135,7 +134,10 @@ func (p *tokenPolicy) enforce(
 	if sensorClusterID == "" {
 		return nil, nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	var scopes tokens.HTTPRequestScopes
+	scopes, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
+	if err != nil {
+		return nil, nil, errox.InvalidArgs.CausedBy(err)
+	}
 	if len(req.GetPermissionSetIds()) > 0 {
 		for _, permissionSetID := range req.GetPermissionSetIds() {
 			switch permissionSetID {
@@ -159,17 +161,19 @@ func (p *tokenPolicy) enforce(
 				}
 			}
 		}
-		scopes, err = approvedHTTPScopes(req)
-		if err != nil {
-			return nil, nil, err
+		hasMethod := false
+		for _, methods := range scopes {
+			if len(methods) > 0 {
+				hasMethod = true
+				break
+			}
+		}
+		if !hasMethod {
+			return nil, nil, errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
 		}
 	} else {
 		if err := p.validatePermissions(req.GetPermissions()); err != nil {
 			return nil, nil, err
-		}
-		scopes, err = tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
-		if err != nil {
-			return nil, nil, errox.InvalidArgs.CausedBy(err)
 		}
 		if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 			return nil, nil, err
@@ -180,51 +184,4 @@ func (p *tokenPolicy) enforce(
 		return nil, nil, err
 	}
 	return req, scopes, nil
-}
-
-func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tokens.HTTPRequestScopes, error) {
-	var allowed tokens.HTTPRequestScopes
-	hasGenericSet := false
-	for _, permissionSetID := range req.GetPermissionSetIds() {
-		var scopes tokens.HTTPRequestScopes
-		switch permissionSetID {
-		case centralproxy.ConsoleProxyPermissionSetID:
-			scopes = centralproxy.ConsoleHTTPScopes
-		case centralproxy.MetricsPermissionSetID:
-			scopes = centralproxy.MetricsHTTPScopes
-		default:
-			hasGenericSet = true
-		}
-		if len(scopes) > 0 && allowed == nil {
-			allowed = make(tokens.HTTPRequestScopes)
-		}
-		for path, methods := range scopes {
-			for _, method := range methods {
-				if !slices.Contains(allowed[path], method) {
-					allowed[path] = append(allowed[path], method)
-				}
-			}
-			if _, exists := allowed[path]; !exists {
-				allowed[path] = []string{}
-			}
-		}
-	}
-
-	requested, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
-	if err != nil {
-		return nil, errox.InvalidArgs.CausedBy(err)
-	}
-	// Permission-set requests without HTTP scopes receive the full Central-managed profile.
-	if len(requested) == 0 {
-		if allowed != nil && !hasGenericSet {
-			return allowed, nil
-		}
-		return nil, errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
-	}
-	for _, methods := range requested {
-		if len(methods) > 0 {
-			return requested, nil
-		}
-	}
-	return nil, errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
 }

@@ -68,15 +68,18 @@ earlier list form must be changed to the map form before upgrading Sensor.
 Sensor authenticates bearer clients via Kubernetes TokenReview and keeps the
 existing namespace SubjectAccessReview. Each policy entry's permission set and
 HTTP scopes are sent to Central; Central checks that the permission set has no
-write access and signs the requested HTTP scopes, and enforces those scopes on
-HTTP requests. The signed `requester` identity is for audit only: a stolen
-bearer token is reusable until expiry and is **not** proof-of-possession bound
-to the original client. Sensor replaces the incoming Authorization header and
-never sends a Kubernetes token to Central. A new Central capability is required
-for additional profiles; built-in routes retain their previous Central-version
-requirements. This implementation supports OpenShift clusters, whose Sensor proxy
-uses an OpenShift service-CA certificate. Cluster scopes do not confine
-permissions for globally scoped Central resources. A read-only permission set
+write access and requires at least one HTTP method before signing the requested
+scopes. Older Sensors that send only resource permissions do not need HTTP
+scopes. Central enforces signed scopes on HTTP requests. The signed `requester`
+identity is for audit only: a stolen bearer token is reusable until expiry and is
+**not** proof-of-possession bound to the original client. Sensor replaces the
+incoming Authorization header and never sends a Kubernetes token to Central.
+Sensor forwards custom permission sets or HTTP scopes outside its built-in
+console/metrics defaults only when Central advertises
+`CentralProxyCustomReadOnlyTokens`. Those defaults remain for older Centrals. This
+implementation supports OpenShift clusters, whose Sensor proxy uses an OpenShift
+service-CA certificate. Cluster scopes do not confine permissions for globally
+scoped Central resources. A read-only permission set
 also does not prove that every HTTP method/route is side-effect-free; review
 each policy entry's route scope. Limit writes to this
 ConfigMap and referenced CA ConfigMaps to trusted administrators and Sensor's
