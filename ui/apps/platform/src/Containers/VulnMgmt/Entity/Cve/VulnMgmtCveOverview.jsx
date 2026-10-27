@@ -4,6 +4,7 @@ import Metadata from 'Components/Metadata';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import entityTypes from 'constants/entityTypes';
 import { getDateTime } from 'utils/dateUtils';
+import { safeToFixed } from 'utils/sortUtils';
 import { isValidURL } from 'utils/urlUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
@@ -60,7 +61,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const cvssScoreBreakdown = [
         {
             key: 'CVSS Score',
-            value: cvss && cvss.toFixed(1),
+            value: cvss && safeToFixed(cvss, 1),
         },
         {
             key: 'Vector',
@@ -68,11 +69,11 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Impact Score',
-            value: vectors && vectors.impactScore && vectors.impactScore.toFixed(1),
+            value: vectors && vectors.impactScore && safeToFixed(vectors.impactScore, 1),
         },
         {
             key: 'Exploitability Score',
-            value: vectors && vectors.exploitabilityScore && vectors.exploitabilityScore.toFixed(1),
+            value: vectors && vectors.exploitabilityScore && safeToFixed(vectors.exploitabilityScore, 1),
         },
     ];
 
@@ -121,7 +122,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'CVSS Score',
-            value: cvss && cvss.toFixed(1),
+            value: cvss && safeToFixed(cvss, 1),
         },
         {
             key: 'Fixability',
