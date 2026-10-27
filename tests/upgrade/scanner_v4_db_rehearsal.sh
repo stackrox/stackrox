@@ -77,9 +77,9 @@ psql_all() {
     local query=${1:?missing first required argument: query}
 
     in_db_sh "
-        for db in \$(psql -U postgres -h 127.0.0.1 -XAt -c \
+        for db in \$(psql -U postgres -h 127.0.0.1 --no-password -XAt -c \
             \"SELECT datname FROM pg_database WHERE NOT datistemplate ORDER BY datname\"); do
-            psql -U postgres -h 127.0.0.1 -XAt -d \"\$db\" -c \"$query\" |
+            psql -U postgres -h 127.0.0.1 --no-password -XAt -d \"\$db\" -c \"$query\" |
                 sed \"s/^/\$db|/\"
         done
     "
@@ -95,7 +95,7 @@ pg_version_on_disk() {
 }
 
 server_major_version() {
-    in_db_sh 'psql -U postgres -h 127.0.0.1 -XAt -c "SHOW server_version"' |
+    in_db_sh 'psql -U postgres -h 127.0.0.1 --no-password -XAt -c "SHOW server_version"' |
         sed 's/\([0-9]*\).*/\1/' | tr -d '[:space:]'
 }
 
@@ -121,9 +121,9 @@ capture_state() {
     # Live counts for every user table, not reltuples: the assertion is that
     # no rows were lost, and reltuples is an estimate that pg_upgrade resets.
     in_db_sh "
-        for db in \$(psql -U postgres -h 127.0.0.1 -XAt -c \
+        for db in \$(psql -U postgres -h 127.0.0.1 --no-password -XAt -c \
             \"SELECT datname FROM pg_database WHERE NOT datistemplate ORDER BY datname\"); do
-            psql -U postgres -h 127.0.0.1 -XAt -d \"\$db\" -c \"
+            psql -U postgres -h 127.0.0.1 --no-password -XAt -d \"\$db\" -c \"
                 SELECT string_agg(q, E'\n' ORDER BY q) FROM (
                     SELECT format('%s.%s', n.nspname, c.relname) AS q
                     FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -131,7 +131,7 @@ capture_state() {
                       AND n.nspname NOT IN ('pg_catalog', 'information_schema')
                 ) t\" | while read -r tbl; do
                 [ -n \"\$tbl\" ] || continue
-                count=\$(psql -U postgres -h 127.0.0.1 -XAt -d \"\$db\" \
+                count=\$(psql -U postgres -h 127.0.0.1 --no-password -XAt -d \"\$db\" \
                     -c \"SELECT count(*) FROM \$tbl\")
                 echo \"\$db|\$tbl|\$count\"
             done
