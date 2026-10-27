@@ -167,7 +167,14 @@ jobs:
         source tests/e2e/lib.sh
         wait_for_api
         echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+        # ROX-37649: When using roxie, password is in environment (not file)
+        # wait_for_api already exports API_ENDPOINT via ci_export
+        # ROX_ADMIN_PASSWORD should already be set from the test run
+        if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
+          echo "ROX_ADMIN_PASSWORD=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_ENV"
+        else
+          echo "Warning: ROX_ADMIN_PASSWORD not found in environment"
+        fi
 
     - name: Run post-test
       if: always()

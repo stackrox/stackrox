@@ -7,7 +7,8 @@ set -eo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 custom_helm_args=("$@")
-secured_cluster_chart_path="$DIR/../deploy/k8s/sensor-deploy/chart"
+# ROX-37649: Sensor chart now at deploy/sensor-deploy since deploy/k8s was removed
+secured_cluster_chart_path="$DIR/../deploy/sensor-deploy/chart"
 
 roxctl helm output secured-cluster-services --image-defaults=development_build --output-dir "$secured_cluster_chart_path" --remove --debug
 
