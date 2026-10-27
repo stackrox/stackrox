@@ -1314,6 +1314,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"namespaceName: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SkipImageLayers(0)))
 	utils.Must(builder.AddType("SlimUser", []string{
 		"id: ID!",
 		"name: String!",
@@ -14102,6 +14103,24 @@ func (resolver *simpleAccessScope_Rules_NamespaceResolver) ClusterName(ctx conte
 func (resolver *simpleAccessScope_Rules_NamespaceResolver) NamespaceName(ctx context.Context) string {
 	value := resolver.data.GetNamespaceName()
 	return value
+}
+
+func toSkipImageLayers(value *string) storage.SkipImageLayers {
+	if value != nil {
+		return storage.SkipImageLayers(storage.SkipImageLayers_value[*value])
+	}
+	return storage.SkipImageLayers(0)
+}
+
+func toSkipImageLayerses(values *[]string) []storage.SkipImageLayers {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SkipImageLayers, len(*values))
+	for i, v := range *values {
+		output[i] = toSkipImageLayers(&v)
+	}
+	return output
 }
 
 type slimUserResolver struct {

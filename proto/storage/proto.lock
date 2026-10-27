@@ -14056,6 +14056,22 @@
             ]
           },
           {
+            "name": "SkipImageLayers",
+            "enum_fields": [
+              {
+                "name": "SKIP_NONE"
+              },
+              {
+                "name": "SKIP_BASE",
+                "integer": 1
+              },
+              {
+                "name": "SKIP_APP",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "Exclusion.WorkloadKind",
             "enum_fields": [
               {
@@ -14376,6 +14392,11 @@
                 "name": "skip_container_types",
                 "type": "ContainerType",
                 "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "skip_image_layers",
+                "type": "SkipImageLayers"
               }
             ]
           },
