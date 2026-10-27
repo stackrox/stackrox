@@ -1,3 +1,4 @@
+// CI-TEST: Validating sensor-subsystem rule - expect sensor-integration-tests, go; skip go-postgres
 package utils
 
 import (
