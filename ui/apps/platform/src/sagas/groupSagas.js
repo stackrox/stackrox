@@ -47,7 +47,6 @@ function* saveRuleGroup(action) {
             previousGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
         yield call(getRuleGroups);
-        yield put(authActions.setAuthProviderEditingState(false));
         yield put(
             authActions.setSaveAuthProviderStatus({
                 status: 'success',
