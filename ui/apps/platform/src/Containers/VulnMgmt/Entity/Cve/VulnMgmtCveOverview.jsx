@@ -2,9 +2,9 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import { safeToFixed } from 'Containers/Vulnerabilities/utils/sortUtils';
 import entityTypes from 'constants/entityTypes';
 import { getDateTime } from 'utils/dateUtils';
-import { safeToFixed } from 'utils/sortUtils';
 import { isValidURL } from 'utils/urlUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
@@ -12,7 +12,7 @@ const emptyCve = {
     imageComponentCount: 0,
     nodeComponentCount: 0,
     cve: '',
-    cvss: 0,
+    cvss: null,
     deploymentCount: 0,
     envImpact: 0,
     fixedByVersion: '',
@@ -61,7 +61,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const cvssScoreBreakdown = [
         {
             key: 'CVSS Score',
-            value: cvss && safeToFixed(cvss, 1),
+            value: safeToFixed(cvss, 1),
         },
         {
             key: 'Vector',
@@ -69,11 +69,11 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Impact Score',
-            value: vectors && vectors.impactScore && safeToFixed(vectors.impactScore, 1),
+            value: safeToFixed(vectors?.impactScore, 1),
         },
         {
             key: 'Exploitability Score',
-            value: vectors && vectors.exploitabilityScore && safeToFixed(vectors.exploitabilityScore, 1),
+            value: safeToFixed(vectors?.exploitabilityScore, 1),
         },
     ];
 
@@ -122,7 +122,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
         {
             key: 'CVSS Score',
-            value: cvss && safeToFixed(cvss, 1),
+            value: safeToFixed(cvss, 1),
         },
         {
             key: 'Fixability',
