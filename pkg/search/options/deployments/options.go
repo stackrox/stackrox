@@ -6,7 +6,7 @@ import (
 
 var (
 	// OptionsMap describes the options for Deployments
-	OptionsMap = schema.DeploymentsSchema.OptionsMap.
-		Merge(schema.ProcessIndicatorsSchema.OptionsMap).
-		Merge(schema.ImagesSchema.OptionsMap)
+	OptionsMap = schema.DeploymentsSchema().OptionsMap.
+		Merge(schema.ProcessIndicatorsSchema().OptionsMap).
+		Merge(schema.ImagesSchema().OptionsMap)
 )

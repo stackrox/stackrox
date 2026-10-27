@@ -14,8 +14,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceOperatorCheckResultV2Schema() })
+}
 
 var (
 	// CreateTableComplianceOperatorCheckResultV2Stmt holds the create statement for table `compliance_operator_check_result_v2`.
@@ -28,18 +33,18 @@ var (
 	}
 
 	// ComplianceOperatorCheckResultV2Schema is the go schema for table `compliance_operator_check_result_v2`.
-	ComplianceOperatorCheckResultV2Schema = func() *walker.Schema {
+	ComplianceOperatorCheckResultV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_check_result_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorCheckResultV2)(nil)), "compliance_operator_check_result_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster":                               ClustersSchema,
-			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
-			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
-			"storage.ComplianceOperatorProfileV2":           ComplianceOperatorProfileV2Schema,
-			"storage.ComplianceOperatorRuleV2":              ComplianceOperatorRuleV2Schema,
+			"storage.Cluster":                               ClustersSchema(),
+			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema(),
+			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema(),
+			"storage.ComplianceOperatorProfileV2":           ComplianceOperatorProfileV2Schema(),
+			"storage.ComplianceOperatorRuleV2":              ComplianceOperatorRuleV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -50,7 +55,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceOperatorCheckResultV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

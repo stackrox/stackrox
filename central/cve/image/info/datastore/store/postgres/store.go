@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageCveInfosSchema
+	schema         = pkgSchema.ImageCveInfosSchema()
 	targetResource = resources.Image
 )
 

@@ -31,7 +31,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.SecretsSchema
+	schema         = pkgSchema.SecretsSchema()
 	targetResource = resources.Secret
 )
 

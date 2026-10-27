@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceOperatorScanSettingBindingsSchema() })
+}
 
 var (
 	// CreateTableComplianceOperatorScanSettingBindingsStmt holds the create statement for table `compliance_operator_scan_setting_bindings`.
@@ -19,7 +24,7 @@ var (
 	}
 
 	// ComplianceOperatorScanSettingBindingsSchema is the go schema for table `compliance_operator_scan_setting_bindings`.
-	ComplianceOperatorScanSettingBindingsSchema = func() *walker.Schema {
+	ComplianceOperatorScanSettingBindingsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_scan_setting_bindings")
 		if schema != nil {
 			return schema
@@ -28,7 +33,7 @@ var (
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorScanSettingBindingsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

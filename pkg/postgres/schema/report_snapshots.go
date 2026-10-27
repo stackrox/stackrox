@@ -13,8 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ReportSnapshotsSchema() })
+}
 
 var (
 	// CreateTableReportSnapshotsStmt holds the create statement for table `report_snapshots`.
@@ -24,14 +29,14 @@ var (
 	}
 
 	// ReportSnapshotsSchema is the go schema for table `report_snapshots`.
-	ReportSnapshotsSchema = func() *walker.Schema {
+	ReportSnapshotsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("report_snapshots")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportSnapshot)(nil)), "report_snapshots")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ReportConfiguration": ReportConfigurationsSchema,
+			"storage.ReportConfiguration": ReportConfigurationsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,7 +47,7 @@ var (
 		RegisterTable(schema, CreateTableReportSnapshotsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_SNAPSHOT, schema)
 		return schema
-	}()
+	})
 )
 
 const (
