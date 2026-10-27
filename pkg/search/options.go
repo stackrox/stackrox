@@ -353,6 +353,7 @@ var (
 	ComponentLayerType  = newFieldLabel("Component Layer Type")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
+	SkipImageLayers = newFieldLabel("Skip Image Layers")
 
 	// Following are helper fields used for sorting
 	// For example, "SORTPolicyName" field should be used to sort policies when the query sort field is "PolicyName"

@@ -60,7 +60,7 @@ import {
     isExternalPolicy,
 } from '../policies.utils';
 import type { LabelAndNotifierIdsForType } from '../policies.utils';
-import { policySearchFilterConfig } from '../policiesSearchFilterConfig';
+import { getPolicySearchFilterConfig } from '../policiesSearchFilterConfig';
 
 import './PoliciesTable.css';
 
@@ -108,7 +108,9 @@ function PoliciesTable({
     const searchFilterConfig = useMemo(
         () =>
             getSearchFilterConfigWithFeatureFlagDependency(isFeatureFlagEnabled, [
-                policySearchFilterConfig,
+                getPolicySearchFilterConfig({
+                    imageLayerFilter: isFeatureFlagEnabled('ROX_IMAGE_LAYER_FILTER'),
+                }),
             ]),
         [isFeatureFlagEnabled]
     );
