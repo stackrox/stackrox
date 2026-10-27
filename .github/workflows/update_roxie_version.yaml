@@ -34,11 +34,15 @@ jobs:
         fetch-depth: 0
 
     - name: Resolve run configuration
+      env:
+        DRY_RUN: '${{ inputs.dry-run }}'
+        SKIP_SLACK: '${{ inputs.skip-slack }}'
+        VERSION: '${{ inputs.version }}'
       run: |
         {
-          echo "DRY_RUN=${{ inputs.dry-run }}"
-          echo "SKIP_SLACK=${{ inputs.skip-slack }}"
-          echo "INPUT_VERSION=${{ inputs.version }}"
+          echo "DRY_RUN=${DRY_RUN}"
+          echo "SKIP_SLACK=${SKIP_SLACK}"
+          echo "VERSION=${VERSION}"
         } >> "$GITHUB_ENV"
 
     - name: Determine target version
@@ -48,8 +52,8 @@ jobs:
         EVENT_NAME: '${{ github.event_name }}'
         DISPATCH_VERSION: '${{ github.event.client_payload.version }}'
       run: |
-        if [[ -n "${INPUT_VERSION}" ]]; then
-          version="${INPUT_VERSION}"
+        if [[ -n "${VERSION}" ]]; then
+          version="${VERSION}"
         elif [[ "${EVENT_NAME}" == "repository_dispatch" ]]; then
           version="${DISPATCH_VERSION#v}"
         else
@@ -71,6 +75,11 @@ jobs:
         target="${TARGET}"
         if [[ "${current}" == "${target}" ]]; then
           echo "ROXIE_VERSION is already at ${current}, no update needed."
+          echo "needed=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        if printf '%s\n%s\n' "${target}" "${current}" | sort -CV; then
+          echo "Target ${target} is not newer than current ${current}, skipping."
           echo "needed=false" >> "$GITHUB_OUTPUT"
           exit 0
         fi

@@ -44,7 +44,7 @@ jobs:
         checks_json=$(gh pr checks \
           "${{ matrix.pr-number }}" \
           --repo "${{ github.repository }}" \
-          --json name,state,link)
+          --json name,bucket,link)
 
         total_count=$(echo "${checks_json}" | jq 'length')
         if [[ "${total_count}" -eq 0 ]]; then
@@ -52,9 +52,9 @@ jobs:
           exit 0
         fi
 
-        pending_count=$(echo "${checks_json}" | jq '[.[] | select(.state == "PENDING" or .state == "QUEUED" or .state == "IN_PROGRESS")] | length')
-        passed_count=$(echo "${checks_json}" | jq '[.[] | select(.state == "SUCCESS")] | length')
-        failed_checks=$(echo "${checks_json}" | jq -c '[.[] | select(.state == "FAILURE" or .state == "ERROR" or .state == "TIMED_OUT" or .state == "STARTUP_FAILURE" or .state == "CANCELLED")]')
+        pending_count=$(echo "${checks_json}" | jq '[.[] | select(.bucket == "pending")] | length')
+        passed_count=$(echo "${checks_json}" | jq '[.[] | select(.bucket == "pass")] | length')
+        failed_checks=$(echo "${checks_json}" | jq -c '[.[] | select(.bucket == "fail")]')
         failed_count=$(echo "${failed_checks}" | jq 'length')
 
         {
