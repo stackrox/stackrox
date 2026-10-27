@@ -67,7 +67,7 @@ in_db() {
 
 # in_db_sh runs a shell snippet in the running db container.
 in_db_sh() {
-    kc exec deploy/scanner-v4-db -c db -- bash -ec "$1"
+    kc exec deploy/scanner-v4-db -c db -- env PGPASSWORD="${PGPASSWORD:-}" bash -ec "$1"
 }
 
 # psql_all runs a query against every non-template database and prints
