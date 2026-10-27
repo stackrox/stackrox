@@ -92,7 +92,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      */
     const isValidRules =
         !getIsUnrestrictedAccessScopeId(values.id) && getIsValidRules(values.rules);
-    /* eslint-disable react-hooks/exhaustive-deps */
+    /* eslint-disable @eslint-react/exhaustive-deps */
     useEffect(() => {
         if (getIsUnrestrictedAccessScopeId(values.id)) {
             return;
@@ -118,7 +118,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
             });
     }, [isValidRules, values.rules]);
     // values.id
-    /* eslint-enable react-hooks/exhaustive-deps */
+    /* eslint-enable @eslint-react/exhaustive-deps */
 
     function onChange(_value, event) {
         handleChange(event);

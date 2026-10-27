@@ -49,6 +49,18 @@ ensure_CI() {
     fi
 }
 
+# validate_image_tag rejects empty tags and tags that contain whitespace.
+# Docker and Kubernetes reject image references with leading or trailing whitespace.
+validate_image_tag() {
+    local tag="${1:-}"
+    if [[ -z "$tag" ]]; then
+        die "image tag is not provided or empty"
+    fi
+    if [[ "$tag" =~ [[:space:]] ]]; then
+        die "image tag '$(printf %q "$tag")' contains whitespace; image tags must not include spaces, tabs, or newlines"
+    fi
+}
+
 ci_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: ci_export <env-name> <env-value>"
@@ -1067,7 +1079,7 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
-        *nongroovy-e2e-tests*|*qa-e2e-tests*)
+        *nongroovy-e2e-tests*|*qa-e2e-tests*|*ui-e2e-tests*)
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
@@ -1095,16 +1107,24 @@ END
             fi
             ;;
         *)
-            cat >> "${image_list}" << END
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-central-db ${tag}
+release-main ${tag}
+release-roxctl ${tag}
+END
+            else
+                cat >> "${image_list}" << END
 central-db ${tag}
 main ${tag}
 roxctl ${tag}
 END
+            fi
             ;;
     esac
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
-            cat >> "${image_list}" << END
+        cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
 stackrox-operator-index ${operator_metadata_tag}

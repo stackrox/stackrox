@@ -91,12 +91,13 @@ func TestVulnMgmtHandler_V1(t *testing.T) {
 	assert.Equal(t, "image", imgEvent.Type)
 	assert.Equal(t, imageDigest, imgEvent.ImageDigest)
 
-	// Verify CVE event uses SHA digest.
+	// Verify CVE event uses SHA digest. No EPSS on the vuln, so the keys are null.
 	var cveEvent splunkCVEEvent
 	require.NoError(t, json.Unmarshal(events[2], &cveEvent))
 	assert.Equal(t, "cve", cveEvent.Type)
 	assert.Equal(t, imageDigest, cveEvent.ImageDigest)
 	assert.Equal(t, "CVE-2021-0001", cveEvent.CVE)
+	assertAbsentEPSS(t, events[2])
 }
 
 func TestVulnMgmtHandler_V2(t *testing.T) {
@@ -145,7 +146,12 @@ func TestVulnMgmtHandler_V2(t *testing.T) {
 					Name:    "openssl",
 					Version: "1.1.1",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{Cve: "CVE-2021-0001", Cvss: 7.5, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.1.2"}},
+						{
+							Cve:        "CVE-2021-0001",
+							Cvss:       7.5,
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.1.2"},
+							Epss:       &storage.EPSS{EpssProbability: 0.42, EpssPercentile: 0.91},
+						},
 					},
 				},
 			},
@@ -174,12 +180,53 @@ func TestVulnMgmtHandler_V2(t *testing.T) {
 	assert.Equal(t, "image", imgEvent.Type)
 	assert.Equal(t, imageDigest, imgEvent.ImageDigest)
 
-	// Verify CVE event uses SHA digest, NOT UUID.
+	// Verify CVE event uses SHA digest, NOT UUID, and carries EPSS decimals.
 	var cveEvent splunkCVEEvent
 	require.NoError(t, json.Unmarshal(events[2], &cveEvent))
 	assert.Equal(t, "cve", cveEvent.Type)
 	assert.Equal(t, imageDigest, cveEvent.ImageDigest)
 	assert.Equal(t, "CVE-2021-0001", cveEvent.CVE)
+	require.NotNil(t, cveEvent.EPSSProbability)
+	require.NotNil(t, cveEvent.EPSSPercentile)
+	assert.InDelta(t, 0.42, float64(*cveEvent.EPSSProbability), 0.00001)
+	assert.InDelta(t, 0.91, float64(*cveEvent.EPSSPercentile), 0.00001)
+}
+
+func TestEpssFields(t *testing.T) {
+	probability, percentile := epssFields(&storage.EmbeddedVulnerability{})
+	assert.Nil(t, probability)
+	assert.Nil(t, percentile)
+
+	probability, percentile = epssFields(&storage.EmbeddedVulnerability{
+		Epss: &storage.EPSS{},
+	})
+	require.NotNil(t, probability)
+	require.NotNil(t, percentile)
+	assert.Equal(t, float32(0), *probability)
+	assert.Equal(t, float32(0), *percentile)
+
+	encoded, err := json.Marshal(&splunkCVEEvent{
+		EPSSProbability: probability,
+		EPSSPercentile:  percentile,
+	})
+	require.NoError(t, err)
+	assert.Contains(t, string(encoded), `"epssProbability":0`)
+	assert.Contains(t, string(encoded), `"epssPercentile":0`)
+}
+
+func assertAbsentEPSS(t *testing.T, rawEvent json.RawMessage) {
+	t.Helper()
+	var cveEvent splunkCVEEvent
+	require.NoError(t, json.Unmarshal(rawEvent, &cveEvent))
+	assert.Nil(t, cveEvent.EPSSProbability)
+	assert.Nil(t, cveEvent.EPSSPercentile)
+
+	var raw map[string]any
+	require.NoError(t, json.Unmarshal(rawEvent, &raw))
+	assert.Contains(t, raw, "epssProbability")
+	assert.Nil(t, raw["epssProbability"])
+	assert.Contains(t, raw, "epssPercentile")
+	assert.Nil(t, raw["epssPercentile"])
 }
 
 func TestVulnMgmtHandler_V2SkipsEmptyUUID(t *testing.T) {
