@@ -459,6 +459,9 @@ KONFLUX_HELM_ARGS :=
 ifeq ($(USE_KONFLUX_IMAGES),true)
 KONFLUX_HELM_ARGS += --set manager.image.repository=quay.io/rhacs-eng/release-operator
 KONFLUX_HELM_ARGS += --set 'manager.imagePullSecrets[0].name=stackrox'
+KONFLUX_HELM_ARGS += --set 'manager.env[0].name=MEMORY_LIMIT_BYTES'
+KONFLUX_HELM_ARGS += --set 'manager.env[0].valueFrom.resourceFieldRef.containerName=manager'
+KONFLUX_HELM_ARGS += --set 'manager.env[0].valueFrom.resourceFieldRef.resource=limits.memory'
 KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_MAIN=quay.io/rhacs-eng/release-main:$(VERSION)
 KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER=quay.io/rhacs-eng/release-scanner:$(VERSION)
 KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_SLIM=quay.io/rhacs-eng/release-scanner:$(VERSION)
