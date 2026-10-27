@@ -158,22 +158,61 @@ func TestActualE2EDispatch(t *testing.T) {
 	job := object(object(w["jobs"])["should-dispatch"])
 	script := object(job["steps"].([]any)[0])["run"].(string)
 	for name, test := range map[string]struct {
-		facts       string
-		draft, fork bool
-		labels      string
-		wantAny     bool
+		facts, event, labels                  string
+		draft, fork, uiOnly                   bool
+		wantAny, wantGHAWait, wantKonfluxWait bool
 	}{
-		"should skip docs even when explicitly requested": {facts: `{"version":1,"complete":true,"every":["docs"]}`, labels: "e2e-qa-tests-gke", wantAny: false},
-		"should retain execution when unavailable":        {facts: `{"version":1,"complete":false,"every":[]}`, wantAny: true},
-		"should retain draft restrictions":                {facts: `{}`, draft: true, wantAny: false},
-		"should retain fork restrictions":                 {facts: `{}`, fork: true, wantAny: false},
+		"should skip docs and image waits even when explicitly requested": {
+			facts: `{"version":1,"complete":true,"every":["docs"]}`, labels: "e2e-qa-tests-gke\nkonflux-build",
+		},
+		"should skip docs and image waits on drafts": {
+			facts: `{"version":1,"complete":true,"every":["docs"]}`, draft: true, labels: "e2e-qa-tests-gke",
+		},
+		"should retain execution and image waits when unavailable": {
+			facts: `{"version":1,"complete":false,"every":[]}`, wantAny: true, wantGHAWait: true,
+		},
+		"should retain execution and image waits for product changes": {
+			facts: `{"version":1,"complete":true,"every":[]}`, wantAny: true, wantGHAWait: true,
+		},
+		"should retain draft restrictions": {facts: `{}`, draft: true},
+		"should wait for requested draft jobs": {
+			facts: `{}`, draft: true, labels: "e2e-qa-tests-gke", wantAny: true, wantGHAWait: true,
+		},
+		"should wait for requested Konflux draft jobs": {
+			facts: `{}`, draft: true, labels: "e2e-qa-tests-gke-konflux\nkonflux-build",
+			wantAny: true, wantGHAWait: true, wantKonfluxWait: true,
+		},
+		"should retain fork restrictions and image wait behavior": {
+			facts: `{}`, fork: true, wantGHAWait: true,
+		},
+		"should retain non-draft UI-only image wait behavior": {
+			facts: `{}`, uiOnly: true, wantGHAWait: true,
+		},
+		"should retain push execution and both image waits": {
+			facts: `{"version":1,"complete":true,"every":["docs"]}`, event: "push",
+			wantAny: true, wantGHAWait: true, wantKonfluxWait: true,
+		},
+		"should retain manual execution and both image waits": {
+			facts: `{"version":1,"complete":true,"every":["docs"]}`, event: "workflow_dispatch", draft: true,
+			wantAny: true, wantGHAWait: true, wantKonfluxWait: true,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			event := test.event
+			if event == "" {
+				event = "pull_request"
+			}
 			dir := t.TempDir()
 			out := filepath.Join(dir, "output")
 			require.NoError(t, os.WriteFile(filepath.Join(dir, "gh"), []byte("#!/usr/bin/env bash\nprintf '%s\\n' \"$LABELS\"\n"), 0o700))
 			cmd := exec.Command("python3", "-c", script)
-			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "LABELS="+test.labels, "input__file_facts="+test.facts, "input__event_name=pull_request", fmt.Sprintf("input__is_draft=%t", test.draft), fmt.Sprintf("input__is_fork=%t", test.fork), "input__ui_only_change=", "input__repo=stackrox/stackrox", "input__pr_number=1", "GITHUB_OUTPUT="+out)
+			cmd.Env = append(os.Environ(),
+				"PATH="+dir+":"+os.Getenv("PATH"), "LABELS="+test.labels,
+				"input__file_facts="+test.facts, "input__event_name="+event,
+				fmt.Sprintf("input__is_draft=%t", test.draft), fmt.Sprintf("input__is_fork=%t", test.fork),
+				fmt.Sprintf("input__ui_only_change=%t", test.uiOnly),
+				"input__repo=stackrox/stackrox", "input__pr_number=1", "GITHUB_OUTPUT="+out,
+			)
 			output, err := cmd.CombinedOutput()
 			require.NoError(t, err, string(output))
 			data, err := os.ReadFile(out)
@@ -188,6 +227,8 @@ func TestActualE2EDispatch(t *testing.T) {
 				any = any || run
 			}
 			require.Equal(t, test.wantAny, any)
+			require.Contains(t, string(data), fmt.Sprintf("wait-for-gha-images=%t\n", test.wantGHAWait))
+			require.Contains(t, string(data), fmt.Sprintf("wait-for-konflux-images=%t\n", test.wantKonfluxWait))
 		})
 	}
 }
@@ -333,6 +374,7 @@ func TestE2EConsumerWiring(t *testing.T) {
 func TestVerificationCannotBeSkippedByProductSelection(t *testing.T) {
 	w := workflow(t, "ci-selection.yaml")
 	require.Contains(t, object(w["on"]), "pull_request")
+	require.Contains(t, object(object(w["on"])["pull_request"])["types"], "ready_for_review")
 	job := object(object(w["jobs"])["verify"])
 	require.NotContains(t, job, "needs")
 	require.NotContains(t, job, "if")

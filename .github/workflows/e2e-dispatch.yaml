@@ -135,7 +135,11 @@ jobs:
             write('jobs', json.dumps(jobs))
 
             # Find out when we can complete the workflow early by not even waiting for GHA-built images.
-            wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
+            wait_for_gha_images = (
+                input.event_name != 'pull_request'
+                or (input.is_draft != 'true' and not input.docs_only)
+                or any(jobs.values())
+            )
             write('wait-for-gha-images', str(wait_for_gha_images).lower())
 
             # Waiting for konflux-built images in PR request context requires the 'konflux-build' PR label.
