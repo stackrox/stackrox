@@ -7,12 +7,7 @@ import {
 
 import type { ClusterStatus } from 'types/cluster.proto';
 
-import {
-    formatBuildDate,
-    formatCloudProvider,
-    formatKubernetesVersion,
-    formatOpenShiftVersion,
-} from '../cluster.helpers';
+import { formatBuildDate, formatCloudProvider, formatKubernetesVersion } from '../cluster.helpers';
 
 export type ClusterMetadataProps = {
     status: ClusterStatus;
@@ -31,7 +26,7 @@ function ClusterMetadata({ status }: ClusterMetadataProps) {
                 <DescriptionListGroup>
                     <DescriptionListTerm>OpenShift version</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {formatOpenShiftVersion(status.orchestratorMetadata)}
+                        {status.orchestratorMetadata.openshiftVersion}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
             )}
