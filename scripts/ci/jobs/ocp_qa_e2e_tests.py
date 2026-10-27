@@ -22,4 +22,4 @@ enable_sfa_for_ocp()
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
-make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
+make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster(sample_resources=True)).run()

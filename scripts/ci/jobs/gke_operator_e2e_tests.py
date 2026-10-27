@@ -14,7 +14,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["KUBERNETES_PROVIDER"] = "gke"
 
 ClusterTestRunner(
-    cluster=GKECluster("operator-e2e-test", num_nodes=4),
+    cluster=GKECluster("operator-e2e-test", num_nodes=4, sample_resources=True),
     pre_test=PreSystemTests(),
     test=OperatorE2eTest(operator_cluster_type="gke"),
     post_test=PostClusterTest(collect_central_artifacts=False),
