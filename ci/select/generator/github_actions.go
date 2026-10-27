@@ -37,7 +37,8 @@ on:
         value: {{ "${{ jobs.detect.outputs.ui_only }}" }}
 {{- range .DomainFlags }}
       {{ .Name }}:
-        description: {{ .Description }}
+        description: >
+          {{ .Description }}
         value: {{ "${{ jobs.detect.outputs." }}{{ .Name }}{{ " }}" }}
 {{- end }}
 

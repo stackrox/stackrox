@@ -27,58 +27,76 @@ on:
           otherwise. Skip non-UI jobs with: if: !needs.X.outputs.ui_only
         value: ${{ jobs.detect.outputs.ui_only }}
       ci_run_all_tests_label:
-        description: 'true' if Force run all tests when label present
+        description: >
+          'true' if Force run all tests when label present
         value: ${{ jobs.detect.outputs.ci_run_all_tests_label }}
       area_sensor_label:
-        description: 'true' if Run sensor-related tests when area/sensor label present
+        description: >
+          'true' if Run sensor-related tests when area/sensor label present
         value: ${{ jobs.detect.outputs.area_sensor_label }}
       area_central_label:
-        description: 'true' if Run central-related tests when area/central label present
+        description: >
+          'true' if Run central-related tests when area/central label present
         value: ${{ jobs.detect.outputs.area_central_label }}
       area_ui_label:
-        description: 'true' if Run UI tests when area/ui label present
+        description: >
+          'true' if Run UI tests when area/ui label present
         value: ${{ jobs.detect.outputs.area_ui_label }}
       go_mod_changes:
-        description: 'true' if go.mod/go.sum changes affect all Go code
+        description: >
+          'true' if go.mod/go.sum changes affect all Go code
         value: ${{ jobs.detect.outputs.go_mod_changes }}
       proto_changes:
-        description: 'true' if Proto changes affect generated code across codebase
+        description: >
+          'true' if Proto changes affect generated code across codebase
         value: ${{ jobs.detect.outputs.proto_changes }}
       generated_code_changes:
-        description: 'true' if Generated code changes need full validation
+        description: >
+          'true' if Generated code changes need full validation
         value: ${{ jobs.detect.outputs.generated_code_changes }}
       docs_only_skip:
-        description: 'true' if Skip most tests for docs-only changes
+        description: >
+          'true' if Skip most tests for docs-only changes
         value: ${{ jobs.detect.outputs.docs_only_skip }}
       ui_only_skip_backend:
-        description: 'true' if Skip backend tests for UI-only changes
+        description: >
+          'true' if Skip backend tests for UI-only changes
         value: ${{ jobs.detect.outputs.ui_only_skip_backend }}
       sensor_subsystem:
-        description: 'true' if Sensor code changes need sensor tests
+        description: >
+          'true' if Sensor code changes need sensor tests
         value: ${{ jobs.detect.outputs.sensor_subsystem }}
       central_subsystem:
-        description: 'true' if Central code changes need central tests
+        description: >
+          'true' if Central code changes need central tests
         value: ${{ jobs.detect.outputs.central_subsystem }}
       scanner_subsystem:
-        description: 'true' if Scanner code changes
+        description: >
+          'true' if Scanner code changes
         value: ${{ jobs.detect.outputs.scanner_subsystem }}
       operator_subsystem:
-        description: 'true' if Operator code changes
+        description: >
+          'true' if Operator code changes
         value: ${{ jobs.detect.outputs.operator_subsystem }}
       ci_tooling_changes:
-        description: 'true' if CI tooling changes need validation but can skip E2E
+        description: >
+          'true' if CI tooling changes need validation but can skip E2E
         value: ${{ jobs.detect.outputs.ci_tooling_changes }}
       go_sources:
-        description: 'true' if Any .go file change needs Go tests
+        description: >
+          'true' if Any .go file change needs Go tests
         value: ${{ jobs.detect.outputs.go_sources }}
       shell_scripts:
-        description: 'true' if Shell script changes need shell tests
+        description: >
+          'true' if Shell script changes need shell tests
         value: ${{ jobs.detect.outputs.shell_scripts }}
       ui_sources:
-        description: 'true' if UI source changes need UI tests
+        description: >
+          'true' if UI source changes need UI tests
         value: ${{ jobs.detect.outputs.ui_sources }}
       style_always:
-        description: 'true' if Style checks run on every PR
+        description: >
+          'true' if Style checks run on every PR
         value: ${{ jobs.detect.outputs.style_always }}
 
 jobs:
