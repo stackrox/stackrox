@@ -1,5 +1,7 @@
 package sizeboundedcache
 
+// CI-TEST: Validating go-sources rule - any .go file should trigger go tests
+
 import (
 	"math"
 	"sync/atomic"
