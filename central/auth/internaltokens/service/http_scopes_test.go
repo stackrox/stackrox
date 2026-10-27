@@ -19,7 +19,7 @@ func TestApprovedHTTPScopes(t *testing.T) {
 		expected      tokens.HTTPRequestScopes
 		invalid       bool
 	}{
-		"older console sensor": {
+		"console permission set without requested HTTP scopes": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
 			expected:      centralproxy.ConsoleHTTPScopes,
 		},

@@ -175,7 +175,7 @@ func approvedHTTPScopes(req *v1.GenerateTokenForPermissionsAndScopeRequest) (tok
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
-	// Older Sensors do not specify HTTP scopes; Central still signs its own profile.
+	// Permission-set requests without HTTP scopes receive the full Central-managed profile.
 	if len(requested) == 0 {
 		return allowed, nil
 	}
