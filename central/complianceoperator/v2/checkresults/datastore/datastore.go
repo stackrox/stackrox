@@ -8,6 +8,7 @@ import (
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -78,7 +79,7 @@ type DataStore interface {
 
 // New returns the datastore wrapper for compliance operator check results
 func New(store store.Store, db postgres.DB) DataStore {
-	return &datastoreImpl{store: store, db: db}
+	return &datastoreImpl{store: store, db: db, keyFence: concurrency.NewKeyFence()}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.

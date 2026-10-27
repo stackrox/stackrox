@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -559,7 +560,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpdateFreshnessByScanConfi
 	// The other scan config is untouched (still UNKNOWN).
 	s.assertFreshness(otherRec.GetId(), storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN)
 
-	// Second sweep with no change writes zero rows (the IS DISTINCT FROM guard).
+	// Second sweep with no change writes zero rows (only rows whose freshness differs are upserted).
 	updated, err = s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-sweep", staleBefore)
 	s.Require().NoError(err)
 	s.Require().Zero(updated)
@@ -611,6 +612,55 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStaleByScanRef() {
 	updated, err = s.dataStore.MarkStaleByScanRef(s.hasWriteCtx, rec1.GetScanRefId())
 	s.Require().NoError(err)
 	s.Require().Zero(updated)
+}
+
+// TestUpdateFreshnessDoesNotRevertConcurrentUpsert is a regression test for the lost-update
+// race (PR #23605 review): the sweeper's read-modify-upsert of the serialized proto must not
+// overwrite a newer result written concurrently by the ingest path. The key fence serializes
+// the two writers and makes the sweeper re-read under the lock, so the newer Status survives.
+func (s *complianceCheckResultDataStoreTestSuite) TestUpdateFreshnessDoesNotRevertConcurrentUpsert() {
+	now := time.Now()
+	staleBefore := now.Add(-85 * time.Minute)
+	oldTime := now.Add(-10 * time.Hour)
+
+	const n = 50
+	recs := make([]*storage.ComplianceOperatorCheckResultV2, 0, n)
+	for i := 0; i < n; i++ {
+		rec := getTestRecForScan("sc-race", testconsts.Cluster1, fmt.Sprintf("scan-%d", i))
+		rec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		rec.Status = storage.ComplianceOperatorCheckResultV2_INFO
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+		recs = append(recs, rec)
+	}
+
+	// Concurrently: the sweeper flips every row UNKNOWN -> STALE, while the ingest path rewrites
+	// each row with a new Status. Without the fence the sweeper could re-upsert its old snapshot
+	// over the ingest, reverting Status to INFO. With the fence, the final Status must be PASS.
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		_, err := s.dataStore.UpdateFreshnessByScanConfig(s.hasWriteCtx, "sc-race", staleBefore)
+		s.NoError(err)
+	}()
+	go func() {
+		defer wg.Done()
+		for _, rec := range recs {
+			updated := rec.CloneVT()
+			updated.Status = storage.ComplianceOperatorCheckResultV2_PASS
+			s.NoError(s.dataStore.UpsertResult(s.hasWriteCtx, updated))
+		}
+	}()
+	wg.Wait()
+
+	// Every row keeps the ingest's newer Status (not reverted), and the sweeper settled
+	// freshness to STALE (its last read saw the old-enough LastStartedTime).
+	for _, rec := range recs {
+		stored, found, err := s.storage.Get(s.hasReadCtx, rec.GetId())
+		s.Require().NoError(err)
+		s.Require().True(found)
+		s.Equal(storage.ComplianceOperatorCheckResultV2_PASS, stored.GetStatus(), "Status reverted for %s", rec.GetId())
+	}
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) assertFreshness(id string, expected storage.ComplianceDataFreshness) {
