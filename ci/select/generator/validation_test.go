@@ -206,6 +206,93 @@ func TestValidateConfig(t *testing.T) {
 			},
 			wantError: false,
 		},
+		"duplicate job name": {
+			config: &Config{
+				Version: 1,
+				Jobs:    []string{"go", "style-check", "go"}, // duplicate "go"
+				Defaults: map[string]string{
+					"go":          "run",
+					"style-check": "run",
+				},
+			},
+			wantError: true,
+			errorMsg:  `duplicate job name "go"`,
+		},
+		"duplicate rule name": {
+			config: &Config{
+				Version: 1,
+				Jobs:    []string{"go"},
+				Defaults: map[string]string{
+					"go": "run",
+				},
+				Rules: []Rule{
+					{
+						Name: "go-changes",
+						When: Condition{
+							AnyFileMatches: []string{`\.go$`},
+						},
+						Action: Action{
+							Run: []string{"go"},
+						},
+					},
+					{
+						Name: "go-changes", // duplicate
+						When: Condition{
+							Label: "ci-run-all",
+						},
+						Action: Action{
+							Run: []string{"go"},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  `duplicate rule name "go-changes"`,
+		},
+		"invalid regex pattern in any_file_matches": {
+			config: &Config{
+				Version: 1,
+				Jobs:    []string{"go"},
+				Defaults: map[string]string{
+					"go": "run",
+				},
+				Rules: []Rule{
+					{
+						Name: "bad-regex",
+						When: Condition{
+							AnyFileMatches: []string{`[invalid`}, // unclosed bracket
+						},
+						Action: Action{
+							Run: []string{"go"},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  `rule "bad-regex" has invalid regex pattern`,
+		},
+		"invalid regex pattern in every_file_matches": {
+			config: &Config{
+				Version: 1,
+				Jobs:    []string{"go"},
+				Defaults: map[string]string{
+					"go": "run",
+				},
+				Rules: []Rule{
+					{
+						Name: "bad-regex-every",
+						When: Condition{
+							EveryFileMatches: []string{`*invalid*`}, // invalid quantifier
+						},
+						Action: Action{
+							Skip: []string{"go"},
+						},
+					},
+				},
+			},
+			wantError: true,
+			errorMsg:  `rule "bad-regex-every" has invalid regex pattern`,
+		},
 	}
 
 	for name, tt := range tests {

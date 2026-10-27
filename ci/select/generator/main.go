@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"gopkg.in/yaml.v3"
 )
@@ -71,6 +72,15 @@ func validateConfig(config *Config) error {
 		return fmt.Errorf("no jobs defined")
 	}
 
+	// Check for duplicate job names
+	jobSet := make(map[string]bool)
+	for _, job := range config.Jobs {
+		if jobSet[job] {
+			return fmt.Errorf("duplicate job name %q", job)
+		}
+		jobSet[job] = true
+	}
+
 	// Check that all jobs have defaults
 	for _, job := range config.Jobs {
 		if _, ok := config.Defaults[job]; !ok {
@@ -86,10 +96,17 @@ func validateConfig(config *Config) error {
 	}
 
 	// Validate rules
+	ruleNames := make(map[string]bool)
 	for i, rule := range config.Rules {
 		if rule.Name == "" {
 			return fmt.Errorf("rule %d has no name", i)
 		}
+
+		// Check for duplicate rule names
+		if ruleNames[rule.Name] {
+			return fmt.Errorf("duplicate rule name %q", rule.Name)
+		}
+		ruleNames[rule.Name] = true
 
 		// Check that condition has exactly one matcher
 		numMatchers := 0
@@ -111,6 +128,18 @@ func validateConfig(config *Config) error {
 		}
 		if numMatchers > 1 {
 			return fmt.Errorf("rule %q has multiple conditions (only one allowed)", rule.Name)
+		}
+
+		// Validate regex patterns
+		for _, pattern := range rule.When.AnyFileMatches {
+			if _, err := regexp.Compile(pattern); err != nil {
+				return fmt.Errorf("rule %q has invalid regex pattern %q: %w", rule.Name, pattern, err)
+			}
+		}
+		for _, pattern := range rule.When.EveryFileMatches {
+			if _, err := regexp.Compile(pattern); err != nil {
+				return fmt.Errorf("rule %q has invalid regex pattern %q: %w", rule.Name, pattern, err)
+			}
 		}
 
 		// Check that action has run or skip
