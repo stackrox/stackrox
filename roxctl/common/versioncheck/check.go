@@ -109,8 +109,7 @@ func CheckCentralVersion(centralVersion string) (*CheckResult, error) {
 	}, nil
 }
 
-// guidance returns structured guidance for the given compatibility classification,
-// describing the version relationship and recommended actions.
+// guidance returns summary and recommended actions for the given compatibility.
 func guidance(c versioncompatibility.Compatibility) (string, string) {
 	switch c {
 	case versioncompatibility.Matched:
