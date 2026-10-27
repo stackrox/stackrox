@@ -1,4 +1,4 @@
-ARG PG_VERSION=15
+ARG PG_VERSION=16
 FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest
 
 USER root
@@ -10,6 +10,7 @@ COPY --link init-bundles/db-init.dump.zst /db-init.dump.zst
 
 RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     --mount=type=cache,target=/var/cache/yum,sharing=locked \
+    dnf install -y postgresql-upgrade && \
     dnf upgrade -y --nobest && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /var/lib/postgresql && \
