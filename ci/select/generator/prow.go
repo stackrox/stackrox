@@ -48,7 +48,7 @@ has_test_override() {
 
     # Get comments after commit time
     local comments
-    comments="$(gh api "repos/${repo}/pulls/${PULL_NUMBER}/comments" \
+    comments="$(gh api --paginate "repos/${repo}/issues/${PULL_NUMBER}/comments" \
         --jq ".[] | select(.created_at >= \"${commit_time}\") | .body" 2>/dev/null)" || return 1
 
     # Check for /test <job> or /test all
@@ -63,7 +63,7 @@ has_test_override() {
 has_label() {
     local label="$1"
     local labels="$2"
-    grep -qF "${label}" <<< "${labels}"
+    grep -qxF "${label}" <<< "${labels}"
 }
 
 # Check if any file matches any of the patterns (extended regex)
