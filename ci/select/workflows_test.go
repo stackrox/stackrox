@@ -145,6 +145,13 @@ func TestImageWaitSelectionPreservesRequiredChecks(t *testing.T) {
 		assert.Empty(t, workflow.Jobs[job.name].If, job.name)
 		assert.NotEmpty(t, workflow.Jobs[job.name].Uses, job.name)
 	}
+	for name, job := range workflow.Jobs {
+		if strings.HasPrefix(job.Uses, "./.github/workflows/e2e-") {
+			assert.True(t, slices.ContainsFunc(dispatchJobs, func(job dispatchJob) bool {
+				return job.name == name
+			}), "dispatched workflow %s is missing from the selector", name)
+		}
+	}
 }
 
 func TestRequiredGHACheckInventory(t *testing.T) {

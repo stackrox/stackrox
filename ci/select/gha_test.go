@@ -238,13 +238,83 @@ func TestBackupRestoreDispatch(t *testing.T) {
 	}
 }
 
+func TestUIE2EDispatch(t *testing.T) {
+	const (
+		ghaJob     = "e2e-ui-tests-gke"
+		konfluxJob = "e2e-ui-tests-gke-konflux"
+	)
+	for name, test := range map[string]struct {
+		input        dispatchInput
+		gha, konflux bool
+	}{
+		"should run both jobs on pushes": {gha: true, konflux: true},
+		"should keep the GHA job opt-in for non-UI changes": {
+			input: dispatchInput{pullRequest: true, labels: []string{"konflux-build"}}, konflux: true,
+		},
+		"should run the GHA job for UI-only changes": {
+			input: dispatchInput{pullRequest: true, uiOnly: true}, gha: true,
+		},
+		"should run the GHA job for draft UI-only changes": {
+			input: dispatchInput{pullRequest: true, uiOnly: true, draft: true}, gha: true,
+		},
+		"should run both UI jobs when Konflux builds are enabled": {
+			input: dispatchInput{pullRequest: true, uiOnly: true, labels: []string{"konflux-build"}}, gha: true, konflux: true,
+		},
+		"should skip draft non-UI changes": {
+			input: dispatchInput{pullRequest: true, draft: true, labels: []string{"konflux-build"}},
+		},
+		"should honor an explicit GHA job label on drafts": {
+			input: dispatchInput{pullRequest: true, draft: true, labels: []string{ghaJob}}, gha: true,
+		},
+		"should skip forks": {
+			input: dispatchInput{pullRequest: true, fork: true, uiOnly: true, labels: []string{ghaJob, "konflux-build"}},
+		},
+		"should skip enforced documentation changes": {
+			input: dispatchInput{pullRequest: true, enforce: true},
+		},
+		"should select the GHA job for enforced UI changes": {
+			input: dispatchInput{pullRequest: true, enforce: true, uiOnly: true}, gha: true,
+		},
+		"should select both jobs for enforced UI changes with Konflux builds": {
+			input: dispatchInput{pullRequest: true, enforce: true, uiOnly: true, labels: []string{"konflux-build"}}, gha: true, konflux: true,
+		},
+		"should honor the GHA job label for enforced documentation changes": {
+			input: dispatchInput{pullRequest: true, enforce: true, labels: []string{ghaJob}}, gha: true,
+		},
+		"should require builds for the enforced Konflux job label": {
+			input: dispatchInput{pullRequest: true, enforce: true, labels: []string{konfluxJob}},
+		},
+		"should honor the Konflux job label with builds enabled": {
+			input: dispatchInput{pullRequest: true, enforce: true, labels: []string{konfluxJob, "konflux-build"}}, konflux: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			files := []string{"README.md"}
+			if test.input.uiOnly {
+				files = []string{"ui/example.tsx"}
+			}
+			resolved, d, err := openDecision("../test-domains.yaml", "../decision-defaults", files, test.input.labels, false, metadata{})
+			require.NoError(t, err)
+			plan := dispatchPlan(test.input, &resolved, d)
+			var jobs map[string]bool
+			require.NoError(t, json.Unmarshal([]byte(plan["jobs"]), &jobs))
+			assert.Equal(t, test.gha, jobs[ghaJob])
+			assert.Equal(t, test.konflux, jobs[konfluxJob])
+			if test.input.enforce {
+				assert.Equal(t, fmt.Sprint(test.gha), plan["wait-for-gha-images"])
+				assert.Equal(t, fmt.Sprint(test.konflux), plan["wait-for-konflux-images"])
+			}
+		})
+	}
+}
+
 func TestGHAImageDependencies(t *testing.T) {
 	for name, test := range map[string]struct {
 		files, labels        []string
 		waitGHA, waitKonflux bool
 	}{
 		"no GHA consumers": {files: []string{"README.md"}},
-		"Prow UI consumer": {files: []string{"ui/example.tsx"}},
+		"UI consumers":     {files: []string{"ui/example.tsx"}, waitGHA: true},
 		"GHA consumer":     {files: []string{"README.md"}, labels: []string{"e2e-gke-upgrade-tests"}, waitGHA: true},
 		"Konflux consumer": {
 			files: []string{"README.md"}, labels: []string{"e2e-nongroovy-tests-gke-konflux", "konflux-build"}, waitKonflux: true,

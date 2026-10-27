@@ -24,6 +24,8 @@ e2e-nongroovy-tests-gke-konflux run
 e2e-qa-tests-gke skip
 e2e-qa-tests-gke-konflux skip
 e2e-qa-tests-ocp-fips-konflux skip
+e2e-ui-tests-gke run
+e2e-ui-tests-gke-konflux run
 gke-nongroovy-e2e-tests run
 gke-qa-e2e-tests skip
 gke-ui-e2e-tests run

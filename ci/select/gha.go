@@ -167,6 +167,7 @@ type dispatchJob struct {
 	name           string
 	requireLabel   bool
 	requireKonflux bool
+	uiTest         bool
 }
 
 var dispatchJobs = []dispatchJob{
@@ -179,6 +180,8 @@ var dispatchJobs = []dispatchJob{
 	{name: "e2e-qa-tests-gke", requireLabel: true},
 	{name: "e2e-qa-tests-gke-konflux", requireKonflux: true},
 	{name: "e2e-qa-tests-ocp-fips-konflux", requireKonflux: true},
+	{name: "e2e-ui-tests-gke", requireLabel: true, uiTest: true},
+	{name: "e2e-ui-tests-gke-konflux", requireKonflux: true, uiTest: true},
 }
 
 type dispatchInput struct {
@@ -196,7 +199,10 @@ func legacyDispatch(job dispatchJob, input dispatchInput) bool {
 	if job.requireKonflux && !slices.Contains(input.labels, "konflux-build") {
 		return false
 	}
-	return !input.uiOnly && !job.requireLabel && !input.draft
+	if input.uiOnly {
+		return job.uiTest
+	}
+	return !job.requireLabel && !input.draft
 }
 
 func dispatchPlan(input dispatchInput, resolved *result, d defaults) map[string]string {

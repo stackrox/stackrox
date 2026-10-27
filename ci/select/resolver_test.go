@@ -128,7 +128,7 @@ func TestCurrentRules(t *testing.T) {
 		complete                   bool
 	}{
 		"docs":                   {files: []string{"README.md"}, runs: []string{"style-check", "build-images"}, complete: true},
-		"UI":                     {files: []string{"ui/example.tsx"}, runs: []string{"style-check", "build-images", "ui", "ui-component", "gke-ui-e2e-tests"}, complete: true},
+		"UI":                     {files: []string{"ui/example.tsx"}, runs: []string{"style-check", "build-images", "ui", "ui-component", "gke-ui-e2e-tests", "e2e-ui-tests-gke", "e2e-ui-tests-gke-konflux", "wait-for-images", "wait-for-konflux-images", "should-dispatch"}, complete: true},
 		"empty diff":             {runs: []string{"style-check", "build-images"}, complete: true},
 		"shared product":         {files: []string{"sensor/common/foo.go", "central/policy/service.go"}, runs: []string{"go", "go-postgres", "sensor-integration-tests"}},
 		"module":                 {files: []string{"go.mod"}, runs: m.Jobs, complete: true},
