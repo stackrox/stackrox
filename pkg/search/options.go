@@ -267,6 +267,7 @@ var (
 	ComplianceOperatorSeverity                 = newFieldLabel("Compliance Rule Severity")
 	ComplianceOperatorStatus                   = newFieldLabel("Compliance Operator Status")
 	ComplianceOperatorCheckStatus              = newFieldLabel("Compliance Check Status")
+	ComplianceDataFreshness                    = newFieldLabel("Compliance Data Freshness")
 	ComplianceOperatorRuleName                 = newFieldLabel("Compliance Rule Name")
 	ComplianceOperatorProfileID                = newFieldLabel("Compliance Profile ID")
 	ComplianceOperatorProfileName              = newFieldLabel("Compliance Profile Name")
