@@ -197,6 +197,9 @@ jobs:
         [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
 
     - name: make golangci-lint
+      env:
+        GOGC: "50"
+        GOMEMLIMIT: 12GiB
       run: make golangci-lint
 
     - name: Check Cache golangci-lint
