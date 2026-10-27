@@ -1148,9 +1148,23 @@ END
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
         if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+            # Konflux always publishes the operator-index under the plain
+            # (non "release-") name, with a tag that forces a "-fast" suffix
+            # (even for tags that otherwise wouldn't carry one, e.g. release
+            # tags) to avoid colliding with GHA-built index images of the
+            # same name. Mirrors the determine-index-tag logic in
+            # .tekton/operator-index-build.yaml. deploy_stackrox_operator()
+            # always resolves this plain name/tag regardless of
+            # USE_KONFLUX_IMAGES (see operator/Makefile's INDEX_IMG_BASE),
+            # so it must be waited for here too.
+            local index_tag="${operator_controller_tag}"
+            if [[ "${index_tag}" != *-fast ]]; then
+                index_tag="${index_tag}-fast"
+            fi
             cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
 release-operator-bundle ${operator_metadata_tag}
+stackrox-operator-index v${index_tag}
 END
         else
             cat >> "${image_list}" << END
