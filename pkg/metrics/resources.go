@@ -18,7 +18,6 @@ const (
 	Node
 	NodeInventory
 	ProviderMetadata
-	ComplianceReturn
 	ImageIntegration
 	ServiceAccount
 	PermissionSet
@@ -26,11 +25,7 @@ const (
 	RoleBinding
 	DeploymentReprocess
 	Pod
-	ComplianceOperatorCheckResult
-	ComplianceOperatorProfile
 	ComplianceOperatorScanSettingBinding
-	ComplianceOperatorRule
-	ComplianceOperatorScan
 	ComplianceOperatorInfo
 	ComplianceOperatorCheckResultV2
 	ComplianceOperatorRuleV2
