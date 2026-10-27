@@ -178,6 +178,15 @@ func TestEnforce(t *testing.T) {
 			clusterID:      fixtureconsts.Cluster1,
 			expectedScopes: tokens.HTTPRequestScopes{"/metrics": {"GET"}},
 		},
+		"legacy metrics permission set without HTTP scopes": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:    metricsScope,
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:      fixtureconsts.Cluster1,
+			expectedScopes: centralproxy.MetricsHTTPScopes,
+		},
 		"metrics permission set can request explicit read route": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
@@ -259,6 +268,14 @@ func TestEnforce(t *testing.T) {
 			},
 			clusterID:      fixtureconsts.Cluster1,
 			expectedScopes: tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
+		},
+		"legacy console permission set without HTTP scopes": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:      fixtureconsts.Cluster1,
+			expectedScopes: centralproxy.ConsoleHTTPScopes,
 		},
 		"console permission set can request approved scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{

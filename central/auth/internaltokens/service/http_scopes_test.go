@@ -23,9 +23,9 @@ func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 		expected      tokens.HTTPRequestScopes
 		invalid       bool
 	}{
-		"console permission set needs HTTP scopes": {
+		"console permission set uses built-in scopes when omitted": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
-			invalid:       true,
+			expected:      centralproxy.ConsoleHTTPScopes,
 		},
 		"console subset": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,
@@ -42,9 +42,9 @@ func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql"}},
 			invalid:       true,
 		},
-		"metrics permission set needs HTTP scopes": {
+		"metrics permission set uses built-in scopes when omitted": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
-			invalid:       true,
+			expected:      centralproxy.MetricsHTTPScopes,
 		},
 		"metrics accepts explicit non-profile read route": {
 			permissionSet: centralproxy.MetricsPermissionSetID,

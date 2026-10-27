@@ -161,6 +161,14 @@ func (p *tokenPolicy) enforce(
 				}
 			}
 		}
+		if len(scopes) == 0 && len(req.GetPermissionSetIds()) == 1 {
+			switch req.GetPermissionSetIds()[0] {
+			case centralproxy.ConsoleProxyPermissionSetID:
+				scopes = centralproxy.ConsoleHTTPScopes
+			case centralproxy.MetricsPermissionSetID:
+				scopes = centralproxy.MetricsHTTPScopes
+			}
+		}
 		hasMethod := false
 		for _, methods := range scopes {
 			if len(methods) > 0 {
