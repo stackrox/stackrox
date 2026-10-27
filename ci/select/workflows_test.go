@@ -24,8 +24,51 @@ type ghaWorkflow struct {
 		Strategy       struct{ Matrix yaml.Node }
 		Steps          []struct {
 			ID, If, Name, Run, Uses string
+			ContinueOnError         bool `yaml:"continue-on-error"`
 		}
 	}
+}
+
+func TestEnforcedJobsReachSelector(t *testing.T) {
+	for file, names := range map[string][]string{
+		"unit-tests.yaml":                   {"go-bench", "ui", "ui-component", "local-roxctl-tests", "shell-unit-tests", "sensor-integration-tests"},
+		"style.yaml":                        {"check-generated-files", "golangci-lint", "check-dependent-images-exist", "github-actions-lint", "openshift-ci-lint"},
+		"check-crd-compatibility.yaml":      {"check-crd-compatibility"},
+		"scanner-db-integration-tests.yaml": {"db-integration-tests"},
+	} {
+		workflow := readWorkflow(t, file)
+		for _, name := range names {
+			t.Run(file+"/"+name, func(t *testing.T) {
+				job := workflow.Jobs[name]
+				assert.True(t, strings.HasPrefix(job.If,
+					"contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||"), job.If)
+				assert.Contains(t, job.If, "needs.detect-changes.outputs.")
+				foundGate := false
+				for _, step := range job.Steps {
+					foundGate = foundGate || step.Run == "ci/select/gha-gate.sh "+name
+				}
+				assert.True(t, foundGate)
+			})
+		}
+	}
+}
+
+func TestCIValidationCannotBeSkipped(t *testing.T) {
+	job := readWorkflow(t, "ci-select-tests.yaml").Jobs["selector-tests"]
+	foundValidation := false
+	for _, step := range job.Steps {
+		if step.Uses == "./.github/actions/ci-select" {
+			assert.False(t, step.ContinueOnError)
+		}
+		if step.Run == "ci/select/bin/ci-select validate" {
+			assert.Empty(t, step.If)
+			foundValidation = true
+		}
+		if step.ID == "ci-decision" {
+			assert.True(t, foundValidation, "configuration validation must precede selection")
+		}
+	}
+	assert.True(t, foundValidation)
 }
 
 func readWorkflow(t *testing.T, name string) ghaWorkflow {

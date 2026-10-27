@@ -27,7 +27,7 @@ func changedFiles(ctx context.Context, base, head string) ([]string, bool) {
 	if base == "" || head == "" {
 		return []string{}, true
 	}
-	text, err := gitOutput(ctx, "diff", "--name-only", "-z", base+"..."+head, "--")
+	text, err := gitOutput(ctx, "diff", "--no-renames", "--name-only", "-z", base+"..."+head, "--")
 	if err != nil {
 		return []string{}, true
 	}
@@ -201,6 +201,7 @@ func legacyDispatch(job dispatchJob, input dispatchInput) bool {
 func dispatchPlan(input dispatchInput, resolved *result, d defaults) map[string]string {
 	jobs := map[string]bool{}
 	anyRuns := false
+	ghaRuns, konfluxRuns := false, false
 	for _, job := range dispatchJobs {
 		runs := legacyDispatch(job, input)
 		if input.enforce && resolved != nil && d.actions[job.name] != "" {
@@ -211,15 +212,20 @@ func dispatchPlan(input dispatchInput, resolved *result, d defaults) map[string]
 		}
 		jobs[job.name] = runs
 		anyRuns = anyRuns || runs
+		if job.requireKonflux {
+			konfluxRuns = konfluxRuns || runs
+		} else {
+			ghaRuns = ghaRuns || runs
+		}
 	}
 	waitGHA := !input.fork && (!input.pullRequest || !input.draft || anyRuns)
 	if input.enforce && resolved != nil && d.actions["wait-for-images"] != "" {
-		waitGHA = !input.fork && resolved.jobs["wait-for-images"]
+		waitGHA = !input.fork && (resolved.jobs["wait-for-images"] || ghaRuns)
 	}
 	// The Konflux label is required for its PR builds even when selection is enforced.
 	waitKonflux := !input.pullRequest || (slices.Contains(input.labels, "konflux-build") && anyRuns)
 	if input.enforce && resolved != nil && d.actions["wait-for-konflux-images"] != "" {
-		waitKonflux = !input.fork && slices.Contains(input.labels, "konflux-build") && resolved.jobs["wait-for-konflux-images"]
+		waitKonflux = !input.fork && slices.Contains(input.labels, "konflux-build") && (resolved.jobs["wait-for-konflux-images"] || konfluxRuns)
 	}
 	encoded, _ := json.Marshal(jobs)
 	return map[string]string{
@@ -237,15 +243,8 @@ func ghaDispatchCI(ctx context.Context, output, diagnostic io.Writer) error {
 		uiOnly:      os.Getenv("CI_UI_ONLY") == "true",
 	}
 	if input.pullRequest {
-		meta := envMetadata()
-		labels, err := newGitHubClient().labels(ctx, meta.repo, meta.pr)
-		if err != nil {
-			input.labels = readList(strings.ReplaceAll(os.Getenv("PR_LABELS"), ",", "\n"))
-			fmt.Fprintf(diagnostic, "Cannot read live dispatch labels (%v); using event labels and existing dispatch rules with enforcement disabled\n", err)
-		} else {
-			input.labels = labels
-			input.enforce = slices.Contains(labels, enforceLabel)
-		}
+		input.labels = readList(strings.ReplaceAll(os.Getenv("PR_LABELS"), ",", "\n"))
+		input.enforce = slices.Contains(input.labels, enforceLabel)
 	}
 	var resolved *result
 	var d defaults

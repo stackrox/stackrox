@@ -21,8 +21,10 @@ jobs:
           persist-credentials: false
 
       - name: Build CI selector
-        continue-on-error: true
         uses: ./.github/actions/ci-select
+
+      - name: Validate CI rules
+        run: ci/select/bin/ci-select validate
 
       - name: Read the CI decision
         id: ci-decision
@@ -40,7 +42,3 @@ jobs:
       - name: Test CI selector
         if: steps.ci-decision.outputs.action != 'skip'
         run: go test -race ./ci/select
-
-      - name: Validate CI rules
-        if: steps.ci-decision.outputs.action != 'skip'
-        run: ci/select/bin/ci-select validate

@@ -127,7 +127,9 @@ func TestCurrentRules(t *testing.T) {
 		files, labels, runs, skips []string
 		complete                   bool
 	}{
-		"docs":                   {files: []string{"README.md"}, runs: []string{"style-check"}, complete: true},
+		"docs":                   {files: []string{"README.md"}, runs: []string{"style-check", "build-images"}, complete: true},
+		"UI":                     {files: []string{"ui/example.tsx"}, runs: []string{"style-check", "build-images", "ui", "ui-component", "gke-ui-e2e-tests"}, complete: true},
+		"empty diff":             {runs: []string{"style-check", "build-images"}, complete: true},
 		"shared product":         {files: []string{"sensor/common/foo.go", "central/policy/service.go"}, runs: []string{"go", "go-postgres", "sensor-integration-tests"}},
 		"module":                 {files: []string{"go.mod"}, runs: m.Jobs, complete: true},
 		"run all overrides docs": {files: []string{"README.md"}, labels: []string{"ci-run-all-tests"}, runs: m.Jobs, complete: true},
@@ -190,7 +192,7 @@ func TestCIToolingSelection(t *testing.T) {
 			assert.True(t, resolved.jobs["go"])
 			assert.True(t, resolved.jobs["style-check"])
 			assert.Equal(t, name == "run all", resolved.jobs["wait-for-images"])
-			assert.Equal(t, name == "run all", resolved.jobs["build-images"])
+			assert.True(t, resolved.jobs["build-images"])
 			assert.Equal(t, name == "run all" || name == "mixed product", resolved.jobs["go-bench"])
 		})
 	}
@@ -295,7 +297,7 @@ func TestResolverUnmatchedFileSkipsRemaining(t *testing.T) {
 	require.NoError(t, err)
 	resolved, err := resolve([]string{"notes/todo.txt"}, nil, m, d, metadata{})
 	require.NoError(t, err)
-	assert.Equal(t, map[string]bool{"style-check": true}, resolved.jobs)
+	assert.Equal(t, map[string]bool{"style-check": true, "build-images": true}, resolved.jobs)
 	assert.NotContains(t, resolved.log, "takes default")
 	assert.Contains(t, resolved.log, `rule "skip-selector-tests" skips target "selector-tests"`)
 }
@@ -372,6 +374,40 @@ func TestOpenDecisionFallbacks(t *testing.T) {
 	}
 }
 
+func TestFallbackRunLabels(t *testing.T) {
+	for name, test := range map[string]struct {
+		rules, defaults string
+		labels, runs    []string
+		unknown         bool
+	}{
+		"should retain dependencies for a forced job with an unknown diff": {
+			rules: "testdata/corners.yaml", defaults: "testdata/corners-defaults", unknown: true,
+			labels: []string{"suite"}, runs: []string{"suite", "images", "extra"},
+		},
+		"should run all jobs when rules are missing": {
+			rules: "testdata/missing.yaml", defaults: "testdata/corners-defaults",
+			labels: []string{"ci-run-all-tests"}, runs: []string{"unit", "lint", "suite", "images", "extra"},
+		},
+		"should honor a GHA job label when rules are invalid": {
+			rules: "testdata/invalid/broken.yaml", defaults: "../decision-defaults",
+			labels: []string{"e2e-qa-tests-gke"}, runs: []string{"e2e-qa-tests-gke", "wait-for-images", "build-images"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			resolved, _, err := openDecision(test.rules, test.defaults, nil, test.labels, test.unknown, metadata{})
+			require.NoError(t, err)
+			assert.Contains(t, resolved.log, "using decision-defaults")
+			assert.Contains(t, resolved.log, "run labels override skipped defaults")
+			for _, job := range test.runs {
+				assert.True(t, resolved.jobs[job], job)
+			}
+			jobs, err := parseDecision(resolved.decision)
+			require.NoError(t, err)
+			assert.Equal(t, jobs, resolved.jobs)
+		})
+	}
+}
+
 func TestResolverDefaultsMismatch(t *testing.T) {
 	m, err := loadMapping("testdata/corners.yaml")
 	require.NoError(t, err)
@@ -392,7 +428,7 @@ func TestResolverDefaultsMismatch(t *testing.T) {
 			defaultsPath := fixturePath(t, text)
 			resolved, _, err := openDecision("testdata/corners.yaml", defaultsPath, nil, nil, false, metadata{})
 			require.NoError(t, err)
-			assert.Equal(t, d.decision(), resolved.decision)
+			assert.Equal(t, d.decision(nil), resolved.decision)
 			assert.Contains(t, resolved.log, "using decision-defaults")
 		})
 	}

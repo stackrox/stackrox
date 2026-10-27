@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -162,6 +164,79 @@ func TestProwWrapper(t *testing.T) {
 			command.Env = append(command.Environ(), "ROOT="+root)
 			err := command.Run()
 			assert.Equal(t, status == 3, err != nil)
+		})
+	}
+}
+
+func TestProwDispatchUIOnly(t *testing.T) {
+	dispatch, err := os.ReadFile("../../.openshift-ci/dispatch.sh")
+	require.NoError(t, err)
+	gate, err := os.ReadFile("prow-gate.sh")
+	require.NoError(t, err)
+	for name, test := range map[string]struct {
+		job                          string
+		pullRequest, enforce, uiOnly bool
+		buildStatus, gateStatus      int
+		wantDispatch, wantBuild      bool
+	}{
+		"should skip unenforced UI-only nongroovy": {
+			job: "gke-nongroovy-e2e-tests", pullRequest: true, uiOnly: true,
+		},
+		"should skip unenforced UI-only upgrade": {
+			job: "gke-upgrade-tests", pullRequest: true, uiOnly: true,
+		},
+		"should skip unenforced UI-only even when selector cannot build": {
+			job: "gke-nongroovy-e2e-tests", pullRequest: true, uiOnly: true, buildStatus: 1,
+		},
+		"should run UI tests on unenforced UI-only changes": {
+			job: "gke-ui-e2e-tests", pullRequest: true, uiOnly: true, wantDispatch: true, wantBuild: true,
+		},
+		"should run unenforced mixed changes": {
+			job: "gke-nongroovy-e2e-tests", pullRequest: true, wantDispatch: true, wantBuild: true,
+		},
+		"should follow enforced run on UI-only changes": {
+			job: "gke-nongroovy-e2e-tests", pullRequest: true, enforce: true, uiOnly: true,
+			wantDispatch: true, wantBuild: true,
+		},
+		"should follow enforced skip": {
+			job: "gke-nongroovy-e2e-tests", pullRequest: true, enforce: true, uiOnly: true,
+			gateStatus: 3, wantBuild: true,
+		},
+		"should run when enforced selector build fails": {
+			job: "gke-nongroovy-e2e-tests", pullRequest: true, enforce: true, uiOnly: true,
+			buildStatus: 1, wantDispatch: true, wantBuild: true,
+		},
+		"should run outside PR context": {
+			job: "gke-nongroovy-e2e-tests", uiOnly: true, wantDispatch: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestFile(t, filepath.Join(root, ".openshift-ci/dispatch.sh"), string(dispatch), 0o700)
+			writeTestFile(t, filepath.Join(root, "scripts/ci/lib.sh"), `is_in_PR_context() { [[ "$CI_SELECT_TEST_PR" == true ]]; }
+pr_has_label() { [[ "$CI_SELECT_TEST_ENFORCE" == true ]]; }
+changes_limited_to() { [[ "$CI_SELECT_TEST_UI_ONLY" == true ]]; }
+info() { echo "$*"; }
+get_pr_details() { echo '{}'; }
+openshift_ci_mods() { echo 'job dispatched'; exit 0; }
+`, 0o600)
+			writeTestFile(t, filepath.Join(root, "tests/e2e/lib.sh"), "", 0o600)
+			writeTestFile(t, filepath.Join(root, "ci/select/build.sh"), "#!/bin/sh\necho 'selector build attempted'\nexit \"$CI_SELECT_TEST_BUILD_STATUS\"\n", 0o700)
+			writeTestFile(t, filepath.Join(root, "ci/select/prow-gate.sh"), string(gate), 0o600)
+			writeTestFile(t, filepath.Join(root, "ci/select/bin/ci-select"), "#!/bin/sh\nexit \"$CI_SELECT_TEST_GATE_STATUS\"\n", 0o700)
+			command := exec.CommandContext(t.Context(), "bash", filepath.Join(root, ".openshift-ci/dispatch.sh"), test.job)
+			command.Env = append(command.Environ(),
+				"ARTIFACT_DIR=",
+				fmt.Sprintf("CI_SELECT_TEST_PR=%t", test.pullRequest),
+				fmt.Sprintf("CI_SELECT_TEST_ENFORCE=%t", test.enforce),
+				fmt.Sprintf("CI_SELECT_TEST_UI_ONLY=%t", test.uiOnly),
+				fmt.Sprintf("CI_SELECT_TEST_BUILD_STATUS=%d", test.buildStatus),
+				fmt.Sprintf("CI_SELECT_TEST_GATE_STATUS=%d", test.gateStatus),
+			)
+			output, err := command.CombinedOutput()
+			require.NoError(t, err, string(output))
+			assert.Equal(t, test.wantDispatch, strings.Contains(string(output), "job dispatched"), string(output))
+			assert.Equal(t, test.wantBuild, strings.Contains(string(output), "selector build attempted"), string(output))
 		})
 	}
 }

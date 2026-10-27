@@ -25,10 +25,19 @@ fi
 ci_job="$1"
 shift
 
-# On a pull request, skip before credentials and cluster setup when the
-# decision leaves this job off the list. The label ci-dispatcher-enforce
-# is what makes that skip real. Without it the job runs as it does today.
+# PR gates run before credentials and cluster setup.
 if is_in_PR_context; then
+    if ! pr_has_label ci-dispatcher-enforce; then
+        case "$ci_job" in
+            *nongroovy*|*upgrade*)
+                if changes_limited_to "ui/"; then
+                    info "Skipping $ci_job: all changes are under ui/"
+                    exit 0
+                fi
+                ;;
+        esac
+    fi
+
     if "$ROOT/ci/select/build.sh"; then
         # shellcheck source=../ci/select/prow-gate.sh
         source "$ROOT/ci/select/prow-gate.sh"

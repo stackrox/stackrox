@@ -263,7 +263,9 @@ jobs:
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
@@ -346,6 +348,7 @@ jobs:
   ui:
     needs: detect-changes
     if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
@@ -425,6 +428,7 @@ jobs:
   ui-component:
     needs: detect-changes
     if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
@@ -514,7 +518,9 @@ jobs:
 
   local-roxctl-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -583,7 +589,9 @@ jobs:
 
   shell-unit-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -662,7 +670,9 @@ jobs:
 
   sensor-integration-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-24.04

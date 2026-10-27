@@ -236,6 +236,12 @@ rules:
     run:
       - style-check
 
+  # Prow can run jobs outside this plan, including later /test requests.
+  - name: prow-image-builds
+    when: always
+    run:
+      - build-images
+
   - name: shell-tests
     when: any-file-matches
     paths:

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -79,10 +80,11 @@ func formatDecision(jobs []string) string {
 	return strings.Join(jobs, "\n") + "\n"
 }
 
-func (d defaults) decision() string {
+func (d defaults) decision(labels []string) string {
 	jobs := []string{}
+	forceAll := slices.Contains(labels, "ci-run-all-tests")
 	for _, job := range d.jobs {
-		if d.actions[job] == "run" {
+		if d.actions[job] == "run" || forceAll || slices.Contains(labels, job) {
 			jobs = append(jobs, job)
 		}
 	}

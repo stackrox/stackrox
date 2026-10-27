@@ -42,6 +42,13 @@ rules:
 		"boolean pattern": {
 			text: strings.Replace(rules, "'^pkg/.*\\.go$'", "true", 1), errorText: "read YAML rules",
 		},
+		"unknown top-level field": {
+			text: rules + "require: {}\n", errorText: `unknown field "require"`,
+		},
+		"unknown rule field": {
+			text:      strings.Replace(rules, "when: any-file-matches", "when: any-file-matches\n    skpi: [unit]", 1),
+			errorText: `unknown field "skpi"`,
+		},
 		"null pattern": {
 			text: strings.Replace(rules, "'^pkg/.*\\.go$'", "null", 1), errorText: "must not contain null values",
 		},

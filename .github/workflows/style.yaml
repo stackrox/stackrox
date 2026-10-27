@@ -26,7 +26,9 @@ jobs:
 
   check-generated-files:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-24.04
@@ -212,7 +214,9 @@ jobs:
 
   golangci-lint:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     timeout-minutes: 240
     runs-on: ubuntu-24.04
     steps:
@@ -286,7 +290,9 @@ jobs:
 
   check-dependent-images-exist:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     # This job ensures that COLLECTOR_VERSION or FACT_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
@@ -354,6 +360,7 @@ jobs:
   github-actions-lint:
     needs: detect-changes
     if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^.github/')
     runs-on: ubuntu-24.04
@@ -406,6 +413,7 @@ jobs:
   openshift-ci-lint:
     needs: detect-changes
     if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^.openshift-ci/')
     runs-on: ubuntu-24.04

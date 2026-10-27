@@ -21,7 +21,9 @@ jobs:
 
   db-integration-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11

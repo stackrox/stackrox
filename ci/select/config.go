@@ -59,7 +59,9 @@ func loadMapping(path string) (mapping, error) {
 	if err != nil {
 		return result, errors.Wrap(err, "read YAML rules")
 	}
-	if err := json.Unmarshal(text, &result); err != nil {
+	strict := json.NewDecoder(bytes.NewReader(text))
+	strict.DisallowUnknownFields()
+	if err := strict.Decode(&result); err != nil {
 		return result, errors.Wrap(err, "read YAML rules")
 	}
 	return result, result.validate()

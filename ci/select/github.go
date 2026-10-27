@@ -85,31 +85,6 @@ func repositoryPath(repo, pr string) (string, error) {
 	return "/repos/" + url.PathEscape(parts[0]) + "/" + url.PathEscape(parts[1]) + "/issues/" + strconv.Itoa(number), nil
 }
 
-func (g githubClient) labels(ctx context.Context, repo, pr string) ([]string, error) {
-	path, err := repositoryPath(repo, pr)
-	if err != nil {
-		return nil, err
-	}
-	labels := []string{}
-	for page := 1; ; page++ {
-		items := []struct {
-			Name string `json:"name"`
-		}{}
-		if err := g.get(ctx, fmt.Sprintf("%s/labels?per_page=100&page=%d", path, page), &items); err != nil {
-			return nil, err
-		}
-		if items == nil {
-			return nil, errors.New("GitHub labels response must be an array")
-		}
-		for _, item := range items {
-			labels = append(labels, item.Name)
-		}
-		if len(items) < 100 {
-			return labels, nil
-		}
-	}
-}
-
 func (g githubClient) comments(ctx context.Context, repo, pr string) ([]comment, error) {
 	path, err := repositoryPath(repo, pr)
 	if err != nil {

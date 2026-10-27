@@ -53,6 +53,8 @@ The rules file uses YAML block lists and supports standalone and inline
 `#` comments. Single-quote regular expressions to preserve backslashes, and
 quote `'*'` so YAML treats it as a string rather than an alias.
 Use one YAML document and omit optional fields instead of setting them to null.
+Unknown fields are rejected. YAML values pass through JSON decoding so numbers
+and booleans cannot silently become strings.
 
 The decision lists jobs to run, one per line. An absent job is skipped.
 `# no job runs` represents a valid decision to run nothing; blank text is
@@ -107,6 +109,15 @@ uses the defaults. Dispatchers also use defaults when rules cannot be
 loaded or resolved. If defaults are unusable, individual CI gates let the
 job run. Jobs absent from the defaults are outside selection and run.
 
+During fallback, `ci-run-all-tests` selects every target in the defaults.
+A label matching a target's name also forces that target to run. Valid rules
+still supply the dependencies of forced targets when the diff is unreadable.
+If the rules cannot be loaded, the defaults must include required setup jobs.
+
+The CI diff collector includes both sides of a rename by treating it as a
+deletion and an addition. For example, moving `engine.go` to `README.md` still
+selects Go tests because removing `engine.go` changes the compiled code.
+
 ## Try the dispatchers locally
 
 The local dispatcher commands take the same file inputs as the resolver:
@@ -154,22 +165,28 @@ enforcement mode, and decision, with the resolver log collapsed under
 not receive a comment. Runs for an outdated PR head do not post a comment.
 
 The `should-dispatch` job calls `ci-select gha-dispatch-ci` directly.
-Go retrieves current PR labels and writes the job map plus
+Go reads PR labels from the event and writes the job map plus
 `wait-for-gha-images` and `wait-for-konflux-images` outputs.
 It reads `GITHUB_EVENT_NAME`, the metadata variables listed earlier, and
 `CI_IS_FORK`, `CI_IS_DRAFT`, and `CI_UI_ONLY`. Fork rejection is preserved.
 With enforcement disabled, non-PR events, or unusable defaults, it follows
-the existing dispatcher rules. If live label lookup fails, it logs a warning,
-uses `PR_LABELS` from the GitHub event, and disables enforcement for that run.
-Event labels may be stale; explicit job labels and the existing fork, draft,
-UI-only, and Konflux rules still apply. With no event labels, it applies those
-rules with an empty label list.
+the existing dispatcher rules. All GHA gates use the event's label snapshot;
+dispatch makes no label API request. An unreadable diff or rules file uses
+the defaults without disabling enforcement. A selected GHA e2e job always
+enables its image-wait job, including during fallback. Fork restrictions and
+the Konflux build-label requirement still apply.
+
+When enforcement is enabled, enrolled GHA jobs bypass outer path filters and
+let the selector decide. For example, `ci-run-all-tests` on a backend-only PR
+can run UI tests. Preview mode retains the existing path filters.
 
 GHA e2e job labels explicitly select their matching targets. Selected GHA
 targets require `wait-for-images`, which requires `build-images`; Konflux
 targets require `wait-for-konflux-images`. With enforcement enabled, no
-selected consumer means no image waiting or image build. Konflux builds
-remain controlled by their existing external integration and label.
+selected GHA consumer means no image waiting. Image builds remain enabled on
+every PR because Prow can run jobs outside the selector's inventory or accept
+later `/test` requests. Konflux builds remain controlled by their existing
+external integration and label.
 
 The Build workflow resolves `build-images` once in `define-job-matrix` and
 passes its action to every build job. The matrix stays populated so required
@@ -185,11 +202,15 @@ body, and resolves the decision. Only exit code 3 means skip; success and
 errors let the job run. The wrapper does not build the binary, parse JSON,
 fetch comments, or implement selection policy.
 
+Without enforcement, `dispatch.sh` skips nongroovy and upgrade jobs for UI-only
+changes before building the selector. With enforcement, the selector controls
+those skips.
+
 Prow uses `PULL_BASE_SHA` for the diff against `HEAD` and `PULL_PULL_SHA` for
 the head commit timestamp. The synthetic merge timestamp is not used for
 `/test` freshness. The GitHub client uses `GITHUB_TOKEN` or `GH_TOKEN`, and
 `GITHUB_API_URL` when set. Requests have a 30-second timeout, up to three
-attempts for transport/server failures, and pagination for labels/comments.
+attempts for transport/server failures, and pagination for comments.
 
 ## Bootstrap and prototype limits
 
@@ -203,12 +224,12 @@ their normal work. The decision and e2e dispatch workflows require a
 successful build. Prow builds once at dispatch entry; build failure bypasses
 selection and runs the job.
 
-The distribution model remains an open decision: build the selector in each
-job, or provide a prebuilt binary. A prebuilt binary avoids compilation
-failures in the dispatch job but can still fail to start or execute.
-Build and runtime failure recovery remains an open design question. For this
-demonstration, a build or execution failure stops e2e dispatch; all dispatch
-policy stays in Go.
+CI integration will distribute prebuilt selector binaries in a separate change.
+This prototype still builds the selector in each job. A build or execution
+failure stops GHA e2e dispatch, including master and tag runs; this is an
+acknowledged prototype limitation. Prebuilt binaries remove the compilation
+dependency but can still fail to start or execute. Runtime failure recovery
+remains an open design question.
 
 These integration costs still need validation in real CI:
 
@@ -220,8 +241,8 @@ These integration costs still need validation in real CI:
 - GHA's `should-dispatch` uses `ubuntu-24.04` instead of `ubuntu-slim` to
   support the shared toolchain setup.
 - Skipped GHA jobs still allocate runners and check out the repository.
-  Existing outer workflow conditions remain in effect. Prow setup performed
-  before `dispatch.sh` remains outside this gate.
+  Preview mode retains existing outer path filters. Prow setup performed before
+  `dispatch.sh` remains outside this gate.
 - The rules and job inventory are samples, not a reviewed production map.
   All eight dispatched GHA e2e targets are enrolled. Konflux targets require
   the `konflux-build` label even when selection is enforced, because that
@@ -229,6 +250,50 @@ These integration costs still need validation in real CI:
 - Benchmarks and dependent collector/fact image checks are enrolled. Product
   Go changes select benchmarks; collector/fact version changes select their
   image checks. Miscellaneous policy checks always run.
+
+## Remaining gaps
+
+- **Selector delivery and execution failures (issue 3).** Prebuilt binaries are
+  planned but are not delivered by this prototype. GHA e2e dispatch stops if
+  the selector cannot build or execute. For example, a failed Go toolchain
+  download on a master push prevents its e2e workflows from starting.
+- **Unusable defaults (issue 2).** When the defaults file cannot be parsed,
+  individual gates run their jobs and GHA e2e dispatch uses its existing
+  eligibility rules. There is no shared emergency decision. For example,
+  `go maybe` in the defaults lets the Go gate run, while a draft PR's automatic
+  e2e jobs remain disabled. A common recovery policy still needs to be defined.
+- **Unavailable dependency graph (issues 2 and 5).** If rules cannot be loaded,
+  the resolver cannot recover dependencies from them. The checked-in defaults
+  keep image prerequisites enabled, and GHA dispatch separately enables image
+  waits for selected consumers. Other prerequisites need conservative defaults.
+  For example, if a target `suite` requires `prepare`, both default to skip,
+  and the rules file is invalid, a `suite` label runs `suite` without `prepare`.
+- **Prow scheduling and command names (issues 1 and 5).** The selector gates
+  Prow jobs after Prow schedules them. A run vote cannot start an opt-in job.
+  For example, `ci-run-all-tests` does not schedule a Prow job configured with
+  `always_run: false`; a Prow `/test` request is still needed. Variant names
+  also need a mapping to internal target names. For example,
+  `/test gke-oldest-ui-e2e-tests` schedules a variant that dispatches as
+  `gke-ui-e2e-tests`, so the selector does not recognize that variant command
+  as a force-run request.
+- **Image-build savings (issue 1).** Image builds remain enabled on every PR
+  until selection accounts for all Prow consumers and later manual requests.
+  For example, a docs-only PR still builds images so a later `/test` request
+  has images to use.
+- **Production policy and live CI validation.** The rules remain samples, and
+  unmatched targets are skipped by the demonstration catch-all. For example,
+  a `Makefile`-only change selects style checks and image builds, but no test
+  suites. Rule curation and live validation of required checks are still needed
+  before broad enforcement. Local workflow tests do not prove that GitHub and
+  Prow report every required status for a skipped run.
+
+## Validation
+
+The CI selector workflow validates the configuration on every PR before
+selection can skip tests. A failed selector build fails this workflow.
+For example, a misspelled `require:` key fails validation instead of silently
+removing dependencies. The workflow must be made a required check separately
+if configuration failures should block merging.
 
 The Go tests retain the 18 resolver fixture cases and 33 invalid-rule cases
 from the Python prototype. They compare decisions and explanation logs
@@ -263,8 +328,9 @@ Selector tests run when enrolled workflows or the build action change.
 To demonstrate selection on the PR, compare runs triggered by removing and
 adding `ci-dispatcher-enforce`, then add `ci-run-all-tests` to check the
 override. With enforcement on, the CI-tooling diff skips PostgreSQL, Sensor,
-scanner DB integration, benchmarks, image builds, image waiting, and e2e
-execution. The gated jobs complete successfully after skipping their work.
+scanner DB integration, benchmarks, image waiting, and e2e execution. Image
+builds still run for possible Prow consumers. The gated jobs complete
+successfully after skipping their work.
 Verify the required contexts from the ruleset individually; a green workflow
 alone does not prove that all required checks were reported. The required
 Prow status and the PR's draft state remain outside this GHA demonstration.

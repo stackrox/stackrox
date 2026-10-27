@@ -75,10 +75,9 @@ CI_COMMENT_OUT optionally saves a PR comment with the plan when no job is given.
 		Use:   "gha-dispatch-ci",
 		Short: "Write the end-to-end job map and image-wait outputs for GitHub Actions",
 		Long: `Read GITHUB_EVENT_NAME, CI_REPO, CI_PR, CI_BASE, CI_HEAD, CI_COMMIT,
-CI_IS_FORK, CI_IS_DRAFT, and CI_UI_ONLY. Retrieve current PR labels from GitHub.
+CI_IS_FORK, CI_IS_DRAFT, CI_UI_ONLY, and PR_LABELS from the workflow event.
 Write jobs, wait-for-gha-images, and wait-for-konflux-images to GITHUB_OUTPUT.
-The ci-dispatcher-enforce label applies selection; fork rejection remains in effect.
-GitHub requests use GITHUB_TOKEN or GH_TOKEN.`,
+The ci-dispatcher-enforce label applies selection; fork rejection remains in effect.`,
 		Example: "  ci-select gha-dispatch-ci",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {

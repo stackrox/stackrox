@@ -117,7 +117,10 @@ func TestPlanComment(t *testing.T) {
 }
 
 func TestDispatchPlan(t *testing.T) {
-	d := defaults{actions: map[string]string{"e2e-nongroovy-tests-gke": "run", "wait-for-images": "run"}}
+	d := defaults{actions: map[string]string{"wait-for-images": "run", "wait-for-konflux-images": "run"}}
+	for _, job := range dispatchJobs {
+		d.actions[job.name] = "run"
+	}
 	for name, test := range map[string]struct {
 		input                                                    dispatchInput
 		resolved                                                 *result
@@ -131,8 +134,16 @@ func TestDispatchPlan(t *testing.T) {
 		"Konflux":                    {input: dispatchInput{pullRequest: true, labels: []string{"konflux-build"}}, nongroovy: true, nongroovyKonflux: true, waitGHA: true, waitKonflux: true},
 		"explicit nongroovy Konflux": {input: dispatchInput{pullRequest: true, draft: true, labels: []string{"e2e-nongroovy-tests-gke-konflux"}}, nongroovyKonflux: true, waitGHA: true},
 		"enforce skip":               {input: dispatchInput{pullRequest: true, enforce: true}, resolved: &result{jobs: map[string]bool{}}},
-		"shadow":                     {input: dispatchInput{pullRequest: true}, resolved: &result{jobs: map[string]bool{}}, nongroovy: true, waitGHA: true},
-		"fork":                       {input: dispatchInput{pullRequest: true, fork: true, enforce: true}, resolved: &result{jobs: map[string]bool{"e2e-nongroovy-tests-gke": true, "wait-for-images": true}}},
+		"enforced consumer without dependency vote": {
+			input:    dispatchInput{pullRequest: true, enforce: true},
+			resolved: &result{jobs: map[string]bool{"e2e-nongroovy-tests-gke": true}}, nongroovy: true, waitGHA: true,
+		},
+		"enforced Konflux consumer without dependency vote": {
+			input:    dispatchInput{pullRequest: true, enforce: true, labels: []string{"konflux-build"}},
+			resolved: &result{jobs: map[string]bool{"e2e-nongroovy-tests-gke-konflux": true}}, nongroovyKonflux: true, waitKonflux: true,
+		},
+		"shadow": {input: dispatchInput{pullRequest: true}, resolved: &result{jobs: map[string]bool{}}, nongroovy: true, waitGHA: true},
+		"fork":   {input: dispatchInput{pullRequest: true, fork: true, enforce: true}, resolved: &result{jobs: map[string]bool{"e2e-nongroovy-tests-gke": true, "wait-for-images": true}}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			plan := dispatchPlan(test.input, test.resolved, d)
@@ -190,20 +201,22 @@ func TestDispatchInventory(t *testing.T) {
 
 func TestGHAImageDependencies(t *testing.T) {
 	for name, test := range map[string]struct {
-		labels                      []string
-		build, waitGHA, waitKonflux bool
+		files, labels        []string
+		waitGHA, waitKonflux bool
 	}{
-		"no consumers": {},
-		"GHA consumer": {labels: []string{"e2e-gke-upgrade-tests"}, build: true, waitGHA: true},
+		"no GHA consumers": {files: []string{"README.md"}},
+		"Prow UI consumer": {files: []string{"ui/example.tsx"}},
+		"GHA consumer":     {files: []string{"README.md"}, labels: []string{"e2e-gke-upgrade-tests"}, waitGHA: true},
 		"Konflux consumer": {
-			labels: []string{"e2e-nongroovy-tests-gke-konflux", "konflux-build"}, waitKonflux: true,
+			files: []string{"README.md"}, labels: []string{"e2e-nongroovy-tests-gke-konflux", "konflux-build"}, waitKonflux: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			resolved, d, err := openDecision("../test-domains.yaml", "../decision-defaults",
-				[]string{"README.md"}, test.labels, false, metadata{})
+				test.files, test.labels, false, metadata{})
 			require.NoError(t, err)
-			assert.Equal(t, test.build, resolved.jobs["build-images"])
+			assert.True(t, resolved.jobs["build-images"])
+			assert.Equal(t, "run", gateAction("build-images", resolved.jobs, d, true, false))
 			plan := dispatchPlan(dispatchInput{pullRequest: true, enforce: true, labels: test.labels}, &resolved, d)
 			assert.Equal(t, fmt.Sprint(test.waitGHA), plan["wait-for-gha-images"])
 			assert.Equal(t, fmt.Sprint(test.waitKonflux), plan["wait-for-konflux-images"])
@@ -235,6 +248,15 @@ func TestChangedFiles(t *testing.T) {
 	files, unknown = changedFiles(t.Context(), base, "HEAD")
 	assert.False(t, unknown)
 	assert.Equal(t, []string{"with space.go"}, files)
+	beforeRename := git("rev-parse", "HEAD")
+	git("mv", "with space.go", "README.md")
+	git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "rename")
+	files, unknown = changedFiles(t.Context(), beforeRename, "HEAD")
+	assert.False(t, unknown)
+	assert.ElementsMatch(t, []string{"with space.go", "README.md"}, files)
+	resolved, _, err := openDecision("../test-domains.yaml", "../decision-defaults", files, nil, false, metadata{})
+	require.NoError(t, err)
+	assert.True(t, resolved.jobs["go"])
 	_, unknown = changedFiles(t.Context(), "missing", "HEAD")
 	assert.True(t, unknown)
 }
@@ -247,18 +269,14 @@ func TestGHADispatchCI(t *testing.T) {
 	t.Setenv("CI_BASE", "missing")
 	t.Setenv("CI_IS_FORK", "true")
 	t.Setenv("GITHUB_OUTPUT", "")
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{"name":"ci-dispatcher-enforce"}]`)
-	}))
-	defer server.Close()
-	t.Setenv("GITHUB_API_URL", server.URL)
+	t.Setenv("PR_LABELS", "ci-dispatcher-enforce")
 	var output bytes.Buffer
 	require.NoError(t, ghaDispatchCI(t.Context(), &output, &bytes.Buffer{}))
 	assert.Contains(t, output.String(), `"e2e-nongroovy-tests-gke":false`)
 	assert.Contains(t, output.String(), "wait-for-gha-images=false")
 }
 
-func TestGHADispatchCILabelFailure(t *testing.T) {
+func TestGHADispatchCIEventLabels(t *testing.T) {
 	for name, test := range map[string]struct {
 		labels, fork, draft, uiOnly        string
 		nongroovy, byodb, konflux, waitGHA bool
@@ -273,7 +291,7 @@ func TestGHADispatchCILabelFailure(t *testing.T) {
 		"Konflux label": {
 			labels: "konflux-build", nongroovy: true, konflux: true, waitGHA: true,
 		},
-		"stale enforcement label": {
+		"enforced with unavailable defaults": {
 			labels: "ci-dispatcher-enforce", nongroovy: true, waitGHA: true,
 		},
 		"fork with explicit job": {
@@ -292,15 +310,14 @@ func TestGHADispatchCILabelFailure(t *testing.T) {
 			outputPath := filepath.Join(t.TempDir(), "output")
 			t.Setenv("GITHUB_OUTPUT", outputPath)
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, "/repos/stackrox/stackrox/issues/23403/labels", r.URL.Path)
+				t.Error("dispatch must use event labels without an API request")
 				w.WriteHeader(http.StatusForbidden)
 			}))
 			defer server.Close()
 			t.Setenv("GITHUB_API_URL", server.URL)
 			var output, diagnostic bytes.Buffer
 			require.NoError(t, ghaDispatchCI(t.Context(), &output, &diagnostic))
-			assert.Contains(t, diagnostic.String(), "using event labels and existing dispatch rules with enforcement disabled")
-			assert.NotContains(t, diagnostic.String(), "CI decision unreadable")
+			assert.Equal(t, strings.Contains(test.labels, enforceLabel), strings.Contains(diagnostic.String(), "CI decision unreadable"))
 			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-nongroovy-tests-gke":%t`, test.nongroovy))
 			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-byodb-tests":%t`, test.byodb))
 			assert.Contains(t, output.String(), fmt.Sprintf(`"e2e-qa-tests-gke-konflux":%t`, test.konflux))
@@ -311,4 +328,20 @@ func TestGHADispatchCILabelFailure(t *testing.T) {
 			assert.Equal(t, output.String(), string(written))
 		})
 	}
+}
+
+func TestGHADispatchCIDefaults(t *testing.T) {
+	t.Setenv("CI_SELECT_ROOT", "../..")
+	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	t.Setenv("CI_BASE", "missing-ref")
+	t.Setenv("CI_HEAD", "HEAD")
+	t.Setenv("CI_IS_FORK", "false")
+	t.Setenv("GITHUB_OUTPUT", "")
+	t.Setenv("PR_LABELS", "ci-dispatcher-enforce")
+	var output, diagnostic bytes.Buffer
+	require.NoError(t, ghaDispatchCI(t.Context(), &output, &diagnostic))
+	assert.Contains(t, diagnostic.String(), "using decision-defaults")
+	assert.Contains(t, output.String(), `"e2e-nongroovy-tests-gke":true`)
+	assert.Contains(t, output.String(), `"e2e-qa-tests-gke":false`)
+	assert.Contains(t, output.String(), "wait-for-gha-images=true")
 }

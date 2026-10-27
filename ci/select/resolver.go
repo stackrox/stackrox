@@ -166,6 +166,7 @@ func openDecision(rulesPath, defaultsPath string, files, labels []string, unknow
 		return result{}, d, err
 	}
 	m, err := loadMapping(rulesPath)
+	mappingValid := err == nil
 	if err == nil && unknown {
 		err = errors.New("changed files are unknown")
 	}
@@ -176,15 +177,44 @@ func openDecision(rulesPath, defaultsPath string, files, labels []string, unknow
 			return resolved, d, nil
 		}
 	}
-	decision := d.decision()
+	decision := d.decision(labels)
 	jobs, parseErr := parseDecision(decision)
 	if parseErr != nil {
 		return result{}, d, parseErr
 	}
+	var log strings.Builder
+	fmt.Fprintf(&log, "resolver failed: %v\nusing decision-defaults\n", err)
+	if decision != d.decision(nil) {
+		log.WriteString("run labels override skipped defaults\n")
+		// Invalid rules cannot supply a trustworthy dependency graph.
+		if mappingValid {
+			for changed := true; changed; {
+				changed = false
+				for _, job := range m.Jobs {
+					if !jobs[job] {
+						continue
+					}
+					for _, needed := range m.Requires[job] {
+						if !jobs[needed] {
+							jobs[needed], changed = true, true
+							fmt.Fprintf(&log, "added target %q because target %q requires it\n", needed, job)
+						}
+					}
+				}
+			}
+			chosen := []string{}
+			for _, job := range dedupe(append(slices.Clone(d.jobs), m.Jobs...)) {
+				if jobs[job] {
+					chosen = append(chosen, job)
+				}
+			}
+			decision = formatDecision(chosen)
+		}
+	}
 	return result{
 		decision: decision,
 		jobs:     jobs,
-		log:      fmt.Sprintf("resolver failed: %v\nusing decision-defaults\n", err),
+		log:      log.String(),
 	}, d, nil
 }
 

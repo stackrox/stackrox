@@ -10,8 +10,11 @@ import (
 func TestDefaults(t *testing.T) {
 	d, err := parseDefaults("# defaults\nunit run\ncheck (GOTAGS=\"\") skip\n")
 	require.NoError(t, err)
-	assert.Equal(t, "unit\n", d.decision())
+	assert.Equal(t, "unit\n", d.decision(nil))
 	assert.Equal(t, "skip", d.actions["check (GOTAGS=\"\")"])
+	assert.Equal(t, "unit\ncheck (GOTAGS=\"\")\n", d.decision([]string{"ci-run-all-tests"}))
+	assert.Equal(t, "unit\ncheck (GOTAGS=\"\")\n", d.decision([]string{`check (GOTAGS="")`}))
+	assert.Equal(t, "unit\n", d.decision([]string{"unknown-job"}))
 	for name, text := range map[string]string{
 		"empty": "", "comments only": "# comment", "duplicate": "unit run\nunit skip",
 		"inline comment": "unit run # note", "no action": "unit", "bad action": "unit maybe",

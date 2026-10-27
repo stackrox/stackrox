@@ -62,7 +62,6 @@ jobs:
     - name: Determine whether to dispatch workflows
       id: determine
       env:
-        GH_TOKEN: ${{ github.token }}
         CI_REPO: ${{ github.repository }}
         CI_PR: ${{ github.event.pull_request.number }}
         CI_COMMIT: ${{ github.event.pull_request.head.sha }}
