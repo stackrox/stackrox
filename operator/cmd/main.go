@@ -16,6 +16,8 @@ limitations under the License.
 
 package main
 
+// CI-TEST: Validating operator-subsystem rule - expect check-crd-compatibility, go
+
 import (
 	"context"
 	"crypto/tls"
