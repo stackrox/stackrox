@@ -16,7 +16,8 @@ should-dispatch run
 wait-for-images run
 wait-for-konflux-images run
 e2e-byodb-tests run
-e2e-db-backup-restore-tests run
+e2e-db-backup-restore-tests-gke run
+e2e-db-backup-restore-tests-gke-konflux run
 e2e-gke-upgrade-tests run
 e2e-nongroovy-tests-gke run
 e2e-nongroovy-tests-gke-konflux run

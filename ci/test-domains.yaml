@@ -18,7 +18,8 @@ jobs:
   - wait-for-images
   - wait-for-konflux-images
   - e2e-byodb-tests
-  - e2e-db-backup-restore-tests
+  - e2e-db-backup-restore-tests-gke
+  - e2e-db-backup-restore-tests-gke-konflux
   - e2e-gke-upgrade-tests
   - e2e-nongroovy-tests-gke
   - e2e-nongroovy-tests-gke-konflux
@@ -95,11 +96,17 @@ rules:
     run:
       - e2e-byodb-tests
 
-  - name: job-label-e2e-db-backup-restore-tests
+  - name: job-label-e2e-db-backup-restore-tests-gke
     when: label-exists
-    label: e2e-db-backup-restore-tests
+    label: e2e-db-backup-restore-tests-gke
     run:
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+
+  - name: job-label-e2e-db-backup-restore-tests-gke-konflux
+    when: label-exists
+    label: e2e-db-backup-restore-tests-gke-konflux
+    run:
+      - e2e-db-backup-restore-tests-gke-konflux
 
   - name: job-label-e2e-gke-upgrade-tests
     when: label-exists
@@ -173,7 +180,8 @@ rules:
       - local-roxctl-tests
       - shell-unit-tests
       - e2e-byodb-tests
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
       - e2e-gke-upgrade-tests
       - e2e-nongroovy-tests-gke
       - e2e-nongroovy-tests-gke-konflux
@@ -199,7 +207,8 @@ rules:
       - '^ci/test-domains\.(toml|yaml)$'
     skip:
       - e2e-byodb-tests
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
       - e2e-gke-upgrade-tests
       - e2e-nongroovy-tests-gke
       - e2e-nongroovy-tests-gke-konflux
@@ -342,7 +351,8 @@ rules:
       - local-roxctl-tests
       - shell-unit-tests
       - e2e-byodb-tests
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
       - e2e-gke-upgrade-tests
       - e2e-nongroovy-tests-gke
       - e2e-nongroovy-tests-gke-konflux
@@ -365,7 +375,8 @@ rules:
       - sensor-integration-tests
       - go-postgres
       - e2e-gke-upgrade-tests
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
       - e2e-byodb-tests
 
   # Operator/CRD-Only
@@ -401,7 +412,8 @@ rules:
       - db-integration-tests
       - gke-ui-e2e-tests
       - e2e-byodb-tests
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
       - e2e-gke-upgrade-tests
 
   # Tier 9: Central/Sensor Separation (Aggressive)
@@ -497,7 +509,8 @@ rules:
       - '^docs/'
       - '\.md$'
     skip:
-      - e2e-db-backup-restore-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
 
   - name: skip-e2e-nongroovy
     when: every-file-matches
@@ -534,8 +547,10 @@ requires:
     - should-dispatch
   e2e-byodb-tests:
     - wait-for-images
-  e2e-db-backup-restore-tests:
+  e2e-db-backup-restore-tests-gke:
     - wait-for-images
+  e2e-db-backup-restore-tests-gke-konflux:
+    - wait-for-konflux-images
   e2e-gke-upgrade-tests:
     - wait-for-images
   e2e-nongroovy-tests-gke:

@@ -184,7 +184,7 @@ func TestCIToolingSelection(t *testing.T) {
 			assert.Equal(t, test.matchesCI, strings.Contains(resolved.log, `rule "ci-tooling" matches every changed file`))
 			for _, job := range []string{
 				"go-postgres", "sensor-integration-tests", "db-integration-tests",
-				"e2e-byodb-tests", "e2e-db-backup-restore-tests", "e2e-gke-upgrade-tests",
+				"e2e-byodb-tests", "e2e-db-backup-restore-tests-gke", "e2e-db-backup-restore-tests-gke-konflux", "e2e-gke-upgrade-tests",
 				"e2e-nongroovy-tests-gke", "e2e-nongroovy-tests-gke-konflux",
 			} {
 				assert.Equal(t, test.want, gateAction(job, resolved.jobs, d, test.enforce, false), job)

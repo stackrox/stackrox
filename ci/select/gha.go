@@ -171,7 +171,8 @@ type dispatchJob struct {
 
 var dispatchJobs = []dispatchJob{
 	{name: "e2e-byodb-tests", requireLabel: true},
-	{name: "e2e-db-backup-restore-tests"},
+	{name: "e2e-db-backup-restore-tests-gke"},
+	{name: "e2e-db-backup-restore-tests-gke-konflux", requireKonflux: true},
 	{name: "e2e-gke-upgrade-tests"},
 	{name: "e2e-nongroovy-tests-gke"},
 	{name: "e2e-nongroovy-tests-gke-konflux", requireKonflux: true},

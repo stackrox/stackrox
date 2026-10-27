@@ -244,7 +244,7 @@ These integration costs still need validation in real CI:
   Preview mode retains existing outer path filters. Prow setup performed before
   `dispatch.sh` remains outside this gate.
 - The rules and job inventory are samples, not a reviewed production map.
-  All eight dispatched GHA e2e targets are enrolled. Konflux targets require
+  All nine dispatched GHA e2e targets are enrolled. Konflux targets require
   the `konflux-build` label even when selection is enforced, because that
   label starts their PR image builds.
 - Benchmarks and dependent collector/fact image checks are enrolled. Product

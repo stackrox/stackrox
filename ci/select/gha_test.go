@@ -199,6 +199,45 @@ func TestDispatchInventory(t *testing.T) {
 	}
 }
 
+func TestBackupRestoreDispatch(t *testing.T) {
+	const (
+		ghaJob     = "e2e-db-backup-restore-tests-gke"
+		konfluxJob = "e2e-db-backup-restore-tests-gke-konflux"
+	)
+	for name, test := range map[string]struct {
+		labels                []string
+		enforce, gha, konflux bool
+	}{
+		"should retain the default GHA job": {gha: true},
+		"should retain both jobs with Konflux builds": {
+			labels: []string{"konflux-build"}, gha: true, konflux: true,
+		},
+		"should skip both jobs for enforced docs-only changes": {enforce: true},
+		"should select the GHA job by label": {
+			labels: []string{ghaJob}, enforce: true, gha: true,
+		},
+		"should require Konflux builds for the enforced Konflux job": {
+			labels: []string{konfluxJob}, enforce: true,
+		},
+		"should select the Konflux job and its image wait": {
+			labels: []string{konfluxJob, "konflux-build"}, enforce: true, konflux: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			resolved, d, err := openDecision("../test-domains.yaml", "../decision-defaults",
+				[]string{"README.md"}, test.labels, false, metadata{})
+			require.NoError(t, err)
+			plan := dispatchPlan(dispatchInput{pullRequest: true, enforce: test.enforce, labels: test.labels}, &resolved, d)
+			var jobs map[string]bool
+			require.NoError(t, json.Unmarshal([]byte(plan["jobs"]), &jobs))
+			assert.Equal(t, test.gha, jobs[ghaJob])
+			assert.Equal(t, test.konflux, jobs[konfluxJob])
+			assert.Equal(t, fmt.Sprint(test.gha), plan["wait-for-gha-images"])
+			assert.Equal(t, fmt.Sprint(test.konflux), plan["wait-for-konflux-images"])
+		})
+	}
+}
+
 func TestGHAImageDependencies(t *testing.T) {
 	for name, test := range map[string]struct {
 		files, labels        []string
