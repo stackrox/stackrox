@@ -1,9 +1,30 @@
 import {
     getScoreVersionsForTopCVSS,
     getSeveritySortOptions,
+    safeToFixed,
     sortCveDistroList,
     syncSeveritySortOption,
 } from './sortUtils';
+
+describe('safeToFixed', () => {
+    it('should return a fixed-point string for a valid number', () => {
+        expect(safeToFixed(9.4300001, 1)).toEqual('9.4');
+    });
+
+    it('should return the value itself for NaN values', () => {
+        expect(safeToFixed("N/A", 1)).toEqual('N/A');
+    });
+});
+
+describe('sortCveDistroList', () => {
+    it('should return an array of objects sorted by operating system priority', () => {
+        const summaries = [{ operatingSystem: 'amzn:2' }];
+
+        expect(sortCveDistroList(summaries)).toEqual([
+            { distro: 'amzn', operatingSystem: 'amzn:2' },
+        ]);
+    });
+});
 
 describe('sortCveDistroList', () => {
     it('should return an array of objects sorted by operating system priority', () => {

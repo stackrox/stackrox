@@ -161,13 +161,18 @@ export function sortCveDistroList<Summary extends { operatingSystem: string }>(
     }));
     return sortBy(withDistroKeys, ({ distro }) => distroPriorityMap[distro]);
 }
+// Returns a fixed-point string for a valid number, or the value itself if it's not a valid number.
+// Necesary because the API now returns "N/A" for CVSS values that are not available, which is not a valid number and would cause toFixed to throw an error.
+export function safeToFixed (num: number | string, digits: number): number |string {
+    return typeof num === 'number' && !Number.isNaN(num) ? num.toFixed(digits) : 'N/A';
+}
 
 export function getScoreVersionsForTopCVSS(
     topCvss: number,
     scores: { cvss: number; scoreVersion: string }[]
 ): string[] {
     const scoreVersions = scores
-        .filter(({ cvss }) => cvss.toFixed(1) === topCvss.toFixed(1))
+        .filter(({ cvss }) => safeToFixed(cvss, 1) === safeToFixed(topCvss, 1))
         .map(({ scoreVersion }) => scoreVersion);
     return Array.from(new Set(scoreVersions)).sort();
 }
@@ -177,7 +182,7 @@ export function getScoreVersionsForTopNvdCVSS(
     scores: { nvdCvss: number; nvdScoreVersion: string }[]
 ): string[] {
     const scoreVersions = scores
-        .filter(({ nvdCvss = 0 }) => nvdCvss.toFixed(1) === topNvdCvss.toFixed(1))
+        .filter(({ nvdCvss = 0 }) => safeToFixed(nvdCvss, 1) === safeToFixed(topNvdCvss, 1))
         .map(({ nvdScoreVersion = 'UNKNOWN_VERSION' }) => nvdScoreVersion);
     return Array.from(new Set(scoreVersions)).sort();
 }
