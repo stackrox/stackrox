@@ -193,10 +193,10 @@ linters:
         path: roxctl/central/generate/interactive.go
       - linters:
           - prealloc
-        path-except: ^(pkg)/
+        path-except: ^(pkg|central)/
       - linters:
           - prealloc
-        path: _test\.go
+        path: (_test\.go|testutils.go)
       - linters:
           - forbidigo
           - wrapcheck
