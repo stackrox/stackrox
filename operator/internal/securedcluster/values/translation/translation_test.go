@@ -1123,7 +1123,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"monitoring.openshift.enabled":                      false,
+				"monitoring.openshift.enabled":        false,
 				"monitoring.openshift.custom.enabled": true,
 			},
 		},
