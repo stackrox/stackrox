@@ -147,7 +147,7 @@ var (
 	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 
 	// PolicyWorkloadKindExclusion enables excluding all workloads of selected Kubernetes kinds (Job, CronJob) from a policy.
-	PolicyWorkloadKindExclusion = registerFeature("Enable excluding all workloads of a given kind from a policy", "ROX_POLICY_WORKLOAD_KIND_EXCLUSION")
+	PolicyWorkloadKindExclusion = registerFeature("Enable excluding all workloads of a given kind from a policy", "ROX_POLICY_WORKLOAD_KIND_EXCLUSION", enabled)
 
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
