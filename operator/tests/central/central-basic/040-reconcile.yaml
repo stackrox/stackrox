@@ -3,7 +3,13 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
-  customize:
-    annotations:
-      # Applying an annotation forces central pod re-creation and thus re-reading password.
-      test-step: "40"
+  # Restart only Central to re-read the password without rolling the databases.
+  overlays:
+  - apiVersion: apps/v1
+    kind: Deployment
+    name: central
+    patches:
+    - path: metadata.annotations.test-step
+      verbatim: "40"
+    - path: spec.template.metadata.annotations.test-step
+      verbatim: "40"

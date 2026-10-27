@@ -22,6 +22,8 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
+  # Remove the Central-only annotation override before testing global annotations.
+  overlays: []
   customize:
     annotations:
       test-step: "76"
