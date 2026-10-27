@@ -35,11 +35,11 @@ on:
           'true' when every changed file is under ui/, empty
           otherwise. Skip non-UI jobs with: if: !needs.X.outputs.ui_only
         value: {{ "${{ jobs.detect.outputs.ui_only }}" }}
-{{- range .DomainFlags }}
-      {{ .Name }}:
+{{- range .Jobs }}
+      should_run_{{ .SanitizedName }}:
         description: >
-          {{ .Description }}
-        value: {{ "${{ jobs.detect.outputs." }}{{ .Name }}{{ " }}" }}
+          'true' if {{ .Name }} should run based on test selection rules
+        value: {{ "${{ jobs.detect.outputs.should_run_" }}{{ .SanitizedName }}{{ " }}" }}
 {{- end }}
 
 jobs:
@@ -48,8 +48,8 @@ jobs:
     outputs:
       files: {{ "${{ steps.list.outputs.files }}" }}
       ui_only: {{ "${{ steps.list.outputs.ui_only }}" }}
-{{- range .DomainFlags }}
-      {{ .Name }}: {{ "${{ steps.evaluate.outputs." }}{{ .Name }}{{ " }}" }}
+{{- range .Jobs }}
+      should_run_{{ .SanitizedName }}: {{ "${{ steps.evaluate.outputs.should_run_" }}{{ .SanitizedName }}{{ " }}" }}
 {{- end }}
     steps:
       - name: Checkout
@@ -177,32 +177,149 @@ jobs:
           def has_label(label):
               return label in labels
 
-          # Evaluate rules and output domain flags
+          # Evaluate rules for each job and apply clash resolution
+          job_decisions = {}
+{{- range .Jobs }}
+          job_decisions['{{ .Name }}'] = {'run': False, 'skip': False}
+{{- end }}
+
+          # Apply rules in order
+{{- range .Rules }}
+          # Rule: {{ .Name }} - {{ .Description }}
+          rule_matches = False
+{{- if .When.Label }}
+          if has_label({{ .When.Label | printf "%q" }}):
+              rule_matches = True
+{{- end }}
+{{- if .When.AnyFileMatches }}
+          if any_file_matches([{{ range $i, $p := .When.AnyFileMatches }}{{ if $i }}, {{ end }}{{ $p | printf "%q" }}{{ end }}]):
+              rule_matches = True
+{{- end }}
+{{- if .When.EveryFileMatches }}
+          if every_file_matches([{{ range $i, $p := .When.EveryFileMatches }}{{ if $i }}, {{ end }}{{ $p | printf "%q" }}{{ end }}]):
+              rule_matches = True
+{{- end }}
+{{- if .When.AnyFileChanged }}
+          if bool(files):
+              rule_matches = True
+{{- end }}
+
+          if rule_matches:
+              print(f"Rule matched: {{ .Name }}", file=sys.stderr)
+{{- if isRunAll .Action.Run }}
+              # Run all jobs
+{{- range $.Jobs }}
+              job_decisions['{{ .Name }}']['run'] = True
+{{- end }}
+{{- else if .Action.Run }}
+              # Run specific jobs
+{{- range asStringSlice .Action.Run }}
+              job_decisions['{{ . }}']['run'] = True
+{{- end }}
+{{- end }}
+{{- if isSkipAll .Action.Skip }}
+              # Skip all jobs (except those in 'except' list)
+{{- $except := .Action.Except }}
+{{- range $.Jobs }}
+{{- if not (has $except .Name) }}
+              job_decisions['{{ .Name }}']['skip'] = True
+{{- end }}
+{{- end }}
+{{- else if .Action.Skip }}
+              # Skip specific jobs
+{{- range asStringSlice .Action.Skip }}
+              job_decisions['{{ . }}']['skip'] = True
+{{- end }}
+{{- end }}
+
+{{- end }}
+
+          # Apply clash resolution: run wins over skip
+          # Output final decisions
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-{{- range .DomainFlags }}
-              # {{ .Name }}: {{ .Description }}
-              {{ .Name }}_value = (
-                  {{- range $i, $cond := .Conditions }}
-                  {{- if $i }} or {{ end -}}
-                  ({{ $cond }})
-                  {{- end }}
-              )
-              print(f"{{ .Name }}={str({{ .Name }}_value).lower()}", file=sys.stderr)
-              output.write(f"{{ .Name }}={str({{ .Name }}_value).lower()}\n")
-{{ end }}
+{{- range .Jobs }}
+              should_run = job_decisions['{{ .Name }}']['run'] or not job_decisions['{{ .Name }}']['skip']
+              # Default from config
+{{- if eq (index $.Defaults .Name) "run" }}
+              if not job_decisions['{{ .Name }}']['run'] and not job_decisions['{{ .Name }}']['skip']:
+                  should_run = True
+{{- else }}
+              if not job_decisions['{{ .Name }}']['run'] and not job_decisions['{{ .Name }}']['skip']:
+                  should_run = False
+{{- end }}
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['{{ .Name }}']['run']:
+                  should_run = True
+
+              print(f"{{ .Name }}: run={job_decisions['{{ .Name }}']['run']}, skip={job_decisions['{{ .Name }}']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_{{ .SanitizedName }}={str(should_run).lower()}\n")
+{{- end }}
 `
 
-type DomainFlag struct {
-	Name        string
-	Description string
-	Conditions  []string // Python conditions
+type JobInfo struct {
+	Name          string
+	SanitizedName string
 }
 
 func generateGitHubActionsWorkflow(config *Config, outputPath string) error {
-	// Extract domain flags from rules
-	domainFlags := extractDomainFlags(config)
+	// Prepare jobs with sanitized names
+	jobs := make([]JobInfo, len(config.Jobs))
+	for i, job := range config.Jobs {
+		jobs[i] = JobInfo{
+			Name:          job,
+			SanitizedName: sanitizeName(job),
+		}
+	}
 
-	tmpl, err := template.New("workflow").Parse(ghaWorkflowTemplate)
+	// Template functions
+	funcMap := template.FuncMap{
+		"has": func(slice []string, item string) bool {
+			for _, s := range slice {
+				if s == item {
+					return true
+				}
+			}
+			return false
+		},
+		"index": func(m map[string]string, key string) string {
+			return m[key]
+		},
+		"isRunAll": func(run interface{}) bool {
+			if run == nil {
+				return false
+			}
+			s, ok := run.(string)
+			return ok && s == "all"
+		},
+		"isSkipAll": func(skip interface{}) bool {
+			if skip == nil {
+				return false
+			}
+			s, ok := skip.(string)
+			return ok && s == "all"
+		},
+		"asStringSlice": func(v interface{}) []string {
+			if v == nil {
+				return nil
+			}
+			// Handle both []string and []interface{}
+			switch val := v.(type) {
+			case []string:
+				return val
+			case []interface{}:
+				result := make([]string, len(val))
+				for i, item := range val {
+					if s, ok := item.(string); ok {
+						result[i] = s
+					}
+				}
+				return result
+			}
+			return nil
+		},
+	}
+
+	tmpl, err := template.New("workflow").Funcs(funcMap).Parse(ghaWorkflowTemplate)
 	if err != nil {
 		return fmt.Errorf("parsing template: %w", err)
 	}
@@ -214,9 +331,13 @@ func generateGitHubActionsWorkflow(config *Config, outputPath string) error {
 	defer f.Close()
 
 	data := struct {
-		DomainFlags []DomainFlag
+		Jobs     []JobInfo
+		Rules    []Rule
+		Defaults map[string]string
 	}{
-		DomainFlags: domainFlags,
+		Jobs:     jobs,
+		Rules:    config.Rules,
+		Defaults: config.Defaults,
 	}
 
 	if err := tmpl.Execute(f, data); err != nil {
@@ -224,70 +345,6 @@ func generateGitHubActionsWorkflow(config *Config, outputPath string) error {
 	}
 
 	return nil
-}
-
-func extractDomainFlags(config *Config) []DomainFlag {
-	// Create domain flags for job groups and label triggers
-	var flags []DomainFlag
-
-	// Add flags for common domains based on rules
-	// Track insertion order for deterministic output
-	domainMap := make(map[string]*DomainFlag)
-	domainOrder := []string{}
-
-	for _, rule := range config.Rules {
-		// Extract domain from rule
-		var domain string
-		var conditions []string
-
-		// Label-based rules
-		if rule.When.Label != "" {
-			domain = sanitizeName(rule.When.Label + "_label")
-			conditions = append(conditions, fmt.Sprintf("has_label(%q)", rule.When.Label))
-		}
-
-		// Path-based rules for subsystems
-		if len(rule.When.AnyFileMatches) > 0 {
-			// Try to extract domain name from patterns
-			domain = sanitizeName(rule.Name)
-			patterns := formatPatterns(rule.When.AnyFileMatches)
-			conditions = append(conditions, fmt.Sprintf("any_file_matches([%s])", patterns))
-		}
-
-		if len(rule.When.EveryFileMatches) > 0 {
-			domain = sanitizeName(rule.Name)
-			patterns := formatPatterns(rule.When.EveryFileMatches)
-			conditions = append(conditions, fmt.Sprintf("every_file_matches([%s])", patterns))
-		}
-
-		if rule.When.AnyFileChanged {
-			domain = sanitizeName(rule.Name)
-			conditions = append(conditions, "bool(files)")
-		}
-
-		if domain == "" || len(conditions) == 0 {
-			continue
-		}
-
-		// Merge with existing domain flag if present
-		if existing, ok := domainMap[domain]; ok {
-			existing.Conditions = append(existing.Conditions, conditions...)
-		} else {
-			domainMap[domain] = &DomainFlag{
-				Name:        domain,
-				Description: fmt.Sprintf("'true' if %s", rule.Description),
-				Conditions:  conditions,
-			}
-			domainOrder = append(domainOrder, domain)
-		}
-	}
-
-	// Convert map to slice in insertion order (deterministic)
-	for _, domain := range domainOrder {
-		flags = append(flags, *domainMap[domain])
-	}
-
-	return flags
 }
 
 func sanitizeName(name string) string {
