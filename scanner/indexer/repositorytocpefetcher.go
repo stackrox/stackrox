@@ -1,5 +1,7 @@
 package indexer
 
+// CI-TEST: Validating scanner-subsystem rule - expect db-integration-tests and go
+
 import (
 	"context"
 	"encoding/json"
