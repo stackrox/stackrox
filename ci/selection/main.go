@@ -18,6 +18,8 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
+var validSHA = regexp.MustCompile(`^[0-9a-f]{40}$`)
+
 type (
 	// changedFiles binds a complete path list to immutable PR revisions.
 	changedFiles struct {
@@ -142,7 +144,6 @@ func readYAML(filename string, result any) error {
 }
 
 func validateDiff(diff changedFiles) error {
-	validSHA := regexp.MustCompile(`^[0-9a-f]{40}$`)
 	if !validSHA.MatchString(diff.Base) || !validSHA.MatchString(diff.Head) || diff.Files == nil {
 		return errors.New("complete diff requires full base/head SHAs and a files array")
 	}

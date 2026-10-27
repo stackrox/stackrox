@@ -254,7 +254,10 @@ func TestProductionConfiguration(t *testing.T) {
 	}
 	var targets []string
 	require.NoError(t, readYAML(filepath.Join(root, "ci/selection/prow-product-tests.yaml"), &targets))
-	facts, err := classify(sampleDiff([]string{"README.md", ".github/workflows/unit-tests.yaml", "ci/selection/main.go"}), groups, ignores)
+	facts, err := classify(sampleDiff([]string{
+		"README.md", ".github/workflows/unit-tests.yaml", "ci/selection/main.go",
+		"tools/roxvet/analyzers/validateimports/analyzer.go",
+	}), groups, ignores)
 	require.NoError(t, err)
 	if len(ignores) > 0 {
 		require.Equal(t, "skip", decide("gke-qa-e2e-tests", facts, targets).Decision)
