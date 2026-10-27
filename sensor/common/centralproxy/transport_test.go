@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -148,9 +149,9 @@ func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, calls.Load())
 	assert.Equal(t, []string{centralproxy.MetricsPermissionSetID}, client.lastRequest.GetPermissionSetIds())
-	assert.Equal(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}}, client.lastRequest.GetHttpRequestScopes())
+	protoassert.SlicesEqual(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}}, client.lastRequest.GetHttpRequestScopes())
 	assert.Empty(t, client.lastRequest.GetPermissions())
-	assert.Equal(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
 		client.lastRequest.GetClusterScopes())
 
 	transport := &scopedTokenTransport{
