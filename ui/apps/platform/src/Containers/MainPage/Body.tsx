@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import type { ElementType, ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat';
-import { Bullseye, PageSection, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
@@ -14,10 +14,8 @@ import {
     clustersClusterRegistrationSecretsPathWithParam,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
-    clustersInitBundlesPathWithParam,
     clustersPathWithParam,
     clustersSecureClusterCrsPath,
-    clustersSecureClusterPath,
     collectionsPath,
     complianceEnhancedCoveragePath,
     complianceEnhancedSchedulesPath,
@@ -57,8 +55,7 @@ import {
 } from 'routePaths';
 import type { RouteKey } from 'routePaths';
 
-import PageNotFound from 'Components/PageNotFound';
-import PageTitle from 'Components/PageTitle';
+import NotFoundPage from 'Components/NotFoundPage';
 import usePermissions from 'hooks/usePermissions';
 import type { HasReadAccess } from 'hooks/usePermissions';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
@@ -66,15 +63,6 @@ import useAnalytics from 'hooks/useAnalytics';
 import { selectors } from 'reducers';
 
 import InviteUsersModal from './InviteUsers/InviteUsersModal';
-
-function NotFoundPage(): ReactElement {
-    return (
-        <PageSection hasBodyWrapper={false}>
-            <PageTitle title="Not Found" />
-            <PageNotFound />
-        </PageSection>
-    );
-}
 
 const WorkloadCvesPage = lazy(
     () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
@@ -118,11 +106,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: clustersDiscoveredClustersPath,
     },
-    // Cluster init bundles must precede generic Clusters.
-    'clusters/init-bundles': {
-        component: lazy(() => import('Containers/Clusters/InitBundles/InitBundlesRoute')),
-        path: clustersInitBundlesPathWithParam,
-    },
     // Cluster registration secrets must precede generic Clusters.
     'clusters/cluster-registration-secrets': {
         component: lazy(
@@ -130,11 +113,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
                 import('Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute')
         ),
         path: clustersClusterRegistrationSecretsPathWithParam,
-    },
-    // Cluster secure-a-cluster must precede generic Clusters.
-    'clusters/secure-a-cluster': {
-        component: lazy(() => import('Containers/Clusters/InitBundles/SecureClusterPage')),
-        path: clustersSecureClusterPath,
     },
     // Cluster secure-a-cluster-crs must precede generic Clusters.
     'clusters/secure-a-cluster-crs': {

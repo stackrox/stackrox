@@ -95,27 +95,9 @@ export function deleteClusters(ids: string[] = []): Promise<Empty[]> {
     return Promise.all(ids.map((id) => deleteCluster(id)));
 }
 
-export type InitBundleAttribute = {
+export type UserAttribute = {
     key: string;
     value: string;
-};
-
-export type ImpactedCluster = {
-    name: string;
-    id: string;
-};
-
-export type ClusterInitBundle = {
-    id: string;
-    name: string;
-    createdAt: string;
-    createdBy: {
-        id: string;
-        authProviderId: string;
-        attributes: InitBundleAttribute[];
-    };
-    expiresAt: string;
-    impactedClusters: ImpactedCluster[];
 };
 
 export type ClusterRegistrationSecret = {
@@ -125,7 +107,7 @@ export type ClusterRegistrationSecret = {
     createdBy: {
         id: string;
         authProviderId: string;
-        attributes: InitBundleAttribute[];
+        attributes: UserAttribute[];
     };
     expiresAt: string;
     // Protobuf uint64 is serialized as a JSON string. Parse with parseInt when a numeric value is needed.
@@ -133,16 +115,6 @@ export type ClusterRegistrationSecret = {
     registrationsInitiated: string[];
     registrationsCompleted: string[];
 };
-
-export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterInitBundle[] } }> {
-    return axios
-        .get<{ items: ClusterInitBundle[] }>(`${clusterInitUrl}/init-bundles`)
-        .then((response) => {
-            return {
-                response: response.data ?? { items: [] },
-            };
-        });
-}
 
 export function fetchClusterRegistrationSecrets(): Promise<{ items: ClusterRegistrationSecret[] }> {
     return axios
@@ -152,32 +124,10 @@ export function fetchClusterRegistrationSecrets(): Promise<{ items: ClusterRegis
         });
 }
 
-export type GenerateClusterInitBundleResponse = {
-    meta?: ClusterInitBundle;
-    helmValuesBundle?: string; // bytes
-    kubectlBundle?: string; // bytes
-};
-
 export type GenerateClusterRegistrationSecretResponse = {
     meta?: ClusterRegistrationSecret;
     crs?: string; // bytes
 };
-
-export function generateClusterInitBundle(data: { name: string }): Promise<{
-    response: GenerateClusterInitBundleResponse;
-}> {
-    return axios
-        .post<{
-            meta: ClusterInitBundle;
-            helmValuesBundle: string;
-            kubectlBundle: string;
-        }>(`${clusterInitUrl}/init-bundles`, data)
-        .then((response) => {
-            return {
-                response: response.data ?? {},
-            };
-        });
-}
 
 export type GenerateClusterRegistrationSecretExtendedRequest = {
     name: string;
@@ -199,17 +149,6 @@ export function generateClusterRegistrationSecretExtended(
         });
 }
 
-export type InitBundleRevocationError = {
-    id: string;
-    error: string;
-    impactedClusters: ImpactedCluster[];
-};
-
-export type InitBundleRevokeResponse = {
-    initBundleRevocationErrors: InitBundleRevocationError[];
-    initBundleRevokedIds: string[];
-};
-
 export type ClusterRegistrationSecretRevocationError = {
     id: string;
     error: string;
@@ -219,20 +158,6 @@ export type ClusterRegistrationSecretRevokeResponse = {
     crsRevocationErrors: ClusterRegistrationSecretRevocationError[];
     revokedIds: string[];
 };
-
-export function revokeClusterInitBundles(
-    ids: string[],
-    confirmImpactedClustersIds: string[]
-): Promise<InitBundleRevokeResponse> {
-    return axios
-        .patch<InitBundleRevokeResponse>(`${clusterInitUrl}/init-bundles/revoke`, {
-            ids,
-            confirmImpactedClustersIds,
-        })
-        .then((response) => {
-            return response.data;
-        });
-}
 
 export function revokeClusterRegistrationSecrets(
     ids: string[]

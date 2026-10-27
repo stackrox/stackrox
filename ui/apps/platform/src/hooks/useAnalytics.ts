@@ -66,15 +66,8 @@ export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
 export const NODE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
     'Node Vulnerability Reports Wizard Save Clicked';
 
-// cluster-init-bundles
-export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
-export const VIEW_INIT_BUNDLES_CLICKED = 'View Init Bundles Clicked';
-export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
-export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
-export const DOWNLOAD_INIT_BUNDLE = 'Download Init Bundle';
-export const REVOKE_INIT_BUNDLE = 'Revoke Init Bundle';
-
 // cluster-registration-secrets
+export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
 export const CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED =
     'Create Cluster Registration Secret Clicked';
 export const DOWNLOAD_CLUSTER_REGISTRATION_SECRET = 'Download Cluster Registration Secret';
@@ -392,41 +385,12 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the user clicks the "Create Bundle" button
-     * source: 'No Clusters' is superseded by the following event in 4.10
-     */
-    | {
-          event: typeof CREATE_INIT_BUNDLE_CLICKED;
-          properties: {
-              source: 'No Clusters' | 'Cluster Init Bundles';
-          };
-      }
-    /**
-     * Tracks each time the user clicks the "Init bundles installation method" link
-     * superseded the preceding event in 4.10
-     */
-    | {
-          event: typeof VIEW_INIT_BUNDLES_CLICKED;
-          properties: {
-              source: 'No Clusters';
-          };
-      }
-    /**
      * Tracks each time the user clicks the "Create Cluster Registration Secrets" button
      */
     | {
           event: typeof CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED;
           properties: {
               source: 'No Clusters' | 'Cluster Registration Secrets';
-          };
-      }
-    /**
-     * Tracks each time the user clicks a link to visit the "Secure a Cluster" page
-     */
-    | {
-          event: typeof SECURE_A_CLUSTER_LINK_CLICKED;
-          properties: {
-              source: 'No Clusters' | 'Secure a Cluster Dropdown';
           };
       }
     /**
@@ -439,17 +403,9 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the user downloads an init bundle
-     */
-    | typeof DOWNLOAD_INIT_BUNDLE
-    /**
      * Tracks each time the user downloads a cluster registration secret
      */
     | typeof DOWNLOAD_CLUSTER_REGISTRATION_SECRET
-    /**
-     * Tracks each time the user revokes an init bundle
-     */
-    | typeof REVOKE_INIT_BUNDLE
     /**
      * Tracks each time the user revokes cluster registration secret
      */
