@@ -198,7 +198,6 @@ jobs:
 
     - name: make golangci-lint
       env:
-        GOGC: "50"
         GOMEMLIMIT: 12GiB
       run: make golangci-lint
 
