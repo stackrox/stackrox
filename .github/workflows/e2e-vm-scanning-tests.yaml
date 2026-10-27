@@ -48,15 +48,10 @@ jobs:
       CLUSTER_NAME_PREFIX: ${{ inputs.cluster-name-prefix }}
       CLUSTER_NAME_PREFIX_MAX: "20"
       # VM scanning is a Scanner V4 feature and currently only exercised on
-      # OpenShift with CNV/KubeVirt. These mirror scripts/ci/jobs/ocp_vm_scanning_e2e_tests.py.
-      DEPLOY_STACKROX_VIA_OPERATOR: "true"
+      # OpenShift with CNV/KubeVirt.
       ORCHESTRATOR_FLAVOR: openshift
       KUBERNETES_PROVIDER: ocp
-      SENSOR_SCANNER_SUPPORT: "true"
-      ROX_DEPLOY_SENSOR_WITH_CRS: "true"
-      SENSOR_HELM_MANAGED: "true"
       INSTALL_CNV_OPERATOR: "true"
-      ROX_VIRTUAL_MACHINES: "true"
       ROX_SCANNER_V4: "true"
       # Selectively enable vulnerability bundles to prevent timeouts of the matcher not
       # being ready in time. The rhel-vex bundle alone has ~3M records and can take >30
@@ -123,12 +118,15 @@ jobs:
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-    - name: Install roxctl
-      # Used by deploy_sensor_via_operator (ROX_DEPLOY_SENSOR_WITH_CRS=true) to
-      # generate the sensor CRS bundle.
-      uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
+    - name: Retrieving roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
       with:
-        roxctl-release: latest
+        version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Install oc
       run: |
@@ -166,13 +164,63 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
-    - name: Run VM scanning e2e tests
+    - name: Deploy StackRox and run VM scanning e2e tests
+      # Mirrors tests/e2e/run-vm-scanning.sh (used by Prow), except deployment
+      # goes through roxie instead of the OLM/operator-bundle path -- roxie
+      # installs the operator via direct manifests, not OLM/CSV, so it isn't
+      # affected by Konflux-built bundles referencing registry.redhat.io
+      # images that don't exist yet for unreleased builds. Same deploy
+      # mechanism as e2e-db-backup-restore-tests.yaml.
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: tests/e2e/run-vm-scanning.sh /tmp/vm-scanning-test-logs
+      run: |
+        source tests/e2e/lib.sh
+        source tests/e2e/vm-scanning-lib.sh
+        source tests/scripts/setup-certs.sh
+        source scripts/ci/sensor-wait.sh
+
+        export_test_environment
+        setup_deployment_env true false # with docker login, no websockets
+        ensure_vm_scanning_cluster_prereqs
+        remove_existing_stackrox_resources
+        setup_default_TLS_certs
+
+        deploy_optional_e2e_components
+
+        if ! ensure_virtctl_binary; then
+          if [[ "${_VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP:-0}" != 1 ]]; then
+            warn "Secure virtctl download failed. Falling back to insecure curl -k download path in CI."
+            ensure_virtctl_binary_insecure || true
+          fi
+          if ! command -v virtctl >/dev/null; then
+            warn "Cluster ConsoleCLIDownload did not serve virtctl. Falling back to the matching KubeVirt GitHub release."
+            _install_virtctl_from_kubevirt_release \
+                || die "Failed to install virtctl from cluster ConsoleCLIDownload and KubeVirt GitHub release"
+          fi
+        fi
+
+        roxie_config="$(mktemp)"
+        merge_yaml "$roxie_config" <<'EOF'
+        central:
+          resourceProfile: ci
+        securedCluster:
+          resourceProfile: ci
+        EOF
+        # Explicit for parity with deploy_central_via_operator(); ROX_VIRTUAL_MACHINES
+        # also defaults to enabled (pkg/features/list.go), so this is defense in depth.
+        set_custom_env "$roxie_config" "central" "ROX_VIRTUAL_MACHINES" "true"
+        deploy_stackrox_with_roxie_compat "$roxie_config"
+        rm -f "$roxie_config"
+
+        ensure_vm_scan_ssh_identity
+        persist_vm_scan_virtctl
+        rm -f FAIL
+        make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-tests || touch FAIL
+        store_test_results "tests/vm-scanning-tests-results" "/tmp/vm-scanning-test-logs/vm-e2e-tests"
+        [[ ! -f FAIL ]] || die "VM scanning e2e tests failed"
 
     - name: Run post-test
       if: always()
