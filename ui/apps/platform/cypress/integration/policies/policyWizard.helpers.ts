@@ -1,5 +1,5 @@
-import { selectors } from './Policies.selectors';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
+import { selectors } from './Policies.selectors';
 
 // --- Form Interaction ---
 
@@ -61,7 +61,21 @@ export function addInclusionWithNamespace(namespace: string) {
 
 export function addExclusionWithDeployment(deploymentName: string) {
     cy.contains('button', 'Add exclusion').click();
-    cy.get('[aria-label="Deployment name"]').type(deploymentName);
+    cy.get('[aria-label="Workload name"]').type(deploymentName);
+}
+
+function workloadKindCheckboxId(label: 'CronJobs' | 'Jobs') {
+    return label === 'CronJobs' ? 'exclude-workload-kind-CRON_JOB' : 'exclude-workload-kind-JOB';
+}
+
+export function toggleWorkloadKindExclusion(label: 'CronJobs' | 'Jobs') {
+    cy.contains('h4', 'By kind');
+    // "Jobs" is a substring of "CronJobs", so a label text match clicks the wrong checkbox.
+    cy.get(`label[for="${workloadKindCheckboxId(label)}"]`).click();
+}
+
+export function assertWorkloadKindExclusion(label: 'CronJobs' | 'Jobs', isChecked: boolean) {
+    cy.get(`#${workloadKindCheckboxId(label)}`).should(isChecked ? 'be.checked' : 'not.be.checked');
 }
 
 // --- Step 5: Actions ---

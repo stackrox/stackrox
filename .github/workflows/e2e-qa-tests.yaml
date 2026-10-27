@@ -107,6 +107,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
+      - name: Validate input tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: scripts/ci/lib.sh validate_image_tag "$TAG"
+
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -156,8 +161,8 @@ jobs:
         if: inputs.cluster-provisioning-method == 'direct-gke'
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
-          MACHINE_TYPE: "e2-standard-8"
-          NUM_NODES: "3"
+          MACHINE_TYPE: "e2-standard-16"
+          NUM_NODES: "1"
           GKE_SPOT: "true"
         run: |
           scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
@@ -173,11 +178,7 @@ jobs:
         env:
           EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
         run: |
-          while IFS= read -r line; do
-            if [[ -n "$line" ]]; then
-              echo "$line" >> "$GITHUB_ENV"
-            fi
-          done <<< "$EXTRA_ENV_VARS"
+          printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
       - name: Install roxctl
         uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
