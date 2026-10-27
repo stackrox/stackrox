@@ -368,11 +368,11 @@ func legacyProxyGrantAllowed(grant *ClientPolicyGrant, request *http.Request) bo
 		return false
 	}
 	for _, scope := range grant.HTTPRequestScopes {
-		methods, found := allowed[scope.Path]
+		methods, found := allowed[scope.GetPath()]
 		if !found {
 			return false
 		}
-		for _, method := range scope.Methods {
+		for _, method := range scope.GetMethods() {
 			if !slices.Contains(methods, method) {
 				return false
 			}

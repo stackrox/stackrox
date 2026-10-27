@@ -10,6 +10,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -21,12 +22,16 @@ import (
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
+	k8sTesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/tools/cache"
 )
 
 func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
@@ -34,6 +39,7 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientset()
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	request := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 	request.Header.Set("Authorization", "Bearer reviewed-token")
 	user := &authenticationv1.UserInfo{Username: "alice"}
@@ -57,7 +63,7 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 	assert.Equal(t, clientAuthKubernetesBearer, grant.AuthType)
 	assert.Equal(t, "alice", grant.Subject)
 	assert.Equal(t, centralproxy.ConsoleProxyPermissionSetID, grant.PermissionSetID)
-	assert.Equal(t, clientPolicyScopesToProto(defaults.Clients[1].HTTPScopes), grant.HTTPRequestScopes)
+	protoassert.SlicesEqual(t, clientPolicyScopesToProto(defaults.Clients[1].HTTPScopes), grant.HTTPRequestScopes)
 
 	// A new exact user policy overrides the wildcard, without weakening other users.
 	defaults.Clients = append(defaults.Clients, clientPolicyEntry{
@@ -65,6 +71,7 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 		HTTPScopes: consolePolicyHTTPScopes(),
 	})
 	setClientPolicyConfigMap(t, ctx, client, defaults)
+	waitForClientPolicy(t, policy, defaults)
 	grant, err = policy.Authorize(ctx, request, user)
 	require.NoError(t, err)
 	assert.Equal(t, "alice-permissions", grant.PermissionSetID)
@@ -73,11 +80,16 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 	assert.Equal(t, centralproxy.ConsoleProxyPermissionSetID, grant.PermissionSetID)
 	defaults.Version++
 	setClientPolicyConfigMap(t, ctx, client, defaults)
+	require.Eventually(t, func() bool { return policy.policy.Load() == nil }, time.Second, 10*time.Millisecond)
 	_, err = policy.Authorize(ctx, request, user)
 	require.Error(t, err)
+	defaults.Version--
+	setClientPolicyConfigMap(t, ctx, client, defaults)
+	waitForClientPolicy(t, policy, defaults)
 
 	// Removing an established policy never recreates it or falls back to defaults.
 	require.NoError(t, client.CoreV1().ConfigMaps(pods.GetPodNamespace()).Delete(ctx, ClientPolicyConfigMapName, metav1.DeleteOptions{}))
+	require.Eventually(t, func() bool { return policy.policy.Load() == nil }, time.Second, 10*time.Millisecond)
 	_, err = policy.Authorize(ctx, request, user)
 	require.Error(t, err)
 	require.NoError(t, policy.EnsureDefaults(ctx))
@@ -89,6 +101,7 @@ func TestClientPolicyRejectsUnreviewedOrOutOfScopeBearers(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientset()
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(ctx))
 	for name, tc := range map[string]struct {
 		method, path string
@@ -118,8 +131,10 @@ func TestClientPolicyEmptyEntriesDisableClients(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientset()
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(ctx))
 	setClientPolicyConfigMap(t, ctx, client, clientPolicyDocument{Version: clientPolicyVersion, Clients: []clientPolicyEntry{}})
+	waitForClientPolicy(t, policy, clientPolicyDocument{Version: clientPolicyVersion, Clients: []clientPolicyEntry{}})
 	r := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 	r.Header.Set("Authorization", "Bearer token")
 	_, err := policy.Authorize(ctx, r, &authenticationv1.UserInfo{Username: "alice"})
@@ -154,6 +169,7 @@ func TestClientPolicyMTLSMatchesOnlyReferencedCA(t *testing.T) {
 		Data:       map[string]string{ref.Key: caPEM},
 	})
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(ctx))
 	otherRef := clientPolicyCARef{Namespace: ref.Namespace, ConfigMap: "second-client-ca", Key: ref.Key}
 	_, err := client.CoreV1().ConfigMaps(otherRef.Namespace).Create(ctx, &corev1.ConfigMap{
@@ -170,6 +186,7 @@ func TestClientPolicyMTLSMatchesOnlyReferencedCA(t *testing.T) {
 		HTTPScopes:      doc.Clients[0].HTTPScopes,
 	})
 	setClientPolicyConfigMap(t, ctx, client, doc)
+	waitForClientPolicy(t, policy, doc)
 	good := signedTestCertificate(t, ca, caKey, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
 	other := signedTestCertificate(t, otherCA, otherCAKey, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
 	second := signedTestCertificate(t, otherCA, otherCAKey, "second-client", x509.ExtKeyUsageClientAuth)
@@ -183,13 +200,18 @@ func TestClientPolicyMTLSMatchesOnlyReferencedCA(t *testing.T) {
 		r.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{leaf}}
 		return r
 	}
-	grant, err := policy.Authorize(ctx, request(good), nil)
-	require.NoError(t, err)
+	var grant *ClientPolicyGrant
+	require.Eventually(t, func() bool {
+		grant, err = policy.Authorize(ctx, request(good), nil)
+		return err == nil
+	}, time.Second, 10*time.Millisecond)
 	assert.Equal(t, clientAuthMTLS, grant.AuthType)
 	assert.Equal(t, env.SecureMetricsClientCertCN.Setting(), grant.Subject)
 	assert.Equal(t, centralproxy.MetricsPermissionSetID, grant.PermissionSetID)
-	grant, err = policy.Authorize(ctx, request(second), nil)
-	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		grant, err = policy.Authorize(ctx, request(second), nil)
+		return err == nil
+	}, time.Second, 10*time.Millisecond)
 	assert.Equal(t, "second-permissions", grant.PermissionSetID)
 	for name, cert := range map[string]tls.Certificate{
 		"wrong CA": other, "wrong CN": wrongCN, "wrong EKU": wrongEKU, "expired": expired,
@@ -210,13 +232,146 @@ func TestClientPolicyMTLSMatchesOnlyReferencedCA(t *testing.T) {
 	caConfigMap.Data[ref.Key] = otherCAPEM
 	_, err = client.CoreV1().ConfigMaps(ref.Namespace).Update(ctx, caConfigMap, metav1.UpdateOptions{})
 	require.NoError(t, err)
-	_, err = policy.Authorize(ctx, request(good), nil)
-	require.Error(t, err)
-	_, err = policy.Authorize(ctx, request(other), nil)
+	require.Eventually(t, func() bool {
+		_, badErr := policy.Authorize(ctx, request(good), nil)
+		_, goodErr := policy.Authorize(ctx, request(other), nil)
+		return badErr != nil && goodErr == nil
+	}, time.Second, 10*time.Millisecond)
+	caConfigMap.Data[ref.Key] = "invalid CA"
+	_, err = client.CoreV1().ConfigMaps(ref.Namespace).Update(ctx, caConfigMap, metav1.UpdateOptions{})
 	require.NoError(t, err)
-	require.NoError(t, client.CoreV1().ConfigMaps(ref.Namespace).Delete(ctx, ref.ConfigMap, metav1.DeleteOptions{}))
+	require.Eventually(t, func() bool {
+		return policy.caWatches[ref].roots.Load() == nil
+	}, time.Second, 10*time.Millisecond)
 	_, err = policy.Authorize(ctx, request(other), nil)
 	require.Error(t, err)
+	caConfigMap.Data[ref.Key] = otherCAPEM
+	_, err = client.CoreV1().ConfigMaps(ref.Namespace).Update(ctx, caConfigMap, metav1.UpdateOptions{})
+	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		_, err := policy.Authorize(ctx, request(other), nil)
+		return err == nil
+	}, time.Second, 10*time.Millisecond)
+	require.NoError(t, client.CoreV1().ConfigMaps(ref.Namespace).Delete(ctx, ref.ConfigMap, metav1.DeleteOptions{}))
+	require.Eventually(t, func() bool {
+		return policy.caWatches[ref].roots.Load() == nil
+	}, time.Second, 10*time.Millisecond)
+	_, err = policy.Authorize(ctx, request(other), nil)
+	require.Error(t, err)
+}
+
+func TestClientPolicyAuthorizesFromWatchesWithoutAPIReads(t *testing.T) {
+	ctx := context.Background()
+	ca, caKey, caPEM := clientPolicyTestCA(t)
+	ref := clientPolicyCARef{
+		Namespace: env.SecureMetricsClientCANamespace.Setting(),
+		ConfigMap: env.SecureMetricsClientCAConfigMap.Setting(),
+		Key:       env.SecureMetricsClientCAKey.Setting(),
+	}
+	client := fake.NewClientset(&corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: ref.ConfigMap, Namespace: ref.Namespace},
+		Data:       map[string]string{ref.Key: caPEM},
+	})
+	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(ctx))
+	client.PrependReactor("get", "configmaps", func(k8sTesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.New("Kubernetes API unavailable")
+	})
+	cert := signedTestCertificate(t, ca, caKey, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
+	leaf, err := x509.ParseCertificate(cert.Certificate[0])
+	require.NoError(t, err)
+	metricsRequest := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	metricsRequest.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{leaf}}
+	bearerRequest := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+	bearerRequest.Header.Set("Authorization", "Bearer reviewed-token")
+	for range 3 {
+		_, err = policy.Authorize(ctx, metricsRequest, nil)
+		require.NoError(t, err)
+		_, err = policy.Authorize(ctx, bearerRequest, &authenticationv1.UserInfo{Username: "alice"})
+		require.NoError(t, err)
+	}
+}
+
+func TestClientPolicyCacheTracksCAReferences(t *testing.T) {
+	ctx := t.Context()
+	client := fake.NewClientset()
+	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(ctx))
+
+	doc := defaultClientPolicy()
+	var originalRef clientPolicyCARef
+	require.NoError(t, json.Unmarshal(doc.Clients[0].CARef, &originalRef))
+	originalWatch := policy.policy.Load().caRoots[originalRef]
+	require.NotNil(t, originalWatch)
+	newRef := clientPolicyCARef{Namespace: originalRef.Namespace, ConfigMap: "another-proxy-client-ca", Key: "ca.crt"}
+	_, _, caPEM := clientPolicyTestCA(t)
+	_, err := client.CoreV1().ConfigMaps(newRef.Namespace).Create(ctx, &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: newRef.ConfigMap, Namespace: newRef.Namespace},
+		Data:       map[string]string{newRef.Key: caPEM},
+	}, metav1.CreateOptions{})
+	require.NoError(t, err)
+	refJSON, err := json.Marshal(newRef)
+	require.NoError(t, err)
+	doc.Clients = append(doc.Clients, clientPolicyEntry{
+		AuthType: clientAuthMTLS, Subject: "another-client", CARef: refJSON,
+		PermissionSetID: centralproxy.MetricsPermissionSetID,
+		HTTPScopes:      tokens.HTTPRequestScopes{"/metrics": {http.MethodGet}},
+	})
+	setClientPolicyConfigMap(t, ctx, client, doc)
+	waitForClientPolicy(t, policy, doc)
+	newWatch := policy.policy.Load().caRoots[newRef]
+	require.NotNil(t, newWatch)
+	require.Eventually(t, func() bool { return newWatch.roots.Load() != nil }, time.Second, 10*time.Millisecond)
+
+	doc.Clients = doc.Clients[1:]
+	setClientPolicyConfigMap(t, ctx, client, doc)
+	waitForClientPolicy(t, policy, doc)
+	assert.NotContains(t, policy.policy.Load().caRoots, originalRef)
+	select {
+	case <-originalWatch.stop:
+	default:
+		t.Fatal("removed CA reference is still watched")
+	}
+	assert.Same(t, newWatch, policy.policy.Load().caRoots[newRef])
+
+	policy.Stop()
+	select {
+	case <-newWatch.stop:
+	default:
+		t.Fatal("active CA watch was not stopped")
+	}
+	assert.False(t, policy.ready.Load())
+}
+
+func TestClientPolicyCacheInvalidatesCAAndIgnoresOtherObjects(t *testing.T) {
+	_, _, caPEM := clientPolicyTestCA(t)
+	ref := clientPolicyCARef{Namespace: "monitoring", ConfigMap: "client-ca", Key: "ca.crt"}
+	watch := &clientCAWatch{}
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Namespace: ref.Namespace, Name: ref.ConfigMap},
+		Data:       map[string]string{ref.Key: caPEM},
+	}
+	watch.update(cm, ref)
+	require.NotNil(t, watch.roots.Load())
+	other := cm.DeepCopy()
+	other.Name = "other-client-ca"
+	other.Data[ref.Key] = "invalid CA"
+	watch.update(other, ref)
+	assert.NotNil(t, watch.roots.Load())
+	assert.Nil(t, watchedConfigMap(cache.DeletedFinalStateUnknown{Obj: other}, ref.Namespace, ref.ConfigMap))
+	assert.Same(t, cm, watchedConfigMap(cache.DeletedFinalStateUnknown{Obj: cm}, ref.Namespace, ref.ConfigMap))
+
+	cm.Data[ref.Key] = "invalid CA"
+	watch.update(cm, ref)
+	assert.Nil(t, watch.roots.Load())
+	cm.Data[ref.Key] = caPEM
+	watch.update(cm, ref)
+	assert.NotNil(t, watch.roots.Load())
+	delete(cm.Data, ref.Key)
+	watch.update(cm, ref)
+	assert.Nil(t, watch.roots.Load())
 }
 
 func TestClientPolicyRejectsMalformedPolicies(t *testing.T) {
@@ -274,6 +429,7 @@ func TestClientPolicyDoesNotReplaceInvalidExistingConfigMap(t *testing.T) {
 		Data:       map[string]string{ClientPolicyDataKey: `{"version":2,"clients":[]}`},
 	})
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.Error(t, policy.EnsureDefaults(ctx))
 	cm, err := client.CoreV1().ConfigMaps(pods.GetPodNamespace()).Get(ctx, ClientPolicyConfigMapName, metav1.GetOptions{})
 	require.NoError(t, err)
@@ -306,6 +462,20 @@ func setClientPolicyConfigMap(t *testing.T, ctx context.Context, client *fake.Cl
 	cm.Data[ClientPolicyDataKey] = string(data)
 	_, err = client.CoreV1().ConfigMaps(pods.GetPodNamespace()).Update(ctx, cm, metav1.UpdateOptions{})
 	require.NoError(t, err)
+}
+
+func waitForClientPolicy(t *testing.T, policy *ClientPolicy, doc clientPolicyDocument) {
+	t.Helper()
+	want, err := json.Marshal(doc)
+	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		snapshot := policy.policy.Load()
+		if snapshot == nil {
+			return false
+		}
+		got, err := json.Marshal(snapshot.document)
+		return err == nil && string(got) == string(want)
+	}, time.Second, 10*time.Millisecond)
 }
 
 func clientPolicyTestCA(t *testing.T) (*x509.Certificate, *ecdsa.PrivateKey, string) {

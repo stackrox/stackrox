@@ -189,7 +189,7 @@ func TestProfileTokenIsBoundToConfiguredClaimsInCache(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "profile-token", token)
 	assert.Equal(t, profile.identity, client.lastRequest.GetRequester())
-	assert.Equal(t, profile.httpScopes, client.lastRequest.GetHttpRequestScopes())
+	protoassert.SlicesEqual(t, profile.httpScopes, client.lastRequest.GetHttpRequestScopes())
 	assert.Equal(t, []string{profile.permissionSetID}, client.lastRequest.GetPermissionSetIds())
 	require.Len(t, client.lastRequest.GetClusterScopes(), 1)
 	assert.Equal(t, "sensor-cluster", client.lastRequest.GetClusterScopes()[0].GetClusterId())
@@ -208,6 +208,12 @@ func TestProfileTokenIsBoundToConfiguredClaimsInCache(t *testing.T) {
 	_, err = provider.getTokenForProfile(context.Background(), &other)
 	require.NoError(t, err)
 	assert.EqualValues(t, 3, calls.Load())
+	other = *profile
+	other.permissionSetID = "another-read-only-set"
+	_, err = provider.getTokenForProfile(context.Background(), &other)
+	require.NoError(t, err)
+	assert.EqualValues(t, 4, calls.Load())
+	assert.Equal(t, []string{other.permissionSetID}, client.lastRequest.GetPermissionSetIds())
 }
 
 func TestProfileTransportReplacesCallerCredentials(t *testing.T) {

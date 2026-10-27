@@ -6,13 +6,13 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
 	"net/http"
 	"slices"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/sync"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +40,7 @@ const (
 	clientPolicyTimeout        = 10 * time.Second
 	maxClientPolicyEntries     = 64
 	clientAuthMTLS             = "mtls"
-	clientAuthKubernetesBearer = "kubernetesBearer"
+	clientAuthKubernetesBearer = "kubernetesBearer" //nolint:gosec // Authentication type, not a credential.
 )
 
 type clientPolicyDocument struct {
@@ -73,18 +74,23 @@ type ClientPolicyGrant struct {
 	HTTPRequestScopes []*apiV1.HTTPRequestScope
 }
 
-// ClientPolicy reads the current policy and, for mTLS identities, current CA on
-// each request. Call EnsureDefaults once at startup before accepting requests.
+// ClientPolicy authorizes requests against watched policy and CA ConfigMaps.
+// Call EnsureDefaults once at startup before accepting requests.
 type ClientPolicy struct {
-	client kubernetes.Interface
-	once   sync.Once
-	ready  atomic.Bool
-	err    error
+	client    kubernetes.Interface
+	once      sync.Once
+	ready     atomic.Bool
+	err       error
+	stop      chan struct{}
+	stopOnce  sync.Once
+	watchMu   sync.Mutex
+	caWatches map[clientPolicyCARef]*clientCAWatch
+	policy    atomic.Pointer[clientPolicySnapshot]
 }
 
 // NewClientPolicy constructs a Sensor proxy client policy using the Kubernetes API.
 func NewClientPolicy(client kubernetes.Interface) *ClientPolicy {
-	return &ClientPolicy{client: client}
+	return &ClientPolicy{client: client, stop: make(chan struct{}), caWatches: make(map[clientPolicyCARef]*clientCAWatch)}
 }
 
 // EnsureDefaults creates the default policy only if the ConfigMap is missing at
@@ -100,7 +106,7 @@ func (p *ClientPolicy) EnsureDefaults(ctx context.Context) error {
 
 func (p *ClientPolicy) ensureDefaults(ctx context.Context) error {
 	if p.client == nil {
-		return fmt.Errorf("client policy: Kubernetes client is nil")
+		return errors.New("client policy: Kubernetes client is nil")
 	}
 	ctx, cancel := context.WithTimeout(ctx, clientPolicyTimeout)
 	defer cancel()
@@ -122,8 +128,14 @@ func (p *ClientPolicy) ensureDefaults(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("loading client policy: %w", err)
 	}
-	_, err = parseClientPolicy(cm)
-	return err
+	if _, err = parseClientPolicy(cm); err != nil {
+		return err
+	}
+	if err := p.startPolicyWatch(ctx); err != nil {
+		p.Stop()
+		return err
+	}
+	return nil
 }
 
 func defaultClientPolicy() clientPolicyDocument {
@@ -159,17 +171,18 @@ func consolePolicyHTTPScopes() tokens.HTTPRequestScopes {
 // console namespace SubjectAccessReview before forwarding and must not treat a
 // signed token's identity claim as proof of possession of either credential.
 // When a client certificate is presented, bearer authentication is not a fallback.
-func (p *ClientPolicy) Authorize(ctx context.Context, r *http.Request, userInfo *authenticationv1.UserInfo) (*ClientPolicyGrant, error) {
+func (p *ClientPolicy) Authorize(_ context.Context, r *http.Request, userInfo *authenticationv1.UserInfo) (*ClientPolicyGrant, error) {
 	if p == nil || !p.ready.Load() {
 		return nil, pkghttputil.NewError(http.StatusServiceUnavailable, "client policy is not initialized")
 	}
 	if r == nil || r.URL == nil {
 		return nil, pkghttputil.NewError(http.StatusBadRequest, "invalid proxy request")
 	}
-	policy, err := p.load(ctx)
-	if err != nil {
-		return nil, pkghttputil.Errorf(http.StatusServiceUnavailable, "loading client policy: %v", err)
+	snapshot := p.policy.Load()
+	if snapshot == nil {
+		return nil, pkghttputil.NewError(http.StatusServiceUnavailable, "client policy is missing or invalid")
 	}
+	policy := snapshot.document
 
 	var authType, subject string
 	var certificate *x509.Certificate
@@ -204,7 +217,7 @@ func (p *ClientPolicy) Authorize(ctx context.Context, r *http.Request, userInfo 
 		return nil, pkghttputil.NewError(http.StatusForbidden, "client policy does not allow request")
 	}
 	if certificate != nil {
-		if err := p.verifyClientCertificate(ctx, r, matched.caRef); err != nil {
+		if err := verifyClientCertificate(r, snapshot.caRoots[matched.caRef]); err != nil {
 			return nil, err
 		}
 	}
@@ -224,19 +237,9 @@ func clientPolicyScopesToProto(scopes tokens.HTTPRequestScopes) []*apiV1.HTTPReq
 	return result
 }
 
-func (p *ClientPolicy) load(ctx context.Context) (*clientPolicyDocument, error) {
-	ctx, cancel := context.WithTimeout(ctx, clientPolicyTimeout)
-	defer cancel()
-	cm, err := p.client.CoreV1().ConfigMaps(pods.GetPodNamespace()).Get(ctx, ClientPolicyConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("getting policy ConfigMap: %w", err)
-	}
-	return parseClientPolicy(cm)
-}
-
 func parseClientPolicy(cm *corev1.ConfigMap) (*clientPolicyDocument, error) {
 	if cm == nil {
-		return nil, fmt.Errorf("missing client policy ConfigMap")
+		return nil, errors.New("missing client policy ConfigMap")
 	}
 	data, ok := cm.Data[ClientPolicyDataKey]
 	if !ok {
@@ -250,7 +253,7 @@ func parseClientPolicy(cm *corev1.ConfigMap) (*clientPolicyDocument, error) {
 		return nil, fmt.Errorf("invalid client policy JSON: %w", err)
 	}
 	if policy.Version != clientPolicyVersion || len(policy.Clients) > maxClientPolicyEntries {
-		return nil, fmt.Errorf("unsupported client policy version or entry count")
+		return nil, errors.New("unsupported client policy version or entry count")
 	}
 	seen := make(map[string]struct{}, len(policy.Clients))
 	for i := range policy.Clients {
@@ -275,7 +278,7 @@ func parseClientPolicy(cm *corev1.ConfigMap) (*clientPolicyDocument, error) {
 				return nil, fmt.Errorf("unexpected CA reference for bearer client at entry %d", i)
 			}
 			if entry.Subject == "*" && entry.PermissionSetID != centralproxy.ConsoleProxyPermissionSetID {
-				return nil, fmt.Errorf("wildcard bearer clients may only use the console permission set")
+				return nil, errors.New("wildcard bearer clients may only use the console permission set")
 			}
 		default:
 			return nil, fmt.Errorf("unsupported client auth type at entry %d", i)
@@ -300,20 +303,13 @@ func parseClientPolicy(cm *corev1.ConfigMap) (*clientPolicyDocument, error) {
 	return &policy, nil
 }
 
-func (p *ClientPolicy) verifyClientCertificate(ctx context.Context, r *http.Request, ref clientPolicyCARef) error {
-	ctx, cancel := context.WithTimeout(ctx, clientPolicyTimeout)
-	defer cancel()
-	cm, err := p.client.CoreV1().ConfigMaps(ref.Namespace).Get(ctx, ref.ConfigMap, metav1.GetOptions{})
-	if err != nil {
-		return pkghttputil.Errorf(http.StatusServiceUnavailable, "getting client CA: %v", err)
+func verifyClientCertificate(r *http.Request, ca *clientCAWatch) error {
+	if ca == nil {
+		return pkghttputil.NewError(http.StatusServiceUnavailable, "client CA is missing or invalid")
 	}
-	caPEM, ok := cm.Data[ref.Key]
-	if !ok {
-		return pkghttputil.NewError(http.StatusServiceUnavailable, "client CA key is missing")
-	}
-	roots, err := parseClientCARoots([]byte(caPEM))
-	if err != nil {
-		return pkghttputil.Errorf(http.StatusServiceUnavailable, "invalid client CA: %v", err)
+	roots := ca.roots.Load()
+	if roots == nil {
+		return pkghttputil.NewError(http.StatusServiceUnavailable, "client CA is missing or invalid")
 	}
 	intermediates := x509.NewCertPool()
 	for _, cert := range r.TLS.PeerCertificates[1:] {
@@ -336,18 +332,18 @@ func parseClientCARoots(data []byte) (*x509.CertPool, error) {
 	for len(data) > 0 {
 		block, rest := pem.Decode(data)
 		if block == nil || block.Type != "CERTIFICATE" || len(block.Headers) != 0 {
-			return nil, fmt.Errorf("invalid CA PEM bundle")
+			return nil, errors.New("invalid CA PEM bundle")
 		}
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil || !cert.IsCA || cert.KeyUsage&x509.KeyUsageCertSign == 0 {
-			return nil, fmt.Errorf("invalid CA certificate")
+			return nil, errors.New("invalid CA certificate")
 		}
 		pool.AddCert(cert)
 		count++
 		data = bytes.TrimSpace(rest)
 	}
 	if count == 0 {
-		return nil, fmt.Errorf("empty CA bundle")
+		return nil, errors.New("empty CA bundle")
 	}
 	return pool, nil
 }
@@ -356,10 +352,10 @@ func decodeStrictJSON(data []byte, dest any) error {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(dest); err != nil {
-		return err
+		return fmt.Errorf("decoding JSON: %w", err)
 	}
 	if err := decoder.Decode(new(any)); err != io.EOF {
-		return fmt.Errorf("trailing JSON data")
+		return errors.New("trailing JSON data")
 	}
 	return nil
 }
@@ -367,10 +363,10 @@ func decodeStrictJSON(data []byte, dest any) error {
 func rejectDuplicateJSONKeys(data []byte) error {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	if err := checkJSONValue(decoder); err != nil {
-		return err
+		return fmt.Errorf("checking JSON keys: %w", err)
 	}
 	if _, err := decoder.Token(); err != io.EOF {
-		return fmt.Errorf("trailing JSON data")
+		return errors.New("trailing JSON data")
 	}
 	return nil
 }
@@ -378,7 +374,7 @@ func rejectDuplicateJSONKeys(data []byte) error {
 func checkJSONValue(decoder *json.Decoder) error {
 	token, err := decoder.Token()
 	if err != nil {
-		return err
+		return fmt.Errorf("reading JSON value: %w", err)
 	}
 	delim, ok := token.(json.Delim)
 	if !ok {
@@ -390,29 +386,32 @@ func checkJSONValue(decoder *json.Decoder) error {
 		for decoder.More() {
 			keyToken, err := decoder.Token()
 			if err != nil {
-				return err
+				return fmt.Errorf("reading JSON object key: %w", err)
 			}
 			key, ok := keyToken.(string)
 			if !ok {
-				return fmt.Errorf("invalid JSON object key")
+				return errors.New("invalid JSON object key")
 			}
 			if _, exists := keys[key]; exists {
 				return fmt.Errorf("duplicate JSON key %q", key)
 			}
 			keys[key] = struct{}{}
 			if err := checkJSONValue(decoder); err != nil {
-				return err
+				return fmt.Errorf("checking JSON object value: %w", err)
 			}
 		}
 	case '[':
 		for decoder.More() {
 			if err := checkJSONValue(decoder); err != nil {
-				return err
+				return fmt.Errorf("checking JSON array value: %w", err)
 			}
 		}
 	default:
-		return fmt.Errorf("unexpected JSON delimiter")
+		return errors.New("unexpected JSON delimiter")
 	}
 	_, err = decoder.Token()
-	return err
+	if err != nil {
+		return fmt.Errorf("reading closing JSON delimiter: %w", err)
+	}
+	return nil
 }

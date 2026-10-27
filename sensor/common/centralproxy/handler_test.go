@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
@@ -39,6 +40,7 @@ import (
 func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {
 	client := fake.NewClientset()
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(context.Background()))
 	doc := defaultClientPolicy()
 	doc.Clients = append(doc.Clients, clientPolicyEntry{
@@ -52,6 +54,7 @@ func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {
 	cm.Data[ClientPolicyDataKey] = string(data)
 	_, err = client.CoreV1().ConfigMaps(cm.Namespace).Update(context.Background(), cm, metav1.UpdateOptions{})
 	require.NoError(t, err)
+	waitForClientPolicy(t, policy, doc)
 	client.PrependReactor("create", "tokenreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{Status: authenticationv1.TokenReviewStatus{
 			Authenticated: true, User: authenticationv1.UserInfo{Username: "test-user"},
@@ -152,6 +155,7 @@ func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
 		Data: map[string]string{env.SecureMetricsClientCAKey.Setting(): caPEM},
 	})
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(context.Background()))
 	centralcaps.Set([]centralsensor.CentralCapability{
 		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyCustomReadOnlyTokens,
@@ -184,9 +188,9 @@ func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
 	assert.True(t, forwarded)
 	assert.Equal(t, "mtls:"+leaf.Subject.CommonName, tokenClient.lastRequest.GetRequester())
 	assert.Equal(t, []string{centralproxy.MetricsPermissionSetID}, tokenClient.lastRequest.GetPermissionSetIds())
-	assert.Equal(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
 		tokenClient.lastRequest.GetClusterScopes())
-	assert.Equal(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
+	protoassert.SlicesEqual(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 		tokenClient.lastRequest.GetHttpRequestScopes())
 
 	otherCA, otherKey, _ := clientPolicyTestCA(t)
@@ -205,6 +209,7 @@ func TestPolicyHandlerDoesNotEnableConsoleWhenOnlyMetricsEnabled(t *testing.T) {
 	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
 	client := fake.NewClientset()
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(context.Background()))
 	client.PrependReactor("create", "tokenreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{Status: authenticationv1.TokenReviewStatus{
@@ -228,6 +233,7 @@ func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
 	t.Setenv("ROX_CENTRAL_PROXY_ENABLED", "true")
 	client := fake.NewClientset()
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(context.Background()))
 	doc := defaultClientPolicy()
 	doc.Clients = append(doc.Clients, clientPolicyEntry{
@@ -237,6 +243,7 @@ func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
 		HTTPScopes:      tokens.HTTPRequestScopes{"/metrics": {"GET"}},
 	})
 	setClientPolicyConfigMap(t, context.Background(), client, doc)
+	waitForClientPolicy(t, policy, doc)
 	client.PrependReactor("create", "tokenreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
 		return true, &authenticationv1.TokenReview{Status: authenticationv1.TokenReviewStatus{
 			Authenticated: true,
@@ -270,7 +277,7 @@ func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, forwarded)
 	assert.Equal(t, "kubernetesBearer:system:serviceaccount:observability:scraper", tokenClient.lastRequest.GetRequester())
-	assert.Equal(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
 		tokenClient.lastRequest.GetClusterScopes())
 }
 
@@ -278,6 +285,7 @@ func TestPolicyHandlerPreservesBuiltInClientOnOlderCentral(t *testing.T) {
 	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "true")
 	client := fake.NewClientset()
 	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(context.Background()))
 	f := newProxyTestFixture(t, newAllowingAuthorizer(t))
 	f.handler.policy = policy
@@ -295,6 +303,7 @@ func TestPolicyHandlerPreservesBuiltInClientOnOlderCentral(t *testing.T) {
 		HTTPScopes: tokens.HTTPRequestScopes{"/v1/custom": {"GET"}},
 	})
 	setClientPolicyConfigMap(t, context.Background(), client, doc)
+	waitForClientPolicy(t, policy, doc)
 	f.proxyCalled = false
 	w = f.serveHTTP(t, http.MethodGet, "/v1/custom", map[string]string{"Authorization": "Bearer kube-token"})
 	assert.Equal(t, http.StatusNotImplemented, w.Code)

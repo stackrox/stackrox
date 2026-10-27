@@ -279,7 +279,7 @@ func profileCacheKey(profile *proxyTokenProfile) string {
 	}
 	httpScopes := make([]httpScope, len(profile.httpScopes))
 	for i, scope := range profile.httpScopes {
-		httpScopes[i] = httpScope{Path: scope.Path, Methods: scope.Methods}
+		httpScopes[i] = httpScope{Path: scope.GetPath(), Methods: scope.GetMethods()}
 	}
 	data, _ := json.Marshal(struct {
 		Identity        string

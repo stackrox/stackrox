@@ -57,6 +57,9 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
+	if managedPolicy {
+		server.RegisterOnShutdown(proxyHandler.policy.Stop)
+	}
 
 	go func() {
 		log.Infof("Starting proxy server on %s with OpenShift service CA signed certificate", env.CentralProxyPort.Setting())
