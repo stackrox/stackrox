@@ -122,7 +122,10 @@ maybe-refresh-statistics() {
     else
         echo "vacuumdb failed, retrying on the next start."
     fi
-    pg_ctl -D "$PGDATA" stop -w --timeout 600 || true
+    if ! pg_ctl -D "$PGDATA" stop -w --timeout 600; then
+        echo "Could not stop the refresh server, retrying on the next start."
+        return 1
+    fi
 }
 
 # recover-interrupted-upgrade cleans up upgrade artifacts left behind by pod
