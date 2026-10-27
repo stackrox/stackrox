@@ -62,4 +62,56 @@ subjects:
     name: scanner-v4
     namespace: "{{ ._rox._namespace }}"
   {{- end }}
+{{- /*
+Scanner V4 DB PVC space alerting is evaluated by the platform Prometheus, which
+scrapes the relevant metrics in every namespace.
+The rule is emitted only when the DB is PVC-backed (not for hostPath or
+emptyDir persistence).
+*/}}
+{{- if ._rox.scannerV4._dbEnabled }}
+{{- $scannerV4DBClaimName := "" -}}
+{{- with ._rox.scannerV4.db.persistence._volumeCfg -}}
+{{- with .persistentVolumeClaim -}}
+{{- $scannerV4DBClaimName = .claimName -}}
+{{- end -}}
+{{- end -}}
+{{- if $scannerV4DBClaimName }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: "scanner-v4-db-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "prometheusrule" (print "scanner-v4-db-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "prometheusrule" (print "scanner-v4-db-" .Release.Namespace)) | nindent 4 }}
+spec:
+  groups:
+    - name: rhacs.scanner-v4-db
+      rules:
+        - alert: ScannerV4DBPersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              > 0.8
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Scanner V4 DB persistent volume is filling up"
+            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ ._rox._namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (warning threshold 80%)."
+        - alert: ScannerV4DBPersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              / kubelet_volume_stats_capacity_bytes{namespace="{{ ._rox._namespace }}", persistentvolumeclaim="{{ $scannerV4DBClaimName }}"}
+              > 0.9
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Scanner V4 DB persistent volume is almost full"
+            description: "The Scanner V4 DB PVC {{ $scannerV4DBClaimName }} in namespace {{ ._rox._namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (critical threshold 90%)."
+{{- end }}
+{{- end }}
 {{- end }}

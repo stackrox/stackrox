@@ -344,6 +344,7 @@ type BaseDescriptor = {
     shortName: string;
     longName?: string;
     infoText?: string;
+    infoDocsPath?: string;
     category: string;
     type: DescriptorType;
     disabled?: boolean;
@@ -637,6 +638,33 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'EPSS',
+        name: 'EPSS',
+        shortName: 'EPSS',
+        longName: 'EPSS probability',
+        infoText: 'EPSS scores require Scanner V4',
+        infoDocsPath: 'operating/managing-vulnerabilities',
+        category: policyCriteriaCategories.IMAGE_SCANNING,
+        type: 'group',
+        subComponents: [
+            {
+                type: 'select',
+                options: equalityOptions,
+                subpath: 'key',
+            },
+            {
+                type: 'number',
+                placeholder: '(ex. 75)',
+                max: 100,
+                min: 0,
+                step: 1,
+                subpath: 'value',
+            },
+        ],
+        canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
         label: 'Severity',
         name: 'Severity',
         shortName: 'Severity',
@@ -747,7 +775,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         placeholder: '0',
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_CVE_FIX_TIMESTAMP'],
     },
     {
         label: 'Days Since CVE Was First Discovered In Image',
@@ -912,8 +939,8 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Runtime class',
         name: 'Runtime Class',
         shortName: 'Runtime class',
-        longName: 'Privilege escalation on container is',
-        negatedName: 'Privilege escalation on container doesn’t match',
+        longName: 'The runtime class of the deployment is',
+        negatedName: 'The runtime class of the deployment doesn’t match',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'text',
         placeholder: 'kata',

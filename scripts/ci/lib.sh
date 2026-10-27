@@ -49,6 +49,18 @@ ensure_CI() {
     fi
 }
 
+# validate_image_tag rejects empty tags and tags that contain whitespace.
+# Docker and Kubernetes reject image references with leading or trailing whitespace.
+validate_image_tag() {
+    local tag="${1:-}"
+    if [[ -z "$tag" ]]; then
+        die "image tag is not provided or empty"
+    fi
+    if [[ "$tag" =~ [[:space:]] ]]; then
+        die "image tag '$(printf %q "$tag")' contains whitespace; image tags must not include spaces, tabs, or newlines"
+    fi
+}
+
 ci_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: ci_export <env-name> <env-value>"
@@ -682,7 +694,7 @@ _image_prefetcher_prebuilt_start() {
         image_prefetcher_start_set qa-e2e
         _set_quay_pull_policy
         ;;
-    *nongroovy-e2e-tests)
+    *nongroovy-e2e-tests*)
         image_prefetcher_start_set qa-nongroovy-e2e
         _set_quay_pull_policy
         ;;
@@ -850,7 +862,7 @@ _image_prefetcher_prebuilt_await() {
     *qa-e2e-tests*)
         image_prefetcher_await_set qa-e2e
         ;;
-    *nongroovy-e2e-tests)
+    *nongroovy-e2e-tests*)
         image_prefetcher_await_set qa-nongroovy-e2e
         ;;
     *compatibility-tests)
@@ -940,28 +952,15 @@ EOM
         rm -f "${query}"
     fi
     info "Now retrieving prefetcher metrics..."
-    local attempt=0
-    local service="service/${name}-metrics"
-    while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
-        if [ "$attempt" -lt "60" ]; then
-            info "Waiting for ${service} to obtain endpoint ..."
-            ((attempt++))
-            sleep 10
-        else
-            info "Something is wrong with the ${service} service. See the following 'describe' output."
-            kubectl -n "${ns}" describe "${service}" || true
-            die "Timeout waiting for ${service} to obtain endpoint!"
-        fi
-    done
-    local endpoint
-    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | service_get_endpoint)"
+    make image-prefetcher-deploy-bin
+    local image_prefetcher_deploy_bin
+    image_prefetcher_deploy_bin="$(make print-image-prefetcher-deploy-bin)"
     local fetcher_metrics
     fetcher_metrics="$(mktemp --suffix=.csv)"
     local fetcher_metrics_json
     fetcher_metrics_json="$(mktemp --suffix=.json)"
-    local metrics_url="http://${endpoint}:8080/metrics"
-    if ! curl --silent --show-error --fail --retry 3 --retry-connrefused "${metrics_url}" > "${fetcher_metrics_json}"; then
-        die "Failed to fetch prefetcher metrics from ${metrics_url}"
+    if ! "${image_prefetcher_deploy_bin}" --fetch-metrics --namespace="${ns}" "${name}" > "${fetcher_metrics_json}"; then
+        die "Failed to fetch prefetcher metrics for set ${name}"
     fi
     # See the stackrox_image_prefetches table definition in https://github.com/stackrox/automation-iac/blob/main/resources/testing/stackrox-ci/metrics.tf
     # for the order of columns.
@@ -1080,7 +1079,7 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
-        *qa-e2e-tests*)
+        *nongroovy-e2e-tests*|*qa-e2e-tests*)
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
@@ -1108,16 +1107,24 @@ END
             fi
             ;;
         *)
-            cat >> "${image_list}" << END
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-central-db ${tag}
+release-main ${tag}
+release-roxctl ${tag}
+END
+            else
+                cat >> "${image_list}" << END
 central-db ${tag}
 main ${tag}
 roxctl ${tag}
 END
+            fi
             ;;
     esac
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
-            cat >> "${image_list}" << END
+        cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
 stackrox-operator-index ${operator_metadata_tag}

@@ -3,11 +3,9 @@ import pluralize from 'pluralize';
 
 import PageTitle from 'Components/PageTitle';
 import type { AccessControlEntityType } from 'constants/entityTypes';
-import useCaseTypes from 'constants/useCaseTypes';
 import { accessControlLabels } from 'messages/common';
-import useCaseLabels from 'messages/useCase';
 
-const accessControlLabel = useCaseLabels[useCaseTypes.ACCESS_CONTROL];
+const accessControlLabel = 'Access Control';
 
 export type AccessControlPageTitleProps = {
     entityType: AccessControlEntityType;

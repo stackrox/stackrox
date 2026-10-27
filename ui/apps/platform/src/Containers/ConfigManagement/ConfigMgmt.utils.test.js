@@ -3,14 +3,6 @@ import { getConfigMgmtCountQuery } from './ConfigMgmt.utils';
 
 describe('ConfigMgmt.utils.test', () => {
     describe('getConfigMgmtCountQuery', () => {
-        it('should return an empty string when the entity list is Controls', () => {
-            const entityListType = entityTypes.CONTROL;
-
-            const countQuery = getConfigMgmtCountQuery(entityListType);
-
-            expect(countQuery).toEqual('');
-        });
-
         it('should return an empty string when the entity list is Policies', () => {
             const entityListType = entityTypes.POLICY;
 

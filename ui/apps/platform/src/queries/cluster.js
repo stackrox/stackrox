@@ -14,15 +14,6 @@ export const CLUSTERS_QUERY = gql`
                     openshiftVersion
                 }
             }
-            complianceResults {
-                resource {
-                    __typename
-                }
-                control {
-                    id
-                    name
-                }
-            }
             policyStatus {
                 status
                 failingPolicies {
@@ -39,23 +30,6 @@ export const CLUSTER_NAME = gql`
         cluster(id: $id) {
             id
             name
-        }
-    }
-`;
-
-export const CLUSTER_VERSION_QUERY = gql`
-    query getClusterVersion($id: ID!) {
-        cluster(id: $id) {
-            id
-            name
-            type
-            status {
-                orchestratorMetadata {
-                    version
-                    openshiftVersion
-                    buildDate
-                }
-            }
         }
     }
 `;

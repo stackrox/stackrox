@@ -12,9 +12,9 @@ import (
 	"github.com/stackrox/rox/central/views/vmcve"
 	componentDS "github.com/stackrox/rox/central/virtualmachine/component/v2/datastore"
 	cveDS "github.com/stackrox/rox/central/virtualmachine/cve/v2/datastore"
+	"github.com/stackrox/rox/central/virtualmachine/scan"
 	scanDS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	vmDS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -57,11 +57,12 @@ var (
 type serviceImpl struct {
 	v2.UnimplementedVirtualMachineV2ServiceServer
 
-	vmDS        vmDS.DataStore
-	cveDS       cveDS.DataStore
-	componentDS componentDS.DataStore
-	scanDS      scanDS.DataStore
-	cveView     vmcve.CveView
+	vmDS         vmDS.DataStore
+	cveDS        cveDS.DataStore
+	componentDS  componentDS.DataStore
+	scanDS       scanDS.DataStore
+	cveView      vmcve.CveView
+	pendingScans *scan.Tracker
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -523,14 +524,28 @@ func (s *serviceImpl) ListVMComponents(ctx context.Context, request *v2.ListVMCo
 		return nil, err
 	}
 
+	isPending := s.pendingScans.IsPending(request.GetVmId())
+	if isPending && totalCount == 0 {
+		// With no component rows, check VM access before exposing pending state.
+		_, exists, err := s.vmDS.GetVirtualMachine(ctx, request.GetVmId())
+		if err != nil {
+			return nil, err
+		}
+		isPending = exists
+	}
 	items := make([]*v2.VMComponentRow, 0, len(components))
 	for _, comp := range components {
-		items = append(items, storagetov2.VirtualMachineComponentV2ToRow(comp))
+		item := storagetov2.VirtualMachineComponentV2ToRow(comp)
+		if isPending {
+			item.ScanStatus = v2.ScanStatus_SCAN_PENDING
+		}
+		items = append(items, item)
 	}
 
 	return &v2.ListVMComponentsResponse{
-		Components: items,
-		TotalCount: int32(totalCount),
+		Components:  items,
+		TotalCount:  int32(totalCount),
+		ScanPending: isPending,
 	}, nil
 }
 
@@ -680,7 +695,7 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 		return nil, status.Errorf(codes.InvalidArgument, "id must be a valid UUID (got: %q)", request.GetId())
 	}
 
-	vm, exists, err := s.vmDS.GetVirtualMachine(ctx, request.GetId())
+	vmWithScan, exists, err := s.vmDS.GetVirtualMachineWithLatestScan(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -688,6 +703,7 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 		return nil, status.Errorf(codes.NotFound, "virtual machine %q not found", request.GetId())
 	}
 
+	vm := vmWithScan.VM
 	detail := storagetov2.VirtualMachineV2ToDetail(vm)
 	detail.AgentStatus = storagetov2.AgentStatusFromLastContact(
 		vm.GetLastAgentContact(),
@@ -695,22 +711,7 @@ func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.
 		env.VirtualMachinesAgentStaleAfter.DurationSetting(),
 	)
 
-	// Get the latest scan for this VM. Scan IDs are UUIDv7 (time-sortable),
-	// so sorting by the primary key is equivalent to sorting by time and avoids
-	// a separate index scan.
-	scanQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
-	scanQuery.Pagination = &v1.QueryPagination{
-		Limit: 1,
-		SortOptions: []*v1.QuerySortOption{
-			{Field: search.VirtualMachineScanID.String(), Reversed: true},
-		},
-	}
-	scans, err := s.scanDS.SearchRawVMScans(ctx, scanQuery)
-	if err != nil {
-		return nil, err
-	}
-	if len(scans) > 0 {
-		scan := scans[0]
+	if scan := vmWithScan.Scan; scan != nil {
 		scanNotes := make([]v2.VMScanNote, 0, len(scan.GetNotes()))
 		for _, n := range scan.GetNotes() {
 			scanNotes = append(scanNotes, storagetov2.ConvertScanNote(n))

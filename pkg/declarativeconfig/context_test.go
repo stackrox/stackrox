@@ -24,6 +24,7 @@ func TestContext(t *testing.T) {
 	ctx := context.Background()
 	declarativeCtx := WithModifyDeclarativeResource(ctx)
 	declarativeOrImperativeCtx := WithModifyDeclarativeOrImperative(ctx)
+	defaultCtx := WithModifyDefaultResource(ctx)
 	// 1.1. empty context can modify imperative origin
 	assert.True(t, CanModifyResource(ctx, imperativeResource))
 	// 1.2. empty context can modify ephemeral origin
@@ -48,4 +49,10 @@ func TestContext(t *testing.T) {
 	assert.True(t, CanModifyResource(declarativeOrImperativeCtx, ephemeralResource))
 	// 9. context.WithModifyDeclarativeOrImperative can't modify default origin
 	assert.False(t, CanModifyResource(declarativeOrImperativeCtx, defaultResource))
+	// 10. context.WithModifyDefaultResource can modify default origin
+	assert.True(t, CanModifyResource(defaultCtx, defaultResource))
+	// 11.1. context.WithModifyDefaultResource can't modify imperative origin
+	assert.False(t, CanModifyResource(defaultCtx, imperativeResource))
+	// 11.2. context.WithModifyDefaultResource can't modify declarative origin
+	assert.False(t, CanModifyResource(defaultCtx, declarativeResource))
 }

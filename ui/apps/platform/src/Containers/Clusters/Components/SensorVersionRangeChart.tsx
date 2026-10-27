@@ -237,7 +237,7 @@ function SensorVersionRangeChart({
         >
             <Flex gap={{ default: 'gapNone' }}>
                 {versionLabels.map((v, i) => (
-                    // eslint-disable-next-line react/no-array-index-key
+                    // eslint-disable-next-line @eslint-react/no-array-index-key
                     <FlexItem key={i} flex={{ default: 'flex_1' }}>
                         {v}
                     </FlexItem>
@@ -248,7 +248,7 @@ function SensorVersionRangeChart({
                 <Flex gap={{ default: 'gapXs' }}>
                     {zones.map((zone, i) => (
                         <Tooltip
-                            // eslint-disable-next-line react/no-array-index-key
+                            // eslint-disable-next-line @eslint-react/no-array-index-key
                             key={i}
                             content={zone.tooltip}
                         >

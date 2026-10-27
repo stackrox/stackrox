@@ -18,6 +18,8 @@ type DataStore interface {
 
 	// GetVirtualMachine returns the VM with the given ID.
 	GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachineV2, bool, error)
+	// GetVirtualMachineWithLatestScan returns the VM and its latest scan together.
+	GetVirtualMachineWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error)
 	// GetManyVirtualMachines returns the VMs with the given IDs.
 	GetManyVirtualMachines(ctx context.Context, ids []string) ([]*storage.VirtualMachineV2, []int, error)
 

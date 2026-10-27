@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import type { ElementType, ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat';
-import { PageSection } from '@patternfly/react-core';
+import { Bullseye, PageSection, Spinner } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
@@ -19,7 +19,6 @@ import {
     clustersSecureClusterCrsPath,
     clustersSecureClusterPath,
     collectionsPath,
-    complianceBasePath,
     complianceEnhancedCoveragePath,
     complianceEnhancedSchedulesPath,
     configManagementPath,
@@ -66,7 +65,6 @@ import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 import { selectors } from 'reducers';
 
-import asyncComponent from './asyncComponent';
 import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
@@ -78,63 +76,56 @@ function NotFoundPage(): ReactElement {
     );
 }
 
-function makeVulnMgmtUserWorkloadView(view: string) {
-    const AsyncWorkloadCvesComponent = asyncComponent(
-        () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
-    );
-    return function WorkloadCvesPage() {
-        return <AsyncWorkloadCvesComponent view={view} />;
-    };
-}
+const WorkloadCvesPage = lazy(
+    () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+);
 
 type RouteComponent = {
     component: ElementType;
     path: string | string[];
+    componentKey?: string; // key of the component in the routeComponentMap to prevent state preservation across duplicate components
+    props?: Partial<Record<string, unknown>>;
 };
 
 // routeComponentMap corresponds to routeRequirementsMap in src/routePaths.ts file.
 // Add route keys in alphabetical order to minimize merge conflicts when multiple people add routes.
 const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'access-control': {
-        component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
+        component: lazy(() => import('Containers/AccessControl/AccessControl')),
         path: accessControlBasePath,
     },
     'administration-events': {
-        component: asyncComponent(
-            () => import('Containers/Administration/Events/AdministrationEventsRoute')
-        ),
+        component: lazy(() => import('Containers/Administration/Events/AdministrationEventsRoute')),
         path: administrationEventsPathWithParam,
     },
     apidocs: {
-        component: asyncComponent(() => import('Containers/Docs/ApiPage')),
+        component: lazy(() => import('Containers/Docs/ApiPage')),
         path: apidocsPath,
     },
     'apidocs-v2': {
-        component: asyncComponent(() => import('Containers/Docs/ApiPageV2')),
+        component: lazy(() => import('Containers/Docs/ApiPageV2')),
         path: apidocsPathV2,
     },
     // Delegated image scanning must precede generic Clusters.
     'clusters/delegated-image-scanning': {
-        component: asyncComponent(
-            () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
-        ),
+        component: lazy(() => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')),
         path: clustersDelegatedScanningPath,
     },
     // Discovered clusters must precede generic Clusters.
     'clusters/discovered-clusters': {
-        component: asyncComponent(
+        component: lazy(
             () => import('Containers/Clusters/DiscoveredClusters/DiscoveredClustersPage')
         ),
         path: clustersDiscoveredClustersPath,
     },
     // Cluster init bundles must precede generic Clusters.
     'clusters/init-bundles': {
-        component: asyncComponent(() => import('Containers/Clusters/InitBundles/InitBundlesRoute')),
+        component: lazy(() => import('Containers/Clusters/InitBundles/InitBundlesRoute')),
         path: clustersInitBundlesPathWithParam,
     },
     // Cluster registration secrets must precede generic Clusters.
     'clusters/cluster-registration-secrets': {
-        component: asyncComponent(
+        component: lazy(
             () =>
                 import('Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute')
         ),
@@ -142,82 +133,68 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     },
     // Cluster secure-a-cluster must precede generic Clusters.
     'clusters/secure-a-cluster': {
-        component: asyncComponent(
-            () => import('Containers/Clusters/InitBundles/SecureClusterPage')
-        ),
+        component: lazy(() => import('Containers/Clusters/InitBundles/SecureClusterPage')),
         path: clustersSecureClusterPath,
     },
     // Cluster secure-a-cluster-crs must precede generic Clusters.
     'clusters/secure-a-cluster-crs': {
-        component: asyncComponent(
+        component: lazy(
             () => import('Containers/Clusters/ClusterRegistrationSecrets/SecureClusterPage')
         ),
         path: clustersSecureClusterCrsPath,
     },
     clusters: {
-        component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
+        component: lazy(() => import('Containers/Clusters/ClustersPage')),
         path: clustersPathWithParam,
     },
     collections: {
-        component: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
+        component: lazy(() => import('Containers/Collections/CollectionsPage')),
         path: collectionsPath,
     },
     'compliance-coverage': {
-        component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/Coverage/CoveragePage')
-        ),
+        component: lazy(() => import('Containers/ComplianceEnhanced/Coverage/CoveragePage')),
         path: complianceEnhancedCoveragePath,
     },
     'compliance-schedules': {
-        component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/Schedules/ScanConfigsPage')
-        ),
+        component: lazy(() => import('Containers/ComplianceEnhanced/Schedules/ScanConfigsPage')),
         path: complianceEnhancedSchedulesPath,
     },
-    compliance: {
-        component: asyncComponent(() => import('Containers/Compliance/Page')),
-        path: complianceBasePath,
-    },
     configmanagement: {
-        component: asyncComponent(
-            () => import('Containers/ConfigManagement/ConfigManagementRoutes')
-        ),
+        component: lazy(() => import('Containers/ConfigManagement/ConfigManagementRoutes')),
         path: configManagementPath,
     },
     dashboard: {
-        component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
+        component: lazy(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
     },
     'exception-configuration': {
-        component: asyncComponent(
+        component: lazy(
             () => import('Containers/ExceptionConfiguration/ExceptionConfigurationPage')
         ),
         path: exceptionConfigurationPath,
     },
     integrations: {
-        component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
+        component: lazy(() => import('Containers/Integrations/IntegrationsPage')),
         path: integrationsPath,
     },
     'listening-endpoints': {
-        component: asyncComponent(
-            () => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')
-        ),
+        component: lazy(() => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')),
         path: listeningEndpointsBasePath,
     },
     'network-graph': {
-        component: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
+        component: lazy(() => import('Containers/NetworkGraph/NetworkGraphPage')),
         path: networkPath,
     },
     'policy-management': {
-        component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
+        component: lazy(() => import('Containers/PolicyManagement/PolicyManagementPage')),
         path: policyManagementBasePath,
     },
     'risk/secrets': {
-        component: asyncComponent(() => import('Containers/Risk/Secrets/SecretsPage')),
+        component: lazy(() => import('Containers/Risk/Secrets/SecretsPage')),
         path: riskSecretsBasePath,
     },
     'risk/workloads': {
-        component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),
+        component: lazy(() => import('Containers/Risk/RiskRoutes')),
         path: riskWorkloadsBasePath,
     },
     risk: {
@@ -225,47 +202,47 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: riskBasePath,
     },
     search: {
-        component: asyncComponent(() => import('Containers/Search/SearchPage')),
+        component: lazy(() => import('Containers/Search/SearchPage')),
         path: searchPath,
     },
     'system-health': {
-        component: asyncComponent(() => import('Containers/SystemHealth/SystemHealthPage')),
+        component: lazy(() => import('Containers/SystemHealth/SystemHealthPage')),
         path: systemHealthPath,
     },
     systemconfig: {
-        component: asyncComponent(() => import('Containers/SystemConfig/SystemConfigPage')),
+        component: lazy(() => import('Containers/SystemConfig/SystemConfigPage')),
         path: systemConfigPath,
     },
     user: {
-        component: asyncComponent(() => import('Containers/User/UserPage')),
+        component: lazy(() => import('Containers/User/UserPage')),
         path: userBasePath,
     },
     violations: {
-        component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
+        component: lazy(() => import('Containers/Violations/ViolationsPage')),
         path: violationsBasePath,
     },
     'vulnerabilities/exception-management': {
-        component: asyncComponent(
+        component: lazy(
             () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
         ),
         path: exceptionManagementPath,
     },
     'vulnerabilities/node-cves': {
-        component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
+        component: lazy(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
         path: vulnerabilitiesNodeCvesPath,
     },
     'vulnerabilities/platform-cves': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
-        ),
+        component: lazy(() => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')),
         path: vulnerabilitiesPlatformCvesPath,
     },
     'vulnerabilities/user-workloads': {
-        component: makeVulnMgmtUserWorkloadView('user-workloads'),
+        component: WorkloadCvesPage,
+        componentKey: 'vulnerabilities/user-workloads',
+        props: { view: 'user-workloads' },
         path: vulnerabilitiesUserWorkloadsPath,
     },
     'vulnerabilities/virtual-machine-cves': {
-        component: asyncComponent(
+        component: lazy(
             () => import('Containers/Vulnerabilities/VirtualMachineCves/VirtualMachineCvesPage')
         ),
         path: vulnerabilitiesVirtualMachineCvesPath,
@@ -273,46 +250,54 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     // Note: currently 'platform' is an implementation of the user-workloads view and
     // it is expected that this will change in the future as these views diverge
     'vulnerabilities/platform': {
-        component: makeVulnMgmtUserWorkloadView('platform'),
+        component: WorkloadCvesPage,
+        componentKey: 'vulnerabilities/platform',
+        props: { view: 'platform' },
         path: vulnerabilitiesPlatformPath,
     },
     'vulnerabilities/all-images': {
-        component: makeVulnMgmtUserWorkloadView('all-images'),
+        component: WorkloadCvesPage,
+        componentKey: 'vulnerabilities/all-images',
+        props: { view: 'all-images' },
         path: vulnerabilitiesAllImagesPath,
     },
     'base-images': {
-        component: asyncComponent(() => import('Containers/BaseImages/BaseImagesPage')),
+        component: lazy(() => import('Containers/BaseImages/BaseImagesPage')),
         path: baseImagesPath,
     },
     'vulnerabilities/inactive-images': {
-        component: makeVulnMgmtUserWorkloadView('inactive-images'),
+        component: WorkloadCvesPage,
+        componentKey: 'vulnerabilities/inactive-images',
+        props: { view: 'inactive-images' },
         path: vulnerabilitiesInactiveImagesPath,
     },
     'vulnerabilities/images-without-cves': {
-        component: makeVulnMgmtUserWorkloadView('images-without-cves'),
+        component: WorkloadCvesPage,
+        componentKey: 'vulnerabilities/images-without-cves',
+        props: { view: 'images-without-cves' },
         path: vulnerabilitiesImagesWithoutCvesPath,
     },
     'vulnerabilities/reports': {
-        component: asyncComponent(
+        component: lazy(
             () => import('Containers/Vulnerabilities/Reports/VulnerabilityReportsPage')
         ),
         path: vulnerabilityReportsPath,
     },
     'vulnerabilities/reports/images': {
-        component: asyncComponent(
+        component: lazy(
             () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
         ),
         path: vulnerabilityImageReportsPath,
     },
     'vulnerabilities/reports/nodes': {
-        component: asyncComponent(
+        component: lazy(
             () =>
                 import('Containers/Vulnerabilities/Reports/NodeVulnerabilityReports/NodeVulnerabilityReportsPage')
         ),
         path: vulnerabilityNodeReportsPath,
     },
     'vulnerability-management': {
-        component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
+        component: lazy(() => import('Containers/VulnMgmt/WorkflowLayout')),
         path: vulnManagementPath,
     },
 };
@@ -379,8 +364,29 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                 {Object.keys(routeComponentMap)
                     .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
                     .map((routeKey) => {
-                        const { component: Component, path } = routeComponentMap[routeKey];
-                        return <Route key={routeKey} path={`${path}/*`} element={<Component />} />;
+                        const {
+                            component: Component,
+                            componentKey,
+                            path,
+                            props,
+                        } = routeComponentMap[routeKey];
+                        return (
+                            <Route
+                                key={routeKey}
+                                path={`${path}/*`}
+                                element={
+                                    <Suspense
+                                        fallback={
+                                            <Bullseye>
+                                                <Spinner />
+                                            </Bullseye>
+                                        }
+                                    >
+                                        <Component key={componentKey} {...props} />
+                                    </Suspense>
+                                }
+                            />
+                        );
                     })}
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>

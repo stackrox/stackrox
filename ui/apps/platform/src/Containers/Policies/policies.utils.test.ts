@@ -1,12 +1,19 @@
 import type { ClientPolicy, Policy } from 'types/policy.proto';
 import {
+    containerTypeFilterApplies,
+    formatValueStr,
+    formatWorkloadKindExclusionMessage,
+    formatWorkloadKindList,
     getClientWizardPolicy,
+    getEmptyPolicyFieldCard,
     getLifeCyclesUpdates,
     getPolicyOriginLabel,
     getServerPolicy,
     initialExcludedDeployment,
+    initialPolicy,
     initialScope,
     isExcludedDeploymentScopeEmpty,
+    parseValueStr,
 } from './policies.utils';
 
 describe('policies.utils', () => {
@@ -287,6 +294,7 @@ describe('policies.utils', () => {
                         },
                     },
                 ],
+                excludedWorkloadKinds: [],
                 serverPolicySections: [
                     {
                         sectionName: 'Policy Section 1',
@@ -621,6 +629,7 @@ describe('policies.utils', () => {
                         },
                     },
                 ],
+                excludedWorkloadKinds: [],
                 serverPolicySections: [
                     {
                         sectionName: 'Policy Section 1',
@@ -701,6 +710,7 @@ describe('policies.utils', () => {
                         scope: initialExcludedDeployment.scope,
                     },
                 ],
+                excludedWorkloadKinds: [],
                 serverPolicySections: [],
                 policySections: [],
                 severity: 'LOW_SEVERITY' as const,
@@ -751,6 +761,7 @@ describe('policies.utils', () => {
                         },
                     },
                 ],
+                excludedWorkloadKinds: [],
                 serverPolicySections: [],
                 policySections: [],
                 severity: 'LOW_SEVERITY' as const,
@@ -770,6 +781,52 @@ describe('policies.utils', () => {
             } satisfies ClientPolicy;
 
             expect(getServerPolicy(clientPolicy).exclusions?.[0]?.deployment?.scope).toBeNull();
+        });
+
+        test('serializes selected workload kinds as a single exclude-by-kind exclusion', () => {
+            const serverPolicy = getServerPolicy({
+                ...initialPolicy,
+                excludedWorkloadKinds: ['JOB', 'CRON_JOB'],
+            });
+
+            expect(serverPolicy.exclusions).toEqual([
+                {
+                    deployment: null,
+                    image: null,
+                    excludeByKind: { kinds: ['CRON_JOB', 'JOB'] },
+                },
+            ]);
+            expect(getClientWizardPolicy(serverPolicy).excludedWorkloadKinds).toEqual([
+                'CRON_JOB',
+                'JOB',
+            ]);
+        });
+
+        test('splits a combined image and kind exclusion into client fields', () => {
+            const serverPolicy = getServerPolicy(initialPolicy);
+            serverPolicy.exclusions = [
+                {
+                    deployment: null,
+                    image: { name: 'nginx' },
+                    excludeByKind: { kinds: ['JOB'] },
+                },
+            ];
+
+            const clientPolicy = getClientWizardPolicy(serverPolicy);
+
+            expect(clientPolicy.excludedImageNames).toEqual(['nginx']);
+            expect(clientPolicy.excludedWorkloadKinds).toEqual(['JOB']);
+            expect(getServerPolicy(clientPolicy).exclusions).toEqual([
+                {
+                    deployment: null,
+                    image: null,
+                    excludeByKind: { kinds: ['JOB'] },
+                },
+                {
+                    image: { name: 'nginx' },
+                    deployment: null,
+                },
+            ]);
         });
     });
 
@@ -836,6 +893,7 @@ describe('policies.utils', () => {
                         eventSource: 'NOT_APPLICABLE',
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
+                        excludedWorkloadKinds: ['CRON_JOB'],
                     },
                     ['BUILD', 'DEPLOY']
                 )
@@ -844,6 +902,7 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
+                excludedWorkloadKinds: ['CRON_JOB'],
             });
         });
 
@@ -854,6 +913,7 @@ describe('policies.utils', () => {
                         lifecycleStages: ['BUILD', 'DEPLOY'],
                         eventSource: 'NOT_APPLICABLE',
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
+                        excludedWorkloadKinds: ['JOB'],
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
                     },
                     ['DEPLOY']
@@ -863,6 +923,7 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['SCALE_TO_ZERO_ENFORCEMENT'],
                 excludedImageNames: [],
+                excludedWorkloadKinds: ['JOB'],
             });
         });
 
@@ -874,6 +935,7 @@ describe('policies.utils', () => {
                         eventSource: 'NOT_APPLICABLE',
                         enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
                         excludedImageNames: ['docker.io/library/archlinux:latest'],
+                        excludedWorkloadKinds: ['CRON_JOB', 'JOB'],
                     },
                     ['BUILD']
                 )
@@ -882,7 +944,50 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
+                excludedWorkloadKinds: [],
             });
+        });
+    });
+
+    describe('EPSS policy values', () => {
+        it('parses and formats a percent comparison', () => {
+            expect(parseValueStr('>=75', 'EPSS')).toEqual({ key: '>=', value: '75' });
+            expect(parseValueStr('75', 'EPSS')).toEqual({ key: '=', value: '75' });
+            expect(formatValueStr({ key: '=', value: '75' }, 'EPSS')).toEqual('75');
+            expect(formatValueStr({ key: '>=', value: '50' }, 'EPSS')).toEqual('>=50');
+        });
+
+        it('starts a new EPSS criterion with an empty comparator and value', () => {
+            const card = getEmptyPolicyFieldCard({ name: 'EPSS' });
+            expect(card.values).toEqual([{ value: '' }]);
+        });
+    });
+
+    describe('containerTypeFilterApplies', () => {
+        it('applies to deploy-time policies and runtime policies with a deployment event source', () => {
+            expect(containerTypeFilterApplies(['DEPLOY'], 'NOT_APPLICABLE')).toBe(true);
+            expect(containerTypeFilterApplies(['BUILD', 'DEPLOY'], 'NOT_APPLICABLE')).toBe(true);
+            expect(containerTypeFilterApplies(['RUNTIME'], 'DEPLOYMENT_EVENT')).toBe(true);
+            expect(containerTypeFilterApplies(['BUILD'], 'NOT_APPLICABLE')).toBe(false);
+            expect(containerTypeFilterApplies(['RUNTIME'], 'NOT_APPLICABLE')).toBe(false);
+            expect(containerTypeFilterApplies(['RUNTIME'], 'AUDIT_LOG_EVENT')).toBe(false);
+            expect(containerTypeFilterApplies(['RUNTIME'], 'NODE_EVENT')).toBe(false);
+            expect(containerTypeFilterApplies([], 'NOT_APPLICABLE')).toBe(false);
+        });
+    });
+
+    describe('workload kind exclusion displayed text', () => {
+        test('formats review labels and wizard info text', () => {
+            expect(formatWorkloadKindList(['JOB', 'CRON_JOB'])).toEqual('CronJobs, Jobs');
+            expect(formatWorkloadKindExclusionMessage([])).toEqual(
+                'Policy will not exclude any workload kinds.'
+            );
+            expect(formatWorkloadKindExclusionMessage(['JOB'])).toEqual(
+                'Policy will exclude Jobs.'
+            );
+            expect(formatWorkloadKindExclusionMessage(['CRON_JOB', 'JOB'])).toEqual(
+                'Policy will exclude CronJobs and Jobs.'
+            );
         });
     });
 });

@@ -56,6 +56,15 @@ func (m *deploymentMatcher) anyExclusionMatches(ctx context.Context, exclusions 
 }
 
 func (m *deploymentMatcher) exclusionMatches(ctx context.Context, exclusion *storage.Exclusion) bool {
+	if !appliesToDeployments(exclusion) {
+		return false
+	}
+	// Kind exclusions have no deployment scope. Falling through would treat the nil scope as
+	// matching every deployment.
+	if exclusion.GetExcludeByKind() != nil {
+		return kindExclusionMatches(exclusion, m.deployment.GetType())
+	}
+
 	// If excluded scope does not match the deployment then no need to check for deployment name
 	if !m.scopeMatches(ctx, exclusion.GetDeployment().GetScope()) {
 		return false

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { Button, Flex, FlexItem, Label, LabelGroup } from '@patternfly/react-core';
-import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
+import { GlobeIcon } from '@patternfly/react-icons';
 
 import type { SearchFilter } from 'types/search';
 
@@ -8,7 +8,7 @@ import type { CompoundSearchFilterAttribute, CompoundSearchFilterConfig } from '
 import { getCompoundSearchFilterLabelDescriptions, updateSearchFilter } from '../utils/utils';
 import type { IsGlobalPredicate } from '../utils/utils';
 
-const iconGlobe = <Globe height="15px" />;
+const iconGlobe = <GlobeIcon />;
 
 export type CompoundSearchFilterLabelsProps = {
     attributesSeparateFromConfig: CompoundSearchFilterAttribute[];

@@ -23,7 +23,6 @@ import {
 } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
 import useAnalytics, {
-    LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
@@ -43,7 +42,6 @@ import {
     getHasSearchApplied,
 } from 'utils/searchUtils';
 import {
-    clustersBasePath,
     clustersClusterRegistrationSecretsPath,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
@@ -285,20 +283,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                         }}
                                     >
                                         Init bundle installation methods
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        key="legacy"
-                                        onClick={() => {
-                                            analyticsTrack({
-                                                event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
-                                                properties: {
-                                                    source: 'Secure a Cluster Dropdown',
-                                                },
-                                            });
-                                            navigate(`${clustersBasePath}/new`);
-                                        }}
-                                    >
-                                        Legacy installation method
                                     </DropdownItem>
                                 </MenuDropdown>
                             </FlexItem>
