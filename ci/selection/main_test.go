@@ -28,7 +28,7 @@ func TestClassify(t *testing.T) {
 	}{
 		"should classify both approved docs":                               {files: []string{"README.md", "CHANGELOG.md"}, any: []string{"docs"}, every: []string{"docs"}},
 		"should retain tests for mixed changes":                            {files: []string{"README.md", "central/main.go"}, any: []string{"docs", "go"}},
-		"should not infer docs from an extension":                          {files: []string{"docs/help.md", "testdata/expected.txt"}},
+		"should keep paths outside the configured group":                   {files: []string{"docs/help.md", "testdata/expected.txt"}},
 		"should not match every group for an empty diff":                   {files: []string{}},
 		"should keep exclusions in the diff":                               {files: []string{"ci/test.go", "central/main.go"}, any: []string{"go"}},
 		"should filter explicitly opted-in demo paths":                     {files: []string{"README.md", "ci/selection/main.go"}, ignore: []string{`^ci/selection/`}, any: []string{"docs"}, every: []string{"docs"}, ignored: []string{"ci/selection/main.go"}},
@@ -94,8 +94,8 @@ func TestDecide(t *testing.T) {
 }
 
 func TestCommand(t *testing.T) {
-	config := filepath.Join(t.TempDir(), "groups.json")
-	require.NoError(t, os.WriteFile(config, []byte(`{"docs":{"include":["^README\\.md$"]}}`), 0o600))
+	config := filepath.Join(t.TempDir(), "groups.yaml")
+	require.NoError(t, os.WriteFile(config, []byte("# Paths qualifying as documentation.\ndocs:\n  include:\n    - '^README\\.md$'\n"), 0o600))
 	payload, err := json.Marshal(sampleDiff([]string{"README.md"}))
 	require.NoError(t, err)
 	var output bytes.Buffer
@@ -115,6 +115,118 @@ func TestCommand(t *testing.T) {
 		})
 	}
 	require.Error(t, run([]string{"--groups", config, "extra"}, bytes.NewReader(payload), &output))
+}
+
+func TestInvalidGroups(t *testing.T) {
+	payload, err := json.Marshal(sampleDiff([]string{"README.md"}))
+	require.NoError(t, err)
+	for name, policy := range map[string]string{
+		"should reject malformed YAML":       "docs: [",
+		"should reject unknown fields":       "docs:\n  include: ['.*']\n  exlcude: ['.*']\n",
+		"should reject duplicate groups":     "docs:\n  include: ['.*']\ndocs:\n  include: ['.*']\n",
+		"should reject duplicate fields":     "docs:\n  include: ['.*']\n  include: ['.*']\n",
+		"should reject additional documents": "docs:\n  include: ['.*']\n---\ndocs:\n  include: ['.*']\n",
+		"should reject trailing syntax":      "docs:\n  include: ['.*']\n---\n[",
+		"should reject a scalar pattern":     "docs:\n  include: '.*'\n",
+		"should reject invalid expressions":  "docs:\n  include: ['[']\n",
+		"should reject empty configuration":  "",
+	} {
+		t.Run(name, func(t *testing.T) {
+			config := filepath.Join(t.TempDir(), "groups.yaml")
+			require.NoError(t, os.WriteFile(config, []byte(policy), 0o600))
+			var output bytes.Buffer
+			require.Error(t, run([]string{"--groups", config}, bytes.NewReader(payload), &output))
+			require.Empty(t, output.String())
+		})
+	}
+}
+
+func TestListConfiguration(t *testing.T) {
+	t.Chdir(repositoryRoot(t))
+	for name, test := range map[string]struct {
+		flag, policy, decision string
+		files                  []string
+		wantError              bool
+	}{
+		"should load commented YAML exclusions": {
+			flag: "--ignore", policy: "# Demo machinery.\n- '^ci/selection/'\n",
+			files: []string{"docs/help.md", "ci/selection/main.go"}, decision: "skip",
+		},
+		"should load commented YAML targets": {
+			flag: "--targets", policy: "# Product test target.\n- gke-qa-e2e-tests\n",
+			files: []string{"docs/help.md"}, decision: "skip",
+		},
+		"should run with empty exclusions": {
+			flag: "--ignore", policy: "[]\n",
+			files: []string{"docs/help.md", "ci/selection/main.go"}, decision: "run",
+		},
+		"should run with no enrolled targets": {
+			flag: "--targets", policy: "[]\n", files: []string{"docs/help.md"}, decision: "run",
+		},
+		"should reject malformed exclusion YAML": {
+			flag: "--ignore", policy: "[", files: []string{"docs/help.md"}, wantError: true,
+		},
+		"should reject additional exclusion documents": {
+			flag: "--ignore", policy: "[]\n---\n[]\n", files: []string{"docs/help.md"}, wantError: true,
+		},
+		"should reject exclusion mappings": {
+			flag: "--ignore", policy: "exclude: ['.*']\n", files: []string{"docs/help.md"}, wantError: true,
+		},
+		"should reject malformed target YAML": {
+			flag: "--targets", policy: "[", files: []string{"docs/help.md"}, wantError: true,
+		},
+		"should reject additional target documents": {
+			flag: "--targets", policy: "[]\n---\n[]\n", files: []string{"docs/help.md"}, wantError: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			config := filepath.Join(t.TempDir(), "list.yaml")
+			require.NoError(t, os.WriteFile(config, []byte(test.policy), 0o600))
+			payload, err := json.Marshal(sampleDiff(test.files))
+			require.NoError(t, err)
+			var output bytes.Buffer
+			err = run([]string{"--job", "gke-qa-e2e-tests", test.flag, config}, bytes.NewReader(payload), &output)
+			if test.wantError {
+				require.Error(t, err)
+				require.Empty(t, output.String())
+				return
+			}
+			require.NoError(t, err)
+			var decision jobDecision
+			require.NoError(t, json.Unmarshal(output.Bytes(), &decision))
+			require.Equal(t, test.decision, decision.Decision)
+		})
+	}
+}
+
+func TestDocsPolicy(t *testing.T) {
+	root := repositoryRoot(t)
+	t.Chdir(root)
+	for name, test := range map[string]struct {
+		files    []string
+		decision string
+	}{
+		"should skip root Markdown":               {[]string{"README.md", "CHANGELOG.md"}, "skip"},
+		"should skip nested Markdown and text":    {[]string{"operator/ARCHITECTURE.md", "docs/notes.txt"}, "skip"},
+		"should skip other text fixtures":         {[]string{"testdata/expected.txt"}, "skip"},
+		"should run for CI dependencies":          {[]string{".openshift-ci/dev-requirements.txt"}, "run"},
+		"should run for report expectations":      {[]string{"roxctl/common/report/testdata/two-images.txt"}, "run"},
+		"should run for excluded files with docs": {[]string{"docs/help.md", ".openshift-ci/dev-requirements.txt", "roxctl/common/report/testdata/two-images.txt"}, "run"},
+		"should run for product changes":          {[]string{"docs/help.md", "central/main.go"}, "run"},
+		"should not match partial extensions":     {[]string{"docs/help.md.bak", "docs/notes.txt.go"}, "run"},
+		"should keep exclusions path specific":    {[]string{"other/dev-requirements.txt", "other/two-images.txt"}, "skip"},
+		"should run for an empty diff":            {[]string{}, "run"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			payload, err := json.Marshal(sampleDiff(test.files))
+			require.NoError(t, err)
+			var output bytes.Buffer
+			require.NoError(t, run([]string{"--job", "gke-qa-e2e-tests"}, bytes.NewReader(payload), &output))
+			var decision jobDecision
+			require.NoError(t, json.Unmarshal(output.Bytes(), &decision))
+			require.Equal(t, test.decision, decision.Decision)
+		})
+	}
 }
 
 func TestGitChanges(t *testing.T) {

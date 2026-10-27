@@ -58,6 +58,8 @@ func runShell(t *testing.T, script, dir string, env []string) (string, error) {
 
 func TestActualCollector(t *testing.T) {
 	w := workflow(t, "detect-changes.yml")
+	var groups map[string]pathGroup
+	require.NoError(t, readYAML(filepath.Join(repositoryRoot(t), "ci/selection/file-groups.yaml"), &groups))
 	steps := object(object(w["jobs"])["detect"])["steps"].([]any)
 	script := object(steps[0])["run"].(string)
 	for name, test := range map[string]struct {
@@ -68,6 +70,9 @@ func TestActualCollector(t *testing.T) {
 		complete          bool
 	}{
 		"should read pages":                         {pages: `[[{"filename":"README.md"}],[{"filename":"CHANGELOG.md"}]]`, count: 2, wantPaths: []string{"README.md", "CHANGELOG.md"}, complete: true},
+		"should collect nested Markdown and text":   {pages: `[[{"filename":"docs/help.md"},{"filename":"docs/notes.txt"}]]`, count: 2, wantPaths: []string{"docs/help.md", "docs/notes.txt"}, complete: true},
+		"should collect CI dependency changes":      {pages: `[[{"filename":".openshift-ci/dev-requirements.txt"}]]`, count: 1, wantPaths: []string{".openshift-ci/dev-requirements.txt"}, complete: true},
+		"should collect report expectation changes": {pages: `[[{"filename":"roxctl/common/report/testdata/two-images.txt"}]]`, count: 1, wantPaths: []string{"roxctl/common/report/testdata/two-images.txt"}, complete: true},
 		"should retain old rename paths":            {pages: `[[{"filename":"README.md","previous_filename":"product.go"}]]`, count: 1, wantPaths: []string{"README.md", "product.go"}, complete: true},
 		"should preserve empty diff":                {pages: `[[]]`, count: 0, wantPaths: []string{}, complete: true},
 		"should reject truncated data":              {pages: `[[{"filename":"README.md"}]]`, count: 2},
@@ -101,10 +106,15 @@ if [[ "$*" == *'/files'* ]]; then printf '%s\n' "$PAGES"; else printf '%s\n' "$M
 			var diff changedFiles
 			require.NoError(t, json.Unmarshal(payload, &diff))
 			require.ElementsMatch(t, test.wantPaths, diff.Files)
-			facts, err := classify(diff, map[string]pathGroup{"docs": {Include: []string{`^(README\.md|CHANGELOG\.md)$`}}}, nil)
+			facts, err := classify(diff, groups, nil)
 			require.NoError(t, err)
-			if slices.Contains(test.wantPaths, "product.go") {
+			switch {
+			case len(test.wantPaths) == 0, slices.Contains(test.wantPaths, "product.go"),
+				slices.Contains(test.wantPaths, ".openshift-ci/dev-requirements.txt"),
+				slices.Contains(test.wantPaths, "roxctl/common/report/testdata/two-images.txt"):
 				require.Empty(t, facts.Every)
+			default:
+				require.Equal(t, []string{"docs"}, facts.Every)
 			}
 		})
 	}
@@ -236,11 +246,14 @@ func TestSkipOutcome(t *testing.T) {
 func TestProductionConfiguration(t *testing.T) {
 	root := repositoryRoot(t)
 	var groups map[string]pathGroup
-	require.NoError(t, readJSON(filepath.Join(root, "ci/selection/file-groups.json"), &groups))
+	require.NoError(t, readYAML(filepath.Join(root, "ci/selection/file-groups.yaml"), &groups))
 	var ignores []string
-	require.NoError(t, readJSON(filepath.Join(root, "ci/selection/demo-ignore.json"), &ignores))
+	require.NoError(t, readYAML(filepath.Join(root, "ci/selection/demo-ignore.yaml"), &ignores))
+	if os.Getenv("CI_SELECTION_REQUIRE_FULL_DIFF") == "true" {
+		require.Empty(t, ignores, "empty demo exclusions before production merge")
+	}
 	var targets []string
-	require.NoError(t, readJSON(filepath.Join(root, "ci/selection/prow-product-tests.json"), &targets))
+	require.NoError(t, readYAML(filepath.Join(root, "ci/selection/prow-product-tests.yaml"), &targets))
 	facts, err := classify(sampleDiff([]string{"README.md", ".github/workflows/unit-tests.yaml", "ci/selection/main.go"}), groups, ignores)
 	require.NoError(t, err)
 	if len(ignores) > 0 {
@@ -326,7 +339,8 @@ func TestVerificationCannotBeSkippedByProductSelection(t *testing.T) {
 		if step["name"] == "Require full-diff policy outside a draft demo" {
 			guardFound = true
 			require.Equal(t, "github.event_name != 'pull_request' || !github.event.pull_request.draft", step["if"])
-			require.Equal(t, "jq -e 'length == 0' ci/selection/demo-ignore.json", step["run"])
+			require.Equal(t, "go test ./ci/selection -run '^TestProductionConfiguration$'", step["run"])
+			require.Equal(t, "true", object(step["env"])["CI_SELECTION_REQUIRE_FULL_DIFF"])
 			continue
 		}
 		require.NotContains(t, step, "if")

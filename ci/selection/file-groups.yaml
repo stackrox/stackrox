@@ -1,0 +1,8 @@
+docs:
+  include:
+    - '\.(md|txt)$'
+  exclude:
+    # CI dependency input.
+    - '^\.openshift-ci/dev-requirements\.txt$'
+    # Expected report test output.
+    - '^roxctl/common/report/testdata/two-images\.txt$'

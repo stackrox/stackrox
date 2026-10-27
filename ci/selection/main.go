@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 )
 
 type (
@@ -25,8 +27,8 @@ type (
 	}
 	// pathGroup excludes paths only from this group, never from the diff.
 	pathGroup struct {
-		Include []string `json:"include"`
-		Exclude []string `json:"exclude,omitempty"`
+		Include []string `yaml:"include"`
+		Exclude []string `yaml:"exclude,omitempty"`
 	}
 	// fileFacts reports nonempty any/every matches; Ignored identifies demo filtering.
 	fileFacts struct {
@@ -57,10 +59,10 @@ func main() {
 
 func run(args []string, input io.Reader, output io.Writer) error {
 	flags := flag.NewFlagSet("ci-selection", flag.ContinueOnError)
-	groupsPath := flags.String("groups", "ci/selection/file-groups.json", "path-group configuration")
+	groupsPath := flags.String("groups", "ci/selection/file-groups.yaml", "YAML path-group configuration")
 	ignorePath := flags.String("ignore", "", "demo-only path exclusions; omitted in production")
 	job := flags.String("job", "", "normalized Prow test target; omit for filename facts")
-	targetsPath := flags.String("targets", "ci/selection/prow-product-tests.json", "enrolled Prow product targets")
+	targetsPath := flags.String("targets", "ci/selection/prow-product-tests.yaml", "YAML enrolled Prow product targets")
 	base := flags.String("base", "", "immutable Git base revision for Prow")
 	head := flags.String("head", "", "immutable Git PR head revision for Prow")
 	if err := flags.Parse(args); err != nil {
@@ -83,12 +85,12 @@ func run(args []string, input io.Reader, output io.Writer) error {
 		return err
 	}
 	var groups map[string]pathGroup
-	if err := readJSON(*groupsPath, &groups); err != nil {
+	if err := readYAML(*groupsPath, &groups); err != nil {
 		return err
 	}
 	var ignoredPatterns []string
 	if *ignorePath != "" {
-		if err := readJSON(*ignorePath, &ignoredPatterns); err != nil {
+		if err := readYAML(*ignorePath, &ignoredPatterns); err != nil {
 			return err
 		}
 	}
@@ -99,7 +101,7 @@ func run(args []string, input io.Reader, output io.Writer) error {
 	var result any = facts
 	if *job != "" {
 		var targets []string
-		if err := readJSON(*targetsPath, &targets); err != nil {
+		if err := readYAML(*targetsPath, &targets); err != nil {
 			return err
 		}
 		result = decide(*job, facts, targets)
@@ -122,13 +124,19 @@ func decode(input io.Reader, result any) error {
 	return nil
 }
 
-func readJSON(filename string, result any) error {
+// readYAML rejects unknown fields and additional documents to catch policy mistakes.
+func readYAML(filename string, result any) error {
 	encoded, err := os.ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", filename, err)
 	}
-	if err := decode(bytes.NewReader(encoded), result); err != nil {
+	decoder := yaml.NewDecoder(bytes.NewReader(encoded))
+	decoder.KnownFields(true)
+	if err := decoder.Decode(result); err != nil {
 		return fmt.Errorf("read %s: %w", filename, err)
+	}
+	if err := decoder.Decode(new(any)); err != io.EOF {
+		return fmt.Errorf("read %s: expected exactly one YAML document", filename)
 	}
 	return nil
 }

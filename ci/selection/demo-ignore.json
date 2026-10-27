@@ -1,6 +1,0 @@
-[
-  "^ci/selection/",
-  "^\\.github/workflows/(detect-changes\\.yml|unit-tests\\.yaml|e2e-dispatch\\.yaml|scanner-db-integration-tests\\.yaml|check-crd-compatibility\\.yaml|scanner-e2e-test\\.yaml|performance-tests\\.yml|ci-selection\\.yaml)$",
-  "^\\.openshift-ci/(dispatch|end)\\.sh$",
-  "^scripts/ci/jobs/test-binary-build-commands\\.sh$"
-]

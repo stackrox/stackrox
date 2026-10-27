@@ -18,7 +18,7 @@ ci_selection_should_skip() {
     fi
     base="$(jq -er '.base_sha | select(type == "string")' <<< "$metadata")" || return 1
     head="$(jq -er '.pulls[0].sha | select(type == "string")' <<< "$metadata")" || return 1
-    if ! decision="$(ci-selection --job "$target" --base "$base" --head "$head" --ignore ci/selection/demo-ignore.json)"; then
+    if ! decision="$(ci-selection --job "$target" --base "$base" --head "$head" --ignore ci/selection/demo-ignore.yaml)"; then
         echo 'CI selection failed; retaining existing execution' >&2
         return 1
     fi

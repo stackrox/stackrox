@@ -21,7 +21,9 @@ jobs:
         cache: false
     - name: Require full-diff policy outside a draft demo
       if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-      run: jq -e 'length == 0' ci/selection/demo-ignore.json
+      env:
+        CI_SELECTION_REQUIRE_FULL_DIFF: "true"
+      run: go test ./ci/selection -run '^TestProductionConfiguration$'
     - name: Test classification and actual CI wiring
       run: go test -race -cover ./ci/selection
     - name: Analyze selection code

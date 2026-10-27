@@ -165,6 +165,6 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          facts="$(go run ./ci/selection --ignore ci/selection/demo-ignore.json < "$RUNNER_TEMP/ci-selection-files.json")"
+          facts="$(go run ./ci/selection --ignore ci/selection/demo-ignore.yaml < "$RUNNER_TEMP/ci-selection-files.json")"
           printf 'facts=%s\n' "$facts" >> "$GITHUB_OUTPUT"
           printf '### Filename selection facts\n\n    %s\n' "$facts" >> "$GITHUB_STEP_SUMMARY"
