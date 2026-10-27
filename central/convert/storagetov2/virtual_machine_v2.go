@@ -130,7 +130,12 @@ func VirtualMachineComponentV2ToRow(comp *storage.VirtualMachineComponentV2) *v2
 		return nil
 	}
 	scanStatus := v2.ScanStatus_SCANNED
-	if slices.Contains(comp.GetNotes(), storage.VirtualMachineComponentV2_UNSCANNED) {
+	switch {
+	case slices.Contains(comp.GetNotes(), storage.VirtualMachineComponentV2_CPE_MISSING):
+		scanStatus = v2.ScanStatus_CPE_MISSING
+	case slices.Contains(comp.GetNotes(), storage.VirtualMachineComponentV2_REPO_UNKNOWN):
+		scanStatus = v2.ScanStatus_REPO_UNKNOWN
+	case slices.Contains(comp.GetNotes(), storage.VirtualMachineComponentV2_UNSCANNED):
 		scanStatus = v2.ScanStatus_NOT_SCANNED
 	}
 	return &v2.VMComponentRow{

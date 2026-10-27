@@ -220,7 +220,7 @@ for a production-grade example that models realistic data distributions.
 
 1. Create a PR with your migration to build a CI image
 2. Checkout the commit **before** the migration: `make clean image`
-3. Deploy: `export STORAGE=pvc && teardown && ./deploy/k8s/deploy-local.sh`
+3. Deploy: `export STORAGE=pvc && teardown && ./deploy/deploy-local.sh`
 4. Port-forward: `./scripts/k8s/local-port-forward.sh`
 5. Create test data via Central UI or REST API
 6. Checkout your migration commit

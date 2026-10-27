@@ -97,12 +97,7 @@ func TestSearchCategories(t *testing.T) {
 		assert.True(t, searchCategories[globalCategory] != nil, "global search category %s does not exist in auto complete", globalCategory)
 	}
 	for category := range searchCategories {
-		switch category {
-		case v1.SearchCategory_COMPLIANCE:
-			continue
-		default:
-			assert.True(t, searchFuncs[category] != nil, "search category %s does not have a search func", category.String())
-		}
+		assert.True(t, searchFuncs[category] != nil, "search category %s does not have a search func", category.String())
 	}
 }
 
