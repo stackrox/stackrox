@@ -32,8 +32,8 @@ cloud.google.com/go v0.98.0/go.mod h1:ua6Ush4NALrHk5QXDWnjvZHN93OuF0HfuEPq9I1X0c
 cloud.google.com/go v0.99.0/go.mod h1:w0Xx2nLzqWJPuozYQX+hFfCSI8WioryfRDzkoI/Y2ZA=
 cloud.google.com/go v0.123.0 h1:2NAUJwPR47q+E35uaJeYoNhuNEM9kM8SjgRgdeOJUSE=
 cloud.google.com/go v0.123.0/go.mod h1:xBoMV08QcqUGuPW65Qfm1o9Y4zKZBpGS+7bImXLTAZU=
-cloud.google.com/go/artifactregistry v1.27.0 h1:EBgdk9sXNAVyWJ3hnTmWRdlmKhGDKCjkJbLoF3EsyWE=
-cloud.google.com/go/artifactregistry v1.27.0/go.mod h1:r0rZgbNmn5ppdqwUMF182yc7EFH6vabJMbXM+PlfW9A=
+cloud.google.com/go/artifactregistry v1.28.0 h1:XIUOA7FgF99C5fG6G8NSSejmn8RjsVb1sxJhZUat4Vk=
+cloud.google.com/go/artifactregistry v1.28.0/go.mod h1:T9Fd+hSzYIw6Bj7lCFehScy2P9whjDqlBCsnbCo9998=
 cloud.google.com/go/auth v0.24.1 h1:NTmd2iJb4DsGIav0KiqFMYI88nMshA2wnFMBatRmoCs=
 cloud.google.com/go/auth v0.24.1/go.mod h1:1dmBXa9xfBvBr39ZnDUDkaaA91ccq9CcqENDgJA4d7c=
 cloud.google.com/go/auth/oauth2adapt v0.3.0 h1:FY8oSZpCYoUNv6QxVODuMjQz4IlSOVeiQtZ08vLPz88=
