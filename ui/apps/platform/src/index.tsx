@@ -1,6 +1,8 @@
 /**
  * This file is intentionally `.tsx` so CRA will detect that the app can be compiled with TypeScript.
  * The rest of the files can be either TypeScript (.ts or .tsx) or JavaScript (.js).
+ *
+ * CI-TEST: Validating ui-only-skip-backend rule - expect backend tests to be skipped
  */
 
 import { createRoot } from 'react-dom/client';
