@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterlabels"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
+	nodeRoleStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -29,6 +30,7 @@ type StoreProvider struct {
 	nsStore                *namespaceStore
 	vmStore                *vmStore.VirtualMachineStore
 	clusterLabelsStore     *clusterlabels.Store
+	nodeRoleStore          *nodeRoleStore.Store
 
 	cleanableStores []CleanableStore
 }
@@ -71,6 +73,7 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 		nsStore:                newNamespaceStore(),
 		vmStore:                vmStore.NewVirtualMachineStore(),
 		clusterLabelsStore:     clusterlabels.NewStore(),
+		nodeRoleStore:          nodeRoleStore.New(),
 	}
 
 	p.cleanableStores = []CleanableStore{
@@ -87,6 +90,7 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 		p.registryMirrorStore,
 		p.nsStore,
 		p.vmStore,
+		p.nodeRoleStore,
 	}
 
 	return p
@@ -172,4 +176,9 @@ func (p *StoreProvider) NamespaceLabels() scopecomp.NamespaceLabelProvider {
 // Namespaces returns the namespace store public interface
 func (p *StoreProvider) Namespaces() store.NamespaceStore {
 	return p.nsStore
+}
+
+// NodeRoles returns the node-role store
+func (p *StoreProvider) NodeRoles() *nodeRoleStore.Store {
+	return p.nodeRoleStore
 }

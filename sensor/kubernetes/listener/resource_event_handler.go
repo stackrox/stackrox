@@ -31,6 +31,7 @@ import (
 	virtualMachineAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
@@ -360,6 +361,20 @@ func (k *listenerImpl) handleAllEvents() {
 				handle(k.context, informerImageContentSourcePolicies, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
 		}
+	}
+
+	// MachineConfigPool informer (OpenShift only)
+	if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osMachineConfigGroupVersion); err != nil {
+		log.Debugf("Checking API resources for group %q: %v (non-OpenShift cluster?)", osMachineConfigGroupVersion, err)
+	} else if listenerUtils.ResourceExists(resourceList, osMachineConfigPoolsResourceName, osMachineConfigGroupVersion) {
+		log.Infof("Initializing %q informer", osMachineConfigPoolsResourceName)
+		machineConfigPoolGVR := schema.GroupVersionResource{
+			Group:    "machineconfiguration.openshift.io",
+			Version:  "v1",
+			Resource: "machineconfigpools",
+		}
+		mcpInformer := crdSharedInformerFactory.ForResource(machineConfigPoolGVR).Informer()
+		handle(k.context, informerMachineConfigPools, mcpInformer, dispatchers.ForMachineConfigPools(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	if coAvailable {
