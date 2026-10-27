@@ -137,8 +137,8 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - **Operator** (`/operator/`) - Kubernetes operator for lifecycle management
 
 ### Technology Stack
-- **Backend**: Go (1.24.0+), PostgreSQL, gRPC/HTTP APIs, Kubernetes controllers
-- **Frontend**: React, TypeScript, Node.js (20.0.0+), npm
+- **Backend**: Go (version set in `go.mod`), PostgreSQL, gRPC/HTTP APIs, Kubernetes controllers
+- **Frontend**: React, TypeScript, Node.js (version set by `engines` in `ui/apps/platform/package.json`), npm
 - **Infrastructure**: Kubernetes-native, Helm charts, Docker/Podman containers
 - **Communication**: mTLS for security, gRPC for internal services, REST APIs for external access
 
