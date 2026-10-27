@@ -265,7 +265,7 @@ function SignatureIntegrationForm({
                                             values.cosign.publicKeys.map(
                                                 (_publicKey, index: number) => (
                                                     <Flex
-                                                        // eslint-disable-next-line react/no-array-index-key
+                                                        // eslint-disable-next-line @eslint-react/no-array-index-key
                                                         key={`publicKey_${index}`}
                                                         direction={{ default: 'column' }}
                                                     >
@@ -419,7 +419,7 @@ function SignatureIntegrationForm({
                                             values.cosignCertificates.map(
                                                 (_certificate, index: number) => (
                                                     <Flex
-                                                        // eslint-disable-next-line react/no-array-index-key
+                                                        // eslint-disable-next-line @eslint-react/no-array-index-key
                                                         key={`certificate_${index}`}
                                                         direction={{ default: 'column' }}
                                                     >

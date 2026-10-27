@@ -3,6 +3,7 @@ package report
 // ResultRow struct which hold all columns of a report row
 type ResultRow struct {
 	ClusterName    string
+	NodeRole       string
 	CheckName      string
 	Profile        string
 	ProfileType    string

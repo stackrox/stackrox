@@ -25,13 +25,23 @@ source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.s
 set -euo pipefail
 
 run_part_1() {
+    local roxie_config="${1:-}"
+
+    if [[ -z "$roxie_config" ]]; then
+        # No roxie config provided by the caller, hence we use a new one.
+        roxie_config="$(mktemp)"
+        trap 'rm -f "$roxie_config"' RETURN
+    fi
+
     info "Starting test (qa-tests-backend part I)"
 
-    config_part_1
+    config_part_1 "$roxie_config"
     test_part_1
 }
 
 config_part_1() {
+    local roxie_config="${1:-}"
+
     info "Configuring the cluster to run part 1 of e2e tests"
 
     require_environment "ORCHESTRATOR_FLAVOR"
@@ -65,8 +75,12 @@ config_part_1() {
 
         ensure_roxie_on_path
 
-        local config_file
-        config_file="$(mktemp)"
+        local config_file="$roxie_config"
+        if [[ -z ${config_file} ]]; then
+            config_file="$(mktemp)"
+            # No cleanup trap, we're deep in the call stack and it's not clear if it would be safe to
+            # override the global exit trap.
+        fi
 
         merge_yaml "$config_file" <<EOF
 central:
