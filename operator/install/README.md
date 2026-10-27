@@ -27,15 +27,6 @@ helm install --wait --namespace stackrox-operator-system --create-namespace stac
 
 Once the operator is running, to actually deploy StackRox you need to create a `Central` and/or a `SecuredCluster` custom resource.
 
-To scrape Central custom metrics with OpenShift monitoring, set
-`spec.monitoring.openshift.custom.enabled: true` on the `Central` resource.
-This requires `spec.monitoring.openshift.enabled: true` and is unavailable on managed services.
-To scrape Central metrics through Sensor's proxy, set the same
-`spec.monitoring.openshift.custom.enabled: true` on the `SecuredCluster` resource.
-Unlike Central, this works even when `spec.monitoring.openshift.enabled` is false.
-Both settings can be changed on existing resources;
-the operator reconciles the corresponding ServiceMonitors.
-
 ### Migrations
 
 For help replacing an existing deployment (done with manifests or the `central-services`/`secured-cluster-services` charts)
