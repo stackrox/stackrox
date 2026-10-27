@@ -1,28 +1,25 @@
 import {
     getScoreVersionsForTopCVSS,
+    getScoreVersionsForTopNvdCVSS,
     getSeveritySortOptions,
     safeToFixed,
     sortCveDistroList,
     syncSeveritySortOption,
 } from './sortUtils';
 
+const unavailableScores = [null, undefined, 'N/A', NaN, Infinity, -Infinity];
+
 describe('safeToFixed', () => {
     it('should return a fixed-point string for a valid number', () => {
         expect(safeToFixed(9.4300001, 1)).toEqual('9.4');
     });
 
-    it('should return the value itself for NaN values', () => {
-        expect(safeToFixed("N/A", 1)).toEqual('N/A');
+    it('should format zero as an available score', () => {
+        expect(safeToFixed(0, 1)).toEqual('0.0');
     });
-});
 
-describe('sortCveDistroList', () => {
-    it('should return an array of objects sorted by operating system priority', () => {
-        const summaries = [{ operatingSystem: 'amzn:2' }];
-
-        expect(sortCveDistroList(summaries)).toEqual([
-            { distro: 'amzn', operatingSystem: 'amzn:2' },
-        ]);
+    it.each(unavailableScores)('should return N/A for unavailable score %s', (score) => {
+        expect(safeToFixed(score, 1)).toEqual('N/A');
     });
 });
 
@@ -101,6 +98,26 @@ describe('sortCveDistroList', () => {
 });
 
 describe('getScoreVersionsForTopCVSS', () => {
+    it.each(unavailableScores)(
+        'should return no versions for unavailable top score %s',
+        (score) => {
+            expect(
+                getScoreVersionsForTopCVSS(score, [
+                    { cvss: score, scoreVersion: 'V3' },
+                    { cvss: 9.4, scoreVersion: 'V2' },
+                ])
+            ).toEqual([]);
+        }
+    );
+
+    it('should exclude unavailable row scores and preserve zero', () => {
+        const unavailableRows = unavailableScores.map((cvss) => ({ cvss, scoreVersion: 'V2' }));
+
+        expect(
+            getScoreVersionsForTopCVSS(0, [...unavailableRows, { cvss: 0, scoreVersion: 'V3' }])
+        ).toEqual(['V3']);
+    });
+
     it('should return the correct score versions for the topCVSS', () => {
         // Empty list
         expect(getScoreVersionsForTopCVSS(9.5, [])).toEqual([]);
@@ -137,6 +154,47 @@ describe('getScoreVersionsForTopCVSS', () => {
                 { cvss: 9.4, scoreVersion: 'V2' },
             ])
         ).toEqual(['V1', 'V2', 'V3']);
+    });
+});
+
+describe('getScoreVersionsForTopNvdCVSS', () => {
+    it.each(unavailableScores)(
+        'should return no versions for unavailable top score %s',
+        (score) => {
+            expect(
+                getScoreVersionsForTopNvdCVSS(score, [
+                    { nvdCvss: score, nvdScoreVersion: 'V3' },
+                    { nvdCvss: 9.4, nvdScoreVersion: 'V2' },
+                ])
+            ).toEqual([]);
+        }
+    );
+
+    it('should exclude unavailable row scores and preserve zero', () => {
+        const unavailableRows = unavailableScores.map((nvdCvss) => ({
+            nvdCvss,
+            nvdScoreVersion: 'V2',
+        }));
+
+        expect(
+            getScoreVersionsForTopNvdCVSS(0, [
+                ...unavailableRows,
+                { nvdCvss: 0, nvdScoreVersion: 'V3' },
+            ])
+        ).toEqual(['V3']);
+    });
+
+    it('should match rounded scores and return sorted unique versions', () => {
+        expect(getScoreVersionsForTopNvdCVSS(9.4, [])).toEqual([]);
+        expect(
+            getScoreVersionsForTopNvdCVSS(9.4, [
+                { nvdCvss: 9.4300001, nvdScoreVersion: 'V3' },
+                { nvdCvss: 9.4, nvdScoreVersion: 'V2' },
+                { nvdCvss: 9.4212, nvdScoreVersion: 'V3' },
+                { nvdCvss: 9.48, nvdScoreVersion: 'V4' },
+                { nvdCvss: 8, nvdScoreVersion: 'V1' },
+            ])
+        ).toEqual(['V2', 'V3']);
     });
 });
 
