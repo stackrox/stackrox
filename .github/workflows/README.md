@@ -1,5 +1,7 @@
 # GitHub Actions
 
+<!-- CI-TEST: Validating ci-tooling-changes rule - expect E2E tests to be skipped -->
+
 ## Upstream Release Automation
 
 ### General Rules
