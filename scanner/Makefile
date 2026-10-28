@@ -251,13 +251,13 @@ endif
 #################
 
 db-integration-timeout := 20m
-db-integration-d       := datastore/postgres
+db-integration-packages := ./datastore/postgres/... ./updater/ci/generate/...
 db-integration-go-tag  := scanner_db_integration
 
 .PHONY: db-integration-test
 db-integration-test: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v $(db-integration-packages)
 
 ##################
 ## Certificates ##
