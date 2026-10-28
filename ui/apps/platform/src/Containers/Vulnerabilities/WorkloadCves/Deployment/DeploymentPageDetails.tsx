@@ -16,40 +16,15 @@ import { gql, useQuery } from '@apollo/client';
 import { getDateTime } from 'utils/dateUtils';
 
 import DeploymentContainersCard from 'Components/DeploymentContainersCard';
+import type { DeploymentContainerView } from 'Components/DeploymentContainerConfig';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import KeyValueListModal from 'Components/KeyValueListModal';
-import type { Container, ContainerConfig } from 'types/deployment.proto';
-import type { ImageName } from 'types/image.proto';
 
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export type DeploymentPageDetailsProps = {
     deploymentId: string;
-};
-
-const emptyImageName: ImageName = {
-    registry: '',
-    remote: '',
-    tag: '',
-    fullName: '',
-};
-
-type DeploymentContainerDetails = {
-    id: string;
-    name: string;
-    type: Container['type'];
-    image: {
-        id: string;
-        idV2: string;
-        notPullable: boolean;
-        name: ImageName | null;
-    } | null;
-    resources: Container['resources'];
-    volumes: Container['volumes'];
-    secrets: Container['secrets'];
-    config: Pick<ContainerConfig, 'args' | 'command'> | null;
-    securityContext: Container['securityContext'];
 };
 
 type DeploymentDetails = {
@@ -72,40 +47,8 @@ type DeploymentDetails = {
         key: string;
         value: string;
     }[];
-    containers: DeploymentContainerDetails[];
+    containers: DeploymentContainerView[];
 };
-
-// DeploymentContainersCard expects a full Container. The details query only loads
-// the fields that card renders, so unused config fields stay empty.
-function toContainers(containers: DeploymentContainerDetails[] | null | undefined): Container[] {
-    return (containers ?? []).map((container) => ({
-        id: container.id,
-        name: container.name,
-        type: container.type,
-        image: {
-            id: container.image?.id ?? '',
-            idV2: container.image?.idV2 ?? '',
-            notPullable: container.image?.notPullable ?? false,
-            name: container.image?.name ?? emptyImageName,
-        },
-        resources: container.resources,
-        volumes: container.volumes,
-        secrets: container.secrets,
-        ports: [],
-        config: container.config
-            ? {
-                  args: container.config.args,
-                  command: container.config.command,
-                  directory: '',
-                  user: '',
-                  uid: '',
-                  appArmorProfile: '',
-                  env: [],
-              }
-            : null,
-        securityContext: container.securityContext,
-    }));
-}
 
 const deploymentDetailsQuery = gql`
     query getDeploymentDetails($id: ID!) {
@@ -301,7 +244,7 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                         </FlexItem>
                         <FlexItem>
                             <DeploymentContainersCard
-                                containers={toContainers(deploymentDetailsData.containers)}
+                                containers={deploymentDetailsData.containers}
                                 title="Container configuration"
                                 getImageUrl={(imageId) =>
                                     urlBuilder.imageDetails(imageId, vulnerabilityState)
