@@ -228,8 +228,10 @@ message ComplianceOperatorCheckResultV2 {
   string rule_ref_id = 19; // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
   // last_started_time is the last time the Scan resource was triggered
   google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time,hidden"
-  // data_freshness is computed by the freshness sweeper. Not hidden so it is filterable and sortable.
-  DataFreshness data_freshness = 21; // @gotags: search:"Compliance Check Data Freshness"
+  // data_freshness is computed by the freshness sweeper. Hidden until the sweeper populates it, so
+  // it is not surfaced as a user-facing search option while every row is UNKNOWN. Hidden fields
+  // remain filterable and sortable, so the later API wiring is unaffected.
+  DataFreshness data_freshness = 21; // @gotags: search:"Compliance Check Data Freshness,hidden"
 }
 
 //Next Tag: 4
