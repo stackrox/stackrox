@@ -37,7 +37,7 @@ type datastoreImpl struct {
 
 	// keyFence serializes read-modify-upsert of a check result's serialized proto against the
 	// per-row ingest write (UpsertResult). Freshness lives inside the serialized blob, so the
-	// sweeper (UpdateFreshnessByScanConfig) and MarkStaleByScanRef load, mutate, and re-upsert
+	// sweeper (UpdateFreshnessByScanConfig) and MarkStalePriorResultsByScanRef load, mutate, and re-upsert
 	// the whole proto. Without the fence a concurrent ingest that writes a newer result between
 	// the load and the re-upsert would be reverted (lost update). Mirrors the CVE suppress
 	// precedent (central/cve/node/datastore), which guards the same pattern with a KeyFence.
@@ -58,7 +58,7 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 	// one time on insert and not everytime we pull the results.
 
 	// Hold the key fence for this result so a concurrent freshness read-modify-upsert
-	// (UpdateFreshnessByScanConfig / MarkStaleByScanRef) cannot re-upsert an older snapshot
+	// (UpdateFreshnessByScanConfig / MarkStalePriorResultsByScanRef) cannot re-upsert an older snapshot
 	// of this row over the result written here.
 	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
 		return d.store.Upsert(ctx, result)
@@ -493,8 +493,17 @@ func (d *datastoreImpl) UpdateFreshnessByScanConfig(ctx context.Context, scanCon
 	}, "updating compliance check result freshness")
 }
 
-// MarkStaleByScanRef marks every check result of the given scan (scan ref ID) STALE.
-func (d *datastoreImpl) MarkStaleByScanRef(ctx context.Context, scanRefID string) (int64, error) {
+// MarkStalePriorResultsByScanRef marks STALE the check results of the given scan (scan ref ID)
+// that predate olderThan, leaving the rest unchanged. It is the write-time complement to the
+// freshness sweeper, used when a scan times out: the results that the timed-out run already
+// refreshed carry its start time (olderThan) and are genuinely fresh, so they stay as they are.
+// Only the results the run did NOT refresh (leftovers from a previous run, with an older last
+// started time) are stale, and marking them here surfaces that immediately instead of waiting for
+// the next sweeper tick. A result row is reused across runs (its ID is the compliance operator
+// check result UID), so "prior results" are the rows the latest run did not overwrite. Results
+// whose last started time is nil are left unchanged (their freshness cannot be evaluated). Returns
+// the number of rows updated.
+func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
@@ -508,13 +517,18 @@ func (d *datastoreImpl) MarkStaleByScanRef(ctx context.Context, scanRefID string
 		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
 		ProtoQuery()
 
-	return d.updateFreshness(ctx, query, func(*storage.ComplianceOperatorCheckResultV2) storage.ComplianceDataFreshness {
-		return storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
-	}, "marking compliance check results stale")
+	return d.updateFreshness(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) storage.ComplianceDataFreshness {
+		started := result.GetLastStartedTime()
+		if started != nil && started.AsTime().Before(olderThan) {
+			return storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
+		}
+		// A result refreshed by the timed-out run (or with no start time) is left as-is.
+		return result.GetDataFreshness()
+	}, "marking prior compliance check results stale")
 }
 
 // updateFreshness is the shared read-modify-upsert used by UpdateFreshnessByScanConfig and
-// MarkStaleByScanRef. want returns the freshness a result should have.
+// MarkStalePriorResultsByScanRef. want returns the freshness a result should have.
 //
 // Two concerns shape the flow:
 //

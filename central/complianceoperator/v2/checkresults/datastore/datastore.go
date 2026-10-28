@@ -69,12 +69,14 @@ type DataStore interface {
 	// rows whose stored value changes are written. Returns the number of rows updated.
 	UpdateFreshnessByScanConfig(ctx context.Context, scanConfigName string, staleBefore time.Time) (int64, error)
 
-	// MarkStaleByScanRef marks every check result of the given scan (identified by its scan
-	// ref ID) as STALE. It is the write-time complement to the freshness sweeper: when a scan
-	// times out, the expected fresh results never arrived, so the existing results for that
-	// scan are known-stale immediately instead of only after the sweeper's grace window. Only
-	// rows not already STALE are written. Returns the number of rows updated.
-	MarkStaleByScanRef(ctx context.Context, scanRefID string) (int64, error)
+	// MarkStalePriorResultsByScanRef marks STALE the check results of the given scan (identified
+	// by its scan ref ID) that predate olderThan, leaving the rest unchanged. It is the
+	// write-time complement to the freshness sweeper: when a scan times out, the results it did
+	// not refresh (leftovers from a previous run, with an older last started time) are
+	// known-stale immediately, instead of only after the next sweeper tick. Results the run
+	// refreshed carry its start time (olderThan) and stay as they are. Only rows whose stored
+	// value changes are written. Returns the number of rows updated.
+	MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results

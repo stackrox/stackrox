@@ -448,7 +448,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 		err            error
 		expectMarkStle bool
 	}{
-		"timeout marks the scan's results stale": {
+		"timeout marks the scan's prior results stale": {
 			err:            watcher.ErrScanTimeout,
 			expectMarkStle: true,
 		},
@@ -492,14 +492,14 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 			}
 			if tc.expectMarkStle {
 				checkResultDS.EXPECT().
-					MarkStaleByScanRef(gomock.Any(), gomock.Eq(scan.GetScanRefId())).
+					MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Eq(scan.GetScanRefId()), gomock.Eq(scan.GetLastStartedTime().AsTime())).
 					Times(1).
-					DoAndReturn(func(_, _ any) (int64, error) {
+					DoAndReturn(func(_, _, _ any) (int64, error) {
 						close(done)
 						return 1, nil
 					})
 			} else {
-				checkResultDS.EXPECT().MarkStaleByScanRef(gomock.Any(), gomock.Any()).Times(0)
+				checkResultDS.EXPECT().MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			}
 			// All branches continue into getOrCreateScanConfigWatcher; stop there.
 			scanConfigDS.EXPECT().
