@@ -160,6 +160,10 @@ jobs:
     if: ${{ !needs.detect-changes.outputs.ui_only }}
     timeout-minutes: 240
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        memlimit: ['4GiB', '5GiB', '6GiB', '7GiB', '8GiB', '9GiB', '10GiB', '11GiB', '12GiB', '13GiB', '14GiB', '15GiB', '16GiB']
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -196,9 +200,14 @@ jobs:
       run: |
         [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
 
+    - name: Record runner CPU and memory
+      run: |
+        grep -m1 'model name' /proc/cpuinfo
+        grep MemTotal /proc/meminfo
+
     - name: make golangci-lint
       env:
-        GOMEMLIMIT: 12GiB
+        GOMEMLIMIT: ${{ matrix.memlimit }}
       run: make golangci-lint
 
     - name: Check Cache golangci-lint
