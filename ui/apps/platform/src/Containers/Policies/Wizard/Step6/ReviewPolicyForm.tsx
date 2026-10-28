@@ -47,12 +47,21 @@ function ReviewPolicyForm({
 
     // Start "dry run" job for preview of violations.
     useEffect(() => {
-        setIsValidOnServer(false);
-        setIsRunningDryRun(true);
         setPolicyErrorMessage('');
         setIsBadRequest(false);
         setCheckDryRunErrorMessage('');
         setAlertsFromDryRun([]);
+        setJobIdOfDryRun('');
+        setCounterToCheckDryRun(0);
+
+        if (isRuntimeOnlyPolicy) {
+            setIsRunningDryRun(false);
+            setIsValidOnServer(true);
+            return;
+        }
+
+        setIsValidOnServer(false);
+        setIsRunningDryRun(true);
 
         startDryRun(getServerPolicy(values))
             .then((jobId) => {
@@ -66,7 +75,7 @@ function ReviewPolicyForm({
                     setIsBadRequest(true);
                 }
             });
-    }, [setIsBadRequest, setIsValidOnServer, setPolicyErrorMessage, values]);
+    }, [isRuntimeOnlyPolicy, setIsBadRequest, setIsValidOnServer, setPolicyErrorMessage, values]);
 
     // Poll "dry run" job for preview of violations.
     useEffect(() => {
