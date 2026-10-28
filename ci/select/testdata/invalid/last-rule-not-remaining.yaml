@@ -1,0 +1,9 @@
+version: 1
+jobs:
+  - unit
+
+rules:
+  - name: only
+    when: always
+    run:
+      - '*'

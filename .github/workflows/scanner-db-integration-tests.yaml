@@ -12,6 +12,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
+    - unlabeled
 
 jobs:
   detect-changes:
@@ -19,7 +21,9 @@ jobs:
 
   db-integration-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') ||
+      !needs.detect-changes.outputs.ui_only
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
@@ -28,21 +32,45 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Build CI selector
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
+      uses: ./.github/actions/ci-select
+
+    - name: Read the CI decision
+      id: ci-decision
+      if: github.event_name == 'pull_request'
+      env:
+        CI_ENFORCE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce') }}
+        CI_REPO: ${{ github.repository }}
+        CI_PR: ${{ github.event.pull_request.number }}
+        CI_COMMIT: ${{ github.event.pull_request.head.sha }}
+        CI_BASE: ${{ github.event.pull_request.base.sha }}
+        CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+      run: ci/select/gha-gate.sh db-integration-tests
 
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Run Postgres
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
+      if: steps.ci-decision.outputs.action != 'skip'
       run: pg_isready -h 127.0.0.1
 
     - name: DB Integration tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: make -C scanner db-integration-test

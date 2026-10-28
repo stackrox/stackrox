@@ -5,6 +5,12 @@
 # hands off to the test/build script in *scripts/ci/jobs*.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+
+if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+    jq -n --arg cwd "$PWD" --args -f "$ROOT/.openshift-ci/dispatch-inputs.jq" -- "$@" \
+        > "${ARTIFACT_DIR}/dispatch-inputs.json" || echo "Could not dump dispatcher inputs" >&2
+fi
+
 # shellcheck source=../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 # shellcheck source=../tests/e2e/lib.sh
@@ -19,15 +25,30 @@ fi
 ci_job="$1"
 shift
 
-# Skip non-UI jobs early when the PR only touches files under ui/.
-case "$ci_job" in
-    *nongroovy*|*upgrade*)
-        if changes_limited_to "ui/"; then
-            info "Skipping $ci_job: all changes are under ui/"
+# PR gates run before credentials and cluster setup.
+if is_in_PR_context; then
+    if ! pr_has_label ci-dispatcher-enforce; then
+        case "$ci_job" in
+            *nongroovy*|*upgrade*)
+                if changes_limited_to "ui/"; then
+                    info "Skipping $ci_job: all changes are under ui/"
+                    exit 0
+                fi
+                ;;
+        esac
+    fi
+
+    if "$ROOT/ci/select/build.sh"; then
+        # shellcheck source=../ci/select/prow-gate.sh
+        source "$ROOT/ci/select/prow-gate.sh"
+        if ! ci_decision_allows "$ci_job"; then
+            info "CI decision skips ${ci_job}"
             exit 0
         fi
-        ;;
-esac
+    else
+        info "CI selector build failed; ${ci_job} runs"
+    fi
+fi
 
 if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     # shellcheck disable=SC1091

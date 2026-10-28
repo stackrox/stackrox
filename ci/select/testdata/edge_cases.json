@@ -1,0 +1,277 @@
+[
+  {
+    "name": "A sensor file and a Central policy file should run go-postgres when its ready line says skip",
+    "input": {
+      "files": [
+        "sensor/common/foo.go",
+        "central/policy/service.go"
+      ],
+      "labels": [],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults-go-postgres-skip"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ngke-nongroovy-e2e-tests\ngke-ui-e2e-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"go-sources\" matches all 2 changed files\n     sensor/common/foo.go\n     central/policy/service.go\n002. rule \"go-sources\" runs target \"go\"\n003. rule \"style\" runs target \"style-check\"\n004. rule \"sensor\" matches\n     sensor/common/foo.go\n005. rule \"central-policy\" matches\n     central/policy/service.go\n006. rule \"image-wait\" runs target \"wait-for-images\"\n007. clash on target \"go-postgres\"; rule \"central-policy\" says run, rule \"sensor\" says skip; run wins\n008. clash on target \"sensor-integration-tests\"; rule \"sensor\" says run, rule \"central-policy\" says skip; run wins\n009. rule \"remaining\" takes default \"run\" for target \"should-dispatch\"\n010. rule \"remaining\" takes default \"run\" for target \"e2e-byodb-tests\"\n011. rule \"remaining\" takes default \"run\" for target \"e2e-db-backup-restore-tests\"\n012. rule \"remaining\" takes default \"run\" for target \"e2e-gke-upgrade-tests\"\n013. rule \"remaining\" takes default \"run\" for target \"e2e-nongroovy-tests\"\n014. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke\"\n015. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke-konflux\"\n016. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-ocp-4-22\"\n017. rule \"remaining\" takes default \"run\" for target \"gke-nongroovy-e2e-tests\"\n018. rule \"remaining\" takes default \"skip\" for target \"gke-qa-e2e-tests\"\n019. rule \"remaining\" takes default \"run\" for target \"gke-ui-e2e-tests\"\n020. rule \"remaining\" takes default \"skip\" for target \"ocp-vm-scanning-e2e-tests\"\n"
+    }
+  },
+  {
+    "name": "A sensor file and a Central policy file should run both suites when both ready lines say run",
+    "input": {
+      "files": [
+        "sensor/common/foo.go",
+        "central/policy/service.go"
+      ],
+      "labels": [],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ngke-nongroovy-e2e-tests\ngke-ui-e2e-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"go-sources\" matches all 2 changed files\n     sensor/common/foo.go\n     central/policy/service.go\n002. rule \"go-sources\" runs target \"go\"\n003. rule \"style\" runs target \"style-check\"\n004. rule \"sensor\" matches\n     sensor/common/foo.go\n005. rule \"central-policy\" matches\n     central/policy/service.go\n006. rule \"image-wait\" runs target \"wait-for-images\"\n007. clash on target \"go-postgres\"; rule \"central-policy\" says run, rule \"sensor\" says skip; run wins\n008. clash on target \"sensor-integration-tests\"; rule \"sensor\" says run, rule \"central-policy\" says skip; run wins\n009. rule \"remaining\" takes default \"run\" for target \"should-dispatch\"\n010. rule \"remaining\" takes default \"run\" for target \"e2e-byodb-tests\"\n011. rule \"remaining\" takes default \"run\" for target \"e2e-db-backup-restore-tests\"\n012. rule \"remaining\" takes default \"run\" for target \"e2e-gke-upgrade-tests\"\n013. rule \"remaining\" takes default \"run\" for target \"e2e-nongroovy-tests\"\n014. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke\"\n015. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke-konflux\"\n016. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-ocp-4-22\"\n017. rule \"remaining\" takes default \"run\" for target \"gke-nongroovy-e2e-tests\"\n018. rule \"remaining\" takes default \"skip\" for target \"gke-qa-e2e-tests\"\n019. rule \"remaining\" takes default \"run\" for target \"gke-ui-e2e-tests\"\n020. rule \"remaining\" takes default \"skip\" for target \"ocp-vm-scanning-e2e-tests\"\n"
+    }
+  },
+  {
+    "name": "README.md alone should skip go and run style-check",
+    "input": {
+      "files": [
+        "README.md"
+      ],
+      "labels": [],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\nwait-for-images\nshould-dispatch\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"docs-only\" matches every changed file\n     README.md\n002. rule \"docs-only\" skips target \"go\"\n003. rule \"docs-only\" skips target \"go-postgres\"\n004. rule \"docs-only\" skips target \"sensor-integration-tests\"\n005. rule \"docs-only\" skips target \"should-dispatch\"\n006. rule \"docs-only\" skips target \"e2e-byodb-tests\"\n007. rule \"docs-only\" skips target \"e2e-db-backup-restore-tests\"\n008. rule \"docs-only\" skips target \"e2e-gke-upgrade-tests\"\n009. rule \"docs-only\" skips target \"e2e-nongroovy-tests\"\n010. rule \"docs-only\" skips target \"e2e-qa-tests-gke\"\n011. rule \"docs-only\" skips target \"e2e-qa-tests-gke-konflux\"\n012. rule \"docs-only\" skips target \"e2e-qa-tests-ocp-4-22\"\n013. rule \"docs-only\" skips target \"gke-nongroovy-e2e-tests\"\n014. rule \"docs-only\" skips target \"gke-qa-e2e-tests\"\n015. rule \"docs-only\" skips target \"gke-ui-e2e-tests\"\n016. rule \"docs-only\" skips target \"ocp-vm-scanning-e2e-tests\"\n017. clash on target \"style-check\"; rule \"style\" says run, rule \"docs-only\" says skip; run wins\n018. clash on target \"wait-for-images\"; rule \"image-wait\" says run, rule \"docs-only\" says skip; run wins\n019. added target \"should-dispatch\" because target \"wait-for-images\" requires it\n"
+    }
+  },
+  {
+    "name": "README.md listed twice should skip go and run style-check the same way",
+    "input": {
+      "files": [
+        "README.md",
+        "README.md"
+      ],
+      "labels": [],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\nwait-for-images\nshould-dispatch\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"docs-only\" matches every changed file\n     README.md\n002. rule \"docs-only\" skips target \"go\"\n003. rule \"docs-only\" skips target \"go-postgres\"\n004. rule \"docs-only\" skips target \"sensor-integration-tests\"\n005. rule \"docs-only\" skips target \"should-dispatch\"\n006. rule \"docs-only\" skips target \"e2e-byodb-tests\"\n007. rule \"docs-only\" skips target \"e2e-db-backup-restore-tests\"\n008. rule \"docs-only\" skips target \"e2e-gke-upgrade-tests\"\n009. rule \"docs-only\" skips target \"e2e-nongroovy-tests\"\n010. rule \"docs-only\" skips target \"e2e-qa-tests-gke\"\n011. rule \"docs-only\" skips target \"e2e-qa-tests-gke-konflux\"\n012. rule \"docs-only\" skips target \"e2e-qa-tests-ocp-4-22\"\n013. rule \"docs-only\" skips target \"gke-nongroovy-e2e-tests\"\n014. rule \"docs-only\" skips target \"gke-qa-e2e-tests\"\n015. rule \"docs-only\" skips target \"gke-ui-e2e-tests\"\n016. rule \"docs-only\" skips target \"ocp-vm-scanning-e2e-tests\"\n017. clash on target \"style-check\"; rule \"style\" says run, rule \"docs-only\" says skip; run wins\n018. clash on target \"wait-for-images\"; rule \"image-wait\" says run, rule \"docs-only\" says skip; run wins\n019. added target \"should-dispatch\" because target \"wait-for-images\" requires it\n"
+    }
+  },
+  {
+    "name": "A file no rule names should run the ready pull request and leave the skip lines off",
+    "input": {
+      "files": [
+        "notes/todo.txt"
+      ],
+      "labels": [],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ngke-nongroovy-e2e-tests\ngke-ui-e2e-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"style\" runs target \"style-check\"\n002. rule \"image-wait\" runs target \"wait-for-images\"\n003. rule \"remaining\" takes default \"run\" for target \"go\"\n004. rule \"remaining\" takes default \"run\" for target \"go-postgres\"\n005. rule \"remaining\" takes default \"run\" for target \"sensor-integration-tests\"\n006. rule \"remaining\" takes default \"run\" for target \"should-dispatch\"\n007. rule \"remaining\" takes default \"run\" for target \"e2e-byodb-tests\"\n008. rule \"remaining\" takes default \"run\" for target \"e2e-db-backup-restore-tests\"\n009. rule \"remaining\" takes default \"run\" for target \"e2e-gke-upgrade-tests\"\n010. rule \"remaining\" takes default \"run\" for target \"e2e-nongroovy-tests\"\n011. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke\"\n012. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke-konflux\"\n013. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-ocp-4-22\"\n014. rule \"remaining\" takes default \"run\" for target \"gke-nongroovy-e2e-tests\"\n015. rule \"remaining\" takes default \"skip\" for target \"gke-qa-e2e-tests\"\n016. rule \"remaining\" takes default \"run\" for target \"gke-ui-e2e-tests\"\n017. rule \"remaining\" takes default \"skip\" for target \"ocp-vm-scanning-e2e-tests\"\n"
+    }
+  },
+  {
+    "name": "ci-run-all-tests on a file no rule names should run every target",
+    "input": {
+      "files": [
+        "notes/todo.txt"
+      ],
+      "labels": [
+        "ci-run-all-tests"
+      ],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ne2e-qa-tests-gke\ne2e-qa-tests-gke-konflux\ne2e-qa-tests-ocp-4-22\ngke-nongroovy-e2e-tests\ngke-qa-e2e-tests\ngke-ui-e2e-tests\nocp-vm-scanning-e2e-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"run-all-label\" matches because label \"ci-run-all-tests\" is set\n002. rule \"run-all-label\" runs target \"style-check\"\n003. rule \"run-all-label\" runs target \"go\"\n004. rule \"run-all-label\" runs target \"go-postgres\"\n005. rule \"run-all-label\" runs target \"sensor-integration-tests\"\n006. rule \"run-all-label\" runs target \"should-dispatch\"\n007. rule \"run-all-label\" runs target \"wait-for-images\"\n008. rule \"run-all-label\" runs target \"e2e-byodb-tests\"\n009. rule \"run-all-label\" runs target \"e2e-db-backup-restore-tests\"\n010. rule \"run-all-label\" runs target \"e2e-gke-upgrade-tests\"\n011. rule \"run-all-label\" runs target \"e2e-nongroovy-tests\"\n012. rule \"run-all-label\" runs target \"e2e-qa-tests-gke\"\n013. rule \"run-all-label\" runs target \"e2e-qa-tests-gke-konflux\"\n014. rule \"run-all-label\" runs target \"e2e-qa-tests-ocp-4-22\"\n015. rule \"run-all-label\" runs target \"gke-nongroovy-e2e-tests\"\n016. rule \"run-all-label\" runs target \"gke-qa-e2e-tests\"\n017. rule \"run-all-label\" runs target \"gke-ui-e2e-tests\"\n018. rule \"run-all-label\" runs target \"ocp-vm-scanning-e2e-tests\"\n019. rule \"style\" runs target \"style-check\"\n020. rule \"image-wait\" runs target \"wait-for-images\"\n"
+    }
+  },
+  {
+    "name": "ci-run-all-tests on README.md should run every target",
+    "input": {
+      "files": [
+        "README.md"
+      ],
+      "labels": [
+        "ci-run-all-tests"
+      ],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ne2e-qa-tests-gke\ne2e-qa-tests-gke-konflux\ne2e-qa-tests-ocp-4-22\ngke-nongroovy-e2e-tests\ngke-qa-e2e-tests\ngke-ui-e2e-tests\nocp-vm-scanning-e2e-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"run-all-label\" matches because label \"ci-run-all-tests\" is set\n002. rule \"docs-only\" matches every changed file\n     README.md\n003. clash on target \"style-check\"; rule \"run-all-label\" and rule \"style\" say run, rule \"docs-only\" says skip; run wins\n004. clash on target \"go\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n005. clash on target \"go-postgres\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n006. clash on target \"sensor-integration-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n007. clash on target \"should-dispatch\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n008. clash on target \"wait-for-images\"; rule \"run-all-label\" and rule \"image-wait\" say run, rule \"docs-only\" says skip; run wins\n009. clash on target \"e2e-byodb-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n010. clash on target \"e2e-db-backup-restore-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n011. clash on target \"e2e-gke-upgrade-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n012. clash on target \"e2e-nongroovy-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n013. clash on target \"e2e-qa-tests-gke\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n014. clash on target \"e2e-qa-tests-gke-konflux\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n015. clash on target \"e2e-qa-tests-ocp-4-22\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n016. clash on target \"gke-nongroovy-e2e-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n017. clash on target \"gke-qa-e2e-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n018. clash on target \"gke-ui-e2e-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n019. clash on target \"ocp-vm-scanning-e2e-tests\"; rule \"run-all-label\" says run, rule \"docs-only\" says skip; run wins\n"
+    }
+  },
+  {
+    "name": "ci-run-all-tests on CI tooling files should run the end-to-end jobs",
+    "input": {
+      "files": [
+        ".github/workflows/ci-decision.yaml",
+        ".openshift-ci/dispatch.sh",
+        "ci/select/resolver.py"
+      ],
+      "labels": [
+        "ci-run-all-tests"
+      ],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ne2e-qa-tests-gke\ne2e-qa-tests-gke-konflux\ne2e-qa-tests-ocp-4-22\ngke-nongroovy-e2e-tests\ngke-qa-e2e-tests\ngke-ui-e2e-tests\nocp-vm-scanning-e2e-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"run-all-label\" matches because label \"ci-run-all-tests\" is set\n002. rule \"run-all-label\" runs target \"style-check\"\n003. rule \"run-all-label\" runs target \"go\"\n004. rule \"run-all-label\" runs target \"go-postgres\"\n005. rule \"run-all-label\" runs target \"sensor-integration-tests\"\n006. rule \"run-all-label\" runs target \"should-dispatch\"\n007. rule \"run-all-label\" runs target \"wait-for-images\"\n008. rule \"ci-tooling\" matches every changed file\n     .github/workflows/ (1)\n     .openshift-ci/ (1)\n     ci/select/ (1)\n009. rule \"style\" runs target \"style-check\"\n010. rule \"image-wait\" runs target \"wait-for-images\"\n011. clash on target \"e2e-byodb-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n012. clash on target \"e2e-db-backup-restore-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n013. clash on target \"e2e-gke-upgrade-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n014. clash on target \"e2e-nongroovy-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n015. clash on target \"e2e-qa-tests-gke\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n016. clash on target \"e2e-qa-tests-gke-konflux\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n017. clash on target \"e2e-qa-tests-ocp-4-22\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n018. clash on target \"gke-nongroovy-e2e-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n019. clash on target \"gke-qa-e2e-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n020. clash on target \"gke-ui-e2e-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n021. clash on target \"ocp-vm-scanning-e2e-tests\"; rule \"run-all-label\" says run, rule \"ci-tooling\" says skip; run wins\n"
+    }
+  },
+  {
+    "name": "An empty file list should run the ready pull request and leave the skip lines off",
+    "input": {
+      "files": [],
+      "labels": [],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ngke-nongroovy-e2e-tests\ngke-ui-e2e-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"style\" runs target \"style-check\"\n002. rule \"image-wait\" runs target \"wait-for-images\"\n003. rule \"remaining\" takes default \"run\" for target \"go\"\n004. rule \"remaining\" takes default \"run\" for target \"go-postgres\"\n005. rule \"remaining\" takes default \"run\" for target \"sensor-integration-tests\"\n006. rule \"remaining\" takes default \"run\" for target \"should-dispatch\"\n007. rule \"remaining\" takes default \"run\" for target \"e2e-byodb-tests\"\n008. rule \"remaining\" takes default \"run\" for target \"e2e-db-backup-restore-tests\"\n009. rule \"remaining\" takes default \"run\" for target \"e2e-gke-upgrade-tests\"\n010. rule \"remaining\" takes default \"run\" for target \"e2e-nongroovy-tests\"\n011. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke\"\n012. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-gke-konflux\"\n013. rule \"remaining\" takes default \"skip\" for target \"e2e-qa-tests-ocp-4-22\"\n014. rule \"remaining\" takes default \"run\" for target \"gke-nongroovy-e2e-tests\"\n015. rule \"remaining\" takes default \"skip\" for target \"gke-qa-e2e-tests\"\n016. rule \"remaining\" takes default \"run\" for target \"gke-ui-e2e-tests\"\n017. rule \"remaining\" takes default \"skip\" for target \"ocp-vm-scanning-e2e-tests\"\n"
+    }
+  },
+  {
+    "name": "An unreadable file list should run the ready pull request without walking the rules",
+    "input": {
+      "files": null,
+      "labels": [],
+      "rules": "ci/select/testdata/rules.yaml",
+      "defaults": "ci/select/testdata/defaults"
+    },
+    "expect": {
+      "decision": "style-check\ngo\ngo-postgres\nsensor-integration-tests\nshould-dispatch\nwait-for-images\ne2e-byodb-tests\ne2e-db-backup-restore-tests\ne2e-gke-upgrade-tests\ne2e-nongroovy-tests\ngke-nongroovy-e2e-tests\ngke-ui-e2e-tests\n",
+      "log": "resolver failed: changed files are unknown\nusing decision-defaults\n"
+    }
+  },
+  {
+    "name": "A suite that requires images should run images after a rule skipped them",
+    "input": {
+      "files": [],
+      "labels": [],
+      "rules": "\nversion: 1\njobs:\n  - suite\n  - images\n\nrules:\n  - name: suite\n    when: always\n    run:\n      - suite\n  - name: hold-images\n    when: always\n    skip:\n      - images\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\nrequires:\n  suite:\n    - images\n\n",
+      "defaults": "\n            suite skip\n            images skip\n        "
+    },
+    "expect": {
+      "decision": "suite\nimages\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"suite\" runs target \"suite\"\n002. rule \"hold-images\" skips target \"images\"\n003. added target \"images\" because target \"suite\" requires it\n"
+    }
+  },
+  {
+    "name": "Rules where left and right require each other should be rejected",
+    "input": {
+      "rules": "\nversion: 1\njobs:\n  - left\n  - right\n\nrules:\n  - name: run-left\n    when: always\n    run:\n      - left\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\nrequires:\n  left:\n    - right\n  right:\n    - left\n\n"
+    },
+    "expect": {
+      "error": "requires cycle at left"
+    }
+  },
+  {
+    "name": "Sensor listed before central-policy should run both jobs",
+    "input": {
+      "files": [
+        "sensor/common/foo.go",
+        "central/policy/service.go"
+      ],
+      "labels": [],
+      "rules": "\nversion: 1\njobs:\n  - go-postgres\n  - sensor-integration-tests\n\nrules:\n  - name: sensor\n    when: any-file-matches\n    paths:\n      - '^sensor/'\n    run:\n      - sensor-integration-tests\n    skip:\n      - go-postgres\n  - name: central-policy\n    when: any-file-matches\n    paths:\n      - '^central/policy/'\n    run:\n      - go-postgres\n    skip:\n      - sensor-integration-tests\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\n\n",
+      "defaults": "\n            go-postgres run\n            sensor-integration-tests run\n        "
+    },
+    "expect": {
+      "decision": "go-postgres\nsensor-integration-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"sensor\" matches\n     sensor/common/foo.go\n002. rule \"central-policy\" matches\n     central/policy/service.go\n003. clash on target \"go-postgres\"; rule \"central-policy\" says run, rule \"sensor\" says skip; run wins\n004. clash on target \"sensor-integration-tests\"; rule \"sensor\" says run, rule \"central-policy\" says skip; run wins\n"
+    }
+  },
+  {
+    "name": "Central-policy listed before sensor should run both jobs",
+    "input": {
+      "files": [
+        "sensor/common/foo.go",
+        "central/policy/service.go"
+      ],
+      "labels": [],
+      "rules": "\nversion: 1\njobs:\n  - go-postgres\n  - sensor-integration-tests\n\nrules:\n  - name: central-policy\n    when: any-file-matches\n    paths:\n      - '^central/policy/'\n    run:\n      - go-postgres\n    skip:\n      - sensor-integration-tests\n  - name: sensor\n    when: any-file-matches\n    paths:\n      - '^sensor/'\n    run:\n      - sensor-integration-tests\n    skip:\n      - go-postgres\n  - name: remaining\n    when: remaining\n    default:\n      - '*'\n\n",
+      "defaults": "\n            go-postgres run\n            sensor-integration-tests run\n        "
+    },
+    "expect": {
+      "decision": "go-postgres\nsensor-integration-tests\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"central-policy\" matches\n     central/policy/service.go\n002. rule \"sensor\" matches\n     sensor/common/foo.go\n003. clash on target \"go-postgres\"; rule \"central-policy\" says run, rule \"sensor\" says skip; run wins\n004. clash on target \"sensor-integration-tests\"; rule \"sensor\" says run, rule \"central-policy\" says skip; run wins\n"
+    }
+  },
+  {
+    "name": "An empty file list should run unit because no file changed",
+    "input": {
+      "files": [],
+      "labels": [],
+      "rules": "ci/select/testdata/corners.yaml",
+      "defaults": "ci/select/testdata/corners-defaults"
+    },
+    "expect": {
+      "decision": "unit\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"nothing-changed\" matches because the diff has no files\n002. rule \"nothing-changed\" runs target \"unit\"\n"
+    }
+  },
+  {
+    "name": "cmd/main.go should run unit because the wildcard matches that path",
+    "input": {
+      "files": [
+        "cmd/main.go"
+      ],
+      "labels": [],
+      "rules": "ci/select/testdata/corners.yaml",
+      "defaults": "ci/select/testdata/corners-defaults"
+    },
+    "expect": {
+      "decision": "unit\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"go-wildcard\" matches\n     cmd/main.go\n002. rule \"go-wildcard\" runs target \"unit\"\n"
+    }
+  },
+  {
+    "name": "An exact path, a directory prefix, and two notes files should run lint",
+    "input": {
+      "files": [
+        "keep/exact.go",
+        "pkg/a.go",
+        "pkg/b.go",
+        "notes/a",
+        "notes/b"
+      ],
+      "labels": [],
+      "rules": "ci/select/testdata/corners.yaml",
+      "defaults": "ci/select/testdata/corners-defaults"
+    },
+    "expect": {
+      "decision": "unit\nlint\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"go-wildcard\" matches\n     keep/exact.go\n     pkg/a.go\n     pkg/b.go\n002. rule \"go-wildcard\" runs target \"unit\"\n003. rule \"shapes\" matches all 5 changed files\n     keep/exact.go\n     pkg/ (2)\n     notes/a\n     notes/b\n004. rule \"shapes\" runs target \"lint\"\n"
+    }
+  },
+  {
+    "name": "The ci-suite label should run suite and the jobs that chain requires",
+    "input": {
+      "files": [
+        "README.md"
+      ],
+      "labels": [
+        "ci-suite"
+      ],
+      "rules": "ci/select/testdata/corners.yaml",
+      "defaults": "ci/select/testdata/corners-defaults"
+    },
+    "expect": {
+      "decision": "suite\nimages\nextra\n",
+      "log": "# stackrox/stackrox PR 23035 a1b2c3d\n# <when>\n001. rule \"run-suite\" matches because label \"ci-suite\" is set\n002. rule \"run-suite\" runs target \"suite\"\n003. added target \"images\" because target \"suite\" requires it\n004. added target \"extra\" because target \"images\" requires it\n"
+    }
+  }
+]

@@ -1,0 +1,15 @@
+version: 1
+jobs:
+  - unit
+
+rules:
+  - name: odd
+    when: any-file-matches
+    paths:
+      - '['
+    run:
+      - unit
+  - name: rest
+    when: remaining
+    skip:
+      - '*'

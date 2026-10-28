@@ -1,0 +1,18 @@
+version: 1
+jobs:
+  - unit
+  - lint
+
+rules:
+  - name: early
+    when: remaining
+    skip:
+      - '*'
+  - name: late
+    when: always
+    run:
+      - lint
+  - name: remaining
+    when: remaining
+    run:
+      - '*'
