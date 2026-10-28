@@ -1,0 +1,68 @@
+name: PostgreSQL benchmark suite
+description: Run the complete PostgreSQL benchmark suite and publish its reports
+inputs:
+  gcp-account:
+    description: Account used to upload test data
+    required: true
+runs:
+  using: composite
+  # Normal steps require a healthy job as well as a successful composite.
+  # The explicit shell keeps the Ubuntu workflow pipeline behavior.
+  steps:
+    - name: Start Postgres
+      if: job.status == 'success'
+      shell: bash -e {0}
+      run: |
+        # Run on tmpfs to avoid disk I/O overhead in tests.
+        PG_VER=$(pg_lsclusters -h | awk '{print $1}')
+        sudo pg_dropcluster --stop "$PG_VER" main
+        sudo mount -t tmpfs -o size=1G tmpfs /var/lib/postgresql
+        # the unit tests expect a local postgres with passwordless access.
+        sudo pg_createcluster "$PG_VER" main -- --auth=trust
+        sudo cp .github/test-images/postgres-ci.conf "/etc/postgresql/$PG_VER/main/conf.d/ci.conf"
+        sudo systemctl start postgresql.service
+
+    - uses: ./.github/actions/job-preamble
+      if: job.status == 'success'
+      with:
+        gcp-account: ${{ inputs.gcp-account }}
+
+    - name: Cache Go dependencies
+      if: job.status == 'success'
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Is Postgres ready
+      if: job.status == 'success'
+      shell: bash -e {0}
+      run: |
+        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
+          || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
+
+    - name: Go Bench Tests
+      if: job.status == 'success'
+      shell: bash -e {0}
+      run: make go-postgres-bench-tests
+
+    - name: Postgres diagnostics
+      if: (!cancelled()) && (failure() || job.status == 'failure')
+      shell: bash -e {0}
+      run: |
+        pg_isready -h 127.0.0.1 || true
+        pg_lsclusters || true
+        df -h /var/lib/postgresql || true
+        sudo journalctl -u postgresql --no-pager -n 40 || true
+        sudo cat /var/log/postgresql/postgresql-*-main.log | tail -60 || true
+
+    - name: Generate junit report
+      if: always()
+      shell: bash -e {0}
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    # Do not create junit report for bench tests:
+    # https://github.com/jstemmer/go-junit-report/issues/174

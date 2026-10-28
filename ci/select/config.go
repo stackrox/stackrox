@@ -1,0 +1,171 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"regexp"
+	"slices"
+	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/set"
+	"go.yaml.in/yaml/v3"
+)
+
+type (
+	mapping struct {
+		Version int      `json:"version"`
+		Jobs    []string `json:"jobs"`
+		Rules   []rule   `json:"rules"`
+	}
+
+	rule struct {
+		Name     string   `json:"name"`
+		When     string   `json:"when"`
+		Paths    []string `json:"paths"`
+		Run      []string `json:"run"`
+		Skip     []string `json:"skip"`
+		patterns []*regexp.Regexp
+	}
+)
+
+func loadMapping(path string) (mapping, error) {
+	var m mapping
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return m, errors.Wrap(err, "read rules")
+	}
+	var document map[string]any
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	if err := decoder.Decode(&document); err != nil {
+		return m, errors.Wrap(err, "decode rules")
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return m, errors.New("rules must contain a single YAML document")
+	}
+	if err := rejectNull(document); err != nil {
+		return m, err
+	}
+	// JSON enforces scalar types; YAML decoding into strings also accepts
+	// numbers and booleans. Unknown fields must not silently alter selection.
+	data, err = json.Marshal(document)
+	if err != nil {
+		return m, errors.Wrap(err, "convert rules to JSON")
+	}
+	strict := json.NewDecoder(bytes.NewReader(data))
+	strict.DisallowUnknownFields()
+	if err := strict.Decode(&m); err != nil {
+		return m, errors.Wrap(err, "decode rules fields")
+	}
+	return m, m.validate()
+}
+
+func rejectNull(value any) error {
+	switch value := value.(type) {
+	case nil:
+		return errors.New("rules must not contain null values")
+	case map[string]any:
+		for _, child := range value {
+			if err := rejectNull(child); err != nil {
+				return err
+			}
+		}
+	case []any:
+		for _, child := range value {
+			if err := rejectNull(child); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (m *mapping) validate() error {
+	if m.Version != 1 || len(m.Jobs) == 0 || len(m.Rules) == 0 {
+		return errors.New("rules need version 1, a nonempty jobs list, and a nonempty rules list")
+	}
+	jobs := set.NewStringSet()
+	for _, job := range m.Jobs {
+		if job == "*" || len(strings.Fields(job)) != 1 || strings.TrimSpace(job) != job || strings.Contains(job, "#") {
+			return fmt.Errorf("invalid job name %q", job)
+		}
+		if !jobs.Add(job) {
+			return fmt.Errorf("duplicate job %q", job)
+		}
+	}
+	names := set.NewStringSet()
+	for i := range m.Rules {
+		r := &m.Rules[i]
+		if r.Name == "" || !names.Add(r.Name) {
+			return fmt.Errorf("rule %d needs a unique nonempty name", i+1)
+		}
+		if i == len(m.Rules)-1 {
+			if r.When != "remaining" || !slices.Equal(r.Run, []string{"*"}) || len(r.Skip)+len(r.Paths) != 0 {
+				return errors.New("last rule must run ['*'] for remaining targets, without paths or skips")
+			}
+			continue
+		}
+		if r.When != "every-file-matches" || len(r.Paths) == 0 || len(r.Skip) == 0 || len(r.Run) != 0 {
+			return fmt.Errorf("rule %q must use every-file-matches with paths and skip targets only", r.Name)
+		}
+		seen := set.NewStringSet()
+		for _, job := range r.Skip {
+			if (job == "*" && len(r.Skip) != 1) || (job != "*" && !jobs.Contains(job)) || !seen.Add(job) {
+				return fmt.Errorf("rule %q has an unknown, repeated, or mixed wildcard skip target %q", r.Name, job)
+			}
+		}
+		for _, pattern := range r.Paths {
+			if !strings.HasPrefix(pattern, "^") {
+				return fmt.Errorf("rule %q pattern %q must be rooted with ^", r.Name, pattern)
+			}
+			compiled, err := regexp.Compile(pattern)
+			if err != nil {
+				return fmt.Errorf("rule %q pattern %q: %w", r.Name, pattern, err)
+			}
+			r.patterns = append(r.patterns, compiled)
+		}
+	}
+	return nil
+}
+
+func loadDefaults(path string) (set.StringSet, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "read decision-defaults")
+	}
+	jobs := set.NewStringSet()
+	for i, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) != 2 || fields[1] != "run" || strings.ContainsAny(fields[0], "#*") || !jobs.Add(fields[0]) {
+			return nil, fmt.Errorf("decision-defaults line %d must contain a unique target and run", i+1)
+		}
+	}
+	if jobs.Cardinality() == 0 {
+		return nil, errors.New("decision-defaults must list targets")
+	}
+	return jobs, nil
+}
+
+func loadConfig(rulesPath, defaultsPath string) (mapping, error) {
+	// Defaults remain readable independently when the YAML is invalid.
+	d, err := loadDefaults(defaultsPath)
+	if err != nil {
+		return mapping{}, err
+	}
+	m, err := loadMapping(rulesPath)
+	if err != nil {
+		return m, err
+	}
+	if !d.Equal(set.NewStringSet(m.Jobs...)) {
+		return m, errors.New("decision-defaults must match the rules inventory exactly")
+	}
+	return m, nil
+}

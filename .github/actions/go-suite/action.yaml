@@ -1,0 +1,76 @@
+name: Go test suite
+description: Run the complete Go test suite and publish its reports
+inputs:
+  gotags:
+    description: Go matrix Make variable assignment
+    required: true
+  gcp-account:
+    description: Account used to upload test data
+    required: true
+  codecov-token:
+    description: Codecov upload token
+    required: true
+runs:
+  using: composite
+  # Normal steps require a healthy job as well as a successful composite.
+  # The explicit shell keeps the Ubuntu workflow pipeline behavior.
+  steps:
+    - uses: ./.github/actions/job-preamble
+      if: job.status == 'success'
+      with:
+        gcp-account: ${{ inputs.gcp-account }}
+        free-disk-space: 30
+
+    - name: Cache Go dependencies
+      if: job.status == 'success'
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ inputs.gotags }}
+
+    - name: Go Unit Tests
+      if: job.status == 'success'
+      shell: bash -e {0}
+      run: ${{ inputs.gotags }} make go-unit-tests
+
+    - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
+      if: job.status == 'success'
+      with:
+        token: ${{ inputs.codecov-token }}
+        flags: go-unit-tests
+
+    - name: Generate junit report
+      if: always()
+      shell: bash -e {0}
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Go Integration Unit Tests
+      if: job.status == 'success'
+      shell: bash -e {0}
+      run: ${{ inputs.gotags }} make integration-unit-tests
+
+    - name: Go Operator Integration Tests
+      if: job.status == 'success'
+      shell: bash -e {0}
+      run: ${{ inputs.gotags }} make -C operator/ test-integration
+
+    - name: Go Operator Helm Tests
+      if: job.status == 'success'
+      shell: bash -e {0}
+      run: ${{ inputs.gotags }} make -C operator/ test-helm
+
+    - name: Generate junit report
+      if: always()
+      shell: bash -e {0}
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'

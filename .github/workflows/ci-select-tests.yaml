@@ -1,0 +1,34 @@
+name: CI selector tests
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  push:
+    tags: ['*']
+    branches: [master, 'release-*']
+
+permissions:
+  contents: read
+
+jobs:
+  selector-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build CI selector
+        run: ci/select/build.sh
+
+      - name: Validate CI rules
+        run: ci/select/bin/ci-select validate
+
+      - name: Preview CI selection
+        if: github.event_name == 'pull_request'
+        run: ci/select/bin/ci-select gha
+
+      - name: Test CI selector
+        run: go test -race ./ci/select

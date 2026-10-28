@@ -1,0 +1,5 @@
+# Recovery never skips enrolled jobs. Keep this inventory aligned with test-domains.yaml.
+go run
+go-postgres run
+go-bench run
+sensor-integration-tests run
