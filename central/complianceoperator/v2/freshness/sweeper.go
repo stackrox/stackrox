@@ -67,7 +67,12 @@ func (s *sweeperImpl) loop() {
 	defer s.stopper.Flow().ReportStopped()
 	defer s.ticker.Stop()
 
-	go s.sweep()
+	// Run sweeps synchronously in this single goroutine. loop() already runs in its own
+	// goroutine (see Start), so the first sweep does not block the caller. Keeping sweeps
+	// serial means a tick cannot start a second sweep while the previous one is still running
+	// on a large database. Stop() waits for this goroutine to return, so no sweep keeps
+	// writing after shutdown.
+	s.sweep()
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():

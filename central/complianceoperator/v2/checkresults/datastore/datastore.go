@@ -64,9 +64,9 @@ type DataStore interface {
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 
 	// UpdateFreshnessByScanConfig recomputes data_freshness for all check results of a scan
-	// configuration. A result is STALE when its last started time predates staleBefore, else
-	// CURRENT. Only rows whose stored value changes are written. Returns the number of rows
-	// updated.
+	// configuration. A result is STALE when its last started time predates staleBefore, CURRENT
+	// when it is more recent, and UNKNOWN when it is nil (freshness cannot be evaluated). Only
+	// rows whose stored value changes are written. Returns the number of rows updated.
 	UpdateFreshnessByScanConfig(ctx context.Context, scanConfigName string, staleBefore time.Time) (int64, error)
 
 	// MarkStaleByScanRef marks every check result of the given scan (identified by its scan

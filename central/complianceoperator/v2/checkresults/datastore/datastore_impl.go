@@ -467,8 +467,8 @@ const freshnessUpdateBatchSize = 1000
 
 // UpdateFreshnessByScanConfig recomputes data_freshness for every check result of the given scan
 // configuration. A result is STALE when its last started time predates staleBefore, else CURRENT.
-// Results whose last started time is nil take the CURRENT branch, matching DeleteOldResults, which
-// treats a nil timestamp as "not yet aged out", and avoiding flapping such rows on every sweep.
+// A result whose last started time is nil maps to UNKNOWN: its freshness cannot be evaluated, so
+// it must not be reported or counted as CURRENT in the freshness rollups.
 //
 // Freshness is part of the serialized proto, so this follows the read-modify-upsert pattern used
 // by the CVE suppress sweeper (central/cve/node/datastore Unsuppress): load the objects, mutate
@@ -584,10 +584,15 @@ func (d *datastoreImpl) updateFreshness(ctx context.Context, query *v1.Query, wa
 	return updated, nil
 }
 
-// freshnessFor returns the freshness a result should have given the staleBefore cutoff.
+// freshnessFor returns the freshness a result should have given the staleBefore cutoff. A nil
+// last started time maps to UNKNOWN: freshness cannot be evaluated, so the result must not be
+// reported or counted as CURRENT.
 func freshnessFor(result *storage.ComplianceOperatorCheckResultV2, staleBefore time.Time) storage.ComplianceDataFreshness {
 	started := result.GetLastStartedTime()
-	if started != nil && started.AsTime().Before(staleBefore) {
+	if started == nil {
+		return storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+	}
+	if started.AsTime().Before(staleBefore) {
 		return storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE
 	}
 	return storage.ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT
