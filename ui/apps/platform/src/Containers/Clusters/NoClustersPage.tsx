@@ -143,22 +143,20 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             </Flex>
                         </EmptyStateBody>
                         <EmptyStateFooter>
-                            {registrationSecretsCount === 0 && (
-                                <Button
-                                    variant="primary"
-                                    size="lg"
-                                    component={LinkShim}
-                                    href={`${clustersClusterRegistrationSecretsPath}?action=create`}
-                                    onClick={() =>
-                                        analyticsTrack({
-                                            event: CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
-                                            properties: { source: 'No Clusters' },
-                                        })
-                                    }
-                                >
-                                    Create cluster registration secret
-                                </Button>
-                            )}
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                component={LinkShim}
+                                href={`${clustersClusterRegistrationSecretsPath}?action=create`}
+                                onClick={() =>
+                                    analyticsTrack({
+                                        event: CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
+                                        properties: { source: 'No Clusters' },
+                                    })
+                                }
+                            >
+                                Create cluster registration secret
+                            </Button>
                             <Flex direction={{ default: 'column' }} className="pf-v6-u-mt-xl">
                                 {registrationSecretsCount !== 0 && (
                                     <Content component="p" className="pf-v6-u-w-50vw">
