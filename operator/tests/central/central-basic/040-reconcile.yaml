@@ -9,7 +9,5 @@ spec:
     kind: Deployment
     name: central
     patches:
-    - path: metadata.annotations.test-step
-      verbatim: "40"
     - path: spec.template.metadata.annotations.test-step
       verbatim: "40"

@@ -1,0 +1,23 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+resourceRefs:
+- apiVersion: apps/v1
+  kind: Deployment
+  name: central
+  ref: central_deployment
+assertAll:
+- celExpr: |
+    !has(central_deployment.spec.template.metadata.annotations) ||
+    !('test-step' in central_deployment.spec.template.metadata.annotations)
+# Removing the annotation triggers another rollout. Wait for it to finish.
+- celExpr: "central_deployment.status.observedGeneration == central_deployment.metadata.generation"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+status:
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1

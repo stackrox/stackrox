@@ -17,8 +17,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
-  annotations:
-    test-step: "40"
+spec:
+  template:
+    metadata:
+      annotations:
+        test-step: "40"
 status:
   # Wait for pod to be ready again
   availableReplicas: 1
