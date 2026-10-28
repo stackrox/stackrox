@@ -307,9 +307,12 @@ func buildMetricsServerTLSOpts(setupLog logr.Logger, enableHTTP2 bool) (*tlsprof
 
 	var tlsOpts []func(c *tls.Config)
 	if clusterTLSProfile != nil {
-		tlsConfigFn, unsupported := openshiftTLS.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
+		tlsConfigFn, unsupported, err := openshiftTLS.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to build TLS config from cluster TLS profile")
+		}
 		if len(unsupported) > 0 {
-			setupLog.Info("Some ciphers from cluster TLS profile are not supported by Go, skipping them.", "ciphers", unsupported)
+			setupLog.Info("Some ciphers or groups from cluster TLS profile are not supported by Go, skipping them.", "unsupported", unsupported)
 		}
 		tlsOpts = append(tlsOpts, tlsConfigFn)
 	}
