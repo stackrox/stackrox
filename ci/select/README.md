@@ -1,9 +1,213 @@
 # CI job selection
 
-The selector enrolls four complete jobs in `unit-tests.yaml`: `go`,
-`go-postgres`, `go-bench`, and `sensor-integration-tests`. It gates setup,
-tests, and report publication at step level, keeping job names and matrices
-present. Selecting `go` includes its integration and Operator tests.
+CI job selection decides which test suites a pull request can safely skip
+based on the files it changes. For example, a change to `README.md` does not
+need the backend test suites. A change to a shared Go package does.
+
+The policy lives in [`ci/test-domains.yaml`](../test-domains.yaml). It lists
+the test jobs covered by selection and the paths that are safe to change
+without running each job. A **target** is one of these job names:
+
+| Target | Tests controlled by this decision |
+| --- | --- |
+| `go` | Go unit tests, integration unit tests, and Operator integration and Helm tests |
+| `go-postgres` | Go tests that require PostgreSQL |
+| `go-bench` | PostgreSQL benchmarks, run once each to check that they compile and execute |
+| `sensor-integration-tests` | Sensor integration tests |
+
+Each target gets a `run` or `skip` decision for its whole suite. A `skip`
+suppresses setup, tests, and reports while keeping the job check visible.
+A `run` leaves the suite enabled, subject to its usual workflow conditions.
+Decisions apply to every matrix variant of the target, including release
+builds when those are enabled.
+
+On GitHub pull requests, add the `ci-dispatcher-enforce` label to apply the
+skip decisions. Without the label, selection prints a preview and the
+workflow keeps its existing behavior. Errors in selection keep tests
+enabled. The selector does not infer dependencies from the changed code;
+the path rules record boundaries that have been reviewed.
+
+## Read a policy file
+
+This reduced example uses two targets and three rules:
+
+```yaml
+version: 1
+jobs: [go, sensor-integration-tests]
+rules:
+  # Documentation is safe to change without either test suite.
+  - name: documentation
+    when: safe-paths
+    paths: ['^docs/', '^[^/]+\.md$']
+    skip: [go, sensor-integration-tests]
+
+  # Central access-control changes are safe to change without Sensor tests.
+  - name: central-access-control
+    when: safe-paths
+    paths: ['^central/sac/']
+    skip: [sensor-integration-tests]
+
+  # Run any job whose safe-path rules did not cover the whole diff.
+  - name: remaining
+    when: remaining
+    run: ['*']
+```
+
+The fields have these meanings:
+
+| Field | Meaning |
+| --- | --- |
+| `version` | The policy format version. Currently only `1` is supported. |
+| `jobs` | The inventory of target names that this policy can decide for. Listing a name does not create a workflow job. |
+| `name` | A unique, nonempty rule name used in explanations. The name does not select the rule's behavior. |
+| `when` | The rule's behavior. The only supported values are `safe-paths` and `remaining`, explained next. |
+| `paths` | Go regular expressions matching repository-relative paths. Required for `safe-paths`; omitted for `remaining`. |
+| `skip` | Target names safe to skip for the listed paths. Required for `safe-paths`; omitted for `remaining`. |
+| `run` | The final rule's action. Only `run: ['*']` on `remaining` is supported. |
+
+### `when: safe-paths`
+
+A `safe-paths` rule says: **these paths do not require the jobs named in
+`skip`**. It contributes coverage for those jobs. It does not immediately
+skip them just because one file matched.
+
+For each job, the selector collects the paths covered by all `safe-paths`
+rules explicitly naming that job in `skip`. It skips the job only if the
+diff is nonempty and every changed path is covered. Different files may
+be covered by different rules. Rules may overlap, and their order does not
+affect the result.
+
+In the example, `docs/guide.md` is safe for both jobs, but
+`central/sac/example.go` is safe only for Sensor integration tests. Changing
+both files skips Sensor integration tests and leaves Go tests to the final
+rule. Adding `pkg/shared.go` leaves both jobs to the final rule because no
+rule covers that file.
+
+Patterns are regular expressions, not shell globs. Every pattern must
+start with `^`, which anchors it to the repository root. A path needs to
+match any one pattern in a rule:
+
+- `'^docs/'` matches files anywhere under `docs/`.
+- `'^[^/]+\.md$'` matches Markdown files in the repository root, such as
+  `README.md`. It does not match `pkg/testdata/fixture.md`.
+- `'^central/sac/'` matches files under that specific Central package.
+
+The YAML examples use single quotes so `\.` reaches the regular expression
+engine as a literal dot. Use `$` when a pattern must also match the end of
+the path.
+
+Every `skip` entry must explicitly name a target in `jobs`. Wildcard skips
+are rejected. If you add `new-check` to `jobs` without adding it to any
+rule's `skip` list, existing rules grant it no skip permission.
+
+### `when: remaining`
+
+The `remaining` rule says: **run every enrolled job that safe-path coverage
+did not already decide to skip**. It must appear exactly once, as the last
+rule, and must have `run: ['*']` with no `paths` or `skip` fields. Here `*`
+means all still-undecided targets in `jobs`.
+
+With the example policy:
+
+- Changing only `docs/guide.md` skips both jobs; none remain to run.
+- Changing only `central/sac/example.go` skips Sensor integration tests;
+  `remaining` runs Go tests.
+- Changing `pkg/shared.go` runs both jobs through `remaining`.
+- An empty diff also runs both jobs. An empty set of changed files never
+  qualifies for a safe-path skip.
+
+`safe-paths` and `remaining` are the only `when` values supported today.
+Additional `when` conditions are planned for future versions.
+
+Path rules cannot select `run`, and the final rule cannot select `skip`.
+Conditions based on labels, imports, or dependencies are not part of this
+policy format. The GitHub enforcement label controls whether to apply a
+computed decision; it is separate from the rule language.
+
+`remaining` defines normal policy behavior. Error recovery is separate:
+invalid configuration, an unavailable planner, and requests for unknown
+targets run tests even if the policy cannot be read.
+
+## Combine rules with set operations
+
+You can read the policy as sets of jobs safe to skip. For each changed
+path, take the **union** (`∪`) of the `skip` lists of all rules matching
+that path. Then take the **intersection** (`∩`) of those sets across all
+changed paths. A job survives that intersection only if every changed
+path permits skipping it.
+
+Using the actual four-target policy, suppose a PR changes
+`central/sac/example.go` and `README.md`:
+
+```text
+Safe to skip for central/sac/example.go:
+  A = {sensor-integration-tests}
+
+Safe to skip for README.md:
+  B = {go, go-postgres, go-bench, sensor-integration-tests}
+
+Safe to skip for the complete diff:
+  A ∩ B = {sensor-integration-tests}
+
+Jobs left for remaining to run:
+  jobs − (A ∩ B) = {go, go-postgres, go-bench}
+```
+
+The two files match different rules, but both allow Sensor integration
+tests to be skipped. If you also change `pkg/shared.go`, its set of safe
+skips is empty (`∅`), so `A ∩ B ∩ ∅ = ∅`: all four jobs run.
+
+If two rules match the same file, their skip sets are combined with union
+before that intersection. For example, skip sets `{go-postgres}` and
+`{go-bench}` for one path give `{go-postgres, go-bench}` for that path.
+Neither rule takes priority over the other.
+
+For a nonempty diff `D`, the calculation is:
+
+```text
+safe(p) = union of skip lists from all safe-paths rules matching path p
+skipped = intersection of safe(p) for every p in D
+remaining = jobs − skipped
+```
+
+For an empty diff, `skipped` is explicitly empty and `remaining` runs all
+jobs.
+
+## Understand the current rules
+
+The full policy has five `safe-paths` rules and one final `remaining` rule.
+The table shows representative diffs and their results:
+
+| Changed paths | Jobs skipped |
+| --- | --- |
+| `ui/`, `docs/`, and root Markdown, in any combination | All four |
+| Listed Central domains, optionally with root Markdown | Sensor integration |
+| Listed Sensor domains only | PostgreSQL tests and benchmarks |
+| `scanner/` and listed non-API Operator paths, alone or combined | PostgreSQL tests, benchmarks, Sensor integration |
+| Listed Central paths plus listed Sensor paths | None |
+| Any uncovered shared path, including when mixed with covered paths | None |
+| No changed files | None |
+
+See each rule's comment and patterns in
+[`ci/test-domains.yaml`](../test-domains.yaml) for its exact scope. Names
+such as `scanner-only` identify rules in the logs; they do not prevent
+coverage from combining with other rules.
+
+Shared packages, generated files, protobufs, build scripts, and workflow
+changes have no skip coverage and run all four jobs. Operator API types
+are shared inputs, so `operator/api/` also runs all four. New Operator
+subdirectories need review before they join the rule's explicit path list.
+
+The long-term goal is no unit-test execution for Markdown-only changes;
+a lightweight planner may still run. This policy covers root Markdown and
+the docs tree. Markdown inside a backend package is not a docs exemption.
+Broader Markdown coverage needs a separate policy review of fixture inputs.
+The workflow has no workflow-level path filter.
+
+Validation rejects unknown fields or targets, invalid scalar types, nulls,
+duplicate names, invalid regular expressions, and malformed final rules.
+
+## How GitHub Actions uses the result
 
 Unit Tests calls `ci-selection.yaml` once, outside its test matrices. This
 reusable `workflow_call` workflow checks out the PR history, builds the
@@ -40,46 +244,7 @@ and coverage reasons to logs and step summaries; consumers log the applied
 action. Making selector validation a required check needs a separate
 repository ruleset change.
 
-## Policy
-
-`ci/test-domains.yaml` lists the inventory and five `safe-paths` rules
-followed by `remaining`. For each target, a nonempty diff is safe to skip
-only when **every changed path** matches at least one rooted Go regular
-expression in a rule explicitly listing that target in `skip`. Different
-paths can be covered by different rules. Overlapping rules combine coverage,
-independently of rule order. The explanation names all matching rules that
-justify a skip. Only after collecting coverage does the final `remaining`
-rule run every enrolled target still undecided.
-
-| Changed paths | Jobs skipped |
-| --- | --- |
-| `ui/`, `docs/`, and root Markdown, in any combination | All four |
-| Listed Central domains, optionally with root Markdown | Sensor integration |
-| Listed Sensor domains only | PostgreSQL tests and benchmarks |
-| `scanner/` and listed non-API Operator paths, alone or combined | PostgreSQL tests, benchmarks, Sensor integration |
-
-Uncovered shared packages, generated files, protobufs, build scripts, and
-workflow changes run all four, including when mixed with covered paths.
-A Central change plus a listed Sensor change also runs all four because no
-target has coverage for both. An empty diff runs everything through
-`remaining`.
-
-The schema accepts only `safe-paths` skips with explicit target names and
-a final `when: remaining` rule with `run: ['*']`. Path-rule wildcard skips
-are invalid: enrolling a target grants no existing skip permission. The
-final wildcard deliberately covers undecided targets. Unknown fields,
-invalid scalar types, nulls, duplicate names, unknown targets, invalid
-regexes, and malformed catch-alls fail validation. There are no dependency
-rules, label-based policy rules, suite filters, positive path-based run
-rules, or run/skip conflict resolution.
-
-The long-term goal is no unit-test execution for Markdown-only changes;
-a lightweight planner may still run. This policy covers root Markdown and
-the docs tree. Markdown inside a backend package is not a docs exemption.
-Broader Markdown coverage needs a separate policy review of fixture inputs.
-The workflow has no workflow-level path filter.
-
-### Boundary evidence
+## Dependency boundaries
 
 The rules were checked against the test targets in the root `Makefile` on
 2026-10-27, using `go list -deps -test -race` for Linux/amd64 with `test`

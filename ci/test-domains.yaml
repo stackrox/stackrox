@@ -1,11 +1,19 @@
 version: 1
 jobs: [go, go-postgres, go-bench, sensor-integration-tests]
+# For each job, combine paths only from rules that name it in skip.
+# Skip that job only if those paths cover a nonempty diff.
+# See select/README.md for examples.
 rules:
+  # UI files, documentation, and root Markdown do not affect these four
+  # backend suites. A diff limited to these paths can skip all four.
   - name: frontend-and-docs-only
     when: safe-paths
     paths: ['^ui/', '^docs/', '^[^/]+\.md$']
     skip: [go, go-postgres, go-bench, sensor-integration-tests]
 
+  # These Central components do not affect Sensor integration tests.
+  # A diff limited to these paths still runs Go tests, database tests,
+  # and benchmarks.
   - name: central-only-domains
     when: safe-paths
     paths:
@@ -18,6 +26,8 @@ rules:
       - '^central/(helmcharts|ping|version|systeminfo|docs|internal)/'
     skip: [sensor-integration-tests]
 
+  # These Sensor components do not affect database tests or benchmarks.
+  # A diff limited to these paths still runs Go and Sensor integration tests.
   - name: sensor-only-domains
     when: safe-paths
     paths:
@@ -25,11 +35,15 @@ rules:
       - '^sensor/kubernetes/(fake|client|enforcer)/'
     skip: [go-postgres, go-bench]
 
+  # Scanner changes can skip database tests, benchmarks, and Sensor
+  # integration tests. The Go suite still runs.
   - name: scanner-only
     when: safe-paths
     paths: ['^scanner/']
     skip: [go-postgres, go-bench, sensor-integration-tests]
 
+  # These Operator implementation paths can skip database tests, benchmarks,
+  # and Sensor integration tests. Go tests, including Operator tests, still run.
   - name: operator-only
     when: safe-paths
     # operator/api is imported by PostgreSQL and Sensor tests. New roots
@@ -39,6 +53,8 @@ rules:
       - '^operator/[^/]+$'
     skip: [go-postgres, go-bench, sensor-integration-tests]
 
+  # Run every job not already skipped by safe-path coverage. This includes
+  # empty diffs and changes outside the reviewed paths.
   - name: remaining
     when: remaining
     run: ['*']
