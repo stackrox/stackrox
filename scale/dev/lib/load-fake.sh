@@ -48,6 +48,12 @@ load::deploy() {
   echo "Deploying ACS completed in ${duration} seconds."
 
   pt::delete_scanner
+
+  # The fake workload runs inside the sensor; if the sensor can't schedule (e.g. an
+  # oversized memory request vs node capacity) there is no workload and no file
+  # activity. Fail fast rather than measuring an empty run. launch_sensor-jv.sh
+  # deploys the sensor into the stackrox namespace.
+  pt::wait_for_sensor "stackrox"
 }
 
 # The fake workload rides inside the sensor deployment; there is nothing to clean up

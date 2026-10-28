@@ -45,6 +45,26 @@ pt::delete_scanner() {
   kubectl -n stackrox delete deployment scanner-db || true
 }
 
+# Wait for the sensor pod to become Ready, failing fast with diagnostics if it does
+# not schedule in time. Without this the harness would run a cell's full measurement
+# cycle against a Pending/absent sensor (e.g. an unschedulable resource request),
+# wasting ~30+ minutes per cell and producing empty results.
+#   $1 namespace (default stackrox)  $2 timeout (default 5m)
+pt::wait_for_sensor() {
+  local ns=${1:-stackrox} timeout=${2:-5m}
+  echo "Waiting for sensor to become ready in namespace ${ns} (timeout ${timeout})..."
+  if kubectl -n "$ns" wait --for=condition=ready pod -l app=sensor --timeout="$timeout"; then
+    echo "Sensor is ready."
+    return 0
+  fi
+  echo "ERROR: sensor pod did not become ready in namespace ${ns} within ${timeout}." >&2
+  echo "Sensor pod status:" >&2
+  kubectl -n "$ns" get pods -l app=sensor -o wide >&2 || true
+  echo "Scheduling events (look for FailedScheduling / Insufficient memory|cpu):" >&2
+  kubectl -n "$ns" describe pod -l app=sensor 2>&1 | grep -iA12 'Events:' >&2 || true
+  exit 1
+}
+
 # Port-forward the Central API on 8001 and export the endpoint vars the policy and
 # token helpers use.
 pt::port_forward_api() {

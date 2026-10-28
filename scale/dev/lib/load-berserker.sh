@@ -93,6 +93,10 @@ EOF
 
   pt::delete_scanner
 
+  # Make sure the sensor (which hosts the fact file-activity monitor) is actually up
+  # before starting the workload; fail fast otherwise instead of measuring nothing.
+  pt::wait_for_sensor "stackrox"
+
   echo "Deploying ${num_deployments} berserker deployment(s) for workload: ${gen_workload_name}"
   start_time=$(date +%s)
   for i in $(seq 1 "$num_deployments"); do
