@@ -27,6 +27,10 @@ func (np RoxNetworkPolicyWrap) ToYaml() (string, error) {
 	return k8sWrap.ToYaml()
 }
 
+// defaultNetworkPolicyAPIVersion is the default API version for NetworkPolicy resources.
+// This is used when the stored apiVersion is empty to ensure exported YAML is valid for kubectl apply.
+const defaultNetworkPolicyAPIVersion = "networking.k8s.io/v1"
+
 // ToKubernetesNetworkPolicy converts a proto network policy to a k8s network policy
 // This code allows for our tests to call the conversion on proto network policies
 func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy {
@@ -36,10 +40,18 @@ func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy 
 		sel = &k8sMetaV1.LabelSelector{}
 	}
 
+	// Ensure apiVersion is set. If empty, default to networking.k8s.io/v1.
+	// This fixes the issue where exported YAML was missing the apiVersion field,
+	// causing kubectl apply to fail with "no matches for kind NetworkPolicy".
+	apiVersion := np.GetApiVersion()
+	if apiVersion == "" {
+		apiVersion = defaultNetworkPolicyAPIVersion
+	}
+
 	return &k8sV1.NetworkPolicy{
 		TypeMeta: k8sMetaV1.TypeMeta{
 			Kind:       "NetworkPolicy",
-			APIVersion: np.GetApiVersion(),
+			APIVersion: apiVersion,
 		},
 		ObjectMeta: k8sMetaV1.ObjectMeta{
 			Name:        np.GetName(),

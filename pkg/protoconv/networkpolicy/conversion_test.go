@@ -19,9 +19,11 @@ var (
 	cases = map[string]*v1.NetworkPolicy{
 		// Test empty to empty - this is actually very important as it ensures an empty list is different from a list not specified
 		// Kubernetes is very picky about a nil slice vs a non nil slice in terms of the implication in a network policy
+		// Note: APIVersion defaults to networking.k8s.io/v1 if not set (ROX-37694 fix)
 		"Empty to Empty": {
 			TypeMeta: metav1.TypeMeta{
-				Kind: "NetworkPolicy",
+				Kind:       "NetworkPolicy",
+				APIVersion: "networking.k8s.io/v1",
 			},
 			Spec: v1.NetworkPolicySpec{
 				PolicyTypes: []v1.PolicyType{
@@ -327,6 +329,32 @@ func TestYamlRoxNetworkPolicyRoundTrip(t *testing.T) {
 			assert.NoError(t, err, "rox policy generation should succeed")
 			assert.Equal(t, 1, len(roxPolicies), "expected one policy from the yaml")
 			assert.Equal(t, np, RoxNetworkPolicyWrap{NetworkPolicy: roxPolicies[0]}.ToKubernetesNetworkPolicy())
+		})
+	}
+}
+
+func TestRoxNetworkPolicyWithEmptyApiVersionDefaultsToV1(t *testing.T) {
+	// This test verifies that when a stored NetworkPolicy has an empty apiVersion,
+	// the exported YAML will have the default apiVersion (networking.k8s.io/v1).
+	// This is the fix for ROX-37694.
+	for name, np := range cases {
+		t.Run(name, func(t *testing.T) {
+			// First, convert k8s policy to rox policy
+			protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
+
+			// Clear the apiVersion to simulate a stored policy without apiVersion
+			protoNetworkPolicy.ApiVersion = ""
+
+			// Convert back to k8s policy
+			k8sPolicy := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToKubernetesNetworkPolicy()
+
+			// The apiVersion should default to networking.k8s.io/v1
+			assert.Equal(t, "networking.k8s.io/v1", k8sPolicy.APIVersion, "apiVersion should default to networking.k8s.io/v1 when empty")
+
+			// Also verify the generated YAML contains apiVersion
+			yaml, err := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToYaml()
+			assert.NoError(t, err, "yaml generation should succeed")
+			assert.Contains(t, yaml, "apiVersion: networking.k8s.io/v1", "exported YAML should contain apiVersion")
 		})
 	}
 }
