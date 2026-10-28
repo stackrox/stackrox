@@ -1,13 +1,9 @@
-name: Select CI job
-description: Build the selector and report or apply the PR decision before expensive setup
-inputs:
-  job:
-    description: Enrolled job name
-    required: true
+name: Plan CI selection
+description: Build the selector and report or apply the PR decisions once per workflow run
 outputs:
-  action:
-    description: run or skip (selection errors run the job)
-    value: ${{ steps.gate.outputs.action }}
+  decisions:
+    description: JSON map of applied decisions (missing targets run)
+    value: ${{ steps.gate.outputs.decisions }}
 runs:
   using: composite
   steps:
@@ -20,6 +16,5 @@ runs:
       id: gate
       shell: bash
       env:
-        CI_SELECT_JOB: ${{ inputs.job }}
         CI_SELECT_BUILD_OUTCOME: ${{ steps.build.outcome }}
-      run: ci/select/gha-gate.sh "$CI_SELECT_JOB"
+      run: ci/select/gha-gate.sh

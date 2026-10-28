@@ -8,7 +8,11 @@ if [[ "${CI_SELECT_BUILD_OUTCOME:-success}" == success ]] && "$root/ci/select/bi
 fi
 echo "CI selector build or execution failed; the job runs" >&2
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-    printf 'action=run\n' >>"$GITHUB_OUTPUT"
+    if [[ $# -gt 0 ]]; then
+        printf 'action=run\n' >>"$GITHUB_OUTPUT"
+    else
+        printf 'decisions={}\n' >>"$GITHUB_OUTPUT"
+    fi
 fi
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     printf 'CI selector build or execution failed; the job runs.\n' >>"$GITHUB_STEP_SUMMARY"

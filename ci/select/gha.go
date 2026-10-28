@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -91,6 +92,21 @@ func gha(ctx context.Context, job string, output, diagnostic io.Writer) error {
 		fmt.Fprintln(output, "action="+action)
 		fmt.Fprint(diagnostic, body)
 	} else {
+		applied := make(map[string]string, len(d.actions))
+		for _, target := range slices.Sorted(maps.Keys(d.actions)) {
+			applied[target] = "run"
+			if enforce {
+				applied[target] = d.action(target)
+			}
+			body += fmt.Sprintf("%s: planned=%s; applied=%s\n", target, d.action(target), applied[target])
+		}
+		data, err := json.Marshal(applied)
+		if err != nil {
+			return errors.Wrap(err, "encode decisions")
+		}
+		if err := appendFile(os.Getenv("GITHUB_OUTPUT"), "decisions="+string(data)+"\n"); err != nil {
+			return err
+		}
 		fmt.Fprint(output, body)
 	}
 	return appendFile(os.Getenv("GITHUB_STEP_SUMMARY"), "## CI selection\n\n<pre>"+html.EscapeString(body)+"</pre>\n")

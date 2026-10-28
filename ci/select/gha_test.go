@@ -156,6 +156,23 @@ func TestGHA(t *testing.T) {
 			data, err = os.ReadFile(os.Getenv("GITHUB_STEP_SUMMARY"))
 			require.NoError(t, err)
 			assert.Contains(t, string(data), "## CI selection")
+			if c.job == "" {
+				t.Setenv("GITHUB_OUTPUT", filepath.Join(t.TempDir(), "planner-output"))
+				var output, diagnostic bytes.Buffer
+				require.NoError(t, run(t.Context(), []string{"gha"}, &output, &diagnostic))
+				data, err := os.ReadFile(os.Getenv("GITHUB_OUTPUT"))
+				require.NoError(t, err)
+				var decisions map[string]string
+				require.NoError(t, json.Unmarshal([]byte(strings.TrimSpace(strings.TrimPrefix(string(data), "decisions="))), &decisions))
+				for _, job := range jobs {
+					action := decisions[job]
+					if action == "" {
+						action = "run"
+					}
+					assert.Equal(t, c.want, action, job)
+				}
+				assert.Contains(t, output.String(), c.log)
+			}
 		})
 	}
 	t.Run("should print a preview without gating validation", func(t *testing.T) {
@@ -170,7 +187,10 @@ func TestGHA(t *testing.T) {
 		assert.Contains(t, output.String(), "sensor-integration-tests skip")
 		assert.Empty(t, diagnostic.String())
 		_, err := os.Stat(os.Getenv("GITHUB_OUTPUT"))
-		assert.True(t, os.IsNotExist(err))
+		require.NoError(t, err)
+		data, err := os.ReadFile(os.Getenv("GITHUB_OUTPUT"))
+		require.NoError(t, err)
+		assert.Contains(t, string(data), `"go":"run"`)
 	})
 }
 
@@ -212,6 +232,69 @@ func TestGateRecovery(t *testing.T) {
 			if c.build == "failure" {
 				assert.Contains(t, string(data), "action=run")
 			}
+		})
+	}
+}
+
+func TestPlannerRecovery(t *testing.T) {
+	t.Parallel()
+	wrapper, err := os.ReadFile("gha-gate.sh")
+	require.NoError(t, err)
+	for name, script := range map[string]string{
+		"missing binary":             "",
+		"crash after partial output": "echo 'decisions={\"go\":\"skip\"}' >>\"$GITHUB_OUTPUT\"\nexit 2",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			root := t.TempDir()
+			wrapperPath := writeTestFile(t, filepath.Join(root, "ci/select/gha-gate.sh"), string(wrapper))
+			if script != "" {
+				binary := writeTestFile(t, filepath.Join(root, "ci/select/bin/ci-select"), "#!/usr/bin/env bash\n"+script+"\n")
+				require.NoError(t, os.Chmod(binary, 0o700))
+			}
+			output := filepath.Join(root, "output")
+			cmd := exec.CommandContext(t.Context(), "bash", wrapperPath)
+			cmd.Env = append(os.Environ(), "GITHUB_OUTPUT="+output, "GITHUB_STEP_SUMMARY="+filepath.Join(root, "summary"), "CI_SELECT_BUILD_OUTCOME=success")
+			data, err := cmd.CombinedOutput()
+			require.NoError(t, err, "%s", data)
+			data, err = os.ReadFile(output)
+			require.NoError(t, err)
+			assert.True(t, strings.HasSuffix(string(data), "decisions={}\n"), "%s", data)
+		})
+	}
+}
+
+func TestConsumeSharedDecision(t *testing.T) {
+	t.Parallel()
+	for name, c := range map[string]struct{ result, decisions, target, want string }{
+		"explicit skip":          {"success", `{"go":"skip","go-bench":"run"}`, "go", "skip"},
+		"explicit run":           {"success", `{"go":"run"}`, "go", "run"},
+		"hyphenated target":      {"success", `{"sensor-integration-tests":"skip"}`, "sensor-integration-tests", "skip"},
+		"missing map":            {"success", "", "go", "run"},
+		"empty map":              {"success", `{}`, "go", "run"},
+		"missing target":         {"success", `{"go-bench":"skip"}`, "go", "run"},
+		"invalid JSON":           {"success", `{`, "go", "run"},
+		"scalar":                 {"success", `"skip"`, "go", "run"},
+		"array":                  {"success", `["skip"]`, "go", "run"},
+		"null":                   {"success", `null`, "go", "run"},
+		"invalid decision":       {"success", `{"go":"Skip"}`, "go", "run"},
+		"invalid member":         {"success", `{"go":"skip","other":true}`, "go", "run"},
+		"multiple documents":     {"success", `{"go":"skip"} {"go":"skip"}`, "go", "run"},
+		"failed planner":         {"failure", `{"go":"skip"}`, "go", "run"},
+		"skipped planner":        {"skipped", `{"go":"skip"}`, "go", "run"},
+		"cancelled planner":      {"cancelled", `{"go":"skip"}`, "go", "run"},
+		"missing planner result": {"", `{"go":"skip"}`, "go", "run"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			output := filepath.Join(t.TempDir(), "output")
+			cmd := exec.CommandContext(t.Context(), "bash", "gha-consume.sh", c.target)
+			cmd.Env = append(os.Environ(), "GITHUB_OUTPUT="+output, "CI_SELECT_PLANNER_RESULT="+c.result, "CI_SELECT_DECISIONS="+c.decisions)
+			data, err := cmd.CombinedOutput()
+			require.NoError(t, err, "%s", data)
+			data, err = os.ReadFile(output)
+			require.NoError(t, err)
+			assert.Equal(t, "action="+c.want+"\n", string(data))
 		})
 	}
 }
