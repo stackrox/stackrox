@@ -300,7 +300,7 @@ github.com/stackrox/rox/path/to/package
 **Replace Directive:**
 - Original: [module path if replaced]
 - Fork/Replace: [replacement path from go.mod]
-- Version Gap: [if fork behind: "Fork at v1.18, upstream at v1.27"]
+- Version Gap: [if fork behind: "Fork at vX.Y, upstream at vX.Z"]
 - Reason: [if known, note why fork exists - check commit history]
 
 **Locations:**
@@ -355,7 +355,7 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 
 ## Examples
 
-Versions, file counts, and CVE IDs in these examples are illustrative. Always read the real versions from `go.mod`, including its `replace` directives.
+Versions, file counts, and CVE IDs in these examples are illustrative. Always read the real versions from `go.mod`, including its `replace` directives, for example with `go list -m <module>` (shows the replacement if there is one) or `grep "<module>" go.mod`.
 
 ### Example 1: Direct production dependency
 
@@ -437,8 +437,8 @@ N/A - Test-only transitive dependency (not production-critical)
 | Dependency | Version | Status | Production Files | Components | Priority |
 |------------|---------|--------|------------------|------------|----------|
 | **pgx** | <version> | Direct | 155 | Central, Scanner, Migrator | CRITICAL |
-| **docker/distribution** | v2.8.3 | Direct | 3 | pkg/registries | Medium |
-| **zap** | v1.18.2 (fork) | Direct | 7 | pkg/logging, operator | CRITICAL |
+| **docker/distribution** | <version> | Direct | 3 | pkg/registries | Medium |
+| **zap** | <fork version> | Direct | 7 | pkg/logging, operator | CRITICAL |
 ```
 
 ### Example 4: Transitive dependency (test infrastructure)
