@@ -3,6 +3,7 @@ package tracker
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"maps"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
@@ -103,6 +105,14 @@ func (g *gatherer[F]) updateMetrics(generator iter.Seq2[F, error]) error {
 		}
 	}
 	return nil
+}
+
+func (g *gatherer[F]) clearMetrics() {
+	g.registry.Lock()
+	defer g.registry.Unlock()
+	for metric := range g.aggregator.result {
+		g.registry.Reset(string(metric))
+	}
 }
 
 func (g *gatherer[F]) trySetRunning() bool {
@@ -372,6 +382,9 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	}
 	begin := time.Now()
 	if err := gatherer.updateMetrics(tracker.generator(ctx, cfg.metrics)); err != nil {
+		if tracker.scoped && errors.Is(err, errox.NotAuthorized) {
+			gatherer.clearMetrics()
+		}
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
 	end := time.Now()
