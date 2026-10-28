@@ -856,8 +856,6 @@ export default [
             'src/Components/TextSelect/**', // deprecated
             'src/Components/TileContent/**', // deprecated
             'src/Components/TileLink/**', // deprecated
-            'src/Components/TimelineGraph/**', // deprecated
-            'src/Components/TimelineOverview/**', // deprecated
             'src/Components/ToggleSwitch/**', // deprecated
             'src/Components/TooltipFieldValue/**', // deprecated
             'src/Components/TopCvssLabel/**', // deprecated
@@ -975,8 +973,6 @@ export default [
             'src/Containers/configMgmtPaginationContext.js', // deferred
             'src/Containers/searchContext.js', // research
             'src/Containers/workflowStateContext.js', // deprecated
-            'src/constants/complianceStates.js', // research
-            'src/constants/componentTypes.js', // research
             'src/constants/entityPageProps.js', // research
             'src/constants/lifecycleStages.js', // rewrite
             'src/constants/listColumns.jsx', // deferred
@@ -985,7 +981,6 @@ export default [
             'src/constants/reduxFormPropTypes.js', // deprecated
             'src/constants/searchParams.js', // deferred
             'src/constants/sortFields.js', // deferred
-            'src/constants/timelineTypes.js', // move into Containers/Risk/EventTimeline
             'src/constants/url.js', // deprecated
             'src/constants/useCaseTypes.js', // deprecated
             'src/hooks/useEntityName.js', // deprecated
@@ -997,8 +992,6 @@ export default [
             'src/init/initializeAnalytics.js', // JavaScript
             'src/init/installRaven.js', // JavaScript
             'src/messages/entity.js', // deprecated
-            'src/messages/standards.js', // deferred
-            'src/messages/timeline.js', // move into Containers/Risk/EventTimeline
             'src/messages/useCase.js', // deferred
             'src/queries/**', // deprecated
             'src/reducers/**', // deprecated
@@ -1020,12 +1013,10 @@ export default [
             'src/utils/URLService.js', // deprecated
             'src/utils/WorkflowEntity.js', // deprecated
             'src/utils/WorkflowState.js', // deprecated
-            'src/utils/captureGraphQLErrors.js', // move into Containers/Risk/EventTimeline
             'src/utils/d3Utils.js', // deprecated
             'src/utils/download.js', // rewrite
             'src/utils/flattenObject.js', // deprecated
             'src/utils/getEntityName.js', // deprecated
-            'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
             'src/utils/gqlLoading.js', // deferred
             'src/utils/permissionRuleGroupUtils.js', // deferred
             'src/utils/queryMap.js', // deprecated
@@ -1055,7 +1046,6 @@ export default [
             'src/Containers/Login/LoginPage.jsx', // rewrite in TypeScript
             'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite in TypeScript
             'src/Containers/MainPage/Header/UserMenu.tsx', // rewritten in TypeScript
-            'src/Containers/Risk/EventTimeline/**', // deprecated
             'src/Containers/Risk/Process/Binaries.jsx', // rewrite in TypeScript?
             'src/Containers/Risk/Process/BinaryCollapsible.jsx', // rewrite in TypeScript?
             'src/Containers/Risk/Process/Signal.jsx', // rewrite in TypeScript?
