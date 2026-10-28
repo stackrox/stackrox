@@ -103,12 +103,15 @@ METRIC_SPECS = [
     ('process_indicators_count', 'metrics_process_indicators.txt',       'central-db', 'max', None),
     ('process_indicators_size',  'metrics_process_indicators_bytes.txt', 'central-db', 'max', 'mb'),
     ('events_received',    'metrics_rox_sensor_file_access_events_received_total.txt', 'sensor', 'events', None),
-    # Detector-stage file-access throughput. Unlike events_received (real/gRPC path
-    # only), this counts both the real and fake paths, so it is the throughput signal
-    # for the fake workload. See prometheus-query-file-activity.sh.
-    ('file_access_detector_received', 'metrics_file_access_detector_received.txt', 'sensor', 'rate', None),
     ('network_flows_received',      'metrics_network_flows_received.txt',      'sensor', 'rate', None),
-    ('process_indicators_received', 'metrics_process_indicators_received.txt', 'sensor', 'rate', None),
+    # Process throughput (pubsub-safe): process indicators enriched/dropped per sec.
+    ('process_enrichment_hits',  'metrics_process_enrichment_hits.txt',  'sensor', 'rate', None),
+    ('process_enrichment_drops', 'metrics_process_enrichment_drops.txt', 'sensor', 'rate', None),
+    # Alert generation on Central (per sec), by outcome. Direct "alerts generated"
+    # signal; works regardless of the sensor pubsub path.
+    ('alert_outcome_new',      'metrics_alert_outcome_new.txt',      'central', 'rate', None),
+    ('alert_outcome_updated',  'metrics_alert_outcome_updated.txt',  'central', 'rate', None),
+    ('alert_outcome_resolved', 'metrics_alert_outcome_resolved.txt', 'central', 'rate', None),
 ]
 
 # Standard vs-rate plots (one per metric, one line per mode). events_received is
@@ -160,15 +163,24 @@ STANDARD_PLOTS = [
     ('process_indicators_size',  'process_indicators_size_vs_rate.png',
      'Process Indicators Table Size vs File Activity Event Rate\n(maximum within {win})',
      'Maximum Table Size (MiB)'),
-    ('file_access_detector_received', 'file_access_detector_received_vs_rate.png',
-     'Sensor File-Access Detector Intake Rate vs File Activity Event Rate\n(averaged over {win})',
-     'File Accesses Into Detector (/sec)'),
     ('network_flows_received', 'network_flows_received_vs_rate.png',
      'Sensor Network Flows Received Rate vs File Activity Event Rate\n(averaged over {win})',
      'Network Flows Received (flows/sec)'),
-    ('process_indicators_received', 'process_indicators_received_vs_rate.png',
-     'Sensor Process Indicators Received Rate vs File Activity Event Rate\n(averaged over {win})',
-     'Process Indicators Received (/sec)'),
+    ('process_enrichment_hits', 'process_enrichment_hits_vs_rate.png',
+     'Sensor Process Enrichment Hits Rate vs Event Rate\n(averaged over {win})',
+     'Process Indicators Enriched (/sec)'),
+    ('process_enrichment_drops', 'process_enrichment_drops_vs_rate.png',
+     'Sensor Process Enrichment Drops Rate vs Event Rate\n(averaged over {win})',
+     'Process Indicators Dropped (/sec)'),
+    ('alert_outcome_new', 'alert_outcome_new_vs_rate.png',
+     'Central New Alerts Rate vs Event Rate\n(averaged over {win})',
+     'New Alerts (/sec)'),
+    ('alert_outcome_updated', 'alert_outcome_updated_vs_rate.png',
+     'Central Alert Updates Rate vs Event Rate\n(averaged over {win})',
+     'Alert Updates (/sec)'),
+    ('alert_outcome_resolved', 'alert_outcome_resolved_vs_rate.png',
+     'Central Alert Resolutions Rate vs Event Rate\n(averaged over {win})',
+     'Alert Resolutions (/sec)'),
 ]
 
 

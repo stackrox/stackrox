@@ -135,19 +135,26 @@ for drop in \
         "${title} (cumulative)" "Events" "${comp}" "${suffix}"
 done
 
-# Process and network event volume received by Sensor (cumulative counters). These
-# gauge the non-file-activity load Sensor carries in each mode; compare across modes
-# and against the file-activity rate.
+# Network flows received by Sensor (cumulative counter): the non-file-activity load.
 plot_metric "${output_dir}/network_flows_received.png" \
     "Sensor Network Flows Received (cumulative)" "Network Flows" "sensor" "network_flows_received"
-plot_metric "${output_dir}/process_indicators_received.png" \
-    "Sensor Process Indicators Received (cumulative)" "Process Indicators" "sensor" "process_indicators_received"
 
-# File accesses entering the sensor detector (cumulative counter). Unlike the
-# file_access_events_received counter above (real/gRPC path only), this covers the
-# fake workload too, so it is the file-access throughput signal for fake runs.
-plot_metric "${output_dir}/file_access_detector_received.png" \
-    "Sensor File-Access Detector Intake (cumulative)" "File Accesses" "sensor" "file_access_detector_received"
+# Process throughput (cumulative counters, pubsub-safe): process indicators enriched
+# (hits) and dropped. These are the process-event volume the sensor handles; the
+# detector queue ADD counter is empty under ROX_SENSOR_PUBSUB so it is not used.
+plot_metric "${output_dir}/process_enrichment_hits.png" \
+    "Sensor Process Enrichment Hits (cumulative)" "Process Indicators" "sensor" "process_enrichment_hits"
+plot_metric "${output_dir}/process_enrichment_drops.png" \
+    "Sensor Process Enrichment Drops (cumulative)" "Process Indicators" "sensor" "process_enrichment_drops"
+
+# Alert generation on Central (cumulative counters) by outcome. The direct
+# "alerts being generated" signal; central-side, so unaffected by the sensor pubsub
+# path. Runtime alerts coalesce per deployment+policy: new bursts once per deployment,
+# updated climbs as violations fold in.
+for outcome in new updated resolved; do
+    plot_metric "${output_dir}/alert_outcome_${outcome}.png" \
+        "Central Alerts ${outcome} (cumulative)" "Alerts" "central" "alert_outcome_${outcome}"
+done
 
 # Database table sizes. alerts and deployments are the file-activity-relevant
 # tables; process_indicators is the storage-side view of process-event volume.

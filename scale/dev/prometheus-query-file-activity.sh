@@ -273,31 +273,45 @@ for out_name in "${!fact_drop_metric[@]}"; do
 done
 
 # Process and network event volume received by Sensor. This tells us how much
-# non-file-activity load Sensor is carrying, so it can be compared across the three
-# test modes (baseline / alerting / idlepolicy) and against the file-activity rate.
+# non-file-activity load Sensor is carrying, so it can be compared across modes and
+# against the configured rate.
 #  - network_flows_received: rox_sensor_total_network_flows_sensor_received_counter,
 #    a plain Counter of flows Sensor received from Collector
 #    (sensor/common/metrics/metrics.go). sum() collapses per-instance series.
-#  - process_indicators_received: there is no dedicated "process signals received"
-#    counter on Sensor, so we use the detector's process-indicator queue ADD count
-#    (rox_sensor_detector_process_indicator_queue_operations_total{Operation="Add"} --
-#    note the capitalized label key and value, from metrics.Add.String()). This is
-#    the number of process indicators entering the detector pipeline.
-#    process_indicators table row count (captured above) is the storage-side companion.
-#  - file_access_detector_received: the file-access throughput signal that works for
-#    the FAKE workload. file_access_events_received_total (scraped above) is only
-#    incremented on the real gRPC ingest path (sensor/common/filesystem/pipeline
-#    run()); the fake workload publishes via pubsub and calls processFileActivity
-#    directly, so that counter stays empty. Both paths DO reach the detector
-#    (detector.ProcessFileAccess), so the detector file-access queue ADD count is the
-#    stage that captures fake throughput. Same shape as process_indicators_received.
+#  - process_enrichment_hits / _drops: rox_sensor_process_enrichment_{hits,drops},
+#    the count of process indicators successfully enriched (hits) or dropped (drops)
+#    in the process-signal pipeline. This is the pubsub-safe process-throughput
+#    signal: the earlier detector queue ADD counter
+#    (detector_process_indicator_queue_operations_total) is only incremented on the
+#    legacy non-pubsub detector path (sensor/common/detector/detector.go), so it is
+#    empty whenever ROX_SENSOR_PUBSUB is enabled (the default). The file-access
+#    detector queue counter had the same problem and is dropped;
+#    file_access_events_received_total (scraped above) is the file-activity signal.
 declare -A received_metric=(
   [network_flows_received]='sum(rox_sensor_total_network_flows_sensor_received_counter{namespace=\"'$sensor_ns'\"})'
-  [process_indicators_received]='sum(rox_sensor_detector_process_indicator_queue_operations_total{namespace=\"'$sensor_ns'\",Operation=\"Add\"})'
-  [file_access_detector_received]='sum(rox_sensor_detector_file_access_queue_operations_total{namespace=\"'$sensor_ns'\",Operation=\"Add\"})'
+  [process_enrichment_hits]='sum(rox_sensor_process_enrichment_hits{namespace=\"'$sensor_ns'\"})'
+  [process_enrichment_drops]='sum(rox_sensor_process_enrichment_drops{namespace=\"'$sensor_ns'\"})'
 )
 for out_name in "${!received_metric[@]}"; do
   result="$(get_time_series_for_metric "${received_metric[$out_name]}" "$from" "$to")" || true
+  if [[ -n "${result//[[:space:]]/}" ]]; then
+    echo "$result" > "${output_file_prefix}_${out_name}.txt"
+  fi
+done
+
+# Alert generation on Central (rox_central_alert_outcome_total, labeled by outcome:
+# new / updated / resolved -- central/detection/alertmanager/metrics.go). This is the
+# direct "alerts being generated" signal and, being a Central metric, is scraped
+# regardless of the sensor pubsub path. Runtime alerts coalesce per (deployment,
+# policy): expect a burst of `new` then `updated` climbing as violations fold in.
+# Queried in the central namespace (stackrox), not sensor_ns.
+declare -A alert_outcome_metric=(
+  [alert_outcome_new]='sum(rox_central_alert_outcome_total{namespace=\"stackrox\",outcome=\"new\"})'
+  [alert_outcome_updated]='sum(rox_central_alert_outcome_total{namespace=\"stackrox\",outcome=\"updated\"})'
+  [alert_outcome_resolved]='sum(rox_central_alert_outcome_total{namespace=\"stackrox\",outcome=\"resolved\"})'
+)
+for out_name in "${!alert_outcome_metric[@]}"; do
+  result="$(get_time_series_for_metric "${alert_outcome_metric[$out_name]}" "$from" "$to")" || true
   if [[ -n "${result//[[:space:]]/}" ]]; then
     echo "$result" > "${output_file_prefix}_${out_name}.txt"
   fi

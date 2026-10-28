@@ -34,23 +34,20 @@ from plot_utils import (
 
 START_OFFSET = 60.0
 EVENTS_FILE = 'metrics_rox_sensor_file_access_events_received_total.txt'
-# Detector-stage intake counter. The fake workload never increments EVENTS_FILE
-# (that counter is only on the real/gRPC ingest path), so fall back to this, which
-# both paths hit (see prometheus-query-file-activity.sh / file_access_detector_received).
-DETECTOR_FILE = 'metrics_file_access_detector_received.txt'
 
 
 def observed_rate(run_dir, end):
-    """Events/sec at the sensor for one cell, with the same fallbacks as the plot."""
+    """Events/sec at the sensor for one cell, with a diagnostic-bundle fallback.
+
+    file_access_events_received_total counts both the real and fake file-activity
+    paths (the Inc lives in processFileActivity), so it is the file-access throughput
+    signal; the bundle fallback covers runs whose Prometheus series is missing."""
     if run_dir is None:
         return None
     baseline = determine_baseline_timestamp(run_dir, 'sensor')
     rate = read_counter_rate(os.path.join(run_dir, EVENTS_FILE), START_OFFSET, end, baseline)
     if rate is None:
         rate = read_events_rate_from_bundles(run_dir)
-    if rate is None:
-        # Fake workload: measure throughput at the detector intake instead.
-        rate = read_counter_rate(os.path.join(run_dir, DETECTOR_FILE), START_OFFSET, end, baseline)
     return rate
 
 
