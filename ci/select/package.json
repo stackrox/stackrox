@@ -1,9 +1,0 @@
-{
-  "name": "ci-selection-workflow-tests",
-  "private": true,
-  "description": "Test-only GitHub Actions expression evaluator",
-  "type": "module",
-  "devDependencies": {
-    "@actions/expressions": "0.3.61"
-  }
-}

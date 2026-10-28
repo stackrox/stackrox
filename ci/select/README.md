@@ -322,30 +322,43 @@ ci/select/build.sh
 ci/select/bin/ci-select validate
 printf '%s\n' ui/example.tsx README.md > /tmp/ci-selection-files
 ci/select/bin/ci-select resolve --files-file /tmp/ci-selection-files
-npm ci --prefix ci/select --ignore-scripts --no-audit --no-fund
-CI_SELECT_EXPRESSION_TESTS=required go test -count=1 -race ./ci/select
+go test -count=1 -race ./ci/select
 go vet ./ci/select
 .gotools/bin/golangci-lint run --enable=unused ./ci/select
 .gotools/bin/actionlint .github/workflows/unit-tests.yaml .github/workflows/ci-select-tests.yaml .github/workflows/ci-selection.yaml
 shellcheck --norc -P SCRIPTDIR -x ci/select/build.sh ci/select/gha-gate.sh ci/select/gha-consume.sh
 ```
 
-Expression scenarios reuse GitHub's MIT-licensed `@actions/expressions`
-evaluator as a pinned test-only dependency. They cover selection, setup and
-test failures, cancellation, planner dependency failure, label events, and
-concurrency isolation. Ordinary Go tests skip those scenarios when the npm
-dependency is absent; the independent validation workflow installs it and
-requires them. Git and shell recovery tests run without npm.
+Go tests cover policy decisions, Git diff handling, and shell recovery.
+Workflow contract tests check required commands, decision wiring, ordering,
+and selection/status guards without fixing the entire workflow layout.
 
 Planning once per caller still requires a build and may download a Go
 toolchain. There is no cross-run artifact or decision cache. Skipping these
 jobs does not guarantee a short whole-PR turnaround while other workflows
 run.
 
-Before rolling out enforcement, inspect live Actions runs for a docs-only
-skip, a partial selection, and an unmatched change. Toggle enforcement off
-and check preview behavior, required check conclusions, downstream jobs,
-both Go matrix variants, setup/test failures, cancellation, and a failed
-planner dependency. Local expression and shell tests verify the gates;
-GitHub's scheduling, reusable-output propagation, post-job hooks, and check
-aggregation still require live Actions validation.
+### Validation limits and possible follow-up
+
+The Go workflow tests inspect YAML; they do not execute GitHub's `if`
+expressions or reproduce its scheduler. Shell tests verify that consumers
+run on missing/malformed decisions and planner failure, but cannot prove
+that GitHub starts those consumers after a failed `needs` dependency.
+
+Before rolling out enforcement, inspect live Actions runs for these cases:
+
+- A docs-only skip, a partial selection, and an uncovered change, including
+  both Go matrix variants and successful skipped-job checks.
+- Enforcement label addition/removal and unrelated label events, including
+  their effect on active and pending runs.
+- Planner failure: selected test jobs still start despite the failed
+  dependency; unrelated label events still leave test work disabled.
+- Setup and test failures: later ordinary steps stop, while the intended
+  diagnostics, reports, and Jira reporting still run.
+- Cancellation: ordinary work, diagnostics, and Jira stop; report steps
+  retain their `always()` behavior.
+
+Reusable-output propagation, post-job hooks, downstream jobs, and check
+aggregation also require live validation. Automatic execution of workflow
+condition scenarios is a possible future follow-up if a suitable Go-based
+approach becomes available. It is deferred from this change.

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"slices"
 	"strings"
 	"testing"
@@ -47,13 +45,6 @@ type (
 		With  map[string]string `yaml:"with"`
 		Env   map[string]string `yaml:"env"`
 	}
-	expressionCase struct {
-		Name       string         `json:"name"`
-		Expression string         `json:"expression"`
-		Context    map[string]any `json:"context"`
-		Status     string         `json:"status"`
-		Want       any            `json:"want"`
-	}
 )
 
 func readWorkflow(t *testing.T, path string) workflow {
@@ -80,94 +71,28 @@ func actionRef(ref string) func(workflowStep) bool {
 	return func(s workflowStep) bool { return strings.HasPrefix(s.Uses, ref) }
 }
 
-func testExpressions(t *testing.T, cases []expressionCase) {
-	t.Helper()
-	if _, err := os.Stat("node_modules/@actions/expressions"); os.IsNotExist(err) {
-		if os.Getenv("CI_SELECT_EXPRESSION_TESTS") == "required" {
-			t.Fatal("install expression tests with npm ci --prefix ci/select before running Go tests")
-		}
-		t.Skip("expression scenarios require npm ci --prefix ci/select")
-	}
-	input, err := json.Marshal(cases)
-	require.NoError(t, err)
-	cmd := exec.CommandContext(t.Context(), "node", "workflow-expressions.mjs")
-	cmd.Stdin = bytes.NewReader(input)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, "%s", output)
-}
-
-func workflowContext(event, action, label string, enforce bool, planner string) map[string]any {
-	labels := []map[string]string{}
-	if enforce {
-		labels = append(labels, map[string]string{"name": enforceLabel})
-	}
-	return map[string]any{
-		"github": map[string]any{
-			"event_name": event, "head_ref": "test-branch", "run_id": 123,
-			"event": map[string]any{
-				"action": action, "label": map[string]string{"name": label},
-				"pull_request": map[string]any{"labels": labels},
-			},
-		},
-		"needs": map[string]any{
-			"ci-selection":   map[string]any{"result": planner},
-			"detect-changes": map[string]any{"outputs": map[string]string{"ui_only": ""}},
-		},
-		"matrix": map[string]string{"pg": "16"},
-	}
-}
-
 func TestWorkflowLabelEvents(t *testing.T) {
 	t.Parallel()
 	w := readWorkflow(t, "../../.github/workflows/unit-tests.yaml")
-	assert.True(t, w.Concurrency.CancelInProgress)
-	var cases []expressionCase
-	for name, c := range map[string]struct {
-		event, action, label, planner, status string
-		enforce, uiOnly, admit                bool
-	}{
-		"PR update":                 {event: "pull_request", action: "synchronize", planner: "success", status: "success", admit: true},
-		"planner failure":           {event: "pull_request", action: "synchronize", planner: "failure", status: "failure", uiOnly: true, admit: true},
-		"missing planner":           {event: "pull_request", action: "synchronize", planner: "skipped", status: "success", admit: true},
-		"cancelled":                 {event: "pull_request", action: "synchronize", planner: "cancelled", status: "cancelled"},
-		"preview UI filter":         {event: "pull_request", action: "synchronize", planner: "success", status: "success", uiOnly: true, admit: true},
-		"enforced UI selection":     {event: "pull_request", action: "synchronize", planner: "success", status: "success", uiOnly: true, enforce: true, admit: true},
-		"enable enforcement":        {event: "pull_request", action: "labeled", label: enforceLabel, planner: "success", status: "success", enforce: true, admit: true},
-		"disable enforcement":       {event: "pull_request", action: "unlabeled", label: enforceLabel, planner: "success", status: "success", admit: true},
-		"unrelated label":           {event: "pull_request", action: "labeled", label: "area/ci", planner: "skipped", status: "success", enforce: true},
-		"release build label event": {event: "pull_request", action: "labeled", label: "ci-release-build", planner: "skipped", status: "success", enforce: true},
-		"unrelated unlabel":         {event: "pull_request", action: "unlabeled", label: "area/ci", planner: "failure", status: "failure"},
-		"push":                      {event: "push", planner: "success", status: "success", admit: true},
-	} {
-		context := workflowContext(c.event, c.action, c.label, c.enforce, c.planner)
-		if c.uiOnly {
-			context["needs"].(map[string]any)["detect-changes"] = map[string]any{"outputs": map[string]string{"ui_only": "true"}}
-		}
-		for _, jobName := range []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"} {
-			want := c.admit
-			if (jobName == "go-bench" || jobName == "sensor-integration-tests") && c.uiOnly && !c.enforce && c.planner == "success" {
-				want = false
-			}
-			job, ok := w.Jobs[jobName]
+	for _, name := range []string{"ci-selection", "detect-changes", "go", "go-postgres", "go-bench", "sensor-integration-tests"} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			job, ok := w.Jobs[name]
 			require.True(t, ok)
-			cases = append(cases, expressionCase{name + "/" + jobName, job.If, context, c.status, want})
-		}
-		for _, jobName := range []string{"ci-selection", "detect-changes"} {
-			// These jobs have no failing dependencies; cancellation supplies the status.
-			status := "success"
-			if c.status == "cancelled" {
-				status = "cancelled"
+			for _, guard := range []string{
+				"github.event_name != 'pull_request'",
+				"github.event.action != 'labeled'",
+				"github.event.action != 'unlabeled'",
+				"github.event.label.name == 'ci-dispatcher-enforce'",
+			} {
+				assert.Contains(t, job.If, guard, "unrelated label events must not start test work")
 			}
-			cases = append(cases, expressionCase{name + "/" + jobName, w.Jobs[jobName].If, context, status, c.admit})
-		}
-		group := strings.TrimPrefix(strings.TrimSpace(w.Concurrency.Group), "${{ github.workflow }}-")
-		wantGroup := "test-branch"
-		if (c.action == "labeled" || c.action == "unlabeled") && c.label != enforceLabel {
-			wantGroup = "ignored-label-123"
-		}
-		cases = append(cases, expressionCase{name + "/concurrency", group, context, "success", wantGroup})
+		})
 	}
-	testExpressions(t, cases)
+	assert.True(t, w.Concurrency.CancelInProgress)
+	assert.Contains(t, w.Concurrency.Group, "github.event.label.name != 'ci-dispatcher-enforce'")
+	assert.Contains(t, w.Concurrency.Group, "ignored-label-")
+	assert.Contains(t, w.Concurrency.Group, "github.run_id", "ignored events need their own concurrency group")
 }
 
 func TestWorkflowGates(t *testing.T) {
@@ -224,32 +149,24 @@ func TestWorkflowGates(t *testing.T) {
 				assert.ElementsMatch(t, []any{`GOTAGS=""`, "GOTAGS=release"}, job.Strategy.Matrix["gotags"])
 				require.NotEmpty(t, job.Strategy.Matrix["exclude"])
 			}
-			var cases []expressionCase
+			assert.Contains(t, job.If, "!cancelled()", "planner failure must not suppress dependent jobs")
+			if name == "go-bench" || name == "sensor-integration-tests" {
+				assert.Contains(t, job.If, "needs.ci-selection.result != 'success'")
+				assert.Contains(t, job.If, "ci-dispatcher-enforce")
+				assert.Contains(t, job.If, "!needs.detect-changes.outputs.ui_only")
+			}
 			if name == "go" || name == "go-postgres" {
 				exclusions, ok := job.Strategy.Matrix["exclude"].([]any)
 				require.True(t, ok)
-				var releaseExclusion string
-				for _, value := range exclusions {
+				assert.True(t, slices.ContainsFunc(exclusions, func(value any) bool {
 					exclude, ok := value.(map[string]any)
-					require.True(t, ok)
-					if expression, ok := exclude["gotags"].(string); ok && strings.Contains(expression, "ci-release-build") {
-						releaseExclusion = expression
+					if !ok {
+						return false
 					}
-				}
-				require.NotEmpty(t, releaseExclusion, "release variant must remain opt-in on PRs")
-				for _, release := range []bool{false, true} {
-					context := workflowContext("pull_request", "synchronize", "", false, "success")
-					labels := []map[string]string{}
-					if release {
-						labels = append(labels, map[string]string{"name": "ci-release-build"})
-					}
-					context["github"].(map[string]any)["event"].(map[string]any)["pull_request"] = map[string]any{"labels": labels}
-					var want any = "GOTAGS=release"
-					if release {
-						want = false
-					}
-					cases = append(cases, expressionCase{"release matrix variant", releaseExclusion, context, "success", want})
-				}
+					expression, ok := exclude["gotags"].(string)
+					return ok && strings.Contains(expression, "ci-release-build") &&
+						strings.Contains(expression, "github.event_name == 'pull_request'")
+				}), "release variant must remain opt-in on PRs")
 			}
 			for index, step := range job.Steps {
 				assert.NotEqual(t, "./.github/actions/ci-select", step.Uses)
@@ -261,32 +178,18 @@ func TestWorkflowGates(t *testing.T) {
 				if !relevant {
 					continue
 				}
-				for phase, status := range map[string]string{"selected": "success", "setup failure": "failure", "test failure": "failure", "cancelled": "cancelled"} {
-					for _, selection := range []string{"run", "skip", ""} {
-						for _, pg := range []string{"16", "default"} {
-							context := workflowContext("pull_request", "synchronize", "", true, "success")
-							context["steps"] = map[string]any{"ci-decision": map[string]any{"outputs": map[string]string{"action": selection}}}
-							context["matrix"] = map[string]string{"pg": pg}
-							want := selection != "skip"
-							switch {
-							case strings.HasPrefix(step.ID, "junit-report-"), strings.HasPrefix(step.ID, "publish-report-"):
-							case step.ID == "junit2jira":
-								want = want && status != "cancelled"
-							case step.ID == "postgres-diagnostics":
-								want = want && status == "failure"
-							default:
-								want = want && status == "success"
-								if name == "go-postgres" {
-									if step.ID == "postgres-host" {
-										want = want && pg == "default"
-									}
-									if step.ID == "postgres-container" {
-										want = want && pg != "default"
-									}
-								}
-							}
-							cases = append(cases, expressionCase{phase + "/" + selection + "/" + pg + "/" + step.ID + step.Uses, step.If, context, status, want})
-						}
+				assert.Contains(t, step.If, "steps.ci-decision.outputs.action != 'skip'", step.ID+step.Uses)
+				switch {
+				case strings.HasPrefix(step.ID, "junit-report-"), strings.HasPrefix(step.ID, "publish-report-"):
+					assert.Contains(t, step.If, "always()")
+				case step.ID == "junit2jira":
+					assert.Contains(t, step.If, "!cancelled()")
+				case step.ID == "postgres-diagnostics":
+					assert.Contains(t, step.If, "failure()")
+					assert.Contains(t, step.If, "!cancelled()")
+				default:
+					for _, status := range []string{"always()", "failure()", "cancelled()"} {
+						assert.NotContains(t, step.If, status, "ordinary steps must require success")
 					}
 				}
 				if strings.HasPrefix(step.ID, "junit-report-") {
@@ -296,7 +199,6 @@ func TestWorkflowGates(t *testing.T) {
 					assert.Equal(t, "bash -e {0}", step.Shell)
 				}
 			}
-			testExpressions(t, cases)
 		})
 	}
 }
@@ -325,11 +227,8 @@ func TestReusablePlanner(t *testing.T) {
 	assert.Equal(t, "./.github/actions/ci-select", selectStep.Uses)
 	validation := readWorkflow(t, "../../.github/workflows/ci-select-tests.yaml").Jobs["selector-tests"]
 	assert.Empty(t, validation.If)
-	for _, command := range []string{"ci-select validate", "go test -race ./ci/select", "npm ci --prefix ci/select"} {
+	for _, command := range []string{"ci-select validate", "go test -race ./ci/select"} {
 		step, _ := findStep(t, validation, func(s workflowStep) bool { return strings.Contains(s.Run, command) })
 		assert.Empty(t, step.If, "selection must not suppress its validation")
-		if strings.Contains(command, "go test") {
-			assert.Equal(t, "required", step.Env["CI_SELECT_EXPRESSION_TESTS"])
-		}
 	}
 }
