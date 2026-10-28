@@ -296,6 +296,7 @@ func TestTrackerBase_ClearsScopedMetricsOnAuthorizationError(t *testing.T) {
 			otherIdentity, err := authn.IdentityFromContext(otherCtx)
 			require.NoError(t, err)
 			tracker.Gather(otherCtx)
+			tracker.cleanupWG.Wait()
 			otherRegistry, err := metrics.GetCustomRegistry(otherIdentity.UID())
 			require.NoError(t, err)
 			t.Cleanup(func() { metrics.DeleteCustomRegistry(otherIdentity.UID()) })
