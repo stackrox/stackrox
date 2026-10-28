@@ -58,7 +58,11 @@ go run ./scanner/updater/ci/generate -check
 sha256sum scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip
 ```
 
-Run the generator package tests:
+Update static pins to `ci-minimal-<sha256>` using the new ZIP digest: all five
+consumers listed in [TestDeploymentBundlePins](generate/pins_test.go), plus the
+four `080-assert-*.yaml` and `081-assert-*.yaml` telemetry assertions under
+[central-misc](../../../operator/tests/central/central-misc/). Rerun the generator
+package tests after updating pins:
 
 ```sh
 go test ./scanner/updater/ci/generate ./scanner/updater/bundle
@@ -79,7 +83,8 @@ needed. Fixtures do not replace production-feed testing.
 
 ## Publish and run
 
-Commit fixtures, independent tests, and the regenerated ZIP together. The [Publish Scanner PR CI bundle workflow](../../../.github/workflows/scanner-ci-bundle-pr.yaml)
+Commit fixtures, independent tests, the regenerated ZIP, and updated pins
+together. The [Publish Scanner PR CI bundle workflow](../../../.github/workflows/scanner-ci-bundle-pr.yaml)
 validates and publishes the exact ZIP from an upstream `stackrox/stackrox` PR,
 including drafts, when the ZIP changes. Fixture-only changes do not trigger
 publication. Fork PRs cannot publish new bundles; use an upstream branch.
@@ -96,3 +101,13 @@ succeed, then rerun affected E2E jobs that started before the bundle was ready.
 The workflow summary lists the source commit, digest, and URL. There is no
 automatic waiting, retesting, or production fallback. If the tested merged
 checkout has a different ZIP, update the branch so those bytes are published.
+Full-stack tests request the version through Central; standalone Scanner tests
+use the public definitions endpoint.
+
+To test the full bundle, add the PR label `ci-scanner-full-bundle` and rerun the
+job, or set `SCANNER_V4_FULL_BUNDLE=true`. Nightlies retain production defaults;
+the Scanner functional workflow also has a `full_bundle` dispatch input.
+These options omit automatic minimal selection while preserving explicit
+settings and allowlists. Static Operator fixtures and local development YAMLs
+remain pinned; these options do not rewrite their pins. The standalone Helm
+chart defaults to the production feed.

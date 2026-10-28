@@ -65,3 +65,11 @@ scannerV4:
       limits:
         cpu: "1000m"
         memory: "2500Mi"
+
+# Minimal CI fixtures provide reduced vulnerability coverage for local development.
+# Restore the deployed image's default stream with:
+# --set-string customize.scanner-v4-matcher.envVars.SCANNER_V4_MATCHER_VULNERABILITY_VERSION=""
+customize:
+  scanner-v4-matcher:
+    envVars:
+      SCANNER_V4_MATCHER_VULNERABILITY_VERSION: ci-minimal-bab3cec6e362f74bbe0c4f6a2e552ce1bac983feb836c449929f20cfd88bf4ce

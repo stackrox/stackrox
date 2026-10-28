@@ -236,8 +236,33 @@ tests:
 - name: "matcher should be using central endpoint when deployed"
   set:
     scannerV4.disable: false
-    expect: |
-      .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION")
+  expect: |
+    .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION")
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[] | select(.name == "matcher") | [.env[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITY_VERSION")] | assertThat(length == 0)
+
+- name: "matcher vulnerability version can be customized through its environment variable"
+  values:
+    customize:
+      scanner-v4-matcher:
+        envVars:
+          SCANNER_V4_MATCHER_VULNERABILITY_VERSION: ci-minimal-test
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[] | select(.name == "matcher") | [.env[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITY_VERSION")] | assertThat(length == 1 and .[0].value == "ci-minimal-test")
+    .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VULNERABILITY_VERSION")
+
+- name: "explicit matcher version customization overrides the CI default"
+  values:
+    customize:
+      scanner-v4-matcher:
+        envVars:
+          SCANNER_V4_MATCHER_VULNERABILITY_VERSION: ci-minimal-test
+  set:
+    scannerV4.disable: false
+    customize.scanner-v4-matcher.envVars.SCANNER_V4_MATCHER_VULNERABILITY_VERSION: ci-minimal-explicit
+  expect: |
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[] | select(.name == "matcher") | [.env[] | select(.name == "SCANNER_V4_MATCHER_VULNERABILITY_VERSION")] | assertThat(length == 1 and .[0].value == "ci-minimal-explicit")
 
 - name: "Scanner V4 defaults to"
   set:
