@@ -3,6 +3,8 @@ package env
 import "time"
 
 var (
+	// NodeIndexDebugDir enables per-scan diagnostic captures in a writable directory.
+	NodeIndexDebugDir = RegisterSetting("ROX_NODE_INDEX_DEBUG_DIR", AllowEmpty())
 	// NodeIndexHostPath sets the path where the R/O host node filesystem is mounted to the container.
 	// that should be scanned by Scanners NodeIndexer
 	NodeIndexHostPath = RegisterSetting("ROX_NODE_INDEX_HOST_PATH", WithDefault("/host"))
