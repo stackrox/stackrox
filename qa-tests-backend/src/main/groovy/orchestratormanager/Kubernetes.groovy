@@ -310,6 +310,18 @@ class Kubernetes {
         return !deleted && pod.status?.containerStatuses?.every { it.ready }
     }
 
+    /**
+     * Returns true if the cluster's primary service network family is IPv6.
+     * The "kubernetes" Service in the default namespace exists on every cluster
+     * and its ClusterIP is allocated from the primary service CIDR, so its
+     * address family reflects the cluster's primary family. This reflects the
+     * actual cluster state, unlike a CI-provided env var that may be missing.
+     */
+    boolean isIPv6PrimaryServiceNetwork() {
+        def kubernetesService = client.services().inNamespace("default").withName("kubernetes").get()
+        return kubernetesService?.getSpec()?.getClusterIP()?.contains(":")
+    }
+
     boolean waitForPodsReady(String ns, Map<String, String> labels, int minReady = 1, int retries = 30,
                              int intervalSeconds = 5) {
         LabelSelector selector = new LabelSelector()
