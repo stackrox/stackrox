@@ -201,8 +201,8 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if tr == nil {
 		return
 	}
-	reqCtx := req.Context()
 	var userID string
+	reqCtx := req.Context()
 	if id := authn.IdentityFromContextOrNil(reqCtx); id != nil {
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
