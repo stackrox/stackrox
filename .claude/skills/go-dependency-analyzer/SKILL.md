@@ -300,7 +300,7 @@ github.com/stackrox/rox/path/to/package
 **Replace Directive:**
 - Original: [module path if replaced]
 - Fork/Replace: [replacement path from go.mod]
-- Version Gap: [if fork behind: "Fork at vX.Y, upstream at vX.Z"]
+- Version Gap: [if fork behind: "Fork at v1.18, upstream at v1.27"]
 - Reason: [if known, note why fork exists - check commit history]
 
 **Locations:**
@@ -355,14 +355,14 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 
 ## Examples
 
-Versions, file counts, and CVE IDs in these examples are illustrative. Always read the real versions from `go.mod`, including its `replace` directives, for example with `go list -m <module>` (shows the replacement if there is one) or `grep "<module>" go.mod`.
+Versions, file counts, and CVE IDs in these examples are illustrative and may be out of date. Always read the real versions from `go.mod`, including its `replace` directives, for example with `go list -m <module>` (shows the replacement if there is one) or `grep "<module>" go.mod`.
 
 ### Example 1: Direct production dependency
 
 **User:** "Verify where we use pgx dependency for CVE-2024-12345"
 
 **Actions:**
-1. Search go.mod: `grep pgx go.mod` → Found: `github.com/jackc/pgx/v5 <version>`
+1. Search go.mod: `grep pgx go.mod` → Found: `github.com/jackc/pgx/v5 v5.4.0`
 2. Check usage: `grep -r "jackc/pgx" --include="*.go" --exclude-dir=vendor --exclude-dir=test`
 3. Use gopls: `mcp__gopls__go_search` with query "pgx"
 4. Analyze files: Found in `central/database/postgres/store.go`
@@ -436,9 +436,9 @@ N/A - Test-only transitive dependency (not production-critical)
 
 | Dependency | Version | Status | Production Files | Components | Priority |
 |------------|---------|--------|------------------|------------|----------|
-| **pgx** | <version> | Direct | 155 | Central, Scanner, Migrator | CRITICAL |
-| **docker/distribution** | <version> | Direct | 3 | pkg/registries | Medium |
-| **zap** | <fork version> | Direct | 7 | pkg/logging, operator | CRITICAL |
+| **pgx** | v5.9.2 | Direct | 155 | Central, Scanner, Migrator | CRITICAL |
+| **docker/distribution** | v2.8.3 | Direct | 3 | pkg/registries | Medium |
+| **zap** | v1.18.2 (fork) | Direct | 7 | pkg/logging, operator | CRITICAL |
 ```
 
 ### Example 4: Transitive dependency (test infrastructure)
@@ -446,7 +446,7 @@ N/A - Test-only transitive dependency (not production-critical)
 **User:** "Check CVE-2024-11111 in protoc-gen-validate"
 
 **Actions:**
-1. Search go.mod: `grep protoc-gen-validate go.mod` → Found: `github.com/envoyproxy/protoc-gen-validate <version> // indirect`
+1. Search go.mod: `grep protoc-gen-validate go.mod` → Found: `github.com/envoyproxy/protoc-gen-validate v0.10.1 // indirect`
 2. Run `go mod why`: Shows dependency chain via `cloud.google.com/go/storage`
 3. Check intermediate usage: `grep -r "cloud.google.com/go/storage" --include="*.go" --exclude="*_test.go" --exclude-dir=vendor --exclude-dir=test` → 0 results
 4. Check test usage: `grep -r "cloud.google.com/go/storage" --include="*_test.go"` → 15 files in `central/externalbackups/`
@@ -456,16 +456,16 @@ N/A - Test-only transitive dependency (not production-critical)
 ```
 ## CVE-2024-11111 Analysis: protoc-gen-validate (TRANSITIVE)
 
-**Dependency:** github.com/envoyproxy/protoc-gen-validate <version>
+**Dependency:** github.com/envoyproxy/protoc-gen-validate v0.10.1
 **Status:** TRANSITIVE ONLY - TEST INFRASTRUCTURE ONLY
 
 **Dependency Chain:**
 ```
 StackRox test code
     ↓ imports (test files only)
-cloud.google.com/go/storage <version>
+cloud.google.com/go/storage v1.30.1
     ↓ depends on
-github.com/envoyproxy/protoc-gen-validate <version>
+github.com/envoyproxy/protoc-gen-validate v0.10.1
 ```
 
 **Why It Exists:**
@@ -569,7 +569,7 @@ Consider syncing fork to v1.18.0+ to reduce version gap and maintenance burden.
 ```
 ## Dependency Analysis: Zap Logger
 
-**Dependency:** go.uber.org/zap <upstream version>
+**Dependency:** go.uber.org/zap v1.27.1
 **Status:** WRAPPER PATTERN - Used via pkg/logging
 
 **Usage Summary:**
@@ -585,9 +585,9 @@ github.com/stackrox/rox/pkg/logging
 ```
 
 **Replace Directive:**
-- Original: go.uber.org/zap <upstream version> (from the `require` block)
-- Fork/Replace: github.com/stackrox/zap <fork version> (from the `replace` directive)
-- Version Gap: compare the fork's base version with the upstream version (for example, how many minor versions behind)
+- Original: go.uber.org/zap v1.27.1
+- Fork/Replace: github.com/stackrox/zap v1.18.2-0.20240314134248-5f932edd0404
+- Version Gap: Fork at v1.18.2, upstream at v1.27.1 (9 minor versions behind)
 - Reason: StackRox-specific customizations (check stackrox/zap repo)
 
 **Wrapper Usage:**
@@ -636,20 +636,20 @@ go install github.com/loov/goda@latest
 
 **Example:**
 ```
-go.uber.org/zap <upstream version>
-go.uber.org/zap => github.com/stackrox/zap <fork version>
+go.uber.org/zap v1.27.1
+go.uber.org/zap => github.com/stackrox/zap v1.18.2
 ```
 
 **Solution:**
 - Always check for replace: `grep "module-name.*=>" go.mod`
 - Report BOTH versions in analysis
-- Note version differences (upstream vs fork)
+- Note version differences (upstream 1.27.1 vs fork 1.18.2)
 - Investigate why fork exists (security patch, features, etc.)
 - Consider: Should we sync with upstream?
 
 **Impact:**
-- Actual version used: The replacement (fork) version
-- Declared version: What appears without replace
+- Actual version used: The replacement version (v1.18.2)
+- Declared version: What appears without replace (v1.27.1)
 - CVEs may reference declared version but fork may have fix
 
 ### Too many results
