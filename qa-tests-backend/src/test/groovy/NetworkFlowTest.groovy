@@ -90,8 +90,13 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", TCPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:80,fork STDOUT & " +
-                                      "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
+                    // socat's TCP-LISTEN binds the IPv4 wildcard only, so on
+                    // IPv6-primary clusters connections are refused and no network
+                    // flow is recorded. TCP6-LISTEN binds "::", which on Linux
+                    // (ipv6.bindv6only=0 default) accepts both IPv6 and v4-mapped
+                    // IPv4 connections, so it serves either cluster family.
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP6-LISTEN:80,fork STDOUT & " +
+                                      "socat "+SOCAT_DEBUG+" TCP6-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
                     .setImagePrefetcherAffinity()
