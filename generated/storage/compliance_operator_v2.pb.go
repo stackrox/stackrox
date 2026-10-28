@@ -344,8 +344,7 @@ func (ComplianceOperatorCheckResultV2_CheckStatus) EnumDescriptor() ([]byte, []i
 }
 
 // DataFreshness indicates whether a stored check result is current relative to its scan
-// configuration's schedule. It is computed by the freshness sweeper and persisted so it can
-// be filtered and sorted. It mirrors the read-side v2.ComplianceCheckDataFreshness enum.
+// configuration's schedule.
 type ComplianceOperatorCheckResultV2_DataFreshness int32
 
 const (
@@ -1412,13 +1411,10 @@ type ComplianceOperatorCheckResultV2 struct {
 	ScanRefId      string                                      `protobuf:"bytes,18,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"`                // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
 	RuleRefId      string                                      `protobuf:"bytes,19,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"`                // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
 	// last_started_time is the last time the Scan resource was triggered
-	LastStartedTime *timestamppb.Timestamp `protobuf:"bytes,20,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Check Last Started Time,hidden"` // @gotags: search:"Compliance Check Last Started Time,hidden"
-	// data_freshness is computed by the freshness sweeper. Hidden until the sweeper populates it, so
-	// it is not surfaced as a user-facing search option while every row is UNKNOWN. Hidden fields
-	// remain filterable and sortable, so the later API wiring is unaffected.
-	DataFreshness ComplianceOperatorCheckResultV2_DataFreshness `protobuf:"varint,21,opt,name=data_freshness,json=dataFreshness,proto3,enum=storage.ComplianceOperatorCheckResultV2_DataFreshness" json:"data_freshness,omitempty" search:"Compliance Check Data Freshness,hidden"` // @gotags: search:"Compliance Check Data Freshness,hidden"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	LastStartedTime *timestamppb.Timestamp                        `protobuf:"bytes,20,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Check Last Started Time,hidden"`                                                     // @gotags: search:"Compliance Check Last Started Time,hidden"
+	DataFreshness   ComplianceOperatorCheckResultV2_DataFreshness `protobuf:"varint,21,opt,name=data_freshness,json=dataFreshness,proto3,enum=storage.ComplianceOperatorCheckResultV2_DataFreshness" json:"data_freshness,omitempty" search:"Compliance Check Data Freshness,hidden"` // @gotags: search:"Compliance Check Data Freshness,hidden"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorCheckResultV2) Reset() {
