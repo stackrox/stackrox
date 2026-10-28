@@ -14,9 +14,9 @@ source "$_VM_SCANNING_LIB_ROOT/scripts/lib.sh"
 # images, or it fails with "manifest unknown".
 _vm_scanning_main_image_name() {
     if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
-        echo "release-main"
+        printf '%s\n' "release-main"
     else
-        echo "main"
+        printf '%s\n' "main"
     fi
 }
 
