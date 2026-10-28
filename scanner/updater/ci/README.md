@@ -76,3 +76,23 @@ also runs them. Run the affected E2E scenario to check actual image findings.
 Passing serialization/importer tests does not prove every new ClairCore field
 is covered: review relevant field and format changes and add expectations where
 needed. Fixtures do not replace production-feed testing.
+
+## Publish and run
+
+Commit fixtures, independent tests, and the regenerated ZIP together. The [Publish Scanner PR CI bundle workflow](../../../.github/workflows/scanner-ci-bundle-pr.yaml)
+validates and publishes the exact ZIP from an upstream `stackrox/stackrox` PR,
+including drafts, when the ZIP changes. Fixture-only changes do not trigger
+publication. Fork PRs cannot publish new bundles; use an upstream branch.
+There is no master-push or scheduled CI-bundle publication.
+
+The immutable URL is:
+
+```text
+https://definitions.stackrox.io/v4/vulnerability-bundles/ci-minimal-<sha256>/vulnerabilities.zip
+```
+
+Existing objects are verified rather than overwritten. Wait for publication to
+succeed, then rerun affected E2E jobs that started before the bundle was ready.
+The workflow summary lists the source commit, digest, and URL. There is no
+automatic waiting, retesting, or production fallback. If the tested merged
+checkout has a different ZIP, update the branch so those bytes are published.
