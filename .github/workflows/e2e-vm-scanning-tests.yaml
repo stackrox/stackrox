@@ -234,7 +234,7 @@ jobs:
         persist_vm_scan_virtctl
         rm -f FAIL
         make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-tests || touch FAIL
-        store_test_results "tests/vm-scanning-tests-results" "/tmp/vm-scanning-test-logs/vm-e2e-tests"
+        store_test_results "tests/vm-scanning-tests-results" "vm-scanning-tests-results/vm-e2e-tests"
         [[ ! -f FAIL ]] || die "VM scanning e2e tests failed"
 
     - name: Run post-test
@@ -249,7 +249,7 @@ jobs:
             collect_vm_guest_logs=True,
         )
         post.k8s_namespaces.append("openshift-cnv")
-        post.run(['/tmp/vm-scanning-test-logs', '${{ env.ARTIFACT_DIR }}'])
+        post.run(['${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
       if: always()
