@@ -8,7 +8,16 @@ import {
     StackItem,
 } from '@patternfly/react-core';
 
-import type { Container } from 'types/deployment.proto';
+import type {
+    Container,
+    ContainerConfig,
+    ContainerImage,
+    ContainerResources,
+    ContainerSecurityContext,
+    ContainerVolume,
+    EmbeddedSecret,
+} from 'types/deployment.proto';
+import type { ImageName } from 'types/image.proto';
 import ContainerImageInfo from 'Components/ContainerImageInfo';
 import ContainerResourcesInfo from 'Components/ContainerResourcesInfo';
 import ContainerVolumesInfo from 'Components/ContainerVolumesInfo';
@@ -17,8 +26,21 @@ import ContainerArgumentsInfo from 'Components/ContainerArgumentsInfo';
 import ContainerCommandInfo from 'Components/ContainerCommandInfo';
 import SecurityContext from 'Components/SecurityContext';
 
+export type DeploymentContainerConfigData = Pick<Container, 'id' | 'name' | 'type'> & {
+    image:
+        | (Pick<ContainerImage, 'id' | 'idV2' | 'notPullable'> & {
+              name: ImageName | null;
+          })
+        | null;
+    resources: ContainerResources | null;
+    volumes: ContainerVolume[];
+    secrets: EmbeddedSecret[];
+    config: Pick<ContainerConfig, 'args' | 'command'> | null;
+    securityContext: ContainerSecurityContext | null;
+};
+
 type DeploymentContainerConfigProps = {
-    container: Container;
+    container: DeploymentContainerConfigData;
     getImageUrl: (imageId: string) => string;
 };
 
