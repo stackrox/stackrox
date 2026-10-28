@@ -1,0 +1,27 @@
+{
+  "name": "Process Execution Test Policy",
+  "description": "Test policy for process-execution performance testing - alerts on every process execution (Process Name matches any via regex). Paired with the process workload's alertRate=1.0 (every emitted process is a flagged binary), so each process execution is a violation.",
+  "rationale": "Matches all process executions to measure alert-processing performance impact",
+  "remediation": "This is a test policy for performance testing",
+  "categories": ["Anomalous Activity"],
+  "lifecycleStages": ["RUNTIME"],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "disabled": false,
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": ".*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [],
+  "isDefault": false
+}

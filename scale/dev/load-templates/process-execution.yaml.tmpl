@@ -1,0 +1,27 @@
+nodeWorkload:
+  numNodes: 10
+
+numNamespaces: 3
+
+# Process-execution load (process-only; no fileActivityWorkload). Every pod emits a
+# process every processInterval; with alertRate 1.0 each emitted process is a flagged
+# "bad" binary (nmap/curl/bash/...), so paired with a Process Name policy that matches
+# everything (policies/process-exec.json) each process execution is a violation.
+#
+# Total pods = numDeployments * numPods = 300, and each pod emits one process per
+# processInterval, so the process-event rate is ~= 300 / processInterval
+# (e.g. processInterval 60ms -> ~5000/s). __RATE__ is substituted with the interval;
+# see configs/process-execution.json for the interval<->rate mapping.
+deploymentWorkload:
+- deploymentType: Deployment
+  numDeployments: 100
+  numLabels: 5
+  lifecycleDuration: 30m
+  updateInterval: 5m
+  podWorkload:
+    numContainers: 2
+    numPods: 3
+    lifecycleDuration: 10m
+    processWorkload:
+      processInterval: __RATE__   # per-pod interval; event rate ~= 300 pods / interval
+      alertRate: 1.0              # 1.0 => every process is a flagged binary -> violation
