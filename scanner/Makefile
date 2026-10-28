@@ -460,14 +460,9 @@ e2e-deploy: timeout := 30m
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
 	@source ../scripts/ci/scanner-bundle.sh; \
-	    if scanner_v4_use_full_bundle; then \
-	        echo 'Scanner V4 bundle: production (deployed version default)'; \
-	        printf '{}\n' > $(e2e-chart-d)/ci-bundle-values.yaml; \
-	    else \
-	        version="$$(scanner_v4_ci_bundle_version)" || exit 1; \
-	        echo "Scanner V4 bundle: $$version"; \
-	        printf 'app:\n  scanner:\n    vulnerabilityVersion: %s\n' "$$version" > $(e2e-chart-d)/ci-bundle-values.yaml; \
-	    fi
+	    version="$$(scanner_v4_ci_bundle_version)" || exit 1; \
+	    echo "Scanner V4 bundle: $$version"; \
+	    printf 'app:\n  scanner:\n    vulnerabilityVersion: %s\n' "$$version" > $(e2e-chart-d)/ci-bundle-values.yaml
 	helm $(if $(debug-templates),template,upgrade --install) --debug $(release) $< \
 	    --namespace $(namespace) \
 	    --create-namespace \

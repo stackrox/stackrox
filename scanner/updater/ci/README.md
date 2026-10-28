@@ -105,9 +105,12 @@ Full-stack tests request the version through Central; standalone Scanner tests
 use the public definitions endpoint.
 
 To test the full bundle, add the PR label `ci-scanner-full-bundle` and rerun the
-job, or set `SCANNER_V4_FULL_BUNDLE=true`. Nightlies retain production defaults;
-the Scanner functional workflow also has a `full_bundle` dispatch input.
+job, or set `SCANNER_V4_FULL_BUNDLE=true`. Nightlies retain production defaults.
 These options omit automatic minimal selection while preserving explicit
 settings and allowlists. Static Operator fixtures and local development YAMLs
 remain pinned; these options do not rewrite their pins. The standalone Helm
 chart defaults to the production feed.
+
+Scanner functional tests (`make -C scanner e2e-deploy`) always use the checked-in
+minimal bundle because they compare scan reports against fixed expectations.
+The full-bundle overrides above do not apply to these tests.
