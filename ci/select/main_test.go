@@ -12,7 +12,7 @@ import (
 func TestRun(t *testing.T) {
 	t.Parallel()
 	files := writeTestFile(t, filepath.Join(t.TempDir(), "files"), "ui/app.tsx\nREADME.md\n")
-	base := []string{"--rules", "../test-domains.yaml", "--defaults", "../decision-defaults"}
+	base := []string{"--rules", "../test-domains.yaml"}
 	for name, args := range map[string][]string{
 		"should validate local configuration": append([]string{"validate"}, base...),
 		"should resolve local changed paths":  append(append([]string{"resolve"}, base...), "--files-file", files),
@@ -30,14 +30,15 @@ func TestRun(t *testing.T) {
 		})
 	}
 	for name, args := range map[string][]string{
-		"should require a command":           {},
-		"should reject unknown commands":     {"prow"},
-		"should reject extra GHA arguments":  {"gha", "go", "extra"},
-		"should reject unsupported flags":    {"validate", "--enforce"},
-		"should reject positional arguments": {"validate", "extra"},
-		"should reject unreadable rules":     {"validate", "--rules", "missing"},
-		"should require a diff file":         append([]string{"resolve"}, base...),
-		"should reject unreadable diff file": append(append([]string{"resolve"}, base...), "--files-file", "missing"),
+		"should require a command":            {},
+		"should reject unknown commands":      {"prow"},
+		"should reject extra GHA arguments":   {"gha", "go", "extra"},
+		"should reject removed defaults flag": {"validate", "--defaults", "missing"},
+		"should reject unsupported flags":     {"validate", "--enforce"},
+		"should reject positional arguments":  {"validate", "extra"},
+		"should reject unreadable rules":      {"validate", "--rules", "missing"},
+		"should require a diff file":          append([]string{"resolve"}, base...),
+		"should reject unreadable diff file":  append(append([]string{"resolve"}, base...), "--files-file", "missing"),
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

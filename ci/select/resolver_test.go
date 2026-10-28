@@ -11,7 +11,7 @@ import (
 
 func TestPolicy(t *testing.T) {
 	t.Parallel()
-	m, err := loadConfig("../test-domains.yaml", "../decision-defaults")
+	m, err := loadMapping("../test-domains.yaml")
 	require.NoError(t, err)
 	require.Equal(t, []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}, m.Jobs)
 	require.Len(t, m.Rules, 6)

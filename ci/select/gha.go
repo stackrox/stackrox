@@ -61,7 +61,7 @@ func ghaDecision(ctx context.Context, root string) (decision, bool) {
 	}
 	pr := event.PullRequest
 	enforce := slices.ContainsFunc(pr.Labels, func(label struct{ Name string }) bool { return label.Name == enforceLabel })
-	m, err := loadConfig(filepath.Join(root, "ci/test-domains.yaml"), filepath.Join(root, "ci/decision-defaults"))
+	m, err := loadMapping(filepath.Join(root, "ci/test-domains.yaml"))
 	if err != nil {
 		return fallback(err), enforce
 	}

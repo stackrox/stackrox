@@ -86,34 +86,3 @@ func TestLoadMapping(t *testing.T) {
 		require.Len(t, m.Rules[0].patterns, 1)
 	})
 }
-
-func TestLoadConfig(t *testing.T) {
-	t.Parallel()
-	for name, defaults := range map[string]string{
-		"should reject missing defaults":   "go run\n",
-		"should reject unknown defaults":   "go run\npostgres run\nextra run\n",
-		"should reject invalid decisions":  "go maybe\npostgres run\n",
-		"should reject skipped defaults":   "go skip\npostgres run\n",
-		"should reject duplicate defaults": "go run\ngo run\npostgres run\n",
-		"should reject inline comments":    "go run # comment\npostgres run\n",
-		"should reject empty defaults":     "# nothing\n",
-		"should reject default wildcards":  "* run\npostgres run\n",
-	} {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			dir := t.TempDir()
-			_, err := loadConfig(writeTestFile(t, filepath.Join(dir, "rules"), validRules),
-				writeTestFile(t, filepath.Join(dir, "defaults"), defaults))
-			require.Error(t, err)
-		})
-	}
-	dir := t.TempDir()
-	rules := writeTestFile(t, filepath.Join(dir, "rules"), validRules)
-	defaults := writeTestFile(t, filepath.Join(dir, "defaults"), "# fallback\ngo run\npostgres run\n")
-	_, err := loadConfig(rules, defaults)
-	require.NoError(t, err)
-	_, err = loadConfig(rules, filepath.Join(dir, "missing"))
-	require.Error(t, err)
-	_, err = loadConfig(filepath.Join(dir, "missing"), defaults)
-	require.Error(t, err)
-}

@@ -87,8 +87,6 @@ func TestGHA(t *testing.T) {
 	head := testGit(t, root, "rev-parse", "HEAD")
 	rules, err := os.ReadFile("../test-domains.yaml")
 	require.NoError(t, err)
-	defaults, err := os.ReadFile("../decision-defaults")
-	require.NoError(t, err)
 	cases := map[string]struct {
 		mutate  func(t *testing.T)
 		preview bool
@@ -108,14 +106,6 @@ func TestGHA(t *testing.T) {
 		"should run with malformed rules": {
 			mutate: func(t *testing.T) { writeTestFile(t, filepath.Join(root, "ci/test-domains.yaml"), "[") },
 			want:   "run", log: "selection unavailable",
-		},
-		"should run with invalid defaults": {
-			mutate: func(t *testing.T) { writeTestFile(t, filepath.Join(root, "ci/decision-defaults"), "go maybe") },
-			want:   "run", log: "decision-defaults",
-		},
-		"should run with missing defaults": {
-			mutate: func(t *testing.T) { require.NoError(t, os.Remove(filepath.Join(root, "ci/decision-defaults"))) },
-			want:   "run", log: "decision-defaults",
 		},
 		"should run with missing rules": {
 			mutate: func(t *testing.T) { require.NoError(t, os.Remove(filepath.Join(root, "ci/test-domains.yaml"))) },
@@ -140,7 +130,6 @@ func TestGHA(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			writeTestFile(t, filepath.Join(root, "ci/test-domains.yaml"), string(rules))
-			writeTestFile(t, filepath.Join(root, "ci/decision-defaults"), string(defaults))
 			writeEvent(t, root, base, head, !c.preview)
 			// Enforcement comes from the event snapshot, including label removal.
 			t.Setenv("CI_ENFORCE", "true")
@@ -171,7 +160,6 @@ func TestGHA(t *testing.T) {
 	}
 	t.Run("should print a preview without gating validation", func(t *testing.T) {
 		writeTestFile(t, filepath.Join(root, "ci/test-domains.yaml"), string(rules))
-		writeTestFile(t, filepath.Join(root, "ci/decision-defaults"), string(defaults))
 		writeEvent(t, root, base, head, false)
 		t.Setenv("CI_SELECT_ROOT", root)
 		t.Setenv("GITHUB_OUTPUT", filepath.Join(t.TempDir(), "output"))

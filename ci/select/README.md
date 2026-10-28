@@ -102,12 +102,10 @@ Git uses the event's base and head with
 participate, and NUL separation preserves unusual filenames. PR checkouts
 fetch full history; tests still use their existing checked-out revision.
 
-`ci/decision-defaults` independently declares an all-run fallback inventory.
-Validation requires exactly the policy inventory and only `run` decisions.
-Consumers run on unreadable diffs, missing refs, invalid rules or defaults,
-failed builds, missing or crashing executables, and unknown targets. Recovery
-also runs if the defaults themselves cannot be read. Logs record the cause;
-configuration validation still fails on malformed input.
+Consumers run on unreadable diffs, missing refs, invalid rules, failed
+builds, missing or crashing executables, and unknown targets. Error recovery
+runs independently of the normal `remaining` policy and requires no readable
+policy inventory. Configuration validation still fails on malformed input.
 
 The composite action builds before dependency preparation, PostgreSQL, image
 pulls, or Kind. A failed build cannot execute a stale binary. The shell gate

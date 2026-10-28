@@ -40,7 +40,6 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer) error
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	flags.SetOutput(diagnostic)
 	rules := flags.String("rules", "ci/test-domains.yaml", "YAML rules")
-	defaults := flags.String("defaults", "ci/decision-defaults", "All-run fallback inventory")
 	var filesPath string
 	if command == "resolve" {
 		flags.StringVar(&filesPath, "files-file", "", "Changed paths, one per line")
@@ -51,7 +50,7 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer) error
 	if flags.NArg() != 0 {
 		return errors.New("unexpected positional arguments")
 	}
-	m, err := loadConfig(*rules, *defaults)
+	m, err := loadMapping(*rules)
 	if err != nil {
 		return err
 	}
