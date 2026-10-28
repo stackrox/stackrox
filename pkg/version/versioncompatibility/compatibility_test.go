@@ -387,23 +387,12 @@ func TestCompatibleVersionsWhenMissingBumpData(t *testing.T) {
 }
 
 func TestDisplayName(t *testing.T) {
-	tests := map[string]struct {
-		c    Compatibility
-		want string
-	}{
-		"matched":             {Matched, "Matched"},
-		"compatible behind":   {CompatibleBehind, "Compatible (Behind)"},
-		"compatible ahead":    {CompatibleAhead, "Compatible (Ahead)"},
-		"incompatible behind": {IncompatibleBehind, "Incompatible (Behind)"},
-		"incompatible ahead":  {IncompatibleAhead, "Incompatible (Ahead)"},
-		"unknown":             {Unknown, "Unknown"},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.c.DisplayName())
-		})
-	}
+	assert.Equal(t, "Matched", Matched.DisplayName())
+	assert.Equal(t, "Compatible (Behind)", CompatibleBehind.DisplayName())
+	assert.Equal(t, "Compatible (Ahead)", CompatibleAhead.DisplayName())
+	assert.Equal(t, "Incompatible (Behind)", IncompatibleBehind.DisplayName())
+	assert.Equal(t, "Incompatible (Ahead)", IncompatibleAhead.DisplayName())
+	assert.Equal(t, "Unknown", Unknown.DisplayName())
 }
 
 func overrideTestBumps(t *testing.T) {
