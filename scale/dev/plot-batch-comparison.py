@@ -103,6 +103,10 @@ METRIC_SPECS = [
     ('process_indicators_count', 'metrics_process_indicators.txt',       'central-db', 'max', None),
     ('process_indicators_size',  'metrics_process_indicators_bytes.txt', 'central-db', 'max', 'mb'),
     ('events_received',    'metrics_rox_sensor_file_access_events_received_total.txt', 'sensor', 'events', None),
+    # Detector-stage file-access throughput. Unlike events_received (real/gRPC path
+    # only), this counts both the real and fake paths, so it is the throughput signal
+    # for the fake workload. See prometheus-query-file-activity.sh.
+    ('file_access_detector_received', 'metrics_file_access_detector_received.txt', 'sensor', 'rate', None),
     ('network_flows_received',      'metrics_network_flows_received.txt',      'sensor', 'rate', None),
     ('process_indicators_received', 'metrics_process_indicators_received.txt', 'sensor', 'rate', None),
 ]
@@ -156,6 +160,9 @@ STANDARD_PLOTS = [
     ('process_indicators_size',  'process_indicators_size_vs_rate.png',
      'Process Indicators Table Size vs File Activity Event Rate\n(maximum within {win})',
      'Maximum Table Size (MiB)'),
+    ('file_access_detector_received', 'file_access_detector_received_vs_rate.png',
+     'Sensor File-Access Detector Intake Rate vs File Activity Event Rate\n(averaged over {win})',
+     'File Accesses Into Detector (/sec)'),
     ('network_flows_received', 'network_flows_received_vs_rate.png',
      'Sensor Network Flows Received Rate vs File Activity Event Rate\n(averaged over {win})',
      'Network Flows Received (flows/sec)'),

@@ -143,6 +143,12 @@ plot_metric "${output_dir}/network_flows_received.png" \
 plot_metric "${output_dir}/process_indicators_received.png" \
     "Sensor Process Indicators Received (cumulative)" "Process Indicators" "sensor" "process_indicators_received"
 
+# File accesses entering the sensor detector (cumulative counter). Unlike the
+# file_access_events_received counter above (real/gRPC path only), this covers the
+# fake workload too, so it is the file-access throughput signal for fake runs.
+plot_metric "${output_dir}/file_access_detector_received.png" \
+    "Sensor File-Access Detector Intake (cumulative)" "File Accesses" "sensor" "file_access_detector_received"
+
 # Database table sizes. alerts and deployments are the file-activity-relevant
 # tables; process_indicators is the storage-side view of process-event volume.
 # Tables use the central-db baseline since they're part of the database.

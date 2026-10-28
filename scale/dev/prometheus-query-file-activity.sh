@@ -267,9 +267,17 @@ done
 #    note the capitalized label key and value, from metrics.Add.String()). This is
 #    the number of process indicators entering the detector pipeline.
 #    process_indicators table row count (captured above) is the storage-side companion.
+#  - file_access_detector_received: the file-access throughput signal that works for
+#    the FAKE workload. file_access_events_received_total (scraped above) is only
+#    incremented on the real gRPC ingest path (sensor/common/filesystem/pipeline
+#    run()); the fake workload publishes via pubsub and calls processFileActivity
+#    directly, so that counter stays empty. Both paths DO reach the detector
+#    (detector.ProcessFileAccess), so the detector file-access queue ADD count is the
+#    stage that captures fake throughput. Same shape as process_indicators_received.
 declare -A received_metric=(
   [network_flows_received]='sum(rox_sensor_total_network_flows_sensor_received_counter{namespace=\"stackrox\"})'
   [process_indicators_received]='sum(rox_sensor_detector_process_indicator_queue_operations_total{namespace=\"stackrox\",Operation=\"Add\"})'
+  [file_access_detector_received]='sum(rox_sensor_detector_file_access_queue_operations_total{namespace=\"stackrox\",Operation=\"Add\"})'
 )
 for out_name in "${!received_metric[@]}"; do
   result="$(get_time_series_for_metric "${received_metric[$out_name]}" "$from" "$to")" || true
