@@ -96,10 +96,10 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/openshift-online/ocm-sdk-go v0.1.519
-	github.com/openshift/api v0.0.0-20261026172859-085ebf481785
-	github.com/openshift/client-go v0.0.0-20261001003915-dcaad1dc7fe8
+	github.com/openshift/api v0.0.0-20261026215420-da0032bf0c5f
+	github.com/openshift/client-go v0.0.0-20261027103500-48133ed95dad
 	github.com/openshift/controller-runtime-common v0.0.0-20261026124434-bdfc411d93cd
-	github.com/openshift/library-go v0.0.0-20261001144932-192662696fc7
+	github.com/openshift/library-go v0.0.0-20261028054900-dbcad7febe41
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
 	github.com/operator-framework/helm-operator-plugins v0.0.0-00010101000000-000000000000
 	github.com/owenrumney/go-sarif/v3 v3.3.2
