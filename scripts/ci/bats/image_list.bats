@@ -59,13 +59,11 @@ function setup() {
 @test "get Konflux images for VM scanning test" {
   local tag
   tag="$(make --quiet --no-print-directory tag)-fast"
-  local operator_tag
-  operator_tag="$(BUILD_TAG="$tag" make -C operator --quiet --no-print-directory tag)"
   local image_list
   image_list="$(mktemp)"
-  # VM scanning always deploys via the operator, same as the real job
-  # (scripts/ci/jobs/ocp_vm_scanning_e2e_tests.py sets DEPLOY_STACKROX_VIA_OPERATOR=true).
-  USE_KONFLUX_IMAGES=true DEPLOY_STACKROX_VIA_OPERATOR=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="ocp-vm-scanning-tests-konflux" populate_stackrox_image_list "$image_list"
+  # VM scanning deploys via roxie (not the operator/OLM), so the operator-bundle
+  # and operator-index images are not required here.
+  USE_KONFLUX_IMAGES=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="ocp-vm-scanning-tests-konflux" populate_stackrox_image_list "$image_list"
   run cat "${image_list}"
   assert_success
   assert_output --partial "release-main ${tag}"
@@ -75,30 +73,6 @@ function setup() {
   assert_output --partial "release-scanner-v4 ${tag}"
   assert_output --partial "release-scanner-v4-db ${tag}"
   assert_output --partial "release-roxctl ${tag}"
-  assert_output --partial "release-operator ${operator_tag}"
-  assert_output --partial "release-operator-bundle v${operator_tag}"
-  # operator-index is always published under the plain (non "release-") name
-  # by Konflux too, see .tekton/operator-index-build.yaml.
-  assert_output --partial "stackrox-operator-index v${operator_tag}"
-}
-
-@test "get Konflux images for VM scanning test, tag without -fast suffix" {
-  # This tests actual release build logic, versus pre-release build testing.
-  # Konflux's operator-index build always forces a "-fast" suffix on the index
-  # tag, even for tags that otherwise wouldn't carry one (e.g. release tags),
-  # to avoid colliding with GHA-built index images of the same name. See the
-  # determine-index-tag task in .tekton/operator-index-build.yaml.
-  local tag
-  tag="$(make --quiet --no-print-directory tag)"
-  local operator_tag
-  operator_tag="$(BUILD_TAG="$tag" make -C operator --quiet --no-print-directory tag)"
-  local image_list
-  image_list="$(mktemp)"
-  USE_KONFLUX_IMAGES=true DEPLOY_STACKROX_VIA_OPERATOR=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="ocp-vm-scanning-tests-konflux" populate_stackrox_image_list "$image_list"
-  run cat "${image_list}"
-  assert_success
-  assert_output --partial "release-main ${tag}"
-  assert_output --partial "stackrox-operator-index v${operator_tag}-fast"
 }
 
 @test "get images for rcd test" {
