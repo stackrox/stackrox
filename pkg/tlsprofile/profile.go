@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 
+	configv1 "github.com/openshift/api/config/v1"
+	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,10 +17,12 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	minVersionOnce     sync.Once
-	cachedMinVersion   uint16
-	cipherSuitesOnce   sync.Once
-	cachedCipherSuites []uint16
+	minVersionOnce         sync.Once
+	cachedMinVersion       uint16
+	cipherSuitesOnce       sync.Once
+	cachedCipherSuites 	   []uint16
+	curvePreferencesOnce   sync.Once
+	cachedCurvePreferences []tls.CurveID
 )
 
 // MinVersion returns the minimum TLS version configured via ROX_TLS_MIN_VERSION.
@@ -70,6 +74,26 @@ func CipherSuites() []uint16 {
 		cachedCipherSuites = suites
 	})
 	return cachedCipherSuites
+}
+
+// CurvePreferences returns the TLS named groups configured via ROX_TLS_GROUPS,
+// for tls.Config.CurvePreferences. If the env var is unset, empty, or has no
+// valid group, nil is returned, leaving Go on its default group preferences.
+func CurvePreferences() []tls.CurveID {
+	curvePreferencesOnce.Do(func() {
+		envValue := strings.TrimSpace(env.TLSGroups.Setting())
+		if envValue == "" {
+			return
+		}
+		curves, err := parseGroups(envValue)
+		if err != nil {
+			log.Errorf("Invalid %s=%q: %v; falling back to default TLS groups",
+				env.TLSGroups.EnvVar(), envValue, err)
+			return
+		}
+		cachedCurvePreferences = curves
+	})
+	return cachedCurvePreferences
 }
 
 // Default TLS settings, used when the corresponding environment variables are not set.
@@ -142,4 +166,23 @@ func parseCipherSuites(s string) ([]uint16, error) {
 		return nil, errors.New("no valid cipher suites in input")
 	}
 	return suites, nil
+}
+
+func parseGroups(s string) ([]tls.CurveID, error) {
+	var groups []configv1.TLSGroup
+	for name := range strings.SplitSeq(s, ",") {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		groups = append(groups, configv1.TLSGroup(name))
+	}
+	curves, unrecognized := libgocrypto.TLSGroupsToCurveIDs(groups)
+	if len(unrecognized) > 0 {
+		log.Warnf("Ignoring TLS groups not supported by Go: %v", unrecognized)
+	}
+	if len(curves) == 0 {
+		return nil, errors.New("no valid TLS groups in input")
+	}
+	return curves, nil
 }
