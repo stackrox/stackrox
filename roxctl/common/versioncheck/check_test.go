@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/versionheader"
+	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,13 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 )
+
+const testBumpsYAML = `bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"
+`
 
 func TestCheckAndWarn(t *testing.T) {
 	cases := map[string]struct {
@@ -225,6 +233,59 @@ func TestGuidance(t *testing.T) {
 			} else {
 				require.NotEmpty(t, summary)
 				assert.Contains(t, summary, tt.contains)
+			}
+		})
+	}
+}
+
+func TestCheckCentralVersion(t *testing.T) {
+	testutils.SetMainVersion(t, "5.0.0-testing")
+	productstreams.OverrideBumpsForTesting(t, testBumpsYAML)
+
+	tests := map[string]struct {
+		centralVersion string
+		wantCompat     versioncompatibility.Compatibility
+		wantContains   []string
+	}{
+		"matched": {
+			centralVersion: "5.0.2",
+			wantCompat:     versioncompatibility.Matched,
+			wantContains:   []string{"matched with Central"},
+		},
+		"compatible ahead": {
+			centralVersion: "5.3.1",
+			wantCompat:     versioncompatibility.CompatibleAhead,
+			wantContains:   []string{"ahead of roxctl", "Use newer roxctl"},
+		},
+		"compatible behind": {
+			centralVersion: "4.10.1",
+			wantCompat:     versioncompatibility.CompatibleBehind,
+			wantContains:   []string{"behind roxctl", "Central upgrade"},
+		},
+		"incompatible ahead": {
+			centralVersion: "5.6.0",
+			wantCompat:     versioncompatibility.IncompatibleAhead,
+			wantContains:   []string{"ahead of roxctl", "Use newer roxctl"},
+		},
+		"incompatible behind": {
+			centralVersion: "4.5.2",
+			wantCompat:     versioncompatibility.IncompatibleBehind,
+			wantContains:   []string{"behind roxctl", "Central upgrade"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(tt *testing.T) {
+			res, err := CheckCentralVersion(tc.centralVersion)
+			require.NoError(tt, err)
+
+			assert.Equal(tt, tc.centralVersion, res.CentralVersion)
+			assert.Equal(tt, "5.0.0-testing", res.RoxctlVersion)
+			assert.Equal(tt, tc.wantCompat.String(), res.Compatibility)
+			assert.Equal(tt, tc.wantCompat.DisplayName(), res.DisplayName)
+			assert.NotEmpty(tt, res.CompatibleCentralVersions)
+			for _, s := range tc.wantContains {
+				assert.Contains(tt, res.Summary+res.Recommendation, s)
 			}
 		})
 	}

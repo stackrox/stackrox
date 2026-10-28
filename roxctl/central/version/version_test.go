@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/versioncheck"
 	"github.com/stretchr/testify/require"
@@ -41,72 +40,6 @@ type centralVersionTestSuite struct {
 
 func (c *centralVersionTestSuite) TearDownTest() {
 	versioncheck.UnsuppressVersionMismatchWarningForTesting(c.T())
-}
-
-func (c *centralVersionTestSuite) TestCompatibilityStates() {
-	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
-
-	tests := map[string]struct {
-		centralVersion string
-		wantCompat     versioncompatibility.Compatibility
-		wantDisplay    string
-		wantContains   []string
-	}{
-		"matched": {
-			centralVersion: "5.0.2",
-			wantCompat:     versioncompatibility.Matched,
-			wantDisplay:    "Matched",
-			wantContains:   []string{"matched with Central"},
-		},
-		"compatible ahead": {
-			centralVersion: "5.3.1",
-			wantCompat:     versioncompatibility.CompatibleAhead,
-			wantDisplay:    "Compatible (Ahead)",
-			wantContains:   []string{"ahead of roxctl", "Use newer roxctl"},
-		},
-		"compatible behind": {
-			centralVersion: "4.10.1",
-			wantCompat:     versioncompatibility.CompatibleBehind,
-			wantDisplay:    "Compatible (Behind)",
-			wantContains:   []string{"behind roxctl", "Central upgrade"},
-		},
-		"incompatible ahead": {
-			centralVersion: "5.6.0",
-			wantCompat:     versioncompatibility.IncompatibleAhead,
-			wantDisplay:    "Incompatible (Ahead)",
-			wantContains:   []string{"ahead of roxctl", "Use newer roxctl"},
-		},
-		"incompatible behind": {
-			centralVersion: "4.5.2",
-			wantCompat:     versioncompatibility.IncompatibleBehind,
-			wantDisplay:    "Incompatible (Behind)",
-			wantContains:   []string{"behind roxctl", "Central upgrade"},
-		},
-	}
-
-	for name, tt := range tests {
-		c.Run(name, func() {
-			cmd, stdout, _, interceptorOutput, cleanup := c.setupCommand(&mockMetadataServer{version: tt.centralVersion})
-			defer cleanup()
-
-			err := cmd.run(false)
-
-			c.Assert().NoError(err)
-			c.Assert().Empty(interceptorOutput.String(), "version check interceptor warning should be suppressed")
-
-			output := stdout.String()
-			c.Assert().Contains(output, "Central version:")
-			c.Assert().Contains(output, tt.centralVersion)
-			c.Assert().Contains(output, "roxctl version:")
-			c.Assert().Contains(output, "5.0.0")
-			c.Assert().Contains(output, "Compatible Central versions:")
-			c.Assert().Contains(output, "Compatibility:")
-			c.Assert().Contains(output, tt.wantDisplay)
-			for _, s := range tt.wantContains {
-				c.Assert().Contains(output, s)
-			}
-		})
-	}
 }
 
 func (c *centralVersionTestSuite) TestEmptyVersionReturnsAuthError() {
