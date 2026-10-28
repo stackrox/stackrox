@@ -10369,7 +10369,7 @@ func (m *ComplianceOperatorCheckResultV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DataFreshness |= ComplianceDataFreshness(b&0x7F) << shift
+				m.DataFreshness |= ComplianceOperatorCheckResultV2_DataFreshness(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -19030,7 +19030,7 @@ func (m *ComplianceOperatorCheckResultV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.DataFreshness |= ComplianceDataFreshness(b&0x7F) << shift
+				m.DataFreshness |= ComplianceOperatorCheckResultV2_DataFreshness(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

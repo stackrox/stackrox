@@ -181,61 +181,6 @@ func (RuleSeverity) EnumDescriptor() ([]byte, []int) {
 	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{2}
 }
 
-// ComplianceDataFreshness indicates whether a stored check result is current relative to its
-// scan configuration's schedule. It is computed by the freshness sweeper and persisted so it
-// can be filtered and sorted. It mirrors the read-side v2.ComplianceDataFreshness enum.
-type ComplianceDataFreshness int32
-
-const (
-	// Cannot evaluate: no schedule, unresolvable config, or not yet swept.
-	ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN ComplianceDataFreshness = 0
-	// Data reflects the most recent expected scan cycle.
-	ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_CURRENT ComplianceDataFreshness = 1
-	// Data predates the most recent expected scan cycle.
-	ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_STALE ComplianceDataFreshness = 2
-)
-
-// Enum value maps for ComplianceDataFreshness.
-var (
-	ComplianceDataFreshness_name = map[int32]string{
-		0: "COMPLIANCE_DATA_FRESHNESS_UNKNOWN",
-		1: "COMPLIANCE_DATA_FRESHNESS_CURRENT",
-		2: "COMPLIANCE_DATA_FRESHNESS_STALE",
-	}
-	ComplianceDataFreshness_value = map[string]int32{
-		"COMPLIANCE_DATA_FRESHNESS_UNKNOWN": 0,
-		"COMPLIANCE_DATA_FRESHNESS_CURRENT": 1,
-		"COMPLIANCE_DATA_FRESHNESS_STALE":   2,
-	}
-)
-
-func (x ComplianceDataFreshness) Enum() *ComplianceDataFreshness {
-	p := new(ComplianceDataFreshness)
-	*p = x
-	return p
-}
-
-func (x ComplianceDataFreshness) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ComplianceDataFreshness) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_compliance_operator_v2_proto_enumTypes[3].Descriptor()
-}
-
-func (ComplianceDataFreshness) Type() protoreflect.EnumType {
-	return &file_storage_compliance_operator_v2_proto_enumTypes[3]
-}
-
-func (x ComplianceDataFreshness) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ComplianceDataFreshness.Descriptor instead.
-func (ComplianceDataFreshness) EnumDescriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{3}
-}
-
 type ComplianceOperatorProfileV2_OperatorKind int32
 
 const (
@@ -269,11 +214,11 @@ func (x ComplianceOperatorProfileV2_OperatorKind) String() string {
 }
 
 func (ComplianceOperatorProfileV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_compliance_operator_v2_proto_enumTypes[4].Descriptor()
+	return file_storage_compliance_operator_v2_proto_enumTypes[3].Descriptor()
 }
 
 func (ComplianceOperatorProfileV2_OperatorKind) Type() protoreflect.EnumType {
-	return &file_storage_compliance_operator_v2_proto_enumTypes[4]
+	return &file_storage_compliance_operator_v2_proto_enumTypes[3]
 }
 
 func (x ComplianceOperatorProfileV2_OperatorKind) Number() protoreflect.EnumNumber {
@@ -318,11 +263,11 @@ func (x ComplianceOperatorRuleV2_OperatorKind) String() string {
 }
 
 func (ComplianceOperatorRuleV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_compliance_operator_v2_proto_enumTypes[5].Descriptor()
+	return file_storage_compliance_operator_v2_proto_enumTypes[4].Descriptor()
 }
 
 func (ComplianceOperatorRuleV2_OperatorKind) Type() protoreflect.EnumType {
-	return &file_storage_compliance_operator_v2_proto_enumTypes[5]
+	return &file_storage_compliance_operator_v2_proto_enumTypes[4]
 }
 
 func (x ComplianceOperatorRuleV2_OperatorKind) Number() protoreflect.EnumNumber {
@@ -382,11 +327,11 @@ func (x ComplianceOperatorCheckResultV2_CheckStatus) String() string {
 }
 
 func (ComplianceOperatorCheckResultV2_CheckStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_compliance_operator_v2_proto_enumTypes[6].Descriptor()
+	return file_storage_compliance_operator_v2_proto_enumTypes[5].Descriptor()
 }
 
 func (ComplianceOperatorCheckResultV2_CheckStatus) Type() protoreflect.EnumType {
-	return &file_storage_compliance_operator_v2_proto_enumTypes[6]
+	return &file_storage_compliance_operator_v2_proto_enumTypes[5]
 }
 
 func (x ComplianceOperatorCheckResultV2_CheckStatus) Number() protoreflect.EnumNumber {
@@ -396,6 +341,61 @@ func (x ComplianceOperatorCheckResultV2_CheckStatus) Number() protoreflect.EnumN
 // Deprecated: Use ComplianceOperatorCheckResultV2_CheckStatus.Descriptor instead.
 func (ComplianceOperatorCheckResultV2_CheckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{7, 0}
+}
+
+// DataFreshness indicates whether a stored check result is current relative to its scan
+// configuration's schedule. It is computed by the freshness sweeper and persisted so it can
+// be filtered and sorted. It mirrors the read-side v2.ComplianceCheckDataFreshness enum.
+type ComplianceOperatorCheckResultV2_DataFreshness int32
+
+const (
+	// Cannot evaluate: no schedule, unresolvable config, or not yet swept.
+	ComplianceOperatorCheckResultV2_UNKNOWN ComplianceOperatorCheckResultV2_DataFreshness = 0
+	// Data reflects the most recent expected scan cycle.
+	ComplianceOperatorCheckResultV2_CURRENT ComplianceOperatorCheckResultV2_DataFreshness = 1
+	// Data predates the most recent expected scan cycle.
+	ComplianceOperatorCheckResultV2_STALE ComplianceOperatorCheckResultV2_DataFreshness = 2
+)
+
+// Enum value maps for ComplianceOperatorCheckResultV2_DataFreshness.
+var (
+	ComplianceOperatorCheckResultV2_DataFreshness_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "CURRENT",
+		2: "STALE",
+	}
+	ComplianceOperatorCheckResultV2_DataFreshness_value = map[string]int32{
+		"UNKNOWN": 0,
+		"CURRENT": 1,
+		"STALE":   2,
+	}
+)
+
+func (x ComplianceOperatorCheckResultV2_DataFreshness) Enum() *ComplianceOperatorCheckResultV2_DataFreshness {
+	p := new(ComplianceOperatorCheckResultV2_DataFreshness)
+	*p = x
+	return p
+}
+
+func (x ComplianceOperatorCheckResultV2_DataFreshness) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ComplianceOperatorCheckResultV2_DataFreshness) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_compliance_operator_v2_proto_enumTypes[6].Descriptor()
+}
+
+func (ComplianceOperatorCheckResultV2_DataFreshness) Type() protoreflect.EnumType {
+	return &file_storage_compliance_operator_v2_proto_enumTypes[6]
+}
+
+func (x ComplianceOperatorCheckResultV2_DataFreshness) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ComplianceOperatorCheckResultV2_DataFreshness.Descriptor instead.
+func (ComplianceOperatorCheckResultV2_DataFreshness) EnumDescriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{7, 1}
 }
 
 type ComplianceOperatorReportStatus_RunState int32
@@ -1414,7 +1414,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	// last_started_time is the last time the Scan resource was triggered
 	LastStartedTime *timestamppb.Timestamp `protobuf:"bytes,20,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Check Last Started Time,hidden"` // @gotags: search:"Compliance Check Last Started Time,hidden"
 	// data_freshness is computed by the freshness sweeper. Not hidden so it is filterable and sortable.
-	DataFreshness ComplianceDataFreshness `protobuf:"varint,21,opt,name=data_freshness,json=dataFreshness,proto3,enum=storage.ComplianceDataFreshness" json:"data_freshness,omitempty" search:"Compliance Data Freshness"` // @gotags: search:"Compliance Data Freshness"
+	DataFreshness ComplianceOperatorCheckResultV2_DataFreshness `protobuf:"varint,21,opt,name=data_freshness,json=dataFreshness,proto3,enum=storage.ComplianceOperatorCheckResultV2_DataFreshness" json:"data_freshness,omitempty" search:"Compliance Check Data Freshness"` // @gotags: search:"Compliance Check Data Freshness"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1589,11 +1589,11 @@ func (x *ComplianceOperatorCheckResultV2) GetLastStartedTime() *timestamppb.Time
 	return nil
 }
 
-func (x *ComplianceOperatorCheckResultV2) GetDataFreshness() ComplianceDataFreshness {
+func (x *ComplianceOperatorCheckResultV2) GetDataFreshness() ComplianceOperatorCheckResultV2_DataFreshness {
 	if x != nil {
 		return x.DataFreshness
 	}
-	return ComplianceDataFreshness_COMPLIANCE_DATA_FRESHNESS_UNKNOWN
+	return ComplianceOperatorCheckResultV2_UNKNOWN
 }
 
 // Next Tag: 4
@@ -3209,7 +3209,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\bprofiles\x18\b \x03(\v2..storage.ComplianceOperatorBenchmarkV2.ProfileR\bprofiles\x1aU\n" +
 	"\aProfile\x12!\n" +
 	"\fprofile_name\x18\x01 \x01(\tR\vprofileName\x12'\n" +
-	"\x0fprofile_version\x18\x02 \x01(\tR\x0eprofileVersion\"\xc0\t\n" +
+	"\x0fprofile_version\x18\x02 \x01(\tR\x0eprofileVersion\"\x8c\n" +
+	"\n" +
 	"\x1fComplianceOperatorCheckResultV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bcheck_id\x18\x02 \x01(\tR\acheckId\x12\x1d\n" +
@@ -3235,8 +3236,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\trationale\x18\x11 \x01(\tR\trationale\x12\x1e\n" +
 	"\vscan_ref_id\x18\x12 \x01(\tR\tscanRefId\x12\x1e\n" +
 	"\vrule_ref_id\x18\x13 \x01(\tR\truleRefId\x12F\n" +
-	"\x11last_started_time\x18\x14 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastStartedTime\x12G\n" +
-	"\x0edata_freshness\x18\x15 \x01(\x0e2 .storage.ComplianceDataFreshnessR\rdataFreshness\x1a9\n" +
+	"\x11last_started_time\x18\x14 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastStartedTime\x12]\n" +
+	"\x0edata_freshness\x18\x15 \x01(\x0e26.storage.ComplianceOperatorCheckResultV2.DataFreshnessR\rdataFreshness\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -3252,7 +3253,11 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\a\"V\n" +
+	"\fINCONSISTENT\x10\a\"4\n" +
+	"\rDataFreshness\x12\v\n" +
+	"\aUNKNOWN\x10\x00\x12\v\n" +
+	"\aCURRENT\x10\x01\x12\t\n" +
+	"\x05STALE\x10\x02\"V\n" +
 	"\n" +
 	"ScanStatus\x12\x14\n" +
 	"\x05phase\x18\x01 \x01(\tR\x05phase\x12\x16\n" +
@@ -3404,11 +3409,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x12INFO_RULE_SEVERITY\x10\x02\x12\x15\n" +
 	"\x11LOW_RULE_SEVERITY\x10\x03\x12\x18\n" +
 	"\x14MEDIUM_RULE_SEVERITY\x10\x04\x12\x16\n" +
-	"\x12HIGH_RULE_SEVERITY\x10\x05*\x8c\x01\n" +
-	"\x17ComplianceDataFreshness\x12%\n" +
-	"!COMPLIANCE_DATA_FRESHNESS_UNKNOWN\x10\x00\x12%\n" +
-	"!COMPLIANCE_DATA_FRESHNESS_CURRENT\x10\x01\x12#\n" +
-	"\x1fCOMPLIANCE_DATA_FRESHNESS_STALE\x10\x02B.\n" +
+	"\x12HIGH_RULE_SEVERITY\x10\x05B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -3426,13 +3427,13 @@ func file_storage_compliance_operator_v2_proto_rawDescGZIP() []byte {
 var file_storage_compliance_operator_v2_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
 var file_storage_compliance_operator_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_storage_compliance_operator_v2_proto_goTypes = []any{
-	(NodeRole)(0),                // 0: storage.NodeRole
-	(ScanType)(0),                // 1: storage.ScanType
-	(RuleSeverity)(0),            // 2: storage.RuleSeverity
-	(ComplianceDataFreshness)(0), // 3: storage.ComplianceDataFreshness
-	(ComplianceOperatorProfileV2_OperatorKind)(0),             // 4: storage.ComplianceOperatorProfileV2.OperatorKind
-	(ComplianceOperatorRuleV2_OperatorKind)(0),                // 5: storage.ComplianceOperatorRuleV2.OperatorKind
-	(ComplianceOperatorCheckResultV2_CheckStatus)(0),          // 6: storage.ComplianceOperatorCheckResultV2.CheckStatus
+	(NodeRole)(0),     // 0: storage.NodeRole
+	(ScanType)(0),     // 1: storage.ScanType
+	(RuleSeverity)(0), // 2: storage.RuleSeverity
+	(ComplianceOperatorProfileV2_OperatorKind)(0),             // 3: storage.ComplianceOperatorProfileV2.OperatorKind
+	(ComplianceOperatorRuleV2_OperatorKind)(0),                // 4: storage.ComplianceOperatorRuleV2.OperatorKind
+	(ComplianceOperatorCheckResultV2_CheckStatus)(0),          // 5: storage.ComplianceOperatorCheckResultV2.CheckStatus
+	(ComplianceOperatorCheckResultV2_DataFreshness)(0),        // 6: storage.ComplianceOperatorCheckResultV2.DataFreshness
 	(ComplianceOperatorReportStatus_RunState)(0),              // 7: storage.ComplianceOperatorReportStatus.RunState
 	(ComplianceOperatorReportStatus_NotificationMethod)(0),    // 8: storage.ComplianceOperatorReportStatus.NotificationMethod
 	(ComplianceOperatorReportStatus_RunMethod)(0),             // 9: storage.ComplianceOperatorReportStatus.RunMethod
@@ -3485,13 +3486,13 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	28, // 0: storage.ComplianceOperatorProfileV2.labels:type_name -> storage.ComplianceOperatorProfileV2.LabelsEntry
 	29, // 1: storage.ComplianceOperatorProfileV2.annotations:type_name -> storage.ComplianceOperatorProfileV2.AnnotationsEntry
 	30, // 2: storage.ComplianceOperatorProfileV2.rules:type_name -> storage.ComplianceOperatorProfileV2.Rule
-	4,  // 3: storage.ComplianceOperatorProfileV2.operator_kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
+	3,  // 3: storage.ComplianceOperatorProfileV2.operator_kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
 	2,  // 4: storage.ComplianceOperatorRuleV2.severity:type_name -> storage.RuleSeverity
 	31, // 5: storage.ComplianceOperatorRuleV2.labels:type_name -> storage.ComplianceOperatorRuleV2.LabelsEntry
 	32, // 6: storage.ComplianceOperatorRuleV2.annotations:type_name -> storage.ComplianceOperatorRuleV2.AnnotationsEntry
 	33, // 7: storage.ComplianceOperatorRuleV2.fixes:type_name -> storage.ComplianceOperatorRuleV2.Fix
 	13, // 8: storage.ComplianceOperatorRuleV2.controls:type_name -> storage.RuleControls
-	5,  // 9: storage.ComplianceOperatorRuleV2.operator_kind:type_name -> storage.ComplianceOperatorRuleV2.OperatorKind
+	4,  // 9: storage.ComplianceOperatorRuleV2.operator_kind:type_name -> storage.ComplianceOperatorRuleV2.OperatorKind
 	34, // 10: storage.ComplianceOperatorScanConfigurationV2.labels:type_name -> storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
 	35, // 11: storage.ComplianceOperatorScanConfigurationV2.annotations:type_name -> storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
 	36, // 12: storage.ComplianceOperatorScanConfigurationV2.profiles:type_name -> storage.ComplianceOperatorScanConfigurationV2.ProfileName
@@ -3505,13 +3506,13 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	53, // 20: storage.ComplianceOperatorScanConfigurationV2.notifiers:type_name -> storage.NotifierConfiguration
 	51, // 21: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
 	39, // 22: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
-	6,  // 23: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
+	5,  // 23: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
 	2,  // 24: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
 	40, // 25: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
 	41, // 26: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
 	51, // 27: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
 	51, // 28: storage.ComplianceOperatorCheckResultV2.last_started_time:type_name -> google.protobuf.Timestamp
-	3,  // 29: storage.ComplianceOperatorCheckResultV2.data_freshness:type_name -> storage.ComplianceDataFreshness
+	6,  // 29: storage.ComplianceOperatorCheckResultV2.data_freshness:type_name -> storage.ComplianceOperatorCheckResultV2.DataFreshness
 	10, // 30: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
 	42, // 31: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
 	43, // 32: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
@@ -3540,7 +3541,7 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	51, // 55: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
 	9,  // 56: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
 	8,  // 57: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
-	4,  // 58: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
+	3,  // 58: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
 	51, // 59: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
 	51, // 60: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
 	48, // 61: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
