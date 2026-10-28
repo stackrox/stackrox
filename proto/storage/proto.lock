@@ -14056,6 +14056,14 @@
             ]
           },
           {
+            "name": "SkipContainerType",
+            "enum_fields": [
+              {
+                "name": "SKIP_INIT"
+              }
+            ]
+          },
+          {
             "name": "Exclusion.WorkloadKind",
             "enum_fields": [
               {
@@ -14374,7 +14382,7 @@
               {
                 "id": 1,
                 "name": "skip_container_types",
-                "type": "ContainerType",
+                "type": "SkipContainerType",
                 "is_repeated": true
               }
             ]
@@ -14477,9 +14485,6 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"
