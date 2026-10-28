@@ -363,8 +363,8 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 1. Search go.mod: `grep pgx go.mod` → Found: `github.com/jackc/pgx/v5 v5.4.0`
 2. Check usage: `grep -r "jackc/pgx" --include="*.go" --exclude-dir=vendor --exclude-dir=test`
 3. Use gopls: `mcp__gopls__go_search` with query "pgx"
-4. Analyze files: Found in `central/database/postgres/store.go`
-5. Check functions: `grep -r "QueryRow\|Query\|Exec" central/database/postgres/`
+4. Analyze files: Found in `pkg/postgres/conn.go`
+5. Check functions: `grep -r "QueryRow\|Query\|Exec" pkg/postgres/`
 
 **Result:**
 ```
@@ -383,8 +383,8 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 - We use: pgx.Query(), pgx.Exec(), pgx.QueryRow() - VULNERABLE
 
 **Locations:**
-- central/database/postgres/store.go:234 - uses QueryRow()
-- central/database/postgres/migration.go:89 - uses Exec()
+- pkg/postgres/conn.go (Conn.QueryRow) - uses QueryRow()
+- pkg/postgres/tx.go (Tx.Exec) - uses Exec()
 
 **Team Assignment:**
 @stackrox/core-workflows (from CODEOWNERS: `pkg/postgres/**/*` and `migrator/**/*`)
@@ -491,67 +491,7 @@ N/A - Test-only transitive dependency (low priority)
 If fix needed: @stackrox/core-workflows (owns central/externalbackups tests)
 ```
 
-### Example 5: Replace directive (StackRox fork)
-
-**User:** "Analyze github.com/hashicorp/consul/api dependency for CVE-2024-22222"
-
-**Actions:**
-1. Search go.mod: `grep consul go.mod` → Found with replace directive
-2. Check replace: `grep "consul.*=>" go.mod` → `github.com/hashicorp/consul/api => github.com/stackrox/consul v1.15.3-0.20240215`
-3. Check versions: Upstream at v1.18.0, fork at v1.15.3 (3 minor versions behind)
-4. Find usage: `grep -r "consul/api" --include="*.go" --exclude="*_test.go" --exclude-dir=vendor --exclude-dir=test` → 12 files in `sensor/kubernetes/`
-5. Run `go mod why -m github.com/hashicorp/consul/api`
-6. Check StackRox fork repo for reason: Security patches backported from v1.18.0
-
-**Result:**
-```
-## CVE-2024-22222 Analysis: Consul API
-
-**Dependency:** github.com/hashicorp/consul/api v1.18.0 (replaced)
-**Status:** USED IN PRODUCTION - FORK WITH SECURITY PATCHES
-
-**Usage Summary:**
-- Direct dependency: YES (with StackRox fork)
-- Production files: 12 files in sensor/kubernetes/
-- Test files: 8 files
-- Primary components: Sensor (service discovery)
-
-**Why Needed (go mod why):**
-```
-github.com/stackrox/rox/sensor/kubernetes/localscanner
-    imports github.com/hashicorp/consul/api
-```
-
-**Replace Directive:**
-- Original: github.com/hashicorp/consul/api v1.18.0
-- Fork/Replace: github.com/stackrox/consul v1.15.3-0.20240215134248
-- Version Gap: Fork at v1.15.3, upstream at v1.18.0 (3 minor versions behind)
-- Reason: CVE-2023-XXXXX security patches backported to v1.15.3 (check stackrox/consul repo commits)
-
-**CVE Analysis:**
-- CVE affects: v1.15.0-v1.17.2 in ConsulClient.Query()
-- StackRox fork status: Patch applied in fork commit abc123 (2024-02-15)
-- **ALREADY PATCHED** - StackRox fork includes fix despite version gap
-
-**Specific Functionality Used:**
-- sensor/kubernetes/localscanner/discovery.go:45 - ConsulClient.Health()
-- sensor/kubernetes/localscanner/watcher.go:89 - ConsulClient.Query()
-- CVE affects Query() - **WE USE THIS FUNCTION** but fork is patched
-
-**Locations:**
-- sensor/kubernetes/localscanner/discovery.go:45
-- sensor/kubernetes/localscanner/watcher.go:89
-- sensor/kubernetes/localscanner/config.go:23
-
-**Team Assignment:**
-@stackrox/sensor-team (from CODEOWNERS: `sensor/**/*`)
-
-**Recommendation:**
-No immediate action needed - fork already contains security patches.
-Consider syncing fork to v1.18.0+ to reduce version gap and maintenance burden.
-```
-
-### Example 6: Wrapper pattern (infrastructure library)
+### Example 5: Wrapper pattern (infrastructure library)
 
 **User:** "Who needs zap logger?"
 

@@ -16,7 +16,7 @@ to retrieve the most up-to-date documentation for roxie.
 
 ## Installation
 
-See @deploy/README.md, specifically the section "Installation" for installation instructions.
+See @./README.md, specifically the section "Installation" for installation instructions.
 The section also briefly describes the roxie backend supported by the `deploy/deploy.sh` shell
 script and enabled with `USE_ROXIE_DEPLOY=true`. You should be aware of this feature, but don't
 prominently suggest its usage. It is much better to install roxie on your system or --
@@ -24,7 +24,7 @@ alternatively -- use `scripts/roxie.sh`, a wrapper that downloads roxie automati
 
 ## Usage
 
-See @deploy/README.md, specifically the section "Usage" for documentation on how to use roxie.
+See @./README.md, specifically the section "Usage" for documentation on how to use roxie.
 The README's description of the config file schema might not be entirely up-to-date, for the most recent
 version, check out roxie's main branch at https://github.com/stackrox/roxie, in particular
 use WebFetch on https://raw.githubusercontent.com/stackrox/roxie/main/internal/deployer/config.go.
@@ -36,8 +36,8 @@ commit](https://github.com/stackrox/roxie/blob/189e745c91c7a6f98c0bcfcca3e7c780c
 
 The Central and the SecuredCluster custom resource definitions (corresponding to the roxie config paths
 `central.spec` and `securedCluster.spec`) can be found at
-- @operator/config/crd/bases/platform.stackrox.io_centrals.yaml and
-- @operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml, respectively.
+- @../operator/config/crd/bases/platform.stackrox.io_centrals.yaml and
+- @../operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml, respectively.
 
 ## Non-interactive mode (important for agents)
 
