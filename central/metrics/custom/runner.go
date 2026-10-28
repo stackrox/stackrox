@@ -2,7 +2,6 @@ package custom
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -43,12 +42,14 @@ type trackerRunner []struct {
 	getGroupConfig func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group
 }
 
-type permittedGlobalGatherer struct {
+// prefixFilteringGatherer exposes only metric families whose names match a
+// caller's permitted prefixes without modifying the shared registry.
+type prefixFilteringGatherer struct {
 	registry prometheus.Gatherer
 	prefixes []string
 }
 
-func (g permittedGlobalGatherer) Gather() ([]*dto.MetricFamily, error) {
+func (g prefixFilteringGatherer) Gather() ([]*dto.MetricFamily, error) {
 	if len(g.prefixes) == 0 {
 		return nil, nil
 	}
@@ -200,16 +201,8 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if tr == nil {
 		return
 	}
-	var userID string
 	reqCtx := req.Context()
-	var permittedGlobalPrefixes []string
-	for _, tracker := range tr {
-		if tracker.IsGlobal() && tracker.CanView(reqCtx) {
-			permittedGlobalPrefixes = append(permittedGlobalPrefixes,
-				fmt.Sprintf("%s_%s_%s_", pkgmetrics.PrometheusNamespace,
-					pkgmetrics.CentralSubsystem, tracker.GetPrefix()))
-		}
-	}
+	var userID string
 	if id := authn.IdentityFromContextOrNil(reqCtx); id != nil {
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
@@ -234,16 +227,31 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	globalGatherer := prefixFilteringGatherer{globalRegistry,
+		tr.getPermittedGlobalPrefixes(reqCtx)}
+
 	userRegistry.Lock()
 	defer userRegistry.Unlock()
 	globalRegistry.Lock()
 	defer globalRegistry.Unlock()
 
 	promhttp.HandlerFor(
-		prometheus.Gatherers{userRegistry, permittedGlobalGatherer{globalRegistry, permittedGlobalPrefixes}},
+		prometheus.Gatherers{userRegistry, globalGatherer},
 		promhttp.HandlerOpts{}).ServeHTTP(w, req)
 
 	go phonehome()
+}
+
+func (tr trackerRunner) getPermittedGlobalPrefixes(ctx context.Context) []string {
+	const commonPrefix = pkgmetrics.PrometheusNamespace + "_" + string(pkgmetrics.CentralSubsystem) + "_"
+
+	var prefixes []string
+	for _, tracker := range tr {
+		if tracker.IsGlobal() && tracker.CanView(ctx) {
+			prefixes = append(prefixes, commonPrefix+tracker.GetPrefix()+"_")
+		}
+	}
+	return prefixes
 }
 
 func phonehome() {
