@@ -37,6 +37,10 @@ num_sensors="$(jq -r '.numSensors' "$config")"
 run_time="$(jq -r '.runTime' "$config")"
 num_deployments="$(jq -r '.numDeployments // 1' "$config")"
 results_base_dir="$(jq -r '.resultsBaseDir' "$config")"
+# Namespace of the secured-cluster components (sensor/collector/fact). The fake
+# workload deploys its sensor into stackrox1; berserker uses stackrox. Defaults to
+# stackrox. Only affects the Prometheus scrape (central stays in stackrox).
+sensor_namespace="$(jq -r '.sensorNamespace // "stackrox"' "$config")"
 
 # Validate the rate is declared in the config and resolve the template substitution
 # value for it. The cell is identified by the actual event rate (.rates[].rate); the
@@ -137,7 +141,7 @@ echo "K6 load testing completed in $((end_time - start_time)) seconds."
 sleep 10m
 
 start_time=$(date +%s)
-pt::query_prometheus "${results_dir}/metrics"
+pt::query_prometheus "${results_dir}/metrics" "${sensor_namespace}"
 end_time=$(date +%s)
 echo "Prometheus query completed in $((end_time - start_time)) seconds."
 

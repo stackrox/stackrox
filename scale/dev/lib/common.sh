@@ -102,12 +102,16 @@ pt::run_k6() {
 }
 
 # Port-forward the monitoring service and scrape Prometheus metrics into metrics_dir.
+# sensor_ns is the namespace of the secured-cluster components (sensor/collector/
+# fact); defaults to stackrox. Central/central-db/table metrics are always queried in
+# the central namespace (stackrox) regardless.
 pt::query_prometheus() {
   local metrics_dir=$1
+  local sensor_ns=${2:-stackrox}
   kubectl -n stackrox port-forward service/monitoring 48443:8443 > /dev/null 2>&1 &
   until nc -z 127.0.0.1 48443; do
     sleep 1
     echo "Waiting for port forward 48443"
   done
-  "${PT_DEV_DIR}/prometheus-query-file-activity.sh" "${metrics_dir}"
+  "${PT_DEV_DIR}/prometheus-query-file-activity.sh" "${metrics_dir}" "${sensor_ns}"
 }

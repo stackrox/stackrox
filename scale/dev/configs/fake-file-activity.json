@@ -7,6 +7,7 @@
   "runTime": "10m",
   "numDeployments": 1,
   "resultsBaseDir": "perf",
+  "sensorNamespace": "stackrox",
   "rates": [
     { "value": 10,  "rate": 100 },
     { "value": 50,  "rate": 500 },

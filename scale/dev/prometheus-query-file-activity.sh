@@ -83,6 +83,21 @@ get_time_series_for_metric() {
 }
 
 output_file_prefix=$1
+# Namespace of the secured-cluster components (sensor, collector, fact, berserker).
+# Central/central-db and the Postgres table-size metrics always live in the central
+# namespace (stackrox); only the sensor-side components can be elsewhere -- e.g. the
+# fake workload deploys its sensor into stackrox1. Defaults to stackrox so berserker
+# runs (sensor in stackrox) are unaffected; the fake configs override it.
+sensor_ns="${2:-stackrox}"
+
+# Namespace to query for a given component: central/central-db are in the central
+# namespace; everything else is a secured-cluster component in sensor_ns.
+ns_for_container() {
+  case "$1" in
+    central|central-db) echo "stackrox" ;;
+    *) echo "$sensor_ns" ;;
+  esac
+}
 
 # CPU and memory metrics for Central, Central-DB, and Sensor.
 # Two memory series per container:
@@ -109,9 +124,9 @@ for container in central central-db; do
 done
 
 container=sensor
-cpu_metric='rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"'$container'\"}[1m])'
-mem_metric='container_memory_usage_bytes{namespace=\"stackrox\", container=\"'$container'\"}'
-ws_metric='container_memory_working_set_bytes{namespace=\"stackrox\", container=\"'$container'\"}'
+cpu_metric='rate(container_cpu_usage_seconds_total{namespace=\"'$sensor_ns'\", container=\"'$container'\"}[1m])'
+mem_metric='container_memory_usage_bytes{namespace=\"'$sensor_ns'\", container=\"'$container'\"}'
+ws_metric='container_memory_working_set_bytes{namespace=\"'$sensor_ns'\", container=\"'$container'\"}'
 cpu_result="$(get_time_series_for_metric "$cpu_metric" "$from" "$to")"
 mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
 ws_result="$(get_time_series_for_metric "$ws_metric" "$from" "$to")"
@@ -126,12 +141,12 @@ echo "$ws_result" > "${output_file_prefix}_${container}_mem_workingset.txt"
 # automatically. Metrics are summed across pods to report the cluster-wide total
 # per container (collector is spread over every node, like the berserker
 # workload); sum() is a no-op for the single-pod components above.
-if kubectl -n stackrox get daemonset collector > /dev/null 2>&1; then
-  collector_containers="$(kubectl -n stackrox get daemonset collector -o jsonpath='{.spec.template.spec.containers[*].name}')"
+if kubectl -n "${sensor_ns}" get daemonset collector > /dev/null 2>&1; then
+  collector_containers="$(kubectl -n "${sensor_ns}" get daemonset collector -o jsonpath='{.spec.template.spec.containers[*].name}')"
   for container in $collector_containers; do
-    cpu_metric='sum(rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"'$container'\"}[1m]))'
-    mem_metric='sum(container_memory_usage_bytes{namespace=\"stackrox\", container=\"'$container'\"})'
-    ws_metric='sum(container_memory_working_set_bytes{namespace=\"stackrox\", container=\"'$container'\"})'
+    cpu_metric='sum(rate(container_cpu_usage_seconds_total{namespace=\"'$sensor_ns'\", container=\"'$container'\"}[1m]))'
+    mem_metric='sum(container_memory_usage_bytes{namespace=\"'$sensor_ns'\", container=\"'$container'\"})'
+    ws_metric='sum(container_memory_working_set_bytes{namespace=\"'$sensor_ns'\", container=\"'$container'\"})'
     cpu_result="$(get_time_series_for_metric "$cpu_metric" "$from" "$to")"
     mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
     ws_result="$(get_time_series_for_metric "$ws_metric" "$from" "$to")"
@@ -147,7 +162,7 @@ if kubectl -n stackrox get daemonset collector > /dev/null 2>&1; then
     fi
   done
 else
-  echo "Collector DaemonSet not found in namespace stackrox; skipping collector metrics."
+  echo "Collector DaemonSet not found in namespace ${sensor_ns}; skipping collector metrics."
 fi
 
 # Live Go heap (go_memstats_heap_inuse_bytes) for the Go components. This is
@@ -162,7 +177,8 @@ fi
 # also avoids double-counting against the separate kubernetes-pods job (which does
 # carry a pod label). Guarded write: skip if absent.
 for container in central sensor; do
-  heap_metric='go_memstats_heap_inuse_bytes{namespace=\"stackrox\",job=\"'$container'\"}'
+  ns="$(ns_for_container "$container")"
+  heap_metric='go_memstats_heap_inuse_bytes{namespace=\"'$ns'\",job=\"'$container'\"}'
   heap_result="$(get_time_series_for_metric "$heap_metric" "$from" "$to")" || true
   if [[ -n "${heap_result//[[:space:]]/}" ]]; then
     echo "$heap_result" > "${output_file_prefix}_${container}_heap_inuse.txt"
@@ -180,8 +196,9 @@ done
 # that isn't scraped in a given cluster just yields no file (OOMs then still
 # surface indirectly as restarts).
 for container in central central-db sensor collector fact berserker; do
-  restarts_metric='sum(kube_pod_container_status_restarts_total{namespace=\"stackrox\",container=\"'$container'\"})'
-  oom_metric='sum(container_oom_events_total{namespace=\"stackrox\",container=\"'$container'\"})'
+  ns="$(ns_for_container "$container")"
+  restarts_metric='sum(kube_pod_container_status_restarts_total{namespace=\"'$ns'\",container=\"'$container'\"})'
+  oom_metric='sum(container_oom_events_total{namespace=\"'$ns'\",container=\"'$container'\"})'
   restarts_result="$(get_time_series_for_metric "$restarts_metric" "$from" "$to")" || true
   oom_result="$(get_time_series_for_metric "$oom_metric" "$from" "$to")" || true
   if [[ -n "${restarts_result//[[:space:]]/}" ]]; then
@@ -222,7 +239,7 @@ done
 #   climbing means the detector can't keep up with the incoming file-access rate --
 #   see DetectorFileAccessDroppedCount in sensor/common/detector/metrics/metrics.go).
 for metric_name in rox_sensor_file_access_events_received_total rox_sensor_file_activity_buffer_drops rox_sensor_file_activity_buffer_size rox_sensor_detector_file_access_queue_dropped_total; do
-  metric="${metric_name}"'{namespace=\"stackrox\"}'
+  metric="${metric_name}"'{namespace=\"'$sensor_ns'\"}'
   result="$(get_time_series_for_metric "$metric" "$from" "$to")" || true
   if [[ -n "$result" ]]; then
     echo "$result" > "${output_file_prefix}_${metric_name}.txt"
@@ -244,9 +261,9 @@ done
 # on port 9001), so these require fact.exposeMonitoring=true; guarded writes skip a
 # stage that returns nothing (metric absent / monitoring not exposed).
 declare -A fact_drop_metric=(
-  [fact_bpf_dropped]='sum(stackrox_fact_bpf_events_total{namespace=\"stackrox\",label=\"Dropped\"})'
-  [fact_rate_limiter_dropped]='sum(stackrox_fact_rate_limiter_events_total{namespace=\"stackrox\",label=\"Dropped\"})'
-  [fact_grpc_dropped]='sum(stackrox_fact_output_grpc_events_total{namespace=\"stackrox\",label=\"Dropped\"})'
+  [fact_bpf_dropped]='sum(stackrox_fact_bpf_events_total{namespace=\"'$sensor_ns'\",label=\"Dropped\"})'
+  [fact_rate_limiter_dropped]='sum(stackrox_fact_rate_limiter_events_total{namespace=\"'$sensor_ns'\",label=\"Dropped\"})'
+  [fact_grpc_dropped]='sum(stackrox_fact_output_grpc_events_total{namespace=\"'$sensor_ns'\",label=\"Dropped\"})'
 )
 for out_name in "${!fact_drop_metric[@]}"; do
   result="$(get_time_series_for_metric "${fact_drop_metric[$out_name]}" "$from" "$to")" || true
@@ -275,9 +292,9 @@ done
 #    (detector.ProcessFileAccess), so the detector file-access queue ADD count is the
 #    stage that captures fake throughput. Same shape as process_indicators_received.
 declare -A received_metric=(
-  [network_flows_received]='sum(rox_sensor_total_network_flows_sensor_received_counter{namespace=\"stackrox\"})'
-  [process_indicators_received]='sum(rox_sensor_detector_process_indicator_queue_operations_total{namespace=\"stackrox\",Operation=\"Add\"})'
-  [file_access_detector_received]='sum(rox_sensor_detector_file_access_queue_operations_total{namespace=\"stackrox\",Operation=\"Add\"})'
+  [network_flows_received]='sum(rox_sensor_total_network_flows_sensor_received_counter{namespace=\"'$sensor_ns'\"})'
+  [process_indicators_received]='sum(rox_sensor_detector_process_indicator_queue_operations_total{namespace=\"'$sensor_ns'\",Operation=\"Add\"})'
+  [file_access_detector_received]='sum(rox_sensor_detector_file_access_queue_operations_total{namespace=\"'$sensor_ns'\",Operation=\"Add\"})'
 )
 for out_name in "${!received_metric[@]}"; do
   result="$(get_time_series_for_metric "${received_metric[$out_name]}" "$from" "$to")" || true
