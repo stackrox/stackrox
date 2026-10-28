@@ -53,7 +53,7 @@ func TestCheckAndWarn(t *testing.T) {
 			centralVersion: "4.15.0",
 			expectWarning:  "Use newer roxctl version",
 		},
-		"invalid central version": {
+		"invalid central version - no warning": {
 			localVersion:   "4.8.0",
 			centralVersion: "invalid",
 		},
