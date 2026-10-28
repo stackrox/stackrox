@@ -284,7 +284,7 @@ func (h *Handler) servePolicyRequest(writer http.ResponseWriter, request *http.R
 		http.Error(writer, "Central is not reachable", http.StatusServiceUnavailable)
 		return
 	}
-	if isMetricsPath(request) && !h.metricsEnabled && !env.CentralProxyEnabled.BooleanSetting() {
+	if isMetricsPath(request) && !h.metricsEnabled {
 		*result = requestResultValidationError
 		http.Error(writer, "secured-cluster metrics proxy unavailable", http.StatusForbidden)
 		return

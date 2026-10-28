@@ -184,6 +184,12 @@ func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
 	req.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{leaf}}
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.False(t, forwarded)
+
+	h.metricsEnabled = true
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, forwarded)
 	assert.Equal(t, "mtls:"+leaf.Subject.CommonName, tokenClient.lastRequest.GetRequester())
@@ -273,6 +279,12 @@ func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
 	req.Header.Set("Authorization", "Bearer kube-token")
 	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.False(t, forwarded)
+
+	h.metricsEnabled = true
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, forwarded)
