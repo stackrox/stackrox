@@ -211,7 +211,7 @@ func (c *centralVersionTestSuite) createGRPCMockService(t *testing.T, server *mo
 
 	return conn, &interceptorOutput, func() {
 		srv.Stop()
-		// conn is already closed by centralVersionCommand.fetchAndClassify via
+		// conn is already closed by centralVersionCommand.fetchAndCheck via
 		// defer conn.Close() so the Close call below is expected to return "already closed" errors.
 		utils.IgnoreError(conn.Close)
 		require.NoError(t, listener.Close())

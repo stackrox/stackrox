@@ -51,7 +51,7 @@ func makeCentralVersionCommand(cliEnvironment environment.Environment, cbr *cobr
 }
 
 func (cmd *centralVersionCommand) run(useJSON bool) error {
-	result, err := cmd.fetchAndClassify()
+	result, err := cmd.fetchAndCheck()
 	if err != nil {
 		cmd.env.Logger().ErrfLn("%v", err)
 		return err
@@ -68,7 +68,7 @@ func (cmd *centralVersionCommand) run(useJSON bool) error {
 	return nil
 }
 
-func (cmd *centralVersionCommand) fetchAndClassify() (*versioncheck.CheckResult, error) {
+func (cmd *centralVersionCommand) fetchAndCheck() (*versioncheck.CheckResult, error) {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return nil, errors.Wrap(err, "establishing gRPC connection to Central")
