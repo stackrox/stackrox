@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type decision struct {
@@ -20,29 +22,35 @@ func resolve(files []string, m mapping) decision {
 		fmt.Fprintf(&log, "changed path: %q\n", path)
 	}
 	if len(files) == 0 {
-		log.WriteString("empty diff: no file rule matches\n")
+		log.WriteString("empty diff: no safe-path coverage\n")
 	}
-	for _, r := range m.Rules {
-		if r.When == "remaining" {
-			for _, job := range m.Jobs {
-				if actions[job] == "" {
-					actions[job] = "run"
-					fmt.Fprintf(&log, "%s: run by %q\n", job, r.Name)
+	for _, job := range m.Jobs {
+		covered := len(files) > 0
+		reasons := set.NewStringSet()
+		for _, path := range files {
+			pathCovered := false
+			for _, r := range m.Rules {
+				if r.When == "safe-paths" && slices.Contains(r.Skip, job) &&
+					slices.ContainsFunc(r.patterns, func(pattern *regexp.Regexp) bool { return pattern.MatchString(path) }) {
+					pathCovered = true
+					reasons.Add(r.Name)
 				}
 			}
-			continue
+			covered = covered && pathCovered
 		}
-		if len(files) == 0 || slices.ContainsFunc(files, func(path string) bool {
-			return !slices.ContainsFunc(r.patterns, func(pattern *regexp.Regexp) bool {
-				return pattern.MatchString(path)
-			})
-		}) {
+		if covered {
+			actions[job] = "skip"
+			fmt.Fprintf(&log, "%s: skip by %q (safe rules cover every changed path)\n", job, slices.Sorted(maps.Keys(reasons)))
+		}
+	}
+	for _, r := range m.Rules {
+		if r.When != "remaining" {
 			continue
 		}
 		for _, job := range m.Jobs {
-			if slices.Contains(r.Skip, "*") || slices.Contains(r.Skip, job) {
-				actions[job] = "skip"
-				fmt.Fprintf(&log, "%s: skip by %q (every changed path matches)\n", job, r.Name)
+			if actions[job] == "" {
+				actions[job] = "run"
+				fmt.Fprintf(&log, "%s: run by %q\n", job, r.Name)
 			}
 		}
 	}

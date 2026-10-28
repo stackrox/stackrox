@@ -2,12 +2,12 @@ version: 1
 jobs: [go, go-postgres, go-bench, sensor-integration-tests]
 rules:
   - name: frontend-and-docs-only
-    when: every-file-matches
+    when: safe-paths
     paths: ['^ui/', '^docs/', '^[^/]+\.md$']
-    skip: ['*']
+    skip: [go, go-postgres, go-bench, sensor-integration-tests]
 
   - name: central-only-domains
-    when: every-file-matches
+    when: safe-paths
     paths:
       - '^central/(sac|search|auth|authprovider|apitoken|user|group|role|rbac|jwt|serviceidentities)/'
       - '^central/(postgres|globaldb|globalindex|graphdb|dackbox|blob|views)/'
@@ -19,19 +19,19 @@ rules:
     skip: [sensor-integration-tests]
 
   - name: sensor-only-domains
-    when: every-file-matches
+    when: safe-paths
     paths:
       - '^sensor/(admission-control|upgrader|debugger|testutils|tests)/'
       - '^sensor/kubernetes/(fake|client|enforcer)/'
     skip: [go-postgres, go-bench]
 
   - name: scanner-only
-    when: every-file-matches
+    when: safe-paths
     paths: ['^scanner/']
     skip: [go-postgres, go-bench, sensor-integration-tests]
 
   - name: operator-only
-    when: every-file-matches
+    when: safe-paths
     # operator/api is imported by PostgreSQL and Sensor tests. New roots
     # require review before joining this allowlist.
     paths:

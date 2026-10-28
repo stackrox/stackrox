@@ -39,29 +39,42 @@ check requires a separate repository ruleset change.
 
 ## Policy
 
-`ci/test-domains.yaml` lists the inventory and five file rules followed by
-`remaining`. Each file rule requires a nonempty diff in which **every path**
-matches at least one of that rule's rooted Go regular expressions. Matched
-rules combine skips; `remaining` runs every target that has no skip.
+`ci/test-domains.yaml` lists the inventory and five `safe-paths` rules
+followed by `remaining`. For each target, a nonempty diff is safe to skip
+only when **every changed path** matches at least one rooted Go regular
+expression in a rule explicitly listing that target in `skip`. Different
+paths can be covered by different rules. Overlapping rules combine coverage,
+independently of rule order. The explanation names all matching rules that
+justify a skip. Only after collecting coverage does the final `remaining`
+rule run every enrolled target still undecided.
 
 | Changed paths | Jobs skipped |
 | --- | --- |
 | `ui/`, `docs/`, and root Markdown, in any combination | All four |
-| Listed Central domains only | Sensor integration |
+| Listed Central domains, optionally with root Markdown | Sensor integration |
 | Listed Sensor domains only | PostgreSQL tests and benchmarks |
-| `scanner/` only | PostgreSQL tests, benchmarks, Sensor integration |
-| Listed non-API Operator paths only | PostgreSQL tests, benchmarks, Sensor integration |
+| `scanner/` and listed non-API Operator paths, alone or combined | PostgreSQL tests, benchmarks, Sensor integration |
 
-Mixed domains, shared packages, generated files, protobufs, build scripts,
-and workflow changes run all four. A Central change plus `README.md` also
-runs all four. Markdown inside a backend package is not a docs exemption.
-An empty diff runs everything through `remaining`.
+Uncovered shared packages, generated files, protobufs, build scripts, and
+workflow changes run all four, including when mixed with covered paths.
+A Central change plus a listed Sensor change also runs all four because no
+target has coverage for both. An empty diff runs everything through
+`remaining`.
 
-The schema accepts only file-rule skips and a final `remaining` rule with
-`run: ['*']`. Unknown fields, invalid scalar types, nulls, duplicate names,
-unknown targets, invalid regexes, and malformed catch-alls fail validation.
-There are no dependency rules, label-based selection rules, suite filters,
-run/skip conflict resolution, or separate run-all overrides.
+The schema accepts only `safe-paths` skips with explicit target names and
+a final `when: remaining` rule with `run: ['*']`. Path-rule wildcard skips
+are invalid: enrolling a target grants no existing skip permission. The
+final wildcard deliberately covers undecided targets. Unknown fields,
+invalid scalar types, nulls, duplicate names, unknown targets, invalid
+regexes, and malformed catch-alls fail validation. There are no dependency
+rules, label-based policy rules, suite filters, positive path-based run
+rules, or run/skip conflict resolution.
+
+The long-term goal is no unit-test execution for Markdown-only changes;
+a lightweight planner may still run. This policy covers root Markdown and
+the docs tree. Markdown inside a backend package is not a docs exemption.
+Broader Markdown coverage needs a separate policy review of fixture inputs.
+The workflow has no workflow-level path filter.
 
 ### Boundary evidence
 
@@ -90,7 +103,9 @@ Sensor tests use `tests/complianceoperator/crds`; other inspected references
 use shared `pkg/` or `generated/` files. These paths run all four. No
 additional counterexample was found. This evidence describes the current
 dependency graph: review new imports and external file inputs when changing
-these boundaries.
+these boundaries. There is no automated dependency audit; new imports or
+external inputs can invalidate a boundary without these path tests detecting
+it. Dependency discovery and periodic auditing are deferred.
 
 Sensor integration uses fake Central/scan messages and the fixed test image
 references in `sensor/tests/images-to-prefetch.txt`.
