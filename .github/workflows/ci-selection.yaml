@@ -1,4 +1,5 @@
-name: CI selection
+# The ACS prefix keeps selection near the top of alphabetically sorted PR checks.
+name: ACS CI selection
 
 on:
   workflow_call:

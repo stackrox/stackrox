@@ -34,6 +34,7 @@ env:
 
 jobs:
   ci-selection:
+    name: ACS CI selection
     if: >-
       github.event_name != 'pull_request' ||
       (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||

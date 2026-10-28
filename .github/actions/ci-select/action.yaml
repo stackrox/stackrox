@@ -1,4 +1,4 @@
-name: Plan CI selection
+name: ACS CI selection
 description: Build the selector and report or apply the PR decisions once per workflow run
 outputs:
   decisions:
