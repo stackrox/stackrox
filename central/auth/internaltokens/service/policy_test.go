@@ -187,14 +187,35 @@ func TestEnforce(t *testing.T) {
 			clusterID:      fixtureconsts.Cluster1,
 			expectedScopes: centralproxy.MetricsHTTPScopes,
 		},
-		"metrics permission set can request explicit read route": {
+		"metrics permission set cannot request another route": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
 				ClusterScopes:     metricsScope,
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 				Lifetime:          durationpb.New(30 * time.Minute),
 			},
-			clusterID: fixtureconsts.Cluster1,
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics permission set cannot request another method": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds:  []string{centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     metricsScope,
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"POST"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"metrics permission set cannot be combined with generic set": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds:  []string{"custom-read-only-set", centralproxy.MetricsPermissionSetID},
+				ClusterScopes:     metricsScope,
+				HttpRequestScopes: metricsHTTPScopes,
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
 		},
 		"metrics permission set ignores client permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{

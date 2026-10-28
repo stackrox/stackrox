@@ -7,8 +7,11 @@ import (
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 const (
@@ -55,7 +58,7 @@ func (rm *roleManager) createSensorRole(
 		Clusters:    scopes,
 		Permissions: make(map[storage.Access][]string),
 	}
-	permissions := make(map[string]storage.Access)
+	grantedPermissions := make(map[string]storage.Access)
 	for _, permissionSetID := range permissionSetIDs {
 		permissionSet, found, err := rm.roleStore.GetPermissionSet(ctx, permissionSetID)
 		if err != nil {
@@ -65,12 +68,19 @@ func (rm *roleManager) createSensorRole(
 			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetID)
 		}
 		for resource, access := range permissionSet.GetResourceToAccess() {
-			if current, found := permissions[resource]; !found || access > current {
-				permissions[resource] = access
+			// Metrics tokens are confined to GET /metrics; other sets must not grant global reads.
+			if access != storage.Access_NO_ACCESS && permissionSetID != centralproxy.MetricsPermissionSetID {
+				metadata, known := resources.MetadataForResource(permissions.Resource(resource))
+				if !known || metadata.GetScope() == permissions.GlobalScope {
+					return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q grants unscoped resource %q", permissionSetID, resource)
+				}
+			}
+			if current, found := grantedPermissions[resource]; !found || access > current {
+				grantedPermissions[resource] = access
 			}
 		}
 	}
-	for resource, access := range permissions {
+	for resource, access := range grantedPermissions {
 		role.Permissions[access] = append(role.Permissions[access], resource)
 	}
 	for _, resources := range role.Permissions {

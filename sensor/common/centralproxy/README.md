@@ -72,11 +72,14 @@ earlier list form must be changed to the map form before upgrading Sensor.
 Sensor authenticates bearer clients via Kubernetes TokenReview and keeps the
 existing namespace SubjectAccessReview. Each policy entry's permission set and
 HTTP scopes are sent to Central; Central checks that the permission set has no
-write access and requires at least one HTTP method before signing the requested
-scopes. A request naming only the built-in console or metrics permission set can
-omit scopes; Central then signs that set's built-in HTTP profile. Generic sets
-must specify HTTP scopes. Older Sensors that send only resource permissions do
-not need HTTP scopes. Central enforces signed scopes on HTTP requests. The signed
+write access and that non-metrics permission sets grant only cluster- or
+namespace-scoped resources. The metrics permission set can include global
+resources, but its token is restricted to `GET /metrics` and cannot be combined
+with other permission sets. At least one HTTP method is required. A request
+naming only the built-in console or metrics permission set can omit scopes;
+Central then signs that set's built-in HTTP profile. Generic sets must specify
+HTTP scopes. Older Sensors that send only resource permissions do not need HTTP
+scopes. Central enforces signed scopes on HTTP requests. The signed
 `requester` identity is for audit only: a stolen bearer token is reusable until
 expiry and is **not** proof-of-possession bound to the original client. Sensor
 replaces the incoming Authorization header and never sends a Kubernetes token
@@ -94,3 +97,7 @@ service account. Enable `sensor.centralProxy.enabled` in Helm or
 `spec.sensor.centralProxyEnabled` in the Operator to serve custom-only clients
 without either built-in integration; both default off. Additional clients need
 their own ingress and client setup; this option does not create a ServiceMonitor.
+The general proxy switch does not enable `/metrics`: that endpoint still requires
+the separate secured-cluster metrics opt-in. On installations already running
+the proxy for the console or metrics integration, administrators can configure
+additional clients without enabling the general proxy switch.

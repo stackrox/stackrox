@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -139,6 +140,9 @@ func (p *tokenPolicy) enforce(
 		return nil, nil, errox.InvalidArgs.CausedBy(err)
 	}
 	if len(req.GetPermissionSetIds()) > 0 {
+		if slices.Contains(req.GetPermissionSetIds(), centralproxy.MetricsPermissionSetID) && len(req.GetPermissionSetIds()) != 1 {
+			return nil, nil, errox.InvalidArgs.New("metrics permission set cannot be combined with other permission sets")
+		}
 		for _, permissionSetID := range req.GetPermissionSetIds() {
 			switch permissionSetID {
 			case centralproxy.MetricsPermissionSetID:
@@ -167,6 +171,11 @@ func (p *tokenPolicy) enforce(
 				scopes = centralproxy.ConsoleHTTPScopes
 			case centralproxy.MetricsPermissionSetID:
 				scopes = centralproxy.MetricsHTTPScopes
+			}
+		}
+		if req.GetPermissionSetIds()[0] == centralproxy.MetricsPermissionSetID {
+			if len(scopes) != 1 || !slices.Equal(scopes["/metrics"], centralproxy.MetricsHTTPScopes["/metrics"]) {
+				return nil, nil, errox.InvalidArgs.New("metrics permission set tokens may only access GET /metrics")
 			}
 		}
 		hasMethod := false

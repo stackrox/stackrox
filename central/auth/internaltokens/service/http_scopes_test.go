@@ -46,15 +46,15 @@ func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 			permissionSet: centralproxy.MetricsPermissionSetID,
 			expected:      centralproxy.MetricsHTTPScopes,
 		},
-		"metrics accepts explicit non-profile read route": {
+		"metrics rejects non-profile read route": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
-			expected:      tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
+			invalid:       true,
 		},
-		"metrics accepts explicit POST route": {
+		"metrics rejects POST route": {
 			permissionSet: centralproxy.MetricsPermissionSetID,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"POST"}}},
-			expected:      tokens.HTTPRequestScopes{"/metrics": {"POST"}},
+			invalid:       true,
 		},
 		"duplicate path": {
 			permissionSet: centralproxy.ConsoleProxyPermissionSetID,

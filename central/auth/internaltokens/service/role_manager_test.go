@@ -84,7 +84,7 @@ func TestCreateRoleFromConsolePermissionSetUsesStoredPermissions(t *testing.T) {
 				"Image":      storage.Access_READ_ACCESS,
 				"Access":     storage.Access_READ_ACCESS,
 			},
-			expected: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Access", "Deployment", "Image"}},
+			denied: true,
 		},
 		"write permission": {
 			permissions: map[string]storage.Access{
@@ -253,15 +253,24 @@ func TestCreateRoleFromGenericPermissionSet(t *testing.T) {
 		expected    map[storage.Access][]string
 		invalid     bool
 	}{
-		"read and no access to arbitrary resources": {
+		"read scoped resources and deny global resources": {
 			permissions: map[string]storage.Access{
-				"Image": storage.Access_READ_ACCESS, "Administration": storage.Access_NO_ACCESS,
+				"Image": storage.Access_READ_ACCESS, "Node": storage.Access_READ_ACCESS,
+				"Administration": storage.Access_NO_ACCESS,
 			},
 			expected: map[storage.Access][]string{
-				storage.Access_READ_ACCESS: {"Image"}, storage.Access_NO_ACCESS: {"Administration"},
+				storage.Access_READ_ACCESS: {"Image", "Node"}, storage.Access_NO_ACCESS: {"Administration"},
 			},
 		},
 		"empty set": {expected: map[storage.Access][]string{}},
+		"global read access": {
+			permissions: map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+			invalid:     true,
+		},
+		"unknown resource": {
+			permissions: map[string]storage.Access{"UnknownResource": storage.Access_READ_ACCESS},
+			invalid:     true,
+		},
 		"write access": {
 			permissions: map[string]storage.Access{"Image": storage.Access_READ_ACCESS, "Deployment": storage.Access_READ_WRITE_ACCESS},
 			invalid:     true,
