@@ -67,7 +67,7 @@ wait_for_rollback_rejection() {
         printf '%s\n' "$pods" >"$artifacts/pods.json"
         # A ready Central at any point is a failed negative test, not a retry.
         if jq -e 'any(.items[].status.conditions[]?; .type == "Ready" and .status == "True")' <<<"$pods" >/dev/null; then
-            echo "Central unexpectedly became ready on N-4 ($tag)" >&2
+            echo "Central unexpectedly became ready on unsupported release $tag" >&2
             return 1
         fi
         pod="$(jq -r '.items[0].metadata.name // empty' <<<"$pods")"
@@ -81,7 +81,7 @@ wait_for_rollback_rejection() {
         fi
         sleep 5
     done
-    echo "No proven compatibility rejection for N-4 ($tag); see $artifacts" >&2
+    echo "No proven compatibility rejection for unsupported release $tag; see $artifacts" >&2
     return 1
 }
 

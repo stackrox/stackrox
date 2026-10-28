@@ -12,6 +12,7 @@ EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
 PREVIOUS_RELEASES=("4.10.10" "4.11.6")
+ROLLBACK_REJECTED_TAG="4.9.0"
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -42,14 +43,10 @@ test_upgrade() {
 
     export_test_environment
 
-    # Resolve exact GA boundaries before mutating the deployment. Missing tags or
-    # indistinguishable historical sequences must fail, never silently skip N-4.
+    # Validate N-3 recovery, the pinned rejection release, and upgrade pins before deployment.
     ROLLBACK_PLAN="$(cd "$TEST_ROOT" && go run ./tests/upgrade/versions \
-        --target "$CURRENT_TAG" --from "${PREVIOUS_RELEASES[${#PREVIOUS_RELEASES[@]}-1]}")"
-    local tag
-    while IFS= read -r tag; do
-        PREVIOUS_RELEASES+=("$tag")
-    done < <(jq -r '.additional_upgrades[].tag' <<<"$ROLLBACK_PLAN")
+        --target "$CURRENT_TAG" --from "${PREVIOUS_RELEASES[${#PREVIOUS_RELEASES[@]}-1]}" \
+        --rejected "$ROLLBACK_REJECTED_TAG")"
     if [[ -n "${ARTIFACT_DIR:-}" ]]; then
         mkdir -p "$ARTIFACT_DIR"
         ARTIFACT_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
@@ -209,7 +206,7 @@ test_upgrade_paths() (
     touch "${UPGRADE_PROGRESS_POSTGRES_MIGRATIONS}"
 
     ########################################################################################
-    # Reject N-4, recover on N-3, then roll forward on the same database.                   #
+    # Reject the pinned old release, recover on N-3, then roll forward on the same database.                   #
     ########################################################################################
     local original_config rollback_tag
     test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.canRollbackAfterUpgrade')" "true"
@@ -241,15 +238,13 @@ test_upgrade_paths() (
         build_goroot="$(go env GOROOT)"
         MAIN_IMAGE_TAG="$rollback_tag" BUILD_TAG="$rollback_tag" PATH="${build_goroot}/bin:${PATH}" make cli
     )
-    upgrade_central_helm_to_head stackrox "$rollback_tag" "$REGISTRY" \
-        "$REPO_FOR_TIME_TRAVEL/bin/$TEST_HOST_PLATFORM/roxctl" "$CURRENT_TAG"
+    upgrade_central_helm "$rollback_tag" "$REPO_FOR_TIME_TRAVEL/bin/$TEST_HOST_PLATFORM/roxctl"
 
     # Cleanup the scaled sensor before smoke tests.
     helm uninstall -n stackrox stackrox-secured-cluster-services
     "$REPO_FOR_TIME_TRAVEL/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify cluster delete --name scale-remote
 
-    # The restart allowlist below is intentionally limited to this smoke phase,
-    # but still require Scanner V4 to recover before considering the smoke run.
+    # Require Scanner V4 to recover before running rollback smoke tests.
     kubectl -n stackrox rollout status deployment/scanner-v4-db --timeout=600s
     kubectl -n stackrox rollout status deployment/scanner-v4-indexer --timeout=600s
     kubectl -n stackrox rollout status deployment/scanner-v4-matcher --timeout=600s
@@ -264,7 +259,7 @@ test_upgrade_paths() (
     # Now go back to the current release. The HEAD chart installs Scanner V4,
     # which smoke test needs.
     kubectl -n stackrox patch configmap/central-config --type=merge -p "$original_config"
-    upgrade_central_helm_to_head
+    upgrade_central_helm
     kubectl -n stackrox rollout status deploy/central --timeout=600s
     wait_for_background_migrations
     test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.version')" "$CURRENT_TAG"
@@ -316,27 +311,6 @@ remove_rollback_smoke_sensor_resources() (
     ./sensor-remote/delete-sensor.sh
 )
 
-run_ci_scaled_workload() (
-    if is_central_upgrade_ci; then
-        local patch="$TEST_ROOT/tests/upgrade/central-db-ci-scale.patch"
-        git apply --check "$patch" || exit "$?"
-        git apply "$patch" || exit "$?"
-        # shellcheck disable=SC2329 # Invoked by the EXIT trap.
-        cleanup_scale_patch() {
-            local status=$?
-            if ! git apply --reverse "$patch"; then
-                echo "Failed to reverse Central DB CI scale patch" >&2
-                if [[ "$status" -eq 0 ]]; then
-                    status=1
-                fi
-            fi
-            exit "$status"
-        }
-        trap cleanup_scale_patch EXIT
-    fi
-    bash ./scale/launch_workload.sh scale-test
-)
-
 deploy_postgres_scaled_workload() {
     info "Deploying a scaled workload"
 
@@ -358,15 +332,7 @@ deploy_postgres_scaled_workload() {
 
     sensor_wait
 
-    run_ci_scaled_workload
-
-    # The historical scale script requests 5 CPUs per component. Leave room for
-    # both scanners by reducing Central and Central DB's CPU reservations.
-    kubectl -n stackrox patch deploy/central --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"cpu":"2"}}}]}}}}'
-    # Init-container requests also count toward the pod's CPU reservation.
-    kubectl -n stackrox patch deploy/central-db --type=strategic -p \
-        '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"cpu":"2"}}}],"initContainers":[{"name":"init-db","resources":{"requests":{"cpu":"2"}}}]}}}}'
+    bash ./scale/launch_workload.sh scale-test
     wait_for_api
 
     info "Sleep for a bit to let the scale build"

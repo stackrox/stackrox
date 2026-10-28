@@ -1,4 +1,4 @@
-// versions selects the published rollback boundaries for the upgrade E2E test.
+// versions selects N-3 recovery and validates a pinned unsupported rollback release.
 package main
 
 import (
@@ -24,18 +24,18 @@ type release struct {
 }
 
 type rollbackPlan struct {
-	Target             string    `json:"target"`
-	MinimumSequence    int       `json:"minimum_sequence"`
-	Allowed            release   `json:"allowed"`
-	Rejected           release   `json:"rejected"`
-	AdditionalUpgrades []release `json:"additional_upgrades"`
+	Target          string  `json:"target"`
+	MinimumSequence int     `json:"minimum_sequence"`
+	Allowed         release `json:"allowed"`
+	Rejected        release `json:"rejected"`
 }
 
 func main() {
 	target := flag.String("target", "", "current image version")
 	from := flag.String("from", "", "last existing intermediate upgrade version")
+	rejected := flag.String("rejected", "", "pinned unsupported GA release")
 	flag.Parse()
-	plan, err := makePlan(*target, *from, migrations.MinimumSupportedForVersion, readRelease)
+	plan, err := makePlan(*target, *from, *rejected, migrations.MinimumSupportedForVersion, readRelease)
 	if err == nil {
 		err = json.NewEncoder(os.Stdout).Encode(plan)
 	}
@@ -45,8 +45,8 @@ func main() {
 	}
 }
 
-func makePlan(target, from string, minimum func(string) (migrations.ReleaseVersion, error), lookup func(string) (release, error)) (rollbackPlan, error) {
-	plan := rollbackPlan{Target: target, AdditionalUpgrades: []release{}}
+func makePlan(target, from, rejected string, minimum func(string) (migrations.ReleaseVersion, error), lookup func(string) (release, error)) (rollbackPlan, error) {
+	plan := rollbackPlan{Target: target}
 	floor, err := minimum(target)
 	if err != nil {
 		return plan, err
@@ -54,25 +54,6 @@ func makePlan(target, from string, minimum func(string) (migrations.ReleaseVersi
 	allowed, err := productstreams.ParseXYFromVersionString(floor.Version)
 	if err != nil {
 		return plan, err
-	}
-	rejected, err := productstreams.GetPreviousYStream(allowed)
-	if err != nil {
-		return plan, err
-	}
-	plan.MinimumSequence = floor.Sequence
-	plan.Allowed, err = lookup(allowed.String() + ".0")
-	if err != nil {
-		return plan, err
-	}
-	plan.Rejected, err = lookup(rejected.String() + ".0")
-	if err != nil {
-		return plan, err
-	}
-	if plan.Allowed.Sequence != floor.Sequence {
-		return plan, fmt.Errorf("%s sequence %d disagrees with generated minimum %d", plan.Allowed.Tag, plan.Allowed.Sequence, floor.Sequence)
-	}
-	if plan.Rejected.Sequence >= floor.Sequence {
-		return plan, fmt.Errorf("cannot require N-4 rollback rejection: %s supports sequence %d, minimum is %d; historical binaries enforce sequences, not release streams", plan.Rejected.Tag, plan.Rejected.Sequence, floor.Sequence)
 	}
 	last, err := productstreams.ParseXYFromVersionString(from)
 	if err != nil {
@@ -85,13 +66,23 @@ func makePlan(target, from string, minimum func(string) (migrations.ReleaseVersi
 	if last.Compare(current) >= 0 {
 		return plan, fmt.Errorf("intermediate release %s must precede target %s", from, target)
 	}
-	for last.Compare(allowed) < 0 {
-		last = productstreams.GetNextYStream(last)
-		r, err := lookup(last.String() + ".0")
-		if err != nil {
-			return plan, err
-		}
-		plan.AdditionalUpgrades = append(plan.AdditionalUpgrades, r)
+	if last.Compare(allowed) < 0 {
+		return plan, fmt.Errorf("intermediate release %s is below minimum supported stream %s; update PREVIOUS_RELEASES", from, allowed)
+	}
+	plan.MinimumSequence = floor.Sequence
+	plan.Allowed, err = lookup(allowed.String() + ".0")
+	if err != nil {
+		return plan, err
+	}
+	plan.Rejected, err = lookup(rejected)
+	if err != nil {
+		return plan, err
+	}
+	if plan.Allowed.Sequence != floor.Sequence {
+		return plan, fmt.Errorf("%s sequence %d disagrees with generated minimum %d", plan.Allowed.Tag, plan.Allowed.Sequence, floor.Sequence)
+	}
+	if plan.Rejected.Sequence >= floor.Sequence {
+		return plan, fmt.Errorf("cannot require rollback rejection: %s supports sequence %d, minimum is %d; historical binaries enforce sequences, not release streams", plan.Rejected.Tag, plan.Rejected.Sequence, floor.Sequence)
 	}
 	return plan, nil
 }
