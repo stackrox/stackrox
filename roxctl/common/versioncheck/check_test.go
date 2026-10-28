@@ -77,14 +77,13 @@ func TestCheckAndWarn(t *testing.T) {
 }
 
 func TestCheckAndWarnPanicsOnInvalidLocalVersion(t *testing.T) {
+	var buf bytes.Buffer
 	testutils.SetMainVersion(t, "invalid")
 	if buildinfo.ReleaseBuild {
-		var buf bytes.Buffer
 		checkAndWarn("4.10.1", &buf)
 		assert.Empty(t, buf.String())
 	} else {
 		assert.Panics(t, func() {
-			var buf bytes.Buffer
 			checkAndWarn("4.10.1", &buf)
 		})
 	}
