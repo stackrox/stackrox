@@ -60,6 +60,12 @@ jobs:
       SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: rhel-vex,stackrox-rhel-csaf,manual,epss,nvd
       SCANNER_V4_VULN_READINESS_TIMEOUT: "7200"
       VM_IMAGES: "quay.io/rhacs-eng/vm-images:rhel8-dnf-primed-latest,quay.io/rhacs-eng/vm-images:rhel9-dnf-primed-latest,quay.io/rhacs-eng/vm-images:rhel10-dnf-primed-latest"
+      # Leave the guest VMs up when the Go suite tears down so the post-test step
+      # can collect roxagent guest journals (collect_vm_guest_logs); without this
+      # TearDownSuite deletes them first and there is nothing left to collect. The
+      # post-test's collect_vm_guest_logs deletes the VM namespaces afterward, and
+      # the whole cluster is torn down at job end, so nothing leaks.
+      VM_SCAN_SKIP_CLEANUP: "true"
     timeout-minutes: 240
     steps:
 
