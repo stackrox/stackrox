@@ -196,7 +196,7 @@ linters:
         path-except: ^(pkg|central)/
       - linters:
           - prealloc
-        path: (_test\.go|testutils.go)
+        path: (_test\.go|test_?utils)
       - linters:
           - forbidigo
           - wrapcheck
