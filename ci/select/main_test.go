@@ -12,7 +12,7 @@ import (
 func TestRun(t *testing.T) {
 	t.Parallel()
 	files := writeTestFile(t, filepath.Join(t.TempDir(), "files"), "ui/app.tsx\nREADME.md\n")
-	base := []string{"--rules", "../test-domains.yaml"}
+	base := []string{"--rules", "../test-selection-rules.yaml"}
 	for name, args := range map[string][]string{
 		"should validate local configuration": append([]string{"validate"}, base...),
 		"should resolve local changed paths":  append(append([]string{"resolve"}, base...), "--files-file", files),

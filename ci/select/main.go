@@ -39,7 +39,7 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer) error
 	}
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	flags.SetOutput(diagnostic)
-	rules := flags.String("rules", "ci/test-domains.yaml", "YAML rules")
+	rules := flags.String("rules", "ci/test-selection-rules.yaml", "YAML rules")
 	var filesPath string
 	if command == "resolve" {
 		flags.StringVar(&filesPath, "files-file", "", "Changed paths, one per line")

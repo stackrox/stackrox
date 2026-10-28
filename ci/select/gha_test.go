@@ -85,7 +85,7 @@ func TestGHA(t *testing.T) {
 	testGit(t, root, "add", "--", "docs/guide.md")
 	testGit(t, root, "commit", "-m", "Docs fixture")
 	head := testGit(t, root, "rev-parse", "HEAD")
-	rules, err := os.ReadFile("../test-domains.yaml")
+	rules, err := os.ReadFile("../test-selection-rules.yaml")
 	require.NoError(t, err)
 	cases := map[string]struct {
 		mutate  func(t *testing.T)
@@ -104,11 +104,11 @@ func TestGHA(t *testing.T) {
 			mutate: func(t *testing.T) { writeEvent(t, root, head, head, true) }, want: "run", log: "empty diff",
 		},
 		"should run with malformed rules": {
-			mutate: func(t *testing.T) { writeTestFile(t, filepath.Join(root, "ci/test-domains.yaml"), "[") },
+			mutate: func(t *testing.T) { writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), "[") },
 			want:   "run", log: "selection unavailable",
 		},
 		"should run with missing rules": {
-			mutate: func(t *testing.T) { require.NoError(t, os.Remove(filepath.Join(root, "ci/test-domains.yaml"))) },
+			mutate: func(t *testing.T) { require.NoError(t, os.Remove(filepath.Join(root, "ci/test-selection-rules.yaml"))) },
 			want:   "run", log: "read rules",
 		},
 		"should run with malformed event": {
@@ -129,7 +129,7 @@ func TestGHA(t *testing.T) {
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			writeTestFile(t, filepath.Join(root, "ci/test-domains.yaml"), string(rules))
+			writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), string(rules))
 			writeEvent(t, root, base, head, !c.preview)
 			// Enforcement comes from the event snapshot, including label removal.
 			t.Setenv("CI_ENFORCE", "true")
@@ -176,7 +176,7 @@ func TestGHA(t *testing.T) {
 		})
 	}
 	t.Run("should print a preview without gating validation", func(t *testing.T) {
-		writeTestFile(t, filepath.Join(root, "ci/test-domains.yaml"), string(rules))
+		writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), string(rules))
 		writeEvent(t, root, base, head, false)
 		t.Setenv("CI_SELECT_ROOT", root)
 		t.Setenv("GITHUB_OUTPUT", filepath.Join(t.TempDir(), "output"))

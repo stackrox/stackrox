@@ -13,7 +13,7 @@ import (
 
 func TestPolicy(t *testing.T) {
 	t.Parallel()
-	m, err := loadMapping("../test-domains.yaml")
+	m, err := loadMapping("../test-selection-rules.yaml")
 	require.NoError(t, err)
 	require.Equal(t, []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}, m.Jobs)
 	cases := map[string]struct {
@@ -115,7 +115,7 @@ func TestResolve(t *testing.T) {
 
 func TestNewTarget(t *testing.T) {
 	t.Parallel()
-	data, err := os.ReadFile("../test-domains.yaml")
+	data, err := os.ReadFile("../test-selection-rules.yaml")
 	require.NoError(t, err)
 	// Enrollment alone grants no path-based skip permissions.
 	data = []byte(strings.Replace(string(data), "jobs: [", "jobs: [ui, ", 1))

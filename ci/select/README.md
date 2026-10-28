@@ -4,7 +4,7 @@ CI job selection decides which test suites a pull request can safely skip
 based on the files it changes. For example, a change to `README.md` does not
 need the backend test suites. A change to a shared Go package does.
 
-The policy lives in [`ci/test-domains.yaml`](../test-domains.yaml). It lists
+The policy lives in [`ci/test-selection-rules.yaml`](../test-selection-rules.yaml). It lists
 the test jobs covered by selection and the paths that are safe to change
 without running each job. A **target** is one of these job names:
 
@@ -189,7 +189,7 @@ The table shows representative diffs and their results:
 | No changed files | None |
 
 See each rule's comment and patterns in
-[`ci/test-domains.yaml`](../test-domains.yaml) for its exact scope. Names
+[`ci/test-selection-rules.yaml`](../test-selection-rules.yaml) for its exact scope. Names
 such as `scanner-only` identify rules in the logs; they do not prevent
 coverage from combining with other rules.
 
