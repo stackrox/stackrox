@@ -24,7 +24,7 @@ alternatively -- use `scripts/roxie.sh`, a wrapper that downloads roxie automati
 
 ## Usage
 
-See @./README.md, specifically the section "Usage" for documentation on how to use roxie.
+See @./README.md, specifically the "Usage" section under "Deploying with roxie" (not the one under "Legacy deployment flow"), for documentation on how to use roxie.
 The README's description of the config file schema might not be entirely up-to-date, for the most recent
 version, check out roxie's main branch at https://github.com/stackrox/roxie, in particular
 use WebFetch on https://raw.githubusercontent.com/stackrox/roxie/main/internal/deployer/config.go.
