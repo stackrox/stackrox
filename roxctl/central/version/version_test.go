@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/versioncheck"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -187,15 +188,15 @@ func (m *mockMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Me
 	return &v1.Metadata{Version: m.version}, nil
 }
 
-func (c *centralVersionTestSuite) createGRPCMockService(server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer, func()) {
+func (c *centralVersionTestSuite) createGRPCMockService(t *testing.T, server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
-	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(injectVersionHeader(server.version)))
+	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(injectVersionHeader(t, server.version)))
 	v1.RegisterMetadataServiceServer(srv, server)
 
 	go func() {
-		utils.IgnoreError(func() error { return srv.Serve(listener) })
+		require.NoError(t, srv.Serve(listener))
 	}()
 
 	var interceptorOutput bytes.Buffer
@@ -209,15 +210,17 @@ func (c *centralVersionTestSuite) createGRPCMockService(server *mockMetadataServ
 	c.Require().NoError(err)
 
 	return conn, &interceptorOutput, func() {
-		utils.IgnoreError(conn.Close)
-		utils.IgnoreError(listener.Close)
 		srv.Stop()
+		// conn is already closed by centralVersionCommand.fetchAndClassify via
+		// defer conn.Close() so the Close call below is expected to return "already closed" errors.
+		utils.IgnoreError(conn.Close)
+		require.NoError(t, listener.Close())
 	}
 }
 
 func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr, interceptorOutput *bytes.Buffer, cleanup func()) {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
-	conn, interceptorOut, closeFunc := c.createGRPCMockService(server)
+	conn, interceptorOut, closeFunc := c.createGRPCMockService(c.T(), server)
 	env, out, errOut := mocks.NewEnvWithConn(conn, c.T())
 	cmd = &centralVersionCommand{
 		env:          env,
@@ -227,9 +230,9 @@ func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd 
 	return cmd, out, errOut, interceptorOut, closeFunc
 }
 
-func injectVersionHeader(centralVersion string) grpc.UnaryServerInterceptor {
+func injectVersionHeader(t *testing.T, centralVersion string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		_ = grpc.SetHeader(ctx, metadata.Pairs(clientconn.CentralVersionHeader, centralVersion))
+		require.NoError(t, grpc.SetHeader(ctx, metadata.Pairs(clientconn.CentralVersionHeader, centralVersion)))
 		return handler(ctx, req)
 	}
 }
