@@ -13,16 +13,9 @@ deploymentWorkload:
     numContainers: 2
     numPods: 3
     lifecycleDuration: 10m
-    processWorkload:
-      processInterval: 30s
-      alertRate: 0
-
-networkWorkload:
-  flowInterval: 60s
-  batchSize: 50
 
 fileActivityWorkload:
   activityInterval: 100ms  # Fixed interval
   batchSize: __RATE__      # events per 100ms; event rate = batchSize * 10 / sec
-  numPaths: 500
-  nodeEventPercent: 50
+  numPaths: 5000000
+  nodeEventPercent: 0
