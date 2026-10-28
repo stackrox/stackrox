@@ -1,9 +1,6 @@
 name: Sensor integration suite
 description: Run the complete Sensor integration suite and publish its reports
 inputs:
-  gcp-account:
-    description: Account used to upload test data
-    required: true
   quay-username:
     description: Quay pull username
     required: true
@@ -15,11 +12,6 @@ runs:
   # Normal steps require a healthy job as well as a successful composite.
   # The explicit shell keeps the Ubuntu workflow pipeline behavior.
   steps:
-    - uses: ./.github/actions/job-preamble
-      if: job.status == 'success'
-      with:
-        gcp-account: ${{ inputs.gcp-account }}
-
     - name: Cache Go dependencies
       if: job.status == 'success'
       uses: ./.github/actions/cache-go-dependencies

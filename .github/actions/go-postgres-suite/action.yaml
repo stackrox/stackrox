@@ -7,9 +7,6 @@ inputs:
   postgres-version:
     description: PostgreSQL matrix version
     required: true
-  gcp-account:
-    description: Account used to upload test data
-    required: true
   codecov-token:
     description: Codecov upload token
     required: true
@@ -45,11 +42,6 @@ runs:
           -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
           -e LANG=C.UTF-8 \
           postgres-test
-
-    - uses: ./.github/actions/job-preamble
-      if: job.status == 'success'
-      with:
-        gcp-account: ${{ inputs.gcp-account }}
 
     - name: Cache Go dependencies
       if: job.status == 'success'

@@ -5,7 +5,11 @@ The selector enrolls four complete jobs in `unit-tests.yaml`: `go`,
 tests, and report publication at step level, keeping job names and matrices
 present. Selecting `go` includes its integration and Operator tests.
 
-Each job calls a suite-specific composite action behind one selection gate.
+Each job gates its workflow-level preamble and a suite-specific composite
+action on the selection decision. The preamble stays at workflow level so
+its post-job metrics hook can read its step outputs. It runs before suite
+setup, including PostgreSQL startup.
+
 JUnit generation and publication remain inside the suite with their status
 conditions. Normal steps check the enclosing job as well as the composite's
 implicit success state; this preserves failure and cancellation handling

@@ -1,9 +1,5 @@
 name: PostgreSQL benchmark suite
 description: Run the complete PostgreSQL benchmark suite and publish its reports
-inputs:
-  gcp-account:
-    description: Account used to upload test data
-    required: true
 runs:
   using: composite
   # Normal steps require a healthy job as well as a successful composite.
@@ -21,11 +17,6 @@ runs:
         sudo pg_createcluster "$PG_VER" main -- --auth=trust
         sudo cp .github/test-images/postgres-ci.conf "/etc/postgresql/$PG_VER/main/conf.d/ci.conf"
         sudo systemctl start postgresql.service
-
-    - uses: ./.github/actions/job-preamble
-      if: job.status == 'success'
-      with:
-        gcp-account: ${{ inputs.gcp-account }}
 
     - name: Cache Go dependencies
       if: job.status == 'success'

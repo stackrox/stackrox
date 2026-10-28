@@ -4,9 +4,6 @@ inputs:
   gotags:
     description: Go matrix Make variable assignment
     required: true
-  gcp-account:
-    description: Account used to upload test data
-    required: true
   codecov-token:
     description: Codecov upload token
     required: true
@@ -15,12 +12,6 @@ runs:
   # Normal steps require a healthy job as well as a successful composite.
   # The explicit shell keeps the Ubuntu workflow pipeline behavior.
   steps:
-    - uses: ./.github/actions/job-preamble
-      if: job.status == 'success'
-      with:
-        gcp-account: ${{ inputs.gcp-account }}
-        free-disk-space: 30
-
     - name: Cache Go dependencies
       if: job.status == 'success'
       uses: ./.github/actions/cache-go-dependencies

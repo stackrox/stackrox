@@ -86,7 +86,7 @@ func TestWorkflowGates(t *testing.T) {
 			t.Parallel()
 			job := w.Jobs[name]
 			assert.Equal(t, "ubuntu-24.04", job.RunsOn)
-			require.Greater(t, len(job.Steps), 2)
+			require.Greater(t, len(job.Steps), 3)
 			assert.Contains(t, job.Steps[0].Uses, "actions/checkout@")
 			assert.Equal(t, "${{ github.event_name == 'pull_request' && '0' || '1' }}", job.Steps[0].With["fetch-depth"])
 			gate := job.Steps[1]
@@ -94,7 +94,14 @@ func TestWorkflowGates(t *testing.T) {
 			assert.Equal(t, "github.event_name == 'pull_request'", gate.If)
 			assert.Equal(t, "./.github/actions/ci-select", gate.Uses)
 			assert.Equal(t, name, gate.With["job"])
-			suite := job.Steps[2]
+			preamble := job.Steps[2]
+			assert.Equal(t, "./.github/actions/job-preamble", preamble.Uses)
+			assert.Equal(t, "steps.ci-decision.outputs.action != 'skip'", preamble.If)
+			assert.Equal(t, "${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}", preamble.With["gcp-account"])
+			if name == "go" {
+				assert.Equal(t, "30", preamble.With["free-disk-space"])
+			}
+			suite := job.Steps[3]
 			assert.Equal(t, "./.github/actions/"+action, suite.Uses)
 			assert.Equal(t, "always() && steps.ci-decision.outputs.action != 'skip'", suite.If)
 			data, err := os.ReadFile("../../.github/actions/" + action + "/action.yaml")
@@ -109,6 +116,8 @@ func TestWorkflowGates(t *testing.T) {
 				assert.NotEmpty(t, suite.With[input], input)
 			}
 			for _, step := range composite.Runs.Steps {
+				assert.NotEqual(t, "./.github/actions/job-preamble", step.Uses,
+					"preamble cleanup needs its workflow-level step scope")
 				assert.NotContains(t, step.If, "ci-decision")
 				switch {
 				case step.Name == "Postgres diagnostics":
@@ -123,10 +132,10 @@ func TestWorkflowGates(t *testing.T) {
 				}
 			}
 			if name == "go-bench" {
-				assert.Len(t, job.Steps, 3)
+				assert.Len(t, job.Steps, 4)
 			} else {
-				require.Len(t, job.Steps, 4)
-				jira := job.Steps[3]
+				require.Len(t, job.Steps, 5)
+				jira := job.Steps[4]
 				assert.Equal(t, "junit2jira", jira.ID)
 				assert.Equal(t, "./.github/actions/junit2jira", jira.Uses)
 				assert.Equal(t, "(!cancelled()) && steps.ci-decision.outputs.action != 'skip'", jira.If)

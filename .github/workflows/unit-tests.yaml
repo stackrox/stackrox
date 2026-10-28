@@ -71,12 +71,17 @@ jobs:
       with:
         job: go
 
+    - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        free-disk-space: 30
+
     - name: Run Go test suite
       if: always() && steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/go-suite
       with:
         gotags: ${{ matrix.gotags }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
 
     # Jira needs the final job status after the composite completes.
@@ -119,13 +124,17 @@ jobs:
       with:
         job: go-postgres
 
+    - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     - name: Run PostgreSQL test suite
       if: always() && steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/go-postgres-suite
       with:
         gotags: ${{ matrix.gotags }}
         postgres-version: ${{ matrix.pg }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         codecov-token: ${{ secrets.CODECOV_TOKEN }}
 
     # Jira needs the final job status after the composite completes.
@@ -164,11 +173,14 @@ jobs:
       with:
         job: go-bench
 
+    - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     - name: Run PostgreSQL benchmark suite
       if: always() && steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/go-bench-suite
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
   ui:
     needs: detect-changes
@@ -418,11 +430,15 @@ jobs:
       with:
         job: sensor-integration-tests
 
+    - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     - name: Run Sensor integration suite
       if: always() && steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/sensor-integration-suite
       with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         quay-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
