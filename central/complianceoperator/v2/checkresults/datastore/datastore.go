@@ -25,9 +25,12 @@ type DataStore interface {
 	// write, derives its data_freshness instead of trusting the caller's value: "received" does
 	// not always mean "new" (sensor resends every existing check result on reconnect regardless of
 	// whether anything changed, and a misbehaving compliance operator could republish a result
-	// without a real rescan behind it). A result is CURRENT when it has no prior stored row, or
-	// when its LastStartedTime is newer than what is currently stored; otherwise the existing
-	// row's freshness is carried over unchanged. The read and the write happen under the same
+	// without a real rescan behind it). A result is CURRENT when it has no prior stored row and a
+	// non-nil LastStartedTime (a nil LastStartedTime cannot be evaluated and stays UNKNOWN, matching
+	// MarkStalePriorResultsByScanRef's treatment of nil timestamps), or when its LastStartedTime is
+	// newer than what is currently stored; otherwise the existing row's freshness AND LastStartedTime
+	// are both carried over unchanged (a replay must not regress the stored timestamp, which would
+	// corrupt later staleness-by-age decisions). The read and the write happen under the same
 	// KeyFence used by MarkStalePriorResultsByScanRef, so an ingest decision can't be based on a
 	// stale read that a concurrent timeout marking (or another ingest) has since invalidated, and
 	// cannot revert that concurrent write. On a lookup error, no write happens: an error here must

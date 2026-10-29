@@ -12,6 +12,78 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// TestUpsertReceivedResult covers reconcileReceivedResult's single-writer decisions directly at
+// the datastore level, where that logic now lives (moved out of the pipeline during review of
+// #23765, since it must run under the KeyFence used by MarkStalePriorResultsByScanRef).
+func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResult() {
+	now := time.Now()
+	older := now.Add(-10 * time.Hour)
+	newer := now.Add(-5 * time.Minute)
+
+	// First sighting, non-nil LastStartedTime: CURRENT.
+	firstSeen := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-first-seen")
+	firstSeen.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&older)
+	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, firstSeen))
+	s.assertFreshness(firstSeen.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+
+	// First sighting, nil LastStartedTime: UNKNOWN, not CURRENT -- freshness cannot be evaluated,
+	// and (deliberately) not STALE-correctable later either, since MarkStalePriorResultsByScanRef
+	// leaves nil-timestamp rows unchanged forever. See reconcileReceivedResult's doc.
+	firstSeenNilTime := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-first-seen-nil")
+	firstSeenNilTime.LastStartedTime = nil
+	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, firstSeenNilTime))
+	s.assertFreshness(firstSeenNilTime.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+
+	// Newer than stored: CURRENT, regardless of the row's previous freshness (STALE here).
+	seeded := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-newer")
+	seeded.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&older)
+	seeded.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, seeded))
+	refreshed := seeded.CloneVT()
+	refreshed.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
+	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, refreshed))
+	s.assertFreshness(seeded.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+
+	// Same-timestamp replay: DataFreshness AND LastStartedTime are both preserved, not regressed.
+	sameTimeReplayBase := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-replay-same")
+	sameTimeReplayBase.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
+	sameTimeReplayBase.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, sameTimeReplayBase))
+	sameTimeReplay := sameTimeReplayBase.CloneVT()
+	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, sameTimeReplay))
+	s.assertFreshness(sameTimeReplayBase.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+	s.assertLastStartedTime(sameTimeReplayBase.GetId(), newer)
+
+	// Older (out-of-order) replay: this is the regression case from review -- without the fix,
+	// Upsert would persist the older incoming timestamp over the newer stored one, corrupting a
+	// later timeout's age-based decision. Both DataFreshness and LastStartedTime must stay as they
+	// were, reflecting the newer, genuine run.
+	oldReplayBase := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-replay-older")
+	oldReplayBase.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
+	oldReplayBase.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, oldReplayBase))
+	oldReplay := oldReplayBase.CloneVT()
+	oldReplay.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&older)
+	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, oldReplay))
+	s.assertFreshness(oldReplayBase.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+	s.assertLastStartedTime(oldReplayBase.GetId(), newer)
+
+	// A replay with a missing/unparseable timestamp (incoming nil) against an existing row with a
+	// real timestamp: not genuinely newer, so both fields are preserved the same way.
+	nilReplayBase := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-replay-nil")
+	nilReplayBase.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
+	nilReplayBase.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, nilReplayBase))
+	nilReplay := nilReplayBase.CloneVT()
+	nilReplay.LastStartedTime = nil
+	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, nilReplay))
+	s.assertFreshness(nilReplayBase.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+	s.assertLastStartedTime(nilReplayBase.GetId(), newer)
+
+	// Write context is required.
+	s.Require().Error(s.dataStore.UpsertReceivedResult(s.hasReadCtx, firstSeen))
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorResultsByScanRef() {
 	now := time.Now()
 	// pivot is the timed-out run's start time. A result the run refreshed carries this time; a
@@ -207,4 +279,11 @@ func (s *complianceCheckResultDataStoreTestSuite) assertFreshness(id string, exp
 	s.Require().NoError(err)
 	s.Require().True(found)
 	s.Require().Equal(expected, rec.GetDataFreshness())
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) assertLastStartedTime(id string, expected time.Time) {
+	rec, found, err := s.storage.Get(s.hasReadCtx, id)
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().True(expected.Equal(rec.GetLastStartedTime().AsTime()), "expected %s, got %s", expected, rec.GetLastStartedTime().AsTime())
 }

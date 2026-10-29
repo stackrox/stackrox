@@ -533,6 +533,63 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 	}
 }
 
+// TestHandleReadyScanSkipsStaleMarkingWithoutScan covers a watcher created from a check result
+// alone (see watcher.GetWatcherIDFromCheckResult), whose Scan is never populated because no Scan
+// update arrived before the timeout fired. MarkStalePriorResultsByScanRef must not be called with
+// the zero-value scan ref and epoch pivot that a nil Scan would otherwise produce.
+func (m *ManagerTestSuite) TestHandleReadyScanSkipsStaleMarkingWithoutScan() {
+	m.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+
+	ctrl := gomock.NewController(m.T())
+	checkResultDS := checkResultsMocks.NewMockDataStore(ctrl)
+	scanConfigDS := scanConfigurationDS.NewMockDataStore(ctrl)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	profileDS := profileMocks.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	integrationDS := integrationMocks.NewMockDataStore(ctrl)
+	suiteStore := suiteDS.NewMockDataStore(ctrl)
+	bindingsStore := bindingsDS.NewMockDataStore(ctrl)
+	generator := reportGen.NewMockComplianceReportGenerator(ctrl)
+	generator.EXPECT().Stop().AnyTimes()
+
+	manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
+	manager.Start()
+	m.T().Cleanup(func() {
+		manager.Stop()
+		ctrl.Finish()
+	})
+	managerImp := manager.(*managerImpl)
+
+	done := make(chan struct{})
+	checkResultDS.EXPECT().MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	// All branches continue into getOrCreateScanConfigWatcher; stop there.
+	scanConfigDS.EXPECT().
+		GetScanConfigurationByName(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+			close(done)
+			return nil, errors.New("stop here")
+		})
+
+	result := &watcher.ScanWatcherResults{
+		WatcherID: "watcher-no-scan",
+		Scan:      nil,
+		Error:     watcher.ErrScanTimeout,
+	}
+
+	concurrency.WithLock(&managerImp.watchingScansLock, func() {
+		managerImp.watchingScansStartTime[result.WatcherID] = time.Now()
+	})
+
+	managerImp.readyQueue.Push(result)
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		m.FailNow("timeout waiting for handleReadyScan to process the result")
+	}
+}
+
 func (m *ManagerTestSuite) TestHandleScan() {
 	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(
