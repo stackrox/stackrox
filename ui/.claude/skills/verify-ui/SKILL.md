@@ -95,7 +95,10 @@ Spec rules:
 - Prefer accessible names and text (`button:contains("Create policy")`, `cy.get('h1:contains("Violations")')`) over CSS classes and positions.
 - Wait on responses (`interactAndWaitForResponses`) or visible state, never `cy.wait(ms)`.
 - Call `captureState('<NN-step>')` after each action whose result is part of the proof.
+- Assert on the result. The template ends with a placeholder that fails with `replace with a real check`; replace it with `should()` or `expect()` checks on what the user sees.
 - An existing checked-in spec can also be driven as is: `$S/drive.sh cypress/integration/<area>/<file>.test.js`. That proves the suite passes, not that a specific change behaves; pair it with a proof spec when the change is new behavior.
+
+Proof gate: a run that Cypress passes still fails with `FAIL (proof gate)` when any test ran no assertions in its body (assertions in hooks such as `withAuth()` do not count; assertions inside helpers called from the body do). The gate works for checked-in specs too, because `templates/support.js` records the checks for every spec. `summary.txt` lists the assertion count per test and each gate failure.
 
 Iterate: when a selector fails, read the failing step in `evidence/cypress.log` and the last screenshot, fix the spec, and rerun `drive.sh` on the same path. Each rerun replaces that run's evidence.
 
@@ -105,7 +108,8 @@ Each run leaves `~/.cache/stackrox-verify-ui/runs/<run-id>/evidence/`:
 
 | File | Shows |
 |---|---|
-| `summary.txt` | PASS/FAIL, branch @ sha (+ uncommitted flag), Central URL + version, time |
+| `summary.txt` | PASS/FAIL, branch @ sha (+ uncommitted flag), Central URL + version, time, assertions per test, proof gate failures |
+| `checks.json` | raw proof checks that the gate reads (assertions per test) |
 | `<spec>.cy.js` | the exact steps that ran |
 | `screenshots/<spec>/<NN-step>.png` | the full app (1440x850, scrolled to top) after each captured step; failures auto-captured by Cypress |
 | `<NN-step>.state.json` | URL, title, headings, alerts, table row count at that step |

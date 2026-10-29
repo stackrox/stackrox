@@ -3,8 +3,37 @@
 
 const consoleErrors = [];
 
+// What drive.sh reads after the run to gate the proof. assertions maps each test that ran
+// to the number of assertions in its body. Assertions in hooks, such as withAuth(), do not count.
+const checks = { assertions: {} };
+
 function evidenceDir() {
     return Cypress.expose('VERIFY_EVIDENCE_DIR');
+}
+
+function testTitle() {
+    return Cypress.currentTest.titlePath.join(' > ');
+}
+
+/**
+ * Record proof checks for every spec drive.sh runs. Called once from templates/support.js,
+ * so it covers checked-in specs too; specs do not call it.
+ */
+export function installEvidenceHooks() {
+    Cypress.on('log:added', (attrs) => {
+        // A log in the test body has hookId equal to its testId; hooks get their own id.
+        if (attrs.name === 'assert' && attrs.hookId === attrs.testId && Cypress.currentTest) {
+            checks.assertions[testTitle()] += 1;
+        }
+    });
+
+    beforeEach(() => {
+        checks.assertions[testTitle()] = 0;
+    });
+
+    after(() => {
+        cy.writeFile(`${evidenceDir()}/checks.json`, checks, { log: false });
+    });
 }
 
 /**

@@ -4,7 +4,10 @@
 #   drive.sh <spec-path>      spec from new-spec.sh (or any spec, e.g. cypress/integration/...)
 #
 # Evidence lands in <run>/evidence/: screenshots, video, *.state.json, console-errors.json,
-# cypress.log, summary.txt. The run dir is printed on the last line.
+# checks.json, cypress.log, summary.txt. The run dir is printed on the last line.
+#
+# Proof gate: even when Cypress passes, the proof fails if any test ran no assertions in its
+# body, or if checks.json is missing (the evidence support file did not run).
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -50,15 +53,39 @@ set +e
 status=$?
 set -e
 
+gate=()
+checks="${evidence}/checks.json"
+if [[ ! -f "${checks}" ]]; then
+    gate+=("no checks.json, so the evidence support file did not run; see cypress.log")
+elif [[ "$(jq '.assertions | length' "${checks}")" -eq 0 ]]; then
+    gate+=("no tests ran")
+else
+    while IFS= read -r test; do
+        gate+=("\"${test}\" ran no assertions; check the visible result with should() or expect()")
+    done < <(jq -r '.assertions | to_entries[] | select(.value == 0) | .key' "${checks}")
+fi
+
+if [[ ${status} -ne 0 ]]; then
+    result="FAIL (exit ${status})"
+elif [[ ${#gate[@]} -gt 0 ]]; then
+    result="FAIL (proof gate)"
+    status=1
+else
+    result="PASS"
+fi
+
 {
     echo "spec: ${spec}"
-    echo "result: $([[ ${status} -eq 0 ]] && echo PASS || echo "FAIL (exit ${status})")"
+    echo "result: ${result}"
     echo "checkout: $(git -C "${REPO_DIR}" rev-parse --abbrev-ref HEAD) @ $(git -C "${REPO_DIR}" rev-parse --short HEAD)$(git -C "${REPO_DIR}" diff --quiet || echo ' + uncommitted changes')"
     echo "central: ${UI_START_TARGET} version $(admin_curl "${UI_START_TARGET}/v1/metadata" | jq -r '.version // "unknown"')"
     echo "time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    if [[ -f "${checks}" ]]; then jq -r '.assertions | to_entries[] | "assertions: \(.value) in \"\(.key)\""' "${checks}"; fi
+    for line in ${gate[@]+"${gate[@]}"}; do echo "proof gate: ${line}"; done
 } > "${evidence}/summary.txt"
 
 sed -n '/(Run Finished)/,$p' "${evidence}/cypress.log" | tail -8 >&2
 [[ ${status} -eq 0 ]] || grep -E 'AssertionError|CypressError|Error:' "${evidence}/cypress.log" | head -5 >&2 || true
+for line in ${gate[@]+"${gate[@]}"}; do info "proof gate: ${line}"; done
 echo "${run_dir}"
 exit "${status}"

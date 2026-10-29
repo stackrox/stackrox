@@ -14,5 +14,7 @@ describe('verify-ui: __NAME__', () => {
         captureState('01-start');
 
         // Action, then the observable result, then captureState for each step.
+        // Delete this placeholder once the body checks the result the proof is about.
+        expect(true, 'replace with a real check').to.be.false;
     });
 });
