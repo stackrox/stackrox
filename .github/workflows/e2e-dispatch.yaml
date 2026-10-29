@@ -79,14 +79,12 @@ jobs:
       run: python3 ci/select/e2e_dispatch.py
 
   wait-for-images:
-    # Ignored label events must not satisfy required checks.
+    # Start the job so GitHub evaluates its check name before skipping steps.
     name: >-
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}wait-for-images
     needs: [ should-dispatch ]
-    if: >-
-      !cancelled() && needs.should-dispatch.result == 'success' &&
-      needs.should-dispatch.outputs.wait-for-gha-images == 'true'
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "."
@@ -99,14 +97,20 @@ jobs:
       tag: ${{ steps.image-references.outputs.tag }}
       tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
     concurrency:
-      group: wait-for-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: >-
+        wait-for-images-${{ github.workflow }}-${{
+          github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce' &&
+          format('ignored-label-{0}', github.run_id) || github.head_ref || github.run_id }}
       cancel-in-progress: true
     steps:
     - name: Read CI selection
       id: ci-decision
       shell: bash
       env:
-        CI_SELECT_ACTION: ${{ needs.should-dispatch.outputs.skip-gha-images == 'true' && 'skip' || 'run' }}
+        CI_SELECT_ACTION: >-
+          ${{ needs.should-dispatch.result == 'success' &&
+          needs.should-dispatch.outputs.wait-for-gha-images == 'true' &&
+          needs.should-dispatch.outputs.skip-gha-images != 'true' && 'run' || 'skip' }}
       run: |
         action=run
         if [[ "$CI_SELECT_ACTION" == skip ]]; then

@@ -273,12 +273,16 @@ job so selection owns the decision. Pushes and tags retain their existing
 behavior.
 
 Adding or removing `ci-dispatcher-enforce` reevaluates Unit Tests and e2e
-Dispatch. Other label events skip planning, change detection, and test jobs.
+Dispatch. Other label events skip planning, change detection, and test work.
 Unit Tests uses a separate concurrency group for those ignored events to
 protect active and pending runs. Required non-matrix jobs use an
-`ignored-label-` check-name prefix on these events so their skipped checks
-cannot satisfy the required checks from test runs. Skipped matrix jobs
-already have names distinct from their required matrix variants.
+`ignored-label-` check-name prefix on these events so they cannot satisfy
+the required test checks. These jobs start even when no work is needed,
+because skipped jobs can retain unevaluated name expressions. Their steps
+skip work through eligibility gates; runner and container startup still
+occur. Skipped matrix jobs already have names
+distinct from their required matrix variants. Ignored image-wait jobs also
+use isolated concurrency groups.
 
 ### E2e jobs and required checks
 
@@ -367,9 +371,9 @@ e2e Dispatch, accepting only one JSON object with `run`/`skip`
 values. Only an explicit `skip` for the consumer from a successful planner
 suppresses work. Missing or malformed maps and planner failure run tests.
 Explicit job status conditions bypass GitHub's default dependency-success
-check while the event guards still reject unrelated label events and
-cancellation. Legacy benchmark/Sensor UI-only filters apply when planning
-succeeds without enforcement; planner failure admits these tests as well.
+check while eligibility guards still disable test work for unrelated label
+events and cancellation. Legacy benchmark/Sensor UI-only filters apply when
+planning succeeds without enforcement; planner failure admits these tests as well.
 See GitHub's [status check functions](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#status-check-functions)
 and [reusable workflow outputs](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#using-outputs-from-a-reusable-workflow).
 

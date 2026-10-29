@@ -288,41 +288,43 @@ jobs:
   # they compile and execute without errors. A single postgres version is
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
-    # Ignored label events must not satisfy required checks.
+    # Start the job so GitHub evaluates its check name before skipping steps.
     name: >-
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}go-bench
     needs: [detect-changes, ci-selection]
-    # Explicit status handling keeps planner failures from suppressing tests.
-    if: >-
-      !cancelled() &&
-      (github.event_name != 'pull_request' ||
-      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
-      github.event.label.name == 'ci-dispatcher-enforce') &&
-      (needs.ci-selection.result != 'success' ||
-       (github.event_name == 'pull_request' &&
-        contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) ||
-       !needs.detect-changes.outputs.ui_only)
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
+    env:
+      CI_RUN_SUITE: >-
+        ${{ (github.event_name != 'pull_request' ||
+        (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+        github.event.label.name == 'ci-dispatcher-enforce') &&
+        (needs.ci-selection.result != 'success' ||
+         (github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) ||
+         !needs.detect-changes.outputs.ui_only) }}
     steps:
     - name: Checkout
+      if: env.CI_RUN_SUITE == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
     - name: Select CI job
       id: ci-decision
+      if: env.CI_RUN_SUITE == 'true'
       env:
         CI_SELECT_PLANNER_RESULT: ${{ needs.ci-selection.result }}
         CI_SELECT_DECISIONS: ${{ needs.ci-selection.outputs.decisions }}
       run: bash ci/select/gha-consume.sh go-bench
 
     - uses: ./.github/actions/job-preamble
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Start Postgres
       id: postgres-host
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       shell: bash -e {0}
       run: |
         # Run on tmpfs to avoid disk I/O overhead in tests.
@@ -335,12 +337,12 @@ jobs:
         sudo systemctl start postgresql.service
 
     - name: Cache Go dependencies
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
       id: postgres-ready
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       shell: bash -e {0}
       run: |
         timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
@@ -348,13 +350,13 @@ jobs:
 
     - name: Go Bench Tests
       id: bench-tests
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       shell: bash -e {0}
       run: make go-postgres-bench-tests
 
     - name: Postgres diagnostics
       id: postgres-diagnostics
-      if: (!cancelled()) && failure() && steps.ci-decision.outputs.action != 'skip'
+      if: (!cancelled()) && failure() && env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       shell: bash -e {0}
       run: |
         pg_isready -h 127.0.0.1 || true
@@ -365,14 +367,14 @@ jobs:
 
     - name: Generate junit report
       id: junit-report-1
-      if: always() && steps.ci-decision.outputs.action != 'skip'
+      if: always() && env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       shell: bash -e {0}
       run: make generate-junit-reports
 
     - name: Publish Test Report
       id: publish-report-1
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always() && steps.ci-decision.outputs.action != 'skip'
+      if: always() && env.CI_RUN_SUITE == 'true' && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
@@ -384,49 +386,57 @@ jobs:
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}ui
     needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
+    env:
+      CI_RUN_SUITE: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        (!needs.detect-changes.outputs.files ||
+         contains(needs.detect-changes.outputs.files, '^ui/') ||
+         contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')) }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
+      if: env.CI_RUN_SUITE == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
     - uses: ./.github/actions/job-preamble
+      if: env.CI_RUN_SUITE == 'true'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Node.js
+      if: env.CI_RUN_SUITE == 'true'
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
       with:
         node-version-file: ui/package.json
 
     - name: Cache UI dependencies
       id: cache-ui
+      if: env.CI_RUN_SUITE == 'true'
       uses: ./.github/actions/cache-ui-dependencies
 
     - name: Install UI dependencies
-      if: steps.cache-ui.outputs.cache-hit != 'true'
+      if: env.CI_RUN_SUITE == 'true' && steps.cache-ui.outputs.cache-hit != 'true'
       run: make -C ui deps
 
     - name: Skip UI deps on cache hit
-      if: steps.cache-ui.outputs.cache-hit == 'true'
+      if: env.CI_RUN_SUITE == 'true' && steps.cache-ui.outputs.cache-hit == 'true'
       run: touch ui/deps
 
     - name: UI Unit Tests
+      if: env.CI_RUN_SUITE == 'true'
       run: make ui-test
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && env.CI_RUN_SUITE == 'true'
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && env.CI_RUN_SUITE == 'true'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -506,8 +516,10 @@ jobs:
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}local-roxctl-tests
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
+    env:
+      CI_RUN_SUITE: ${{ needs.detect-changes.result == 'success' && !needs.detect-changes.outputs.ui_only }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -517,30 +529,35 @@ jobs:
         - /opt:/mnt/opt
     steps:
     - name: Checkout
+      if: env.CI_RUN_SUITE == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      if: env.CI_RUN_SUITE == 'true'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
+      if: env.CI_RUN_SUITE == 'true'
       uses: ./.github/actions/cache-go-dependencies
 
     - uses: ./.github/actions/handle-tagged-build
+      if: env.CI_RUN_SUITE == 'true'
 
     - name: Local roxctl tests
+      if: env.CI_RUN_SUITE == 'true'
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && env.CI_RUN_SUITE == 'true'
       with:
         paths: 'roxctl-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && env.CI_RUN_SUITE == 'true'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
