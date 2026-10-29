@@ -67,6 +67,8 @@ def main():
         Job(name='e2e-gke-upgrade-tests'),
         Job(name='e2e-nongroovy-tests-gke'),
         Job(name='e2e-nongroovy-tests-gke-konflux', require_konflux_build=True),
+        Job(name='e2e-operator-tests-gke'),
+        Job(name='e2e-operator-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-qa-tests-gke', require_pr_label=True),
         Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
@@ -91,6 +93,12 @@ def main():
         # Waiting for konflux-built images in PR request context requires the 'konflux-build' PR label.
         wait_for_konflux_images = inputs.event_name != 'pull_request' or ('konflux-build' in inputs.pr_labels and any(jobs.values()))
         write('wait-for-konflux-images', str(wait_for_konflux_images).lower())
+
+        # Print a human-readable summary of which jobs will be dispatched.
+        print()
+        width = max(len(name) for name in jobs)
+        for name in sorted(jobs):
+            print(f'{name:<{width}}  {"✓" if jobs[name] else ""}')
 
 
 if __name__ == '__main__':
