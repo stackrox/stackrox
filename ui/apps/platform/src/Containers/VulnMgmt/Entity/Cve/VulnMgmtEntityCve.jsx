@@ -10,7 +10,6 @@ import {
     VULN_CVE_DETAIL_FRAGMENT,
     IMAGE_CVE_DETAIL_FRAGMENT,
     NODE_CVE_DETAIL_FRAGMENT,
-    CLUSTER_CVE_DETAIL_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import WorkflowEntityPage from '../WorkflowEntityPage';
@@ -22,32 +21,24 @@ import {
     getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
-const validCVETypes = [
-    resourceTypes.CVE,
-    resourceTypes.IMAGE_CVE,
-    resourceTypes.NODE_CVE,
-    resourceTypes.CLUSTER_CVE,
-];
+const validCVETypes = [resourceTypes.CVE, resourceTypes.IMAGE_CVE, resourceTypes.NODE_CVE];
 
 // Distinguish GraphQL query name and therefore opname especially for integration tests.
 const queryNameMap = {
     CVE: 'getCve',
     IMAGE_CVE: 'getImageCve',
     NODE_CVE: 'getNodeCve',
-    CLUSTER_CVE: 'getClusterCve',
 };
 
 const vulnQueryMap = {
     CVE: 'vulnerability',
     IMAGE_CVE: 'imageVulnerability',
     NODE_CVE: 'nodeVulnerability',
-    CLUSTER_CVE: 'clusterVulnerability',
 };
 const vulnFieldMap = {
     CVE: VULN_CVE_DETAIL_FRAGMENT,
     IMAGE_CVE: IMAGE_CVE_DETAIL_FRAGMENT,
     NODE_CVE: NODE_CVE_DETAIL_FRAGMENT,
-    CLUSTER_CVE: CLUSTER_CVE_DETAIL_FRAGMENT,
 };
 
 function getCVETypeFromStack(worklowStateStack) {

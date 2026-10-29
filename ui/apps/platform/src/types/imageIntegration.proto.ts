@@ -13,7 +13,6 @@ export type BaseImageIntegration = {
 export type ImageIntegrationCategory = 'REGISTRY' | 'SCANNER' | 'NODE_SCANNER';
 
 // For strict type checking of frontend code, although not specified in proto.
-export type CategoriesForClairifyScanner = 'SCANNER' | 'NODE_SCANNER';
 // Scanner v4 currently only supports 'SCANNER' so this is disabled in the form
 export type CategoriesForScannerV4 = 'SCANNER' | 'NODE_SCANNER';
 export type CategoriesForRegistryScanner = 'REGISTRY' | 'SCANNER';
@@ -24,7 +23,6 @@ export type ImageIntegration =
     | AzureImageIntegration
     | ClairImageIntegration
     | ClairV4ImageIntegration
-    | ClairifyImageIntegration
     | DockerImageIntegration
     | EcrImageIntegration
     | GhcrImageIntegration
@@ -73,18 +71,6 @@ export type ClairV4ImageIntegration = {
 export type ClairV4Config = {
     endpoint: string;
     insecure: boolean;
-};
-
-export type ClairifyImageIntegration = {
-    type: 'clairify';
-    categories: CategoriesForClairifyScanner[];
-    clairify: ClairifyConfig;
-} & BaseImageIntegration;
-
-export type ClairifyConfig = {
-    endpoint: string;
-    grpcEndpoint: string;
-    numConcurrentScans: number; // int32
 };
 
 export type DockerImageIntegration = {

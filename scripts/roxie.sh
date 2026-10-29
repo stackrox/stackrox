@@ -113,7 +113,7 @@ gh_download_release() {
     fi
 
     # The caller runs in a conditional, so explicitly stop before it can install a failed download.
-    if ! curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "${auth_headers[@]}" \
+    if ! curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "${auth_headers[@]+"${auth_headers[@]}"}" \
         -o "$target" "https://github.com/${repo}/releases/${release_path}/${asset_name}"; then
         rm -f "$target"
         exit 1
