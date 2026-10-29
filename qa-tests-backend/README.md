@@ -23,7 +23,7 @@ need to consider the following environment variables:
 - API_HOSTNAME: defaults to 'localhost' because `deploy.sh` creates a proxy to central at localhost:8000
 - API_PORT: defaults to 8000
 - CLUSTER: For local runs, an empty value defaults to `K8S`. Set this to `OPENSHIFT` when testing an OpenShift cluster.
-- ROX_ADMIN_PASSWORD: Set this in the environment or `qa-test-settings.properties`. It is not inferred from the deployment password file.
+- ROX_ADMIN_PASSWORD: Set this in the environment or `qa-test-settings.properties`.
 
 When deploying using `deploy/{k8s,openshift}/deploy.sh` scripts you may need:
 - MAIN_IMAGE_TAG: If your working directory has not been built and pushed and the output of `make tag` does not
