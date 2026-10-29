@@ -85,7 +85,7 @@ kind: ClusterExtension
 metadata:
   name: rhacs-operator-${NAMESPACE}
 spec:
-  namespace: ${NAMESPACE}
+  namespace: "${NAMESPACE}"
   serviceAccount:
     name: rhacs-operator-installer
   source:
