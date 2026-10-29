@@ -199,6 +199,8 @@ Three test levels, in order of preference:
 - [apps/platform/TESTING_COMPONENT.md](./apps/platform/TESTING_COMPONENT.md) — Cypress component test patterns (mounting, interaction, providers)
 - [apps/platform/TESTING_E2E.md](./apps/platform/TESTING_E2E.md) — Cypress e2e patterns (standalone + OCP plugin)
 
+**To prove a change in the running app** (screenshots, video, page state against a live Central), use the [verify-ui skill](./.claude/skills/verify-ui/SKILL.md).
+
 ---
 
 ## For More Information
