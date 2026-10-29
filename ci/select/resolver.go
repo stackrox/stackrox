@@ -56,9 +56,13 @@ func resolve(files []string, m mapping) decision {
 	return decision{actions: actions, log: log.String()}
 }
 
-// matches applies exclusions within this rule; other rules can still cover the path.
+// matches requires a root match and applies rule-local exclusions.
+// Other rules can still cover the path.
 func (r rule) matches(path string) bool {
-	match := func(pattern *regexp.Regexp) bool { return pattern.MatchString(path) }
+	match := func(pattern *regexp.Regexp) bool {
+		location := pattern.FindStringIndex(path)
+		return location != nil && location[0] == 0
+	}
 	return slices.ContainsFunc(r.patterns, match) && !slices.ContainsFunc(r.excludedPatterns, match)
 }
 

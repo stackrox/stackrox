@@ -51,6 +51,7 @@ func TestLoadMapping(t *testing.T) {
 		"should reject no skip targets":      strings.Replace(validRules, "skip: [go, postgres]", "skip: []", 1),
 		"should reject file rule runs":       strings.Replace(validRules, "skip: [go, postgres]", "run: ['*']", 1),
 		"should reject bad patterns":         strings.Replace(validRules, "'^docs/'", "'^[broken'", 1),
+		"should reject unbalanced groups":    strings.Replace(validRules, "'^docs/'", "'^ui/)|docs/(?:'", 1),
 		"should reject unrooted patterns":    strings.Replace(validRules, "'^docs/'", "'docs/'", 1),
 		"should reject unrooted exclusions":  strings.Replace(validRules, "'^docs/'", "'^docs/', '!docs/testdata/'", 1),
 		"should reject malformed exclusions": strings.Replace(validRules, "'^docs/'", "'^docs/', '!^[broken'", 1),

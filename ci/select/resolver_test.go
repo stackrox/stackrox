@@ -178,6 +178,46 @@ func TestDocumentationInputs(t *testing.T) {
 	}
 }
 
+func TestRootedPathAlternatives(t *testing.T) {
+	t.Parallel()
+	for name, c := range map[string]struct {
+		paths, path, want string
+	}{
+		"should match the first alternative at the root": {
+			paths: `['^ui/|docs/']`, path: "ui/example.tsx", want: "skip",
+		},
+		"should match a later alternative at the root": {
+			paths: `['^ui/|docs/']`, path: "docs/guide.md", want: "skip",
+		},
+		"should not match a later alternative inside a path": {
+			paths: `['^ui/|docs/']`, path: "pkg/docs/input.go", want: "run",
+		},
+		"should not treat a nested Markdown fixture as rooted documentation": {
+			paths: `['^ui/|\.md$']`, path: "pkg/testdata/output.md", want: "run",
+		},
+		"should not let multiline flags escape the root anchor": {
+			paths: `['^ui/|(?m)^docs/']`, path: "pkg/\ndocs/input.go", want: "run",
+		},
+		"should apply a later exclusion alternative at the root": {
+			paths: `['^docs/', '!^docs/private/|docs/generated/']`, path: "docs/generated/guide.md", want: "run",
+		},
+		"should not apply a later exclusion alternative inside a path": {
+			paths: `['^docs/', '!^docs/private/|docs/generated/']`, path: "docs/example/docs/generated/guide.md", want: "skip",
+		},
+		"should preserve quoted literal patterns": {
+			paths: `['^docs/\Qliteral']`, path: "docs/literal", want: "skip",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			rules := strings.Replace(validRules, "['^docs/']", c.paths, 1)
+			m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), rules))
+			require.NoError(t, err)
+			assert.Equal(t, c.want, resolve([]string{c.path}, m).action("go"))
+		})
+	}
+}
+
 func TestPathExclusions(t *testing.T) {
 	t.Parallel()
 	for name, paths := range map[string]string{

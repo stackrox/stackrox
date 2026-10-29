@@ -91,7 +91,8 @@ rule covers that file.
 
 Patterns are regular expressions, not shell globs. After an optional `!`
 prefix, each pattern must start with `^`, which anchors it to the repository
-root. A path must match at least one inclusion and none of the exclusions:
+root. The root anchor applies to every alternative (`|`) in the pattern.
+A path must match at least one inclusion and none of the exclusions:
 
 - `'^docs/'` matches files anywhere under `docs/`.
 - `'^[^/]+\.md$'` matches Markdown files in the repository root, such as
