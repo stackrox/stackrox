@@ -137,8 +137,8 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - **Operator** (`/operator/`) - Kubernetes operator for lifecycle management
 
 ### Technology Stack
-- **Backend**: Go (1.24.0+), PostgreSQL, gRPC/HTTP APIs, Kubernetes controllers
-- **Frontend**: React, TypeScript, Node.js (20.0.0+), npm
+- **Backend**: Go (version set in `go.mod`), PostgreSQL, gRPC/HTTP APIs, Kubernetes controllers
+- **Frontend**: React, TypeScript, Node.js (version set by `engines` in `ui/package.json`, which CI reads), npm
 - **Infrastructure**: Kubernetes-native, Helm charts, Docker/Podman containers
 - **Communication**: mTLS for security, gRPC for internal services, REST APIs for external access
 
@@ -191,6 +191,7 @@ When making code changes, keep this in-code documentation up-to-date.
 
 ### Style and Conventions
 - Go code follows golangci-lint standards
+- Keep behavioral documentation with the implementation that owns it. Call-site comments should explain why a call is made, not restate what the callee does; duplicated behavior descriptions can become stale when the implementation changes.
 - Additional project specific style guide in `.github/go-coding-style.md`
 - Protocol buffers have enforced style guidelines
 - Shell scripts are checked with shellcheck

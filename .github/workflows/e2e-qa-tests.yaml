@@ -163,7 +163,7 @@ jobs:
         env:
           MACHINE_TYPE: "e2-standard-16"
           NUM_NODES: "1"
-          GKE_SPOT: "true"
+          GKE_SPOT: "false"
         run: |
           scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
           echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
@@ -202,7 +202,7 @@ jobs:
             | tar xz -C /usr/local/bin oc
           oc version --client
 
-      - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
+      - uses: stackrox/actions/infra/install-infractl@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/install-infractl@v1
         if: inputs.cluster-provisioning-method == 'infra'
 
       - name: Wait for infra cluster and get kubeconfig

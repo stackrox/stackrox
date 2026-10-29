@@ -5,7 +5,7 @@
 central:
   resources:
     requests:
-      cpu: 500m
+      cpu: 250m
       memory: 1Gi
     limits:
       cpu: 1
@@ -14,7 +14,7 @@ central:
   db:
     resources:
       requests:
-        cpu: 500m
+        cpu: 250m
         memory: 1Gi
       limits:
         cpu: 1
@@ -22,6 +22,15 @@ central:
 
   telemetry:
     enabled: false
+
+centralWorker:
+  enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 128Mi
+    limits:
+      memory: 128Mi
 
 scannerV4:
   indexer:
@@ -31,7 +40,7 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: "400m"
+        cpu: "250m"
         memory: "1500Mi"
       limits:
         cpu: "1000m"
@@ -43,8 +52,8 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: "400m"
-        memory: "2Gi"
+        cpu: "250m"
+        memory: "1Gi"
       limits:
         cpu: "1000m"
         memory: "5500Mi"
