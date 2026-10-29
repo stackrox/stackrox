@@ -16,7 +16,7 @@ call_curl() {
     local url=$1
     # Bound each request: an unbounded curl here hung the whole post phase for
     # the 30-min timeout on dual-ipv6-primary (one stalled per-policy GET, 2026-09-12).
-    curl -s --insecure --connect-timeout 10 --max-time 120 --retry 3 --retry-delay 2 --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") "$url"
+    curl -s --insecure --connect-timeout 10 --max-time 120 --retry 3 --retry-delay 2 --retry-max-time 120 --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") "$url"
 }
 
 main() {
