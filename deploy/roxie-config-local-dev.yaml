@@ -1,0 +1,91 @@
+# Roxie config mirroring the legacy LOCAL_DEPLOYMENT=true (deploy-local.sh) settings.
+# Reduces resource requests/limits for local dev clusters, disables telemetry,
+# monitoring, and scanner autoscaling.
+#
+# Usage: roxie --config deploy/roxie-config-local-dev.yaml deploy
+
+central:
+  namespace: stackrox
+  spec:
+    central:
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 4Gi
+      db:
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1Gi
+          limits:
+            cpu: 1
+            memory: 4Gi
+      telemetry:
+        enabled: false
+
+    monitoring:
+      openshift:
+        enabled: false
+
+    centralWorker:
+      enabled: true
+      resources:
+        requests:
+          cpu: 10m
+          memory: 128Mi
+        limits:
+          memory: 128Mi
+
+    scannerV4:
+      indexer:
+        scaling:
+          autoScaling: Disabled
+          minReplicas: 1
+          replicas: 1
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1500Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+      matcher:
+        scaling:
+          autoScaling: Disabled
+          minReplicas: 1
+          replicas: 1
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1Gi
+          limits:
+            cpu: 1000m
+            memory: 5500Mi
+      db:
+        resources:
+          requests:
+            cpu: 400m
+            memory: 2Gi
+          limits:
+            cpu: 1000m
+            memory: 2500Mi
+
+securedCluster:
+  namespace: stackrox
+  spec:
+    monitoring:
+      openshift:
+        enabled: false
+
+    sensor:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 500Mi
+
+    perNode:
+      collector:
+        collection: CORE_BPF

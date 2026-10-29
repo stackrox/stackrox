@@ -355,6 +355,8 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 
 ## Examples
 
+Versions, file counts, and CVE IDs in these examples are illustrative and may be out of date. Always read the real versions from `go.mod`, including its `replace` directives, for example with `go list -m <module>` (shows the replacement if there is one) or `grep "<module>" go.mod`.
+
 ### Example 1: Direct production dependency
 
 **User:** "Verify where we use pgx dependency for CVE-2024-12345"

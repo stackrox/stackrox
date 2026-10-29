@@ -346,7 +346,7 @@ jobs:
       run: touch ui/deps
 
     - name: UI Component Tests
-      uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
+      uses: cypress-io/github-action@bc982daf1fc26474fa0cf2c355d6c910616ce411 # ratchet:cypress-io/github-action@v7
       with:
         working-directory: ui/apps/platform
         install: false
