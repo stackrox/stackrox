@@ -113,7 +113,7 @@ You will need to start another proxy:
 
  Or use `kubectl`/`oc`:
 
-`kubectl -n stackrox port-forward svc/central 8000:443`
+`kubectl -n <central namespace> port-forward svc/central 8000:443`
 
 ## When image pulls from docker.io get throttled
 
