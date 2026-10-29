@@ -17,6 +17,7 @@ jobs:
   - e2e-ui-tests-gke-konflux
 # For each job, combine paths only from rules that name it in skip.
 # Skip that job only if those paths cover a nonempty diff.
+# A matching run request takes precedence over skip coverage.
 # See select/README.md for examples.
 rules:
   # UI files do not affect these four backend suites.
@@ -61,9 +62,7 @@ rules:
       - e2e-ui-tests-gke
       - e2e-ui-tests-gke-konflux
 
-  # These Central components do not affect Sensor integration tests.
-  # A diff limited to these paths still runs Go tests, database tests,
-  # and benchmarks.
+  # These Central components require Go tests but not Sensor integration tests.
   - name: central-only-domains
     when: any-file-matches
     paths:
@@ -74,15 +73,17 @@ rules:
       - '^central/(ui|graphql|grpc|endpoints)/'
       - '^central/(featureflags|development|audit|logimbue|trace)/'
       - '^central/(helmcharts|ping|version|systeminfo|docs|internal)/'
+    run: [go]
     skip: [sensor-integration-tests]
 
-  # These Sensor components do not affect database tests or benchmarks.
-  # A diff limited to these paths still runs Go and Sensor integration tests.
+  # These Sensor components require Sensor integration tests but not database
+  # tests or benchmarks.
   - name: sensor-only-domains
     when: any-file-matches
     paths:
       - '^sensor/(admission-control|upgrader|debugger|testutils|tests)/'
       - '^sensor/kubernetes/(fake|client|enforcer)/'
+    run: [sensor-integration-tests]
     skip: [go-postgres, go-bench]
 
   # Scanner changes can skip database tests, benchmarks, and Sensor

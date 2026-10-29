@@ -116,8 +116,16 @@ func TestDocumentationPolicy(t *testing.T) {
 		files []string
 		skip  []string
 	}{
-		"root Markdown and text":                    {files: []string{"README.md", "NOTICE.txt"}, skip: all},
-		"nested and uppercase extensions":           {files: []string{"pkg/README.MD", "sensor/notes.TxT"}, skip: all},
+		"root Markdown and text":          {files: []string{"README.md", "NOTICE.txt"}, skip: all},
+		"nested and uppercase extensions": {files: []string{"pkg/README.MD", "sensor/notes.TxT"}, skip: all},
+		"Central documentation requests Go": {
+			files: []string{"central/sac/README.md"},
+			skip:  append([]string{"go-postgres", "go-bench", "sensor-integration-tests"}, e2eTargets()...),
+		},
+		"Sensor documentation requests Sensor integration": {
+			files: []string{"sensor/tests/README.md"},
+			skip:  append([]string{"go", "go-postgres", "go-bench"}, e2eTargets()...),
+		},
 		"newline filename":                          {files: []string{"docs/multi\nline.md"}, skip: all},
 		"mixed documentation and Go":                {files: []string{"README.md", "pkg/example.go"}},
 		"UI implementation":                         {files: []string{"README.md", "ui/src/App.tsx"}, skip: backend},
