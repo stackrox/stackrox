@@ -168,6 +168,17 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Configure golangci-lint cache
+      id: lint-cache
+      run: |
+        # The workflow `env` context does not contain runner-default variables like HOME,
+        # so ${{ env.HOME }} in the cache steps below expands to an empty string.
+        # Resolve the cache dir in the shell instead and pin golangci-lint to it,
+        # mirroring how golangci-lint-action sets GOLANGCI_LINT_CACHE internally.
+        dir="${HOME}/.cache/golangci-lint"
+        echo "GOLANGCI_LINT_CACHE=${dir}" >> "$GITHUB_ENV"
+        echo "dir=${dir}" >> "$GITHUB_OUTPUT"
+
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
@@ -175,7 +186,7 @@ jobs:
       if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6
       with:
-        path: ${{ env.HOME }}/.cache/golangci-lint
+        path: ${{ steps.lint-cache.outputs.dir }}
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           go-lint-v2-
@@ -184,7 +195,7 @@ jobs:
       if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
       with:
-        path: ${{ env.HOME }}/.cache/golangci-lint
+        path: ${{ steps.lint-cache.outputs.dir }}
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           go-lint-v2-
