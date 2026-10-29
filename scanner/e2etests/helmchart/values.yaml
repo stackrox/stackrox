@@ -9,6 +9,9 @@ app:
       registry: quay.io/stackrox-io
       name: scanner-v4
       tag: latest
+    # Optional overrides; unset values retain the production feed.
+    vulnerabilitiesUrl: null
+    vulnerabilityVersion: null
   db:
     name: scanner-v4-db
     image:

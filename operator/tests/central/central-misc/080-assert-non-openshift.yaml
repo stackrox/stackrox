@@ -58,3 +58,5 @@ spec:
                 secretKeyRef:
                   key: NO_PROXY
                   name: central-stackrox-central-services-proxy-env
+            - name: SCANNER_V4_MATCHER_VULNERABILITY_VERSION
+              value: ci-minimal-bab3cec6e362f74bbe0c4f6a2e552ce1bac983feb836c449929f20cfd88bf4ce
