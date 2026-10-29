@@ -416,8 +416,7 @@ EOF
 # service itself is dual-stack (the ingress operator's router Service is the known-
 # working recipe: ipFamilies [IPv6, IPv4] + RequireDualStack + an NLB). The chart
 # leaves the Service on the cluster's primary family (single-stack IPv6), so patch
-# it via an overlay; spec.customize.other would be pruned by the CRD. The
-# ip-address-type annotation is AWS Load Balancer Controller-only and inert on OCP.
+# it via an overlay; spec.customize.other would be pruned by the CRD.
 # TODO: drop once the chart supports dual-stack LoadBalancer services.
 handle_ipv6_primary_lb_annotations() {
     local config_file="$1"
@@ -431,22 +430,30 @@ handle_ipv6_primary_lb_annotations() {
     fi
 
     info "IPv6-primary service network: making central-loadbalancer dual-stack for NLB provisioning"
-    merge_yaml "$config_file" <<'EOF'
-central:
-  spec:
-    overlays:
-    - apiVersion: v1
-      kind: Service
-      name: central-loadbalancer
-      optional: true
-      patches:
-      - path: spec.ipFamilies
-        value: '["IPv6", "IPv4"]'
-      - path: spec.ipFamilyPolicy
-        value: RequireDualStack
-      - path: metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
-        value: nlb
+    append_central_overlay "$config_file" <<'EOF'
+apiVersion: v1
+kind: Service
+name: central-loadbalancer
+optional: true
+patches:
+- path: spec.ipFamilies
+  value: '["IPv6", "IPv4"]'
+- path: spec.ipFamilyPolicy
+  value: RequireDualStack
+- path: metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
+  value: nlb
 EOF
+}
+
+# Append a single overlay entry (the list element's YAML, on stdin) to
+# central.spec.overlays. Unlike merge_yaml, which merges arrays by index and
+# would replace overlays already in the config, this composes with them.
+append_central_overlay() {
+    local config_file="$1"
+    local overlay_entry
+    overlay_entry="$(cat)"
+    OVERLAY_ENTRY="$overlay_entry" patch_yaml "$config_file" \
+        '.central.spec.overlays = ((.central.spec.overlays // []) + [strenv(OVERLAY_ENTRY) | from_yaml])'
 }
 
 handle_load_balancer_setting() {
@@ -490,18 +497,15 @@ handle_endpoints_for_test() {
         # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
         # single ConfigMap key rather than a path separator. verbatim preserves newlines.
         cat > "$overlay_tmp" <<'OVERLAY'
-central:
-  spec:
-    overlays:
-    - apiVersion: v1
-      kind: ConfigMap
-      name: central-endpoints
-      patches:
-      - path: data.endpoints\.yaml
-        verbatim: |
+apiVersion: v1
+kind: ConfigMap
+name: central-endpoints
+patches:
+- path: data.endpoints\.yaml
+  verbatim: |
 OVERLAY
-        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
-        merge_yaml "$config_file" < "$overlay_tmp"
+        sed 's/^/    /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
+        append_central_overlay "$config_file" < "$overlay_tmp"
         rm -f "$overlay_tmp"
     fi
 }
