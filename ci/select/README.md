@@ -274,7 +274,10 @@ behavior.
 Adding or removing `ci-dispatcher-enforce` reevaluates Unit Tests and e2e
 Dispatch. Other label events skip planning, change detection, and test jobs.
 Unit Tests uses a separate concurrency group for those ignored events to
-protect active and pending runs.
+protect active and pending runs. Required non-matrix jobs use an
+`ignored-label-` check-name prefix on these events so their skipped checks
+cannot satisfy the required checks from test runs. Skipped matrix jobs
+already have names distinct from their required matrix variants.
 
 ### E2e jobs and required checks
 

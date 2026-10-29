@@ -79,6 +79,10 @@ jobs:
       run: python3 ci/select/e2e_dispatch.py
 
   wait-for-images:
+    # Ignored label events must not satisfy required checks.
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}wait-for-images
     needs: [ should-dispatch ]
     if: >-
       !cancelled() && needs.should-dispatch.result == 'success' &&

@@ -288,6 +288,10 @@ jobs:
   # they compile and execute without errors. A single postgres version is
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
+    # Ignored label events must not satisfy required checks.
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}go-bench
     needs: [detect-changes, ci-selection]
     # Explicit status handling keeps planner failures from suppressing tests.
     if: >-
@@ -376,6 +380,9 @@ jobs:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}ui
     needs: detect-changes
     if: >-
       !needs.detect-changes.outputs.files ||
@@ -495,6 +502,9 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}local-roxctl-tests
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-24.04
