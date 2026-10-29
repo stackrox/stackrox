@@ -74,7 +74,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorDoesNotRever
 	const n = 50
 	recs := make([]*storage.ComplianceOperatorCheckResultV2, 0, n)
 	var scanRefID string
-	for i := 0; i < n; i++ {
+	for i := range n {
 		// All rows share one scan ref (same cluster + scan name) so a single
 		// MarkStalePriorResultsByScanRef call targets the whole set.
 		rec := getTestRecForScan("sc-race", testconsts.Cluster1, "scan-race")
@@ -148,7 +148,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResultDoesNo
 	const n = 50
 	recs := make([]*storage.ComplianceOperatorCheckResultV2, 0, n)
 	var scanRefID string
-	for i := 0; i < n; i++ {
+	for i := range n {
 		// All rows share one scan ref so a single MarkStalePriorResultsByScanRef call targets the
 		// whole set. They start CURRENT, as if a prior run had resolved them fresh; the pivot is
 		// now newer than their LastStartedTime, so the timed-out run did not refresh them.
