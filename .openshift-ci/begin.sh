@@ -68,7 +68,6 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     else
         case "${CLOUD_PROVIDER:-gcp}" in
             aws)
-                # GCE instance types are invalid on AWS
                 set_ci_shared_export WORKER_NODE_TYPE m5.2xlarge
                 ;;
             gcp|*)

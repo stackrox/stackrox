@@ -66,7 +66,6 @@ class NetworkFlowTest extends BaseSpecification {
 
     static final private String SOCAT_DEBUG = "-d -d -v"
 
-    // See the comment on the TCPCONNECTIONTARGET deployment.
     private String getTcpListen() {
         orchestrator.isIPv6PrimaryServiceNetwork() ? "TCP6-LISTEN" : "TCP-LISTEN"
     }
