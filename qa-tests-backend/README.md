@@ -22,10 +22,8 @@ another method e.g. helm, or want to test against an existing cluster, or want t
 need to consider the following environment variables:
 - API_HOSTNAME: defaults to 'localhost' because `deploy.sh` creates a proxy to central at localhost:8000
 - API_PORT: defaults to 8000
-- CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy`
-  dir, so if you are deploying another way or have more than 1 cluster type deployed then you will
-  need to set this appropriately.
-- ROX_ADMIN_PASSWORD: This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy/password` file.
+- CLUSTER: For local runs, an empty value defaults to `K8S`. Set this to `OPENSHIFT` when testing an OpenShift cluster.
+- ROX_ADMIN_PASSWORD: Set this in the environment or `qa-test-settings.properties`.
 
 When deploying using `deploy/{k8s,openshift}/deploy.sh` scripts you may need:
 - MAIN_IMAGE_TAG: If your working directory has not been built and pushed and the output of `make tag` does not
@@ -35,8 +33,8 @@ When deploying using `deploy/{k8s,openshift}/deploy.sh` scripts you may need:
 
 ## Using IntelliJ
 If you have deployed StackRox into a cluster with the `deploy/{k8s,openshift}/deploy.sh` script,
-the tests in `src/test/groovy/` can be run directly. Cluster type and login data
-are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
+you can run tests in `src/test/groovy/` after setting `ROX_ADMIN_PASSWORD` in the environment
+or `qa-test-settings.properties`.
 
 ### Tests dependent on integration credentials
 - If your tests depend on an integration password or token in an environment variable such as:
@@ -52,11 +50,11 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
   - Script path : `github.com/stackrox/stackrox/qa-tests-backend/src/test/groovy/<Groovy class name>.groovy`
   - Working Directory : `github.com/stackrox/stackrox/qa-tests-backend`
   - Environment Variables:
-    - `CLUSTER`: Either `OPENSHIFT` or `K8S`
+    - `CLUSTER`: Set to `OPENSHIFT` for OpenShift; an empty value defaults to `K8S` for local runs.
     - `API_HOSTNAME`: hostname central is running; default `localhost`
     - `API_PORT`: central port; default `8000`
     - `ROX_USERNAME`: default `admin`
-    - `ROX_ADMIN_PASSWORD`: default read from deploy dir based on specified `CLUSTER`
+    - `ROX_ADMIN_PASSWORD`: set explicitly in the environment or `qa-test-settings.properties`
     - `KUBECONFIG`: kubeconfig file to use
     - `POD_SECURITY_POLICIES`: set to `false` if the underlying kubernetes cluster does not support pod security policies
 
@@ -66,9 +64,8 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
 ## Using command-line
 
 If you have deployed StackRox into a cluster with the `deploy.sh` script,
-the tests in `src/test/groovy/` can be run directly from the command-line without
-setting any environment variables. Cluster type and login data
-are inferred from the `central-deploy` directory.
+set `ROX_ADMIN_PASSWORD` in the environment or `qa-test-settings.properties`
+before running tests in `src/test/groovy/`.
 
 To run tests, from within `qa-tests-backend` directory:
 
