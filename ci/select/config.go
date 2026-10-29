@@ -110,13 +110,18 @@ func (m *mapping) validate() error {
 			}
 			continue
 		}
-		if r.When != "safe-paths" || len(r.Paths) == 0 || len(r.Skip) == 0 || len(r.Run) != 0 {
-			return fmt.Errorf("rule %q must use safe-paths with paths and skip targets only", r.Name)
+		if r.When != "any-file-matches" || len(r.Paths) == 0 || len(r.Skip)+len(r.Run) == 0 {
+			return fmt.Errorf("rule %q must use any-file-matches with paths and run or skip targets", r.Name)
 		}
 		seen := set.NewStringSet()
-		for _, job := range r.Skip {
-			if !jobs.Contains(job) || !seen.Add(job) {
-				return fmt.Errorf("rule %q has an unknown, repeated, or wildcard skip target %q", r.Name, job)
+		for _, targets := range [][]string{r.Skip, r.Run} {
+			for _, job := range targets {
+				if job == "*" && slices.Equal(r.Run, []string{"*"}) && len(r.Skip) == 0 {
+					continue
+				}
+				if !jobs.Contains(job) || !seen.Add(job) {
+					return fmt.Errorf("rule %q has an unknown, repeated, conflicting, or unsupported wildcard target %q", r.Name, job)
+				}
 			}
 		}
 		for _, pattern := range r.Paths {

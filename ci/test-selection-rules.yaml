@@ -22,14 +22,14 @@ rules:
   # UI files do not affect these four backend suites.
   # A diff limited to the frontend can skip all four.
   - name: frontend-only
-    when: safe-paths
+    when: any-file-matches
     paths: ['^ui/']
     skip: [go, go-postgres, go-bench, sensor-integration-tests]
 
   # Documentation-only changes can skip the suites listed here. Exclude
   # files used by tests, image builds, generators, and dependency setup.
   - name: documentation-only
-    when: safe-paths
+    when: any-file-matches
     paths:
       - '^(?is:.*\.(md|txt))$'
       # These lists control images downloaded by Sensor and e2e tests.
@@ -65,7 +65,7 @@ rules:
   # A diff limited to these paths still runs Go tests, database tests,
   # and benchmarks.
   - name: central-only-domains
-    when: safe-paths
+    when: any-file-matches
     paths:
       - '^central/(sac|search|auth|authprovider|apitoken|user|group|role|rbac|jwt|serviceidentities)/'
       - '^central/(postgres|globaldb|globalindex|graphdb|dackbox|blob|views)/'
@@ -79,7 +79,7 @@ rules:
   # These Sensor components do not affect database tests or benchmarks.
   # A diff limited to these paths still runs Go and Sensor integration tests.
   - name: sensor-only-domains
-    when: safe-paths
+    when: any-file-matches
     paths:
       - '^sensor/(admission-control|upgrader|debugger|testutils|tests)/'
       - '^sensor/kubernetes/(fake|client|enforcer)/'
@@ -88,14 +88,14 @@ rules:
   # Scanner changes can skip database tests, benchmarks, and Sensor
   # integration tests. The Go suite still runs.
   - name: scanner-only
-    when: safe-paths
+    when: any-file-matches
     paths: ['^scanner/']
     skip: [go-postgres, go-bench, sensor-integration-tests]
 
   # These Operator implementation paths can skip database tests, benchmarks,
   # and Sensor integration tests. Go tests, including Operator tests, still run.
   - name: operator-only
-    when: safe-paths
+    when: any-file-matches
     # operator/api is imported by PostgreSQL and Sensor tests. New roots
     # require review before joining this allowlist.
     paths:
@@ -103,7 +103,7 @@ rules:
       - '^operator/[^/]+$'
     skip: [go-postgres, go-bench, sensor-integration-tests]
 
-  # Run every job not already skipped by safe-path coverage. This includes
+  # Run every job not already selected or skipped. This includes
   # empty diffs and changes outside the reviewed paths.
   - name: remaining
     when: remaining

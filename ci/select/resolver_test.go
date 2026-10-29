@@ -178,6 +178,88 @@ func TestDocumentationInputs(t *testing.T) {
 	}
 }
 
+func TestRunComposition(t *testing.T) {
+	t.Parallel()
+	const rules = `version: 1
+jobs: [go, postgres]
+rules:
+  - name: safe-inputs
+    when: any-file-matches
+    paths: ['^']
+    skip: [go, postgres]
+  - name: scanner-inputs
+    when: any-file-matches
+    paths: ['^scanner/', '!^scanner/docs/']
+    run: [go]
+  - name: operator-inputs
+    when: any-file-matches
+    paths: ['^operator/']
+    run: [postgres]
+  - name: remaining
+    when: remaining
+    run: ['*']
+`
+	m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), rules))
+	require.NoError(t, err)
+	for name, c := range map[string]struct {
+		files []string
+		want  string
+	}{
+		"should skip when no run rule matches": {[]string{"docs/guide.md"}, "go skip\npostgres skip\n"},
+		"should let a run override complete skip coverage": {
+			[]string{"scanner/example.go"}, "go run\npostgres skip\n",
+		},
+		"should request a different target for another domain": {
+			[]string{"operator/example.go"}, "go skip\npostgres run\n",
+		},
+		"should union requests from different files and rules": {
+			[]string{"scanner/example.go", "operator/example.go"}, "go run\npostgres run\n",
+		},
+		"should preserve a run when other files do not match its rule": {
+			[]string{"scanner/example.go", "docs/guide.md"}, "go run\npostgres skip\n",
+		},
+		"should respect exclusions in run rules": {
+			[]string{"scanner/docs/guide.md"}, "go skip\npostgres skip\n",
+		},
+		"should allow a different file to request a run despite an exclusion": {
+			[]string{"scanner/docs/guide.md", "scanner/example.go"}, "go run\npostgres skip\n",
+		},
+		"should match run paths only at the root": {
+			[]string{"other/scanner/example.go"}, "go skip\npostgres skip\n",
+		},
+		"should keep skipping when safe diffs are combined": {
+			[]string{"docs/a.md", "docs/b.md"}, "go skip\npostgres skip\n",
+		},
+		"should run all targets for an empty diff": {nil, "go run\npostgres run\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			forward := resolve(c.files, m)
+			assert.Equal(t, c.want, forward.String())
+			reversed := m
+			reversed.Rules = slices.Clone(m.Rules)
+			slices.Reverse(reversed.Rules[:len(reversed.Rules)-1])
+			assert.Equal(t, forward, resolve(c.files, reversed), "rule order must not change decisions or explanations")
+		})
+	}
+	t.Run("should apply wildcard runs only when a path matches", func(t *testing.T) {
+		t.Parallel()
+		data := strings.Replace(rules, "run: [go]", "run: ['*']", 1)
+		m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), data))
+		require.NoError(t, err)
+		assert.Equal(t, "go run\npostgres run\n", resolve([]string{"scanner/example.go", "docs/guide.md"}, m).String())
+		assert.Equal(t, "go skip\npostgres skip\n", resolve([]string{"docs/guide.md"}, m).String())
+	})
+	t.Run("should run and skip different targets in one rule", func(t *testing.T) {
+		t.Parallel()
+		data := strings.Replace(validRules, "skip: [go, postgres]", "run: [go]\n    skip: [postgres]", 1)
+		m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), data))
+		require.NoError(t, err)
+		assert.Equal(t, "go run\npostgres skip\n", resolve([]string{"docs/guide.md"}, m).String())
+		assert.Equal(t, "go run\npostgres run\n", resolve([]string{"docs/guide.md", "pkg/shared.go"}, m).String())
+	})
+}
+
 func TestRootedPathAlternatives(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
@@ -235,7 +317,7 @@ func TestPathExclusions(t *testing.T) {
 			assert.Equal(t, "go run\npostgres run\n", resolve(nil, m).String())
 
 			data = strings.Replace(data, "  - name: remaining", `  - name: test-inputs
-    when: safe-paths
+    when: any-file-matches
     paths: ['^docs/testdata/']
     skip: [go]
   - name: remaining`, 1)
@@ -252,7 +334,7 @@ func TestPathExclusions(t *testing.T) {
 func TestResolve(t *testing.T) {
 	t.Parallel()
 	data := strings.Replace(validRules, "  - name: remaining", `  - name: second
-    when: safe-paths
+    when: any-file-matches
     paths: ['^docs/', '^ui/']
     skip: [postgres]
   - name: remaining`, 1)
@@ -298,7 +380,7 @@ func TestNewTarget(t *testing.T) {
 func TestCoverageOrder(t *testing.T) {
 	t.Parallel()
 	data := strings.Replace(validRules, "  - name: remaining", `  - name: frontend
-    when: safe-paths
+    when: any-file-matches
     paths: ['^ui/', '^docs/']
     skip: [postgres]
   - name: remaining`, 1)

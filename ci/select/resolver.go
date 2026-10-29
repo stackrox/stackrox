@@ -22,24 +22,37 @@ func resolve(files []string, m mapping) decision {
 		fmt.Fprintf(&log, "changed path: %q\n", path)
 	}
 	if len(files) == 0 {
-		log.WriteString("empty diff: no safe-path coverage\n")
+		log.WriteString("empty diff: no skip coverage\n")
 	}
 	for _, job := range m.Jobs {
 		covered := len(files) > 0
 		reasons := set.NewStringSet()
+		runReasons := set.NewStringSet()
 		for _, path := range files {
 			pathCovered := false
 			for _, r := range m.Rules {
-				if r.When == "safe-paths" && slices.Contains(r.Skip, job) && r.matches(path) {
+				if r.When != "any-file-matches" || !r.matches(path) {
+					continue
+				}
+				if slices.Contains(r.Run, job) || slices.Contains(r.Run, "*") {
+					runReasons.Add(r.Name)
+				}
+				if slices.Contains(r.Skip, job) {
 					pathCovered = true
 					reasons.Add(r.Name)
 				}
 			}
 			covered = covered && pathCovered
 		}
-		if covered {
+		if len(runReasons) > 0 {
+			actions[job] = "run"
+			fmt.Fprintf(&log, "%s: run by %q (at least one changed path matches)\n", job, slices.Sorted(maps.Keys(runReasons)))
+			if covered {
+				fmt.Fprintf(&log, "%s: run overrides skip coverage by %q\n", job, slices.Sorted(maps.Keys(reasons)))
+			}
+		} else if covered {
 			actions[job] = "skip"
-			fmt.Fprintf(&log, "%s: skip by %q (safe rules cover every changed path)\n", job, slices.Sorted(maps.Keys(reasons)))
+			fmt.Fprintf(&log, "%s: skip by %q (skip rules cover every changed path)\n", job, slices.Sorted(maps.Keys(reasons)))
 		}
 	}
 	for _, r := range m.Rules {

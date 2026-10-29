@@ -13,7 +13,7 @@ const validRules = `version: 1
 jobs: [go, postgres]
 rules:
   - name: docs
-    when: safe-paths
+    when: any-file-matches
     paths: ['^docs/']
     skip: [go, postgres]
   - name: remaining
@@ -48,8 +48,14 @@ func TestLoadMapping(t *testing.T) {
 		"should reject repeated skip jobs":   strings.Replace(validRules, "skip: [go, postgres]", "skip: [go, go]", 1),
 		"should reject mixed wildcard jobs":  strings.Replace(validRules, "skip: [go, postgres]", "skip: ['*', go]", 1),
 		"should reject repeated wildcard":    strings.Replace(validRules, "skip: [go, postgres]", "skip: ['*', '*']", 1),
-		"should reject no skip targets":      strings.Replace(validRules, "skip: [go, postgres]", "skip: []", 1),
-		"should reject file rule runs":       strings.Replace(validRules, "skip: [go, postgres]", "run: ['*']", 1),
+		"should reject no actions":           strings.Replace(validRules, "skip: [go, postgres]", "skip: []", 1),
+		"should reject unknown run jobs":     strings.Replace(validRules, "skip: [go, postgres]", "run: [missing]", 1),
+		"should reject repeated run jobs":    strings.Replace(validRules, "skip: [go, postgres]", "run: [go, go]", 1),
+		"should reject mixed wildcard runs":  strings.Replace(validRules, "skip: [go, postgres]", "run: ['*', go]", 1),
+		"should reject repeated run stars":   strings.Replace(validRules, "skip: [go, postgres]", "run: ['*', '*']", 1),
+		"should reject conflicting actions":  strings.Replace(validRules, "skip: [go, postgres]", "run: [go]\n    skip: [go]", 1),
+		"should reject conflicting wildcard": strings.Replace(validRules, "skip: [go, postgres]", "run: ['*']\n    skip: [go]", 1),
+		"should reject scalar run targets":   strings.Replace(validRules, "skip: [go, postgres]", "run: go", 1),
 		"should reject bad patterns":         strings.Replace(validRules, "'^docs/'", "'^[broken'", 1),
 		"should reject unbalanced groups":    strings.Replace(validRules, "'^docs/'", "'^ui/)|docs/(?:'", 1),
 		"should reject unrooted patterns":    strings.Replace(validRules, "'^docs/'", "'docs/'", 1),
@@ -61,8 +67,8 @@ func TestLoadMapping(t *testing.T) {
 		"should reject no paths":             strings.Replace(validRules, "['^docs/']", "[]", 1),
 		"should reject a missing name":       strings.Replace(validRules, "name: docs", "name: ''", 1),
 		"should reject duplicate names":      strings.Replace(validRules, "name: docs", "name: remaining", 1),
-		"should reject early remaining":      strings.Replace(validRules, "when: safe-paths", "when: remaining", 1),
-		"should require final remaining":     strings.Replace(validRules, "when: remaining", "when: safe-paths", 1),
+		"should reject early remaining":      strings.Replace(validRules, "when: any-file-matches", "when: remaining", 1),
+		"should require final remaining":     strings.Replace(validRules, "when: remaining", "when: any-file-matches", 1),
 		"should require final run all":       strings.Replace(validRules, "run: ['*']", "run: [go]", 1),
 		"should reject final wildcard skips": strings.Replace(validRules, "run: ['*']", "skip: ['*']", 1),
 		"should reject final skips":          strings.Replace(validRules, "run: ['*']", "skip: [go, postgres]", 1),
@@ -77,8 +83,8 @@ func TestLoadMapping(t *testing.T) {
 	for _, field := range []string{"requires: {}", "label: example", "default: ['*']"} {
 		cases["should reject removed field "+field] = strings.Replace(validRules, "    skip:", "    "+field+"\n    skip:", 1)
 	}
-	for _, when := range []string{"every-file-matches", "any-file-matches", "always", "no-file-changed", "label-exists", "typo"} {
-		cases["should reject unused condition "+when] = strings.Replace(validRules, "safe-paths", when, 1)
+	for _, when := range []string{"safe-paths", "changed-paths", "every-file-matches", "always", "no-file-changed", "label-exists", "typo"} {
+		cases["should reject unused condition "+when] = strings.Replace(validRules, "any-file-matches", when, 1)
 	}
 	for name, data := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -87,10 +93,18 @@ func TestLoadMapping(t *testing.T) {
 			require.Error(t, err)
 		})
 	}
-	t.Run("should accept the supported schema", func(t *testing.T) {
-		t.Parallel()
-		m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), validRules))
-		require.NoError(t, err)
-		require.Len(t, m.Rules[0].patterns, 1)
-	})
+	for name, actions := range map[string]string{
+		"should accept skip targets":     "skip: [go, postgres]",
+		"should accept run targets":      "run: [go, postgres]",
+		"should accept all run targets":  "run: ['*']",
+		"should accept disjoint actions": "run: [go]\n    skip: [postgres]",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			data := strings.Replace(validRules, "skip: [go, postgres]", actions, 1)
+			m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), data))
+			require.NoError(t, err)
+			require.Len(t, m.Rules[0].patterns, 1)
+		})
+	}
 }
