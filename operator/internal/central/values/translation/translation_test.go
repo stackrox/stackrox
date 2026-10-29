@@ -130,6 +130,37 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 		},
+		"custom metrics enabled without standard monitoring": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Enabled: new(false),
+								Custom:  &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
+							},
+						},
+					},
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+						"custom":  map[string]interface{}{"enabled": true},
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{"createClaim": false},
+						},
+					},
+				},
+			},
+		},
 		"minimal spec": {
 			args: args{
 				c: platform.Central{
