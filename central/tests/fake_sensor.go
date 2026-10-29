@@ -43,30 +43,32 @@ func (s *FakeSensor) ClusterID() string {
 // ConnectTo pre-creates a cluster, dials the test Central over bufconn, and
 // completes the SensorHello/CentralHello handshake.
 func (s *FakeSensor) ConnectTo(c *CentralTestServer) {
-	// Pre-create the cluster so Central can look it up by ID.
-	clusterID, err := c.ClusterDS.AddCluster(allAccessCtx(), &storage.Cluster{
-		Name:      s.name,
-		MainImage: "quay.io/stackrox-io/main",
-	})
-	require.NoError(s.t, err)
-	s.clusterID = clusterID
+	// Pre-create the cluster on first connection; reuse on reconnect.
+	if s.clusterID == "" {
+		clusterID, err := c.ClusterDS.AddCluster(allAccessCtx(), &storage.Cluster{
+			Name:      s.name,
+			MainImage: "quay.io/stackrox-io/main",
+		})
+		require.NoError(s.t, err)
+		s.clusterID = clusterID
+	}
 
 	// Dial over bufconn.
+	var err error
 	s.conn, err = grpc.NewClient("passthrough:///bufconn",
 		grpc.WithContextDialer(bufconnDialer(c.listener)),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	require.NoError(s.t, err)
-	s.t.Cleanup(func() { s.conn.Close() })
+	s.t.Cleanup(func() { s.Disconnect() })
 
 	// Open Communicate stream with sensor hello metadata + cluster ID.
 	ctx, cancel := context.WithCancel(context.Background())
 	s.cancel = cancel
-	s.t.Cleanup(cancel)
 
 	md := metadata.Pairs(
 		centralsensor.SensorHelloMetadataKey, "true",
-		testClusterIDKey, clusterID,
+		testClusterIDKey, s.clusterID,
 	)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
@@ -96,6 +98,7 @@ func (s *FakeSensor) ConnectTo(c *CentralTestServer) {
 	require.NotNil(s.t, hello, "expected CentralHello, got %T", msg.GetMsg())
 
 	// Drain initial sync messages (at least ClusterConfig).
+	s.recvC = make(chan *central.MsgToSensor, 64)
 	s.drainInitialSync()
 
 	// Background receiver.
@@ -124,6 +127,19 @@ func (s *FakeSensor) recvLoop() {
 			return
 		}
 		s.recvC <- msg
+	}
+}
+
+// Disconnect terminates the current sensor connection. The FakeSensor can be
+// reconnected by calling ConnectTo again.
+func (s *FakeSensor) Disconnect() {
+	if s.cancel != nil {
+		s.cancel()
+		s.cancel = nil
+	}
+	if s.conn != nil {
+		s.conn.Close()
+		s.conn = nil
 	}
 }
 
