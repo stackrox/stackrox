@@ -1,18 +1,25 @@
 // Evidence helpers for verify-ui proof specs. Imported by absolute path from specs that
-// scripts/new-spec.sh generates; never imported by checked-in tests.
-
-const consoleErrors = [];
+// scripts/new-spec.sh generates and by templates/support.js; never by checked-in tests.
 
 // What drive.sh reads after the run to gate the proof. assertions maps each test that ran
 // to the number of assertions in its body. Assertions in hooks, such as withAuth(), do not count.
-const checks = { assertions: {} };
+// errors lists uncaught exceptions and console.error calls from the app.
+const checks = { assertions: {}, errors: [] };
+
+// Uncaught exceptions that cypress/support/e2e.js already ignores as benign. Keep in sync.
+const knownBenignUncaught =
+    /ResizeObserver loop (completed|limit exceeded)|multiple, different versions of MobX|model\.getLanguageId is not a function|Uncaught SyntaxError: Unexpected token '<'/;
 
 function evidenceDir() {
     return Cypress.expose('VERIFY_EVIDENCE_DIR');
 }
 
 function testTitle() {
-    return Cypress.currentTest.titlePath.join(' > ');
+    return Cypress.currentTest ? Cypress.currentTest.titlePath.join(' > ') : '(outside a test)';
+}
+
+function recordError(kind, message) {
+    checks.errors.push({ kind, test: testTitle(), message: String(message) });
 }
 
 /**
@@ -27,32 +34,32 @@ export function installEvidenceHooks() {
         }
     });
 
+    // Recorded, and drive.sh fails the proof on any that is not known benign. Returns nothing,
+    // so the repo handler still decides whether Cypress fails the test.
+    Cypress.on('uncaught:exception', (err) => {
+        const kind = knownBenignUncaught.test(err.message) ? 'uncaught (known benign)' : 'uncaught';
+        // Keep the app's message, without the explanation Cypress wraps around it.
+        const message = err.message
+            .replace(/^The following error originated from your application code[^>]*>\s*/, '')
+            .replace(/\s*When Cypress detects uncaught errors[\s\S]*$/, '');
+        recordError(kind, message);
+    });
+
+    // Recorded only. The app logs some errors on its own, so these do not fail the proof.
+    Cypress.on('window:before:load', (win) => {
+        const original = win.console.error.bind(win.console);
+        win.console.error = (...args) => {
+            recordError('console.error', args.map(String).join(' '));
+            original(...args);
+        };
+    });
+
     beforeEach(() => {
         checks.assertions[testTitle()] = 0;
     });
 
     after(() => {
         cy.writeFile(`${evidenceDir()}/checks.json`, checks, { log: false });
-    });
-}
-
-/**
- * Collect console.error calls and uncaught exceptions from the app window so a proof can
- * show the flow ran clean. Call once at the top of the describe block.
- */
-export function recordConsoleErrors() {
-    beforeEach(() => {
-        cy.on('window:before:load', (win) => {
-            const original = win.console.error.bind(win.console);
-            win.console.error = (...args) => {
-                consoleErrors.push(args.map(String).join(' '));
-                original(...args);
-            };
-        });
-    });
-
-    after(() => {
-        cy.writeFile(`${evidenceDir()}/console-errors.json`, consoleErrors);
     });
 }
 

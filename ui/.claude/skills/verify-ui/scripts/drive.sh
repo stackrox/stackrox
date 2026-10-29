@@ -3,11 +3,13 @@
 #
 #   drive.sh <spec-path>      spec from new-spec.sh (or any spec, e.g. cypress/integration/...)
 #
-# Evidence lands in <run>/evidence/: screenshots, video, *.state.json, console-errors.json,
+# Evidence lands in <run>/evidence/: screenshots, video, *.state.json, errors.txt,
 # checks.json, cypress.log, summary.txt. The run dir is printed on the last line.
 #
 # Proof gate: even when Cypress passes, the proof fails if any test ran no assertions in its
-# body, or if checks.json is missing (the evidence support file did not run).
+# body, if the app threw an uncaught exception that is not known benign, or if checks.json
+# is missing (the evidence support file did not run). console.error calls are recorded in
+# errors.txt but do not fail the proof.
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -57,12 +59,14 @@ gate=()
 checks="${evidence}/checks.json"
 if [[ ! -f "${checks}" ]]; then
     gate+=("no checks.json, so the evidence support file did not run; see cypress.log")
-elif [[ "$(jq '.assertions | length' "${checks}")" -eq 0 ]]; then
-    gate+=("no tests ran")
 else
+    [[ "$(jq '.assertions | length' "${checks}")" -gt 0 ]] || gate+=("no tests ran")
     while IFS= read -r test; do
         gate+=("\"${test}\" ran no assertions; check the visible result with should() or expect()")
     done < <(jq -r '.assertions | to_entries[] | select(.value == 0) | .key' "${checks}")
+    jq -r '.errors[] | "\(.kind): \(.test): \(.message | gsub("\\s+"; " ") | .[0:500])"' "${checks}" > "${evidence}/errors.txt"
+    uncaught="$(jq '[.errors[] | select(.kind == "uncaught")] | length' "${checks}")"
+    [[ ${uncaught} -eq 0 ]] || gate+=("the app threw ${uncaught} uncaught exception(s); see errors.txt")
 fi
 
 if [[ ${status} -ne 0 ]]; then
@@ -80,7 +84,10 @@ fi
     echo "checkout: $(git -C "${REPO_DIR}" rev-parse --abbrev-ref HEAD) @ $(git -C "${REPO_DIR}" rev-parse --short HEAD)$(git -C "${REPO_DIR}" diff --quiet || echo ' + uncommitted changes')"
     echo "central: ${UI_START_TARGET} version $(admin_curl "${UI_START_TARGET}/v1/metadata" | jq -r '.version // "unknown"')"
     echo "time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    if [[ -f "${checks}" ]]; then jq -r '.assertions | to_entries[] | "assertions: \(.value) in \"\(.key)\""' "${checks}"; fi
+    if [[ -f "${checks}" ]]; then
+        jq -r '.assertions | to_entries[] | "assertions: \(.value) in \"\(.key)\""' "${checks}"
+        jq -r '.errors | group_by(.kind)[] | "errors: \(length) \(.[0].kind)"' "${checks}"
+    fi
     for line in ${gate[@]+"${gate[@]}"}; do echo "proof gate: ${line}"; done
 } > "${evidence}/summary.txt"
 

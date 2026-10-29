@@ -3,11 +3,10 @@
 // no fixtures or staticResponseMap stubs for the behavior under proof.
 import withAuth from '__PLATFORM__/cypress/helpers/basicAuth';
 import { visit } from '__PLATFORM__/cypress/helpers/visit';
-import { captureState, recordConsoleErrors } from '__SKILL__/templates/evidence';
+import { captureState } from '__SKILL__/templates/evidence';
 
 describe('verify-ui: __NAME__', () => {
     withAuth();
-    recordConsoleErrors();
 
     it('__NAME__', () => {
         visit('/main/dashboard');
