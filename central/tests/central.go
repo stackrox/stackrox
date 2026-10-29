@@ -14,6 +14,7 @@ import (
 	compIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	complianceProfilesPipeline "github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorprofilesv2"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	profileService "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	compScanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	compScansDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	compSSBDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
@@ -38,6 +39,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	pipelineAll "github.com/stackrox/rox/central/sensor/service/pipeline/all"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -131,10 +133,17 @@ func NewCentral(t *testing.T) *CentralTestServer {
 	clusterInit := clusterInitStore.GetTestPostgresDataStore(t, pool)
 	svc := sensorService.New(connMgr, factory, clusterDS, installStore, clusterInit)
 
-	// gRPC server with auth bypass interceptor.
+	// Compliance profile API service (real).
+	profileSvc := profileService.New(profDS)
+
+	// gRPC server with auth bypass interceptors.
 	lis := bufconn.Listen(1024 * 1024)
-	srv := grpc.NewServer(grpc.StreamInterceptor(sensorIdentityInterceptor()))
+	srv := grpc.NewServer(
+		grpc.StreamInterceptor(sensorIdentityInterceptor()),
+		grpc.UnaryInterceptor(allAccessUnaryInterceptor()),
+	)
 	central.RegisterSensorServiceServer(srv, svc)
+	v2.RegisterComplianceProfileServiceServer(srv, profileSvc)
 
 	return &CentralTestServer{
 		t:         t,
@@ -187,6 +196,14 @@ func sensorIdentityInterceptor() grpc.StreamServerInterceptor {
 		ctx := sac.WithAllAccess(ss.Context())
 		ctx = authn.ContextWithIdentity(ctx, identity, nil)
 		return handler(srv, &wrappedStream{ServerStream: ss, ctx: ctx})
+	}
+}
+
+// allAccessUnaryInterceptor injects SAC all-access into unary RPCs so API
+// service methods can query the database without auth setup.
+func allAccessUnaryInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		return handler(sac.WithAllAccess(ctx), req)
 	}
 }
 
