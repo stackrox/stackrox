@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
-// cache round-trip test marker
 type contextBoundRoundTripper struct {
 	ctx      concurrency.ErrorWaitable
 	delegate http.RoundTripper
