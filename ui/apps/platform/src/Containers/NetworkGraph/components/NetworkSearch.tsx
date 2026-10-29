@@ -17,6 +17,7 @@ function NetworkSearch({ isDisabled }: NetworkSearchProps) {
         <CompoundSearchFilter
             config={searchFilterConfig}
             defaultEntity="Deployment"
+            defaultAttribute="Label"
             searchFilter={searchFilter}
             isDisabled={isDisabled}
             onSearch={(payload) => setSearchFilter(updateSearchFilter(searchFilter, payload))}
