@@ -70,7 +70,7 @@ jobs:
             check_fact_version
 
   publish-helm-charts:
-    needs: [build, check-collector-version, check-fact-version, check-is-release]
+    needs: [build, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-24.04
     steps:
