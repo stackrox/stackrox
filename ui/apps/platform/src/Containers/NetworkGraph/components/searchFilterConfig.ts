@@ -41,13 +41,16 @@ export const searchFilterConfig: CompoundSearchFilterConfig = [entityForDeployme
 
 // Search keys owned by the dedicated scope selectors (Cluster/Namespace/Deployment); they are
 // managed outside the compound search filter and must never render a legacy catch-all chip.
+// Matched case-sensitively because useScopeHierarchy reads these keys by exact property access
+// (searchFilter.Cluster, etc.): a case-different variant is not consumed there, so it must stay in
+// the catch-all as a removable chip rather than becoming a hidden, unremovable filter.
 const scopeSearchKeys: SearchFieldLabel[] = ['Cluster', 'Namespace', 'Deployment'];
 
-// Keys represented by the config attributes or the scope selectors already render a chip (or are
-// intentionally handled elsewhere), so they are excluded from the catch-all. Compared lowercased
-// because the search filter read path matches keys case-insensitively.
-function getHandledSearchKeys(config: CompoundSearchFilterConfig): Set<string> {
-    const keys = new Set<string>(scopeSearchKeys.map((key) => key.toLowerCase()));
+// Keys represented by the config attributes already render a chip via the compound search filter's
+// own label component, so they are excluded from the catch-all. Compared lowercased because that
+// label component reads values with getValueByCaseInsensitiveKey (case-insensitive).
+function getHandledConfigSearchKeys(config: CompoundSearchFilterConfig): Set<string> {
+    const keys = new Set<string>();
     config.forEach((entity) => {
         entity.attributes.forEach((attribute) => {
             keys.add(attribute.searchTerm.toLowerCase());
@@ -68,10 +71,12 @@ export function getLegacySearchFilterAttributes(
     searchFilter: SearchFilter,
     config: CompoundSearchFilterConfig = searchFilterConfig
 ): CompoundSearchFilterAttribute[] {
-    const handledKeys = getHandledSearchKeys(config);
+    const scopeKeys = new Set<string>(scopeSearchKeys);
+    const configKeys = getHandledConfigSearchKeys(config);
     return Object.keys(searchFilter)
         .filter((key) => {
-            if (handledKeys.has(key.toLowerCase())) {
+            // Scope keys match exactly; config keys match case-insensitively (see comments above).
+            if (scopeKeys.has(key) || configKeys.has(key.toLowerCase())) {
                 return false;
             }
             const value = searchFilter[key];
