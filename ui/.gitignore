@@ -23,4 +23,7 @@ npm-debug.log*
 # we want to ignore all AI rules while we are experimenting with them
 .cursor/
 .cursorrules/
-.claude/
+# Personal Claude files (settings.local.json and the like) stay ignored.
+# Shared skills under ui/.claude/skills/ are tracked.
+**/.claude/*
+!/.claude/skills/
