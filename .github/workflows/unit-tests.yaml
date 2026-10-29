@@ -187,6 +187,9 @@ jobs:
         echo "Probe outcome: pass"
       if: env.CI_RUN_SUITE == 'true'
   ui-component:
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}ui-component
     needs: detect-changes
     if: "!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files,
       '^ui/') || contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')"
@@ -234,6 +237,9 @@ jobs:
         echo "Probe outcome: pass"
       if: env.CI_RUN_SUITE == 'true'
   shell-unit-tests:
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}shell-unit-tests
     needs: detect-changes
     if: "${{ !needs.detect-changes.outputs.ui_only }}"
     runs-on: ubuntu-24.04
@@ -251,6 +257,9 @@ jobs:
         PY
         echo "Probe outcome: pass"
   openshift-ci-unit-tests:
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}openshift-ci-unit-tests
     needs: detect-changes
     if: "${{ !needs.detect-changes.outputs.ui_only }}"
     runs-on: ubuntu-24.04
@@ -268,6 +277,9 @@ jobs:
         PY
         echo "Probe outcome: pass"
   sensor-integration-tests:
+    name: >-
+      ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
+          && 'ignored-label-' || '' }}sensor-integration-tests
     needs:
     - detect-changes
     - ci-selection
