@@ -17,10 +17,11 @@ Gradle is used to build and run tests written in Groovy using the Spock test fra
   collection under `Quay.io readonly user`.
 
 ## Test access to the StackRox instance under test
-Deploy StackRox using [roxie](https://github.com/stackrox/roxie) (see `deploy/README.md`).
-After deployment, source the roxie-generated envrc file to set `ROX_ADMIN_PASSWORD`,
-`API_ENDPOINT`, and other connection details automatically or use roxies interactive sub-shell
-feature, which takes care of setting up the environment automatically.
+After deployment, source the roxie-generated envrc file to set `ROX_ADMIN_PASSWORD` and
+`API_ENDPOINT`. The QA client uses `API_HOSTNAME` and `API_PORT`, so set them to the host
+and port from `API_ENDPOINT` before running tests. Roxie's interactive sub-shell requires
+the same variables when the endpoint is not `localhost:8000`.
+For OpenShift clusters, also export `CLUSTER=OPENSHIFT`; Roxie's environment does not set `CLUSTER`.
 
 If you need to override connection settings (e.g. when testing against an existing cluster),
 the following environment variables are available:
