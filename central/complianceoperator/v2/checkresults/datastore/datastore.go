@@ -21,6 +21,19 @@ type DataStore interface {
 	// UpsertResult adds the result to the database
 	UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
 
+	// UpsertReceivedResult upserts a result just received from sensor and, atomically with the
+	// write, derives its data_freshness instead of trusting the caller's value: "received" does
+	// not always mean "new" (sensor resends every existing check result on reconnect regardless of
+	// whether anything changed, and a misbehaving compliance operator could republish a result
+	// without a real rescan behind it). A result is CURRENT when it has no prior stored row, or
+	// when its LastStartedTime is newer than what is currently stored; otherwise the existing
+	// row's freshness is carried over unchanged. The read and the write happen under the same
+	// KeyFence used by MarkStalePriorResultsByScanRef, so an ingest decision can't be based on a
+	// stale read that a concurrent timeout marking (or another ingest) has since invalidated, and
+	// cannot revert that concurrent write. On a lookup error, no write happens: an error here must
+	// not silently replace a known freshness value with UNKNOWN.
+	UpsertReceivedResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
+
 	// DeleteResult removes a result from the database
 	DeleteResult(ctx context.Context, id string) error
 

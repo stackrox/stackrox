@@ -252,6 +252,20 @@ func (mr *MockDataStoreMockRecorder) SearchComplianceCheckResults(ctx, query any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchComplianceCheckResults", reflect.TypeOf((*MockDataStore)(nil).SearchComplianceCheckResults), ctx, query)
 }
 
+// UpsertReceivedResult mocks base method.
+func (m *MockDataStore) UpsertReceivedResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertReceivedResult", ctx, result)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertReceivedResult indicates an expected call of UpsertReceivedResult.
+func (mr *MockDataStoreMockRecorder) UpsertReceivedResult(ctx, result any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertReceivedResult", reflect.TypeOf((*MockDataStore)(nil).UpsertReceivedResult), ctx, result)
+}
+
 // UpsertResult mocks base method.
 func (m *MockDataStore) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	m.ctrl.T.Helper()
