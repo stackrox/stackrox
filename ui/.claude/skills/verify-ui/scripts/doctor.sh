@@ -21,7 +21,7 @@ if [[ -n "${INFRA_CLUSTER}" ]]; then
 fi
 
 code="$(admin_curl "${UI_START_TARGET}/v1/auth/status" -o /dev/null -w '%{http_code}' --max-time 15 || true)"
-[[ "${code}" == "200" ]] || fail "Central rejected admin basic auth directly (HTTP ${code:-none})"
+[[ "${code}" == "200" ]] || fail "Central at ${UI_START_TARGET} $(describe_http_failure "${code}")"
 ok "Central accepts admin basic auth"
 
 central_version="$(admin_curl "${UI_START_TARGET}/v1/metadata" --max-time 15 | jq -r '.version // "unknown"')"
@@ -55,7 +55,7 @@ curl -sk "${UI_URL}/" | grep -q 'id="root"' || fail "${UI_URL}/ does not return 
 ok "${UI_URL} returns the app shell"
 
 code="$(admin_curl "${UI_URL}/v1/auth/status" -o /dev/null -w '%{http_code}' --max-time 15 || true)"
-[[ "${code}" == "200" ]] || fail "proxied /v1/auth/status through the dev server returned HTTP ${code:-none}"
+[[ "${code}" == "200" ]] || fail "Central through the dev server proxy ${UI_URL}/v1 $(describe_http_failure "${code}")"
 ok "dev server proxies /v1 to Central"
 
 echo "healthy"

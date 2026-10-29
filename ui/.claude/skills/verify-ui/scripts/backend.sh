@@ -4,6 +4,7 @@
 #   backend.sh create [name]          start an infra qa-demo running the image for local HEAD
 #   backend.sh wait <name>            block until the infra cluster is READY
 #   backend.sh connect <name>         fetch Central URL + admin password from infra artifacts
+#   backend.sh connect-roxie <envrc>  use the Central from a roxie deploy --envrc file
 #   backend.sh connect-url <url> <password-file>   use any reachable Central
 #   backend.sh status                 print the connected backend (never the password)
 #   backend.sh delete                 delete the connected infra cluster and forget it
@@ -14,20 +15,23 @@ cmd="${1:-status}"
 shift || true
 
 write_backend_env() {
-    local target="$1" cluster="${2:-}"
-    cat > "${BACKEND_ENV}" <<EOF
-UI_START_TARGET=${target}
-INFRA_CLUSTER=${cluster}
-EOF
+    local target="$1" cluster="${2:-}" user="${3:-admin}"
+    printf 'UI_START_TARGET=%q\nINFRA_CLUSTER=%q\nCENTRAL_USER=%q\n' "${target}" "${cluster}" "${user}" > "${BACKEND_ENV}"
     chmod 600 "${BACKEND_ENV}"
     info "connected: UI_START_TARGET=${target}${cluster:+ (infra ${cluster})}"
 }
 
-check_central() {
-    local target="$1"
+# Verify that Central accepts the credentials, then save them. Nothing is saved on failure,
+# so a bad attempt never replaces a working connection.
+connect_central() {
+    local target="$1" password_file="$2" cluster="${3:-}" user="${4:-admin}"
     local code
-    code="$(admin_curl "${target}/v1/auth/status" -o /dev/null -w '%{http_code}' --max-time 15 || true)"
-    [[ "${code}" == "200" ]] || die "Central at ${target} rejected admin basic auth (HTTP ${code:-none})"
+    target="${target%/}"
+    [[ -s "${password_file}" ]] || die "password file ${password_file} is missing or empty"
+    code="$(basic_curl "${user}" "${password_file}" "${target}/v1/auth/status" -o /dev/null -w '%{http_code}' --max-time 15 || true)"
+    [[ "${code}" == "200" ]] || die "Central at ${target} $(describe_http_failure "${code}"); nothing saved"
+    install -m 600 "${password_file}" "${PASSWORD_FILE}"
+    write_backend_env "${target}" "${cluster}" "${user}"
 }
 
 case "${cmd}" in
@@ -63,17 +67,33 @@ connect)
     infractl artifacts "${name}" --download-dir "${dl}" >/dev/null
     [[ -f "${dl}/url" && -f "${dl}/admin-password" ]] \
         || die "artifacts for ${name} lack url/admin-password; contents: $(ls "${dl}" | tr '\n' ' ')"
-    install -m 600 "${dl}/admin-password" "${PASSWORD_FILE}"
-    target="$(tr -d '[:space:]' < "${dl}/url")"
-    check_central "${target}"
-    write_backend_env "${target}" "${name}"
+    connect_central "$(tr -d '[:space:]' < "${dl}/url")" "${dl}/admin-password" "${name}"
+    ;;
+connect-roxie)
+    envrc="${1:?usage: backend.sh connect-roxie <envrc>}"
+    [[ -f "${envrc}" ]] || die "no envrc at ${envrc}; create it with roxie deploy --envrc <path> (deploy/AGENTS.md)"
+    pw="$(mktemp "${STATE_DIR}/roxie-password.XXXXXX")"
+    trap 'rm -f "${pw}"' EXIT
+    # roxie writes export NAME="value" lines. Read them in a subshell so nothing leaks into
+    # this shell, and pass the password through a 0600 file, never the command line.
+    roxie_env="$(
+        unset ROX_BASE_URL ROX_ENDPOINT ROX_ADMIN_PASSWORD ROX_USERNAME
+        # shellcheck disable=SC1090
+        source "${envrc}" >/dev/null
+        printf '%s' "${ROX_ADMIN_PASSWORD:-}" > "${pw}"
+        echo "${ROX_BASE_URL:-${ROX_ENDPOINT:+https://${ROX_ENDPOINT}}}"
+        echo "${ROX_USERNAME:-admin}"
+    )"
+    target="$(sed -n 1p <<< "${roxie_env}")"
+    user="$(sed -n 2p <<< "${roxie_env}")"
+    [[ -n "${target}" ]] || die "${envrc} sets neither ROX_BASE_URL nor ROX_ENDPOINT"
+    [[ -s "${pw}" ]] || die "${envrc} does not set ROX_ADMIN_PASSWORD"
+    connect_central "${target}" "${pw}" "" "${user}"
     ;;
 connect-url)
     target="${1:?usage: backend.sh connect-url <url> <password-file>}"
     pw="${2:?usage: backend.sh connect-url <url> <password-file>}"
-    install -m 600 "${pw}" "${PASSWORD_FILE}"
-    check_central "${target}"
-    write_backend_env "${target}"
+    connect_central "${target}" "${pw}"
     ;;
 status)
     load_backend

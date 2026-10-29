@@ -1,6 +1,6 @@
 ---
 name: verify-ui
-description: Prove StackRox UI behavior in the real app by driving the Vite dev server from this checkout with Cypress against a live Central (infra qa-demo), capturing screenshots, video, and page-state evidence. Use when asked to verify, prove, demo, or check a UI change in the running app, reproduce a UI bug end to end, or when "it type-checks" is not enough evidence for a ui/ change. Not for writing checked-in e2e tests (use cypress-e2e-test).
+description: Prove StackRox UI behavior in the real app by driving the Vite dev server from this checkout with Cypress against a live Central (roxie deployment, any reachable Central, or an infra qa-demo), capturing screenshots, video, and page-state evidence. Use when asked to verify, prove, demo, or check a UI change in the running app, reproduce a UI bug end to end, or when "it type-checks" is not enough evidence for a ui/ change. Not for writing checked-in e2e tests (use cypress-e2e-test).
 ---
 
 # verify-ui
@@ -11,7 +11,7 @@ Drive the StackRox web UI the way a user does and keep proof. The stack is:
 Cypress (electron, headless) -> https://localhost:3000 (Vite, this checkout)
                                     | proxies /v1 /v2 /api /docs /sso
                                     v
-                               Central (UI_START_TARGET, infra qa-demo)
+                               Central (UI_START_TARGET: roxie, any Central, or infra qa-demo)
 ```
 
 All scripts live in `ui/.claude/skills/verify-ui/scripts/`. Run them from any directory. State and evidence live in `~/.cache/stackrox-verify-ui/` (override with `VERIFY_UI_HOME`), outside the git tree.
@@ -28,17 +28,33 @@ All scripts live in `ui/.claude/skills/verify-ui/scripts/`. Run them from any di
 
 ## 1. Backend: get a Central
 
-Reuse one if `scripts/backend.sh status` already shows a READY cluster. Otherwise:
+Reuse one if `scripts/backend.sh status` already shows a connected Central. Otherwise connect the first option that fits:
 
 ```bash
 S=ui/.claude/skills/verify-ui/scripts
+
+# Default: a roxie deployment (deploy/AGENTS.md). Use its --envrc file; never print its contents.
+$S/backend.sh connect-roxie "$ROXIE_ENVRC"
+
+# Or any Central you can reach, with its admin password in a file.
+$S/backend.sh connect-url https://<host>:<port> <password-file>
+```
+
+- Every `connect*` command checks that Central accepts the credentials before it saves anything (URL and user in `state/backend.env`, password in `state/admin-password`, both 0600). A failed attempt leaves the current connection alone and says whether Central was unreachable or rejected the credentials.
+- `connect-roxie` reads `ROX_BASE_URL` (or `ROX_ENDPOINT`), `ROX_USERNAME`, and `ROX_ADMIN_PASSWORD` from the `export` lines that `roxie deploy --envrc <path>` writes. If roxie exposed Central through a port-forward (`localhost:8443`), that port-forward must stay up while you verify.
+- No roxie deployment yet? Deploying one is a separate step: `roxie deploy --envrc "$ROXIE_ENVRC" ...` per `deploy/AGENTS.md`.
+
+### Fallback: infra qa-demo
+
+When there is no Kubernetes cluster to deploy to:
+
+```bash
 name=$($S/backend.sh create)        # qa-demo running quay.io/rhacs-eng/main:<make tag>; ~30-45 min
 $S/backend.sh wait "$name"          # run in background; blocks until READY
 $S/backend.sh connect "$name"       # stores URL + admin password (0600) in the state dir
 ```
 
 - `create` fails fast if the image for local HEAD is not on quay (unpushed commit). Then either check out a pushed commit, or pass an older pushed image's cluster via `connect`. UI-only branches are fine on a slightly older Central; doctor warns on version drift.
-- Any other Central works: `backend.sh connect-url https://<host>:<port> <password-file>`.
 - Infra clusters are shared GCP cost and internet-facing (public LB, admin password). Default lifespan 8h (`VERIFY_UI_LIFESPAN`). Delete when done.
 - `create` passes `--no-slack` (nothing posted to #infra_notifications) and uses zone `us-central1-a` (`VERIFY_UI_GCP_ZONE`). If it FAILS with "does not have enough resources", delete it and retry in another zone.
 
@@ -118,7 +134,7 @@ Kills only the recorded pid, never by process name. Evidence under `runs/` survi
 - Dev server is HTTPS with a self-signed cert (`@vitejs/plugin-basic-ssl`). Use `https://localhost:3000`; `http://` gets no response.
 - The login page defaults to an SSO provider that is not the demo's. Proof specs skip login via the API token; to prove login itself, see `features/login.md`.
 - Feature-flagged UI: check `CYPRESS_ROX_*` values in `cypress.log` context or `curl` `/v1/featureflags`. A qa-demo uses the image's default flags; you cannot flip them without kubectl access to the cluster.
-- Central data on qa-demo is live and changes over time (violations, CVEs). Assert on shape and presence, not on exact counts, unless the spec created the data.
+- Central data is live and changes over time (violations, CVEs). Assert on shape and presence, not on exact counts, unless the spec created the data.
 - `retries=0` on purpose: a flaky proof is not a proof. Fix the wait, not the retry count.
 - `drive.sh` runs with `templates/cypress.config.js` (repo config plus a 2000x1100 window). Headless Electron defaults to 1280x720, which crops the 1440x850 viewport.
 - `captureState` screenshots the app frame through the DevTools protocol, not `cy.screenshot`, which hides the command log and makes the video flash. It captures the whole window and crops on a canvas: a `clip` or `scale` makes Chrome briefly resize the page, which also flashes in the video. Electron/Chrome only.

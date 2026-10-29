@@ -34,10 +34,25 @@ load_backend() {
     [[ -f "${PASSWORD_FILE}" ]] || die "missing ${PASSWORD_FILE}; rerun scripts/backend.sh connect"
 }
 
-# curl against Central (or the UI proxy) with admin basic auth.
+# curl with basic auth for user $1 and the password in file $2.
+basic_curl() {
+    local user="$1" password_file="$2" url="$3"; shift 3
+    curl -sk --config <(curl_cfg user "${user}:$(cat "${password_file}")") "$@" "${url}"
+}
+
+# curl against Central (or the UI proxy) with the connected backend's admin basic auth.
 admin_curl() {
     local url="$1"; shift
-    curl -sk --config <(curl_cfg user "admin:$(cat "${PASSWORD_FILE}")") "$@" "${url}"
+    basic_curl "${CENTRAL_USER:-admin}" "${PASSWORD_FILE}" "${url}" "$@"
+}
+
+# Explain a failed HTTP status from Central in words.
+describe_http_failure() {
+    case "${1:-000}" in
+    000) echo "is unreachable (no HTTP response)" ;;
+    401 | 403) echo "rejected the admin credentials (HTTP $1)" ;;
+    *) echo "answered HTTP $1 to /v1/auth/status" ;;
+    esac
 }
 
 vite_pid() {

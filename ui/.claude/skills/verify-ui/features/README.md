@@ -5,7 +5,7 @@ Maintained source for proving user-facing UI behavior with verify-ui. Read this 
 ## Baseline preconditions
 
 - `scripts/doctor.sh` prints `healthy`: backend connected, dev server from this checkout on `https://localhost:3000`, `/v1` proxied to Central.
-- Central is an infra qa-demo (or equivalent) with live demo data: several clusters' worth of deployments, violations, images, and CVEs.
+- Central has a secured cluster reporting data: a roxie deployment of Central plus SecuredCluster, or an infra qa-demo (more demo workloads, violations, images, and CVEs). On a small roxie deployment some views can be empty; each feature's Gotchas names a view that has data.
 - Specs run through `scripts/drive.sh`, which authenticates with a per-run Admin API token (`withAuth()`), not the login form.
 - Paths below are relative to `ui/apps/platform`. Import them in specs as `<platform>/<path>` (absolute), as the template does.
 
