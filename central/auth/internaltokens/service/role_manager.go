@@ -7,11 +7,9 @@ import (
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 const (
@@ -22,24 +20,12 @@ type roleManager struct {
 	roleStore roleDS.DataStore
 }
 
-func readOnlyRole(role *tokens.InternalRole) bool {
-	for access := range role.Permissions {
-		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
-			return false
-		}
-	}
-	return true
-}
-
 func (rm *roleManager) createRoleFromPermissionSets(
 	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*tokens.InternalRole, error) {
 	role, err := rm.createSensorRole(ctx, req.GetPermissionSetIds(), clusterScopesFromRequest(req.GetClusterScopes()))
 	if err != nil {
 		return nil, err
-	}
-	if !readOnlyRole(role) {
-		return nil, errox.InvalidArgs.New("Sensor proxy permission set grants non-read-only access")
 	}
 	return role, nil
 }
@@ -67,14 +53,10 @@ func (rm *roleManager) createSensorRole(
 		if !found || permissionSet == nil {
 			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetID)
 		}
+		if err := permissionsUtils.ValidateScopedReadOnlyPermissions(permissionSet.GetResourceToAccess()); err != nil {
+			return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q: %v", permissionSetID, err)
+		}
 		for resource, access := range permissionSet.GetResourceToAccess() {
-			// Metrics tokens are confined to GET /metrics; other sets must not grant global reads.
-			if access != storage.Access_NO_ACCESS && permissionSetID != centralproxy.MetricsPermissionSetID {
-				metadata, known := resources.MetadataForResource(permissions.Resource(resource))
-				if !known || metadata.GetScope() == permissions.GlobalScope {
-					return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q grants unscoped resource %q", permissionSetID, resource)
-				}
-			}
 			if current, found := grantedPermissions[resource]; !found || access > current {
 				grantedPermissions[resource] = access
 			}

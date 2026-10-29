@@ -71,12 +71,12 @@ earlier list form must be changed to the map form before upgrading Sensor.
 
 Sensor authenticates bearer clients via Kubernetes TokenReview and keeps the
 existing namespace SubjectAccessReview. Each policy entry's permission set and
-HTTP scopes are sent to Central; Central checks that the permission set has no
-write access and that non-metrics permission sets grant only cluster- or
-namespace-scoped resources. The metrics permission set can include global
-resources, but its token is restricted to `GET /metrics` and cannot be combined
-with other permission sets. At least one HTTP method is required. A request
-naming only the built-in console or metrics permission set can omit scopes;
+HTTP scopes are sent to Central; Central checks that every permission set grants
+only read access to known cluster- or namespace-scoped resources. The built-in
+metrics token is restricted to `GET /metrics` and cannot be combined with other
+permission sets. Custom scrapers need their own permission set if their grants
+differ from the built-in Prometheus reader. At least one HTTP method is required.
+A request naming only the built-in console or metrics permission set can omit scopes;
 Central then signs that set's built-in HTTP profile. Generic sets must specify
 HTTP scopes. Older Sensors that send only resource permissions do not need HTTP
 scopes. Central enforces signed scopes on HTTP requests. The signed
