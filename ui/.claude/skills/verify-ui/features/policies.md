@@ -21,7 +21,7 @@ Policy Management lists system and custom policies, opens a policy's detail page
 Preconditions:
 
 - `doctor.sh` healthy.
-- Import from `cypress/integration/policies/Policies.helpers.ts` (`visitPoliciesFromLeftNav`, `deletePolicyIfExists`) and `cypress/integration/policies/policyWizard.helpers.ts` (`startPolicyWizard`, `selectCategory`, `clickNext`, `clickSave`, `assertStepHeading`, `verifyPolicyInTable`). `getInputByLabel` comes from `cypress/helpers/formHelpers.js`.
+- Import from `cypress/integration/policies/Policies.helpers.ts` (`visitPoliciesFromLeftNav`, `visitPolicies`, `deletePolicyIfExists`) and `cypress/integration/policies/policyWizard.helpers.ts` (`startPolicyWizard`, `selectCategory`, `clickNext`, `clickSave`, `assertStepHeading`, `verifyPolicyInTable`). `getInputByLabel` comes from `cypress/helpers/formHelpers.js`.
 - Unique name: `const name = \`verify-ui-${Date.now()}\``, and `after(() => deletePolicyIfExists(name))`.
 
 - **Open from nav.** `visitPoliciesFromLeftNav()`. Expect `h1:contains("Policy management")` and `[data-testid="policies-table"] tbody tr` length > 0. `captureState('01-policies')`.
@@ -30,7 +30,7 @@ Preconditions:
 - **Details step.** `getInputByLabel('Name').type(name)`, `cy.contains('label', 'Low').click()`, `selectCategory('Privileges')` (Categories is required; Next stays disabled without it), then `clickNext()`. `assertStepHeading('Lifecycle')`.
 - **Lifecycle step.** `cy.contains('label', 'Build').click()`, then `clickNext()`. `assertStepHeading('Rules')`. Add one rule criterion with the drag helpers (see `policyCreateWorkflow.test.ts`), or use a lifecycle whose rule step allows advancing.
 - **Finish.** `clickNext()` through Resources, Filters (if shown), and Actions until `assertStepHeading('Review policy')`. Then `clickSave()`. `captureState('04-saved')`.
-- **Persisted.** `verifyPolicyInTable(name)` (reloads the table and finds the row). `captureState('05-in-table')`.
+- **Persisted.** After the save returns to Policy Management, call `visitPolicies()` to reload the list and wait for its policies response. Then call `verifyPolicyInTable(name)` to find the row in the fresh list. `captureState('05-in-table')`.
 
 ## Gotchas
 
