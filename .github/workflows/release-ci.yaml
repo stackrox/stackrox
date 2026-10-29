@@ -79,11 +79,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      # TODO: clean up unused cli-build artifacts here and in following step,
-      # once release 5.0 (last one to ship legacy helm charts) is EOL
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: cli-build
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
           STACKROX_TAG: ${{ github.ref_name }}
@@ -93,9 +88,6 @@ jobs:
           SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
           RELEASE_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
         run: |
-          tar xf cli-build.tar
-          mkdir -p "${HOME}/.local/bin"
-          mv bin/linux_amd64/roxctl "${HOME}/.local/bin/roxctl"
           scripts/ci/lib.sh \
             push_helm_charts "${STACKROX_TAG}"
 
