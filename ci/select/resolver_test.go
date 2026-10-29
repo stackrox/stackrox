@@ -11,6 +11,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func e2eTargets() []string {
+	return []string{
+		"e2e-byodb-tests", "e2e-db-backup-restore-tests-gke", "e2e-db-backup-restore-tests-gke-konflux",
+		"e2e-gke-upgrade-tests", "e2e-nongroovy-tests-gke", "e2e-nongroovy-tests-gke-konflux",
+		"e2e-qa-tests-gke", "e2e-qa-tests-gke-konflux", "e2e-qa-tests-ocp-fips-konflux",
+		"e2e-ui-tests-gke", "e2e-ui-tests-gke-konflux",
+	}
+}
+
 func TestPolicy(t *testing.T) {
 	t.Parallel()
 	m, err := loadMapping("../test-selection-rules.yaml")

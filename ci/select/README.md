@@ -278,7 +278,8 @@ protect active and pending runs.
 
 ### E2e jobs and required checks
 
-The e2e dispatcher validates the applied map and forwards one `ci-action`
+The e2e dispatcher runs [`e2e_dispatch.py`](e2e_dispatch.py) after checkout.
+The script validates the applied map and forwards one `ci-action`
 (`run` or `skip`) through each variant's existing reusable workflows. Each
 suite job starts with a small Bash decision step. A selected skip disables
 checkout, setup, provisioning, tests, cleanup, and reporting while the job
@@ -381,8 +382,11 @@ such as Scanner functional tests, are not enrolled.
 
 ## Local checks and rollout
 
-The tests use Go, Git, Bash, `jq`, and Python 3. The Python cases execute
-the dispatcher's existing script with a local `gh` stub and make no API calls.
+The Go unit tests cover the selector and use Git for temporary repository
+fixtures. Go script integration tests live in `scripts_integration_test.go`,
+behind the `integration` build tag. They execute the Bash wrappers with local
+fixtures and the existing Python E2E dispatcher with a local `gh` stub.
+Integration tests require Bash, `jq`, and Python 3 and make no API calls.
 
 From the repository root:
 
@@ -392,6 +396,7 @@ ci/select/bin/ci-select validate
 printf '%s\n' ui/example.tsx README.md > /tmp/ci-selection-files
 ci/select/bin/ci-select resolve --files-file /tmp/ci-selection-files
 go test -count=1 -race ./ci/select
+go test -count=1 -race -tags=integration ./ci/select -run '^TestScript'
 go vet ./ci/select
 .gotools/bin/golangci-lint run --enable=unused ./ci/select
 .gotools/bin/actionlint .github/workflows/unit-tests.yaml .github/workflows/ci-select-tests.yaml .github/workflows/ci-selection.yaml
@@ -399,9 +404,15 @@ go vet ./ci/select
 shellcheck --norc -P SCRIPTDIR -x ci/select/build.sh ci/select/gha-gate.sh ci/select/gha-consume.sh
 ```
 
-Go tests cover policy decisions, Git diff handling, and shell recovery.
-Workflow contract tests check required commands, decision wiring, ordering,
-and selection/status guards without fixing the entire workflow layout.
+Go unit tests cover configuration validation, policy decisions, the CLI, Git
+diff handling, and GitHub event/output handling. Script integration tests
+cover planner failure recovery, decision parsing, and the dispatcher's
+application of selection to check admission and image waits. They compare
+fallback eligibility with normal dispatch behavior without fixing the whole
+job inventory. Neither suite reads workflow YAML or requires particular step
+names, ordering, or expression text. `CI selector tests` runs both suites
+independently of suite selection; the existing `make github-actions-lint`
+style check validates workflow syntax and expressions with `actionlint`.
 
 Planning once per caller still requires a build and may download a Go
 toolchain. There is no cross-run artifact or decision cache. Skipping these
@@ -410,11 +421,12 @@ run.
 
 ### Validation limits and possible follow-up
 
-The Go workflow tests inspect YAML and execute the e2e dispatcher's Python
-and the Bash decision steps with local fixtures. They do not execute
-GitHub's `if` expressions or reproduce its scheduler. These tests verify
-missing/malformed decisions and planner failure recovery, but cannot prove
-that GitHub starts consumers after a failed or skipped `needs` dependency.
+The Go integration tests execute the dispatcher and shell wrappers directly. They
+verify missing/malformed decisions and planner failure recovery. `actionlint`
+checks workflow syntax and expressions, but does not prove that decisions
+reach every suite or that GitHub starts consumers after a failed or skipped
+`needs` dependency. The small E2E gates that must run before checkout remain
+inline. Their wiring and GitHub's scheduler behavior require live validation.
 
 Before rolling out enforcement, inspect live Actions runs for these cases:
 
