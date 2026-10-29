@@ -17,7 +17,7 @@ if lsof -nP -iTCP:"${VERIFY_UI_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
     die "port ${VERIFY_UI_PORT} is held by a process this skill did not start; stop it or set VERIFY_UI_PORT"
 fi
 
-[[ -d "${PLATFORM_DIR}/node_modules" ]] || die "run 'npm ci' in ${UI_DIR} first"
+[[ -d "${PLATFORM_DIR}/node_modules" ]] || die "run 'npm ci' in ${PLATFORM_DIR} first (Node 22.13 or newer)"
 
 # Run vite directly, not through npm, so the recorded pid is the server itself.
 cd "${PLATFORM_DIR}"

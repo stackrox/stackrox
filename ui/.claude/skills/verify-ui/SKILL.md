@@ -18,7 +18,8 @@ All scripts live in `ui/.claude/skills/verify-ui/scripts/`. Run them from any di
 
 ## 0. Prerequisites (check once)
 
-- `node_modules` installed in `ui/` (`npm ci`), which includes Cypress 15 and its Electron.
+- Node 22.13 or newer (`engines.node` in `ui/apps/platform/package.json`).
+- `node_modules` installed in `ui/apps/platform/` (`cd ui/apps/platform && npm ci`), which includes Cypress 15 and its Electron. `ui/` itself has no lockfile, so `npm ci` there fails.
 - `infractl` on PATH and logged in (`infractl whoami` prints your service account).
 - `jq`, `curl`, `docker` (only for the image-exists check in `backend.sh create`).
 - No gcloud/kubectl needed: the qa-demo artifacts carry the Central URL and admin password.
