@@ -119,7 +119,7 @@ The migrator README contains detailed examples of frozen schemas, GORM usage pat
 - Run specific Go test: `go test -v ./central/path/to/package -run TestSpecificFunction`
 - Run PostgreSQL integration tests: `go test -v -tags sql_integration ./central/path/to/package`
 - Run a test with CI's env and build tags (cgocheck2, `test` tag): `make go-test PKG=./central/path/to/package RUN=TestSpecificFunction`;
-  race detector is off by default, add `RACE=1` to enable it or `TAGS=sql_integration` for extra comma-separated build tags
+  race detector is off by default, add `RACE=1` to enable it or `TAGS=sql_integration` for extra comma-separated build tags (`sql_integration` requires running Postgres on port 5432)
 - **Testify Suite Pattern**: Many tests use `github.com/stretchr/testify/suite`:
   - Suite tests have a top-level function like `TestClient` that runs the entire suite
   - Individual test methods are on a struct (e.g., `func (s *ClientTestSuite) TestSomething()`)
