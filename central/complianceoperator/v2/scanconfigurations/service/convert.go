@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -27,7 +29,43 @@ storage type to apiV2 type conversions
 
 const (
 	suiteComplete = "DONE"
+
+	// allNodesRole is the special Compliance Operator value that matches all nodes.
+	allNodesRole = "@all"
 )
+
+// readNodeRoles returns the node roles to surface on the v2 API for a stored
+// config. When the ComplianceCustomNodeRoles flag is off the feature is hidden
+// entirely (nil, pre-feature API behavior). When on, an empty stored blob falls
+// back to complianceoperator.DefaultNodeRoles(): pre-PR stored configs have an
+// empty node_roles blob but actually run master+worker on Sensor, so defaulting
+// here keeps the API/UI representation consistent with actual behavior (and
+// matches the write-path defaulting in writeNodeRoles).
+func readNodeRoles(roles []string) []string {
+	if !features.ComplianceCustomNodeRoles.Enabled() {
+		return nil
+	}
+	if len(roles) == 0 {
+		return complianceoperator.DefaultNodeRoles()
+	}
+	return roles
+}
+
+// writeNodeRoles returns the node roles to persist for an incoming v2 config.
+// When the ComplianceCustomNodeRoles flag is off any caller-supplied roles are
+// dropped and nothing is stored (nil), matching the pre-feature storage state;
+// Sensor then falls back to master+worker. When on, custom roles pass through and
+// an empty request defaults to master+worker so the stored config is
+// self-describing.
+func writeNodeRoles(roles []string) []string {
+	if !features.ComplianceCustomNodeRoles.Enabled() {
+		return nil
+	}
+	if len(roles) == 0 {
+		return complianceoperator.DefaultNodeRoles()
+	}
+	return roles
+}
 
 var (
 	v2IntervalTypeToStorage = map[v2.Schedule_IntervalType]storage.Schedule_IntervalType{
@@ -86,10 +124,20 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
+	// Build the per-cluster node roles map from the storage clusters
+	clusterNodeRoles := make(map[string]*v2.NodeRoleSet)
+	for _, cluster := range scanConfig.GetClusters() {
+		roles := readNodeRoles(cluster.GetNodeRoles())
+		if roles != nil {
+			clusterNodeRoles[cluster.GetClusterId()] = &v2.NodeRoleSet{NodeRoles: roles}
+		}
+	}
+
 	return &v2.ComplianceScanConfiguration{
-		Id:       scanConfig.GetId(),
-		ScanName: scanConfig.GetScanConfigName(),
-		Clusters: clusters,
+		Id:               scanConfig.GetId(),
+		ScanName:         scanConfig.GetScanConfigName(),
+		Clusters:         clusters,
+		ClusterNodeRoles: clusterNodeRoles,
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan:  scanConfig.GetOneTimeScan(),
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
@@ -158,9 +206,15 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 	}
 
 	clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(scanConfig.GetClusters()))
-	for _, cluster := range scanConfig.GetClusters() {
+	for _, clusterID := range scanConfig.GetClusters() {
+		// Look up node roles from the per-cluster map, defaulting via writeNodeRoles
+		var nodeRoles []string
+		if roleSet := scanConfig.GetClusterNodeRoles()[clusterID]; roleSet != nil {
+			nodeRoles = roleSet.GetNodeRoles()
+		}
 		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			ClusterId: cluster,
+			ClusterId: clusterID,
+			NodeRoles: writeNodeRoles(nodeRoles),
 		})
 	}
 
@@ -279,6 +333,15 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 		notifiers = append(notifiers, notifierV2)
 	}
 
+	// Build the per-cluster node roles map from the storage clusters
+	clusterNodeRoles := make(map[string]*v2.NodeRoleSet)
+	for _, cluster := range reportData.GetScanConfiguration().GetClusters() {
+		roles := readNodeRoles(cluster.GetNodeRoles())
+		if roles != nil {
+			clusterNodeRoles[cluster.GetClusterId()] = &v2.NodeRoleSet{NodeRoles: roles}
+		}
+	}
+
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       reportData.GetScanConfiguration().GetId(),
 		ScanName: reportData.GetScanConfiguration().GetScanConfigName(),
@@ -314,8 +377,9 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 			}
 			return ret
 		}(),
-		CreatedTime:     reportData.GetScanConfiguration().GetCreatedTime(),
-		LastUpdatedTime: reportData.GetScanConfiguration().GetLastUpdatedTime(),
+		ClusterNodeRoles: clusterNodeRoles,
+		CreatedTime:      reportData.GetScanConfiguration().GetCreatedTime(),
+		LastUpdatedTime:  reportData.GetScanConfiguration().GetLastUpdatedTime(),
 		ModifiedBy: &v2.SlimUser{
 			Id:   reportData.GetScanConfiguration().GetModifiedBy().GetId(),
 			Name: reportData.GetScanConfiguration().GetModifiedBy().GetName(),
@@ -386,6 +450,15 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		clusterToSuiteMap[suite.GetClusterId()] = suiteStatus
 	}
 
+	// Build the per-cluster node roles map from the storage clusters
+	clusterNodeRoles := make(map[string]*v2.NodeRoleSet)
+	for _, cluster := range scanConfig.GetClusters() {
+		roles := readNodeRoles(cluster.GetNodeRoles())
+		if roles != nil {
+			clusterNodeRoles[cluster.GetClusterId()] = &v2.NodeRoleSet{NodeRoles: roles}
+		}
+	}
+
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
 		ScanName: scanConfig.GetScanConfigName(),
@@ -425,6 +498,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 			Description:  scanConfig.GetDescription(),
 			Notifiers:    notifiers,
 		},
+		ClusterNodeRoles: clusterNodeRoles,
 		ModifiedBy: &v2.SlimUser{
 			Id:   scanConfig.GetModifiedBy().GetId(),
 			Name: scanConfig.GetModifiedBy().GetName(),

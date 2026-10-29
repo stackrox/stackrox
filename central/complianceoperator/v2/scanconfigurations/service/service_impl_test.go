@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -106,6 +107,7 @@ type ComplianceScanConfigServiceTestSuite struct {
 
 func (s *ComplianceScanConfigServiceTestSuite) SetupSuite() {
 	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
+	s.T().Setenv(features.ComplianceCustomNodeRoles.EnvVar(), "true")
 	if !features.ComplianceEnhancements.Enabled() {
 		s.T().Skip("Skip test when compliance enhancements are disabled")
 		s.T().SkipNow()
@@ -201,6 +203,116 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	s.Require().Error(err)
 	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
 	s.Require().Nil(config)
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationNodeRoleValidation() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	// Valid cases: validateScanConfiguration must accept these without error.
+	validCases := map[string][]string{
+		"custom roles":                    {"infra", "control-plane"},
+		"@all alone":                      {allNodesRole},
+		"empty defaults to master/worker": nil,
+		"single default role":             {"master"},
+		"single character role":           {"a"},
+		"exactly 39 characters":           {strings.Repeat("a", 39)},
+	}
+	for name, roles := range validCases {
+		s.Run("valid/"+name, func() {
+			request := getTestAPIRec()
+			if roles != nil {
+				request.ClusterNodeRoles = map[string]*apiV2.NodeRoleSet{
+					fixtureconsts.Cluster1: {NodeRoles: roles},
+				}
+			} else {
+				// nil means default - omit from map
+				request.ClusterNodeRoles = nil
+			}
+			s.Require().NoError(validateScanConfiguration(request))
+		})
+	}
+
+	// Invalid cases: assert the error is an errox.InvalidArgs (robust, not
+	// dependent on user-facing message wording), plus a light substring check
+	// so a mixed-up case is still caught.
+	invalidCases := map[string]struct {
+		roles     []string
+		msgSubstr string
+	}{
+		"@all mixed with other roles": {[]string{allNodesRole, "worker"}, "@all"},
+		"special characters":          {[]string{"inv@lid"}, "invalid"},
+		"empty string in list":        {[]string{"master", ""}, "empty"},
+		"too long":                    {[]string{"aaaaaaaaaa-bbbbbbbbbbb-cccccccccc-dddddddddd"}, "invalid"},
+		"duplicate role":              {[]string{"worker", "worker"}, "Duplicate"},
+		"leading hyphen":              {[]string{"-infra"}, "invalid"},
+		"trailing hyphen":             {[]string{"infra-"}, "invalid"},
+		"hyphen alone":                {[]string{"-"}, "invalid"},
+		"too long by one character":   {[]string{strings.Repeat("a", 40)}, "invalid"},
+	}
+	for name, tc := range invalidCases {
+		s.Run("invalid/"+name, func() {
+			request := getTestAPIRec()
+			request.ClusterNodeRoles = map[string]*apiV2.NodeRoleSet{
+				fixtureconsts.Cluster1: {NodeRoles: tc.roles},
+			}
+			config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+			s.Require().Error(err)
+			s.Require().Nil(config)
+			s.Require().ErrorIs(err, errox.InvalidArgs)
+			s.Require().Contains(err.Error(), tc.msgSubstr)
+		})
+	}
+
+	// cluster_node_roles keys must be a subset of clusters: roles keyed to a
+	// cluster that is not part of the scan configuration are rejected.
+	s.Run("invalid/roles for cluster not in scan config", func() {
+		request := getTestAPIRec()
+		request.ClusterNodeRoles = map[string]*apiV2.NodeRoleSet{
+			fixtureconsts.Cluster2: {NodeRoles: []string{"infra"}},
+		}
+		config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+		s.Require().Error(err)
+		s.Require().Nil(config)
+		s.Require().ErrorIs(err, errox.InvalidArgs)
+		s.Require().Contains(err.Error(), fixtureconsts.Cluster2)
+	})
+}
+
+// TestNodeRolesFeatureFlagDisabled verifies the kill-switch: with
+// ComplianceCustomNodeRoles off, caller-supplied node roles are ignored rather
+// than validated or persisted, so even otherwise-invalid roles are accepted and
+// nothing is written to storage.
+func (s *ComplianceScanConfigServiceTestSuite) TestNodeRolesFeatureFlagDisabled() {
+	s.T().Setenv(features.ComplianceCustomNodeRoles.EnvVar(), "false")
+
+	// Validation is skipped entirely: roles that are invalid when the flag is on
+	// must not cause an error when it is off.
+	for name, roles := range map[string][]string{
+		"invalid role is ignored": {"inv@lid"},
+		"@all mixed is ignored":   {allNodesRole, "worker"},
+		"custom roles ignored":    {"infra"},
+	} {
+		s.Run("validation skipped/"+name, func() {
+			request := getTestAPIRec()
+			request.ClusterNodeRoles = map[string]*apiV2.NodeRoleSet{
+				fixtureconsts.Cluster1: {NodeRoles: roles},
+			}
+			s.Require().NoError(validateScanConfiguration(request))
+		})
+	}
+
+	// Write path drops the roles (stores nil) regardless of input.
+	s.Run("write path drops roles", func() {
+		request := getTestAPIRec()
+		request.ClusterNodeRoles = map[string]*apiV2.NodeRoleSet{
+			fixtureconsts.Cluster1: {NodeRoles: []string{"infra"}},
+		}
+		storageCfg := convertV2ScanConfigToStorage(s.ctx, request)
+		// Verify all clusters have nil node roles when feature is off
+		for _, cluster := range storageCfg.GetClusters() {
+			s.Require().Nil(cluster.GetNodeRoles())
+		}
+	})
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
@@ -358,6 +470,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
 						Notifiers:       []*storage.NotifierConfiguration{},
+						Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+							{ClusterId: fixtureconsts.Cluster1},
+						},
 					},
 				}, nil).Times(1)
 
@@ -468,6 +583,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
 						Notifiers:       []*storage.NotifierConfiguration{},
+						Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+							{ClusterId: fixtureconsts.Cluster1},
+						},
 					}, true, nil).Times(1)
 
 				s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorSuiteV2{
@@ -771,8 +889,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
 						},
-						ClusterStatus: []*v2.ClusterScanStatus{},
-						ModifiedBy:    &v2.SlimUser{},
+						ClusterNodeRoles: map[string]*v2.NodeRoleSet{},
+						ClusterStatus:    []*v2.ClusterScanStatus{},
+						ModifiedBy:       &v2.SlimUser{},
 					},
 					User:                &v2.SlimUser{},
 					IsDownloadAvailable: false,
@@ -837,8 +956,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
 						},
-						ClusterStatus: []*v2.ClusterScanStatus{},
-						ModifiedBy:    &v2.SlimUser{},
+						ClusterNodeRoles: map[string]*v2.NodeRoleSet{},
+						ClusterStatus:    []*v2.ClusterScanStatus{},
+						ModifiedBy:       &v2.SlimUser{},
 					},
 					User:                &v2.SlimUser{},
 					IsDownloadAvailable: true,
@@ -909,8 +1029,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
 						},
-						ClusterStatus: []*v2.ClusterScanStatus{},
-						ModifiedBy:    &v2.SlimUser{},
+						ClusterNodeRoles: map[string]*v2.NodeRoleSet{},
+						ClusterStatus:    []*v2.ClusterScanStatus{},
+						ModifiedBy:       &v2.SlimUser{},
 					},
 					User:                &v2.SlimUser{},
 					IsDownloadAvailable: false,
@@ -1025,8 +1146,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 							Profiles:    []string{},
 							Notifiers:   []*v2.NotifierConfiguration{},
 						},
-						ClusterStatus: []*v2.ClusterScanStatus{},
-						ModifiedBy:    &v2.SlimUser{},
+						ClusterNodeRoles: map[string]*v2.NodeRoleSet{},
+						ClusterStatus:    []*v2.ClusterScanStatus{},
+						ModifiedBy:       &v2.SlimUser{},
 					},
 					User:                apiRequester,
 					IsDownloadAvailable: false,
@@ -1179,6 +1301,9 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 			Description:  "test-description",
 			Notifiers:    []*v2.NotifierConfiguration{},
 		},
+		ClusterNodeRoles: map[string]*apiV2.NodeRoleSet{
+			fixtureconsts.Cluster1: {NodeRoles: []string{"master", "worker"}},
+		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{
 				ClusterId:   fixtureconsts.Cluster1,
@@ -1221,6 +1346,9 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 			Description:  "test-description",
 		},
 		Clusters: []string{fixtureconsts.Cluster1},
+		ClusterNodeRoles: map[string]*apiV2.NodeRoleSet{
+			fixtureconsts.Cluster1: {NodeRoles: []string{"master", "worker"}},
+		},
 	}
 }
 

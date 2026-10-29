@@ -7,8 +7,6 @@ import (
 )
 
 const (
-	masterRole       = "master"
-	workerRole       = "worker"
 	rescanAnnotation = v1alpha1.ComplianceScanRescanAnnotation
 )
 
