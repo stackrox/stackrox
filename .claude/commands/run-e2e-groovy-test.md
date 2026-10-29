@@ -76,8 +76,7 @@ curl -u admin:$PASSWORD -k https://localhost:8000/v1/metadata
 If authentication fails or `ROX_ADMIN_PASSWORD` is not defined, find the password:
 
 **User is typically `admin`. Password locations:**
-- **OpenShift**: `deploy/openshift/central-deploy/password`
-- **Kubernetes**: `deploy/k8s/central-deploy/password`
+- **All platforms**: `deploy/central-deploy/password` (since ROX-37649, unified location)
 - **Common fallbacks**: `admin/admin`, `admin/stackrox`, `stackrox/stackrox`
 
 Check whether these are valid using the above curl command. Once found, update `ROX_ADMIN_PASSWORD` in `qa-test-settings.properties`. If nothing works, ask the user.

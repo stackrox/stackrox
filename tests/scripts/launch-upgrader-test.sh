@@ -5,7 +5,8 @@ set -x
 
 cluster_name="${1:-remote}"
 
-ROX_ADMIN_PASSWORD="${ROX_ADMIN_PASSWORD:-$(< deploy/k8s/central-deploy/password)}"
+# ROX-37649: Password now at deploy/central-deploy since deploy/k8s was removed
+ROX_ADMIN_PASSWORD="${ROX_ADMIN_PASSWORD:-$(< deploy/central-deploy/password)}"
 ROX_API_ENDPOINT="${ROX_API_ENDPOINT:-localhost:8000}"
 
 curl_cfg() { # Use built-in echo to not expose $2 in the process list.

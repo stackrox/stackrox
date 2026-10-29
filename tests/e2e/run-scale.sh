@@ -51,7 +51,8 @@ deploy_stackrox_in_scale_mode() {
     source "$roxie_envrc"
     rm -f "$roxie_envrc"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
+    # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
+    DEPLOY_DIR="deploy" \
     export_central_basic_auth_creds
 
     "$ROOT/scale/launch_workload.sh" scale-test

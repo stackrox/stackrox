@@ -37,16 +37,33 @@ if [[ -n "${KUBECONFIG}" ]]; then
     exit 1
   fi
 fi
+
+# Try to get endpoint and password from various sources
 endpoint="localhost:8000"
-password="$(cat "$DIR/../deploy/k8s/central-deploy/password")"
+password=""
 
 if [[ -f "$cache" ]]; then
+  # Use cached credentials if available
   endpoint=$(cat "${cache}" | awk '{print $1}')
   password=$(cat "${cache}" | awk '{print $2}')
 elif is_operator_on_openshift; then
+  # Get credentials from operator deployment on OpenShift
   endpoint="$(oc get route -n stackrox central -o json | jq -r '.spec.host'):443"
   password=$(oc get secret -n stackrox central-htpasswd -o json | jq -r '.data.password' | base64 --decode)
   printf "$endpoint\t$password" > "${cache}"
+elif [[ -f "$DIR/../deploy/central-deploy/password" ]]; then
+  # ROX-37649: Read from deploy/central-deploy (legacy deploy location)
+  password="$(cat "$DIR/../deploy/central-deploy/password")"
+elif kubectl get secret -n stackrox central-htpasswd &>/dev/null; then
+  # Get password from Kubernetes secret (operator or Helm deployment)
+  password=$(kubectl get secret -n stackrox central-htpasswd -o json | jq -r '.data.password' | base64 --decode)
+else
+  echo "Error: Could not find Central password. Tried:"
+  echo "  1. Cache file: $cache"
+  echo "  2. OpenShift route/secret"
+  echo "  3. deploy/central-deploy/password"
+  echo "  4. stackrox/central-htpasswd secret"
+  exit 1
 fi
 
 "$roxctl_bin" -e "https://${endpoint}" -p "$password" --insecure-skip-tls-verify "$@"

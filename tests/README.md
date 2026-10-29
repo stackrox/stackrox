@@ -22,13 +22,13 @@ Alternatively, try the launcher script in [./e2e](./e2e/).
 
 1. Add the following values to your ENV  
     export ROX_USERNAME=admin
-    export ROX_ADMIN_PASSWORD=$(cat ../deploy/k8s/central-deploy/password)
+    export ROX_ADMIN_PASSWORD=$(cat ../deploy/central-deploy/password)
     export API_ENDPOINT=localhost:8000
 1. Run `cd tests; go test -run <TestName>`
 
 ### From Goland IDE 
 
-1. From the command line, run `cat ../deploy/k8s/central-deploy/password` and record this.
+1. From the command line, run `cat ../deploy/central-deploy/password` and record this.
 1. Go to `Run > Edit Configurations`
 1. Set Environment Variables to the following:
     `ROX_USERNAME=admin;ROX_ADMIN_PASSWORD=<Value from the first step>;API_ENDPOINT=localhost:8000;<More Env Vars Here>`

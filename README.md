@@ -252,7 +252,7 @@ MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 
 After a few minutes, all resources should be deployed.
 
-**Credentials for the 'admin' user can be found in the `./deploy/k8s/central-deploy/password` file.**
+**Credentials for the 'admin' user can be found in the `./deploy/central-deploy/password` file.**
 
 > **Note:**
 > The password file is stored in plaintext on your local filesystem, but the Kubernetes Secret that StackRox creates from it is encrypted. You will not be able to alter the password at runtime. If you lose the password, you will have to redeploy central.
@@ -277,7 +277,7 @@ MAIN_IMAGE_TAG=VERSION_TO_USE ./deploy/deploy.sh
 
 After a few minutes, all resources should be deployed. The process will complete with this message.
 
-**Credentials for the 'admin' user can be found in the `./deploy/openshift/central-deploy/password` file.**
+**Credentials for the 'admin' user can be found in the `./deploy/central-deploy/password` file.**
 
 > **Note:**
 > While the password file is stored in plaintext on your local filesystem, the Kubernetes Secret StackRox uses is encrypted, and you will not be able to alter the secret at runtime. If you loose the password, you will have to redeploy central.
@@ -298,7 +298,7 @@ MAIN_IMAGE_TAG=latest ./deploy/deploy-local.sh
 
 After a few minutes, all resources should be deployed.
 
-**Credentials for the 'admin' user can be found in the `./deploy/k8s/deploy-local/password` file.**
+**Credentials for the 'admin' user can be found in the `./deploy/central-deploy/password` file.**
 
 </details>
 

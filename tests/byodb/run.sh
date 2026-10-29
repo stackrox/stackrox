@@ -37,7 +37,8 @@ test_byodb() {
 
     export_test_environment
 
-    DEPLOY_DIR="deploy/k8s"
+    # ROX-37649: Use deploy/ directly since deploy/k8s was removed
+    DEPLOY_DIR="deploy"
     QUAY_REPO="stackrox-io"
     REGISTRY="quay.io/$QUAY_REPO"
 
