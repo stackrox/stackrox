@@ -22,13 +22,11 @@ export type ImageIntegration =
     | ArtifactoryImageIntegration
     | ArtifactRegistryImageIntegration
     | AzureImageIntegration
-    | ClairImageIntegration
     | ClairV4ImageIntegration
     | ClairifyImageIntegration
     | DockerImageIntegration
     | EcrImageIntegration
     | GhcrImageIntegration
-    | GoogleImageIntegration
     | IbmImageIntegration
     | NexusImageIntegration
     | QuayImageIntegration
@@ -53,16 +51,6 @@ export type AzureConfig = {
     username: string; // scrub: dependent
     password: string; // scrub: always
     wifEnabled: boolean; // scrub: dependent
-};
-
-export type ClairImageIntegration = {
-    type: 'clair';
-    clair: ClairConfig;
-} & BaseImageIntegration;
-
-export type ClairConfig = {
-    endpoint: string;
-    insecure: boolean;
 };
 
 export type ClairV4ImageIntegration = {
@@ -129,20 +117,6 @@ export type EcrAuthorizationData = {
 export type GhcrImageIntegration = {
     type: 'ghcr';
 } & BaseImageIntegration;
-
-export type GoogleImageIntegration = {
-    type: 'google';
-    categories: CategoriesForRegistryScanner[];
-    google: GoogleConfig;
-} & BaseImageIntegration;
-
-export type GoogleConfig = {
-    endpoint: string; // scrub: dependent
-    // The service account for the integration. The server will mask the value of this credential in responses and logs.
-    serviceAccount: string; // scrub: always
-    project: string;
-    wifEnabled: boolean;
-};
 
 export type IbmImageIntegration = {
     type: 'ibm';

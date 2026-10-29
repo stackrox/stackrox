@@ -36,10 +36,6 @@ export function getIsScannerV4(source: IntegrationSource, type: IntegrationType)
     return source === 'imageIntegrations' && type === 'scannerv4';
 }
 
-export function getIsGCR(source: IntegrationSource, type: IntegrationType): boolean {
-    return source === 'imageIntegrations' && type === 'google';
-}
-
 export function getIsS3(source: IntegrationSource, type: IntegrationType): boolean {
     return source === 'backups' && type === 's3';
 }
