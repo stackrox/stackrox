@@ -4,7 +4,6 @@ package tests
 
 import (
 	"context"
-	"net"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -14,7 +13,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/test/bufconn"
 )
 
 // FakeSensor is a lightweight gRPC client that connects to a test Central.
@@ -136,8 +134,12 @@ func (s *FakeSensor) Inject(msgs ...*central.MsgFromSensor) {
 	}
 }
 
-func bufconnDialer(lis *bufconn.Listener) func(context.Context, string) (net.Conn, error) {
-	return func(ctx context.Context, _ string) (net.Conn, error) {
-		return lis.DialContext(ctx)
+// NewSensorEvent wraps a SensorEvent in a MsgFromSensor. The caller sets Id,
+// Action, and the Resource oneof on the event.
+func NewSensorEvent(event *central.SensorEvent) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: event,
+		},
 	}
 }

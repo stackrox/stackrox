@@ -51,6 +51,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -168,6 +169,18 @@ func (c *CentralTestServer) Start() {
 	})
 }
 
+// APIConn returns a gRPC client connection to the test Central, suitable for
+// creating API service clients. The connection is closed on test cleanup.
+func (c *CentralTestServer) APIConn() *grpc.ClientConn {
+	conn, err := grpc.NewClient("passthrough:///bufconn",
+		grpc.WithContextDialer(bufconnDialer(c.listener)),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(c.t, err)
+	c.t.Cleanup(func() { conn.Close() })
+	return conn
+}
+
 // testFactory is a pipeline.Factory that builds a ClusterPipeline with only
 // the supplied fragments.
 type testFactory struct {
@@ -235,8 +248,4 @@ func (i *testSensorIdentity) Service() *storage.ServiceIdentity {
 		Type: storage.ServiceType_SENSOR_SERVICE,
 		Id:   i.clusterID,
 	}
-}
-
-func allAccessCtx() context.Context {
-	return sac.WithAllAccess(context.Background())
 }
