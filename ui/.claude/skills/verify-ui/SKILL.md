@@ -20,8 +20,10 @@ All scripts live in `ui/.claude/skills/verify-ui/scripts/`. Run them from any di
 
 - Node 22.13 or newer (`engines.node` in `ui/apps/platform/package.json`).
 - `node_modules` installed in `ui/apps/platform/` (`cd ui/apps/platform && npm ci`), which includes Cypress 15 and its Electron. `ui/` itself has no lockfile, so `npm ci` there fails.
-- `infractl` on PATH and logged in (`infractl whoami` prints your service account).
-- `jq`, `curl`, `docker` (only for the image-exists check in `backend.sh create`).
+- `bash`, `git`, `curl`, `jq`.
+- `ss` (Linux) or `lsof` (macOS) so `launch.sh` and `doctor.sh` can see who owns the dev server port. Without either, launch falls back to a plain connect and doctor warns instead of checking the pid and working directory.
+- `make` is optional: scripts fall back to the same `git describe` that `make tag` runs.
+- For the qa-demo fallback only: `infractl` on PATH and logged in (`infractl whoami` prints your service account), and `docker` (image-exists check in `backend.sh create`).
 - No gcloud/kubectl needed: the qa-demo artifacts carry the Central URL and admin password.
 
 ## 1. Backend: get a Central

@@ -13,7 +13,7 @@ if vite_running; then
     exit 0
 fi
 
-if lsof -nP -iTCP:"${VERIFY_UI_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+if port_in_use "${VERIFY_UI_PORT}"; then
     die "port ${VERIFY_UI_PORT} is held by a process this skill did not start; stop it or set VERIFY_UI_PORT"
 fi
 

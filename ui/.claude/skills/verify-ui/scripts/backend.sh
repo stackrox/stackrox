@@ -33,7 +33,7 @@ check_central() {
 case "${cmd}" in
 create)
     command -v infractl >/dev/null || die "infractl not installed; see https://github.com/stackrox/infra"
-    tag="$(make -C "${REPO_DIR}" --no-print-directory tag)"
+    tag="$(local_tag)"
     image="quay.io/rhacs-eng/main:${tag}"
     docker manifest inspect "${image}" >/dev/null 2>&1 \
         || die "image ${image} not on quay; push the commit and wait for CI, or check out a pushed commit"

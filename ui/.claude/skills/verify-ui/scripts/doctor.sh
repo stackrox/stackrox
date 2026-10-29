@@ -25,7 +25,7 @@ code="$(admin_curl "${UI_START_TARGET}/v1/auth/status" -o /dev/null -w '%{http_c
 ok "Central accepts admin basic auth"
 
 central_version="$(admin_curl "${UI_START_TARGET}/v1/metadata" --max-time 15 | jq -r '.version // "unknown"')"
-local_tag="$(make -C "${REPO_DIR}" --no-print-directory tag 2>/dev/null || echo unknown)"
+local_tag="$(local_tag 2>/dev/null || echo unknown)"
 if [[ "${central_version}" == "${local_tag}" ]]; then
     ok "Central ${central_version} matches checkout"
 else
@@ -34,13 +34,22 @@ fi
 
 vite_running || fail "dev server not running (scripts/launch.sh)"
 pid="$(vite_pid)"
-lsof -nP -a -p "${pid}" -iTCP:"${VERIFY_UI_PORT}" -sTCP:LISTEN >/dev/null 2>&1 \
-    || fail "pid ${pid} is alive but does not own port ${VERIFY_UI_PORT}"
-ok "dev server pid ${pid} owns port ${VERIFY_UI_PORT}"
+owns=0
+pid_owns_port "${pid}" "${VERIFY_UI_PORT}" || owns=$?
+case "${owns}" in
+0) ok "dev server pid ${pid} owns port ${VERIFY_UI_PORT}" ;;
+2) warn "cannot check which pid owns port ${VERIFY_UI_PORT} (no ss or lsof); relying on the app shell check" ;;
+*) fail "pid ${pid} is alive but does not own port ${VERIFY_UI_PORT}" ;;
+esac
 
-cwd="$(lsof -a -p "${pid}" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')"
-[[ "${cwd}" == "${PLATFORM_DIR}" ]] || fail "dev server cwd ${cwd} is not this checkout (${PLATFORM_DIR})"
-ok "dev server serves this checkout ($(git -C "${REPO_DIR}" rev-parse --abbrev-ref HEAD))"
+cwd="$(pid_cwd "${pid}")"
+if [[ -z "${cwd}" ]]; then
+    warn "cannot read the dev server's working directory (no /proc or lsof)"
+elif [[ "${cwd}" == "${PLATFORM_DIR}" ]]; then
+    ok "dev server serves this checkout ($(git -C "${REPO_DIR}" rev-parse --abbrev-ref HEAD))"
+else
+    fail "dev server cwd ${cwd} is not this checkout (${PLATFORM_DIR})"
+fi
 
 curl -sk "${UI_URL}/" | grep -q 'id="root"' || fail "${UI_URL}/ does not return the app shell"
 ok "${UI_URL} returns the app shell"
