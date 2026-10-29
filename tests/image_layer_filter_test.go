@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand/v2"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,7 +88,7 @@ func (s *ImageLayerFilterSuite) TestCRWithSkipImageLayers() {
 
 	for name, tc := range tests {
 		s.Run(name, func() {
-			crName := fmt.Sprintf("test-image-layer-filter-cr-%s-%d", name, rand.IntN(10000))
+			crName := fmt.Sprintf("test-image-layer-filter-cr-%s-%d", strings.ToLower(strings.ReplaceAll(name, "_", "-")), rand.IntN(10000))
 			k8sPolicy := s.createBasePolicyCR(crName)
 			k8sPolicy.Spec.EvaluationFilter = &v1alpha1.EvaluationFilter{
 				SkipImageLayers: tc.crValue,
