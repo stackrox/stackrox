@@ -20,7 +20,7 @@ var (
 	minVersionOnce         sync.Once
 	cachedMinVersion       uint16
 	cipherSuitesOnce       sync.Once
-	cachedCipherSuites 	   []uint16
+	cachedCipherSuites     []uint16
 	curvePreferencesOnce   sync.Once
 	cachedCurvePreferences []tls.CurveID
 )
@@ -176,6 +176,13 @@ func parseGroups(s string) ([]tls.CurveID, error) {
 			continue
 		}
 		groups = append(groups, configv1.TLSGroup(name))
+	}
+	if libgocrypto.IsFIPSEnabled() {
+		approved := libgocrypto.FIPSApprovedTLSGroups(groups)
+		if dropped := len(groups) - len(approved); dropped > 0 {
+			log.Warnf("FIPS mode: ignoring %d non-FIPS-approved TLS group(s) from %s", dropped, env.TLSGroups.EnvVar())
+		}
+		groups = approved
 	}
 	curves, unrecognized := libgocrypto.TLSGroupsToCurveIDs(groups)
 	if len(unrecognized) > 0 {

@@ -30,6 +30,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/console/v1"
 	openshiftTLS "github.com/openshift/controller-runtime-common/pkg/tls"
+	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
@@ -307,7 +308,15 @@ func buildMetricsServerTLSOpts(setupLog logr.Logger, enableHTTP2 bool) (*tlsprof
 
 	var tlsOpts []func(c *tls.Config)
 	if clusterTLSProfile != nil {
-		tlsConfigFn, unsupported, err := openshiftTLS.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
+		profileSpec := clusterTLSProfile.ProfileSpec
+		if libgocrypto.IsFIPSEnabled() {
+			approved := libgocrypto.FIPSApprovedTLSGroups(profileSpec.Groups)
+			if dropped := len(profileSpec.Groups) - len(approved); dropped > 0 {
+				setupLog.Info("FIPS mode: dropping non-FIPS-approved TLS groups from cluster profile", "dropped", dropped)
+			}
+			profileSpec.Groups = approved
+		}
+		tlsConfigFn, unsupported, err := openshiftTLS.NewTLSConfigFromProfile(profileSpec)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to build TLS config from cluster TLS profile")
 		}
