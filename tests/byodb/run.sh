@@ -79,8 +79,13 @@ run_byodb_test() {
     # Deploy a simple postgres to use as an external database
     deploy_external_postgres
 
-    # Run the QA BAT Tests.  Part 1 only as Part 2 deals more with sensor
-    run_part_1
+    local roxie_config
+    roxie_config="$(mktemp)"
+    configure_byodb "$roxie_config" stackrox
+
+    # Run the QA tests. Part 1 only as Part 2 deals more with Sensor.
+    run_part_1 "$roxie_config"
+    rm -f "$roxie_config"
 
     collect_and_check_stackrox_logs "$log_output_dir" "byodb_QA"
 }
