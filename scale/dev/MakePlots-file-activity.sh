@@ -156,6 +156,23 @@ for outcome in new updated resolved; do
         "Central Alerts ${outcome} (cumulative)" "Alerts" "central" "alert_outcome_${outcome}"
 done
 
+# Central sharded deduping worker queue (cumulative counters): intake (Add) vs drain
+# (Remove) per message type. If the Add curve pulls away from Remove, the queue is
+# backing up -- the unbounded-memory signature from the file-activity tests. Also the
+# pre-queue process-indicator deduper (dropped vs passed).
+plot_metric "${output_dir}/alert_queue_add.png" \
+    "Central Alert Queue Intake (cumulative)" "Alert Msgs" "central" "alert_queue_add"
+plot_metric "${output_dir}/alert_queue_remove.png" \
+    "Central Alert Queue Drain (cumulative)" "Alert Msgs" "central" "alert_queue_remove"
+plot_metric "${output_dir}/process_indicator_queue_add.png" \
+    "Central Process-Indicator Queue Intake (cumulative)" "PI Msgs" "central" "process_indicator_queue_add"
+plot_metric "${output_dir}/process_indicator_queue_remove.png" \
+    "Central Process-Indicator Queue Drain (cumulative)" "PI Msgs" "central" "process_indicator_queue_remove"
+plot_metric "${output_dir}/process_indicator_deduped.png" \
+    "Central Process-Indicator Deduper Drops (cumulative)" "Process Indicators" "central" "process_indicator_deduped"
+plot_metric "${output_dir}/process_indicator_passed.png" \
+    "Central Process-Indicator Deduper Passed (cumulative)" "Process Indicators" "central" "process_indicator_passed"
+
 # Database table sizes. alerts and deployments are the file-activity-relevant
 # tables; process_indicators is the storage-side view of process-event volume.
 # Tables use the central-db baseline since they're part of the database.

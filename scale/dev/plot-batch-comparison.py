@@ -112,6 +112,15 @@ METRIC_SPECS = [
     ('alert_outcome_new',      'metrics_alert_outcome_new.txt',      'central', 'rate', None),
     ('alert_outcome_updated',  'metrics_alert_outcome_updated.txt',  'central', 'rate', None),
     ('alert_outcome_resolved', 'metrics_alert_outcome_resolved.txt', 'central', 'rate', None),
+    # Central sharded worker-queue intake vs drain, per sec (the file-activity
+    # memory-blowup signature is add >> remove). And the pre-queue process-indicator
+    # deduper (dropped vs passed).
+    ('alert_queue_add',             'metrics_alert_queue_add.txt',             'central', 'rate', None),
+    ('alert_queue_remove',          'metrics_alert_queue_remove.txt',          'central', 'rate', None),
+    ('process_indicator_queue_add',    'metrics_process_indicator_queue_add.txt',    'central', 'rate', None),
+    ('process_indicator_queue_remove', 'metrics_process_indicator_queue_remove.txt', 'central', 'rate', None),
+    ('process_indicator_deduped',   'metrics_process_indicator_deduped.txt',   'central', 'rate', None),
+    ('process_indicator_passed',    'metrics_process_indicator_passed.txt',    'central', 'rate', None),
 ]
 
 # Standard vs-rate plots (one per metric, one line per mode). events_received is
@@ -181,6 +190,24 @@ STANDARD_PLOTS = [
     ('alert_outcome_resolved', 'alert_outcome_resolved_vs_rate.png',
      'Central Alert Resolutions Rate vs Event Rate\n(averaged over {win})',
      'Alert Resolutions (/sec)'),
+    ('alert_queue_add', 'alert_queue_add_vs_rate.png',
+     'Central Alert Queue Intake Rate vs Event Rate\n(averaged over {win})',
+     'Alert Msgs Enqueued (/sec)'),
+    ('alert_queue_remove', 'alert_queue_remove_vs_rate.png',
+     'Central Alert Queue Drain Rate vs Event Rate\n(averaged over {win})',
+     'Alert Msgs Processed (/sec)'),
+    ('process_indicator_queue_add', 'process_indicator_queue_add_vs_rate.png',
+     'Central Process-Indicator Queue Intake Rate vs Event Rate\n(averaged over {win})',
+     'Process Indicator Msgs Enqueued (/sec)'),
+    ('process_indicator_queue_remove', 'process_indicator_queue_remove_vs_rate.png',
+     'Central Process-Indicator Queue Drain Rate vs Event Rate\n(averaged over {win})',
+     'Process Indicator Msgs Processed (/sec)'),
+    ('process_indicator_deduped', 'process_indicator_deduped_vs_rate.png',
+     'Central Process-Indicator Deduper Drops vs Event Rate\n(averaged over {win})',
+     'Process Indicators Deduped (/sec)'),
+    ('process_indicator_passed', 'process_indicator_passed_vs_rate.png',
+     'Central Process-Indicator Deduper Passed vs Event Rate\n(averaged over {win})',
+     'Process Indicators Passed (/sec)'),
 ]
 
 

@@ -316,3 +316,30 @@ for out_name in "${!alert_outcome_metric[@]}"; do
     echo "$result" > "${output_file_prefix}_${out_name}.txt"
   fi
 done
+
+# Central's sharded deduping worker queue (central/sensor/service/connection/
+# worker_queue.go: 16 shards + 1, each a DedupingQueue). This is the queue that grew
+# unbounded in the file-activity tests when alerts arrived faster than they drained.
+#  - *_queue_add / *_queue_remove: rox_central_sensor_event_queue{Operation=Add|Remove,
+#    Type=...} -- enqueue vs dequeue ops per message type (Operation is capitalized,
+#    from pkg/metrics Op.String()). Add rate = Central's intake rate for that type;
+#    Add >> Remove means a growing backlog (the memory-blowup signature).
+#  - process_indicator_{deduped,passed}: rox_central_sensor_event_deduper{status,type}
+#    -- how many ProcessIndicator messages the pre-queue hash deduper drops vs passes.
+#    (Runtime AlertResults skip this deduper, so only ProcessIndicator is meaningful.)
+# All central-namespace (stackrox), not sensor_ns. Type values are AlertResults /
+# ProcessIndicator (reflectutils.Type, last _-segment; see sensorevents.go).
+declare -A central_queue_metric=(
+  [alert_queue_add]='sum(rox_central_sensor_event_queue{namespace=\"stackrox\",Operation=\"Add\",Type=\"AlertResults\"})'
+  [alert_queue_remove]='sum(rox_central_sensor_event_queue{namespace=\"stackrox\",Operation=\"Remove\",Type=\"AlertResults\"})'
+  [process_indicator_queue_add]='sum(rox_central_sensor_event_queue{namespace=\"stackrox\",Operation=\"Add\",Type=\"ProcessIndicator\"})'
+  [process_indicator_queue_remove]='sum(rox_central_sensor_event_queue{namespace=\"stackrox\",Operation=\"Remove\",Type=\"ProcessIndicator\"})'
+  [process_indicator_deduped]='sum(rox_central_sensor_event_deduper{namespace=\"stackrox\",status=\"deduped\",type=\"ProcessIndicator\"})'
+  [process_indicator_passed]='sum(rox_central_sensor_event_deduper{namespace=\"stackrox\",status=\"passed\",type=\"ProcessIndicator\"})'
+)
+for out_name in "${!central_queue_metric[@]}"; do
+  result="$(get_time_series_for_metric "${central_queue_metric[$out_name]}" "$from" "$to")" || true
+  if [[ -n "${result//[[:space:]]/}" ]]; then
+    echo "$result" > "${output_file_prefix}_${out_name}.txt"
+  fi
+done
