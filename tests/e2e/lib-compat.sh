@@ -412,11 +412,10 @@ EOF
     fi
 }
 
-# OCP's AWS provider provisions an IPv6-family LoadBalancer service only when the
-# service itself is dual-stack (the ingress operator's router Service is the known-
-# working recipe: ipFamilies [IPv6, IPv4] + RequireDualStack + an NLB). The chart
-# leaves the Service on the cluster's primary family (single-stack IPv6), so patch
-# it via an overlay; spec.customize.other would be pruned by the CRD.
+# OCP's AWS provider provisions an IPv6-family LoadBalancer service only when
+# the service itself is dual-stack. The chart leaves the Service on the
+# cluster's primary family (single-stack IPv6), so patch it via an overlay;
+# spec.customize.other would be pruned by the CRD.
 # TODO: drop once the chart supports dual-stack LoadBalancer services.
 handle_ipv6_primary_lb_annotations() {
     local config_file="$1"
