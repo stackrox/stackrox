@@ -8,11 +8,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestScriptPlannerRecovery(t *testing.T) {
@@ -107,6 +109,36 @@ func TestScriptE2EDispatch(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(baseline["ci-actions"]), &baselineActions))
 	require.NoError(t, json.Unmarshal([]byte(baseline["jobs"]), &baselineJobs))
 	require.NotEmpty(t, baselineActions)
+
+	t.Run("should enroll the same E2E targets in policy, dispatcher, and workflows", func(t *testing.T) {
+		policy, err := loadMapping("../test-selection-rules.yaml")
+		require.NoError(t, err)
+		var policyTargets []string
+		for _, target := range policy.Jobs {
+			if strings.HasPrefix(target, "e2e-") {
+				policyTargets = append(policyTargets, target)
+			}
+		}
+
+		data, err := os.ReadFile("../../.github/workflows/e2e-dispatch.yaml")
+		require.NoError(t, err)
+		var workflow struct {
+			Jobs map[string]struct {
+				Uses string `yaml:"uses"`
+			} `yaml:"jobs"`
+		}
+		require.NoError(t, yaml.Unmarshal(data, &workflow))
+		var workflowTargets []string
+		for target, job := range workflow.Jobs {
+			if strings.HasPrefix(job.Uses, "./.github/workflows/e2e-") {
+				workflowTargets = append(workflowTargets, target)
+			}
+		}
+
+		registryTargets := slices.Collect(maps.Keys(baselineActions))
+		assert.ElementsMatch(t, registryTargets, policyTargets, "policy and dispatcher targets must match")
+		assert.ElementsMatch(t, registryTargets, workflowTargets, "dispatcher and workflow targets must match")
+	})
 
 	allRun, allSkip := make(map[string]string), make(map[string]string)
 	allJobs, noJobs := make(map[string]bool), make(map[string]bool)

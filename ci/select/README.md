@@ -397,9 +397,10 @@ diff handling, and GitHub event/output handling. Script integration tests
 cover planner failure recovery, decision parsing, and the dispatcher's
 application of selection to check admission and image waits. They compare
 fallback eligibility with normal dispatch behavior without fixing the whole
-job inventory. Neither suite reads workflow YAML or requires particular step
-names, ordering, or expression text. `CI selector tests` runs both suites
-independently of suite selection; the existing `make github-actions-lint`
+job inventory. A contract check compares the E2E targets in the policy,
+dispatcher output, and reusable workflow calls. It reads workflow YAML without
+requiring particular step names, ordering, or expression text. `CI selector tests`
+runs both suites independently of suite selection; the existing `make github-actions-lint`
 style check validates workflow syntax and expressions with `actionlint`.
 
 Planning once per caller still requires a build and may download a Go
