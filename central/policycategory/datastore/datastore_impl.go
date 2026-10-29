@@ -154,7 +154,7 @@ func (ds *datastoreImpl) GetPolicyCategory(ctx context.Context, id string) (*sto
 		return nil, false, errorsPkg.Wrapf(err, "policy category with id '%s' cannot be found	", id)
 	}
 	if !exists {
-		return nil, false, errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
+		return nil, false, errox.NotFound.Newf("policy category with id '%s' does not exist", id)
 	}
 	return category, true, nil
 }
@@ -270,11 +270,11 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return nil, err
 	}
 	if !exists {
-		return nil, errorsPkg.Wrapf(errox.NotFound, "policy category with id '%s' does not exist", id)
+		return nil, errox.NotFound.Newf("policy category with id '%s' does not exist", id)
 	}
 
 	if category.GetIsDefault() {
-		return nil, errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
+		return nil, errox.InvalidArgs.New(fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
 	}
 
 	category.Name = titleCase.String(newName)
@@ -311,7 +311,7 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 		return nil
 	}
 	if category.GetIsDefault() {
-		return errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be removed", id))
+		return errox.InvalidArgs.New(fmt.Sprintf("policy category %q is a default category, cannot be removed", id))
 	}
 
 	if err := ds.storage.Delete(ctx, id); err != nil {

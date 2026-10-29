@@ -62,13 +62,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetComplianceRule retrieves the specified compliance rule
 func (s *serviceImpl) GetComplianceRule(ctx context.Context, req *v2.RuleRequest) (*v2.ComplianceRule, error) {
 	if req.GetRuleName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Rule name is required for retrieval")
+		return nil, errox.InvalidArgs.New("Rule name is required for retrieval")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the scan config name as an exact match

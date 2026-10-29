@@ -266,7 +266,7 @@ func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, 
 
 	config, found, err := d.store.Get(ctx)
 	if !found {
-		return nil, errors.Wrap(errox.NotFound, "System configuration not found")
+		return nil, errox.NotFound.New("System configuration not found")
 	} else if err != nil {
 		return nil, err
 	}

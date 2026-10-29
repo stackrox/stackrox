@@ -107,7 +107,7 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("alert with id '%s' does not exist", request.GetId())
 	}
 
 	return alert, nil
@@ -154,7 +154,7 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	count, err := s.dataStore.Count(ctx, parsedQuery, true)
@@ -253,7 +253,7 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 		return response, nil
 	}
 
-	return nil, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", request.GetGroupBy())
+	return nil, errox.InvalidArgs.Newf("unknown group by: %v", request.GetGroupBy())
 }
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
@@ -281,7 +281,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", req.GetId())
+		return nil, errox.NotFound.Newf("alert with id '%s' does not exist", req.GetId())
 	}
 
 	if req.GetWhitelist() || req.GetAddToBaseline() {
@@ -334,7 +334,7 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 	query, err := search.ParseQuery(req.GetQuery())
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	runtimeQuery := search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
 	cq := search.ConjunctionQuery(query, runtimeQuery)
@@ -416,7 +416,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 
 	query, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "error parsing query: %v", err)
+		return nil, errox.InvalidArgs.CausedByf("error parsing query: %v", err)
 	}
 	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
 
@@ -428,7 +428,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		}
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.ViolationState.String() {
 			if matchFieldQuery.MatchFieldQuery.GetValue() != storage.ViolationState_RESOLVED.String() {
-				err = errors.Wrapf(errox.InvalidArgs, "invalid value for violation state: %q. Only resolved alerts can be deleted", matchFieldQuery.MatchFieldQuery.GetValue())
+				err = errox.InvalidArgs.Newf("invalid value for violation state: %q. Only resolved alerts can be deleted", matchFieldQuery.MatchFieldQuery.GetValue())
 				return
 			}
 			specified = true
@@ -438,7 +438,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		return nil, err
 	}
 	if !specified {
-		return nil, errors.Wrapf(errox.InvalidArgs, "please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
+		return nil, errox.InvalidArgs.Newf("please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
 	}
 
 	results, err := s.dataStore.Search(ctx, query, true)

@@ -170,7 +170,7 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 		return errors.Errorf("Error looking up attached notifier, Notifier ID: %s, Error: %s", emailConfig.GetNotifierId(), err)
 	}
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "Notifier with ID %s not found.", emailConfig.GetNotifierId())
+		return errox.NotFound.Newf("Notifier with ID %s not found.", emailConfig.GetNotifierId())
 	}
 	if notifier.GetType() != notifiers.EmailType && notifier.GetType() != notifiers.ACSCSEmailType {
 		return errox.InvalidArgs.New("report configuration requires an email notifier")
@@ -237,7 +237,7 @@ func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionRefer
 		return errors.Errorf("Error trying to lookup attached collection, Collection: %s, Error: %s", collectionID, err)
 	}
 	if !exists {
-		return errors.Wrapf(errox.NotFound, "Collection %s not found.", collectionID)
+		return errox.NotFound.Newf("Collection %s not found.", collectionID)
 	}
 	return nil
 }
@@ -414,7 +414,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", configID)
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
+		return nil, errox.NotFound.Newf("Report configuration id not found %s", configID)
 	}
 	// Verify ResourceScope is non-nil
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
@@ -437,7 +437,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 			return nil, errors.Wrapf(err, "Error finding collection ID '%s'", collectionID)
 		}
 		if !found {
-			return nil, errors.Wrapf(errox.NotFound, "Collection ID '%s' not found", collectionID)
+			return nil, errox.NotFound.Newf("Collection ID '%s' not found", collectionID)
 		}
 	}
 
@@ -450,7 +450,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 		return nil, errors.Wrap(err, "Error finding attached notifiers")
 	}
 	if len(protoNotifiers) != len(notifierIDs) {
-		return nil, errors.Wrap(errox.NotFound, "Some of the attached notifiers not found")
+		return nil, errox.NotFound.New("Some of the attached notifiers not found")
 	}
 
 	return &reportGen.ReportRequest{
@@ -466,7 +466,7 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 		return errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", reportID)
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "Report snapshot with job ID '%s' does not exist", reportID)
+		return errox.NotFound.Newf("Report snapshot with job ID '%s' does not exist", reportID)
 	}
 	if snapshot.GetType() == storage.ReportSnapshot_NODE_VULNERABILITY {
 		return errox.InvalidArgs.Newf("report job '%s' is a node vulnerability report; use the node report service", reportID)
@@ -476,10 +476,10 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	case storage.ReportStatus_WAITING, storage.ReportStatus_PREPARING:
 		// valid states for cancellation — fall through
 	default:
-		return errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report job ID '%s' has already completed execution.", reportID)
+		return errox.InvalidArgs.Newf("Cannot cancel. Report job ID '%s' has already completed execution.", reportID)
 	}
 	if requester.GetId() != snapshot.GetRequester().GetId() {
-		return errors.Wrap(errox.NotAuthorized, "Report job cannot be cancelled by a user who did not request the report.")
+		return errox.NotAuthorized.New("Report job cannot be cancelled by a user who did not request the report.")
 	}
 	return nil
 }
@@ -497,7 +497,7 @@ func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage
 			return "", err
 		}
 		if hasPending {
-			return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
+			return "", errox.AlreadyExists.Newf("User already has a report running for config ID '%s'",
 				snapshot.GetReportConfigurationId())
 		}
 	}

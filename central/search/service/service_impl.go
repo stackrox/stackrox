@@ -209,7 +209,7 @@ func trimMatches(matches map[string][]string, fieldPaths []string) map[string][]
 func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
 	query, autocompleteKey, err := search.ParseQueryForAutocomplete(queryString)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "unable to parse query %q: %v", queryString, err)
+		return nil, errox.InvalidArgs.CausedByf("unable to parse query %q: %v", queryString, err)
 	}
 	// Set the max return size for the query
 	query.Pagination = &v1.QueryPagination{
@@ -229,12 +229,12 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 			if ok {
 				utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
 			}
-			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
+			return nil, errox.InvalidArgs.Newf("Search category %q is not implemented", category.String())
 		}
 
 		optMultiMap := categoryToOptionsMultimap[category]
 		if optMultiMap == nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
+			return nil, errox.InvalidArgs.Newf("Search category %q is not implemented", category.String())
 		}
 
 		autocompleteFields := optMultiMap.GetAll(autocompleteKey)
@@ -298,7 +298,7 @@ func (s *serviceImpl) autocomplete(ctx context.Context, queryString string, cate
 
 func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest) (*v1.AutocompleteResponse, error) {
 	if req.GetQuery() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "query cannot be empty")
+		return nil, errox.InvalidArgs.New("query cannot be empty")
 	}
 	results, err := s.autocomplete(ctx, req.GetQuery(), req.GetCategories())
 	if err != nil {
@@ -354,7 +354,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 
 	parsedRequest, err := search.ParseQuery(query)
 	if err != nil {
-		err = errors.Wrap(errox.InvalidArgs, err.Error())
+		err = errox.InvalidArgs.New(err.Error())
 		return
 	}
 	if len(categories) == 0 {
@@ -367,7 +367,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		}
 		searchFunc, ok := searchFuncMap[category]
 		if !ok {
-			err = errors.Wrapf(errox.InvalidArgs, "Search category '%s' is not implemented", category.String())
+			err = errox.InvalidArgs.Newf("Search category '%s' is not implemented", category.String())
 			return
 		}
 		var resultsFromCategory []*v1.SearchResult

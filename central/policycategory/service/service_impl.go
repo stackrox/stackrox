@@ -52,7 +52,7 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, query *v1.RawQuer
 
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 	categories, err := s.policyCategoriesDatastore.SearchRawPolicyCategories(ctx, parsedQuery)
 	if err != nil {
@@ -68,7 +68,7 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 		return nil, errors.New("empty request, policy category not specified")
 	}
 	if !validateName.MatchString(request.GetPolicyCategory().GetName()) {
-		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
+		return nil, errox.InvalidArgs.New(invalidNameErrString)
 	}
 	category, err := s.policyCategoriesDatastore.AddPolicyCategory(ctx, ToStorageProto(request.GetPolicyCategory()))
 	if err != nil {
@@ -79,7 +79,7 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 
 func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.PolicyCategory, error) {
 	if !validateName.MatchString(request.GetNewCategoryName()) {
-		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
+		return nil, errox.InvalidArgs.New(invalidNameErrString)
 	}
 	c, err := s.policyCategoriesDatastore.RenamePolicyCategory(ctx, request.GetId(), request.GetNewCategoryName())
 	if err != nil {
@@ -110,14 +110,14 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) getPolicyCategory(ctx context.Context, id string) (*v1.PolicyCategory, error) {
 	if id == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Policy category ID must be provided")
+		return nil, errox.InvalidArgs.New("Policy category ID must be provided")
 	}
 	category, exists, err := s.policyCategoriesDatastore.GetPolicyCategory(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%q' does not exist", id)
+		return nil, errox.NotFound.Newf("policy with ID '%q' does not exist", id)
 	}
 	return ToV1Proto(category), nil
 
