@@ -23,9 +23,11 @@ rm -rf "${evidence}"
 mkdir -p "${evidence}"
 run_id="$(basename "${run_dir}")"
 
-# Per-run Admin API token, named so cleanup.sh can revoke it.
-token="$(admin_curl "${UI_URL}/v1/apitokens/generate" -X POST \
-    -d "{\"name\": \"verify-ui-${run_id}\", \"role\": \"Admin\"}" | jq -r '.token // ""')"
+# Per-run Admin API token, named so cleanup.sh can revoke it. It also expires on its own
+# (VERIFY_UI_TOKEN_TTL_HOURS, default 4) in case cleanup never runs.
+token_body="$(jq -cn --arg name "verify-ui-${run_id}" --argjson hours "${VERIFY_UI_TOKEN_TTL_HOURS:-4}" \
+    '{name: $name, roles: ["Admin"], expiration: (now + $hours * 3600 | floor | todate)}')"
+token="$(admin_curl "${UI_URL}/v1/apitokens/generate" -X POST -d "${token_body}" | jq -r '.token // ""')"
 [[ -n "${token}" ]] || die "Central did not issue an API token; run scripts/doctor.sh"
 export CYPRESS_ROX_AUTH_TOKEN="${token}"
 

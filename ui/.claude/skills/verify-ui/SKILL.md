@@ -86,7 +86,7 @@ spec=$($S/new-spec.sh violations-filter)   # ~/.cache/stackrox-verify-ui/runs/<r
 $S/drive.sh "$spec"                         # prints PASS/FAIL summary, last line is the run dir
 ```
 
-`drive.sh` mints a per-run Admin API token (`verify-ui-<run-id>`) and puts it in localStorage through `cypress/helpers/basicAuth.js`. It also exports Central feature flags as `CYPRESS_ROX_*` (same as `scripts/cypress.sh`) and runs Cypress headless with retries off and video on.
+`drive.sh` mints a per-run Admin API token (`verify-ui-<run-id>`, expires after `VERIFY_UI_TOKEN_TTL_HOURS`, default 4) and puts it in localStorage through `cypress/helpers/basicAuth.js`. It also exports Central feature flags as `CYPRESS_ROX_*` (same as `scripts/cypress.sh`) and runs Cypress headless with retries off and video on.
 
 Spec rules:
 - Start from the matching file in `features/`. It lists entry points, helpers, selectors, and what proves the feature works.
