@@ -1,0 +1,291 @@
+name: e2e-vm-scanning-tests
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: |
+          Image tag to test. The caller needs to include the "-fast" suffix
+          when required for development builds.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
+      ci-job-name:
+        description: Unique CI job name.
+        type: string
+        default: ocp-vm-scanning-tests
+      use-konflux-images:
+        description: Use Konflux-built images.
+        type: boolean
+        default: false
+      cluster-name-prefix:
+        description: Prefix for the provisioned cluster name. Maximum 20 characters.
+        type: string
+        default: e2e-vmscan
+
+permissions:
+  contents: read
+  pull-requests: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ocp-vm-scanning-tests:
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
+    runs-on: ubuntu-24.04
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      USE_KONFLUX_IMAGES: ${{ inputs.use-konflux-images }}
+      ARTIFACT_DIR: ./junit-reports
+      PYTHONUNBUFFERED: "1"
+      CLUSTER_NAME_PREFIX: ${{ inputs.cluster-name-prefix }}
+      CLUSTER_NAME_PREFIX_MAX: "20"
+      # VM scanning is a Scanner V4 feature and currently only exercised on
+      # OpenShift with CNV/KubeVirt.
+      ORCHESTRATOR_FLAVOR: openshift
+      KUBERNETES_PROVIDER: ocp
+      INSTALL_CNV_OPERATOR: "true"
+      ROX_SCANNER_V4: "true"
+      # Selectively enable vulnerability bundles to prevent timeouts of the matcher not
+      # being ready in time. The rhel-vex bundle alone has ~3M records and can take >30
+      # min to import. Drops alpine, aws, debian, oracle, osv, photon, suse, ubuntu
+      # (unused for RHEL guests).
+      SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: rhel-vex,stackrox-rhel-csaf,manual,epss,nvd
+      SCANNER_V4_VULN_READINESS_TIMEOUT: "7200"
+      VM_IMAGES: "quay.io/rhacs-eng/vm-images:rhel8-dnf-primed-latest,quay.io/rhacs-eng/vm-images:rhel9-dnf-primed-latest,quay.io/rhacs-eng/vm-images:rhel10-dnf-primed-latest"
+      # Leave the guest VMs up when the Go suite tears down so the post-test step
+      # can collect roxagent guest journals (collect_vm_guest_logs); without this
+      # TearDownSuite deletes them first and there is nothing left to collect. The
+      # post-test's collect_vm_guest_logs deletes the VM namespaces afterward, and
+      # the whole cluster is torn down at job end, so nothing leaks.
+      VM_SCAN_SKIP_CLEANUP: "true"
+    timeout-minutes: 240
+    steps:
+
+    - name: Validate workflow input
+      run: |
+        if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
+          echo "::error::Workflow input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters."
+          exit 1
+        fi
+
+    - name: Checkout repo
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Compute cluster name for infra-provisioned cluster
+      # infractl enforces a 28-char limit for cluster names.
+      run: |
+        cluster_name_max=28
+
+        hash_length=$(( cluster_name_max - 1 - CLUSTER_NAME_PREFIX_MAX ))
+        hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+        hash="$(echo "$hash_input" | sha256sum)"
+        hash_truncated="${hash:0:$hash_length}"
+
+        cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
+        echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
+
+    - name: Trigger cluster creation via infra
+      # Nested virtualization requires nodes with KVM support, same as the
+      # n2-standard-8 worker nodes used for Prow VM-scanning jobs (see
+      # .openshift-ci/begin.sh).
+      uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
+      with:
+        token: ${{ secrets.INFRA_TOKEN }}
+        flavor: openshift-4
+        name: ${{ env.CLUSTER_NAME }}
+        lifespan: 5h
+        args: openshift-version=ocp/stable,master-node-type=e2-standard-4,master-node-count=3,worker-node-type=n2-standard-8,worker-node-count=2,ssd-storage-class=true
+        wait: false
+
+    - name: Set up GCloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin,beta"
+
+    - name: Docker login to Quay.io
+      env:
+        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+
+    - name: Retrieving roxie version from repository
+      id: roxie-version
+      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+    - name: Install roxie
+      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
+      with:
+        version: "v${{ steps.roxie-version.outputs.version }}"
+        gh-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install roxctl
+      # Not needed for deploy (roxie handles that), but PostClusterTest's
+      # best-effort debug-dump/diagnostics/backup collection in the shared
+      # "Run post-test" step calls roxctl directly and escalates any of those
+      # failures into a hard job failure.
+      uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
+      with:
+        roxctl-release: latest
+
+    - name: Install oc
+      run: |
+        curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
+          | tar xz -C /usr/local/bin oc
+        oc version --client
+
+    - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
+
+    - name: Wait for infra cluster and get kubeconfig
+      env:
+        INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      timeout-minutes: 60
+      run: |
+        infractl wait "${CLUSTER_NAME}"
+        infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+        echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+    - name: Wait for cluster to stabilize
+      timeout-minutes: 5
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Run pre-test
+      shell: python
+      env:
+        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from pre_tests import PreSystemTests
+        PreSystemTests().run()
+
+    - name: Deploy StackRox and run VM scanning e2e tests
+      # Mirrors tests/e2e/run-vm-scanning.sh (used by Prow), except deployment
+      # goes through roxie instead of the OLM/operator-bundle path -- roxie
+      # installs the operator via direct manifests, not OLM/CSV, so it isn't
+      # affected by Konflux-built bundles referencing registry.redhat.io
+      # images that don't exist yet for unreleased builds. Same deploy
+      # mechanism as e2e-db-backup-restore-tests.yaml.
+      env:
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      run: |
+        source tests/e2e/lib.sh
+        source tests/e2e/vm-scanning-lib.sh
+        source tests/scripts/setup-certs.sh
+        source scripts/ci/sensor-wait.sh
+
+        export_test_environment
+        setup_deployment_env true false # with docker login, no websockets
+        ensure_vm_scanning_cluster_prereqs
+        remove_existing_stackrox_resources
+        setup_default_TLS_certs
+
+        deploy_optional_e2e_components
+
+        if ! ensure_virtctl_binary; then
+          if [[ "${_VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP:-0}" != 1 ]]; then
+            warn "Secure virtctl download failed. Falling back to insecure curl -k download path in CI."
+            ensure_virtctl_binary_insecure || true
+          fi
+          if ! command -v virtctl >/dev/null; then
+            warn "Cluster ConsoleCLIDownload did not serve virtctl. Falling back to the matching KubeVirt GitHub release."
+            _install_virtctl_from_kubevirt_release \
+                || die "Failed to install virtctl from cluster ConsoleCLIDownload and KubeVirt GitHub release"
+          fi
+        fi
+
+        roxie_config="$(mktemp)"
+        merge_yaml "$roxie_config" <<'EOF'
+        central:
+          resourceProfile: ci
+        securedCluster:
+          resourceProfile: ci
+        EOF
+        # Explicit for parity with deploy_central_via_operator(); ROX_VIRTUAL_MACHINES
+        # also defaults to enabled (pkg/features/list.go), so this is defense in depth.
+        set_custom_env "$roxie_config" "central" "ROX_VIRTUAL_MACHINES" "true"
+        deploy_stackrox_with_roxie_compat "$roxie_config"
+        rm -f "$roxie_config"
+
+        ensure_vm_scan_ssh_identity
+        persist_vm_scan_virtctl
+        rm -f FAIL
+        make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-tests || touch FAIL
+        store_test_results "tests/vm-scanning-tests-results" "vm-scanning-tests-results/vm-e2e-tests"
+        [[ ! -f FAIL ]] || die "VM scanning e2e tests failed"
+
+    - name: Run post-test
+      if: always()
+      shell: python
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from post_tests import PostClusterTest
+        post = PostClusterTest(
+            check_stackrox_logs=False,
+            collect_vm_guest_logs=True,
+        )
+        post.k8s_namespaces.append("openshift-cnv")
+        post.run(['${{ env.ARTIFACT_DIR }}'])
+
+    - name: Run final-post
+      if: always()
+      shell: python
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from post_tests import FinalPost
+        FinalPost(store_qa_tests_data=False).run()
+
+    - name: Publish summary for all tests
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: all
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: ${{ env.ARTIFACT_DIR }}
+
+    - name: Delete cluster via infra
+      if: always()
+      continue-on-error: true
+      env:
+        INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      run: |
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then
+          echo "No cluster to teardown"
+          exit 0
+        fi
+        infractl delete "${CLUSTER_NAME}"

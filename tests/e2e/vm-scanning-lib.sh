@@ -6,6 +6,20 @@ _VM_SCANNING_LIB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/lib.sh
 source "$_VM_SCANNING_LIB_ROOT/scripts/lib.sh"
 
+# _vm_scanning_main_image_name returns the base image name to resolve
+# MAIN_IMAGE_REPO against. Konflux never publishes "main" under its plain
+# name -- it's published as "release-main" instead (see
+# scripts/ci/lib.sh's populate_stackrox_image_list()) -- so the guest
+# roxagent Quadlet must pull that name when deploying with Konflux-built
+# images, or it fails with "manifest unknown".
+_vm_scanning_main_image_name() {
+    if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+        printf '%s\n' "release-main"
+    else
+        printf '%s\n' "main"
+    fi
+}
+
 # Ensures VM-scanning E2E required environment variables are set before deploy/tests.
 # Variables with sensible defaults in the Go suite are optional here;
 # only truly external inputs that cannot be self-discovered are required.
@@ -21,7 +35,7 @@ ensure_vm_scanning_cluster_prereqs() {
             export MAIN_IMAGE_TAG
         fi
         if [[ -z "${MAIN_IMAGE_REPO:-}" ]]; then
-            MAIN_IMAGE_REPO="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" default-image-registry)/main"
+            MAIN_IMAGE_REPO="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" default-image-registry)/$(_vm_scanning_main_image_name)"
             export MAIN_IMAGE_REPO
         fi
         export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
