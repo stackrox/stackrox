@@ -397,6 +397,12 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
+    - name: Require change detection
+      if: needs.detect-changes.result == 'failure'
+      run: |
+        echo "Change detection failed; suite eligibility is unknown." >&2
+        exit 1
+
     - name: Checkout
       if: env.CI_RUN_SUITE == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -528,6 +534,12 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - name: Require change detection
+      if: needs.detect-changes.result == 'failure'
+      run: |
+        echo "Change detection failed; suite eligibility is unknown." >&2
+        exit 1
+
     - name: Checkout
       if: env.CI_RUN_SUITE == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
