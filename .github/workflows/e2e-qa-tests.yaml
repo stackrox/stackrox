@@ -94,7 +94,6 @@ jobs:
     steps:
       - name: Read CI selection
         id: ci-decision
-        shell: bash
         env:
           CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
         run: |
@@ -106,7 +105,7 @@ jobs:
           printf 'CI selection: %s\n' "$action"
 
       - name: Validate workflow input
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: &selected-suite steps.ci-decision.outputs.action != 'skip'
         run: |
           case "${{ inputs.cluster-provisioning-method }}" in
             direct-gke|infra) ;;
@@ -119,7 +118,7 @@ jobs:
           fi
 
       - name: Checkout repo
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
@@ -127,13 +126,13 @@ jobs:
           persist-credentials: false
 
       - name: Validate input tag
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         env:
           TAG: ${{ inputs.tag }}
         run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
       - uses: ./.github/actions/job-preamble
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
@@ -172,7 +171,7 @@ jobs:
           wait: false
 
       - name: Set up GCloud SDK
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
         with:
           install_components: "gke-gcloud-auth-plugin,beta"
@@ -191,32 +190,32 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
       - name: Docker login to Quay.io
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
       - name: Set flavor-specific env vars
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         env:
           EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
         run: |
           printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
       - name: Install roxctl
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
         with:
           roxctl-release: latest
 
       - name: Retrieving roxie version from repository
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         id: roxie-version
         run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Install roxie
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
         with:
           version: "v${{ steps.roxie-version.outputs.version }}"
@@ -246,7 +245,7 @@ jobs:
       # already RUNNING at this point. wait_for_cluster provides additional
       # guarantees by polling until all kube-system pods are ready.
       - name: Wait for cluster to stabilize
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         timeout-minutes: 5
         env:
           CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
@@ -258,18 +257,18 @@ jobs:
           fi
 
       - name: Create artifact directory
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         run: mkdir -p "$ARTIFACT_DIR"
 
       - name: Download Go module dependencies
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         # The qa-tests-backend Makefile copies scanner protos from the Go module
         # cache (via go list -m). Unlike Prow's apollo-ci image, GHA runners
         # don't have the cache pre-populated.
         run: go mod download github.com/stackrox/scanner
 
       - name: Run pre-test
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         shell: python
         env:
           QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -282,7 +281,7 @@ jobs:
           PreSystemTests().run()
 
       - name: Run Part 1 tests
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         env: &test_env
           USE_ROXIE_DEPLOY: true
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -332,7 +331,7 @@ jobs:
           post.run([os.environ['ARTIFACT_DIR']])
 
       - name: Run Part 2 tests
-        if: steps.ci-decision.outputs.action != 'skip'
+        if: *selected-suite
         id: run-part-2
         env: *test_env
         timeout-minutes: ${{ inputs.part2-timeout-minutes }}

@@ -50,7 +50,6 @@ jobs:
 
     - name: Read CI selection
       id: ci-decision
-      shell: bash
       env:
         CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
       run: |
@@ -62,7 +61,7 @@ jobs:
         printf 'CI selection: %s\n' "$action"
 
     - name: Checkout repo
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: &selected-suite steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
@@ -70,18 +69,18 @@ jobs:
         persist-credentials: false
 
     - name: Validate input tag
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         TAG: ${{ inputs.tag }}
       run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create GKE cluster
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         MACHINE_TYPE: e2-standard-16
         # Leave room for the scale workload alongside both Scanner versions.
@@ -93,36 +92,36 @@ jobs:
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Build roxctl
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: make roxctl_linux-amd64
 
     - name: Retrieve roxie version from repository
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       id: roxie-version
       run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
     - name: Install roxie
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
         gh-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Verify kubectl access and wait for cluster to stabilize
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       timeout-minutes: 5
       run: |
         kubectl cluster-info
@@ -130,11 +129,11 @@ jobs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -145,14 +144,14 @@ jobs:
         PreSystemTests().run()
 
     - name: Fix GOPATH and PATH for building and running roxctl during tests
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: |
         GOPATH="$(go env GOPATH)"
         echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
         echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
 
     - name: Run central upgrade test
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -232,7 +231,6 @@ jobs:
     steps:
     - name: Read CI selection
       id: ci-decision
-      shell: bash
       env:
         CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
       run: |
@@ -244,14 +242,14 @@ jobs:
         printf 'CI selection: %s\n' "$action"
 
     - name: Checkout repo
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - name: Check whether PostgreSQL needs a major-version upgrade
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       id: check
       run: tests/upgrade/postgres_upgrade_run.sh --check
 
@@ -274,7 +272,6 @@ jobs:
 
     - name: Read CI selection
       id: ci-decision
-      shell: bash
       env:
         CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
       run: |
@@ -286,7 +283,7 @@ jobs:
         printf 'CI selection: %s\n' "$action"
 
     - name: Checkout repo
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
@@ -294,18 +291,18 @@ jobs:
         persist-credentials: false
 
     - name: Validate input tag
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         TAG: ${{ inputs.tag }}
       run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create GKE cluster
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         MACHINE_TYPE: e2-standard-16
         # Leave room for the scale workload alongside both Scanner versions.
@@ -317,36 +314,36 @@ jobs:
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Build roxctl
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: make roxctl_linux-amd64
 
     - name: Retrieve roxie version from repository
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       id: roxie-version
       run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
     - name: Install roxie
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
         gh-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Verify kubectl access and wait for cluster to stabilize
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       timeout-minutes: 5
       run: |
         kubectl cluster-info
@@ -354,11 +351,11 @@ jobs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -369,14 +366,14 @@ jobs:
         PreSystemTests().run()
 
     - name: Fix GOPATH and PATH for building and running roxctl during tests
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: |
         GOPATH="$(go env GOPATH)"
         echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
         echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
 
     - name: Run postgres version upgrade test
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -465,7 +462,6 @@ jobs:
 
     - name: Read CI selection
       id: ci-decision
-      shell: bash
       env:
         CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
       run: |
@@ -477,7 +473,7 @@ jobs:
         printf 'CI selection: %s\n' "$action"
 
     - name: Checkout repo
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
@@ -485,18 +481,18 @@ jobs:
         persist-credentials: false
 
     - name: Validate input tag
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         TAG: ${{ inputs.tag }}
       run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create GKE cluster
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "1"
@@ -507,24 +503,24 @@ jobs:
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Build roxctl and upgrader
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: make roxctl_linux-amd64 upgrader
 
     - name: Verify kubectl access and wait for cluster to stabilize
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       timeout-minutes: 5
       run: |
         kubectl cluster-info
@@ -532,11 +528,11 @@ jobs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -547,7 +543,7 @@ jobs:
         PreSystemTests().run()
 
     - name: Run sensor upgrade test
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: *selected-suite
       env:
         LONGTERM_LICENSE: todo - remove me
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
