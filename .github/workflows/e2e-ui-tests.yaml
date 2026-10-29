@@ -3,6 +3,10 @@ name: e2e-ui-tests
 on:
   workflow_call:
     inputs:
+      ci-action:
+        description: Applied CI selection decision; missing or invalid values run.
+        type: string
+        default: run
       should-run:
         description: "true if should really run the job. false - otherwise, i.e. the job should be skipped."
         required: true
@@ -53,7 +57,21 @@ jobs:
     timeout-minutes: 150
     steps:
 
+    - name: Read CI selection
+      id: ci-decision
+      shell: bash
+      env:
+        CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+
     - name: Checkout repo
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
@@ -61,27 +79,32 @@ jobs:
         persist-credentials: false
 
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set extra environment variables
+      if: steps.ci-decision.outputs.action != 'skip'
       env:
         EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
       run: |
         printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
+      if: steps.ci-decision.outputs.action != 'skip'
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
+      if: steps.ci-decision.outputs.action != 'skip'
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
@@ -92,15 +115,18 @@ jobs:
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Retrieving roxie version from repository
+      if: steps.ci-decision.outputs.action != 'skip'
       id: roxie-version
       run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
     - name: Install roxie
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions/roxie/install-cli@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
 
     - name: Verify kubectl access and wait for cluster to stabilize
+      if: steps.ci-decision.outputs.action != 'skip'
       timeout-minutes: 5
       run: |
         kubectl cluster-info
@@ -108,9 +134,11 @@ jobs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
+      if: steps.ci-decision.outputs.action != 'skip'
       run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
+      if: steps.ci-decision.outputs.action != 'skip'
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -123,6 +151,7 @@ jobs:
         PreSystemTests().run()
 
     - name: Run UI E2E tests
+      if: steps.ci-decision.outputs.action != 'skip'
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -132,7 +161,7 @@ jobs:
       run: tests/e2e/run-ui-e2e.sh
 
     - name: Run post-test
-      if: always() && env.KUBECONFIG != ''
+      if: (always() && env.KUBECONFIG != '') && steps.ci-decision.outputs.action != 'skip'
       continue-on-error: true
       shell: python
       run: |
@@ -145,7 +174,7 @@ jobs:
         post.run(['${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
-      if: always() && env.KUBECONFIG != ''
+      if: (always() && env.KUBECONFIG != '') && steps.ci-decision.outputs.action != 'skip'
       continue-on-error: true
       shell: python
       run: |
@@ -155,7 +184,7 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
@@ -169,20 +198,20 @@ jobs:
 
     - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "fail"
 
     - name: Publish summary for passed and skipped tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "pass, skip"
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:

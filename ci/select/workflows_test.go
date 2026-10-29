@@ -15,6 +15,10 @@ import (
 type (
 	workflow struct {
 		On map[string]struct {
+			Types  []string `yaml:"types"`
+			Inputs map[string]struct {
+				Default string `yaml:"default"`
+			} `yaml:"inputs"`
 			Outputs map[string]struct {
 				Value string `yaml:"value"`
 			} `yaml:"outputs"`
@@ -26,9 +30,10 @@ type (
 		} `yaml:"concurrency"`
 	}
 	workflowJob struct {
-		If       string `yaml:"if"`
-		Needs    any    `yaml:"needs"`
-		Uses     string `yaml:"uses"`
+		If       string            `yaml:"if"`
+		Needs    any               `yaml:"needs"`
+		Uses     string            `yaml:"uses"`
+		With     map[string]string `yaml:"with"`
 		Strategy struct {
 			FailFast bool           `yaml:"fail-fast"`
 			Matrix   map[string]any `yaml:"matrix"`
@@ -37,6 +42,7 @@ type (
 		Outputs map[string]string `yaml:"outputs"`
 	}
 	workflowStep struct {
+		Name  string            `yaml:"name"`
 		ID    string            `yaml:"id"`
 		If    string            `yaml:"if"`
 		Uses  string            `yaml:"uses"`

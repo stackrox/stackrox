@@ -13,6 +13,8 @@ on:
     - reopened
     - synchronize
     - ready_for_review
+    - labeled
+    - unlabeled
 
 permissions:
   contents: read
@@ -23,18 +25,38 @@ defaults:
     shell: bash
 
 jobs:
+  ci-selection:
+    name: ACS CI selection
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+      github.event.label.name == 'ci-dispatcher-enforce'
+    uses: ./.github/workflows/ci-selection.yaml
+
   detect-changes:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+      github.event.label.name == 'ci-dispatcher-enforce'
     uses: ./.github/workflows/detect-changes.yml
 
   # Determines whether we should dispatch jobs that call real E2E workflows.
   # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
   should-dispatch:
-    needs: [ detect-changes ]
+    needs: [ detect-changes, ci-selection ]
+    if: >-
+      !cancelled() && needs.detect-changes.result == 'success' &&
+      (github.event_name != 'pull_request' ||
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+      github.event.label.name == 'ci-dispatcher-enforce')
     runs-on: ubuntu-slim
     outputs:
       wait-for-gha-images: ${{ steps.determine.outputs.wait-for-gha-images }}
       wait-for-konflux-images: ${{ steps.determine.outputs.wait-for-konflux-images }}
       jobs: ${{ steps.determine.outputs.jobs }}
+      ci-actions: ${{ steps.determine.outputs.ci-actions }}
+      skip-gha-images: ${{ steps.determine.outputs.skip-gha-images }}
+      skip-konflux-images: ${{ steps.determine.outputs.skip-konflux-images }}
     steps:
     - name: Determine whether should dispatch workflows
       id: determine
@@ -48,6 +70,8 @@ jobs:
         input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
         input__repo: ${{ github.repository }}
         input__pr_number: ${{ github.event.pull_request.number }}
+        input__ci_decisions: ${{ needs.ci-selection.outputs.decisions }}
+        input__ci_planner_result: ${{ needs.ci-selection.result }}
       run: |
         import json
         import os
@@ -118,13 +142,29 @@ jobs:
             Job(name='e2e-ui-tests-gke-konflux', require_konflux_build=True, is_ui_test=True),
         ]
 
+        # Only valid, applied decisions from a successful PR planner can skip work.
+        planned = {}
+        if input.event_name == 'pull_request' and input.is_fork != 'true' and input.ci_planner_result == 'success':
+            try:
+                candidate = json.loads(input.ci_decisions or '{}')
+                if not isinstance(candidate, dict) or any(value not in ('run', 'skip') for value in candidate.values()):
+                    raise ValueError('invalid selection map')
+                planned = candidate
+            except (ValueError, TypeError):
+                print('CI selection unavailable; preserving existing e2e eligibility')
+        ci_actions = {job.name: planned.get(job.name, 'run') for job in jobs_registry}
+
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
             def write(job, val):
                 line = f'{job}={val}'
                 print(line)
                 file.write(line + '\n')
 
-            jobs = {job.name: job.should_run(input) for job in jobs_registry}
+            # Skipped suites still start their jobs so required checks can finish successfully.
+            jobs = {job.name: job.should_run(input) or ci_actions[job.name] == 'skip' for job in jobs_registry}
+            write('ci-actions', json.dumps(ci_actions))
+            write('skip-gha-images', str(all(ci_actions[job.name] == 'skip' for job in jobs_registry if not job.require_konflux_build)).lower())
+            write('skip-konflux-images', str(all(ci_actions[job.name] == 'skip' for job in jobs_registry if job.require_konflux_build)).lower())
 
             write('jobs', json.dumps(jobs))
 
@@ -138,7 +178,9 @@ jobs:
 
   wait-for-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "."
@@ -154,14 +196,30 @@ jobs:
       group: wait-for-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
     steps:
+    - name: Read CI selection
+      id: ci-decision
+      shell: bash
+      env:
+        CI_SELECT_ACTION: ${{ needs.should-dispatch.outputs.skip-gha-images == 'true' && 'skip' || 'run' }}
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+
     - name: Checkout repo
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: steps.ci-decision.outputs.action != 'skip'
     - name: Determine image references
+      if: steps.ci-decision.outputs.action != 'skip'
       id: image-references
       run: &image-references |
         IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C "$MAIN_IMAGE_TAG_DIR" --quiet --no-print-directory tag)"}"
@@ -184,6 +242,7 @@ jobs:
         echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
 
     - name: Wait for images
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -201,7 +260,9 @@ jobs:
 
   wait-for-konflux-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG_DIR: "operator"
@@ -215,18 +276,35 @@ jobs:
       group: wait-for-konflux-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
     steps:
+    - name: Read CI selection
+      id: ci-decision
+      shell: bash
+      env:
+        CI_SELECT_ACTION: ${{ needs.should-dispatch.outputs.skip-konflux-images == 'true' && 'skip' || 'run' }}
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+
     - name: Checkout repo
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
+      if: steps.ci-decision.outputs.action != 'skip'
     - name: Determine image references
+      if: steps.ci-decision.outputs.action != 'skip'
       id: image-references
       run: *image-references
 
     - name: Wait for Konflux images
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -235,8 +313,13 @@ jobs:
 
   e2e-byodb-tests:
     needs: [ wait-for-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-byodb-tests == 'skip')
     uses: ./.github/workflows/e2e-byodb-tests.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-byodb-tests || 'run' }}
       tag: ${{ needs.wait-for-images.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-tests }}
     secrets: inherit
@@ -246,8 +329,13 @@ jobs:
 
   e2e-db-backup-restore-tests-gke:
     needs: [ wait-for-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-db-backup-restore-tests-gke == 'skip')
     uses: ./.github/workflows/e2e-db-backup-restore-tests-gke.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-db-backup-restore-tests-gke || 'run' }}
       tag: ${{ needs.wait-for-images.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-tests-gke }}
     secrets: inherit
@@ -257,8 +345,13 @@ jobs:
 
   e2e-db-backup-restore-tests-gke-konflux:
     needs: [ wait-for-konflux-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-konflux-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-db-backup-restore-tests-gke-konflux == 'skip')
     uses: ./.github/workflows/e2e-db-backup-restore-tests-gke-konflux.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-db-backup-restore-tests-gke-konflux || 'run' }}
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-tests-gke-konflux }}
     secrets: inherit
@@ -268,8 +361,13 @@ jobs:
 
   e2e-gke-upgrade-tests:
     needs: [ wait-for-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-gke-upgrade-tests == 'skip')
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-gke-upgrade-tests || 'run' }}
       tag: ${{ needs.wait-for-images.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-gke-upgrade-tests }}
     secrets: inherit
@@ -279,8 +377,13 @@ jobs:
 
   e2e-nongroovy-tests-gke:
     needs: [ wait-for-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-nongroovy-tests-gke == 'skip')
     uses: ./.github/workflows/e2e-nongroovy-tests-gke.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-nongroovy-tests-gke || 'run' }}
       tag: ${{ needs.wait-for-images.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests-gke }}
     secrets: inherit
@@ -290,8 +393,13 @@ jobs:
 
   e2e-nongroovy-tests-gke-konflux:
     needs: [ wait-for-konflux-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-konflux-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-nongroovy-tests-gke-konflux == 'skip')
     uses: ./.github/workflows/e2e-nongroovy-tests-gke-konflux.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-nongroovy-tests-gke-konflux || 'run' }}
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests-gke-konflux }}
     secrets: inherit
@@ -301,8 +409,13 @@ jobs:
 
   e2e-qa-tests-gke:
     needs: [ wait-for-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-qa-tests-gke == 'skip')
     uses: ./.github/workflows/e2e-qa-tests-gke.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-qa-tests-gke || 'run' }}
       tag: ${{ needs.wait-for-images.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke }}
     secrets: inherit
@@ -312,8 +425,13 @@ jobs:
 
   e2e-qa-tests-ocp-fips-konflux:
     needs: [ wait-for-konflux-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-konflux-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-qa-tests-ocp-fips-konflux == 'skip')
     uses: ./.github/workflows/e2e-qa-tests-ocp-fips-konflux.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-qa-tests-ocp-fips-konflux || 'run' }}
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-fips-konflux }}
     secrets: inherit
@@ -323,8 +441,13 @@ jobs:
 
   e2e-qa-tests-gke-konflux:
     needs: [ wait-for-konflux-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-konflux-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-qa-tests-gke-konflux == 'skip')
     uses: ./.github/workflows/e2e-qa-tests-gke-konflux.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-qa-tests-gke-konflux || 'run' }}
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke-konflux }}
     secrets: inherit
@@ -334,8 +457,13 @@ jobs:
 
   e2e-ui-tests-gke:
     needs: [ wait-for-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-ui-tests-gke == 'skip')
     uses: ./.github/workflows/e2e-ui-tests-gke.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-ui-tests-gke || 'run' }}
       tag: ${{ needs.wait-for-images.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-ui-tests-gke }}
     secrets: inherit
@@ -345,8 +473,13 @@ jobs:
 
   e2e-ui-tests-gke-konflux:
     needs: [ wait-for-konflux-images, should-dispatch ]
+    if: >-
+      !cancelled() && needs.should-dispatch.result == 'success' &&
+      (needs.wait-for-konflux-images.result == 'success' ||
+       fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-ui-tests-gke-konflux == 'skip')
     uses: ./.github/workflows/e2e-ui-tests-gke-konflux.yaml
     with:
+      ci-action: ${{ fromJSON(needs.should-dispatch.outputs.ci-actions || '{}').e2e-ui-tests-gke-konflux || 'run' }}
       tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-ui-tests-gke-konflux }}
     secrets: inherit

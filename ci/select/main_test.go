@@ -24,8 +24,13 @@ func TestRun(t *testing.T) {
 			if args[0] == "validate" {
 				assert.Contains(t, output.String(), "Validation passed")
 			} else {
-				assert.Equal(t, "go skip\ngo-bench skip\ngo-postgres skip\nsensor-integration-tests skip\n", output.String())
-				assert.Contains(t, diagnostic.String(), "frontend-and-docs-only")
+				for _, target := range []string{"go", "go-bench", "go-postgres", "sensor-integration-tests"} {
+					assert.Contains(t, output.String(), target+" skip\n")
+				}
+				for _, target := range e2eTargets() {
+					assert.Contains(t, output.String(), target+" run\n")
+				}
+				assert.Contains(t, diagnostic.String(), "frontend-only")
 			}
 		})
 	}

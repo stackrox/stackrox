@@ -30,8 +30,7 @@ func resolve(files []string, m mapping) decision {
 		for _, path := range files {
 			pathCovered := false
 			for _, r := range m.Rules {
-				if r.When == "safe-paths" && slices.Contains(r.Skip, job) &&
-					slices.ContainsFunc(r.patterns, func(pattern *regexp.Regexp) bool { return pattern.MatchString(path) }) {
+				if r.When == "safe-paths" && slices.Contains(r.Skip, job) && r.matches(path) {
 					pathCovered = true
 					reasons.Add(r.Name)
 				}
@@ -55,6 +54,12 @@ func resolve(files []string, m mapping) decision {
 		}
 	}
 	return decision{actions: actions, log: log.String()}
+}
+
+// matches applies exclusions within this rule; other rules can still cover the path.
+func (r rule) matches(path string) bool {
+	match := func(pattern *regexp.Regexp) bool { return pattern.MatchString(path) }
+	return slices.ContainsFunc(r.patterns, match) && !slices.ContainsFunc(r.excludedPatterns, match)
 }
 
 func fallback(err error) decision {

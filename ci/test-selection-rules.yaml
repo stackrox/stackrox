@@ -1,15 +1,65 @@
 version: 1
-jobs: [go, go-postgres, go-bench, sensor-integration-tests]
+jobs:
+  - go
+  - go-postgres
+  - go-bench
+  - sensor-integration-tests
+  - e2e-byodb-tests
+  - e2e-db-backup-restore-tests-gke
+  - e2e-db-backup-restore-tests-gke-konflux
+  - e2e-gke-upgrade-tests
+  - e2e-nongroovy-tests-gke
+  - e2e-nongroovy-tests-gke-konflux
+  - e2e-qa-tests-gke
+  - e2e-qa-tests-gke-konflux
+  - e2e-qa-tests-ocp-fips-konflux
+  - e2e-ui-tests-gke
+  - e2e-ui-tests-gke-konflux
 # For each job, combine paths only from rules that name it in skip.
 # Skip that job only if those paths cover a nonempty diff.
 # See select/README.md for examples.
 rules:
-  # UI files, documentation, and root Markdown do not affect these four
-  # backend suites. A diff limited to these paths can skip all four.
-  - name: frontend-and-docs-only
+  # UI files do not affect these four backend suites.
+  # A diff limited to the frontend can skip all four.
+  - name: frontend-only
     when: safe-paths
-    paths: ['^ui/', '^docs/', '^[^/]+\.md$']
+    paths: ['^ui/']
     skip: [go, go-postgres, go-bench, sensor-integration-tests]
+
+  # Documentation-only changes can skip the suites listed here. Exclude
+  # files used by tests, image builds, generators, and dependency setup.
+  - name: documentation-only
+    when: safe-paths
+    paths:
+      - '^(?is:.*\.(md|txt))$'
+      # These lists control images downloaded by Sensor and e2e tests.
+      - '!^sensor/tests/images-to-prefetch\.txt$'
+      - '!^tests/images-to-prefetch\.txt$'
+      - '!^qa-tests-backend/scripts/images-to-prefetch\.txt$'
+      # Test fixtures and expected output are inputs, even with doc extensions.
+      - '!^(?s:.*/)?(testdata|fixtures)/'
+      - '!^tests/roxctl/bats-tests/local/expect/'
+      - '!^qa-tests-backend/test-images/'
+      # Generator headers and Python dependencies affect builds and checks.
+      - '!^(tools|operator/hack|config-controller/hack)/boilerplate\.go\.txt$'
+      - '!^\.openshift-ci/dev-requirements\.txt$'
+      - '!^tests/performance/scripts/opensearch-upload/requirements\.txt$'
+    skip:
+      - go
+      - go-postgres
+      - go-bench
+      - sensor-integration-tests
+      - e2e-byodb-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
+      - e2e-gke-upgrade-tests
+      - e2e-nongroovy-tests-gke
+      - e2e-nongroovy-tests-gke-konflux
+      - e2e-qa-tests-gke
+      - e2e-qa-tests-gke-konflux
+      - e2e-qa-tests-ocp-fips-konflux
+      - e2e-ui-tests-gke
+      - e2e-ui-tests-gke-konflux
 
   # These Central components do not affect Sensor integration tests.
   # A diff limited to these paths still runs Go tests, database tests,

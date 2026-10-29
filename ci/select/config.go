@@ -23,12 +23,13 @@ type (
 	}
 
 	rule struct {
-		Name     string   `json:"name"`
-		When     string   `json:"when"`
-		Paths    []string `json:"paths"`
-		Run      []string `json:"run"`
-		Skip     []string `json:"skip"`
-		patterns []*regexp.Regexp
+		Name             string   `json:"name"`
+		When             string   `json:"when"`
+		Paths            []string `json:"paths"`
+		Run              []string `json:"run"`
+		Skip             []string `json:"skip"`
+		patterns         []*regexp.Regexp
+		excludedPatterns []*regexp.Regexp
 	}
 )
 
@@ -119,14 +120,22 @@ func (m *mapping) validate() error {
 			}
 		}
 		for _, pattern := range r.Paths {
-			if !strings.HasPrefix(pattern, "^") {
+			expression, exclude := strings.CutPrefix(pattern, "!")
+			if !strings.HasPrefix(expression, "^") {
 				return fmt.Errorf("rule %q pattern %q must be rooted with ^", r.Name, pattern)
 			}
-			compiled, err := regexp.Compile(pattern)
+			compiled, err := regexp.Compile(expression)
 			if err != nil {
 				return fmt.Errorf("rule %q pattern %q: %w", r.Name, pattern, err)
 			}
+			if exclude {
+				r.excludedPatterns = append(r.excludedPatterns, compiled)
+				continue
+			}
 			r.patterns = append(r.patterns, compiled)
+		}
+		if len(r.patterns) == 0 {
+			return fmt.Errorf("rule %q must include at least one non-excluded path pattern", r.Name)
 		}
 	}
 	return nil

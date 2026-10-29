@@ -15,15 +15,18 @@ func TestPolicy(t *testing.T) {
 	t.Parallel()
 	m, err := loadMapping("../test-selection-rules.yaml")
 	require.NoError(t, err)
-	require.Equal(t, []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}, m.Jobs)
+	require.ElementsMatch(t, append([]string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}, e2eTargets()...), m.Jobs)
 	cases := map[string]struct {
 		files []string
 		skip  []string
 	}{
-		"should skip all for UI and root docs": {
+		"should skip backend targets for UI only": {
+			files: []string{"ui/example.tsx"}, skip: []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"},
+		},
+		"should skip only backend targets for UI and root docs": {
 			files: []string{"ui/example.tsx", "README.md"}, skip: []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"},
 		},
-		"should skip all for docs": {files: []string{"docs/guide.md"}, skip: []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}},
+		"should skip all for docs": {files: []string{"docs/guide.md"}, skip: append([]string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}, e2eTargets()...)},
 		"should keep database jobs for Central": {
 			files: []string{"central/sac/example.go"}, skip: []string{"sensor-integration-tests"},
 		},
@@ -59,10 +62,13 @@ func TestPolicy(t *testing.T) {
 		"should keep targets with an uncovered shared path": {
 			files: []string{"scanner/example.go", "operator/internal/example.go", "pkg/shared.go"},
 		},
-		"should not exempt backend Markdown fixtures": {files: []string{"central/example/fixture.md"}},
-		"should run all for empty diff":               {},
-		"should not match roots within other paths":   {files: []string{"other/docs/guide.md"}},
-		"should not treat a renamed backend fixture as docs only": {
+		"should skip all for nested Markdown docs": {
+			files: []string{"central/example/guide.md"},
+			skip:  append([]string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}, e2eTargets()...),
+		},
+		"should run all for empty diff":                          {},
+		"should not match backend roots within other code paths": {files: []string{"other/docs/example.go"}},
+		"should keep backend tests after a Markdown fixture rename": {
 			files: []string{"pkg/testdata/input.md", "docs/input.md"},
 		},
 	}
@@ -87,6 +93,109 @@ func TestPolicy(t *testing.T) {
 				assert.Equal(t, expected, d.action(job), job)
 			}
 			assert.Equal(t, "run", d.action("unenrolled-job"))
+		})
+	}
+}
+
+func TestDocumentationPolicy(t *testing.T) {
+	t.Parallel()
+	m, err := loadMapping("../test-selection-rules.yaml")
+	require.NoError(t, err)
+	backend := []string{"go", "go-postgres", "go-bench", "sensor-integration-tests"}
+	all := append(slices.Clone(backend), e2eTargets()...)
+	for name, c := range map[string]struct {
+		files []string
+		skip  []string
+	}{
+		"root Markdown and text":                    {files: []string{"README.md", "NOTICE.txt"}, skip: all},
+		"nested and uppercase extensions":           {files: []string{"pkg/README.MD", "sensor/notes.TxT"}, skip: all},
+		"newline filename":                          {files: []string{"docs/multi\nline.md"}, skip: all},
+		"mixed documentation and Go":                {files: []string{"README.md", "pkg/example.go"}},
+		"UI implementation":                         {files: []string{"README.md", "ui/src/App.tsx"}, skip: backend},
+		"documentation without supported extension": {files: []string{"docs/guide.html"}},
+		"extension followed by suffix":              {files: []string{"README.md.bak"}},
+		"empty diff":                                {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			d := resolve(c.files, m)
+			for _, target := range all {
+				want := "run"
+				if slices.Contains(c.skip, target) {
+					want = "skip"
+				}
+				assert.Equal(t, want, d.action(target), target)
+			}
+		})
+	}
+}
+
+func TestDocumentationInputs(t *testing.T) {
+	t.Parallel()
+	m, err := loadMapping("../test-selection-rules.yaml")
+	require.NoError(t, err)
+	for path, skip := range map[string][]string{
+		"docs/testdata/input.md":                                                                 nil,
+		"tests/images-to-prefetch.txt":                                                           nil,
+		"qa-tests-backend/scripts/images-to-prefetch.txt":                                        nil,
+		"sensor/tests/images-to-prefetch.txt":                                                    {"go-postgres", "go-bench"},
+		"roxctl/common/report/testdata/passed.txt":                                               nil,
+		"central/tlsconfig/testdata/cert.txt":                                                    nil,
+		"tests/e2e/bats/fixtures/panic-log-check-output.txt":                                     nil,
+		"tests/roxctl/bats-tests/local/expect/roxctl--help.txt":                                  nil,
+		"qa-tests-backend/test-images/lineage/dummy.txt":                                         nil,
+		"sensor/common/centralclient/testdata/central/info.md":                                   nil,
+		"pkg\nname/testdata/fixture.md":                                                          nil,
+		"roxctl/netpol/connectivity/diff/testdata/acs-security-demos-new-version/diff_output.md": nil,
+		"tools/boilerplate.go.txt":                                                               nil,
+		"operator/hack/boilerplate.go.txt":                                                       {"go-postgres", "go-bench", "sensor-integration-tests"},
+		"config-controller/hack/boilerplate.go.txt":                                              nil,
+		".openshift-ci/dev-requirements.txt":                                                     nil,
+		"tests/performance/scripts/opensearch-upload/requirements.txt":                           nil,
+	} {
+		t.Run(path, func(t *testing.T) {
+			t.Parallel()
+			for _, files := range [][]string{{path}, {"README.md", path}} {
+				d := resolve(files, m)
+				for _, target := range m.Jobs {
+					want := "run"
+					if slices.Contains(skip, target) {
+						want = "skip"
+					}
+					assert.Equal(t, want, d.action(target), target)
+				}
+			}
+		})
+	}
+}
+
+func TestPathExclusions(t *testing.T) {
+	t.Parallel()
+	for name, paths := range map[string]string{
+		"exclusions after includes":  "['^docs/', '^docs/testdata/', '!^docs/testdata/']",
+		"exclusions before includes": "['!^docs/testdata/', '^docs/testdata/', '^docs/']",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			data := strings.Replace(validRules, "['^docs/']", paths, 1)
+			m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules"), data))
+			require.NoError(t, err)
+			assert.Equal(t, "go skip\npostgres skip\n", resolve([]string{"docs/guide.md"}, m).String())
+			assert.Equal(t, "go run\npostgres run\n", resolve([]string{"docs/testdata/input.txt"}, m).String())
+			assert.Equal(t, "go run\npostgres run\n", resolve([]string{"docs/guide.md", "docs/testdata/input.txt"}, m).String())
+			assert.Equal(t, "go run\npostgres run\n", resolve(nil, m).String())
+
+			data = strings.Replace(data, "  - name: remaining", `  - name: test-inputs
+    when: safe-paths
+    paths: ['^docs/testdata/']
+    skip: [go]
+  - name: remaining`, 1)
+			m, err = loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules"), data))
+			require.NoError(t, err)
+			forward := resolve([]string{"docs/guide.md", "docs/testdata/input.txt"}, m)
+			assert.Equal(t, "go skip\npostgres run\n", forward.String(), "exclusions apply only to their own rule")
+			slices.Reverse(m.Rules[:len(m.Rules)-1])
+			assert.Equal(t, forward, resolve([]string{"docs/guide.md", "docs/testdata/input.txt"}, m))
 		})
 	}
 }
@@ -118,12 +227,13 @@ func TestNewTarget(t *testing.T) {
 	data, err := os.ReadFile("../test-selection-rules.yaml")
 	require.NoError(t, err)
 	// Enrollment alone grants no path-based skip permissions.
-	data = []byte(strings.Replace(string(data), "jobs: [", "jobs: [ui, ", 1))
+	data = []byte(strings.Replace(string(data), "jobs:\n", "jobs:\n  - ui\n", 1))
 	m, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules"), string(data)))
 	require.NoError(t, err)
 	for name, files := range map[string][]string{
 		"frontend":         {"ui/src/App.tsx"},
 		"docs":             {"docs/guide.md", "README.md"},
+		"nested text":      {"central/notes.TXT", "sensor/README.MD"},
 		"combined domains": {"scanner/example.go", "operator/internal/example.go"},
 		"empty":            nil,
 	} {
