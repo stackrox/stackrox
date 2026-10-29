@@ -1,0 +1,35 @@
+name: CI label probe evidence
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+  checks: read
+
+jobs:
+  collect:
+    if: github.head_ref == 'piotr/ROX-37751-ci-label-probe'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+
+    - name: Collect read-only evidence
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 ci/label-check-probe/collect.py
+
+    - name: Upload evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      with:
+        name: label-probe-${{ github.run_id }}-${{ github.run_attempt }}
+        path: label-probe-evidence/
+        retention-days: 7

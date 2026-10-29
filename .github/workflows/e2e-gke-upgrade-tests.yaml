@@ -1,6 +1,133 @@
+# Disposable label/check aggregation experiment. Do not merge.
+---
 name: e2e-gke-upgrade-tests
+permissions:
+  contents: read
+  pull-requests: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  gke-upgrade-tests-central:
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+    - name: Read CI selection
+      id: ci-decision
+      env:
+        CI_SELECT_ACTION: "${{ github.event_name == 'workflow_dispatch' && 'run' ||
+          inputs.ci-action }}"
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+    - name: 'Label/check probe: pass'
+      run: |
+        python3 - <<'PY'
+        import json, os
+        from pathlib import Path
+        event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+        record = {"action": event.get("action"), "label": event.get("label", {}).get("name"), "head_sha": event.get("pull_request", {}).get("head", {}).get("sha"), "tested_sha": os.environ["GITHUB_SHA"], "run_id": os.environ["GITHUB_RUN_ID"], "job": os.environ["GITHUB_JOB"]}
+        print(json.dumps(record, indent=2))
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+            summary.write("```json\n" + json.dumps(record, indent=2) + "\n```\n")
+        PY
+        echo "Probe outcome: pass"
+      if: steps.ci-decision.outputs.action != 'skip'
+  check-postgres-upgrade:
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
+    runs-on: ubuntu-latest
+    outputs:
+      required: "${{ steps.check.outputs.required }}"
+    steps:
+    - name: Read CI selection
+      id: ci-decision
+      env:
+        CI_SELECT_ACTION: "${{ github.event_name == 'workflow_dispatch' && 'run' ||
+          inputs.ci-action }}"
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+    - name: Enable PostgreSQL probe
+      id: check
+      if: steps.ci-decision.outputs.action != 'skip'
+      run: 'echo "required=true" >> "$GITHUB_OUTPUT"
 
-on:
+        '
+  gke-upgrade-tests-postgres:
+    needs: check-postgres-upgrade
+    if: needs.check-postgres-upgrade.outputs.required == 'true' || inputs.ci-action
+      == 'skip'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+    - name: Read CI selection
+      id: ci-decision
+      env:
+        CI_SELECT_ACTION: "${{ github.event_name == 'workflow_dispatch' && 'run' ||
+          inputs.ci-action }}"
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+    - name: 'Label/check probe: pass'
+      run: |
+        python3 - <<'PY'
+        import json, os
+        from pathlib import Path
+        event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+        record = {"action": event.get("action"), "label": event.get("label", {}).get("name"), "head_sha": event.get("pull_request", {}).get("head", {}).get("sha"), "tested_sha": os.environ["GITHUB_SHA"], "run_id": os.environ["GITHUB_RUN_ID"], "job": os.environ["GITHUB_JOB"]}
+        print(json.dumps(record, indent=2))
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+            summary.write("```json\n" + json.dumps(record, indent=2) + "\n```\n")
+        PY
+        echo "Probe outcome: pass"
+      if: steps.ci-decision.outputs.action != 'skip'
+  gke-upgrade-tests-sensor:
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - name: Read CI selection
+      id: ci-decision
+      env:
+        CI_SELECT_ACTION: "${{ github.event_name == 'workflow_dispatch' && 'run' ||
+          inputs.ci-action }}"
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+    - name: 'Label/check probe: hold'
+      run: |
+        python3 - <<'PY'
+        import json, os
+        from pathlib import Path
+        event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+        record = {"action": event.get("action"), "label": event.get("label", {}).get("name"), "head_sha": event.get("pull_request", {}).get("head", {}).get("sha"), "tested_sha": os.environ["GITHUB_SHA"], "run_id": os.environ["GITHUB_RUN_ID"], "job": os.environ["GITHUB_JOB"]}
+        print(json.dumps(record, indent=2))
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+            summary.write("```json\n" + json.dumps(record, indent=2) + "\n```\n")
+        PY
+        echo "Probe outcome: hold"
+        echo "Holding this check in progress for ten minutes, then failing."
+        sleep 600
+        exit 1
+      if: steps.ci-decision.outputs.action != 'skip'
+'on':
   workflow_call:
     inputs:
       ci-action:
@@ -12,7 +139,8 @@ on:
         type: string
         required: true
       should-run:
-        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        description: true if should really run the job. false - otherwise, i.e. the
+          job should be skipped.
         type: boolean
         required: true
   workflow_dispatch:
@@ -21,590 +149,3 @@ on:
         description: Image tag to test.
         type: string
         required: true
-
-permissions:
-  contents: read
-  pull-requests: read
-
-defaults:
-  run:
-    shell: bash
-
-jobs:
-
-  # Verifies Central DB upgrades/rollbacks.
-  gke-upgrade-tests-central:
-    if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-24.04
-    env:
-      MAIN_IMAGE_TAG: ${{ inputs.tag }}
-      BUILD_TAG: ${{ inputs.tag }}
-      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
-      # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
-      CI_JOB_NAME: gke-upgrade-tests-central
-      ARTIFACT_DIR: ./junit-reports
-      # Make sure Python steps don't buffer stdout/stderr.
-      PYTHONUNBUFFERED: "1"
-    timeout-minutes: 180 # Keep in sync with cluster's lifespan
-    steps:
-
-    - name: Read CI selection
-      id: ci-decision
-      env:
-        CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
-      run: |
-        action=run
-        if [[ "$CI_SELECT_ACTION" == skip ]]; then
-            action=skip
-        fi
-        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
-        printf 'CI selection: %s\n' "$action"
-
-    - name: Checkout repo
-      if: &selected-suite steps.ci-decision.outputs.action != 'skip'
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        persist-credentials: false
-
-    - name: Validate input tag
-      if: *selected-suite
-      env:
-        TAG: ${{ inputs.tag }}
-      run: scripts/ci/lib.sh validate_image_tag "$TAG"
-
-    - uses: ./.github/actions/job-preamble
-      if: *selected-suite
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Create GKE cluster
-      if: *selected-suite
-      env:
-        MACHINE_TYPE: e2-standard-16
-        # Leave room for the scale workload alongside both Scanner versions.
-        NUM_NODES: "1"
-        GKE_SPOT: "false"
-      timeout-minutes: 20
-      run: |
-        scripts/ci/gke.sh provision_gke_cluster cent-up
-        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
-
-    - name: Docker login to Quay.io
-      if: *selected-suite
-      env:
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
-
-    - name: Set up Cloud SDK
-      if: *selected-suite
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      with:
-        install_components: "gke-gcloud-auth-plugin"
-
-    - name: Build roxctl
-      if: *selected-suite
-      run: make roxctl_linux-amd64
-
-    - name: Retrieve roxie version from repository
-      if: *selected-suite
-      id: roxie-version
-      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
-
-    - name: Install roxie
-      if: *selected-suite
-      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
-      with:
-        version: "v${{ steps.roxie-version.outputs.version }}"
-        gh-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Verify kubectl access and wait for cluster to stabilize
-      if: *selected-suite
-      timeout-minutes: 5
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
-
-    - name: Create artifact directory
-      if: *selected-suite
-      run: mkdir -p "$ARTIFACT_DIR"
-
-    - name: Run pre-test
-      if: *selected-suite
-      shell: python
-      env:
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from pre_tests import PreSystemTests
-        PreSystemTests().run()
-
-    - name: Fix GOPATH and PATH for building and running roxctl during tests
-      if: *selected-suite
-      run: |
-        GOPATH="$(go env GOPATH)"
-        echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
-        echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
-
-    - name: Run central upgrade test
-      if: *selected-suite
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
-        GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
-        REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
-        REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
-      run: |
-        tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
-        # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
-        touch /tmp/stackrox_ci_state_deployed
-
-    - name: Run post-test
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      shell: python
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import PostClusterTest
-        PostClusterTest(collect_central_artifacts=True).run(['/tmp/postgres-upgrade-test-logs', '${{ env.ARTIFACT_DIR }}'])
-
-    - name: Run final-post
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      shell: python
-      env:
-        QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import FinalPost
-        FinalPost(store_qa_tests_data=True).run()
-
-    - name: Teardown GKE cluster
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      continue-on-error: true
-      run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
-
-    - name: Publish summary for failed tests
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: "fail"
-    - name: Publish summary for passed and skipped tests
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: "pass, skip"
-
-    - name: Report junit failures in jira
-      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: ${{ env.ARTIFACT_DIR }}
-
-  check-postgres-upgrade:
-    if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-latest
-    outputs:
-      required: ${{ steps.check.outputs.required }}
-    steps:
-    - name: Read CI selection
-      id: ci-decision
-      env:
-        CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
-      run: |
-        action=run
-        if [[ "$CI_SELECT_ACTION" == skip ]]; then
-            action=skip
-        fi
-        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
-        printf 'CI selection: %s\n' "$action"
-
-    - name: Checkout repo
-      if: *selected-suite
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        persist-credentials: false
-    - name: Check whether PostgreSQL needs a major-version upgrade
-      if: *selected-suite
-      id: check
-      run: tests/upgrade/postgres_upgrade_run.sh --check
-
-  # Verifies we can do Postgres major version upgrade.
-  gke-upgrade-tests-postgres:
-    needs: check-postgres-upgrade
-    if: needs.check-postgres-upgrade.outputs.required == 'true' || inputs.ci-action == 'skip'
-    runs-on: ubuntu-24.04
-    env:
-      MAIN_IMAGE_TAG: ${{ inputs.tag }}
-      BUILD_TAG: ${{ inputs.tag }}
-      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
-      # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
-      CI_JOB_NAME: gke-upgrade-tests-postgres
-      ARTIFACT_DIR: ./junit-reports
-      # Make sure Python steps don't buffer stdout/stderr.
-      PYTHONUNBUFFERED: "1"
-    timeout-minutes: 180 # Keep in sync with cluster's lifespan
-    steps:
-
-    - name: Read CI selection
-      id: ci-decision
-      env:
-        CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
-      run: |
-        action=run
-        if [[ "$CI_SELECT_ACTION" == skip ]]; then
-            action=skip
-        fi
-        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
-        printf 'CI selection: %s\n' "$action"
-
-    - name: Checkout repo
-      if: *selected-suite
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        persist-credentials: false
-
-    - name: Validate input tag
-      if: *selected-suite
-      env:
-        TAG: ${{ inputs.tag }}
-      run: scripts/ci/lib.sh validate_image_tag "$TAG"
-
-    - uses: ./.github/actions/job-preamble
-      if: *selected-suite
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Create GKE cluster
-      if: *selected-suite
-      env:
-        MACHINE_TYPE: e2-standard-16
-        # Leave room for the scale workload alongside both Scanner versions.
-        NUM_NODES: "1"
-        GKE_SPOT: "false"
-      timeout-minutes: 20
-      run: |
-        scripts/ci/gke.sh provision_gke_cluster pg-up
-        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
-
-    - name: Docker login to Quay.io
-      if: *selected-suite
-      env:
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
-
-    - name: Set up Cloud SDK
-      if: *selected-suite
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      with:
-        install_components: "gke-gcloud-auth-plugin"
-
-    - name: Build roxctl
-      if: *selected-suite
-      run: make roxctl_linux-amd64
-
-    - name: Retrieve roxie version from repository
-      if: *selected-suite
-      id: roxie-version
-      run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
-
-    - name: Install roxie
-      if: *selected-suite
-      uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
-      with:
-        version: "v${{ steps.roxie-version.outputs.version }}"
-        gh-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Verify kubectl access and wait for cluster to stabilize
-      if: *selected-suite
-      timeout-minutes: 5
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
-
-    - name: Create artifact directory
-      if: *selected-suite
-      run: mkdir -p "$ARTIFACT_DIR"
-
-    - name: Run pre-test
-      if: *selected-suite
-      shell: python
-      env:
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from pre_tests import PreSystemTests
-        PreSystemTests().run()
-
-    - name: Fix GOPATH and PATH for building and running roxctl during tests
-      if: *selected-suite
-      run: |
-        GOPATH="$(go env GOPATH)"
-        echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
-        echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
-
-    - name: Run postgres version upgrade test
-      if: *selected-suite
-      env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
-        REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
-        REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
-      run: |
-        tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
-        # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
-        touch /tmp/stackrox_ci_state_deployed
-
-    - name: Run post-test
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      shell: python
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import PostClusterTest
-        PostClusterTest(collect_central_artifacts=True).run(['/tmp/postgres-version-upgrade-test-logs', '${{ env.ARTIFACT_DIR }}'])
-
-    - name: Run final-post
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      shell: python
-      env:
-        QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import FinalPost
-        FinalPost(store_qa_tests_data=True).run()
-
-    - name: Teardown GKE cluster
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      continue-on-error: true
-      run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
-
-    - name: Publish summary for failed tests
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: "fail"
-    - name: Publish summary for passed and skipped tests
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: "pass, skip"
-
-    - name: Report junit failures in jira
-      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: ${{ env.ARTIFACT_DIR }}
-
-  # Verifies Sensor/Secured Cluster `upgrader` (applicable to manifest installations only).
-  gke-upgrade-tests-sensor:
-    if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-24.04
-    env:
-      MAIN_IMAGE_TAG: ${{ inputs.tag }}
-      BUILD_TAG: ${{ inputs.tag }}
-      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
-      # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
-      CI_JOB_NAME: gke-upgrade-tests-sensor
-      ARTIFACT_DIR: ./junit-reports
-      # Make sure Python steps don't buffer stdout/stderr.
-      PYTHONUNBUFFERED: "1"
-    timeout-minutes: 60 # Keep in sync with cluster's lifespan
-    steps:
-
-    - name: Read CI selection
-      id: ci-decision
-      env:
-        CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
-      run: |
-        action=run
-        if [[ "$CI_SELECT_ACTION" == skip ]]; then
-            action=skip
-        fi
-        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
-        printf 'CI selection: %s\n' "$action"
-
-    - name: Checkout repo
-      if: *selected-suite
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        persist-credentials: false
-
-    - name: Validate input tag
-      if: *selected-suite
-      env:
-        TAG: ${{ inputs.tag }}
-      run: scripts/ci/lib.sh validate_image_tag "$TAG"
-
-    - uses: ./.github/actions/job-preamble
-      if: *selected-suite
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Create GKE cluster
-      if: *selected-suite
-      env:
-        MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "1"
-        GKE_SPOT: "false"
-      timeout-minutes: 20
-      run: |
-        scripts/ci/gke.sh provision_gke_cluster sens-up
-        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
-
-    - name: Docker login to Quay.io
-      if: *selected-suite
-      env:
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
-
-    - name: Set up Cloud SDK
-      if: *selected-suite
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      with:
-        install_components: "gke-gcloud-auth-plugin"
-
-    - name: Build roxctl and upgrader
-      if: *selected-suite
-      run: make roxctl_linux-amd64 upgrader
-
-    - name: Verify kubectl access and wait for cluster to stabilize
-      if: *selected-suite
-      timeout-minutes: 5
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
-
-    - name: Create artifact directory
-      if: *selected-suite
-      run: mkdir -p "$ARTIFACT_DIR"
-
-    - name: Run pre-test
-      if: *selected-suite
-      shell: python
-      env:
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from pre_tests import PreSystemTests
-        PreSystemTests().run()
-
-    - name: Run sensor upgrade test
-      if: *selected-suite
-      env:
-        LONGTERM_LICENSE: todo - remove me
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        LOAD_BALANCER: lb
-      run: tests/upgrade/postgres_sensor_run.sh /tmp/postgres-sensor-upgrade-test-logs
-
-    - name: Run post-test
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      shell: python
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import PostClusterTest
-        # The particular test removes StackRox resources, therefore not collecting their artifacts.
-        PostClusterTest(collect_central_artifacts=False).run(['/tmp/postgres-sensor-upgrade-test-logs', '${{ env.ARTIFACT_DIR }}'])
-
-    - name: Run final-post
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      shell: python
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from post_tests import FinalPost
-        FinalPost(store_qa_tests_data=False).run()
-
-    - name: Teardown GKE cluster
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      continue-on-error: true
-      run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
-
-    - name: Publish summary for failed tests
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: "fail"
-    - name: Publish summary for passed and skipped tests
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always() && steps.ci-decision.outputs.action != 'skip'
-      with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-        show: "pass, skip"
-
-    - name: Report junit failures in jira
-      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: ${{ env.ARTIFACT_DIR }}
