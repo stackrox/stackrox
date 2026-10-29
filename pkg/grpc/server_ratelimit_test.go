@@ -16,6 +16,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	rateLimitAuthorizer = allow.Anonymous()
+)
+
 type testHTTPHandler struct {
 	requestCount int
 }
@@ -43,7 +47,7 @@ func (s *pingServiceTestImpl) RegisterServiceHandler(ctx context.Context, mux *r
 }
 
 func (s *pingServiceTestImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, rateLimitAuthorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *pingServiceTestImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {

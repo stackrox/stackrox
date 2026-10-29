@@ -19,6 +19,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var (
+	authorizer = allow.Anonymous()
+)
+
 type MarshalerTest struct {
 	suite.Suite
 }
@@ -52,7 +56,7 @@ func (s *supressCveServiceTestErrorImpl) RegisterServiceHandler(ctx context.Cont
 }
 
 func (s *supressCveServiceTestErrorImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *supressCveServiceTestErrorImpl) SuppressCVEs(_ context.Context, req *v1.SuppressCVERequest) (*v1.Empty, error) {

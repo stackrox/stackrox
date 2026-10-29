@@ -26,6 +26,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	pingAuthorizer = allow.Anonymous()
+)
+
 type APIServerSuite struct {
 	suite.Suite
 }
@@ -224,7 +228,7 @@ func (s *pingServiceTestErrorImpl) RegisterServiceHandler(ctx context.Context, m
 }
 
 func (s *pingServiceTestErrorImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, pingAuthorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
