@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: rhacs-operator-installer
-  namespace: ${NAMESPACE}
+  namespace: "${NAMESPACE}"
 ---
 # ClusterRole with permissions needed to install the operator bundle
 # The installer SA needs broad permissions to create CRDs, ClusterRoles, etc.
