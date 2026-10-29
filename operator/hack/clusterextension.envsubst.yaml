@@ -66,7 +66,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: rhacs-operator-installer
-  namespace: ${NAMESPACE}
+  namespace: "${NAMESPACE}"
 ---
 # ClusterCatalog - points to the index image containing operator bundles
 apiVersion: olm.operatorframework.io/v1
