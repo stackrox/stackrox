@@ -1,6 +1,6 @@
 // Cypress config for verify-ui runs: the repo config plus a browser window large enough to
-// hold the whole 1440x850 viewport next to the command log. Headless Electron defaults to
-// 1280x720, which crops the app on the right.
+// hold the whole 1440x850 viewport next to the command log (headless Electron defaults to
+// 1280x720, which crops the app on the right), and the evidence dir exposed to specs.
 const path = require('path');
 
 const platformDir = process.env.VERIFY_PLATFORM_DIR;
@@ -23,7 +23,14 @@ module.exports = {
                 }
                 return launchOptions;
             });
-            return base.e2e.setupNodeEvents(on, config);
+            const result = base.e2e.setupNodeEvents(on, config) || config;
+            // The repo config sets allowCypressEnv: false, so specs read public values through
+            // Cypress.expose(). The evidence dir is a local path, not a secret.
+            result.expose = {
+                ...result.expose,
+                VERIFY_EVIDENCE_DIR: result.env.VERIFY_EVIDENCE_DIR,
+            };
+            return result;
         },
     },
 };

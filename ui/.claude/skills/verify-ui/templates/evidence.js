@@ -4,7 +4,7 @@
 const consoleErrors = [];
 
 function evidenceDir() {
-    return Cypress.env('VERIFY_EVIDENCE_DIR');
+    return Cypress.expose('VERIFY_EVIDENCE_DIR');
 }
 
 /**

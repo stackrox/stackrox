@@ -21,7 +21,7 @@ Preconditions:
 
 - `doctor.sh` healthy.
 - Do NOT call `withAuth()` in this spec; delete it from the template so the session starts signed out.
-- The spec needs the admin password. Pass it only through env: run `CYPRESS_VERIFY_ADMIN_PASSWORD="$(cat ~/.cache/stackrox-verify-ui/state/admin-password)" scripts/drive.sh <spec>` and read `Cypress.env('VERIFY_ADMIN_PASSWORD')`. Never inline it in the spec, which is copied into evidence.
+- The spec needs the admin password. Pass it only through env: run `CYPRESS_VERIFY_ADMIN_PASSWORD="$(cat ~/.cache/stackrox-verify-ui/state/admin-password)" scripts/drive.sh <spec>` and read it with `cy.env(['VERIFY_ADMIN_PASSWORD']).then(({ VERIFY_ADMIN_PASSWORD }) => ...)`. The repo config sets `allowCypressEnv: false`, so `Cypress.env()` throws, and secrets must never go through `Cypress.expose()`. Never inline it in the spec, which is copied into evidence.
 
 - **Redirect.** `cy.visit('/main/violations')`. Expect `cy.location('pathname').should('eq', '/login')` and `h2:contains("Log in to your account")`. `captureState('01-login-page')`.
 - **Pick provider.** The provider select (`.react-select__control`, label "Select an auth provider") defaults to the first provider and is disabled when there is only one. If `input[name="username"]` is not rendered, click `.react-select__control`, then `.react-select__option` for the basic provider. The name comes from the deployment's data and is often `Login with username/password`; confirm it from the screenshot.
