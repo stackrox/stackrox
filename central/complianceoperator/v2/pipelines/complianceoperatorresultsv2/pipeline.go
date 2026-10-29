@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -85,51 +84,21 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return errox.NotFound.Newf("cluster with id %q does not exist", clusterID)
 		}
 		result := internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName)
-		// A result reflecting a genuinely new scan run is, by definition, fresh. Note: without the
-		// freshness sweeper, a result can only decay to STALE through an explicit event (a scan
-		// timeout); see MarkStalePriorResultsByScanRef.
-		if features.ComplianceSurfaceStaleData.Enabled() {
-			result.DataFreshness = s.freshnessOnReceive(ctx, result)
-		}
 		if err := s.reportMgr.HandleResult(ctx, result); err != nil {
 			log.Errorf("unable to handle the check result in the report manager: %v", err)
 			return err
 		}
+		// A result reflecting a genuinely new scan run is, by definition, fresh. Note: without the
+		// freshness sweeper, a result can only decay to STALE through an explicit event (a scan
+		// timeout); see MarkStalePriorResultsByScanRef. The freshness derivation itself lives in
+		// the datastore (UpsertReceivedResult), under the same lock used by the timeout hook, so an
+		// ingest decision can't be made from a stale read and can't race with a concurrent STALE
+		// marking.
+		if features.ComplianceSurfaceStaleData.Enabled() {
+			return s.v2Datastore.UpsertReceivedResult(ctx, result)
+		}
 		return s.v2Datastore.UpsertResult(ctx, result)
 	}
-}
-
-// freshnessOnReceive decides the DataFreshness a newly received result should be stored with.
-// "Received" does not always mean "new": sensor resends every existing CheckResult CR on
-// reconnect regardless of whether anything changed (compliance resources are not deduplicated),
-// and a misbehaving compliance operator could republish a result without a real rescan behind it.
-// In either case the incoming LastStartedTime (sourced from the compliance operator's own
-// last-scanned-timestamp annotation) is unchanged from what is already stored, so marking it
-// CURRENT would launder stale data as fresh. There is no sweeper in this slice to correct that
-// later, so the check happens here: only a LastStartedTime that is newer than what is already
-// stored (or the first time this result is seen) counts as genuinely fresh. Otherwise the result's
-// existing freshness is carried over unchanged, since result is a freshly built proto whose
-// DataFreshness would otherwise default to UNKNOWN and wipe out the prior value on upsert.
-func (s *pipelineImpl) freshnessOnReceive(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) storage.ComplianceOperatorCheckResultV2_DataFreshness {
-	started := result.GetLastStartedTime()
-
-	existing, found, err := s.v2Datastore.GetComplianceCheckResult(ctx, result.GetId())
-	if err != nil {
-		log.Errorf("unable to look up existing compliance check result %s to evaluate freshness: %v", result.GetId(), err)
-		return storage.ComplianceOperatorCheckResultV2_UNKNOWN
-	}
-	if !found {
-		// A result with no prior history cannot be a stale replay.
-		if started == nil {
-			return storage.ComplianceOperatorCheckResultV2_UNKNOWN
-		}
-		return storage.ComplianceOperatorCheckResultV2_CURRENT
-	}
-
-	if started != nil && (existing.GetLastStartedTime() == nil || started.AsTime().After(existing.GetLastStartedTime().AsTime())) {
-		return storage.ComplianceOperatorCheckResultV2_CURRENT
-	}
-	return existing.GetDataFreshness()
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}

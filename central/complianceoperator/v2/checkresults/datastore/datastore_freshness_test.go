@@ -90,22 +90,31 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorDoesNotRever
 	// Concurrently: the timeout hook flips every row UNKNOWN -> STALE, while the ingest path
 	// rewrites each row with a new Status. Without the fence the hook could re-upsert its old
 	// snapshot over the ingest, reverting Status to INFO. With the fence, the final Status must be
-	// PASS.
+	// PASS. Both goroutines are released from a shared start gate only once both are running, to
+	// maximize the chance the race actually overlaps instead of passing by accident because one
+	// side happened to finish before the other started.
+	ready, start := s.newRaceGate(2)
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
+		ready.Done()
+		<-start
 		_, err := s.dataStore.MarkStalePriorResultsByScanRef(s.hasWriteCtx, scanRefID, pivot)
 		s.NoError(err)
 	}()
 	go func() {
 		defer wg.Done()
+		ready.Done()
+		<-start
 		for _, rec := range recs {
 			updated := rec.CloneVT()
 			updated.Status = storage.ComplianceOperatorCheckResultV2_PASS
 			s.NoError(s.dataStore.UpsertResult(s.hasWriteCtx, updated))
 		}
 	}()
+	ready.Wait()
+	close(start)
 	wg.Wait()
 
 	// Every row keeps the ingest's newer Status (not reverted). The timeout hook's freshness
@@ -117,6 +126,80 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorDoesNotRever
 		s.Require().True(found)
 		s.Equal(storage.ComplianceOperatorCheckResultV2_PASS, stored.GetStatus(), "Status reverted for %s", rec.GetId())
 	}
+}
+
+// TestUpsertReceivedResultDoesNotRevertConcurrentTimeout is a regression test for the TOCTOU race
+// found in review on #23765: the receive path used to read a result's existing freshness, decide
+// CURRENT/carry-forward, and only then upsert -- all without holding the key fence across the read.
+// A replayed result (same LastStartedTime as what is stored, so not genuinely new) decided from a
+// stale read could overwrite a concurrent timeout's STALE marking with a freshness value computed
+// before that marking happened. UpsertReceivedResult closes that gap by reading and writing under
+// the same KeyFence used by MarkStalePriorResultsByScanRef. No matter which side's critical section
+// runs first, the result converges to the objectively correct value: STALE, because the row's
+// LastStartedTime genuinely predates the timed-out run's pivot. A replay that reads before the
+// timeout commits carries CURRENT forward, a no-op immediately corrected by the timeout's own
+// (serialized, not concurrent) read right after; a replay that reads after the timeout carries the
+// already-STALE value forward.
+func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResultDoesNotRevertConcurrentTimeout() {
+	now := time.Now()
+	pivot := now.Add(-5 * time.Minute)
+	oldTime := now.Add(-10 * time.Hour)
+
+	const n = 50
+	recs := make([]*storage.ComplianceOperatorCheckResultV2, 0, n)
+	var scanRefID string
+	for i := 0; i < n; i++ {
+		// All rows share one scan ref so a single MarkStalePriorResultsByScanRef call targets the
+		// whole set. They start CURRENT, as if a prior run had resolved them fresh; the pivot is
+		// now newer than their LastStartedTime, so the timed-out run did not refresh them.
+		rec := getTestRecForScan("sc-replay-race", testconsts.Cluster1, "scan-replay-race")
+		rec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		rec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		rec.Id = fmt.Sprintf("replay-race-%d", i)
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+		recs = append(recs, rec)
+		scanRefID = rec.GetScanRefId()
+	}
+
+	ready, start := s.newRaceGate(2)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		ready.Done()
+		<-start
+		_, err := s.dataStore.MarkStalePriorResultsByScanRef(s.hasWriteCtx, scanRefID, pivot)
+		s.NoError(err)
+	}()
+	go func() {
+		defer wg.Done()
+		ready.Done()
+		<-start
+		for _, rec := range recs {
+			// A replay: same ID, same LastStartedTime as what is stored. Not a genuinely new scan
+			// run, so this must not force CURRENT regardless of how it interleaves with the
+			// timeout.
+			replayed := rec.CloneVT()
+			s.NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, replayed))
+		}
+	}()
+	ready.Wait()
+	close(start)
+	wg.Wait()
+
+	for _, rec := range recs {
+		s.assertFreshness(rec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+	}
+}
+
+// newRaceGate returns a WaitGroup that n racing goroutines should call Done() on immediately after
+// starting, and a channel they should block on before doing their real work. The caller waits on
+// the group and then closes the channel, releasing all goroutines together so the race actually
+// overlaps instead of passing by accident due to scheduling.
+func (s *complianceCheckResultDataStoreTestSuite) newRaceGate(n int) (*sync.WaitGroup, chan struct{}) {
+	ready := &sync.WaitGroup{}
+	ready.Add(n)
+	return ready, make(chan struct{})
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) assertFreshness(id string, expected storage.ComplianceOperatorCheckResultV2_DataFreshness) {

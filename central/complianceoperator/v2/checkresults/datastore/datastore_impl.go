@@ -65,6 +65,49 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 	})
 }
 
+// UpsertReceivedResult upserts a result just received from sensor, deriving its data_freshness
+// atomically with the write rather than trusting the caller's value. See the DataStore interface
+// doc for why this must happen under the same lock as the write (a stale, unfenced read-then-write
+// could revert a concurrent timeout marking, or be reverted by one).
+func (d *datastoreImpl) UpsertReceivedResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
+		existing, found, err := d.store.Get(ctx, result.GetId())
+		if err != nil {
+			return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
+		}
+		result.DataFreshness = freshnessOnReceive(result, existing, found)
+		return d.store.Upsert(ctx, result)
+	})
+}
+
+// freshnessOnReceive decides the DataFreshness a newly received result should be stored with.
+// "Received" does not always mean "new": see UpsertReceivedResult's doc. incoming.LastStartedTime
+// is sourced from the compliance operator's own last-scanned-timestamp annotation, so it only
+// advances when the operator actually reruns the check. Only a LastStartedTime strictly newer than
+// what is already stored (or no prior row at all) counts as genuinely fresh. Otherwise the
+// existing row's freshness is carried over unchanged: incoming is a freshly built proto whose
+// DataFreshness would otherwise default to UNKNOWN and wipe out the prior value on upsert.
+func freshnessOnReceive(incoming, existing *storage.ComplianceOperatorCheckResultV2, found bool) storage.ComplianceOperatorCheckResultV2_DataFreshness {
+	started := incoming.GetLastStartedTime()
+	if !found {
+		// A result with no prior history cannot be a stale replay.
+		if started == nil {
+			return storage.ComplianceOperatorCheckResultV2_UNKNOWN
+		}
+		return storage.ComplianceOperatorCheckResultV2_CURRENT
+	}
+	if started != nil && (existing.GetLastStartedTime() == nil || started.AsTime().After(existing.GetLastStartedTime().AsTime())) {
+		return storage.ComplianceOperatorCheckResultV2_CURRENT
+	}
+	return existing.GetDataFreshness()
+}
+
 // DeleteResult removes a result from the database
 func (d *datastoreImpl) DeleteResult(ctx context.Context, id string) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
