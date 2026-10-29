@@ -1,11 +1,11 @@
 import { Card, CardBody, CardTitle, Stack, StackItem } from '@patternfly/react-core';
 
 import useContainerGroups from 'hooks/useContainerGroups';
-import type { Container } from 'types/deployment.proto';
 import DeploymentContainerConfig from './DeploymentContainerConfig';
+import type { DeploymentContainerView } from './DeploymentContainerConfig';
 
 type DeploymentContainersCardProps = {
-    containers: Container[] | null | undefined;
+    containers: DeploymentContainerView[] | null | undefined;
     title: string;
     getImageUrl: (imageId: string) => string;
 };
@@ -14,7 +14,7 @@ function ContainerGroup({
     containers,
     getImageUrl,
 }: {
-    containers: Container[];
+    containers: DeploymentContainerView[];
     getImageUrl: (imageId: string) => string;
 }) {
     return (
