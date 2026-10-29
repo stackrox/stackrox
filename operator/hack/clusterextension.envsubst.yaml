@@ -77,7 +77,7 @@ spec:
   source:
     type: Image
     image:
-      ref: ${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}
+      ref: "${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}"
 ---
 # ClusterExtension - installs the operator from the catalog
 apiVersion: olm.operatorframework.io/v1
