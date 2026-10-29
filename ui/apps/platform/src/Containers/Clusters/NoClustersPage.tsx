@@ -18,15 +18,11 @@ import { CloudSecurityIcon } from '@patternfly/react-icons';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getProductBranding } from 'constants/productBranding';
-import useAnalytics, {
-    CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
-    SECURE_A_CLUSTER_LINK_CLICKED,
-    VIEW_INIT_BUNDLES_CLICKED,
-} from 'hooks/useAnalytics';
+import useAnalytics, { CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED } from 'hooks/useAnalytics';
 // import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
 import { fetchClusterRegistrationSecrets } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { clustersClusterRegistrationSecretsPath, clustersInitBundlesPath } from 'routePaths';
+import { clustersClusterRegistrationSecretsPath } from 'routePaths';
 
 import SecureClusterModal from './ClusterRegistrationSecrets/SecureClusterModal';
 
@@ -147,48 +143,21 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             </Flex>
                         </EmptyStateBody>
                         <EmptyStateFooter>
-                            {registrationSecretsCount === 0 ? (
-                                <Button
-                                    variant="primary"
-                                    size="lg"
-                                    component={LinkShim}
-                                    href={`${clustersClusterRegistrationSecretsPath}?action=create`}
-                                    onClick={() =>
-                                        analyticsTrack({
-                                            event: CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
-                                            properties: { source: 'No Clusters' },
-                                        })
-                                    }
-                                >
-                                    Create cluster registration secret
-                                </Button>
-                            ) : (
-                                <Button
-                                    variant="primary"
-                                    size="lg"
-                                    onClick={() => {
-                                        setIsModalOpen(true);
-                                        analyticsTrack({
-                                            event: SECURE_A_CLUSTER_LINK_CLICKED,
-                                            properties: { source: 'No Clusters' },
-                                        });
-                                    }}
-                                >
-                                    View installation methods
-                                </Button>
-                            )}
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                component={LinkShim}
+                                href={`${clustersClusterRegistrationSecretsPath}?action=create`}
+                                onClick={() =>
+                                    analyticsTrack({
+                                        event: CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
+                                        properties: { source: 'No Clusters' },
+                                    })
+                                }
+                            >
+                                Create cluster registration secret
+                            </Button>
                             <Flex direction={{ default: 'column' }} className="pf-v6-u-mt-xl">
-                                <Link
-                                    to={clustersInitBundlesPath}
-                                    onClick={() => {
-                                        analyticsTrack({
-                                            event: VIEW_INIT_BUNDLES_CLICKED,
-                                            properties: { source: 'No Clusters' },
-                                        });
-                                    }}
-                                >
-                                    Init bundles installation method
-                                </Link>
                                 {registrationSecretsCount !== 0 && (
                                     <Content component="p" className="pf-v6-u-w-50vw">
                                         If you misplaced your registration secret, we recommend
