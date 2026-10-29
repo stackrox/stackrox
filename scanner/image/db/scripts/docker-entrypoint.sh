@@ -378,6 +378,7 @@ _main() {
 	if [ -n "${ROX_TLS_OPENSSL_CIPHERS:-}" ]; then
 		set -- "$@" -c "ssl_ciphers=${ROX_TLS_OPENSSL_CIPHERS}"
 	fi
+	set -- "$@" -c "ssl_ecdh_curve=X25519MLKEM768:X25519"
 
 	### STACKROX MODIFIED - Start Postgres as a child process and
 	### prevent multiple pods on the same node from using this instance.

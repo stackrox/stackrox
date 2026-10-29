@@ -369,6 +369,7 @@ _main() {
 	if [ -n "${ROX_TLS_OPENSSL_CIPHERS:-}" ]; then
 		set -- "$@" -c "ssl_ciphers=${ROX_TLS_OPENSSL_CIPHERS}"
 	fi
+	set -- "$@" -c "ssl_ecdh_curve=X25519MLKEM768:X25519"
 
 	flock /var/lib/postgresql/data/pglock "$@" &
 	child=$!
