@@ -369,7 +369,7 @@ type OpenShiftMonitoring struct {
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
-	// Independent of openshift.enabled for SecuredCluster. The default is: false.
+	// Independent of openshift.enabled for Central and SecuredCluster. The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Custom *OpenShiftCustomMonitoring `json:"custom,omitempty"`
 }
