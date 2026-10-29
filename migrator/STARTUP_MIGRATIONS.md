@@ -220,17 +220,16 @@ for a production-grade example that models realistic data distributions.
 
 1. Create a PR with your migration to build a CI image
 2. Checkout the commit **before** the migration: `make clean image`
-3. Deploy: `export STORAGE=pvc && teardown && ./deploy/deploy-local.sh`
-4. Port-forward: `./scripts/k8s/local-port-forward.sh`
-5. Create test data via Central UI or REST API
-6. Checkout your migration commit
-7. Update Central image: `kubectl -n stackrox set image deploy/central central=stackrox/main:$(make tag)`
-8. Check logs for:
+3. Deploy: `./deploy/deploy-local.sh teardown && ./deploy/deploy-local.sh`
+4. Create test data via Central UI or REST API
+5. Checkout your migration commit
+6. Update Central image: `kubectl -n stackrox set image deploy/central central=stackrox/main:$(make tag)`
+7. Check logs for:
    ```
    Migrator: Info: Found DB at version N, which is less than what we expect (N+1). Running migrations...
    Migrator: Info: Successfully updated DB from version N to N+1
    ```
-9. Re-run port-forward and verify results
+8. Re-run port-forward (`./scripts/k8s/local-port-forward.sh`) and verify results
 
 ## Breaking changes
 
