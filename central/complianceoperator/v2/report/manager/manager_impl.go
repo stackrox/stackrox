@@ -507,11 +507,21 @@ func (m *managerImpl) handleReadyScan() {
 			// Mark only those prior results stale right away. The pivot is the timed-out run's
 			// start time, matching DeleteOldResults.
 			if features.ComplianceSurfaceStaleData.Enabled() && errors.Is(scanWatcherResult.Error, watcher.ErrScanTimeout) {
-				olderThan := scanWatcherResult.Scan.GetLastStartedTime().AsTime()
-				if updated, err := m.checkResultDataStore.MarkStalePriorResultsByScanRef(m.automaticReportingCtx, scanWatcherResult.Scan.GetScanRefId(), olderThan); err != nil {
-					log.Errorf("unable to mark prior results of timed-out scan %s stale: %v", scanWatcherResult.Scan.GetScanName(), err)
-				} else if updated > 0 {
-					log.Infof("Marked %d prior check results stale for timed-out scan %s", updated, scanWatcherResult.Scan.GetScanName())
+				// A watcher can be created, and time out, from a check result alone, before its
+				// corresponding Scan update ever arrives (see GetWatcherIDFromCheckResult). Guard
+				// explicitly rather than relying on the pivot/scan-ref zero values happening to
+				// make MarkStalePriorResultsByScanRef a no-op: a result-first timeout genuinely
+				// has no scan to scope the staleness marking to, but a nil Scan deserves its own
+				// branch instead of silently falling through on an accidental empty-string match.
+				if scanWatcherResult.Scan == nil {
+					log.Debugf("Skipping stale marking for timed-out watcher %s: no scan received yet", scanWatcherResult.WatcherID)
+				} else {
+					olderThan := scanWatcherResult.Scan.GetLastStartedTime().AsTime()
+					if updated, err := m.checkResultDataStore.MarkStalePriorResultsByScanRef(m.automaticReportingCtx, scanWatcherResult.Scan.GetScanRefId(), olderThan); err != nil {
+						log.Errorf("unable to mark prior results of timed-out scan %s stale: %v", scanWatcherResult.Scan.GetScanName(), err)
+					} else if updated > 0 {
+						log.Infof("Marked %d prior check results stale for timed-out scan %s", updated, scanWatcherResult.Scan.GetScanName())
+					}
 				}
 			}
 		}

@@ -81,31 +81,53 @@ func (d *datastoreImpl) UpsertReceivedResult(ctx context.Context, result *storag
 		if err != nil {
 			return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
 		}
-		result.DataFreshness = freshnessOnReceive(result, existing, found)
+		reconcileReceivedResult(result, existing, found)
 		return d.store.Upsert(ctx, result)
 	})
 }
 
-// freshnessOnReceive decides the DataFreshness a newly received result should be stored with.
-// "Received" does not always mean "new": see UpsertReceivedResult's doc. incoming.LastStartedTime
-// is sourced from the compliance operator's own last-scanned-timestamp annotation, so it only
-// advances when the operator actually reruns the check. Only a LastStartedTime strictly newer than
-// what is already stored (or no prior row at all) counts as genuinely fresh. Otherwise the
-// existing row's freshness is carried over unchanged: incoming is a freshly built proto whose
-// DataFreshness would otherwise default to UNKNOWN and wipe out the prior value on upsert.
-func freshnessOnReceive(incoming, existing *storage.ComplianceOperatorCheckResultV2, found bool) storage.ComplianceOperatorCheckResultV2_DataFreshness {
+// reconcileReceivedResult decides the DataFreshness a newly received result (incoming) should be
+// stored with, and mutates incoming in place. "Received" does not always mean "new": see
+// UpsertReceivedResult's doc. incoming.LastStartedTime is sourced from the compliance operator's
+// own last-scanned-timestamp annotation, so it only advances when the operator actually reruns the
+// check. Only a LastStartedTime strictly newer than what is already stored (or no prior row at
+// all) counts as genuinely fresh and is marked CURRENT.
+//
+// Otherwise -- a replay, or any result that is not genuinely newer -- two things must be
+// preserved, not just DataFreshness:
+//
+//  1. DataFreshness is carried over from the existing row unchanged: incoming is a freshly built
+//     proto whose DataFreshness would otherwise default to UNKNOWN and wipe out the prior value.
+//  2. LastStartedTime is also clamped to the existing row's value when it is older or equal.
+//     Without this, Upsert would still persist incoming's older timestamp over the newer stored
+//     one, and a later timeout's age-based STALE decision (LastStartedTime < pivot) could then
+//     wrongly flag a genuinely-refreshed row stale because a late replay regressed its timestamp.
+//
+// A nil LastStartedTime on first sighting is deliberately left UNKNOWN rather than CURRENT: with
+// no sweeper in this slice, a wrongly-asserted CURRENT would have no correction path, because
+// MarkStalePriorResultsByScanRef explicitly leaves nil-timestamp rows unchanged forever.
+func reconcileReceivedResult(incoming, existing *storage.ComplianceOperatorCheckResultV2, found bool) {
 	started := incoming.GetLastStartedTime()
 	if !found {
 		// A result with no prior history cannot be a stale replay.
 		if started == nil {
-			return storage.ComplianceOperatorCheckResultV2_UNKNOWN
+			incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_UNKNOWN
+		} else {
+			incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
 		}
-		return storage.ComplianceOperatorCheckResultV2_CURRENT
+		return
 	}
-	if started != nil && (existing.GetLastStartedTime() == nil || started.AsTime().After(existing.GetLastStartedTime().AsTime())) {
-		return storage.ComplianceOperatorCheckResultV2_CURRENT
+
+	existingStarted := existing.GetLastStartedTime()
+	if started != nil && (existingStarted == nil || started.AsTime().After(existingStarted.AsTime())) {
+		incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		return
 	}
-	return existing.GetDataFreshness()
+
+	incoming.DataFreshness = existing.GetDataFreshness()
+	if existingStarted != nil {
+		incoming.LastStartedTime = existingStarted
+	}
 }
 
 // DeleteResult removes a result from the database
@@ -498,6 +520,14 @@ func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scan
 		ProtoQuery()
 
 	return d.updateFreshness(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) storage.ComplianceOperatorCheckResultV2_DataFreshness {
+		// The candidate read and the fenced re-read are two separate reads (see updateFreshness),
+		// so re-check the scan ref here: a result's ScanRefId is derived from a scan-name label
+		// that, in principle, could be reassigned between the two reads. Scoping the STALE decision
+		// to the scan ref being processed keeps "prior results of scanRefID" accurate even if that
+		// happens, instead of relying solely on the initial query filter.
+		if result.GetScanRefId() != scanRefID {
+			return result.GetDataFreshness()
+		}
 		started := result.GetLastStartedTime()
 		if started != nil && started.AsTime().Before(olderThan) {
 			return storage.ComplianceOperatorCheckResultV2_STALE
