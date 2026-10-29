@@ -19,6 +19,44 @@ spec="$(cd "$(dirname "${1:?usage: drive.sh <spec-path>}")" && pwd)/$(basename "
 [[ -f "${spec}" ]] || die "no spec at ${spec}"
 
 load_backend
+lock_held=0
+active_run_dir=""
+token_record=""
+run_dir=""
+finish_run() {
+    local status=$?
+    trap - EXIT
+    if [[ -n "${token_record}" && -f "${token_record}/id" ]]; then
+        revoke_recorded_token "${token_record}" || info "could not revoke this run's token; retry scripts/cleanup.sh"
+    elif [[ -n "${token_record}" ]]; then
+        rm -rf "${token_record}"
+    fi
+    if [[ -n "${active_run_dir}" ]]; then
+        if [[ "${lock_held}" -eq 0 ]]; then
+            acquire_lifecycle_lock
+            lock_held=1
+        fi
+        rm -rf "${active_run_dir}"
+        if [[ -n "${run_dir}" ]] && declare -F prune_attempts >/dev/null; then
+            prune_attempts
+        fi
+    fi
+    if [[ "${lock_held}" -eq 1 ]]; then
+        release_lifecycle_lock
+    fi
+    exit "${status}"
+}
+
+acquire_lifecycle_lock
+lock_held=1
+trap finish_run EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+active_run_dir="$(mktemp -d "${ACTIVE_RUNS_DIR}/drive.XXXXXX")"
+printf '%s\n' "$$" > "${active_run_dir}/pid"
+printf '%s\n' "${spec}" > "${active_run_dir}/spec"
+process_start "$$" > "${active_run_dir}/start"
+[[ -s "${active_run_dir}/start" ]] || die "cannot identify this run's process; cleanup would be unsafe"
 vite_running || die "dev server not running; run scripts/launch.sh"
 
 case "${spec}" in
@@ -37,6 +75,29 @@ attempts() {
     done | sort -n
 }
 
+attempt_active() {
+    local active
+    for active in "${ACTIVE_RUNS_DIR}"/*; do
+        [[ -f "${active}/evidence" ]] || continue
+        [[ "$(cat "${active}/evidence")" == "$1" ]] && return 0
+    done
+    return 1
+}
+
+prune_attempts() {
+    local total old latest
+    active_runs >/dev/null
+    total="$(attempts | wc -l | tr -d ' ')"
+    latest="$(readlink "${run_dir}/latest" 2>/dev/null || true)"
+    for old in $(attempts); do
+        [[ "${total}" -gt "${keep}" ]] || break
+        if [[ "attempt-${old}" != "${latest}" ]] && ! attempt_active "${run_dir}/attempt-${old}"; then
+            rm -rf "${run_dir:?}/attempt-${old}"
+            total=$((total - 1))
+        fi
+    done
+}
+
 # A rerun never overwrites earlier evidence. mkdir without -p claims the number, so two
 # runs of one spec at once still get separate attempts.
 n=$(( $(attempts | tail -1) + 1 ))
@@ -45,21 +106,22 @@ until mkdir "${run_dir}/attempt-${n}" 2>/dev/null; do
     n=$((n + 1))
 done
 evidence="${run_dir}/attempt-${n}"
+printf '%s\n' "${evidence}" > "${active_run_dir}/evidence"
 ln -sfn "attempt-${n}" "${run_dir}/latest"
-total="$(attempts | wc -l | tr -d ' ')"
-if [[ ${total} -gt ${keep} ]]; then
-    for old in $(attempts | head -n "$((total - keep))"); do
-        rm -rf "${run_dir:?}/attempt-${old}"
-    done
-fi
 run_id="$(basename "${run_dir}")-attempt-${n}"
+release_lifecycle_lock
+lock_held=0
 
-# Per-run Admin API token, named so cleanup.sh can revoke it. It also expires on its own
-# (VERIFY_UI_TOKEN_TTL_HOURS, default 4) in case cleanup never runs.
+# The token ID is recorded outside evidence so cleanup can revoke only this home's tokens.
+token_record="$(mktemp -d "${TOKENS_DIR}/token.XXXXXX")"
+printf '%s\n' "${UI_START_TARGET}" > "${token_record}/target"
 token_body="$(jq -cn --arg name "verify-ui-${run_id}" --argjson hours "${VERIFY_UI_TOKEN_TTL_HOURS:-4}" \
     '{name: $name, roles: ["Admin"], expiration: (now + $hours * 3600 | floor | todate)}')"
-token="$(admin_curl "${UI_URL}/v1/apitokens/generate" -X POST -d "${token_body}" | jq -r '.token // ""')"
-[[ -n "${token}" ]] || die "Central did not issue an API token; run scripts/doctor.sh"
+token_response="$(admin_curl "${UI_URL}/v1/apitokens/generate" -X POST -f -d "${token_body}")"
+token="$(jq -r '.token // empty' <<< "${token_response}")"
+token_id="$(jq -r '.metadata.id // empty' <<< "${token_response}")"
+[[ -n "${token}" && -n "${token_id}" ]] || die "Central did not issue a trackable API token; run scripts/doctor.sh"
+printf '%s\n' "${token_id}" > "${token_record}/id"
 export CYPRESS_ROX_AUTH_TOKEN="${token}"
 
 # Mirror scripts/cypress.sh: expose Central feature flags so helpers/features.js sees them.

@@ -26,8 +26,9 @@ UI_START_TARGET="${UI_START_TARGET}" nohup node node_modules/vite/bin/vite.js se
 echo $! > "${VITE_PID_FILE}"
 
 for _ in $(seq 1 90); do
-    vite_running || die "dev server exited; see ${VITE_LOG}"
+    vite_pid_alive || die "dev server exited; see ${VITE_LOG}"
     if curl -sk -o /dev/null -w '%{http_code}' "${UI_URL}/" 2>/dev/null | grep -q 200; then
+        vite_running
         info "dev server ready at ${UI_URL} (pid $(vite_pid), proxy -> ${UI_START_TARGET})"
         exit 0
     fi

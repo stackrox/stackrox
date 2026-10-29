@@ -21,7 +21,7 @@ All scripts live in `ui/.claude/skills/verify-ui/scripts/`. Run them from any di
 - Node 22.13 or newer (`engines.node` in `ui/apps/platform/package.json`).
 - `node_modules` installed in `ui/apps/platform/` (`cd ui/apps/platform && npm ci`), which includes Cypress 15 and its Electron. `ui/` itself has no lockfile, so `npm ci` there fails.
 - `bash`, `git`, `curl`, `jq`.
-- `ss` (Linux) or `lsof` (macOS) so `launch.sh` and `doctor.sh` can see who owns the dev server port. Without either, launch falls back to a plain connect and doctor warns instead of checking the pid and working directory.
+- `ss` (Linux) or `lsof` (macOS) to verify the dev server owns its port. Launch, drive, doctor, and cleanup refuse to reuse or stop a live recorded pid if its port or checkout cannot be verified.
 - `make` is optional: scripts fall back to the same `git describe` that `make tag` runs.
 - For the qa-demo fallback only: `infractl` on PATH and logged in (`infractl whoami` prints your service account), and `docker` (image-exists check in `backend.sh create`).
 - No gcloud/kubectl needed: the qa-demo artifacts carry the Central URL and admin password.
@@ -86,7 +86,7 @@ spec=$($S/new-spec.sh violations-filter)   # ~/.cache/stackrox-verify-ui/runs/vi
 $S/drive.sh "$spec"                         # prints PASS/FAIL summary, last line is the attempt dir
 ```
 
-`drive.sh` mints a per-run Admin API token (`verify-ui-<run>-attempt-<N>`, expires after `VERIFY_UI_TOKEN_TTL_HOURS`, default 4) and puts it in localStorage through `cypress/helpers/basicAuth.js`. It also exports Central feature flags as `CYPRESS_ROX_*` (same as `scripts/cypress.sh`) and runs Cypress headless with retries off and video on.
+`drive.sh` mints a per-attempt Admin API token (`verify-ui-<run>-attempt-<N>`, expires after `VERIFY_UI_TOKEN_TTL_HOURS`, default 4) and puts it in localStorage through `cypress/helpers/basicAuth.js`. Each invocation gets its own attempt directory, including concurrent invocations of the same spec. The run revokes its token on exit; cleanup can retry revoking recorded tokens left by interrupted runs. It also exports Central feature flags as `CYPRESS_ROX_*` (same as `scripts/cypress.sh`) and runs Cypress headless with retries off and video on.
 
 Spec rules:
 - Start from the matching file in `features/`. It lists entry points, helpers, selectors, and what proves the feature works.
@@ -127,11 +127,11 @@ Proof standards:
 ## 6. Cleanup
 
 ```bash
-$S/cleanup.sh              # stop the dev server we started, revoke verify-ui-* tokens
+$S/cleanup.sh              # stop the dev server we started, revoke recorded tokens
 $S/cleanup.sh --backend    # also infractl delete the connected cluster
 ```
 
-Kills only the recorded pid, never by process name. Evidence under `runs/` survives cleanup. `drive.sh` already keeps only the last 5 attempts per spec; remove whole run dirs by hand.
+Cleanup refuses to run while any `drive.sh` invocation using this `VERIFY_UI_HOME` is active, including with `--backend`. It revokes only token IDs recorded in this home's state for the connected Central. It stops the recorded server only after verifying that its pid owns the configured port and serves this checkout. Evidence under `runs/` survives cleanup. `drive.sh` keeps the last 5 attempts per spec after active attempts finish; remove whole run dirs by hand.
 
 ## Gotchas
 
