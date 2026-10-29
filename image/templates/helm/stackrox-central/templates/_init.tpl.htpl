@@ -139,8 +139,8 @@
 {{ if kindIs "invalid" $._rox.monitoring.openshift.custom.enabled }}
   {{ $_ := set $._rox.monitoring.openshift.custom "enabled" false }}
 {{ end }}
-{{ if and $._rox.monitoring.openshift.custom.enabled (ne $._rox.env.openshift 4) }}
-  {{ include "srox.warn" (list . "Central custom metrics scraping is supported only on OpenShift 4; disabling monitoring.openshift.custom.enabled.") }}
+{{ if and $._rox.monitoring.openshift.custom.enabled (lt $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "Central custom metrics scraping requires OpenShift 4 or newer; disabling monitoring.openshift.custom.enabled.") }}
   {{ $_ := set $._rox.monitoring.openshift.custom "enabled" false }}
 {{ end }}
 {{ if $._rox.monitoring.openshift.enabled }}
