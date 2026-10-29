@@ -81,9 +81,8 @@ run_byodb_test() {
 
     local roxie_config
     roxie_config="$(mktemp)"
-    configure_byodb "$roxie_config" stackrox
 
-    # Run the QA tests. Part 1 only as Part 2 deals more with Sensor.
+    # Run the QA BAT Tests.  Part 1 only as Part 2 deals more with sensor
     run_part_1 "$roxie_config"
     rm -f "$roxie_config"
 

@@ -23,41 +23,6 @@ deploy_external_postgres() {
     kubectl rollout status statefulset/postgres -n database --timeout=180s
 }
 
-configure_byodb() {
-    local config_file="$1"
-    local namespace="$2"
-
-    merge_yaml "$config_file" <<EOF
-central:
-  namespace: "$namespace"
-  spec:
-    central:
-      db:
-        connectionString: "host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
-        passwordSecret:
-          name: "central-external-db-password"
-EOF
-    retrying_kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ${namespace}
-EOF
-    # The compatibility layer removes secrets it owns before deployment. This
-    # secret belongs to BYODB and must survive that cleanup and roxie teardown.
-    retrying_kubectl -n "${namespace}" apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: central-external-db-password
-  labels:
-    app.kubernetes.io/managed-by: byodb-tests
-data:
-  password: $(echo -n "${EXTERNAL_DB_PASSWORD}" | base64 | tr -d '\n')
-EOF
-}
-
 preamble() {
     info "Starting test preamble"
 
