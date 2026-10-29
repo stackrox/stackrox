@@ -44,7 +44,7 @@ RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
     done
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:966b87b2022147cee9f43ad4c7c6a3c719b2a072255d04427445d8fa9f496eea as ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:b66295c1b3ef39cc5adcf7f0459f7ec9111014e1dce8f565ed4339c760862418 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -68,7 +68,7 @@ RUN make -C ui build
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:5be877a2a280ae36eb9ab80ca4efb28bbf77c57abbba38137cdc37a03b8465e6 AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:48393e4261b2544f652c915b3e052256ddf66ee95cd04dc0362191f302c4e94a AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:5f08e80aa970ae77712e75e5e857ac0b396abc900823c4d041c1150a9538a13f AS package_installer
 
 ARG PG_VERSION
 
