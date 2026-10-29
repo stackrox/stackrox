@@ -3,8 +3,10 @@
 #
 #   drive.sh <spec-path>      spec from new-spec.sh (or any spec, e.g. cypress/integration/...)
 #
-# Evidence lands in <run>/evidence/: screenshots, video, *.state.json, errors.txt,
-# checks.json, cypress.log, summary.txt. The run dir is printed on the last line.
+# Each run gets a new <run>/attempt-N/ (N counts up, <run>/latest points at the newest, and
+# only the last VERIFY_UI_KEEP_ATTEMPTS, default 5, are kept). It holds screenshots, video,
+# *.state.json, errors.txt, checks.json, cypress.log, summary.txt. The attempt dir is printed
+# on the last line.
 #
 # Proof gate: even when Cypress passes, the proof fails if any test ran no assertions in its
 # body, if the app threw an uncaught exception that is not known benign, or if checks.json
@@ -21,12 +23,36 @@ vite_running || die "dev server not running; run scripts/launch.sh"
 
 case "${spec}" in
 "${RUNS_DIR}"/*/specs/*) run_dir="${spec%/specs/*}" ;;
-*) run_dir="${RUNS_DIR}/$(date +%Y%m%d-%H%M%S)-$(basename "${spec}" | cut -d. -f1)" ;;
+*) run_dir="${RUNS_DIR}/$(basename "${spec}" | cut -d. -f1)" ;;
 esac
-evidence="${run_dir}/evidence"
-rm -rf "${evidence}"
-mkdir -p "${evidence}"
-run_id="$(basename "${run_dir}")"
+mkdir -p "${run_dir}"
+keep="${VERIFY_UI_KEEP_ATTEMPTS:-5}"
+[[ "${keep}" =~ ^[1-9][0-9]*$ ]] || die "VERIFY_UI_KEEP_ATTEMPTS must be a whole number of 1 or more"
+
+# Attempt numbers already in run_dir, oldest first.
+attempts() {
+    local dir
+    for dir in "${run_dir}"/attempt-*; do
+        if [[ "${dir##*/attempt-}" =~ ^[0-9]+$ ]]; then echo "${dir##*/attempt-}"; fi
+    done | sort -n
+}
+
+# A rerun never overwrites earlier evidence. mkdir without -p claims the number, so two
+# runs of one spec at once still get separate attempts.
+n=$(( $(attempts | tail -1) + 1 ))
+until mkdir "${run_dir}/attempt-${n}" 2>/dev/null; do
+    [[ -e "${run_dir}/attempt-${n}" ]] || die "cannot create ${run_dir}/attempt-${n}"
+    n=$((n + 1))
+done
+evidence="${run_dir}/attempt-${n}"
+ln -sfn "attempt-${n}" "${run_dir}/latest"
+total="$(attempts | wc -l | tr -d ' ')"
+if [[ ${total} -gt ${keep} ]]; then
+    for old in $(attempts | head -n "$((total - keep))"); do
+        rm -rf "${run_dir:?}/attempt-${old}"
+    done
+fi
+run_id="$(basename "${run_dir}")-attempt-${n}"
 
 # Per-run Admin API token, named so cleanup.sh can revoke it. It also expires on its own
 # (VERIFY_UI_TOKEN_TTL_HOURS, default 4) in case cleanup never runs.
@@ -94,5 +120,5 @@ fi
 sed -n '/(Run Finished)/,$p' "${evidence}/cypress.log" | tail -8 >&2
 [[ ${status} -eq 0 ]] || grep -E 'AssertionError|CypressError|Error:' "${evidence}/cypress.log" | head -5 >&2 || true
 for line in ${gate[@]+"${gate[@]}"}; do info "proof gate: ${line}"; done
-echo "${run_dir}"
+echo "${evidence}"
 exit "${status}"

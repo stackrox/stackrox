@@ -24,7 +24,7 @@ Maintained source for proving user-facing UI behavior with verify-ui. Read this 
 - Call `captureState('<NN-step>')` after each action whose result is part of the claim; it saves a screenshot and a `.state.json`.
 - Mutation proof needs a second view: reload, or reopen from the list.
 - An uncaught exception fails the proof. `console.error` entries in `errors.txt` do not, but explain or flag each one.
-- Report the run dir and `summary.txt` result with every claim.
+- Report the attempt dir and `summary.txt` result with every claim.
 - If an entry point cannot be reached (flag off, no permission, no data), report it as unverified with the failing step. Do not count it as verified through another path.
 
 ## Feature entry contract

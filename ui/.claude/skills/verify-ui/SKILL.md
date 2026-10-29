@@ -81,12 +81,12 @@ Read-only. Checks: backend connected, infra READY + lifespan left, Central accep
 Write a throwaway proof spec, then run it:
 
 ```bash
-spec=$($S/new-spec.sh violations-filter)   # ~/.cache/stackrox-verify-ui/runs/<run-id>/specs/violations-filter.cy.js
+spec=$($S/new-spec.sh violations-filter)   # ~/.cache/stackrox-verify-ui/runs/violations-filter/specs/violations-filter.cy.js
 # edit the it() body using the feature map recipe
-$S/drive.sh "$spec"                         # prints PASS/FAIL summary, last line is the run dir
+$S/drive.sh "$spec"                         # prints PASS/FAIL summary, last line is the attempt dir
 ```
 
-`drive.sh` mints a per-run Admin API token (`verify-ui-<run-id>`, expires after `VERIFY_UI_TOKEN_TTL_HOURS`, default 4) and puts it in localStorage through `cypress/helpers/basicAuth.js`. It also exports Central feature flags as `CYPRESS_ROX_*` (same as `scripts/cypress.sh`) and runs Cypress headless with retries off and video on.
+`drive.sh` mints a per-run Admin API token (`verify-ui-<run>-attempt-<N>`, expires after `VERIFY_UI_TOKEN_TTL_HOURS`, default 4) and puts it in localStorage through `cypress/helpers/basicAuth.js`. It also exports Central feature flags as `CYPRESS_ROX_*` (same as `scripts/cypress.sh`) and runs Cypress headless with retries off and video on.
 
 Spec rules:
 - Start from the matching file in `features/`. It lists entry points, helpers, selectors, and what proves the feature works.
@@ -100,11 +100,11 @@ Spec rules:
 
 Proof gate: a run that Cypress passes still fails with `FAIL (proof gate)` when any test ran no assertions in its body (assertions in hooks such as `withAuth()` do not count; assertions inside helpers called from the body do), or when the app threw an uncaught exception. Exceptions that `cypress/support/e2e.js` ignores as benign (ResizeObserver loop and similar) are recorded but do not fail. `console.error` calls are recorded in `errors.txt` and never fail the proof, since the app logs some on its own. The gate works for checked-in specs too, because `templates/support.js` records the checks for every spec. `summary.txt` lists the assertion count per test and each gate failure.
 
-Iterate: when a selector fails, read the failing step in `evidence/cypress.log` and the last screenshot, fix the spec, and rerun `drive.sh` on the same path. Each rerun replaces that run's evidence.
+Iterate: when a selector fails, read the failing step in `<run>/latest/cypress.log` and the last screenshot, fix the spec, and rerun `drive.sh` on the same path. Each rerun saves to the next `attempt-N`, so earlier evidence stays for comparison.
 
 ## 5. Evidence
 
-Each run leaves `~/.cache/stackrox-verify-ui/runs/<run-id>/evidence/`:
+Each run leaves `~/.cache/stackrox-verify-ui/runs/<run>/attempt-<N>/`, where `<run>` is the spec name and N counts up per rerun. `<run>/latest` links to the newest attempt; cite that one in a PR. Only the last 5 attempts per spec are kept (`VERIFY_UI_KEEP_ATTEMPTS`). Each attempt holds:
 
 | File | Shows |
 |---|---|
@@ -121,7 +121,7 @@ Proof standards:
 - Exercise the real user path (nav, buttons, typing), not `cy.request` setters or stubbed responses.
 - Capture the action and the result, not just the final screen.
 - For mutations, prove persistence from a second view: reload, or reopen from the list.
-- A claim of "verified" cites the run dir, `summary.txt` result, and the screenshots that show the behavior. An unreachable path is reported as unverified with the failing command, never as verified through a different path.
+- A claim of "verified" cites the attempt dir, `summary.txt` result, and the screenshots that show the behavior. An unreachable path is reported as unverified with the failing command, never as verified through a different path.
 - Privacy: screenshots and video show cluster names, IPs, and anything on screen (including freshly generated tokens). Review before attaching to a PR or Jira; never commit them.
 
 ## 6. Cleanup
@@ -131,7 +131,7 @@ $S/cleanup.sh              # stop the dev server we started, revoke verify-ui-* 
 $S/cleanup.sh --backend    # also infractl delete the connected cluster
 ```
 
-Kills only the recorded pid, never by process name. Evidence under `runs/` survives cleanup; prune old runs by hand.
+Kills only the recorded pid, never by process name. Evidence under `runs/` survives cleanup. `drive.sh` already keeps only the last 5 attempts per spec; remove whole run dirs by hand.
 
 ## Gotchas
 

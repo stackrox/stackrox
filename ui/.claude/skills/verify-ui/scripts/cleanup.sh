@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Tear down what verify-ui started. Evidence under runs/ is never removed.
+# Tear down what verify-ui started. Evidence under runs/ is never removed here (drive.sh
+# keeps the last VERIFY_UI_KEEP_ATTEMPTS attempts per spec).
 #
 #   cleanup.sh             stop the dev server, revoke verify-ui-* API tokens
 #   cleanup.sh --backend   also delete the connected infra cluster
