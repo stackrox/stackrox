@@ -30,7 +30,8 @@ run_part_1() {
     if [[ -z "$roxie_config" ]]; then
         # No roxie config provided by the caller, hence we use a new one.
         roxie_config="$(mktemp)"
-        trap 'rm -f "$roxie_config"' RETURN
+        # RETURN traps also fire when callers return, after this local is out of scope.
+        trap 'rm -f "$roxie_config"; trap - RETURN' RETURN
     fi
 
     info "Starting test (qa-tests-backend part I)"
