@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -84,6 +85,13 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return errox.NotFound.Newf("cluster with id %q does not exist", clusterID)
 		}
 		result := internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName)
+		// A result we are receiving right now is, by definition, fresh. Mark it CURRENT so reads
+		// reflect the new data immediately. Note: without the freshness sweeper, a result can only
+		// decay to STALE through an explicit event (a scan timeout); see
+		// MarkStalePriorResultsByScanRef.
+		if features.ComplianceSurfaceStaleData.Enabled() {
+			result.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		}
 		if err := s.reportMgr.HandleResult(ctx, result); err != nil {
 			log.Errorf("unable to handle the check result in the report manager: %v", err)
 			return err

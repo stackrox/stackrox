@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	datastore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -219,6 +220,21 @@ func (m *MockDataStore) GetComplianceCheckResult(ctx context.Context, compliance
 func (mr *MockDataStoreMockRecorder) GetComplianceCheckResult(ctx, complianceResultID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceCheckResult", reflect.TypeOf((*MockDataStore)(nil).GetComplianceCheckResult), ctx, complianceResultID)
+}
+
+// MarkStalePriorResultsByScanRef mocks base method.
+func (m *MockDataStore) MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkStalePriorResultsByScanRef", ctx, scanRefID, olderThan)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MarkStalePriorResultsByScanRef indicates an expected call of MarkStalePriorResultsByScanRef.
+func (mr *MockDataStoreMockRecorder) MarkStalePriorResultsByScanRef(ctx, scanRefID, olderThan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkStalePriorResultsByScanRef", reflect.TypeOf((*MockDataStore)(nil).MarkStalePriorResultsByScanRef), ctx, scanRefID, olderThan)
 }
 
 // SearchComplianceCheckResults mocks base method.

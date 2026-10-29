@@ -3,10 +3,12 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -60,11 +62,21 @@ type DataStore interface {
 
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
+
+	// MarkStalePriorResultsByScanRef marks STALE the check results of the given scan (identified
+	// by its scan ref ID) that predate olderThan, leaving the rest unchanged. It is the
+	// write-time staleness hook for a timed-out scan: the results the timed-out run did not
+	// refresh (leftovers from a previous run, with an older last started time) are known-stale
+	// immediately. Results the run refreshed carry its start time (olderThan) and stay as they
+	// are. Results with a nil last started time are left unchanged (freshness cannot be
+	// evaluated). Only rows whose stored value changes are written. Returns the number of rows
+	// updated.
+	MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results
 func New(store store.Store, db postgres.DB) DataStore {
-	return &datastoreImpl{store: store, db: db}
+	return &datastoreImpl{store: store, db: db, keyFence: concurrency.NewKeyFence()}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.

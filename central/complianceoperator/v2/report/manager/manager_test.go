@@ -433,6 +433,106 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 	}
 }
 
+func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
+	m.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+	now := protocompat.TimestampNow()
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              "scan-1",
+		ClusterId:       "cluster-1",
+		ScanConfigName:  "test-scan",
+		ScanRefId:       "ref-1",
+		LastStartedTime: now,
+	}
+
+	tests := map[string]struct {
+		err             error
+		expectMarkStale bool
+	}{
+		"timeout marks the scan's prior results stale": {
+			err:             watcher.ErrScanTimeout,
+			expectMarkStale: true,
+		},
+		"context cancelled does not mark stale": {
+			err:             watcher.ErrScanContextCancelled,
+			expectMarkStale: false,
+		},
+		"success does not mark stale": {
+			err:             nil,
+			expectMarkStale: false,
+		},
+	}
+
+	for name, tc := range tests {
+		m.Run(name, func() {
+			ctrl := gomock.NewController(m.T())
+			checkResultDS := checkResultsMocks.NewMockDataStore(ctrl)
+			scanConfigDS := scanConfigurationDS.NewMockDataStore(ctrl)
+			scanDS := scanMocks.NewMockDataStore(ctrl)
+			profileDS := profileMocks.NewMockDataStore(ctrl)
+			snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+			integrationDS := integrationMocks.NewMockDataStore(ctrl)
+			suiteStore := suiteDS.NewMockDataStore(ctrl)
+			bindingsStore := bindingsDS.NewMockDataStore(ctrl)
+			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
+			generator.EXPECT().Stop().AnyTimes()
+
+			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
+			manager.Start()
+			m.T().Cleanup(func() {
+				manager.Stop()
+				ctrl.Finish()
+			})
+			managerImp := manager.(*managerImpl)
+
+			done := make(chan struct{})
+			if tc.err == nil {
+				checkResultDS.EXPECT().
+					DeleteOldResults(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					AnyTimes().Return(nil)
+			}
+			if tc.expectMarkStale {
+				checkResultDS.EXPECT().
+					MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Eq(scan.GetScanRefId()), gomock.Eq(scan.GetLastStartedTime().AsTime())).
+					Times(1).
+					DoAndReturn(func(_, _, _ any) (int64, error) {
+						close(done)
+						return 1, nil
+					})
+			} else {
+				checkResultDS.EXPECT().MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+			}
+			// All branches continue into getOrCreateScanConfigWatcher; stop there.
+			scanConfigDS.EXPECT().
+				GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
+				AnyTimes().
+				DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+					if !tc.expectMarkStale {
+						close(done)
+					}
+					return nil, errors.New("stop here")
+				})
+
+			result := &watcher.ScanWatcherResults{
+				WatcherID: "watcher-1",
+				Scan:      scan,
+				Error:     tc.err,
+			}
+
+			concurrency.WithLock(&managerImp.watchingScansLock, func() {
+				managerImp.watchingScansStartTime[result.WatcherID] = time.Now()
+			})
+
+			managerImp.readyQueue.Push(result)
+
+			select {
+			case <-done:
+			case <-time.After(2 * time.Second):
+				m.FailNow("timeout waiting for handleReadyScan to process the result")
+			}
+		})
+	}
+}
+
 func (m *ManagerTestSuite) TestHandleScan() {
 	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(

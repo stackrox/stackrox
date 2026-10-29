@@ -103,6 +103,54 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 	suite.NoError(err)
 }
 
+func (suite *PipelineTestSuite) TestRunCreateMarksCurrentWhenFreshnessEnabled() {
+	suite.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+	if !features.ComplianceSurfaceStaleData.Enabled() {
+		suite.T().Skip("Skip test when ComplianceSurfaceStaleData disabled")
+	}
+	ctx := context.Background()
+
+	expected := getTestRec(fixtureconsts.Cluster1)
+	expected.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+
+	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+	suite.v2ResultDS.EXPECT().UpsertResult(ctx, expected).Return(nil).Times(1)
+	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Times(1)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     id,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+						Id:           id,
+						CheckId:      checkID,
+						CheckName:    mockCheckRuleName,
+						ClusterId:    fixtureconsts.Cluster1,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
+						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
+						Description:  "this is a test",
+						Instructions: "this is a test",
+						Labels:       nil,
+						Annotations:  nil,
+						CreatedTime:  createdTime,
+						ScanName:     mockScanName,
+						SuiteName:    mockSuiteName,
+						Rationale:    "test rationale",
+						ValuesUsed:   []string{"var1", "var2"},
+						Warnings:     []string{"warning1", "warning2"},
+					},
+				},
+			},
+		},
+	}
+
+	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	suite.NoError(err)
+}
+
 func (suite *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 

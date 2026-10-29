@@ -501,6 +501,19 @@ func (m *managerImpl) handleReadyScan() {
 			}
 		} else {
 			log.Debugf("Skipping DeleteOldResults for scan %s: %v", scanWatcherResult.Scan.GetScanName(), scanWatcherResult.Error)
+			// Write-time staleness: a timed-out scan did not deliver a full set of fresh results.
+			// The results it DID deliver carry this run's start time and are genuinely fresh. The
+			// results it did NOT refresh still carry an older run's start time and are now stale.
+			// Mark only those prior results stale right away. The pivot is the timed-out run's
+			// start time, matching DeleteOldResults.
+			if features.ComplianceSurfaceStaleData.Enabled() && errors.Is(scanWatcherResult.Error, watcher.ErrScanTimeout) {
+				olderThan := scanWatcherResult.Scan.GetLastStartedTime().AsTime()
+				if updated, err := m.checkResultDataStore.MarkStalePriorResultsByScanRef(m.automaticReportingCtx, scanWatcherResult.Scan.GetScanRefId(), olderThan); err != nil {
+					log.Errorf("unable to mark prior results of timed-out scan %s stale: %v", scanWatcherResult.Scan.GetScanName(), err)
+				} else if updated > 0 {
+					log.Infof("Marked %d prior check results stale for timed-out scan %s", updated, scanWatcherResult.Scan.GetScanName())
+				}
+			}
 		}
 		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())

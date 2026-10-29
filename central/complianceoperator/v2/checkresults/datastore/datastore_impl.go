@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -33,6 +34,14 @@ const (
 type datastoreImpl struct {
 	store store.Store
 	db    postgres.DB
+
+	// keyFence serializes the per-row ingest write (UpsertResult) against the read-modify-upsert
+	// of a check result's serialized proto in MarkStalePriorResultsByScanRef. Freshness lives
+	// inside the serialized blob, so the timeout hook loads, mutates, and re-upserts the whole
+	// proto. Without the fence a concurrent ingest writing a newer result between the load and the
+	// re-upsert would be reverted (lost update), and vice versa. Mirrors the CVE suppress
+	// precedent (central/cve/node/datastore), which guards the same pattern with a KeyFence.
+	keyFence concurrency.KeyFence
 }
 
 // UpsertResult adds the result to the database  If enabling the use of this
@@ -48,7 +57,12 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 	// TODO (ROX-20573): populate the standard and control from the rule so that lookup only happens
 	// one time on insert and not everytime we pull the results.
 
-	return d.store.Upsert(ctx, result)
+	// Hold the key fence for this result so a concurrent freshness read-modify-upsert
+	// (MarkStalePriorResultsByScanRef) cannot re-upsert an older snapshot of this row over the
+	// result written here.
+	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
+		return d.store.Upsert(ctx, result)
+	})
 }
 
 // DeleteResult removes a result from the database
@@ -411,4 +425,112 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 	)
 	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
 	return err
+}
+
+// freshnessUpdateBatchSize bounds how many changed results are re-serialized and upserted per
+// UpsertMany call, so a large update does not issue one oversized write.
+const freshnessUpdateBatchSize = 1000
+
+// MarkStalePriorResultsByScanRef marks STALE the check results of the given scan (scan ref ID)
+// that predate olderThan, leaving the rest unchanged. It is the write-time staleness hook used
+// when a scan times out: the results that the timed-out run already refreshed carry its start time
+// (olderThan) and are genuinely fresh, so they stay as they are. Only the results the run did NOT
+// refresh (leftovers from a previous run, with an older last started time) are stale, and marking
+// them here surfaces that immediately. A result row is reused across runs (its ID is the
+// compliance operator check result UID), so "prior results" are the rows the latest run did not
+// overwrite. Results whose last started time is nil are left unchanged (their freshness cannot be
+// evaluated). Returns the number of rows updated.
+func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanRefID == "" {
+		return 0, nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		ProtoQuery()
+
+	return d.updateFreshness(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) storage.ComplianceOperatorCheckResultV2_DataFreshness {
+		started := result.GetLastStartedTime()
+		if started != nil && started.AsTime().Before(olderThan) {
+			return storage.ComplianceOperatorCheckResultV2_STALE
+		}
+		// A result refreshed by the timed-out run (or with no start time) is left as-is.
+		return result.GetDataFreshness()
+	}, "marking prior compliance check results stale")
+}
+
+// updateFreshness performs a read-modify-upsert of data_freshness for the results matched by
+// query. want returns the freshness a result should have.
+//
+// Two concerns shape the flow:
+//
+//  1. Deadlock avoidance: the candidate IDs are collected DURING the streaming read, and the
+//     re-read + upsert happen AFTER the read completes. Upserting inside the GetByQueryFn callback
+//     would issue writes on a second pool connection while the read stream still holds the first
+//     one open; under a large result set Postgres blocks writing to the client (full send buffer)
+//     while the client blocks acquiring a connection for the upsert, a deadlock. Only candidate
+//     IDs are retained, so memory stays proportional to churn, not to the whole result set.
+//
+//  2. Lost-update avoidance: freshness lives inside the serialized proto, so the whole row is
+//     re-upserted. A concurrent ingest (UpsertResult) could write a newer result between the read
+//     and the upsert; re-upserting the old snapshot would revert it. Each batch therefore takes
+//     the key fence on its IDs, re-reads the current rows under the lock, recomputes freshness,
+//     and upserts only rows that still need it. Ingest takes the same fence, so inside the lock
+//     the re-read always sees the latest row. This matches the CVE suppress precedent, which
+//     guards its read-modify-upsert with a KeyFence.
+func (d *datastoreImpl) updateFreshness(ctx context.Context, query *v1.Query, want func(*storage.ComplianceOperatorCheckResultV2) storage.ComplianceOperatorCheckResultV2_DataFreshness, errMsg string) (int64, error) {
+	var candidateIDs []string
+	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
+		if result.GetDataFreshness() != want(result) {
+			candidateIDs = append(candidateIDs, result.GetId())
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrap(err, errMsg)
+	}
+
+	var updated int64
+	for start := 0; start < len(candidateIDs); start += freshnessUpdateBatchSize {
+		end := min(start+freshnessUpdateBatchSize, len(candidateIDs))
+		batchIDs := candidateIDs[start:end]
+
+		keys := make([][]byte, 0, len(batchIDs))
+		for _, id := range batchIDs {
+			keys = append(keys, []byte(id))
+		}
+
+		err := d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+			results, _, err := d.store.GetMany(ctx, batchIDs)
+			if err != nil {
+				return err
+			}
+			changed := results[:0]
+			for _, result := range results {
+				w := want(result)
+				if result.GetDataFreshness() == w {
+					continue
+				}
+				result.DataFreshness = w
+				changed = append(changed, result)
+			}
+			if len(changed) == 0 {
+				return nil
+			}
+			if err := d.store.UpsertMany(ctx, changed); err != nil {
+				return err
+			}
+			updated += int64(len(changed))
+			return nil
+		})
+		if err != nil {
+			return updated, errors.Wrap(err, errMsg)
+		}
+	}
+	return updated, nil
 }
