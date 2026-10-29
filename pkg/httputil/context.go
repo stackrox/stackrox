@@ -66,4 +66,3 @@ func ContextBoundRequest(ctx concurrency.ErrorWaitable, req *http.Request) (*htt
 	concurrency.CancelContextOnSignal(subCtx, cancel, ctx)
 	return req.WithContext(subCtx), cancel
 }
-
