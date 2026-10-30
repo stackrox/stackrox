@@ -62,7 +62,6 @@ function* evaluateUserAccess() {
     // No token but validated providers present? Log out the user since they
     // can't have access.
     if (!tokenExists && authStatus !== AUTH_STATUS.LOGGED_OUT) {
-        // it can happen if user had ANONYMOUS access before, but now auth provider was added to the system
         yield put(actions.logout());
         return;
     }
