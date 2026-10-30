@@ -20,6 +20,7 @@ type ListDeploymentView struct {
 	ClusterID   string     `db:"cluster_id"`
 	Namespace   string     `db:"namespace"`
 	Created     *time.Time `db:"created"`
+	RiskScore   float32    `db:"deployment_risk_score"`
 	// Priority is NOT selected from DB - it's computed by the ranker
 }
 
@@ -33,6 +34,7 @@ func (v *ListDeploymentView) ToListDeployment() *storage.ListDeployment {
 		ClusterId: v.ClusterID,
 		Namespace: v.Namespace,
 		Created:   protocompat.ConvertTimeToTimestampOrNil(v.Created),
+		RiskScore: v.RiskScore,
 		// Priority is set by updateListDeploymentPriority in the datastore layer
 	}
 }
@@ -47,5 +49,6 @@ func ListDeploymentViewSelects() []*v1.QuerySelect {
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.Created).Proto(),
+		search.NewQuerySelect(search.DeploymentRiskScore).Proto(),
 	}
 }

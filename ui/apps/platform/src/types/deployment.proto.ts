@@ -15,6 +15,7 @@ export type ListDeployment = {
     created: string; // ISO 8601 date string
     priority: string; // int64
     riskPriorityClassification?: RiskPriorityClassification;
+    riskScore: number; // float
 };
 
 export type Deployment = {
@@ -142,7 +143,7 @@ export type PortConfig = {
     exposureInfos: ExposureInfo[];
 };
 
-export type ExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST';
+export type ExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST' | 'ROUTE';
 
 export type ExposureInfo = {
     level: ExposureLevel;

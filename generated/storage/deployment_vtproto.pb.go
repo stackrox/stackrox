@@ -579,6 +579,7 @@ func (m *ListDeployment) CloneVT() *ListDeployment {
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	r.Priority = m.Priority
 	r.RiskPriorityClassification = m.RiskPriorityClassification
+	r.RiskScore = m.RiskScore
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1517,6 +1518,9 @@ func (this *ListDeployment) EqualVT(that *ListDeployment) bool {
 		return false
 	}
 	if this.RiskPriorityClassification != that.RiskPriorityClassification {
+		return false
+	}
+	if this.RiskScore != that.RiskScore {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3227,6 +3231,12 @@ func (m *ListDeployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.RiskScore != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.RiskScore))))
+		i--
+		dAtA[i] = 0x55
+	}
 	if m.RiskPriorityClassification != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPriorityClassification))
 		i--
@@ -4013,6 +4023,9 @@ func (m *ListDeployment) SizeVT() (n int) {
 	}
 	if m.RiskPriorityClassification != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.RiskPriorityClassification))
+	}
+	if m.RiskScore != 0 {
+		n += 5
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8976,6 +8989,17 @@ func (m *ListDeployment) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 10:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.RiskScore = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14212,6 +14236,17 @@ func (m *ListDeployment) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 10:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.RiskScore = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
