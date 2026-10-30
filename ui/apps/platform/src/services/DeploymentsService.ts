@@ -52,26 +52,6 @@ export type RiskSubjectType =
     | 'IMAGE_COMPONENT'
     | 'SERVICEACCOUNT';
 
-function getRiskTableSortOption(sortOption: ApiSortOption): ApiSortOption {
-    const riskClassField = 'Risk Priority Classification';
-    const riskScoreField = 'Deployment Risk Score';
-
-    if (Array.isArray(sortOption)) {
-        const hasRiskClassSort = sortOption.some(({ field }) => field === riskClassField);
-        const hasRiskScoreSort = sortOption.some(({ field }) => field === riskScoreField);
-        if (hasRiskClassSort && !hasRiskScoreSort) {
-            return [...sortOption, { field: riskScoreField, reversed: true }];
-        }
-        return sortOption;
-    }
-
-    if (sortOption.field === riskClassField) {
-        return [sortOption, { field: riskScoreField, reversed: true }];
-    }
-
-    return sortOption;
-}
-
 function fillDeploymentSearchQuery(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
@@ -83,11 +63,7 @@ function fillDeploymentSearchQuery(
         pagination: Pagination;
         query?: string;
     } = {
-        pagination: getPaginationParams({
-            page,
-            perPage,
-            sortOption: getRiskTableSortOption(sortOption),
-        }),
+        pagination: getPaginationParams({ page, perPage, sortOption }),
     };
     if (query) {
         queryObject.query = query;

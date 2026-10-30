@@ -1,4 +1,5 @@
 import { Label, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import type { LabelProps } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -35,16 +36,13 @@ const riskClassLabels: Record<RiskPriorityClassification, string> = {
     RISK_PRIORITY_IMPROVE_POSTURE: 'Improve posture',
 };
 
-const riskClassColors: Record<
-    RiskPriorityClassification,
-    'red' | 'orange' | 'yellow' | 'blue' | 'green' | 'grey'
-> = {
-    RISK_PRIORITY_UNKNOWN: 'grey',
-    RISK_PRIORITY_RESPOND_NOW: 'red',
-    RISK_PRIORITY_INVESTIGATE_NOW: 'orange',
-    RISK_PRIORITY_REMEDIATE_NOW: 'red',
-    RISK_PRIORITY_REMEDIATE: 'yellow',
-    RISK_PRIORITY_IMPROVE_POSTURE: 'blue',
+const riskClassLabelProps: Record<RiskPriorityClassification, LabelProps> = {
+    RISK_PRIORITY_RESPOND_NOW: { status: 'danger' },
+    RISK_PRIORITY_INVESTIGATE_NOW: { status: 'warning' },
+    RISK_PRIORITY_REMEDIATE_NOW: { color: 'orangered' },
+    RISK_PRIORITY_REMEDIATE: { color: 'orange' },
+    RISK_PRIORITY_IMPROVE_POSTURE: { color: 'blue' },
+    RISK_PRIORITY_UNKNOWN: { color: 'grey' },
 };
 
 type RiskTablePanelProps = {
@@ -137,7 +135,7 @@ function RiskTablePanel({
                                         <Td dataLabel="Cluster">{deployment.cluster}</Td>
                                         <Td dataLabel="Namespace">{deployment.namespace}</Td>
                                         <Td dataLabel="Risk class">
-                                            <Label color={riskClassColors[riskClass]}>
+                                            <Label {...riskClassLabelProps[riskClass]}>
                                                 {riskClassLabels[riskClass]}
                                             </Label>
                                         </Td>
