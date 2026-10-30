@@ -323,7 +323,10 @@ func setupServerAndClient(t *testing.T, serverInterceptors []grpc.UnaryServerInt
 		grpc.WithChainUnaryInterceptor(clientInterceptors...),
 	)
 	require.NoError(t, err)
-	t.Cleanup(func() { assert.NoError(t, conn.Close()) })
+	t.Cleanup(func() {
+		assert.NoError(t, conn.Close())
+		assert.NoError(t, listener.Close())
+	})
 	return conn
 }
 
