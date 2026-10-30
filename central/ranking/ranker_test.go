@@ -6,6 +6,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRankerStoresPriorityClassificationWithScore(t *testing.T) {
+	rnk := NewRanker()
+
+	rnk.AddWithPriorityClassification("deployment-1", 10, 3)
+	assert.Equal(t, float32(10), rnk.GetScoreForID("deployment-1"))
+	assert.Equal(t, int32(3), rnk.GetPriorityClassificationForID("deployment-1"))
+
+	rnk.SetPriorityClassificationForID("deployment-1", 5)
+	assert.Equal(t, float32(10), rnk.GetScoreForID("deployment-1"))
+	assert.Equal(t, int32(5), rnk.GetPriorityClassificationForID("deployment-1"))
+
+	rnk.Add("deployment-1", 20)
+	assert.Equal(t, float32(20), rnk.GetScoreForID("deployment-1"))
+	assert.Equal(t, int32(0), rnk.GetPriorityClassificationForID("deployment-1"))
+}
+
 func TestRanker(t *testing.T) {
 	rnk := NewRanker()
 

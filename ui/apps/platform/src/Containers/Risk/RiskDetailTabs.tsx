@@ -1,9 +1,10 @@
-import { Alert, Flex, PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import { Alert, Flex, Label, PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import type { Deployment } from 'types/deployment.proto';
 import type { Risk } from 'services/DeploymentsService';
+import type { RiskPriorityClassification } from 'types/risk.proto';
 
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDiscovery from './Process/ProcessDiscovery';
@@ -16,6 +17,27 @@ const processDiscoveryTab = 'Process discovery';
 export type RiskDetailTabsProps = {
     deployment: Deployment;
     risk: Risk | null | undefined;
+};
+
+const riskClassLabels: Record<RiskPriorityClassification, string> = {
+    RISK_PRIORITY_UNKNOWN: 'Unknown',
+    RISK_PRIORITY_RESPOND_NOW: 'Respond now',
+    RISK_PRIORITY_INVESTIGATE_NOW: 'Investigate now',
+    RISK_PRIORITY_REMEDIATE_NOW: 'Remediate now',
+    RISK_PRIORITY_REMEDIATE: 'Remediate',
+    RISK_PRIORITY_IMPROVE_POSTURE: 'Improve posture',
+};
+
+const riskClassColors: Record<
+    RiskPriorityClassification,
+    'red' | 'orange' | 'yellow' | 'blue' | 'green' | 'grey'
+> = {
+    RISK_PRIORITY_UNKNOWN: 'grey',
+    RISK_PRIORITY_RESPOND_NOW: 'red',
+    RISK_PRIORITY_INVESTIGATE_NOW: 'orange',
+    RISK_PRIORITY_REMEDIATE_NOW: 'red',
+    RISK_PRIORITY_REMEDIATE: 'yellow',
+    RISK_PRIORITY_IMPROVE_POSTURE: 'blue',
 };
 
 function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
@@ -63,6 +85,11 @@ function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsMd' }}
                         >
+                            {risk.priorityClassification && (
+                                <Label color={riskClassColors[risk.priorityClassification]}>
+                                    Risk class: {riskClassLabels[risk.priorityClassification]}
+                                </Label>
+                            )}
                             {risk.results.map((result) => (
                                 <RiskIndicatorCard key={result.name} result={result} />
                             ))}

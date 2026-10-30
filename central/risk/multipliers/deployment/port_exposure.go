@@ -13,7 +13,10 @@ const (
 	ReachabilityHeading = `Service Reachability`
 
 	reachabilitySaturation = 10
-	reachabilityValue      = 2
+	reachabilityValue      = 4
+
+	additionalPortContribution    = 0.2
+	additionalPortContributionCap = 2
 )
 
 // reachabilityMultiplier is a scorer for the port exposures
@@ -27,19 +30,23 @@ func NewReachability() Multiplier {
 
 // Score takes a deployment and evaluates its risk based on the service configuration
 func (s *reachabilityMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
-	var score float32
+	var maxExposureScore float32
 	riskResult := &storage.Risk_Result{
 		Name: ReachabilityHeading,
 	}
 	for _, p := range deployment.GetPorts() {
-		score += exposureValue(p.GetExposure())
+		maxExposureScore = max(maxExposureScore, exposureValue(p.GetExposure()))
 
 		riskResult.Factors = append(riskResult.Factors,
 			&storage.Risk_Result_Factor{Message: fmt.Sprintf("Port %d is exposed %s",
 				p.GetContainerPort(), exposureString(p.GetExposure()))})
 	}
-	if score == 0 {
+	if maxExposureScore == 0 {
 		return nil
+	}
+	score := maxExposureScore
+	if additionalPorts := len(deployment.GetPorts()) - 1; additionalPorts > 0 {
+		score += min(float32(additionalPorts)*additionalPortContribution, additionalPortContributionCap)
 	}
 	riskResult.Score = multipliers.NormalizeScore(score, reachabilitySaturation, reachabilityValue)
 	return riskResult
@@ -48,9 +55,9 @@ func (s *reachabilityMultiplier) Score(_ context.Context, deployment *storage.De
 func exposureValue(exposure storage.PortConfig_ExposureLevel) float32 {
 	switch exposure {
 	case storage.PortConfig_EXTERNAL, storage.PortConfig_ROUTE:
-		return 3
+		return 10
 	case storage.PortConfig_NODE, storage.PortConfig_HOST:
-		return 2
+		return 5
 	case storage.PortConfig_INTERNAL:
 		return 1
 	default:

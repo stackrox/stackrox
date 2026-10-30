@@ -58,8 +58,9 @@ func (s *imageScorerImpl) Score(ctx context.Context, image *storage.Image) *stor
 	}
 
 	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
+		Score:                overallScore,
+		Results:              riskResults,
+		VulnerabilitySummary: vulnerabilitySummaryFromScan(image.GetScan()),
 		Subject: &storage.RiskSubject{
 			Id:   image.GetId(),
 			Type: storage.RiskSubjectType_IMAGE,
@@ -95,8 +96,9 @@ func (s *imageScorerImpl) ScoreV2(ctx context.Context, image *storage.ImageV2) *
 	}
 
 	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
+		Score:                overallScore,
+		Results:              riskResults,
+		VulnerabilitySummary: vulnerabilitySummaryFromScan(image.GetScan()),
 		Subject: &storage.RiskSubject{
 			Id:   image.GetId(),
 			Type: storage.RiskSubjectType_IMAGE,
