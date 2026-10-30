@@ -46,6 +46,18 @@ jobs:
       - /tmp:/tmp
       - /usr:/mnt/usr
       - /opt:/mnt/opt
+    services:
+      postgres:
+        image: docker.io/library/postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: matcher
+        options: >-
+          --health-cmd "pg_isready -U test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     strategy:
       fail-fast: false
       matrix:
@@ -160,14 +172,16 @@ jobs:
             fi
         done < <("$sc" sources "$STREAM")
 
-    - name: Validate sources
+    - name: Validate source content
       id: download-validate
       if: steps.check-changes.outputs.changed == 'true'
       run: |
         set -euo pipefail
 
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
         valid_files=()
         failed_sources=()
+
         while IFS= read -r source; do
             dest="bundles/${source}.json.zst"
             if ! record_count=$(./.github/workflows/scripts/scanner-updater-validate-source.sh "$dest"); then
@@ -177,7 +191,7 @@ jobs:
                 echo "source '${source}': OK (${record_count} records)"
                 valid_files+=("$dest")
             fi
-        done < <(./.github/workflows/scripts/scanner-updater-config.sh sources "$STREAM")
+        done < <("$sc" sources "$STREAM")
 
         ( IFS=','; echo "failed=${failed_sources[*]}" >> "$GITHUB_OUTPUT" )
 
@@ -189,13 +203,167 @@ jobs:
         printf '%s\n' "${valid_files[@]}" > valid-files.txt
         echo "Validated: ${#valid_files[@]} of $(( ${#valid_files[@]} + ${#failed_sources[@]} )) source(s) OK"
 
-    - name: Assemble and upload bundle
+    - name: Assemble bundle
+      id: assemble
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        set -euo pipefail
+        zip vulnerabilities.zip -@ < valid-files.txt
+        echo "Assembled vulnerabilities.zip ($(stat -c%s vulnerabilities.zip) bytes)"
+
+    - name: Validate ZIP entries
+      if: steps.check-changes.outputs.changed == 'true'
+      env:
+        FAILED_SOURCES: ${{ steps.download-validate.outputs.failed }}
+      run: |
+        set -euo pipefail
+
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
+
+        # Normalize ZIP entries to source names (strip bundles/ prefix and .json.zst suffix).
+        mapfile -t zip_entries < <(zipinfo -1 vulnerabilities.zip \
+          | sed 's|^bundles/||; s|\.json\.zst$||')
+        mapfile -t expected < <("$sc" sources "$STREAM")
+        IFS=',' read -ra excluded <<< "${FAILED_SOURCES:-}"
+
+        errors=0
+
+        dupes=$(printf '%s\n' "${zip_entries[@]}" | sort | uniq -d)
+        if [ -n "$dupes" ]; then
+            while IFS= read -r d; do
+                echo "::error::duplicate ZIP entry: ${d}"
+            done <<< "$dupes"
+            (( errors++ )) || true
+        fi
+
+        for entry in "${zip_entries[@]}"; do
+            found=false
+            for exp in "${expected[@]}"; do
+                [[ "$entry" == "$exp" ]] && found=true && break
+            done
+            if [[ "$found" == "false" ]]; then
+                echo "::error::unexpected ZIP entry: ${entry}"
+                (( errors++ )) || true
+            fi
+        done
+
+        for exp in "${expected[@]}"; do
+            # Skip sources already excluded during content validation.
+            is_excluded=false
+            for exc in "${excluded[@]}"; do
+                [[ "$exp" == "$exc" ]] && is_excluded=true && break
+            done
+            [[ "$is_excluded" == "true" ]] && continue
+
+            found=false
+            for entry in "${zip_entries[@]}"; do
+                [[ "$entry" == "$exp" ]] && found=true && break
+            done
+            if [[ "$found" == "false" ]]; then
+                echo "::error::missing ZIP entry without prior exclusion: ${exp}"
+                (( errors++ )) || true
+            fi
+        done
+
+        if (( errors > 0 )); then
+            echo "::error::ZIP entry validation failed with ${errors} error(s)"
+            exit 1
+        fi
+        echo "ZIP entries validated: ${#zip_entries[@]} entries match expected sources"
+
+    - name: Save bundle for import validation
+      if: steps.check-changes.outputs.changed == 'true'
+      run: cp vulnerabilities.zip /tmp/vulnerabilities.zip
+
+    - name: Resolve stream ref
+      id: resolve-ref
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        set -euo pipefail
+        ref=$(awk -v s="$STREAM" '$1 == s {print $2}' scanner/updater/version/VULNERABILITY_BUNDLE_VERSION)
+        if [ -z "$ref" ]; then
+            echo "::error::no ref found for stream '${STREAM}' in VULNERABILITY_BUNDLE_VERSION"
+            exit 1
+        fi
+        case "$ref" in
+            heads/*) ref="${ref#heads/}" ;;
+            tags/*)  ref="${ref#tags/}" ;;
+        esac
+        echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+        echo "Resolved stream '${STREAM}' -> ref '${ref}'"
+
+    - name: Checkout stream ref
+      if: steps.check-changes.outputs.changed == 'true'
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ steps.resolve-ref.outputs.ref }}
+
+    - name: Build updater
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        set -euo pipefail
+        echo "Building updater for stream '${STREAM}' from ref '${{ steps.resolve-ref.outputs.ref }}'..."
+        make tag
+        make -C scanner bin/updater
+        cp scanner/bin/updater /tmp/updater
+
+    - name: Checkout master
+      if: steps.check-changes.outputs.changed == 'true'
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Restore bundle for import validation
+      if: steps.check-changes.outputs.changed == 'true'
+      run: cp /tmp/vulnerabilities.zip vulnerabilities.zip
+
+    - name: Validate bundle import
       if: steps.check-changes.outputs.changed == 'true'
       run: |
         set -euo pipefail
 
-        zip vulnerabilities.zip -@ < valid-files.txt
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
 
+        # The updater import command expects a URL.
+        python3 -m http.server 8080 --directory . &
+        http_pid=$!
+        trap "kill $http_pid 2>/dev/null || true" EXIT
+        for i in $(seq 1 10); do
+            curl -sf http://localhost:8080/vulnerabilities.zip > /dev/null && break
+            sleep 1
+        done
+
+        /tmp/updater import \
+            --db-conn "host=postgres user=test password=test dbname=matcher sslmode=disable" \
+            --vulns-url "http://localhost:8080/vulnerabilities.zip"
+
+        # Verify all expected sources were imported with non-zero timestamps.
+        mapfile -t expected < <("$sc" sources "$STREAM")
+        missing=()
+        for source in "${expected[@]}"; do
+            key="bundles/${source}.json.zst"
+            ts=$(PGPASSWORD=test psql -h postgres -U test -d matcher -tAc \
+                "SELECT update_timestamp FROM last_vuln_update WHERE key = '${key}';")
+            if [ -z "$ts" ] || [ "$ts" = "1970-01-01 00:00:00" ]; then
+                echo "::error::${source}: missing or zero timestamp in last_vuln_update after import"
+                missing+=("$source")
+            else
+                echo "source '${source}': imported (update_timestamp=${ts})"
+            fi
+        done
+
+        if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::${#missing[@]} source(s) missing from last_vuln_update after import"
+            exit 1
+        fi
+        echo "Bundle import validation passed for stream '${STREAM}'"
+
+    - name: Upload bundle
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        set -euo pipefail
         bundle_obj="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/vulnerabilities.zip"
         gcloud storage cp vulnerabilities.zip "$bundle_obj"
         echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
