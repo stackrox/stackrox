@@ -842,7 +842,6 @@ export default [
             'src/Components/MetadataStatsList/**', // deprecated
             'src/Components/NoComponentVulnMessage/**', // deprecated
             'src/Components/PageHeader/**', // deprecated
-            'src/Components/Pagination/**', // deprecated
             'src/Components/PanelButton/**', // deprecated
             'src/Components/RiskScore/**', // deprecated
             'src/Components/RowActionButton/**', // deprecated
