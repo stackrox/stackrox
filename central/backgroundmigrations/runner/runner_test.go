@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/central/backgroundmigrations/migrations"
 	"github.com/stackrox/rox/central/backgroundmigrations/types"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
@@ -93,11 +94,11 @@ func (s *RunnerTestSuite) waitForAdvisoryUnlock() {
 
 		defer dbConn.Release()
 		var acquired bool
-		err = dbConn.QueryRow(s.ctx, "SELECT pg_try_advisory_lock($1)", bgMigrationAdvisoryLockID).Scan(&acquired)
+		err = dbConn.QueryRow(s.ctx, "SELECT pg_try_advisory_lock($1)", dblock.BackgroundMigrationLockID).Scan(&acquired)
 		require.NoError(t, err)
 		require.True(t, acquired)
 
-		_, err = dbConn.Exec(s.ctx, "SELECT pg_advisory_unlock($1)", bgMigrationAdvisoryLockID)
+		_, err = dbConn.Exec(s.ctx, "SELECT pg_advisory_unlock($1)", dblock.BackgroundMigrationLockID)
 		assert.NoError(t, err)
 	}, time.Second, 50*time.Millisecond, "advisory lock still held")
 }
