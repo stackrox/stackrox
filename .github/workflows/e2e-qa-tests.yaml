@@ -3,6 +3,10 @@ name: e2e-qa-tests
 on:
   workflow_call:
     inputs:
+      ci-action:
+        description: Applied CI selection decision; missing or invalid values run.
+        type: string
+        default: run
       should-run:
         description: "true if should really run the job. false - otherwise, i.e. the job should be skipped."
         required: true
@@ -88,7 +92,20 @@ jobs:
       CLUSTER_NAME_PREFIX_MAX: "20"
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
+      - name: Read CI selection
+        id: ci-decision
+        env:
+          CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
+        run: |
+          action=run
+          if [[ "$CI_SELECT_ACTION" == skip ]]; then
+              action=skip
+          fi
+          printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+          printf 'CI selection: %s\n' "$action"
+
       - name: Validate workflow input
+        if: &selected-suite steps.ci-decision.outputs.action != 'skip'
         run: |
           case "${{ inputs.cluster-provisioning-method }}" in
             direct-gke|infra) ;;
@@ -101,6 +118,7 @@ jobs:
           fi
 
       - name: Checkout repo
+        if: *selected-suite
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
@@ -108,16 +126,18 @@ jobs:
           persist-credentials: false
 
       - name: Validate input tag
+        if: *selected-suite
         env:
           TAG: ${{ inputs.tag }}
         run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
       - uses: ./.github/actions/job-preamble
+        if: *selected-suite
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Compute cluster name for infra-provisioned cluster
-        if: inputs.cluster-provisioning-method == 'infra'
+        if: (inputs.cluster-provisioning-method == 'infra') && steps.ci-decision.outputs.action != 'skip'
         # infractl enforces a 28-char limit for cluster names.
         run: |
           cluster_name_max=28
@@ -131,7 +151,7 @@ jobs:
           echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
 
       - name: Prepare infra args
-        if: inputs.cluster-provisioning-method == 'infra'
+        if: (inputs.cluster-provisioning-method == 'infra') && steps.ci-decision.outputs.action != 'skip'
         id: prepare-infra-args
         env:
           INFRA_ARGS: ${{ inputs.infra-args }}
@@ -140,7 +160,7 @@ jobs:
           echo "args=$args" >> "$GITHUB_OUTPUT"
 
       - name: Trigger cluster creation via infra
-        if: inputs.cluster-provisioning-method == 'infra'
+        if: (inputs.cluster-provisioning-method == 'infra') && steps.ci-decision.outputs.action != 'skip'
         uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
@@ -151,6 +171,7 @@ jobs:
           wait: false
 
       - name: Set up GCloud SDK
+        if: *selected-suite
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
         with:
           install_components: "gke-gcloud-auth-plugin,beta"
@@ -158,7 +179,7 @@ jobs:
       # In the direct-gke provisioning case, this step also exports CLUSTER_NAME
       # into the environments.
       - name: Create cluster via direct-gke
-        if: inputs.cluster-provisioning-method == 'direct-gke'
+        if: (inputs.cluster-provisioning-method == 'direct-gke') && steps.ci-decision.outputs.action != 'skip'
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
           MACHINE_TYPE: "e2-standard-16"
@@ -169,44 +190,49 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
       - name: Docker login to Quay.io
+        if: *selected-suite
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
       - name: Set flavor-specific env vars
+        if: *selected-suite
         env:
           EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
         run: |
           printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
       - name: Install roxctl
+        if: *selected-suite
         uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
         with:
           roxctl-release: latest
 
       - name: Retrieving roxie version from repository
+        if: *selected-suite
         id: roxie-version
         run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Install roxie
+        if: *selected-suite
         uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
         with:
           version: "v${{ steps.roxie-version.outputs.version }}"
           gh-token: ${{ github.token }}
 
       - name: Install oc
-        if: startsWith(inputs.infra-flavor, 'openshift')
+        if: (startsWith(inputs.infra-flavor, 'openshift')) && steps.ci-decision.outputs.action != 'skip'
         run: |
           curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
             | tar xz -C /usr/local/bin oc
           oc version --client
 
       - uses: stackrox/actions/infra/install-infractl@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/install-infractl@v1
-        if: inputs.cluster-provisioning-method == 'infra'
+        if: (inputs.cluster-provisioning-method == 'infra') && steps.ci-decision.outputs.action != 'skip'
 
       - name: Wait for infra cluster and get kubeconfig
-        if: inputs.cluster-provisioning-method == 'infra'
+        if: (inputs.cluster-provisioning-method == 'infra') && steps.ci-decision.outputs.action != 'skip'
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
@@ -219,6 +245,7 @@ jobs:
       # already RUNNING at this point. wait_for_cluster provides additional
       # guarantees by polling until all kube-system pods are ready.
       - name: Wait for cluster to stabilize
+        if: *selected-suite
         timeout-minutes: 5
         env:
           CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
@@ -230,15 +257,18 @@ jobs:
           fi
 
       - name: Create artifact directory
+        if: *selected-suite
         run: mkdir -p "$ARTIFACT_DIR"
 
       - name: Download Go module dependencies
+        if: *selected-suite
         # The qa-tests-backend Makefile copies scanner protos from the Go module
         # cache (via go list -m). Unlike Prow's apollo-ci image, GHA runners
         # don't have the cache pre-populated.
         run: go mod download github.com/stackrox/scanner
 
       - name: Run pre-test
+        if: *selected-suite
         shell: python
         env:
           QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -251,6 +281,7 @@ jobs:
           PreSystemTests().run()
 
       - name: Run Part 1 tests
+        if: *selected-suite
         env: &test_env
           USE_ROXIE_DEPLOY: true
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -287,7 +318,7 @@ jobs:
         run: qa-tests-backend/scripts/run-part-1.sh
 
       - name: Run Part 1 post-test
-        if: always() && env.KUBECONFIG != ''
+        if: (always() && env.KUBECONFIG != '') && steps.ci-decision.outputs.action != 'skip'
         shell: python
         run: |
           import os, sys
@@ -300,13 +331,14 @@ jobs:
           post.run([os.environ['ARTIFACT_DIR']])
 
       - name: Run Part 2 tests
+        if: *selected-suite
         id: run-part-2
         env: *test_env
         timeout-minutes: ${{ inputs.part2-timeout-minutes }}
         run: qa-tests-backend/scripts/run-part-2.sh
 
       - name: Run Part 2 post-test
-        if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''
+        if: (always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != '') && steps.ci-decision.outputs.action != 'skip'
         shell: python
         run: |
           import os, sys
@@ -319,7 +351,7 @@ jobs:
           post.run([os.environ['ARTIFACT_DIR']])
 
       - name: Run final-post
-        if: always()
+        if: always() && steps.ci-decision.outputs.action != 'skip'
         shell: python
         run: |
           import sys
@@ -329,19 +361,19 @@ jobs:
 
       - name: Publish summary for failed tests
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-        if: always()
+        if: always() && steps.ci-decision.outputs.action != 'skip'
         with:
           paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
           show: "fail"
       - name: Publish summary for passed and skipped tests
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-        if: always()
+        if: always() && steps.ci-decision.outputs.action != 'skip'
         with:
           paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
           show: "pass, skip"
 
       - name: Report junit failures in jira
-        if: (!cancelled())
+        if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
         id: junit2jira
         uses: ./.github/actions/junit2jira
         with:
@@ -356,7 +388,7 @@ jobs:
       # here anyway, just in case a cluster has been provisioned even though
       # a failure during cluster creation has been surfaced.
       - name: Delete cluster via direct-gke
-        if: always() && inputs.cluster-provisioning-method == 'direct-gke'
+        if: (always() && inputs.cluster-provisioning-method == 'direct-gke') && steps.ci-decision.outputs.action != 'skip'
         continue-on-error: true
         run: |
           if [[ -z "${CLUSTER_NAME:-}" ]]; then
@@ -369,7 +401,7 @@ jobs:
           fi
 
       - name: Delete cluster via infra
-        if: always() && inputs.cluster-provisioning-method == 'infra'
+        if: (always() && inputs.cluster-provisioning-method == 'infra') && steps.ci-decision.outputs.action != 'skip'
         continue-on-error: true
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}

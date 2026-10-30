@@ -1,0 +1,131 @@
+version: 1
+jobs:
+  - go
+  - go-postgres
+  - go-bench
+  - sensor-integration-tests
+  - e2e-byodb-tests
+  - e2e-db-backup-restore-tests-gke
+  - e2e-db-backup-restore-tests-gke-konflux
+  - e2e-gke-upgrade-tests
+  - e2e-nongroovy-tests-gke
+  - e2e-nongroovy-tests-gke-konflux
+  - e2e-qa-tests-gke
+  - e2e-qa-tests-gke-konflux
+  - e2e-qa-tests-ocp-fips-konflux
+  - e2e-ui-tests-gke
+  - e2e-ui-tests-gke-konflux
+# For each job, combine paths only from rules that name it in skip.
+# Skip that job only if those paths cover a nonempty diff.
+# A run request counts only for files the job's skip rules do not
+# cover; one such file anywhere in the diff forces the job to run.
+# Walkthroughs with full planner traces live in select/EXAMPLES.md;
+# composition semantics and field reference in select/README.md.
+rules:
+  # UI files contain no Go code, so the Go, PostgreSQL, benchmark, and
+  # Sensor integration suites cannot be affected by them.
+  - name: frontend-backend-only
+    when: any-file-matches
+    paths: ['^ui/']
+    skip: [go, go-postgres, go-bench, sensor-integration-tests]
+
+  # Backend e2e suites drive the APIs and clusters, not the browser.
+  # The UI e2e suites are deliberately not listed: remaining runs them.
+  # The UI is baked into the main image, but an image build failure
+  # blocks every suite anyway, so that is not a reason to run these.
+  - name: frontend-no-backend-e2e
+    when: any-file-matches
+    paths: ['^ui/']
+    skip:
+      - e2e-byodb-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
+      - e2e-gke-upgrade-tests
+      - e2e-nongroovy-tests-gke
+      - e2e-nongroovy-tests-gke-konflux
+      - e2e-qa-tests-gke
+      - e2e-qa-tests-gke-konflux
+      - e2e-qa-tests-ocp-fips-konflux
+
+  # Documentation-only changes can skip the suites listed here. Exclude
+  # files used by tests, image builds, generators, and dependency setup.
+  - name: documentation-only
+    when: any-file-matches
+    paths:
+      - '^(?is:.*\.(md|txt))$'
+      # These lists control images downloaded by Sensor and e2e tests.
+      - '!^sensor/tests/images-to-prefetch\.txt$'
+      - '!^tests/images-to-prefetch\.txt$'
+      - '!^qa-tests-backend/scripts/images-to-prefetch\.txt$'
+      # Test fixtures and expected output are inputs, even with doc extensions.
+      - '!^(?s:.*/)?(testdata|fixtures)/'
+      - '!^tests/roxctl/bats-tests/local/expect/'
+      - '!^qa-tests-backend/test-images/'
+      # Generator headers and Python dependencies affect builds and checks.
+      - '!^(tools|operator/hack|config-controller/hack)/boilerplate\.go\.txt$'
+      - '!^\.openshift-ci/dev-requirements\.txt$'
+      - '!^tests/performance/scripts/opensearch-upload/requirements\.txt$'
+    skip:
+      - go
+      - go-postgres
+      - go-bench
+      - sensor-integration-tests
+      - e2e-byodb-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
+      - e2e-gke-upgrade-tests
+      - e2e-nongroovy-tests-gke
+      - e2e-nongroovy-tests-gke-konflux
+      - e2e-qa-tests-gke
+      - e2e-qa-tests-gke-konflux
+      - e2e-qa-tests-ocp-fips-konflux
+      - e2e-ui-tests-gke
+      - e2e-ui-tests-gke-konflux
+
+  # These Central components require Go tests but not Sensor integration tests.
+  - name: central-only-domains
+    when: any-file-matches
+    paths:
+      - '^central/(sac|search|auth|authprovider|apitoken|user|group|role|rbac|jwt|serviceidentities)/'
+      - '^central/(postgres|globaldb|globalindex|graphdb|dackbox|blob|views)/'
+      - '^central/(notifier|notifiers|reports|reportconfigurations)/'
+      - '^central/(externalbackups|declarativeconfig|config|installation)/'
+      - '^central/(ui|graphql|grpc|endpoints)/'
+      - '^central/(featureflags|development|audit|logimbue|trace)/'
+      - '^central/(helmcharts|ping|version|systeminfo|docs|internal)/'
+    run: [go]
+    skip: [sensor-integration-tests]
+
+  # These Sensor components require Sensor integration tests but not database
+  # tests or benchmarks.
+  - name: sensor-only-domains
+    when: any-file-matches
+    paths:
+      - '^sensor/(admission-control|upgrader|debugger|testutils|tests)/'
+      - '^sensor/kubernetes/(fake|client|enforcer)/'
+    run: [sensor-integration-tests]
+    skip: [go-postgres, go-bench]
+
+  # Scanner changes can skip database tests, benchmarks, and Sensor
+  # integration tests. The Go suite still runs.
+  - name: scanner-only
+    when: any-file-matches
+    paths: ['^scanner/']
+    skip: [go-postgres, go-bench, sensor-integration-tests]
+
+  # These Operator implementation paths can skip database tests, benchmarks,
+  # and Sensor integration tests. Go tests, including Operator tests, still run.
+  - name: operator-only
+    when: any-file-matches
+    # operator/api is imported by PostgreSQL and Sensor tests. New roots
+    # require review before joining this allowlist.
+    paths:
+      - '^operator/(build|bundle|bundle_helpers|cmd|config|hack|install|internal|midstream|tests|tools)/'
+      - '^operator/[^/]+$'
+    skip: [go-postgres, go-bench, sensor-integration-tests]
+
+  # Run every job not already selected or skipped. This includes
+  # empty diffs and changes outside the reviewed paths.
+  - name: remaining
+    when: remaining
+    run: ['*']
