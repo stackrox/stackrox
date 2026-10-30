@@ -3,14 +3,18 @@
 package main
 
 import (
+	"encoding/json"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestScriptPlannerRecovery(t *testing.T) {
@@ -78,6 +82,166 @@ func TestScriptConsumeDecision(t *testing.T) {
 				"CI_SELECT_DECISIONS":      c.decisions,
 			}, "bash", "gha-consume.sh", "example-suite")
 			assert.Equal(t, c.want, outputs["action"])
+		})
+	}
+}
+
+// Every e2e decision step runs before its job's checkout, so it must stay
+// inline; this test pins all copies to one shared body so they cannot drift.
+func TestSuiteDecisionStepsShareBody(t *testing.T) {
+	t.Parallel()
+	const wantBody = `action=run
+if [[ "$CI_SELECT_ACTION" == skip ]]; then
+    action=skip
+fi
+printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+printf 'CI selection: %s\n' "$action"
+`
+	workflowPaths, err := filepath.Glob("../../.github/workflows/e2e-*.yaml")
+	require.NoError(t, err)
+	require.NotEmpty(t, workflowPaths)
+	found := 0
+	for _, path := range workflowPaths {
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		var workflow struct {
+			Jobs map[string]struct {
+				Steps []struct {
+					Name string            `yaml:"name"`
+					Run  string            `yaml:"run"`
+					Env  map[string]string `yaml:"env"`
+				} `yaml:"steps"`
+			} `yaml:"jobs"`
+		}
+		require.NoError(t, yaml.Unmarshal(data, &workflow), path)
+		for _, job := range workflow.Jobs {
+			for _, step := range job.Steps {
+				if step.Name != "Read CI selection" {
+					continue
+				}
+				found++
+				assert.Contains(t, step.Env, "CI_SELECT_ACTION", path)
+				assert.Equal(t, wantBody, step.Run, "%s", path)
+			}
+		}
+	}
+	assert.Positive(t, found, "expected at least one decision step")
+}
+
+func TestScriptE2EDispatch(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	gh := writeTestFile(t, filepath.Join(root, "gh"), "#!/usr/bin/env bash\nprintf '%s' \"$TEST_PR_LABELS\"\n")
+	require.NoError(t, os.Chmod(gh, 0o700))
+	env := map[string]string{
+		"PATH":                     root + string(os.PathListSeparator) + os.Getenv("PATH"),
+		"TEST_PR_LABELS":           "",
+		"input__event_name":        "pull_request",
+		"input__is_fork":           "false",
+		"input__is_draft":          "false",
+		"input__ui_only_change":    "false",
+		"input__ci_decisions":      "",
+		"input__ci_planner_result": "success",
+		"input__repo":              "example/repo",
+		"input__pr_number":         "1",
+	}
+	baseline := runSelectionScript(t, env, "python3", "e2e_dispatch.py")
+	var baselineActions map[string]string
+	var baselineJobs map[string]bool
+	require.NoError(t, json.Unmarshal([]byte(baseline["ci-actions"]), &baselineActions))
+	require.NoError(t, json.Unmarshal([]byte(baseline["jobs"]), &baselineJobs))
+	require.NotEmpty(t, baselineActions)
+
+	t.Run("should enroll the same E2E targets in policy, dispatcher, and workflows", func(t *testing.T) {
+		policy, err := loadMapping("../test-selection-rules.yaml")
+		require.NoError(t, err)
+		var policyTargets []string
+		for _, target := range policy.Jobs {
+			if strings.HasPrefix(target, "e2e-") {
+				policyTargets = append(policyTargets, target)
+			}
+		}
+
+		data, err := os.ReadFile("../../.github/workflows/e2e-dispatch.yaml")
+		require.NoError(t, err)
+		var workflow struct {
+			Jobs map[string]struct {
+				Uses string `yaml:"uses"`
+			} `yaml:"jobs"`
+		}
+		require.NoError(t, yaml.Unmarshal(data, &workflow))
+		var workflowTargets []string
+		for target, job := range workflow.Jobs {
+			if strings.HasPrefix(job.Uses, "./.github/workflows/e2e-") {
+				workflowTargets = append(workflowTargets, target)
+			}
+		}
+
+		registryTargets := slices.Collect(maps.Keys(baselineActions))
+		assert.ElementsMatch(t, registryTargets, policyTargets, "policy and dispatcher targets must match")
+		assert.ElementsMatch(t, registryTargets, workflowTargets, "dispatcher and workflow targets must match")
+	})
+
+	allRun, allSkip := make(map[string]string), make(map[string]string)
+	allJobs, noJobs := make(map[string]bool), make(map[string]bool)
+	for target := range baselineActions {
+		allRun[target], allSkip[target] = "run", "skip"
+		allJobs[target], noJobs[target] = true, false
+	}
+	assert.Equal(t, allRun, baselineActions)
+	skipJSON, err := json.Marshal(allSkip)
+	require.NoError(t, err)
+
+	const optionalTarget = "e2e-byodb-tests"
+	require.Contains(t, baselineJobs, optionalTarget)
+	require.False(t, baselineJobs[optionalTarget])
+	partialActions, partialJobs := maps.Clone(allRun), maps.Clone(baselineJobs)
+	partialActions[optionalTarget] = "skip"
+
+	for name, c := range map[string]struct {
+		env        map[string]string
+		actions    map[string]string
+		jobs       map[string]bool
+		skipImages string
+	}{
+		"should keep a draft's ineligible jobs unstarted under skips": {
+			env:     map[string]string{"input__ci_decisions": string(skipJSON), "input__is_draft": "true"},
+			actions: allSkip, jobs: noJobs, skipImages: "true",
+		},
+		"should apply a partial selection without changing other eligibility": {
+			env:     map[string]string{"input__ci_decisions": `{"e2e-byodb-tests":"skip"}`},
+			actions: partialActions, jobs: partialJobs, skipImages: "false",
+		},
+		"should retain normal eligibility when decisions are malformed": {
+			env:     map[string]string{"input__ci_decisions": "{"},
+			actions: allRun, jobs: baselineJobs, skipImages: "false",
+		},
+		"should ignore stale skips when the planner fails": {
+			env:     map[string]string{"input__ci_decisions": string(skipJSON), "input__ci_planner_result": "failure"},
+			actions: allRun, jobs: baselineJobs, skipImages: "false",
+		},
+		"should not admit a fork through a skip decision": {
+			env:     map[string]string{"input__ci_decisions": string(skipJSON), "input__is_fork": "true"},
+			actions: allRun, jobs: noJobs, skipImages: "false",
+		},
+		"should ignore skip decisions on a push": {
+			env:     map[string]string{"input__ci_decisions": string(skipJSON), "input__event_name": "push"},
+			actions: allRun, jobs: allJobs, skipImages: "false",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			inputs := maps.Clone(env)
+			maps.Copy(inputs, c.env)
+			outputs := runSelectionScript(t, inputs, "python3", "e2e_dispatch.py")
+			var actions map[string]string
+			var jobs map[string]bool
+			require.NoError(t, json.Unmarshal([]byte(outputs["ci-actions"]), &actions))
+			require.NoError(t, json.Unmarshal([]byte(outputs["jobs"]), &jobs))
+			assert.Equal(t, c.actions, actions)
+			assert.Equal(t, c.jobs, jobs)
+			assert.Equal(t, c.skipImages, outputs["skip-gha-images"])
+			assert.Equal(t, c.skipImages, outputs["skip-konflux-images"])
 		})
 	}
 }

@@ -3,6 +3,10 @@ name: e2e-byodb-tests
 on:
   workflow_call:
     inputs:
+      ci-action:
+        description: Applied CI selection decision; missing or invalid values run.
+        type: string
+        default: run
       tag:
         description: Image tag to test.
         type: string
@@ -51,7 +55,20 @@ jobs:
     timeout-minutes: 361
     steps:
 
+    - name: Read CI selection
+      id: ci-decision
+      env:
+        CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+
     - name: Checkout repo
+      if: &selected-suite steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
@@ -59,26 +76,31 @@ jobs:
         persist-credentials: false
 
     - name: Validate input tag
+      if: *selected-suite
       env:
         TAG: ${{ inputs.tag }}
       run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
+      if: *selected-suite
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Docker login to Quay.io
+      if: *selected-suite
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
+      if: *selected-suite
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
+      if: *selected-suite
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "1"
@@ -89,12 +111,14 @@ jobs:
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
+      if: *selected-suite
       run: |
         make roxctl_linux-amd64
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
     - name: Verify kubectl access and wait for cluster to stabilize
+      if: *selected-suite
       timeout-minutes: 5
       run: |
         kubectl cluster-info
@@ -102,19 +126,23 @@ jobs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
+      if: *selected-suite
       run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Retrieve roxie version from repository
+      if: *selected-suite
       id: roxie-version
       run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
     - name: Install roxie
+      if: *selected-suite
       uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
         gh-token: ${{ github.token }}
 
     - name: Run pre-test
+      if: *selected-suite
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -127,6 +155,7 @@ jobs:
         PreSystemTests().run()
 
     - name: Run BYODB test
+      if: *selected-suite
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -162,7 +191,7 @@ jobs:
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
     - name: Persist env vars for post-test
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: |
         source tests/e2e/lib.sh
         wait_for_api
@@ -170,7 +199,7 @@ jobs:
         echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
     - name: Run post-test
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       shell: python
       env:
         ROX_USERNAME: admin
@@ -184,7 +213,7 @@ jobs:
         post.run(['/tmp/byodb-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       shell: python
       run: |
         import sys
@@ -193,7 +222,7 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
@@ -207,19 +236,19 @@ jobs:
 
     - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "fail"
     - name: Publish summary for passed and skipped tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "pass, skip"
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:

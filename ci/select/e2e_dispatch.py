@@ -74,13 +74,32 @@ def main():
         Job(name='e2e-ui-tests-gke-konflux', require_konflux_build=True, is_ui_test=True),
     ]
 
+    # Only valid, applied decisions from a successful PR planner can skip work.
+    planned = {}
+    if inputs.event_name == 'pull_request' and inputs.is_fork != 'true' and inputs.ci_planner_result == 'success':
+        try:
+            candidate = json.loads(inputs.ci_decisions or '{}')
+            if not isinstance(candidate, dict) or any(value not in ('run', 'skip') for value in candidate.values()):
+                raise ValueError('invalid selection map')
+            planned = candidate
+        except (ValueError, TypeError):
+            print('CI selection unavailable; preserving existing e2e eligibility')
+    ci_actions = {job.name: planned.get(job.name, 'run') for job in jobs_registry}
+
     with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
         def write(job, val):
             line = f'{job}={val}'
             print(line)
             file.write(line + '\n')
 
+        # A selected skip does not force an ineligible job to start: a skipped
+        # job also satisfies required checks, and reporting skips natively is
+        # more transparent than starting jobs that only skip their steps.
         jobs = {job.name: job.should_run(inputs) for job in jobs_registry}
+
+        write('ci-actions', json.dumps(ci_actions))
+        write('skip-gha-images', str(all(ci_actions[job.name] == 'skip' for job in jobs_registry if not job.require_konflux_build)).lower())
+        write('skip-konflux-images', str(all(ci_actions[job.name] == 'skip' for job in jobs_registry if job.require_konflux_build)).lower())
 
         write('jobs', json.dumps(jobs))
 
