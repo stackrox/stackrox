@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -35,18 +36,13 @@ type datastoreImpl struct {
 	store store.Store
 	db    postgres.DB
 
-	// keyFence serializes the per-row ingest write (UpsertResult) against the read-modify-upsert
-	// of a check result's serialized proto in MarkStalePriorResultsByScanRef. Freshness lives
-	// inside the serialized blob, so the timeout hook loads, mutates, and re-upserts the whole
-	// proto. Without the fence a concurrent ingest writing a newer result between the load and the
-	// re-upsert would be reverted (lost update), and vice versa. Mirrors the CVE suppress
-	// precedent (central/cve/node/datastore), which guards the same pattern with a KeyFence.
+	// keyFence prevents UpsertResult from racing MarkStalePriorResultsByScanRef.
 	keyFence concurrency.KeyFence
 }
 
-// UpsertResult adds the result to the database  If enabling the use of this
-// method from a service, the creation of the `ScanRefID` must be accounted for.  In reality this
-// method should only be used by the pipeline as this is a compliance operator object we are storing.
+// UpsertResult stores a result received from sensor. If enabling the use of this method from a
+// service, the creation of the `ScanRefID` must be accounted for. In reality this method should only
+// be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -57,59 +53,23 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 	// TODO (ROX-20573): populate the standard and control from the rule so that lookup only happens
 	// one time on insert and not everytime we pull the results.
 
-	// Hold the key fence for this result so a concurrent freshness read-modify-upsert
-	// (MarkStalePriorResultsByScanRef) cannot re-upsert an older snapshot of this row over the
-	// result written here.
 	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
-		return d.store.Upsert(ctx, result)
-	})
-}
-
-// UpsertReceivedResult upserts a result just received from sensor, deriving its data_freshness
-// atomically with the write rather than trusting the caller's value. See the DataStore interface
-// doc for why this must happen under the same lock as the write (a stale, unfenced read-then-write
-// could revert a concurrent timeout marking, or be reverted by one).
-func (d *datastoreImpl) UpsertReceivedResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
-	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
-		existing, found, err := d.store.Get(ctx, result.GetId())
-		if err != nil {
-			return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
+		if features.ComplianceSurfaceStaleData.Enabled() {
+			existing, found, err := d.store.Get(ctx, result.GetId())
+			if err != nil {
+				return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
+			}
+			reconcileReceivedResult(result, existing, found)
 		}
-		reconcileReceivedResult(result, existing, found)
 		return d.store.Upsert(ctx, result)
 	})
 }
 
-// reconcileReceivedResult decides the DataFreshness a newly received result (incoming) should be
-// stored with, and mutates incoming in place. "Received" does not always mean "new": see
-// UpsertReceivedResult's doc. incoming.LastStartedTime is sourced from the compliance operator's
-// own last-scanned-timestamp annotation, so it only advances when the operator actually reruns the
-// check. Only a LastStartedTime strictly newer than what is already stored (or no prior row at
-// all) counts as genuinely fresh and is marked CURRENT.
-//
-// Otherwise -- a replay, or any result that is not genuinely newer -- two things must be
-// preserved, not just DataFreshness:
-//
-//  1. DataFreshness is carried over from the existing row unchanged: incoming is a freshly built
-//     proto whose DataFreshness would otherwise default to UNKNOWN and wipe out the prior value.
-//  2. LastStartedTime is also clamped to the existing row's value when it is older or equal.
-//     Without this, Upsert would still persist incoming's older timestamp over the newer stored
-//     one, and a later timeout's age-based STALE decision (LastStartedTime < pivot) could then
-//     wrongly flag a genuinely-refreshed row stale because a late replay regressed its timestamp.
-//
-// A nil LastStartedTime on first sighting is deliberately left UNKNOWN rather than CURRENT: with
-// no sweeper in this slice, a wrongly-asserted CURRENT would have no correction path, because
-// MarkStalePriorResultsByScanRef explicitly leaves nil-timestamp rows unchanged forever.
+// reconcileReceivedResult sets incoming's DataFreshness to CURRENT only when it is newer than the
+// stored row, otherwise preserves the stored freshness. incoming is mutated.
 func reconcileReceivedResult(incoming, existing *storage.ComplianceOperatorCheckResultV2, found bool) {
 	started := incoming.GetLastStartedTime()
 	if !found {
-		// A result with no prior history cannot be a stale replay.
 		if started == nil {
 			incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_UNKNOWN
 		} else {
@@ -118,6 +78,8 @@ func reconcileReceivedResult(incoming, existing *storage.ComplianceOperatorCheck
 		return
 	}
 
+	// LastStartedTime comes from the operator's last-scanned annotation, so it advances only on a
+	// real rerun. A strictly newer timestamp is the only genuine refresh.
 	existingStarted := existing.GetLastStartedTime()
 	if started != nil && (existingStarted == nil || started.AsTime().After(existingStarted.AsTime())) {
 		incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
@@ -125,9 +87,6 @@ func reconcileReceivedResult(incoming, existing *storage.ComplianceOperatorCheck
 	}
 
 	incoming.DataFreshness = existing.GetDataFreshness()
-	if existingStarted != nil {
-		incoming.LastStartedTime = existingStarted
-	}
 }
 
 // DeleteResult removes a result from the database
@@ -496,15 +455,8 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 // UpsertMany call, so a large update does not issue one oversized write.
 const freshnessUpdateBatchSize = 1000
 
-// MarkStalePriorResultsByScanRef marks STALE the check results of the given scan (scan ref ID)
-// that predate olderThan, leaving the rest unchanged. It is the write-time staleness hook used
-// when a scan times out: the results that the timed-out run already refreshed carry its start time
-// (olderThan) and are genuinely fresh, so they stay as they are. Only the results the run did NOT
-// refresh (leftovers from a previous run, with an older last started time) are stale, and marking
-// them here surfaces that immediately. A result row is reused across runs (its ID is the
-// compliance operator check result UID), so "prior results" are the rows the latest run did not
-// overwrite. Results whose last started time is nil are left unchanged (their freshness cannot be
-// evaluated). Returns the number of rows updated.
+// MarkStalePriorResultsByScanRef marks STALE the check results (from the scan specified via scanRefID) whose
+// LastStartedTime predates olderThan.
 func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return 0, err
@@ -519,47 +471,27 @@ func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scan
 		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
 		ProtoQuery()
 
-	return d.updateFreshness(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) storage.ComplianceOperatorCheckResultV2_DataFreshness {
-		// The candidate read and the fenced re-read are two separate reads (see updateFreshness),
-		// so re-check the scan ref here: a result's ScanRefId is derived from a scan-name label
-		// that, in principle, could be reassigned between the two reads. Scoping the STALE decision
-		// to the scan ref being processed keeps "prior results of scanRefID" accurate even if that
-		// happens, instead of relying solely on the initial query filter.
+	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		// Re-check the scan ref: ScanRefId derives from a scan-name label that could be reassigned
+		// between markStale's two reads, so the initial query filter alone is not enough.
 		if result.GetScanRefId() != scanRefID {
-			return result.GetDataFreshness()
+			return false
 		}
 		started := result.GetLastStartedTime()
-		if started != nil && started.AsTime().Before(olderThan) {
-			return storage.ComplianceOperatorCheckResultV2_STALE
-		}
-		// A result refreshed by the timed-out run (or with no start time) is left as-is.
-		return result.GetDataFreshness()
+		return started != nil && started.AsTime().Before(olderThan)
 	}, "marking prior compliance check results stale")
 }
 
-// updateFreshness performs a read-modify-upsert of data_freshness for the results matched by
-// query. want returns the freshness a result should have.
-//
-// Two concerns shape the flow:
-//
-//  1. Deadlock avoidance: the candidate IDs are collected DURING the streaming read, and the
-//     re-read + upsert happen AFTER the read completes. Upserting inside the GetByQueryFn callback
-//     would issue writes on a second pool connection while the read stream still holds the first
-//     one open; under a large result set Postgres blocks writing to the client (full send buffer)
-//     while the client blocks acquiring a connection for the upsert, a deadlock. Only candidate
-//     IDs are retained, so memory stays proportional to churn, not to the whole result set.
-//
-//  2. Lost-update avoidance: freshness lives inside the serialized proto, so the whole row is
-//     re-upserted. A concurrent ingest (UpsertResult) could write a newer result between the read
-//     and the upsert; re-upserting the old snapshot would revert it. Each batch therefore takes
-//     the key fence on its IDs, re-reads the current rows under the lock, recomputes freshness,
-//     and upserts only rows that still need it. Ingest takes the same fence, so inside the lock
-//     the re-read always sees the latest row. This matches the CVE suppress precedent, which
-//     guards its read-modify-upsert with a KeyFence.
-func (d *datastoreImpl) updateFreshness(ctx context.Context, query *v1.Query, want func(*storage.ComplianceOperatorCheckResultV2) storage.ComplianceOperatorCheckResultV2_DataFreshness, errMsg string) (int64, error) {
+// markStale performs a read-modify-upsert that flips to STALE every result matched by query for
+// which shouldStale reports true. Results already STALE, or for which shouldStale is false, are
+// left untouched.
+func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldStale func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
+	// Collect IDs during the read, upsert after it completes: upserting inside the callback would
+	// need a second connection while this stream holds one open, which can deadlock on a large
+	// result set. Keeping only the IDs bounds memory to the churn, not the whole result set.
 	var candidateIDs []string
 	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
-		if result.GetDataFreshness() != want(result) {
+		if result.GetDataFreshness() != storage.ComplianceOperatorCheckResultV2_STALE && shouldStale(result) {
 			candidateIDs = append(candidateIDs, result.GetId())
 		}
 		return nil
@@ -578,6 +510,9 @@ func (d *datastoreImpl) updateFreshness(ctx context.Context, query *v1.Query, wa
 			keys = append(keys, []byte(id))
 		}
 
+		// Re-read and upsert under the key fence: freshness lives in the serialized proto, so the
+		// whole row is rewritten. Ingest takes the same fence, so the re-read sees any concurrent
+		// write and we never revert a newer result to an older snapshot.
 		err := d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
 			results, _, err := d.store.GetMany(ctx, batchIDs)
 			if err != nil {
@@ -585,11 +520,10 @@ func (d *datastoreImpl) updateFreshness(ctx context.Context, query *v1.Query, wa
 			}
 			changed := results[:0]
 			for _, result := range results {
-				w := want(result)
-				if result.GetDataFreshness() == w {
+				if result.GetDataFreshness() == storage.ComplianceOperatorCheckResultV2_STALE || !shouldStale(result) {
 					continue
 				}
-				result.DataFreshness = w
+				result.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
 				changed = append(changed, result)
 			}
 			if len(changed) == 0 {
