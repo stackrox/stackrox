@@ -22,6 +22,7 @@ import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/compone
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
@@ -72,7 +73,9 @@ type StaleScanAlertProps = {
 };
 
 function StaleScanAlert({ staleCount, resultsView }: StaleScanAlertProps) {
-    if (staleCount === 0) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    if (staleCount === 0 || !isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA')) {
         return null;
     }
 
