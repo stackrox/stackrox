@@ -38,6 +38,9 @@ type ProcessWorkload struct {
 	ProcessInterval time.Duration `yaml:"processInterval"`
 	AlertRate       float32       `yaml:"alertRate"`
 	ActiveProcesses bool          `yaml:"activeProcesses"`
+	// NumArgs, when > 0, gives bad processes one of NumArgs distinct Args values so
+	// each is a distinct violation instead of deduping. 0 (default) keeps fixed Args.
+	NumArgs int `yaml:"numArgs"`
 }
 
 // NetworkWorkload defines the rate and size of network flows

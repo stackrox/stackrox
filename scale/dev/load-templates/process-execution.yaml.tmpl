@@ -25,3 +25,4 @@ deploymentWorkload:
     processWorkload:
       processInterval: __RATE__   # per-pod interval; event rate ~= 300 pods / interval
       alertRate: 1.0              # 1.0 => every process is a flagged binary -> violation
+      numArgs: 5000000            # distinct Args values so each process is a distinct violation

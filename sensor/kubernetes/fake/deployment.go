@@ -577,7 +577,7 @@ func (w *WorkloadManager) manageProcessesForPod(ctx context.Context, podSig *con
 			} else {
 				// If less than the rate, then it's a bad process
 				if rand.Float32() < processWorkload.AlertRate {
-					w.processes.Process(getBadProcess(containerID))
+					w.processes.Process(getBadProcess(containerID, processWorkload.NumArgs))
 				} else {
 					goodProcess := getGoodProcess(containerID)
 					w.processes.Process(goodProcess)
