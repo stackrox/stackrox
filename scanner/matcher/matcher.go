@@ -326,20 +326,11 @@ func (m *matcherImpl) Ready(ctx context.Context) error {
 	return nil
 }
 
-// selectDefaultTransport returns the HTTP transport to use for external requests
-// (requests not routed to Central or Sensor by TransportMux).
-//
-// In release builds, external requests are denied by default. Setting
-// allowExternalVulnURLs to true overrides this and allows external HTTP requests,
-// which is intended for testing environments such as PR Checks.
-//
-// In non-release (development) builds, external requests are always allowed
-// regardless of allowExternalVulnURLs.
+// selectDefaultTransport returns the fallback transport for requests not routed to Central or Sensor.
+// Release builds deny those requests unless external vulnerability URLs are explicitly allowed.
 func selectDefaultTransport(ctx context.Context, releaseBuild, allowExternalVulnURLs bool) http.RoundTripper {
-	// Using http.DefaultTransport instead of httputil.DefaultTransport, as the Matcher
-	// should never have a need to reach out to a server with untrusted certificates.
-	// Note: http.DefaultTransport has already been modified to handle configured proxies.
-	// See scanner/cmd/scanner/main.go.
+	// Scanner startup configures proxy handling on http.DefaultTransport.
+	// Unlike httputil.DefaultTransport, it requires trusted TLS certificates.
 	if !releaseBuild {
 		return http.DefaultTransport
 	}
