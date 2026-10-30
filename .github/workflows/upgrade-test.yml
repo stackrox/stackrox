@@ -91,6 +91,7 @@ jobs:
           ref: ${{ github.ref_name }}
       - uses: stackrox/actions/infra/install-infractl@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/install-infractl@v1
       - uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
+        id: gcp-auth
         with:
           credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
       - name: "Set up Cloud SDK"
