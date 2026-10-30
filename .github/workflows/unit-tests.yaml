@@ -187,14 +187,18 @@ jobs:
         echo "Probe outcome: pass"
       if: env.CI_RUN_SUITE == 'true'
   ui-component:
-    name: >-
+    name: |-
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}ui-component
     needs: detect-changes
-    if: "!needs.detect-changes.outputs.files || contains(needs.detect-changes.outputs.files,
-      '^ui/') || contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')"
+    if: "${{ !cancelled() }}"
     runs-on: ubuntu-24.04
     steps:
+    - name: Require change detection
+      if: needs.detect-changes.result == 'failure'
+      run: |
+        echo "Change detection failed; suite eligibility is unknown." >&2
+        exit 1
     - name: 'Label/check probe: pass'
       run: |
         python3 - <<'PY'
@@ -207,6 +211,11 @@ jobs:
             summary.write("```json\n" + json.dumps(record, indent=2) + "\n```\n")
         PY
         echo "Probe outcome: pass"
+      if: env.CI_RUN_SUITE == 'true'
+    env:
+      CI_RUN_SUITE: "${{ needs.detect-changes.result == 'success' && (!needs.detect-changes.outputs.files
+        || contains(needs.detect-changes.outputs.files, '^ui/') || contains(needs.detect-changes.outputs.files,
+        '^.github/actions/cache-ui-dependencies/')) }}"
   local-roxctl-tests:
     name: |-
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
@@ -237,13 +246,18 @@ jobs:
         echo "Probe outcome: pass"
       if: env.CI_RUN_SUITE == 'true'
   shell-unit-tests:
-    name: >-
+    name: |-
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}shell-unit-tests
     needs: detect-changes
-    if: "${{ !needs.detect-changes.outputs.ui_only }}"
+    if: "${{ !cancelled() }}"
     runs-on: ubuntu-24.04
     steps:
+    - name: Require change detection
+      if: needs.detect-changes.result == 'failure'
+      run: |
+        echo "Change detection failed; suite eligibility is unknown." >&2
+        exit 1
     - name: 'Label/check probe: pass'
       run: |
         python3 - <<'PY'
@@ -256,14 +270,23 @@ jobs:
             summary.write("```json\n" + json.dumps(record, indent=2) + "\n```\n")
         PY
         echo "Probe outcome: pass"
+      if: env.CI_RUN_SUITE == 'true'
+    env:
+      CI_RUN_SUITE: "${{ needs.detect-changes.result == 'success' && (!needs.detect-changes.outputs.ui_only)
+        }}"
   openshift-ci-unit-tests:
-    name: >-
+    name: |-
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}openshift-ci-unit-tests
     needs: detect-changes
-    if: "${{ !needs.detect-changes.outputs.ui_only }}"
+    if: "${{ !cancelled() }}"
     runs-on: ubuntu-24.04
     steps:
+    - name: Require change detection
+      if: needs.detect-changes.result == 'failure'
+      run: |
+        echo "Change detection failed; suite eligibility is unknown." >&2
+        exit 1
     - name: 'Label/check probe: pass'
       run: |
         python3 - <<'PY'
@@ -276,30 +299,37 @@ jobs:
             summary.write("```json\n" + json.dumps(record, indent=2) + "\n```\n")
         PY
         echo "Probe outcome: pass"
+      if: env.CI_RUN_SUITE == 'true'
+    env:
+      CI_RUN_SUITE: "${{ needs.detect-changes.result == 'success' && (!needs.detect-changes.outputs.ui_only)
+        }}"
   sensor-integration-tests:
-    name: >-
+    name: |-
       ${{ github.event.label.name && github.event.label.name != 'ci-dispatcher-enforce'
           && 'ignored-label-' || '' }}sensor-integration-tests
     needs:
     - detect-changes
     - ci-selection
-    if: |-
-      !cancelled() && (github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ci-dispatcher-enforce') && (needs.ci-selection.result != 'success' ||
-       (github.event_name == 'pull_request' &&
-        contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) ||
-       !needs.detect-changes.outputs.ui_only)
+    if: "${{ !cancelled() }}"
     env:
       KUBECONFIG: "/tmp/kubeconfig"
+      CI_RUN_SUITE: |-
+        ${{ (github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ci-dispatcher-enforce') && (needs.ci-selection.result != 'success' ||
+         (github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) ||
+         !needs.detect-changes.outputs.ui_only) }}
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      if: env.CI_RUN_SUITE == 'true'
     - name: Select CI job
       id: ci-decision
       env:
         CI_SELECT_PLANNER_RESULT: "${{ needs.ci-selection.result }}"
         CI_SELECT_DECISIONS: "${{ needs.ci-selection.outputs.decisions }}"
       run: bash ci/select/gha-consume.sh sensor-integration-tests
+      if: env.CI_RUN_SUITE == 'true'
     - name: 'Label/check probe: pass'
       run: |
         python3 - <<'PY'
@@ -312,7 +342,7 @@ jobs:
             summary.write("```json\n" + json.dumps(record, indent=2) + "\n```\n")
         PY
         echo "Probe outcome: pass"
-      if: steps.ci-decision.outputs.action != 'skip'
+      if: env.CI_RUN_SUITE == 'true' && (steps.ci-decision.outputs.action != 'skip')
 'on':
   push:
     tags:

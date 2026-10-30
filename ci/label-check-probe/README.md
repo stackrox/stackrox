@@ -1,14 +1,16 @@
 # Disposable label/check aggregation probe
 
-Do not merge this branch. It intentionally fails required checks and removes
+Do not merge this branch. It intentionally fails selected checks and removes
 test execution from the two affected workflows. The probe branch starts at
 core commit `3d43723521c41e5382ebc5ce53e8ec9f8b46f8c9` from PR #23716.
-The disposable PR targets `master`: the core branch has no required-check rules.
+The disposable PR targets `piotr/ROX-37751-ci-selection-core`. That base has no
+required-check rules, so the experiment verifies emitted names and conclusions
+rather than the final effect on the `master` merge gate.
 
 ## Probe behavior
 
 The Unit Tests and e2e-dispatch workflows keep their event subscriptions,
-job identities, job-level conditions, matrices, concurrency groups, selection
+job identities, matrices, concurrency groups, selection
 planner, change detector, and reusable-workflow call chains. Their runners
 execute small probes instead of suites, image waits, or cluster operations.
 Container setup and test-reporting outputs are omitted. E2E dispatch treats
@@ -23,17 +25,24 @@ The PostgreSQL-upgrade eligibility stub returns true so that check also starts.
 | `e2e-gke-upgrade-tests / gke-upgrade-tests-sensor` | Wait ten minutes, then fail |
 | Other eligible checks in these workflows | Success |
 
-The probe does not introduce a check-name fix. Planner and detector behavior
-is real. Existing unrelated workflows can still run normally on the PR.
+UI component, shell, OpenShift wrapper, and Sensor jobs start with
+`!cancelled()` so GitHub evaluates their check names. Their suite eligibility
+is enforced at step level through `CI_RUN_SUITE`. The three detector-dependent
+jobs fail explicitly if detection fails. Ignored label events start no probe
+steps, and their check names receive the `ignored-label-` prefix.
+
+Planner and detector behavior is real. Existing unrelated workflows can still
+run normally on the PR.
 
 ## Run the experiment
 
-1. Open the disposable PR as a draft against `master`, with `ai-assisted`.
+1. Open the disposable PR as a draft against the core feature branch, with
+   `ai-assisted`.
 2. Wait for the two intentional failures and for PostgreSQL and Sensor upgrade
    probes to be in progress. Collect a baseline snapshot with the command below.
 3. Remove the `ai-assisted` label, then wait for the label-event workflow runs
-   and their evidence collector to finish. Capture the merge box, including the
-   individual required-check rows, while the original held checks are pending.
+   and their evidence collector to finish. Capture the check list, including
+   ordinary and ignored-label names, while the original held checks are pending.
 4. Add `ai-assisted` back and inspect the next label-event results. Do not push
    between these steps: the comparison must use the same PR head and merge SHA.
 5. Let the held checks fail, then repeat the label removal/addition to observe
@@ -67,13 +76,12 @@ Probe steps also print event metadata to their summaries. API permission errors
 are preserved in JSON; a local collection with the authenticated `gh` CLI can
 fill gaps in the workflow token's access.
 
-Compare the exact required contexts and GitHub App IDs with check runs before
-and after the unrelated label event. Inspect whether skipped matrix jobs retain
+Compare the exact `master` required contexts and GitHub App IDs separately with
+check runs before and after the unrelated label event. Inspect whether skipped matrix jobs retain
 matrix suffixes, whether skipped reusable callers publish their parent name or
 their nested names, and whether existing prefixed jobs remain isolated.
 An overall blocked merge state alone is inconclusive because other checks and
 review requirements can also block this disposable PR.
 
-Only after establishing those results should a candidate naming fix be applied
-and the same experiment repeated on its new SHA. Close the disposable PR after
-the evidence has been downloaded; never merge its probe stubs.
+Repeat the same-head experiment for each candidate naming fix. Close the
+disposable PR after the evidence has been downloaded; never merge its probe stubs.
