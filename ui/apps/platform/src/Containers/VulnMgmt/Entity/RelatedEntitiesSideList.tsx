@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 
 import { defaultCountKeyMap as countKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import { getVulnerabilityManagementEntityTypesByRelationship } from 'utils/entityRelationships';
 import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 
@@ -21,7 +20,6 @@ function RelatedEntitiesSideList({
     entityContext,
 }: RelatedEntitiesSideListProps): ReactNode {
     const workflowState = useContext(workflowStateContext);
-    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
     const { useCase } = workflowState;
     if (!useCase) {
         return null;
@@ -30,7 +28,7 @@ function RelatedEntitiesSideList({
     const matchRelationships = getVulnerabilityManagementEntityTypesByRelationship(
         entityType,
         'MATCHES'
-    ).filter((rel) => isLegacyScannerEnabled || rel !== 'CLUSTER_CVE');
+    );
 
     const matches = matchRelationships
         .map((matchEntity) => {
@@ -43,10 +41,7 @@ function RelatedEntitiesSideList({
             };
         })
         .filter((matchObj) => {
-            return (
-                entityType === 'CLUSTER_CVE' ||
-                (matchObj.count && !entityContext[matchObj.entityType])
-            );
+            return matchObj.count && !entityContext[matchObj.entityType];
         });
     const contains = getVulnerabilityManagementEntityTypesByRelationship(entityType, 'CONTAINS')
         .map((containEntity) => {

@@ -96,17 +96,5 @@ describe('queryService.', () => {
                 'CVE ID': 'CVE-2022-27223#ubuntu:20.04',
             });
         });
-
-        it('returns the query object for a CLUSTER CVE', () => {
-            const entityContext = {
-                CLUSTER_CVE: 'CVE-2020-8554#K8S_CVE',
-            };
-
-            const queryObject = queryService.entityContextToQueryObject(entityContext);
-
-            expect(queryObject).toEqual({
-                'CVE ID': 'CVE-2020-8554#K8S_CVE',
-            });
-        });
     });
 });

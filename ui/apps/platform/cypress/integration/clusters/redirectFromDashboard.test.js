@@ -27,6 +27,6 @@ describe.skip('Clusters', () => {
         }, staticResponseMapForClusters);
 
         // Replace with h2 if refactoring restores h1 element with Clusters
-        cy.get('h1:contains("Secure clusters with a reusable init bundle")');
+        cy.get('h1:contains("Secure clusters with a registration secret")');
     });
 });
