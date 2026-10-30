@@ -1,10 +1,6 @@
 import type { ParsedQs } from 'qs';
 
-import {
-    vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesPlatformCvesPath,
-    vulnerabilitiesVirtualMachineCvesPath,
-} from 'routePaths';
+import { vulnerabilitiesNodeCvesPath, vulnerabilitiesVirtualMachineCvesPath } from 'routePaths';
 import { vulnerabilitySeverities } from 'types/cve.proto';
 import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import type { SearchFilter } from 'types/search';
@@ -24,7 +20,6 @@ import { isFixableStatus, isVulnerabilitySeverityLabel } from '../types';
 import type {
     FixableStatus,
     NodeEntityTab,
-    PlatformEntityTab,
     QuerySearchFilter,
     VirtualMachineEntityTab,
     VulnerabilitySeverityLabel,
@@ -36,14 +31,12 @@ export type OverviewPageSearch = {
 } & (
     | { entityTab?: WorkloadEntityTab; vulnerabilityState: VulnerabilityState }
     | { entityTab?: NodeEntityTab }
-    | { entityTab?: PlatformEntityTab }
     | { entityTab?: VirtualMachineEntityTab }
 );
 
 const baseUrlForCveMap = {
     Workload: '', // base URL provided by calling context
     Node: vulnerabilitiesNodeCvesPath,
-    Platform: vulnerabilitiesPlatformCvesPath,
     VirtualMachine: vulnerabilitiesVirtualMachineCvesPath,
 } as const;
 
@@ -74,23 +67,6 @@ export function getWorkloadEntityPagePath(
             return `deployments/${id}${queryString}`;
         default:
             return ensureExhaustive(workloadCveEntity);
-    }
-}
-
-export function getPlatformEntityPagePath(
-    platformCveEntity: PlatformEntityTab,
-    id: string,
-    queryOptions?: ParsedQs
-): string {
-    const queryString = getQueryString(queryOptions);
-    switch (platformCveEntity) {
-        case 'CVE':
-            // We need to encode the id here due to the `#` character literal in Platform CVE IDs
-            return `${vulnerabilitiesPlatformCvesPath}/cves/${encodeURIComponent(id)}${queryString}`;
-        case 'Cluster':
-            return `${vulnerabilitiesPlatformCvesPath}/clusters/${id}${queryString}`;
-        default:
-            return ensureExhaustive(platformCveEntity);
     }
 }
 

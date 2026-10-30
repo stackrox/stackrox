@@ -14,7 +14,6 @@ export type ResourceType =
     | 'CVE'
     | 'IMAGE_CVE'
     | 'NODE_CVE'
-    | 'CLUSTER_CVE'
     | 'POLICY';
 
 export const resourceTypes = {
@@ -31,7 +30,6 @@ export const resourceTypes = {
     CVE: 'CVE',
     IMAGE_CVE: 'IMAGE_CVE',
     NODE_CVE: 'NODE_CVE',
-    CLUSTER_CVE: 'CLUSTER_CVE',
     POLICY: 'POLICY',
 } as const;
 
@@ -50,7 +48,6 @@ export const searchCategories: Record<string, SearchCategory> = {
     NODE: 'NODES',
     CLUSTER: 'CLUSTERS',
     CVE: 'VULNERABILITIES',
-    CLUSTER_CVE: 'CLUSTER_VULNERABILITIES',
     IMAGE_CVE: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
     NODE_CVE: 'NODE_VULNERABILITIES',
     IMAGE_COMPONENT: 'IMAGE_COMPONENTS_V2', // flat CVE data model

@@ -202,6 +202,7 @@ jobs:
           path: |
             ui/build
             ui/apps/platform/package-lock.json
+          retention-days: '1'
 
   pre-build-cli:
     needs: define-job-matrix
@@ -274,6 +275,7 @@ jobs:
           name: cli-build
           path: cli-build.tar
           compression-level: 1
+          retention-days: '1'
 
   pre-build-go-binaries:
     strategy:
@@ -361,6 +363,7 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tar
           compression-level: 1
+          retention-days: '1'
 
   pre-build-docs:
     runs-on: ubuntu-24.04
@@ -392,6 +395,7 @@ jobs:
           name: docs-build
           path: |
             image/rhel/docs
+          retention-days: '1'
 
   pre-build-oss-notice:
     runs-on: ubuntu-24.04
@@ -433,6 +437,7 @@ jobs:
       with:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
+        retention-days: '1'
 
   build-and-push-db:
     runs-on: ubuntu-24.04
