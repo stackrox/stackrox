@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
+	riskPkg "github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -167,6 +168,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 
 	deployment.RiskScore = risk.GetScore()
 	deployment.RiskPriorityClassification = risk.GetPriorityClassification()
+	deployment.RiskPrioritySortOrder = riskPkg.PriorityClassificationSortOrder(risk.GetPriorityClassification())
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
 	}

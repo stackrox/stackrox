@@ -29,6 +29,7 @@ import (
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
+	riskPkg "github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -341,6 +342,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	// Update deployment with latest risk score and classification.
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
 	deployment.RiskPriorityClassification = storage.RiskPriorityClassification(ds.deploymentRanker.GetPriorityClassificationForID(deployment.GetId()))
+	deployment.RiskPrioritySortOrder = riskPkg.PriorityClassificationSortOrder(deployment.GetRiskPriorityClassification())
 
 	// Deployments that run intermittently and do not have images that are referenced by digest
 	// should maintain the digest of the last used image
@@ -480,7 +482,6 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 func (ds *datastoreImpl) updateListDeploymentPriority(deployments ...*storage.ListDeployment) {
 	for _, deployment := range deployments {
 		deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
-		deployment.RiskPriorityClassification = storage.RiskPriorityClassification(ds.deploymentRanker.GetPriorityClassificationForID(deployment.GetId()))
 	}
 }
 
