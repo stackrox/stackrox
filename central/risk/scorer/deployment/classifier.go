@@ -18,7 +18,7 @@ type classificationInputs struct {
 }
 
 func classifyRisk(inputs classificationInputs) storage.RiskPriorityClassification {
-	if hasCriticalPolicyViolation(inputs.riskResults) {
+	if hasConfirmedThreatPolicyViolation(inputs.riskResults) {
 		return storage.RiskPriorityClassification_RISK_PRIORITY_RESPOND_NOW
 	}
 	if hasRiskResult(inputs.riskResults, deploymentMultiplier.ProcessBaselineHeading) {
@@ -36,7 +36,7 @@ func classifyRisk(inputs classificationInputs) storage.RiskPriorityClassificatio
 		}
 	}
 
-	if powerfulIdentity || privileged || hasImportantOrCriticalVulnerability(vuln) {
+	if powerfulIdentity || privileged || hasImportantOrCriticalVulnerability(vuln) || hasCriticalPolicyViolation(inputs.riskResults) {
 		return storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE
 	}
 	if len(inputs.riskResults) != 0 || hasAnyVulnerability(vuln) || hasImagePostureRisk(inputs.imageRiskResults) {
@@ -55,12 +55,28 @@ func hasRiskResult(results []*storage.Risk_Result, name string) bool {
 }
 
 func hasCriticalPolicyViolation(results []*storage.Risk_Result) bool {
+	return hasPolicyViolationMatching(results, func(message string) bool {
+		return strings.Contains(message, "severity: Critical")
+	})
+}
+
+func hasConfirmedThreatPolicyViolation(results []*storage.Risk_Result) bool {
+	return hasPolicyViolationMatching(results, func(message string) bool {
+		lowerMessage := strings.ToLower(message)
+		return strings.Contains(lowerMessage, "cryptocurrency") ||
+			strings.Contains(lowerMessage, "crypto mining") ||
+			strings.Contains(lowerMessage, "miner") ||
+			strings.Contains(lowerMessage, "malware")
+	})
+}
+
+func hasPolicyViolationMatching(results []*storage.Risk_Result, matches func(string) bool) bool {
 	for _, result := range results {
 		if result.GetName() != deploymentMultiplier.PolicyViolationsHeading {
 			continue
 		}
 		for _, factor := range result.GetFactors() {
-			if strings.Contains(factor.GetMessage(), "severity: Critical") {
+			if matches(factor.GetMessage()) {
 				return true
 			}
 		}

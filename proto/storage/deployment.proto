@@ -278,7 +278,7 @@ message SecurityContext {
   bool allow_privilege_escalation = 7; // @gotags: policy:"Allow Privilege Escalation"
 }
 
-// Next available tag: 9
+// Next available tag: 11
 message ListDeployment {
   string id = 1;
   uint64 hash = 8;
@@ -289,4 +289,5 @@ message ListDeployment {
   google.protobuf.Timestamp created = 6;
   int64 priority = 7;
   RiskPriorityClassification risk_priority_classification = 9;
+  float risk_score = 10;
 }

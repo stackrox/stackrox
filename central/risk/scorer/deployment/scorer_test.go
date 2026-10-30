@@ -98,13 +98,13 @@ func TestScore(t *testing.T) {
 	actualRisk := scorer.Score(ctx, deployment, getMockImagesRisk())
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
-	assert.Equal(t, storage.RiskPriorityClassification_RISK_PRIORITY_RESPOND_NOW, actualRisk.GetPriorityClassification())
+	assert.Equal(t, storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW, actualRisk.GetPriorityClassification())
 
 	expectedRiskScore = 39.592
 	actualRisk = scorer.Score(ctx, deployment, getMockImagesRisk())
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
-	assert.Equal(t, storage.RiskPriorityClassification_RISK_PRIORITY_RESPOND_NOW, actualRisk.GetPriorityClassification())
+	assert.Equal(t, storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW, actualRisk.GetPriorityClassification())
 
 	mockCtrl.Finish()
 }
