@@ -259,49 +259,63 @@ jobs:
 
   ui:
     needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
+    env:
+      CI_RUN_SUITE: >-
+        ${{ needs.detect-changes.result == 'success' &&
+        (!needs.detect-changes.outputs.files ||
+         contains(needs.detect-changes.outputs.files, '^ui/') ||
+         contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')) }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
+    - name: Require change detection
+      if: needs.detect-changes.result == 'failure'
+      run: |
+        echo "Change detection failed; suite eligibility is unknown." >&2
+        exit 1
+
     - name: Checkout
+      if: env.CI_RUN_SUITE == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
     - uses: ./.github/actions/job-preamble
+      if: env.CI_RUN_SUITE == 'true'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Node.js
+      if: env.CI_RUN_SUITE == 'true'
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
       with:
         node-version-file: ui/package.json
 
     - name: Cache UI dependencies
       id: cache-ui
+      if: env.CI_RUN_SUITE == 'true'
       uses: ./.github/actions/cache-ui-dependencies
 
     - name: Install UI dependencies
-      if: steps.cache-ui.outputs.cache-hit != 'true'
+      if: env.CI_RUN_SUITE == 'true' && steps.cache-ui.outputs.cache-hit != 'true'
       run: make -C ui deps
 
     - name: Skip UI deps on cache hit
-      if: steps.cache-ui.outputs.cache-hit == 'true'
+      if: env.CI_RUN_SUITE == 'true' && steps.cache-ui.outputs.cache-hit == 'true'
       run: touch ui/deps
 
     - name: UI Unit Tests
+      if: env.CI_RUN_SUITE == 'true'
       run: make ui-test
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && env.CI_RUN_SUITE == 'true'
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && env.CI_RUN_SUITE == 'true'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -378,8 +392,10 @@ jobs:
 
   local-roxctl-tests:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
+    env:
+      CI_RUN_SUITE: ${{ needs.detect-changes.result == 'success' && !needs.detect-changes.outputs.ui_only }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -388,31 +404,42 @@ jobs:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
+    - name: Require change detection
+      if: needs.detect-changes.result == 'failure'
+      run: |
+        echo "Change detection failed; suite eligibility is unknown." >&2
+        exit 1
+
     - name: Checkout
+      if: env.CI_RUN_SUITE == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
+      if: env.CI_RUN_SUITE == 'true'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
+      if: env.CI_RUN_SUITE == 'true'
       uses: ./.github/actions/cache-go-dependencies
 
     - uses: ./.github/actions/handle-tagged-build
+      if: env.CI_RUN_SUITE == 'true'
 
     - name: Local roxctl tests
+      if: env.CI_RUN_SUITE == 'true'
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && env.CI_RUN_SUITE == 'true'
       with:
         paths: 'roxctl-test-output/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && env.CI_RUN_SUITE == 'true'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
