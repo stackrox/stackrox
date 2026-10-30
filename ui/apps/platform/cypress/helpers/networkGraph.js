@@ -1,4 +1,3 @@
-import * as api from '../constants/apiEndpoints';
 import { interactAndWaitForResponses } from './request';
 
 const networkGraphClusterAlias = 'networkgraph/cluster/id';
@@ -12,17 +11,16 @@ const routeMatcherMapForClusterInNetworkGraph = {
 
 export const clustersAlias = 'clusters';
 export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
-export const searchMetadataOptionsAlias = 'search/metadata/options';
 export const namespaceAlias = 'namespaces';
 
+// The Network Graph migrated from the legacy SearchFilterInput (which fetched
+// /v1/search/metadata/options?categories=DEPLOYMENTS on mount) to the CompoundSearchFilter, whose
+// autocomplete fetches suggestions via GraphQL only on user interaction. So there is no longer a
+// search/metadata/options request to wait for when the page loads.
 const routeMatcherMapToVisitNetworkGraph = {
     [clustersAlias]: {
         method: 'GET',
         url: '/v1/sac/clusters?permissions=**',
-    },
-    [searchMetadataOptionsAlias]: {
-        method: 'GET',
-        url: api.search.optionsCategories('DEPLOYMENTS'),
     },
     [namespaceAlias]: {
         method: 'GET',
