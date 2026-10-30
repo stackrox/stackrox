@@ -38,6 +38,10 @@ type centralVersionTestSuite struct {
 	suite.Suite
 }
 
+func (c *centralVersionTestSuite) SetupTest() {
+	testutils.SetMainVersion(c.T(), "5.0.0-testing")
+}
+
 func (c *centralVersionTestSuite) TearDownTest() {
 	versioncheck.UnsuppressVersionMismatchWarningForTesting(c.T())
 }
@@ -54,7 +58,6 @@ func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 }
 
 func (c *centralVersionTestSuite) TestJSONOutput() {
-	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
 	ts := c.setupCommand("5.0.2")
@@ -74,7 +77,6 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 }
 
 func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
-	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
 	ts := c.setupCommand("5.6.0")
@@ -93,7 +95,6 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 }
 
 func (c *centralVersionTestSuite) TestTextOutputFormat() {
-	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
 	ts := c.setupCommand("5.0.2")
