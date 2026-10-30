@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       dry_run:
-        description: "Validate without publishing; send failures to the test Slack channel"
+        description: "Upload validated bundles to the test bucket; send failures to the test Slack channel"
         required: false
         type: boolean
         default: false
@@ -86,7 +86,7 @@ jobs:
     - name: Authenticate with GCS
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
-        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+        credentials_json: ${{ secrets[inputs.dry_run == true && 'GOOGLE_SA_CIRCLECI_SCANNER' || 'GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER'] }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
@@ -365,11 +365,22 @@ jobs:
         fi
         echo "Bundle import validation passed for stream '${STREAM}'"
 
+    - name: Authenticate with GCS for upload
+      if: steps.check-changes.outputs.changed == 'true'
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets[inputs.dry_run == true && 'GOOGLE_SA_CIRCLECI_SCANNER' || 'GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER'] }}
+
     - name: Upload bundle
-      if: steps.check-changes.outputs.changed == 'true' && inputs.dry_run != true
+      if: steps.check-changes.outputs.changed == 'true'
+      env:
+        DRY_RUN: ${{ inputs.dry_run == true }}
       run: |
         set -euo pipefail
         bundle_obj="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/vulnerabilities.zip"
+        if [[ "$DRY_RUN" == "true" ]]; then
+            bundle_obj="gs://scanner-v4-test/${GCS_PREFIX}/test-runs/${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}/${STREAM}/vulnerabilities.zip"
+        fi
         gcloud storage cp vulnerabilities.zip "$bundle_obj"
         echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
 
@@ -387,4 +398,4 @@ jobs:
     - uses: ./.github/actions/notify-slack-on-failure
       with:
         slack-webhook: ${{ secrets[inputs.dry_run == true && 'SLACK_CI_INTEGRATION_TESTING_WEBHOOK' || 'SLACK_ONCALL_SCANNER_WEBHOOK'] }}
-        context: ${{ inputs.dry_run == true && 'Dry run (bundle publication disabled)' || '' }}
+        context: ${{ inputs.dry_run == true && 'Dry run (test-bucket upload; no production publication)' || '' }}
