@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 
 import lib
@@ -15,6 +16,12 @@ import lib
 
 CASES = ("control", "manual-control", "N3a", "N3b", "N3c", "N3d-control", "N3d", "N4-missing", "N4-epoch", "N4-go-zero")
 IMAGE = "quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1"
+MIN_FREE_BYTES = 20 * 1024 ** 3
+STOP_FREE_BYTES = 4 * 1024 ** 3
+
+
+class DiskBudgetError(RuntimeError):
+    pass
 
 
 def main():
@@ -53,6 +60,8 @@ def main():
         "bundle_origin": checked["uri"], "bundle_generation": checked["metadata"]["generation"],
         "bundle_sha256": lib.digest(bundle), "healthy_run": healthy,
         "ci_image": IMAGE,
+        "driver_sha256": lib.digest(__file__),
+        "minimum_free_bytes": MIN_FREE_BYTES, "stop_free_bytes": STOP_FREE_BYTES,
     })
     selected = args.case or list(CASES)
     cases = ["control"]
@@ -63,26 +72,42 @@ def main():
                 cases.append(candidate)
     results = []
     passed = set()
+    cleanup_failed = False
     for case in cases:
         prerequisite = {"N3c": "manual-control", "N3d": "N3d-control"}.get(case, "control")
         if case != "control" and prerequisite not in passed:
             results.append({"case": case, "status": "Pending", "reason": f"Prerequisite {prerequisite} failed"})
             continue
+        free_before = shutil.disk_usage(evidence).free
+        if free_before < MIN_FREE_BYTES:
+            results.append({"case": case, "status": "Pending", "reason": "Disk budget blocks further local imports", "free_bytes": free_before})
+            lib.write_json(evidence / "results.json", results)
+            break
         cell = evidence / case
         cell.mkdir()
         suffix = uuid.uuid4().hex[:12]
         network, database, client = (f"t1-{kind}-{suffix}" for kind in ("net", "pg", "client"))
         created_network = False
+        process = None
+        stop_batch = False
+        resources = {"case": case, "directory": str(cell), "network": network,
+                     "database_name": database, "client_name": client,
+                     "free_before": free_before}
         try:
-            lib.command([args.runtime, "network", "create", network])
+            resources["network_id"] = lib.command([args.runtime, "network", "create", network]).decode().strip()
             created_network = True
-            lib.command([
+            resources["database_id"] = lib.command([
                 args.runtime, "run", "-d", "--name", database,
                 "--network", network, "--network-alias", "postgres",
                 "--label", "rox.t1.disposable=true",
                 "-e", "POSTGRES_USER=test", "-e", "POSTGRES_PASSWORD=test",
                 "-e", "POSTGRES_DB=matcher", "docker.io/library/postgres:15",
-            ])
+            ]).decode().strip()
+            database_info = json.loads(lib.command([args.runtime, "inspect", database]))[0]
+            assert database_info["Id"] == resources["database_id"]
+            assert database_info["Config"]["Labels"].get("rox.t1.disposable") == "true"
+            resources["database_mounts"] = database_info["Mounts"]
+            lib.write_json(cell / "resources.json", resources)
             command = [
                 args.runtime, "run", "--name", client, "--network", network,
                 "--user", f"{os.getuid()}:{os.getgid()}",
@@ -96,17 +121,29 @@ def main():
                 "--repo", "/repo", "--case", case, "--stream", args.stream,
                 "--timeout", str(args.timeout),
             ]
-            completed = subprocess.run(command, capture_output=True, text=True, timeout=args.timeout + 600)
-            (cell / "container.log").write_text(completed.stdout + completed.stderr)
+            with (cell / "container.log").open("wb") as output:
+                process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT)
+                deadline = time.monotonic() + args.timeout + 600
+                while process.poll() is None:
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        if shutil.disk_usage(evidence).free < STOP_FREE_BYTES:
+                            raise DiskBudgetError("Free disk fell below the safety reserve; this interrupted case is not a detection pass")
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError("Local case exceeded its execution deadline")
             report = cell / "evidence/result.json"
             if not report.exists():
                 raise RuntimeError("Container did not produce a case result; this is a setup failure")
             result = json.loads(report.read_text())
-            if completed.returncode != 0 or result["status"] != "Passed":
+            if process.returncode != 0 or result["status"] != "Passed":
                 result["status"] = "Failed"
             else:
                 passed.add(case)
             results.append(result)
+        except DiskBudgetError as error:
+            results.append({"case": case, "status": "Pending", "reason": str(error), "free_bytes": shutil.disk_usage(evidence).free})
+            stop_batch = True
         except Exception as error:
             results.append({"case": case, "status": "Failed", "error": str(error)})
         finally:
@@ -114,13 +151,37 @@ def main():
                 logs = subprocess.run([args.runtime, "logs", database], capture_output=True)
                 (cell / "postgres.log").write_bytes(logs.stdout + logs.stderr)
                 cleanup = []
-                for command in ([args.runtime, "rm", "-f", client], [args.runtime, "rm", "-f", database], [args.runtime, "network", "rm", network]):
+                for name in (client, database):
+                    inspected = subprocess.run([args.runtime, "inspect", name], capture_output=True, text=True)
+                    if inspected.returncode == 0:
+                        owner = json.loads(inspected.stdout)[0]
+                        assert owner["Config"]["Labels"].get("rox.t1.disposable") == "true"
+                        resources[name] = {"id": owner["Id"], "mounts": owner["Mounts"]}
+                lib.write_json(cell / "resources.json", resources)
+                for command in ([args.runtime, "rm", "-f", "--volumes", client], [args.runtime, "rm", "-f", "--volumes", database], [args.runtime, "network", "rm", network]):
                     outcome = subprocess.run(command, capture_output=True, text=True)
                     cleanup.append({"command": command, "exit": outcome.returncode, "output": outcome.stdout + outcome.stderr})
+                    if outcome.returncode and "No such" not in outcome.stderr:
+                        cleanup_failed = stop_batch = True
+                if process is not None and process.poll() is None:
+                    process.wait(timeout=30)
+                for mount in resources.get("database_mounts", []):
+                    if mount["Type"] == "volume":
+                        remaining = subprocess.run([args.runtime, "volume", "inspect", mount["Name"]], capture_output=True, text=True)
+                        if remaining.returncode == 0:
+                            cleanup_failed = stop_batch = True
+                            cleanup.append({"volume": mount["Name"], "error": "Task-owned anonymous database volume remains; no next case will start"})
+                        elif "no such volume" not in remaining.stderr.lower():
+                            cleanup_failed = stop_batch = True
+                            cleanup.append({"volume": mount["Name"], "error": "Volume absence could not be verified", "diagnostic": remaining.stderr})
+                resources["free_after_cleanup"] = shutil.disk_usage(evidence).free
+                lib.write_json(cell / "resources.json", resources)
                 lib.write_json(cell / "cleanup.json", cleanup)
             lib.write_json(evidence / "results.json", results)
+        if stop_batch:
+            break
     print(json.dumps(results, indent=2))
-    return 0 if results and all(r["status"] == "Passed" for r in results) else 1
+    return 0 if results and not cleanup_failed and all(r["status"] == "Passed" for r in results) else 1
 
 
 if __name__ == "__main__":
