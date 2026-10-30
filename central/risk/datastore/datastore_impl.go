@@ -91,10 +91,12 @@ func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID strin
 	}
 
 	return &storage.Risk{
-		Id:      risk.GetId(),
-		Subject: risk.GetSubject(),
-		Results: riskResults,
-		Score:   overallScore,
+		Id:                     risk.GetId(),
+		Subject:                risk.GetSubject(),
+		Results:                riskResults,
+		Score:                  overallScore,
+		PriorityClassification: risk.GetPriorityClassification(),
+		VulnerabilitySummary:   risk.GetVulnerabilitySummary(),
 	}, nil
 }
 

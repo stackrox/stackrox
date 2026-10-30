@@ -199,6 +199,7 @@ var (
 	SeccompProfileType            = newFieldLabel("Seccomp Profile Type")
 	ServiceAccountName            = newFieldLabel("Service Account")
 	ServiceAccountPermissionLevel = newFieldLabel("Service Account Permission Level")
+	RiskPriorityClassification    = newFieldLabel("Risk Priority Classification")
 	ServiceAccountLabel           = newFieldLabel("Service Account Label")
 	ServiceAccountAnnotation      = newFieldLabel("Service Account Annotation")
 	Created                       = newFieldLabel("Created")

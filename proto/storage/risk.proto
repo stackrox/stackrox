@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package storage;
 
+import "storage/cve.proto";
+
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
@@ -9,6 +11,8 @@ message Risk {
   string id = 1; // @gotags: sql:"pk"
   RiskSubject subject = 2;
   float score = 3; // @gotags: search:"Risk Score,hidden"
+  RiskPriorityClassification priority_classification = 5;
+  RiskVulnerabilitySummary vulnerability_summary = 6;
 
   message Result {
     message Factor {
@@ -22,11 +26,33 @@ message Risk {
   repeated Result results = 4;
 }
 
+message RiskVulnerabilitySummary {
+  VulnerabilitySeverity max_severity = 1;
+  int32 critical_count = 2;
+  int32 important_count = 3;
+  int32 moderate_count = 4;
+  int32 low_count = 5;
+  bool cisa_kev = 6;
+  bool known_ransomware_campaign = 7;
+  bool network_attack_vector = 8;
+  float max_epss_percentile = 9;
+}
+
 message RiskSubject {
   string id = 1;
   string namespace = 2; // @gotags: search:"Namespace"
   string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   RiskSubjectType type = 4; // @gotags: search:"Risk Subject Type,hidden"
+}
+
+// Next tag: 6
+enum RiskPriorityClassification {
+  RISK_PRIORITY_UNKNOWN = 0;
+  RISK_PRIORITY_RESPOND_NOW = 1;
+  RISK_PRIORITY_INVESTIGATE_NOW = 2;
+  RISK_PRIORITY_REMEDIATE_NOW = 3;
+  RISK_PRIORITY_REMEDIATE = 4;
+  RISK_PRIORITY_IMPROVE_POSTURE = 5;
 }
 
 // Next tag: 9

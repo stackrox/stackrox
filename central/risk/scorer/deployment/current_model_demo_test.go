@@ -53,11 +53,11 @@ func TestCurrentRiskModelDemo_InternalPortCountCanMaxReachability(t *testing.T) 
 
 	t.Logf("one EXTERNAL port: reachability multiplier = %.2fx", externalResult.GetScore())
 	t.Logf("ten INTERNAL ports: reachability multiplier = %.2fx", internalResult.GetScore())
-	t.Logf("demo point: reachability sums declared ports, so enough internal ports can max the multiplier even without proving vulnerable code, a live listener, observed traffic, or public reachability")
+	t.Logf("demo point: the patched reachability formula uses dominant exposure plus a small capped additional-port bonus, so one external port beats ten internal declared ports")
 
-	assert.InDelta(t, 1.3, externalResult.GetScore(), 0.0001)
-	assert.InDelta(t, 2.0, internalResult.GetScore(), 0.0001)
-	assert.Greater(t, internalResult.GetScore(), externalResult.GetScore())
+	assert.InDelta(t, 4.0, externalResult.GetScore(), 0.0001)
+	assert.InDelta(t, 1.84, internalResult.GetScore(), 0.0001)
+	assert.Greater(t, externalResult.GetScore(), internalResult.GetScore())
 }
 
 func TestCurrentRiskModelDemo_LowOrModerateCVEVolumeCanOutweighSingleCriticalExposure(t *testing.T) {
@@ -103,18 +103,19 @@ func TestCurrentRiskModelDemo_LowOrModerateCVEVolumeCanOutweighSingleCriticalExp
 	t.Logf("deployment score: EXTERNAL workload with 1 Critical CVE = %.4f", externalRisk.GetScore())
 	t.Logf("deployment score: INTERNAL workload with 34 Moderate CVEs = %.4f", internalModerateRisk.GetScore())
 	t.Logf("deployment score: INTERNAL workload with 251 Low CVEs = %.4f", internalLowRisk.GetScore())
-	t.Logf("demo point: enough low/moderate vulnerability volume saturates the image vulnerability multiplier and can beat a single critical CVE even when the critical workload has external exposure")
+	t.Logf("demo point: the patched vulnerability formula caps low/moderate CVE volume, so a single critical externally exposed workload is no longer buried by arbitrary low/moderate CVE volume")
 
-	assert.Greater(t, riskResultScore(t, moderateVolumeRisk, imageMultiplier.VulnerabilitiesHeading), riskResultScore(t, criticalVulnRisk, imageMultiplier.VulnerabilitiesHeading))
-	assert.Greater(t, riskResultScore(t, lowVolumeRisk, imageMultiplier.VulnerabilitiesHeading), riskResultScore(t, criticalVulnRisk, imageMultiplier.VulnerabilitiesHeading))
-	assert.Greater(t, internalModerateRisk.GetScore(), externalRisk.GetScore())
-	assert.Greater(t, internalLowRisk.GetScore(), externalRisk.GetScore())
+	assert.Greater(t, riskResultScore(t, criticalVulnRisk, imageMultiplier.VulnerabilitiesHeading), riskResultScore(t, moderateVolumeRisk, imageMultiplier.VulnerabilitiesHeading))
+	assert.Greater(t, riskResultScore(t, criticalVulnRisk, imageMultiplier.VulnerabilitiesHeading), riskResultScore(t, lowVolumeRisk, imageMultiplier.VulnerabilitiesHeading))
+	assert.Greater(t, externalRisk.GetScore(), internalModerateRisk.GetScore())
+	assert.Greater(t, externalRisk.GetScore(), internalLowRisk.GetScore())
 }
 
-func TestCurrentRiskModelDemo_ServiceAccountBlastRadiusDoesNotAffectScore(t *testing.T) {
+func TestCurrentRiskModelDemo_ServiceAccountBlastRadiusAffectsScore(t *testing.T) {
 	ctx := context.Background()
 	scorer := &deploymentScorerImpl{ConfiguredMultipliers: []deploymentMultiplier.Multiplier{
 		deploymentMultiplier.NewReachability(),
+		deploymentMultiplier.NewIdentityBlastRadius(),
 	}}
 
 	baseline := deploymentWithPorts("baseline", []storage.PortConfig_ExposureLevel{storage.PortConfig_INTERNAL})
@@ -130,9 +131,9 @@ func TestCurrentRiskModelDemo_ServiceAccountBlastRadiusDoesNotAffectScore(t *tes
 
 	t.Logf("baseline internal workload score = %.4f", baselineRisk.GetScore())
 	t.Logf("otherwise identical workload with CLUSTER_ADMIN service account and automounted token score = %.4f", clusterAdminRisk.GetScore())
-	t.Logf("demo point: service account permission level and automounted token exist on storage.Deployment, but this scorer does not use them as direct risk factors")
+	t.Logf("demo point: identity blast radius is now a direct score factor, but classification should still carry the primary semantic meaning")
 
-	assert.Equal(t, baselineRisk.GetScore(), clusterAdminRisk.GetScore())
+	assert.Greater(t, clusterAdminRisk.GetScore(), baselineRisk.GetScore())
 }
 
 type vulnCounts struct {
@@ -267,7 +268,7 @@ func TestCurrentRiskModelDemo_DangerousCasesCanBeBuriedByBenignScoreBoosters(t *
 			description: strings.Join([]string{
 				"public external exposure",
 				"one Critical network RCE CVE",
-				"assume high EPSS / CISA KEV metadata exists but is not used by this scorer",
+				"high EPSS / CISA KEV metadata can now raise image vulnerability contribution when present",
 				"mounted credential Secret",
 				"hardened otherwise",
 			}, "; "),
@@ -299,7 +300,7 @@ func TestCurrentRiskModelDemo_DangerousCasesCanBeBuriedByBenignScoreBoosters(t *
 				"service account has cluster-admin / cluster-wide Secret access",
 				"automounted service account token",
 				"internal port only",
-				"identity blast radius is present on storage.Deployment but is not a direct scoring factor",
+				"identity blast radius is now a direct scoring factor",
 			}, "; "),
 			deployment: clusterAdminDeployment(
 				deploymentWithPorts("cluster-wide-secret-reader", []storage.PortConfig_ExposureLevel{storage.PortConfig_INTERNAL}),
@@ -347,12 +348,7 @@ func TestCurrentRiskModelDemo_DangerousCasesCanBeBuriedByBenignScoreBoosters(t *
 		t.Logf("%d. %s score=%.4f -- %s", i+1, workload.name, workload.risk.GetScore(), workload.description)
 		logRiskResultsInScorerOrder(t, workload.risk)
 	}
-	t.Log("demo point: the first row should be posture/backlog work in a case-based UX, but the current multiplicative score ranks it above response/remediation cases with public exposure, Critical CVEs, runtime alerts, suspicious processes, credentials, privilege, or cluster-wide identity blast radius")
-
-	assert.Equal(t, "benign-noisy-backlog", scored[0].name)
-	for _, workload := range scored[1:] {
-		assert.Greater(t, scored[0].risk.GetScore(), workload.risk.GetScore(), "benign noisy backlog should bury %s under the current formula", workload.name)
-	}
+	t.Log("demo point: formula patches reduce the worst inversions, but the raw score still cannot fully express semantic classes such as Respond now, Remediate now, Remediate, and Improve posture")
 }
 
 type multiplierDisplay struct {
@@ -364,8 +360,9 @@ var deploymentMultiplierDisplayOrder = []multiplierDisplay{
 	{name: deploymentMultiplier.PolicyViolationsHeading, maxScore: 4},
 	{name: deploymentMultiplier.ProcessBaselineHeading, maxScore: 4},
 	{name: imageMultiplier.VulnerabilitiesHeading, maxScore: 4},
+	{name: deploymentMultiplier.IdentityBlastRadiusHeading, maxScore: 4},
 	{name: deploymentMultiplier.ServiceConfigHeading, maxScore: 2},
-	{name: deploymentMultiplier.ReachabilityHeading, maxScore: 2},
+	{name: deploymentMultiplier.ReachabilityHeading, maxScore: 4},
 	{name: imageMultiplier.RiskyComponentCountHeading, maxScore: 1.5},
 	{name: imageMultiplier.ComponentCountHeading, maxScore: 1.5},
 	{name: imageMultiplier.ImageAgeHeading, maxScore: 1.5},
