@@ -124,7 +124,7 @@ func (m *mockMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Me
 	return &v1.Metadata{Version: m.centralVersion}, nil
 }
 
-func (c *centralVersionTestSuite) createGRPCMockService(t *testing.T, server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer, func()) {
+func (c *centralVersionTestSuite) createMockServiceAndClient(t *testing.T, server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
@@ -155,7 +155,7 @@ func (c *centralVersionTestSuite) createGRPCMockService(t *testing.T, server *mo
 }
 
 func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr, interceptorOutput *bytes.Buffer, cleanup func()) {
-	conn, interceptorOut, closeFunc := c.createGRPCMockService(c.T(), server)
+	conn, interceptorOut, closeFunc := c.createMockServiceAndClient(c.T(), server)
 	env, out, errOut := mocks.NewEnvWithConn(conn, c.T())
 	cmd = &centralVersionCommand{
 		env:          env,
