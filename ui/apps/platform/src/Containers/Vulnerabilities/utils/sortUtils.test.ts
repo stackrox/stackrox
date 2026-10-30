@@ -7,7 +7,16 @@ import {
     syncSeveritySortOption,
 } from './sortUtils';
 
-const unavailableScores = [null, undefined, 'N/A', NaN, Infinity, -Infinity];
+const unavailableScores = [
+    null,
+    undefined,
+    'N/A',
+    'Not available',
+    'No score',
+    NaN,
+    Infinity,
+    -Infinity,
+];
 
 describe('safeToFixed', () => {
     it('should return a fixed-point string for a valid number', () => {
