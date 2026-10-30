@@ -59,20 +59,20 @@ function ExclusionScopeCard({
                         value={excludedDeploymentScope.scope?.namespace ?? ''}
                     />
                 </FormGroup>
-                <FormGroup label="Deployment">
+                <FormGroup label="Workload">
                     <TextInput
-                        aria-label="Deployment name"
+                        aria-label="Workload name"
                         name={`${scopePath}.name`}
                         onChange={handleChange}
-                        placeholder="Deployment name"
+                        placeholder="Workload name"
                         type="text"
                         value={excludedDeploymentScope.name ?? ''}
                     />
                 </FormGroup>
-                <FormGroup label="Deployment label">
+                <FormGroup label="Workload label">
                     <Flex direction={{ default: 'row' }} flexWrap={{ default: 'nowrap' }}>
                         <TextInput
-                            aria-label="Deployment label key"
+                            aria-label="Workload label key"
                             name={`${scopePath}.scope.label.key`}
                             onChange={handleChange}
                             placeholder="Label key"
@@ -80,7 +80,7 @@ function ExclusionScopeCard({
                             value={excludedDeploymentScope.scope?.label?.key ?? ''}
                         />
                         <TextInput
-                            aria-label="Deployment label value"
+                            aria-label="Workload label value"
                             name={`${scopePath}.scope.label.value`}
                             onChange={handleChange}
                             placeholder="Label value"
