@@ -45,7 +45,7 @@ func (c *centralVersionTestSuite) TearDownTest() {
 func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	ts := c.setupCommand(&mockMetadataServer{centralVersion: ""})
+	ts := c.setupCommand("")
 
 	err := ts.cmd.run(false)
 
@@ -57,7 +57,7 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	ts := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
+	ts := c.setupCommand("5.0.2")
 
 	err := ts.cmd.run(true)
 	c.Require().NoError(err)
@@ -77,7 +77,7 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	ts := c.setupCommand(&mockMetadataServer{centralVersion: "5.6.0"})
+	ts := c.setupCommand("5.6.0")
 
 	err := ts.cmd.run(true)
 
@@ -96,7 +96,7 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	ts := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
+	ts := c.setupCommand("5.0.2")
 
 	err := ts.cmd.run(false)
 	c.Require().NoError(err)
@@ -157,7 +157,8 @@ func (c *centralVersionTestSuite) createMockServiceAndClient(t *testing.T, serve
 	return conn, &interceptorOutput
 }
 
-func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) *testSetup {
+func (c *centralVersionTestSuite) setupCommand(centralVersion string) *testSetup {
+	server := &mockMetadataServer{centralVersion: centralVersion}
 	conn, interceptorOut := c.createMockServiceAndClient(c.T(), server)
 	env, out, _ := mocks.NewEnvWithConn(conn, c.T())
 	cmd := &centralVersionCommand{
