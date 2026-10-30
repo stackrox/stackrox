@@ -260,9 +260,10 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Namespace: "my-namespace",
 	}
 	expectedDeployment := &storage.Deployment{
-		Id:                "id",
-		Namespace:         "my-namespace",
-		PlatformComponent: false,
+		Id:                    "id",
+		Namespace:             "my-namespace",
+		RiskPrioritySortOrder: 99,
+		PlatformComponent:     false,
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
@@ -276,9 +277,10 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Namespace: "kube-123",
 	}
 	expectedDeployment = &storage.Deployment{
-		Id:                "id",
-		Namespace:         "kube-123",
-		PlatformComponent: true,
+		Id:                    "id",
+		Namespace:             "kube-123",
+		RiskPrioritySortOrder: 99,
+		PlatformComponent:     true,
 	}
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)

@@ -21,6 +21,65 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Next tag: 6
+type RiskPriorityClassification int32
+
+const (
+	RiskPriorityClassification_RISK_PRIORITY_UNKNOWN         RiskPriorityClassification = 0
+	RiskPriorityClassification_RISK_PRIORITY_RESPOND_NOW     RiskPriorityClassification = 1
+	RiskPriorityClassification_RISK_PRIORITY_INVESTIGATE_NOW RiskPriorityClassification = 2
+	RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW   RiskPriorityClassification = 3
+	RiskPriorityClassification_RISK_PRIORITY_REMEDIATE       RiskPriorityClassification = 4
+	RiskPriorityClassification_RISK_PRIORITY_IMPROVE_POSTURE RiskPriorityClassification = 5
+)
+
+// Enum value maps for RiskPriorityClassification.
+var (
+	RiskPriorityClassification_name = map[int32]string{
+		0: "RISK_PRIORITY_UNKNOWN",
+		1: "RISK_PRIORITY_RESPOND_NOW",
+		2: "RISK_PRIORITY_INVESTIGATE_NOW",
+		3: "RISK_PRIORITY_REMEDIATE_NOW",
+		4: "RISK_PRIORITY_REMEDIATE",
+		5: "RISK_PRIORITY_IMPROVE_POSTURE",
+	}
+	RiskPriorityClassification_value = map[string]int32{
+		"RISK_PRIORITY_UNKNOWN":         0,
+		"RISK_PRIORITY_RESPOND_NOW":     1,
+		"RISK_PRIORITY_INVESTIGATE_NOW": 2,
+		"RISK_PRIORITY_REMEDIATE_NOW":   3,
+		"RISK_PRIORITY_REMEDIATE":       4,
+		"RISK_PRIORITY_IMPROVE_POSTURE": 5,
+	}
+)
+
+func (x RiskPriorityClassification) Enum() *RiskPriorityClassification {
+	p := new(RiskPriorityClassification)
+	*p = x
+	return p
+}
+
+func (x RiskPriorityClassification) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RiskPriorityClassification) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_risk_proto_enumTypes[0].Descriptor()
+}
+
+func (RiskPriorityClassification) Type() protoreflect.EnumType {
+	return &file_storage_risk_proto_enumTypes[0]
+}
+
+func (x RiskPriorityClassification) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RiskPriorityClassification.Descriptor instead.
+func (RiskPriorityClassification) EnumDescriptor() ([]byte, []int) {
+	return file_storage_risk_proto_rawDescGZIP(), []int{0}
+}
+
 // Next tag: 9
 type RiskSubjectType int32
 
@@ -73,11 +132,11 @@ func (x RiskSubjectType) String() string {
 }
 
 func (RiskSubjectType) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_risk_proto_enumTypes[0].Descriptor()
+	return file_storage_risk_proto_enumTypes[1].Descriptor()
 }
 
 func (RiskSubjectType) Type() protoreflect.EnumType {
-	return &file_storage_risk_proto_enumTypes[0]
+	return &file_storage_risk_proto_enumTypes[1]
 }
 
 func (x RiskSubjectType) Number() protoreflect.EnumNumber {
@@ -86,17 +145,19 @@ func (x RiskSubjectType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RiskSubjectType.Descriptor instead.
 func (RiskSubjectType) EnumDescriptor() ([]byte, []int) {
-	return file_storage_risk_proto_rawDescGZIP(), []int{0}
+	return file_storage_risk_proto_rawDescGZIP(), []int{1}
 }
 
 type Risk struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Subject       *RiskSubject           `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
-	Score         float32                `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
-	Results       []*Risk_Result         `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState     `protogen:"open.v1"`
+	Id                     string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Subject                *RiskSubject               `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	Score                  float32                    `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
+	PriorityClassification RiskPriorityClassification `protobuf:"varint,5,opt,name=priority_classification,json=priorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"priority_classification,omitempty"`
+	VulnerabilitySummary   *RiskVulnerabilitySummary  `protobuf:"bytes,6,opt,name=vulnerability_summary,json=vulnerabilitySummary,proto3" json:"vulnerability_summary,omitempty"`
+	Results                []*Risk_Result             `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Risk) Reset() {
@@ -150,11 +211,133 @@ func (x *Risk) GetScore() float32 {
 	return 0
 }
 
+func (x *Risk) GetPriorityClassification() RiskPriorityClassification {
+	if x != nil {
+		return x.PriorityClassification
+	}
+	return RiskPriorityClassification_RISK_PRIORITY_UNKNOWN
+}
+
+func (x *Risk) GetVulnerabilitySummary() *RiskVulnerabilitySummary {
+	if x != nil {
+		return x.VulnerabilitySummary
+	}
+	return nil
+}
+
 func (x *Risk) GetResults() []*Risk_Result {
 	if x != nil {
 		return x.Results
 	}
 	return nil
+}
+
+type RiskVulnerabilitySummary struct {
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	MaxSeverity             VulnerabilitySeverity  `protobuf:"varint,1,opt,name=max_severity,json=maxSeverity,proto3,enum=storage.VulnerabilitySeverity" json:"max_severity,omitempty"`
+	CriticalCount           int32                  `protobuf:"varint,2,opt,name=critical_count,json=criticalCount,proto3" json:"critical_count,omitempty"`
+	ImportantCount          int32                  `protobuf:"varint,3,opt,name=important_count,json=importantCount,proto3" json:"important_count,omitempty"`
+	ModerateCount           int32                  `protobuf:"varint,4,opt,name=moderate_count,json=moderateCount,proto3" json:"moderate_count,omitempty"`
+	LowCount                int32                  `protobuf:"varint,5,opt,name=low_count,json=lowCount,proto3" json:"low_count,omitempty"`
+	CisaKev                 bool                   `protobuf:"varint,6,opt,name=cisa_kev,json=cisaKev,proto3" json:"cisa_kev,omitempty"`
+	KnownRansomwareCampaign bool                   `protobuf:"varint,7,opt,name=known_ransomware_campaign,json=knownRansomwareCampaign,proto3" json:"known_ransomware_campaign,omitempty"`
+	NetworkAttackVector     bool                   `protobuf:"varint,8,opt,name=network_attack_vector,json=networkAttackVector,proto3" json:"network_attack_vector,omitempty"`
+	MaxEpssPercentile       float32                `protobuf:"fixed32,9,opt,name=max_epss_percentile,json=maxEpssPercentile,proto3" json:"max_epss_percentile,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *RiskVulnerabilitySummary) Reset() {
+	*x = RiskVulnerabilitySummary{}
+	mi := &file_storage_risk_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RiskVulnerabilitySummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RiskVulnerabilitySummary) ProtoMessage() {}
+
+func (x *RiskVulnerabilitySummary) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_risk_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RiskVulnerabilitySummary.ProtoReflect.Descriptor instead.
+func (*RiskVulnerabilitySummary) Descriptor() ([]byte, []int) {
+	return file_storage_risk_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *RiskVulnerabilitySummary) GetMaxSeverity() VulnerabilitySeverity {
+	if x != nil {
+		return x.MaxSeverity
+	}
+	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+func (x *RiskVulnerabilitySummary) GetCriticalCount() int32 {
+	if x != nil {
+		return x.CriticalCount
+	}
+	return 0
+}
+
+func (x *RiskVulnerabilitySummary) GetImportantCount() int32 {
+	if x != nil {
+		return x.ImportantCount
+	}
+	return 0
+}
+
+func (x *RiskVulnerabilitySummary) GetModerateCount() int32 {
+	if x != nil {
+		return x.ModerateCount
+	}
+	return 0
+}
+
+func (x *RiskVulnerabilitySummary) GetLowCount() int32 {
+	if x != nil {
+		return x.LowCount
+	}
+	return 0
+}
+
+func (x *RiskVulnerabilitySummary) GetCisaKev() bool {
+	if x != nil {
+		return x.CisaKev
+	}
+	return false
+}
+
+func (x *RiskVulnerabilitySummary) GetKnownRansomwareCampaign() bool {
+	if x != nil {
+		return x.KnownRansomwareCampaign
+	}
+	return false
+}
+
+func (x *RiskVulnerabilitySummary) GetNetworkAttackVector() bool {
+	if x != nil {
+		return x.NetworkAttackVector
+	}
+	return false
+}
+
+func (x *RiskVulnerabilitySummary) GetMaxEpssPercentile() float32 {
+	if x != nil {
+		return x.MaxEpssPercentile
+	}
+	return 0
 }
 
 type RiskSubject struct {
@@ -169,7 +352,7 @@ type RiskSubject struct {
 
 func (x *RiskSubject) Reset() {
 	*x = RiskSubject{}
-	mi := &file_storage_risk_proto_msgTypes[1]
+	mi := &file_storage_risk_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -181,7 +364,7 @@ func (x *RiskSubject) String() string {
 func (*RiskSubject) ProtoMessage() {}
 
 func (x *RiskSubject) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_risk_proto_msgTypes[1]
+	mi := &file_storage_risk_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -194,7 +377,7 @@ func (x *RiskSubject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RiskSubject.ProtoReflect.Descriptor instead.
 func (*RiskSubject) Descriptor() ([]byte, []int) {
-	return file_storage_risk_proto_rawDescGZIP(), []int{1}
+	return file_storage_risk_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RiskSubject) GetId() string {
@@ -236,7 +419,7 @@ type Risk_Result struct {
 
 func (x *Risk_Result) Reset() {
 	*x = Risk_Result{}
-	mi := &file_storage_risk_proto_msgTypes[2]
+	mi := &file_storage_risk_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -248,7 +431,7 @@ func (x *Risk_Result) String() string {
 func (*Risk_Result) ProtoMessage() {}
 
 func (x *Risk_Result) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_risk_proto_msgTypes[2]
+	mi := &file_storage_risk_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -295,7 +478,7 @@ type Risk_Result_Factor struct {
 
 func (x *Risk_Result_Factor) Reset() {
 	*x = Risk_Result_Factor{}
-	mi := &file_storage_risk_proto_msgTypes[3]
+	mi := &file_storage_risk_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -307,7 +490,7 @@ func (x *Risk_Result_Factor) String() string {
 func (*Risk_Result_Factor) ProtoMessage() {}
 
 func (x *Risk_Result_Factor) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_risk_proto_msgTypes[3]
+	mi := &file_storage_risk_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -341,11 +524,13 @@ var File_storage_risk_proto protoreflect.FileDescriptor
 
 const file_storage_risk_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/risk.proto\x12\astorage\"\xae\x02\n" +
+	"\x12storage/risk.proto\x12\astorage\x1a\x11storage/cve.proto\"\xe4\x03\n" +
 	"\x04Risk\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
 	"\asubject\x18\x02 \x01(\v2\x14.storage.RiskSubjectR\asubject\x12\x14\n" +
-	"\x05score\x18\x03 \x01(\x02R\x05score\x12.\n" +
+	"\x05score\x18\x03 \x01(\x02R\x05score\x12\\\n" +
+	"\x17priority_classification\x18\x05 \x01(\x0e2#.storage.RiskPriorityClassificationR\x16priorityClassification\x12V\n" +
+	"\x15vulnerability_summary\x18\x06 \x01(\v2!.storage.RiskVulnerabilitySummaryR\x14vulnerabilitySummary\x12.\n" +
 	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultR\aresults\x1a\x9f\x01\n" +
 	"\x06Result\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
@@ -353,13 +538,30 @@ const file_storage_risk_proto_rawDesc = "" +
 	"\x05score\x18\x03 \x01(\x02R\x05score\x1a4\n" +
 	"\x06Factor\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x10\n" +
-	"\x03url\x18\x02 \x01(\tR\x03url\"\x88\x01\n" +
+	"\x03url\x18\x02 \x01(\tR\x03url\"\xac\x03\n" +
+	"\x18RiskVulnerabilitySummary\x12A\n" +
+	"\fmax_severity\x18\x01 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\vmaxSeverity\x12%\n" +
+	"\x0ecritical_count\x18\x02 \x01(\x05R\rcriticalCount\x12'\n" +
+	"\x0fimportant_count\x18\x03 \x01(\x05R\x0eimportantCount\x12%\n" +
+	"\x0emoderate_count\x18\x04 \x01(\x05R\rmoderateCount\x12\x1b\n" +
+	"\tlow_count\x18\x05 \x01(\x05R\blowCount\x12\x19\n" +
+	"\bcisa_kev\x18\x06 \x01(\bR\acisaKev\x12:\n" +
+	"\x19known_ransomware_campaign\x18\a \x01(\bR\x17knownRansomwareCampaign\x122\n" +
+	"\x15network_attack_vector\x18\b \x01(\bR\x13networkAttackVector\x12.\n" +
+	"\x13max_epss_percentile\x18\t \x01(\x02R\x11maxEpssPercentile\"\x88\x01\n" +
 	"\vRiskSubject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12,\n" +
-	"\x04type\x18\x04 \x01(\x0e2\x18.storage.RiskSubjectTypeR\x04type*\x9c\x01\n" +
+	"\x04type\x18\x04 \x01(\x0e2\x18.storage.RiskSubjectTypeR\x04type*\xda\x01\n" +
+	"\x1aRiskPriorityClassification\x12\x19\n" +
+	"\x15RISK_PRIORITY_UNKNOWN\x10\x00\x12\x1d\n" +
+	"\x19RISK_PRIORITY_RESPOND_NOW\x10\x01\x12!\n" +
+	"\x1dRISK_PRIORITY_INVESTIGATE_NOW\x10\x02\x12\x1f\n" +
+	"\x1bRISK_PRIORITY_REMEDIATE_NOW\x10\x03\x12\x1b\n" +
+	"\x17RISK_PRIORITY_REMEDIATE\x10\x04\x12!\n" +
+	"\x1dRISK_PRIORITY_IMPROVE_POSTURE\x10\x05*\x9c\x01\n" +
 	"\x0fRiskSubjectType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -385,25 +587,31 @@ func file_storage_risk_proto_rawDescGZIP() []byte {
 	return file_storage_risk_proto_rawDescData
 }
 
-var file_storage_risk_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_storage_risk_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_storage_risk_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_storage_risk_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_storage_risk_proto_goTypes = []any{
-	(RiskSubjectType)(0),       // 0: storage.RiskSubjectType
-	(*Risk)(nil),               // 1: storage.Risk
-	(*RiskSubject)(nil),        // 2: storage.RiskSubject
-	(*Risk_Result)(nil),        // 3: storage.Risk.Result
-	(*Risk_Result_Factor)(nil), // 4: storage.Risk.Result.Factor
+	(RiskPriorityClassification)(0),  // 0: storage.RiskPriorityClassification
+	(RiskSubjectType)(0),             // 1: storage.RiskSubjectType
+	(*Risk)(nil),                     // 2: storage.Risk
+	(*RiskVulnerabilitySummary)(nil), // 3: storage.RiskVulnerabilitySummary
+	(*RiskSubject)(nil),              // 4: storage.RiskSubject
+	(*Risk_Result)(nil),              // 5: storage.Risk.Result
+	(*Risk_Result_Factor)(nil),       // 6: storage.Risk.Result.Factor
+	(VulnerabilitySeverity)(0),       // 7: storage.VulnerabilitySeverity
 }
 var file_storage_risk_proto_depIdxs = []int32{
-	2, // 0: storage.Risk.subject:type_name -> storage.RiskSubject
-	3, // 1: storage.Risk.results:type_name -> storage.Risk.Result
-	0, // 2: storage.RiskSubject.type:type_name -> storage.RiskSubjectType
-	4, // 3: storage.Risk.Result.factors:type_name -> storage.Risk.Result.Factor
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	4, // 0: storage.Risk.subject:type_name -> storage.RiskSubject
+	0, // 1: storage.Risk.priority_classification:type_name -> storage.RiskPriorityClassification
+	3, // 2: storage.Risk.vulnerability_summary:type_name -> storage.RiskVulnerabilitySummary
+	5, // 3: storage.Risk.results:type_name -> storage.Risk.Result
+	7, // 4: storage.RiskVulnerabilitySummary.max_severity:type_name -> storage.VulnerabilitySeverity
+	1, // 5: storage.RiskSubject.type:type_name -> storage.RiskSubjectType
+	6, // 6: storage.Risk.Result.factors:type_name -> storage.Risk.Result.Factor
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_storage_risk_proto_init() }
@@ -411,13 +619,14 @@ func file_storage_risk_proto_init() {
 	if File_storage_risk_proto != nil {
 		return
 	}
+	file_storage_cve_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_risk_proto_rawDesc), len(file_storage_risk_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   4,
+			NumEnums:      2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
+	riskPkg "github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -160,14 +161,14 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 		log.Errorf("Error reprocessing risk for deployment %s: %v", deployment.GetName(), err)
 	}
 
-	if oldScore == risk.GetScore() {
-		return
+	if oldScore != risk.GetScore() {
+		e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
+		e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
 	}
 
-	e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
-	e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
-
 	deployment.RiskScore = risk.GetScore()
+	deployment.RiskPriorityClassification = risk.GetPriorityClassification()
+	deployment.RiskPrioritySortOrder = riskPkg.PriorityClassificationSortOrder(risk.GetPriorityClassification())
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
 	}

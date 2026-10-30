@@ -55,6 +55,18 @@ var (
 				},
 			}
 		},
+		search.RiskPriorityClassification: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.RiskPrioritySortOrder.String(),
+					Reversed: option.GetReversed(),
+				},
+				{
+					Field:    search.DeploymentRiskScore.String(),
+					Reversed: !option.GetReversed(),
+				},
+			}
+		},
 		search.ImagePriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
 				{

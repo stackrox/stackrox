@@ -1,9 +1,11 @@
-import { Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Label, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import type { LabelProps } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { RiskPriorityClassification } from 'types/risk.proto';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getDateTime } from 'utils/dateUtils';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -17,9 +19,31 @@ export const sortFields = [
     'Created',
     'Cluster',
     'Namespace',
+    'Risk Priority Classification',
     'Deployment Risk Priority',
 ];
-export const defaultSortOption = { field: 'Deployment Risk Priority', direction: 'asc' } as const;
+export const defaultSortOption = {
+    field: 'Risk Priority Classification',
+    direction: 'asc',
+} as const;
+
+const riskClassLabels: Record<RiskPriorityClassification, string> = {
+    RISK_PRIORITY_UNKNOWN: 'Unknown',
+    RISK_PRIORITY_RESPOND_NOW: 'Respond now',
+    RISK_PRIORITY_INVESTIGATE_NOW: 'Investigate now',
+    RISK_PRIORITY_REMEDIATE_NOW: 'Remediate now',
+    RISK_PRIORITY_REMEDIATE: 'Remediate',
+    RISK_PRIORITY_IMPROVE_POSTURE: 'Improve posture',
+};
+
+const riskClassLabelProps: Record<RiskPriorityClassification, LabelProps> = {
+    RISK_PRIORITY_RESPOND_NOW: { status: 'danger' },
+    RISK_PRIORITY_INVESTIGATE_NOW: { status: 'warning' },
+    RISK_PRIORITY_REMEDIATE_NOW: { color: 'orangered' },
+    RISK_PRIORITY_REMEDIATE: { color: 'orange' },
+    RISK_PRIORITY_IMPROVE_POSTURE: { color: 'blue' },
+    RISK_PRIORITY_UNKNOWN: { color: 'grey' },
+};
 
 type RiskTablePanelProps = {
     sortOption: ApiSortOption;
@@ -77,25 +101,25 @@ function RiskTablePanel({
                         </Th>
                         <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th sort={getSortParams('Namespace')}>Namespace</Th>
-                        <Th width={10} sort={getSortParams('Deployment Risk Priority')}>
-                            Priority
+                        <Th width={10} sort={getSortParams('Risk Priority Classification')}>
+                            Risk class
+                        </Th>
+                        <Th width={10} sort={getSortParams('Deployment Risk Score')}>
+                            Score
                         </Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={5}
+                    colSpan={6}
                     emptyProps={{ message: 'No results found' }}
                     filteredEmptyProps={{ onClearFilters: () => onSearchFilterChange({}) }}
                     renderer={({ data }) =>
                         data.map((deploymentWithProcessInfo) => {
                             const { deployment } = deploymentWithProcessInfo;
 
-                            const priorityAsInt = parseInt(deployment.priority, 10);
-                            const priorityDisplay =
-                                Number.isNaN(priorityAsInt) || priorityAsInt < 1
-                                    ? '-'
-                                    : priorityAsInt;
+                            const riskClass =
+                                deployment.riskPriorityClassification ?? 'RISK_PRIORITY_UNKNOWN';
 
                             return (
                                 <Tbody key={deployment.id}>
@@ -110,7 +134,12 @@ function RiskTablePanel({
                                         </Td>
                                         <Td dataLabel="Cluster">{deployment.cluster}</Td>
                                         <Td dataLabel="Namespace">{deployment.namespace}</Td>
-                                        <Td dataLabel="Priority">{priorityDisplay}</Td>
+                                        <Td dataLabel="Risk class">
+                                            <Label {...riskClassLabelProps[riskClass]}>
+                                                {riskClassLabels[riskClass]}
+                                            </Label>
+                                        </Td>
+                                        <Td dataLabel="Score">{deployment.riskScore.toFixed(1)}</Td>
                                     </Tr>
                                 </Tbody>
                             );

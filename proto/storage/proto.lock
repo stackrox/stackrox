@@ -7625,6 +7625,11 @@
                 "type": "int64"
               },
               {
+                "id": 36,
+                "name": "risk_priority_classification",
+                "type": "RiskPriorityClassification"
+              },
+              {
                 "id": 16,
                 "name": "inactive",
                 "type": "bool"
@@ -8354,6 +8359,11 @@
                 "id": 7,
                 "name": "priority",
                 "type": "int64"
+              },
+              {
+                "id": 9,
+                "name": "risk_priority_classification",
+                "type": "RiskPriorityClassification"
               }
             ]
           }
@@ -8373,6 +8383,9 @@
           },
           {
             "path": "storage/rbac.proto"
+          },
+          {
+            "path": "storage/risk.proto"
           },
           {
             "path": "storage/taints.proto"
@@ -16645,6 +16658,34 @@
       "def": {
         "enums": [
           {
+            "name": "RiskPriorityClassification",
+            "enum_fields": [
+              {
+                "name": "RISK_PRIORITY_UNKNOWN"
+              },
+              {
+                "name": "RISK_PRIORITY_RESPOND_NOW",
+                "integer": 1
+              },
+              {
+                "name": "RISK_PRIORITY_INVESTIGATE_NOW",
+                "integer": 2
+              },
+              {
+                "name": "RISK_PRIORITY_REMEDIATE_NOW",
+                "integer": 3
+              },
+              {
+                "name": "RISK_PRIORITY_REMEDIATE",
+                "integer": 4
+              },
+              {
+                "name": "RISK_PRIORITY_IMPROVE_POSTURE",
+                "integer": 5
+              }
+            ]
+          },
+          {
             "name": "RiskSubjectType",
             "enum_fields": [
               {
@@ -16705,6 +16746,16 @@
                 "type": "float"
               },
               {
+                "id": 5,
+                "name": "priority_classification",
+                "type": "RiskPriorityClassification"
+              },
+              {
+                "id": 6,
+                "name": "vulnerability_summary",
+                "type": "RiskVulnerabilitySummary"
+              },
+              {
                 "id": 4,
                 "name": "results",
                 "type": "Result",
@@ -16753,6 +16804,56 @@
             ]
           },
           {
+            "name": "RiskVulnerabilitySummary",
+            "fields": [
+              {
+                "id": 1,
+                "name": "max_severity",
+                "type": "VulnerabilitySeverity"
+              },
+              {
+                "id": 2,
+                "name": "critical_count",
+                "type": "int32"
+              },
+              {
+                "id": 3,
+                "name": "important_count",
+                "type": "int32"
+              },
+              {
+                "id": 4,
+                "name": "moderate_count",
+                "type": "int32"
+              },
+              {
+                "id": 5,
+                "name": "low_count",
+                "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "cisa_kev",
+                "type": "bool"
+              },
+              {
+                "id": 7,
+                "name": "known_ransomware_campaign",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "network_attack_vector",
+                "type": "bool"
+              },
+              {
+                "id": 9,
+                "name": "max_epss_percentile",
+                "type": "float"
+              }
+            ]
+          },
+          {
             "name": "RiskSubject",
             "fields": [
               {
@@ -16776,6 +16877,11 @@
                 "type": "RiskSubjectType"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/cve.proto"
           }
         ],
         "package": {

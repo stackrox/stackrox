@@ -52,7 +52,7 @@ func TestScore(t *testing.T) {
 	mockEvaluator.EXPECT().EvaluateBaselinesAndPersistResult(deployment).MaxTimes(2).Return(nil, nil)
 
 	// Without user defined function
-	expectedRiskScore := 12.1794405
+	expectedRiskScore := 39.592
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name:    deploymentMultiplier.PolicyViolationsHeading,
@@ -64,7 +64,7 @@ func TestScore(t *testing.T) {
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 distinct CVEs with severities ranging between Moderate and Critical"},
 			},
-			Score: 1.5535,
+			Score: 2.02,
 		},
 		{
 			Name: deploymentMultiplier.ServiceConfigHeading,
@@ -84,7 +84,7 @@ func TestScore(t *testing.T) {
 				{Message: "Port 23 is exposed in the cluster"},
 				{Message: "Port 24 is exposed on node interfaces"},
 			},
-			Score: 1.6,
+			Score: 4.0,
 		},
 		{
 			Name: imageMultiplier.ImageAgeHeading,
@@ -98,11 +98,13 @@ func TestScore(t *testing.T) {
 	actualRisk := scorer.Score(ctx, deployment, getMockImagesRisk())
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.Equal(t, storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW, actualRisk.GetPriorityClassification())
 
-	expectedRiskScore = 12.1794405
+	expectedRiskScore = 39.592
 	actualRisk = scorer.Score(ctx, deployment, getMockImagesRisk())
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.Equal(t, storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW, actualRisk.GetPriorityClassification())
 
 	mockCtrl.Finish()
 }

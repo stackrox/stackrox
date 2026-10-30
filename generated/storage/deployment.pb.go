@@ -286,40 +286,42 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1, 0}
 }
 
-// Next available tag: 36
+// Next available tag: 37
 type Deployment struct {
-	state                         protoimpl.MessageState `protogen:"open.v1"`
-	Id                            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
-	Name                          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"`                                                                                                       // @gotags: search:"Deployment"
-	Hash                          uint64                 `protobuf:"varint,26,opt,name=hash,proto3" json:"hash,omitempty" search:"Deployment Hash,hidden" hash:"ignore" sensorhash:"ignore"`                                                                                                     // @gotags: search:"Deployment Hash,hidden" hash:"ignore" sensorhash:"ignore"
-	Type                          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                                                       // @gotags: search:"Deployment Type"
-	Namespace                     string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                                                             // @gotags: search:"Namespace"
-	NamespaceId                   string                 `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"`                                                                     // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"
-	OrchestratorComponent         bool                   `protobuf:"varint,33,opt,name=orchestrator_component,json=orchestratorComponent,proto3" json:"orchestrator_component,omitempty" search:"Orchestrator Component"`                                      // @gotags: search:"Orchestrator Component"
-	Replicas                      int64                  `protobuf:"varint,6,opt,name=replicas,proto3" json:"replicas,omitempty" policy:"Replicas"`                                                                                              // @gotags: policy:"Replicas"
-	Labels                        map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Label"`                         // @gotags: search:"Deployment Label"
-	PodLabels                     map[string]string      `protobuf:"bytes,19,rep,name=pod_labels,json=podLabels,proto3" json:"pod_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Pod Label"` // @gotags: search:"Pod Label"
-	LabelSelector                 *LabelSelector         `protobuf:"bytes,20,opt,name=label_selector,json=labelSelector,proto3" json:"label_selector,omitempty"`
-	Created                       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created,proto3" json:"created,omitempty" search:"Created,hidden" hash:"ignore"`                             // @gotags: search:"Created,hidden" hash:"ignore"
-	ClusterId                     string                 `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`        // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	ClusterName                   string                 `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
-	Containers                    []*Container           `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
-	Annotations                   map[string]string      `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Annotation"` // @gotags: search:"Deployment Annotation"
-	Priority                      int64                  `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
-	Inactive                      bool                   `protobuf:"varint,16,opt,name=inactive,proto3" json:"inactive,omitempty"`
-	ImagePullSecrets              []string               `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                        // @gotags: search:"Image Pull Secret"
-	ServiceAccount                string                 `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" search:"Service Account"`                                                                                // @gotags: search:"Service Account"
-	ServiceAccountPermissionLevel PermissionLevel        `protobuf:"varint,28,opt,name=service_account_permission_level,json=serviceAccountPermissionLevel,proto3,enum=storage.PermissionLevel" json:"service_account_permission_level,omitempty" search:"Service Account Permission Level"` // @gotags: search:"Service Account Permission Level"
-	AutomountServiceAccountToken  bool                   `protobuf:"varint,25,opt,name=automount_service_account_token,json=automountServiceAccountToken,proto3" json:"automount_service_account_token,omitempty" policy:"Automount Service Account Token"`                                 // @gotags: policy:"Automount Service Account Token"
-	HostNetwork                   bool                   `protobuf:"varint,21,opt,name=host_network,json=hostNetwork,proto3" json:"host_network,omitempty" policy:"Host Network"`                                                                                        // @gotags: policy:"Host Network"
-	HostPid                       bool                   `protobuf:"varint,31,opt,name=host_pid,json=hostPid,proto3" json:"host_pid,omitempty" policy:"Host PID"`                                                                                                    // @gotags: policy:"Host PID"
-	HostIpc                       bool                   `protobuf:"varint,32,opt,name=host_ipc,json=hostIpc,proto3" json:"host_ipc,omitempty" policy:"Host IPC"`                                                                                                    // @gotags: policy:"Host IPC"
-	RuntimeClass                  string                 `protobuf:"bytes,34,opt,name=runtime_class,json=runtimeClass,proto3" json:"runtime_class,omitempty" policy:"Runtime Class"`                                                                                      // @gotags: policy:"Runtime Class"
-	Tolerations                   []*Toleration          `protobuf:"bytes,22,rep,name=tolerations,proto3" json:"tolerations,omitempty" search:"-"`                                                                                                            // @gotags: search:"-"
-	Ports                         []*PortConfig          `protobuf:"bytes,24,rep,name=ports,proto3" json:"ports,omitempty" policy:"Ports"`                                                                                                                        // @gotags: policy:"Ports"
-	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
-	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
-	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
+	state                         protoimpl.MessageState     `protogen:"open.v1"`
+	Id                            string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
+	Name                          string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"`                                                                                                      // @gotags: search:"Deployment"
+	Hash                          uint64                     `protobuf:"varint,26,opt,name=hash,proto3" json:"hash,omitempty" search:"Deployment Hash,hidden" hash:"ignore" sensorhash:"ignore"`                                                      // @gotags: search:"Deployment Hash,hidden" hash:"ignore" sensorhash:"ignore"
+	Type                          string                     `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                                                 // @gotags: search:"Deployment Type"
+	Namespace                     string                     `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                                                             // @gotags: search:"Namespace"
+	NamespaceId                   string                     `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"`       // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"
+	OrchestratorComponent         bool                       `protobuf:"varint,33,opt,name=orchestrator_component,json=orchestratorComponent,proto3" json:"orchestrator_component,omitempty" search:"Orchestrator Component"`                         // @gotags: search:"Orchestrator Component"
+	Replicas                      int64                      `protobuf:"varint,6,opt,name=replicas,proto3" json:"replicas,omitempty" policy:"Replicas"`                                                                                               // @gotags: policy:"Replicas"
+	Labels                        map[string]string          `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Label"`                  // @gotags: search:"Deployment Label"
+	PodLabels                     map[string]string          `protobuf:"bytes,19,rep,name=pod_labels,json=podLabels,proto3" json:"pod_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Pod Label"` // @gotags: search:"Pod Label"
+	LabelSelector                 *LabelSelector             `protobuf:"bytes,20,opt,name=label_selector,json=labelSelector,proto3" json:"label_selector,omitempty"`
+	Created                       *timestamppb.Timestamp     `protobuf:"bytes,8,opt,name=created,proto3" json:"created,omitempty" search:"Created,hidden" hash:"ignore"`                            // @gotags: search:"Created,hidden" hash:"ignore"
+	ClusterId                     string                     `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ClusterName                   string                     `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"`                     // @gotags: search:"Cluster"
+	Containers                    []*Container               `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
+	Annotations                   map[string]string          `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Annotation"`                                                              // @gotags: search:"Deployment Annotation"
+	Priority                      int64                      `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                                                     // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
+	RiskPriorityClassification    RiskPriorityClassification `protobuf:"varint,36,opt,name=risk_priority_classification,json=riskPriorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"risk_priority_classification,omitempty" search:"Risk Priority Classification,hidden" hash:"ignore"` // @gotags: search:"Risk Priority Classification,hidden" hash:"ignore"
+	RiskPrioritySortOrder         int32                      `protobuf:"varint,37,opt,name=risk_priority_sort_order,json=riskPrioritySortOrder,proto3" json:"risk_priority_sort_order,omitempty" search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"`                                        // @gotags: search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"
+	Inactive                      bool                       `protobuf:"varint,16,opt,name=inactive,proto3" json:"inactive,omitempty"`
+	ImagePullSecrets              []string                   `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                                       // @gotags: search:"Image Pull Secret"
+	ServiceAccount                string                     `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" search:"Service Account"`                                                                                                 // @gotags: search:"Service Account"
+	ServiceAccountPermissionLevel PermissionLevel            `protobuf:"varint,28,opt,name=service_account_permission_level,json=serviceAccountPermissionLevel,proto3,enum=storage.PermissionLevel" json:"service_account_permission_level,omitempty" search:"Service Account Permission Level"` // @gotags: search:"Service Account Permission Level"
+	AutomountServiceAccountToken  bool                       `protobuf:"varint,25,opt,name=automount_service_account_token,json=automountServiceAccountToken,proto3" json:"automount_service_account_token,omitempty" policy:"Automount Service Account Token"`                                  // @gotags: policy:"Automount Service Account Token"
+	HostNetwork                   bool                       `protobuf:"varint,21,opt,name=host_network,json=hostNetwork,proto3" json:"host_network,omitempty" policy:"Host Network"`                                                                                                            // @gotags: policy:"Host Network"
+	HostPid                       bool                       `protobuf:"varint,31,opt,name=host_pid,json=hostPid,proto3" json:"host_pid,omitempty" policy:"Host PID"`                                                                                                                            // @gotags: policy:"Host PID"
+	HostIpc                       bool                       `protobuf:"varint,32,opt,name=host_ipc,json=hostIpc,proto3" json:"host_ipc,omitempty" policy:"Host IPC"`                                                                                                                            // @gotags: policy:"Host IPC"
+	RuntimeClass                  string                     `protobuf:"bytes,34,opt,name=runtime_class,json=runtimeClass,proto3" json:"runtime_class,omitempty" policy:"Runtime Class"`                                                                                                         // @gotags: policy:"Runtime Class"
+	Tolerations                   []*Toleration              `protobuf:"bytes,22,rep,name=tolerations,proto3" json:"tolerations,omitempty" search:"-"`                                                                                                                                           // @gotags: search:"-"
+	Ports                         []*PortConfig              `protobuf:"bytes,24,rep,name=ports,proto3" json:"ports,omitempty" policy:"Ports"`                                                                                                                                                   // @gotags: policy:"Ports"
+	StateTimestamp                int64                      `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                                       // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
+	RiskScore                     float32                    `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                              // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
+	PlatformComponent             bool                       `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                                    // @gotags: search:"Platform Component"
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
@@ -469,6 +471,20 @@ func (x *Deployment) GetAnnotations() map[string]string {
 func (x *Deployment) GetPriority() int64 {
 	if x != nil {
 		return x.Priority
+	}
+	return 0
+}
+
+func (x *Deployment) GetRiskPriorityClassification() RiskPriorityClassification {
+	if x != nil {
+		return x.RiskPriorityClassification
+	}
+	return RiskPriorityClassification_RISK_PRIORITY_UNKNOWN
+}
+
+func (x *Deployment) GetRiskPrioritySortOrder() int32 {
+	if x != nil {
+		return x.RiskPrioritySortOrder
 	}
 	return 0
 }
@@ -784,10 +800,10 @@ func (x *Container) GetType() ContainerType {
 
 type Resources struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	CpuCoresRequest float32                `protobuf:"fixed32,1,opt,name=cpu_cores_request,json=cpuCoresRequest,proto3" json:"cpu_cores_request,omitempty" search:"CPU Cores Request"` // @gotags: search:"CPU Cores Request"
-	CpuCoresLimit   float32                `protobuf:"fixed32,2,opt,name=cpu_cores_limit,json=cpuCoresLimit,proto3" json:"cpu_cores_limit,omitempty" search:"CPU Cores Limit"`       // @gotags: search:"CPU Cores Limit"
+	CpuCoresRequest float32                `protobuf:"fixed32,1,opt,name=cpu_cores_request,json=cpuCoresRequest,proto3" json:"cpu_cores_request,omitempty" search:"CPU Cores Request"`   // @gotags: search:"CPU Cores Request"
+	CpuCoresLimit   float32                `protobuf:"fixed32,2,opt,name=cpu_cores_limit,json=cpuCoresLimit,proto3" json:"cpu_cores_limit,omitempty" search:"CPU Cores Limit"`           // @gotags: search:"CPU Cores Limit"
 	MemoryMbRequest float32                `protobuf:"fixed32,3,opt,name=memory_mb_request,json=memoryMbRequest,proto3" json:"memory_mb_request,omitempty" search:"Memory Request (MB)"` // @gotags: search:"Memory Request (MB)"
-	MemoryMbLimit   float32                `protobuf:"fixed32,4,opt,name=memory_mb_limit,json=memoryMbLimit,proto3" json:"memory_mb_limit,omitempty" search:"Memory Limit (MB)"`       // @gotags: search:"Memory Limit (MB)"
+	MemoryMbLimit   float32                `protobuf:"fixed32,4,opt,name=memory_mb_limit,json=memoryMbLimit,proto3" json:"memory_mb_limit,omitempty" search:"Memory Limit (MB)"`         // @gotags: search:"Memory Limit (MB)"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -852,11 +868,11 @@ func (x *Resources) GetMemoryMbLimit() float32 {
 
 type Volume struct {
 	state            protoimpl.MessageState  `protogen:"open.v1"`
-	Name             string                  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Volume Name"`                                                                                       // @gotags: search:"Volume Name"
-	Source           string                  `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty" search:"Volume Source"`                                                                                   // @gotags: search:"Volume Source"
-	Destination      string                  `protobuf:"bytes,3,opt,name=destination,proto3" json:"destination,omitempty" search:"Volume Destination"`                                                                         // @gotags: search:"Volume Destination"
-	ReadOnly         bool                    `protobuf:"varint,4,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty" search:"Volume ReadOnly"`                                                              // @gotags: search:"Volume ReadOnly"
-	Type             string                  `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty" search:"Volume Type"`                                                                                       // @gotags: search:"Volume Type"
+	Name             string                  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Volume Name"`                                                                                             // @gotags: search:"Volume Name"
+	Source           string                  `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty" search:"Volume Source"`                                                                                       // @gotags: search:"Volume Source"
+	Destination      string                  `protobuf:"bytes,3,opt,name=destination,proto3" json:"destination,omitempty" search:"Volume Destination"`                                                                        // @gotags: search:"Volume Destination"
+	ReadOnly         bool                    `protobuf:"varint,4,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty" search:"Volume ReadOnly"`                                                                // @gotags: search:"Volume ReadOnly"
+	Type             string                  `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty" search:"Volume Type"`                                                                                             // @gotags: search:"Volume Type"
 	MountPropagation Volume_MountPropagation `protobuf:"varint,6,opt,name=mount_propagation,json=mountPropagation,proto3,enum=storage.Volume_MountPropagation" json:"mount_propagation,omitempty" policy:"Mount Propagation"` // @gotags: policy:"Mount Propagation"
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -1026,11 +1042,11 @@ func (x *ReadinessProbe) GetDefined() bool {
 type Pod struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Pod UID
-	Id            string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Pod ID,hidden" sql:"pk,type(uuid)"`                                         // @gotags: search:"Pod ID,hidden" sql:"pk,type(uuid)"
-	Name          string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Pod Name,hidden"`                                     // @gotags: search:"Pod Name,hidden"
+	Id            string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Pod ID,hidden" sql:"pk,type(uuid)"`                                                                                // @gotags: search:"Pod ID,hidden" sql:"pk,type(uuid)"
+	Name          string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Pod Name,hidden"`                                                                                              // @gotags: search:"Pod Name,hidden"
 	DeploymentId  string               `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"
-	Namespace     string               `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                           // @gotags: search:"Namespace"
-	ClusterId     string               `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	Namespace     string               `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                                                          // @gotags: search:"Namespace"
+	ClusterId     string               `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	LiveInstances []*ContainerInstance `protobuf:"bytes,6,rep,name=live_instances,json=liveInstances,proto3" json:"live_instances,omitempty"`
 	// Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
 	// There is one bucket (list) per container name.
@@ -1310,7 +1326,7 @@ func (x *ContainerInstanceID) GetNode() string {
 
 type EmbeddedSecret struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Secret"` // @gotags: search:"Secret"
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Secret"`      // @gotags: search:"Secret"
 	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty" search:"Secret Path"` // @gotags: search:"Secret Path"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1364,8 +1380,8 @@ func (x *EmbeddedSecret) GetPath() string {
 type PortConfig struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
 	Name          string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	ContainerPort int32                    `protobuf:"varint,2,opt,name=container_port,json=containerPort,proto3" json:"container_port,omitempty" search:"Port"`        // @gotags: search:"Port"
-	Protocol      string                   `protobuf:"bytes,3,opt,name=protocol,proto3" json:"protocol,omitempty" search:"Port Protocol"`                                        // @gotags: search:"Port Protocol"
+	ContainerPort int32                    `protobuf:"varint,2,opt,name=container_port,json=containerPort,proto3" json:"container_port,omitempty" search:"Port"`                      // @gotags: search:"Port"
+	Protocol      string                   `protobuf:"bytes,3,opt,name=protocol,proto3" json:"protocol,omitempty" search:"Port Protocol"`                                             // @gotags: search:"Port Protocol"
 	Exposure      PortConfig_ExposureLevel `protobuf:"varint,4,opt,name=exposure,proto3,enum=storage.PortConfig_ExposureLevel" json:"exposure,omitempty" search:"Max Exposure Level"` // @gotags: search:"Max Exposure Level"
 	// Deprecated: Marked as deprecated in storage/deployment.proto.
 	ExposedPort   int32                      `protobuf:"varint,5,opt,name=exposed_port,json=exposedPort,proto3" json:"exposed_port,omitempty"`
@@ -1543,8 +1559,8 @@ type SecurityContext struct {
 	state                    protoimpl.MessageState          `protogen:"open.v1"`
 	Privileged               bool                            `protobuf:"varint,1,opt,name=privileged,proto3" json:"privileged,omitempty" search:"Privileged"` // @gotags: search:"Privileged"
 	Selinux                  *SecurityContext_SELinux        `protobuf:"bytes,2,opt,name=selinux,proto3" json:"selinux,omitempty"`
-	DropCapabilities         []string                        `protobuf:"bytes,3,rep,name=drop_capabilities,json=dropCapabilities,proto3" json:"drop_capabilities,omitempty" search:"Drop Capabilities"`                        // @gotags: search:"Drop Capabilities"
-	AddCapabilities          []string                        `protobuf:"bytes,4,rep,name=add_capabilities,json=addCapabilities,proto3" json:"add_capabilities,omitempty" search:"Add Capabilities"`                           // @gotags: search:"Add Capabilities"
+	DropCapabilities         []string                        `protobuf:"bytes,3,rep,name=drop_capabilities,json=dropCapabilities,proto3" json:"drop_capabilities,omitempty" search:"Drop Capabilities"`                                // @gotags: search:"Drop Capabilities"
+	AddCapabilities          []string                        `protobuf:"bytes,4,rep,name=add_capabilities,json=addCapabilities,proto3" json:"add_capabilities,omitempty" search:"Add Capabilities"`                                    // @gotags: search:"Add Capabilities"
 	ReadOnlyRootFilesystem   bool                            `protobuf:"varint,5,opt,name=read_only_root_filesystem,json=readOnlyRootFilesystem,proto3" json:"read_only_root_filesystem,omitempty" search:"Read Only Root Filesystem"` // @gotags: search:"Read Only Root Filesystem"
 	SeccompProfile           *SecurityContext_SeccompProfile `protobuf:"bytes,6,opt,name=seccomp_profile,json=seccompProfile,proto3" json:"seccomp_profile,omitempty"`
 	AllowPrivilegeEscalation bool                            `protobuf:"varint,7,opt,name=allow_privilege_escalation,json=allowPrivilegeEscalation,proto3" json:"allow_privilege_escalation,omitempty" policy:"Allow Privilege Escalation"` // @gotags: policy:"Allow Privilege Escalation"
@@ -1631,19 +1647,21 @@ func (x *SecurityContext) GetAllowPrivilegeEscalation() bool {
 	return false
 }
 
-// Next available tag: 9
+// Next available tag: 11
 type ListDeployment struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Hash          uint64                 `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Cluster       string                 `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace     string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Created       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
-	Priority      int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                      protoimpl.MessageState     `protogen:"open.v1"`
+	Id                         string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Hash                       uint64                     `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
+	Name                       string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Cluster                    string                     `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	ClusterId                  string                     `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespace                  string                     `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Created                    *timestamppb.Timestamp     `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
+	Priority                   int64                      `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	RiskPriorityClassification RiskPriorityClassification `protobuf:"varint,9,opt,name=risk_priority_classification,json=riskPriorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"risk_priority_classification,omitempty"`
+	RiskScore                  float32                    `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *ListDeployment) Reset() {
@@ -1728,6 +1746,20 @@ func (x *ListDeployment) GetCreated() *timestamppb.Timestamp {
 func (x *ListDeployment) GetPriority() int64 {
 	if x != nil {
 		return x.Priority
+	}
+	return 0
+}
+
+func (x *ListDeployment) GetRiskPriorityClassification() RiskPriorityClassification {
+	if x != nil {
+		return x.RiskPriorityClassification
+	}
+	return RiskPriorityClassification_RISK_PRIORITY_UNKNOWN
+}
+
+func (x *ListDeployment) GetRiskScore() float32 {
+	if x != nil {
+		return x.RiskScore
 	}
 	return 0
 }
@@ -1882,8 +1914,8 @@ func (x *PortConfig_ExposureInfo) GetExternalHostnames() []string {
 
 type ContainerConfig_EnvironmentConfig struct {
 	state         protoimpl.MessageState                         `protogen:"open.v1"`
-	Key           string                                         `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Environment Key"`                                                                                                      // @gotags: search:"Environment Key"
-	Value         string                                         `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Environment Value"`                                                                                                  // @gotags: search:"Environment Value"
+	Key           string                                         `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Environment Key"`                                                                                                                  // @gotags: search:"Environment Key"
+	Value         string                                         `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Environment Value"`                                                                                                            // @gotags: search:"Environment Value"
 	EnvVarSource  ContainerConfig_EnvironmentConfig_EnvVarSource `protobuf:"varint,3,opt,name=env_var_source,json=envVarSource,proto3,enum=storage.ContainerConfig_EnvironmentConfig_EnvVarSource" json:"env_var_source,omitempty" search:"Environment Variable Source"` // @gotags: search:"Environment Variable Source"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2064,7 +2096,7 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\"\xf6\v\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x12storage/risk.proto\x1a\x14storage/taints.proto\"\x96\r\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2088,7 +2120,9 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"containers\x18\v \x03(\v2\x12.storage.ContainerR\n" +
 	"containers\x12F\n" +
 	"\vannotations\x18\x0e \x03(\v2$.storage.Deployment.AnnotationsEntryR\vannotations\x12\x1a\n" +
-	"\bpriority\x18\x0f \x01(\x03R\bpriority\x12\x1a\n" +
+	"\bpriority\x18\x0f \x01(\x03R\bpriority\x12e\n" +
+	"\x1crisk_priority_classification\x18$ \x01(\x0e2#.storage.RiskPriorityClassificationR\x1ariskPriorityClassification\x127\n" +
+	"\x18risk_priority_sort_order\x18% \x01(\x05R\x15riskPrioritySortOrder\x12\x1a\n" +
 	"\binactive\x18\x10 \x01(\bR\binactive\x12,\n" +
 	"\x12image_pull_secrets\x18\x11 \x03(\tR\x10imagePullSecrets\x12'\n" +
 	"\x0fservice_account\x18\x12 \x01(\tR\x0eserviceAccount\x12a\n" +
@@ -2254,7 +2288,7 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
 	"UNCONFINED\x10\x00\x12\x13\n" +
 	"\x0fRUNTIME_DEFAULT\x10\x01\x12\r\n" +
-	"\tLOCALHOST\x10\x02\"\xf1\x01\n" +
+	"\tLOCALHOST\x10\x02\"\xf7\x02\n" +
 	"\x0eListDeployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04hash\x18\b \x01(\x04R\x04hash\x12\x12\n" +
@@ -2264,7 +2298,11 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12\x1c\n" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x124\n" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x1a\n" +
-	"\bpriority\x18\a \x01(\x03R\bpriority*&\n" +
+	"\bpriority\x18\a \x01(\x03R\bpriority\x12e\n" +
+	"\x1crisk_priority_classification\x18\t \x01(\x0e2#.storage.RiskPriorityClassificationR\x1ariskPriorityClassification\x12\x1d\n" +
+	"\n" +
+	"risk_score\x18\n" +
+	" \x01(\x02R\triskScore*&\n" +
 	"\rContainerType\x12\v\n" +
 	"\aREGULAR\x10\x00\x12\b\n" +
 	"\x04INIT\x10\x01B.\n" +
@@ -2315,10 +2353,11 @@ var file_storage_deployment_proto_goTypes = []any{
 	(*SecurityContext_SeccompProfile)(nil),              // 27: storage.SecurityContext.SeccompProfile
 	(*LabelSelector)(nil),                               // 28: storage.LabelSelector
 	(*timestamppb.Timestamp)(nil),                       // 29: google.protobuf.Timestamp
-	(PermissionLevel)(0),                                // 30: storage.PermissionLevel
-	(*Toleration)(nil),                                  // 31: storage.Toleration
-	(*ImageName)(nil),                                   // 32: storage.ImageName
-	(ContainerRuntime)(0),                               // 33: storage.ContainerRuntime
+	(RiskPriorityClassification)(0),                     // 30: storage.RiskPriorityClassification
+	(PermissionLevel)(0),                                // 31: storage.PermissionLevel
+	(*Toleration)(nil),                                  // 32: storage.Toleration
+	(*ImageName)(nil),                                   // 33: storage.ImageName
+	(ContainerRuntime)(0),                               // 34: storage.ContainerRuntime
 }
 var file_storage_deployment_proto_depIdxs = []int32{
 	20, // 0: storage.Deployment.labels:type_name -> storage.Deployment.LabelsEntry
@@ -2327,43 +2366,45 @@ var file_storage_deployment_proto_depIdxs = []int32{
 	29, // 3: storage.Deployment.created:type_name -> google.protobuf.Timestamp
 	7,  // 4: storage.Deployment.containers:type_name -> storage.Container
 	22, // 5: storage.Deployment.annotations:type_name -> storage.Deployment.AnnotationsEntry
-	30, // 6: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
-	31, // 7: storage.Deployment.tolerations:type_name -> storage.Toleration
-	16, // 8: storage.Deployment.ports:type_name -> storage.PortConfig
-	32, // 9: storage.ContainerImage.name:type_name -> storage.ImageName
-	17, // 10: storage.Container.config:type_name -> storage.ContainerConfig
-	6,  // 11: storage.Container.image:type_name -> storage.ContainerImage
-	18, // 12: storage.Container.security_context:type_name -> storage.SecurityContext
-	9,  // 13: storage.Container.volumes:type_name -> storage.Volume
-	16, // 14: storage.Container.ports:type_name -> storage.PortConfig
-	15, // 15: storage.Container.secrets:type_name -> storage.EmbeddedSecret
-	8,  // 16: storage.Container.resources:type_name -> storage.Resources
-	10, // 17: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
-	11, // 18: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
-	0,  // 19: storage.Container.type:type_name -> storage.ContainerType
-	1,  // 20: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
-	13, // 21: storage.Pod.live_instances:type_name -> storage.ContainerInstance
-	23, // 22: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
-	29, // 23: storage.Pod.started:type_name -> google.protobuf.Timestamp
-	14, // 24: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
-	29, // 25: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
-	29, // 26: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
-	33, // 27: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
-	2,  // 28: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
-	24, // 29: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
-	25, // 30: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
-	26, // 31: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
-	27, // 32: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
-	29, // 33: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
-	13, // 34: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
-	2,  // 35: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
-	3,  // 36: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
-	4,  // 37: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
-	38, // [38:38] is the sub-list for method output_type
-	38, // [38:38] is the sub-list for method input_type
-	38, // [38:38] is the sub-list for extension type_name
-	38, // [38:38] is the sub-list for extension extendee
-	0,  // [0:38] is the sub-list for field type_name
+	30, // 6: storage.Deployment.risk_priority_classification:type_name -> storage.RiskPriorityClassification
+	31, // 7: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
+	32, // 8: storage.Deployment.tolerations:type_name -> storage.Toleration
+	16, // 9: storage.Deployment.ports:type_name -> storage.PortConfig
+	33, // 10: storage.ContainerImage.name:type_name -> storage.ImageName
+	17, // 11: storage.Container.config:type_name -> storage.ContainerConfig
+	6,  // 12: storage.Container.image:type_name -> storage.ContainerImage
+	18, // 13: storage.Container.security_context:type_name -> storage.SecurityContext
+	9,  // 14: storage.Container.volumes:type_name -> storage.Volume
+	16, // 15: storage.Container.ports:type_name -> storage.PortConfig
+	15, // 16: storage.Container.secrets:type_name -> storage.EmbeddedSecret
+	8,  // 17: storage.Container.resources:type_name -> storage.Resources
+	10, // 18: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
+	11, // 19: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
+	0,  // 20: storage.Container.type:type_name -> storage.ContainerType
+	1,  // 21: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
+	13, // 22: storage.Pod.live_instances:type_name -> storage.ContainerInstance
+	23, // 23: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
+	29, // 24: storage.Pod.started:type_name -> google.protobuf.Timestamp
+	14, // 25: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
+	29, // 26: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
+	29, // 27: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
+	34, // 28: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
+	2,  // 29: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
+	24, // 30: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
+	25, // 31: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
+	26, // 32: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
+	27, // 33: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
+	29, // 34: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
+	30, // 35: storage.ListDeployment.risk_priority_classification:type_name -> storage.RiskPriorityClassification
+	13, // 36: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
+	2,  // 37: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
+	3,  // 38: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
+	4,  // 39: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
+	40, // [40:40] is the sub-list for method output_type
+	40, // [40:40] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_storage_deployment_proto_init() }
@@ -2375,6 +2416,7 @@ func file_storage_deployment_proto_init() {
 	file_storage_image_proto_init()
 	file_storage_labels_proto_init()
 	file_storage_rbac_proto_init()
+	file_storage_risk_proto_init()
 	file_storage_taints_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -2,6 +2,7 @@ import type { ContainerRuntimeType } from './containerRuntime.proto';
 import type { ImageName } from './image.proto';
 import type { MatchLabelsSelector } from './labels.proto';
 import type { PermissionLevel } from './rbac.proto';
+import type { RiskPriorityClassification } from './risk.proto';
 import type { Toleration } from './taints.proto';
 
 export type ListDeployment = {
@@ -13,6 +14,8 @@ export type ListDeployment = {
     namespace: string;
     created: string; // ISO 8601 date string
     priority: string; // int64
+    riskPriorityClassification?: RiskPriorityClassification;
+    riskScore: number; // float
 };
 
 export type Deployment = {
@@ -33,6 +36,7 @@ export type Deployment = {
     containers: Container[];
     annotations: Record<string, string>;
     priority: string; // int64
+    riskPriorityClassification?: RiskPriorityClassification;
     inactive: boolean;
     imagePullSecrets: string[];
     serviceAccount: string;
@@ -139,7 +143,7 @@ export type PortConfig = {
     exposureInfos: ExposureInfo[];
 };
 
-export type ExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST';
+export type ExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST' | 'ROUTE';
 
 export type ExposureInfo = {
     level: ExposureLevel;

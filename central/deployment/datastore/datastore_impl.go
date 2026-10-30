@@ -29,6 +29,7 @@ import (
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
+	riskPkg "github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -98,7 +99,7 @@ func (ds *datastoreImpl) initializeRanker() {
 	// The store search function does not use select fields, only views do. Hence empty query is used in the walk below
 	err := ds.deploymentStore.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(deployment *storage.Deployment) error {
 		riskScore := deployment.GetRiskScore()
-		ds.deploymentRanker.Add(deployment.GetId(), riskScore)
+		ds.deploymentRanker.AddWithPriorityClassification(deployment.GetId(), riskScore, int32(deployment.GetRiskPriorityClassification()))
 
 		// TODO: ROX-6235: account for nodes in cluster risk
 		// aggregate deployment risk scores to get cluster risk score
@@ -333,8 +334,15 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		return sac.ErrResourceAccessDenied
 	}
 
-	// Update deployment with latest risk score
+	// Update ranker metadata when risk processing upserts a deployment with freshly computed risk.
+	if deployment.GetRiskScore() > 0 || deployment.GetRiskPriorityClassification() != storage.RiskPriorityClassification_RISK_PRIORITY_UNKNOWN {
+		ds.deploymentRanker.AddWithPriorityClassification(deployment.GetId(), deployment.GetRiskScore(), int32(deployment.GetRiskPriorityClassification()))
+	}
+
+	// Update deployment with latest risk score and classification.
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
+	deployment.RiskPriorityClassification = storage.RiskPriorityClassification(ds.deploymentRanker.GetPriorityClassificationForID(deployment.GetId()))
+	deployment.RiskPrioritySortOrder = riskPkg.PriorityClassificationSortOrder(deployment.GetRiskPriorityClassification())
 
 	// Deployments that run intermittently and do not have images that are referenced by digest
 	// should maintain the digest of the last used image
@@ -480,6 +488,7 @@ func (ds *datastoreImpl) updateListDeploymentPriority(deployments ...*storage.Li
 func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deployment) {
 	for _, deployment := range deployments {
 		deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
+		deployment.RiskPriorityClassification = storage.RiskPriorityClassification(ds.deploymentRanker.GetPriorityClassificationForID(deployment.GetId()))
 	}
 }
 
