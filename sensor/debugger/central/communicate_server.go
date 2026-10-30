@@ -52,9 +52,9 @@ type FakeService struct {
 
 // GetAllMessages clones and returns all messages that were ingested by central gRPC.
 func (s *FakeService) GetAllMessages() []*central.MsgFromSensor {
-	var output []*central.MsgFromSensor
 	s.receivedLock.RLock()
 	defer s.receivedLock.RUnlock()
+	output := make([]*central.MsgFromSensor, 0, len(s.receivedMessages))
 	for _, m := range s.receivedMessages {
 		output = append(output, m.CloneVT())
 	}
