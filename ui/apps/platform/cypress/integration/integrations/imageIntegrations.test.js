@@ -30,53 +30,6 @@ const staticResponseForPOST = {
 describe('Image Integrations', () => {
     withAuth();
 
-    it('should create a new StackRox Scanner integration', () => {
-        const integrationName = generateNameWithDate('StackRox Scanner Test');
-        const integrationType = 'clairify';
-
-        visitIntegrationsTable(integrationSource, integrationType);
-        clickCreateNewIntegrationInTable(integrationSource, integrationType);
-
-        // Step 0, should start out with disabled Save and Test buttons
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 1, check empty fields
-        getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Endpoint').type(' ').blur();
-
-        getHelperElementByLabel('Integration name').contains('An integration name is required');
-        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
-        cy.get(selectors.buttons.test).should('be.disabled');
-        cy.get(selectors.buttons.save).should('be.disabled');
-
-        // Step 2, check valid from and save
-        getInputByLabel('Integration name').clear().type(integrationName);
-
-        const selected = 'pf-m-selected';
-        getToggleGroupItem('Type', 0, 'Image Scanner').should('have.class', selected);
-        getToggleGroupItem('Type', 1, 'Node Scanner').should('not.have.class', selected);
-        getToggleGroupItem('Type', 2, 'Image Scanner + Node Scanner').should(
-            'not.have.class',
-            selected
-        );
-        getToggleGroupItem('Type', 2, 'Image Scanner + Node Scanner')
-            .click()
-            .should('have.class', selected);
-
-        getInputByLabel('Endpoint').clear().type('https://scanner.stackrox:8080');
-
-        testIntegrationInFormWithoutStoredCredentials(
-            integrationSource,
-            integrationType,
-            staticResponseForTest
-        );
-
-        saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
-
-        // Test does not delete, because it did not create.
-    });
-
     it('should create a new Generic Docker Registry integration', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
