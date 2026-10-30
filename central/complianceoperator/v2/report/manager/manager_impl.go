@@ -507,17 +507,20 @@ func (m *managerImpl) handleReadyScan() {
 			// Mark only those prior results stale right away. The pivot is the timed-out run's
 			// start time, matching DeleteOldResults.
 			if features.ComplianceSurfaceStaleData.Enabled() && errors.Is(scanWatcherResult.Error, watcher.ErrScanTimeout) {
-				// Scope the staleness marking by scan ref and run start time. Normally these come from
-				// the Scan. A watcher can be created, and time out, from a check result alone before
-				// any Scan update arrives (see GetWatcherIDFromCheckResult); in that case the arrived
-				// results carry the same scan ref and start time, so fall back to those. Skip only
-				// when neither source yields a scope (e.g. a timeout with no results at all).
-				scanRefID := scanWatcherResult.Scan.GetScanRefId()
-				pivot := scanWatcherResult.Scan.GetLastStartedTime()
+				// Scope the staleness marking by scan ref and run start time. The watcher records both
+				// from whichever events it saw (a Scan update and/or check results), always tracking
+				// the newest run's start time, so prefer that: it stays correct even for a result-first
+				// timeout (no Scan ever arrived) or when a Scan and a newer result raced. Fall back to
+				// the Scan object only when the watcher recorded no scope (e.g. a scan-only watcher
+				// built directly in tests). Skip when neither yields a scope.
+				scanRefID := scanWatcherResult.ScanRefID
+				pivot := scanWatcherResult.LastStartedTime
+				if scanRefID == "" || pivot == nil {
+					scanRefID = scanWatcherResult.Scan.GetScanRefId()
+					pivot = scanWatcherResult.Scan.GetLastStartedTime()
+				}
 				scanName := scanWatcherResult.Scan.GetScanName()
-				if scanWatcherResult.Scan == nil {
-					scanRefID = scanWatcherResult.ScanRefID
-					pivot = scanWatcherResult.LastStartedTime
+				if scanName == "" {
 					scanName = scanWatcherResult.WatcherID
 				}
 				if scanRefID == "" || pivot == nil {

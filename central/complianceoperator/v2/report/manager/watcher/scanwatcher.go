@@ -370,13 +370,24 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 		s.lastStartedTime = scan.GetLastStartedTime()
 		s.scanResults.Scan = scan
 		s.scanResults.CheckResults = set.NewStringSet()
+		s.recordScope(scan.GetScanRefId())
 		s.timeout.Reset()
 	} else if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) == 0 {
 		s.totalChecks = numChecks
 		// Same timestamp: update scan to pick up status changes (e.g., NOT-APPLICABLE).
 		s.scanResults.Scan = scan
+		s.recordScope(scan.GetScanRefId())
 	}
 	return nil
+}
+
+// recordScope stores the run's scan ref and start time on the results so the manager can mark prior
+// results stale on timeout from whichever events the watcher saw. s.lastStartedTime is the single
+// source of truth for the run start: both handleScan and handleResult keep it current, so a Scan and
+// a newer result that raced each other never leave a stale pivot. Callers hold resultsLock.
+func (s *scanWatcherImpl) recordScope(scanRefID string) {
+	s.scanResults.ScanRefID = scanRefID
+	s.scanResults.LastStartedTime = s.lastStartedTime
 }
 
 func (s *scanWatcherImpl) handleResult(result *storage.ComplianceOperatorCheckResultV2) error {
@@ -410,10 +421,8 @@ func (s *scanWatcherImpl) handleResult(result *storage.ComplianceOperatorCheckRe
 		s.timeout.Reset()
 	}
 	// Record the run's scope from the results so the manager can mark prior results stale even if no
-	// Scan update ever arrives (result-first timeout). All results of a watcher share the scan ref,
-	// and s.lastStartedTime is this run's start time.
-	s.scanResults.ScanRefID = result.GetScanRefId()
-	s.scanResults.LastStartedTime = s.lastStartedTime
+	// Scan update ever arrives (result-first timeout). All results of a watcher share the scan ref.
+	s.recordScope(result.GetScanRefId())
 	s.scanResults.CheckResults.Add(result.GetCheckId())
 	return nil
 }
