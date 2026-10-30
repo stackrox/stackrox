@@ -64,9 +64,9 @@ type DataStore interface {
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 
-	// MarkStalePriorResultsByScanRef marks STALE the check results of the given scan (identified
+	// MarkScanChecksStale marks STALE the check results of the given scan (identified
 	// by its scan ref ID) that predate olderThan, leaving the rest unchanged.
-	MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error)
+	MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results

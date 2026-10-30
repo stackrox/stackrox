@@ -14,7 +14,7 @@ import (
 )
 
 // TestUpsertResultDerivesFreshness covers reconcileReceivedResult's single-writer decisions, which
-// UpsertResult applies under the KeyFence (shared with MarkStalePriorResultsByScanRef) when the
+// UpsertResult applies under the KeyFence (shared with MarkScanChecksStale) when the
 // freshness feature is on. Seeds that set up a prior row go through s.storage directly so they are
 // plain writes, independent of the derivation under test.
 func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResultDerivesFreshness() {
@@ -30,7 +30,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResultDerivesFreshne
 	s.assertFreshness(firstSeen.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
 
 	// First sighting, nil LastStartedTime: UNKNOWN, not CURRENT -- freshness cannot be evaluated,
-	// and (deliberately) not STALE-correctable later either, since MarkStalePriorResultsByScanRef
+	// and (deliberately) not STALE-correctable later either, since MarkScanChecksStale
 	// leaves nil-timestamp rows unchanged forever. See reconcileReceivedResult's doc.
 	firstSeenNilTime := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-first-seen-nil")
 	firstSeenNilTime.LastStartedTime = nil
@@ -91,7 +91,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResultDerivesFreshne
 	s.Require().Error(s.dataStore.UpsertResult(s.hasReadCtx, firstSeen))
 }
 
-func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorResultsByScanRef() {
+func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStale() {
 	now := time.Now()
 	// pivot is the timed-out run's start time. A result the run refreshed carries this time; a
 	// result it did not refresh carries an older time (a previous run) and is the stale leftover.
@@ -116,17 +116,17 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorResultsBySca
 	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, otherRec))
 
 	// Write context is required.
-	_, err := s.dataStore.MarkStalePriorResultsByScanRef(s.hasReadCtx, refreshedRec.GetScanRefId(), pivot)
+	_, err := s.dataStore.MarkScanChecksStale(s.hasReadCtx, refreshedRec.GetScanRefId(), pivot)
 	s.Require().Error(err)
 
 	// An empty scan ref is a no-op.
-	updated, err := s.dataStore.MarkStalePriorResultsByScanRef(s.hasWriteCtx, "", pivot)
+	updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, "", pivot)
 	s.Require().NoError(err)
 	s.Require().Zero(updated)
 
 	// The timeout marks only the prior (not-refreshed) row STALE. The row the run refreshed keeps
 	// its CURRENT value; the other scan is untouched.
-	updated, err = s.dataStore.MarkStalePriorResultsByScanRef(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
+	updated, err = s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
 	s.Require().NoError(err)
 	s.Require().Equal(int64(1), updated)
 	s.assertFreshness(priorRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
@@ -134,7 +134,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorResultsBySca
 	s.assertFreshness(otherRec.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
 
 	// Marking again is idempotent: the prior row is already STALE, nothing else changes.
-	updated, err = s.dataStore.MarkStalePriorResultsByScanRef(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
+	updated, err = s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
 	s.Require().NoError(err)
 	s.Require().Zero(updated)
 }
@@ -155,7 +155,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorDoesNotRever
 	var scanRefID string
 	for i := range n {
 		// All rows share one scan ref (same cluster + scan name) so a single
-		// MarkStalePriorResultsByScanRef call targets the whole set.
+		// MarkScanChecksStale call targets the whole set.
 		rec := getTestRecForScan("sc-race", testconsts.Cluster1, "scan-race")
 		rec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
 		rec.Status = storage.ComplianceOperatorCheckResultV2_INFO
@@ -179,7 +179,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorDoesNotRever
 		defer wg.Done()
 		ready.Done()
 		<-start
-		_, err := s.dataStore.MarkStalePriorResultsByScanRef(s.hasWriteCtx, scanRefID, pivot)
+		_, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, scanRefID, pivot)
 		s.NoError(err)
 	}()
 	go func() {
@@ -213,7 +213,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorDoesNotRever
 // A replayed result (same LastStartedTime as what is stored, so not genuinely new) decided from a
 // stale read could overwrite a concurrent timeout's STALE marking with a freshness value computed
 // before that marking happened. UpsertResult closes that gap by reading and writing under the same
-// KeyFence used by MarkStalePriorResultsByScanRef. No matter which side's critical section runs
+// KeyFence used by MarkScanChecksStale. No matter which side's critical section runs
 // first, the result converges to the objectively correct value: STALE, because the row's
 // LastStartedTime genuinely predates the timed-out run's pivot. A replay that reads before the
 // timeout commits carries CURRENT forward, a no-op immediately corrected by the timeout's own
@@ -229,7 +229,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResultDoesNotRevertC
 	recs := make([]*storage.ComplianceOperatorCheckResultV2, 0, n)
 	var scanRefID string
 	for i := range n {
-		// All rows share one scan ref so a single MarkStalePriorResultsByScanRef call targets the
+		// All rows share one scan ref so a single MarkScanChecksStale call targets the
 		// whole set. They start CURRENT, as if a prior run had resolved them fresh; the pivot is
 		// now newer than their LastStartedTime, so the timed-out run did not refresh them. Seed
 		// through the store so the seed itself does not derive freshness.
@@ -249,7 +249,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResultDoesNotRevertC
 		defer wg.Done()
 		ready.Done()
 		<-start
-		_, err := s.dataStore.MarkStalePriorResultsByScanRef(s.hasWriteCtx, scanRefID, pivot)
+		_, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, scanRefID, pivot)
 		s.NoError(err)
 	}()
 	go func() {

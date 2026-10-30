@@ -36,7 +36,7 @@ type datastoreImpl struct {
 	store store.Store
 	db    postgres.DB
 
-	// keyFence prevents UpsertResult from racing MarkStalePriorResultsByScanRef.
+	// keyFence prevents UpsertResult from racing MarkScanChecksStale.
 	keyFence concurrency.KeyFence
 }
 
@@ -455,9 +455,9 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 // UpsertMany call, so a large update does not issue one oversized write.
 const freshnessUpdateBatchSize = 1000
 
-// MarkStalePriorResultsByScanRef marks STALE the check results (from the scan specified via scanRefID) whose
+// MarkScanChecksStale marks STALE the check results (from the scan specified via scanRefID) whose
 // LastStartedTime predates olderThan.
-func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
@@ -472,11 +472,6 @@ func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scan
 		ProtoQuery()
 
 	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
-		// Re-check the scan ref: ScanRefId derives from a scan-name label that could be reassigned
-		// between markStale's two reads, so the initial query filter alone is not enough.
-		if result.GetScanRefId() != scanRefID {
-			return false
-		}
 		started := result.GetLastStartedTime()
 		return started != nil && started.AsTime().Before(olderThan)
 	}, "marking prior compliance check results stale")
@@ -486,9 +481,8 @@ func (d *datastoreImpl) MarkStalePriorResultsByScanRef(ctx context.Context, scan
 // which shouldStale reports true. Results already STALE, or for which shouldStale is false, are
 // left untouched.
 func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldStale func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
-	// Collect IDs during the read, upsert after it completes: upserting inside the callback would
-	// need a second connection while this stream holds one open, which can deadlock on a large
-	// result set. Keeping only the IDs bounds memory to the churn, not the whole result set.
+	// Collect IDs during the read, upsert after it completes (upserting inside the callback would
+	// need a second connection, risking a deadlock)
 	var candidateIDs []string
 	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
 		if result.GetDataFreshness() != storage.ComplianceOperatorCheckResultV2_STALE && shouldStale(result) {

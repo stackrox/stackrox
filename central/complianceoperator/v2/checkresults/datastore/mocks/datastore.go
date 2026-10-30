@@ -222,19 +222,19 @@ func (mr *MockDataStoreMockRecorder) GetComplianceCheckResult(ctx, complianceRes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceCheckResult", reflect.TypeOf((*MockDataStore)(nil).GetComplianceCheckResult), ctx, complianceResultID)
 }
 
-// MarkStalePriorResultsByScanRef mocks base method.
-func (m *MockDataStore) MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+// MarkScanChecksStale mocks base method.
+func (m *MockDataStore) MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkStalePriorResultsByScanRef", ctx, scanRefID, olderThan)
+	ret := m.ctrl.Call(m, "MarkScanChecksStale", ctx, scanRefID, olderThan)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// MarkStalePriorResultsByScanRef indicates an expected call of MarkStalePriorResultsByScanRef.
-func (mr *MockDataStoreMockRecorder) MarkStalePriorResultsByScanRef(ctx, scanRefID, olderThan any) *gomock.Call {
+// MarkScanChecksStale indicates an expected call of MarkScanChecksStale.
+func (mr *MockDataStoreMockRecorder) MarkScanChecksStale(ctx, scanRefID, olderThan any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkStalePriorResultsByScanRef", reflect.TypeOf((*MockDataStore)(nil).MarkStalePriorResultsByScanRef), ctx, scanRefID, olderThan)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkScanChecksStale", reflect.TypeOf((*MockDataStore)(nil).MarkScanChecksStale), ctx, scanRefID, olderThan)
 }
 
 // SearchComplianceCheckResults mocks base method.
