@@ -45,26 +45,26 @@ func (c *centralVersionTestSuite) TearDownTest() {
 func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _ := c.setupCommand(&mockMetadataServer{centralVersion: ""})
+	ts := c.setupCommand(&mockMetadataServer{centralVersion: ""})
 
-	err := cmd.run(false)
+	err := ts.cmd.run(false)
 
 	c.Assert().ErrorContains(err, "did not return its version")
-	c.Assert().Empty(stdout.String())
+	c.Assert().Empty(ts.out.String())
 }
 
 func (c *centralVersionTestSuite) TestJSONOutput() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _ := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
+	ts := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
 
-	err := cmd.run(true)
+	err := ts.cmd.run(true)
 	c.Require().NoError(err)
 
 	var result versioncheck.CheckResult
-	c.T().Log(stdout.String())
-	c.Require().NoError(json.Unmarshal(stdout.Bytes(), &result))
+	c.T().Log(ts.out.String())
+	c.Require().NoError(json.Unmarshal(ts.out.Bytes(), &result))
 
 	c.Assert().Equal("5.0.0-testing", result.RoxctlVersion)
 	c.Assert().Equal("5.0.2", result.CentralVersion)
@@ -77,15 +77,15 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, interceptorOutput := c.setupCommand(&mockMetadataServer{centralVersion: "5.6.0"})
+	ts := c.setupCommand(&mockMetadataServer{centralVersion: "5.6.0"})
 
-	err := cmd.run(true)
+	err := ts.cmd.run(true)
 
 	c.Assert().NoError(err)
-	c.Assert().Empty(interceptorOutput.String(), "version check interceptor warning should be suppressed")
+	c.Assert().Empty(ts.interceptorOut.String(), "version check interceptor warning should be suppressed")
 
 	var result versioncheck.CheckResult
-	c.Require().NoError(json.Unmarshal(stdout.Bytes(), &result))
+	c.Require().NoError(json.Unmarshal(ts.out.Bytes(), &result))
 
 	c.Assert().Equal("INCOMPATIBLE_AHEAD", result.Compatibility)
 	c.Assert().Equal("5.6.0", result.CentralVersion)
@@ -96,12 +96,12 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _ := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
+	ts := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
 
-	err := cmd.run(false)
+	err := ts.cmd.run(false)
 	c.Require().NoError(err)
 
-	output := stdout.String()
+	output := ts.out.String()
 	c.Assert().Contains(output, "Central version:                   5.0.2")
 	c.Assert().Contains(output, "roxctl version:                    5.0.0")
 	c.Assert().Contains(output, "Compatibility:                     Matched")
@@ -114,6 +114,12 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 type mockMetadataServer struct {
 	v1.UnimplementedMetadataServiceServer
 	centralVersion string
+}
+
+type testSetup struct {
+	cmd            *centralVersionCommand
+	out            *bytes.Buffer
+	interceptorOut *bytes.Buffer
 }
 
 func (m *mockMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Metadata, error) {
@@ -151,15 +157,19 @@ func (c *centralVersionTestSuite) createMockServiceAndClient(t *testing.T, serve
 	return conn, &interceptorOutput
 }
 
-func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr, interceptorOutput *bytes.Buffer) {
+func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) *testSetup {
 	conn, interceptorOut := c.createMockServiceAndClient(c.T(), server)
-	env, out, errOut := mocks.NewEnvWithConn(conn, c.T())
-	cmd = &centralVersionCommand{
+	env, out, _ := mocks.NewEnvWithConn(conn, c.T())
+	cmd := &centralVersionCommand{
 		env:          env,
 		timeout:      5 * time.Second,
 		retryTimeout: 5 * time.Second,
 	}
-	return cmd, out, errOut, interceptorOut
+	return &testSetup{
+		cmd:            cmd,
+		out:            out,
+		interceptorOut: interceptorOut,
+	}
 }
 
 func injectVersionHeader(t *testing.T, centralVersion string) grpc.UnaryServerInterceptor {
