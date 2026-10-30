@@ -45,6 +45,11 @@ type queueGeneratorBinding struct {
 	generator reportGen.ReportGenerator
 }
 
+type reportSemaphore interface {
+	Acquire(context.Context, int64) error
+	Release(int64)
+}
+
 type scheduler struct {
 	// Used to map reportConfigs to their cron jobs. This is only used for scheduled reports, On-demand reports are directly added to reportsQueue
 	reportConfigToEntryIDs map[string]cron.EntryID
@@ -73,7 +78,9 @@ type scheduler struct {
 	// isStopped will prevent scheduler from being re-started once it is stopped
 	isStopped atomic.Bool
 
-	stopper concurrency.Stopper
+	stopper    concurrency.Stopper
+	stopCtx    context.Context
+	stopCancel context.CancelFunc
 
 	// Use to synchronize access to reportConfigToEntryIDs map
 	cronJobsLock sync.Mutex
@@ -83,7 +90,7 @@ type scheduler struct {
 	//      If you need to lock another mutex, you must free the locked one first.
 
 	cron                *cron.Cron
-	concurrencySema     *semaphore.Weighted
+	concurrencySema     reportSemaphore
 	advisoryLockRelease func()
 }
 
@@ -103,6 +110,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
 	imageReportGenerator reportGen.ReportGenerator, nodeReportGenerator reportGen.ReportGenerator,
 	validator *validation.Validator, cronScheduler *cron.Cron) *scheduler {
+	stopCtx, stopCancel := context.WithCancel(scheduledCtx)
 
 	imageQueue := reportqueue.New()
 	queues := []queueGeneratorBinding{
@@ -130,6 +138,8 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		queueByType:            queueByType,
 		readyForReports:        concurrency.NewSignal(),
 		stopper:                concurrency.NewStopper(),
+		stopCtx:                stopCtx,
+		stopCancel:             stopCancel,
 		cron:                   cronScheduler,
 		concurrencySema:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 	}
@@ -180,6 +190,7 @@ func (s *scheduler) Stop() {
 		log.Error("Scheduler already stopped")
 		return
 	}
+	s.stopCancel()
 	s.stopper.Client().Stop()
 	err := s.stopper.Client().Stopped().Wait()
 	if err != nil {
@@ -197,13 +208,19 @@ func (s *scheduler) runReports() {
 		case <-s.stopper.Flow().StopRequested():
 			return
 		case <-s.readyForReports.Done():
+			if err := s.concurrencySema.Acquire(s.stopCtx, 1); err != nil {
+				return
+			}
+			select {
+			case <-s.stopper.Flow().StopRequested():
+				s.concurrencySema.Release(1)
+				return
+			default:
+			}
 			req, q, gen := s.selectNextJobRoundRobin()
 			if req == nil {
+				s.concurrencySema.Release(1)
 				s.readyForReports.Reset()
-				continue
-			}
-			if err := s.concurrencySema.Acquire(scheduledCtx, 1); err != nil {
-				log.Errorf("Error acquiring semaphore to run new report: %v", err)
 				continue
 			}
 			log.Infof("Executing report '%s' at %v", req.ReportSnapshot.GetName(), time.Now().Format(time.RFC822))
