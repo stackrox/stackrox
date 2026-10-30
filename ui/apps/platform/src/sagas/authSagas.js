@@ -62,7 +62,6 @@ function* evaluateUserAccess() {
     // No token but validated providers present? Log out the user since they
     // can't have access.
     if (!tokenExists && authStatus !== AUTH_STATUS.LOGGED_OUT) {
-        // it can happen if user had ANONYMOUS access before, but now auth provider was added to the system
         yield put(actions.logout());
         return;
     }
@@ -337,7 +336,6 @@ function* saveAuthProvider(action) {
             );
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
-            yield put(actions.selectAuthProvider({ ...remaining, id: savedAuthProvider.data.id }));
         } else {
             const isImmutable = yield call(authServiceGetIsAuthProviderImmutable, remaining);
             if (!remaining.active && !isImmutable) {
@@ -346,14 +344,8 @@ function* saveAuthProvider(action) {
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
             yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole, authProvider.id));
-            const newAuthProviders = yield select(selectors.getAuthProviders);
-            const updatedSelectedAuthProvider = newAuthProviders.find(
-                (provider) => provider.id === authProvider.id
-            );
-            yield put(actions.selectAuthProvider(updatedSelectedAuthProvider));
         }
     } catch (error) {
-        yield put(actions.setAuthProviderEditingState(true));
         const message =
             (error.response && error.response.data && error.response.data.error) ||
             'AuthProvider request timed out';

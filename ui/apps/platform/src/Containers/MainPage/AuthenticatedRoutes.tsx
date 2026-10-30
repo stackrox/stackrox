@@ -22,7 +22,6 @@ function AuthenticatedRoutes(): ReactElement {
             return <LoadingSection message="Authenticating..." />;
 
         case AUTH_STATUS.LOGGED_IN:
-        case AUTH_STATUS.ANONYMOUS_ACCESS:
             return <MainPage />;
 
         case AUTH_STATUS.LOGGED_OUT:
