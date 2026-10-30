@@ -441,13 +441,17 @@ deploy-dirty-tag-via-olmv0: ## Deploy operator dirty tagged image to the cluster
 # This target ignores filter for dirty tagged images.
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
-.PHONY: deploy-previous-via-olmv0
-deploy-previous-via-olmv0: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv0.
+.PHONY: deploy-previous-via-olmv
+deploy-previous-via-olmv: kuttl bundle-post-process
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	set -x ;\
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(OLM_OPERATOR_INSTALLER) $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+
+.PHONY: deploy-previous-via-olmv0
+deploy-previous-via-olmv0: OLM_OPERATOR_INSTALLER = ./hack/olm-operator-install.sh
+deploy-previous-via-olmv0: kuttl bundle-post-process deploy-previous-via-olmv ## Deploy replaced version of operator image to the cluster using OLMv0.
 
 .PHONY: deploy-via-chart
 deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
@@ -470,12 +474,8 @@ upgrade-dirty-tag-via-olmv0: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
 .PHONY: deploy-previous-via-olmv1
-deploy-previous-via-olmv1: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv1.
-# This requires operator, bundle and index images to already be pushed, but we do not depend on the
-# target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
-	set -x ;\
-	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+deploy-previous-via-olmv1: OLM_OPERATOR_INSTALLER = ./hack/olmv1-operator-install.sh
+deploy-previous-via-olmv1: kuttl bundle-post-process deploy-previous-via-olmv ## Deploy replaced version of operator image to the cluster using OLMv1.
 
 .PHONY: upgrade-via-olmv1
 upgrade-via-olmv1: kuttl
