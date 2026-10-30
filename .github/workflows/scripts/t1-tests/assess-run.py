@@ -100,7 +100,11 @@ def main():
             matching = [job for job in jobs if job["name"] == f"bundle ({stream})"]
             if len(matching) != 1 or matching[0]["conclusion"] != ("success" if positive else "failure"):
                 raise RuntimeError(f"Unexpected bundle-job result for {stream}")
-            job = matching[0]
+            # The run's job list can retain non-final step snapshots after completion.
+            job = api(f"repos/{REPOSITORY}/actions/jobs/{matching[0]['id']}")
+            lib.write_json(evidence / f"{stream}-job.json", job)
+            if job["run_id"] != args.run or job["status"] != "completed" or job["conclusion"] != ("success" if positive else "failure"):
+                raise RuntimeError(f"Final job metadata is unavailable or inconsistent for {stream}")
             log = lib.command(["gh", "api", "--method", "GET", f"repos/{REPOSITORY}/actions/jobs/{job['id']}/logs"], timeout=180).decode(errors="replace")
             (evidence / f"{stream}-job.log").write_text(log)
             steps = {step["name"]: step["conclusion"] for step in job["steps"]}
@@ -132,6 +136,12 @@ def main():
         assessment["validation_status"] = "Passed"
         assessment["publication_gate"] = "Positive control" if positive else "Passed (W8 real positive/negative pair)"
         notify = [job for job in jobs if job["name"] == "notify"]
+        if not positive and len(notify) == 1:
+            final_notify = api(f"repos/{REPOSITORY}/actions/jobs/{notify[0]['id']}")
+            lib.write_json(evidence / "notify-job.json", final_notify)
+            if final_notify["run_id"] != args.run or final_notify["status"] != "completed":
+                raise RuntimeError("Final notification-job metadata is unavailable or inconsistent")
+            notify = [final_notify]
         assessment["notification_job"] = notify[0]["conclusion"] if len(notify) == 1 else "missing"
         assessment["slack_delivery"] = "Not expected" if positive else "Pending: retain a real test-channel message reference; job success alone is not delivery proof"
         if not positive and assessment["notification_job"] != "success":
