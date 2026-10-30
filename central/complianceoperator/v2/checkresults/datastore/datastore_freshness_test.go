@@ -7,15 +7,18 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// TestUpsertReceivedResult covers reconcileReceivedResult's single-writer decisions directly at
-// the datastore level, where that logic now lives (moved out of the pipeline during review of
-// #23765, since it must run under the KeyFence used by MarkStalePriorResultsByScanRef).
-func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResult() {
+// TestUpsertResultDerivesFreshness covers reconcileReceivedResult's single-writer decisions, which
+// UpsertResult applies under the KeyFence (shared with MarkStalePriorResultsByScanRef) when the
+// freshness feature is on. Seeds that set up a prior row go through s.storage directly so they are
+// plain writes, independent of the derivation under test.
+func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResultDerivesFreshness() {
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
 	now := time.Now()
 	older := now.Add(-10 * time.Hour)
 	newer := now.Add(-5 * time.Minute)
@@ -23,7 +26,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResult() {
 	// First sighting, non-nil LastStartedTime: CURRENT.
 	firstSeen := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-first-seen")
 	firstSeen.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&older)
-	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, firstSeen))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, firstSeen))
 	s.assertFreshness(firstSeen.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
 
 	// First sighting, nil LastStartedTime: UNKNOWN, not CURRENT -- freshness cannot be evaluated,
@@ -31,57 +34,61 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResult() {
 	// leaves nil-timestamp rows unchanged forever. See reconcileReceivedResult's doc.
 	firstSeenNilTime := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-first-seen-nil")
 	firstSeenNilTime.LastStartedTime = nil
-	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, firstSeenNilTime))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, firstSeenNilTime))
 	s.assertFreshness(firstSeenNilTime.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
 
 	// Newer than stored: CURRENT, regardless of the row's previous freshness (STALE here).
 	seeded := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-newer")
 	seeded.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&older)
 	seeded.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, seeded))
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, seeded))
 	refreshed := seeded.CloneVT()
 	refreshed.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
-	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, refreshed))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, refreshed))
 	s.assertFreshness(seeded.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
 
-	// Same-timestamp replay: DataFreshness AND LastStartedTime are both preserved, not regressed.
+	// Same-timestamp replay (not newer): DataFreshness is carried over from the stored row, and the
+	// identical timestamp means nothing is regressed.
 	sameTimeReplayBase := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-replay-same")
 	sameTimeReplayBase.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
 	sameTimeReplayBase.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, sameTimeReplayBase))
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, sameTimeReplayBase))
 	sameTimeReplay := sameTimeReplayBase.CloneVT()
-	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, sameTimeReplay))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, sameTimeReplay))
 	s.assertFreshness(sameTimeReplayBase.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
 	s.assertLastStartedTime(sameTimeReplayBase.GetId(), newer)
 
-	// Older (out-of-order) replay: this is the regression case from review -- without the fix,
-	// Upsert would persist the older incoming timestamp over the newer stored one, corrupting a
-	// later timeout's age-based decision. Both DataFreshness and LastStartedTime must stay as they
-	// were, reflecting the newer, genuine run.
+	// Older (out-of-order) replay: DataFreshness is still carried over from the stored row, but the
+	// result is otherwise ingested as-is, so its older LastStartedTime overwrites the newer stored
+	// one. This regression is accepted: it can make a later timeout wrongly flag the row STALE, a
+	// rare case corrected by the next scan (and, once it exists, the freshness sweeper).
 	oldReplayBase := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-replay-older")
 	oldReplayBase.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
 	oldReplayBase.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, oldReplayBase))
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, oldReplayBase))
 	oldReplay := oldReplayBase.CloneVT()
 	oldReplay.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&older)
-	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, oldReplay))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, oldReplay))
 	s.assertFreshness(oldReplayBase.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
-	s.assertLastStartedTime(oldReplayBase.GetId(), newer)
+	s.assertLastStartedTime(oldReplayBase.GetId(), older)
 
 	// A replay with a missing/unparseable timestamp (incoming nil) against an existing row with a
-	// real timestamp: not genuinely newer, so both fields are preserved the same way.
+	// real timestamp: DataFreshness is carried over, but the nil timestamp is ingested as-is.
 	nilReplayBase := getTestRecForScan("sc-upsert-received", testconsts.Cluster1, "scan-replay-nil")
 	nilReplayBase.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&newer)
 	nilReplayBase.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, nilReplayBase))
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, nilReplayBase))
 	nilReplay := nilReplayBase.CloneVT()
 	nilReplay.LastStartedTime = nil
-	s.Require().NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, nilReplay))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, nilReplay))
 	s.assertFreshness(nilReplayBase.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
-	s.assertLastStartedTime(nilReplayBase.GetId(), newer)
+	storedNilReplay, found, err := s.storage.Get(s.hasReadCtx, nilReplayBase.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Nil(storedNilReplay.GetLastStartedTime())
 
 	// Write context is required.
-	s.Require().Error(s.dataStore.UpsertReceivedResult(s.hasReadCtx, firstSeen))
+	s.Require().Error(s.dataStore.UpsertResult(s.hasReadCtx, firstSeen))
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorResultsByScanRef() {
@@ -200,19 +207,20 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkStalePriorDoesNotRever
 	}
 }
 
-// TestUpsertReceivedResultDoesNotRevertConcurrentTimeout is a regression test for the TOCTOU race
-// found in review on #23765: the receive path used to read a result's existing freshness, decide
+// TestUpsertResultDoesNotRevertConcurrentTimeout is a regression test for the TOCTOU race found in
+// review on #23765: the receive path used to read a result's existing freshness, decide
 // CURRENT/carry-forward, and only then upsert -- all without holding the key fence across the read.
 // A replayed result (same LastStartedTime as what is stored, so not genuinely new) decided from a
 // stale read could overwrite a concurrent timeout's STALE marking with a freshness value computed
-// before that marking happened. UpsertReceivedResult closes that gap by reading and writing under
-// the same KeyFence used by MarkStalePriorResultsByScanRef. No matter which side's critical section
-// runs first, the result converges to the objectively correct value: STALE, because the row's
+// before that marking happened. UpsertResult closes that gap by reading and writing under the same
+// KeyFence used by MarkStalePriorResultsByScanRef. No matter which side's critical section runs
+// first, the result converges to the objectively correct value: STALE, because the row's
 // LastStartedTime genuinely predates the timed-out run's pivot. A replay that reads before the
 // timeout commits carries CURRENT forward, a no-op immediately corrected by the timeout's own
 // (serialized, not concurrent) read right after; a replay that reads after the timeout carries the
 // already-STALE value forward.
-func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResultDoesNotRevertConcurrentTimeout() {
+func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResultDoesNotRevertConcurrentTimeout() {
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
 	now := time.Now()
 	pivot := now.Add(-5 * time.Minute)
 	oldTime := now.Add(-10 * time.Hour)
@@ -223,12 +231,13 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResultDoesNo
 	for i := range n {
 		// All rows share one scan ref so a single MarkStalePriorResultsByScanRef call targets the
 		// whole set. They start CURRENT, as if a prior run had resolved them fresh; the pivot is
-		// now newer than their LastStartedTime, so the timed-out run did not refresh them.
+		// now newer than their LastStartedTime, so the timed-out run did not refresh them. Seed
+		// through the store so the seed itself does not derive freshness.
 		rec := getTestRecForScan("sc-replay-race", testconsts.Cluster1, "scan-replay-race")
 		rec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
 		rec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
 		rec.Id = fmt.Sprintf("replay-race-%d", i)
-		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, rec))
 		recs = append(recs, rec)
 		scanRefID = rec.GetScanRefId()
 	}
@@ -252,7 +261,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertReceivedResultDoesNo
 			// run, so this must not force CURRENT regardless of how it interleaves with the
 			// timeout.
 			replayed := rec.CloneVT()
-			s.NoError(s.dataStore.UpsertReceivedResult(s.hasWriteCtx, replayed))
+			s.NoError(s.dataStore.UpsertResult(s.hasWriteCtx, replayed))
 		}
 	}()
 	ready.Wait()

@@ -18,24 +18,9 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	// UpsertResult adds the result to the database
+	// UpsertResult stores a result received from sensor. When the freshness feature is enabled it
+	// also derives data_freshness from the stored row, atomically with the write.
 	UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
-
-	// UpsertReceivedResult upserts a result just received from sensor and, atomically with the
-	// write, derives its data_freshness instead of trusting the caller's value: "received" does
-	// not always mean "new" (sensor resends every existing check result on reconnect regardless of
-	// whether anything changed, and a misbehaving compliance operator could republish a result
-	// without a real rescan behind it). A result is CURRENT when it has no prior stored row and a
-	// non-nil LastStartedTime (a nil LastStartedTime cannot be evaluated and stays UNKNOWN, matching
-	// MarkStalePriorResultsByScanRef's treatment of nil timestamps), or when its LastStartedTime is
-	// newer than what is currently stored; otherwise the existing row's freshness AND LastStartedTime
-	// are both carried over unchanged (a replay must not regress the stored timestamp, which would
-	// corrupt later staleness-by-age decisions). The read and the write happen under the same
-	// KeyFence used by MarkStalePriorResultsByScanRef, so an ingest decision can't be based on a
-	// stale read that a concurrent timeout marking (or another ingest) has since invalidated, and
-	// cannot revert that concurrent write. On a lookup error, no write happens: an error here must
-	// not silently replace a known freshness value with UNKNOWN.
-	UpsertReceivedResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
 
 	// DeleteResult removes a result from the database
 	DeleteResult(ctx context.Context, id string) error
@@ -80,13 +65,7 @@ type DataStore interface {
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 
 	// MarkStalePriorResultsByScanRef marks STALE the check results of the given scan (identified
-	// by its scan ref ID) that predate olderThan, leaving the rest unchanged. It is the
-	// write-time staleness hook for a timed-out scan: the results the timed-out run did not
-	// refresh (leftovers from a previous run, with an older last started time) are known-stale
-	// immediately. Results the run refreshed carry its start time (olderThan) and stay as they
-	// are. Results with a nil last started time are left unchanged (freshness cannot be
-	// evaluated). Only rows whose stored value changes are written. Returns the number of rows
-	// updated.
+	// by its scan ref ID) that predate olderThan, leaving the rest unchanged.
 	MarkStalePriorResultsByScanRef(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error)
 }
 
