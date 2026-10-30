@@ -88,15 +88,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			log.Errorf("unable to handle the check result in the report manager: %v", err)
 			return err
 		}
-		// A result reflecting a genuinely new scan run is, by definition, fresh. Note: without the
-		// freshness sweeper, a result can only decay to STALE through an explicit event (a scan
-		// timeout); see MarkStalePriorResultsByScanRef. The freshness derivation itself lives in
-		// the datastore (UpsertReceivedResult), under the same lock used by the timeout hook, so an
-		// ingest decision can't be made from a stale read and can't race with a concurrent STALE
-		// marking.
-		if features.ComplianceSurfaceStaleData.Enabled() {
-			return s.v2Datastore.UpsertReceivedResult(ctx, result)
-		}
+		// data_freshness is derived in the datastore under the same lock used by the timeout hook
+		// (see UpsertResult and MarkStalePriorResultsByScanRef), so an ingest decision can't be made
+		// from a stale read and can't race with a concurrent STALE marking.
 		return s.v2Datastore.UpsertResult(ctx, result)
 	}
 }

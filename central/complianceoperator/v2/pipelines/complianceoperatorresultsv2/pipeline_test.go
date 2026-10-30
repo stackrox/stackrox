@@ -118,18 +118,12 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 	suite.NoError(err)
 }
 
-// TestRunCreateUsesUpsertReceivedResultWhenFreshnessEnabled covers routing only: when the flag is
-// enabled, the pipeline must hand the built result to UpsertReceivedResult (which derives
-// data_freshness atomically with the write) instead of the plain UpsertResult. The pipeline itself
-// no longer computes data_freshness: that logic -- and its test coverage for first-sighting,
-// newer-than-stored, and stale-replay -- lives in the datastore now (see
-// checkresults/datastore/datastore_freshness_test.go), because it must run under the same KeyFence
-// as the write to avoid a lost-update race with the timeout hook (review finding on #23765).
-func (suite *PipelineTestSuite) TestRunCreateUsesUpsertReceivedResultWhenFreshnessEnabled() {
-	suite.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
-	if !features.ComplianceSurfaceStaleData.Enabled() {
-		suite.T().Skip("Skip test when ComplianceSurfaceStaleData disabled")
-	}
+// TestRunCreatePopulatesLastStartedTime verifies the pipeline passes LastStartedTime (parsed from
+// the operator's last-scanned-timestamp annotation) through to the datastore. The data_freshness
+// derivation itself -- and its coverage for first-sighting, newer-than-stored, and stale-replay --
+// lives in the datastore now (see checkresults/datastore/datastore_freshness_test.go), because it
+// must run under the same KeyFence as the write to avoid a lost-update race with the timeout hook.
+func (suite *PipelineTestSuite) TestRunCreatePopulatesLastStartedTime() {
 	ctx := context.Background()
 
 	expected := getTestRec(fixtureconsts.Cluster1)
@@ -137,8 +131,7 @@ func (suite *PipelineTestSuite) TestRunCreateUsesUpsertReceivedResultWhenFreshne
 	expected.LastStartedTime = mockLastScannedTime
 
 	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
-	suite.v2ResultDS.EXPECT().UpsertReceivedResult(ctx, expected).Return(nil).Times(1)
-	suite.v2ResultDS.EXPECT().UpsertResult(gomock.Any(), gomock.Any()).Times(0)
+	suite.v2ResultDS.EXPECT().UpsertResult(ctx, expected).Return(nil).Times(1)
 	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Times(1)
 	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
 
