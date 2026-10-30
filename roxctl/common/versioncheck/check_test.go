@@ -313,7 +313,6 @@ func setupServerAndClient(t *testing.T, serverInterceptors []grpc.UnaryServerInt
 	go func() {
 		assert.NoError(t, server.Serve(listener))
 	}()
-	t.Cleanup(server.Stop)
 
 	conn, err := grpc.NewClient("passthrough:///bufnet",
 		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
@@ -324,6 +323,7 @@ func setupServerAndClient(t *testing.T, serverInterceptors []grpc.UnaryServerInt
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
+		server.Stop()
 		assert.NoError(t, conn.Close())
 		assert.NoError(t, listener.Close())
 	})
