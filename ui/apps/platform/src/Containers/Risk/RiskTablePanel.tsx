@@ -106,11 +106,14 @@ function RiskTablePanel({
                         <Th width={10} sort={getSortParams('Risk Priority Classification')}>
                             Risk class
                         </Th>
+                        <Th width={10} sort={getSortParams('Deployment Risk Score')}>
+                            Score
+                        </Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={5}
+                    colSpan={6}
                     emptyProps={{ message: 'No results found' }}
                     filteredEmptyProps={{ onClearFilters: () => onSearchFilterChange({}) }}
                     renderer={({ data }) =>
@@ -138,6 +141,7 @@ function RiskTablePanel({
                                                 {riskClassLabels[riskClass]}
                                             </Label>
                                         </Td>
+                                        <Td dataLabel="Score">{deployment.riskScore.toFixed(1)}</Td>
                                     </Tr>
                                 </Tbody>
                             );
