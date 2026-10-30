@@ -54,6 +54,7 @@ var (
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
+			{Name: "deployments_riskprioritysortorder", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskprioritysortorder ON deployments USING btree (riskprioritysortorder)"},
 			{Name: "deployments_riskscore", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskscore ON deployments USING btree (riskscore)"},
 			{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (namespace, clusterid)"},
 		},
@@ -128,6 +129,7 @@ type Deployments struct {
 	Annotations                   map[string]string                  `gorm:"column:annotations;type:jsonb"`
 	Priority                      int64                              `gorm:"column:priority;type:bigint"`
 	RiskPriorityClassification    storage.RiskPriorityClassification `gorm:"column:riskpriorityclassification;type:integer"`
+	RiskPrioritySortOrder         int32                              `gorm:"column:riskprioritysortorder;type:integer;default:99"`
 	ImagePullSecrets              *pq.StringArray                    `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                             `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel            `gorm:"column:serviceaccountpermissionlevel;type:integer"`

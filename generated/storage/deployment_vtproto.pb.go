@@ -43,6 +43,7 @@ func (m *Deployment) CloneVT() *Deployment {
 	r.ClusterName = m.ClusterName
 	r.Priority = m.Priority
 	r.RiskPriorityClassification = m.RiskPriorityClassification
+	r.RiskPrioritySortOrder = m.RiskPrioritySortOrder
 	r.Inactive = m.Inactive
 	r.ServiceAccount = m.ServiceAccount
 	r.ServiceAccountPermissionLevel = m.ServiceAccountPermissionLevel
@@ -766,6 +767,9 @@ func (this *Deployment) EqualVT(that *Deployment) bool {
 		return false
 	}
 	if this.RiskPriorityClassification != that.RiskPriorityClassification {
+		return false
+	}
+	if this.RiskPrioritySortOrder != that.RiskPrioritySortOrder {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1562,6 +1566,13 @@ func (m *Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.RiskPrioritySortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPrioritySortOrder))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xa8
 	}
 	if m.RiskPriorityClassification != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPriorityClassification))
@@ -3440,6 +3451,9 @@ func (m *Deployment) SizeVT() (n int) {
 	if m.RiskPriorityClassification != 0 {
 		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPriorityClassification))
 	}
+	if m.RiskPrioritySortOrder != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPrioritySortOrder))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5196,6 +5210,25 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.RiskPriorityClassification |= RiskPriorityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPrioritySortOrder", wireType)
+			}
+			m.RiskPrioritySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPrioritySortOrder |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -10251,6 +10284,25 @@ func (m *Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.RiskPriorityClassification |= RiskPriorityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPrioritySortOrder", wireType)
+			}
+			m.RiskPrioritySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPrioritySortOrder |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

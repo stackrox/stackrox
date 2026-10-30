@@ -35,6 +35,7 @@ message Deployment {
   map<string, string> annotations = 14; // @gotags: search:"Deployment Annotation"
   int64 priority = 15; // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
   RiskPriorityClassification risk_priority_classification = 36; // @gotags: search:"Risk Priority Classification,hidden" hash:"ignore"
+  int32 risk_priority_sort_order = 37; // @gotags: search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"
   bool inactive = 16;
   repeated string image_pull_secrets = 17; // @gotags: search:"Image Pull Secret"
   string service_account = 18; // @gotags: search:"Service Account"

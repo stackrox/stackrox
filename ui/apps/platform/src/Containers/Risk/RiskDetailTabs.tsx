@@ -1,4 +1,5 @@
 import { Alert, Flex, Label, PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import type { LabelProps } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -28,16 +29,13 @@ const riskClassLabels: Record<RiskPriorityClassification, string> = {
     RISK_PRIORITY_IMPROVE_POSTURE: 'Improve posture',
 };
 
-const riskClassColors: Record<
-    RiskPriorityClassification,
-    'red' | 'orange' | 'yellow' | 'blue' | 'green' | 'grey'
-> = {
-    RISK_PRIORITY_UNKNOWN: 'grey',
-    RISK_PRIORITY_RESPOND_NOW: 'red',
-    RISK_PRIORITY_INVESTIGATE_NOW: 'orange',
-    RISK_PRIORITY_REMEDIATE_NOW: 'red',
-    RISK_PRIORITY_REMEDIATE: 'yellow',
-    RISK_PRIORITY_IMPROVE_POSTURE: 'blue',
+const riskClassColors: Record<RiskPriorityClassification, LabelProps> = {
+    RISK_PRIORITY_UNKNOWN: { color: 'grey' },
+    RISK_PRIORITY_RESPOND_NOW: { status: 'danger' },
+    RISK_PRIORITY_INVESTIGATE_NOW: { status: 'warning' },
+    RISK_PRIORITY_REMEDIATE_NOW: { color: 'orangered' },
+    RISK_PRIORITY_REMEDIATE: { color: 'orange' },
+    RISK_PRIORITY_IMPROVE_POSTURE: { color: 'blue' },
 };
 
 const riskClassDescriptions: Record<RiskPriorityClassification, string> = {
@@ -173,7 +171,7 @@ function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
                                         <>
                                             Risk class:{' '}
                                             <Label
-                                                color={riskClassColors[risk.priorityClassification]}
+                                                {...riskClassColors[risk.priorityClassification]}
                                             >
                                                 {riskClassLabels[risk.priorityClassification]}
                                             </Label>

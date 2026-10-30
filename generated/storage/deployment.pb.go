@@ -307,6 +307,7 @@ type Deployment struct {
 	Annotations                   map[string]string          `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Annotation"`                                                              // @gotags: search:"Deployment Annotation"
 	Priority                      int64                      `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                                                     // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
 	RiskPriorityClassification    RiskPriorityClassification `protobuf:"varint,36,opt,name=risk_priority_classification,json=riskPriorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"risk_priority_classification,omitempty" search:"Risk Priority Classification,hidden" hash:"ignore"` // @gotags: search:"Risk Priority Classification,hidden" hash:"ignore"
+	RiskPrioritySortOrder         int32                      `protobuf:"varint,37,opt,name=risk_priority_sort_order,json=riskPrioritySortOrder,proto3" json:"risk_priority_sort_order,omitempty" search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"`                                        // @gotags: search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"
 	Inactive                      bool                       `protobuf:"varint,16,opt,name=inactive,proto3" json:"inactive,omitempty"`
 	ImagePullSecrets              []string                   `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                                       // @gotags: search:"Image Pull Secret"
 	ServiceAccount                string                     `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" search:"Service Account"`                                                                                                 // @gotags: search:"Service Account"
@@ -479,6 +480,13 @@ func (x *Deployment) GetRiskPriorityClassification() RiskPriorityClassification 
 		return x.RiskPriorityClassification
 	}
 	return RiskPriorityClassification_RISK_PRIORITY_UNKNOWN
+}
+
+func (x *Deployment) GetRiskPrioritySortOrder() int32 {
+	if x != nil {
+		return x.RiskPrioritySortOrder
+	}
+	return 0
 }
 
 func (x *Deployment) GetInactive() bool {
@@ -2088,7 +2096,7 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x12storage/risk.proto\x1a\x14storage/taints.proto\"\xdd\f\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x12storage/risk.proto\x1a\x14storage/taints.proto\"\x96\r\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2113,7 +2121,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"containers\x12F\n" +
 	"\vannotations\x18\x0e \x03(\v2$.storage.Deployment.AnnotationsEntryR\vannotations\x12\x1a\n" +
 	"\bpriority\x18\x0f \x01(\x03R\bpriority\x12e\n" +
-	"\x1crisk_priority_classification\x18$ \x01(\x0e2#.storage.RiskPriorityClassificationR\x1ariskPriorityClassification\x12\x1a\n" +
+	"\x1crisk_priority_classification\x18$ \x01(\x0e2#.storage.RiskPriorityClassificationR\x1ariskPriorityClassification\x127\n" +
+	"\x18risk_priority_sort_order\x18% \x01(\x05R\x15riskPrioritySortOrder\x12\x1a\n" +
 	"\binactive\x18\x10 \x01(\bR\binactive\x12,\n" +
 	"\x12image_pull_secrets\x18\x11 \x03(\tR\x10imagePullSecrets\x12'\n" +
 	"\x0fservice_account\x18\x12 \x01(\tR\x0eserviceAccount\x12a\n" +

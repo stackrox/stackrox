@@ -200,6 +200,7 @@ var (
 	ServiceAccountName            = newFieldLabel("Service Account")
 	ServiceAccountPermissionLevel = newFieldLabel("Service Account Permission Level")
 	RiskPriorityClassification    = newFieldLabel("Risk Priority Classification")
+	RiskPrioritySortOrder         = newFieldLabel("Risk Priority Sort Order")
 	ServiceAccountLabel           = newFieldLabel("Service Account Label")
 	ServiceAccountAnnotation      = newFieldLabel("Service Account Annotation")
 	Created                       = newFieldLabel("Created")
