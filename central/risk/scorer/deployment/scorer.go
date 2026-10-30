@@ -32,6 +32,7 @@ func NewDeploymentScorer(alertSearcher getters.AlertSearcher, allowlistEvaluator
 			deployment.NewViolations(alertSearcher),
 			deployment.NewProcessBaselines(allowlistEvaluator),
 			deployment.NewImageMultiplier(image.VulnerabilitiesHeading),
+			deployment.NewIdentityBlastRadius(),
 			deployment.NewServiceConfig(),
 			deployment.NewReachability(),
 			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
@@ -48,7 +49,11 @@ type deploymentScorerImpl struct {
 // Score takes a deployment and evaluates its risk
 func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Risk) *storage.Risk {
 	imageRiskResults := make(map[string][]*storage.Risk_Result)
+	imageVulnerabilitySummaries := make([]*storage.RiskVulnerabilitySummary, 0, len(images))
 	for _, risk := range images {
+		if summary := risk.GetVulnerabilitySummary(); summary != nil {
+			imageVulnerabilitySummaries = append(imageVulnerabilitySummaries, summary)
+		}
 		for _, result := range risk.GetResults() {
 			imageRiskResults[result.GetName()] = append(imageRiskResults[result.GetName()], result)
 		}
@@ -69,6 +74,12 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 	risk := &storage.Risk{
 		Score:   overallScore,
 		Results: riskResults,
+		PriorityClassification: classifyRisk(classificationInputs{
+			deployment:       deployment,
+			riskResults:      riskResults,
+			imageSummaries:   imageVulnerabilitySummaries,
+			imageRiskResults: imageRiskResults,
+		}),
 		Subject: &storage.RiskSubject{
 			Id:        deployment.GetId(),
 			Type:      storage.RiskSubjectType_DEPLOYMENT,
