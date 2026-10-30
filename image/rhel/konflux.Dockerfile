@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 
 
-FROM registry.redhat.io/openshift/golang-builder:golang-builder-v1.26-rhel9@sha256:cdb2b291b842dc836be849d735d47a80c13a910bdd61a95933167bbaff6b8bc3 AS go-builder
+FROM registry.redhat.io/openshift/golang-builder:golang-builder-v1.26-rhel9@sha256:0a93368c78345f50b59d0cd1733505015b9b6d532d060bf097b59c8a2c0b85dc AS go-builder
 
 RUN dnf -y install --allowerasing jq pigz
 
@@ -44,7 +44,7 @@ RUN cd /go/src/github.com/stackrox/rox/app/image/rhel/bin && \
     done
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:b66295c1b3ef39cc5adcf7f0459f7ec9111014e1dce8f565ed4339c760862418 as ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:06f5f49a1f94a0ff6822de8b99a62717945ec227883c914d9371a84103612ea4 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
