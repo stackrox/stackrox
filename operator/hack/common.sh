@@ -180,3 +180,123 @@ function run_oc_adm_must_gather() {
     log "Running oc adm must-gather failed, perhaps this is not an OpenShift cluster?"
   fi
 }
+
+# OLMv1-specific functions
+
+function wait_for_clusterextension_installed() {
+  local -r operator_ns="$1"
+  local -r extension_name="$2"
+  local -r expected_version="$3"
+
+  log "Waiting for ClusterExtension ${extension_name} to reach Installed status..."
+
+  # Wait for up to 10 minutes for the extension to install
+  # Catalog unpacking can take 60-90 seconds on first use
+  local max_attempts=60
+  local attempt=0
+  while (( attempt < max_attempts )); do
+    (( ++attempt )) # Pre-increment to avoid set -e exit when attempt=0
+
+    local installed_status
+    installed_status=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Installed")].status}' 2>/dev/null || echo "")
+
+    if [[ "$installed_status" == "True" ]]; then
+      local installed_version
+      installed_version=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.install.bundle.version}' 2>/dev/null || echo "")
+
+      if [[ "${installed_version#v}" == "${expected_version#v}" ]]; then
+        log "ClusterExtension ${extension_name} successfully installed version ${installed_version}"
+        return 0
+      else
+        log "ClusterExtension installed with version ${installed_version} (expected ${expected_version}), continuing to wait..."
+        # Continue waiting - version might update as catalog unpacks
+      fi
+    fi
+
+    # Check if it's in a failed state (but not Retrying, which is normal during catalog unpacking)
+    local progressing_status
+    local progressing_reason
+    progressing_status=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].status}' 2>/dev/null || echo "")
+    progressing_reason=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].reason}' 2>/dev/null || echo "")
+
+    if [[ "$progressing_status" == "False" ]] && [[ "$progressing_reason" == "Failed" ]]; then
+      log "ClusterExtension ${extension_name} installation failed"
+      local error_msg
+      error_msg=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].message}' 2>/dev/null || echo "")
+      log "Error: ${error_msg}"
+      gather_olmv1_resources "${operator_ns}" "${extension_name}"
+      return 1
+    fi
+
+    if (( attempt % 6 == 0 )); then
+      # Log progress every minute (6 attempts × 10 seconds)
+      log "Still waiting for ClusterExtension to install (${attempt}/${max_attempts} attempts, status: Installed=${installed_status}, Progressing=${progressing_reason})..."
+    fi
+
+    sleep 10
+  done
+
+  log "ClusterExtension ${extension_name} failed to install within timeout"
+  gather_olmv1_resources "${operator_ns}" "${extension_name}"
+  return 1
+}
+
+function inject_test_env_vars() {
+  local -r operator_ns="$1"
+  local -r deployment_name="${2:-rhacs-operator-controller-manager}"
+
+  log "Injecting test environment variables into operator deployment..."
+
+  # Patch the deployment to add NO_PROXY and ROX_ADMISSION_CONTROLLER_CONFIG env vars
+  # These are required for operator e2e test assertions
+  # Note: This may produce "hides previous definition" warnings if vars already exist (e.g., after OLMv1 upgrade reconciliation)
+  # These warnings are harmless - the last value wins, which is what we want for test env injection
+  if ! "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null patch deployment "${deployment_name}" -n "${operator_ns}" --type='json' -p='[
+    {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "NO_PROXY", "value": "127.1.2.3/8"}},
+    {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "ROX_ADMISSION_CONTROLLER_CONFIG", "value": "true"}}
+  ]'; then
+    log "Warning: Failed to inject test environment variables, tests may fail"
+  else
+    log "Successfully injected test environment variables"
+  fi
+}
+
+function gather_olmv1_resources() {
+  local -r operator_ns="$1"
+  local -r extension_name="$2"
+  local -r msg="Gathering OLMv1 resources for troubleshooting..."
+
+  log "${msg}"
+  log "Dumping ClusterExtension..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null describe clusterextension "${extension_name}" || true
+  log "Dumping ClusterExtension status..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o yaml || true
+  log "Dumping operator deployment..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe deployments || true
+  log "Dumping pod descriptions..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe pods || true
+  log "Dumping pod logs..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" logs -l app=rhacs-operator || true
+
+  if [[ -n ${CI:-} ]]; then
+    local -r path="${ROX_CI_OUTPUT_DIR:-/tmp/k8s-service-logs}/olmv1-must-gather"
+    log "Running oc adm must-gather in ${path} (which will be collected along with other CI artifacts)..."
+    mkdir -p "${path}"
+    ( cd "${path}" && run_oc_adm_must_gather >> "oc-adm-must-gather-output.txt"; )
+  fi
+  log "Resource collection completed, look before '${msg}' above for the cause of the failure."
+}
+
+function verify_operator_deployment() {
+  local -r operator_ns="$1"
+  local -r deployment_name="${2:-rhacs-operator-controller-manager}"
+
+  log "Verifying operator deployment is available..."
+  if ! retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps "${deployment_name}" --for condition=available --timeout 60s; then
+    log "Operator deployment failed to become available"
+    gather_olmv1_resources "${operator_ns}" "rhacs-operator-${operator_ns}"
+    return 1
+  fi
+
+  log "Operator deployment is healthy"
+}

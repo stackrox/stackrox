@@ -10,6 +10,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$ROOT/scripts/lib.sh"
 source "$ROOT/scripts/ci/lib.sh"
 
+# Determine which OLM deployment target to use based on OCP version
+get_olm_deploy_target() {
+    local olm_version
+    olm_version=$(get_olm_version)
+    echo "deploy-previous-via-olm${olm_version}"
+}
+
 test_operator_e2e() {
     operator_cluster_type="$1"
 
@@ -34,10 +41,13 @@ _EO_KUTTL_HELP_
 
     info "Deploying operator"
     if [[ $operator_cluster_type == openshift4 ]]; then
+        local olm_target
+        olm_target=$(get_olm_deploy_target)
+        info "Using OLM deployment target: ${olm_target}"
         junit_wrap deploy-previous-operator \
                    "Deploy previously released version of the operator using OLM." \
                    "${kuttl_help}" \
-                   "make" "-C" "operator" "deploy-previous-via-olm" TEST_NAMESPACE="rhacs-operator-system"
+                   "make" "-C" "operator" "${olm_target}" TEST_NAMESPACE="rhacs-operator-system"
    else
         junit_wrap deploy-previous-operator \
                    "Deploy previous version of the operator using helm chart." \
