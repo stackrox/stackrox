@@ -120,6 +120,7 @@ jobs:
       run: |
         set -euo pipefail
         mkdir -p /tmp/opencode
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
         python3 .github/workflows/scripts/t1-tests/prepare-run.py
 
     - name: Authenticate with GCS
