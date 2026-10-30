@@ -45,8 +45,7 @@ func (c *centralVersionTestSuite) TearDownTest() {
 func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: ""})
-	defer cleanup()
+	cmd, stdout, _, _ := c.setupCommand(&mockMetadataServer{centralVersion: ""})
 
 	err := cmd.run(false)
 
@@ -58,8 +57,7 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
-	defer cleanup()
+	cmd, stdout, _, _ := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
 
 	err := cmd.run(true)
 	c.Require().NoError(err)
@@ -79,8 +77,7 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, interceptorOutput, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: "5.6.0"})
-	defer cleanup()
+	cmd, stdout, _, interceptorOutput := c.setupCommand(&mockMetadataServer{centralVersion: "5.6.0"})
 
 	err := cmd.run(true)
 
@@ -99,8 +96,7 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
-	defer cleanup()
+	cmd, stdout, _, _ := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
 
 	err := cmd.run(false)
 	c.Require().NoError(err)
@@ -124,7 +120,7 @@ func (m *mockMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Me
 	return &v1.Metadata{Version: m.centralVersion}, nil
 }
 
-func (c *centralVersionTestSuite) createMockServiceAndClient(t *testing.T, server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer, func()) {
+func (c *centralVersionTestSuite) createMockServiceAndClient(t *testing.T, server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
@@ -145,24 +141,25 @@ func (c *centralVersionTestSuite) createMockServiceAndClient(t *testing.T, serve
 	)
 	c.Require().NoError(err)
 
-	return conn, &interceptorOutput, func() {
+	t.Cleanup(func() {
 		srv.Stop()
 		// conn is already closed by centralVersionCommand.fetchAndCheck via
 		// defer conn.Close() so the Close call below is expected to return "already closed" errors.
 		utils.IgnoreError(conn.Close)
 		require.NoError(t, listener.Close())
-	}
+	})
+	return conn, &interceptorOutput
 }
 
-func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr, interceptorOutput *bytes.Buffer, cleanup func()) {
-	conn, interceptorOut, closeFunc := c.createMockServiceAndClient(c.T(), server)
+func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr, interceptorOutput *bytes.Buffer) {
+	conn, interceptorOut := c.createMockServiceAndClient(c.T(), server)
 	env, out, errOut := mocks.NewEnvWithConn(conn, c.T())
 	cmd = &centralVersionCommand{
 		env:          env,
 		timeout:      5 * time.Second,
 		retryTimeout: 5 * time.Second,
 	}
-	return cmd, out, errOut, interceptorOut, closeFunc
+	return cmd, out, errOut, interceptorOut
 }
 
 func injectVersionHeader(t *testing.T, centralVersion string) grpc.UnaryServerInterceptor {
