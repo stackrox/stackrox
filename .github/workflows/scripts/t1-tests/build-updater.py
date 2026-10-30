@@ -32,12 +32,11 @@ def main():
     if not re.fullmatch(r"[0-9a-f]{40}", args.revision):
         raise RuntimeError("The exact healthy stream build requires a full commit SHA")
     checkout = directory / "stackrox"
-    lib.command(["git", "init", str(checkout)])
+    lib.command(["git", "init", "--initial-branch=alkmim/ROX-36961-t1-negative-tests", str(checkout)])
     lib.command(["git", "-C", str(checkout), "remote", "add", "origin", "https://github.com/stackrox/stackrox.git"])
     lib.command(["git", "-C", str(checkout), "fetch", "--tags", "origin"], timeout=900)
     lib.command(["git", "-C", str(checkout), "fetch", "origin", args.revision], timeout=900)
-    branch = f"alkmim/ROX-36961-t1-build-{args.stream}"
-    lib.command(["git", "-C", str(checkout), "checkout", "-b", branch, args.revision])
+    lib.command(["git", "-C", str(checkout), "checkout", "--detach", args.revision])
     if lib.command(["git", "-C", str(checkout), "rev-parse", "--is-shallow-repository"]).strip() != b"false":
         raise RuntimeError("The versioned build requires full history and tags, not a shallow clone")
     if (checkout / ".git/objects/info/alternates").exists():
@@ -45,9 +44,11 @@ def main():
     revision = lib.command(["git", "-C", str(checkout), "rev-parse", "HEAD"]).decode().strip()
     command = [
         args.runtime, "run", "--rm", "--user", f"{os.getuid()}:{os.getgid()}",
+        "--cidfile", str(directory / "build-container.id"),
+        "--label", "rox.t1.disposable=true",
         "-v", f"{checkout}:/src", "--workdir", "/src",
         "-e", "HOME=/tmp/t1-home", "-e", "GOCACHE=/tmp/t1-gocache",
-        "-e", "GOMODCACHE=/tmp/t1-gomod", IMAGE,
+        "-e", "GOMODCACHE=/tmp/t1-gomod", "-e", "GOMAXPROCS=4", "-e", "GOFLAGS=-p=4", IMAGE,
         "bash", "-euc", "mkdir -p \"$HOME\"; make tag; make -C scanner bin/updater",
     ]
     with (directory / "build.log").open("wb") as log:
@@ -61,10 +62,11 @@ def main():
     clair = re.search(r"^\s*github\.com/quay/claircore\s+(\S+)", module, re.MULTILINE)
     lib.write_json(directory / "updater.json", {
         "stream": args.stream, "configured_ref": refs[args.stream],
-        "resolved_commit": revision, "branch": branch, "ci_image": IMAGE,
+        "resolved_commit": revision, "branch": None, "checkout_mode": "detached", "ci_image": IMAGE,
         "go_mod_sha256": lib.digest(checkout / "go.mod"),
         "claircore": clair.group(1) if clair else None,
         "updater_sha256": lib.digest(binary),
+        "build_container_id": (directory / "build-container.id").read_text().strip(),
     })
     print(json.dumps({"updater": str(binary), "manifest": str(directory / "updater.json")}, indent=2))
 

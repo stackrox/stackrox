@@ -368,7 +368,10 @@ jobs:
       if: steps.check-changes.outputs.changed == 'true'
       env:
         T1_RESOLVED_REF: ${{ steps.resolve-ref.outputs.ref }}
-      run: python3 /tmp/t1-tests/record-build.py
+      run: |
+        set -euo pipefail
+        python3 /tmp/t1-tests/record-build.py
+        cp /tmp/updater "$T1_EVIDENCE/updater"
 
     - name: Checkout master
       if: steps.check-changes.outputs.changed == 'true'
