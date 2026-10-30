@@ -411,7 +411,7 @@ spec:
       - name: name
         value: roxctl-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1.1@sha256:4d2c2edcfa0e3616ceb3fe67534aa1955f73fc14209acf734f2d9c9f1f47de27
+        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1.1@sha256:41ec2c60fa2becba661a0e5178a6a320fe90db734ccdc58e3da4707ef8645d34
       - name: kind
         value: task
       resolver: bundles
@@ -431,7 +431,7 @@ spec:
       - name: name
         value: clair-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.4.1@sha256:4d56d4fe296be137c91021b1d6225e78c277fc2e33946a6cb384059fcc97f092
+        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.4.1@sha256:3f5dd00579c8a7dee230d1adb4322e52c8c778ec453cfdbe70507a35310c47c2
       - name: kind
         value: task
       resolver: bundles
@@ -454,7 +454,7 @@ spec:
       - name: name
         value: ecosystem-cert-preflight-checks
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.2@sha256:18493ff54938eeb9bc4eea8c2eb1f1b96826b6739e6895428ce03c1f2b8ad2fd
+        value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.2@sha256:43604d0997721bf995d98ef09d4911a9e7fdbb4f96ffa577fb942b6c864e22d1
       - name: kind
         value: task
       resolver: bundles
@@ -551,7 +551,7 @@ spec:
       - name: name
         value: clamav-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.3.4@sha256:6406168c03f83558b4ff454fec2503269ee8f522ea2cd2d1b293cc75d37df32a
+        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.3.4@sha256:79d5b56151a4bab17ed6f49fad19e62306ec74533120c8739318657406b958de
       - name: kind
         value: task
       resolver: bundles
