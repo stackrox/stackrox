@@ -55,6 +55,7 @@ func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 }
 
 func (c *centralVersionTestSuite) TestJSONOutput() {
+	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
 	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
@@ -75,6 +76,7 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 }
 
 func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
+	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
 	cmd, stdout, _, interceptorOutput, cleanup := c.setupCommand(&mockMetadataServer{version: "5.6.0"})
@@ -93,6 +95,7 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 }
 
 func (c *centralVersionTestSuite) TestTextOutputFormat() {
+	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
 	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
@@ -151,7 +154,6 @@ func (c *centralVersionTestSuite) createGRPCMockService(t *testing.T, server *mo
 }
 
 func (c *centralVersionTestSuite) setupCommand(server *mockMetadataServer) (cmd *centralVersionCommand, stdout, stderr, interceptorOutput *bytes.Buffer, cleanup func()) {
-	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	conn, interceptorOut, closeFunc := c.createGRPCMockService(c.T(), server)
 	env, out, errOut := mocks.NewEnvWithConn(conn, c.T())
 	cmd = &centralVersionCommand{
