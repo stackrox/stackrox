@@ -50,8 +50,7 @@ func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 
 	err := cmd.run(false)
 
-	c.Require().Error(err)
-	c.Assert().Contains(err.Error(), "did not return its version")
+	c.Assert().ErrorContains(err, "did not return its version")
 	c.Assert().Empty(stdout.String())
 }
 
