@@ -45,7 +45,7 @@ func (c *centralVersionTestSuite) TearDownTest() {
 func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: ""})
+	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: ""})
 	defer cleanup()
 
 	err := cmd.run(false)
@@ -58,7 +58,7 @@ func (c *centralVersionTestSuite) TestJSONOutput() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
+	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
 	defer cleanup()
 
 	err := cmd.run(true)
@@ -79,7 +79,7 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, interceptorOutput, cleanup := c.setupCommand(&mockMetadataServer{version: "5.6.0"})
+	cmd, stdout, _, interceptorOutput, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: "5.6.0"})
 	defer cleanup()
 
 	err := cmd.run(true)
@@ -99,7 +99,7 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 	testutils.SetMainVersion(c.T(), "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
-	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: "5.0.2"})
+	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{centralVersion: "5.0.2"})
 	defer cleanup()
 
 	err := cmd.run(false)
@@ -117,18 +117,18 @@ func (c *centralVersionTestSuite) TestTextOutputFormat() {
 
 type mockMetadataServer struct {
 	v1.UnimplementedMetadataServiceServer
-	version string
+	centralVersion string
 }
 
 func (m *mockMetadataServer) GetMetadata(_ context.Context, _ *v1.Empty) (*v1.Metadata, error) {
-	return &v1.Metadata{Version: m.version}, nil
+	return &v1.Metadata{Version: m.centralVersion}, nil
 }
 
 func (c *centralVersionTestSuite) createGRPCMockService(t *testing.T, server *mockMetadataServer) (*grpc.ClientConn, *bytes.Buffer, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
-	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(injectVersionHeader(t, server.version)))
+	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(injectVersionHeader(t, server.centralVersion)))
 	v1.RegisterMetadataServiceServer(srv, server)
 
 	go func() {
