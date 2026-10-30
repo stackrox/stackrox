@@ -171,6 +171,18 @@ export function getAttributeFromEntity(
     return attributeFound ?? entity?.attributes?.[0]; // default to first attribute
 }
 
+// Returns the existing search-filter key that matches category case-insensitively, falling back to
+// category when none exists. Chips are rendered with getValueByCaseInsensitiveKey (case-insensitive)
+// and the backend search API is case-insensitive, so a legacy/bookmarked key stored in a different
+// case than the config searchTerm must still be the key we delete from or rewrite; otherwise the
+// chip's removal would target a non-existent key and leave the filter (and its chip) in place.
+function resolveExistingKey(searchFilter: SearchFilter, category: string): string {
+    const existingKey = Object.keys(searchFilter).find(
+        (key) => key.toLowerCase() === category.toLowerCase()
+    );
+    return existingKey ?? category;
+}
+
 // Pure function returns searchFilter updated according to payload from interactions.
 // Assume that update is needed because payload has already been filtered and is non-empty.
 export function updateSearchFilter(
@@ -195,13 +207,14 @@ export function updateSearchFilter(
             }
             case 'DELETE': {
                 const { category } = payloadItem;
-                delete searchFilterUpdated[category];
+                delete searchFilterUpdated[resolveExistingKey(searchFilterUpdated, category)];
                 break;
             }
             case 'REMOVE': {
                 const { category, value } = payloadItem;
-                const values = searchValueAsArray(searchFilterUpdated[category]);
-                searchFilterUpdated[category] = values.filter(
+                const key = resolveExistingKey(searchFilterUpdated, category);
+                const values = searchValueAsArray(searchFilterUpdated[key]);
+                searchFilterUpdated[key] = values.filter(
                     (valueInSearchFilter) => valueInSearchFilter !== value
                 );
                 break;
