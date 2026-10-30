@@ -1,0 +1,20 @@
+name: ACS CI selection
+description: Build the selector and report or apply the PR decisions once per workflow run
+outputs:
+  decisions:
+    description: JSON map of applied decisions (missing targets run)
+    value: ${{ steps.gate.outputs.decisions }}
+runs:
+  using: composite
+  steps:
+    - name: Build CI selector
+      id: build
+      continue-on-error: true
+      shell: bash
+      run: GOTOOLCHAIN=auto ci/select/build.sh
+    - name: Read CI selection
+      id: gate
+      shell: bash
+      env:
+        CI_SELECT_BUILD_OUTCOME: ${{ steps.build.outcome }}
+      run: ci/select/gha-gate.sh
