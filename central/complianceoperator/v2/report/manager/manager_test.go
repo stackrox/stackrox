@@ -492,14 +492,14 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 			}
 			if tc.expectMarkStale {
 				checkResultDS.EXPECT().
-					MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Eq(scan.GetScanRefId()), gomock.Eq(scan.GetLastStartedTime().AsTime())).
+					MarkScanChecksStale(gomock.Any(), gomock.Eq(scan.GetScanRefId()), gomock.Eq(scan.GetLastStartedTime().AsTime())).
 					Times(1).
 					DoAndReturn(func(_, _, _ any) (int64, error) {
 						close(done)
 						return 1, nil
 					})
 			} else {
-				checkResultDS.EXPECT().MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+				checkResultDS.EXPECT().MarkScanChecksStale(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			}
 			// All branches continue into getOrCreateScanConfigWatcher; stop there.
 			scanConfigDS.EXPECT().
@@ -535,7 +535,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 
 // TestHandleReadyScanSkipsStaleMarkingWithoutScan covers a watcher created from a check result
 // alone (see watcher.GetWatcherIDFromCheckResult), whose Scan is never populated because no Scan
-// update arrived before the timeout fired. MarkStalePriorResultsByScanRef must not be called with
+// update arrived before the timeout fired. MarkScanChecksStale must not be called with
 // the zero-value scan ref and epoch pivot that a nil Scan would otherwise produce.
 func (m *ManagerTestSuite) TestHandleReadyScanSkipsStaleMarkingWithoutScan() {
 	m.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
@@ -561,7 +561,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanSkipsStaleMarkingWithoutScan() {
 	managerImp := manager.(*managerImpl)
 
 	done := make(chan struct{})
-	checkResultDS.EXPECT().MarkStalePriorResultsByScanRef(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	checkResultDS.EXPECT().MarkScanChecksStale(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	// All branches continue into getOrCreateScanConfigWatcher; stop there.
 	scanConfigDS.EXPECT().
 		GetScanConfigurationByName(gomock.Any(), gomock.Any()).

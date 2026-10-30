@@ -89,7 +89,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return err
 		}
 		// data_freshness is derived in the datastore under the same lock used by the timeout hook
-		// (see UpsertResult and MarkStalePriorResultsByScanRef), so an ingest decision can't be made
+		// (see UpsertResult and MarkScanChecksStale), so an ingest decision can't be made
 		// from a stale read and can't race with a concurrent STALE marking.
 		return s.v2Datastore.UpsertResult(ctx, result)
 	}
