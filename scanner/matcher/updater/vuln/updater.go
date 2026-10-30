@@ -3,6 +3,8 @@ package vuln
 import (
 	"archive/zip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -22,12 +24,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/klauspost/compress/zstd"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/toolkit/log"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
@@ -58,6 +62,17 @@ var (
 		20 * time.Minute,
 	}
 )
+
+// bundleImportResult records the latest observed attempt for each source.
+// The SHA-256 identifies the complete downloaded ZIP, not an internal file.
+var bundleImportResult = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "rox_scanner_vulnerability_bundle_import_result",
+	Help: "Result of the latest vulnerability bundle import attempt per source and ZIP SHA-256.",
+}, []string{"sha256", "source", "status"})
+
+func init() {
+	metrics.EmplaceCollector(bundleImportResult)
+}
 
 // Opts represents Updater options.
 //
@@ -116,6 +131,9 @@ type Updater struct {
 	vulnBundleAllowlist set.FrozenSet[string]
 
 	distManager *distManager
+
+	lastBundleSHA string
+	sourceResults map[string]string
 }
 
 // New creates a new Updater based on the given options.
@@ -414,6 +432,16 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		}
 	}()
 
+	// Hash the exact downloaded archive bytes, before reading its entries.
+	hash := sha256.New()
+	if _, err := io.Copy(hash, zipFile); err != nil {
+		return false, fmt.Errorf("hashing downloaded vulnerability ZIP: %w", err)
+	}
+	zipSHA := hex.EncodeToString(hash.Sum(nil))
+	if _, err := zipFile.Seek(0, io.SeekStart); err != nil {
+		return false, fmt.Errorf("rewinding vulnerability ZIP: %w", err)
+	}
+
 	zipInfo, err := zipFile.Stat()
 	if err != nil {
 		return false, err
@@ -433,10 +461,31 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		bundles = append(bundles, f)
 	}
 
+	// A new candidate replaces previous in-memory results. Prometheus retains
+	// previously scraped samples for historical queries.
+	if u.lastBundleSHA != zipSHA {
+		bundleImportResult.Reset()
+		u.sourceResults = make(map[string]string)
+		u.lastBundleSHA = zipSHA
+	}
+	for _, f := range bundles {
+		source := strings.TrimSuffix(path.Base(f.Name), ".json.zst")
+		if u.sourceResults[source] == "" {
+			u.sourceResults[source] = "pending"
+			bundleImportResult.WithLabelValues(zipSHA, source, "pending").Set(1)
+		}
+	}
+
 	// Create update-time rows for new bundles since they don't have one yet, using the
 	// last known update time to preserve aggregate timestamp accuracy.
 	for _, f := range bundles {
 		if _, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(ctx, f.Name, prevTime); err != nil {
+			for _, bundle := range bundles {
+				source := strings.TrimSuffix(path.Base(bundle.Name), ".json.zst")
+				if u.sourceResults[source] == "pending" {
+					u.setSourceResult(zipSHA, source, "failure")
+				}
+			}
 			return false, fmt.Errorf("setting last update-time for bundle %s: %w", f.Name, err)
 		}
 	}
@@ -453,13 +502,23 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	for _, bundleF := range bundles {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
-		if err := u.updateBundle(bundleCtx, bundleF, prevTime); err != nil {
+		source := strings.TrimSuffix(path.Base(bundleF.Name), ".json.zst")
+		outcome, err := u.updateBundleWithOutcome(bundleCtx, bundleF, prevTime)
+		if err != nil {
+			u.setSourceResult(zipSHA, source, "failure")
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
 			bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
 			continue
 		}
-		slog.InfoContext(bundleCtx, "completed bundle update")
-		succeeded++
+		// A source already imported from this same ZIP remains successful
+		// when a subsequent retry finds it up to date.
+		if outcome != "skipped" || u.sourceResults[source] != "success" {
+			u.setSourceResult(zipSHA, source, outcome)
+		}
+		slog.InfoContext(bundleCtx, "completed bundle update", "result", outcome)
+		if outcome == "success" {
+			succeeded++
+		}
 	}
 
 	// Skip GC and distribution update only when every bundle that was
@@ -493,29 +552,42 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	return true, errors.Join(bundleErrs...)
 }
 
+func (u *Updater) setSourceResult(sha, source, result string) {
+	if previous := u.sourceResults[source]; previous != "" {
+		bundleImportResult.DeleteLabelValues(sha, source, previous)
+	}
+	u.sourceResults[source] = result
+	bundleImportResult.WithLabelValues(sha, source, result).Set(1)
+}
+
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, prevTime time.Time) error {
+	_, err := u.updateBundleWithOutcome(ctx, zipF, prevTime)
+	return err
+}
+
+func (u *Updater) updateBundleWithOutcome(ctx context.Context, zipF *zip.File, prevTime time.Time) (string, error) {
 	// Use TryLock to prevent simultaneous updates for the same bundle.
 	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
 	defer lDone()
 	if err := lCtx.Err(); err != nil {
 		slog.InfoContext(ctx, "skipping: did not obtain lock", "reason", err)
-		return nil
+		return "skipped", nil
 	}
 
 	// Get the last update timestamp for this bundle and check if it's newer
 	// than this update.
 	lastTime, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(lCtx, zipF.Name, prevTime)
 	if err != nil {
-		return fmt.Errorf("querying last update: %w", err)
+		return "failure", fmt.Errorf("querying last update: %w", err)
 	}
 	if !lastTime.Before(zipF.Modified) {
 		slog.InfoContext(ctx, "skipping: last update time is greater or equal to the zip archive time", "last_update_time", lastTime, "update_time", zipF.Modified)
-		return nil
+		return "skipped", nil
 	}
 
 	r, err := zipF.Open()
 	if err != nil {
-		return fmt.Errorf("opening bundle: %w", err)
+		return "failure", fmt.Errorf("opening bundle: %w", err)
 	}
 	defer func() {
 		_ = r.Close()
@@ -523,20 +595,20 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, prevTime tim
 
 	dec, err := zstd.NewReader(r)
 	if err != nil {
-		return fmt.Errorf("creating zstd reader: %w", err)
+		return "failure", fmt.Errorf("creating zstd reader: %w", err)
 	}
 	defer dec.Close()
 
 	if err := u.importFunc(lCtx, dec); err != nil {
-		return fmt.Errorf("importing vulnerabilities: %w", err)
+		return "failure", fmt.Errorf("importing vulnerabilities: %w", err)
 	}
 
 	err = u.metadataStore.SetLastVulnerabilityUpdate(lCtx, zipF.Name, zipF.Modified)
 	if err != nil {
-		return fmt.Errorf("updating timestamp (import was successful): %w", err)
+		return "failure", fmt.Errorf("updating timestamp (import was successful): %w", err)
 	}
 
-	return nil
+	return "success", nil
 }
 
 // fetch acquires the latest vulnerability data and writes it to the returned file.
