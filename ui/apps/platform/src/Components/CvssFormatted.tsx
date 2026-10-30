@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 
 export type CvssFormattedProps = {
-    cvss: number | null | undefined;
+    cvss: number | string | null | undefined;
     scoreVersion?: string;
 };
 
