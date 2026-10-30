@@ -1,0 +1,21 @@
+{
+  "name": "fake-file-activity",
+  "loadType": "fake",
+  "loadTemplate": "load-templates/fake-file-activity.yaml.tmpl",
+  "rateField": "__RATE__",
+  "numSensors": 1,
+  "runTime": "10m",
+  "numDeployments": 1,
+  "resultsBaseDir": "perf",
+  "rates": [
+    { "value": 10,  "rate": 100 },
+    { "value": 50,  "rate": 500 },
+    { "value": 100, "rate": 1000 },
+    { "value": 250, "rate": 2500 },
+    { "value": 500, "rate": 5000 }
+  ],
+  "policies": [
+    { "nickname": "nopolicy", "file": null },
+    { "nickname": "policy",   "file": "policies/fake-dirs.json" }
+  ]
+}
