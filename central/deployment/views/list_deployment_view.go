@@ -13,28 +13,30 @@ import (
 // This view is used to populate ListDeployment protos from database queries.
 // The db tags use search field labels (lowercase with underscores), not database column names.
 type ListDeploymentView struct {
-	ID          string     `db:"deployment_id"`
-	Hash        uint64     `db:"deployment_hash"`
-	Name        string     `db:"deployment"`
-	ClusterName string     `db:"cluster"`
-	ClusterID   string     `db:"cluster_id"`
-	Namespace   string     `db:"namespace"`
-	Created     *time.Time `db:"created"`
-	RiskScore   float32    `db:"deployment_risk_score"`
+	ID                         string                             `db:"deployment_id"`
+	Hash                       uint64                             `db:"deployment_hash"`
+	Name                       string                             `db:"deployment"`
+	ClusterName                string                             `db:"cluster"`
+	ClusterID                  string                             `db:"cluster_id"`
+	Namespace                  string                             `db:"namespace"`
+	Created                    *time.Time                         `db:"created"`
+	RiskPriorityClassification storage.RiskPriorityClassification `db:"risk_priority_classification"`
+	RiskScore                  float32                            `db:"deployment_risk_score"`
 	// Priority is NOT selected from DB - it's computed by the ranker
 }
 
 // ToListDeployment converts the view to a storage.ListDeployment proto.
 func (v *ListDeploymentView) ToListDeployment() *storage.ListDeployment {
 	return &storage.ListDeployment{
-		Id:        v.ID,
-		Hash:      v.Hash,
-		Name:      v.Name,
-		Cluster:   v.ClusterName,
-		ClusterId: v.ClusterID,
-		Namespace: v.Namespace,
-		Created:   protocompat.ConvertTimeToTimestampOrNil(v.Created),
-		RiskScore: v.RiskScore,
+		Id:                         v.ID,
+		Hash:                       v.Hash,
+		Name:                       v.Name,
+		Cluster:                    v.ClusterName,
+		ClusterId:                  v.ClusterID,
+		Namespace:                  v.Namespace,
+		Created:                    protocompat.ConvertTimeToTimestampOrNil(v.Created),
+		RiskPriorityClassification: v.RiskPriorityClassification,
+		RiskScore:                  v.RiskScore,
 		// Priority is set by updateListDeploymentPriority in the datastore layer
 	}
 }
@@ -49,6 +51,7 @@ func ListDeploymentViewSelects() []*v1.QuerySelect {
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.Created).Proto(),
+		search.NewQuerySelect(search.RiskPriorityClassification).Proto(),
 		search.NewQuerySelect(search.DeploymentRiskScore).Proto(),
 	}
 }
