@@ -1,0 +1,19 @@
+{
+  "Updater": "stackrox-manual",
+  "Fingerprint": "t1-offline-manual-v1",
+  "Date": "2026-01-01T00:00:00Z",
+  "Ref": "00000000-0000-4000-8000-000000000001",
+  "Kind": "vulnerability",
+  "Vuln": {
+    "updater": "stackrox-manual",
+    "name": "CVE-2022-22963",
+    "description": "Spring Cloud Function code injection",
+    "issued": "2022-04-03T00:00:59Z",
+    "links": "https://nvd.nist.gov/vuln/detail/CVE-2022-22963",
+    "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "normalized_severity": "Critical",
+    "package": {"name": "spring-cloud-function-context", "kind": "binary"},
+    "repository": {"name": "maven", "uri": "https://repo1.maven.apache.org/maven2"},
+    "fixed_in_version": "introduced=0&fixed=3.1.7"
+  }
+}

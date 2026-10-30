@@ -1,11 +1,9 @@
-name: Scanner updater bundle
+name: Scanner updater bundle (disposable T1 tests)
 # Downloads per-source vulnerability data from GCS, validates each source,
 # and assembles vulnerabilities.zip for each bundle stream defined in
 # VULNERABILITY_BUNDLE_VERSION. Invalid sources fail the job before publication.
 
 on:
-  schedule:
-  - cron: "47 * * * *"
   workflow_dispatch:
     inputs:
       force:
@@ -18,17 +16,44 @@ on:
         required: false
         type: boolean
         default: false
+      t1_case:
+        description: "Temporary test-branch scenario; never merge this input"
+        required: true
+        type: choice
+        default: healthy
+        options:
+        - healthy
+        - gate-control
+        - W5
+        - W6
+        - W7
+        - W9
 
 permissions:
   contents: read
 
 jobs:
   build-matrix:
-    if: github.repository_owner == 'stackrox'
+    if: github.repository_owner == 'stackrox' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     outputs:
       streams: ${{ steps.emit.outputs.streams }}
     steps:
+    - name: Enforce disposable-test safety
+      env:
+        TEST_REF: ${{ github.ref }}
+        DRY_RUN: ${{ inputs.dry_run == true }}
+        FORCE: ${{ inputs.force == true }}
+        TEST_CASE: ${{ inputs.t1_case }}
+      run: |
+        set -euo pipefail
+        [[ "$TEST_REF" == "refs/heads/alkmim/ROX-36961-t1-negative-tests" ]]
+        [[ "$DRY_RUN" == "true" && "$FORCE" == "true" ]]
+        case "$TEST_CASE" in
+          healthy|gate-control|W5|W6|W7|W9) ;;
+          *) echo "Unsupported disposable test case" >&2; exit 1 ;;
+        esac
+
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -44,6 +69,7 @@ jobs:
 
   bundle:
     needs: build-matrix
+    timeout-minutes: 120
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1
@@ -76,12 +102,25 @@ jobs:
     env:
       STREAM: ${{ matrix.stream }}
       SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+      T1_CASE: ${{ inputs.t1_case }}
+      T1_DRY_RUN: ${{ inputs.dry_run == true }}
+      T1_FORCE: ${{ inputs.force == true }}
+      T1_EVIDENCE: /tmp/t1-evidence
+      T1_ISOLATED_DATABASE: "true"
+      PGHOST: postgres
     steps:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         persist-credentials: false
+
+    - name: Preserve disposable test helpers
+      id: t1_prepare
+      run: |
+        set -euo pipefail
+        mkdir -p /tmp/opencode
+        python3 .github/workflows/scripts/t1-tests/prepare-run.py
 
     - name: Authenticate with GCS
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
@@ -177,6 +216,11 @@ jobs:
             fi
         done < <("$sc" sources "$STREAM")
 
+    - name: Inject W6 empty source
+      id: t1_fault_source
+      if: steps.check-changes.outputs.changed == 'true' && inputs.t1_case == 'W6'
+      run: python3 /tmp/t1-tests/inject.py W6
+
     - name: Validate source content
       id: download-validate
       if: steps.check-changes.outputs.changed == 'true'
@@ -216,7 +260,13 @@ jobs:
         zip vulnerabilities.zip -@ < valid-files.txt
         echo "Assembled vulnerabilities.zip ($(stat -c%s vulnerabilities.zip) bytes)"
 
+    - name: Inject W5 unexpected ZIP entry
+      id: t1_fault_zip
+      if: steps.check-changes.outputs.changed == 'true' && inputs.t1_case == 'W5'
+      run: python3 /tmp/t1-tests/inject.py W5
+
     - name: Validate ZIP entries
+      id: t1_zip
       if: steps.check-changes.outputs.changed == 'true'
       env:
         FAILED_SOURCES: ${{ steps.download-validate.outputs.failed }}
@@ -313,6 +363,12 @@ jobs:
         make -C scanner bin/updater
         cp scanner/bin/updater /tmp/updater
 
+    - name: Record actual stream build
+      if: steps.check-changes.outputs.changed == 'true'
+      env:
+        T1_RESOLVED_REF: ${{ steps.resolve-ref.outputs.ref }}
+      run: python3 /tmp/t1-tests/record-build.py
+
     - name: Checkout master
       if: steps.check-changes.outputs.changed == 'true'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -324,54 +380,41 @@ jobs:
       if: steps.check-changes.outputs.changed == 'true'
       run: cp /tmp/vulnerabilities.zip vulnerabilities.zip
 
+    - name: Inject W7 malformed import data
+      id: t1_fault_import
+      if: steps.check-changes.outputs.changed == 'true' && inputs.t1_case == 'W7'
+      run: python3 /tmp/t1-tests/inject.py W7
+
     - name: Validate bundle import
+      id: t1_import
       if: steps.check-changes.outputs.changed == 'true'
       run: |
         set -euo pipefail
 
-        sc=./.github/workflows/scripts/scanner-updater-config.sh
-
-        # The updater import command expects a URL.
-        python3 -m http.server 8080 --directory . &
-        http_pid=$!
-        trap 'kill "$http_pid" 2>/dev/null || true' EXIT
-        for _ in $(seq 1 10); do
-            curl -sf http://localhost:8080/vulnerabilities.zip > /dev/null && break
-            sleep 1
-        done
-
-        /tmp/updater import \
-            --db-conn "host=postgres user=test password=test dbname=matcher sslmode=disable" \
-            --vulns-url "http://localhost:8080/vulnerabilities.zip"
-
-        # Verify all expected sources were imported with non-zero timestamps.
-        mapfile -t expected < <("$sc" sources "$STREAM")
-        missing=()
-        for source in "${expected[@]}"; do
-            key="bundles/${source}.json.zst"
-            ts=$(PGPASSWORD="test" psql -h postgres -U test -d matcher -tAc \
-                "SELECT update_timestamp FROM last_vuln_update WHERE key = '${key}';")
-            if [ -z "$ts" ] || [ "$ts" = "1970-01-01 00:00:00" ]; then
-                echo "::error::${source}: missing or zero timestamp in last_vuln_update after import"
-                missing+=("$source")
-            else
-                echo "source '${source}': imported (update_timestamp=${ts})"
-            fi
-        done
-
-        if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::${#missing[@]} source(s) missing from last_vuln_update after import"
-            exit 1
+        if [[ "$T1_CASE" == "W9" || "$T1_CASE" == "gate-control" ]]; then
+            mode=fail
+            [[ "$T1_CASE" != "gate-control" ]] || mode=release
+            python3 /tmp/t1-tests/mid-import.py \
+                --mode "$mode" \
+                --script /tmp/t1-tests/Validate-bundle-import.sh \
+                --evidence "$T1_EVIDENCE"
+        else
+            python3 /tmp/t1-tests/run-import.py
         fi
-        echo "Bundle import validation passed for stream '${STREAM}'"
+
+    - name: Record validated candidate
+      if: steps.check-changes.outputs.changed == 'true'
+      run: python3 /tmp/t1-tests/candidate.py
 
     - name: Authenticate with GCS for upload
+      id: t1_upload_auth
       if: steps.check-changes.outputs.changed == 'true'
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets[inputs.dry_run == true && 'GOOGLE_SA_CIRCLECI_SCANNER' || 'GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER'] }}
 
     - name: Upload bundle
+      id: t1_upload
       if: steps.check-changes.outputs.changed == 'true'
       env:
         DRY_RUN: ${{ inputs.dry_run == true }}
@@ -383,6 +426,32 @@ jobs:
         fi
         gcloud storage cp vulnerabilities.zip "$bundle_obj"
         echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
+
+    - name: Authenticate for evidence reads only
+      if: always() && steps.t1_prepare.outcome == 'success'
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Verify real test object or authenticated absence
+      if: always() && steps.t1_prepare.outcome == 'success'
+      env:
+        T1_CONTENT_OUTCOME: ${{ steps.download-validate.outcome }}
+        T1_ZIP_OUTCOME: ${{ steps.t1_zip.outcome }}
+        T1_IMPORT_OUTCOME: ${{ steps.t1_import.outcome }}
+        T1_UPLOAD_AUTH_OUTCOME: ${{ steps.t1_upload_auth.outcome }}
+        T1_UPLOAD_OUTCOME: ${{ steps.t1_upload.outcome }}
+        T1_FAULT_OUTCOME: ${{ inputs.t1_case == 'W5' && steps.t1_fault_zip.outcome || inputs.t1_case == 'W6' && steps.t1_fault_source.outcome || steps.t1_fault_import.outcome }}
+      run: python3 /tmp/t1-tests/verify-object.py
+
+    - name: Retain disposable test evidence
+      if: always() && steps.t1_prepare.outcome == 'success'
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1
+      with:
+        name: t1-${{ inputs.t1_case }}-${{ matrix.stream }}-${{ github.run_attempt }}
+        path: /tmp/t1-evidence/
+        if-no-files-found: error
+        retention-days: 7
 
   notify:
     needs: [bundle]
