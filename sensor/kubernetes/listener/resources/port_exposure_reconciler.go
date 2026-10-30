@@ -26,8 +26,9 @@ func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore st
 }
 
 func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sel selector.Selector) []*central.SensorEvent {
-	var events []*central.SensorEvent
-	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(namespace, sel) {
+	deployments := p.deploymentStore.getMatchingDeployments(namespace, sel)
+	events := make([]*central.SensorEvent, 0, len(deployments))
+	for _, deploymentWrap := range deployments {
 		if exposureInfo := p.serviceStore.GetExposureInfos(deploymentWrap.Namespace, deploymentWrap.PodLabels); len(exposureInfo) > 0 || deploymentWrap.anyNonHostPort() {
 			cloned := deploymentWrap.Clone()
 			cloned.updatePortExposureSlice(exposureInfo)

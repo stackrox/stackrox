@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"slices"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -152,9 +153,7 @@ func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string
 	c.scrapeIDToState[scrapeID] = scrapeState
 	log.Infof("started scrape %q with %d results desired", scrapeID, numResults)
 
-	updates := []*central.ScrapeUpdate{scrapeStarted(scrapeID, "")}
-	updates = append(updates, c.checkScrapeCompleted(scrapeID, scrapeState)...)
-	return updates
+	return slices.Concat([]*central.ScrapeUpdate{scrapeStarted(scrapeID, "")}, c.checkScrapeCompleted(scrapeID, scrapeState))
 }
 
 func (c *commandHandlerImpl) killScrape(scrapeID string) *central.ScrapeUpdate {
