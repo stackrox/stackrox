@@ -60,6 +60,12 @@ type ScanWatcherResults struct {
 	Scan         *storage.ComplianceOperatorScanV2
 	CheckResults set.StringSet
 	Error        error
+	// ScanRefID and LastStartedTime capture the run's scope (scan ref and start time) taken from
+	// the check results themselves. They let the manager mark prior results stale on a result-first
+	// timeout, where Scan is never populated (see GetWatcherIDFromCheckResult). When a Scan is
+	// present the manager reads the scope from it directly, so these may stay empty.
+	ScanRefID       string
+	LastStartedTime *protocompat.Timestamp
 }
 
 // DeleteOldResults associated with the Scan of the given ScanWatcherResults
@@ -403,6 +409,11 @@ func (s *scanWatcherImpl) handleResult(result *storage.ComplianceOperatorCheckRe
 		s.scanResults.CheckResults = set.NewStringSet()
 		s.timeout.Reset()
 	}
+	// Record the run's scope from the results so the manager can mark prior results stale even if no
+	// Scan update ever arrives (result-first timeout). All results of a watcher share the scan ref,
+	// and s.lastStartedTime is this run's start time.
+	s.scanResults.ScanRefID = result.GetScanRefId()
+	s.scanResults.LastStartedTime = s.lastStartedTime
 	s.scanResults.CheckResults.Add(result.GetCheckId())
 	return nil
 }
