@@ -39,4 +39,10 @@ var (
 	// Java packages. The ROX_SCANNER_V4_MAVEN_SEARCH feature flag must be enabled to have any effect.
 	// Default: https://search.maven.org/solrsearch/select
 	ScannerV4MavenSearchURL = RegisterSetting("ROX_SCANNER_V4_MAVEN_SEARCH_URL", WithDefault("https://search.maven.org/solrsearch/select"))
+
+	// ScannerV4AllowExternalVulnURLs specifies whether Scanner V4 Matcher should allow fetching vulnerability
+	// bundles from external URLs in release builds. When false (default), release builds deny HTTP requests
+	// to hosts other than Central. When true, the Matcher uses the default HTTP transport for external requests.
+	// Not intended for production use.
+	ScannerV4AllowExternalVulnURLs = RegisterBooleanSetting("ROX_SCANNER_V4_ALLOW_EXTERNAL_VULN_URLS", false)
 )

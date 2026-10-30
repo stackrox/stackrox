@@ -34,6 +34,7 @@ import (
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
@@ -211,16 +212,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		}
 	}()
 
-	// Using http.DefaultTransport instead of httputil.DefaultTransport, as the Matcher
-	// should never have a need to reach out to a server with untrusted certificates.
-	// Note: http.DefaultTransport has already been modified to handle configured proxies.
-	// See scanner/cmd/scanner/main.go.
-	defaultTransport := http.DefaultTransport
-	// If this is a release build, Matcher should only reach out to Central,
-	// so deny (and log) any other traffic.
-	if buildinfo.ReleaseBuild {
-		defaultTransport = httputil.DenyTransport
-	}
+	defaultTransport := selectDefaultTransport(ctx, buildinfo.ReleaseBuild, env.ScannerV4AllowExternalVulnURLs.BooleanSetting())
+
 	// Matcher should never reach out to Sensor, so ensure all Sensor-traffic is always denied.
 	transport, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices), httputil.WithDenySensor(true))
 	if err != nil {
@@ -331,4 +324,21 @@ func (m *matcherImpl) Ready(ctx context.Context) error {
 		return errors.New("initial load for the vulnerability store is in progress")
 	}
 	return nil
+}
+
+// selectDefaultTransport returns the fallback transport for requests not routed to Central or Sensor.
+// Release builds deny those requests unless external vulnerability URLs are explicitly allowed.
+func selectDefaultTransport(ctx context.Context, releaseBuild, allowExternalVulnURLs bool) http.RoundTripper {
+	// Scanner startup configures proxy handling on http.DefaultTransport.
+	// Unlike httputil.DefaultTransport, it requires trusted TLS certificates.
+	if !releaseBuild {
+		return http.DefaultTransport
+	}
+	if allowExternalVulnURLs {
+		slog.WarnContext(ctx, "Release build: external vulnerability URLs are allowed (ROX_SCANNER_V4_ALLOW_EXTERNAL_VULN_URLS=true). "+
+			"This should only be used in testing environments.")
+		return http.DefaultTransport
+	}
+	// Release build with default settings: deny external traffic.
+	return httputil.DenyTransport
 }
