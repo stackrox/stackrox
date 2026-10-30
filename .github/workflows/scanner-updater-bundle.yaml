@@ -13,6 +13,11 @@ on:
         required: false
         type: boolean
         default: false
+      dry_run:
+        description: "Validate without publishing; send failures to the test Slack channel"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -63,7 +68,7 @@ jobs:
       matrix:
         stream: ${{ fromJson(needs.build-matrix.outputs.streams) }}
     concurrency:
-      group: scanner-updater-bundle-${{ matrix.stream }}
+      group: scanner-updater-bundle-${{ matrix.stream }}${{ inputs.dry_run == true && '-dry-run' || '' }}
       cancel-in-progress: false
     defaults:
       run:
@@ -329,8 +334,8 @@ jobs:
         # The updater import command expects a URL.
         python3 -m http.server 8080 --directory . &
         http_pid=$!
-        trap "kill $http_pid 2>/dev/null || true" EXIT
-        for i in $(seq 1 10); do
+        trap 'kill "$http_pid" 2>/dev/null || true' EXIT
+        for _ in $(seq 1 10); do
             curl -sf http://localhost:8080/vulnerabilities.zip > /dev/null && break
             sleep 1
         done
@@ -344,7 +349,7 @@ jobs:
         missing=()
         for source in "${expected[@]}"; do
             key="bundles/${source}.json.zst"
-            ts=$(PGPASSWORD=test psql -h postgres -U test -d matcher -tAc \
+            ts=$(PGPASSWORD="test" psql -h postgres -U test -d matcher -tAc \
                 "SELECT update_timestamp FROM last_vuln_update WHERE key = '${key}';")
             if [ -z "$ts" ] || [ "$ts" = "1970-01-01 00:00:00" ]; then
                 echo "::error::${source}: missing or zero timestamp in last_vuln_update after import"
@@ -361,7 +366,7 @@ jobs:
         echo "Bundle import validation passed for stream '${STREAM}'"
 
     - name: Upload bundle
-      if: steps.check-changes.outputs.changed == 'true'
+      if: steps.check-changes.outputs.changed == 'true' && inputs.dry_run != true
       run: |
         set -euo pipefail
         bundle_obj="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/vulnerabilities.zip"
@@ -381,4 +386,5 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
     - uses: ./.github/actions/notify-slack-on-failure
       with:
-        slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        slack-webhook: ${{ secrets[inputs.dry_run == true && 'SLACK_CI_INTEGRATION_TESTING_WEBHOOK' || 'SLACK_ONCALL_SCANNER_WEBHOOK'] }}
+        context: ${{ inputs.dry_run == true && 'Dry run (bundle publication disabled)' || '' }}
