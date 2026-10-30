@@ -92,6 +92,7 @@ func (c *centralVersionTestSuite) TestJSONOutputIncompatible() {
 
 	c.Assert().Equal("INCOMPATIBLE_AHEAD", result.Compatibility)
 	c.Assert().Equal("5.6.0", result.CentralVersion)
+	c.Assert().NotEmpty(result.Recommendation)
 }
 
 func (c *centralVersionTestSuite) TestTextOutputFormat() {
