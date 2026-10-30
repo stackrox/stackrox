@@ -372,6 +372,60 @@ func TestScanWatcherTimeoutResultFirstRecordsScope(t *testing.T) {
 	assert.Equal(t, timeNow.AsTime(), result.LastStartedTime.AsTime())
 }
 
+// TestScanWatcherNewerResultAfterScanUpdatesScope covers M1: after a Scan is recorded, a result for
+// a newer run resets the watcher. The recorded scope must advance to the newer run's start time, so
+// the manager does not mark stale against the superseded Scan's older start time.
+func TestScanWatcherNewerResultAfterScanUpdatesScope(t *testing.T) {
+	scanStart := protocompat.TimestampNow()
+	newerStart := protocompat.TimestampNow().AsTime().Add(time.Minute)
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
+	ctx, cancel := context.WithCancel(context.Background())
+	finishedSignal := concurrency.NewSignal()
+	timeoutC := make(chan time.Time)
+	defer close(timeoutC)
+	timeout := &testTimer{ch: timeoutC}
+	scanWatcher := &scanWatcherImpl{
+		ctx:        ctx,
+		sensorCtx:  ctx,
+		cancel:     cancel,
+		timeout:    timeout,
+		scanC:      make(chan *storage.ComplianceOperatorScanV2),
+		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2),
+		stopped:    &finishedSignal,
+		readyQueue: readyTestQueue,
+		scanResults: &ScanWatcherResults{
+			SensorCtx:    ctx,
+			WatcherID:    "id",
+			CheckResults: set.NewStringSet(),
+		},
+	}
+	go scanWatcher.run()
+	// Scan for the current run, then a result for a newer run that resets the watcher.
+	handleScanWithAnnotation("scan-1", "5", scanStart)(t, scanWatcher)
+	err := scanWatcher.PushCheckResult(&storage.ComplianceOperatorCheckResultV2{
+		CheckId:   "check-1",
+		ScanRefId: "ref-1",
+		Annotations: map[string]string{
+			LastScannedAnnotationKey: newerStart.Format(time.RFC3339Nano),
+		},
+	})
+	require.NoError(t, err)
+	timeoutC <- time.Now()
+	select {
+	case <-scanWatcher.Finished().Done():
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for the watcher to stop")
+	}
+	require.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanTimeout)
+	// Recorded scope advanced to the newer run, not the Scan's older start time.
+	assert.Equal(t, "ref-1", result.ScanRefID)
+	require.NotNil(t, result.LastStartedTime)
+	assert.Equal(t, newerStart, result.LastStartedTime.AsTime())
+	assert.True(t, result.LastStartedTime.AsTime().After(scanStart.AsTime()))
+}
+
 func TestGetIDFromScan(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
