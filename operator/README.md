@@ -289,6 +289,54 @@ Otherwise, the make targets below will add `-dirty` to the image tag, and it lik
 
 Push your changes to a GitHub PR (draft is OK) to let CI build and push images for you.
 
+### OLM Version Selection (OLMv0 vs OLMv1)
+
+On OpenShift, the operator e2e tests automatically detect which OLM version to use based on the cluster version:
+
+- **OCP >= 4.20.1**: Uses OLMv1 (ClusterExtension API)
+- **OCP < 4.20.1**: Uses OLMv0 (Subscription/CSV API)
+
+Non-OpenShift clusters do not use OLM at all — the tests deploy the operator from its Helm chart
+(`deploy-previous-via-chart`), so the OLM targets below do not apply there.
+
+OLMv1 provides improved CRD upgrade safety through preflight checks that catch breaking changes early.
+
+#### Available Makefile Targets
+
+The following targets are available for testing with OLM:
+
+**OLMv0 targets:**
+- `deploy-via-olmv0` - Deploy current version via OLMv0
+- `deploy-previous-via-olmv0` - Deploy previous version via OLMv0 (for upgrade tests)
+- `upgrade-via-olmv0` - Upgrade operator via OLMv0
+
+**OLMv1 targets:**
+- `deploy-via-olmv1` - Deploy current version via OLMv1
+- `deploy-previous-via-olmv1` - Deploy previous version via OLMv1 (for upgrade tests)
+- `upgrade-via-olmv1` - Upgrade operator via OLMv1
+
+**Backwards-compatible targets:**
+- `deploy-via-olm`, `deploy-previous-via-olm`, `upgrade-via-olm` - Point to OLMv0 versions for backwards compatibility
+
+**Auto-selecting targets (used by CI):**
+- Upgrade is handled by `operator/hack/upgrade-autoselect.sh` which selects the appropriate OLM version
+
+#### Testing OLMv1 Locally
+
+To test OLMv1 installation on an OpenShift cluster >= 4.20.1:
+
+```bash
+# Deploy current version via OLMv1
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olmv1 TEST_NAMESPACE=test-olmv1
+
+# Or, to exercise an upgrade: deploy the previous version first, then upgrade
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-previous-via-olmv1 TEST_NAMESPACE=test-olmv1
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make upgrade-via-olmv1 TEST_NAMESPACE=test-olmv1
+```
+
+**Known Limitations:**
+- Test environment variables (`NO_PROXY`, `ROX_ADMISSION_CONTROLLER_CONFIG`) are injected via post-install deployment patch as a workaround until OLMv1 supports `ClusterExtension.spec.config.deploymentConfig.env` (tracked in OCPSTRAT-2311).
+
 ### Deploy
 
 Now the latest version (based off of `make tag`) can be installed like so:
