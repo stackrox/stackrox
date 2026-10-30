@@ -134,6 +134,7 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		obj.GetPolicy().GetSORTName(),
 		obj.GetPolicy().GetSORTLifecycleStage(),
 		obj.GetPolicy().GetSORTEnforcement(),
+		obj.GetPolicy().GetEvaluationFilter().GetSkipImageLayers(),
 		obj.GetLifecycleStage(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
@@ -162,7 +163,7 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_Severity, Policy_EnforcementActions, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, LifecycleStage, ClusterId, ClusterName, Namespace, NamespaceId, Deployment_Id, Deployment_Name, Deployment_Type, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_IdV2, Node_Id, Node_Name, Resource_ResourceType, Resource_Name, Enforcement_Action, Time, State, PlatformComponent, EntityType, EnforcementCount, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, LifecycleStage = EXCLUDED.LifecycleStage, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Type = EXCLUDED.Deployment_Type, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_IdV2 = EXCLUDED.Image_IdV2, Node_Id = EXCLUDED.Node_Id, Node_Name = EXCLUDED.Node_Name, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Enforcement_Action = EXCLUDED.Enforcement_Action, Time = EXCLUDED.Time, State = EXCLUDED.State, PlatformComponent = EXCLUDED.PlatformComponent, EntityType = EXCLUDED.EntityType, EnforcementCount = EXCLUDED.EnforcementCount, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_Severity, Policy_EnforcementActions, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Policy_EvaluationFilter_SkipImageLayers, LifecycleStage, ClusterId, ClusterName, Namespace, NamespaceId, Deployment_Id, Deployment_Name, Deployment_Type, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_IdV2, Node_Id, Node_Name, Resource_ResourceType, Resource_Name, Enforcement_Action, Time, State, PlatformComponent, EntityType, EnforcementCount, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Policy_EvaluationFilter_SkipImageLayers = EXCLUDED.Policy_EvaluationFilter_SkipImageLayers, LifecycleStage = EXCLUDED.LifecycleStage, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Type = EXCLUDED.Deployment_Type, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_IdV2 = EXCLUDED.Image_IdV2, Node_Id = EXCLUDED.Node_Id, Node_Name = EXCLUDED.Node_Name, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Enforcement_Action = EXCLUDED.Enforcement_Action, Time = EXCLUDED.Time, State = EXCLUDED.State, PlatformComponent = EXCLUDED.PlatformComponent, EntityType = EXCLUDED.EntityType, EnforcementCount = EXCLUDED.EnforcementCount, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -181,6 +182,7 @@ var copyColsAlerts = []string{
 	"policy_sortname",
 	"policy_sortlifecyclestage",
 	"policy_sortenforcement",
+	"policy_evaluationfilter_skipimagelayers",
 	"lifecyclestage",
 	"clusterid",
 	"clustername",
@@ -252,6 +254,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			obj.GetPolicy().GetSORTName(),
 			obj.GetPolicy().GetSORTLifecycleStage(),
 			obj.GetPolicy().GetSORTEnforcement(),
+			obj.GetPolicy().GetEvaluationFilter().GetSkipImageLayers(),
 			obj.GetLifecycleStage(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetClusterName(),
