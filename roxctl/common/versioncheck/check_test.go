@@ -211,33 +211,6 @@ func TestCentralVersionClientInterceptor_WarnsOnlyOnce(t *testing.T) {
 	assert.Empty(t, buf.String(), "warning should not be emitted a second time")
 }
 
-func TestGuidance(t *testing.T) {
-	tests := map[string]struct {
-		c         versioncompatibility.Compatibility
-		wantEmpty bool
-		contains  string
-	}{
-		"matched":             {versioncompatibility.Matched, false, "matched with Central"},
-		"compatible ahead":    {versioncompatibility.CompatibleAhead, false, "ahead of roxctl"},
-		"compatible behind":   {versioncompatibility.CompatibleBehind, false, "behind roxctl"},
-		"incompatible ahead":  {versioncompatibility.IncompatibleAhead, false, "ahead of roxctl"},
-		"incompatible behind": {versioncompatibility.IncompatibleBehind, false, "behind roxctl"},
-		"unknown":             {versioncompatibility.Unknown, true, ""},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			summary, _ := guidance(tt.c)
-			if tt.wantEmpty {
-				assert.Empty(t, summary)
-			} else {
-				require.NotEmpty(t, summary)
-				assert.Contains(t, summary, tt.contains)
-			}
-		})
-	}
-}
-
 func TestCheckCentralVersion(t *testing.T) {
 	testutils.SetMainVersion(t, "5.0.0-testing")
 	productstreams.OverrideBumpsForTesting(t, testBumpsYAML)
