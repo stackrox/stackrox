@@ -34,6 +34,7 @@ import (
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
@@ -211,16 +212,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		}
 	}()
 
-	// Using http.DefaultTransport instead of httputil.DefaultTransport, as the Matcher
-	// should never have a need to reach out to a server with untrusted certificates.
-	// Note: http.DefaultTransport has already been modified to handle configured proxies.
-	// See scanner/cmd/scanner/main.go.
-	defaultTransport := http.DefaultTransport
-	// If this is a release build, Matcher should only reach out to Central,
-	// so deny (and log) any other traffic.
-	if buildinfo.ReleaseBuild {
-		defaultTransport = httputil.DenyTransport
-	}
+	defaultTransport := selectDefaultTransport(ctx, buildinfo.ReleaseBuild, env.ScannerV4AllowExternalVulnURLs.BooleanSetting())
+
 	// Matcher should never reach out to Sensor, so ensure all Sensor-traffic is always denied.
 	transport, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices), httputil.WithDenySensor(true))
 	if err != nil {
@@ -331,4 +324,30 @@ func (m *matcherImpl) Ready(ctx context.Context) error {
 		return errors.New("initial load for the vulnerability store is in progress")
 	}
 	return nil
+}
+
+// selectDefaultTransport returns the HTTP transport to use for external requests
+// (requests not routed to Central or Sensor by TransportMux).
+//
+// In release builds, external requests are denied by default. Setting
+// allowExternalVulnURLs to true overrides this and allows external HTTP requests,
+// which is intended for testing environments such as PR Checks.
+//
+// In non-release (development) builds, external requests are always allowed
+// regardless of allowExternalVulnURLs.
+func selectDefaultTransport(ctx context.Context, releaseBuild, allowExternalVulnURLs bool) http.RoundTripper {
+	// Using http.DefaultTransport instead of httputil.DefaultTransport, as the Matcher
+	// should never have a need to reach out to a server with untrusted certificates.
+	// Note: http.DefaultTransport has already been modified to handle configured proxies.
+	// See scanner/cmd/scanner/main.go.
+	if !releaseBuild {
+		return http.DefaultTransport
+	}
+	if allowExternalVulnURLs {
+		slog.WarnContext(ctx, "Release build: external vulnerability URLs are allowed (ROX_SCANNER_V4_ALLOW_EXTERNAL_VULN_URLS=true). "+
+			"This should only be used in testing environments.")
+		return http.DefaultTransport
+	}
+	// Release build with default settings: deny external traffic.
+	return httputil.DenyTransport
 }
