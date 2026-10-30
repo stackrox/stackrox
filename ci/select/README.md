@@ -255,9 +255,10 @@ behavior.
 Adding or removing `ci-dispatcher-enforce` reevaluates Unit Tests and e2e
 Dispatch. Other label events skip planning, change detection, and test work.
 Unit Tests uses a separate concurrency group for those ignored events to
-protect active and pending runs. Required non-matrix jobs use an
-`ignored-label-` check-name prefix on these events so they cannot satisfy
-the required test checks. These jobs start even when no work is needed,
+protect active and pending runs. Its non-matrix suite jobs use an
+`ignored-label-` check-name prefix on these events to keep their results
+separate from ordinary suite results, including non-required checks.
+These jobs start even when no work is needed,
 because skipped jobs can retain unevaluated name expressions. Their steps
 skip work through eligibility gates; runner and container startup still
 occur. Skipped matrix jobs already have names
@@ -417,6 +418,13 @@ reach every suite or that GitHub starts consumers after a failed or skipped
 `needs` dependency. The small E2E gates that must run before checkout remain
 inline. Their wiring and GitHub's scheduler behavior require live validation.
 
+The [disposable probe in PR #23770](https://github.com/stackrox/stackrox/pull/23770)
+verified ordinary names and probe execution for UI component, shell, OpenShift
+wrapper, and Sensor jobs. Adding and removing an unrelated label produced
+resolved `ignored-label-` names with every suite step skipped. The probe used
+stub workloads against the feature branch; it did not run the real suites or
+exercise the protected `master` merge gate.
+
 Before rolling out enforcement, inspect live Actions runs for these cases:
 
 - A docs-only skip, a partial selection, and an uncovered change, including
@@ -432,7 +440,7 @@ Before rolling out enforcement, inspect live Actions runs for these cases:
 - Cancellation: ordinary work, diagnostics, and Jira stop; report steps
   retain their `always()` behavior.
 
-Reusable-output propagation, post-job hooks, downstream jobs, and check
-aggregation also require live validation. Automatic execution of workflow
+Reusable-output propagation, post-job hooks, downstream jobs, and aggregation
+of required checks also require live validation. Automatic execution of workflow
 condition scenarios is a possible future follow-up if a suitable Go-based
 approach becomes available. It is deferred from this change.
