@@ -33,6 +33,9 @@ type (
 	}
 )
 
+// loadMapping reads and validates the job-selection rules file at the given path.
+// JSON re-decoding with DisallowUnknownFields enforces scalar types and rejects
+// unknown fields; validation of the semantics lives in validate.
 func loadMapping(path string) (mapping, error) {
 	var m mapping
 	data, err := os.ReadFile(path)
@@ -85,13 +88,26 @@ func rejectNull(value any) error {
 	return nil
 }
 
+func isJobNameValid(job string) bool {
+	return job != "*" &&
+		len(strings.Fields(job)) == 1 &&
+		strings.TrimSpace(job) == job &&
+		!strings.Contains(job, "#")
+}
+
 func (m *mapping) validate() error {
-	if m.Version != 1 || len(m.Jobs) == 0 || len(m.Rules) == 0 {
-		return errors.New("rules need version 1, a nonempty jobs list, and a nonempty rules list")
+	if m.Version != 1 {
+		return fmt.Errorf("unsupported rules version %d, only 1 is supported", m.Version)
+	}
+	if len(m.Jobs) == 0 {
+		return errors.New("rules need a nonempty jobs list")
+	}
+	if len(m.Rules) == 0 {
+		return errors.New("rules need a nonempty rules list")
 	}
 	jobs := set.NewStringSet()
 	for _, job := range m.Jobs {
-		if job == "*" || len(strings.Fields(job)) != 1 || strings.TrimSpace(job) != job || strings.Contains(job, "#") {
+		if !isJobNameValid(job) {
 			return fmt.Errorf("invalid job name %q", job)
 		}
 		if !jobs.Add(job) {

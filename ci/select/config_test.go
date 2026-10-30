@@ -42,6 +42,8 @@ func TestLoadMapping(t *testing.T) {
 		"should reject duplicate jobs":       strings.Replace(validRules, "[go, postgres]", "[go, go]", 1),
 		"should reject a wildcard job":       strings.Replace(validRules, "[go, postgres]", "['*']", 1),
 		"should reject whitespace job names": strings.Replace(validRules, "[go, postgres]", "['go postgres']", 1),
+		"should reject padded job names":     strings.Replace(validRules, "[go, postgres]", "[' postgres']", 1),
+		"should reject job names with hash":  strings.Replace(validRules, "[go, postgres]", "['pos#tgres']", 1),
 		"should reject empty rules":          "version: 1\njobs: [go]\nrules: []\n",
 		"should reject wildcard skips":       strings.Replace(validRules, "skip: [go, postgres]", "skip: ['*']", 1),
 		"should reject unknown skip jobs":    strings.Replace(validRules, "skip: [go, postgres]", "skip: [missing]", 1),
@@ -109,20 +111,22 @@ func TestLoadMapping(t *testing.T) {
 	}
 }
 
-func TestLoadMappingTargetErrors(t *testing.T) {
+func TestLoadMappingErrors(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		replacement, wantError string
+		data, wantError string
 	}{
-		"unknown target":    {"skip: [missing]", "names unknown target \"missing\""},
-		"wildcard in skip":  {"skip: ['*']", "the wildcard is supported only as run: ['*']"},
-		"mixed run targets": {"run: ['*', go]", "the wildcard is supported only as run: ['*']"},
-		"repeated target":   {"run: [go]\n    skip: [go]", "repeats target \"go\""},
+		"unsupported version": {strings.Replace(validRules, "version: 1", "version: 2", 1), "unsupported rules version 2"},
+		"missing jobs list":   {"version: 1\nrules: []\n", "nonempty jobs list"},
+		"missing rules list":  {"version: 1\njobs: [go]\nrules: []\n", "nonempty rules list"},
+		"unknown target":      {strings.Replace(validRules, "skip: [go, postgres]", "skip: [missing]", 1), "names unknown target \"missing\""},
+		"wildcard in skip":    {strings.Replace(validRules, "skip: [go, postgres]", "skip: ['*']", 1), "the wildcard is supported only as run: ['*']"},
+		"mixed run targets":   {strings.Replace(validRules, "skip: [go, postgres]", "run: ['*', go]", 1), "the wildcard is supported only as run: ['*']"},
+		"repeated target":     {strings.Replace(validRules, "skip: [go, postgres]", "run: [go]\n    skip: [go]", 1), "repeats target \"go\""},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			data := strings.Replace(validRules, "skip: [go, postgres]", c.replacement, 1)
-			_, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), data))
+			_, err := loadMapping(writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), c.data))
 			require.ErrorContains(t, err, c.wantError)
 		})
 	}
