@@ -87,10 +87,7 @@ func (cmd *centralVersionCommand) fetchAndCheck() (*versioncheck.CheckResult, er
 
 	centralVersion := metadata.GetVersion()
 	if centralVersion == "" {
-		return nil, errors.New(
-			"Central did not return its version. " +
-				"This typically means roxctl is not authenticated. " +
-				"Run \"roxctl central login\" first")
+		return nil, errors.New("Central did not return its version")
 	}
 
 	result, err := versioncheck.CheckCentralVersion(centralVersion)

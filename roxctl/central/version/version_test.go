@@ -42,7 +42,7 @@ func (c *centralVersionTestSuite) TearDownTest() {
 	versioncheck.UnsuppressVersionMismatchWarningForTesting(c.T())
 }
 
-func (c *centralVersionTestSuite) TestEmptyVersionReturnsAuthError() {
+func (c *centralVersionTestSuite) TestEmptyVersionReturnsError() {
 	productstreams.OverrideBumpsForTesting(c.T(), testBumpsYAML)
 
 	cmd, stdout, _, _, cleanup := c.setupCommand(&mockMetadataServer{version: ""})
@@ -51,7 +51,7 @@ func (c *centralVersionTestSuite) TestEmptyVersionReturnsAuthError() {
 	err := cmd.run(false)
 
 	c.Require().Error(err)
-	c.Assert().Contains(err.Error(), "not authenticated")
+	c.Assert().Contains(err.Error(), "did not return its version")
 	c.Assert().Empty(stdout.String())
 }
 
