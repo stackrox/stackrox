@@ -136,6 +136,10 @@ func TestFetchProfile_StrictWithCustomProfile(t *testing.T) {
 							"ECDHE-ECDSA-AES256-GCM-SHA384",
 							"ECDHE-RSA-AES256-GCM-SHA384",
 						},
+						Groups: []configv1.TLSGroup{
+							configv1.TLSGroupX25519,
+							configv1.TLSGroupSecP256r1,
+						},
 					},
 				},
 			},
@@ -149,6 +153,7 @@ func TestFetchProfile_StrictWithCustomProfile(t *testing.T) {
 	assert.Equal(t, "TLSv1.2", profile.MinVersion)
 	assert.Equal(t, "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", profile.CipherSuites)
 	assert.Equal(t, "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384", profile.OpenSSLCiphers)
+	assert.Equal(t, "X25519,secp256r1", profile.Groups)
 }
 
 func TestFetchProfile_StrictWithNilTLSSecurityProfile(t *testing.T) {

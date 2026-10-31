@@ -13,4 +13,11 @@ var (
 	// and not configurable. Cipher settings are silently ignored for TLS 1.3.
 	// When unset, services use their compiled-in defaults.
 	TLSCipherSuites = RegisterSetting("ROX_TLS_CIPHER_SUITES")
+
+	// TLSGroups configures the allowed TLS named groups (formerly elliptic
+	// curves) for StackRox services, as a comma-separated list of group names
+	// in OpenShift API spelling (e.g. "X25519MLKEM768,X25519,secp256r1").
+	// Go treats the list as the set of allowed groups, using its own preference
+	// order. When unset, services use their compiled-in defaults.
+	TLSGroups = RegisterSetting("ROX_TLS_GROUPS")
 )
