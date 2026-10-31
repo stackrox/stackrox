@@ -250,8 +250,16 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 	}
 
 	result := make([]IndexInfo, 0, len(idxBuildOrder))
+	primaryKeys := schema.PrimaryKeys()
 	for _, name := range idxBuildOrder {
-		result = append(result, idxNameToBuilder[name].build())
+		builder := idxNameToBuilder[name]
+		// Check after grouping so indexes spanning the primary key and other
+		// columns are preserved. Embedded IDs with ignore_pk are not primary keys.
+		if len(primaryKeys) == 1 && builder.indexType == "btree" && len(builder.columns) == 1 &&
+			builder.columns[0] == strings.ToLower(primaryKeys[0].ColumnName) {
+			continue
+		}
+		result = append(result, builder.build())
 	}
 	return result
 }
