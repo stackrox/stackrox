@@ -20,6 +20,7 @@ import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
+    vulnerabilitiesClusterRemediationPath,
 } from 'routePaths';
 import NavigationItem from 'Containers/MainPage/Navigation/NavigationItem';
 import { filterNavDescriptions, isActiveLink } from 'Containers/MainPage/Navigation/utils';
@@ -65,6 +66,12 @@ function VulnerabilitiesSubnav({
             content: 'Virtual Machines',
             path: vulnerabilitiesVirtualMachineCvesPath,
             routeKey: 'vulnerabilities/virtual-machine-cves',
+        },
+        {
+            type: 'link',
+            content: 'Cluster upgrade',
+            path: vulnerabilitiesClusterRemediationPath,
+            routeKey: 'vulnerabilities/cluster-remediation',
         },
         {
             type: 'parent',
