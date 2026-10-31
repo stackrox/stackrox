@@ -226,7 +226,7 @@ export function isDefaultGroupModifiable(groups: Group[], id: string): boolean {
     return isUserResource(defaultGroup?.props?.traits);
 }
 
-export function getDefaultGroupByAuthProviderId(groups: Group[], id: string): Group | undefined {
+function getDefaultGroupByAuthProviderId(groups: Group[], id: string): Group | undefined {
     const defaultRoleGroups = groups.filter(
         (group) =>
             group.props &&
