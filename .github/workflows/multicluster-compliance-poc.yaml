@@ -92,7 +92,11 @@ jobs:
       - name: Stand up Central + 2 secured clusters with Compliance Operator
         env:
           MODE: separate-kind
+          # PR images are published to quay.io/rhacs-eng (development_build flavor);
+          # keep every image (central, sensor, central-db) on that registry + the PR
+          # tag so they match the images waited for above.
           IMAGE_DEFAULTS: development_build
+          MAIN_IMAGE_REGISTRY: quay.io/rhacs-eng
           DISABLE_COLLECTOR: "true"
           ROX_ADMIN_PASSWORD: ci-${{ github.run_id }}
         run: tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
