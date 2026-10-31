@@ -1,5 +1,7 @@
 package accesscontrol
 
+import "github.com/stackrox/rox/pkg/centralproxy"
+
 // Postgres IDs for permission sets
 // The values are UUIDs taken in descending order from ffffffff-ffff-fff4-f5ff-ffffffffffff
 // Next ID: ffffffff-ffff-fff4-f5ff-fffffffffff3
@@ -36,6 +38,11 @@ const (
 	// - view, request, and approve/deny vulnerability deferrals or false positives.
 	// - view and create vulnerability report configurations.
 	VulnerabilityManagementAdmin = "Vulnerability Management Admin"
+
+	// ConsoleProxy permission set provides necessary privileges to OpenShift Console users.
+	// This includes priveleges to:
+	// - view deployments and images.
+	ConsoleProxy = "OpenShift Secured Cluster Console Proxy"
 )
 
 var (
@@ -44,6 +51,7 @@ var (
 		Admin:                           adminPermissionSetID,
 		Analyst:                         analystPermissionSetID,
 		ConfigController:                configControllerPermissionSetID,
+		ConsoleProxy:                    centralproxy.ConsoleProxyPermissionSetID,
 		ContinuousIntegration:           continuousIntegrationPermissionSetID,
 		NetworkGraphViewer:              networkGraphViewerPermissionSetID,
 		None:                            nonePermissionSetID,
@@ -58,5 +66,6 @@ var (
 
 // IsDefaultPermissionSet will return true if the given permission set name is a default permission set.
 func IsDefaultPermissionSet(name string) bool {
-	return DefaultRoleNames.Contains(name)
+	_, found := DefaultPermissionSetIDs[name]
+	return found
 }
