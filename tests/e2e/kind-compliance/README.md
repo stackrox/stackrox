@@ -45,6 +45,19 @@ openscap image, service-ca, or SCC webhook required.
 In CI, `content` is available via the workflow's manual `workflow_dispatch` input;
 PR runs use `cel`.
 
+## Install method (`CO_INSTALL` env, default `bundle`)
+- **`bundle`** (default): the operator's CRDs + Deployment/RBAC are applied directly
+  (reconstructed from the bundle image). No OLM — fastest and deterministic.
+- **`olm`**: install upstream OLM, then a `CatalogSource` + `OperatorGroup` +
+  `Subscription` — the install path OpenShift actually uses, recognizable to readers.
+  Gotcha baked into the script: OLM only resolves a Subscription against catalogs in
+  the Subscription's namespace or OLM's *global catalog namespace* (`olm` for the
+  upstream install), so the CatalogSource goes in `olm`, not `openshift-marketplace`.
+  **`olm` implies `content` fidelity**: the upstream catalog's CSV runs
+  `PLATFORM=OpenShift` regardless of the Subscription env override, so the real
+  ProfileBundles + serving-cert/SCC shims come along for the ride.
+  Available via the workflow's `co_install` dispatch input.
+
 ## The tests
 `tests/compliance_operator_v2_multicluster_test.go` (build tag `compliance`) talk
 only to Central's v2 API:

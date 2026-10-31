@@ -19,6 +19,11 @@ on:
         type: choice
         options: [cel, content]
         default: cel
+      co_install:
+        description: "How CO is installed (bundle = reconstructed manifests; olm = real CatalogSource/Subscription, implies content)"
+        type: choice
+        options: [bundle, olm]
+        default: bundle
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
@@ -108,7 +113,18 @@ jobs:
           TIMEOUT_ROLLOUT: "900"
           # cel (default, PR runs) or content (manual dispatch): real ProfileBundles.
           FIDELITY: ${{ github.event.inputs.fidelity || 'cel' }}
-        run: tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
+          # bundle (default) or olm (manual dispatch; implies content fidelity).
+          CO_INSTALL: ${{ github.event.inputs.co_install || 'bundle' }}
+        run: |
+          set -euo pipefail
+          # The cluster deploy (~5 min) and the Go test binary compile share no
+          # dependency, so overlap them: warm GOCACHE here in the background and
+          # let the later `make -C tests compliance-v2-multicluster-tests` step
+          # reuse it, instead of paying the compile cost twice in series.
+          go test -c -tags "test,compliance" -o /tmp/mc.test ./tests/ &
+          compile_pid=$!
+          tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
+          wait "$compile_pid"
 
       - name: Install go-junit-report (for the tests Makefile report target)
         run: |

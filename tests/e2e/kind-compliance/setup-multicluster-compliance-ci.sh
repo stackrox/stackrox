@@ -40,6 +40,8 @@
 #   PREFIX=co-ci                     cluster/context name prefix (keep unique!)
 #   KIND_NODE_IMAGE=kindest/node:v1.31.2@sha256:...   PIN this in CI
 #   CO_OPERATOR_IMAGE=...@sha256:... PIN the CO operator image in CI (see NOTES)
+#   CO_INSTALL=bundle|olm            how CO is installed (default bundle, see NOTES)
+#   CO_CATALOG_IMAGE=...@sha256:...  CO_INSTALL=olm catalog image (see NOTES)
 #   MAIN_IMAGE_REGISTRY=quay.io/stackrox-io   StackRox image registry
 #   MAIN_IMAGE_TAG=<make tag>        StackRox image tag to test (REQUIRED in CI)
 #   ROX_ADMIN_PASSWORD=<pw>          Central admin password (generated if unset)
@@ -62,6 +64,16 @@ SECURED_COUNT="${SECURED_COUNT:-2}"
 PREFIX="${PREFIX:-co-ci}"
 KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.31.2}"
 CO_OPERATOR_IMAGE="${CO_OPERATOR_IMAGE:-quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master}"
+# How the Compliance Operator gets onto each cluster:
+#   bundle - (default) reconstructed Deployment/RBAC + co-crds/, no OLM. What the
+#            script has always done; fastest, no catalog/subscription resolution.
+#   olm    - install upstream OLM, then a CatalogSource/OperatorGroup/Subscription
+#            against CO_CATALOG_IMAGE, exercising the real install path OpenShift
+#            uses. Opt-in: slower (extra images, catalog pod, CSV resolution).
+#            NOTE: implies FIDELITY=content (the upstream catalog's CSV runs
+#            PLATFORM=OpenShift regardless of the Subscription env override).
+CO_INSTALL="${CO_INSTALL:-bundle}"
+CO_CATALOG_IMAGE="${CO_CATALOG_IMAGE:-ghcr.io/complianceascode/compliance-operator-catalog@sha256:b5ad7b09f3fa12d99821b7768d6af54eba02e9328feb71c5aee7624401d5a3e8}"
 MAIN_IMAGE_REGISTRY="${MAIN_IMAGE_REGISTRY:-quay.io/stackrox-io}"
 MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-}"
 IMAGE_DEFAULTS="${IMAGE_DEFAULTS:-opensource}"
@@ -84,6 +96,12 @@ CEL_PROFILE_NAME="${CEL_PROFILE_NAME:-kind-cel-tp}"  # TailoredProfile in cel-pr
 #             ocp4/rhcos4 SCANS yield NOT-APPLICABLE on kind (no OpenShift API /
 #             RHCOS), so content mode validates catalog+profile sync, not results.
 FIDELITY="${FIDELITY:-cel}"
+# OLM installs use the upstream catalog, whose bundled CSV effectively runs
+# PLATFORM=OpenShift and ignores the Subscription's config.env override (the
+# catalog's channel-head name doesn't match the bundled CSV, so installedCSV — and
+# thus the env override — never applies). So an OLM install always behaves as
+# content fidelity on kind (real ProfileBundles + the serving-cert/SCC shims).
+[[ "$CO_INSTALL" == "olm" ]] && FIDELITY=content
 CO_PLATFORM=Generic
 [[ "$FIDELITY" == "content" ]] && CO_PLATFORM=OpenShift
 REAL_PROFILE_NAME="${REAL_PROFILE_NAME:-ocp4-cis}"  # a real profile to gate on in content mode
@@ -115,6 +133,10 @@ require_tools() {
     cel) ;;
     content) [[ -f "$ASSET_DIR/scc-shim-webhook.py" ]] || die "content fidelity needs scc-shim-webhook.py in $ASSET_DIR" ;;
     *) die "FIDELITY must be 'cel' or 'content' (got '$FIDELITY')" ;;
+  esac
+  case "$CO_INSTALL" in
+    bundle|olm) ;;
+    *) die "CO_INSTALL must be 'bundle' or 'olm' (got '$CO_INSTALL')" ;;
   esac
 }
 
@@ -254,12 +276,113 @@ wait_profilebundles_valid() {
   done
 }
 
+# OLM mode: install upstream OLM (idempotent) so CO can be installed via the
+# normal CatalogSource/OperatorGroup/Subscription flow instead of the
+# reconstructed bundle manifests.
+install_olm() {
+  local ctx="$1"
+  local K="kubectl --context ${ctx}"
+  local olm_version=v0.46.0
+  local crds_url="https://github.com/operator-framework/operator-lifecycle-manager/releases/download/${olm_version}/crds.yaml"
+  local olm_url="https://github.com/operator-framework/operator-lifecycle-manager/releases/download/${olm_version}/olm.yaml"
+  if $K -n olm get deploy catalog-operator >/dev/null 2>&1; then
+    log "[$ctx] OLM already installed"
+    return 0
+  fi
+  log "[$ctx] installing OLM $olm_version"
+  # --server-side is required: the clusterserviceversions CRD is too large for
+  # client-side apply (exceeds the last-applied-configuration annotation limit).
+  $K apply --server-side -f "$crds_url"
+  $K wait --for=condition=Established -f "$crds_url"
+  $K apply -f "$olm_url"
+  $K -n olm rollout status deploy/olm-operator --timeout="${TIMEOUT_ROLLOUT}s"
+  $K -n olm rollout status deploy/catalog-operator --timeout="${TIMEOUT_ROLLOUT}s"
+}
+
+# OLM mode: CatalogSource + OperatorGroup + Subscription for the Compliance
+# Operator, then wait for the resolved CSV to succeed.
+install_co_olm() {
+  local ctx="$1"
+  local K="kubectl --context ${ctx}"
+  install_olm "$ctx"
+  # The OLM-created Deployment carries nodeSelector
+  # node-role.kubernetes.io/master, which kind control-plane nodes lack by
+  # default; label it so the operator pod can schedule.
+  $K label node -l node-role.kubernetes.io/control-plane node-role.kubernetes.io/master="" --overwrite
+  log "[$ctx] installing Compliance Operator via OLM (catalog=$CO_CATALOG_IMAGE)"
+  $K apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: compliance-operator
+  namespace: olm
+spec:
+  sourceType: grpc
+  image: ${CO_CATALOG_IMAGE}
+  displayName: Compliance Operator (kind-compliance)
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: compliance-operator
+  namespace: ${CO_NS}
+spec:
+  targetNamespaces:
+  - ${CO_NS}
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: compliance-operator-sub
+  namespace: ${CO_NS}
+spec:
+  channel: alpha
+  name: compliance-operator
+  source: compliance-operator
+  sourceNamespace: olm
+  installPlanApproval: Automatic
+  config:
+    env:
+    - name: PLATFORM
+      value: ${CO_PLATFORM}
+EOF
+  log "[$ctx] waiting for Subscription/compliance-operator-sub to resolve a CSV"
+  local deadline csv phase
+  deadline=$(( $(date +%s) + TIMEOUT_ROLLOUT ))
+  csv=""
+  while [[ -z "$csv" ]]; do
+    csv="$($K -n "$CO_NS" get subscription compliance-operator-sub -o jsonpath='{.status.currentCSV}' 2>/dev/null || true)"
+    # Tolerate a catalog whose declared channel head name does not match the
+    # actual CSV it ships (seen in practice: status.currentCSV pointed at a CSV
+    # that was never created because the bundle's embedded CSV uses a newer
+    # name than the catalog's own channel/package metadata). Fall back to
+    # whatever compliance-operator CSV object OLM actually installed.
+    if [[ -z "$csv" ]] || ! $K -n "$CO_NS" get csv "$csv" >/dev/null 2>&1; then
+      csv="$($K -n "$CO_NS" get csv -o name 2>/dev/null | sed -n 's#.*/\(compliance-operator\..*\)#\1#p' | head -1)"
+    fi
+    [[ -n "$csv" ]] && break
+    (( $(date +%s) >= deadline )) && die "[$ctx] Subscription/compliance-operator-sub did not resolve an installable CSV"
+    sleep 5
+  done
+  log "[$ctx] waiting for CSV/$csv to reach phase Succeeded"
+  while :; do
+    phase="$($K -n "$CO_NS" get csv "$csv" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+    [[ "$phase" == "Succeeded" ]] && break
+    (( $(date +%s) >= deadline )) && die "[$ctx] CSV/$csv did not reach Succeeded (last: ${phase:-none})"
+    sleep 10
+  done
+  log "[$ctx] CSV/$csv Succeeded"
+  $K -n "$CO_NS" rollout status deploy/compliance-operator --timeout="${TIMEOUT_ROLLOUT}s"
+}
+
 install_co() {
   local ctx="$1"
   local K="kubectl --context ${ctx}"
-  log "[$ctx] installing Compliance Operator (PLATFORM=$CO_PLATFORM, fidelity=$FIDELITY)"
+  log "[$ctx] installing Compliance Operator (PLATFORM=$CO_PLATFORM, fidelity=$FIDELITY, install=$CO_INSTALL)"
   $K create namespace "$CO_NS" --dry-run=client -o yaml | $K apply -f -
-  $K apply --server-side -f "$ASSET_DIR/co-crds"
+  if [[ "$CO_INSTALL" == "bundle" ]]; then
+    $K apply --server-side -f "$ASSET_DIR/co-crds"
+  fi
   $K apply --server-side -f "$ASSET_DIR"/openshift-shim/config-crds.yaml
   $K apply -f "$ASSET_DIR"/openshift-shim/config-objects.yaml
   $K patch infrastructure cluster --subresource=status --type=merge \
@@ -269,13 +392,17 @@ install_co() {
     create_serving_cert "$ctx"
     install_scc_webhook "$ctx"
   fi
-  # Render operator with the pinned image and the selected PLATFORM (the asset
-  # ships PLATFORM=Generic; content mode rewrites it to OpenShift).
-  sed -e "s#image: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master#image: ${CO_OPERATOR_IMAGE}#g" \
-      -e "s/^\( *\)value: Generic\$/\1value: ${CO_PLATFORM}/" \
-    "$ASSET_DIR/operator-generic.yaml" >"$WORK/operator.rendered.yaml"
-  $K apply -f "$WORK/operator.rendered.yaml"
-  $K -n "$CO_NS" rollout status deploy/compliance-operator --timeout="${TIMEOUT_ROLLOUT}s"
+  if [[ "$CO_INSTALL" == "olm" ]]; then
+    install_co_olm "$ctx"
+  else
+    # Render operator with the pinned image and the selected PLATFORM (the asset
+    # ships PLATFORM=Generic; content mode rewrites it to OpenShift).
+    sed -e "s#image: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master#image: ${CO_OPERATOR_IMAGE}#g" \
+        -e "s/^\( *\)value: Generic\$/\1value: ${CO_PLATFORM}/" \
+      "$ASSET_DIR/operator-generic.yaml" >"$WORK/operator.rendered.yaml"
+    $K apply -f "$WORK/operator.rendered.yaml"
+    $K -n "$CO_NS" rollout status deploy/compliance-operator --timeout="${TIMEOUT_ROLLOUT}s"
+  fi
   if [[ "$FIDELITY" == "content" ]]; then
     wait_profilebundles_valid "$ctx"
   fi
@@ -493,19 +620,47 @@ up() {
   apply_cel_profile "$CENTRAL_CTX"
   printf '%s\t%s\n' "$(secured_name 1)" "$CENTRAL_CTX" >>"$STATE_DIR/clusters.tsv"
 
-  # secured #2..N on separate kinds or vclusters
-  local i ctx vport=11000
+  # secured #2..N on separate kinds or vclusters. Each is fully independent
+  # (its own cluster, CO install, Sensor, profile), so deploy them concurrently
+  # instead of one at a time to cut wall time. Every log line from install_co /
+  # deploy_secured already carries a "[$ctx]" prefix, so interleaved output from
+  # parallel children stays attributable; each line is a single short printf, so
+  # stderr writes do not interleave mid-line.
+  local i name pids=() names=()
   for (( i=2; i<=SECURED_COUNT; i++ )); do
-    local name; name="$(secured_name "$i")"
-    if [[ "$MODE" == "vcluster" ]]; then
-      ctx="$(ensure_vcluster "$name" "$vport")"; vport=$((vport+1))
-    else
-      ensure_kind_cluster "$name"; ctx="kind-${name}"
-    fi
-    install_co "$ctx"
-    deploy_secured "$ctx" "$name" "$endpoint" "$bundle"
-    apply_cel_profile "$ctx"
-    printf '%s\t%s\n' "$name" "$ctx" >>"$STATE_DIR/clusters.tsv"
+    name="$(secured_name "$i")"
+    names+=("$name")
+    # Each child writes ITS OWN clusters.tsv line to a private temp file so
+    # concurrent writers can never interleave-corrupt a shared file; the
+    # parent concatenates them, in order, once every child has succeeded.
+    rm -f "$STATE_DIR/clusters.tsv.$i"
+    (
+      set -e
+      local ctx vport=$(( 11000 + i - 2 ))
+      if [[ "$MODE" == "vcluster" ]]; then
+        ctx="$(ensure_vcluster "$name" "$vport")"
+      else
+        ensure_kind_cluster "$name"; ctx="kind-${name}"
+      fi
+      install_co "$ctx"
+      deploy_secured "$ctx" "$name" "$endpoint" "$bundle"
+      apply_cel_profile "$ctx"
+      printf '%s\t%s\n' "$name" "$ctx" >"$STATE_DIR/clusters.tsv.$i"
+    ) &
+    pids+=($!)
+  done
+
+  local fail=0 j
+  for j in "${!pids[@]}"; do
+    wait "${pids[$j]}" || { warn "parallel deploy of secured cluster '${names[$j]}' failed (pid ${pids[$j]})"; fail=1; }
+  done
+  (( fail == 0 )) || die "one or more secured clusters #2..N failed to deploy; see log above"
+
+  for (( i=2; i<=SECURED_COUNT; i++ )); do
+    name="$(secured_name "$i")"
+    [[ -s "$STATE_DIR/clusters.tsv.$i" ]] || die "secured cluster '$name' did not record its clusters.tsv entry"
+    cat "$STATE_DIR/clusters.tsv.$i" >>"$STATE_DIR/clusters.tsv"
+    rm -f "$STATE_DIR/clusters.tsv.$i"
   done
 
   verify
