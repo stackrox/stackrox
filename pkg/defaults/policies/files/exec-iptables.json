@@ -13,6 +13,33 @@
   "eventSource": "DEPLOYMENT_EVENT",
   "exclusions": [
     {
+      "name": "Don't alert on haproxy-control-plane-* deployment in openshift-kni-infra namespace",
+      "deployment": {
+        "name": "haproxy-control-plane-.*",
+        "scope": {
+          "namespace": "openshift-kni-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on keepalived-control-plane-* deployment in openshift-kni-infra namespace",
+      "deployment": {
+        "name": "keepalived-control-plane-.*",
+        "scope": {
+          "namespace": "openshift-kni-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on keepalived-worker-* deployment in openshift-kni-infra namespace",
+      "deployment": {
+        "name": "keepalived-worker-.*",
+        "scope": {
+          "namespace": "openshift-kni-infra"
+        }
+      }
+    },
+    {
       "name": "Don't alert on haproxy-* deployment in openshift-vsphere-infra namespace",
       "deployment": {
         "name": "haproxy-.*",
