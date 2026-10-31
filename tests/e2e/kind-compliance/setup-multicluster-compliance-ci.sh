@@ -179,6 +179,10 @@ deploy_central() {
   local -a imgargs=()
   [[ -n "$MAIN_IMAGE_TAG" ]] && imgargs+=(--set "central.image.tag=$MAIN_IMAGE_TAG" --set "central.image.registry=$MAIN_IMAGE_REGISTRY")
   log "[$ctx] deploying Central (scanners off, monitoring off, NodePort exposure)"
+  # Shrink resource REQUESTS so everything co-schedules on a single kind node
+  # (kind advertises the whole host's CPU, and central-db alone requests 4 CPU by
+  # default, which does not fit next to central on a small CI runner). Limits are
+  # left at chart defaults; actual usage with tiny CEL scans is low.
   helm --kube-context "$ctx" upgrade --install stackrox-central-services \
     "$WORK/charts/central-services" -n "$ROX_NS" --create-namespace \
     --set central.adminPassword.value="$ROX_ADMIN_PASSWORD" \
@@ -186,6 +190,10 @@ deploy_central() {
     --set monitoring.openshift.enabled=false \
     --set imagePullSecrets.allowNone=true \
     --set central.exposure.nodePort.enabled=true \
+    --set central.resources.requests.cpu=500m --set central.resources.requests.memory=1Gi \
+    --set central.db.resources.requests.cpu=500m --set central.db.resources.requests.memory=1Gi \
+    --set centralWorker.resources.requests.cpu=50m --set centralWorker.resources.requests.memory=128Mi \
+    --set configController.resources.requests.cpu=50m --set configController.resources.requests.memory=128Mi \
     "${imgargs[@]}" \
     --wait --timeout "${TIMEOUT_ROLLOUT}s"
   kubectl --context "$ctx" -n "$ROX_NS" rollout status deploy/central --timeout="${TIMEOUT_ROLLOUT}s"
@@ -237,6 +245,8 @@ deploy_secured() {
     --set monitoring.openshift.enabled=false \
     --set scannerV4.disable=true \
     --set imagePullSecrets.allowNone=true \
+    --set sensor.resources.requests.cpu=200m --set sensor.resources.requests.memory=512Mi \
+    --set admissionControl.resources.requests.cpu=50m --set admissionControl.resources.requests.memory=128Mi \
     "${extra[@]}" "${imgargs[@]}" \
     --wait --timeout "${TIMEOUT_ROLLOUT}s"
   kubectl --context "$ctx" -n "$ROX_NS" rollout status deploy/sensor --timeout="${TIMEOUT_ROLLOUT}s"

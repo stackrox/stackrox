@@ -99,6 +99,7 @@ jobs:
           MAIN_IMAGE_REGISTRY: quay.io/stackrox-io
           DISABLE_COLLECTOR: "true"
           ROX_ADMIN_PASSWORD: ci-${{ github.run_id }}
+          TIMEOUT_ROLLOUT: "900"
         run: tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
 
       - name: Run multi-cluster compliance Go tests
