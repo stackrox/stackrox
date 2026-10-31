@@ -1,4 +1,4 @@
-# PoC: multi-cluster compliance e2e on kind.
+# Multi-cluster compliance e2e on kind.
 #
 # Stands up StackRox Central + two secured clusters on kind, each running a real
 # Compliance Operator (PLATFORM=Generic + CEL, operator image only — no
@@ -9,11 +9,28 @@
 #
 # Why a dedicated workflow: compliance e2e currently runs on OpenShift only (Prow).
 # This proves the same integration can be gated cheaply on kind in GitHub Actions.
-name: Multi-cluster compliance (kind PoC)
+#
+# Dispatched by .github/workflows/e2e-dispatch.yaml (opt-in via the
+# e2e-multicluster-compliance-kind PR label), or directly via workflow_dispatch.
+name: e2e-multicluster-compliance-kind
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
   workflow_dispatch:
     inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
       fidelity:
         description: "Compliance Operator fidelity (cel = operator image only, real PASS/FAIL; content = real ocp4/rhcos4 ProfileBundles synced to Central; platform = content + OpenShift-API shim for real ocp4-cis OVAL PASS/FAIL)"
         type: choice
@@ -24,14 +41,11 @@ on:
         type: choice
         options: [bundle, olm]
         default: bundle
-  pull_request:
-    types: [opened, reopened, synchronize]
-    paths:
-      - tests/e2e/kind-compliance/**
-      - tests/compliance_operator_v2_multicluster_test.go
-      - .github/workflows/multicluster-compliance-poc.yaml
 
-# The PR's images are built by build.yaml; we wait for them below.
+permissions:
+  contents: read
+  pull-requests: read
+
 env:
   KIND_VERSION: v0.33.0
   KIND_NODE_IMAGE: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
@@ -47,17 +61,20 @@ env:
 
 jobs:
   multicluster-compliance-kind:
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           # Full history + tags so `make tag` / status.sh can `git describe`.
           fetch-depth: 0
-          # Check out the PR head (not the merge commit) so `make tag` matches the
-          # tag build.yaml uses when it pushes the PR images we wait for below.
-          ref: ${{ github.event.pull_request.head.sha }}
+          # Check out the PR head (not the merge commit) so the diagnostics and
+          # checked-out test code match the PR whose images we were given.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -90,15 +107,6 @@ jobs:
         run: |
           make cli_host-arch
           echo "ROXCTL=$PWD/bin/linux_amd64/roxctl" >> "$GITHUB_ENV"
-          echo "MAIN_IMAGE_TAG=$(make --quiet --no-print-directory tag)" >> "$GITHUB_ENV"
-
-      - name: Wait for PR images (main, central-db)
-        uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86
-        with:
-          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-          image: |
-            stackrox-io/main:${{ env.MAIN_IMAGE_TAG }}
-            stackrox-io/central-db:${{ env.MAIN_IMAGE_TAG }}
 
       - name: Stand up Central + 2 secured clusters with Compliance Operator
         env:
@@ -113,9 +121,11 @@ jobs:
           TIMEOUT_ROLLOUT: "900"
           # cel (default, PR runs), content (real ProfileBundles), or platform
           # (content + OpenShift-API shim, real ocp4-cis OVAL results) via dispatch.
-          FIDELITY: ${{ github.event.inputs.fidelity || 'cel' }}
+          # inputs.fidelity is undefined (empty) when called via workflow_call, so
+          # the default applies there too.
+          FIDELITY: ${{ inputs.fidelity || 'cel' }}
           # bundle (default) or olm (manual dispatch; implies content fidelity).
-          CO_INSTALL: ${{ github.event.inputs.co_install || 'bundle' }}
+          CO_INSTALL: ${{ inputs.co_install || 'bundle' }}
         run: |
           set -euo pipefail
           # The cluster deploy (~5 min) and the Go test binary compile share no
@@ -139,7 +149,7 @@ jobs:
           # Only run TestComplianceV2MultiClusterPlatformResults (real ocp4-cis
           # OVAL PASS/FAIL) in platform mode: ocp4-cis is all NOT-APPLICABLE
           # without the OpenShift-API shim, so it must stay opt-in.
-          COMPLIANCE_MC_PLATFORM: ${{ github.event.inputs.fidelity == 'platform' && 'true' || 'false' }}
+          COMPLIANCE_MC_PLATFORM: ${{ inputs.fidelity == 'platform' && 'true' || 'false' }}
         run: |
           set -euo pipefail
           ROX_ADMIN_PASSWORD="$(cat "$WORK/state/admin-password")"

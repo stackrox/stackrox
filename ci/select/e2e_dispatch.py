@@ -62,6 +62,11 @@ def main():
 
     jobs_registry = [
         Job(name='e2e-byodb-tests', require_pr_label=True),
+        # New/heavier kind-based compliance jobs, opt-in via PR label first (same
+        # pattern as e2e-qa-tests-gke/e2e-byodb-tests) so they don't burden
+        # unrelated PRs. Flipping to always-on later is just dropping
+        # require_pr_label.
+        Job(name='e2e-multicluster-compliance-kind', require_pr_label=True),
         Job(name='e2e-db-backup-restore-tests-gke'),
         Job(name='e2e-db-backup-restore-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-gke-upgrade-tests'),

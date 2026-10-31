@@ -1,9 +1,9 @@
-# Multi-cluster compliance on kind (PoC)
+# Multi-cluster compliance on kind
 
 Compliance e2e currently runs on OpenShift only (Prow), because the Compliance
-Operator (CO) is an OpenShift operator. This directory is a proof of concept that
-the same StackRox compliance integration can be exercised **multi-cluster, on
-kind, in GitHub Actions** — cheaply enough for a PR gate.
+Operator (CO) is an OpenShift operator. This directory proves that the same
+StackRox compliance integration can be exercised **multi-cluster, on kind, in
+GitHub Actions** — cheaply enough for a PR gate.
 
 It stands up StackRox Central plus two secured clusters, each running the **real**
 upstream Compliance Operator in its leanest mode (`PLATFORM=Generic` + CEL
@@ -113,9 +113,14 @@ tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh down
 ```
 
 ## CI
-`.github/workflows/multicluster-compliance-poc.yaml` runs the flow on GitHub
-Actions: it waits for the PR's `main` and `central-db` images, builds `roxctl`,
-runs `up`, then the Go tests, and uploads diagnostics.
+`.github/workflows/e2e-multicluster-compliance-kind.yaml` runs the flow on GitHub
+Actions: it builds `roxctl`, runs `up` (against the PR's `main`/`central-db`
+images, already waited for by the shared dispatcher), then the Go tests, and
+uploads diagnostics. It is a reusable workflow dispatched by
+`.github/workflows/e2e-dispatch.yaml` — it only runs on a PR when the PR carries
+the `e2e-multicluster-compliance-kind` label (opt-in, like the other heavier e2e
+jobs), or always on push/tag builds. It can also be run directly via
+`workflow_dispatch`, supplying a `tag` (and optionally `fidelity`/`co_install`).
 
 ## Known limitations / hardening TODO
 - Node (`rhcos4-*`) scans and MachineConfig remediation are out of scope; kind
