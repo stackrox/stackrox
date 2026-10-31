@@ -2178,11 +2178,18 @@ spec:
                     description: OpenShiftMonitoring defines settings related to OpenShift
                       Monitoring
                     properties:
+                      custom:
+                        description: |-
+                          Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
+                          Independent of openshift.enabled for SecuredCluster. The default is: false.
+                        properties:
+                          enabled:
+                            description: 'The default is: false.'
+                            type: boolean
+                        type: object
                       enabled:
                         description: 'The default is: true.'
                         type: boolean
-                    required:
-                    - enabled
                     type: object
                 type: object
               network:

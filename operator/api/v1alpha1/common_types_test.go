@@ -62,3 +62,37 @@ func TestGlobalMonitoring_IsOpenShiftMonitoringDisabled(t *testing.T) {
 		})
 	}
 }
+
+func TestGlobalMonitoring_IsOpenShiftCustomMonitoringEnabled(t *testing.T) {
+	tests := map[string]struct {
+		monitoring *GlobalMonitoring
+		want       bool
+	}{
+		"nil monitoring": {},
+		"nil openshift":  {monitoring: &GlobalMonitoring{}},
+		"nil custom": {
+			monitoring: &GlobalMonitoring{OpenShiftMonitoring: &OpenShiftMonitoring{}},
+		},
+		"nil enabled": {
+			monitoring: &GlobalMonitoring{OpenShiftMonitoring: &OpenShiftMonitoring{
+				Custom: &OpenShiftCustomMonitoring{},
+			}},
+		},
+		"disabled": {
+			monitoring: &GlobalMonitoring{OpenShiftMonitoring: &OpenShiftMonitoring{
+				Custom: &OpenShiftCustomMonitoring{Enabled: new(false)},
+			}},
+		},
+		"enabled": {
+			monitoring: &GlobalMonitoring{OpenShiftMonitoring: &OpenShiftMonitoring{
+				Custom: &OpenShiftCustomMonitoring{Enabled: new(true)},
+			}},
+			want: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.monitoring.IsOpenShiftCustomMonitoringEnabled())
+		})
+	}
+}

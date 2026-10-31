@@ -476,6 +476,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
 								Enabled: new(true),
+								Custom:  &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
 							},
 						},
 						Scanner: &platform.LocalScannerComponentSpec{
@@ -840,6 +841,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
+						"custom": map[string]interface{}{
+							"enabled": true,
+						},
 					},
 				},
 				"registryOverride": "my.registry.override.com",
@@ -1086,6 +1090,60 @@ func TestTranslatePartialMatch(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"central custom metrics enabled without general monitoring setting": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Custom: &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring.openshift.enabled":        true,
+				"monitoring.openshift.custom.enabled": true,
+			},
+		},
+		"central custom metrics enabled": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Enabled: new(false),
+								Custom:  &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring.openshift.enabled":        false,
+				"monitoring.openshift.custom.enabled": true,
+			},
+		},
+		"central custom metrics disabled": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Custom: &platform.OpenShiftCustomMonitoring{Enabled: new(false)},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring.openshift.custom.enabled": nil,
+			},
+		},
 		"unset network": {
 			args: args{
 				sc: platform.SecuredCluster{
