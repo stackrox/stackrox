@@ -325,7 +325,7 @@ spec:
         path: customize.deploymentDefaults.nodeSelector
       - description: |-
           Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
-          Independent of openshift.enabled for SecuredCluster. The default is: false.
+          Independent of openshift.enabled for Central and SecuredCluster. The default is: false.
         displayName: Custom
         path: monitoring.openshift.custom
         x-descriptors:
@@ -1195,7 +1195,7 @@ spec:
         path: customize.deploymentDefaults.nodeSelector
       - description: |-
           Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
-          Independent of openshift.enabled for SecuredCluster. The default is: false.
+          Independent of openshift.enabled for Central and SecuredCluster. The default is: false.
         displayName: Custom
         path: monitoring.openshift.custom
         x-descriptors:
