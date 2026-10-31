@@ -228,16 +228,11 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 }
 
 func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
+	// Create the ScanSetting.
 	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
-
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request, ""))
-	if err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
-
 	err = m.callWithRetry(func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Create(ctx, scanSetting, v1.CreateOptions{})
 		return errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
@@ -246,6 +241,22 @@ func (m *handlerImpl) createScanResources(requestID string, ns string, request *
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
+	// Verify the ScanSetting is observable before creating the ScanSettingBinding
+	// that references it. Without this check, the Compliance Operator may reconcile
+	// the binding before the ScanSetting is visible, causing a NamedReferenceLookupError.
+	err = m.callWithRetry(func(ctx context.Context) error {
+		_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Get(ctx, scanSetting.GetName(), v1.GetOptions{})
+		return errors.Wrapf(err, "ScanSetting namespaces/%s/scansettings/%s not yet observable", ns, scanSetting.GetName())
+	})
+	if err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	// Create the ScanSettingBinding.
+	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request, ""))
+	if err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
 	err = m.callWithRetry(func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(ctx, scanSettingBinding, v1.CreateOptions{})
 		return errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
