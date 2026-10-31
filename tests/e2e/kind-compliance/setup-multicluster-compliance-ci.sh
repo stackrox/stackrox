@@ -207,7 +207,9 @@ central_internal_endpoint() {
   node_container="${CENTRAL_CLUSTER}-control-plane"
   ip="$(docker inspect -f '{{(index .NetworkSettings.Networks "kind").IPAddress}}' "$node_container")"
   [[ -n "$ip" ]] || die "could not resolve Central node IP on the kind network"
-  port="$(kubectl --context "$CENTRAL_CTX" -n "$ROX_NS" get svc central \
+  # central.exposure.nodePort.enabled creates a NodePort Service named
+  # 'central-loadbalancer' (plain 'svc/central' is ClusterIP with no nodePort).
+  port="$(kubectl --context "$CENTRAL_CTX" -n "$ROX_NS" get svc central-loadbalancer \
     -o jsonpath='{.spec.ports[?(@.port==443)].nodePort}')"
   [[ -n "$port" ]] || die "could not resolve Central NodePort"
   echo "${ip}:${port}"
