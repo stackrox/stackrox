@@ -86,17 +86,17 @@ jobs:
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: |
-            rhacs-eng/main:${{ env.MAIN_IMAGE_TAG }}
-            rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
+            stackrox-io/main:${{ env.MAIN_IMAGE_TAG }}
+            stackrox-io/central-db:${{ env.MAIN_IMAGE_TAG }}
 
       - name: Stand up Central + 2 secured clusters with Compliance Operator
         env:
           MODE: separate-kind
-          # PR images are published to quay.io/rhacs-eng (development_build flavor);
-          # keep every image (central, sensor, central-db) on that registry + the PR
-          # tag so they match the images waited for above.
-          IMAGE_DEFAULTS: development_build
-          MAIN_IMAGE_REGISTRY: quay.io/rhacs-eng
+          # Use the PUBLIC opensource registry (quay.io/stackrox-io) so the kind
+          # nodes can pull without registry credentials (imagePullSecrets.allowNone).
+          # build.yaml publishes the PR's main+central-db there too (STACKROX_BRANDING).
+          IMAGE_DEFAULTS: opensource
+          MAIN_IMAGE_REGISTRY: quay.io/stackrox-io
           DISABLE_COLLECTOR: "true"
           ROX_ADMIN_PASSWORD: ci-${{ github.run_id }}
         run: tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
@@ -125,6 +125,9 @@ jobs:
             ns_out="/tmp/diag/${ctx//\//_}"
             mkdir -p "$ns_out"
             kubectl --context "$ctx" get pods -A -o wide > "$ns_out/pods.txt" 2>&1 || true
+            kubectl --context "$ctx" -n stackrox describe pods > "$ns_out/stackrox-describe.txt" 2>&1 || true
+            kubectl --context "$ctx" -n stackrox get events --sort-by=.lastTimestamp > "$ns_out/stackrox-events.txt" 2>&1 || true
+            kubectl --context "$ctx" -n openshift-compliance describe pods > "$ns_out/co-describe.txt" 2>&1 || true
             kubectl --context "$ctx" -n openshift-compliance get all,compliancescans,compliancecheckresults,scansettingbindings > "$ns_out/compliance.txt" 2>&1 || true
             kubectl --context "$ctx" -n openshift-compliance logs deploy/compliance-operator --tail=200 > "$ns_out/co-operator.log" 2>&1 || true
           done
