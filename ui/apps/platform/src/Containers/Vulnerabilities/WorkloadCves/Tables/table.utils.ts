@@ -83,7 +83,7 @@ export type ComponentVulnerabilityBase = {
     inBaseImageLayer?: boolean;
     imageVulnerabilities: {
         severity: string;
-        cvss: number;
+        cvss: number | null;
         scoreVersion: string;
         fixedByVersion: string;
         origin?: string;
@@ -100,7 +100,7 @@ export type DeploymentComponentVulnerability = Omit<
 > & {
     imageVulnerabilities: {
         severity: string;
-        cvss: number;
+        cvss: number | null;
         scoreVersion: string;
         fixedByVersion: string;
         origin?: string;
@@ -125,7 +125,7 @@ export type TableDataRow = {
     fixedByVersion: string;
     advisory?: Advisory | null;
     severity: VulnerabilitySeverity;
-    cvss: number;
+    cvss: number | null;
     scoreVersion: string;
     version: string;
     location: string;
@@ -201,7 +201,7 @@ function extractCommonComponentFields(
         vulnerability?.severity && isVulnerabilitySeverity(vulnerability.severity)
             ? vulnerability.severity
             : 'UNKNOWN_VULNERABILITY_SEVERITY';
-    const cvss = vulnerability?.cvss ?? 0;
+    const cvss = vulnerability?.cvss ?? null;
     const scoreVersion = vulnerability?.scoreVersion ?? 'N/A';
     const fixedByVersion = vulnerability?.fixedByVersion ?? 'N/A';
     const origin = vulnerability?.origin;
