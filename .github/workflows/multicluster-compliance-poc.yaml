@@ -41,6 +41,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          # Full history + tags so `make tag` / status.sh can `git describe`.
+          fetch-depth: 0
 
       - uses: ./.github/actions/job-preamble
         with:
