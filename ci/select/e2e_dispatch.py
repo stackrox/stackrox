@@ -66,6 +66,7 @@ def main():
         # pattern as e2e-qa-tests-gke/e2e-byodb-tests) so they don't burden
         # unrelated PRs. Flipping to always-on later is just dropping
         # require_pr_label.
+        Job(name='e2e-compliance-v2-kind', require_pr_label=True),
         Job(name='e2e-multicluster-compliance-kind', require_pr_label=True),
         Job(name='e2e-db-backup-restore-tests-gke'),
         Job(name='e2e-db-backup-restore-tests-gke-konflux', require_konflux_build=True),

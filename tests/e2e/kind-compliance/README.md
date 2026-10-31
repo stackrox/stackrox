@@ -156,14 +156,15 @@ the `e2e-multicluster-compliance-kind` label (opt-in, like the other heavier e2e
 jobs), or always on push/tag builds. It can also be run directly via
 `workflow_dispatch`, supplying a `tag` (and optionally `fidelity`/`co_install`).
 
-## Single-cluster compliance-v2 suite (`compliance-v2-kind-poc.yaml`)
+## Single-cluster compliance-v2 suite (`e2e-compliance-v2-kind.yaml`)
 `tests/compliance_operator_v2_test.go` (build tag `compliance`, `make -C tests
 compliance-v2-tests`) is the suite Prow runs on real OpenShift via
 `tests/e2e/run-compliance-e2e.sh`. It is single-cluster-oriented (talks to
 `clusters[0]`/the one CO integration) and references real profiles (`ocp4-cis`,
 `ocp4-pci-dss`, `rhcos4-e8`, `rhcos4-stig`, `ocp4-cis-node`, ...), so it needs
-`FIDELITY=platform` (not `cel`). `.github/workflows/compliance-v2-kind-poc.yaml`
-runs it with `SECURED_COUNT=1`.
+`FIDELITY=platform` (not `cel`). `.github/workflows/e2e-compliance-v2-kind.yaml`
+runs it with `SECURED_COUNT=1`. Same dispatch model as above: opt-in via the
+`e2e-compliance-v2-kind` PR label, or `workflow_dispatch` with a `tag`.
 
 All 11 `TestComplianceV2*` tests pass on kind **unmodified**. The only change
 needed anywhere was harness-side: `SECURED1_NAME` (new env, default unset ⇒

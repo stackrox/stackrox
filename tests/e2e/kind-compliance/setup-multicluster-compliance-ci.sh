@@ -280,7 +280,7 @@ stage_co_crds() {
 # Names of the secured clusters. #1 is co-located on the Central cluster.
 # SECURED1_NAME overrides secured cluster #1's StackRox clusterName (default
 # "${PREFIX}-sec-1"). Used by the compliance-v2 single-cluster migration (see
-# tests/compliance_operator_v2_test.go / compliance-v2-kind-poc.yaml), whose
+# tests/compliance_operator_v2_test.go / e2e-compliance-v2-kind.yaml), whose
 # TestComplianceV2Integration asserts exactly one integration named "remote".
 secured_name() {
   if [[ "$1" == "1" && -n "${SECURED1_NAME:-}" ]]; then
