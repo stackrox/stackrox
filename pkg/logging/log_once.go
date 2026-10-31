@@ -1,0 +1,110 @@
+package logging
+
+import (
+	"strconv"
+	"sync/atomic"
+
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sync"
+	"go.uber.org/zap/zapcore"
+)
+
+var (
+	logOnceMemory        sync.Map
+	logOnceMemoryUsed    atomic.Int32
+	logOnceLimitNotified atomic.Bool
+
+	// logOnceMaxMemory sets the maximum number of unique entries to track.
+	// When the use exceeds this amount, some previously logOnceMemory entries will be randomly dropped and so
+	// subsequent calls to LogOnce* will result in previously seen messages again appearing in the log.
+	// If we see a warning in the logs (ref logOnceLimitNotified) that we reached this limit, we should check our use of
+	// LogOncef / LogOncePerKeyf and remove any cases when the same line sends varying templates, or bump the limit if
+	// there are no such cases.
+	logOnceMaxMemory int32
+
+	// logOnceMaxMemorySetting defines environment variable for users to be able to override the default
+	// logOnceMaxMemory value.
+	logOnceMaxMemorySetting = env.RegisterSetting(logOnceMaxMemoryVarName)
+)
+
+const (
+	logOnceDefaultMaxMemory int32 = 10_000
+	logOnceMaxMemoryVarName       = "ROX_MAX_LOG_ONCE_MEMORY"
+)
+
+func init() {
+	// Read and parse environment variable only once, otherwise it's going to be done on every call adding overhead.
+	logOnceMaxMemory = getLogOnceMaxMemory()
+}
+
+func getLogOnceMaxMemory() int32 {
+	envValue := logOnceMaxMemorySetting.Setting()
+	if envValue == "" {
+		return logOnceDefaultMaxMemory
+	}
+	v, err := strconv.ParseInt(envValue, 10, 32)
+	if err != nil || v <= 0 {
+		// Not sure if we should try log here.
+		return logOnceDefaultMaxMemory
+	}
+	return int32(v)
+}
+
+// LogOncef logs a message only once per template string (before formatting message).
+//
+// Use this in cases when subsequent calls should not result in new log messages, i.e. to prevent log spam.
+// The idea is that you can call LogOncef in some code that may get called repeatedly and should log something useful,
+// but the conditions don't change. You would use this function if you want to avoid producing the same repeated
+// message to logs over and over.
+// It is important that repeated messages are prevented for the same template string which is used before formatting
+// args into it. This is intentional compromise: LogOncef and LogOncePerKeyf are more performant than RateLimitedLogger
+// because they don't rely on heavy synchronization with Mutex and use relatively small memory of seen messages
+// (capped by logOnceMaxMemory). If you want to prevent repeated varied messages considering args or level, LogOncef
+// and LogOncePerKeyf are not for you, and you should look at RateLimitedLogger or invent something else.
+// Note that level also does not participate in de-duplication (similar to args).
+func LogOncef(logger Logger, level zapcore.Level, template string, args ...any) {
+	LogOncePerKeyf("", logger, level, template, args...)
+}
+
+// LogOncePerKeyf logs a message only once per template string (before formatting message) and provided arbitrary key.
+//
+// The combination of the key and the template string would be the thing which prevents logging the same message
+// multiple times. Use this function when you want to log once for a certain object that can be identified by the key.
+// Make sure you understand when to use and not to use this function - read doc/comment for LogOncef.
+// It's important to make sure the number of keys is bounded. For example, the use of cluster IDs is ok because we
+// know that the number of clusters is limited, but the use of container IDs is not because many new containers are
+// likely to appear during the run time of the process.
+func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template string, args ...any) {
+	fullKey := template
+	if key != "" {
+		fullKey = key + "\x00" + template
+	}
+
+	_, seen := logOnceMemory.LoadOrStore(fullKey, nil)
+	if !seen {
+		logger.Logf(level, template, args...)
+
+		if logOnceMemoryUsed.Add(1) > logOnceMaxMemory {
+			if !logOnceLimitNotified.Swap(true) {
+				logger.Warnf("logOnceMaxMemory=%d limit reached. "+
+					"If you see logs flooded with repeated messages after this, set %s "+
+					"environment variable to a value higher than %d.",
+					logOnceMaxMemory,
+					logOnceMaxMemoryVarName,
+					logOnceMaxMemory)
+			}
+			logOnceMemory.Range(func(randomKey, _ any) bool {
+				if randomKey == fullKey {
+					// Don't forget what we just added, iterate to try another randomKey.
+					return true
+				}
+				if _, deleted := logOnceMemory.LoadAndDelete(randomKey); deleted {
+					logOnceMemoryUsed.Add(-1)
+					return false // Stop iterating.
+				}
+				// Some other thread deleted the same randomKey, keep iterating to try another one.
+				return true
+			})
+		}
+	}
+}
