@@ -2,17 +2,60 @@ package service
 
 import (
 	"context"
+	"slices"
 
+	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 const (
 	internalRoleName = "internal role"
 )
 
-type roleManager struct{}
+type roleManager struct {
+	roleStore roleDS.DataStore
+}
+
+func (rm *roleManager) createSensorRole(
+	ctx context.Context, permissionSetIDs []string, scopes tokens.ClusterScopes,
+) (*tokens.InternalRole, error) {
+	if len(permissionSetIDs) == 0 {
+		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
+	}
+	if rm.roleStore == nil {
+		return nil, errox.NotAuthorized.New("Sensor proxy permission set store unavailable")
+	}
+	role := &tokens.InternalRole{
+		RoleName:    internalRoleName,
+		Clusters:    scopes,
+		Permissions: make(map[storage.Access][]string),
+	}
+	permissions := make(map[string]storage.Access)
+	for _, permissionSetID := range permissionSetIDs {
+		permissionSet, found, err := rm.roleStore.GetPermissionSet(ctx, permissionSetID)
+		if err != nil {
+			return nil, err
+		}
+		if !found || permissionSet == nil {
+			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetID)
+		}
+		for resource, access := range permissionSet.GetResourceToAccess() {
+			if current, found := permissions[resource]; !found || access > current {
+				permissions[resource] = access
+			}
+		}
+	}
+	for resource, access := range permissions {
+		role.Permissions[access] = append(role.Permissions[access], resource)
+	}
+	for _, resources := range role.Permissions {
+		slices.Sort(resources)
+	}
+	return role, nil
+}
 
 func (rm *roleManager) createRoleForRoxClaims(
 	_ context.Context,
@@ -32,18 +75,24 @@ func (rm *roleManager) createRoleForRoxClaims(
 		}
 		role.Permissions[access] = append(role.Permissions[access], resource)
 	}
-	if len(req.GetClusterScopes()) > 0 {
-		role.Clusters = make(tokens.ClusterScopes)
+	role.Clusters = clusterScopesFromRequest(req.GetClusterScopes())
+	return role, nil
+}
+
+func clusterScopesFromRequest(scopes []*v1.ClusterScope) tokens.ClusterScopes {
+	if len(scopes) == 0 {
+		return nil
 	}
-	for _, requestedScope := range req.GetClusterScopes() {
+	clusters := make(tokens.ClusterScopes)
+	for _, requestedScope := range scopes {
 		clusterID := requestedScope.GetClusterId()
 		if requestedScope.GetFullClusterAccess() {
-			role.Clusters[clusterID] = []string{"*"}
+			clusters[clusterID] = []string{"*"}
 			continue
 		}
-		role.Clusters[clusterID] = append(role.Clusters[clusterID], requestedScope.GetNamespaces()...)
+		clusters[clusterID] = append(clusters[clusterID], requestedScope.GetNamespaces()...)
 	}
-	return role, nil
+	return clusters
 }
 
 func convertAccess(access v1.Access) storage.Access {

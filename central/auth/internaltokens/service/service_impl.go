@@ -41,6 +41,11 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster),
 		),
 	)
+
+	accessReadChecker = sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Access),
+	)
 )
 
 type serviceImpl struct {
@@ -91,7 +96,14 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	tokenRole, err := s.roleManager.createRoleForRoxClaims(ctx, req)
+	var tokenRole *tokens.InternalRole
+	if len(req.GetPermissionSetIds()) > 0 {
+		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
+		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req.GetPermissionSetIds(),
+			clusterScopesFromRequest(req.GetClusterScopes()))
+	} else {
+		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+	}
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
 		return nil, errors.Wrap(err, "building ephemeral role")

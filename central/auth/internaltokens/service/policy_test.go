@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -161,6 +162,63 @@ func TestEnforce(t *testing.T) {
 		expectError  bool
 		expectCapped bool
 	}{
+		"console permission set without scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"console permission set with namespace scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"console permission set with full cluster scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"console permission set cannot access other cluster": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"console permission set ignores fallback permissions": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
+				Permissions:      map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"unsupported permission set": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{"unknown"},
+				Permissions:      map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"unsupported permission set alongside console": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID, "unknown"},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
 		"permission validation failure": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"NetworkGraph": v1.Access_READ_ACCESS},

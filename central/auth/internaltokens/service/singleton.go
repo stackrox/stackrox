@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/jwt"
+	roleDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,7 +28,7 @@ func Singleton() Service {
 	once.Do(func() {
 		s = &serviceImpl{
 			issuer:      getTokenIssuer(jwt.IssuerFactorySingleton()),
-			roleManager: &roleManager{},
+			roleManager: &roleManager{roleDS.Singleton()},
 			now:         time.Now,
 			policy:      defaultTokenPolicy(),
 		}
