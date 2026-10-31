@@ -232,13 +232,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId3, 180)
 
         assert processesListeningOnPorts
-
-        destroyDeployments()
     }
 
     def "Verify networking endpoint doesn't disappear when port stays open"() {
         given:
-        createDeployments()
+        // Reuse the still-running deployments from the previous step.
 
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
 
