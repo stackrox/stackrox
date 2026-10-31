@@ -1,0 +1,188 @@
+# PoC: multi-cluster compliance e2e on kind.
+#
+# Stands up StackRox Central + two secured clusters on kind, each running a real
+# Compliance Operator (PLATFORM=Generic + CEL, operator image only — no
+# OpenShift/OLM/RHCOS), then runs Go e2e tests that assert one scan configuration
+# fans out to both clusters and real PASS/FAIL results round-trip to Central,
+# attributed per cluster. See tests/e2e/kind-compliance/ and
+# tests/compliance_operator_v2_multicluster_test.go.
+#
+# Why a dedicated workflow: compliance e2e currently runs on OpenShift only (Prow).
+# This proves the same integration can be gated cheaply on kind in GitHub Actions.
+name: Multi-cluster compliance (kind PoC)
+
+on:
+  workflow_dispatch:
+    inputs:
+      fidelity:
+        description: "Compliance Operator fidelity (cel = operator image only, real PASS/FAIL; content = real ocp4/rhcos4 ProfileBundles synced to Central; platform = content + OpenShift-API shim for real ocp4-cis OVAL PASS/FAIL)"
+        type: choice
+        options: [cel, content, platform]
+        default: cel
+      co_install:
+        description: "How CO is installed (bundle = reconstructed manifests; olm = real CatalogSource/Subscription, implies content)"
+        type: choice
+        options: [bundle, olm]
+        default: bundle
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - tests/e2e/kind-compliance/**
+      - tests/compliance_operator_v2_multicluster_test.go
+      - .github/workflows/multicluster-compliance-poc.yaml
+
+# The PR's images are built by build.yaml; we wait for them below.
+env:
+  KIND_VERSION: v0.33.0
+  KIND_NODE_IMAGE: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+  KUBECTL_VERSION: v1.36.4
+  HELM_VERSION: v3.16.4
+  # Pinned Compliance Operator image (Generic+CEL uses only this image).
+  CO_OPERATOR_IMAGE: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev@sha256:70d2176520624cf5215a1f3b73b8fd64bbcf3278aacb5971409c99095ec35d2e
+  PREFIX: co-ci
+  SECURED_COUNT: "2"
+  # Pin the script's work dir so the setup and test steps agree (script otherwise
+  # derives it from $TMPDIR, which GitHub sets on the runner).
+  WORK: /tmp/kind-co-ci/co-ci
+
+jobs:
+  multicluster-compliance-kind:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          # Full history + tags so `make tag` / status.sh can `git describe`.
+          fetch-depth: 0
+          # Check out the PR head (not the merge commit) so `make tag` matches the
+          # tag build.yaml uses when it pushes the PR images we wait for below.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          free-disk-space: "40"
+
+      - uses: ./.github/actions/cache-go-dependencies
+
+      - name: Login to Quay.io
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # ratchet:docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Install kind, kubectl, helm
+        run: |
+          set -euo pipefail
+          sudo curl -fsSL -o /usr/local/bin/kind \
+            "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          sudo chmod +x /usr/local/bin/kind
+          sudo curl -fsSL -o /usr/local/bin/kubectl \
+            "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          sudo chmod +x /usr/local/bin/kubectl
+          curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" | tar xz
+          sudo install -m0755 linux-amd64/helm /usr/local/bin/helm
+          kind version && kubectl version --client && helm version --short
+
+      - name: Build roxctl
+        run: |
+          make cli_host-arch
+          echo "ROXCTL=$PWD/bin/linux_amd64/roxctl" >> "$GITHUB_ENV"
+          echo "MAIN_IMAGE_TAG=$(make --quiet --no-print-directory tag)" >> "$GITHUB_ENV"
+
+      - name: Wait for PR images (main, central-db)
+        uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: |
+            stackrox-io/main:${{ env.MAIN_IMAGE_TAG }}
+            stackrox-io/central-db:${{ env.MAIN_IMAGE_TAG }}
+
+      - name: Stand up Central + 2 secured clusters with Compliance Operator
+        env:
+          MODE: separate-kind
+          # Use the PUBLIC opensource registry (quay.io/stackrox-io) so the kind
+          # nodes can pull without registry credentials (imagePullSecrets.allowNone).
+          # build.yaml publishes the PR's main+central-db there too (STACKROX_BRANDING).
+          IMAGE_DEFAULTS: opensource
+          MAIN_IMAGE_REGISTRY: quay.io/stackrox-io
+          DISABLE_COLLECTOR: "true"
+          ROX_ADMIN_PASSWORD: ci-${{ github.run_id }}
+          TIMEOUT_ROLLOUT: "900"
+          # cel (default, PR runs), content (real ProfileBundles), or platform
+          # (content + OpenShift-API shim, real ocp4-cis OVAL results) via dispatch.
+          FIDELITY: ${{ github.event.inputs.fidelity || 'cel' }}
+          # bundle (default) or olm (manual dispatch; implies content fidelity).
+          CO_INSTALL: ${{ github.event.inputs.co_install || 'bundle' }}
+        run: |
+          set -euo pipefail
+          # The cluster deploy (~5 min) and the Go test binary compile share no
+          # dependency, so overlap them: warm GOCACHE here in the background and
+          # let the later `make -C tests compliance-v2-multicluster-tests` step
+          # reuse it, instead of paying the compile cost twice in series.
+          go test -c -tags "test,compliance" -o /tmp/mc.test ./tests/ &
+          compile_pid=$!
+          tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
+          wait "$compile_pid"
+
+      - name: Install go-junit-report (for the tests Makefile report target)
+        run: |
+          cd tools/test && go install github.com/jstemmer/go-junit-report/v2
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Run multi-cluster compliance Go tests
+        env:
+          API_ENDPOINT: localhost:8443
+          ROX_USERNAME: admin
+          # Only run TestComplianceV2MultiClusterPlatformResults (real ocp4-cis
+          # OVAL PASS/FAIL) in platform mode: ocp4-cis is all NOT-APPLICABLE
+          # without the OpenShift-API shim, so it must stay opt-in.
+          COMPLIANCE_MC_PLATFORM: ${{ github.event.inputs.fidelity == 'platform' && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          ROX_ADMIN_PASSWORD="$(cat "$WORK/state/admin-password")"
+          export ROX_ADMIN_PASSWORD
+          kubectl --context "kind-${PREFIX}" -n stackrox port-forward svc/central 8443:443 &
+          pf=$!
+          trap 'kill "$pf" 2>/dev/null || true' EXIT
+          sleep 6
+          make -C tests compliance-v2-multicluster-tests
+
+      - name: Collect diagnostics
+        if: always()
+        run: |
+          mkdir -p /tmp/diag
+          cp -f "$WORK/state/proof.json" /tmp/diag/ 2>/dev/null || true
+          cp -f tests/test.log /tmp/diag/ 2>/dev/null || true
+          for ctx in $(kubectl config get-contexts -o name | grep "^kind-${PREFIX}"); do
+            ns_out="/tmp/diag/${ctx//\//_}"
+            mkdir -p "$ns_out"
+            kubectl --context "$ctx" get pods -A -o wide > "$ns_out/pods.txt" 2>&1 || true
+            kubectl --context "$ctx" -n stackrox describe pods > "$ns_out/stackrox-describe.txt" 2>&1 || true
+            kubectl --context "$ctx" -n stackrox get events --sort-by=.lastTimestamp > "$ns_out/stackrox-events.txt" 2>&1 || true
+            kubectl --context "$ctx" -n openshift-compliance describe pods > "$ns_out/co-describe.txt" 2>&1 || true
+            kubectl --context "$ctx" -n openshift-compliance get all,compliancescans,compliancecheckresults,scansettingbindings > "$ns_out/compliance.txt" 2>&1 || true
+            kubectl --context "$ctx" -n openshift-compliance logs deploy/compliance-operator --tail=200 > "$ns_out/co-operator.log" 2>&1 || true
+          done
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        with:
+          name: multicluster-compliance-diag-${{ github.run_id }}
+          path: /tmp/diag
+          retention-days: 3
+
+      - name: Publish test report
+        if: always()
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+        with:
+          paths: 'tests/report.xml'
+
+      - name: Tear down kind clusters
+        if: always()
+        env:
+          MODE: separate-kind
+        run: tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh down || true

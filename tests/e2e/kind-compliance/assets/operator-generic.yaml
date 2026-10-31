@@ -1,0 +1,1768 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: co-api-resource-collector-cr
+rules:
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - ingresscontrollers
+  - kubeapiservers
+  - openshiftapiservers
+  - networks
+  - kubedeschedulers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - operatorhubs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metrics.k8s.io
+  resources:
+  - pods
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - componentstatuses
+  - nodes
+  - nodes/status
+  - nodes/proxy
+  - persistentvolumeclaims/status
+  - persistentvolumes
+  - persistentvolumes/status
+  - pods/binding
+  - pods/eviction
+  - podtemplates
+  - securitycontextconstraints
+  - services/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - controllerrevisions
+  - daemonsets/status
+  - deployments/status
+  - replicasets/status
+  - statefulsets/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  - customresourcedefinitions/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiregistration.k8s.io
+  resources:
+  - apiservices
+  - apiservices/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs/status
+  - jobs/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - daemonsets/status
+  - deployments/status
+  - horizontalpodautoscalers
+  - horizontalpodautoscalers/status
+  - ingresses/status
+  - jobs
+  - jobs/status
+  - podsecuritypolicies
+  - replicasets/status
+  - replicationcontrollers
+  - storageclasses
+  - thirdpartyresources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - node.k8s.io
+  resources:
+  - runtimeclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets/status
+  - podsecuritypolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - settings.k8s.io
+  resources:
+  - podpresets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - csidrivers
+  - csinodes
+  - storageclasses
+  - volumeattachments
+  - volumeattachments/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  - certificatesigningrequests/approval
+  - certificatesigningrequests/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - authorization.openshift.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindingrestrictions
+  - rolebindings
+  - roles
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - build.openshift.io
+  resources:
+  - builds/details
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - image.openshift.io
+  resources:
+  - images
+  - imagesignatures
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - image.openshift.io
+  resources:
+  - imagestreams/layers
+  verbs:
+  - get
+- apiGroups:
+  - ''
+  - oauth.openshift.io
+  resources:
+  - oauthclientauthorizations
+  - oauthclients
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - project.openshift.io
+  resources:
+  - projects
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - project.openshift.io
+  resources:
+  - projectrequests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - quota.openshift.io
+  resources:
+  - clusterresourcequotas
+  - clusterresourcequotas/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - network.openshift.io
+  resources:
+  - clusternetworks
+  - egressnetworkpolicies
+  - hostsubnets
+  - netnamespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - rangeallocations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - template.openshift.io
+  resources:
+  - brokertemplateinstances
+  - templateinstances/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - user.openshift.io
+  resources:
+  - groups
+  - identities
+  - useridentitymappings
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - authorization.openshift.io
+  resources:
+  - localresourceaccessreviews
+  - localsubjectaccessreviews
+  - resourceaccessreviews
+  - selfsubjectrulesreviews
+  - subjectaccessreviews
+  - subjectrulesreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - localsubjectaccessreviews
+  - selfsubjectaccessreviews
+  - selfsubjectrulesreviews
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - ''
+  - security.openshift.io
+  resources:
+  - podsecuritypolicyreviews
+  - podsecuritypolicyselfsubjectreviews
+  - podsecuritypolicysubjectreviews
+  verbs:
+  - create
+- apiGroups:
+  - ''
+  resources:
+  - nodes/metrics
+  - nodes/spec
+  verbs:
+  - get
+- apiGroups:
+  - ''
+  resources:
+  - nodes/stats
+  verbs:
+  - create
+  - get
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - get
+- apiGroups:
+  - cloudcredential.openshift.io
+  resources:
+  - credentialsrequests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - apiservers
+  - authentications
+  - builds
+  - clusteroperators
+  - clusterversions
+  - consoles
+  - dnses
+  - featuregates
+  - images
+  - infrastructures
+  - ingresses
+  - networks
+  - oauths
+  - projects
+  - proxies
+  - schedulers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - samples.operator.openshift.io
+  resources:
+  - configs
+  - configs/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - machineconfiguration.openshift.io
+  resources:
+  - containerruntimeconfigs
+  - controllerconfigs
+  - kubeletconfigs
+  - machineconfigpools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  - catalogsources
+  - installplans
+  - subscriptions
+  - operatorgroups
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - packages.operators.coreos.com
+  resources:
+  - packagemanifests
+  - packagemanifests/icon
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - packages.operators.coreos.com
+  resources:
+  - packagemanifests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - image.openshift.io
+  resources:
+  - imagestreamimages
+  - imagestreammappings
+  - imagestreams
+  - imagestreamtags
+  - imagetags
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - get
+- apiGroups:
+  - ''
+  - project.openshift.io
+  resources:
+  - projects
+  verbs:
+  - get
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - endpoints
+  - persistentvolumeclaims
+  - persistentvolumeclaims/status
+  - pods
+  - replicationcontrollers
+  - replicationcontrollers/scale
+  - serviceaccounts
+  - services
+  - services/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - bindings
+  - events
+  - limitranges
+  - namespaces/status
+  - pods/log
+  - pods/status
+  - replicationcontrollers/status
+  - resourcequotas
+  - resourcequotas/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - controllerrevisions
+  - daemonsets
+  - daemonsets/status
+  - deployments
+  - deployments/scale
+  - deployments/status
+  - replicasets
+  - replicasets/scale
+  - replicasets/status
+  - statefulsets
+  - statefulsets/scale
+  - statefulsets/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  - horizontalpodautoscalers/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - cronjobs/status
+  - jobs
+  - jobs/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - daemonsets
+  - daemonsets/status
+  - deployments
+  - deployments/scale
+  - deployments/status
+  - ingresses
+  - ingresses/status
+  - networkpolicies
+  - replicasets
+  - replicasets/scale
+  - replicasets/status
+  - replicationcontrollers/scale
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  - poddisruptionbudgets/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  - ingresses/status
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - build.openshift.io
+  resources:
+  - buildconfigs
+  - buildconfigs/webhooks
+  - builds
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - build.openshift.io
+  resources:
+  - builds/log
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - build.openshift.io
+  resources:
+  - jenkins
+  verbs:
+  - view
+- apiGroups:
+  - ''
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  - deploymentconfigs/scale
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs/log
+  - deploymentconfigs/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - image.openshift.io
+  resources:
+  - imagestreams/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - quota.openshift.io
+  resources:
+  - appliedclusterresourcequotas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - route.openshift.io
+  resources:
+  - routes/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - template.openshift.io
+  resources:
+  - processedtemplates
+  - templateconfigs
+  - templateinstances
+  - templates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  - build.openshift.io
+  resources:
+  - buildlogs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - resourcequotausages
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - logging.openshift.io
+  resourceNames:
+  - instance
+  resources:
+  - clusterlogforwarders
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - logging.openshift.io
+  resourceNames:
+  - instance
+  resources:
+  - clusterloggings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - observability.openshift.io
+  resources:
+  - clusterlogforwarders
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - flowcontrol.apiserver.k8s.io
+  resourceNames:
+  - catch-all
+  resources:
+  - flowschemas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - imageregistry.operator.openshift.io
+  resourceNames:
+  - cluster
+  resources:
+  - imagepruners
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.openshift.io
+  resourceNames:
+  - cluster
+  resources:
+  - kubeapiservers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancescans/finalizers
+  - compliancecheckresults/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancesuites
+  - compliancescans
+  - scansettings
+  - scansettingbindings
+  - tailoredprofiles
+  - customrules
+  - variables
+  - profiles
+  - rules
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - hco.kubevirt.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kubevirt.io
+  resources:
+  - virtualmachines
+  - virtualmachineinstances
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - instancetype.kubevirt.io
+  resources:
+  - virtualmachineclusterinstancetypes
+  - virtualmachineclusterpreferences
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cdi.kubevirt.io
+  resources:
+  - cdis
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - k8s.cni.cncf.io
+  resources:
+  - network-attachment-definitions
+  - multi-networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - sriovnetwork.openshift.io
+  resources:
+  - sriovnetworks
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancecheckresults
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - create
+  - delete
+- apiGroups:
+  - machineconfiguration.openshift.io
+  resources:
+  - machineconfigs
+  - kubeletconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - fileintegrity.openshift.io
+  resources:
+  - fileintegrities
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - ''
+  resourceNames:
+  - kubeadmin
+  resources:
+  - secrets
+  verbs:
+  - get
+- apiGroups:
+  - machine.openshift.io
+  resources:
+  - machinesets
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - pipelines.openshift.io
+  resources:
+  - gitopsservices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - hypershift.openshift.io
+  resources:
+  - hostedclusters
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - kataconfiguration.openshift.io
+  resources:
+  - kataconfigs
+  verbs:
+  - list
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: co-api-resource-collector-crb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: co-api-resource-collector-cr
+subjects:
+- kind: ServiceAccount
+  name: api-resource-collector
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: co-compliance-operator-cr
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  - nodes/proxy
+  verbs:
+  - list
+  - watch
+  - get
+- apiGroups:
+  - machineconfiguration.openshift.io
+  resources:
+  - machineconfigs
+  - machineconfigpools
+  - kubeletconfigs
+  verbs:
+  - list
+  - get
+  - patch
+  - create
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - template.openshift.io
+  resources:
+  - templates
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - create
+  - delete
+- apiGroups:
+  - config.openshift.io
+  resourceNames:
+  - cluster
+  resources:
+  - apiservers
+  - oauths
+  - projects
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - apiservers
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheusrules
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - patch
+- apiGroups:
+  - templates.gatekeeper.sh
+  resources:
+  - constrainttemplates
+  verbs:
+  - list
+  - get
+  - patch
+  - create
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - config.gatekeeper.sh
+  resources:
+  - configs
+  verbs:
+  - list
+  - get
+  - patch
+  - create
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - constraints.gatekeeper.sh
+  resources:
+  - '*'
+  verbs:
+  - list
+  - get
+  - patch
+  - create
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - list
+  - get
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - clusterclaims
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - ingresscontrollers
+  verbs:
+  - get
+  - list
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: co-compliance-operator-crb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: co-compliance-operator-cr
+subjects:
+- kind: ServiceAccount
+  name: compliance-operator
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: co-remediation-aggregator-cr
+rules:
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusteroperators
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: co-remediation-aggregator-crb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: co-remediation-aggregator-cr
+subjects:
+- kind: ServiceAccount
+  name: remediation-aggregator
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: co-resultserver-cr
+rules:
+- apiGroups:
+  - config.openshift.io
+  resourceNames:
+  - cluster
+  resources:
+  - apiservers
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: co-resultserver-crb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: co-resultserver-cr
+subjects:
+- kind: ServiceAccount
+  name: resultserver
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: co-api-resource-collector-role
+  namespace: openshift-compliance
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - create
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancescans
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: co-api-resource-collector-rb
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: co-api-resource-collector-role
+subjects:
+- kind: ServiceAccount
+  name: api-resource-collector
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: co-compliance-operator-role
+  namespace: openshift-compliance
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  verbs:
+  - watch
+  - create
+  - get
+  - list
+  - delete
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  - configmaps
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - patch
+  - update
+  - delete
+  - deletecollection
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  - nodes/proxy
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancescans
+  verbs:
+  - create
+  - watch
+  - patch
+  - get
+  - list
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resourceNames:
+  - compliance-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - services
+  - services/finalizers
+  verbs:
+  - create
+  - get
+  - update
+  - delete
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - get
+  - create
+  - update
+- apiGroups:
+  - apps
+  resourceNames:
+  - compliance-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - deletecollection
+- apiGroups:
+  - image.openshift.io
+  resources:
+  - imagestreamtags
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: co-compliance-operator-rb
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: co-compliance-operator-role
+subjects:
+- kind: ServiceAccount
+  name: compliance-operator
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: co-profileparser-role
+  namespace: openshift-compliance
+rules:
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - profilebundles
+  - profilebundles/status
+  - profilebundles/finalizers
+  verbs:
+  - get
+  - watch
+  - list
+  - update
+  - patch
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - profiles
+  - rules
+  - variables
+  verbs:
+  - get
+  - watch
+  - list
+  - create
+  - update
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: co-profileparser-rb
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: co-profileparser-role
+subjects:
+- kind: ServiceAccount
+  name: profileparser
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: co-remediation-aggregator-role
+  namespace: openshift-compliance
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - update
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancescans
+  verbs:
+  - get
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancescans/finalizers
+  - compliancecheckresults/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - complianceremediations
+  - complianceremediations/status
+  verbs:
+  - create
+  - get
+  - update
+  - patch
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancecheckresults
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - tailoredprofiles
+  verbs:
+  - get
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - rules
+  verbs:
+  - list
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: co-remediation-aggregator-rb
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: co-remediation-aggregator-role
+subjects:
+- kind: ServiceAccount
+  name: remediation-aggregator
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: co-rerunner-role
+  namespace: openshift-compliance
+rules:
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancescans
+  verbs:
+  - get
+  - list
+  - update
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: co-rerunner-rb
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: co-rerunner-role
+subjects:
+- kind: ServiceAccount
+  name: rerunner
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: co-resultscollector-role
+  namespace: openshift-compliance
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  verbs:
+  - create
+- apiGroups:
+  - compliance.openshift.io
+  resources:
+  - compliancescans
+  verbs:
+  - get
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - privileged
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: co-resultscollector-rb
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: co-resultscollector-role
+subjects:
+- kind: ServiceAccount
+  name: resultscollector
+  namespace: openshift-compliance
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: co-resultserver-role
+  namespace: openshift-compliance
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - restricted
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: co-resultserver-rb
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: co-resultserver-role
+subjects:
+- kind: ServiceAccount
+  name: resultserver
+  namespace: openshift-compliance
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api-resource-collector
+  namespace: openshift-compliance
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: compliance-operator
+  namespace: openshift-compliance
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: profileparser
+  namespace: openshift-compliance
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: remediation-aggregator
+  namespace: openshift-compliance
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rerunner
+  namespace: openshift-compliance
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: resultscollector
+  namespace: openshift-compliance
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: resultserver
+  namespace: openshift-compliance
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: compliance-operator
+    olm.owner: compliance-operator.v1.11.0-dev
+  name: compliance-operator
+  namespace: openshift-compliance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: compliance-operator
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        name: compliance-operator
+    spec:
+      containers:
+      - command:
+        - compliance-operator
+        - operator
+        env:
+        - name: WATCH_NAMESPACE
+          value: openshift-compliance
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: RELATED_IMAGE_OPENSCAP
+          value: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-openscap-dev:master
+        - name: RELATED_IMAGE_OPERATOR
+          value: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master
+        - name: RELATED_IMAGE_PROFILE
+          value: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-content-dev:master
+        - name: PLATFORM
+          value: Generic
+        image: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master
+        imagePullPolicy: IfNotPresent
+        name: compliance-operator
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /var/run/secrets/serving-cert
+          name: serving-cert
+          readOnly: true
+      serviceAccountName: compliance-operator
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      volumes:
+      - name: serving-cert
+        secret:
+          optional: true
+          secretName: compliance-operator-serving-cert

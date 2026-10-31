@@ -1,0 +1,504 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    api-approved.openshift.io: https://github.com/openshift/api/pull/470
+    api.openshift.io/merged-by-featuregates: "true"
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    release.openshift.io/bootstrap-required: "true"
+    release.openshift.io/feature-set: Default
+  name: apiservers.config.openshift.io
+spec:
+  group: config.openshift.io
+  names:
+    kind: APIServer
+    listKind: APIServerList
+    plural: apiservers
+    singular: apiserver
+  scope: Cluster
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          APIServer holds configuration (like serving certificates, client CA and CORS domains)
+          shared by all API servers in the system, among them especially kube-apiserver
+          and openshift-apiserver. The canonical name of an instance is 'cluster'.
+
+          Compatibility level 1: Stable within a major release for a minimum of 12 months or 3 minor releases (whichever is longer).
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: spec holds user settable values for configuration
+            properties:
+              additionalCORSAllowedOrigins:
+                description: |-
+                  additionalCORSAllowedOrigins lists additional, user-defined regular expressions describing hosts for which the
+                  API server allows access using the CORS headers. This may be needed to access the API and the integrated OAuth
+                  server from JavaScript applications.
+                  The values are regular expressions that correspond to the Golang regular expression language.
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: atomic
+              audit:
+                default:
+                  profile: Default
+                description: |-
+                  audit specifies the settings for audit configuration to be applied to all OpenShift-provided
+                  API servers in the cluster.
+                properties:
+                  customRules:
+                    description: |-
+                      customRules specify profiles per group. These profile take precedence over the
+                      top-level profile field if they apply. They are evaluation from top to bottom and
+                      the first one that matches, applies.
+                    items:
+                      description: |-
+                        AuditCustomRule describes a custom rule for an audit profile that takes precedence over
+                        the top-level profile.
+                      properties:
+                        group:
+                          description: group is a name of group a request user must
+                            be member of in order to this profile to apply.
+                          minLength: 1
+                          type: string
+                        profile:
+                          description: |-
+                            profile specifies the name of the desired audit policy configuration to be deployed to
+                            all OpenShift-provided API servers in the cluster.
+
+                            The following profiles are provided:
+                            - Default: the existing default policy.
+                            - WriteRequestBodies: like 'Default', but logs request and response HTTP payloads for
+                            write requests (create, update, patch).
+                            - AllRequestBodies: like 'WriteRequestBodies', but also logs request and response
+                            HTTP payloads for read requests (get, list).
+                            - None: no requests are logged at all, not even oauthaccesstokens and oauthauthorizetokens.
+
+                            If unset, the 'Default' profile is used as the default.
+                          enum:
+                          - Default
+                          - WriteRequestBodies
+                          - AllRequestBodies
+                          - None
+                          type: string
+                      required:
+                      - group
+                      - profile
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - group
+                    x-kubernetes-list-type: map
+                  profile:
+                    default: Default
+                    description: |-
+                      profile specifies the name of the desired top-level audit profile to be applied to all requests
+                      sent to any of the OpenShift-provided API servers in the cluster (kube-apiserver,
+                      openshift-apiserver and oauth-apiserver), with the exception of those requests that match
+                      one or more of the customRules.
+
+                      The following profiles are provided:
+                      - Default: default policy which means MetaData level logging with the exception of events
+                        (not logged at all), oauthaccesstokens and oauthauthorizetokens (both logged at RequestBody
+                        level).
+                      - WriteRequestBodies: like 'Default', but logs request and response HTTP payloads for
+                      write requests (create, update, patch).
+                      - AllRequestBodies: like 'WriteRequestBodies', but also logs request and response
+                      HTTP payloads for read requests (get, list).
+                      - None: no requests are logged at all, not even oauthaccesstokens and oauthauthorizetokens.
+
+                      Warning: It is not recommended to disable audit logging by using the `None` profile unless you
+                      are fully aware of the risks of not logging data that can be beneficial when troubleshooting issues.
+                      If you disable audit logging and a support situation arises, you might need to enable audit logging
+                      and reproduce the issue in order to troubleshoot properly.
+
+                      If unset, the 'Default' profile is used as the default.
+                    enum:
+                    - Default
+                    - WriteRequestBodies
+                    - AllRequestBodies
+                    - None
+                    type: string
+                type: object
+              clientCA:
+                description: |-
+                  clientCA references a ConfigMap containing a certificate bundle for the signers that will be recognized for
+                  incoming client certificates in addition to the operator managed signers. If this is empty, then only operator managed signers are valid.
+                  You usually only have to set this if you have your own PKI you wish to honor client certificates from.
+                  The ConfigMap must exist in the openshift-config namespace and contain the following required fields:
+                  - ConfigMap.Data["ca-bundle.crt"] - CA bundle.
+                properties:
+                  name:
+                    description: name is the metadata.name of the referenced config
+                      map
+                    type: string
+                required:
+                - name
+                type: object
+              encryption:
+                description: encryption allows the configuration of encryption of
+                  resources at the datastore layer.
+                properties:
+                  kms:
+                    description: |-
+                      kms defines the configuration for the external KMS instance that manages the encryption keys,
+                      when KMS encryption is enabled sensitive resources will be encrypted using keys managed by an
+                      externally configured KMS instance.
+
+                      The Key Management Service (KMS) instance provides symmetric encryption and is responsible for
+                      managing the lifecyle of the encryption keys outside of the control plane.
+                      This allows integration with an external provider to manage the data encryption keys securely.
+                    properties:
+                      pluginConfig:
+                        description: |-
+                          pluginConfig is a required reference to a cluster-scoped resource with a status subresource
+                          that satisfies the OpenShift KMS plugin configuration status interface.
+                        properties:
+                          apiVersion:
+                            description: |-
+                              apiVersion is required and identifies the API version of the referenced KMS plugin configuration resource.
+                              The value must be in the format <group>/<version>, where group is a DNS subdomain
+                              and version is a Kubernetes API version (for example, v1 or v1alpha1).
+                              It must contain between 1 and 64 characters.
+                            maxLength: 64
+                            minLength: 1
+                            type: string
+                            x-kubernetes-validations:
+                            - message: apiVersion must be in the format <group>/<version>
+                              rule: self.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)+/v[0-9]+([a-z0-9]+)*$')
+                          name:
+                            description: |-
+                              name is required and is the metadata.name of the referenced KMS plugin configuration resource.
+                              The referenced resource must be cluster-scoped.
+                              The name must be a valid DNS subdomain name: it must contain between 1 and 253 characters,
+                              contain only lowercase alphanumeric characters, '-' or '.', and start and end with an alphanumeric character.
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                            x-kubernetes-validations:
+                            - message: 'name must be a valid DNS subdomain name: contain
+                                no more than 253 characters, contain only lowercase
+                                alphanumeric characters, ''-'' or ''.'', and start
+                                and end with an alphanumeric character'
+                              rule: self.matches('^[a-z0-9]([a-z0-9\\-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9\\-]*[a-z0-9])?)*$')
+                          resource:
+                            description: |-
+                              resource is required and is the resource name of the referenced KMS plugin configuration custom resource.
+                              This is the plural name used in the Kubernetes API (for example, vaultkmsconfigs),
+                              not the Kind (for example, VaultKMSConfig).
+                              The value must be between 1 and 63 characters, contain only lowercase alphanumeric
+                              characters or '-', and start and end with an alphanumeric character.
+                            maxLength: 63
+                            minLength: 1
+                            type: string
+                            x-kubernetes-validations:
+                            - message: 'resource must be a valid Kubernetes resource
+                                name: contain no more than 63 characters, contain
+                                only lowercase alphanumeric characters or ''-'', and
+                                start and end with an alphanumeric character'
+                              rule: self.matches('^[a-z0-9]([a-z0-9\\-]*[a-z0-9])?$')
+                        required:
+                        - apiVersion
+                        - name
+                        - resource
+                        type: object
+                    required:
+                    - pluginConfig
+                    type: object
+                  type:
+                    description: |-
+                      type defines what encryption type should be used to encrypt resources at the datastore layer.
+                      When this field is unset (i.e. when it is set to the empty string), identity is implied.
+                      The behavior of unset can and will change over time.  Even if encryption is enabled by default,
+                      the meaning of unset may change to a different encryption type based on changes in best practices.
+
+                      When encryption is enabled, all sensitive resources shipped with the platform are encrypted.
+                      This list of sensitive resources can and will change over time.  The current authoritative list is:
+
+                        1. secrets
+                        2. configmaps
+                        3. routes.route.openshift.io
+                        4. oauthaccesstokens.oauth.openshift.io
+                        5. oauthauthorizetokens.oauth.openshift.io
+                    enum:
+                    - ""
+                    - identity
+                    - aescbc
+                    - aesgcm
+                    - KMS
+                    type: string
+                type: object
+                x-kubernetes-validations:
+                - message: kms config is required when encryption type is KMS, and
+                    forbidden otherwise
+                  rule: 'has(self.type) && self.type == ''KMS'' ?  has(self.kms) :
+                    !has(self.kms)'
+              servingCerts:
+                description: |-
+                  servingCert is the TLS cert info for serving secure traffic. If not specified, operator managed certificates
+                  will be used for serving secure traffic.
+                properties:
+                  namedCertificates:
+                    description: |-
+                      namedCertificates references secrets containing the TLS cert info for serving secure traffic to specific hostnames.
+                      If no named certificates are provided, or no named certificates match the server name as understood by a client,
+                      the defaultServingCertificate will be used.
+                    items:
+                      description: APIServerNamedServingCert maps a server DNS name,
+                        as understood by a client, to a certificate.
+                      properties:
+                        names:
+                          description: |-
+                            names is a optional list of explicit DNS names (leading wildcards allowed) that should use this certificate to
+                            serve secure traffic. If no names are provided, the implicit names will be extracted from the certificates.
+                            Exact names trump over wildcard names. Explicit names defined here trump over extracted implicit names.
+                          items:
+                            type: string
+                          maxItems: 64
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        servingCertificate:
+                          description: |-
+                            servingCertificate references a kubernetes.io/tls type secret containing the TLS cert info for serving secure traffic.
+                            The secret must exist in the openshift-config namespace and contain the following required fields:
+                            - Secret.Data["tls.key"] - TLS private key.
+                            - Secret.Data["tls.crt"] - TLS certificate.
+                          properties:
+                            name:
+                              description: name is the metadata.name of the referenced
+                                secret
+                              type: string
+                          required:
+                          - name
+                          type: object
+                      type: object
+                    maxItems: 32
+                    type: array
+                    x-kubernetes-list-type: atomic
+                type: object
+              tlsAdherence:
+                description: |-
+                  tlsAdherence controls if components in the cluster adhere to the TLS security profile
+                  configured on this APIServer resource.
+
+                  Valid values are "LegacyAdheringComponentsOnly" and "StrictAllComponents".
+
+                  When set to "LegacyAdheringComponentsOnly", components that already honor the
+                  cluster-wide TLS profile continue to do so. Components that do not already honor
+                  it continue to use their individual TLS configurations.
+
+                  When set to "StrictAllComponents", all components must honor the configured TLS
+                  profile unless they have a component-specific TLS configuration that overrides
+                  it. This mode is recommended for security-conscious deployments and is required
+                  for certain compliance frameworks.
+
+                  Note: Some components such as Kubelet and IngressController have their own
+                  dedicated TLS configuration mechanisms via KubeletConfig and IngressController
+                  CRs respectively. When these component-specific TLS configurations are set,
+                  they take precedence over the cluster-wide tlsSecurityProfile. When not set,
+                  these components fall back to the cluster-wide default.
+
+                  Components that encounter an unknown value for tlsAdherence should treat it
+                  as "StrictAllComponents" and log a warning to ensure forward compatibility
+                  while defaulting to the more secure behavior.
+
+                  This field is optional.
+                  When omitted, this means the user has no opinion and the platform is left
+                  to choose reasonable defaults. These defaults are subject to change over time.
+                  The current default is LegacyAdheringComponentsOnly.
+
+                  Once set, this field may be changed to a different value, but may not be removed.
+                enum:
+                - LegacyAdheringComponentsOnly
+                - StrictAllComponents
+                type: string
+              tlsSecurityProfile:
+                description: |-
+                  tlsSecurityProfile specifies settings for TLS connections for externally exposed servers.
+
+                  When omitted, this means no opinion and the platform is left to choose a reasonable default, which is subject to change over time.
+                  The current default is the Intermediate profile.
+                properties:
+                  custom:
+                    description: |-
+                      custom is a user-defined TLS security profile. Be extremely careful using a custom
+                      profile as invalid configurations can be catastrophic.
+
+                      The supported groups list for this profile is empty by default.
+
+                      An example custom profile looks like this:
+
+                        minTLSVersion: VersionTLS11
+                        ciphers:
+                          - ECDHE-ECDSA-CHACHA20-POLY1305
+                          - ECDHE-RSA-CHACHA20-POLY1305
+                          - ECDHE-RSA-AES128-GCM-SHA256
+                          - ECDHE-ECDSA-AES128-GCM-SHA256
+                    nullable: true
+                    properties:
+                      ciphers:
+                        description: |-
+                          ciphers is used to specify the cipher algorithms that are negotiated
+                          during the TLS handshake. Operators may remove entries that their operands
+                          do not support. For example, to use only ECDHE-RSA-AES128-GCM-SHA256 (yaml):
+
+                            ciphers:
+                              - ECDHE-RSA-AES128-GCM-SHA256
+
+                          TLS 1.3 cipher suites (e.g. TLS_AES_128_GCM_SHA256) are not configurable
+                          and are always enabled when TLS 1.3 is negotiated.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      minTLSVersion:
+                        description: |-
+                          minTLSVersion is used to specify the minimal version of the TLS protocol
+                          that is negotiated during the TLS handshake. For example, to use TLS
+                          versions 1.1, 1.2 and 1.3 (yaml):
+
+                            minTLSVersion: VersionTLS11
+                        enum:
+                        - VersionTLS10
+                        - VersionTLS11
+                        - VersionTLS12
+                        - VersionTLS13
+                        type: string
+                    type: object
+                  intermediate:
+                    description: |-
+                      intermediate is a TLS profile for use when you do not need compatibility with
+                      legacy clients and want to remain highly secure while being compatible with
+                      most clients currently in use.
+
+                      The supported groups list includes by default the following groups
+                      in suggested preference order (ordering may not be honored by all implementations):
+                      X25519MLKEM768, X25519, secp256r1, secp384r1.
+
+                      This profile is equivalent to a Custom profile specified as:
+                        minTLSVersion: VersionTLS12
+                        ciphers:
+                          - TLS_AES_128_GCM_SHA256
+                          - TLS_AES_256_GCM_SHA384
+                          - TLS_CHACHA20_POLY1305_SHA256
+                          - ECDHE-ECDSA-AES128-GCM-SHA256
+                          - ECDHE-RSA-AES128-GCM-SHA256
+                          - ECDHE-ECDSA-AES256-GCM-SHA384
+                          - ECDHE-RSA-AES256-GCM-SHA384
+                          - ECDHE-ECDSA-CHACHA20-POLY1305
+                          - ECDHE-RSA-CHACHA20-POLY1305
+                    nullable: true
+                    type: object
+                  modern:
+                    description: |-
+                      modern is a TLS security profile for use with clients that support TLS 1.3 and
+                      do not need backward compatibility for older clients.
+                      The supported groups list includes by default the following groups
+                      in suggested preference order (ordering may not be honored by all implementations):
+                      X25519MLKEM768, X25519, secp256r1, secp384r1.
+                      This profile is equivalent to a Custom profile specified as:
+                        minTLSVersion: VersionTLS13
+                        ciphers:
+                          - TLS_AES_128_GCM_SHA256
+                          - TLS_AES_256_GCM_SHA384
+                          - TLS_CHACHA20_POLY1305_SHA256
+                    nullable: true
+                    type: object
+                  old:
+                    description: |-
+                      old is a TLS profile for use when services need to be accessed by very old
+                      clients or libraries and should be used only as a last resort.
+
+                      The supported groups list includes by default the following groups
+                      in suggested preference order (ordering may not be honored by all implementations):
+                      X25519MLKEM768, X25519, secp256r1, secp384r1.
+
+                      This profile is equivalent to a Custom profile specified as:
+                        minTLSVersion: VersionTLS10
+                        ciphers:
+                          - TLS_AES_128_GCM_SHA256
+                          - TLS_AES_256_GCM_SHA384
+                          - TLS_CHACHA20_POLY1305_SHA256
+                          - ECDHE-ECDSA-AES128-GCM-SHA256
+                          - ECDHE-RSA-AES128-GCM-SHA256
+                          - ECDHE-ECDSA-AES256-GCM-SHA384
+                          - ECDHE-RSA-AES256-GCM-SHA384
+                          - ECDHE-ECDSA-CHACHA20-POLY1305
+                          - ECDHE-RSA-CHACHA20-POLY1305
+                          - ECDHE-ECDSA-AES128-SHA256
+                          - ECDHE-RSA-AES128-SHA256
+                          - ECDHE-ECDSA-AES128-SHA
+                          - ECDHE-RSA-AES128-SHA
+                          - ECDHE-ECDSA-AES256-SHA384
+                          - ECDHE-RSA-AES256-SHA384
+                          - ECDHE-ECDSA-AES256-SHA
+                          - ECDHE-RSA-AES256-SHA
+                          - AES128-GCM-SHA256
+                          - AES256-GCM-SHA384
+                          - AES128-SHA256
+                          - AES256-SHA256
+                          - AES128-SHA
+                          - AES256-SHA
+                          - DES-CBC3-SHA
+                    nullable: true
+                    type: object
+                  type:
+                    description: |-
+                      type is one of Old, Intermediate, Modern or Custom. Custom provides the
+                      ability to specify individual TLS security profile parameters.
+
+                      The cipher and groups lists in these profiles are based on version 5.8 of the
+                      Mozilla Server Side TLS configuration guidelines.
+                      See: https://ssl-config.mozilla.org/guidelines/5.8.json
+
+                      The groups are listed in suggested preference order, with the most preferred group first.
+                      Note that not all platform components honor the ordering: Go-based components use Go's
+                      internal preference order and treat this list as a filter of allowed groups rather than
+                      an ordered preference.
+                      Note that X25519MLKEM768 is a post-quantum hybrid group that is not
+                      FIPS-approved and should be ignored by components running in FIPS mode.
+
+                      The profiles are intent based, so they may change over time as new ciphers are
+                      developed and existing ciphers are found to be insecure. Depending on
+                      precisely which ciphers are available to a process, the list may be reduced.
+                    enum:
+                    - Old
+                    - Intermediate
+                    - Modern
+                    - Custom
+                    type: string
+                type: object
+            type: object
+            x-kubernetes-validations:
+            - message: tlsAdherence may not be removed once set
+              rule: 'has(oldSelf.tlsAdherence) ? has(self.tlsAdherence) : true'
+          status:
+            description: status holds observed values from the cluster. They may not
+              be overridden.
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

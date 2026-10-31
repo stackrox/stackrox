@@ -1,0 +1,95 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  creationTimestamp: null
+  name: compliancecheckresults.compliance.openshift.io
+spec:
+  group: compliance.openshift.io
+  names:
+    kind: ComplianceCheckResult
+    listKind: ComplianceCheckResultList
+    plural: compliancecheckresults
+    shortNames:
+    - ccr
+    - checkresults
+    - checkresult
+    singular: compliancecheckresult
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status
+      name: Status
+      type: string
+    - jsonPath: .severity
+      name: Severity
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ComplianceCheckResult represent a result of a single compliance
+          "test"
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          description:
+            description: A human-readable check description, what and why it does
+            type: string
+          id:
+            description: A unique identifier of a check
+            type: string
+          instructions:
+            description: |-
+              How to evaluate if the rule status manually. If no automatic test is present, the rule status will be MANUAL
+              and the administrator should follow these instructions.
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          rationale:
+            description: The rationale of the Rule
+            type: string
+          severity:
+            description: The severity of a check status
+            type: string
+          status:
+            description: The result of a check
+            type: string
+          valuesUsed:
+            description: It stores a list of values used by the check
+            items:
+              type: string
+            type: array
+          warnings:
+            description: Any warnings that the user should be aware about.
+            items:
+              type: string
+            nullable: true
+            type: array
+        required:
+        - id
+        - severity
+        - status
+        type: object
+    served: true
+    storage: true
+    subresources: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
