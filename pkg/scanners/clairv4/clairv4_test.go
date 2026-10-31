@@ -72,6 +72,7 @@ func (m *mockClair) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, indexReportPath) {
 		// Always say the index does not already exist.
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	// index new manifest.
@@ -88,27 +89,36 @@ func (m *mockClair) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Err:     "",
 		}
 		_ = json.NewEncoder(w).Encode(ir)
+		return
 	}
 
 	// get vulnerability report.
 	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, vulnerabilityReportPath) {
+		digestStr := path.Base(r.URL.Path)
 		vr := &claircore.VulnerabilityReport{
-			Hash: claircore.MustParseDigest(path.Base(r.URL.Path)),
+			Hash: claircore.MustParseDigest(digestStr),
 			Distributions: map[string]*claircore.Distribution{
 				"rhel": {
+					ID:        "rhel",
 					DID:       "rhel",
 					VersionID: "8",
 				},
 			},
 			Packages: map[string]*claircore.Package{
 				"a": {
+					ID:      "a",
 					Name:    "a",
 					Version: "1.2.3",
 				},
 				"b": {
+					ID:      "b",
 					Name:    "b",
 					Version: "4.5",
 				},
+			},
+			Environments: map[string][]*claircore.Environment{
+				"a": {{PackageDB: "lib/rpm/db", IntroducedIn: claircore.MustParseDigest("sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"), DistributionID: "rhel"}},
+				"b": {{PackageDB: "lib/rpm/db", IntroducedIn: claircore.MustParseDigest("sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"), DistributionID: "rhel"}},
 			},
 			PackageVulnerabilities: map[string][]string{
 				"a": {"CVE-2023-0001", "CVE-2023-0002"},
@@ -116,12 +126,14 @@ func (m *mockClair) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			},
 			Vulnerabilities: map[string]*claircore.Vulnerability{
 				"CVE-2023-0001": {
+					ID:                 "CVE-2023-0001",
 					Name:               "CVE-2023-0001",
 					Description:        "First CVE of 2023",
 					Links:              "https://cve.com/CVE-2023-0001 https://somewhereelse.com",
 					NormalizedSeverity: claircore.Medium,
 				},
 				"CVE-2023-0002": {
+					ID:                 "CVE-2023-0002",
 					Name:               "CVE-2023-0002",
 					Description:        "Second CVE of 2023",
 					Links:              "https://cve.com/CVE-2023-0002 https://somewhereelse.com",
@@ -131,6 +143,7 @@ func (m *mockClair) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 		_ = json.NewEncoder(w).Encode(vr)
+		return
 	}
 }
 
@@ -159,16 +172,10 @@ var testImage = imageTestCase{
 		OperatingSystem: "rhel:8",
 		Components: []*storage.EmbeddedImageScanComponent{
 			{
-				Name:    "a",
-				Version: "1.2.3",
+				Name:     "a",
+				Version:  "1.2.3",
+				Location: "lib/rpm/db",
 				Vulns: []*storage.EmbeddedVulnerability{
-					{
-						Cve:               "CVE-2023-0001",
-						Summary:           "First CVE of 2023",
-						Link:              "https://cve.com/CVE-2023-0001",
-						VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-						Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-					},
 					{
 						Cve:               "CVE-2023-0002",
 						Summary:           "Second CVE of 2023",
@@ -177,12 +184,19 @@ var testImage = imageTestCase{
 						Severity:          storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 						SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.2.3.4"},
 					},
+					{
+						Cve:               "CVE-2023-0001",
+						Summary:           "First CVE of 2023",
+						Link:              "https://cve.com/CVE-2023-0001",
+						VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+						Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+					},
 				},
 			},
 			{
-				Name:    "b",
-				Version: "4.5",
-				Vulns:   []*storage.EmbeddedVulnerability{},
+				Name:     "b",
+				Version:  "4.5",
+				Location: "lib/rpm/db",
 			},
 		},
 	},
