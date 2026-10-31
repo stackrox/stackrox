@@ -26,7 +26,7 @@ os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 
 ClusterTestRunner(
-    cluster=GKECluster("nongroovy-test"),
+    cluster=GKECluster("nongroovy-test", num_nodes=1, machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
     test=NonGroovyE2e(),
     post_test=PostClusterTest(
