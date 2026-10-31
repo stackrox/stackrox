@@ -55,6 +55,9 @@ func (ll LazyLabelGetters[F]) GetLabels() []string {
 type Tracker interface {
 	// Gather the data and update the metrics registry.
 	Gather(context.Context)
+	// GatherWithKey uses a stable cache key without replacing the request identity
+	// used by the underlying data sources for authorization.
+	GatherWithKey(context.Context, string)
 	// NewConfiguration checks the provided metrics storage configuration
 	// and returns a tracker configuration, without reconfiguring the tracker.
 	NewConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
@@ -355,6 +358,12 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
+	tracker.GatherWithKey(ctx, "")
+}
+
+// GatherWithKey reuses a registry across equivalent authorized scrape identities.
+// The original identity and access scope in ctx remain unchanged for data sources.
+func (tracker *TrackerBase[F]) GatherWithKey(ctx context.Context, cacheKey string) {
 	cfg := tracker.getConfiguration()
 	if !cfg.isEnabled() {
 		return
@@ -367,6 +376,9 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 			return
 		}
 		id = userID.UID()
+		if cacheKey != "" {
+			id = cacheKey
+		}
 	}
 	// Pass the cfg so that the same configuration is used there and here.
 	gatherer := tracker.getGatherer(id, cfg)
