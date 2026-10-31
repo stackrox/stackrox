@@ -156,6 +156,30 @@ the `e2e-multicluster-compliance-kind` label (opt-in, like the other heavier e2e
 jobs), or always on push/tag builds. It can also be run directly via
 `workflow_dispatch`, supplying a `tag` (and optionally `fidelity`/`co_install`).
 
+## Single-cluster compliance-v2 suite (`compliance-v2-kind-poc.yaml`)
+`tests/compliance_operator_v2_test.go` (build tag `compliance`, `make -C tests
+compliance-v2-tests`) is the suite Prow runs on real OpenShift via
+`tests/e2e/run-compliance-e2e.sh`. It is single-cluster-oriented (talks to
+`clusters[0]`/the one CO integration) and references real profiles (`ocp4-cis`,
+`ocp4-pci-dss`, `rhcos4-e8`, `rhcos4-stig`, `ocp4-cis-node`, ...), so it needs
+`FIDELITY=platform` (not `cel`). `.github/workflows/compliance-v2-kind-poc.yaml`
+runs it with `SECURED_COUNT=1`.
+
+All 11 `TestComplianceV2*` tests pass on kind **unmodified**. The only change
+needed anywhere was harness-side: `SECURED1_NAME` (new env, default unset ⇒
+`${PREFIX}-sec-1` as before) overrides secured cluster #1's StackRox
+`clusterName`, set to `remote` for this job because
+`TestComplianceV2Integration` asserts exactly one integration named `"remote"`.
+The 4 `TestComplianceV2MultiCluster*` tests in the sibling file skip
+automatically with `SECURED_COUNT=1`.
+
+Caveat: this validates the Central↔CO control plane (scan config CRUD,
+profile/rule/TailoredProfile sync, metadata, rescan, ScanSettingBinding
+fan-out) end-to-end, including that scans backed by `rhcos4-*` (NODE-type)
+profiles produce *some* result Central can see. It does **not** validate
+NODE-scan result *correctness* or MachineConfig remediation — kind nodes are
+not RHCOS and there are no MachineConfigPools, unlike Prow's real-OCP run.
+
 ## Known limitations / hardening TODO
 - Node (`rhcos4-*`) scans and MachineConfig remediation are out of scope; kind
   nodes are not RHCOS. `ocp4-*` platform scans run but yield NOT-APPLICABLE on
