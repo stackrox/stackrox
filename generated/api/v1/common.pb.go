@@ -65,6 +65,61 @@ func (x *ResourceByID) GetId() string {
 	return ""
 }
 
+// HTTPRequestScope restricts a token to the given methods on a path.
+// An empty methods list denies all methods on this path.
+type HTTPRequestScope struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// A trailing slash denotes a path prefix; otherwise the path matches exactly.
+	Path          string   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Methods       []string `protobuf:"bytes,2,rep,name=methods,proto3" json:"methods,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HTTPRequestScope) Reset() {
+	*x = HTTPRequestScope{}
+	mi := &file_api_v1_common_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HTTPRequestScope) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HTTPRequestScope) ProtoMessage() {}
+
+func (x *HTTPRequestScope) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_common_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HTTPRequestScope.ProtoReflect.Descriptor instead.
+func (*HTTPRequestScope) Descriptor() ([]byte, []int) {
+	return file_api_v1_common_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *HTTPRequestScope) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *HTTPRequestScope) GetMethods() []string {
+	if x != nil {
+		return x.Methods
+	}
+	return nil
+}
+
 // EXPERIMENTAL.
 //
 // Used in combination with MutabilityMode.ALLOW_MUTATE_FORCED to enable forced removal.
@@ -78,7 +133,7 @@ type DeleteByIDWithForce struct {
 
 func (x *DeleteByIDWithForce) Reset() {
 	*x = DeleteByIDWithForce{}
-	mi := &file_api_v1_common_proto_msgTypes[1]
+	mi := &file_api_v1_common_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -90,7 +145,7 @@ func (x *DeleteByIDWithForce) String() string {
 func (*DeleteByIDWithForce) ProtoMessage() {}
 
 func (x *DeleteByIDWithForce) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_common_proto_msgTypes[1]
+	mi := &file_api_v1_common_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -103,7 +158,7 @@ func (x *DeleteByIDWithForce) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteByIDWithForce.ProtoReflect.Descriptor instead.
 func (*DeleteByIDWithForce) Descriptor() ([]byte, []int) {
-	return file_api_v1_common_proto_rawDescGZIP(), []int{1}
+	return file_api_v1_common_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DeleteByIDWithForce) GetId() string {
@@ -126,7 +181,10 @@ const file_api_v1_common_proto_rawDesc = "" +
 	"\n" +
 	"\x13api/v1/common.proto\x12\x02v1\"\x1e\n" +
 	"\fResourceByID\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\";\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"@\n" +
+	"\x10HTTPRequestScope\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
+	"\amethods\x18\x02 \x03(\tR\amethods\";\n" +
 	"\x13DeleteByIDWithForce\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05force\x18\x02 \x01(\bR\x05forceB'\n" +
@@ -144,10 +202,11 @@ func file_api_v1_common_proto_rawDescGZIP() []byte {
 	return file_api_v1_common_proto_rawDescData
 }
 
-var file_api_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_api_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_v1_common_proto_goTypes = []any{
 	(*ResourceByID)(nil),        // 0: v1.ResourceByID
-	(*DeleteByIDWithForce)(nil), // 1: v1.DeleteByIDWithForce
+	(*HTTPRequestScope)(nil),    // 1: v1.HTTPRequestScope
+	(*DeleteByIDWithForce)(nil), // 2: v1.DeleteByIDWithForce
 }
 var file_api_v1_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -168,7 +227,7 @@ func file_api_v1_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_common_proto_rawDesc), len(file_api_v1_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

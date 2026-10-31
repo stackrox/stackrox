@@ -9,6 +9,14 @@ message ResourceByID {
   string id = 1;
 }
 
+// HTTPRequestScope restricts a token to the given methods on a path.
+// An empty methods list denies all methods on this path.
+message HTTPRequestScope {
+  // A trailing slash denotes a path prefix; otherwise the path matches exactly.
+  string path = 1;
+  repeated string methods = 2;
+}
+
 // EXPERIMENTAL.
 //
 // Used in combination with MutabilityMode.ALLOW_MUTATE_FORCED to enable forced removal.

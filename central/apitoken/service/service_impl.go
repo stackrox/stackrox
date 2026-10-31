@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -116,8 +117,12 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}
 
 	expiresAt := protocompat.ConvertTimestampToTimeOrNil(req.GetExpiration())
+	httpScopes, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
+	if err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
 
-	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles), expiresAt)
+	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles), expiresAt, httpScopes)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -33,11 +36,23 @@ func TestIssueTokenJSON(t *testing.T) {
 			},
 		}
 		roxClaims := RoxClaims{
-			InternalRoles: []*InternalRole{internalRole},
-			Name:          "token-with-internal-role",
+			InternalRoles:     []*InternalRole{internalRole},
+			Name:              "token-with-internal-role",
+			HTTPRequestScopes: HTTPRequestScopes{"/metrics": {"GET"}},
 		}
 		info, err := issuer.Issue(context.Background(), roxClaims)
 		require.NoError(t, err, "Should successfully encode InternalRole to JWT")
+		parts := strings.Split(info.Token, ".")
+		require.Len(t, parts, 3)
+		payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+		require.NoError(t, err)
+		var signedClaims map[string]json.RawMessage
+		require.NoError(t, json.Unmarshal(payload, &signedClaims))
+		assert.Contains(t, signedClaims, "http")
+		assert.NotContains(t, signedClaims, "http_request_scopes")
+		var signedHTTP HTTPRequestScopes
+		require.NoError(t, json.Unmarshal(signedClaims["http"], &signedHTTP))
+		assert.Equal(t, roxClaims.HTTPRequestScopes, signedHTTP)
 
 		parsed, err := validator.Validate(context.Background(), info.Token)
 		require.NoError(t, err)
@@ -45,5 +60,6 @@ func TestIssueTokenJSON(t *testing.T) {
 		require.Len(t, parsed.RoxClaims.InternalRoles, 1)
 		assert.Equal(t, "test-internal-role", parsed.RoxClaims.InternalRoles[0].RoleName)
 		assert.Len(t, parsed.RoxClaims.InternalRoles[0].Permissions, 2)
+		assert.Equal(t, roxClaims.HTTPRequestScopes, parsed.RoxClaims.HTTPRequestScopes)
 	})
 }
