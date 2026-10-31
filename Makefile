@@ -862,7 +862,7 @@ install-dev-tools: gotools-all
 	@echo "+ $@"
 
 .PHONY: roxvet
-roxvet: skip-dirs := operator/pkg/clientset /generated/ /mocks
+roxvet: skip-dirs := operator/pkg/clientset /generated/ /mocks ci/select/generator
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
@@ -910,3 +910,13 @@ print-image-prefetcher-deploy-bin:
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
+########################################
+# CI Test Selection (Native Approach) #
+########################################
+
+.PHONY: generate-ci-selection
+generate-ci-selection:
+	@echo "+ $@"
+	@cd ci/select/generator && go build -o generator .
+	@./ci/select/generator/generator ci/test-selection-rules.yaml
+	@echo "Generated CI test selection files from ci/test-selection-rules.yaml"

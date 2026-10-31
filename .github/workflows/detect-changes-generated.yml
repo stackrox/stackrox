@@ -1,0 +1,729 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from: ci/test-selection-rules.yaml
+# To regenerate: make generate-ci-selection
+
+name: Detect changed files
+
+on:
+  workflow_call:
+    inputs:
+      run_all:
+        description: >
+          Newline-separated list of patterns (same ^/$ anchored
+          format as the output). If any changed file matches any
+          of these, output is empty and all jobs run.
+        type: string
+        required: false
+        default: ''
+    outputs:
+      files:
+        description: >
+          Newline-separated list of changed filenames, or empty
+          string on push/failure (falsy, so jobs default to run).
+        value: ${{ jobs.detect.outputs.files }}
+      ui_only:
+        description: >
+          'true' when every changed file is under ui/, empty
+          otherwise. Skip non-UI jobs with: if: !needs.X.outputs.ui_only
+        value: ${{ jobs.detect.outputs.ui_only }}
+      should_run_style_check:
+        description: >
+          'true' if style-check should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_style_check }}
+      should_run_check_generated_files:
+        description: >
+          'true' if check-generated-files should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_check_generated_files }}
+      should_run_go:
+        description: >
+          'true' if go should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_go }}
+      should_run_go_postgres:
+        description: >
+          'true' if go-postgres should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_go_postgres }}
+      should_run_sensor_integration_tests:
+        description: >
+          'true' if sensor-integration-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_sensor_integration_tests }}
+      should_run_shell_unit_tests:
+        description: >
+          'true' if shell-unit-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_shell_unit_tests }}
+      should_run_ui:
+        description: >
+          'true' if ui should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_ui }}
+      should_run_ui_component:
+        description: >
+          'true' if ui-component should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_ui_component }}
+      should_run_golangci_lint:
+        description: >
+          'true' if golangci-lint should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_golangci_lint }}
+      should_run_check_crd_compatibility:
+        description: >
+          'true' if check-crd-compatibility should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_check_crd_compatibility }}
+      should_run_db_integration_tests:
+        description: >
+          'true' if db-integration-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_db_integration_tests }}
+      should_run_gke_qa_e2e_tests:
+        description: >
+          'true' if gke-qa-e2e-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_gke_qa_e2e_tests }}
+      should_run_gke_upgrade_tests:
+        description: >
+          'true' if gke-upgrade-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_gke_upgrade_tests }}
+      should_run_gke_nongroovy_e2e_tests:
+        description: >
+          'true' if gke-nongroovy-e2e-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_gke_nongroovy_e2e_tests }}
+      should_run_ocp_qa_e2e_tests:
+        description: >
+          'true' if ocp-qa-e2e-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_ocp_qa_e2e_tests }}
+      should_run_sensor_integration_tests_openshift:
+        description: >
+          'true' if sensor-integration-tests-openshift should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_sensor_integration_tests_openshift }}
+      should_run_wait_for_images:
+        description: >
+          'true' if wait-for-images should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_wait_for_images }}
+      should_run_should_dispatch:
+        description: >
+          'true' if should-dispatch should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_should_dispatch }}
+
+jobs:
+  detect:
+    runs-on: ubuntu-24.04
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+      ui_only: ${{ steps.list.outputs.ui_only }}
+      should_run_style_check: ${{ steps.evaluate.outputs.should_run_style_check }}
+      should_run_check_generated_files: ${{ steps.evaluate.outputs.should_run_check_generated_files }}
+      should_run_go: ${{ steps.evaluate.outputs.should_run_go }}
+      should_run_go_postgres: ${{ steps.evaluate.outputs.should_run_go_postgres }}
+      should_run_sensor_integration_tests: ${{ steps.evaluate.outputs.should_run_sensor_integration_tests }}
+      should_run_shell_unit_tests: ${{ steps.evaluate.outputs.should_run_shell_unit_tests }}
+      should_run_ui: ${{ steps.evaluate.outputs.should_run_ui }}
+      should_run_ui_component: ${{ steps.evaluate.outputs.should_run_ui_component }}
+      should_run_golangci_lint: ${{ steps.evaluate.outputs.should_run_golangci_lint }}
+      should_run_check_crd_compatibility: ${{ steps.evaluate.outputs.should_run_check_crd_compatibility }}
+      should_run_db_integration_tests: ${{ steps.evaluate.outputs.should_run_db_integration_tests }}
+      should_run_gke_qa_e2e_tests: ${{ steps.evaluate.outputs.should_run_gke_qa_e2e_tests }}
+      should_run_gke_upgrade_tests: ${{ steps.evaluate.outputs.should_run_gke_upgrade_tests }}
+      should_run_gke_nongroovy_e2e_tests: ${{ steps.evaluate.outputs.should_run_gke_nongroovy_e2e_tests }}
+      should_run_ocp_qa_e2e_tests: ${{ steps.evaluate.outputs.should_run_ocp_qa_e2e_tests }}
+      should_run_sensor_integration_tests_openshift: ${{ steps.evaluate.outputs.should_run_sensor_integration_tests_openshift }}
+      should_run_wait_for_images: ${{ steps.evaluate.outputs.should_run_wait_for_images }}
+      should_run_should_dispatch: ${{ steps.evaluate.outputs.should_run_should_dispatch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+
+      - name: List changed files
+        id: list
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ALL: ${{ inputs.run_all }}
+          WORKFLOW_FILE_PATH: ".github/workflows/detect-changes-generated.yml"
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          if [[ -z "${PR_NUMBER}" ]]; then
+            echo "Not a PR" >&2
+            exit 0
+          fi
+
+          if ! output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
+            echo "::warning::GitHub API call failed" >&2
+            exit 0
+          fi
+
+          mapfile -t files < <(echo -n "${output}")
+          echo "Changed files (${#files[@]}):" >&2
+          printf '  %s\n' "${files[@]}" >&2
+
+          if [[ ${#files[@]} -ge 3000 ]]; then
+            echo "::warning::PR has 3000+ changed files" >&2
+            exit 0
+          fi
+
+          anchored=$(printf '^%s$\n' "${files[@]}")
+
+          if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
+            echo "detect-changes-generated.yml modified, running all jobs" >&2
+            exit 0
+          fi
+
+          if [[ -n "${RUN_ALL}" ]]; then
+            while IFS= read -r pattern; do
+              [[ -z "$pattern" ]] && continue
+              if echo "${anchored}" | grep -qF "$pattern"; then
+                echo "run_all: matched '${pattern}', running all jobs" >&2
+                exit 0
+              fi
+            done <<< "${RUN_ALL}"
+          fi
+
+          if [[ ${#files[@]} -gt 0 ]]; then
+            {
+              echo "files<<EOF"
+              printf '^%s$\n' "${files[@]}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+
+            if ! echo "${anchored}" | grep -qv '^\^ui/'; then
+              echo "All changed files are under ui/" >&2
+              echo "ui_only=true" >> "${GITHUB_OUTPUT}"
+            fi
+          fi
+
+      - name: Evaluate test selection rules
+        id: evaluate
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FILES: ${{ steps.list.outputs.files }}
+        run: |
+          import os
+          import re
+          import subprocess
+          import sys
+
+          pr_number = os.environ.get('PR_NUMBER')
+          files_output = os.environ.get('FILES', '')
+
+          # Get changed files
+          if not files_output:
+              print("No files changed or not a PR, skipping rule evaluation", file=sys.stderr)
+              sys.exit(0)
+
+          files = [line.strip('^$') for line in files_output.strip().split('\n') if line]
+
+          # Get PR labels
+          labels = []
+          if pr_number:
+              try:
+                  result = subprocess.run(
+                      ['gh', 'pr', 'view', pr_number, '--repo', os.environ['GH_REPO'],
+                       '--json', 'labels', '--jq', '.labels[].name'],
+                      check=True, capture_output=True, text=True
+                  )
+                  labels = result.stdout.strip().split('\n') if result.stdout.strip() else []
+              except subprocess.CalledProcessError:
+                  print("Warning: Could not fetch PR labels", file=sys.stderr)
+
+          print(f"Files: {len(files)}", file=sys.stderr)
+          print(f"Labels: {labels}", file=sys.stderr)
+
+          # Helper functions
+          def any_file_matches(patterns):
+              for pattern in patterns:
+                  regex = re.compile(pattern)
+                  if any(regex.search(f) for f in files):
+                      return True
+              return False
+
+          def every_file_matches(patterns):
+              if not files:
+                  return False
+              for f in files:
+                  if not any(re.search(pattern, f) for pattern in patterns):
+                      return False
+              return True
+
+          def has_label(label):
+              return label in labels
+
+          # Evaluate rules for each job and apply clash resolution
+          job_decisions = {}
+          job_decisions['style-check'] = {'run': False, 'skip': False}
+          job_decisions['check-generated-files'] = {'run': False, 'skip': False}
+          job_decisions['go'] = {'run': False, 'skip': False}
+          job_decisions['go-postgres'] = {'run': False, 'skip': False}
+          job_decisions['sensor-integration-tests'] = {'run': False, 'skip': False}
+          job_decisions['shell-unit-tests'] = {'run': False, 'skip': False}
+          job_decisions['ui'] = {'run': False, 'skip': False}
+          job_decisions['ui-component'] = {'run': False, 'skip': False}
+          job_decisions['golangci-lint'] = {'run': False, 'skip': False}
+          job_decisions['check-crd-compatibility'] = {'run': False, 'skip': False}
+          job_decisions['db-integration-tests'] = {'run': False, 'skip': False}
+          job_decisions['gke-qa-e2e-tests'] = {'run': False, 'skip': False}
+          job_decisions['gke-upgrade-tests'] = {'run': False, 'skip': False}
+          job_decisions['gke-nongroovy-e2e-tests'] = {'run': False, 'skip': False}
+          job_decisions['ocp-qa-e2e-tests'] = {'run': False, 'skip': False}
+          job_decisions['sensor-integration-tests-openshift'] = {'run': False, 'skip': False}
+          job_decisions['wait-for-images'] = {'run': False, 'skip': False}
+          job_decisions['should-dispatch'] = {'run': False, 'skip': False}
+
+          # Apply rules in order
+          # Rule: ci-run-all-tests-label - Force run all tests when label present
+          rule_matches = False
+          if has_label("ci-run-all-tests"):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: ci-run-all-tests-label", file=sys.stderr)
+              # Run all jobs
+              job_decisions['style-check']['run'] = True
+              job_decisions['check-generated-files']['run'] = True
+              job_decisions['go']['run'] = True
+              job_decisions['go-postgres']['run'] = True
+              job_decisions['sensor-integration-tests']['run'] = True
+              job_decisions['shell-unit-tests']['run'] = True
+              job_decisions['ui']['run'] = True
+              job_decisions['ui-component']['run'] = True
+              job_decisions['golangci-lint']['run'] = True
+              job_decisions['check-crd-compatibility']['run'] = True
+              job_decisions['db-integration-tests']['run'] = True
+              job_decisions['gke-qa-e2e-tests']['run'] = True
+              job_decisions['gke-upgrade-tests']['run'] = True
+              job_decisions['gke-nongroovy-e2e-tests']['run'] = True
+              job_decisions['ocp-qa-e2e-tests']['run'] = True
+              job_decisions['sensor-integration-tests-openshift']['run'] = True
+              job_decisions['wait-for-images']['run'] = True
+              job_decisions['should-dispatch']['run'] = True
+          # Rule: area-sensor-label - Run sensor-related tests when area/sensor label present
+          rule_matches = False
+          if has_label("area/sensor"):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: area-sensor-label", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['sensor-integration-tests']['run'] = True
+              job_decisions['sensor-integration-tests-openshift']['run'] = True
+              job_decisions['go']['run'] = True
+          # Rule: area-central-label - Run central-related tests when area/central label present
+          rule_matches = False
+          if has_label("area/central"):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: area-central-label", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['go-postgres']['run'] = True
+              job_decisions['go']['run'] = True
+          # Rule: area-ui-label - Run UI tests when area/ui label present
+          rule_matches = False
+          if has_label("area/ui"):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: area-ui-label", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['ui']['run'] = True
+              job_decisions['ui-component']['run'] = True
+          # Rule: go-mod-changes - go.mod/go.sum changes affect all Go code
+          rule_matches = False
+          if any_file_matches(["^go\\.mod$", "^go\\.sum$"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: go-mod-changes", file=sys.stderr)
+              # Run all jobs
+              job_decisions['style-check']['run'] = True
+              job_decisions['check-generated-files']['run'] = True
+              job_decisions['go']['run'] = True
+              job_decisions['go-postgres']['run'] = True
+              job_decisions['sensor-integration-tests']['run'] = True
+              job_decisions['shell-unit-tests']['run'] = True
+              job_decisions['ui']['run'] = True
+              job_decisions['ui-component']['run'] = True
+              job_decisions['golangci-lint']['run'] = True
+              job_decisions['check-crd-compatibility']['run'] = True
+              job_decisions['db-integration-tests']['run'] = True
+              job_decisions['gke-qa-e2e-tests']['run'] = True
+              job_decisions['gke-upgrade-tests']['run'] = True
+              job_decisions['gke-nongroovy-e2e-tests']['run'] = True
+              job_decisions['ocp-qa-e2e-tests']['run'] = True
+              job_decisions['sensor-integration-tests-openshift']['run'] = True
+              job_decisions['wait-for-images']['run'] = True
+              job_decisions['should-dispatch']['run'] = True
+          # Rule: proto-changes - Proto changes affect generated code across codebase
+          rule_matches = False
+          if any_file_matches(["^proto/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: proto-changes", file=sys.stderr)
+              # Run all jobs
+              job_decisions['style-check']['run'] = True
+              job_decisions['check-generated-files']['run'] = True
+              job_decisions['go']['run'] = True
+              job_decisions['go-postgres']['run'] = True
+              job_decisions['sensor-integration-tests']['run'] = True
+              job_decisions['shell-unit-tests']['run'] = True
+              job_decisions['ui']['run'] = True
+              job_decisions['ui-component']['run'] = True
+              job_decisions['golangci-lint']['run'] = True
+              job_decisions['check-crd-compatibility']['run'] = True
+              job_decisions['db-integration-tests']['run'] = True
+              job_decisions['gke-qa-e2e-tests']['run'] = True
+              job_decisions['gke-upgrade-tests']['run'] = True
+              job_decisions['gke-nongroovy-e2e-tests']['run'] = True
+              job_decisions['ocp-qa-e2e-tests']['run'] = True
+              job_decisions['sensor-integration-tests-openshift']['run'] = True
+              job_decisions['wait-for-images']['run'] = True
+              job_decisions['should-dispatch']['run'] = True
+          # Rule: generated-code-changes - Generated code changes need full validation
+          rule_matches = False
+          if any_file_matches(["^generated/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: generated-code-changes", file=sys.stderr)
+              # Run all jobs
+              job_decisions['style-check']['run'] = True
+              job_decisions['check-generated-files']['run'] = True
+              job_decisions['go']['run'] = True
+              job_decisions['go-postgres']['run'] = True
+              job_decisions['sensor-integration-tests']['run'] = True
+              job_decisions['shell-unit-tests']['run'] = True
+              job_decisions['ui']['run'] = True
+              job_decisions['ui-component']['run'] = True
+              job_decisions['golangci-lint']['run'] = True
+              job_decisions['check-crd-compatibility']['run'] = True
+              job_decisions['db-integration-tests']['run'] = True
+              job_decisions['gke-qa-e2e-tests']['run'] = True
+              job_decisions['gke-upgrade-tests']['run'] = True
+              job_decisions['gke-nongroovy-e2e-tests']['run'] = True
+              job_decisions['ocp-qa-e2e-tests']['run'] = True
+              job_decisions['sensor-integration-tests-openshift']['run'] = True
+              job_decisions['wait-for-images']['run'] = True
+              job_decisions['should-dispatch']['run'] = True
+          # Rule: docs-only-skip - Skip most tests for docs-only changes
+          rule_matches = False
+          if every_file_matches(["\\.md$", "^docs/", "^CHANGELOG"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: docs-only-skip", file=sys.stderr)
+              # Skip all jobs (except those in 'except' list)
+              job_decisions['check-generated-files']['skip'] = True
+              job_decisions['go']['skip'] = True
+              job_decisions['go-postgres']['skip'] = True
+              job_decisions['sensor-integration-tests']['skip'] = True
+              job_decisions['shell-unit-tests']['skip'] = True
+              job_decisions['ui']['skip'] = True
+              job_decisions['ui-component']['skip'] = True
+              job_decisions['golangci-lint']['skip'] = True
+              job_decisions['check-crd-compatibility']['skip'] = True
+              job_decisions['db-integration-tests']['skip'] = True
+              job_decisions['gke-qa-e2e-tests']['skip'] = True
+              job_decisions['gke-upgrade-tests']['skip'] = True
+              job_decisions['gke-nongroovy-e2e-tests']['skip'] = True
+              job_decisions['ocp-qa-e2e-tests']['skip'] = True
+              job_decisions['sensor-integration-tests-openshift']['skip'] = True
+          # Rule: ui-only-skip-backend - Skip backend tests for UI-only changes
+          rule_matches = False
+          if every_file_matches(["^ui/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: ui-only-skip-backend", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['ui']['run'] = True
+              job_decisions['ui-component']['run'] = True
+              job_decisions['style-check']['run'] = True
+              # Skip specific jobs
+              job_decisions['go-postgres']['skip'] = True
+              job_decisions['sensor-integration-tests']['skip'] = True
+              job_decisions['sensor-integration-tests-openshift']['skip'] = True
+              job_decisions['gke-qa-e2e-tests']['skip'] = True
+              job_decisions['gke-upgrade-tests']['skip'] = True
+              job_decisions['ocp-qa-e2e-tests']['skip'] = True
+          # Rule: sensor-subsystem - Sensor code changes need sensor tests
+          rule_matches = False
+          if any_file_matches(["^sensor/", "^pkg/sensor/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: sensor-subsystem", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['sensor-integration-tests']['run'] = True
+              job_decisions['go']['run'] = True
+              # Skip specific jobs
+              job_decisions['go-postgres']['skip'] = True
+          # Rule: central-subsystem - Central code changes need central tests
+          rule_matches = False
+          if any_file_matches(["^central/", "^pkg/central/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: central-subsystem", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['go-postgres']['run'] = True
+              job_decisions['go']['run'] = True
+              # Skip specific jobs
+              job_decisions['sensor-integration-tests']['skip'] = True
+          # Rule: scanner-subsystem - Scanner code changes
+          rule_matches = False
+          if any_file_matches(["^scanner/", "^pkg/scanner/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: scanner-subsystem", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['db-integration-tests']['run'] = True
+              job_decisions['go']['run'] = True
+          # Rule: operator-subsystem - Operator code changes
+          rule_matches = False
+          if any_file_matches(["^operator/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: operator-subsystem", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['check-crd-compatibility']['run'] = True
+              job_decisions['go']['run'] = True
+          # Rule: ci-tooling-changes - CI tooling changes need validation but can skip E2E
+          rule_matches = False
+          if any_file_matches(["^\\.github/workflows/", "^\\.openshift-ci/", "^ci/select/", "^scripts/ci/"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: ci-tooling-changes", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['style-check']['run'] = True
+              job_decisions['go']['run'] = True
+              job_decisions['shell-unit-tests']['run'] = True
+              # Skip specific jobs
+              job_decisions['gke-qa-e2e-tests']['skip'] = True
+              job_decisions['gke-upgrade-tests']['skip'] = True
+              job_decisions['ocp-qa-e2e-tests']['skip'] = True
+          # Rule: go-sources - Any .go file change needs Go tests
+          rule_matches = False
+          if any_file_matches(["\\.go$"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: go-sources", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['go']['run'] = True
+          # Rule: shell-scripts - Shell script changes need shell tests
+          rule_matches = False
+          if any_file_matches(["\\.sh$"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: shell-scripts", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['shell-unit-tests']['run'] = True
+          # Rule: ui-sources - UI source changes need UI tests
+          rule_matches = False
+          if any_file_matches(["^ui/.*\\.(tsx?|jsx?|css|scss)$"]):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: ui-sources", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['ui']['run'] = True
+              job_decisions['ui-component']['run'] = True
+          # Rule: style-always - Style checks run on every PR
+          rule_matches = False
+          if bool(files):
+              rule_matches = True
+
+          if rule_matches:
+              print(f"Rule matched: style-always", file=sys.stderr)
+              # Run specific jobs
+              job_decisions['style-check']['run'] = True
+
+          # Apply clash resolution: run wins over skip
+          # Output final decisions
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              should_run = job_decisions['style-check']['run'] or not job_decisions['style-check']['skip']
+              # Default from config
+              if not job_decisions['style-check']['run'] and not job_decisions['style-check']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['style-check']['run']:
+                  should_run = True
+
+              print(f"style-check: run={job_decisions['style-check']['run']}, skip={job_decisions['style-check']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_style_check={str(should_run).lower()}\n")
+              should_run = job_decisions['check-generated-files']['run'] or not job_decisions['check-generated-files']['skip']
+              # Default from config
+              if not job_decisions['check-generated-files']['run'] and not job_decisions['check-generated-files']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['check-generated-files']['run']:
+                  should_run = True
+
+              print(f"check-generated-files: run={job_decisions['check-generated-files']['run']}, skip={job_decisions['check-generated-files']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_check_generated_files={str(should_run).lower()}\n")
+              should_run = job_decisions['go']['run'] or not job_decisions['go']['skip']
+              # Default from config
+              if not job_decisions['go']['run'] and not job_decisions['go']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['go']['run']:
+                  should_run = True
+
+              print(f"go: run={job_decisions['go']['run']}, skip={job_decisions['go']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_go={str(should_run).lower()}\n")
+              should_run = job_decisions['go-postgres']['run'] or not job_decisions['go-postgres']['skip']
+              # Default from config
+              if not job_decisions['go-postgres']['run'] and not job_decisions['go-postgres']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['go-postgres']['run']:
+                  should_run = True
+
+              print(f"go-postgres: run={job_decisions['go-postgres']['run']}, skip={job_decisions['go-postgres']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_go_postgres={str(should_run).lower()}\n")
+              should_run = job_decisions['sensor-integration-tests']['run'] or not job_decisions['sensor-integration-tests']['skip']
+              # Default from config
+              if not job_decisions['sensor-integration-tests']['run'] and not job_decisions['sensor-integration-tests']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['sensor-integration-tests']['run']:
+                  should_run = True
+
+              print(f"sensor-integration-tests: run={job_decisions['sensor-integration-tests']['run']}, skip={job_decisions['sensor-integration-tests']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_sensor_integration_tests={str(should_run).lower()}\n")
+              should_run = job_decisions['shell-unit-tests']['run'] or not job_decisions['shell-unit-tests']['skip']
+              # Default from config
+              if not job_decisions['shell-unit-tests']['run'] and not job_decisions['shell-unit-tests']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['shell-unit-tests']['run']:
+                  should_run = True
+
+              print(f"shell-unit-tests: run={job_decisions['shell-unit-tests']['run']}, skip={job_decisions['shell-unit-tests']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_shell_unit_tests={str(should_run).lower()}\n")
+              should_run = job_decisions['ui']['run'] or not job_decisions['ui']['skip']
+              # Default from config
+              if not job_decisions['ui']['run'] and not job_decisions['ui']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['ui']['run']:
+                  should_run = True
+
+              print(f"ui: run={job_decisions['ui']['run']}, skip={job_decisions['ui']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_ui={str(should_run).lower()}\n")
+              should_run = job_decisions['ui-component']['run'] or not job_decisions['ui-component']['skip']
+              # Default from config
+              if not job_decisions['ui-component']['run'] and not job_decisions['ui-component']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['ui-component']['run']:
+                  should_run = True
+
+              print(f"ui-component: run={job_decisions['ui-component']['run']}, skip={job_decisions['ui-component']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_ui_component={str(should_run).lower()}\n")
+              should_run = job_decisions['golangci-lint']['run'] or not job_decisions['golangci-lint']['skip']
+              # Default from config
+              if not job_decisions['golangci-lint']['run'] and not job_decisions['golangci-lint']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['golangci-lint']['run']:
+                  should_run = True
+
+              print(f"golangci-lint: run={job_decisions['golangci-lint']['run']}, skip={job_decisions['golangci-lint']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_golangci_lint={str(should_run).lower()}\n")
+              should_run = job_decisions['check-crd-compatibility']['run'] or not job_decisions['check-crd-compatibility']['skip']
+              # Default from config
+              if not job_decisions['check-crd-compatibility']['run'] and not job_decisions['check-crd-compatibility']['skip']:
+                  should_run = False
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['check-crd-compatibility']['run']:
+                  should_run = True
+
+              print(f"check-crd-compatibility: run={job_decisions['check-crd-compatibility']['run']}, skip={job_decisions['check-crd-compatibility']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_check_crd_compatibility={str(should_run).lower()}\n")
+              should_run = job_decisions['db-integration-tests']['run'] or not job_decisions['db-integration-tests']['skip']
+              # Default from config
+              if not job_decisions['db-integration-tests']['run'] and not job_decisions['db-integration-tests']['skip']:
+                  should_run = False
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['db-integration-tests']['run']:
+                  should_run = True
+
+              print(f"db-integration-tests: run={job_decisions['db-integration-tests']['run']}, skip={job_decisions['db-integration-tests']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_db_integration_tests={str(should_run).lower()}\n")
+              should_run = job_decisions['gke-qa-e2e-tests']['run'] or not job_decisions['gke-qa-e2e-tests']['skip']
+              # Default from config
+              if not job_decisions['gke-qa-e2e-tests']['run'] and not job_decisions['gke-qa-e2e-tests']['skip']:
+                  should_run = False
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['gke-qa-e2e-tests']['run']:
+                  should_run = True
+
+              print(f"gke-qa-e2e-tests: run={job_decisions['gke-qa-e2e-tests']['run']}, skip={job_decisions['gke-qa-e2e-tests']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_gke_qa_e2e_tests={str(should_run).lower()}\n")
+              should_run = job_decisions['gke-upgrade-tests']['run'] or not job_decisions['gke-upgrade-tests']['skip']
+              # Default from config
+              if not job_decisions['gke-upgrade-tests']['run'] and not job_decisions['gke-upgrade-tests']['skip']:
+                  should_run = False
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['gke-upgrade-tests']['run']:
+                  should_run = True
+
+              print(f"gke-upgrade-tests: run={job_decisions['gke-upgrade-tests']['run']}, skip={job_decisions['gke-upgrade-tests']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_gke_upgrade_tests={str(should_run).lower()}\n")
+              should_run = job_decisions['gke-nongroovy-e2e-tests']['run'] or not job_decisions['gke-nongroovy-e2e-tests']['skip']
+              # Default from config
+              if not job_decisions['gke-nongroovy-e2e-tests']['run'] and not job_decisions['gke-nongroovy-e2e-tests']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['gke-nongroovy-e2e-tests']['run']:
+                  should_run = True
+
+              print(f"gke-nongroovy-e2e-tests: run={job_decisions['gke-nongroovy-e2e-tests']['run']}, skip={job_decisions['gke-nongroovy-e2e-tests']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_gke_nongroovy_e2e_tests={str(should_run).lower()}\n")
+              should_run = job_decisions['ocp-qa-e2e-tests']['run'] or not job_decisions['ocp-qa-e2e-tests']['skip']
+              # Default from config
+              if not job_decisions['ocp-qa-e2e-tests']['run'] and not job_decisions['ocp-qa-e2e-tests']['skip']:
+                  should_run = False
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['ocp-qa-e2e-tests']['run']:
+                  should_run = True
+
+              print(f"ocp-qa-e2e-tests: run={job_decisions['ocp-qa-e2e-tests']['run']}, skip={job_decisions['ocp-qa-e2e-tests']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_ocp_qa_e2e_tests={str(should_run).lower()}\n")
+              should_run = job_decisions['sensor-integration-tests-openshift']['run'] or not job_decisions['sensor-integration-tests-openshift']['skip']
+              # Default from config
+              if not job_decisions['sensor-integration-tests-openshift']['run'] and not job_decisions['sensor-integration-tests-openshift']['skip']:
+                  should_run = False
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['sensor-integration-tests-openshift']['run']:
+                  should_run = True
+
+              print(f"sensor-integration-tests-openshift: run={job_decisions['sensor-integration-tests-openshift']['run']}, skip={job_decisions['sensor-integration-tests-openshift']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_sensor_integration_tests_openshift={str(should_run).lower()}\n")
+              should_run = job_decisions['wait-for-images']['run'] or not job_decisions['wait-for-images']['skip']
+              # Default from config
+              if not job_decisions['wait-for-images']['run'] and not job_decisions['wait-for-images']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['wait-for-images']['run']:
+                  should_run = True
+
+              print(f"wait-for-images: run={job_decisions['wait-for-images']['run']}, skip={job_decisions['wait-for-images']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_wait_for_images={str(should_run).lower()}\n")
+              should_run = job_decisions['should-dispatch']['run'] or not job_decisions['should-dispatch']['skip']
+              # Default from config
+              if not job_decisions['should-dispatch']['run'] and not job_decisions['should-dispatch']['skip']:
+                  should_run = True
+              # Clash resolution: if both run and skip voted, run wins
+              if job_decisions['should-dispatch']['run']:
+                  should_run = True
+
+              print(f"should-dispatch: run={job_decisions['should-dispatch']['run']}, skip={job_decisions['should-dispatch']['skip']}, decision={'run' if should_run else 'skip'}", file=sys.stderr)
+              output.write(f"should_run_should_dispatch={str(should_run).lower()}\n")
