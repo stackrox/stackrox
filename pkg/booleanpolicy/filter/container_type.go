@@ -5,11 +5,17 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-func newContainerTypeFilter(skipTypes []storage.ContainerType) *EvaluationFilter {
-	if len(skipTypes) == 0 {
+func newContainerTypeFilter(skipTypes []storage.SkipContainerType) *EvaluationFilter {
+	skip := set.NewSet[storage.ContainerType]()
+	for _, skipType := range skipTypes {
+		switch skipType {
+		case storage.SkipContainerType_SKIP_INIT:
+			skip.Add(storage.ContainerType_INIT)
+		}
+	}
+	if skip.IsEmpty() {
 		return nil
 	}
-	skip := set.NewSet(skipTypes...)
 	return &EvaluationFilter{
 		isNonDefault: func() bool { return true },
 		apply: func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
