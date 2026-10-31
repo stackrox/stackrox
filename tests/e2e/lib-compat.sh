@@ -96,6 +96,7 @@ roxie_config_from_environment_compat() {
 
     info "Configuring load balancer..."
     handle_load_balancer_setting "$config_file"
+    handle_ipv6_primary_lb_annotations "$config_file"
 
     handle_endpoints_for_test "$config_file" # Echoes info internally.
 
@@ -411,6 +412,49 @@ EOF
     fi
 }
 
+# OCP's AWS provider provisions an IPv6-family LoadBalancer service only when
+# the service itself is dual-stack. The chart leaves the Service on the
+# cluster's primary family (single-stack IPv6), so patch it via an overlay;
+# spec.customize.other would be pruned by the CRD.
+# TODO: drop once the chart supports dual-stack LoadBalancer services.
+handle_ipv6_primary_lb_annotations() {
+    local config_file="$1"
+    # serviceNetwork[0] is the cluster's primary IP family.
+    local service_network
+    service_network="$(kubectl get network.config.openshift.io cluster \
+        -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null || true)"
+
+    if [[ "${LOAD_BALANCER:-}" != "lb" || "$service_network" != *:* ]]; then
+        return 0
+    fi
+
+    info "IPv6-primary service network: making central-loadbalancer dual-stack for NLB provisioning"
+    append_central_overlay "$config_file" <<'EOF'
+apiVersion: v1
+kind: Service
+name: central-loadbalancer
+optional: true
+patches:
+- path: spec.ipFamilies
+  value: '["IPv6", "IPv4"]'
+- path: spec.ipFamilyPolicy
+  value: RequireDualStack
+- path: metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
+  value: nlb
+EOF
+}
+
+# Append a single overlay entry (the list element's YAML, on stdin) to
+# central.spec.overlays. Unlike merge_yaml, which merges arrays by index and
+# would replace overlays already in the config, this composes with them.
+append_central_overlay() {
+    local config_file="$1"
+    local overlay_entry
+    overlay_entry="$(cat)"
+    OVERLAY_ENTRY="$overlay_entry" patch_yaml "$config_file" \
+        '.central.spec.overlays = ((.central.spec.overlays // []) + [strenv(OVERLAY_ENTRY) | from_yaml])'
+}
+
 handle_load_balancer_setting() {
     local config_file="$1"
     local load_balancer="${LOAD_BALANCER:-}"
@@ -452,18 +496,15 @@ handle_endpoints_for_test() {
         # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
         # single ConfigMap key rather than a path separator. verbatim preserves newlines.
         cat > "$overlay_tmp" <<'OVERLAY'
-central:
-  spec:
-    overlays:
-    - apiVersion: v1
-      kind: ConfigMap
-      name: central-endpoints
-      patches:
-      - path: data.endpoints\.yaml
-        verbatim: |
+apiVersion: v1
+kind: ConfigMap
+name: central-endpoints
+patches:
+- path: data.endpoints\.yaml
+  verbatim: |
 OVERLAY
-        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
-        merge_yaml "$config_file" < "$overlay_tmp"
+        sed 's/^/    /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
+        append_central_overlay "$config_file" < "$overlay_tmp"
         rm -f "$overlay_tmp"
     fi
 }

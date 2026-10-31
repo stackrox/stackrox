@@ -16,6 +16,12 @@ fi
 
 extra_args=()
 if [[ -n "${CA:-}" ]]; then
+  # roxctl rewrites IP endpoints to the canonical central service name for SNI,
+  # so verification matches the service certificate Central serves for that
+  # name. DNS endpoints (e.g. AWS ELB hostnames) are sent as-is; they match no
+  # certificate SAN, so make the same canonical choice explicit for all
+  # endpoint types.
+  extra_args+=(--server-name central.stackrox.svc)
   extra_args+=(--ca "$CA")
 else
   extra_args+=(--insecure-skip-tls-verify)

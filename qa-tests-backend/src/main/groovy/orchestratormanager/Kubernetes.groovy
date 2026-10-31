@@ -310,6 +310,13 @@ class Kubernetes {
         return !deleted && pod.status?.containerStatuses?.every { it.ready }
     }
 
+    // The "kubernetes" Service's ClusterIP comes from the primary service CIDR,
+    // so its address family is the cluster's primary family.
+    boolean isIPv6PrimaryServiceNetwork() {
+        def kubernetesService = client.services().inNamespace("default").withName("kubernetes").get()
+        return kubernetesService?.getSpec()?.getClusterIP()?.contains(":")
+    }
+
     boolean waitForPodsReady(String ns, Map<String, String> labels, int minReady = 1, int retries = 30,
                              int intervalSeconds = 5) {
         LabelSelector selector = new LabelSelector()
