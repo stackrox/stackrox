@@ -16,6 +16,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-30427: Added an EPSS policy criterion for image vulnerabilities. The Splunk TA vulnerability feed now includes `epssProbability` and `epssPercentile` on each CVE event, when available.
 - ROX-33524: New predefined User PKI auth provider, role, empty permission set and a Central cluster access scope for OpenShift Prometheus server access to custom metrics. Administrator action required: grant the permission set read access to the resources user by custom metrics you want to collect.
+- ROX-37580: Authenticated Prometheus clients can scrape Central custom metrics without View(Administration). The built-in OpenShift Prometheus identity accepts only read grants on cluster- or namespace-scoped resources, so it cannot scrape global metric families. Use a separate identity and permission set for global metrics.
 - ROX-37597: The compliance CSV report now includes a "Node Role" column showing which node role (for example `master`, `worker`, or a custom MachineConfigPool-derived role) a check result applies to. The column reads "N/A" for results that don't target a specific node role (platform scans, or node scans using the Compliance Operator's `@all` role selector).
 - ROX-34293: Policies can exclude all workloads of kind CronJob and Job.
 
