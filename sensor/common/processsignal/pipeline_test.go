@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -312,6 +313,7 @@ func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
 		[]pubsub.LaneConfig{
 			lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
 			lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
+			lane.NewBlockingLane(pubsub.DetectorProcessIndicatorLane),
 		},
 	))
 	require.NoError(t, err)
@@ -331,6 +333,23 @@ func TestPubSubPipelineEnrichesAndDeliversIndicator(t *testing.T) {
 		mockDetector := mocks.NewMockDetector(mockCtrl)
 		dispatcher := newTestDispatcher(t)
 
+		// Register a test consumer to capture the event published to the
+		// detector topic — the pipeline no longer calls detector.ProcessIndicator()
+		// directly in pubsub mode.
+		var receivedEvent *detectorEvents.IndicatorEvent
+		err := dispatcher.RegisterConsumerToLane(
+			pubsub.DetectorProcessIndicatorConsumer,
+			pubsub.DetectorProcessIndicatorTopic,
+			pubsub.DetectorProcessIndicatorLane,
+			func(e pubsub.Event) error {
+				ie, ok := e.(*detectorEvents.IndicatorEvent)
+				require.True(t, ok, "expected *detectorEvents.IndicatorEvent, got %T", e)
+				receivedEvent = ie
+				return nil
+			},
+		)
+		require.NoError(t, err)
+
 		p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 			mockDetector, dispatcher)
 		require.NoError(t, err)
@@ -344,15 +363,17 @@ func TestPubSubPipelineEnrichesAndDeliversIndicator(t *testing.T) {
 		}
 		updateStore(containerID, deploymentID, containerMetadata, mockStore)
 
-		mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
-			assert.Equal(t, deploymentID, ind.GetDeploymentId())
-		})
-
 		p.Process(&storage.ProcessSignal{ContainerId: containerID})
 
 		// Wait for all goroutines in the bubble to settle.
 		synctest.Wait()
 
+		// Verify the indicator was published to the detector topic.
+		require.NotNil(t, receivedEvent, "expected an IndicatorEvent published to the detector topic")
+		assert.Equal(t, deploymentID, receivedEvent.Indicator.GetDeploymentId())
+		assert.Equal(t, containerID, receivedEvent.Indicator.GetSignal().GetContainerId())
+
+		// Verify the indicator was also sent to Central via the output channel.
 		msg := <-sensorEvents
 		require.NotNil(t, msg)
 		assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())

@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -35,16 +36,18 @@ type processPipeline interface {
 type basePipeline struct {
 	processFilter     filter.Filter
 	detector          detector.Detector
+	pubSubDispatcher  common.PubSubDispatcher
 	stopper           concurrency.Stopper
 	cancelEnricherCtx context.CancelCauseFunc
 	enricher          *enricher
 	indicators        chan *message.ExpiringMessage
 }
 
-func newBasePipeline(indicators chan *message.ExpiringMessage, enricher *enricher, processFilter filter.Filter, detector detector.Detector, stopper concurrency.Stopper, cancelEnricherCtx context.CancelCauseFunc) basePipeline {
+func newBasePipeline(indicators chan *message.ExpiringMessage, enricher *enricher, processFilter filter.Filter, detector detector.Detector, pubSubDispatcher common.PubSubDispatcher, stopper concurrency.Stopper, cancelEnricherCtx context.CancelCauseFunc) basePipeline {
 	return basePipeline{
 		processFilter:     processFilter,
 		detector:          detector,
+		pubSubDispatcher:  pubSubDispatcher,
 		stopper:           stopper,
 		enricher:          enricher,
 		cancelEnricherCtx: cancelEnricherCtx,
@@ -103,7 +106,14 @@ func (p *basePipeline) processEnrichedIndicator(event pubsub.Event) error {
 }
 
 func (p *basePipeline) handleEnrichedIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
-	p.detector.ProcessIndicator(ctx, indicator)
+	if features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil {
+		event := &detectorEvents.IndicatorEvent{Ctx: ctx, Indicator: indicator}
+		if err := p.pubSubDispatcher.Publish(event); err != nil {
+			log.Errorf("Failed to publish indicator event to detector: %v", err)
+		}
+	} else {
+		p.detector.ProcessIndicator(ctx, indicator)
+	}
 
 	p.sendToCentral(
 		message.NewExpiring(ctx, &central.MsgFromSensor{
@@ -247,7 +257,7 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 	}
 
 	stopper := concurrency.NewStopper()
-	base := newBasePipeline(indicators, en, processFilter, detector, stopper, cancelEnricherCtx)
+	base := newBasePipeline(indicators, en, processFilter, detector, pubSubDispatcher, stopper, cancelEnricherCtx)
 
 	var inner processPipeline
 	var pipelineMode string

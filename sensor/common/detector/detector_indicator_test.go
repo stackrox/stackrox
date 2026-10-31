@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -166,6 +167,53 @@ func TestIndicatorPipelineOfflineBlocks(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestHandleUnenrichedIndicatorEvent(t *testing.T) {
+	deployment := &storage.Deployment{
+		Id:        "dep-1",
+		Name:      "test-deployment",
+		Namespace: "default",
+	}
+
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	synctest.Test(t, func(t *testing.T) {
+		d, ds, nps, _ := createTestDetector(t, true)
+		d.unifiedDetector = &fakeUnifiedDetector{
+			alerts: []*storage.Alert{{Id: "alert-1", Policy: &storage.Policy{Id: "p1"}}},
+		}
+		ds.EXPECT().GetSnapshot("dep-1").Return(deployment)
+		nps.EXPECT().Find("default", gomock.Any()).Return(nil)
+
+		require.NoError(t, d.Start())
+		defer d.Stop()
+
+		d.Notify(common.SensorComponentEventCentralReachable)
+
+		// Publish an unenriched event directly — simulates the process
+		// pipeline publishing a raw indicator without a deployment snapshot.
+		event := &detectorEvents.IndicatorEvent{
+			Ctx: context.Background(),
+			Indicator: &storage.ProcessIndicator{
+				Id:           "pi-unenriched",
+				DeploymentId: "dep-1",
+				Signal:       &storage.ProcessSignal{ExecFilePath: "/bin/bash"},
+			},
+		}
+		require.NoError(t, d.pubSubDispatcher.Publish(event))
+		synctest.Wait()
+
+		select {
+		case msg := <-d.output:
+			require.NotNil(t, msg)
+			alertResults := msg.GetEvent().GetAlertResults()
+			assert.Equal(t, "dep-1", alertResults.GetDeploymentId())
+			assert.NotEmpty(t, alertResults.GetAlerts())
+		default:
+			t.Fatal("expected output from unenriched indicator event")
+		}
+	})
 }
 
 func TestIndicatorPipelineDropsWhenFull(t *testing.T) {
