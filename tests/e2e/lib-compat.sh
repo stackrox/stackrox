@@ -112,7 +112,7 @@ roxie_config_from_environment_compat() {
         set_custom_env "$config_file" "central" "$name" "$value"
         ci_export "$name" "$value"
     done < <(
-        # These are set in env.sh and picked up roxctl/central/generate/generate.go:updateConfig().
+        # These are set in env.sh and used by operator deployments.
         env_with_default ROX_DEVELOPMENT_BUILD "true"   # pkg/devbuild/setting.go.
         env_with_default ROX_HOTRELOAD "false"          # pkg/env/hot_reload.go.
         env_with_default ROX_NETWORK_ACCESS_LOG "false" # pkg/env/networklog.go.
@@ -131,7 +131,7 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "2m" # pkg/env/network_baseline_observation_period.go.
         env_with_default ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"      # pkg/env/telemetry.go.
 
-        # Configured by test suites, picked up by roxctl/central/generate/generate.go:updateConfig().
+        # Configured by test suites for operator deployments.
         env_with_default ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL # pkg/env/sensor.go.
 
         # Set in export_test_environment().
