@@ -3,6 +3,7 @@ package enricher
 import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
@@ -26,12 +27,20 @@ type CVESuppressor interface {
 	EnrichNodeWithSuppressedCVEs(image *storage.Node)
 }
 
-// New returns a new NodeEnricher for the given Prometheus metrics subsystem and the Clair node scanner creator.
+// New returns a new NodeEnricher for the given Prometheus metrics subsystem and the node scanner creators.
 func New(cves CVESuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
-	return NewWithCreator(cves, subsystem,
-		func() (string, scanners.NodeScannerCreator) {
+	// The legacy StackRox Scanner (Scanner V2 / Clairify) is removed in 5.0 and is
+	// only registered when it is explicitly enabled for backward compatibility,
+	// mirroring the image scanner factory (pkg/scanners/factory.go). Scanner V4 is
+	// always registered.
+	var legacyCreator func() (string, scanners.NodeScannerCreator)
+	if features.LegacyScanner.Enabled() {
+		legacyCreator = func() (string, scanners.NodeScannerCreator) {
 			return clairify.NodeScannerCreator()
-		},
+		}
+	}
+	return NewWithCreator(cves, subsystem,
+		legacyCreator,
 		func() (string, scanners.NodeScannerCreator) {
 			return scannerv4.NodeScannerCreator()
 		})
@@ -50,9 +59,13 @@ func NewWithCreator(cves CVESuppressor, subsystem pkgMetrics.Subsystem,
 
 		metrics: newMetrics(subsystem),
 	}
-	name, creator := fn()
+	// fn (the legacy creator) is optional: New passes nil when the legacy scanner
+	// is disabled so no clairify node-scanner creator is registered.
+	if fn != nil {
+		name, creator := fn()
+		enricher.creators[name] = creator
+	}
 	name4, creator4 := fn4()
-	enricher.creators[name] = creator
 	enricher.creators[name4] = creator4
 
 	return enricher
