@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/administration/events/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -17,8 +18,9 @@ type Service interface {
 	v1.AdministrationEventServiceServer
 }
 
-func newService(datastore datastore.DataStore) Service {
+func newService(datastore datastore.DataStore, deployments deploymentDatastore.DataStore) Service {
 	return &serviceImpl{
-		ds: datastore,
+		ds:          datastore,
+		deployments: deployments,
 	}
 }
