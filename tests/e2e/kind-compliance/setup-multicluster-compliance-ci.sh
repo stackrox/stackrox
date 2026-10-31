@@ -38,6 +38,8 @@
 #   MODE=separate-kind|vcluster      (default separate-kind)
 #   SECURED_COUNT=2                  total secured clusters (>=1)
 #   PREFIX=co-ci                     cluster/context name prefix (keep unique!)
+#   SECURED1_NAME=<name>             override secured cluster #1's StackRox
+#                                    clusterName (default "${PREFIX}-sec-1")
 #   KIND_NODE_IMAGE=kindest/node:v1.31.2@sha256:...   PIN this in CI
 #   CO_OPERATOR_IMAGE=...@sha256:... PIN the CO operator image in CI (see NOTES)
 #   CO_INSTALL=bundle|olm            how CO is installed (default bundle, see NOTES)
@@ -276,7 +278,17 @@ stage_co_crds() {
 }
 
 # Names of the secured clusters. #1 is co-located on the Central cluster.
-secured_name() { echo "${PREFIX}-sec-$1"; }
+# SECURED1_NAME overrides secured cluster #1's StackRox clusterName (default
+# "${PREFIX}-sec-1"). Used by the compliance-v2 single-cluster migration (see
+# tests/compliance_operator_v2_test.go / compliance-v2-kind-poc.yaml), whose
+# TestComplianceV2Integration asserts exactly one integration named "remote".
+secured_name() {
+  if [[ "$1" == "1" && -n "${SECURED1_NAME:-}" ]]; then
+    echo "$SECURED1_NAME"
+  else
+    echo "${PREFIX}-sec-$1"
+  fi
+}
 
 # ---------------------------------------------------------------------------
 # kind cluster lifecycle
