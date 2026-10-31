@@ -35,7 +35,10 @@ import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import type { VulnerabilityState } from 'types/cve.proto';
 import { runImageViewBasedReport } from 'services/ReportsService';
-import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
+import {
+    vulnerabilityImageViewBasedJobsPath,
+    vulnerabilitiesOperatorRemediationPath,
+} from 'routePaths';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import GenerateSbomModal from '../../components/GenerateSbomModal';
@@ -209,35 +212,50 @@ function ImagePage({
                                     )}
                                     <ImageDetailBadges imageData={imageData} />
                                 </Flex>
-                                {hasWriteAccessForImage && (
-                                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                                        <OptionalSbomButtonTooltip
-                                            message={sbomGenerationStatusMessage}
+                                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                    <Flex
+                                        alignItems={{ default: 'alignItemsCenter' }}
+                                        spaceItems={{ default: 'spaceItemsMd' }}
+                                    >
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() =>
+                                                navigate(
+                                                    `${vulnerabilitiesOperatorRemediationPath}/${imageData.id}`
+                                                )
+                                            }
                                         >
-                                            <Button
-                                                variant="secondary"
-                                                onClick={() => {
-                                                    setSbomTargetImage({
-                                                        name: imageData.name?.fullName ?? '',
-                                                        digest: imageData.id,
-                                                    });
-                                                }}
-                                                isAriaDisabled={
-                                                    sbomGenerationStatusMessage !== undefined ||
-                                                    !imageData.name?.fullName
-                                                }
+                                            Operator remediation
+                                        </Button>
+                                        {hasWriteAccessForImage && (
+                                            <OptionalSbomButtonTooltip
+                                                message={sbomGenerationStatusMessage}
                                             >
-                                                Generate SBOM
-                                            </Button>
-                                        </OptionalSbomButtonTooltip>
-                                        {sbomTargetImage && (
-                                            <GenerateSbomModal
-                                                onClose={() => setSbomTargetImage(undefined)}
-                                                image={sbomTargetImage}
-                                            />
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={() => {
+                                                        setSbomTargetImage({
+                                                            name: imageData.name?.fullName ?? '',
+                                                            digest: imageData.id,
+                                                        });
+                                                    }}
+                                                    isAriaDisabled={
+                                                        sbomGenerationStatusMessage !== undefined ||
+                                                        !imageData.name?.fullName
+                                                    }
+                                                >
+                                                    Generate SBOM
+                                                </Button>
+                                            </OptionalSbomButtonTooltip>
                                         )}
-                                    </FlexItem>
-                                )}
+                                    </Flex>
+                                    {sbomTargetImage && (
+                                        <GenerateSbomModal
+                                            onClose={() => setSbomTargetImage(undefined)}
+                                            image={sbomTargetImage}
+                                        />
+                                    )}
+                                </FlexItem>
                             </Flex>
                             {hasScanMessage && (
                                 <Alert
