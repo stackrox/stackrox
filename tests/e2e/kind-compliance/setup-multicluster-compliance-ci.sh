@@ -225,7 +225,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata: {name: scc-shim}
 webhooks:
-- name: scc-shim.local
+- name: scc-shim.stackrox.io
   admissionReviewVersions: ["v1"]
   sideEffects: None
   failurePolicy: Ignore
