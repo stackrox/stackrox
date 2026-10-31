@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
@@ -27,6 +28,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
 			v1.ProcessBaselineService_GetProcessBaseline_FullMethodName,
+			v1.ProcessBaselineService_GetProcessBaselineBulk_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
@@ -71,34 +73,39 @@ func validateKeyNotEmpty(key *storage.ProcessBaselineKey) error {
 	return nil
 }
 
-func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetProcessBaselineRequest) (*storage.ProcessBaseline, error) {
-	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
+func (s *serviceImpl) getProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
+	if err := validateKeyNotEmpty(key); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	baseline, exists, err := s.dataStore.GetProcessBaseline(ctx, request.GetKey())
+	baseline, exists, err := s.dataStore.GetProcessBaseline(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		// Make sure the deployment still exists before we try to build a baseline.
-		_, deploymentExists, err := s.deployments.GetDeployment(ctx, request.GetKey().GetDeploymentId())
+		_, deploymentExists, err := s.deployments.GetDeployment(ctx, key.GetDeploymentId())
 		if err != nil {
 			return nil, err
 		}
 		if !deploymentExists {
-			return nil, errors.Wrapf(errox.NotFound, "deployment with id '%q' does not exist", request.GetKey().GetDeploymentId())
+			return nil, errors.Wrapf(errox.NotFound, "deployment with id '%q' does not exist", key.GetDeploymentId())
 		}
 
 		// Build an unlocked baseline
-		baseline, err = s.dataStore.CreateUnlockedProcessBaseline(ctx, request.GetKey())
+		baseline, err = s.dataStore.CreateUnlockedProcessBaseline(ctx, key)
 		if err != nil {
 			return nil, err
 		}
 		if baseline == nil {
-			return nil, errors.Wrapf(errox.NotFound, "No process baseline with key %+v found", request.GetKey())
+			return nil, errors.Wrapf(errox.NotFound, "No process baseline with key %+v found", key)
 		}
 	}
+
 	return baseline, nil
+}
+
+func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetProcessBaselineRequest) (*storage.ProcessBaseline, error) {
+	return s.getProcessBaseline(ctx, request.GetKey())
 }
 
 func bulkUpdate(keys []*storage.ProcessBaselineKey, parallelFunc func(*storage.ProcessBaselineKey) (*storage.ProcessBaseline, error)) *v1.UpdateProcessBaselinesResponse {
@@ -304,4 +311,94 @@ func (s *serviceImpl) reprocessUpdatedBaselines(resp **v1.UpdateProcessBaselines
 		keys = append(keys, pb.GetKey())
 	}
 	s.reprocessDeploymentRisks(keys)
+}
+
+func (s *serviceImpl) GetProcessBaselineBulk(ctx context.Context, request *v1.GetProcessBaselinesBulkRequest) (*v1.GetProcessBaselinesBulkResponse, error) {
+	query := request.GetQuery()
+	if query == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "Query must not be nil")
+	}
+
+	clusters := query.GetClusterIds()
+	if len(clusters) == 0 {
+		return nil, errors.Wrap(errox.InvalidArgs, "Clusters list cannot be empty. Set the list of clusters to *, if you want process baselines in all clusters")
+	}
+
+	// First we search for matching deployments and containers. Since process baselines are created lazily not process baselines
+	// that we are interested exist and we may need to create them. The information that we need is in the deployments datastore
+	// and might not be in the process baselines datastore. Also some fields that we are interested in such as image names are
+	// availabe in the deployments datastore and not in process baselines datastore.
+	deploymentQueryBuilder := search.NewQueryBuilder()
+
+	if !(len(clusters) == 1 && clusters[0] == "*") {
+		deploymentQueryBuilder = deploymentQueryBuilder.AddExactMatches(search.ClusterID, query.GetClusterIds()...)
+	}
+	if len(query.GetNamespaces()) > 0 {
+		deploymentQueryBuilder = deploymentQueryBuilder.AddExactMatches(search.Namespace, query.GetNamespaces()...)
+	}
+	if len(query.GetDeploymentNames()) > 0 {
+		deploymentQueryBuilder = deploymentQueryBuilder.AddExactMatches(search.DeploymentName, query.GetDeploymentNames()...)
+	}
+	if len(query.GetDeploymentIds()) > 0 {
+		deploymentQueryBuilder = deploymentQueryBuilder.AddExactMatches(search.DeploymentID, query.GetDeploymentIds()...)
+	}
+	if len(query.GetImages()) > 0 {
+		deploymentQueryBuilder = deploymentQueryBuilder.AddExactMatches(search.ImageName, query.GetImages()...)
+	}
+
+	if deploymentQueryBuilder.Query() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "At least one parameter must not be empty or a wild card, not counting container name")
+	}
+
+	deployments, err := s.deployments.SearchRawDeployments(ctx, deploymentQueryBuilder.ProtoQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the process baseline keys from the deployments and filter for container name
+	imageSet := set.NewStringSet(query.GetImages()...)
+	containerSet := set.NewStringSet(query.GetContainerNames()...)
+	baselineKeys := make([]*storage.ProcessBaselineKey, 0, len(deployments))
+	for _, deployment := range deployments {
+		for _, container := range deployment.GetContainers() {
+			imageName := container.GetImage().GetName().GetFullName()
+			containerName := container.GetName()
+			// We need to check that the container has the correct image and container name. Searching for an image
+			// will return all deployments that have that image, including containers that don't have that image.
+			// Containers need to be filtered for the container name, since that is not searchable.
+			if (imageSet.Contains(imageName) || len(imageSet) == 0) && (containerSet.Contains(containerName) || len(containerSet) == 0) {
+				baselineKey := &storage.ProcessBaselineKey{
+					DeploymentId:  deployment.GetId(),
+					ContainerName: containerName,
+					ClusterId:     deployment.GetClusterId(),
+					Namespace:     deployment.GetNamespace(),
+				}
+				baselineKeys = append(baselineKeys, baselineKey)
+			}
+		}
+	}
+
+	totalCount := int32(len(baselineKeys))
+
+	page := request.GetPagination()
+	if page != nil {
+		baselineKeys = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), baselineKeys)
+	}
+
+	baselines := make([]*storage.ProcessBaseline, 0, len(baselineKeys))
+	for _, baselineKey := range baselineKeys {
+		baseline, err := s.getProcessBaseline(ctx, baselineKey)
+		if err == nil {
+			baselines = append(baselines, baseline)
+		} else {
+			log.Errorf("Unable to get process baseline from process baseline key %+v: %v", baselineKey, err)
+		}
+	}
+
+	response := &v1.GetProcessBaselinesBulkResponse{
+		Baselines:  baselines,
+		TotalCount: totalCount,
+	}
+
+	return response, nil
 }
