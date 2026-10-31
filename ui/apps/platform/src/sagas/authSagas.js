@@ -31,9 +31,6 @@ import { actions as groupActions } from 'reducers/groups';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as rolesActions } from 'reducers/roles';
 
-// The unique string indicating auth provider test mode. Do not change!
-// Must be kept in sync with `TestLoginClientState` in `pkg/auth/authproviders/idputil/state.go`.
-const testLoginClientState = `e003ba41-9cc1-48ee-b6a9-2dd7c21da92e`;
 // The unique string indicating auth provider authorize roxctl mode. Do not change!
 // Must be kept in sync with `AuthorizeRoxctlClientState` in `pkg/auth/authproviders/idputil/state.go`.
 const authorizeRoxctlClientState = `2ed17ca6-4b3c-4279-8317-f26f8ba01c52`;
@@ -129,13 +126,6 @@ function* handleLoginPageRedirect({ location }) {
     }
 }
 
-// isTestMode returns whether the given client-side state (of the general form
-// `<auth provider ID>:<test prefix or empty>#<client state>`) indicates that we are in test mode.
-// See `ParseClientState` in `pkg/auth/authproviders/idputil/state.go` for the authoritative implementation.
-function isTestMode(state) {
-    return isGivenMode(state, testLoginClientState);
-}
-
 // isAuthorizeRoxctlMode returns whether the given client-side state (of the general form
 // `<auth provider ID>:<authorize roxctl state or empty>#<client state>`) indicates that we are in authorize
 // roxctl mode.
@@ -153,9 +143,6 @@ function isGivenMode(state, mode) {
 function* handleOidcResponse(location) {
     const parsedFragment = parseAndDecodeFragment(location);
     if (parsedFragment.has('error')) {
-        const state = parsedFragment.get('state');
-        parsedFragment.set('test', isTestMode(state).toString());
-        parsedFragment.set('authorizeRoxctl', isAuthorizeRoxctlMode(state).toString());
         return Object.fromEntries(parsedFragment.entries());
     }
 
@@ -166,7 +153,6 @@ function* handleOidcResponse(location) {
         );
         const pseudoToken = `#${queryString.stringify({ ...otherFields })}`;
         const result = yield call(authServiceExchangeAuthToken, pseudoToken, 'oidc', state);
-        result.authorizeRoxctl = isAuthorizeRoxctlMode(state);
         return result;
     } catch (error) {
         if (error.response) {
