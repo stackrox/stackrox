@@ -269,7 +269,7 @@ func getKeys(m map[string]bool) []string {
 func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *central.ComplianceOperatorInfo {
 	timer := time.NewTimer(responseTimeout)
 	readySignal := concurrency.NewSignal()
-	updater := NewInfoUpdater(s.client, updateInterval, &readySignal)
+	updater := NewInfoUpdater(s.client, updateInterval, &readySignal, nil)
 
 	updater.Notify(common.SensorComponentEventSyncFinished)
 	err := updater.Start()

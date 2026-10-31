@@ -34,6 +34,9 @@ const (
 
 	osOperatorAlphaGroupVersion              = "operator.openshift.io/v1alpha1"
 	osImageContentSourcePoliciesResourceName = "imagecontentsourcepolicies"
+
+	osMachineConfigGroupVersion      = "machineconfiguration.openshift.io/v1"
+	osMachineConfigPoolsResourceName = "machineconfigpools"
 )
 
 type stoppable interface {

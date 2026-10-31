@@ -19,6 +19,7 @@ const (
 	SoftRestartLane
 	ResourceSyncFinishedLane
 	FakeFileActivityLane
+	NodeRoleChangeLane
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 		SoftRestartLane:                "SoftRestart",
 		ResourceSyncFinishedLane:       "ResourceSyncFinished",
 		FakeFileActivityLane:           "FakeFileActivity",
+		NodeRoleChangeLane:             "NodeRoleChange",
 	}
 )
 
