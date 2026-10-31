@@ -15,7 +15,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
-	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -132,21 +131,6 @@ func (m *MockDataStore) GetNamespaceLabels(ctx context.Context, clusterID, names
 func (mr *MockDataStoreMockRecorder) GetNamespaceLabels(ctx, clusterID, namespaceName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockDataStore)(nil).GetNamespaceLabels), ctx, clusterID, namespaceName)
-}
-
-// GetNamespacesForSAC mocks base method.
-func (m *MockDataStore) GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespacesForSAC", ctx)
-	ret0, _ := ret[0].([]effectiveaccessscope.Namespace)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNamespacesForSAC indicates an expected call of GetNamespacesForSAC.
-func (mr *MockDataStoreMockRecorder) GetNamespacesForSAC(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespacesForSAC", reflect.TypeOf((*MockDataStore)(nil).GetNamespacesForSAC), ctx)
 }
 
 // RemoveNamespace mocks base method.
