@@ -44,6 +44,9 @@ jobs:
         with:
           # Full history + tags so `make tag` / status.sh can `git describe`.
           fetch-depth: 0
+          # Check out the PR head (not the merge commit) so `make tag` matches the
+          # tag build.yaml uses when it pushes the PR images we wait for below.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
