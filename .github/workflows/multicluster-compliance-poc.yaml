@@ -15,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       fidelity:
-        description: "Compliance Operator fidelity (cel = operator image only, real PASS/FAIL; content = real ocp4/rhcos4 ProfileBundles synced to Central)"
+        description: "Compliance Operator fidelity (cel = operator image only, real PASS/FAIL; content = real ocp4/rhcos4 ProfileBundles synced to Central; platform = content + OpenShift-API shim for real ocp4-cis OVAL PASS/FAIL)"
         type: choice
-        options: [cel, content]
+        options: [cel, content, platform]
         default: cel
       co_install:
         description: "How CO is installed (bundle = reconstructed manifests; olm = real CatalogSource/Subscription, implies content)"
@@ -111,7 +111,8 @@ jobs:
           DISABLE_COLLECTOR: "true"
           ROX_ADMIN_PASSWORD: ci-${{ github.run_id }}
           TIMEOUT_ROLLOUT: "900"
-          # cel (default, PR runs) or content (manual dispatch): real ProfileBundles.
+          # cel (default, PR runs), content (real ProfileBundles), or platform
+          # (content + OpenShift-API shim, real ocp4-cis OVAL results) via dispatch.
           FIDELITY: ${{ github.event.inputs.fidelity || 'cel' }}
           # bundle (default) or olm (manual dispatch; implies content fidelity).
           CO_INSTALL: ${{ github.event.inputs.co_install || 'bundle' }}
@@ -135,6 +136,10 @@ jobs:
         env:
           API_ENDPOINT: localhost:8443
           ROX_USERNAME: admin
+          # Only run TestComplianceV2MultiClusterPlatformResults (real ocp4-cis
+          # OVAL PASS/FAIL) in platform mode: ocp4-cis is all NOT-APPLICABLE
+          # without the OpenShift-API shim, so it must stay opt-in.
+          COMPLIANCE_MC_PLATFORM: ${{ github.event.inputs.fidelity == 'platform' && 'true' || 'false' }}
         run: |
           set -euo pipefail
           ROX_ADMIN_PASSWORD="$(cat "$WORK/state/admin-password")"

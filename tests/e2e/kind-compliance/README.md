@@ -41,9 +41,26 @@ openscap image, service-ca, or SCC webhook required.
   SCC). **Caveat:** `ocp4`/`rhcos4` *scans* evaluate NOT-APPLICABLE on kind (no
   OpenShift API resources, no RHCOS), so content mode validates the catalog +
   profile/rule sync, not scan results. CEL remains the source of real results.
+- **`platform`**: a SUPERSET of `content` (same `PLATFORM=OpenShift`, same two
+  shims) that ALSO applies `assets/openshift-platform-shim/` — real
+  `config.openshift.io`/`operator.openshift.io`/`security.openshift.io` CRDs plus
+  ~20 singleton CRs/ConfigMaps/SCCs — so the api-resource-collector can fetch what
+  the `ocp4` OVAL checks actually read. This flips `ocp4-cis` from
+  NOT-APPLICABLE to **real PASS/FAIL/MANUAL results** (deterministic: a ConfigMap
+  field maps directly to a rule's outcome), and gates
+  `TestComplianceV2MultiClusterPlatformResults`
+  (`COMPLIANCE_MC_PLATFORM=true`), which asserts real PASS *and* FAIL round-trip
+  to Central for `ocp4-cis`. The content (ProfileBundle) image is pinned by digest
+  via `CO_CONTENT_IMAGE` (default: a resolved digest of
+  `compliance-operator-content-dev:master`) instead of a moving `:master` tag, so
+  which rules exist and how they evaluate does not drift out from under the shim.
+  **Maintenance caveat:** the shim is coupled to both the CRD schemas (from
+  `openshift/api`) and the content version (`CO_CONTENT_IMAGE`) — see
+  `assets/openshift-platform-shim/README.md` for what to re-sync when bumping
+  either. `rhcos4` node scans are still out of scope (no RHCOS on kind).
 
-In CI, `content` is available via the workflow's manual `workflow_dispatch` input;
-PR runs use `cel`.
+In CI, `content` and `platform` are available via the workflow's manual
+`workflow_dispatch` input; PR runs use `cel`.
 
 ## Install method (`CO_INSTALL` env, default `bundle`)
 - **`bundle`** (default): the operator's CRDs + Deployment/RBAC are applied directly
@@ -66,13 +83,19 @@ only to Central's v2 API:
 - `TestComplianceV2MultiClusterScanConfigResults` — one scan configuration fans
   out to all clusters exposing the CEL profile, and real PASS + FAIL results come
   back attributed to each cluster.
-- `TestComplianceV2MultiClusterRealProfiles` — (content mode) the real
+- `TestComplianceV2MultiClusterRealProfiles` — (content/platform mode) the real
   `ocp4`/`rhcos4` profile+rule catalog synced to Central for every cluster. Auto-
   skips when only the CEL profile is present.
+- `TestComplianceV2MultiClusterPlatformResults` — (platform mode only, gated on
+  `COMPLIANCE_MC_PLATFORM=true`) one scan configuration for profile `ocp4-cis`
+  fans out to every cluster exposing it, and real PASS *and* FAIL results (not
+  NOT-APPLICABLE) come back attributed to each cluster. Explicitly `t.Skip`s
+  unless the env var is set, since `ocp4-cis` is all NOT-APPLICABLE without the
+  OpenShift-API shim and would just time out.
 
 All skip (not fail) when fewer than two suitable clusters are present (or, for the
-real-profiles test, when real ProfileBundles are absent), so they are safe in
-single-cluster and `cel`-mode runs.
+real-profiles/platform-results tests, when real ProfileBundles/the shim are
+absent), so they are safe in single-cluster and `cel`-mode runs.
 
 ## Run it locally
 ```bash

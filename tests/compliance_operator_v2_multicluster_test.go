@@ -225,3 +225,105 @@ func TestComplianceV2MultiClusterRealProfiles(t *testing.T) {
 		t.Logf("cluster %q: %d profiles synced, %q has %d rules", in.GetClusterName(), len(profiles), realProfile, len(full.GetRules()))
 	}
 }
+
+// TestComplianceV2MultiClusterPlatformResults verifies that, when the
+// environment installs the OpenShift-API shim (the kind-compliance harness run
+// with FIDELITY=platform), the real ocp4-cis OVAL checks actually evaluate on
+// kind: creating ONE scan configuration for profile "ocp4-cis" across every
+// secured cluster must produce real PASS and FAIL results (not NOT-APPLICABLE
+// everywhere, which is what ocp4-cis yields WITHOUT the shim). Gated on
+// COMPLIANCE_MC_PLATFORM=true (set by the harness/workflow in platform mode)
+// so it never runs unguarded: ocp4-cis without the shim is all N/A and would
+// just time out waiting for a PASS/FAIL that never comes.
+func TestComplianceV2MultiClusterPlatformResults(t *testing.T) {
+	if os.Getenv("COMPLIANCE_MC_PLATFORM") != "true" {
+		t.Skip("set COMPLIANCE_MC_PLATFORM=true to run (requires the kind-compliance harness FIDELITY=platform OpenShift-API shim)")
+	}
+	const realProfile = "ocp4-cis"
+	ctx := context.Background()
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	integrationSvc := v2.NewComplianceIntegrationServiceClient(conn)
+	profileSvc := v2.NewComplianceProfileServiceClient(conn)
+	scanCfgSvc := v2.NewComplianceScanConfigurationServiceClient(conn)
+	resultsSvc := v2.NewComplianceResultsServiceClient(conn)
+
+	integrations, err := integrationSvc.ListComplianceIntegrations(ctx, &v2.RawQuery{Query: ""})
+	require.NoError(t, err)
+
+	var clusterIDs, clusterNames []string
+	for _, in := range integrations.GetIntegrations() {
+		cid := in.GetClusterId()
+		profiles, err := profileSvc.ListComplianceProfiles(ctx, &v2.ProfilesForClusterRequest{ClusterId: cid})
+		require.NoError(t, err)
+		if hasProfile(profiles.GetProfiles(), realProfile) {
+			clusterIDs = append(clusterIDs, cid)
+			clusterNames = append(clusterNames, in.GetClusterName())
+		}
+	}
+	require.NotEmptyf(t, clusterIDs, "no cluster exposes profile %q; run the harness with FIDELITY=platform", realProfile)
+	t.Logf("targeting %d cluster(s) with profile %q: %v", len(clusterIDs), realProfile, clusterNames)
+
+	scanName := fmt.Sprintf("mc-platform-%s", uuid.NewV4().String())
+	req := &v2.ComplianceScanConfiguration{
+		ScanName: scanName,
+		Clusters: clusterIDs,
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan:  false,
+			Profiles:     []string{realProfile},
+			Description:  "multi-cluster ocp4-cis platform scan (OpenShift-API shim)",
+			ScanSchedule: initialSchedule,
+		},
+	}
+	created, err := scanCfgSvc.CreateComplianceScanConfiguration(ctx, req)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = deleteScanConfig(context.Background(), created.GetId(), scanCfgSvc)
+	})
+
+	// The configuration should fan out to every target cluster.
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		cfgs, err := scanCfgSvc.ListComplianceScanConfigurations(ctx, &v2.RawQuery{Query: ""})
+		require.NoError(c, err)
+		var ours *v2.ComplianceScanConfigurationStatus
+		for _, cfg := range cfgs.GetConfigurations() {
+			if cfg.GetScanName() == scanName {
+				ours = cfg
+				break
+			}
+		}
+		require.NotNil(c, ours, "scan config %s not found", scanName)
+		statusClusters := make(map[string]bool)
+		for _, cs := range ours.GetClusterStatus() {
+			statusClusters[cs.GetClusterId()] = true
+		}
+		for i, cid := range clusterIDs {
+			assert.Truef(c, statusClusters[cid], "scan config status missing cluster %q (%s)", clusterNames[i], cid)
+		}
+	}, 2*time.Minute, 10*time.Second)
+
+	// ocp4-cis platform checks are real OVAL evaluations against the
+	// OpenShift-API shim objects, so an actual scan+OVAL run takes longer than
+	// the CEL in-process path; give it the same generous window the real-profile
+	// ocp4/rhcos4 CEL-equivalent (CreateGetScanConfigurations) uses upstream.
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		results, err := resultsSvc.GetComplianceScanResults(ctx, &v2.RawQuery{Query: ""})
+		require.NoError(c, err)
+		byCluster := make(map[string]map[v2.ComplianceCheckStatus]bool)
+		for _, r := range results.GetScanResults() {
+			if r.GetScanName() != scanName {
+				continue
+			}
+			cid := r.GetClusterId()
+			if byCluster[cid] == nil {
+				byCluster[cid] = make(map[v2.ComplianceCheckStatus]bool)
+			}
+			byCluster[cid][r.GetResult().GetStatus()] = true
+		}
+		for i, cid := range clusterIDs {
+			require.Containsf(c, byCluster, cid, "no results yet for cluster %q (%s)", clusterNames[i], cid)
+			assert.Truef(c, byCluster[cid][v2.ComplianceCheckStatus_PASS], "cluster %q missing a real PASS result (ocp4-cis would be all N/A without the OpenShift-API shim)", clusterNames[i])
+			assert.Truef(c, byCluster[cid][v2.ComplianceCheckStatus_FAIL], "cluster %q missing a real FAIL result (ocp4-cis would be all N/A without the OpenShift-API shim)", clusterNames[i])
+		}
+	}, 15*time.Minute, 30*time.Second)
+}

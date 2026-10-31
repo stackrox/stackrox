@@ -42,6 +42,8 @@
 #   CO_OPERATOR_IMAGE=...@sha256:... PIN the CO operator image in CI (see NOTES)
 #   CO_INSTALL=bundle|olm            how CO is installed (default bundle, see NOTES)
 #   CO_CATALOG_IMAGE=...@sha256:...  CO_INSTALL=olm catalog image (see NOTES)
+#   FIDELITY=cel|content|platform    CO fidelity (default cel, see FIDELITY NOTES below)
+#   CO_CONTENT_IMAGE=...@sha256:...  FIDELITY=platform content image digest (see NOTES)
 #   MAIN_IMAGE_REGISTRY=quay.io/stackrox-io   StackRox image registry
 #   MAIN_IMAGE_TAG=<make tag>        StackRox image tag to test (REQUIRED in CI)
 #   ROX_ADMIN_PASSWORD=<pw>          Central admin password (generated if unset)
@@ -88,13 +90,21 @@ CO_NS="openshift-compliance"
 ROX_NS="stackrox"
 CEL_PROFILE_NAME="${CEL_PROFILE_NAME:-kind-cel-tp}"  # TailoredProfile in cel-profile.yaml
 # Fidelity of the Compliance Operator install:
-#   cel     - operator image only, PLATFORM=Generic, CEL CustomRules (real
-#             PASS/FAIL results on kind). Fast, deterministic. Default.
-#   content - PLATFORM=OpenShift: the operator also builds the real ocp4/rhcos4
-#             ProfileBundles (~48 profiles / ~1166 rules) which sync to Central.
-#             Needs two kind shims (serving-cert secret + SCC-UID webhook). Note:
-#             ocp4/rhcos4 SCANS yield NOT-APPLICABLE on kind (no OpenShift API /
-#             RHCOS), so content mode validates catalog+profile sync, not results.
+#   cel      - operator image only, PLATFORM=Generic, CEL CustomRules (real
+#              PASS/FAIL results on kind). Fast, deterministic. Default.
+#   content  - PLATFORM=OpenShift: the operator also builds the real ocp4/rhcos4
+#              ProfileBundles (~48 profiles / ~1166 rules) which sync to Central.
+#              Needs two kind shims (serving-cert secret + SCC-UID webhook). Note:
+#              ocp4/rhcos4 SCANS yield NOT-APPLICABLE on kind (no OpenShift API /
+#              RHCOS), so content mode validates catalog+profile sync, not results.
+#   platform - SUPERSET of content (same PLATFORM=OpenShift, same two shims),
+#              PLUS an OpenShift-API shim (assets/openshift-platform-shim/: real
+#              config.openshift.io/operator.openshift.io/security.openshift.io
+#              CRDs + singleton CRs/ConfigMaps/SCCs) that lets the api-resource-
+#              collector fetch what ocp4 OVAL checks read, so ocp4-* PLATFORM
+#              scans (e.g. ocp4-cis) produce real PASS/FAIL/MANUAL instead of
+#              NOT-APPLICABLE. Opt-in: heavier and has a content/CRD version
+#              coupling caveat (see the shim's README).
 FIDELITY="${FIDELITY:-cel}"
 # OLM installs use the upstream catalog, whose bundled CSV effectively runs
 # PLATFORM=OpenShift and ignores the Subscription's config.env override (the
@@ -103,8 +113,13 @@ FIDELITY="${FIDELITY:-cel}"
 # content fidelity on kind (real ProfileBundles + the serving-cert/SCC shims).
 [[ "$CO_INSTALL" == "olm" ]] && FIDELITY=content
 CO_PLATFORM=Generic
-[[ "$FIDELITY" == "content" ]] && CO_PLATFORM=OpenShift
-REAL_PROFILE_NAME="${REAL_PROFILE_NAME:-ocp4-cis}"  # a real profile to gate on in content mode
+[[ "$FIDELITY" == "content" || "$FIDELITY" == "platform" ]] && CO_PLATFORM=OpenShift
+REAL_PROFILE_NAME="${REAL_PROFILE_NAME:-ocp4-cis}"  # a real profile to gate on in content/platform mode
+# platform mode pins the content (ProfileBundle) image by digest for determinism:
+# a moving `:master` tag would make which ocp4-cis rules exist/PASS/FAIL drift out
+# from under the openshift-platform-shim assets. Default resolved once via:
+#   crane digest quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-content-dev:master
+CO_CONTENT_IMAGE="${CO_CONTENT_IMAGE:-quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-content-dev@sha256:c0920cbcae5c816cc50572917d2f439a7b5a5f3f493200a380e2e0f39a8cc308}"
 # Deterministic workdir so `up`, `verify`, `down` share state across invocations.
 WORK="${WORK:-${TMPDIR:-/tmp}/kind-co-ci/${PREFIX}}"
 CENTRAL_CLUSTER="${PREFIX}"                 # kind name of the Central cluster
@@ -132,7 +147,13 @@ require_tools() {
   case "$FIDELITY" in
     cel) ;;
     content) [[ -f "$ASSET_DIR/scc-shim-webhook.py" ]] || die "content fidelity needs scc-shim-webhook.py in $ASSET_DIR" ;;
-    *) die "FIDELITY must be 'cel' or 'content' (got '$FIDELITY')" ;;
+    platform)
+      [[ -f "$ASSET_DIR/scc-shim-webhook.py" ]] || die "platform fidelity needs scc-shim-webhook.py in $ASSET_DIR"
+      [[ -d "$ASSET_DIR/openshift-platform-shim/crds" ]] || die "platform fidelity needs openshift-platform-shim/crds/ in $ASSET_DIR"
+      [[ -f "$ASSET_DIR/openshift-platform-shim/objects.yaml" ]] || die "platform fidelity needs openshift-platform-shim/objects.yaml in $ASSET_DIR"
+      [[ -f "$ASSET_DIR/openshift-platform-shim/sccs.yaml" ]] || die "platform fidelity needs openshift-platform-shim/sccs.yaml in $ASSET_DIR"
+      ;;
+    *) die "FIDELITY must be 'cel', 'content', or 'platform' (got '$FIDELITY')" ;;
   esac
   case "$CO_INSTALL" in
     bundle|olm) ;;
@@ -276,6 +297,30 @@ wait_profilebundles_valid() {
   done
 }
 
+# platform mode: apply the OpenShift-API shim (real config.openshift.io/
+# operator.openshift.io/security.openshift.io CRDs + singleton CRs/ConfigMaps/
+# SCCs) so the api-resource-collector can fetch what ocp4 OVAL checks read.
+# Must run AFTER the ocp4 ProfileBundle is VALID (profileparser already parsed
+# the content) and after the real CRDs below are in place, so the SCCs (which
+# depend on the real security.openshift.io CRD, not the generic co-crds one)
+# validate correctly.
+apply_platform_shim() {
+  local ctx="$1"; local K="kubectl --context ${ctx}"
+  local shim="$ASSET_DIR/openshift-platform-shim"
+  log "[$ctx] applying OpenShift-API platform shim (real CRDs + objects + SCCs)"
+  $K apply --server-side -f "$shim/crds"
+  $K apply --server-side -f "$shim/objects.yaml"
+  # The real SCC CRD requires priority/allowedCapabilities/defaultAddCapabilities/
+  # volumes present even when null; `apply` strips explicit nulls and fails CRD
+  # validation. `create` sends the object as-is; on a re-run (idempotency) fall
+  # back to delete+recreate rather than `replace`/`apply`, which have the same
+  # null-stripping behavior.
+  if ! $K create -f "$shim/sccs.yaml" 2>/dev/null; then
+    $K delete --ignore-not-found -f "$shim/sccs.yaml"
+    $K create -f "$shim/sccs.yaml"
+  fi
+}
+
 # OLM mode: install upstream OLM (idempotent) so CO can be installed via the
 # normal CatalogSource/OperatorGroup/Subscription flow instead of the
 # reconstructed bundle manifests.
@@ -388,7 +433,7 @@ install_co() {
   $K patch infrastructure cluster --subresource=status --type=merge \
     -p '{"status":{"infrastructureName":"kind","controlPlaneTopology":"HighlyAvailable","platform":"None","platformStatus":{"type":"None"}}}' \
     >/dev/null 2>&1 || true
-  if [[ "$FIDELITY" == "content" ]]; then
+  if [[ "$FIDELITY" == "content" || "$FIDELITY" == "platform" ]]; then
     create_serving_cert "$ctx"
     install_scc_webhook "$ctx"
   fi
@@ -396,15 +441,27 @@ install_co() {
     install_co_olm "$ctx"
   else
     # Render operator with the pinned image and the selected PLATFORM (the asset
-    # ships PLATFORM=Generic; content mode rewrites it to OpenShift).
-    sed -e "s#image: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master#image: ${CO_OPERATOR_IMAGE}#g" \
-        -e "s/^\( *\)value: Generic\$/\1value: ${CO_PLATFORM}/" \
-      "$ASSET_DIR/operator-generic.yaml" >"$WORK/operator.rendered.yaml"
+    # ships PLATFORM=Generic; content/platform mode rewrites it to OpenShift).
+    # platform mode ALSO pins RELATED_IMAGE_PROFILE to CO_CONTENT_IMAGE (a
+    # digest) instead of the moving :master tag, so the default ocp4/rhcos4
+    # ProfileBundles the operator creates at startup (cmd/manager/operator.go,
+    # which reads this env var) are deterministic.
+    local -a sed_args=(
+      -e "s#image: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master#image: ${CO_OPERATOR_IMAGE}#g"
+      -e "s/^\( *\)value: Generic\$/\1value: ${CO_PLATFORM}/"
+    )
+    if [[ "$FIDELITY" == "platform" ]]; then
+      sed_args+=(-e "s#value: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-content-dev:master#value: ${CO_CONTENT_IMAGE}#g")
+    fi
+    sed "${sed_args[@]}" "$ASSET_DIR/operator-generic.yaml" >"$WORK/operator.rendered.yaml"
     $K apply -f "$WORK/operator.rendered.yaml"
     $K -n "$CO_NS" rollout status deploy/compliance-operator --timeout="${TIMEOUT_ROLLOUT}s"
   fi
-  if [[ "$FIDELITY" == "content" ]]; then
+  if [[ "$FIDELITY" == "content" || "$FIDELITY" == "platform" ]]; then
     wait_profilebundles_valid "$ctx"
+  fi
+  if [[ "$FIDELITY" == "platform" ]]; then
+    apply_platform_shim "$ctx"
   fi
 }
 
@@ -581,8 +638,8 @@ cluster_ready() {
       profiles="$(central_api GET "/v2/compliance/profiles/cluster?clusterId=$cid" 2>/dev/null \
         | jq -r '.profiles[]?.name' 2>/dev/null)"
       if [[ "$status" == "HEALTHY" ]] && echo "$profiles" | grep -qx "$CEL_PROFILE_NAME"; then
-        if [[ "$FIDELITY" == "content" ]] && ! echo "$profiles" | grep -qx "$REAL_PROFILE_NAME"; then
-          : # content mode: also wait for the real ocp4/rhcos4 profiles to sync
+        if [[ "$FIDELITY" == "content" || "$FIDELITY" == "platform" ]] && ! echo "$profiles" | grep -qx "$REAL_PROFILE_NAME"; then
+          : # content/platform mode: also wait for the real ocp4/rhcos4 profiles to sync
         else
           log "  cluster '$name' ($cid): CO HEALTHY, profiles synced"
           return 0
