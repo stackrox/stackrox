@@ -1122,6 +1122,7 @@ func mustEventually(t *testing.T, ctx context.Context, f func() error, pauseInte
 
 // createService creates a k8s Service object.
 func (ks *KubernetesSuite) createService(ctx context.Context, namespace string, name string, labels map[string]string, ports map[int32]int32) {
+	ipFamilyPolicyPreferDualStack := coreV1.IPFamilyPolicyPreferDualStack
 	svc := &coreV1.Service{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   name,
@@ -1130,6 +1131,9 @@ func (ks *KubernetesSuite) createService(ctx context.Context, namespace string, 
 		Spec: coreV1.ServiceSpec{
 			Selector: labels,
 			Type:     coreV1.ServiceTypeClusterIP,
+			// Allocate addresses in every family the cluster supports so that
+			// IPv4-only test servers remain reachable on IPv6-primary clusters.
+			IPFamilyPolicy: &ipFamilyPolicyPreferDualStack,
 		},
 	}
 	for portNum, targetPortNum := range ports {
