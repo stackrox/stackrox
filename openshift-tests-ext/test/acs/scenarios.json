@@ -1,0 +1,30 @@
+[
+  {
+    "name": "[sig-acs] ACS Central is deployed and available",
+    "entrypoint": "/bin/bash",
+    "args": ["-c", "${INTEROP_SCRIPTS_DIR:-.}/check-acs-central.sh"],
+    "tags": ["SMOKE", "acs", "INSTALL"],
+    "timeout": "5m"
+  },
+  {
+    "name": "[sig-acs] ACS Scanner is deployed and available",
+    "entrypoint": "/bin/bash",
+    "args": ["-c", "${INTEROP_SCRIPTS_DIR:-.}/check-acs-scanner.sh"],
+    "tags": ["SMOKE", "acs", "INSTALL"],
+    "timeout": "5m"
+  },
+  {
+    "name": "[sig-acs] ACS init-bundle and TLS secrets are configured",
+    "entrypoint": "/bin/bash",
+    "args": ["-c", "${INTEROP_SCRIPTS_DIR:-.}/check-acs-init-bundle.sh"],
+    "tags": ["SMOKE", "acs", "INSTALL"],
+    "timeout": "5m"
+  },
+  {
+    "name": "[sig-acs] ACS SecuredCluster and collector are deployed",
+    "entrypoint": "/bin/bash",
+    "args": ["-c", "${INTEROP_SCRIPTS_DIR:-.}/check-acs-secured-clusters.sh"],
+    "tags": ["SMOKE", "acs", "INSTALL"],
+    "timeout": "5m"
+  }
+]
