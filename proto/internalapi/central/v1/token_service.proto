@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package central.v1;
 
+import "api/v1/common.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/duration.proto";
 
@@ -45,6 +46,8 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // recognize this field. Console requests may specify cluster_scopes
   // within the authenticated Sensor's cluster.
   repeated string permission_set_ids = 5;
+  // Optional HTTP method/path restrictions for this token.
+  repeated .v1.HTTPRequestScope http_request_scopes = 6;
 }
 
 // ClusterScope represents the access scope of a role within a cluster.

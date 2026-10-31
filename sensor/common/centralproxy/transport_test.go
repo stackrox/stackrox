@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -374,6 +375,7 @@ func TestBuildTokenRequest(t *testing.T) {
 		req, err := provider.buildTokenRequest("")
 		require.NoError(t, err)
 		assert.Equal(t, []string{centralproxy.ConsoleProxyPermissionSetID}, req.GetPermissionSetIds())
+		assert.Len(t, req.GetHttpRequestScopes(), len(centralproxy.ConsoleHTTPScopes))
 		assert.Equal(t, map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,
@@ -409,6 +411,21 @@ func TestBuildTokenRequest(t *testing.T) {
 		assert.Nil(t, req)
 		assert.Contains(t, err.Error(), "cluster ID not available")
 	})
+}
+
+func TestConsoleRequestScopes(t *testing.T) {
+	scopes := consoleRequestScopes()
+	require.NotEmpty(t, scopes)
+	actual, err := tokens.HTTPRequestScopesFromProto(scopes)
+	require.NoError(t, err)
+	assert.Equal(t, centralproxy.ConsoleHTTPScopes, actual)
+
+	for i := 1; i < len(scopes); i++ {
+		assert.Less(t, scopes[i-1].GetPath(), scopes[i].GetPath())
+	}
+
+	scopes[0].Methods[0] = "PUT"
+	assert.NotEqual(t, "PUT", centralproxy.ConsoleHTTPScopes[scopes[0].GetPath()][0])
 }
 
 // dynamicFakeTokenServiceClient allows dynamic token generation for testing.

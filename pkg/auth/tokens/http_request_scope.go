@@ -35,18 +35,6 @@ func HTTPRequestScopesFromProto(requested []*v1.HTTPRequestScope) (HTTPRequestSc
 	return scopes, nil
 }
 
-// HTTPRequestScopesByPath groups validated method/path pairs for signing.
-func HTTPRequestScopesByPath(scopes []HTTPRequestScope) HTTPRequestScopes {
-	if len(scopes) == 0 {
-		return nil
-	}
-	byPath := make(HTTPRequestScopes)
-	for _, scope := range scopes {
-		byPath[scope.Path] = append(byPath[scope.Path], scope.Method)
-	}
-	return byPath
-}
-
 // ValidateHTTPRequestScopes checks optional path-to-method restrictions.
 // Callers must validate scopes before signing them into a token.
 func ValidateHTTPRequestScopes(scopes HTTPRequestScopes) error {
