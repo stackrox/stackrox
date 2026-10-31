@@ -576,7 +576,7 @@ go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 25m -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | grep -v -E '^($(NESTED_GO_MODULE_REGEX))(/|$$)' | scripts/go-files-to-packages.sh | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee $(GO_TEST_OUTPUT_PATH)
+		| tee -a $(GO_TEST_OUTPUT_PATH)
 	# Nested modules have independent coverage profiles, so keep their coverage
 	# out of the root profile while including their verbose output in JUnit.
 	@set -o pipefail; \
@@ -595,7 +595,7 @@ go-unit-tests: build-prep test-prep
 .PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -race -v -p 1 ./sensor/tests/... | tee $(GO_TEST_OUTPUT_PATH)
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -race -v -p 1 ./sensor/tests/... | tee -a $(GO_TEST_OUTPUT_PATH)
 
 sensor-pipeline-benchmark: build-prep test-prep
 	LOGLEVEL="panic" go test -bench=. -run=^# -benchtime=30s -count=5 ./sensor/tests/pipeline | tee $(CURDIR)/test-output/pipeline.results.txt
@@ -605,7 +605,7 @@ go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" central pkg tools | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee $(GO_TEST_OUTPUT_PATH)
+		| tee -a $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
@@ -617,7 +617,7 @@ go-postgres-bench-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
 		$(shell git grep -rl "testing.B" central pkg migrator tools | scripts/go-files-to-packages.sh -tags sql_integration | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee $(GO_TEST_OUTPUT_PATH)
+		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
 shell-unit-tests:
@@ -653,7 +653,7 @@ integration-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
-		| tee $(GO_TEST_OUTPUT_PATH)
+		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: generate-junit-reports
 generate-junit-reports: junit-reports/report.xml
@@ -793,6 +793,7 @@ central-db-image:
 .PHONY: clean
 clean: clean-image
 	@echo "+ $@"
+	rm -f $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: clean-image
 clean-image:

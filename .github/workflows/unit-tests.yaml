@@ -66,16 +66,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
 
@@ -90,10 +80,12 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'junit-reports/report.xml'
+        directory: junit-reports
+        artifact-retention-days: '7'
+        report-title: Go tests
 
     - name: Report test failures to Jira
       if: (!cancelled())
@@ -182,10 +174,12 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'junit-reports/report.xml'
+        directory: junit-reports
+        artifact-retention-days: '7'
+        report-title: Go Postgres integration tests
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -249,10 +243,13 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'junit-reports/report.xml'
+        directory: junit-reports
+        artifact-retention-days: '7'
+        report-title: Go bench tests
+        show-preview: none
 
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
@@ -295,10 +292,12 @@ jobs:
       run: make ui-test
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'ui/apps/platform/test-results/reports/*.xml'
+        directory: ui/apps/platform/test-results/reports
+        artifact-retention-days: '7'
+        report-title: UI unit tests
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -360,10 +359,12 @@ jobs:
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
+        directory: ui/apps/platform/cypress/test-results/reports
+        artifact-retention-days: '7'
+        report-title: UI Component tests
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -406,10 +407,12 @@ jobs:
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'roxctl-test-output/*.xml'
+        directory: roxctl-test-output
+        artifact-retention-days: '7'
+        report-title: Local roxctl tests
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -444,10 +447,12 @@ jobs:
       run: make shell-unit-tests
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'shell-test-output/*.xml'
+        directory: shell-test-output
+        artifact-retention-days: '7'
+        report-title: Shell unit tests
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -537,10 +542,12 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      uses: ./.github/actions/make-tests-report
       if: always()
       with:
-        paths: 'junit-reports/report.xml'
+        directory: junit-reports
+        artifact-retention-days: '7'
+        report-title: Sensor integration tests
 
     - name: Report junit failures in jira
       if: (!cancelled())
