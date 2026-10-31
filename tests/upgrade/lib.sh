@@ -148,6 +148,156 @@ get_target_bg_migration_seqnum() {
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
+deploy_earlier_postgres_central() {
+    info "Deploying: $EARLIER_TAG..."
+
+    # Older checkouts force GOTOOLCHAIN=local during dependency checks.
+    # Put the toolchain selected for this checkout first on PATH for the build.
+    local build_goroot
+    build_goroot="$(go env GOROOT)"
+    PATH="${build_goroot}/bin:${PATH}" make cli
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+
+    # Let's try helm
+    # BSD tr cannot filter /dev/urandom (NUL bytes). gen_admin_password
+    # produces a value shared with Helm --set and later restore/auth.
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
+
+    # Scanner V4 is installed by default in 4.10. Set its DB storage class now,
+    # because the later Helm upgrade cannot change an existing PVC's class.
+    local helm_extra_args=()
+    if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]]; then
+        if [[ "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
+            kubectl apply -f "${TEST_ROOT}/deploy/common/ssd-storageclass.yaml"
+        fi
+        helm_extra_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+    fi
+
+    # Pin all initial images to the fixture, regardless of the CLI's embedded tag.
+    # Otherwise a later historical chart can downgrade Scanner V4 DB on its PVC.
+    helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         "${helm_extra_args[@]}" \
+         --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+         --set central.db.enabled=true \
+         --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
+         --set central.persistence.none=true \
+         --set central.exposure.loadBalancer.enabled=true \
+         --set system.enablePodSecurityPolicies=false \
+         --set central.image.tag="${EARLIER_TAG}" \
+         --set central.db.image.tag="${EARLIER_TAG}" \
+         --set scanner.image.tag="${EARLIER_TAG}" \
+         --set scanner.dbImage.tag="${EARLIER_TAG}" \
+         --set scannerV4.image.tag="${EARLIER_TAG}" \
+         --set scannerV4.db.image.tag="${EARLIER_TAG}"
+
+    ROX_USERNAME="admin"
+    ci_export "ROX_USERNAME" "$ROX_USERNAME"
+    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
+}
+
+# Apply a release-matched chart without downgrading Central DB.
+upgrade_central_helm() {
+    local image_tag="${1:-$CURRENT_TAG}"
+    local roxctl="${2:-$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl}"
+
+    info "Applying Central chart for $image_tag with Scanner V4 (Central DB: $CURRENT_TAG)"
+
+    if ! helm -n stackrox status stackrox-central-services >/dev/null 2>&1; then
+        die "Helm release stackrox-central-services not found in namespace stackrox"
+    fi
+
+    local chart_dir
+    chart_dir="$(mktemp -d)"
+    "$roxctl" helm output central-services \
+        --image-defaults opensource \
+        --output-dir "${chart_dir}" --remove
+
+    # Kept Helm hook secrets can accumulate; reuse the oldest secret's install-time CA.
+    local generated_secret helm_generated_values_file
+    if ! generated_secret="$(
+        kubectl -n stackrox get secrets -o json | jq -ce '
+            [
+                .items[]
+                | select(.metadata.name | startswith("stackrox-generated-"))
+                | select(.data["generated-values.yaml"] != null)
+            ]
+            | min_by(.metadata.creationTimestamp)
+            | select(. != null)
+            | {
+                name: .metadata.name,
+                values: (.data["generated-values.yaml"] | @base64d)
+            }
+            | select(.values != "")
+        ' 2>/dev/null
+    )"; then
+        echo 'Cannot read nonempty Helm generated values from the oldest install-time secret' >&2
+        return 1
+    fi
+    info "Using install-time secret $(jq -r '.name' <<<"$generated_secret")"
+    helm_generated_values_file="$(mktemp)"
+    jq -r '.values' <<<"$generated_secret" >"$helm_generated_values_file" || return 1
+
+    # 4.6 installs this CRD outside Helm ownership; HEAD templates it. Helm
+    # refuses the upgrade until the existing CRD is adopted.
+    if kubectl get crd securitypolicies.config.stackrox.io >/dev/null 2>&1; then
+        kubectl annotate crd/securitypolicies.config.stackrox.io \
+            meta.helm.sh/release-name=stackrox-central-services \
+            meta.helm.sh/release-namespace="stackrox" \
+            --overwrite
+        kubectl label crd/securitypolicies.config.stackrox.io \
+            app.kubernetes.io/managed-by=Helm \
+            --overwrite
+    fi
+
+    local helm_extra_args=()
+    # The image walk uses kubectl patch/set, so Helm 4 SSA will not overwrite
+    # those fields (central-config, CPU/memory) without --force-conflicts.
+    if helm upgrade --help 2>&1 | grep -q -- '--force-conflicts'; then
+        helm_extra_args+=(--force-conflicts)
+    fi
+
+    # The chart emits the Scanner V4 DB PVC only when createClaim is true;
+    # this is an upgrade so .Release.IsInstall is false.
+    # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
+    # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
+    helm -n stackrox upgrade --reuse-values \
+        -f "$helm_generated_values_file" \
+        -f - \
+        "${helm_extra_args[@]}" \
+        stackrox-central-services "${chart_dir}" <<EOT
+image:
+  registry: "${REGISTRY}"
+central:
+  db:
+    image:
+      tag: "${CURRENT_TAG}"
+  image:
+    tag: "${image_tag}"
+scannerV4:
+  disable: false
+  image:
+    tag: "${image_tag}"
+  db:
+    image:
+      tag: "${image_tag}"
+    persistence:
+      persistentVolumeClaim:
+        createClaim: true
+customize:
+  envVars:
+    SCANNER_V4_MATCHER_READINESS: vulnerability
+EOT
+
+    export SCANNER_V4_VULN_READINESS=true
+    wait_for_api stackrox
+    wait_for_central_db stackrox
+    wait_for_scanner_V4 stackrox
+}
+
 deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
