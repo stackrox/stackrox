@@ -16,7 +16,7 @@ import (
 // IMPORTANT: The proxy buffers request bodies in memory for retry support.
 // When adding new paths, ensure the endpoints do not expect request bodies
 // exceeding the buffer limit.
-var AllowedProxyPaths = allowedPathsForProfiles(ConsoleHTTPScopes)
+var AllowedProxyPaths = allowedPathsForProfiles(ConsoleHTTPScopes, MetricsHTTPScopes)
 
 func allowedPathsForProfiles(profiles ...tokens.HTTPRequestScopes) set.FrozenStringSet {
 	var paths []string

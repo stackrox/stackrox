@@ -99,8 +99,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	var tokenRole *tokens.InternalRole
 	if len(req.GetPermissionSetIds()) > 0 {
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
-		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req.GetPermissionSetIds(),
-			clusterScopesFromRequest(req.GetClusterScopes()))
+		tokenRole, err = s.roleManager.createRoleFromPermissionSets(roleReadCtx, req)
 	} else {
 		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
 	}
