@@ -102,6 +102,11 @@ jobs:
           TIMEOUT_ROLLOUT: "900"
         run: tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
 
+      - name: Install go-junit-report (for the tests Makefile report target)
+        run: |
+          cd tools/test && go install github.com/jstemmer/go-junit-report/v2
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
       - name: Run multi-cluster compliance Go tests
         env:
           API_ENDPOINT: localhost:8443
