@@ -1,0 +1,143 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  creationTimestamp: null
+  name: profilebundles.compliance.openshift.io
+spec:
+  group: compliance.openshift.io
+  names:
+    kind: ProfileBundle
+    listKind: ProfileBundleList
+    plural: profilebundles
+    shortNames:
+    - pb
+    singular: profilebundle
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.contentImage
+      name: ContentImage
+      type: string
+    - jsonPath: .spec.contentFile
+      name: ContentFile
+      type: string
+    - jsonPath: .spec.celContentFile
+      name: CELContentFile
+      type: string
+    - jsonPath: .status.dataStreamStatus
+      name: Status
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ProfileBundle is the Schema for the profilebundles API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Defines the desired state of ProfileBundle
+            properties:
+              celContentFile:
+                description: |-
+                  Is the path for the file in the image that contains the CEL-based
+                  compliance content (rules and profiles) for this bundle. This is
+                  optional and when set, the parser will create CEL Rule and Profile CRs
+                  alongside any XCCDF content from ContentFile.
+                type: string
+              contentFile:
+                description: Is the path for the file in the image that contains the
+                  content for this bundle.
+                type: string
+              contentImage:
+                description: Is the path for the image that contains the content for
+                  this bundle.
+                type: string
+            required:
+            - contentFile
+            - contentImage
+            type: object
+          status:
+            description: Defines the observed state of ProfileBundle
+            properties:
+              conditions:
+                description: |-
+                  Defines the conditions for the ProfileBundle. Valid conditions are:
+                   - Ready: Indicates if the ProfileBundle is Ready parsing or not.
+                items:
+                  description: |-
+                    Condition represents an observation of an object's state. Conditions are an
+                    extension mechanism intended to be used when the details of an observation
+                    are not a priori known or would not apply to all instances of a given Kind.
+
+                    Conditions should be added to explicitly convey properties that users and
+                    components care about rather than requiring those properties to be inferred
+                    from other observations. Once defined, the meaning of a Condition can not be
+                    changed arbitrarily - it becomes part of the API, and has the same
+                    backwards- and forwards-compatibility concerns of any other part of the API.
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      description: |-
+                        ConditionReason is intended to be a one-word, CamelCase representation of
+                        the category of cause of the current status. It is intended to be used in
+                        concise output, such as one-line kubectl get output, and in summarizing
+                        occurrences of causes.
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      description: |-
+                        ConditionType is the type of the condition and is typically a CamelCased
+                        word or short phrase.
+
+                        Condition types should indicate state in the "abnormal-true" polarity. For
+                        example, if the condition indicates when a policy is invalid, the "is valid"
+                        case is probably the norm, so the condition should be called "Invalid".
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              dataStreamStatus:
+                default: PENDING
+                description: Presents the current status for the datastream for this
+                  bundle
+                type: string
+              errorMessage:
+                description: If there's an error in the datastream, it'll be presented
+                  here
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

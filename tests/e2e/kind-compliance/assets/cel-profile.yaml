@@ -1,0 +1,85 @@
+# CEL compliance PROFILE content for kind (fake OpenShift).
+#
+# Defines a CEL-based TailoredProfile that yields REAL PASS/FAIL
+# ComplianceCheckResults on a vanilla kind cluster: the CustomRules read a plain
+# k8s ConfigMap and are evaluated in-process on the Compliance Operator image (no
+# content/openscap image pulled). See
+# ~/ai/library/docs/stackrox/kind-compliance-operator-stackrox.md.
+#
+# This file intentionally ships ONLY the profile (ConfigMap + CustomRules +
+# TailoredProfile) and NO ScanSetting/ScanSettingBinding: the scan is driven from
+# Central by the compliance e2e test (tests/compliance_operator_v2_multicluster_test.go),
+# which creates one scan configuration targeting every cluster. Central rejects a
+# second scan configuration that reuses a profile already bound on a cluster, so a
+# local binding here would collide with the Central-driven one.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compliance-test-cm
+  namespace: openshift-compliance
+data:
+  compliant: "true"
+---
+apiVersion: compliance.openshift.io/v1alpha1
+kind: CustomRule
+metadata:
+  name: kind-cm-compliant-pass
+  namespace: openshift-compliance
+spec:
+  id: kind-cm-compliant-pass
+  title: "ConfigMap compliant flag equals true"
+  description: "Checks compliance-test-cm has compliant=true"
+  rationale: "Demo CEL platform check that passes on kind"
+  severity: medium
+  checkType: Platform
+  scannerType: CEL
+  expression: 'cm.data["compliant"] == "true"'
+  failureReason: "compliant flag is not true"
+  inputs:
+    - name: cm
+      kubernetesInputSpec:
+        apiVersion: v1
+        group: ""
+        resource: configmaps
+        resourceName: compliance-test-cm
+        resourceNamespace: openshift-compliance
+---
+apiVersion: compliance.openshift.io/v1alpha1
+kind: CustomRule
+metadata:
+  name: kind-cm-compliant-fail
+  namespace: openshift-compliance
+spec:
+  id: kind-cm-compliant-fail
+  title: "ConfigMap compliant flag equals false"
+  description: "Checks compliance-test-cm has compliant=false (intentionally fails)"
+  rationale: "Demo CEL platform check that fails on kind"
+  severity: high
+  checkType: Platform
+  scannerType: CEL
+  expression: 'cm.data["compliant"] == "false"'
+  failureReason: "compliant flag is not false"
+  inputs:
+    - name: cm
+      kubernetesInputSpec:
+        apiVersion: v1
+        group: ""
+        resource: configmaps
+        resourceName: compliance-test-cm
+        resourceNamespace: openshift-compliance
+---
+apiVersion: compliance.openshift.io/v1alpha1
+kind: TailoredProfile
+metadata:
+  name: kind-cel-tp
+  namespace: openshift-compliance
+spec:
+  title: "Kind CEL demo profile"
+  description: "From-scratch tailored profile exercising CEL custom rules on kind"
+  enableRules:
+    - name: kind-cm-compliant-pass
+      kind: CustomRule
+      rationale: "demo pass"
+    - name: kind-cm-compliant-fail
+      kind: CustomRule
+      rationale: "demo fail"

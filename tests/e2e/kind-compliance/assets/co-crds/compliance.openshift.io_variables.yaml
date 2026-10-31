@@ -1,0 +1,87 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  creationTimestamp: null
+  name: variables.compliance.openshift.io
+spec:
+  group: compliance.openshift.io
+  names:
+    kind: Variable
+    listKind: VariableList
+    plural: variables
+    shortNames:
+    - var
+    singular: variable
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Variable describes a tunable in the XCCDF profile
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          description:
+            description: The description of the Variable
+            type: string
+          id:
+            description: the ID of the variable
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          selections:
+            description: Enumerates what values are allowed for this variable. Can
+              be empty.
+            items:
+              properties:
+                description:
+                  description: The string description of the selection
+                  type: string
+                value:
+                  description: The value of the variable
+                  type: string
+              type: object
+            nullable: true
+            type: array
+            x-kubernetes-list-type: atomic
+          title:
+            description: The title of the Variable
+            type: string
+          type:
+            description: The type of the variable
+            enum:
+            - number
+            - bool
+            - string
+            type: string
+          value:
+            description: The value of the variable
+            type: string
+        required:
+        - id
+        - title
+        - type
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

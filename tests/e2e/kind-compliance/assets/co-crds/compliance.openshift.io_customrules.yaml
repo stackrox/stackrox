@@ -1,0 +1,205 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  creationTimestamp: null
+  name: customrules.compliance.openshift.io
+spec:
+  group: compliance.openshift.io
+  names:
+    kind: CustomRule
+    listKind: CustomRuleList
+    plural: customrules
+    singular: customrule
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CustomRule represents a user-created rule for use with TailoredProfiles
+          to execute arbitrary checks against the cluster.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              CustomRuleSpec embeds RulePayload which now contains all CEL fields
+              (scannerType, expression, inputs, failureReason). This is CRD-compatible
+              since both RulePayload and the former CustomRulePayload were json:",inline".
+            properties:
+              availableFixes:
+                description: The Available fixes
+                items:
+                  description: |-
+                    FixDefinition Specifies a fix or remediation
+                    that applies to a rule
+                  properties:
+                    disruption:
+                      description: |-
+                        An estimate of the potential disruption or operational
+                        degradation that this fix will impose in the target system
+                      type: string
+                    fixObject:
+                      description: an object that should bring the rule into compliance
+                      type: object
+                      x-kubernetes-embedded-resource: true
+                      x-kubernetes-preserve-unknown-fields: true
+                    platform:
+                      description: The platform that the fix applies to
+                      type: string
+                  type: object
+                nullable: true
+                type: array
+                x-kubernetes-list-type: atomic
+              checkType:
+                description: |-
+                  What type of check will this rule execute:
+                  Platform, Node or none (represented by an empty string)
+                  For CustomRules, only Platform is supported.
+                type: string
+              description:
+                description: The description of the Rule
+                type: string
+              expression:
+                description: Expression is the CEL expression to evaluate (required
+                  when scannerType=CEL)
+                type: string
+              failureReason:
+                description: FailureReason is displayed when a CEL rule evaluation
+                  fails
+                type: string
+              id:
+                description: The ID of the Rule
+                type: string
+              inputs:
+                description: Inputs defines the Kubernetes resources that need to
+                  be fetched before evaluating the expression
+                items:
+                  properties:
+                    kubernetesInputSpec:
+                      description: KubernetesInputSpec is the specification of the
+                        Kubernetes resource to fetch
+                      properties:
+                        apiVersion:
+                          description: APIVersion is the API version (e.g., "v1",
+                            "v1beta1")
+                          minLength: 1
+                          type: string
+                        group:
+                          description: Group is the API group (e.g., "apps", "" for
+                            core resources)
+                          type: string
+                        resource:
+                          description: |-
+                            Resource is the resource type (e.g., "pods", "configmaps")
+                            Use the plural form of the resource
+                          minLength: 1
+                          type: string
+                        resourceName:
+                          description: |-
+                            ResourceName is the specific resource name
+                            Leave empty to fetch all resources of this type
+                          type: string
+                        resourceNamespace:
+                          description: |-
+                            ResourceNamespace is the namespace to search in
+                            Leave empty for cluster-scoped resources or to search all namespaces
+                          type: string
+                      required:
+                      - apiVersion
+                      - resource
+                      type: object
+                    name:
+                      description: Name is the variable name used to reference this
+                        resource in the CEL expression
+                      minLength: 1
+                      type: string
+                  required:
+                  - kubernetesInputSpec
+                  - name
+                  type: object
+                type: array
+              instructions:
+                description: Instructions for auditing this specific rule
+                type: string
+              rationale:
+                description: The rationale of the Rule
+                type: string
+              scannerType:
+                description: |-
+                  ScannerType denotes which scanner evaluates this rule.
+                  All rules must have an explicit scanner type set by the parser or user.
+                enum:
+                - OpenSCAP
+                - CEL
+                type: string
+              severity:
+                description: The severity level
+                type: string
+              title:
+                description: The title of the Rule
+                type: string
+              warning:
+                description: A discretionary warning about the Rule
+                type: string
+            required:
+            - id
+            - title
+            type: object
+          status:
+            description: Status contains the validation status and other runtime information
+            properties:
+              errorMessage:
+                description: ErrorMessage contains any validation error message
+                type: string
+              lastValidationTime:
+                description: LastValidationTime is the timestamp of the last validation
+                format: date-time
+                type: string
+              observedGeneration:
+                description: ObservedGeneration represents the .metadata.generation
+                  that the status was set based upon
+                format: int64
+                type: integer
+              phase:
+                description: Phase describes the current phase of the CustomRule (Ready
+                  or Error)
+                enum:
+                - Ready
+                - Error
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
