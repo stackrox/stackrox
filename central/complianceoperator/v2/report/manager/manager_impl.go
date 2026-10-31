@@ -501,6 +501,36 @@ func (m *managerImpl) handleReadyScan() {
 			}
 		} else {
 			log.Debugf("Skipping DeleteOldResults for scan %s: %v", scanWatcherResult.Scan.GetScanName(), scanWatcherResult.Error)
+			// Write-time staleness: a timed-out scan did not deliver a full set of fresh results.
+			// The results it DID deliver carry this run's start time and are genuinely fresh. The
+			// results it did NOT refresh still carry an older run's start time and are now stale.
+			// Mark only those prior results stale right away. The pivot is the timed-out run's
+			// start time, matching DeleteOldResults.
+			if features.ComplianceSurfaceStaleData.Enabled() && errors.Is(scanWatcherResult.Error, watcher.ErrScanTimeout) {
+				// Scope the staleness marking by scan ref and run start time. The watcher records both
+				// from whichever events it saw (a Scan update and/or check results), always tracking
+				// the newest run's start time, so prefer that: it stays correct even for a result-first
+				// timeout (no Scan ever arrived) or when a Scan and a newer result raced. Fall back to
+				// the Scan object only when the watcher recorded no scope (e.g. a scan-only watcher
+				// built directly in tests). Skip when neither yields a scope.
+				scanRefID := scanWatcherResult.ScanRefID
+				pivot := scanWatcherResult.LastStartedTime
+				if scanRefID == "" || pivot == nil {
+					scanRefID = scanWatcherResult.Scan.GetScanRefId()
+					pivot = scanWatcherResult.Scan.GetLastStartedTime()
+				}
+				scanName := scanWatcherResult.Scan.GetScanName()
+				if scanName == "" {
+					scanName = scanWatcherResult.WatcherID
+				}
+				if scanRefID == "" || pivot == nil {
+					log.Debugf("Skipping stale marking for timed-out watcher %s: no scan scope available", scanWatcherResult.WatcherID)
+				} else if updated, err := m.checkResultDataStore.MarkScanChecksStale(m.automaticReportingCtx, scanRefID, pivot.AsTime()); err != nil {
+					log.Errorf("unable to mark prior results of timed-out scan %s stale: %v", scanName, err)
+				} else if updated > 0 {
+					log.Infof("Marked %d prior check results stale for timed-out scan %s", updated, scanName)
+				}
+			}
 		}
 		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())

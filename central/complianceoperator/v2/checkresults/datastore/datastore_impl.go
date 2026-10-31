@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -33,11 +35,14 @@ const (
 type datastoreImpl struct {
 	store store.Store
 	db    postgres.DB
+
+	// keyFence prevents UpsertResult from racing MarkScanChecksStale.
+	keyFence concurrency.KeyFence
 }
 
-// UpsertResult adds the result to the database  If enabling the use of this
-// method from a service, the creation of the `ScanRefID` must be accounted for.  In reality this
-// method should only be used by the pipeline as this is a compliance operator object we are storing.
+// UpsertResult stores a result received from sensor. If enabling the use of this method from a
+// service, the creation of the `ScanRefID` must be accounted for. In reality this method should only
+// be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -48,7 +53,40 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 	// TODO (ROX-20573): populate the standard and control from the rule so that lookup only happens
 	// one time on insert and not everytime we pull the results.
 
-	return d.store.Upsert(ctx, result)
+	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
+		if features.ComplianceSurfaceStaleData.Enabled() {
+			existing, found, err := d.store.Get(ctx, result.GetId())
+			if err != nil {
+				return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
+			}
+			reconcileReceivedResult(result, existing, found)
+		}
+		return d.store.Upsert(ctx, result)
+	})
+}
+
+// reconcileReceivedResult sets incoming's DataFreshness to CURRENT only when it is newer than the
+// stored row, otherwise preserves the stored freshness. incoming is mutated.
+func reconcileReceivedResult(incoming, existing *storage.ComplianceOperatorCheckResultV2, found bool) {
+	started := incoming.GetLastStartedTime()
+	if !found {
+		if started == nil {
+			incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_UNKNOWN
+		} else {
+			incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		}
+		return
+	}
+
+	// LastStartedTime comes from the operator's last-scanned annotation, so it advances only on a
+	// real rerun. A strictly newer timestamp is the only genuine refresh.
+	existingStarted := existing.GetLastStartedTime()
+	if started != nil && (existingStarted == nil || started.AsTime().After(existingStarted.AsTime())) {
+		incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		return
+	}
+
+	incoming.DataFreshness = existing.GetDataFreshness()
 }
 
 // DeleteResult removes a result from the database
@@ -411,4 +449,89 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 	)
 	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
 	return err
+}
+
+// freshnessUpdateBatchSize bounds how many changed results are re-serialized and upserted per
+// UpsertMany call, so a large update does not issue one oversized write.
+const freshnessUpdateBatchSize = 1000
+
+// MarkScanChecksStale marks STALE the check results (from the scan specified via scanRefID) whose
+// LastStartedTime predates olderThan.
+func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanRefID == "" {
+		return 0, nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		ProtoQuery()
+
+	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		started := result.GetLastStartedTime()
+		return started != nil && started.AsTime().Before(olderThan)
+	}, "marking prior compliance check results stale")
+}
+
+// markStale performs a read-modify-upsert that flips to STALE every result matched by query for
+// which shouldStale reports true. Results already STALE, or for which shouldStale is false, are
+// left untouched.
+func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldStale func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
+	// Collect IDs during the read, upsert after it completes (upserting inside the callback would
+	// need a second connection, risking a deadlock)
+	var candidateIDs []string
+	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
+		if result.GetDataFreshness() != storage.ComplianceOperatorCheckResultV2_STALE && shouldStale(result) {
+			candidateIDs = append(candidateIDs, result.GetId())
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrap(err, errMsg)
+	}
+
+	var updated int64
+	for start := 0; start < len(candidateIDs); start += freshnessUpdateBatchSize {
+		end := min(start+freshnessUpdateBatchSize, len(candidateIDs))
+		batchIDs := candidateIDs[start:end]
+
+		keys := make([][]byte, 0, len(batchIDs))
+		for _, id := range batchIDs {
+			keys = append(keys, []byte(id))
+		}
+
+		// Re-read and upsert under the key fence: freshness lives in the serialized proto, so the
+		// whole row is rewritten. Ingest takes the same fence, so the re-read sees any concurrent
+		// write and we never revert a newer result to an older snapshot.
+		err := d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+			results, _, err := d.store.GetMany(ctx, batchIDs)
+			if err != nil {
+				return err
+			}
+			changed := results[:0]
+			for _, result := range results {
+				if result.GetDataFreshness() == storage.ComplianceOperatorCheckResultV2_STALE || !shouldStale(result) {
+					continue
+				}
+				result.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
+				changed = append(changed, result)
+			}
+			if len(changed) == 0 {
+				return nil
+			}
+			if err := d.store.UpsertMany(ctx, changed); err != nil {
+				return err
+			}
+			updated += int64(len(changed))
+			return nil
+		})
+		if err != nil {
+			return updated, errors.Wrap(err, errMsg)
+		}
+	}
+	return updated, nil
 }

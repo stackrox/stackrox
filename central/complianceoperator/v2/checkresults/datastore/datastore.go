@@ -3,10 +3,12 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -16,7 +18,8 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	// UpsertResult adds the result to the database
+	// UpsertResult stores a result received from sensor. When the freshness feature is enabled it
+	// also derives data_freshness from the stored row, atomically with the write.
 	UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
 
 	// DeleteResult removes a result from the database
@@ -60,11 +63,15 @@ type DataStore interface {
 
 	// DeleteOldResults scan results from a previous run
 	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
+
+	// MarkScanChecksStale marks STALE the check results of the given scan (identified
+	// by its scan ref ID) that predate olderThan, leaving the rest unchanged.
+	MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results
 func New(store store.Store, db postgres.DB) DataStore {
-	return &datastoreImpl{store: store, db: db}
+	return &datastoreImpl{store: store, db: db, keyFence: concurrency.NewKeyFence()}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
