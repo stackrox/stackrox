@@ -12,7 +12,13 @@
 name: Multi-cluster compliance (kind PoC)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      fidelity:
+        description: "Compliance Operator fidelity (cel = operator image only, real PASS/FAIL; content = real ocp4/rhcos4 ProfileBundles synced to Central)"
+        type: choice
+        options: [cel, content]
+        default: cel
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
@@ -100,6 +106,8 @@ jobs:
           DISABLE_COLLECTOR: "true"
           ROX_ADMIN_PASSWORD: ci-${{ github.run_id }}
           TIMEOUT_ROLLOUT: "900"
+          # cel (default, PR runs) or content (manual dispatch): real ProfileBundles.
+          FIDELITY: ${{ github.event.inputs.fidelity || 'cel' }}
         run: tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
 
       - name: Install go-junit-report (for the tests Makefile report target)

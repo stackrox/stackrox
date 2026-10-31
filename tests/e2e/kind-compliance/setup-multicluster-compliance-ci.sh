@@ -75,6 +75,18 @@ TIMEOUT_RESULTS="${TIMEOUT_RESULTS:-600}"
 CO_NS="openshift-compliance"
 ROX_NS="stackrox"
 CEL_PROFILE_NAME="${CEL_PROFILE_NAME:-kind-cel-tp}"  # TailoredProfile in cel-profile.yaml
+# Fidelity of the Compliance Operator install:
+#   cel     - operator image only, PLATFORM=Generic, CEL CustomRules (real
+#             PASS/FAIL results on kind). Fast, deterministic. Default.
+#   content - PLATFORM=OpenShift: the operator also builds the real ocp4/rhcos4
+#             ProfileBundles (~48 profiles / ~1166 rules) which sync to Central.
+#             Needs two kind shims (serving-cert secret + SCC-UID webhook). Note:
+#             ocp4/rhcos4 SCANS yield NOT-APPLICABLE on kind (no OpenShift API /
+#             RHCOS), so content mode validates catalog+profile sync, not results.
+FIDELITY="${FIDELITY:-cel}"
+CO_PLATFORM=Generic
+[[ "$FIDELITY" == "content" ]] && CO_PLATFORM=OpenShift
+REAL_PROFILE_NAME="${REAL_PROFILE_NAME:-ocp4-cis}"  # a real profile to gate on in content mode
 # Deterministic workdir so `up`, `verify`, `down` share state across invocations.
 WORK="${WORK:-${TMPDIR:-/tmp}/kind-co-ci/${PREFIX}}"
 CENTRAL_CLUSTER="${PREFIX}"                 # kind name of the Central cluster
@@ -99,6 +111,11 @@ require_tools() {
   [[ -d "$ASSET_DIR/co-crds" ]] || die "ASSET_DIR missing co-crds/: $ASSET_DIR"
   [[ -f "$ASSET_DIR/operator-generic.yaml" ]] || die "missing operator-generic.yaml in $ASSET_DIR"
   [[ -f "$ASSET_DIR/cel-profile.yaml" ]] || die "missing cel-profile.yaml in $ASSET_DIR"
+  case "$FIDELITY" in
+    cel) ;;
+    content) [[ -f "$ASSET_DIR/scc-shim-webhook.py" ]] || die "content fidelity needs scc-shim-webhook.py in $ASSET_DIR" ;;
+    *) die "FIDELITY must be 'cel' or 'content' (got '$FIDELITY')" ;;
+  esac
 }
 
 # Names of the secured clusters. #1 is co-located on the Central cluster.
@@ -138,10 +155,109 @@ EOF
 # ---------------------------------------------------------------------------
 # Compliance Operator (lean: Generic + CEL, operator image only)
 # ---------------------------------------------------------------------------
+# content mode shim: dummy serving-cert secret (OpenShift's service-ca normally
+# injects it; without it the operator os.Exit(1)s in addMetrics on OpenShift platforms).
+create_serving_cert() {
+  local ctx="$1"; local K="kubectl --context ${ctx}"
+  log "[$ctx] creating serving-cert secret (service-ca shim)"
+  openssl req -x509 -newkey rsa:2048 -nodes -keyout "$WORK/co-metrics.key" -out "$WORK/co-metrics.crt" \
+    -days 365 -subj "/CN=metrics.${CO_NS}.svc" >/dev/null 2>&1
+  $K create secret tls compliance-operator-serving-cert -n "$CO_NS" \
+    --cert="$WORK/co-metrics.crt" --key="$WORK/co-metrics.key" --dry-run=client -o yaml | $K apply -f -
+}
+
+# content mode shim: a mutating webhook that injects a non-root runAsUser into pods
+# in the CO namespace, emulating OpenShift SCC. Needed because the content/openscap
+# scanner pods run as root with runAsNonRoot set and no runAsUser.
+install_scc_webhook() {
+  local ctx="$1"; local K="kubectl --context ${ctx}"; local sns=scc-shim svc=scc-shim-webhook
+  log "[$ctx] deploying SCC-UID mutating webhook"
+  openssl req -x509 -newkey rsa:2048 -nodes -keyout "$WORK/scc-ca.key" -out "$WORK/scc-ca.crt" \
+    -days 3650 -subj "/CN=scc-shim-ca" >/dev/null 2>&1
+  openssl genrsa -out "$WORK/scc-tls.key" 2048 >/dev/null 2>&1
+  cat >"$WORK/scc-csr.cnf" <<EOF
+[req]
+req_extensions=v3_req
+distinguished_name=dn
+[dn]
+[v3_req]
+subjectAltName=@alt
+[alt]
+DNS.1=${svc}.${sns}.svc
+EOF
+  openssl req -new -key "$WORK/scc-tls.key" -out "$WORK/scc.csr" -subj "/CN=${svc}.${sns}.svc" -config "$WORK/scc-csr.cnf" >/dev/null 2>&1
+  openssl x509 -req -in "$WORK/scc.csr" -CA "$WORK/scc-ca.crt" -CAkey "$WORK/scc-ca.key" -CAcreateserial \
+    -out "$WORK/scc-tls.crt" -days 3650 -extensions v3_req -extfile "$WORK/scc-csr.cnf" >/dev/null 2>&1
+  $K create namespace "$sns" --dry-run=client -o yaml | $K apply -f -
+  $K create secret tls scc-shim-tls -n "$sns" --cert="$WORK/scc-tls.crt" --key="$WORK/scc-tls.key" --dry-run=client -o yaml | $K apply -f -
+  $K create configmap scc-shim-code -n "$sns" --from-file=webhook.py="$ASSET_DIR/scc-shim-webhook.py" --dry-run=client -o yaml | $K apply -f -
+  $K label namespace "$CO_NS" scc-shim=enabled --overwrite
+  local cab; cab="$(base64 -w0 "$WORK/scc-ca.crt")"
+  $K apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ${svc}, namespace: ${sns}}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: ${svc}}}
+  template:
+    metadata: {labels: {app: ${svc}}}
+    spec:
+      containers:
+      - name: webhook
+        image: python:3.12-slim
+        command: ["python3","/code/webhook.py"]
+        ports: [{containerPort: 8443}]
+        volumeMounts: [{name: code, mountPath: /code},{name: tls, mountPath: /tls}]
+        readinessProbe: {httpGet: {path: /, port: 8443, scheme: HTTPS}, initialDelaySeconds: 3}
+      volumes:
+      - {name: code, configMap: {name: scc-shim-code}}
+      - {name: tls, secret: {secretName: scc-shim-tls}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ${svc}, namespace: ${sns}}
+spec:
+  selector: {app: ${svc}}
+  ports: [{port: 443, targetPort: 8443}]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata: {name: scc-shim}
+webhooks:
+- name: scc-shim.local
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+  failurePolicy: Ignore
+  namespaceSelector: {matchLabels: {scc-shim: enabled}}
+  rules: [{apiGroups: [""], apiVersions: ["v1"], operations: ["CREATE"], resources: ["pods"], scope: Namespaced}]
+  clientConfig:
+    service: {name: ${svc}, namespace: ${sns}, path: /mutate}
+    caBundle: ${cab}
+EOF
+  $K -n "$sns" rollout status "deploy/${svc}" --timeout=120s
+}
+
+# content mode: wait for the operator-created ProfileBundles to parse the content
+# image and become VALID.
+wait_profilebundles_valid() {
+  local ctx="$1"; local K="kubectl --context ${ctx}"; local pb deadline st
+  for pb in ocp4 rhcos4; do
+    log "[$ctx] waiting for ProfileBundle/$pb to become VALID"
+    deadline=$(( $(date +%s) + TIMEOUT_ROLLOUT ))
+    while :; do
+      st="$($K -n "$CO_NS" get profilebundle "$pb" -o jsonpath='{.status.dataStreamStatus}' 2>/dev/null || true)"
+      [[ "$st" == VALID ]] && { log "  ProfileBundle/$pb VALID"; break; }
+      (( $(date +%s) >= deadline )) && die "[$ctx] ProfileBundle/$pb did not become VALID (last: ${st:-none})"
+      sleep 10
+    done
+  done
+}
+
 install_co() {
   local ctx="$1"
   local K="kubectl --context ${ctx}"
-  log "[$ctx] installing Compliance Operator (PLATFORM=Generic)"
+  log "[$ctx] installing Compliance Operator (PLATFORM=$CO_PLATFORM, fidelity=$FIDELITY)"
   $K create namespace "$CO_NS" --dry-run=client -o yaml | $K apply -f -
   $K apply --server-side -f "$ASSET_DIR/co-crds"
   $K apply --server-side -f "$ASSET_DIR"/openshift-shim/config-crds.yaml
@@ -149,11 +265,20 @@ install_co() {
   $K patch infrastructure cluster --subresource=status --type=merge \
     -p '{"status":{"infrastructureName":"kind","controlPlaneTopology":"HighlyAvailable","platform":"None","platformStatus":{"type":"None"}}}' \
     >/dev/null 2>&1 || true
-  # Render operator with the (pinned, overridable) operator image.
-  sed "s#image: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master#image: ${CO_OPERATOR_IMAGE}#g" \
-    "$ASSET_DIR/operator-generic.yaml" >"$WORK/operator-generic.rendered.yaml"
-  $K apply -f "$WORK/operator-generic.rendered.yaml"
+  if [[ "$FIDELITY" == "content" ]]; then
+    create_serving_cert "$ctx"
+    install_scc_webhook "$ctx"
+  fi
+  # Render operator with the pinned image and the selected PLATFORM (the asset
+  # ships PLATFORM=Generic; content mode rewrites it to OpenShift).
+  sed -e "s#image: quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master#image: ${CO_OPERATOR_IMAGE}#g" \
+      -e "s/^\( *\)value: Generic\$/\1value: ${CO_PLATFORM}/" \
+    "$ASSET_DIR/operator-generic.yaml" >"$WORK/operator.rendered.yaml"
+  $K apply -f "$WORK/operator.rendered.yaml"
   $K -n "$CO_NS" rollout status deploy/compliance-operator --timeout="${TIMEOUT_ROLLOUT}s"
+  if [[ "$FIDELITY" == "content" ]]; then
+    wait_profilebundles_valid "$ctx"
+  fi
 }
 
 apply_cel_profile() {
@@ -329,8 +454,12 @@ cluster_ready() {
       profiles="$(central_api GET "/v2/compliance/profiles/cluster?clusterId=$cid" 2>/dev/null \
         | jq -r '.profiles[]?.name' 2>/dev/null)"
       if [[ "$status" == "HEALTHY" ]] && echo "$profiles" | grep -qx "$CEL_PROFILE_NAME"; then
-        log "  cluster '$name' ($cid): CO HEALTHY, profile '$CEL_PROFILE_NAME' synced"
-        return 0
+        if [[ "$FIDELITY" == "content" ]] && ! echo "$profiles" | grep -qx "$REAL_PROFILE_NAME"; then
+          : # content mode: also wait for the real ocp4/rhcos4 profiles to sync
+        else
+          log "  cluster '$name' ($cid): CO HEALTHY, profiles synced"
+          return 0
+        fi
       fi
     fi
     (( $(date +%s) >= deadline )) && { warn "cluster '$name' not ready (cid=${cid:-none}, CO=${status:-none})"; return 1; }

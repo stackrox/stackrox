@@ -30,17 +30,36 @@ openscap image, service-ca, or SCC webhook required.
   one fails) + a from-scratch `TailoredProfile` (`kind-cel-tp`). Profile only: the
   scan is driven from Central by the Go test, not by a local ScanSettingBinding.
 
-## The test
-`tests/compliance_operator_v2_multicluster_test.go` (build tag `compliance`) talks
+## Fidelity modes (`FIDELITY` env, default `cel`)
+- **`cel`** (default; what the PR gate runs): operator image only, `PLATFORM=Generic`,
+  a CEL `CustomRule` profile. Fast and deterministic, and the only way to get real
+  PASS/FAIL results on kind.
+- **`content`**: `PLATFORM=OpenShift`, so the operator builds the real `ocp4`/`rhcos4`
+  ProfileBundles (~48 profiles / ~1166 rules) which sync to Central. Needs two kind
+  shims the script adds automatically — a dummy `compliance-operator-serving-cert`
+  secret (OpenShift's service-ca) and a small SCC-UID mutating webhook (OpenShift's
+  SCC). **Caveat:** `ocp4`/`rhcos4` *scans* evaluate NOT-APPLICABLE on kind (no
+  OpenShift API resources, no RHCOS), so content mode validates the catalog +
+  profile/rule sync, not scan results. CEL remains the source of real results.
+
+In CI, `content` is available via the workflow's manual `workflow_dispatch` input;
+PR runs use `cel`.
+
+## The tests
+`tests/compliance_operator_v2_multicluster_test.go` (build tag `compliance`) talk
 only to Central's v2 API:
 - `TestComplianceV2MultiClusterIntegrations` — every secured cluster has its own
   HEALTHY CO integration, and they are distinct.
 - `TestComplianceV2MultiClusterScanConfigResults` — one scan configuration fans
   out to all clusters exposing the CEL profile, and real PASS + FAIL results come
   back attributed to each cluster.
+- `TestComplianceV2MultiClusterRealProfiles` — (content mode) the real
+  `ocp4`/`rhcos4` profile+rule catalog synced to Central for every cluster. Auto-
+  skips when only the CEL profile is present.
 
-Both skip (not fail) when fewer than two suitable clusters are present, so they are
-safe in single-cluster runs.
+All skip (not fail) when fewer than two suitable clusters are present (or, for the
+real-profiles test, when real ProfileBundles are absent), so they are safe in
+single-cluster and `cel`-mode runs.
 
 ## Run it locally
 ```bash

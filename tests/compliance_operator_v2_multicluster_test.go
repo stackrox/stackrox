@@ -172,3 +172,56 @@ func TestComplianceV2MultiClusterScanConfigResults(t *testing.T) {
 		}
 	}, 10*time.Minute, 30*time.Second)
 }
+
+// TestComplianceV2MultiClusterRealProfiles verifies that, when the environment
+// installs the real ocp4/rhcos4 ProfileBundles (the kind-compliance harness run
+// with FIDELITY=content, or any real OpenShift cluster), the full profile+rule
+// catalog syncs to Central independently for every secured cluster. It auto-skips
+// when only the lean CEL profile is present (FIDELITY=cel), so it is safe in the
+// default PR run.
+func TestComplianceV2MultiClusterRealProfiles(t *testing.T) {
+	const realProfile = "ocp4-cis" // shipped by the real ocp4 ProfileBundle
+	ctx := context.Background()
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	integrationSvc := v2.NewComplianceIntegrationServiceClient(conn)
+	profileSvc := v2.NewComplianceProfileServiceClient(conn)
+
+	integrations, err := integrationSvc.ListComplianceIntegrations(ctx, &v2.RawQuery{Query: ""})
+	require.NoError(t, err)
+	if len(integrations.GetIntegrations()) < 2 {
+		t.Skipf("multi-cluster test needs >=2 compliance integrations, found %d", len(integrations.GetIntegrations()))
+	}
+
+	// Content-fidelity detection: skip unless the real profile synced for cluster 1.
+	first := integrations.GetIntegrations()[0]
+	firstProfiles, err := profileSvc.ListComplianceProfiles(ctx, &v2.ProfilesForClusterRequest{ClusterId: first.GetClusterId()})
+	require.NoError(t, err)
+	if !hasProfile(firstProfiles.GetProfiles(), realProfile) {
+		t.Skipf("real ProfileBundles not installed (no %q profile); run the harness with FIDELITY=content", realProfile)
+	}
+
+	for _, in := range integrations.GetIntegrations() {
+		resp, err := profileSvc.ListComplianceProfiles(ctx, &v2.ProfilesForClusterRequest{ClusterId: in.GetClusterId()})
+		require.NoError(t, err)
+		profiles := resp.GetProfiles()
+
+		assert.Truef(t, hasProfile(profiles, realProfile), "cluster %q missing real profile %q", in.GetClusterName(), realProfile)
+		// The real ocp4+rhcos4 bundles bring dozens of profiles; assert the catalog
+		// actually synced per cluster (not just our single CEL profile).
+		assert.GreaterOrEqualf(t, len(profiles), 10, "cluster %q has only %d profiles; expected the full ocp4/rhcos4 catalog", in.GetClusterName(), len(profiles))
+
+		var realP *v2.ComplianceProfile
+		for _, p := range profiles {
+			if p.GetName() == realProfile {
+				realP = p
+				break
+			}
+		}
+		require.NotNilf(t, realP, "cluster %q: %q not found after presence check", in.GetClusterName(), realProfile)
+		full, err := profileSvc.GetComplianceProfile(ctx, &v2.ResourceByID{Id: realP.GetId()})
+		require.NoError(t, err)
+		assert.Greaterf(t, len(full.GetRules()), 0, "profile %q on cluster %q has no rules synced", realProfile, in.GetClusterName())
+		t.Logf("cluster %q: %d profiles synced, %q has %d rules", in.GetClusterName(), len(profiles), realProfile, len(full.GetRules()))
+	}
+}
