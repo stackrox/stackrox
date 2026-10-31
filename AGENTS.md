@@ -64,6 +64,7 @@ When creating pull requests, you must follow these requirements:
 ### Testing Commands
 - `make test` - Run all tests (Go unit tests, UI tests, shell tests)
 - `make go-unit-tests` - Run Go unit tests only
+- `make go-test PKG=<pkg> [RUN=<regex>] [TAGS=<tag1,tag2>] [RACE=1]` - Run a single Go package's tests with CI's env and build tags (race detector off unless `RACE=1`)
 - `make go-postgres-unit-tests` - Run PostgreSQL integration tests (requires running Postgres on port 5432)
 - `make ui-test` - Run UI tests
 - `make ui-component-tests` - Run UI component tests
@@ -117,6 +118,8 @@ The migrator README contains detailed examples of frozen schemas, GORM usage pat
 ### Single Test Examples
 - Run specific Go test: `go test -v ./central/path/to/package -run TestSpecificFunction`
 - Run PostgreSQL integration tests: `go test -v -tags sql_integration ./central/path/to/package`
+- Run a test with CI's env and build tags (cgocheck2, `test` tag): `make go-test PKG=./central/path/to/package RUN=TestSpecificFunction`;
+  race detector is off by default, add `RACE=1` to enable it or `TAGS=sql_integration` for extra comma-separated build tags (`sql_integration` requires running Postgres on port 5432)
 - **Testify Suite Pattern**: Many tests use `github.com/stretchr/testify/suite`:
   - Suite tests have a top-level function like `TestClient` that runs the entire suite
   - Individual test methods are on a struct (e.g., `func (s *ClientTestSuite) TestSomething()`)
