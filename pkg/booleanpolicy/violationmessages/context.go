@@ -24,6 +24,11 @@ var (
 	ContainerContextFields = newContextFields(
 		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag})
+	// ContainerAgeContextFields extends ContainerContextFields with the container start time so
+	// the violation message printer can display when the container instance started.
+	ContainerAgeContextFields = newContextFields(
+		nil,
+		[]string{augmentedobjs.ContainerNameCustomTag, search.ContainerStartTime.String()})
 	ResourceContextFields = newContextFields(
 		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag})
