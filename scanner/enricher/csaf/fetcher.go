@@ -22,6 +22,7 @@ import (
 	"github.com/klauspost/compress/snappy"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/enricher/csaf/internal/zreader"
 )
@@ -29,6 +30,9 @@ import (
 var (
 	// compressedFileTimeout matches Claircore's VEX https://github.com/quay/claircore/blob/v1.5.34/rhel/vex/fetcher.go.
 	compressedFileTimeout = 2 * time.Minute
+
+	advisoryFetchRetries        = 5
+	advisoryFetchRetryBaseDelay = 500 * time.Millisecond
 )
 
 // fingerprint is used to track the state of the changes.csv and deletions.csv endpoints.
@@ -339,55 +343,74 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 			continue
 		}
 
-		changed[path.Base(cvePath)] = true
-
 		advisoryURI, err := e.base.Parse(cvePath)
 		if err != nil {
 			return err
 		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, advisoryURI.String(), nil)
-		if err != nil {
-			return fmt.Errorf("error creating advisory request %w", err)
+
+		// Fetch individual advisory with retries. If the advisory is
+		// unavailable after all attempts, skip it — the compressed
+		// archive (downloaded next) will likely container a version of it.
+		advisoryErr := e.fetchAdvisory(ctx, advisoryURI, &buf, &bc, w)
+		if advisoryErr != nil {
+			slog.WarnContext(ctx, "skipping advisory due to fetch failure; will fall back to archive",
+				"advisory", cvePath, "reason", advisoryErr)
+			continue
 		}
-
-		// Use a func here as we're in a loop and want to make sure the
-		// body is closed in all events.
-		err = func() error {
-			res, err := e.c.Do(req)
-			if err != nil {
-				return fmt.Errorf("error making advisory request %w", err)
-			}
-			defer utils.IgnoreError(res.Body.Close)
-			err = checkResponse(res, http.StatusOK)
-			if err != nil {
-				return fmt.Errorf("unexpected response: %w", err)
-			}
-
-			// Add compacted JSON to buffer.
-			_, err = buf.ReadFrom(res.Body)
-			if err != nil {
-				return fmt.Errorf("error reading from buffer: %w", err)
-			}
-			slog.DebugContext(ctx, "copying body to file", "url", advisoryURI.String())
-			err = json.Compact(&bc, buf.Bytes())
-			if err != nil {
-				return fmt.Errorf("error compressing JSON: %w", err)
-			}
-
-			bc.WriteByte('\n')
-			_, _ = w.Write(bc.Bytes())
-			l++
-			return nil
-		}()
-		if !errors.Is(err, nil) {
-			return err
-		}
+		changed[path.Base(cvePath)] = true
+		l++
 	}
 
 	if !errors.Is(err, io.EOF) {
 		return fmt.Errorf("error parsing the changes.csv file: %w", err)
 	}
 	return nil
+}
+
+func (e *Enricher) fetchAdvisory(ctx context.Context, advisoryURI *url.URL, buf, bc *bytes.Buffer, w io.Writer) error {
+	fetch := func() error {
+		buf.Reset()
+		bc.Reset()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, advisoryURI.String(), nil)
+		if err != nil {
+			return err
+		}
+		res, err := e.c.Do(req)
+		if err != nil {
+			return err
+		}
+		defer utils.IgnoreError(res.Body.Close)
+		if err := checkResponse(res, http.StatusOK); err != nil {
+			return err
+		}
+		if _, err := buf.ReadFrom(res.Body); err != nil {
+			return fmt.Errorf("error reading response body: %w", err)
+		}
+		if err := json.Compact(bc, buf.Bytes()); err != nil {
+			return fmt.Errorf("error compacting JSON: %w", err)
+		}
+		bc.WriteByte('\n')
+		if _, err := w.Write(bc.Bytes()); err != nil {
+			return fmt.Errorf("error writing advisory output: %w", err)
+		}
+		return nil
+	}
+
+	return retry.WithRetry(fetch,
+		retry.WithContext(ctx),
+		retry.Tries(advisoryFetchRetries),
+		retry.BetweenAttempts(func(attempt int) {
+			delay := advisoryFetchRetryBaseDelay * time.Duration(1<<attempt)
+			select {
+			case <-ctx.Done():
+			case <-time.After(delay):
+			}
+		}),
+		retry.OnFailedAttempts(func(err error) {
+			slog.WarnContext(ctx, "advisory fetch attempt failed",
+				"advisory", advisoryURI, "reason", err)
+		}),
+	)
 }
 
 // checkResponse takes a http.Response and a variadic of ints representing
