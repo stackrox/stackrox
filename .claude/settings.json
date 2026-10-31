@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(roxctl central generate *)",
+      "Bash(MIGRATION/strip-randomness.sh *)",
+      "Bash(diff -r *)",
+      "Bash(rm -rf MIGRATION/opt-*)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
