@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -31,8 +31,78 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVE)(nil)), "cluster_cves")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULNERABILITIES, "clustercve", (*storage.ClusterCVE)(nil)))
+		schema = &walker.Schema{
+			Table:    "cluster_cves",
+			Type:     "*storage.ClusterCVE",
+			TypeName: "ClusterCVE",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{ID: true, PrimaryKey: true}, Search: walker.SearchField{FieldName: "CVE ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "cve count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Cve", ProtoBufName: "cve", ColumnName: "CveBaseInfo_Cve", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetCveBaseInfo().GetCve()", false), Search: walker.SearchField{FieldName: "CVE", Enabled: true}},
+			{Schema: schema, Name: "PublishedOn", ProtoBufName: "published_on", ColumnName: "CveBaseInfo_PublishedOn", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCveBaseInfo().GetPublishedOn()", false), Search: walker.SearchField{FieldName: "CVE Published On", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "cve published on min", DerivationType: search.MinDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "CreatedAt", ProtoBufName: "created_at", ColumnName: "CveBaseInfo_CreatedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCveBaseInfo().GetCreatedAt()", false), Search: walker.SearchField{FieldName: "CVE Created Time", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "cve created time min", DerivationType: search.MinDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "EpssProbability", ProtoBufName: "epss_probability", ColumnName: "CveBaseInfo_Epss_EpssProbability", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetCveBaseInfo().GetEpss().GetEpssProbability()", false), Search: walker.SearchField{FieldName: "EPSS Probability", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "epss probability max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "CisaKev", ProtoBufName: "cisa_kev", ColumnName: "CveBaseInfo_CisaKev", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetCveBaseInfo().GetCisaKev()", false), Search: walker.SearchField{FieldName: "CISA KEV", Enabled: true}},
+			{Schema: schema, Name: "Cvss", ProtoBufName: "cvss", ColumnName: "Cvss", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetCvss()", false), Search: walker.SearchField{FieldName: "CVSS", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "cvss max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Severity", ProtoBufName: "severity", ColumnName: "Severity", Type: "storage.VulnerabilitySeverity", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.VulnerabilitySeverity", ObjectGetter: walker.MakeObjectGetter("GetSeverity()", false), Search: walker.SearchField{FieldName: "Severity", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "fixable low severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "critical severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "moderate severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable important severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "low severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "unknown severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable critical severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable unknown severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "important severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "fixable moderate severity count", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "severity max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "ImpactScore", ProtoBufName: "impact_score", ColumnName: "ImpactScore", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetImpactScore()", false), Search: walker.SearchField{FieldName: "Impact Score", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "impact score max", DerivationType: search.MaxDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Snoozed", ProtoBufName: "snoozed", ColumnName: "Snoozed", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetSnoozed()", false), Search: walker.SearchField{FieldName: "CVE Snoozed", Enabled: true}},
+			{Schema: schema, Name: "SnoozeExpiry", ProtoBufName: "snooze_expiry", ColumnName: "SnoozeExpiry", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetSnoozeExpiry()", false), Search: walker.SearchField{FieldName: "CVE Snooze Expiry", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "storage.CVE_CVEType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.CVE_CVEType", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "CVE Type", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_VULNERABILITIES, map[search.FieldLabel]*search.Field{
+			"CISA KEV":          {FieldPath: "clustercve.cve_base_info.cisa_kev", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVE":               {FieldPath: "clustercve.cve_base_info.cve", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVE Created Time":  {FieldPath: "clustercve.cve_base_info.created_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVE ID":            {FieldPath: "clustercve.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVE Published On":  {FieldPath: "clustercve.cve_base_info.published_on.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVE Snooze Expiry": {FieldPath: "clustercve.snooze_expiry.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVE Snoozed":       {FieldPath: "clustercve.snoozed", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVE Type":          {FieldPath: "clustercve.type", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"CVSS":              {FieldPath: "clustercve.cvss", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"EPSS Probability":  {FieldPath: "clustercve.cve_base_info.epss.epss_probability", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"Impact Score":      {FieldPath: "clustercve.impact_score", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+			"Severity":          {FieldPath: "clustercve.severity", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_CLUSTER_VULNERABILITIES},
+		}))
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.CvssScore.Cvssv3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_metrics.source", map[string]int32{"SOURCE_NVD": 3, "SOURCE_OSV": 2, "SOURCE_RED_HAT": 1, "SOURCE_UNKNOWN": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v2.access_complexity", map[string]int32{"ACCESS_HIGH": 0, "ACCESS_LOW": 2, "ACCESS_MEDIUM": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v2.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v2.authentication", map[string]int32{"AUTH_MULTIPLE": 0, "AUTH_NONE": 2, "AUTH_SINGLE": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v2.availability", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v2.confidentiality", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v2.integrity", map[string]int32{"IMPACT_COMPLETE": 2, "IMPACT_NONE": 0, "IMPACT_PARTIAL": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v2.severity", map[string]int32{"HIGH": 3, "LOW": 1, "MEDIUM": 2, "UNKNOWN": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.attack_complexity", map[string]int32{"COMPLEXITY_HIGH": 1, "COMPLEXITY_LOW": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.attack_vector", map[string]int32{"ATTACK_ADJACENT": 1, "ATTACK_LOCAL": 0, "ATTACK_NETWORK": 2, "ATTACK_PHYSICAL": 3})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.availability", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.confidentiality", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.integrity", map[string]int32{"IMPACT_HIGH": 2, "IMPACT_LOW": 1, "IMPACT_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.privileges_required", map[string]int32{"PRIVILEGE_HIGH": 2, "PRIVILEGE_LOW": 1, "PRIVILEGE_NONE": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.scope", map[string]int32{"CHANGED": 1, "UNCHANGED": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.severity", map[string]int32{"CRITICAL": 5, "HIGH": 4, "LOW": 2, "MEDIUM": 3, "NONE": 1, "UNKNOWN": 0})
+		enumregistry.AddValues("clustercve.cve_base_info.cvss_v3.user_interaction", map[string]int32{"UI_NONE": 0, "UI_REQUIRED": 1})
+		enumregistry.AddValues("clustercve.cve_base_info.score_version", map[string]int32{"UNKNOWN": 2, "V2": 0, "V3": 1})
+		enumregistry.AddValues("clustercve.severity", map[string]int32{"CRITICAL_VULNERABILITY_SEVERITY": 4, "IMPORTANT_VULNERABILITY_SEVERITY": 3, "LOW_VULNERABILITY_SEVERITY": 1, "MODERATE_VULNERABILITY_SEVERITY": 2, "UNKNOWN_VULNERABILITY_SEVERITY": 0})
+		enumregistry.AddValues("clustercve.type", map[string]int32{"IMAGE_CVE": 1, "ISTIO_CVE": 3, "K8S_CVE": 2, "NODE_CVE": 4, "OPENSHIFT_CVE": 5, "UNKNOWN_CVE": 0})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTER_VULNERABILITIES,
 			v1.SearchCategory_CLUSTER_VULN_EDGE,
