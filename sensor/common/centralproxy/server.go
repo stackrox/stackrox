@@ -28,7 +28,9 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 	}
 
 	tlsConfig := verifier.DefaultTLSServerConfig(nil, []tls.Certificate{cert})
-	if env.SecuredClusterMetricsEnabled.BooleanSetting() {
+	proxyHandler, ok := h.(*Handler)
+	managedPolicy := ok && proxyHandler.policy != nil
+	if env.SecuredClusterMetricsEnabled.BooleanSetting() || managedPolicy {
 		config, err := k8sutil.GetK8sInClusterConfig()
 		if err != nil {
 			return nil, errors.Wrap(err, "getting client CA Kubernetes config")
@@ -38,6 +40,9 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 			return nil, errors.Wrap(err, "creating client CA Kubernetes client")
 		}
 		tlsConfig = newMetricsProxyTLSConfig(cert, client)
+		if managedPolicy {
+			allowPolicyClientCertificates(tlsConfig)
+		}
 	}
 
 	mux := http.NewServeMux()
@@ -52,6 +57,9 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
+	if managedPolicy {
+		server.RegisterOnShutdown(proxyHandler.policy.Stop)
+	}
 
 	go func() {
 		log.Infof("Starting proxy server on %s with OpenShift service CA signed certificate", env.CentralProxyPort.Setting())
@@ -61,6 +69,22 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 	}()
 
 	return server, nil
+}
+
+func allowPolicyClientCertificates(config *tls.Config) {
+	// Certificate verification is performed against the matching policy entry's
+	// CA in the handler, not against a common handshake trust pool.
+	config.ClientAuth = tls.RequestClientCert
+	getConfig := config.GetConfigForClient
+	config.GetConfigForClient = func(info *tls.ClientHelloInfo) (*tls.Config, error) {
+		live, err := getConfig(info)
+		if err != nil {
+			return nil, err
+		}
+		live.ClientAuth = tls.RequestClientCert
+		live.ClientCAs = nil
+		return live, nil
+	}
 }
 
 // newMetricsProxyTLSConfig verifies presented client certificates against the

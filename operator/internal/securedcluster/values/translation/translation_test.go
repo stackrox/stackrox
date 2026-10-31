@@ -1090,6 +1090,32 @@ func TestTranslatePartialMatch(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"Sensor Central proxy enabled without console or metrics": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Sensor: &platform.SensorComponentSpec{CentralProxyEnabled: new(true)},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"sensor.centralProxy.enabled": true,
+			},
+		},
+		"Sensor Central proxy explicitly disabled": {
+			args: args{
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						Sensor: &platform.SensorComponentSpec{CentralProxyEnabled: new(false)},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"sensor.centralProxy.enabled": false,
+			},
+		},
 		"central custom metrics enabled without general monitoring setting": {
 			args: args{
 				sc: platform.SecuredCluster{

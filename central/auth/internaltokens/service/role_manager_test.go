@@ -72,10 +72,11 @@ func TestCreateSensorRoleFailsClosed(t *testing.T) {
 	require.ErrorIs(t, err, errox.NotFound)
 }
 
-func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
+func TestCreateRoleFromConsolePermissionSetUsesStoredPermissions(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissions map[string]storage.Access
 		expected    map[storage.Access][]string
+		denied      bool
 	}{
 		"global permission": {
 			permissions: map[string]storage.Access{
@@ -83,7 +84,7 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 				"Image":      storage.Access_READ_ACCESS,
 				"Access":     storage.Access_READ_ACCESS,
 			},
-			expected: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Access", "Deployment", "Image"}},
+			denied: true,
 		},
 		"write permission": {
 			permissions: map[string]storage.Access{
@@ -94,6 +95,7 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 				storage.Access_READ_ACCESS:       {"Deployment"},
 				storage.Access_READ_WRITE_ACCESS: {"Image"},
 			},
+			denied: true,
 		},
 		"missing permission": {
 			permissions: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
@@ -105,11 +107,17 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+			ctrl := gomock.NewController(t)
+			roles := roleMocks.NewMockDataStore(ctrl)
 			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
 				Return(&storage.PermissionSet{ResourceToAccess: tc.permissions}, true, nil)
-			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
-				[]string{centralproxy.ConsoleProxyPermissionSetID}, nil)
+			role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
+				&v1.GenerateTokenForPermissionsAndScopeRequest{PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID}})
+			if tc.denied {
+				require.ErrorIs(t, err, errox.InvalidArgs)
+				assert.Nil(t, role)
+				return
+			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, role.Permissions)
 		})
@@ -121,16 +129,16 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
 		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
 			"Deployment":   storage.Access_READ_ACCESS,
-			"Image":        storage.Access_READ_WRITE_ACCESS,
+			"Image":        storage.Access_NO_ACCESS,
 			"Access":       storage.Access_NO_ACCESS,
 			"NetworkGraph": storage.Access_READ_ACCESS,
 		}}, true, nil)
 	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
 		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
-			"Deployment":     storage.Access_READ_WRITE_ACCESS,
+			"Deployment":     storage.Access_READ_ACCESS,
 			"Image":          storage.Access_READ_ACCESS,
-			"Access":         storage.Access_READ_ACCESS,
-			"Administration": storage.Access_READ_ACCESS,
+			"Node":           storage.Access_READ_ACCESS,
+			"Administration": storage.Access_NO_ACCESS,
 		}}, true, nil)
 
 	role, err := (&roleManager{roles}).createSensorRole(t.Context(),
@@ -141,8 +149,8 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 		RoleName: internalRoleName,
 		Clusters: tokens.ClusterScopes{"sensor-cluster": {"*"}},
 		Permissions: map[storage.Access][]string{
-			storage.Access_READ_ACCESS:       {"Access", "Administration", "NetworkGraph"},
-			storage.Access_READ_WRITE_ACCESS: {"Deployment", "Image"},
+			storage.Access_READ_ACCESS: {"Deployment", "Image", "NetworkGraph", "Node"},
+			storage.Access_NO_ACCESS:   {"Access", "Administration"},
 		},
 	}, role)
 }
@@ -184,7 +192,7 @@ func TestCreateRoleFromMetricsPermissionSet(t *testing.T) {
 	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
 		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
 			"Deployment":     storage.Access_READ_ACCESS,
-			"Administration": storage.Access_READ_ACCESS,
+			"Administration": storage.Access_NO_ACCESS,
 		}}, true, nil)
 
 	role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
@@ -197,15 +205,17 @@ func TestCreateRoleFromMetricsPermissionSet(t *testing.T) {
 		RoleName: internalRoleName,
 		Clusters: tokens.ClusterScopes{"sensor-cluster": {"*"}},
 		Permissions: map[storage.Access][]string{
-			storage.Access_READ_ACCESS: {"Administration", "Deployment"},
+			storage.Access_READ_ACCESS: {"Deployment"},
+			storage.Access_NO_ACCESS:   {"Administration"},
 		},
 	}, role)
 }
 
-func TestCreateRoleFromMetricsPermissionSetRejectsStoredWriteOrUnknownAccess(t *testing.T) {
+func TestCreateRoleFromMetricsPermissionSetRejectsInvalidAccess(t *testing.T) {
 	for name, access := range map[string]storage.Access{
-		"write":   storage.Access_READ_WRITE_ACCESS,
-		"unknown": storage.Access(99),
+		"global read": storage.Access_READ_ACCESS,
+		"write":       storage.Access_READ_WRITE_ACCESS,
+		"unknown":     storage.Access(99),
 	} {
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -235,5 +245,79 @@ func TestCreateRoleFromMetricsPermissionSetFailsClosed(t *testing.T) {
 			PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
 			ClusterScopes:    []*v1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
 		})
+	require.ErrorIs(t, err, errox.NotFound)
+}
+
+func TestCreateRoleFromGenericPermissionSet(t *testing.T) {
+	const permissionSetID = "custom-read-only-set"
+	for name, tc := range map[string]struct {
+		permissions map[string]storage.Access
+		expected    map[storage.Access][]string
+		invalid     bool
+	}{
+		"read scoped resources and deny global resources": {
+			permissions: map[string]storage.Access{
+				"Image": storage.Access_READ_ACCESS, "Node": storage.Access_READ_ACCESS,
+				"Administration": storage.Access_NO_ACCESS,
+			},
+			expected: map[storage.Access][]string{
+				storage.Access_READ_ACCESS: {"Image", "Node"}, storage.Access_NO_ACCESS: {"Administration"},
+			},
+		},
+		"empty set": {expected: map[storage.Access][]string{}},
+		"global read access": {
+			permissions: map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+			invalid:     true,
+		},
+		"unknown resource": {
+			permissions: map[string]storage.Access{"UnknownResource": storage.Access_READ_ACCESS},
+			invalid:     true,
+		},
+		"write access": {
+			permissions: map[string]storage.Access{"Image": storage.Access_READ_ACCESS, "Deployment": storage.Access_READ_WRITE_ACCESS},
+			invalid:     true,
+		},
+		"unknown access": {
+			permissions: map[string]storage.Access{"Image": storage.Access(99)},
+			invalid:     true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			roles := roleMocks.NewMockDataStore(ctrl)
+			roles.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).
+				Return(&storage.PermissionSet{ResourceToAccess: tc.permissions}, true, nil)
+			role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
+				&v1.GenerateTokenForPermissionsAndScopeRequest{
+					PermissionSetIds: []string{permissionSetID},
+					ClusterScopes:    []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"prod"}}},
+				})
+			if tc.invalid {
+				assert.Nil(t, role)
+				assert.ErrorIs(t, err, errox.InvalidArgs)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, &tokens.InternalRole{
+				RoleName:    internalRoleName,
+				Clusters:    tokens.ClusterScopes{"sensor-cluster": {"prod"}},
+				Permissions: tc.expected,
+			}, role)
+		})
+	}
+}
+
+func TestCreateRoleFromGenericPermissionSetFailsClosed(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ctx := sensorContext(t, ctrl, "sensor-cluster")
+	req := &v1.GenerateTokenForPermissionsAndScopeRequest{PermissionSetIds: []string{"missing"}}
+	manager := &roleManager{}
+	_, err := manager.createRoleFromPermissionSets(ctx, req)
+	require.ErrorIs(t, err, errox.NotAuthorized)
+
+	roles := roleMocks.NewMockDataStore(ctrl)
+	roles.EXPECT().GetPermissionSet(gomock.Any(), "missing").Return(nil, false, nil)
+	manager.roleStore = roles
+	_, err = manager.createRoleFromPermissionSets(ctx, req)
 	require.ErrorIs(t, err, errox.NotFound)
 }

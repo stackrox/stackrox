@@ -7,8 +7,8 @@ import (
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -20,27 +20,12 @@ type roleManager struct {
 	roleStore roleDS.DataStore
 }
 
-func validateSensorMetricsRole(role *tokens.InternalRole) error {
-	for access := range role.Permissions {
-		if access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
-			return errox.InvalidArgs.New("Sensor metrics permission set grants non-read-only access")
-		}
-	}
-	return nil
-}
-
 func (rm *roleManager) createRoleFromPermissionSets(
 	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*tokens.InternalRole, error) {
-	includesMetrics := slices.Contains(req.GetPermissionSetIds(), centralproxy.MetricsPermissionSetID)
 	role, err := rm.createSensorRole(ctx, req.GetPermissionSetIds(), clusterScopesFromRequest(req.GetClusterScopes()))
 	if err != nil {
 		return nil, err
-	}
-	if includesMetrics {
-		if err := validateSensorMetricsRole(role); err != nil {
-			return nil, err
-		}
 	}
 	return role, nil
 }
@@ -59,7 +44,7 @@ func (rm *roleManager) createSensorRole(
 		Clusters:    scopes,
 		Permissions: make(map[storage.Access][]string),
 	}
-	permissions := make(map[string]storage.Access)
+	grantedPermissions := make(map[string]storage.Access)
 	for _, permissionSetID := range permissionSetIDs {
 		permissionSet, found, err := rm.roleStore.GetPermissionSet(ctx, permissionSetID)
 		if err != nil {
@@ -68,13 +53,16 @@ func (rm *roleManager) createSensorRole(
 		if !found || permissionSet == nil {
 			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetID)
 		}
+		if err := permissionsUtils.ValidateScopedReadOnlyPermissions(permissionSet.GetResourceToAccess()); err != nil {
+			return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q: %v", permissionSetID, err)
+		}
 		for resource, access := range permissionSet.GetResourceToAccess() {
-			if current, found := permissions[resource]; !found || access > current {
-				permissions[resource] = access
+			if current, found := grantedPermissions[resource]; !found || access > current {
+				grantedPermissions[resource] = access
 			}
 		}
 	}
-	for resource, access := range permissions {
+	for resource, access := range grantedPermissions {
 		role.Permissions[access] = append(role.Permissions[access], resource)
 	}
 	for _, resources := range role.Permissions {
