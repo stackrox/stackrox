@@ -82,13 +82,15 @@ CENTRAL_CTX="kind-${CENTRAL_CLUSTER}"
 CENTRAL_PF_PORT="${CENTRAL_PF_PORT:-18443}" # local port-forward to Central
 STATE_DIR="$WORK/state"; mkdir -p "$STATE_DIR"
 
-log()  { printf '>> %s\n' "$*"; }
+# Logs go to stderr so functions whose stdout is captured via $(...) are not
+# corrupted by log lines.
+log()  { printf '>> %s\n' "$*" >&2; }
 warn() { printf '!! %s\n' "$*" >&2; }
 die()  { printf 'XX %s\n' "$*" >&2; exit 1; }
 
 require_tools() {
   local t
-  for t in kind kubectl helm docker jq openssl "$ROXCTL"; do
+  for t in kind kubectl helm docker jq openssl curl "$ROXCTL"; do
     command -v "$t" >/dev/null 2>&1 || die "missing required tool: $t"
   done
   if [[ "$MODE" == "vcluster" ]]; then
@@ -141,7 +143,7 @@ install_co() {
   local K="kubectl --context ${ctx}"
   log "[$ctx] installing Compliance Operator (PLATFORM=Generic)"
   $K create namespace "$CO_NS" --dry-run=client -o yaml | $K apply -f -
-  $K apply --server-side -f "$ASSET_DIR"/co-crds/compliance.openshift.io_*.yaml
+  $K apply --server-side -f "$ASSET_DIR/co-crds"
   $K apply --server-side -f "$ASSET_DIR"/openshift-shim/config-crds.yaml
   $K apply -f "$ASSET_DIR"/openshift-shim/config-objects.yaml
   $K patch infrastructure cluster --subresource=status --type=merge \
@@ -215,20 +217,36 @@ central_internal_endpoint() {
   echo "${ip}:${port}"
 }
 
-generate_init_bundle() {
-  local bundle="$STATE_DIR/init-bundle-helm.yaml"
-  [[ -s "$bundle" ]] && { echo "$bundle"; return 0; }
-  log "generating init bundle (helm format) via roxctl"
-  # roxctl talks to Central over a local port-forward.
+# Path of the generated helm-format init bundle (shared across up/verify).
+INIT_BUNDLE="$STATE_DIR/init-bundle-helm.yaml"
+
+# Start a background port-forward to Central and wait until it actually answers.
+# Idempotent: reuses a live port-forward recorded in pf.pid. Verifying readiness
+# (instead of a blind sleep) avoids silently talking to the wrong listener if the
+# port is already bound.
+start_central_pf() {
+  if kill -0 "$(cat "$STATE_DIR/pf.pid" 2>/dev/null)" 2>/dev/null; then return 0; fi
   kubectl --context "$CENTRAL_CTX" -n "$ROX_NS" port-forward svc/central "${CENTRAL_PF_PORT}:443" \
     >/dev/null 2>&1 &
-  local pf=$!; echo "$pf" >"$STATE_DIR/pf.pid"
+  echo $! >"$STATE_DIR/pf.pid"
   trap 'kill "$(cat "$STATE_DIR/pf.pid" 2>/dev/null)" 2>/dev/null || true' EXIT
-  sleep 4
+  local i
+  for i in $(seq 1 30); do
+    curl -sk "https://localhost:${CENTRAL_PF_PORT}/v1/ping" >/dev/null 2>&1 && return 0
+    sleep 2
+  done
+  die "Central port-forward on localhost:${CENTRAL_PF_PORT} did not become ready"
+}
+
+# Generate the helm-format init bundle at $INIT_BUNDLE. Must NOT be called inside a
+# command substitution: roxctl failures would be masked by set -e in $(...).
+generate_init_bundle() {
+  [[ -s "$INIT_BUNDLE" ]] && return 0
+  log "generating init bundle (helm format) via roxctl"
+  start_central_pf
   "$ROXCTL" -e "localhost:${CENTRAL_PF_PORT}" -p "$(cat "$STATE_DIR/admin-password")" \
     --insecure-skip-tls-verify \
-    central init-bundles generate "ci-$(date +%s)" --output "$bundle"
-  echo "$bundle"
+    central init-bundles generate "ci-$(date +%s)" --output "$INIT_BUNDLE"
 }
 
 deploy_secured() {
@@ -334,7 +352,8 @@ up() {
   deploy_central
   local endpoint; endpoint="$(central_internal_endpoint)"
   log "Central internal endpoint for secured clusters: $endpoint"
-  local bundle; bundle="$(generate_init_bundle)"
+  generate_init_bundle
+  local bundle="$INIT_BUNDLE"
 
   # Record name->context for verification/teardown.
   : >"$STATE_DIR/clusters.tsv"
@@ -365,11 +384,7 @@ up() {
 
 verify() {
   [[ -s "$STATE_DIR/admin-password" ]] || die "no admin password state; run 'up' first"
-  # ensure a port-forward exists for the API calls
-  if ! kill -0 "$(cat "$STATE_DIR/pf.pid" 2>/dev/null)" 2>/dev/null; then
-    kubectl --context "$CENTRAL_CTX" -n "$ROX_NS" port-forward svc/central "${CENTRAL_PF_PORT}:443" >/dev/null 2>&1 &
-    echo $! >"$STATE_DIR/pf.pid"; sleep 4
-  fi
+  start_central_pf
   local rc=0 name ctx
   echo '{"mode":"'"$MODE"'","clusters":[]}' >"$STATE_DIR/proof.json"
   # Prefer the recorded name->context map; fall back to derived names/contexts.
