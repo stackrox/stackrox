@@ -6,6 +6,8 @@ import (
 	"github.com/stackrox/rox/central/cve/image/info/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -20,8 +22,11 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) SearchRawImageCVEInfos(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEInfo, error) {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, env.PostgresDefaultCursorTimeout.DurationSetting())
+	defer cancel()
 	infos := make([]*storage.ImageCVEInfo, 0)
-	err := ds.storage.WalkByQuery(ctx, q, func(cve *storage.ImageCVEInfo) error {
+	// This method retains the full result, so a cursor does not bound its memory.
+	err := ds.storage.GetByQueryFn(ctx, q, func(cve *storage.ImageCVEInfo) error {
 		infos = append(infos, cve)
 		return nil
 	})

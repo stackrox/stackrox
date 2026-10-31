@@ -17,6 +17,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -166,12 +167,18 @@ func (s *imageServicePostgresTestSuite) TestExportImagesEnrichesVerifierName() {
 			VerifierId: saved.GetId(),
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
 		},
+		{VerifierId: "io.stackrox.signatureintegration.non-existent-id"},
+		{},
 	})
 	s.Require().NoError(s.imageDS.UpsertImage(s.ctx, image))
 
-	// Set up a gRPC streaming server.
+	// Image readers can see verifier names without Integration read access.
+	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Image),
+	))
 	conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
-		s.ctx,
+		readCtx,
 		s.T(),
 		func(registrar grpc.ServiceRegistrar) {
 			v1.RegisterImageServiceServer(registrar, s.service)
@@ -181,23 +188,32 @@ func (s *imageServicePostgresTestSuite) TestExportImagesEnrichesVerifierName() {
 	defer closeFunc()
 
 	client := v1.NewImageServiceClient(conn)
-	stream, err := client.ExportImages(s.ctx, &v1.ExportImageRequest{Timeout: 60})
-	s.Require().NoError(err)
+	for _, verifierName := range []string{"export-verifier", "renamed-verifier"} {
+		saved.Name = verifierName
+		_, err := s.sigIntegrationDS.UpdateSignatureIntegration(s.ctx, saved)
+		s.Require().NoError(err)
 
-	var exported []*storage.Image
-	for {
-		resp, recvErr := stream.Recv()
-		if errors.Is(recvErr, io.EOF) {
-			break
+		// The one-connection test pool catches nested reads inside the image cursor.
+		stream, err := client.ExportImages(readCtx, &v1.ExportImageRequest{Timeout: 10})
+		s.Require().NoError(err)
+
+		var exported []*storage.Image
+		for {
+			resp, recvErr := stream.Recv()
+			if errors.Is(recvErr, io.EOF) {
+				break
+			}
+			s.Require().NoError(recvErr)
+			exported = append(exported, resp.GetImage())
 		}
-		s.Require().NoError(recvErr)
-		exported = append(exported, resp.GetImage())
-	}
 
-	s.Require().Len(exported, 1)
-	results := exported[0].GetSignatureVerificationData().GetResults()
-	s.Require().Len(results, 1)
-	s.Equal("export-verifier", results[0].GetVerifierName())
+		s.Require().Len(exported, 1)
+		results := exported[0].GetSignatureVerificationData().GetResults()
+		s.Require().Len(results, 3)
+		s.Equal(verifierName, results[0].GetVerifierName())
+		s.Empty(results[1].GetVerifierName())
+		s.Empty(results[2].GetVerifierName())
+	}
 }
 
 // newTestSignatureIntegration creates a minimal SignatureIntegration for testing.
