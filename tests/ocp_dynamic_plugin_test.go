@@ -18,6 +18,7 @@ import (
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	routeclient "github.com/openshift/client-go/route/clientset/versioned"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -164,6 +165,11 @@ func (s *OCPPluginSuite) SetupSuite() {
 	// Phase 2: extract values that require reading back from the API.
 	routeHost := waitForRouteHost(s.T(), s.ctx, rc, "acs-ocp-e2e-proxy-route")
 	s.proxyBaseURL = fmt.Sprintf("https://%s/proxy/central", routeHost)
+
+	// Earlier tests (e.g. delegated scanning) restart Sensor, and the route
+	// keeps answering 503 until the proxy on the new pod serves again.
+	waitForDeploymentReadyInK8s(s.T(), "sensor", "stackrox")
+	waitUntilCentralSensorConnectionIs(s.T(), s.ctx, storage.ClusterHealthStatus_HEALTHY)
 
 	s.noScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-noscope-sa")
 	s.nsScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-ns-sa")
