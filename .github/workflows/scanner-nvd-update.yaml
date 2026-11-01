@@ -49,6 +49,7 @@ jobs:
         name: nvd-feeds
         path: nvd-feeds.zip
         if-no-files-found: error
+        retention-days: '1'
 
   fetch-nvd-api:
     runs-on: ubuntu-24.04
@@ -90,6 +91,7 @@ jobs:
         name: nvd-api
         path: nvd-api.zip
         if-no-files-found: error
+        retention-days: '1'
 
   upload-pr-nvd-feeds:
     needs:
