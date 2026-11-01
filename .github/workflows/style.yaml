@@ -168,41 +168,38 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Check Cache golangci-lint
-      run: make golangci-lint-cache-status
-
-    - name: Cache golangci-lint
-      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6
+    # EXPERIMENT BRANCH: replace the hand-rolled make golangci-lint (go-tool built
+    # binary + manual analysis cache steps) with the official golangci-lint-action.
+    # The action manages its own analysis cache (GOLANGCI_LINT_CACHE + actions/cache);
+    # actions/setup-go provides the Go build/module caches.
+    - name: Set up Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
       with:
-        path: ${{ env.HOME }}/.cache/golangci-lint
-        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-lint-v2-
-
-    - name: Restore golangci-lint analysis cache
-      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
-      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
-      with:
-        path: ${{ env.HOME }}/.cache/golangci-lint
-        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-lint-v2-
-
-    - name: Check cache golangci-lint
-      run: make golangci-lint-cache-status
+        go-version-file: go.mod
+        cache-dependency-path: '**/go.sum'
 
     - name: Check Go version is in sync in .golangci.yml and go.mod
       run: |
         [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
 
-    - name: make golangci-lint
+    - name: Generate dependencies
+      run: make deps
+
+    - name: golangci-lint (no tags)
+      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # ratchet:golangci/golangci-lint-action@v9.3.0
+      with:
+        version: v2.15.0
+        args: --verbose --print-resources-usage --enable=unused
       env:
         GOMEMLIMIT: 12GiB
-      run: make golangci-lint
 
-    - name: Check Cache golangci-lint
-      run: make golangci-lint-cache-status
+    - name: golangci-lint (release tags)
+      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # ratchet:golangci/golangci-lint-action@v9.3.0
+      with:
+        version: v2.15.0
+        args: --verbose --print-resources-usage --build-tags release --tests=false
+      env:
+        GOMEMLIMIT: 12GiB
 
   check-dependent-images-exist:
     needs: detect-changes
