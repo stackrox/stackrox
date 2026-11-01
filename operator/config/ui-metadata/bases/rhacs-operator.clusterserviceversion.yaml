@@ -65,7 +65,7 @@ spec:
 
     2. **Secured Cluster Services** - Secured cluster services are placed on each cluster you manage and report back to Central. These services allow users to enforce policies and monitor your OpenShift and Kubernetes clusters. Secured Cluster Services come as two Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).
 
-    **Console Plugin (Tech Preview):** RHACS provides a dynamic plugin that displays vulnerability management information in the OpenShift web console. Install a SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed Operators* or by modifying the console Operator configuration.
+    **Console Plugin:** RHACS provides a dynamic plugin that displays vulnerability management information in the OpenShift web console. Install a SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed Operators* or by modifying the console Operator configuration.
     **Important:** The Console Plugin requires OpenShift 4.19 or later.
 
     ### Central Services Explained
@@ -99,13 +99,13 @@ spec:
 
     #### Installation Prerequisites
 
-    Before deploying a SecuredCluster resource, you need to create a cluster init bundle secret.
+    Before deploying a SecuredCluster resource, you need to create a cluster registration secret (CRS).
 
-    - **Through the RHACS UI:** To create a cluster init bundle secret through the RHACS UI, navigate to `Platform Configuration > Clusters`, and then click `Manage Tokens` in the top-right corner. Select `Cluster Init Bundle`, and click `Generate Bundle`. Select `Download Kubernetes secrets file`, and store the file under a name of your choice (for example, `cluster-init-secrets.yaml`).
-    - **Through the `roxctl` CLI:** To create a cluster init bundle secret through the `roxctl` command-line interface, run `roxctl central init-bundles generate <name> --output-secrets <file name>`. Choose any `name` and `file name` that you like.
+    - **Through the RHACS UI:** To create a cluster registration secret (CRS) through the RHACS UI, navigate to `Platform Configuration > Clusters`, and then click `Cluster Registration Secrets`. Click `Create cluster registration secret` in the top-right corner, enter a name, and click `Download` to download the Kubernetes secret file. Store the file under a name of your choice (for example, `cluster-registration-secret.yaml`).
+    - **Through the `roxctl` CLI:** To create a cluster registration secret (CRS) through the `roxctl` command-line interface, run `roxctl central crs generate <name> --output <file name>`. Choose any `name` and `file name` that you like.
 
     Run `oc project` and check that it reports the correct namespace where you intend to deploy SecuredCluster. In case you want to install SecuredCluster to a different namespace, select it by running `oc project <namespace>`.
-    Then, run `oc create -f init-bundle.yaml`. If you have chosen a name other than `init-bundle.yaml`, specify that file name instead.
+    Then, run `oc create -f cluster-registration-secret.yaml`. If you have chosen a name other than `cluster-registration-secret.yaml`, specify that file name instead.
 
     #### Required Fields
 
@@ -143,7 +143,7 @@ spec:
   - risk
   links:
   - name: Red Hat Advanced Cluster Security Documentation
-    url: https://docs.openshift.com/acs/welcome/
+    url: https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes
   - name: DataSheet
     url: https://www.redhat.com/en/resources/advanced-cluster-security-for-kubernetes-datasheet
   - name: Support Policy

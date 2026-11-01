@@ -57,6 +57,7 @@ func initialize() {
 		scanwaiterv2.Singleton(),
 
 		sachelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
+		clusterDataStore.Singleton(),
 	)
 
 	if !features.FlattenImageData.Enabled() {

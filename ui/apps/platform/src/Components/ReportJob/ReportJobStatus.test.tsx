@@ -71,7 +71,7 @@ describe('ReportJobStatus', () => {
                     reportRequestType: 'ON_DEMAND',
                     reportNotificationMethod: 'DOWNLOAD',
                     completedAt: '',
-                    errorMsg: 'This is an error message',
+                    errorMsg: 'scan failed on Cluster "Prod-East"',
                 }}
                 isDownloadAvailable={false}
                 areDownloadActionsDisabled={false}
@@ -88,7 +88,7 @@ describe('ReportJobStatus', () => {
         // trigger the hover action
         fireEvent.mouseEnter(statusIconElement);
 
-        const tooltipElement = await screen.findByText('This is an error message');
+        const tooltipElement = await screen.findByText('scan failed on Cluster "Prod-East"');
 
         expect(tooltipElement).toBeInTheDocument();
 

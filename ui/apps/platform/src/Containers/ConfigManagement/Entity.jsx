@@ -9,7 +9,6 @@ import queryService from 'utils/queryService';
 
 import { getConfigMgmtDefaultSort } from './ConfigMgmt.utils';
 import ConfigManagementEntityCluster from './Entity/ConfigManagementEntityCluster';
-import ConfigManagementEntityControl from './Entity/ConfigManagementEntityControl';
 import ConfigManagementEntityDeployment from './Entity/Deployment/ConfigManagementEntityDeployment';
 import ConfigManagementEntityImage from './Entity/ConfigManagementEntityImage';
 import ConfigManagementEntityNamespace from './Entity/ConfigManagementEntityNamespace';
@@ -22,7 +21,6 @@ import ConfigManagementEntitySubject from './Entity/ConfigManagementEntitySubjec
 
 const entityComponentMap = {
     CLUSTER: ConfigManagementEntityCluster,
-    CONTROL: ConfigManagementEntityControl,
     DEPLOYMENT: ConfigManagementEntityDeployment,
     IMAGE: ConfigManagementEntityImage,
     NAMESPACE: ConfigManagementEntityNamespace,

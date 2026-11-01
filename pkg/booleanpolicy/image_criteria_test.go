@@ -80,6 +80,110 @@ func (suite *ImageCriteriaTestSuite) TestNVDCVSSCriteria() {
 
 }
 
+func (suite *ImageCriteriaTestSuite) TestEPSSCriteria() {
+	dep := &storage.Deployment{
+		Id: "EPSSDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:  "nginx",
+				Image: &storage.ContainerImage{Id: "EPSSDEPSHA"},
+			},
+		},
+	}
+	img := &storage.Image{
+		Id:   "EPSSDEPSHA",
+		Name: &storage.ImageName{FullName: "epss"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "openssl", Version: "1.1.1", Vulns: []*storage.EmbeddedVulnerability{
+					{Cve: "CVE-HIGH-BOTH", Cvss: 9, Epss: &storage.EPSS{EpssProbability: 0.42}},
+					{Cve: "CVE-CVSS-ONLY", Cvss: 9},
+					{Cve: "CVE-EPSS-ONLY", Cvss: 2, Epss: &storage.EPSS{EpssProbability: 0.42}},
+					{Cve: "CVE-LOW-EPSS", Cvss: 2, Epss: &storage.EPSS{EpssProbability: 0.1}},
+					{Cve: "CVE-ZERO-EPSS", Cvss: 2, Epss: &storage.EPSS{EpssProbability: 0}},
+					{Cve: "CVE-TINY-EPSS", Cvss: 2, Epss: &storage.EPSS{EpssProbability: 0.00042}},
+					{Cve: "CVE-SUPPRESSED", Cvss: 9, Suppressed: true, Epss: &storage.EPSS{EpssProbability: 0.9}},
+				}},
+			},
+		},
+	}
+	suite.addDepAndImages(dep, img)
+
+	allCVEs := []string{
+		"CVE-HIGH-BOTH", "CVE-CVSS-ONLY", "CVE-EPSS-ONLY", "CVE-LOW-EPSS",
+		"CVE-ZERO-EPSS", "CVE-TINY-EPSS", "CVE-SUPPRESSED",
+	}
+	deployment := suite.deployments["EPSSDEPID"]
+
+	for name, tc := range map[string]struct {
+		policy       *storage.Policy
+		expectedCVEs []string
+		message      string
+		messageAny   string
+	}{
+		"greater than or equal to 40 percent": {
+			policy:       policyWithSingleKeyValue(fieldnames.EPSS, ">= 40", false),
+			expectedCVEs: []string{"CVE-HIGH-BOTH", "CVE-EPSS-ONLY"},
+			message:      "EPSS 42%",
+		},
+		"equal to 42 percent": {
+			policy:       policyWithSingleKeyValue(fieldnames.EPSS, "42", false),
+			expectedCVEs: []string{"CVE-HIGH-BOTH", "CVE-EPSS-ONLY"},
+			message:      "EPSS 42%",
+		},
+		"greater than 42 percent matches none of the 42 percent CVEs": {
+			policy:       policyWithSingleKeyValue(fieldnames.EPSS, "> 42", false),
+			expectedCVEs: []string{},
+		},
+		"less than 40 percent skips CVEs with no EPSS": {
+			policy:       policyWithSingleKeyValue(fieldnames.EPSS, "< 40", false),
+			expectedCVEs: []string{"CVE-LOW-EPSS", "CVE-ZERO-EPSS", "CVE-TINY-EPSS"},
+			messageAny:   "EPSS 0.042%",
+		},
+		"greater than 0 percent skips an explicit zero": {
+			policy:       policyWithSingleKeyValue(fieldnames.EPSS, "> 0", false),
+			expectedCVEs: []string{"CVE-HIGH-BOTH", "CVE-EPSS-ONLY", "CVE-LOW-EPSS", "CVE-TINY-EPSS"},
+		},
+		"combined with CVSS stays linked to the same CVE": {
+			policy: policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+				policyGroupWithSingleKeyValue(fieldnames.CVSS, ">= 7", false),
+				policyGroupWithSingleKeyValue(fieldnames.EPSS, ">= 40", false),
+			),
+			expectedCVEs: []string{"CVE-HIGH-BOTH"},
+			message:      "EPSS 42%",
+		},
+	} {
+		suite.Run(name, func() {
+			expected := set.NewFrozenStringSet(tc.expectedCVEs...)
+			depMatcher, err := BuildDeploymentMatcher(tc.policy)
+			suite.Require().NoError(err)
+			violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
+			suite.Require().NoError(err)
+			assertFixableCVEMatches(suite.T(), violations, allCVEs, expected)
+			if tc.message != "" {
+				suite.Require().NotEmpty(violations.AlertViolations)
+				suite.Contains(violations.AlertViolations[0].GetMessage(), tc.message)
+			}
+			if tc.messageAny != "" {
+				var found bool
+				for _, violation := range violations.AlertViolations {
+					if strings.Contains(violation.GetMessage(), tc.messageAny) {
+						found = true
+						break
+					}
+				}
+				suite.True(found, "expected a violation containing %q", tc.messageAny)
+			}
+
+			imgMatcher, err := BuildImageMatcher(tc.policy)
+			suite.Require().NoError(err)
+			imgViolations, err := imgMatcher.MatchImage(nil, img)
+			suite.Require().NoError(err)
+			assertFixableCVEMatches(suite.T(), imgViolations, allCVEs, expected)
+		})
+	}
+}
+
 func (suite *ImageCriteriaTestSuite) TestFixableAndImageFirstOccurenceCriteria() {
 	heartbleedDep := &storage.Deployment{
 		Id: "HEARTBLEEDDEPID",

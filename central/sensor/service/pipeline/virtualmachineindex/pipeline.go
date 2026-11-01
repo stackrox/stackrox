@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	"github.com/stackrox/rox/central/virtualmachine/scan"
 	virtualMachineV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -157,6 +158,8 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	// Enrich VM with vulnerabilities
+	finishScan := scan.Singleton().Start(vm.GetId())
+	defer finishScan()
 	err := p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
 	if err != nil {
 		sendVMIndexNACK(ctx, resourceID, reasonForEnrichmentFailure(err), injector)

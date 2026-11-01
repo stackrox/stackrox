@@ -83,11 +83,18 @@ class OperatorE2eTest(BaseTest):
 class QaE2eTestPart1(BaseTest):
     TEST_TIMEOUT = 240 * 60
 
+    def __init__(self, roxie_config=""):
+        super().__init__()
+        self.roxie_config = roxie_config
+
     def run(self):
         print("Executing qa-tests-backend tests (part I)")
 
+        args = ["qa-tests-backend/scripts/run-part-1.sh"]
+        if self.roxie_config:
+            args.append(self.roxie_config)
         self.run_with_graceful_kill(
-            ["qa-tests-backend/scripts/run-part-1.sh"], self.TEST_TIMEOUT,
+            args, self.TEST_TIMEOUT,
             output_dir="/tmp/qa-part1-misc-logs",
         )
 

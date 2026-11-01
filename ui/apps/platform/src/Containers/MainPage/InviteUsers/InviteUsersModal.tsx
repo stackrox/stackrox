@@ -124,7 +124,7 @@ function InviteUsersModal(): ReactElement | null {
                 void setFieldValue('provider', redhatSsoProvider.name);
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line @eslint-react/exhaustive-deps
     }, [authProviders]); // ignore `setFieldValue` as a dependency
 
     function onChange(event, value) {

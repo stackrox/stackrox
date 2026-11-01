@@ -200,7 +200,7 @@ function PlatformComponentsConfigForm({
                                             );
                                             return (
                                                 // @TODO: Consider a more appropriate way to handle the keys
-                                                // eslint-disable-next-line react/no-array-index-key
+                                                // eslint-disable-next-line @eslint-react/no-array-index-key
                                                 <Card key={index}>
                                                     <CardHeader
                                                         actions={{ actions: headerActions }}

@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -357,4 +358,22 @@ func TestToProtobufExcludeByKind(t *testing.T) {
 		_, err := baseSpec(&ExcludeByKind{Kinds: []WorkloadKind{"JOB", "CRONJOB"}}).ToProtobuf(caches)
 		assert.EqualError(t, err, `excludeByKind contains unknown workload kind "CRONJOB"`)
 	})
+}
+
+func TestExclusionJSONOmitsZeroDeployment(t *testing.T) {
+	kindOnly, err := json.Marshal(Exclusion{
+		Name:          "skip jobs",
+		ExcludeByKind: &ExcludeByKind{Kinds: []WorkloadKind{"JOB"}},
+	})
+	assert.NoError(t, err)
+	assert.NotContains(t, string(kindOnly), `"deployment"`)
+	assert.Contains(t, string(kindOnly), `"excludeByKind"`)
+
+	withDeployment, err := json.Marshal(Exclusion{
+		Name:       "skip web",
+		Deployment: Deployment{Name: "web"},
+	})
+	assert.NoError(t, err)
+	assert.Contains(t, string(withDeployment), `"deployment"`)
+	assert.Contains(t, string(withDeployment), `"web"`)
 }

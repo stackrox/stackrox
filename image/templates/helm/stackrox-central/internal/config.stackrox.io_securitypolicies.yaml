@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: securitypolicies.config.stackrox.io
 spec:
   group: config.stackrox.io
@@ -170,6 +170,11 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-validations:
+                  - message: at most one of the fields in [deployment excludeByKind]
+                      may be set
+                    rule: (has(self.deployment)?1:0)+(has(self.excludeByKind)?1:0)
+                      <= 1
                 type: array
               isDefault:
                 description: IsDefault is unused

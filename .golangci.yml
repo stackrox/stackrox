@@ -164,6 +164,8 @@ linters:
         - backoff.Retry.*
         - concurrency\.WithLock.*
         - errox\..+\.CausedBy(f)?
+        - \(\*github\.com\/stackrox\/rox\/pkg\/errox\.RoxError\)\.New(f)?
+        - github\.com\/stackrox\/rox\/pkg\/httputil\.NewError
         - policy\.NewErr.*
         - retry\.MakeRetryable
         - retry\.WithRetry
@@ -191,10 +193,10 @@ linters:
         path: roxctl/central/generate/interactive.go
       - linters:
           - prealloc
-        path-except: ^(pkg)/
+        path-except: ^(pkg|central)/
       - linters:
           - prealloc
-        path: _test\.go
+        path: (_test\.go|test_?utils)
       - linters:
           - forbidigo
           - wrapcheck

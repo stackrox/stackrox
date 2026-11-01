@@ -38,7 +38,7 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
-	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	// Settings for the Scanner V4 component
 	// TODO(ROX-36705): renumber order annotations after legacy Scanner field removal
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4Spec `json:"scannerV4,omitempty"`

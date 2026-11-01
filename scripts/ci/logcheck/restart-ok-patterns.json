@@ -54,15 +54,9 @@
         "logline": "Socket closed"
     },
     {
-        "comment": "Scanner V4 slow to start indexer with external DB",
-        "job": "(gke-external-pg-17-qa-e2e-tests|gke-byodb-qa-e2e-tests)",
-        "logfile": "indexer-previous",
-        "logline": "panic: migrate: failed to connect to"
-    },
-    {
-        "comment": "Scanner V4 slow to start matcher with external DB",
-        "job": "(gke-external-pg-17-qa-e2e-tests|gke-byodb-qa-e2e-tests)",
-        "logfile": "matcher-previous",
+        "comment": "Scanner V4 components can start before scanner-v4-db is ready to accept connections",
+        "job": ".*",
+        "logfile": "(indexer|matcher)-previous",
         "logline": "panic: migrate: failed to connect to"
     },
     {

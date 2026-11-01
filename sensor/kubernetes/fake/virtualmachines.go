@@ -167,15 +167,18 @@ func toUnstructuredVM(vm *kubeVirtV1.VirtualMachine) *unstructured.Unstructured 
 	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
-// toUnstructuredVMI converts a VirtualMachineInstance to unstructured.Unstructured
+// toUnstructuredVMI converts a VirtualMachineInstance to unstructured.Unstructured.
 func toUnstructuredVMI(vmi *kubeVirtV1.VirtualMachineInstance) *unstructured.Unstructured {
-	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(vmi)
+	// A uint64 above MaxInt64 makes unstructured conversion fail the whole object.
+	sanitized := *vmi
+	sanitized.Status.RuntimeUser = uint64(jsonSafeUint64(sanitized.Status.RuntimeUser))
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sanitized)
 	if err != nil {
-		log.Warnf("failed to convert VMI %s to unstructured object: %v", vmi.GetName(), err)
+		log.Warnf("failed to convert VMI %s to unstructured object: %v", sanitized.GetName(), err)
 		return &unstructured.Unstructured{Object: map[string]interface{}{}}
 	}
 	obj := &unstructured.Unstructured{Object: unstructuredObj}
-	normalizeVMIUnsignedFields(obj, vmi.Status)
+	normalizeVMIUnsignedFields(obj, sanitized.Status)
 	return obj
 }
 

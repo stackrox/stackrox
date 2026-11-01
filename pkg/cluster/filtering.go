@@ -12,13 +12,7 @@ const (
 )
 
 func GetNamespaceFilter(cluster *storage.Cluster) *string {
-	var config *storage.DynamicClusterConfig_ProcessIndicatorsConfig
-
-	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
-		config = cluster.GetDynamicConfig().GetProcessIndicators()
-	} else {
-		config = cluster.GetHelmConfig().GetDynamicConfig().GetProcessIndicators()
-	}
+	config := getProcessIndicatorsConfig(cluster)
 
 	// No configuration for runtime data means no filter
 	if config == nil {
@@ -48,4 +42,16 @@ func GetNamespaceFilter(cluster *storage.Cluster) *string {
 	}
 
 	return new(filter)
+}
+
+// IsNoPersistenceEnabled reports whether process indicators must not be persisted for the cluster.
+func IsNoPersistenceEnabled(cluster *storage.Cluster) bool {
+	return getProcessIndicatorsConfig(cluster).GetNoPersistence()
+}
+
+func getProcessIndicatorsConfig(cluster *storage.Cluster) *storage.DynamicClusterConfig_ProcessIndicatorsConfig {
+	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+		return cluster.GetDynamicConfig().GetProcessIndicators()
+	}
+	return cluster.GetHelmConfig().GetDynamicConfig().GetProcessIndicators()
 }

@@ -227,7 +227,7 @@ function MachineAccessIntegrationForm({
                                         {values.mappings.length === 0 && <p>No rules defined</p>}
                                         {values.mappings.length > 0 &&
                                             values.mappings.map((_mapping, index: number) => (
-                                                // eslint-disable-next-line react/no-array-index-key
+                                                // eslint-disable-next-line @eslint-react/no-array-index-key
                                                 <Flex key={`mapping_${index}`}>
                                                     <FlexItem>
                                                         <FormLabelGroup

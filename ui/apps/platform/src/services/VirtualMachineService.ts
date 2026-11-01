@@ -200,6 +200,7 @@ export type VMComponentRow = {
 export type ListVMComponentsResponse = {
     components: VMComponentRow[];
     totalCount: number;
+    scanPending: boolean;
 };
 
 export type VirtualMachineV2State = 'VM_STATE_UNKNOWN' | 'VM_STATE_STOPPED' | 'VM_STATE_RUNNING';

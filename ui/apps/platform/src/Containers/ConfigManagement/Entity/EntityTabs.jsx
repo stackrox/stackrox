@@ -10,7 +10,7 @@ import entityTabsMap from '../entityTabRelationships';
 
 const TAB_GROUPS = {
     OVERVIEW: 'Overview',
-    POLICIES: 'Policies & CIS Controls',
+    POLICIES: 'Policies',
     VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
     APPLICATION_RESOURCES: 'Application & Infrastructure Resources',
     RBAC_CONFIG: 'Role-Based Access Control',
@@ -35,7 +35,6 @@ const ENTITY_TO_TAB = {
     [entityTypes.COMPONENT]: TAB_GROUPS.APPLICATION_RESOURCES,
 
     [entityTypes.POLICY]: TAB_GROUPS.POLICIES,
-    [entityTypes.CONTROL]: TAB_GROUPS.POLICIES,
 };
 
 const EntityTabs = ({ entityType, entityListType, pageEntityId }) => {

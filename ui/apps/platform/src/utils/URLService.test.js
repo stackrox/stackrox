@@ -458,25 +458,6 @@ it('overflows all paths', () => {
     });
 });
 
-it('overflows a parent entity', () => {
-    const match = getMatch({
-        context: baseContext,
-        pageEntityType: urlEntityTypes.NODE,
-        pageEntityId: 'pageEntityId',
-        entityListType1: urlEntityListTypes.CONTROL,
-        entityId1: 'entityId1',
-        entityType2: urlEntityTypes.NODE,
-        entityId2: 'nodeId2',
-    });
-    const url = URLService.getURL(match);
-    url.push(entityTypes.CLUSTER, 'clusterId');
-    expect(url.urlParams).toEqual({
-        context: useCases.CONFIG_MANAGEMENT,
-        pageEntityType: entityTypes.CLUSTER,
-        pageEntityId: 'clusterId',
-    });
-});
-
 it('should properly encode entity ids with special characters', () => {
     const match = getMatch({
         context: baseContext,

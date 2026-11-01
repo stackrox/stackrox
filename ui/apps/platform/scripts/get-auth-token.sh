@@ -11,8 +11,9 @@ api_token_name="${UI_API_TOKEN_NAME:-ui_tests}"
 api_token_role="${UI_API_TOKEN_ROLE:-Admin}"
 
 if [[ -z "$ROX_USERNAME" || -z "$ROX_ADMIN_PASSWORD" ]]; then
-  # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
-  source "${DIR}/../../../../scripts/k8s/export-basic-auth-creds.sh" "${DIR}/../../../../deploy/k8s"
+    echo >&2 "$0 requires \$ROX_USERNAME and \$ROX_ADMIN_PASSWORD to be set."
+    echo >&2 "Are you executing within a roxie shell? See deploy/README.md for more information."
+    exit 1
 fi
 
 curl_cfg() { # Use built-in echo to not expose $2 in the process list.

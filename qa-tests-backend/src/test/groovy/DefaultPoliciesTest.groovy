@@ -2,12 +2,15 @@ import static Services.expectNoViolations
 import static Services.getPolicies
 import static Services.waitForViolation
 
+import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
+import io.stackrox.proto.api.v1.EmptyOuterClass
+import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
@@ -30,6 +33,7 @@ import services.DeploymentService
 import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.ImageService
+import services.IntegrationHealthService
 import services.PolicyService
 import util.Env
 import util.Helpers
@@ -239,7 +243,14 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         then:
         "Verify Violation for #policyName is triggered"
-        assert waitForViolation(deploymentName,  policyName, WAIT_FOR_VIOLATION_TIMEOUT)
+        try {
+            assert waitForViolation(deploymentName,  policyName, WAIT_FOR_VIOLATION_TIMEOUT)
+        } catch (AssertionError failure) {
+            if (policyName == "Fixable CVSS >= 7") {
+                collectFixableCvssDiagnostics(deploymentName)
+            }
+            throw failure
+        }
 
         cleanup:
         if (policyEnabled) {
@@ -279,6 +290,49 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Curl in Image"                                          | WGET_CURL      | "C948" | true
 
         "Red Hat images must be signed by a Red Hat release key" | UNSIGNED_REDHAT | "C999" | false
+    }
+
+    // collectFixableCvssDiagnostics preserves the scan used by deploy-time policy evaluation.
+    private void collectFixableCvssDiagnostics(String deploymentName) {
+        try {
+            def deploymentClient = DeploymentService.getDeploymentService().withDeadlineAfter(15, TimeUnit.SECONDS)
+            def imageClient = ImageService.getImageClient().withDeadlineAfter(15, TimeUnit.SECONDS)
+            def deployments = deploymentClient.listDeployments(
+                    SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Deployment:${deploymentName}").build()
+            ).deploymentsList.findAll { it.name == deploymentName }
+            deployments.each { deployment ->
+                def storedDeployment = deploymentClient.getDeployment(DeploymentService.getResourceByID(deployment.id))
+                storedDeployment.containersList.each { container ->
+                    def image = imageClient.getImage(
+                            ImageServiceOuterClass.GetImageRequest.newBuilder().setId(container.image.id).build()
+                    )
+                    def vulns = image.scan.componentsList.collectMany { it.vulnsList }
+                    def fixable = vulns.findAll { it.fixedBy }
+                    def maxFixableCvss = (fixable*.cvss).max() ?: 0
+                    log.warn("Fixable CVSS diagnostic: deployment=${deployment.id}, image=${image.name.fullName}, " +
+                            "id=${image.id}, hasMetadata=${image.hasMetadata()}, hasScan=${image.hasScan()}, " +
+                            "scanTime=${image.scan.scanTime}, notes=${image.notesList}, " +
+                            "scanNotes=${image.scan.notesList}, fixableCves=${fixable.size()}, " +
+                            "maxFixableCvss=${maxFixableCvss}")
+                    Helpers.collectStoredProtoForDebug(image, "fixable-cvss-${image.id}.json")
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not collect stored image scan for ${deploymentName}", e)
+        }
+        try {
+            def health = IntegrationHealthService.getIntegrationHealthClient()
+                    .withDeadlineAfter(15, TimeUnit.SECONDS).getImageIntegrations(
+                    EmptyOuterClass.Empty.getDefaultInstance()
+            )
+            health.integrationHealthList.findAll { it.errorMessage }.each {
+                log.warn("Image enrichment integration error: name=${it.name}, status=${it.status}, " +
+                        "timestamp=${it.lastTimestamp}, error=${it.errorMessage}")
+            }
+            Helpers.collectStoredProtoForDebug(health, 'fixable-cvss-integration-health.json')
+        } catch (Exception e) {
+            log.warn("Could not collect image integration health", e)
+        }
     }
 
     def hasApacheStrutsVuln(image) {
@@ -463,11 +517,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "Port 80 is exposed in the cluster"  | null | []
 
         "Image Vulnerabilities"           | 4.0f     | null |
-                // StackRox Scanner reports 100+ CVEs between Low and Critical.
-                // Scanner V4 reports fewer CVEs (~78) and a different minimum
-                // severity (Moderate in this case). Using \\d{2,} and \\w+ to accept both outcomes.
+                // Scanner versions report different counts of distinct CVEs and minimum
+                // severities. Use a regex to accept both outcomes.
                 "Image \"" + STRUTS_IMAGE + "\\\"" +
-                     " contains \\d{2,} CVEs with severities ranging between " +
+                     " contains \\d{2,} distinct CVEs with severities ranging between " +
                      "\\w+ and \\w+" | []
 
         "Service Configuration"           | 2.0f     |

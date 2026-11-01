@@ -1,6 +1,5 @@
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     cloneFirstPolicyFromTable,
     doPolicyRowAction,
@@ -32,12 +31,6 @@ function clearPolicyCriteriaCards() {
 
 describe('Policy wizard, Step 3 Policy Criteria', () => {
     withAuth();
-
-    before(function () {
-        if (hasFeatureFlag('ROX_POLICY_CRITERIA_MODAL')) {
-            this.skip();
-        }
-    });
 
     it('should not allow user to edit policy criteria for default policies', () => {
         visitPolicies();

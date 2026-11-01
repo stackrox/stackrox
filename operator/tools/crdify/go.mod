@@ -1,6 +1,6 @@
 module github.com/stackrox/rox/operator/tools/crdify
 
-go 1.26.3
+go 1.26.10
 
 require sigs.k8s.io/crdify v0.6.0
 

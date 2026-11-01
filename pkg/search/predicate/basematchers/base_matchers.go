@@ -32,7 +32,7 @@ func ForString(value string) (func(string) bool, error) {
 
 // ForFloat returns a matcher for a float64.
 func ForFloat(value string) (func(float64) bool, error) {
-	cmpStr, value := parseNumericPrefix(value)
+	cmpStr, value := ParseNumericPrefix(value)
 	comparator, err := floatComparator(cmpStr)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func ForFloat(value string) (func(float64) bool, error) {
 
 // ForUint returns a matcher for a uint.
 func ForUint(value string) (func(uint64) bool, error) {
-	cmpStr, value := parseNumericPrefix(value)
+	cmpStr, value := ParseNumericPrefix(value)
 	comparator, err := uintComparator(cmpStr)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func ForUint(value string) (func(uint64) bool, error) {
 
 // ForInt returns a matcher for a uint.
 func ForInt(value string) (func(int64) bool, error) {
-	cmpStr, value := parseNumericPrefix(value)
+	cmpStr, value := ParseNumericPrefix(value)
 	comparator, err := intComparator(cmpStr)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func ForEnum(value string, enumRef protoreflect.ProtoEnum) (func(int64) bool, ma
 	}
 
 	// Get the comparator if needed.
-	cmpStr, value := parseNumericPrefix(value)
+	cmpStr, value := ParseNumericPrefix(value)
 
 	// Translate input value to an int if needed.
 	var int64Value int64
@@ -153,7 +153,7 @@ func ForTimestamp(value string) (func(*protocompat.Timestamp) bool, error) {
 			return instance == nil
 		}, nil
 	}
-	cmpStr, value := parseNumericPrefix(value)
+	cmpStr, value := ParseNumericPrefix(value)
 
 	timestampValue, durationValue, err := parseTimestamp(value)
 	if err != nil {

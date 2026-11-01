@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import DateDistance from 'Components/DateDistance';
-import type { ClusterRegistrationSecret, InitBundleAttribute } from 'services/ClustersService';
+import type { ClusterRegistrationSecret, UserAttribute } from 'services/ClustersService';
 import { clustersClusterRegistrationSecretsPath } from 'routePaths';
 
 const createdByDisplayKeys = ['name', 'username', 'email'];
@@ -11,7 +11,7 @@ const createdByDisplayKeys = ['name', 'username', 'email'];
 function getCreatedByDisplayValue(createdBy: ClusterRegistrationSecret['createdBy']): string {
     const match = createdByDisplayKeys
         .map((key) => createdBy.attributes.find((attr) => attr.key === key))
-        .find((attr): attr is InitBundleAttribute => attr !== undefined);
+        .find((attr): attr is UserAttribute => attr !== undefined);
 
     return match?.value ?? createdBy.id;
 }

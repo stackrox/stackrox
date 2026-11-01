@@ -1,9 +1,6 @@
-import { format } from 'date-fns';
-
 import { graphql } from '../../constants/apiEndpoints';
 import { visitFromHorizontalNav } from '../../helpers/nav';
 import { interactAndVisitNetworkGraphWithDeploymentSelected } from '../../helpers/networkGraph';
-import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 
 // visit
@@ -66,99 +63,7 @@ export function viewRiskDeploymentInNetworkGraph(deploymentName) {
     });
 }
 
-// Process Discovery
-
-const getDeploymentEventTimelineAlias = 'getDeploymentEventTimeline';
-
-const routeMatcherMapForDeploymentEventTimeline = {
-    [getDeploymentEventTimelineAlias]: {
-        method: 'POST',
-        url: graphql('getDeploymentEventTimeline'),
-    },
-};
-
-export function viewGraph(fixtureForDeploymentEventTimeline) {
-    interactAndWaitForResponses(
-        () => {
-            cy.get('button:contains("View Graph")').click();
-        },
-        routeMatcherMapForDeploymentEventTimeline,
-        fixtureForDeploymentEventTimeline && {
-            [getDeploymentEventTimelineAlias]: {
-                fixture: fixtureForDeploymentEventTimeline,
-            },
-        }
-    );
-
-    cy.get('[data-testid="event-timeline"]');
-}
-
-const nextPageSelector = '[aria-label="Modal"] button[aria-label="Go to next page"]';
-
-export function clickNextPageInEventTimelineWithRequest(fixtureForDeploymentEventTimeline) {
-    interactAndWaitForResponses(
-        () => {
-            // Risk deployments list also has a button.
-            cy.get(nextPageSelector).click();
-        },
-        routeMatcherMapForDeploymentEventTimeline,
-        fixtureForDeploymentEventTimeline && {
-            [getDeploymentEventTimelineAlias]: {
-                fixture: fixtureForDeploymentEventTimeline,
-            },
-        }
-    );
-}
-
-export function clickNextPageInEventTimelineWithoutRequest() {
-    cy.get(nextPageSelector).click();
-}
-
-/**
- * Finds an event based on the event id and returns the formatted timestamp
- * @param {string} id - the event id
- * @returns {Promise<string>} - a promise that, once resolved, will return the formatted timestamp of an event for the specified event typee
- */
-export function getFormattedEventTimeById(id, fixtureForDeploymentEventTimeline) {
-    return cy.fixture(fixtureForDeploymentEventTimeline).then((json) => {
-        const eventTime = json.data.pods[0].events.find((event) => event.id === id).timestamp;
-        return `Event time: ${format(eventTime, 'MM/DD/YYYY | h:mm:ssA')}`;
-    });
-}
-
-const getPodEventTimelineAlias = 'getPodEventTimeline';
-
-const routeMatcherMapForPodEventTimeline = {
-    [getPodEventTimelineAlias]: {
-        method: 'POST',
-        url: graphql('getPodEventTimeline'),
-    },
-};
-
-export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline) {
-    interactAndWaitForResponses(
-        () => {
-            cy.get('[data-testid="timeline-drill-down-button"]:nth(0)').click();
-        },
-        routeMatcherMapForPodEventTimeline,
-        fixtureForPodEventTimeline && {
-            [getPodEventTimelineAlias]: {
-                fixture: fixtureForPodEventTimeline,
-            },
-        }
-    );
-}
-
 // interact
-
-export function clickTab(tabText) {
-    cy.get(`*[role="tablist"] button:contains("${tabText}")`).click();
-}
-
-export function filterEventsByType(eventType) {
-    cy.get('[aria-label="Modal"] .react-select__control').click();
-    cy.get(`[aria-label="Modal"] .react-select__option:contains("${eventType}")`).click();
-}
 
 /**
  * @param {'User Workloads'|'Platform'|'All Deployments'} viewName

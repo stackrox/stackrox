@@ -88,15 +88,6 @@ export function visitSystemHealth(staticResponseMap) {
     cy.get(SystemHealthHeadingSelector);
 }
 
-export function visitSystemHealthWithKeysRemoved(keysToRemove, staticResponseMap) {
-    const updatedRouteMatcherMap = { ...routeMatcherMap };
-    keysToRemove.forEach((key) => delete updatedRouteMatcherMap[key]);
-
-    visit(systemHealthUrl, updatedRouteMatcherMap, staticResponseMap);
-
-    cy.get(SystemHealthHeadingSelector);
-}
-
 export function visitSystemHealthWithStaticResponseForCapabilities(
     staticResponseForCapabilities,
     keysToRemoveFromRouteMatcherMap = []

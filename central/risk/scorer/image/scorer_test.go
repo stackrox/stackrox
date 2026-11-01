@@ -28,7 +28,7 @@ func TestScore(t *testing.T) {
 		{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"},
+				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 distinct CVEs with severities ranging between Moderate and Critical"},
 			},
 			Score: 1.5535,
 		},
@@ -67,7 +67,7 @@ func TestScoreV2(t *testing.T) {
 		{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"},
+				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 distinct CVEs with severities ranging between Moderate and Critical"},
 			},
 			Score: 1.5535,
 		},

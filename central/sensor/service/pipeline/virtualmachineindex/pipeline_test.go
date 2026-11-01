@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDSMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
+	"github.com/stackrox/rox/central/virtualmachine/scan"
 	virtualMachineV2DSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
 	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -20,6 +21,7 @@ import (
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
@@ -672,6 +674,50 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
 	assert.Equal(t, vmID+":", ack.GetResourceId())
 	assert.Equal(t, centralsensor.SensorACKReasonFeatureDisabled, ack.GetReason())
+}
+
+func TestPipelineRunV2_PendingScanLifecycle(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
+	tests := map[string]struct {
+		enrichmentError error
+		storageError    error
+	}{
+		"success":          {},
+		"enrichment fails": {enrichmentError: errors.New("matcher unavailable")},
+		"storage fails":    {storageError: errors.New("database unavailable")},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+			store := virtualMachineV2DSMocks.NewMockDataStore(ctrl)
+			p := &pipelineImpl{enricher: enricher, virtualMachineV2Store: store}
+			vmID := "pending-scan-" + name
+			enricher.EXPECT().EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(vm *storage.VirtualMachine, _ *v4.IndexReport) error {
+					assert.True(t, scan.Singleton().IsPending(vmID))
+					vm.Scan = &storage.VirtualMachineScan{}
+					return tt.enrichmentError
+				})
+			if tt.enrichmentError == nil {
+				store.EXPECT().GetVirtualMachine(ctx, vmID).Return(nil, false, nil)
+				store.EXPECT().EnsureVirtualMachineExists(ctx, vmID, testClusterID).Return(nil)
+				store.EXPECT().UpsertScan(ctx, vmID, gomock.Any()).
+					DoAndReturn(func(context.Context, string, common.VMScanParts) error {
+						assert.True(t, scan.Singleton().IsPending(vmID), "pending must cover persistence")
+						return tt.storageError
+					})
+			}
+			err := p.Run(ctx, testClusterID, createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE), &mockInjector{})
+			if tt.enrichmentError != nil || tt.storageError != nil {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			assert.False(t, scan.Singleton().IsPending(vmID), "success and failure must both clear pending")
+		})
+	}
 }
 
 func TestPipelineRunV2_StoresScanViaV2Datastore(t *testing.T) {

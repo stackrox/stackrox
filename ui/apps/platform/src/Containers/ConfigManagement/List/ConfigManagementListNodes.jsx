@@ -1,12 +1,7 @@
 import { useLocation } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
-import pluralize from 'pluralize';
 
-import {
-    defaultColumnClassName,
-    defaultHeaderClassName,
-    nonSortableHeaderClassName,
-} from 'Components/Table';
+import { defaultColumnClassName, defaultHeaderClassName } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import { nodeSortFields } from 'constants/sortFields';
@@ -16,7 +11,6 @@ import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
-import NoEntitiesIconText from './utilities/NoEntitiesIconText';
 
 const QUERY = gql`
     query nodes($query: String, $pagination: Pagination) {
@@ -28,11 +22,6 @@ const QUERY = gql`
             osImage
             containerRuntimeVersion
             joinedAt
-            nodeComplianceControlCount(query: "Standard:CIS") {
-                failingCount
-                passingCount
-                unknownCount
-            }
         }
         count: nodeCount(query: $query)
     }
@@ -113,30 +102,6 @@ const buildTableColumns = (match, location, entityContext) => {
                   },
                   id: nodeSortFields.CLUSTER,
                   sortField: nodeSortFields.CLUSTER,
-              },
-        entityContext && entityContext.CONTROL
-            ? null
-            : {
-                  Header: `CIS Controls`,
-                  headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
-                  className: `w-1/8 ${defaultColumnClassName}`,
-                  accessor: 'nodeComplianceControlCount',
-                  Cell: ({ original }) => {
-                      const { nodeComplianceControlCount } = original;
-                      const { passingCount, failingCount, unknownCount } =
-                          nodeComplianceControlCount;
-                      const controlCount = passingCount + failingCount + unknownCount;
-                      if (!controlCount) {
-                          return <NoEntitiesIconText text="No Controls" />;
-                      }
-                      const url = URLService.getURL(match, location)
-                          .push(original.id)
-                          .push('CONTROL')
-                          .url();
-                      const text = `${controlCount} ${pluralize('Controls', controlCount)}`;
-                      return <TableCellLink url={url}>{text}</TableCellLink>;
-                  },
-                  sortable: false,
               },
     ];
     return tableColumns.filter((col) => col);

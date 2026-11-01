@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,4 +38,42 @@ func TestImageOnlyExclusionDoesNotExcludeEntities(t *testing.T) {
 			assert.False(t, m.IsPolicyApplicable(ctx, clusterExclusion), "cluster-scoped exclusion should exclude")
 		})
 	}
+}
+
+func TestKindExclusionExcludesMatchingDeploymentsOnly(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.PolicyWorkloadKindExclusion, true)
+	ctx := context.Background()
+	namespace := &storage.NamespaceMetadata{Name: "shop", ClusterId: "cluster1"}
+	cluster := &storage.Cluster{Id: "cluster1"}
+	policy := &storage.Policy{Exclusions: []*storage.Exclusion{{
+		Matcher: &storage.Exclusion_ExcludeByKind_{
+			ExcludeByKind: &storage.Exclusion_ExcludeByKind{
+				Kinds: []storage.Exclusion_WorkloadKind{storage.Exclusion_JOB, storage.Exclusion_CRON_JOB},
+			},
+		},
+	}}}
+
+	job := &storage.Deployment{Name: "batch", Type: kubernetes.Job, ClusterId: "cluster1", Namespace: "shop"}
+	cronJob := &storage.Deployment{Name: "nightly", Type: kubernetes.CronJob, ClusterId: "cluster1", Namespace: "shop"}
+	deploy := &storage.Deployment{Name: "web", Type: kubernetes.Deployment, ClusterId: "cluster1", Namespace: "shop"}
+
+	assert.False(t, NewDeploymentMatcher(job, nil, nil).IsPolicyApplicable(ctx, policy))
+	assert.False(t, NewDeploymentMatcher(cronJob, nil, nil).IsPolicyApplicable(ctx, policy))
+	assert.True(t, NewDeploymentMatcher(deploy, nil, nil).IsPolicyApplicable(ctx, policy))
+	assert.True(t, NewNamespaceMatcher(namespace).IsPolicyApplicable(ctx, policy))
+	assert.True(t, NewClusterMatcher(cluster, []*storage.NamespaceMetadata{namespace}).IsPolicyApplicable(ctx, policy))
+}
+
+func TestKindExclusionFlagOffLeavesPolicyApplicable(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.PolicyWorkloadKindExclusion, false)
+	job := &storage.Deployment{Name: "batch", Type: kubernetes.Job, ClusterId: "cluster1", Namespace: "shop"}
+	policy := &storage.Policy{Exclusions: []*storage.Exclusion{{
+		Matcher: &storage.Exclusion_ExcludeByKind_{
+			ExcludeByKind: &storage.Exclusion_ExcludeByKind{
+				Kinds: []storage.Exclusion_WorkloadKind{storage.Exclusion_JOB},
+			},
+		},
+	}}}
+
+	assert.True(t, NewDeploymentMatcher(job, nil, nil).IsPolicyApplicable(context.Background(), policy))
 }

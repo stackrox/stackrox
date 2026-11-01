@@ -134,13 +134,15 @@ func TestBufferedConsumer_BufferFull(t *testing.T) {
 
 		// First errC should still be open (callback blocked)
 		select {
-		case <-errC1:
+		case err := <-errC1:
+			assert.NoError(t, err)
 			t.Fatal("errC1 should still be open, callback is blocked")
 		default:
 		}
 		// Second errC should still be open (callback blocked)
 		select {
-		case <-errC2:
+		case err := <-errC2:
+			assert.NoError(t, err)
 			t.Fatal("errC2 should still be open, callback is blocked")
 		default:
 		}
