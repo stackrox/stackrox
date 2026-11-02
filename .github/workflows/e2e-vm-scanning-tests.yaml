@@ -233,6 +233,7 @@ jobs:
       if: always()
       shell: python
       run: |
+        import os
         import sys
         sys.path.append('.openshift-ci')
         from post_tests import PostClusterTest
@@ -241,7 +242,7 @@ jobs:
             collect_vm_guest_logs=True,
         )
         post.k8s_namespaces.append("openshift-cnv")
-        post.run(['${{ env.ARTIFACT_DIR }}'])
+        post.run([os.environ['ARTIFACT_DIR']])
 
     - name: Run final-post
       if: always()
