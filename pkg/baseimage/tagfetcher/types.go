@@ -2,6 +2,8 @@ package tagfetcher
 
 import (
 	"time"
+
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // TagMetadata holds metadata fetched for a single image tag.
@@ -25,6 +27,11 @@ type TagMetadata struct {
 	// LayerDigests contains the SHA256 digests of all layers in order.
 	// Used for base image matching via layer commonality.
 	LayerDigests []string
+
+	// History is the config history in order, including empty USER/ENV/CMD
+	// entries. Enrichment compares it to a workload image before recording
+	// a history index. Digests alone cannot locate those empty entries.
+	History []*storage.BaseImageHistoryEntry
 
 	// Error contains any error that occurred during metadata fetching.
 	// If non-nil, only Tag is guaranteed to be populated.

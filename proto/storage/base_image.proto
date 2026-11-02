@@ -18,6 +18,19 @@ message BaseImage {
   string first_layer_digest = 8; // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
   repeated BaseImageLayer layers = 9;
   google.protobuf.Timestamp created = 10;
+  // Config history in order, including empty USER/ENV/CMD entries.
+  // Recorded so enrichment can check that a workload image's history
+  // starts with this base. Lives in the serialized blob.
+  repeated BaseImageHistoryEntry history = 11; // @gotags: search:"-" sql:"-"
+}
+
+// BaseImageHistoryEntry is one config-history line from a base image.
+// Instruction and value are the parsed Dockerfile line. Empty is true
+// when the entry has no content blob (USER, ENV, CMD, and similar).
+message BaseImageHistoryEntry {
+  string instruction = 1;
+  string value = 2;
+  bool empty = 3;
 }
 
 message BaseImageLayer {

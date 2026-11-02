@@ -1811,6 +1811,137 @@ func TestToBaseImageInfos(t *testing.T) {
 			baseImages: nil,
 			expected:   nil,
 		},
+		"sets history index when base history is a prefix": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Instruction: "ADD", Value: "rootfs"},
+						{Instruction: "RUN", Value: "microdnf"},
+						{Instruction: "USER", Value: "1001", Empty: true},
+						{Instruction: "COPY", Value: "app"},
+						{Instruction: "USER", Value: "1000", Empty: true},
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseImages: []*storage.BaseImage{
+				{
+					Id:         "ubi",
+					Repository: "registry.redhat.io/ubi8/ubi",
+					Tag:        "8.10",
+					Layers: []*storage.BaseImageLayer{
+						{LayerDigest: "sha256:rootfs"},
+						{LayerDigest: "sha256:microdnf"},
+					},
+					History: []*storage.BaseImageHistoryEntry{
+						{Instruction: "ADD", Value: "rootfs"},
+						{Instruction: "RUN", Value: "microdnf"},
+						{Instruction: "USER", Value: "1001", Empty: true},
+					},
+				},
+				{
+					Id:         "ubi-no-user",
+					Repository: "registry.redhat.io/ubi8/ubi",
+					Tag:        "8.10-nouser",
+					Layers: []*storage.BaseImageLayer{
+						{LayerDigest: "sha256:rootfs"},
+						{LayerDigest: "sha256:microdnf"},
+					},
+					History: []*storage.BaseImageHistoryEntry{
+						{Instruction: "ADD", Value: "rootfs"},
+						{Instruction: "RUN", Value: "microdnf"},
+					},
+				},
+			},
+			expected: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "ubi",
+					BaseImageFullName: "registry.redhat.io/ubi8/ubi:8.10",
+					MaxLayerIndex:     1,
+					SetMaxHistoryIndex: &storage.BaseImageInfo_MaxHistoryIndex{
+						MaxHistoryIndex: 2,
+					},
+				},
+				{
+					BaseImageId:       "ubi-no-user",
+					BaseImageFullName: "registry.redhat.io/ubi8/ubi:8.10-nouser",
+					MaxLayerIndex:     1,
+					SetMaxHistoryIndex: &storage.BaseImageInfo_MaxHistoryIndex{
+						MaxHistoryIndex: 1,
+					},
+				},
+			},
+		},
+		"leaves history index unset when prefix does not match": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Instruction: "ADD", Value: "rootfs"},
+						{Instruction: "RUN", Value: "microdnf"},
+						{Instruction: "USER", Value: "1000", Empty: true},
+						{Instruction: "COPY", Value: "app"},
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseImages: []*storage.BaseImage{
+				{
+					Id:         "ubi",
+					Repository: "rhel",
+					Tag:        "8",
+					Layers: []*storage.BaseImageLayer{
+						{LayerDigest: "sha256:rootfs"},
+						{LayerDigest: "sha256:microdnf"},
+					},
+					History: []*storage.BaseImageHistoryEntry{
+						{Instruction: "ADD", Value: "rootfs"},
+						{Instruction: "RUN", Value: "microdnf"},
+						{Instruction: "USER", Value: "1001", Empty: true},
+					},
+				},
+			},
+			expected: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "ubi",
+					BaseImageFullName: "rhel:8",
+					MaxLayerIndex:     1,
+				},
+			},
+		},
+		"history index zero is set when the base has one history entry": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Instruction: "ADD", Value: "rootfs"},
+						{Instruction: "COPY", Value: "app"},
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseImages: []*storage.BaseImage{
+				{
+					Id:         "scratch-like",
+					Repository: "example",
+					Tag:        "base",
+					Layers: []*storage.BaseImageLayer{
+						{LayerDigest: "sha256:rootfs"},
+					},
+					History: []*storage.BaseImageHistoryEntry{
+						{Instruction: "ADD", Value: "rootfs"},
+					},
+				},
+			},
+			expected: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "scratch-like",
+					BaseImageFullName: "example:base",
+					MaxLayerIndex:     0,
+					SetMaxHistoryIndex: &storage.BaseImageInfo_MaxHistoryIndex{
+						MaxHistoryIndex: 0,
+					},
+				},
+			},
+		},
 	}
 
 	for name, c := range cases {
@@ -1824,8 +1955,90 @@ func TestToBaseImageInfos(t *testing.T) {
 					assert.Equal(t, exp.GetBaseImageId(), result[i].GetBaseImageId())
 					assert.Equal(t, exp.GetBaseImageFullName(), result[i].GetBaseImageFullName())
 					assert.Equal(t, exp.GetMaxLayerIndex(), result[i].GetMaxLayerIndex())
+					if exp.GetSetMaxHistoryIndex() == nil {
+						assert.Nil(t, result[i].GetSetMaxHistoryIndex())
+					} else {
+						assert.Equal(t, exp.GetMaxHistoryIndex(), result[i].GetMaxHistoryIndex())
+						assert.NotNil(t, result[i].GetSetMaxHistoryIndex())
+					}
 				}
 			}
+		})
+	}
+}
+
+func TestHistoryBoundary(t *testing.T) {
+	base := []*storage.BaseImageHistoryEntry{
+		{Instruction: "ADD", Value: "rootfs"},
+		{Instruction: "RUN", Value: "microdnf"},
+		{Instruction: "USER", Value: "1001", Empty: true},
+	}
+	child := []*storage.ImageLayer{
+		{Instruction: "ADD", Value: "rootfs"},
+		{Instruction: "RUN", Value: "microdnf"},
+		{Instruction: "USER", Value: "1001", Empty: false},
+		{Instruction: "COPY", Value: "app"},
+	}
+
+	cases := map[string]struct {
+		child   []*storage.ImageLayer
+		history []*storage.BaseImageHistoryEntry
+		index   int32
+		ok      bool
+	}{
+		"prefix including a rewritten empty flag": {
+			child:   child,
+			history: base,
+			index:   2,
+			ok:      true,
+		},
+		"instruction mismatch": {
+			child: []*storage.ImageLayer{
+				{Instruction: "ADD", Value: "rootfs"},
+				{Instruction: "COPY", Value: "microdnf"},
+				{Instruction: "USER", Value: "1001"},
+				{Instruction: "COPY", Value: "app"},
+			},
+			history: base,
+		},
+		"value mismatch": {
+			child: []*storage.ImageLayer{
+				{Instruction: "ADD", Value: "rootfs"},
+				{Instruction: "RUN", Value: "microdnf"},
+				{Instruction: "USER", Value: "0"},
+				{Instruction: "COPY", Value: "app"},
+			},
+			history: base,
+		},
+		"child is not strictly longer": {
+			child:   child[:len(base)],
+			history: base,
+		},
+		"child is shorter": {
+			child:   child[:1],
+			history: base,
+		},
+		"history was not recorded": {
+			child: child,
+		},
+		"single entry index is zero and set": {
+			child: []*storage.ImageLayer{
+				{Instruction: "ADD", Value: "rootfs"},
+				{Instruction: "COPY", Value: "app"},
+			},
+			history: []*storage.BaseImageHistoryEntry{
+				{Instruction: "ADD", Value: "rootfs"},
+			},
+			index: 0,
+			ok:    true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			index, ok := historyBoundary(c.child, c.history)
+			assert.Equal(t, c.ok, ok)
+			assert.Equal(t, c.index, index)
 		})
 	}
 }

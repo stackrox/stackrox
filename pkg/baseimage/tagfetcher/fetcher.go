@@ -159,6 +159,24 @@ func tagMetadata(tag string, metadata *storage.ImageMetadata) TagMetadata {
 
 	// Extract layer digests for base image matching via layer commonality.
 	result.LayerDigests = metadata.GetLayerShas()
+	result.History = historyFromLayers(metadata.GetV1().GetLayers())
 
 	return result
+}
+
+// historyFromLayers copies config history, including empty entries.
+// The registry already downloaded these lines; only the digests used to be kept.
+func historyFromLayers(layers []*storage.ImageLayer) []*storage.BaseImageHistoryEntry {
+	if len(layers) == 0 {
+		return nil
+	}
+	history := make([]*storage.BaseImageHistoryEntry, len(layers))
+	for i, layer := range layers {
+		history[i] = &storage.BaseImageHistoryEntry{
+			Instruction: layer.GetInstruction(),
+			Value:       layer.GetValue(),
+			Empty:       layer.GetEmpty(),
+		}
+	}
+	return history
 }

@@ -280,5 +280,14 @@ message BaseImageInfo {
   google.protobuf.Timestamp created = 4;
   // Index of the last base image layer, taking into account
   // "empty layers" (aka. metadata history without SHA).
+  // This is the last content blob, not the last history entry.
+  // Dockerfile-line cuts use max_history_index.
   int32 max_layer_index = 5;
+  // Index of the last base history entry in this image, including empty
+  // USER/ENV/CMD entries. Set only when the recorded base history is a
+  // prefix of this image and the child history is strictly longer.
+  // Unset means Dockerfile-line filtering must not cut history.
+  oneof set_max_history_index {
+    int32 max_history_index = 6;
+  }
 }

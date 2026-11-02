@@ -363,7 +363,11 @@
         "maxLayerIndex": {
           "type": "integer",
           "format": "int32",
-          "description": "Index of the last base image layer, taking into account\n\"empty layers\" (aka. metadata history without SHA)."
+          "description": "Index of the last base image layer, taking into account\n\"empty layers\" (aka. metadata history without SHA).\nThis is the last content blob, not the last history entry.\nDockerfile-line cuts use max_history_index."
+        },
+        "maxHistoryIndex": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
