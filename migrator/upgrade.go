@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/lock"
@@ -33,13 +34,13 @@ func upgrade(dbClone string) error {
 	// Close when needed
 	defer postgreshelper.Close()
 
-	return upgradeAcquireLock(pgPool, gormDB, dbClone)
+	return upgradeAcquireLock(context.Background(), pgPool, gormDB, dbClone)
 }
 
 // upgradeAcquireLock runs the logic to acquire the migration lock
 // and run the upgrade if successfully locked
-func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) error {
-	ctx := sac.WithAllAccess(context.Background())
+func upgradeAcquireLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, dbClone string) error {
+	ctx = sac.WithAllAccess(ctx)
 	ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
 	if err != nil {
 		return errors.Wrap(err, "failed to get version from the database")
@@ -69,9 +70,17 @@ func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) err
 
 	switch {
 	case currSeqNum > ver.SeqNum:
-		// This is a new version pod trying to upgrade the DB.
-		// Fail fast, to restart the container and try acquiring lock again.
-		return errors.Errorf("failed to upgrade DB from %d to %d, could not acquire migration lock.", ver.SeqNum, currSeqNum)
+		// Worker briefly takes this lock to check the DB version. Retry that
+		// contention without restarting Central. Only acquisition is bounded;
+		// migrations run with the original context, even if they take hours.
+		lockCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		release, err := lock.AcquireMigrationLock(lockCtx, pgPool)
+		if err != nil {
+			return errors.Wrapf(err, "failed to upgrade DB from %d to %d, could not acquire migration lock", ver.SeqNum, currSeqNum)
+		}
+		defer release()
+		return upgradeWithLock(ctx, pgPool, gormDB, dbClone)
 	case currSeqNum < ver.SeqNum:
 		// This is the old pod during a rolling upgrade. It is backward compatible,
 		// so it can proceed without running migrations.
