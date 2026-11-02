@@ -34,7 +34,7 @@ defaults:
 
 jobs:
   ocp-vm-scanning-tests:
-    if: github.event_name == 'workflow_dispatch' || inputs.should-run
+    if: inputs.should-run
     runs-on: ubuntu-24.04
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
