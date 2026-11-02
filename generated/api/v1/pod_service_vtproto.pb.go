@@ -55,6 +55,7 @@ func (m *ExportPodRequest) CloneVT() *ExportPodRequest {
 	r := new(ExportPodRequest)
 	r.Timeout = m.Timeout
 	r.Query = m.Query
+	r.MinAgeDays = m.MinAgeDays
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -136,6 +137,9 @@ func (this *ExportPodRequest) EqualVT(that *ExportPodRequest) bool {
 		return false
 	}
 	if this.Query != that.Query {
+		return false
+	}
+	if this.MinAgeDays != that.MinAgeDays {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -258,6 +262,11 @@ func (m *ExportPodRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.MinAgeDays != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MinAgeDays))
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.Query) > 0 {
 		i -= len(m.Query)
 		copy(dAtA[i:], m.Query)
@@ -362,6 +371,9 @@ func (m *ExportPodRequest) SizeVT() (n int) {
 	l = len(m.Query)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.MinAgeDays != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MinAgeDays))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -560,6 +572,25 @@ func (m *ExportPodRequest) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Query = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinAgeDays", wireType)
+			}
+			m.MinAgeDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MinAgeDays |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -854,6 +885,25 @@ func (m *ExportPodRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Query = stringValue
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinAgeDays", wireType)
+			}
+			m.MinAgeDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MinAgeDays |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

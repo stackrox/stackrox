@@ -56,6 +56,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "minAgeDays",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
