@@ -22,7 +22,6 @@ os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
-os.environ["ROX_VIRTUAL_MACHINES"] = "true"
 # Leave guests up so post-test can collect roxagent journals, then
 # delete-vm-ns.sh deletes the test namespaces.
 os.environ["VM_SCAN_SKIP_CLEANUP"] = "true"

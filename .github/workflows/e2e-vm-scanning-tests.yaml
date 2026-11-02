@@ -216,9 +216,6 @@ jobs:
         securedCluster:
           resourceProfile: ci
         EOF
-        # Explicit for parity with deploy_central_via_operator(); ROX_VIRTUAL_MACHINES
-        # also defaults to enabled (pkg/features/list.go), so this is defense in depth.
-        set_custom_env "$roxie_config" "central" "ROX_VIRTUAL_MACHINES" "true"
         deploy_stackrox_with_roxie_compat "$roxie_config"
         rm -f "$roxie_config"
 
