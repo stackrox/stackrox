@@ -146,7 +146,7 @@ jobs:
     - name: Install oc
       run: |
         curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
-          | tar xz -C /usr/local/bin oc
+          | sudo tar xz -C /usr/local/bin oc
         oc version --client
 
     - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
