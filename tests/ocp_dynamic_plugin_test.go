@@ -174,6 +174,46 @@ func (s *OCPPluginSuite) SetupSuite() {
 	s.noScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-noscope-sa")
 	s.nsScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-ns-sa")
 	s.clusterScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-cluster-sa")
+
+	s.waitForProxyReady()
+}
+
+// waitForProxyReady polls an allowed, forwarded endpoint through the proxy
+// route until it keeps answering for a sustained period. Route traffic can
+// flap for minutes after a Sensor restart even once the deployment is ready,
+// which the per-test retry budget does not absorb.
+func (s *OCPPluginSuite) waitForProxyReady() {
+	const (
+		stableWindow    = time.Minute
+		requestInterval = 5 * time.Second
+	)
+	ctx, cancel := context.WithTimeout(s.ctx, 8*time.Minute)
+	defer cancel()
+
+	var stableFor time.Duration
+	mustEventually(s.T(), ctx, func() error {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.proxyBaseURL+"/v1/metadata", nil)
+		if err != nil {
+			stableFor = 0
+			return err
+		}
+		req.Header.Set("Authorization", "Bearer "+s.noScopeToken)
+		resp, err := s.client.Do(req)
+		if err != nil {
+			stableFor = 0
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			stableFor = 0
+			return fmt.Errorf("proxy returned status %d", resp.StatusCode)
+		}
+		stableFor += requestInterval
+		if stableFor < stableWindow {
+			return fmt.Errorf("proxy stable for %s so far, need %s", stableFor, stableWindow)
+		}
+		return nil
+	}, requestInterval, "proxy route not ready")
 }
 
 // TestProxyPathEnforcement verifies the Sensor proxy's allowlist enforcement:
