@@ -277,8 +277,5 @@ jobs:
       env:
         INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
+        set -u
         infractl delete "${CLUSTER_NAME}"
