@@ -702,7 +702,7 @@ func (e *enricherV2Impl) enrichWithScan(ctx context.Context, enrichmentContext E
 		if enrichmentContext.ScannerTypeHint != "" && scannerType != enrichmentContext.ScannerTypeHint {
 			continue
 		}
-		result, err := e.enrichImageWithScanner(ctx, imageV2, image, scanner, enrichmentContext.FetchOpt == ForceRefetchScansOnly)
+		result, err := e.enrichImageWithScanner(ctx, imageV2, image, scanner, enrichmentContext.FetchOpt.forceReindex())
 		if err != nil {
 			currentScannerErrors := concurrency.WithLock1(&e.scannerErrorsLock, func() int32 {
 				currentScannerErrors := e.errorsPerScanner[scanner] + 1
