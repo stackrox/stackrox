@@ -25,11 +25,11 @@ function AggregateScoreTable({ data }) {
 }
 
 describe(Cypress.spec.relative, () => {
-    it('displays unavailable aggregate text and preserves numeric maxima', () => {
+    it('displays unavailable aggregate scores and preserves numeric maxima', () => {
         const cases = {
             unavailable: {
                 topCVSS: 'Not available',
-                topNvdCVSS: 'No score',
+                topNvdCVSS: null,
                 scores: [null],
                 expectedCvss: 'Not available',
                 expectedNvd: 'Not available',
@@ -42,10 +42,10 @@ describe(Cypress.spec.relative, () => {
                 expectedNvd: '7.2 (V3)',
             },
             missingNvd: {
-                topCVSS: 7.2,
-                topNvdCVSS: 'Not available',
-                scores: [7.2, null],
-                expectedCvss: '7.2 (V3)',
+                topCVSS: 6.8,
+                topNvdCVSS: null,
+                scores: [6.8],
+                expectedCvss: '6.8 (V3)',
                 expectedNvd: 'Not available',
             },
             zero: {
@@ -77,7 +77,7 @@ describe(Cypress.spec.relative, () => {
                 cvss,
                 scoreVersion: 'V3',
                 nvdCvss: typeof topNvdCVSS === 'number' ? cvss : null,
-                nvdScoreVersion: 'V3',
+                nvdScoreVersion: typeof topNvdCVSS === 'number' ? 'V3' : 'UNKNOWN_VERSION',
                 cveBaseInfo: {},
             })),
         }));

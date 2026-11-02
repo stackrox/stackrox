@@ -17,6 +17,7 @@ func TestCVSSFieldsAreNullable(t *testing.T) {
 	schema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.NewMock())
 	require.NoError(t, err)
 	cases := map[string][]string{
+		"ImageCVECore":         {"topNvdCVSS"},
 		"ImageCVEV2":           {"cvss", "nvdcvss"},
 		"ImageVulnerability":   {"cvss", "nvdCvss"},
 		"NodeCVE":              {"cvss"},

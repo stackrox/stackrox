@@ -185,13 +185,13 @@ export type ImageCVE = {
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
     publishedOn: string | null;
-    topNvdCVSS: number | string;
+    topNvdCVSS: number | null;
     distroTuples: {
         summary: string;
         operatingSystem: string;
         cvss: number;
         scoreVersion: string;
-        nvdCvss: number;
+        nvdCvss: number | null;
         nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
         cveBaseInfo: CveBaseInfo;
     }[];
