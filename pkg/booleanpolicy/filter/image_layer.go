@@ -27,9 +27,9 @@ func filterSingleImageByLayer(img *storage.Image, skip storage.SkipImageLayers) 
 	}
 	// Base-image detection records the matched base image's last layer as
 	// BaseImageInfo.max_layer_index (counting "empty" metadata-only layers). That
-	// index is the base/application boundary: components and Dockerfile layers at or
-	// below it belong to the base image. Without base-image info the boundary is
-	// unknown, so every layer is kept.
+	// index is the base/application boundary: components at or below it belong to
+	// the base image. Without base-image info the boundary is unknown, so every
+	// layer is kept.
 	baseInfos := img.GetBaseImageInfo()
 	if len(baseInfos) == 0 {
 		return img
