@@ -24,6 +24,7 @@ type NamespaceServiceAccount struct {
 // ResolveDeploymentsByMultipleServiceAccounts returns a list of deployment IDs given a list of ServiceAccounts
 func ResolveDeploymentsByMultipleServiceAccounts(serviceAccounts []NamespaceServiceAccount) DeploymentResolution {
 	return func(store store.DeploymentStore) []string {
+		// It is not possible to determine the size of allIds in advance so no capacity is set.
 		var allIds []string //nolint:prealloc
 		for _, sa := range serviceAccounts {
 			allIds = append(allIds, store.FindDeploymentIDsWithServiceAccount(sa.Namespace, sa.ServiceAccount)...)

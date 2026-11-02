@@ -564,13 +564,12 @@ func ResponsesChannelDrop(msg *central.MsgFromSensor) {
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
 func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetrics) {
-	labels := make([]string, 0, 4)
-	labels = append(labels,
+	labels := []string{ //nolint:prealloc
 		centralid.Get(),
 		getHosting(),
 		installmethod.Get(),
 		clusterIDPeeker(),
-	)
+	}
 
 	telemetryInfo.Reset()
 	telemetryInfo.WithLabelValues(labels...).Set(1)
