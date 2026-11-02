@@ -178,12 +178,6 @@ jobs:
         PreSystemTests().run()
 
     - name: Deploy StackRox and run VM scanning e2e tests
-      # Mirrors tests/e2e/run-vm-scanning.sh (used by Prow), except deployment
-      # goes through roxie instead of the OLM/operator-bundle path -- roxie
-      # installs the operator via direct manifests, not OLM/CSV, so it isn't
-      # affected by Konflux-built bundles referencing registry.redhat.io
-      # images that don't exist yet for unreleased builds. Same deploy
-      # mechanism as e2e-db-backup-restore-tests.yaml.
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
