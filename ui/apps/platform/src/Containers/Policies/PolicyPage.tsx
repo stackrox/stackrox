@@ -87,6 +87,10 @@ function PolicyPage({
                     setIsLoading(false);
                 });
         } else if (pageAction === 'generate' && getHasSearchApplied(searchFilter)) {
+            // Gate the wizard mount on isLoading so PolicyWizard mounts only after the generated
+            // policy is set. Formik reads initialValues once at mount and has no enableReinitialize,
+            // so mounting before setPolicy would leave the rules step empty.
+            setIsLoading(true);
             generatePolicyFromSearch(getRequestQueryStringForSearchFilter(searchFilter))
                 .then((data) => {
                     /*
@@ -127,6 +131,9 @@ function PolicyPage({
                         errorFromCatch: getAxiosErrorMessage(err),
                         hasNestedFields: false,
                     });
+                })
+                .finally(() => {
+                    setIsLoading(false);
                 });
         }
     }, [pageAction, policyId, searchFilter]);
