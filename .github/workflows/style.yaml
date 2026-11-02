@@ -199,6 +199,31 @@ jobs:
     - name: Check cache golangci-lint
       run: make golangci-lint-cache-status
 
+    # TEST BRANCH: measure reusing the existing pre-build-cli GOCACHE lineage
+    # (plain GOTAGS="" builds) for lint package loading, and separately the
+    # effect of caching the module cache. Not for merge.
+    - name: Determine Go cache paths
+      id: go-paths
+      run: |
+        echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Go build cache (pre-build-cli lineage)
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+      with:
+        path: ${{ steps.go-paths.outputs.GOCACHE }}
+        key: lint-donor-test-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-pre-build-cli-amd64-
+
+    - name: Module cache (test)
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6
+      with:
+        path: ${{ steps.go-paths.outputs.GOMODCACHE }}
+        key: lint-modcache-test-${{ github.sha }}
+        restore-keys: |
+          lint-modcache-test-
+
     - name: Check Go version is in sync in .golangci.yml and go.mod
       run: |
         [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
