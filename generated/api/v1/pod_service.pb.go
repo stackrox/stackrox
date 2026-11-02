@@ -71,6 +71,7 @@ type ExportPodRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	MinAgeDays    int32                  `protobuf:"varint,3,opt,name=min_age_days,json=minAgeDays,proto3" json:"min_age_days,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -117,6 +118,13 @@ func (x *ExportPodRequest) GetQuery() string {
 		return x.Query
 	}
 	return ""
+}
+
+func (x *ExportPodRequest) GetMinAgeDays() int32 {
+	if x != nil {
+		return x.MinAgeDays
+	}
+	return 0
 }
 
 type ExportPodResponse struct {
@@ -169,10 +177,12 @@ const file_api_v1_pod_service_proto_rawDesc = "" +
 	"\n" +
 	"\x18api/v1/pod_service.proto\x12\x02v1\x1a\x1bapi/v1/search_service.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\"0\n" +
 	"\fPodsResponse\x12 \n" +
-	"\x04pods\x18\x01 \x03(\v2\f.storage.PodR\x04pods\"B\n" +
+	"\x04pods\x18\x01 \x03(\v2\f.storage.PodR\x04pods\"d\n" +
 	"\x10ExportPodRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"3\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\x12 \n" +
+	"\fmin_age_days\x18\x03 \x01(\x05R\n" +
+	"minAgeDays\"3\n" +
 	"\x11ExportPodResponse\x12\x1e\n" +
 	"\x03pod\x18\x01 \x01(\v2\f.storage.PodR\x03pod2\x9f\x01\n" +
 	"\n" +

@@ -16,6 +16,7 @@ message PodsResponse {
 message ExportPodRequest {
   int32 timeout = 1;
   string query = 2;
+  int32 min_age_days = 3;
 }
 
 message ExportPodResponse {
