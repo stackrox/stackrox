@@ -42,7 +42,6 @@ jobs:
         ssd-storage-class=true
         fips-enabled=true
       infra-lifespan: 5h
-      # TODO(ROX-36332): setup workload identities
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=openshift
         KUBERNETES_PROVIDER=ocp
