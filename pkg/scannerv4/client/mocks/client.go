@@ -195,6 +195,26 @@ func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2, arg3 any,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), varargs...)
 }
 
+// CreateAndScanImage mocks base method.
+func (m *MockScanner) CreateAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator, arg3 client.ImageRegistryOpt, arg4 ...client.CallOption) (*v4.VulnerabilityReport, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateAndScanImage", varargs...)
+	ret0, _ := ret[0].(*v4.VulnerabilityReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateAndScanImage indicates an expected call of CreateAndScanImage.
+func (mr *MockScannerMockRecorder) CreateAndScanImage(arg0, arg1, arg2, arg3 any, arg4 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAndScanImage", reflect.TypeOf((*MockScanner)(nil).CreateAndScanImage), varargs...)
+}
+
 // ScanSBOM mocks base method.
 func (m *MockScanner) ScanSBOM(ctx context.Context, sbom []byte, mediaType string, callOpts ...client.CallOption) (*v4.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()

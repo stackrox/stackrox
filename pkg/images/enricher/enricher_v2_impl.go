@@ -702,7 +702,7 @@ func (e *enricherV2Impl) enrichWithScan(ctx context.Context, enrichmentContext E
 		if enrichmentContext.ScannerTypeHint != "" && scannerType != enrichmentContext.ScannerTypeHint {
 			continue
 		}
-		result, err := e.enrichImageWithScanner(ctx, imageV2, image, scanner)
+		result, err := e.enrichImageWithScanner(ctx, imageV2, image, scanner, enrichmentContext.FetchOpt == ForceRefetchScansOnly)
 		if err != nil {
 			currentScannerErrors := concurrency.WithLock1(&e.scannerErrorsLock, func() int32 {
 				currentScannerErrors := e.errorsPerScanner[scanner] + 1
@@ -999,7 +999,7 @@ func checkForMatchingImageIntegrationsV2(registries []registryTypes.ImageRegistr
 }
 
 func (e *enricherV2Impl) enrichImageWithScanner(ctx context.Context, imageV2 *storage.ImageV2, image *storage.Image,
-	imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
+	imageScanner scannerTypes.ImageScannerWithDataSource, forceReindex bool) (ScanResult, error) {
 	scanner := imageScanner.GetScanner()
 
 	if !scanner.Match(imageV2.GetName()) {
@@ -1017,7 +1017,17 @@ func (e *enricherV2Impl) enrichImageWithScanner(ctx context.Context, imageV2 *st
 	}()
 
 	scanStartTime := time.Now()
-	scan, err := scanner.GetScan(image)
+	var scan *storage.ImageScan
+	var err error
+	if forceReindex {
+		if fr, ok := scanner.(scannerTypes.ForceReindexer); ok {
+			scan, err = fr.GetScanForceReindex(image)
+		} else {
+			scan, err = scanner.GetScan(image)
+		}
+	} else {
+		scan, err = scanner.GetScan(image)
+	}
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	if err != nil {
 		return ScanNotDone, errors.Wrapf(err, "scanning %q with scanner %q", imageV2.GetName().GetFullName(), scanner.Name())

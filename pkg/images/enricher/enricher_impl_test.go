@@ -1845,3 +1845,40 @@ func TestHasScanData(t *testing.T) {
 		})
 	}
 }
+
+func TestEnrichImageWithScanner_ForceReindex(t *testing.T) {
+	image := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
+	e := &enricherImpl{metrics: newMetrics(pkgMetrics.CentralSubsystem)}
+
+	t.Run("force reindex with ForceReindexer scanner calls GetScanForceReindex", func(t *testing.T) {
+		scanner := &fakeForceReindexScanner{}
+		imageScanner := &fakeImageScannerWithDataSource{scanner: scanner}
+
+		result, err := e.enrichImageWithScanner(context.Background(), image, imageScanner, true)
+		require.NoError(t, err)
+		assert.Equal(t, ScanSucceeded, result)
+		assert.True(t, scanner.requestedForceReindex)
+		assert.False(t, scanner.fakeScanner.requestedScan)
+	})
+
+	t.Run("force reindex with plain scanner falls back to GetScan", func(t *testing.T) {
+		scanner := &fakeScanner{}
+		imageScanner := &fakeImageScannerWithDataSource{scanner: scanner}
+
+		result, err := e.enrichImageWithScanner(context.Background(), image, imageScanner, true)
+		require.NoError(t, err)
+		assert.Equal(t, ScanSucceeded, result)
+		assert.True(t, scanner.requestedScan)
+	})
+
+	t.Run("no force reindex uses GetScan even if scanner implements ForceReindexer", func(t *testing.T) {
+		scanner := &fakeForceReindexScanner{}
+		imageScanner := &fakeImageScannerWithDataSource{scanner: scanner}
+
+		result, err := e.enrichImageWithScanner(context.Background(), image, imageScanner, false)
+		require.NoError(t, err)
+		assert.Equal(t, ScanSucceeded, result)
+		assert.False(t, scanner.requestedForceReindex)
+		assert.True(t, scanner.fakeScanner.requestedScan)
+	})
+}

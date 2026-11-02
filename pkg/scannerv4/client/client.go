@@ -97,6 +97,19 @@ type Scanner interface {
 	// report.
 	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator, ImageRegistryOpt, ...CallOption) (*v4.VulnerabilityReport, error)
 
+	// CreateAndScanImage unconditionally creates a fresh index report for the
+	// image, discarding any previously stored index report for the same
+	// digest, then calls the matcher to return a vulnerability report.
+	//
+	// Unlike IndexAndScanImage, this always re-runs indexing rather than
+	// reusing an existing index report. Use this when the indexer's own
+	// configuration (e.g. enabling the Maven search fallback) has changed
+	// since an image was last indexed, since claircore's per-layer scan
+	// cache has no way to know indexer configuration changed and would
+	// otherwise keep serving the stale, previously-indexed packages
+	// indefinitely.
+	CreateAndScanImage(context.Context, name.Digest, authn.Authenticator, ImageRegistryOpt, ...CallOption) (*v4.VulnerabilityReport, error)
+
 	// GetVulnerabilities will match vulnerabilities to the contents provided.
 	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents, callOpts ...CallOption) (*v4.VulnerabilityReport, error)
 
@@ -315,6 +328,28 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 	return c.getVulnerabilities(ctx, ir.GetHashId(), nil, options)
 }
 
+// CreateAndScanImage calls the Indexer's gRPC endpoint CreateIndexReport,
+// unconditionally creating a fresh index report, then calls the matcher to
+// return a vulnerability report.
+func (c *gRPCScanner) CreateAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.VulnerabilityReport, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
+	ctx = log.With(ctx, "method", "CreateAndScanImage", "image", ref.String())
+	options := makeCallOptions(callOpts...)
+
+	ir, err := c.createImageIndex(ctx, ref, auth, opt, options)
+	if err != nil {
+		return nil, fmt.Errorf("create index: %w", err)
+	}
+
+	return c.getVulnerabilities(ctx, ir.GetHashId(), nil, options)
+}
+
 func (c *gRPCScanner) getImageIndex(ctx context.Context, hashID string, options callOptions) (*v4.IndexReport, bool, error) {
 	req := &v4.GetIndexReportRequest{HashId: hashID, IncludeExternal: options.includeExternalIndexReports}
 	var ir *v4.IndexReport
@@ -366,6 +401,47 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 	var responseMetadata metadata.MD
 	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
 		ir, err = c.indexer.GetOrCreateIndexReport(ctx, &req, grpc.Header(&responseMetadata))
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create index: %w", err)
+	}
+
+	setIndexerVersion(options, responseMetadata)
+
+	return ir, nil
+}
+
+// createImageIndex builds the same locator the Indexer needs as
+// getOrCreateImageIndex, but calls CreateIndexReport instead of
+// GetOrCreateIndexReport, so the Indexer always performs a fresh index
+// instead of returning a previously stored one for the same hash ID.
+func (c *gRPCScanner) createImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, options callOptions) (*v4.IndexReport, error) {
+	id := getImageManifestID(ref)
+	imgURL := &url.URL{
+		Scheme: ref.Context().Scheme(),
+		Host:   ref.RegistryStr(),
+		Path:   fmt.Sprintf("%s@%s", ref.RepositoryStr(), ref.DigestStr()),
+	}
+	authCfg, err := auth.Authorization()
+	if err != nil {
+		return nil, fmt.Errorf("get auth: %w", err)
+	}
+	req := v4.CreateIndexReportRequest{
+		HashId: id,
+		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
+			ContainerImage: &v4.ContainerImageLocator{
+				Url:                   imgURL.String(),
+				Username:              authCfg.Username,
+				Password:              authCfg.Password,
+				InsecureSkipTlsVerify: opt.InsecureSkipTLSVerify,
+			},
+		},
+	}
+	var ir *v4.IndexReport
+	var responseMetadata metadata.MD
+	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.CreateIndexReport", func() (err error) {
+		ir, err = c.indexer.CreateIndexReport(ctx, &req, grpc.Header(&responseMetadata))
 		return err
 	})
 	if err != nil {

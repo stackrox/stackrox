@@ -180,7 +180,25 @@ func sbomScan(vr *v4.VulnerabilityReport, scannerVersionStr string) *v1.SBOMScan
 	}
 }
 
+// indexAndScanFunc matches the shape of both client.Scanner.IndexAndScanImage
+// and client.Scanner.CreateAndScanImage, so GetScan and GetScanForceReindex
+// can share everything except which of those two gets called.
+type indexAndScanFunc func(context.Context, name.Digest, authn.Authenticator, client.ImageRegistryOpt, ...client.CallOption) (*v4.VulnerabilityReport, error)
+
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+	return s.getScan(image, s.scannerClient.IndexAndScanImage)
+}
+
+// GetScanForceReindex behaves like GetScan, except it unconditionally
+// discards any previously indexed data for the image and re-runs indexing
+// from scratch. Use this when scanner configuration has changed since the
+// image was last scanned (see client.Scanner.CreateAndScanImage for why
+// GetScan can't pick this up on its own).
+func (s *scannerv4) GetScanForceReindex(image *storage.Image) (*storage.ImageScan, error) {
+	return s.getScan(image, s.scannerClient.CreateAndScanImage)
+}
+
+func (s *scannerv4) getScan(image *storage.Image, indexAndScan indexAndScanFunc) (*storage.ImageScan, error) {
 	if image.GetMetadata() == nil {
 		return nil, nil
 	}
@@ -213,7 +231,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 	var scannerVersion pkgscanner.Version
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt, client.Version(&scannerVersion))
+	vr, err := indexAndScan(ctx, digest, &auth, opt, client.Version(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}

@@ -111,6 +111,30 @@ func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	return &v1.VulnDefinitionsInfo{}, nil
 }
 
+type fakeForceReindexScanner struct {
+	fakeScanner
+	requestedForceReindex bool
+}
+
+var _ scannertypes.ForceReindexer = (*fakeForceReindexScanner)(nil)
+
+func (f *fakeForceReindexScanner) GetScanForceReindex(_ *storage.Image) (*storage.ImageScan, error) {
+	f.requestedForceReindex = true
+	return &storage.ImageScan{}, nil
+}
+
+type fakeImageScannerWithDataSource struct {
+	scanner scannertypes.Scanner
+}
+
+func (f *fakeImageScannerWithDataSource) GetScanner() scannertypes.Scanner {
+	return f.scanner
+}
+
+func (f *fakeImageScannerWithDataSource) DataSource() *storage.DataSource {
+	return &storage.DataSource{Id: "id"}
+}
+
 type fakeRegistryScanner struct {
 	scanner           *fakeScanner
 	requestedMetadata bool
