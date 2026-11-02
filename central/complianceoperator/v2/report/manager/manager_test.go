@@ -513,9 +513,11 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 				})
 
 			result := &watcher.ScanWatcherResults{
-				WatcherID: "watcher-1",
-				Scan:      scan,
-				Error:     tc.err,
+				WatcherID:       "watcher-1",
+				Scan:            scan,
+				ScanRefID:       scan.GetScanRefId(),
+				LastStartedTime: scan.GetLastStartedTime(),
+				Error:           tc.err,
 			}
 
 			concurrency.WithLock(&managerImp.watchingScansLock, func() {
