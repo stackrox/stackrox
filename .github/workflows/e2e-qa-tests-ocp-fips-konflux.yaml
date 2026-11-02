@@ -43,10 +43,10 @@ jobs:
         fips-enabled=true
       infra-lifespan: 5h
       # TODO(ROX-36332): setup workload identities
-      #   SETUP_WORKLOAD_IDENTITIES=true
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=openshift
         KUBERNETES_PROVIDER=ocp
         SFA_AGENT=true
         USE_KONFLUX_IMAGES=true
+        SETUP_WORKLOAD_IDENTITIES=true
     secrets: inherit
