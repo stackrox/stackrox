@@ -21,6 +21,7 @@ import {
 } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -30,7 +31,7 @@ import { getPercentage } from 'utils/mathUtils';
 
 import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
-import { getStatusCounts } from './compliance.coverage.utils';
+import { getAggregateScanStatus, getStatusCounts } from './compliance.coverage.utils';
 import ComplianceProgressBar from './components/ComplianceProgressBar';
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
@@ -58,6 +59,9 @@ function ProfileChecksTable({
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const { searchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = pagination;
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
 
     function toggleRow(selectedRowIndex: number) {
         const newExpandedRows = expandedRows.includes(selectedRowIndex)
@@ -114,6 +118,7 @@ function ProfileChecksTable({
                                 Check
                             </Th>
                             <Th modifier="fitContent">Controls</Th>
+                            {isScanStatusEnabled && <Th modifier="fitContent">Scan status</Th>}
                             <Th modifier="fitContent">Pass status</Th>
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
@@ -144,7 +149,13 @@ function ProfileChecksTable({
                         renderer={({ data }) => (
                             <>
                                 {data.map((check, rowIndex) => {
-                                    const { checkName, rationale, checkStats, controls } = check;
+                                    const {
+                                        checkName,
+                                        rationale,
+                                        checkStats,
+                                        controls,
+                                        dataFreshness,
+                                    } = check;
                                     const {
                                         passCount,
                                         failCount,
@@ -208,6 +219,11 @@ function ProfileChecksTable({
                                                         '-'
                                                     )}
                                                 </Td>
+                                                {isScanStatusEnabled && (
+                                                    <Td dataLabel="Scan status">
+                                                        {getAggregateScanStatus(dataFreshness)}
+                                                    </Td>
+                                                )}
                                                 <Td dataLabel="Pass status" modifier="fitContent">
                                                     <StatusCountIcon
                                                         text="cluster"
