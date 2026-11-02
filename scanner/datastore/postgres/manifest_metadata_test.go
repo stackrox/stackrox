@@ -153,3 +153,39 @@ func Test_ManifestMetadata(t *testing.T) {
 		assert.False(t, exists)
 	}
 }
+
+func Test_ManifestMetadata_DeleteManifest(t *testing.T) {
+	ctx := test.Logging(t)
+	pool := testDB(t, ctx, "manifest_metadata_delete_manifest_test")
+	store, err := InitPostgresIndexerMetadataStore(ctx, pool, true, IndexerMetadataStoreOpts{})
+	require.NoError(t, err)
+	now := time.Now()
+
+	// DeleteManifest should remove the manifest regardless of its expiration, even if that
+	// expiration is far in the future (unlike GCManifests, which only deletes already-expired
+	// rows).
+	err = store.StoreManifest(ctx, "sha512:abc", now.Add(1*time.Hour))
+	require.NoError(t, err)
+	exists, err := store.ManifestExists(ctx, "sha512:abc")
+	require.NoError(t, err)
+	assert.True(t, exists)
+
+	// A second, unrelated manifest should be unaffected.
+	err = store.StoreManifest(ctx, "sha512:def", now.Add(1*time.Hour))
+	require.NoError(t, err)
+
+	err = store.DeleteManifest(ctx, "sha512:abc")
+	require.NoError(t, err)
+
+	exists, err = store.ManifestExists(ctx, "sha512:abc")
+	require.NoError(t, err)
+	assert.False(t, exists)
+
+	exists, err = store.ManifestExists(ctx, "sha512:def")
+	require.NoError(t, err)
+	assert.True(t, exists)
+
+	// Deleting a manifest that was never stored is a no-op, not an error.
+	err = store.DeleteManifest(ctx, "sha512:never-stored")
+	require.NoError(t, err)
+}

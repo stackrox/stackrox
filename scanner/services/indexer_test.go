@@ -70,7 +70,7 @@ func (s *indexerServiceTestSuite) TestAuthz() {
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {
-	s.setupMock(hashID, 2, &claircore.IndexReport{Success: true}, nil)
+	s.setupMock(hashID, 3, &claircore.IndexReport{Success: true}, nil)
 	req := createRequest(hashID, imageURL, "sample username", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
@@ -78,7 +78,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEn
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
-	s.setupMock(hashID, 1, &claircore.IndexReport{Success: true}, nil)
+	s.setupMock(hashID, 2, &claircore.IndexReport{Success: true}, nil)
 	req := createRequest(hashID, imageURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
@@ -86,7 +86,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
-	s.setupMock(hashID, 1, nil, errors.New(`indexer said "ouch"`))
+	s.setupMock(hashID, 2, nil, errors.New(`indexer said "ouch"`))
 	req := createRequest(hashID, imageURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
@@ -98,7 +98,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError(
 	iURL := "https://foobar:443/image:sha256@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106"
 	s.indexerMock.
 		EXPECT().
-		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(1)).
+		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(2)).
 		Return(&claircore.IndexReport{Success: true}, nil)
 	req := createRequest(hashID, iURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)

@@ -42,6 +42,20 @@ func (m *MockIndexerMetadataStore) EXPECT() *MockIndexerMetadataStoreMockRecorde
 	return m.recorder
 }
 
+// DeleteManifest mocks base method.
+func (m *MockIndexerMetadataStore) DeleteManifest(ctx context.Context, manifestID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteManifest", ctx, manifestID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteManifest indicates an expected call of DeleteManifest.
+func (mr *MockIndexerMetadataStoreMockRecorder) DeleteManifest(ctx, manifestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteManifest", reflect.TypeOf((*MockIndexerMetadataStore)(nil).DeleteManifest), ctx, manifestID)
+}
+
 // GCManifests mocks base method.
 func (m *MockIndexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...postgres.ReindexGCOption) ([]string, error) {
 	m.ctrl.T.Helper()

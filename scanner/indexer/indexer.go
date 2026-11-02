@@ -469,6 +469,12 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 		})
 	}
 
+	if o.force && features.ScannerV4ReIndex.Enabled() && i.metadataStore != nil {
+		if err := i.metadataStore.DeleteManifest(ctx, manifestDigest.String()); err != nil {
+			return nil, fmt.Errorf("discarding previous index for forced reindex: %w", err)
+		}
+	}
+
 	ir, err := i.libIndex.Index(ctx, manifest)
 	if err != nil {
 		return nil, err

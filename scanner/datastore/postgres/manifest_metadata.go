@@ -151,3 +151,38 @@ func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.
 
 	return deletedManifests, nil
 }
+
+// DeleteManifest immediately and unconditionally deletes the single given manifest, both from
+// the manifest_metadata table and, via the underlying indexer.Store, from ClairCore's own
+// manifest/index report/scanned-state tracking.
+func (i *indexerMetadataStore) DeleteManifest(ctx context.Context, manifestID string) error {
+	const deleteManifest = `DELETE FROM manifest_metadata WHERE manifest_id = $1`
+
+	tx, err := i.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("beginning DeleteManifest transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	if _, err := tx.Exec(ctx, deleteManifest, manifestID); err != nil {
+		return fmt.Errorf("deleting manifest metadata: %w", err)
+	}
+
+	if i.store != nil {
+		d, err := claircore.ParseDigest(manifestID)
+		if err != nil {
+			return fmt.Errorf("parsing manifest ID: %w", err)
+		}
+		if _, err := i.store.DeleteManifests(ctx, d); err != nil {
+			return fmt.Errorf("deleting manifest: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("committing deleted manifest: %w", err)
+	}
+
+	return nil
+}
