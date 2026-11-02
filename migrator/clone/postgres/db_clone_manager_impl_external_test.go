@@ -148,6 +148,13 @@ func (s *PostgresExternalManagerSuite) TestUpgradeCompatibility() {
 
 func (s *PostgresExternalManagerSuite) TestOverrideCannotBypassRollbackMinimum() {
 	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
-	migVer.SetVersionPostgres(s.ctx, externalDB, &storage.Version{Version: "5.2.0", SeqNum: 230, MinSeqNum: 228})
+	// The stored minimum must stay above this Central's sequence. The unsafe
+	// upgrade override must not bypass that rollback floor.
+	current := migrations.CurrentDBVersionSeqNum()
+	migVer.SetVersionPostgres(s.ctx, externalDB, &storage.Version{
+		Version:   "5.2.0",
+		SeqNum:    int32(current + 2),
+		MinSeqNum: int32(current + 1),
+	})
 	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "Central rollback blocked")
 }

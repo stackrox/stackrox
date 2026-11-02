@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/baseimage/tagfetcher"
 	delegatedRegistryMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -102,7 +103,7 @@ func TestPromoteTags_CopiesHistory(t *testing.T) {
 		DoAndReturn(func(_ context.Context, _ string, images map[*storage.BaseImage][]string) error {
 			require.Len(t, images, 1)
 			for img, digests := range images {
-				assert.Equal(t, history, img.GetHistory())
+				protoassert.SlicesEqual(t, history, img.GetHistory())
 				assert.Equal(t, []string{"sha256:layer1"}, digests)
 			}
 			return nil
