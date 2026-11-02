@@ -20,6 +20,7 @@ export const sortFields = [
     'Cluster',
     'Namespace',
     'Risk Priority Classification',
+    'Deployment Risk Score',
     'Deployment Risk Priority',
 ];
 export const defaultSortOption = {
