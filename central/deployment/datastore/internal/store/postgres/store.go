@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
+	riskPkg "github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,6 +40,13 @@ type (
 	storeType = storage.Deployment
 	callback  = func(obj *storeType) error
 )
+
+func normalizeRiskPrioritySortOrder(classification storage.RiskPriorityClassification, sortOrder int32) int32 {
+	if sortOrder != 0 {
+		return sortOrder
+	}
+	return riskPkg.PriorityClassificationSortOrder(classification)
+}
 
 // Store is the interface to interact with the storage for storage.Deployment
 type Store interface {
@@ -146,7 +154,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		obj.GetPriority(),
 		obj.GetRiskPriorityClassification(),
-		obj.GetRiskPrioritySortOrder(),
+		normalizeRiskPrioritySortOrder(obj.GetRiskPriorityClassification(), obj.GetRiskPrioritySortOrder()),
 		obj.GetImagePullSecrets(),
 		obj.GetServiceAccount(),
 		obj.GetServiceAccountPermissionLevel(),
@@ -408,7 +416,7 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			obj.GetPriority(),
 			obj.GetRiskPriorityClassification(),
-			obj.GetRiskPrioritySortOrder(),
+			normalizeRiskPrioritySortOrder(obj.GetRiskPriorityClassification(), obj.GetRiskPrioritySortOrder()),
 			obj.GetImagePullSecrets(),
 			obj.GetServiceAccount(),
 			obj.GetServiceAccountPermissionLevel(),

@@ -15,6 +15,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"gorm.io/gorm"
 )
 
@@ -100,14 +101,7 @@ func (f *fullStoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	// Clone the query to avoid mutating the original
-	query := q.CloneVT()
-	if query == nil {
-		query = pkgSearch.EmptyQuery()
-	}
-
-	// Set selects to only the columns needed for ListDeployment
-	query.Selects = views.ListDeploymentViewSelects()
+	query := prepareListDeploymentQuery(q)
 
 	var listDeployments []*storage.ListDeployment
 	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, query,
@@ -120,6 +114,20 @@ func (f *fullStoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) 
 	}
 
 	return listDeployments, nil
+}
+
+func prepareListDeploymentQuery(q *v1.Query) *v1.Query {
+	// Clone the query to avoid mutating the original.
+	query := pkgSearch.EmptyQuery()
+	if q != nil {
+		query = q.CloneVT()
+	}
+
+	query = sortfields.TransformSortOptions(query, pkgSchema.DeploymentsSchema.OptionsMap)
+
+	// Set selects to only the columns needed for ListDeployment.
+	query.Selects = views.ListDeploymentViewSelects()
+	return query
 }
 
 func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
