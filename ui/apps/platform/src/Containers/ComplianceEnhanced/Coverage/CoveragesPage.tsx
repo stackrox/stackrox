@@ -1,5 +1,5 @@
 import { useCallback, useContext, useState } from 'react';
-import { Navigate, Route, Routes, useMatch, useParams } from 'react-router-dom-v5-compat';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
@@ -30,10 +30,7 @@ import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsServi
 import type { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight } from 'utils/chartUtils';
 
-import {
-    coverageProfileChecksPath,
-    coverageProfileClustersPath,
-} from './compliance.coverage.routes';
+import { coverageProfileChecksPath } from './compliance.coverage.routes';
 import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
@@ -53,58 +50,33 @@ import {
 
 const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfig];
 
-const staleScanAlertMessages = {
-    clusters: {
-        title: ({ count }: { count: number }) =>
-            count === 1
-                ? `Scan health issues detected on ${count} cluster`
-                : `Scan health issues detected on ${count} clusters`,
-        body: 'Clusters with stale or incomplete compliance scans remain listed with their last known results instead of being removed from this view.',
-    },
-    checks: {
-        title: ({ count }: { count: number }) =>
-            count === 1
-                ? `Scan health issues detected on ${count} check result`
-                : `Scan health issues detected on ${count} check results`,
-        body: 'Check results with stale or incomplete compliance scans remain listed with their last known results instead of being removed from this view.',
-    },
-};
-
 type StaleScanAlertProps = {
-    staleCount: number;
-    resultsView: 'checks' | 'clusters';
+    staleClusterCount: number;
+    staleCheckResultCount: number;
 };
 
-function StaleScanAlert({ staleCount, resultsView }: StaleScanAlertProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
-    if (staleCount === 0 || !isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA')) {
-        return null;
-    }
-
-    const messages = staleScanAlertMessages[resultsView];
-
+function StaleScanAlert({ staleClusterCount, staleCheckResultCount }: StaleScanAlertProps) {
     return (
-        <PageSection>
-            <Alert
-                component="p"
-                isInline
-                title={messages.title({ count: staleCount })}
-                variant="warning"
-            >
-                {messages.body}
-            </Alert>
-        </PageSection>
+        <Alert component="p" isInline title="Scan data not current" variant="warning">
+            <Flex direction={{ default: 'column' }}>
+                <p>
+                    Some compliance coverage data is stale or incomplete. Last known results remain
+                    listed to preserve visibility until the next successful scan.
+                </p>
+                <p>Clusters affected: {staleClusterCount}</p>
+                <p>Check results affected: {staleCheckResultCount}</p>
+            </Flex>
+        </Alert>
     );
 }
 
 function CoveragesPage() {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
         COMPLIANCE_DISCLAIMER_KEY,
         false
     );
     const { navigateWithScanConfigQuery } = useScanConfigRouter();
-    const isClustersRoute = useMatch(coverageProfileClustersPath);
     const { profileName } = useParams() as { profileName: string };
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
@@ -144,11 +116,12 @@ function CoveragesPage() {
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
         (profile) => profile.name === profileName
     );
-    const resultsView: StaleScanAlertProps['resultsView'] = isClustersRoute ? 'clusters' : 'checks';
-    const staleScanHealthIssueCount =
-        resultsView === 'clusters'
-            ? (selectedProfileStats?.staleClusterCount ?? 0)
-            : (selectedProfileStats?.staleCheckResultCount ?? 0);
+    const staleClusterCount = selectedProfileStats?.staleClusterCount ?? 0;
+    const staleCheckResultCount = selectedProfileStats?.staleCheckResultCount ?? 0;
+
+    const showStaleScanAlert =
+        (staleClusterCount > 0 || staleCheckResultCount > 0) &&
+        isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
 
     return (
         <>
@@ -176,11 +149,15 @@ function CoveragesPage() {
                         profiles={scanConfigProfilesResponse.profiles}
                         handleToggleChange={handleProfilesToggleChange}
                     />
-                    <StaleScanAlert
-                        resultsView={resultsView}
-                        staleCount={staleScanHealthIssueCount}
-                    />
                     <Divider component="div" />
+                    {showStaleScanAlert && (
+                        <PageSection>
+                            <StaleScanAlert
+                                staleClusterCount={staleClusterCount}
+                                staleCheckResultCount={staleCheckResultCount}
+                            />
+                        </PageSection>
+                    )}
                     <Flex
                         alignItems={{ default: 'alignItemsStretch' }}
                         columnGap={{ default: 'columnGapNone' }}
