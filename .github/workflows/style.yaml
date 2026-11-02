@@ -208,13 +208,13 @@ jobs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
 
-    - name: Restore Go build cache (pre-build-cli lineage)
+    - name: Restore Go build cache (pre-build-go-binaries lineage)
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
       with:
         path: ${{ steps.go-paths.outputs.GOCACHE }}
         key: lint-donor-test-${{ github.sha }}
         restore-keys: |
-          go-build-v2-pre-build-cli-amd64-
+          go-build-v2-pre-build-go-binaries-amd64-
 
     - name: Module cache (test)
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6
@@ -231,6 +231,10 @@ jobs:
     - name: make golangci-lint
       env:
         GOMEMLIMIT: 12GiB
+        # Match the build jobs' compile flags (scripts/go-build.sh) so the restored
+        # go-build-v2 build cache entries hit for lint's package loading.
+        GOFLAGS: -trimpath
+        CGO_ENABLED: "0"
       run: make golangci-lint
 
     - name: Check Cache golangci-lint
