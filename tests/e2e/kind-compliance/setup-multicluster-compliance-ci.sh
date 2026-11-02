@@ -47,28 +47,52 @@
 #   MAIN_IMAGE_REGISTRY=quay.io/stackrox-io   StackRox image registry
 #   MAIN_IMAGE_TAG=<make tag>        StackRox image tag to test (REQUIRED in CI)
 #   ROX_ADMIN_PASSWORD=<pw>          Central admin password (generated if unset)
-#   ASSET_DIR=<dir>                  dir with co-crds/, openshift-shim/,
-#                                    operator-generic.yaml, cel-profile.yaml
+#   ASSET_DIR=<dir>                  dir with openshift-shim/, operator-generic.yaml,
+#                                    cel-profile.yaml (the Compliance Operator's own
+#                                    CRDs and the openshift/api platform CRDs are NOT
+#                                    here: they are sourced at setup time from the
+#                                    pinned go.mod deps, see stage_co_crds/
+#                                    stage_openshift_crds below)
 #   ROXCTL=roxctl                    roxctl binary
 #   DISABLE_COLLECTOR=true           CEL path needs no collector; saves CPU/RAM
 #   KEEP=false                       if true, `up` does not auto-teardown on failure
 #   TIMEOUT_ROLLOUT=600  TIMEOUT_RESULTS=600  seconds
 #
-# REQUIRES: kind, kubectl, helm, docker, jq, roxctl, openssl; vcluster for MODE=vcluster.
+# REQUIRES: kind, kubectl, helm, docker, jq, roxctl, openssl, go (to resolve CRDs
+#           from pinned go.mod deps, see "CRD sourcing" below); vcluster for
+#           MODE=vcluster.
+#
+# CRD sourcing (no vendored copies): the Compliance Operator's own CRDs
+# (compliance.openshift.io_*.yaml, CO_INSTALL=bundle) and the openshift/api
+# platform CRDs (FIDELITY=platform) are NOT committed under assets/. Both are
+# already shipped, byte-for-byte, inside modules this repo's go.mod already pins
+# for compilation (github.com/ComplianceAsCode/compliance-operator,
+# github.com/openshift/api). At `up` time this script resolves those module
+# directories with `go list -m` and copies the needed files into
+# $WORK/sourced/{co-crds,openshift-crds}/, which are what gets applied. This
+# makes the pinned go.mod version the single source of truth (no separate
+# snapshot to fall out of sync), at the cost of requiring `go` + the module
+# cache to be present (true in CI: an earlier step already builds roxctl, which
+# resolves the full module graph).
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Root of the stackrox/stackrox checkout (tests/e2e/kind-compliance -> repo root),
+# resolved once, up front: `go list -m` (CRD sourcing, see below) must run with
+# this repo's go.mod/go.sum in scope, not wherever a later `cd` might land.
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 MODE="${MODE:-separate-kind}"
 SECURED_COUNT="${SECURED_COUNT:-2}"
 PREFIX="${PREFIX:-co-ci}"
 KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.31.2}"
 CO_OPERATOR_IMAGE="${CO_OPERATOR_IMAGE:-quay.io/redhat-user-workloads/ocp-isc-tenant/compliance-operator-dev:master}"
 # How the Compliance Operator gets onto each cluster:
-#   bundle - (default) reconstructed Deployment/RBAC + co-crds/, no OLM. What the
-#            script has always done; fastest, no catalog/subscription resolution.
+#   bundle - (default) reconstructed Deployment/RBAC (assets/operator-generic.yaml)
+#            + CRDs sourced from the pinned go.mod dep, no OLM. What the script
+#            has always done; fastest, no catalog/subscription resolution.
 #   olm    - install upstream OLM, then a CatalogSource/OperatorGroup/Subscription
 #            against CO_CATALOG_IMAGE, exercising the real install path OpenShift
 #            uses. Opt-in: slower (extra images, catalog pod, CSV resolution).
@@ -135,13 +159,15 @@ die()  { printf 'XX %s\n' "$*" >&2; exit 1; }
 
 require_tools() {
   local t
-  for t in kind kubectl helm docker jq openssl curl "$ROXCTL"; do
+  # `go` is required unconditionally: CO_INSTALL=bundle (the default) sources
+  # the Compliance Operator's own CRDs from its pinned go.mod module (see
+  # stage_co_crds), not from a committed copy.
+  for t in kind kubectl helm docker jq openssl curl go "$ROXCTL"; do
     command -v "$t" >/dev/null 2>&1 || die "missing required tool: $t"
   done
   if [[ "$MODE" == "vcluster" ]]; then
     command -v vcluster >/dev/null 2>&1 || die "MODE=vcluster needs the vcluster CLI"
   fi
-  [[ -d "$ASSET_DIR/co-crds" ]] || die "ASSET_DIR missing co-crds/: $ASSET_DIR"
   [[ -f "$ASSET_DIR/operator-generic.yaml" ]] || die "missing operator-generic.yaml in $ASSET_DIR"
   [[ -f "$ASSET_DIR/cel-profile.yaml" ]] || die "missing cel-profile.yaml in $ASSET_DIR"
   case "$FIDELITY" in
@@ -149,7 +175,6 @@ require_tools() {
     content) [[ -f "$ASSET_DIR/scc-shim-webhook.py" ]] || die "content fidelity needs scc-shim-webhook.py in $ASSET_DIR" ;;
     platform)
       [[ -f "$ASSET_DIR/scc-shim-webhook.py" ]] || die "platform fidelity needs scc-shim-webhook.py in $ASSET_DIR"
-      [[ -d "$ASSET_DIR/openshift-platform-shim/crds" ]] || die "platform fidelity needs openshift-platform-shim/crds/ in $ASSET_DIR"
       [[ -f "$ASSET_DIR/openshift-platform-shim/objects.yaml" ]] || die "platform fidelity needs openshift-platform-shim/objects.yaml in $ASSET_DIR"
       [[ -f "$ASSET_DIR/openshift-platform-shim/sccs.yaml" ]] || die "platform fidelity needs openshift-platform-shim/sccs.yaml in $ASSET_DIR"
       ;;
@@ -159,6 +184,95 @@ require_tools() {
     bundle|olm) ;;
     *) die "CO_INSTALL must be 'bundle' or 'olm' (got '$CO_INSTALL')" ;;
   esac
+}
+
+# ---------------------------------------------------------------------------
+# CRD sourcing: resolve the two pinned go.mod deps that already ship, verbatim,
+# every CRD this harness needs (see the "CRD sourcing" header note above). This
+# is the only place the script reads from the module cache; everything else
+# below reads from $WORK/sourced/ like it used to read from a committed asset.
+# ---------------------------------------------------------------------------
+OPENSHIFT_API_MODULE="github.com/openshift/api"
+CO_MODULE="github.com/ComplianceAsCode/compliance-operator"
+OPENSHIFT_API_DIR=""
+CO_MODULE_DIR=""
+
+# Short-name -> path of the CRD manifest inside the openshift/api module, for
+# the 18 OpenShift CRDs FIDELITY=platform needs. Several config/v1 and
+# operator/v1 types ship one manifest per FeatureSet (e.g. "-Default.crd.yaml",
+# "-CustomNoUpgrade.crd.yaml", "-OKD.crd.yaml"); we always want "-Default" (the
+# standard self-managed featureset). Types without a featureset ship a single
+# file. This table is the only thing authored here: it is a lookup of file
+# paths, not a copy of CRD content, and only needs to change if openshift/api
+# restructures its zz_generated.crd-manifests/ layout (rare).
+OPENSHIFT_CRD_MAP=(
+  "apiservers.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_apiservers-Default.crd.yaml"
+  "authentications.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_authentications-Default.crd.yaml"
+  "clusteroperators.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_00_cluster-version-operator_01_clusteroperators.crd.yaml"
+  "clusterversions.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_00_cluster-version-operator_01_clusterversions-Default.crd.yaml"
+  "consoles.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_consoles.crd.yaml"
+  "featuregates.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_featuregates.crd.yaml"
+  "images.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_images.crd.yaml"
+  "infrastructures.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_infrastructures-Default.crd.yaml"
+  "ingresses.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_ingresses.crd.yaml"
+  "networks.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_networks.crd.yaml"
+  "oauths.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_oauths.crd.yaml"
+  "proxies.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_03_config-operator_01_proxies.crd.yaml"
+  "schedulers.config.openshift.io=config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_schedulers-SelfManagedHA-Default.crd.yaml"
+  "ingresscontrollers.operator.openshift.io=operator/v1/zz_generated.crd-manifests/0000_50_ingress_00_ingresscontrollers.crd.yaml"
+  "kubeapiservers.operator.openshift.io=operator/v1/zz_generated.crd-manifests/0000_20_kube-apiserver_01_kubeapiservers-Default.crd.yaml"
+  "networks.operator.openshift.io=operator/v1/zz_generated.crd-manifests/0000_70_network_01_networks.crd.yaml"
+  "openshiftapiservers.operator.openshift.io=operator/v1/zz_generated.crd-manifests/0000_30_openshift-apiserver_01_openshiftapiservers.crd.yaml"
+  "securitycontextconstraints.security.openshift.io=security/v1/zz_generated.crd-manifests/0000_03_config-operator_01_securitycontextconstraints.crd.yaml"
+)
+
+# Resolve $OPENSHIFT_API_DIR / $CO_MODULE_DIR once, from $REPO_ROOT (not the
+# process's current directory, which nothing here changes, but which a future
+# edit should not be allowed to invalidate this). `go -C` avoids a `cd`
+# entirely. Safe/cheap to call repeatedly: `go mod download` and `go list -m`
+# are no-ops once the module cache is warm (already true in CI: an earlier
+# step builds roxctl, which resolves the full go.mod graph).
+resolve_go_module_dirs() {
+  [[ -n "$OPENSHIFT_API_DIR" && -n "$CO_MODULE_DIR" ]] && return 0
+  log "resolving pinned go.mod module dirs for CRD sourcing ($OPENSHIFT_API_MODULE, $CO_MODULE)"
+  go -C "$REPO_ROOT" mod download "$OPENSHIFT_API_MODULE" "$CO_MODULE" \
+    || die "go mod download failed for $OPENSHIFT_API_MODULE / $CO_MODULE"
+  OPENSHIFT_API_DIR="$(go -C "$REPO_ROOT" list -m -f '{{.Dir}}' "$OPENSHIFT_API_MODULE")"
+  CO_MODULE_DIR="$(go -C "$REPO_ROOT" list -m -f '{{.Dir}}' "$CO_MODULE")"
+  [[ -d "$OPENSHIFT_API_DIR" ]] || die "could not resolve module dir for $OPENSHIFT_API_MODULE"
+  [[ -d "$CO_MODULE_DIR" ]] || die "could not resolve module dir for $CO_MODULE"
+}
+
+# Stage the 18 openshift/api platform CRDs (FIDELITY=platform only) into
+# $WORK/sourced/openshift-crds/, named exactly as the (now-deleted) committed
+# openshift-platform-shim/crds/ directory named them.
+stage_openshift_crds() {
+  resolve_go_module_dirs
+  local dest="$WORK/sourced/openshift-crds" entry name relpath src
+  rm -rf "$dest"; mkdir -p "$dest"
+  for entry in "${OPENSHIFT_CRD_MAP[@]}"; do
+    name="${entry%%=*}"
+    relpath="${entry#*=}"
+    src="$OPENSHIFT_API_DIR/$relpath"
+    [[ -f "$src" ]] || die "openshift/api module ($OPENSHIFT_API_DIR) missing expected CRD manifest: $relpath (module layout changed? update OPENSHIFT_CRD_MAP)"
+    cp "$src" "$dest/$name.crd.yaml"
+  done
+  log "staged ${#OPENSHIFT_CRD_MAP[@]} OpenShift CRDs from $OPENSHIFT_API_MODULE into $dest"
+}
+
+# Stage the Compliance Operator's own CRDs (CO_INSTALL=bundle only) into
+# $WORK/sourced/co-crds/, straight from the module's own config/crd/bases/
+# (the same files the module's own build/bundle generation reads).
+stage_co_crds() {
+  resolve_go_module_dirs
+  local dest="$WORK/sourced/co-crds"
+  rm -rf "$dest"; mkdir -p "$dest"
+  shopt -s nullglob
+  local -a files=("$CO_MODULE_DIR"/config/crd/bases/compliance.openshift.io_*.yaml)
+  shopt -u nullglob
+  (( ${#files[@]} > 0 )) || die "compliance-operator module ($CO_MODULE_DIR) missing config/crd/bases/compliance.openshift.io_*.yaml (module layout changed?)"
+  cp "${files[@]}" "$dest/"
+  log "staged ${#files[@]} Compliance Operator CRDs from $CO_MODULE into $dest"
 }
 
 # Names of the secured clusters. #1 is co-located on the Central cluster.
@@ -308,7 +422,7 @@ apply_platform_shim() {
   local ctx="$1"; local K="kubectl --context ${ctx}"
   local shim="$ASSET_DIR/openshift-platform-shim"
   log "[$ctx] applying OpenShift-API platform shim (real CRDs + objects + SCCs)"
-  $K apply --server-side -f "$shim/crds"
+  $K apply --server-side -f "$WORK/sourced/openshift-crds"
   $K apply --server-side -f "$shim/objects.yaml"
   # The real SCC CRD requires priority/allowedCapabilities/defaultAddCapabilities/
   # volumes present even when null; `apply` strips explicit nulls and fails CRD
@@ -426,7 +540,7 @@ install_co() {
   log "[$ctx] installing Compliance Operator (PLATFORM=$CO_PLATFORM, fidelity=$FIDELITY, install=$CO_INSTALL)"
   $K create namespace "$CO_NS" --dry-run=client -o yaml | $K apply -f -
   if [[ "$CO_INSTALL" == "bundle" ]]; then
-    $K apply --server-side -f "$ASSET_DIR/co-crds"
+    $K apply --server-side -f "$WORK/sourced/co-crds"
   fi
   $K apply --server-side -f "$ASSET_DIR"/openshift-shim/config-crds.yaml
   $K apply -f "$ASSET_DIR"/openshift-shim/config-objects.yaml
@@ -658,6 +772,11 @@ up() {
   require_tools
   [[ "$SECURED_COUNT" -ge 1 ]] || die "SECURED_COUNT must be >= 1"
   raise_inotify
+
+  # Stage CRDs sourced from the pinned go.mod deps ONCE, before any secured
+  # cluster (including parallel ones below) calls install_co/apply_platform_shim.
+  [[ "$CO_INSTALL" == "bundle" ]] && stage_co_crds
+  [[ "$FIDELITY" == "platform" ]] && stage_openshift_crds
 
   # 1. Central cluster (also hosts secured #1 + CO).
   ensure_kind_cluster "$CENTRAL_CLUSTER"

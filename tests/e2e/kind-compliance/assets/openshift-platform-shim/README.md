@@ -9,8 +9,8 @@ api-resource-collector can actually fetch them, which flips `ocp4-cis` from
 NOT-APPLICABLE to real PASS/FAIL/MANUAL results.
 
 ## Layout
-- `crds/` — the REAL CRDs for the OpenShift API groups the `ocp4-cis` OVAL checks
-  read, fetched verbatim from `github.com/openshift/api` (`zz_generated.crd-manifests/`):
+- CRDs (NOT committed here — sourced at setup time, see below) — the REAL CRDs
+  for the OpenShift API groups the `ocp4-cis` OVAL checks read:
   `config.openshift.io/v1` (apiservers, infrastructures, networks, oauths, images,
   proxies*, schedulers*, clusteroperators, consoles*, ingresses*, authentications*,
   featuregates*, clusterversions), `operator.openshift.io/v1` (kubeapiservers,
@@ -67,20 +67,20 @@ PASS and FAIL, the same way a freshly installed, not-yet-hardened OpenShift
 cluster would.
 
 ## Maintenance caveat: content/CRD version coupling
-The CRDs here are a point-in-time snapshot from `openshift/api@master`, and the
-ConfigMap contents are point-in-time snapshots of operator defaults. If a future
-`ocp4` content update (pinned via `CO_CONTENT_IMAGE`, see the harness README)
-starts reading a field, CRD, or resource this shim does not provide, those
-specific rules will fall back to NOT-APPLICABLE/MANUAL rather than erroring —
-but to keep `ocp4-cis` fully exercised, re-sync this directory against
-`github.com/openshift/api` (same paths, `zz_generated.crd-manifests/`) and the
-three operator repos' `defaultconfig.yaml` when bumping `CO_CONTENT_IMAGE`.
+The CRDs are sourced at `up` time from the `github.com/openshift/api` version
+this repo's `go.mod` pins (see the harness README's "CRD and manifest
+sourcing"), so they can't drift from that pin the way a committed snapshot
+could — bumping the go.mod pin is all that's needed to pick up new CRD schema.
+The ConfigMap contents in `objects.yaml` are still point-in-time snapshots of
+operator defaults (see below), independent of that pin. If a future `ocp4`
+content update (pinned via `CO_CONTENT_IMAGE`, see the harness README) starts
+reading a field, CRD, or resource this shim does not provide, those specific
+rules will fall back to NOT-APPLICABLE/MANUAL rather than erroring — but to
+keep `ocp4-cis` fully exercised, re-sync `objects.yaml` against the three
+operator repos' `defaultconfig.yaml` when bumping `CO_CONTENT_IMAGE`.
 
-## Source commands (how this was generated)
+## Source commands (how objects.yaml/sccs.yaml were generated)
 ```bash
-# CRDs: raw.githubusercontent.com/openshift/api/master/<group>/v1/zz_generated.crd-manifests/<file>
-# e.g. config/v1/zz_generated.crd-manifests/0000_10_config-operator_01_apiservers-Default.crd.yaml
-
 # openshift-kube-apiserver/config apiServerArguments:
 curl -fsSL https://raw.githubusercontent.com/openshift/cluster-kube-apiserver-operator/master/bindata/assets/config/defaultconfig.yaml
 

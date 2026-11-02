@@ -20,15 +20,47 @@ openscap image, service-ca, or SCC webhook required.
   integration HEALTHY, CEL profile synced). Secured cluster #1 is co-located on
   the Central cluster; the rest are separate kind clusters (`MODE=separate-kind`)
   or vclusters on the Central host (`MODE=vcluster`).
-- `assets/co-crds/` — the Compliance Operator CRDs (from the upstream bundle).
 - `assets/operator-generic.yaml` — the CO operator Deployment + RBAC, run with
-  `PLATFORM=Generic` (reconstructed from the bundle CSV; no OLM).
+  `PLATFORM=Generic` (reconstructed from the bundle CSV; no OLM). Kept committed:
+  see "CRD and manifest sourcing" below for why this one isn't also sourced live.
 - `assets/openshift-shim/` — minimal `config.openshift.io` CRDs + singleton
   objects. These keep the operator's TLS-profile watcher happy and let Sensor
   detect the cluster as OpenShift.
 - `assets/cel-profile.yaml` — a `ConfigMap` + two CEL `CustomRule`s (one passes,
   one fails) + a from-scratch `TailoredProfile` (`kind-cel-tp`). Profile only: the
   scan is driven from Central by the Go test, not by a local ScanSettingBinding.
+
+## CRD and manifest sourcing (no vendored copies)
+This repo's `go.mod` already pins `github.com/ComplianceAsCode/compliance-operator`
+and `github.com/openshift/api` for compilation, and both modules ship, verbatim,
+every CRD this harness needs. Rather than committing point-in-time snapshots of
+those CRDs (which can silently drift from the pin — see git history for an
+example), the script resolves the pinned module directories with `go list -m`
+at `up` time and copies the needed files into `$WORK/sourced/`:
+- `$WORK/sourced/co-crds/` — the Compliance Operator's own CRDs
+  (`compliance.openshift.io_*.yaml`), from `config/crd/bases/` in the
+  `compliance-operator` module. Used by `install_co()` when `CO_INSTALL=bundle`
+  (the default).
+- `$WORK/sourced/openshift-crds/` — the 18 `config.openshift.io`/
+  `operator.openshift.io`/`security.openshift.io` CRDs `FIDELITY=platform`
+  needs, from `zz_generated.crd-manifests/` in the `openshift/api` module (a
+  short authored path-mapping table in the script, not CRD content, handles
+  the per-type FeatureSet-variant filenames).
+
+This requires `go` on `PATH` and the module cache to be warm (true in CI: an
+earlier step already builds `roxctl`, which resolves the full module graph).
+
+**`assets/operator-generic.yaml` stays committed.** The compliance-operator
+module's own `config/manager/` + `config/rbac/` can be rendered with `kubectl
+kustomize config/default`, and that output is structurally valid — but it has
+no `PLATFORM` env var at all (OpenShift sets it via the OLM Subscription's
+`config.env`, which this harness's `bundle` install path deliberately doesn't
+use), so cleanly reproducing the `PLATFORM=Generic`/`OpenShift` and
+`RELATED_IMAGE_PROFILE` override points `install_co()` depends on would need a
+hand-maintained kustomize/JSON6902 patch anyway — no less fragile than the
+current hand-reconstructed, hand-commented manifest, for a fraction of the
+diff-bloat payoff the CRDs give. Not worth it; revisit if this ever needs to
+track upstream RBAC changes more closely.
 
 ## Fidelity modes (`FIDELITY` env, default `cel`)
 - **`cel`** (default; what the PR gate runs): operator image only, `PLATFORM=Generic`,
@@ -99,7 +131,9 @@ absent), so they are safe in single-cluster and `cel`-mode runs.
 
 ## Run it locally
 ```bash
-# Needs: kind, kubectl, helm, docker, jq, roxctl, openssl.
+# Needs: kind, kubectl, helm, docker, jq, roxctl, openssl, go (to resolve the
+# pinned CRDs; the module cache must already have been populated, e.g. by a
+# prior `go build`/`go mod download` in this checkout).
 export MAIN_IMAGE_TAG="$(make --quiet --no-print-directory tag)"   # or a released tag
 tests/e2e/kind-compliance/setup-multicluster-compliance-ci.sh up
 
