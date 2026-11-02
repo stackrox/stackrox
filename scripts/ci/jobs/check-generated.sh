@@ -7,7 +7,12 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 export SHELLOPTS
 
-FAIL_FLAG="/tmp/fail"
+CHECK_STATE=$(mktemp -d)
+export CHECK_STATE ROOT
+trap 'rm -rf "$CHECK_STATE"' EXIT
+FAIL_FLAG="$CHECK_STATE/fail"
+# shellcheck source=../generated-check-output.sh
+source "$ROOT/scripts/ci/generated-check-output.sh"
 
 # This scripts consists of separate checks, each implemented in the form of a separate shell functions.
 # After execution of each step we might need to handle errors.
@@ -46,20 +51,18 @@ FAIL_FLAG="/tmp/fail"
 # shellcheck disable=SC2016
 info 'Check: go.mod/go.sum files are tidy. If this fails, run `go mod tidy` in the affected module and commit the result.'
 function check-go-mod-tidy() {
-    github_group 'Running go mod tidy across all modules'
     for gomod in $(git ls-files '*/go.mod' 'go.mod'); do
         (cd "$(dirname "$gomod")" && go mod tidy) || exit 1
     done
-    github_endgroup
 
     echo 'Checking for diffs after go mod tidy...'
-    git diff --exit-code HEAD
+    generated_diff
 }
 export -f check-go-mod-tidy
-bash -c check-go-mod-tidy || {
+generated_command bash -c check-go-mod-tidy || {
     save_junit_failure "Check_Go_Mod_Tidy" \
         "go.mod/go.sum files are not tidy" \
-        "$(git diff HEAD || true)"
+        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-go-mod-tidy >> "$FAIL_FLAG"
 }
@@ -67,38 +70,38 @@ bash -c check-go-mod-tidy || {
 # shellcheck disable=SC2016
 info 'Check: Generated files are up to date. If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.'
 function generated_files-are-up-to-date() {
-    git ls-files --others --exclude-standard >/tmp/untracked
+    git ls-files --others --exclude-standard >"${CHECK_STATE}/untracked"
 
-    github_group 'Running make proto-generated-srcs'
     make proto-generated-srcs
-    github_endgroup
 
     # Remove generated mocks, they should be regenerated and if source was deleted they should be deleted as well.
     git grep --files-with-matches "Package mocks is a generated GoMock package." -- '*.go' | xargs rm
 
-    github_group 'Running make go-generated-srcs'
     make go-generated-srcs
-    github_endgroup
 
-    git diff --exit-code HEAD
-    { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
+    local changed=0
+    generated_diff || changed=1
+    { git ls-files --others --exclude-standard ; cat "${CHECK_STATE}/untracked" ; } | sort | uniq -u >"${CHECK_STATE}/untracked-new"
 
-    if [[ -s /tmp/untracked-new ]]; then
+    if [[ -s "${CHECK_STATE}/untracked-new" ]]; then
         # shellcheck disable=SC2016
         echo 'ERROR: Found new untracked files after running `make proto-generated-srcs` and `make go-generated-srcs`. Did you forget to `git add` generated mocks and protos?'
-        cat /tmp/untracked-new
+        while IFS= read -r file; do
+            generated_annotation "$file" "" "New generated file: run generation and add this file to Git."
+        done < "${CHECK_STATE}/untracked-new"
 
         if is_OPENSHIFT_CI; then
-            cp /tmp/untracked-new "${ARTIFACT_DIR:-}/untracked-new"
+            cp "${CHECK_STATE}/untracked-new" "${ARTIFACT_DIR:-}/untracked-new"
         fi
         return 1
     fi
+    return "$changed"
 }
 export -f generated_files-are-up-to-date
-bash -c generated_files-are-up-to-date || {
+generated_command bash -c generated_files-are-up-to-date || {
     save_junit_failure "Check_Generated_Files" \
-        "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
-        "$(cat /tmp/untracked-new)"
+        "Generated files check failed; see diagnostics" \
+        "$(cat "$CHECK_STATE/details")"
     git reset --hard HEAD
     echo generated_files-are-up-to-date >> "$FAIL_FLAG"
 }
@@ -106,27 +109,22 @@ bash -c generated_files-are-up-to-date || {
 # shellcheck disable=SC2016
 info 'Check: Operator generated files are up to date. If this fails, run `make -C operator manifests generate bundle` and commit the result.'
 function check-operator-generated-files-up-to-date() {
-    github_group 'Generate operator files'
     make -C operator/ generate
     make -C operator/ manifests
-    github_endgroup
 
     echo 'Checking for diffs after making generate and manifests...'
-    git diff --exit-code HEAD
+    generated_diff
 
 
-    github_group 'Generate operator bundle'
     make -C operator/ bundle
-    github_endgroup
 
     echo 'Checking for diffs after making bundle...'
     echo 'If this fails, check if the invocation of the normalize-metadata.py script in operator/Makefile'
     echo 'needs to change due to formatting changes in the generated files.'
-    git diff --exit-code HEAD
+    generated_diff
 
     # For as long as the helm chart kubebuilder plugin is alpha, we want to check that kubebuilder bumps do not surprise
     # us with unexpected divergence compared to the (more seasoned and predictable) manifest output.
-    github_group 'Generate operator chart'
     make -C operator/ chart
     echo 'Expanding the operator helm chart...'
     helm template --namespace rhacs-operator-system rhacs-operator ./operator/dist/chart/ > operator/dist/chart.yaml
@@ -149,16 +147,15 @@ function check-operator-generated-files-up-to-date() {
       | del(.[] | select(.kind == "Deployment").spec.template.spec.imagePullSecrets)
       | .[] | splitDoc | ... comments=""' \
       operator/dist/install.yaml > operator/dist/install-sorted.yaml
-    github_endgroup
 
     echo 'Checking for differences between normalized operator manifest and normalized and expanded operator helm chart...'
     diff -U 10 operator/dist/install-sorted.yaml operator/dist/chart-sorted.yaml
 }
 export -f check-operator-generated-files-up-to-date
-bash -c check-operator-generated-files-up-to-date || {
+generated_command bash -c check-operator-generated-files-up-to-date || {
     save_junit_failure "Check_Operator_Generated_Files" \
         "Operator generated files are not up to date" \
-        "$(git diff HEAD || true)"
+        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
@@ -166,18 +163,16 @@ bash -c check-operator-generated-files-up-to-date || {
 # shellcheck disable=SC2016
 info 'Check: Config-controller generated files are up to date. If this fails, run `make config-controller-gen` and commit the result.'
 function check-config-controller-generated-files-up-to-date() {
-    github_group 'Running make config-controller-gen'
     make config-controller-gen
-    github_endgroup
 
     echo 'Checking for diffs after making config-controller-gen...'
-    git diff --exit-code HEAD
+    generated_diff
 }
 export -f check-config-controller-generated-files-up-to-date
-bash -c check-config-controller-generated-files-up-to-date || {
+generated_command bash -c check-config-controller-generated-files-up-to-date || {
     save_junit_failure "Check_Config_Controller_Generated_Files" \
         "Config controller generated files are not up to date" \
-        "$(git diff HEAD || true)"
+        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-config-controller-generated-files-up-to-date >> "$FAIL_FLAG"
 }
@@ -193,7 +188,7 @@ function check-containerignore-is-in-sync() {
     > diff.txt
 }
 export -f check-containerignore-is-in-sync
-bash -c check-containerignore-is-in-sync || {
+generated_command bash -c check-containerignore-is-in-sync || {
     save_junit_failure "Check_Containerignore_File" \
         ".containerignore file is not in sync with .dockerignore" \
         "$(cat diff.txt)"
@@ -204,9 +199,7 @@ bash -c check-containerignore-is-in-sync || {
 # shellcheck disable=SC2016
 info 'Check: Shellcheck skip list is up to date. If this fails, run `make update-shellcheck-skip` and commit the result.'
 function check-shellcheck-failing-list() {
-    github_group 'Running make update-shellcheck-skip'
     make update-shellcheck-skip
-    github_endgroup
 
     echo 'Checking for diffs after updating shellcheck failing list...'
     if ! git diff --exit-code HEAD; then
@@ -216,10 +209,10 @@ function check-shellcheck-failing-list() {
     fi
 }
 export -f check-shellcheck-failing-list
-bash -c check-shellcheck-failing-list || {
+generated_command bash -c check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \
         "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
-        "$(git diff HEAD || true)"
+        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-shellcheck-failing-list >> "$FAIL_FLAG"
 }
