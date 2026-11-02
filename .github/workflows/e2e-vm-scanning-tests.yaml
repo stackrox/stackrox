@@ -183,48 +183,8 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: |
-        source tests/e2e/lib.sh
-        source tests/e2e/vm-scanning-lib.sh
-        source tests/scripts/setup-certs.sh
-        source scripts/ci/sensor-wait.sh
-
-        export_test_environment
-        setup_deployment_env true false # with docker login, no websockets
-        ensure_vm_scanning_cluster_prereqs
-        remove_existing_stackrox_resources
-        setup_default_TLS_certs
-
-        deploy_optional_e2e_components
-
-        if ! ensure_virtctl_binary; then
-          if [[ "${_VIRTCTL_CLUSTER_DOWNLOAD_NONGZIP:-0}" != 1 ]]; then
-            warn "Secure virtctl download failed. Falling back to insecure curl -k download path in CI."
-            ensure_virtctl_binary_insecure || true
-          fi
-          if ! command -v virtctl >/dev/null; then
-            warn "Cluster ConsoleCLIDownload did not serve virtctl. Falling back to the matching KubeVirt GitHub release."
-            _install_virtctl_from_kubevirt_release \
-                || die "Failed to install virtctl from cluster ConsoleCLIDownload and KubeVirt GitHub release"
-          fi
-        fi
-
-        roxie_config="$(mktemp)"
-        merge_yaml "$roxie_config" <<'EOF'
-        central:
-          resourceProfile: ci
-        securedCluster:
-          resourceProfile: ci
-        EOF
-        deploy_stackrox_with_roxie_compat "$roxie_config"
-        rm -f "$roxie_config"
-
-        ensure_vm_scan_ssh_identity
-        persist_vm_scan_virtctl
-        rm -f FAIL
-        make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-tests || touch FAIL
-        store_test_results "tests/vm-scanning-tests-results" "vm-scanning-tests-results/vm-e2e-tests"
-        [[ ! -f FAIL ]] || die "VM scanning e2e tests failed"
+        DEPLOY_VIA_ROXIE: "true"
+      run: tests/e2e/run-vm-scanning.sh
 
     - name: Run post-test
       if: always()
