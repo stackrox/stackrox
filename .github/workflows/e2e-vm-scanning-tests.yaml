@@ -4,9 +4,7 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: |
-          Image tag to test. The caller needs to include the "-fast" suffix
-          when required for development builds.
+        description: Image tag to test.
         type: string
         required: true
       should-run:
