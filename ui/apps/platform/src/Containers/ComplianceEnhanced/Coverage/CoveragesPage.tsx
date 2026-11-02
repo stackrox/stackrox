@@ -1,5 +1,5 @@
 import { useCallback, useContext, useState } from 'react';
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat';
+import { Navigate, Route, Routes, useMatch, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
@@ -30,7 +30,10 @@ import { getComplianceProfilesStats } from 'services/ComplianceResultsStatsServi
 import type { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight } from 'utils/chartUtils';
 
-import { coverageProfileChecksPath } from './compliance.coverage.routes';
+import {
+    coverageProfileChecksPath,
+    coverageProfileClustersPath,
+} from './compliance.coverage.routes';
 import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
@@ -82,14 +85,16 @@ function StaleScanAlert({ staleCount, resultsView }: StaleScanAlertProps) {
     const messages = staleScanAlertMessages[resultsView];
 
     return (
-        <Alert
-            component="p"
-            isInline
-            title={messages.title({ count: staleCount })}
-            variant="warning"
-        >
-            {messages.body}
-        </Alert>
+        <PageSection>
+            <Alert
+                component="p"
+                isInline
+                title={messages.title({ count: staleCount })}
+                variant="warning"
+            >
+                {messages.body}
+            </Alert>
+        </PageSection>
     );
 }
 
@@ -99,7 +104,7 @@ function CoveragesPage() {
         false
     );
     const { navigateWithScanConfigQuery } = useScanConfigRouter();
-    const { pathname } = useLocation();
+    const isClustersRoute = useMatch(coverageProfileClustersPath);
     const { profileName } = useParams() as { profileName: string };
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
@@ -139,7 +144,7 @@ function CoveragesPage() {
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
         (profile) => profile.name === profileName
     );
-    const resultsView = pathname.endsWith('/clusters') ? 'clusters' : 'checks';
+    const resultsView: StaleScanAlertProps['resultsView'] = isClustersRoute ? 'clusters' : 'checks';
     const staleScanHealthIssueCount =
         resultsView === 'clusters'
             ? (selectedProfileStats?.staleClusterCount ?? 0)
@@ -170,6 +175,10 @@ function CoveragesPage() {
                         profileName={profileName}
                         profiles={scanConfigProfilesResponse.profiles}
                         handleToggleChange={handleProfilesToggleChange}
+                    />
+                    <StaleScanAlert
+                        resultsView={resultsView}
+                        staleCount={staleScanHealthIssueCount}
                     />
                     <Divider component="div" />
                     <Flex
@@ -211,10 +220,6 @@ function CoveragesPage() {
             <Divider component="div" />
             <PageSection>
                 <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
-                    <StaleScanAlert
-                        resultsView={resultsView}
-                        staleCount={staleScanHealthIssueCount}
-                    />
                     <Toolbar>
                         <ToolbarContent>
                             <CompoundSearchFilter
