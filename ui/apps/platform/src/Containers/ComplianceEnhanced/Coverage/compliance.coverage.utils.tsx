@@ -12,11 +12,17 @@ import {
     WrenchIcon,
 } from '@patternfly/react-icons';
 
-import type { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
+import type {
+    ComplianceAggregateDataFreshness,
+    ComplianceCheckDataFreshness,
+    ComplianceCheckStatus,
+    ComplianceCheckStatusCount,
+} from 'services/ComplianceCommon';
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import type { SearchFilter } from 'types/search';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getPercentage } from 'utils/mathUtils';
+import { ensureExhaustive } from 'utils/type.utils';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import {
@@ -29,6 +35,34 @@ import {
     PASSING_LABEL_COLOR,
     PASSING_VAR_COLOR,
 } from './compliance.coverage.constants';
+
+export function getAggregateScanStatus(dataFreshness: ComplianceAggregateDataFreshness) {
+    switch (dataFreshness) {
+        case 'COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT':
+            return 'Current';
+        case 'COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE':
+            return 'Stale';
+        case 'COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT':
+            return 'Incomplete';
+        case 'COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN':
+            return 'Unknown';
+        default:
+            return ensureExhaustive(dataFreshness);
+    }
+}
+
+export function getCheckScanStatus(dataFreshness: ComplianceCheckDataFreshness) {
+    switch (dataFreshness) {
+        case 'COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN':
+            return 'Unknown';
+        case 'COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT':
+            return 'Current';
+        case 'COMPLIANCE_CHECK_DATA_FRESHNESS_STALE':
+            return 'Stale';
+        default:
+            return ensureExhaustive(dataFreshness);
+    }
+}
 
 export type ClusterStatusObject = {
     icon: ReactElement;

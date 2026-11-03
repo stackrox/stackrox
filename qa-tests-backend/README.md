@@ -48,7 +48,7 @@ has been loaded, the tests in `src/test/groovy/` can be run directly.
   - Script path : `github.com/stackrox/stackrox/qa-tests-backend/src/test/groovy/<Groovy class name>.groovy`
   - Working Directory : `github.com/stackrox/stackrox/qa-tests-backend`
   - Environment Variables:
-    - `CLUSTER`: Either `OPENSHIFT` or `K8S`
+    - `CLUSTER`: Set to `OPENSHIFT` for OpenShift; an empty value defaults to `K8S` for local runs.
     - `API_HOSTNAME`: hostname central is running; default `localhost`
     - `API_PORT`: central port; default `8000`
     - `ROX_USERNAME`: default `admin`
