@@ -9,7 +9,14 @@ import (
 )
 
 const (
-	defaultTTL = 5 * time.Minute
+	// defaultTTL is the fallback retention for interactive sessions whose
+	// close event is never observed, e.g. when a streaming session ends
+	// abruptly. Streaming exec/attach sessions have no lease renewal, and
+	// real-world sessions (oc debug) routinely last far longer than a few
+	// minutes, so the fallback is generous. In the majority of cases a close
+	// event (ResponseComplete/Panic) destroys the session promptly via the
+	// closed-session grace period below, and the TTL never comes into play.
+	defaultTTL = 6 * time.Hour
 	// closedSessionGracePeriod is how long a closed session stays matchable
 	// after its closing event (e.g. ResponseComplete) is observed. It covers
 	// file events that are still in the pipeline when the session closes.
@@ -29,24 +36,34 @@ type session struct {
 	expiresAt time.Time
 }
 
-// Tracker retains active exec and attach sessions that can be unambiguously
-// associated with a container file activity. Closed sessions remain
-// matchable for a grace period, so file events still in the pipeline when a
-// session closes keep their attribution.
+// Tracker retains interactive exec and attach sessions for attributing
+// container file activity to the Kubernetes user behind the session. At
+// most one session is retained per container: a newly opened session
+// replaces any session already tracked for the same container (newest
+// wins). A session whose close event (ResponseComplete/Panic) is observed
+// is destroyed after a short grace period; sessions whose close event is
+// never seen fall back to the TTL (6 hours by default).
 type Tracker struct {
-	mutex    sync.Mutex
-	sessions map[key]map[string]session
-	ttl      time.Duration
-	grace    time.Duration
-	now      func() time.Time
+	mutex       sync.Mutex
+	sessions    map[key]map[string]session
+	ttl         time.Duration
+	grace       time.Duration
+	maxSessions int
+	now         func() time.Time
 }
 
 func New() *Tracker {
-	return newTracker(defaultTTL, closedSessionGracePeriod, time.Now)
+	return newTracker(defaultTTL, closedSessionGracePeriod, maxSessions, time.Now)
 }
 
-func newTracker(ttl, grace time.Duration, now func() time.Time) *Tracker {
-	return &Tracker{sessions: make(map[key]map[string]session), ttl: ttl, grace: grace, now: now}
+func newTracker(ttl, grace time.Duration, maxSessions int, now func() time.Time) *Tracker {
+	return &Tracker{
+		sessions:    make(map[key]map[string]session),
+		ttl:         ttl,
+		grace:       grace,
+		maxSessions: maxSessions,
+		now:         now,
+	}
 }
 
 func (t *Tracker) Observe(events *sensor.AuditEvents) {
@@ -70,9 +87,10 @@ func (t *Tracker) Observe(events *sensor.AuditEvents) {
 	}
 }
 
-// Match returns a session only when exactly one session owns the container.
-// A session closed within its grace period counts toward this rule just like
-// an active one, so ambiguity still results in no attribution.
+// Match returns the session retained for the container, if any. With
+// newest-session-wins replacement at most one session is retained per
+// container; requiring exactly one is a defensive invariant. A session
+// closed within its grace period counts just like an active one.
 func (t *Tracker) Match(namespace, pod, container string) (*storage.KubernetesEvent, bool) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -88,14 +106,51 @@ func (t *Tracker) Match(namespace, pod, container string) (*storage.KubernetesEv
 	return nil, false
 }
 
+// addLocked tracks the session opened by a ResponseStarted event. When a
+// new session opens on a container that already has a session, the existing
+// session is dropped and the newest session wins. Retaining multiple
+// concurrent sessions per container and disambiguating attribution between
+// them is a potential future enhancement.
 func (t *Tracker) addLocked(key key, event *storage.KubernetesEvent) {
-	if t.sessions[key][event.GetId()].event == nil && t.sessionCountLocked() >= maxSessions {
+	if len(t.sessions[key]) == 0 && t.sessionCountLocked() >= t.maxSessions {
+		// The cap is only enforced for sessions on new keys; replacing a
+		// session on an existing key does not grow the count.
+		t.evictOldestLocked()
+	}
+	// Replacing the inner map drops any session previously tracked for the
+	// key: a duplicate ResponseStarted for the same audit ID refreshes the
+	// session, and a different audit ID replaces it.
+	t.sessions[key] = map[string]session{
+		event.GetId(): {event: event, expiresAt: t.now().Add(t.ttl)},
+	}
+}
+
+// evictOldestLocked deletes the session with the smallest expiresAt across
+// all keys; it is a no-op when no sessions are tracked. Evicting the
+// earliest-expiring entry preferentially removes closed/grace-expiring
+// sessions and keeps a new session from ever being blocked: with a 6 hour
+// fallback TTL, the previous policy of dropping new sessions at the cap
+// could silently block attribution for hours on exec-heavy clusters.
+func (t *Tracker) evictOldestLocked() {
+	var oldestKey key
+	var oldestID string
+	var oldestExpiry time.Time
+	found := false
+	for key, sessions := range t.sessions {
+		for auditID, session := range sessions {
+			if !found || session.expiresAt.Before(oldestExpiry) {
+				found = true
+				oldestKey, oldestID, oldestExpiry = key, auditID, session.expiresAt
+			}
+		}
+	}
+	if !found {
 		return
 	}
-	if t.sessions[key] == nil {
-		t.sessions[key] = make(map[string]session)
+	delete(t.sessions[oldestKey], oldestID)
+	if len(t.sessions[oldestKey]) == 0 {
+		delete(t.sessions, oldestKey)
 	}
-	t.sessions[key][event.GetId()] = session{event: event, expiresAt: t.now().Add(t.ttl)}
 }
 
 // closeLocked retains a closed session for the grace period instead of the

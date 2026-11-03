@@ -533,9 +533,9 @@ func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	// Must exceed the session tracker's default TTL of five minutes so that
+	// Must exceed the session tracker's default TTL of six hours so that
 	// the session is pruned before the file activity is translated.
-	pastSessionTTL := 5*time.Minute + time.Second
+	pastSessionTTL := 6*time.Hour + time.Second
 	// Must exceed the grace period a closed session stays matchable for.
 	pastClosedSessionGrace := 30*time.Second + time.Second
 
@@ -590,10 +590,18 @@ func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
 				MatchBasis:        "namespace/pod/container",
 			},
 		},
-		"two concurrent sessions are ambiguous and not attributed": {
+		"a newer session on the same container replaces the older one": {
 			sessions: []*storage.KubernetesEvent{
 				execEvent("audit-exec-3", "ResponseStarted", "alice", ""),
 				execEvent("audit-exec-4", "ResponseStarted", "bob", ""),
+			},
+			want: &storage.FileAccess_InteractiveSession{
+				EffectiveUser:     "bob",
+				AuthenticatedUser: "bob",
+				AuditId:           "audit-exec-4",
+				Type:              "exec",
+				Confidence:        "high",
+				MatchBasis:        "namespace/pod/container",
 			},
 		},
 		// A session closed by ResponseComplete is retained for the tracker's
