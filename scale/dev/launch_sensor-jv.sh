@@ -33,6 +33,16 @@ kubectl -n "${namespace}" delete deploy/admission-control
 kubectl -n "${namespace}" delete daemonset collector
 
 kubectl -n "${namespace}" set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0 ROX_FAKE_WORKLOAD_STORAGE=/var/cache/stackrox/pebble.db
+
+# Pass process-filter tuning through to the sensor container when set in the shell.
+# These are read by the sensor at startup (pkg/env); exporting them in the shell alone
+# does not reach the sensor, so set them on the deployment here. No-op when unset.
+for var in ROX_PROCESS_FILTER_MODE ROX_PROCESS_FILTER_MAX_PROCESS_PATHS ROX_PROCESS_FILTER_FAN_OUT_LEVELS; do
+  if [[ -n "${!var:-}" ]]; then
+    kubectl -n "${namespace}" set env deploy/sensor "${var}=${!var}"
+  fi
+done
+
 kubectl -n "${namespace}" delete configmap scale-workload-config || true
 kubectl -n "${namespace}" create configmap scale-workload-config --from-file=workload.yaml="$file"
 sleep 5
