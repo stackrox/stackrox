@@ -459,20 +459,16 @@ KONFLUX_HELM_ARGS :=
 ifeq ($(USE_KONFLUX_IMAGES),true)
 KONFLUX_HELM_ARGS += --set manager.image.repository=quay.io/rhacs-eng/release-operator
 KONFLUX_HELM_ARGS += --set 'manager.imagePullSecrets[0].name=stackrox'
+# Reset manager.env (Helm replaces the whole list) to drop the chart's valueless
+# RELATED_IMAGE_* placeholders, which would otherwise collide with the envOverrides below and
+# fail `helm upgrade` SSA with "duplicate entries for key". MEMORY_LIMIT_BYTES is restated here
+# because it's the one entry we must keep that envOverrides can't carry (it uses valueFrom).
 KONFLUX_HELM_ARGS += --set 'manager.env[0].name=MEMORY_LIMIT_BYTES'
 KONFLUX_HELM_ARGS += --set 'manager.env[0].valueFrom.resourceFieldRef.containerName=manager'
 KONFLUX_HELM_ARGS += --set 'manager.env[0].valueFrom.resourceFieldRef.resource=limits.memory'
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_MAIN=quay.io/rhacs-eng/release-main:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER=quay.io/rhacs-eng/release-scanner:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_SLIM=quay.io/rhacs-eng/release-scanner:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_DB=quay.io/rhacs-eng/release-scanner-db:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_DB_SLIM=quay.io/rhacs-eng/release-scanner-db:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_COLLECTOR=quay.io/rhacs-eng/release-collector:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_FACT=quay.io/rhacs-eng/release-fact:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_ROXCTL=quay.io/rhacs-eng/release-roxctl:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_CENTRAL_DB=quay.io/rhacs-eng/release-central-db:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_V4_DB=quay.io/rhacs-eng/release-scanner-v4-db:$(VERSION)
-KONFLUX_HELM_ARGS += --set manager.envOverrides.RELATED_IMAGE_SCANNER_V4=quay.io/rhacs-eng/release-scanner-v4:$(VERSION)
+# Point every related image at its Konflux release image. Generated from the RELATED_IMAGE_*
+# list in config/manager/manager.yaml so the two cannot drift when images are added/removed.
+KONFLUX_HELM_ARGS += $(shell $(PROJECT_DIR)/hack/related-images-konflux-helm-args.sh $(VERSION))
 endif
 
 .PHONY: deploy-via-chart
@@ -483,8 +479,9 @@ deploy-via-chart: ensure-operator-pull-secrets ## Deploy current version of oper
 		rhacs-operator $(CHART_DIR)
 
 .PHONY: ensure-operator-pull-secrets
-ensure-operator-pull-secrets: ## Set up required image pull secrets on cluster for deploying Konflux images
+ensure-operator-pull-secrets: ## Set up required image pull secrets on cluster.
 ifeq ($(USE_KONFLUX_IMAGES),true)
+# For deploying the Konflux `release-operator` image, which is private (unlike the public `stackrox-operator` one).
 	$(MAKE) stackrox-image-pull-secret NAMESPACE=$(TEST_NAMESPACE)
 endif
 

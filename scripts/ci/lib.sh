@@ -1042,7 +1042,6 @@ populate_stackrox_image_list() {
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
-release-operator-bundle ${operator_metadata_tag}
 release-main ${operator_controller_tag}
 release-central-db ${operator_controller_tag}
 release-collector ${operator_controller_tag}
