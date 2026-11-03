@@ -48,6 +48,7 @@ function ProfileClustersTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const colSpan = isScanStatusEnabled ? 8 : 7;
 
     function isComplianceStatusFiltered() {
         return CHECK_STATUS_QUERY in searchFilter;
@@ -107,7 +108,7 @@ function ProfileClustersTable({
                     </Thead>
                     <TbodyUnified
                         tableState={tableState}
-                        colSpan={7}
+                        colSpan={colSpan}
                         errorProps={{
                             title: 'There was an error loading profile clusters',
                         }}

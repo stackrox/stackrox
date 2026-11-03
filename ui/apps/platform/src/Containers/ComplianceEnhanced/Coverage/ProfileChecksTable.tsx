@@ -62,6 +62,7 @@ function ProfileChecksTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const colSpan = isScanStatusEnabled ? 8 : 7;
 
     function toggleRow(selectedRowIndex: number) {
         const newExpandedRows = expandedRows.includes(selectedRowIndex)
@@ -137,7 +138,7 @@ function ProfileChecksTable({
                     </Thead>
                     <TbodyUnified
                         tableState={tableState}
-                        colSpan={7}
+                        colSpan={colSpan}
                         errorProps={{
                             title: 'There was an error loading profile checks',
                         }}
@@ -274,7 +275,7 @@ function ProfileChecksTable({
                                             </Tr>
                                             {isRowExpanded && (
                                                 <Tr isExpanded={isRowExpanded}>
-                                                    <Td colSpan={7}>
+                                                    <Td colSpan={colSpan}>
                                                         <ExpandableRowContent>
                                                             <ControlLabels controls={controls} />
                                                         </ExpandableRowContent>
