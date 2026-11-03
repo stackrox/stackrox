@@ -14,7 +14,13 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 
 call_curl() {
     local url=$1
-    curl -s --insecure --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") "$url"
+    # Limit time: an unbounded curl can hang the post phase.
+    curl -s --insecure \
+        --connect-timeout 30 \
+        --max-time 120 \
+        --retry 3 --retry-delay 2 --retry-max-time 240 \
+        --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") \
+        "$url"
 }
 
 main() {
