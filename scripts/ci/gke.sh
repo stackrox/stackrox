@@ -129,7 +129,7 @@ create_cluster() {
     # job id and cannot distinguish the callers of a reusable workflow).
     if is_GITHUB_ACTIONS; then
         local ci_flavor="${CI_JOB_NAME:-unknown}"
-        labels="${labels},stackrox-ci-flavor=${ci_flavor:0:63}"
+        labels="${labels},stackrox-ci-job-name=${ci_flavor:0:63}"
         labels="${labels},stackrox-ci-attempt=${GITHUB_RUN_ATTEMPT:-1}"
         labels="${labels//./-}"
     fi
