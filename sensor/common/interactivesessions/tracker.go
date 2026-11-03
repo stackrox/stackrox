@@ -108,9 +108,12 @@ func (t *Tracker) Match(namespace, pod, container string) (*storage.KubernetesEv
 
 // addLocked tracks the session opened by a ResponseStarted event. When a
 // new session opens on a container that already has a session, the existing
-// session is dropped and the newest session wins. Retaining multiple
-// concurrent sessions per container and disambiguating attribution between
-// them is a potential future enhancement.
+// session is dropped and the newest session wins. The consequence is that
+// file events already in flight from the evicted session's user
+// (closed-in-grace or still active) are attributed to the new session's
+// user — accepted for now. Retaining multiple concurrent sessions per
+// container and disambiguating attribution between them is a potential
+// future enhancement.
 func (t *Tracker) addLocked(key key, event *storage.KubernetesEvent) {
 	if len(t.sessions[key]) == 0 && t.sessionCountLocked() >= t.maxSessions {
 		// The cap is only enforced for sessions on new keys; replacing a

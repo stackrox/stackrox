@@ -137,10 +137,15 @@ func TestTrackerEvictsOldestSessionAtCap(t *testing.T) {
 		return event
 	}
 
-	// The cap is reached with sessions on two distinct keys.
+	// The cap is reached with sessions on two distinct keys. The clock is
+	// advanced between the two observations so that pod-1's session is
+	// strictly the earliest-expiring one: with equal expiries the eviction
+	// tie-break depends on map iteration order and is not deterministic.
 	first := podEvent("audit-1", "pod-1", "ResponseStarted")
+	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{first}})
+	now = now.Add(time.Second)
 	second := podEvent("audit-2", "pod-2", "ResponseStarted")
-	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{first, second}})
+	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{second}})
 
 	// A third session on a new key evicts the oldest session to make room.
 	third := podEvent("audit-3", "pod-3", "ResponseStarted")
