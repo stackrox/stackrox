@@ -107,7 +107,7 @@ const unknownState = (
     </Tooltip>
 );
 
-type EffectiveAccessScopeStateIconProps = {
+export type EffectiveAccessScopeStateIconProps = {
     state: EffectiveAccessScopeState;
     isCluster: boolean;
 };

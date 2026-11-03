@@ -9,7 +9,7 @@ import { getIsValidLabelKey } from 'utils/labels';
 /*
  * Render a temporary row to enter the key for a new requirement.
  */
-type RequirementRowAddKeyProps = {
+export type RequirementRowAddKeyProps = {
     handleRequirementKeyOK: (key: string) => void;
     handleRequirementKeyCancel: () => void;
 };

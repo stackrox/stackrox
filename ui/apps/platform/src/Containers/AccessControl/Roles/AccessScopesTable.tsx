@@ -3,7 +3,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { AccessScope } from 'services/AccessScopesService';
 
-type AccessScopesTableProps = {
+export type AccessScopesTableProps = {
     fieldId: string;
     accessScopeId: string;
     accessScopes: AccessScope[];

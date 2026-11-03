@@ -15,9 +15,9 @@ import type { ResourceName } from 'types/roleResources';
 
 import { ReadAccessIcon, WriteAccessIcon } from './AccessIcons';
 import { getReadAccessCount, getWriteAccessCount } from './permissionSets.utils';
-import { ResourceDescription } from './ResourceDescription';
+import ResourceDescription from './ResourceDescription';
 
-type PermissionsTableProps = {
+export type PermissionsTableProps = {
     resourceToAccess: PermissionsMap;
     setResourceValue: (resource: string, value: string) => void;
     isDisabled: boolean;

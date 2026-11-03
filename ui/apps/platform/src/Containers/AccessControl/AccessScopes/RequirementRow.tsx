@@ -20,7 +20,7 @@ import type { Activity } from './accessScopes.utils';
  * Render a requirement with editing interaction if hasAction.
  */
 
-type RequirementRowProps = {
+export type RequirementRowProps = {
     requirement: LabelSelectorRequirement;
     hasAction: boolean;
     activity: Activity;

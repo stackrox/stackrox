@@ -21,7 +21,7 @@ function getHasRoleName(groups: Group[], name: string) {
 
 const entityType = 'ROLE';
 
-type RolesListProps = {
+export type RolesListProps = {
     roles: Role[];
     s?: AccessControlQueryFilter;
     groups: Group[];

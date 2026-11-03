@@ -28,7 +28,7 @@ import {
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
 
-type AccessScopeFormWrapperProps = {
+export type AccessScopeFormWrapperProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     accessScope: AccessScope;

@@ -7,7 +7,7 @@ import { accessControlLabels } from 'messages/common';
 
 const accessControlLabel = 'Access Control';
 
-type AccessControlPageTitleProps = {
+export type AccessControlPageTitleProps = {
     entityType: AccessControlEntityType;
     isList: boolean;
 };

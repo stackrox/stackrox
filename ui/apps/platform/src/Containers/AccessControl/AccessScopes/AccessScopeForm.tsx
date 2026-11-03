@@ -67,7 +67,7 @@ const labelIconLabelInclusion = (
     </Tooltip>
 );
 
-type AccessScopeFormProps = {
+export type AccessScopeFormProps = {
     hasAction: boolean;
     alertSubmit: ReactElement | null;
     formik: FormikContextType<AccessScope>;

@@ -1,7 +1,7 @@
 import { Content } from '@patternfly/react-core';
 import type { ReactElement, ReactNode } from 'react';
 
-type AccessControlDescriptionProps = {
+export type AccessControlDescriptionProps = {
     children: ReactNode;
 };
 

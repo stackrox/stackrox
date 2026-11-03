@@ -12,7 +12,7 @@ import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 
 const entityType = 'PERMISSION_SET';
 
-type PermissionSetsListProps = {
+export type PermissionSetsListProps = {
     permissionSets: PermissionSet[];
     roles: Role[];
     handleDelete: (id: string) => Promise<void>;

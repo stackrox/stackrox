@@ -8,7 +8,7 @@ import { accessControlLabels } from 'messages/common';
 
 import { entityPathSegment, getEntityPath } from './accessControlPaths';
 
-type AccessControlHeadingProps = {
+export type AccessControlHeadingProps = {
     /** The AccessControl Entity managed on this page, used to highlight the current navigation item. */
     entityType?: AccessControlEntityType;
 };

@@ -29,7 +29,7 @@ import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
 
-type PermissionSetFormProps = {
+export type PermissionSetFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     permissionSet: PermissionSet;

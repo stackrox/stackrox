@@ -30,7 +30,7 @@ export type RuleGroupErrors = {
     };
 };
 
-type RuleGroupsProps = {
+export type RuleGroupsProps = {
     authProviderId: string;
     onChange: (
         event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>,

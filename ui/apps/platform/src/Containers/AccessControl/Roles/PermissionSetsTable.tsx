@@ -3,7 +3,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { PermissionSet } from 'services/RolesService';
 
-type PermissionSetsTableProps = {
+export type PermissionSetsTableProps = {
     fieldId: string;
     permissionSetId: string;
     permissionSets: PermissionSet[];

@@ -53,7 +53,7 @@ import {
 } from './authProviders.utils';
 import type { AccessControlQueryAction } from '../accessControlPaths';
 
-type AuthProviderFormProps = {
+export type AuthProviderFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     selectedAuthProvider: AuthProvider;

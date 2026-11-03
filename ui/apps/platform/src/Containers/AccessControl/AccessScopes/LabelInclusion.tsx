@@ -7,7 +7,7 @@ import type { LabelSelector, LabelSelectorsKey } from 'services/AccessScopesServ
 import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCards from './LabelSelectorCards';
 
-type LabelInclusionProps = {
+export type LabelInclusionProps = {
     clusterLabelSelectors: LabelSelector[];
     namespaceLabelSelectors: LabelSelector[];
     hasAction: boolean;
