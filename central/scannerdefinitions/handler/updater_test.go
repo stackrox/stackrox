@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,12 +24,13 @@ const (
 	v2DiffURI         = "/" + v2UUID + "/diff.zip"
 	v2ManifestContent = `{"since":"yesterday","until":"today"}`
 
-	v4Dev        = "dev"
-	v4V1         = "v1"
-	v4DevURI     = "/v4/vulnerability-bundles/" + v4Dev + "/vulnerabilities.zip"
-	v4V1URI      = "/v4/vulnerability-bundles/" + v4V1 + "/vulnerabilities.zip"
-	v4MappingURI = "/v4/redhat-repository-mappings/mapping.zip"
-	name2repos   = `{
+	v4Dev         = "dev"
+	v4V1          = "v1"
+	v4VulnBaseURI = "/v4/vulnerability-bundles"
+	v4DevURI      = v4VulnBaseURI + "/" + v4Dev + "/vulnerabilities.zip"
+	v4V1URI       = v4VulnBaseURI + "/" + v4V1 + "/vulnerabilities.zip"
+	v4MappingURI  = "/v4/redhat-repository-mappings/mapping.zip"
+	name2repos    = `{
 	"data": {
 		"sample": ["sample"]
 	}
@@ -112,6 +114,7 @@ func startMockDefinitionsStackRoxIO(t *testing.T) string {
 	// Replace definitions.stackrox.io with the mock server.
 	originalURL := scannerUpdateBaseURL
 	scannerUpdateBaseURL, _ = url.Parse(srv.URL)
+	t.Setenv(env.ScannerV4VulnerabilityBundleBaseURL.EnvVar(), srv.URL+v4VulnBaseURI)
 	t.Cleanup(func() {
 		srv.Close()
 		// Revert URL change.
@@ -134,6 +137,7 @@ func startBrokenMockDefinitionsStackRoxIO(t *testing.T) string {
 	// Replace definitions.stackrox.io with the mock server.
 	originalURL := scannerUpdateBaseURL
 	scannerUpdateBaseURL, _ = url.Parse(srv.URL)
+	t.Setenv(env.ScannerV4VulnerabilityBundleBaseURL.EnvVar(), srv.URL+v4VulnBaseURI)
 	t.Cleanup(func() {
 		srv.Close()
 		// Revert URL change.
@@ -261,6 +265,208 @@ func TestV4VulnUpdate(t *testing.T) {
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
 	assertOnFileExistence(t, filePath, true)
+}
+
+func TestBuildUpdateURL(t *testing.T) {
+	originalURL := scannerUpdateBaseURL
+	scannerUpdateBaseURL = mustParseURL(t, "https://definitions.example/base")
+	t.Cleanup(func() {
+		scannerUpdateBaseURL = originalURL
+	})
+
+	tests := map[string]struct {
+		updaterType updaterType
+		urlPath     string
+		vulnBaseURL string
+		expectedURL string
+		expectError bool
+	}{
+		"default vulnerability base with dev stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "dev/vulnerabilities.zip",
+			expectedURL: "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip",
+		},
+		"default vulnerability base with release stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "v4/vulnerabilities.zip",
+			expectedURL: "https://definitions.stackrox.io/v4/vulnerability-bundles/v4/vulnerabilities.zip",
+		},
+		"custom vulnerability base with dev stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "dev/vulnerabilities.zip",
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectedURL: "https://candidate.example/test-runs/123/1/dev/vulnerabilities.zip",
+		},
+		"custom vulnerability base with release stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "v4/vulnerabilities.zip",
+			vulnBaseURL: "https://candidate.example/test-runs/123/1/",
+			expectedURL: "https://candidate.example/test-runs/123/1/v4/vulnerabilities.zip",
+		},
+		"custom vulnerability base with release candidate stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "v4-rc/vulnerabilities.zip",
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectedURL: "https://candidate.example/test-runs/123/1/v4-rc/vulnerabilities.zip",
+		},
+		"custom vulnerability base does not change mappings": {
+			updaterType: mappingUpdaterType,
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectedURL: "https://definitions.example/base/v4/redhat-repository-mappings/mapping.zip",
+		},
+		"custom vulnerability base does not change Scanner V2": {
+			updaterType: v2UpdaterType,
+			urlPath:     v2UUID,
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectedURL: "https://definitions.example/base/" + v2UUID + "/diff.zip",
+		},
+		"invalid vulnerability base": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "dev/vulnerabilities.zip",
+			vulnBaseURL: "relative/path",
+			expectError: true,
+		},
+		"path traversal vulnerability stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "../../../admin/vulnerabilities.zip",
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectError: true,
+		},
+		"nested vulnerability stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "v4/rc/vulnerabilities.zip",
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectError: true,
+		},
+		"invalid percent escape in vulnerability stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "%zz/vulnerabilities.zip",
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectError: true,
+		},
+		"encoded separator in vulnerability stream": {
+			updaterType: vulnerabilityUpdaterType,
+			urlPath:     "%2Fadmin/vulnerabilities.zip",
+			vulnBaseURL: "https://candidate.example/test-runs/123/1",
+			expectError: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(env.ScannerV4VulnerabilityBundleBaseURL.EnvVar(), tt.vulnBaseURL)
+			updateURL, err := buildUpdateURL(tt.updaterType, tt.urlPath)
+			if tt.expectError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedURL, updateURL.String())
+		})
+	}
+}
+
+func TestValidateVulnerabilityStream(t *testing.T) {
+	tests := map[string]struct {
+		stream      string
+		expectError bool
+	}{
+		"development stream": {
+			stream: "dev",
+		},
+		"versioned stream": {
+			stream: "v4",
+		},
+		"release candidate stream": {
+			stream: "v4-rc",
+		},
+		"legacy numeric stream": {
+			stream: "4.5",
+		},
+		"empty stream": {
+			expectError: true,
+		},
+		"dot stream": {
+			stream:      ".",
+			expectError: true,
+		},
+		"dot dot stream": {
+			stream:      "..",
+			expectError: true,
+		},
+		"embedded dot dot": {
+			stream:      "v4..rc",
+			expectError: true,
+		},
+		"forward slash": {
+			stream:      "v4/rc",
+			expectError: true,
+		},
+		"backslash": {
+			stream:      `v4\rc`,
+			expectError: true,
+		},
+		"percent escape": {
+			stream:      "%2Fadmin",
+			expectError: true,
+		},
+		"invalid percent escape": {
+			stream:      "%zz",
+			expectError: true,
+		},
+		"space": {
+			stream:      "v4 rc",
+			expectError: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := validateVulnerabilityStream(tt.stream)
+			if tt.expectError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestRejectInvalidVulnerabilityStreamsBeforeUpdaterLookup(t *testing.T) {
+	h := &httpHandler{
+		updaters: map[string]*requestedUpdater{
+			"vulnerabilityUpdaterType-v4-rc-vulnerabilities.zip": {},
+		},
+	}
+
+	_, err := h.getUpdater(vulnerabilityUpdaterType, "v4/rc/vulnerabilities.zip")
+	require.Error(t, err)
+}
+
+func TestServeHTTPRejectsInvalidVulnerabilityStreams(t *testing.T) {
+	tests := map[string]string{
+		"dot dot":                  "version=..",
+		"path traversal":           "version=..%2F..%2F..%2Fadmin",
+		"encoded slash collision":  "version=v4%2Frc",
+		"invalid percent escape":   "version=%25zz",
+		"double encoded separator": "version=%252Fadmin",
+	}
+
+	for name, rawQuery := range tests {
+		t.Run(name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "https://central.stackrox.svc/scannerdefinitions?"+rawQuery, nil)
+			w := httptest.NewRecorder()
+			(&httpHandler{}).ServeHTTP(w, req)
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+	}
+}
+
+func mustParseURL(t *testing.T, rawURL string) *url.URL {
+	t.Helper()
+	u, err := url.Parse(rawURL)
+	require.NoError(t, err)
+	return u
 }
 
 // countFilesInZip counts the number of files inside a zip archive.

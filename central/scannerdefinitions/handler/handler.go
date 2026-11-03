@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -48,7 +49,7 @@ const (
 	// scannerV4DefsPrefix helps to search the v4 offline zip bundle for CVEs
 	scannerV4DefsPrefix    = "v4-definitions-"
 	scannerV4ManifestFile  = "manifest.json"
-	scannerV4VulnSubDir    = "v4/vulnerability-bundles"
+	scannerV4VulnFile      = "vulnerabilities.zip"
 	scannerV4MappingSubDir = "v4/redhat-repository-mappings"
 	scannerV4MappingFile   = "mapping.zip"
 	// offlineScannerV4DefsBlobName represents the blob name of offline/fallback data file for Scanner V4.
@@ -93,6 +94,8 @@ var (
 	// `4.6.x`, the variants would eventually allow us to accept the bundle when
 	// comparing `4.6.x-nightly-20241004`, `4.6.x-nightly` and finally `4.6.x`.
 	mainVersionVariants map[string]bool
+
+	vulnerabilityStreamPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 )
 
 type requestedUpdater struct {
@@ -252,12 +255,15 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		opts.offlineBlobName = offlineScannerV4DefsBlobName
 	case fileName == "" && v != "":
 		// If only version is provided, this is for Scanner V4 vulnerabilities.
+		if err := validateVulnerabilityStream(v); err != nil {
+			writeErrorBadRequest(w)
+			return
+		}
 		uType = vulnerabilityUpdaterType
-		bundle := "vulnerabilities.zip"
 		opts.name = v
-		opts.urlPath = path.Join(v, bundle)
+		opts.urlPath = path.Join(v, scannerV4VulnFile)
 		opts.vulnVersion = v
-		opts.vulnBundle = bundle
+		opts.vulnBundle = scannerV4VulnFile
 		opts.offlineBlobName = offlineScannerV4DefsBlobName
 	default:
 		// No other parameter configurations are supported.
@@ -464,22 +470,21 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 // by the given updater type and a URL path to the definitions file. If the
 // updater was created, it is no started here, callers are expected to start it.
 func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdater, error) {
+	if t == vulnerabilityUpdaterType {
+		if err := validateVulnerabilityUpdatePath(urlPath); err != nil {
+			return nil, err
+		}
+	}
+
 	h.updatersLock.Lock()
 	defer h.updatersLock.Unlock()
 
 	fileName := strings.ReplaceAll(filepath.Join(t.String(), urlPath), "/", "-")
 	updater, exists := h.updaters[fileName]
 	if !exists {
-		var updateURL *url.URL
-		switch t {
-		case mappingUpdaterType:
-			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4MappingSubDir, scannerV4MappingFile)
-		case vulnerabilityUpdaterType:
-			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
-		case v2UpdaterType:
-			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DiffFile)
-		default:
-			return nil, fmt.Errorf("unknown updater type: %s", t)
+		updateURL, err := buildUpdateURL(t, urlPath)
+		if err != nil {
+			return nil, err
 		}
 		filePath := filepath.Join(h.dataDir, fileName)
 		updater = &requestedUpdater{
@@ -490,6 +495,44 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdat
 
 	updater.lastRequestedTime = time.Now()
 	return updater, nil
+}
+
+func buildUpdateURL(t updaterType, urlPath string) (*url.URL, error) {
+	switch t {
+	case mappingUpdaterType:
+		return scannerUpdateBaseURL.JoinPath(scannerV4MappingSubDir, scannerV4MappingFile), nil
+	case vulnerabilityUpdaterType:
+		if err := validateVulnerabilityUpdatePath(urlPath); err != nil {
+			return nil, err
+		}
+		baseURL, err := url.Parse(env.ScannerV4VulnerabilityBundleBaseURL.Setting())
+		if err != nil {
+			return nil, fmt.Errorf("parsing Scanner V4 vulnerability bundle base URL: %w", err)
+		}
+		if baseURL.Host == "" || (baseURL.Scheme != "http" && baseURL.Scheme != "https") {
+			return nil, fmt.Errorf("scanner V4 vulnerability bundle base URL must be an absolute HTTP or HTTPS URL: %q", baseURL.String())
+		}
+		return baseURL.JoinPath(urlPath), nil
+	case v2UpdaterType:
+		return scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DiffFile), nil
+	default:
+		return nil, fmt.Errorf("unknown updater type: %s", t)
+	}
+}
+
+func validateVulnerabilityStream(stream string) error {
+	if !vulnerabilityStreamPattern.MatchString(stream) || strings.Contains(stream, "..") {
+		return fmt.Errorf("invalid Scanner V4 vulnerability stream: %q", stream)
+	}
+	return nil
+}
+
+func validateVulnerabilityUpdatePath(urlPath string) error {
+	stream, bundle, ok := strings.Cut(urlPath, "/")
+	if !ok || bundle != scannerV4VulnFile {
+		return fmt.Errorf("invalid Scanner V4 vulnerability update path: %q", urlPath)
+	}
+	return validateVulnerabilityStream(stream)
 }
 
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
