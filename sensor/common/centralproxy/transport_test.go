@@ -145,10 +145,10 @@ func TestMetricsTokenDoesNotReuseConsoleScope(t *testing.T) {
 	provider := newTestTokenProvider(client, "sensor-cluster")
 	_, err := provider.getTokenForScope(context.Background(), "")
 	require.NoError(t, err)
-	_, err = provider.getTokenForPermissionSet(context.Background(), centralproxy.MetricsPermissionSetID)
+	_, err = provider.getTokenForPermissionSet(context.Background(), centralproxy.MetricsPermissionSetName)
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, calls.Load())
-	assert.Equal(t, []string{centralproxy.MetricsPermissionSetID}, client.lastRequest.GetPermissionSetIds())
+	assert.Equal(t, []string{centralproxy.MetricsPermissionSetName}, client.lastRequest.GetPermissionSetNames())
 	protoassert.SlicesEqual(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}}, client.lastRequest.GetHttpRequestScopes())
 	assert.Empty(t, client.lastRequest.GetPermissions())
 	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
@@ -1002,7 +1002,7 @@ func TestTokenProvider_Coalescing(t *testing.T) {
 		token, err := provider.getTokenForPermissionSet(ctx, key)
 		require.NoError(t, err)
 		assert.Equal(t, "metrics-token", token)
-		assert.Equal(t, []string{key}, client.lastRequest.GetPermissionSetIds())
+		assert.Equal(t, []string{key}, client.lastRequest.GetPermissionSetNames())
 	})
 
 	t.Run("concurrent requests for same scope make only one RPC call", func(t *testing.T) {

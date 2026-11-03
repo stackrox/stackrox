@@ -9,7 +9,7 @@ import (
 type proxyPermissionSetKey struct{}
 
 var proxyPathPermissionSets = map[string]string{
-	"/metrics": centralproxy.MetricsPermissionSetID,
+	"/metrics": centralproxy.MetricsPermissionSetName,
 }
 
 func withMetricsScrape(ctx context.Context) context.Context {
@@ -17,6 +17,6 @@ func withMetricsScrape(ctx context.Context) context.Context {
 }
 
 func proxyPermissionSetFromContext(ctx context.Context) string {
-	permissionSetID, _ := ctx.Value(proxyPermissionSetKey{}).(string)
-	return permissionSetID
+	permissionSetName, _ := ctx.Value(proxyPermissionSetKey{}).(string)
+	return permissionSetName
 }
