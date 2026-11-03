@@ -166,16 +166,21 @@ func (i *indexerMetadataStore) DeleteManifest(ctx context.Context, manifestID st
 		_ = tx.Rollback(ctx)
 	}()
 
-	if _, err := tx.Exec(ctx, deleteManifest, manifestID); err != nil {
+	tag, err := tx.Exec(ctx, deleteManifest, manifestID)
+	if err != nil {
 		return fmt.Errorf("deleting manifest metadata: %w", err)
 	}
+	// Whether our own record of this manifest existed a moment ago, in this same
+	// transaction. Used below to tell genuine absence apart from lock contention in
+	// ClairCore's own store, which look identical from that store's return value alone.
+	previouslyIndexed := tag.RowsAffected() > 0
 
 	if i.store != nil {
 		d, err := claircore.ParseDigest(manifestID)
 		if err != nil {
 			return fmt.Errorf("parsing manifest ID: %w", err)
 		}
-		if _, err := i.store.DeleteManifests(ctx, d); err != nil {
+		if err := i.deleteFromClairCoreStore(ctx, d, previouslyIndexed); err != nil {
 			return fmt.Errorf("deleting manifest: %w", err)
 		}
 	}
@@ -185,4 +190,45 @@ func (i *indexerMetadataStore) DeleteManifest(ctx context.Context, manifestID st
 	}
 
 	return nil
+}
+
+// deleteFromClairCoreStore calls the underlying claircore Store.DeleteManifests for the
+// given digest.
+//
+// claircore's DeleteManifests takes a per-manifest Postgres advisory lock and, on lock
+// contention, silently returns (nil, nil) for that digest -- the exact same observable
+// result as the manifest never having existed in ClairCore's store at all, which is
+// actually the common case here (e.g. the very first CreateIndexReport call for a
+// brand-new image always goes through this path with nothing to discard).
+//
+// mustHaveExisted (derived, in the same transaction, from whether our own
+// manifest_metadata row existed a moment ago) disambiguates the two: if true, an empty
+// result can only mean lock contention, so retry briefly and ultimately fail loudly
+// rather than silently leave ClairCore's stale state in place -- committing in that
+// case would make the caller's subsequent indexing call return the stale,
+// previously-indexed result instead of genuinely re-indexing, defeating the point of a
+// forced reindex with no visible error. If mustHaveExisted is false, an empty result is
+// the expected, benign case and is not treated as an error.
+func (i *indexerMetadataStore) deleteFromClairCoreStore(ctx context.Context, d claircore.Digest, mustHaveExisted bool) error {
+	const (
+		maxAttempts = 4
+		retryDelay  = 250 * time.Millisecond
+	)
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		deleted, err := i.store.DeleteManifests(ctx, d)
+		if err != nil {
+			return err
+		}
+		if len(deleted) > 0 || !mustHaveExisted {
+			return nil
+		}
+		if attempt < maxAttempts {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(retryDelay):
+			}
+		}
+	}
+	return fmt.Errorf("manifest %s was not deleted after %d attempts (possible lock contention)", d, maxAttempts)
 }

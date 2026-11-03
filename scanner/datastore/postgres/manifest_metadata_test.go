@@ -189,3 +189,49 @@ func Test_ManifestMetadata_DeleteManifest(t *testing.T) {
 	err = store.DeleteManifest(ctx, "sha512:never-stored")
 	require.NoError(t, err)
 }
+
+// Test_ManifestMetadata_DeleteManifest_ClairCoreStore exercises DeleteManifest with a real
+// ClairCore indexer.Store wired in (IndexerMetadataStoreOpts{IndexerStore: ...}), unlike
+// Test_ManifestMetadata_DeleteManifest above, which only covers the manifest_metadata table.
+func Test_ManifestMetadata_DeleteManifest_ClairCoreStore(t *testing.T) {
+	ctx := test.Logging(t)
+	pool := testDB(t, ctx, "manifest_metadata_delete_manifest_claircore_store_test")
+	ccStore, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
+	require.NoError(t, err)
+	store, err := InitPostgresIndexerMetadataStore(ctx, pool, true, IndexerMetadataStoreOpts{IndexerStore: ccStore})
+	require.NoError(t, err)
+	now := time.Now()
+
+	sha := "sha512:de1ab9379bccc4afea75ef6b5a53e1ca867e97bd2edfaa61256368a579249518a283b81d95d1bdcdebdb8d96fe7f0219daeda8941c9cbddf64b6e3c543389d18"
+	digest := claircore.MustParseDigest(sha)
+
+	// Index the manifest in ClairCore's own store and record it in our metadata table,
+	// mirroring what a real indexing pass does.
+	err = ccStore.PersistManifest(ctx, claircore.Manifest{
+		Hash:   digest,
+		Layers: []*claircore.Layer{{Hash: digest}},
+	})
+	require.NoError(t, err)
+	err = store.StoreManifest(ctx, sha, now.Add(1*time.Hour))
+	require.NoError(t, err)
+
+	// A manifest previously recorded in manifest_metadata must actually be gone from
+	// ClairCore's own store afterward, not just from our bookkeeping table.
+	err = store.DeleteManifest(ctx, sha)
+	require.NoError(t, err)
+
+	exists, err := store.ManifestExists(ctx, sha)
+	require.NoError(t, err)
+	assert.False(t, exists)
+
+	// Confirm ClairCore's own store, not just our bookkeeping table, no longer has it:
+	// if DeleteManifest had left it in place, there would still be something to delete.
+	deleted, err := ccStore.DeleteManifests(ctx, digest)
+	require.NoError(t, err)
+	assert.Empty(t, deleted, "ClairCore's own store must no longer have this manifest")
+
+	// Deleting it again -- now genuinely absent from both tables, with a real ClairCore
+	// store wired in -- must still be a no-op, not an error.
+	err = store.DeleteManifest(ctx, sha)
+	require.NoError(t, err)
+}

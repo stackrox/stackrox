@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -326,4 +327,25 @@ func Test_shouldUpdateExternalIndexReport(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestIndexContainerImage_ForceRequiresMetadataStore(t *testing.T) {
+	// Regardless of the ScannerV4ReIndex feature flag's own state in this test
+	// environment, a nil metadataStore alone must be enough to reject a forced
+	// reindex, and it must do so before any registry I/O (no libIndex/http setup
+	// needed for either sub-test to reach its assertion).
+	i := &localIndexer{}
+
+	t.Run("forced call fails fast, before parsing the image URL", func(t *testing.T) {
+		_, err := i.IndexContainerImage(context.Background(), "hash-id", "", Force(true))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ROX_SCANNER_V4_REINDEX")
+	})
+
+	t.Run("non-forced call is unaffected and reaches normal validation", func(t *testing.T) {
+		_, err := i.IndexContainerImage(context.Background(), "hash-id", "", Force(false))
+		require.Error(t, err)
+		assert.NotContains(t, err.Error(), "ROX_SCANNER_V4_REINDEX")
+		assert.Contains(t, err.Error(), "parsing image URL")
+	})
 }
