@@ -96,11 +96,11 @@ func (r *NodeCVEQueryResponse) GetSeverity() storage.VulnerabilitySeverity {
 	return *r.Severity
 }
 
-func (r *NodeCVEQueryResponse) GetCVSS() float64 {
-	if r.CVSS == nil {
-		return 0.0
+func (r *NodeCVEQueryResponse) GetCVSS() *float64 {
+	if r.CVSS == nil || *r.CVSS == 0 {
+		return nil
 	}
-	return *r.CVSS
+	return r.CVSS
 }
 
 func (r *NodeCVEQueryResponse) GetFirstOccurrence() string {

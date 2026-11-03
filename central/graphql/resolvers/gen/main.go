@@ -73,6 +73,14 @@ var (
 		},
 		SkipFields: []generator.TypeAndField{
 			{
+				ParentType: reflect.TypeFor[storage.ClusterCVE](),
+				FieldName:  "Cvss",
+			},
+			{
+				ParentType: reflect.TypeFor[storage.NodeCVE](),
+				FieldName:  "Cvss",
+			},
+			{
 				ParentType: reflect.TypeFor[storage.Image](),
 				FieldName:  "Scan",
 			},

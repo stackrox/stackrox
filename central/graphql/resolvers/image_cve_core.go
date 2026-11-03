@@ -41,7 +41,7 @@ func init() {
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
 				"publishedOn: Time",
-				"topNvdCVSS: Float!",
+				"topNvdCVSS: Float",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
@@ -296,8 +296,8 @@ func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
 }
 
-func (resolver *imageCVECoreResolver) TopNVDCVSS(_ context.Context) float64 {
-	return float64(resolver.data.GetTopNVDCVSS())
+func (resolver *imageCVECoreResolver) TopNVDCVSS(_ context.Context) *float64 {
+	return nullableCVSS(resolver.data.GetTopNVDCVSS())
 }
 
 // ImageCVE returns graphQL resolver for specified image cve.

@@ -316,7 +316,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ClusterCVE", []string{
 		"cveBaseInfo: CVEInfo",
-		"cvss: Float!",
 		"id: ID!",
 		"impactScore: Float!",
 		"severity: VulnerabilitySeverity!",
@@ -905,7 +904,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NodeCVE", []string{
 		"cveBaseInfo: CVEInfo",
-		"cvss: Float!",
 		"id: ID!",
 		"impactScore: Float!",
 		"operatingSystem: String!",
@@ -4372,11 +4370,6 @@ func (resolver *Resolver) wrapClusterCVEsWithContext(ctx context.Context, values
 func (resolver *clusterCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
 	value := resolver.data.GetCveBaseInfo()
 	return resolver.root.wrapCVEInfo(value, true, nil)
-}
-
-func (resolver *clusterCVEResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
 }
 
 func (resolver *clusterCVEResolver) Id(ctx context.Context) graphql.ID {
@@ -10258,11 +10251,6 @@ func (resolver *Resolver) wrapNodeCVEsWithContext(ctx context.Context, values []
 func (resolver *nodeCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
 	value := resolver.data.GetCveBaseInfo()
 	return resolver.root.wrapCVEInfo(value, true, nil)
-}
-
-func (resolver *nodeCVEResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
 }
 
 func (resolver *nodeCVEResolver) Id(ctx context.Context) graphql.ID {

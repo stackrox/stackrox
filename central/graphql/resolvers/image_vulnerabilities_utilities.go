@@ -58,11 +58,11 @@ func (resolver *imageCVEV2Resolver) CveBaseInfo(ctx context.Context) (*cVEInfoRe
 	return resolver.root.wrapCVEInfo(value, true, nil)
 }
 
-func (resolver *imageCVEV2Resolver) Cvss(ctx context.Context) float64 {
+func (resolver *imageCVEV2Resolver) Cvss(ctx context.Context) *float64 {
 	if resolver.flatData != nil {
-		return float64(resolver.flatData.GetTopCVSS())
+		return nullableCVSS(resolver.flatData.GetTopCVSS())
 	}
-	return float64(resolver.data.GetCvss())
+	return nullableCVSS(resolver.data.GetCvss())
 }
 
 func (resolver *imageCVEV2Resolver) FirstImageOccurrence(ctx context.Context) (*graphql.Time, error) {
@@ -90,11 +90,11 @@ func (resolver *imageCVEV2Resolver) NvdScoreVersion(ctx context.Context) string 
 	return value.String()
 }
 
-func (resolver *imageCVEV2Resolver) Nvdcvss(ctx context.Context) float64 {
+func (resolver *imageCVEV2Resolver) Nvdcvss(ctx context.Context) *float64 {
 	if resolver.flatData != nil {
-		return float64(resolver.flatData.GetTopNVDCVSS())
+		return nullableCVSS(resolver.flatData.GetTopNVDCVSS())
 	}
-	return float64(resolver.data.GetNvdcvss())
+	return nullableCVSS(resolver.data.GetNvdcvss())
 }
 
 func (resolver *imageCVEV2Resolver) Severity(ctx context.Context) string {
