@@ -84,6 +84,7 @@ When creating pull requests, you must follow these requirements:
 - `make proto-generated-srcs` - Generate Go code from protobuf definitions
 - `make go-generated-srcs` - Generate Go code (mockgen, stringer, easyjson)
 - `make generated-srcs` - Generate all source code
+- `make check-generated-local` - Run CI's generated-code check against HEAD in a scratch worktree (your working tree is not touched)
 
 ### Adding Database Columns
 When the user needs to add a new column to an existing database table:

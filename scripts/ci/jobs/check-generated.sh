@@ -7,7 +7,8 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 export SHELLOPTS
 
-FAIL_FLAG="/tmp/fail"
+FAIL_FLAG="${FAIL_FLAG:-/tmp/fail}"
+rm -f "$FAIL_FLAG"
 
 # This scripts consists of separate checks, each implemented in the form of a separate shell functions.
 # After execution of each step we might need to handle errors.

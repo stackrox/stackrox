@@ -372,6 +372,12 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
+# Run CI's generated-code checks against HEAD in a scratch worktree, leaving the working tree untouched.
+.PHONY: check-generated-local
+check-generated-local:
+	@echo "+ $@"
+	$(SILENT)$(BASE_DIR)/scripts/check-generated-local.sh
+
 ifdef CI
 # In CI, go.mod/go.sum must be committed — not auto-updated.
 # go mod tidy is validated by check-generated-files (scripts/ci/jobs/check-generated.sh).
