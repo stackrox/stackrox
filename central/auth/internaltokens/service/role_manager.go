@@ -20,9 +20,9 @@ type roleManager struct {
 }
 
 func (rm *roleManager) createSensorRole(
-	ctx context.Context, permissionSetIDs []string, scopes tokens.ClusterScopes,
+	ctx context.Context, permissionSetNames []string, scopes tokens.ClusterScopes,
 ) (*tokens.InternalRole, error) {
-	if len(permissionSetIDs) == 0 {
+	if len(permissionSetNames) == 0 {
 		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
 	}
 	if rm.roleStore == nil {
@@ -34,15 +34,17 @@ func (rm *roleManager) createSensorRole(
 		Permissions: make(map[storage.Access][]string),
 	}
 	permissions := make(map[string]storage.Access)
-	for _, permissionSetID := range permissionSetIDs {
-		permissionSet, found, err := rm.roleStore.GetPermissionSet(ctx, permissionSetID)
+	for _, permissionSetName := range permissionSetNames {
+		matches, err := rm.roleStore.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
+			return ps.GetName() == permissionSetName
+		})
 		if err != nil {
 			return nil, err
 		}
-		if !found || permissionSet == nil {
-			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetID)
+		if len(matches) != 1 || matches[0] == nil {
+			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetName)
 		}
-		for resource, access := range permissionSet.GetResourceToAccess() {
+		for resource, access := range matches[0].GetResourceToAccess() {
 			if current, found := permissions[resource]; !found || access > current {
 				permissions[resource] = access
 			}

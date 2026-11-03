@@ -289,8 +289,8 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSetIds: []string{centralproxy.ConsoleProxyPermissionSetID},
-		// Older Centrals ignore the permission set IDs and use these permissions.
+		PermissionSetNames: []string{centralproxy.ConsoleProxyPermissionSetName},
+		// Centrals without permission set support use these fallback permissions.
 		Permissions: map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,

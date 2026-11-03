@@ -133,9 +133,9 @@ func (p *tokenPolicy) enforce(
 	if sensorClusterID == "" {
 		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	if len(req.GetPermissionSetIds()) > 0 {
-		for _, permissionSetID := range req.GetPermissionSetIds() {
-			if permissionSetID != centralproxy.ConsoleProxyPermissionSetID {
+	if len(req.GetPermissionSetNames()) > 0 {
+		for _, permissionSetName := range req.GetPermissionSetNames() {
+			if permissionSetName != centralproxy.ConsoleProxyPermissionSetName {
 				return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 			}
 		}
