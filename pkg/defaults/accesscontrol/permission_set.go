@@ -42,7 +42,7 @@ const (
 	// ConsoleProxy permission set provides necessary privileges to OpenShift Console users.
 	// This includes priveleges to:
 	// - view deployments and images.
-	ConsoleProxy = "OpenShift Secured Cluster Console Proxy"
+	ConsoleProxy = centralproxy.ConsoleProxyPermissionSetName
 )
 
 var (
@@ -51,7 +51,6 @@ var (
 		Admin:                           adminPermissionSetID,
 		Analyst:                         analystPermissionSetID,
 		ConfigController:                configControllerPermissionSetID,
-		ConsoleProxy:                    centralproxy.ConsoleProxyPermissionSetID,
 		ContinuousIntegration:           continuousIntegrationPermissionSetID,
 		NetworkGraphViewer:              networkGraphViewerPermissionSetID,
 		None:                            nonePermissionSetID,
@@ -66,6 +65,9 @@ var (
 
 // IsDefaultPermissionSet will return true if the given permission set name is a default permission set.
 func IsDefaultPermissionSet(name string) bool {
+	if name == ConsoleProxy {
+		return true
+	}
 	_, found := DefaultPermissionSetIDs[name]
 	return found
 }

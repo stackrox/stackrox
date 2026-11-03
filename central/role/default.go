@@ -51,8 +51,12 @@ func IsDefaultRole(role *storage.Role) bool {
 
 // IsDefaultPermissionSet checks if a given permission set corresponds to a default role.
 func IsDefaultPermissionSet(permissionSet *storage.PermissionSet) bool {
-	return permissionSet.GetTraits().GetOrigin() == storage.Traits_DEFAULT ||
-		accesscontrol.IsDefaultPermissionSet(permissionSet.GetName())
+	if permissionSet.GetTraits().GetOrigin() == storage.Traits_DEFAULT {
+		return true
+	}
+	// A matching name alone must not make an administrator-created set immutable.
+	id, found := accesscontrol.DefaultPermissionSetIDs[permissionSet.GetName()]
+	return found && permissionSet.GetId() == id
 }
 
 // IsDefaultAccessScope checks if a given access scope corresponds to a
