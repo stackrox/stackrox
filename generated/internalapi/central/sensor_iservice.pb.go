@@ -443,7 +443,6 @@ type MsgFromSensor_NetworkFlowUpdate struct {
 }
 
 type MsgFromSensor_NetworkPoliciesResponse struct {
-	// 3 was ScrapeUpdate (Compliance 1.0)
 	NetworkPoliciesResponse *NetworkPoliciesResponse `protobuf:"bytes,4,opt,name=network_policies_response,json=networkPoliciesResponse,proto3,oneof"`
 }
 
@@ -906,7 +905,6 @@ type MsgToSensor_Enforcement struct {
 }
 
 type MsgToSensor_NetworkPoliciesCommand struct {
-	// 2 was ScrapeCommand (Compliance 1.0)
 	NetworkPoliciesCommand *NetworkPoliciesCommand `protobuf:"bytes,3,opt,name=network_policies_command,json=networkPoliciesCommand,proto3,oneof"`
 }
 
@@ -927,7 +925,6 @@ type MsgToSensor_PolicySync struct {
 }
 
 type MsgToSensor_BaselineSync struct {
-	// 8 was ReassessPolicies
 	BaselineSync *BaselineSync `protobuf:"bytes,9,opt,name=baseline_sync,json=baselineSync,proto3,oneof"`
 }
 
@@ -1564,7 +1561,7 @@ var File_internalapi_central_sensor_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\n" +
-	")internalapi/central/sensor_iservice.proto\x12\acentral\x1a'internalapi/central/baseline_sync.proto\x1a(internalapi/central/cluster_config.proto\x1a)internalapi/central/cluster_metrics.proto\x1a(internalapi/central/cluster_status.proto\x1a-internalapi/central/compliance_operator.proto\x1a3internalapi/central/delegated_registry_config.proto\x1a0internalapi/central/deployment_enhancement.proto\x1a\x1finternalapi/central/hello.proto\x1a\x1finternalapi/central/image.proto\x1a'internalapi/central/local_scanner.proto\x1a/internalapi/central/network_baseline_sync.proto\x1a&internalapi/central/network_flow.proto\x1a%internalapi/central/policy_sync.proto\x1a;internalapi/central/process_listening_on_ports_update.proto\x1a6internalapi/central/secured_cluster_cert_refresh.proto\x1a'internalapi/central/sensor_events.proto\x1a(internalapi/central/sensor_upgrade.proto\x1a#internalapi/central/telemetry.proto\x1a\x15storage/cluster.proto\x1a\x13storage/image.proto\"\xa1\v\n" +
+	")internalapi/central/sensor_iservice.proto\x12\acentral\x1a'internalapi/central/baseline_sync.proto\x1a(internalapi/central/cluster_config.proto\x1a)internalapi/central/cluster_metrics.proto\x1a(internalapi/central/cluster_status.proto\x1a-internalapi/central/compliance_operator.proto\x1a3internalapi/central/delegated_registry_config.proto\x1a0internalapi/central/deployment_enhancement.proto\x1a\x1finternalapi/central/hello.proto\x1a\x1finternalapi/central/image.proto\x1a'internalapi/central/local_scanner.proto\x1a/internalapi/central/network_baseline_sync.proto\x1a&internalapi/central/network_flow.proto\x1a%internalapi/central/policy_sync.proto\x1a;internalapi/central/process_listening_on_ports_update.proto\x1a6internalapi/central/secured_cluster_cert_refresh.proto\x1a'internalapi/central/sensor_events.proto\x1a(internalapi/central/sensor_upgrade.proto\x1a#internalapi/central/telemetry.proto\x1a\x15storage/cluster.proto\x1a\x13storage/image.proto\"\xa7\v\n" +
 	"\rMsgFromSensor\x12\x19\n" +
 	"\bhash_key\x18\a \x01(\tR\ahashKey\x12\x1d\n" +
 	"\n" +
@@ -1586,9 +1583,9 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x13compliance_response\x18\x11 \x01(\v2\x1b.central.ComplianceResponseH\x00R\x12complianceResponse\x12p\n" +
 	"\x1fdeployment_enhancement_response\x18\x12 \x01(\v2&.central.DeploymentEnhancementResponseH\x00R\x1ddeploymentEnhancementResponse\x12x\n" +
 	"#issue_secured_cluster_certs_request\x18\x13 \x01(\v2(.central.IssueSecuredClusterCertsRequestH\x00R\x1fissueSecuredClusterCertsRequestB\x05\n" +
-	"\x03msg\"@\n" +
+	"\x03msgJ\x04\b\x03\x10\x04\"@\n" +
 	"\x14ReprocessDeployments\x12(\n" +
-	"\x10skip_cache_flush\x18\x01 \x01(\bR\x0eskipCacheFlush\"\xf6\x11\n" +
+	"\x10skip_cache_flush\x18\x01 \x01(\bR\x0eskipCacheFlush\"\x82\x12\n" +
 	"\vMsgToSensor\x12>\n" +
 	"\venforcement\x18\x01 \x01(\v2\x1a.central.SensorEnforcementH\x00R\venforcement\x12[\n" +
 	"\x18network_policies_command\x18\x03 \x01(\v2\x1f.central.NetworkPoliciesCommandH\x00R\x16networkPoliciesCommand\x12?\n" +
@@ -1622,7 +1619,7 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\n" +
 	"sensor_ack\x18\x1d \x01(\v2\x12.central.SensorACKH\x00R\tsensorAck\x12V\n" +
 	"\x17refresh_image_cache_ttl\x18\x1e \x01(\v2\x1d.central.RefreshImageCacheTTLH\x00R\x14refreshImageCacheTtlB\x05\n" +
-	"\x03msg\"\xd5\x01\n" +
+	"\x03msgJ\x04\b\x02\x10\x03J\x04\b\b\x10\t\"\xd5\x01\n" +
 	"\fDeduperState\x12R\n" +
 	"\x0fresource_hashes\x18\x01 \x03(\v2).central.DeduperState.ResourceHashesEntryR\x0eresourceHashes\x12\x18\n" +
 	"\acurrent\x18\x02 \x01(\x05R\acurrent\x12\x14\n" +
