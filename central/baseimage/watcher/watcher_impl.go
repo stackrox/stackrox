@@ -480,6 +480,10 @@ func (w *watcherImpl) doScan(ctx context.Context, repo *storage.BaseImageReposit
 
 // promoteTags promotes the top-N tags by created timestamp from cache to base_images.
 // This replaces all base_images entries for the repository with the current top-N from cache.
+//
+// An empty cache digest has not been refetched yet. The digest already stored on that
+// promoted row is kept, so a failed refetch does not clear it. The cache row stays empty
+// and the next scan tries again. A non-empty cache digest replaces the promoted one.
 func (w *watcherImpl) promoteTags(
 	ctx context.Context,
 	repo *storage.BaseImageRepository,
@@ -494,15 +498,24 @@ func (w *watcherImpl) promoteTags(
 		tags = tags[:w.tagLimit]
 	}
 
+	promotedDigest, err := w.promotedDigests(ctx, repo.GetId(), tags)
+	if err != nil {
+		return err
+	}
+
 	// Build base images from cached tags.
 	imgs := make(map[*storage.BaseImage][]string, len(tags))
 	for _, tag := range tags {
+		digest := tag.GetManifestDigest()
+		if digest == "" {
+			digest = promotedDigest[tag.GetId()]
+		}
 		bi := &storage.BaseImage{
 			Id:                    tag.GetId(),
 			BaseImageRepositoryId: tag.GetBaseImageRepositoryId(),
 			Repository:            repo.GetRepositoryPath(),
 			Tag:                   tag.GetTag(),
-			ManifestDigest:        tag.GetManifestDigest(),
+			ManifestDigest:        digest,
 			DiscoveredAt:          protocompat.TimestampNow(),
 			Active:                true,
 			Created:               tag.GetCreated(),
@@ -513,6 +526,38 @@ func (w *watcherImpl) promoteTags(
 
 	// Atomically replace base images for this repository.
 	return w.baseImageDS.ReplaceByRepository(ctx, repo.GetId(), imgs)
+}
+
+// promotedDigests returns digests already stored on promoted base images when a
+// cached tag has an empty digest. Tags that already have a cache digest are
+// written as-is, so this lookup is skipped when every tag has one.
+func (w *watcherImpl) promotedDigests(
+	ctx context.Context,
+	repoID string,
+	tags []*storage.BaseImageTag,
+) (map[string]string, error) {
+	needsLookup := false
+	for _, tag := range tags {
+		if tag.GetManifestDigest() == "" {
+			needsLookup = true
+			break
+		}
+	}
+	if !needsLookup {
+		return nil, nil
+	}
+
+	current, err := w.baseImageDS.ListByRepository(ctx, repoID)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing promoted base images")
+	}
+	kept := make(map[string]string, len(current))
+	for _, img := range current {
+		if digest := img.GetManifestDigest(); digest != "" {
+			kept[img.GetId()] = digest
+		}
+	}
+	return kept, nil
 }
 
 func validate(event reposcan.TagEvent) error {
