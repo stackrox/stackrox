@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -14,6 +15,18 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+func expectPermissionSetLookup(t *testing.T, roles *roleMocks.MockDataStore, name string, ps *storage.PermissionSet, found bool, lookupErr error) {
+	t.Helper()
+	roles.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+			assert.True(t, filter(&storage.PermissionSet{Name: name}))
+			if !found {
+				return nil, lookupErr
+			}
+			return []*storage.PermissionSet{ps}, lookupErr
+		})
+}
 
 func TestCreateSensorRole(t *testing.T) {
 	for name, tc := range map[string]struct {
@@ -33,8 +46,8 @@ func TestCreateSensorRole(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			roles := roleMocks.NewMockDataStore(ctrl)
-			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
-				Return(&storage.PermissionSet{
+			expectPermissionSetLookup(t, roles, centralproxy.ConsoleProxyPermissionSetName,
+				&storage.PermissionSet{
 					ResourceToAccess: map[string]storage.Access{
 						"Deployment": storage.Access_READ_ACCESS,
 						"Image":      storage.Access_READ_ACCESS,
@@ -43,7 +56,7 @@ func TestCreateSensorRole(t *testing.T) {
 				}, true, nil)
 
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
-				[]string{centralproxy.ConsoleProxyPermissionSetID},
+				[]string{centralproxy.ConsoleProxyPermissionSetName},
 				clusterScopesFromRequest(tc.scopes))
 			require.NoError(t, err)
 			assert.Equal(t, &tokens.InternalRole{
@@ -61,15 +74,30 @@ func TestCreateSensorRoleFailsClosed(t *testing.T) {
 	manager := &roleManager{}
 	_, err := manager.createSensorRole(t.Context(), nil, nil)
 	require.ErrorIs(t, err, errox.InvalidArgs)
-	_, err = manager.createSensorRole(t.Context(), []string{centralproxy.ConsoleProxyPermissionSetID}, nil)
+	_, err = manager.createSensorRole(t.Context(), []string{centralproxy.ConsoleProxyPermissionSetName}, nil)
 	require.ErrorIs(t, err, errox.NotAuthorized)
 
 	ctrl := gomock.NewController(t)
 	roles := roleMocks.NewMockDataStore(ctrl)
-	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).Return(nil, false, nil)
+	expectPermissionSetLookup(t, roles, centralproxy.ConsoleProxyPermissionSetName, nil, false, nil)
 	manager.roleStore = roles
-	_, err = manager.createSensorRole(t.Context(), []string{centralproxy.ConsoleProxyPermissionSetID}, nil)
+	_, err = manager.createSensorRole(t.Context(), []string{centralproxy.ConsoleProxyPermissionSetName}, nil)
 	require.ErrorIs(t, err, errox.NotFound)
+}
+
+func TestCreateSensorRoleResolvesAdministratorSetByName(t *testing.T) {
+	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+	expectPermissionSetLookup(t, roles, centralproxy.ConsoleProxyPermissionSetName, &storage.PermissionSet{
+		Id:   "5e151917-5903-4701-9658-8fe4044c722f",
+		Name: centralproxy.ConsoleProxyPermissionSetName,
+		ResourceToAccess: map[string]storage.Access{
+			"Deployment": storage.Access_READ_ACCESS,
+		},
+	}, true, nil)
+	role, err := (&roleManager{roles}).createSensorRole(t.Context(),
+		[]string{centralproxy.ConsoleProxyPermissionSetName}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"Deployment"}, role.Permissions[storage.Access_READ_ACCESS])
 }
 
 func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
@@ -106,10 +134,10 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
-			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
-				Return(&storage.PermissionSet{ResourceToAccess: tc.permissions}, true, nil)
+			expectPermissionSetLookup(t, roles, centralproxy.ConsoleProxyPermissionSetName,
+				&storage.PermissionSet{ResourceToAccess: tc.permissions}, true, nil)
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
-				[]string{centralproxy.ConsoleProxyPermissionSetID}, nil)
+				[]string{centralproxy.ConsoleProxyPermissionSetName}, nil)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, role.Permissions)
 		})
@@ -118,15 +146,15 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 
 func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
-	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
-		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+	expectPermissionSetLookup(t, roles, centralproxy.ConsoleProxyPermissionSetName,
+		&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
 			"Deployment":   storage.Access_READ_ACCESS,
 			"Image":        storage.Access_READ_WRITE_ACCESS,
 			"Access":       storage.Access_NO_ACCESS,
 			"NetworkGraph": storage.Access_READ_ACCESS,
 		}}, true, nil)
-	roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
-		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+	expectPermissionSetLookup(t, roles, centralproxy.MetricsPermissionSetName,
+		&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
 			"Deployment":     storage.Access_READ_WRITE_ACCESS,
 			"Image":          storage.Access_READ_ACCESS,
 			"Access":         storage.Access_READ_ACCESS,
@@ -134,7 +162,7 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 		}}, true, nil)
 
 	role, err := (&roleManager{roles}).createSensorRole(t.Context(),
-		[]string{centralproxy.ConsoleProxyPermissionSetID, centralproxy.MetricsPermissionSetID},
+		[]string{centralproxy.ConsoleProxyPermissionSetName, centralproxy.MetricsPermissionSetName},
 		tokens.ClusterScopes{"sensor-cluster": {"*"}})
 	require.NoError(t, err)
 	assert.Equal(t, &tokens.InternalRole{
@@ -160,14 +188,13 @@ func TestCreateSensorRoleFailsIfAnyPermissionSetCannotBeLoaded(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
-			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.ConsoleProxyPermissionSetID).
-				Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+			expectPermissionSetLookup(t, roles, centralproxy.ConsoleProxyPermissionSetName,
+				&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
 					"Deployment": storage.Access_READ_ACCESS,
 				}}, true, nil)
-			roles.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
-				Return(tc.permissionSet, tc.found, tc.storeErr)
+			expectPermissionSetLookup(t, roles, centralproxy.MetricsPermissionSetName, tc.permissionSet, tc.found, tc.storeErr)
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
-				[]string{centralproxy.ConsoleProxyPermissionSetID, centralproxy.MetricsPermissionSetID}, nil)
+				[]string{centralproxy.ConsoleProxyPermissionSetName, centralproxy.MetricsPermissionSetName}, nil)
 			assert.Nil(t, role)
 			if tc.storeErr != nil {
 				require.ErrorIs(t, err, tc.storeErr)

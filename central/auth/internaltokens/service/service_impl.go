@@ -97,9 +97,9 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
 	var tokenRole *tokens.InternalRole
-	if len(req.GetPermissionSetIds()) > 0 {
+	if len(req.GetPermissionSetNames()) > 0 {
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
-		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req.GetPermissionSetIds(),
+		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req.GetPermissionSetNames(),
 			clusterScopesFromRequest(req.GetClusterScopes()))
 	} else {
 		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
