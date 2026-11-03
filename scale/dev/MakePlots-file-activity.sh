@@ -146,6 +146,8 @@ plot_metric "${output_dir}/process_enrichment_hits.png" \
     "Sensor Process Enrichment Hits (cumulative)" "Process Indicators" "sensor" "process_enrichment_hits"
 plot_metric "${output_dir}/process_enrichment_drops.png" \
     "Sensor Process Enrichment Drops (cumulative)" "Process Indicators" "sensor" "process_enrichment_drops"
+plot_metric "${output_dir}/process_filter_rejected.png" \
+    "Sensor Process Filter Rejections (cumulative)" "Process Indicators" "sensor" "process_filter_rejected"
 
 # Alert generation on Central (cumulative counters) by outcome. The direct
 # "alerts being generated" signal; central-side, so unaffected by the sensor pubsub

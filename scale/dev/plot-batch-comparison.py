@@ -107,6 +107,7 @@ METRIC_SPECS = [
     # Process throughput (pubsub-safe): process indicators enriched/dropped per sec.
     ('process_enrichment_hits',  'metrics_process_enrichment_hits.txt',  'sensor', 'rate', None),
     ('process_enrichment_drops', 'metrics_process_enrichment_drops.txt', 'sensor', 'rate', None),
+    ('process_filter_rejected',  'metrics_process_filter_rejected.txt',  'sensor', 'rate', None),
     # Alert generation on Central (per sec), by outcome. Direct "alerts generated"
     # signal; works regardless of the sensor pubsub path.
     ('alert_outcome_new',      'metrics_alert_outcome_new.txt',      'central', 'rate', None),
@@ -181,6 +182,9 @@ STANDARD_PLOTS = [
     ('process_enrichment_drops', 'process_enrichment_drops_vs_rate.png',
      'Sensor Process Enrichment Drops Rate vs Event Rate\n(averaged over {win})',
      'Process Indicators Dropped (/sec)'),
+    ('process_filter_rejected', 'process_filter_rejected_vs_rate.png',
+     'Sensor Process Filter Rejections Rate vs Event Rate\n(averaged over {win})',
+     'Process Indicators Rejected by Filter (/sec)'),
     ('alert_outcome_new', 'alert_outcome_new_vs_rate.png',
      'Central New Alerts Rate vs Event Rate\n(averaged over {win})',
      'New Alerts (/sec)'),

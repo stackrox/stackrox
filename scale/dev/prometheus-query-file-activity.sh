@@ -291,6 +291,9 @@ declare -A received_metric=(
   [network_flows_received]='sum(rox_sensor_total_network_flows_sensor_received_counter{namespace=\"'$sensor_ns'\"})'
   [process_enrichment_hits]='sum(rox_sensor_process_enrichment_hits{namespace=\"'$sensor_ns'\"})'
   [process_enrichment_drops]='sum(rox_sensor_process_enrichment_drops{namespace=\"'$sensor_ns'\"})'
+  # Enriched process indicators dropped by the per-container process filter before
+  # being sent to Central (the gap between enrichment and Central intake).
+  [process_filter_rejected]='sum(rox_sensor_process_filter_rejected_total{namespace=\"'$sensor_ns'\"})'
 )
 for out_name in "${!received_metric[@]}"; do
   result="$(get_time_series_for_metric "${received_metric[$out_name]}" "$from" "$to")" || true
