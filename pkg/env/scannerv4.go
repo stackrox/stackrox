@@ -40,9 +40,7 @@ var (
 	// Default: https://search.maven.org/solrsearch/select
 	ScannerV4MavenSearchURL = RegisterSetting("ROX_SCANNER_V4_MAVEN_SEARCH_URL", WithDefault("https://search.maven.org/solrsearch/select"))
 
-	// ScannerV4AllowExternalVulnURLs specifies whether Scanner V4 Matcher should allow fetching vulnerability
-	// bundles from external URLs in release builds. When false (default), release builds deny HTTP requests
-	// to hosts other than Central. When true, the Matcher uses the default HTTP transport for external requests.
-	// Not intended for production use.
-	ScannerV4AllowExternalVulnURLs = RegisterBooleanSetting("ROX_SCANNER_V4_ALLOW_EXTERNAL_VULN_URLS", false)
+	// ScannerV4VulnerabilityBundleBaseURL specifies the base URL Central uses to download Scanner V4 vulnerability bundles.
+	// Default: https://definitions.stackrox.io/v4/vulnerability-bundles
+	ScannerV4VulnerabilityBundleBaseURL = RegisterSetting("ROX_SCANNER_V4_VULNERABILITY_BUNDLE_BASE_URL", WithDefault("https://definitions.stackrox.io/v4/vulnerability-bundles"))
 )
