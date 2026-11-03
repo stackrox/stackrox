@@ -363,17 +363,11 @@ _main() {
 	### ROX_OPENSSL_TLS_CIPHER_SUITES: colon-separated OpenSSL cipher names
 	###   (e.g. "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384").
 	###   Only affects TLS 1.2; TLS 1.3 ciphers are not configurable in PostgreSQL 16.
-	### ROX_TLS_GROUPS: comma-separated TLS named groups (e.g. "X25519,secp256r1").
-	###   Converted to colon-separated format for PostgreSQL ssl_groups parameter.
 	if [ -n "${ROX_TLS_MIN_VERSION:-}" ]; then
 		set -- "$@" -c "ssl_min_protocol_version=${ROX_TLS_MIN_VERSION}"
 	fi
 	if [ -n "${ROX_OPENSSL_TLS_CIPHER_SUITES:-}" ]; then
 		set -- "$@" -c "ssl_ciphers=${ROX_OPENSSL_TLS_CIPHER_SUITES}"
-	fi
-	if [ -n "${ROX_TLS_GROUPS:-}" ]; then
-		local ssl_groups="${ROX_TLS_GROUPS//,/:}"
-		set -- "$@" -c "ssl_groups=${ssl_groups}"
 	fi
 
 	flock /var/lib/postgresql/data/pglock "$@" &
