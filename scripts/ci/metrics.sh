@@ -165,7 +165,7 @@ bq_save_job_record() {
         local type=""
         columns="$columns, $field"
 
-        if [[ "$field" == "pr_number" ]]; then
+        if [[ "$field" == "pr_number" ]] || [[ "$field" == "attempt" ]]; then
             type="INTEGER"
         fi
 

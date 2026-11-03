@@ -189,6 +189,8 @@ runs:
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
             started_at "${{ steps.record_job_info.outputs.started_at }}" \
+            ci_job_name "${CI_JOB_NAME:-null}" \
+            attempt "${{ github.run_attempt }}" \
             cut_os_image "${{ steps.runner-info.outputs.runner_image }}" \
             build "${{ steps.runner-info.outputs.cpu_model }}" \
             test_target "${{ steps.runner-info.outputs.runner_resources }}" \
