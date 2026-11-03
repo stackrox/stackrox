@@ -96,8 +96,9 @@ func TestPerRPC_Authorized_ForwardsRPCName(t *testing.T) {
 			Default:     rejectAll,
 			Authorizers: map[string]authz.Authorizer{methodA: rec},
 		}
-		pr.Authorized(it.Context(), methodA)
+		err := pr.Authorized(it.Context(), methodA)
 		assert.Equal(it, methodA, rec.lastRPCName)
+		assert.NoError(it, err)
 	})
 
 	t.Run("to default authorizer", func(it *testing.T) {
@@ -106,8 +107,9 @@ func TestPerRPC_Authorized_ForwardsRPCName(t *testing.T) {
 			Default:     rec,
 			Authorizers: map[string]authz.Authorizer{methodA: allowAll},
 		}
-		pr.Authorized(it.Context(), methodB)
+		err := pr.Authorized(it.Context(), methodB)
 		assert.Equal(it, methodB, rec.lastRPCName)
+		assert.NoError(it, err)
 	})
 }
 

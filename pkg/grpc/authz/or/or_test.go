@@ -23,12 +23,16 @@ func (f fixedAuthorizer) Authorized(_ context.Context, _ string) error { return 
 
 // recordingAuthorizer captures every Authorized call for inspection.
 type recordingAuthorizer struct {
-	calls int
-	err   error
+	calls    int
+	contexts []context.Context
+	methods  []string
+	err      error
 }
 
-func (r *recordingAuthorizer) Authorized(_ context.Context, _ string) error {
+func (r *recordingAuthorizer) Authorized(ctx context.Context, method string) error {
 	r.calls++
+	r.contexts = append(r.contexts, ctx)
+	r.methods = append(r.methods, method)
 	return r.err
 }
 
@@ -79,7 +83,8 @@ func TestOr_Authorized(t *testing.T) {
 // TestOr_ShortCircuit verifies subsequent authorizers are not called once one succeeds.
 func TestOr_ShortCircuit(t *testing.T) {
 	second := &recordingAuthorizer{}
-	Or(allow, second).Authorized(t.Context(), "")
+	err := Or(allow, second).Authorized(t.Context(), "")
+	assert.NoError(t, err)
 	assert.Equal(t, 0, second.calls, "second authorizer must not be called after first succeeds")
 }
 
@@ -89,8 +94,11 @@ func TestOr_ForwardsContextAndMethod(t *testing.T) {
 	const method = "/some.Service/Method"
 
 	rec := &recordingAuthorizer{}
-	Or(rec).Authorized(ctx, method)
+	err := Or(rec).Authorized(ctx, method)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, rec.calls)
+	assert.Equal(t, []string{method}, rec.methods)
+	assert.Equal(t, []context.Context{ctx}, rec.contexts)
 }
 
 func TestOr_ReturnsAuthorizer(t *testing.T) {
