@@ -28,13 +28,20 @@ on:
         - W6
         - W7
         - W9
+        - N3c
+        - N4-go-zero
 
 permissions:
   contents: read
 
+# Keep the focused T1 imports from overlapping across manual test cases.
+concurrency:
+  group: scanner-updater-bundle-t1-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-matrix:
-    if: github.repository_owner == 'stackrox' && github.event_name == 'workflow_dispatch'
+    if: github.repository == 'stackrox/stackrox' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     outputs:
       streams: ${{ steps.emit.outputs.streams }}
@@ -42,15 +49,17 @@ jobs:
     - name: Enforce disposable-test safety
       env:
         TEST_REF: ${{ github.ref }}
+        TEST_REPOSITORY: ${{ github.repository }}
         DRY_RUN: ${{ inputs.dry_run == true }}
         FORCE: ${{ inputs.force == true }}
         TEST_CASE: ${{ inputs.t1_case }}
       run: |
         set -euo pipefail
+        [[ "$TEST_REPOSITORY" == "stackrox/stackrox" ]]
         [[ "$TEST_REF" == "refs/heads/alkmim/ROX-36961-t1-negative-tests" ]]
         [[ "$DRY_RUN" == "true" && "$FORCE" == "true" ]]
         case "$TEST_CASE" in
-          healthy|gate-control|W5|W6|W7|W9) ;;
+          healthy|gate-control|W5|W6|W7|W9|N3c|N4-go-zero) ;;
           *) echo "Unsupported disposable test case" >&2; exit 1 ;;
         esac
 
@@ -91,6 +100,7 @@ jobs:
           --health-retries 10
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         stream: ${{ fromJson(needs.build-matrix.outputs.streams) }}
     concurrency:
@@ -126,7 +136,7 @@ jobs:
     - name: Authenticate with GCS
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
-        credentials_json: ${{ secrets[inputs.dry_run == true && 'GOOGLE_SA_CIRCLECI_SCANNER' || 'GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER'] }}
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
@@ -260,6 +270,11 @@ jobs:
         set -euo pipefail
         zip vulnerabilities.zip -@ < valid-files.txt
         echo "Assembled vulnerabilities.zip ($(stat -c%s vulnerabilities.zip) bytes)"
+
+    - name: Inject N3c unsupported manual record
+      id: t1_fault_n3c
+      if: steps.check-changes.outputs.changed == 'true' && inputs.t1_case == 'N3c'
+      run: python3 /tmp/t1-tests/inject.py N3c
 
     - name: Inject W5 unexpected ZIP entry
       id: t1_fault_zip
@@ -415,7 +430,7 @@ jobs:
       if: steps.check-changes.outputs.changed == 'true'
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
-        credentials_json: ${{ secrets[inputs.dry_run == true && 'GOOGLE_SA_CIRCLECI_SCANNER' || 'GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER'] }}
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Upload bundle
       id: t1_upload
@@ -424,10 +439,9 @@ jobs:
         DRY_RUN: ${{ inputs.dry_run == true }}
       run: |
         set -euo pipefail
-        bundle_obj="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/vulnerabilities.zip"
-        if [[ "$DRY_RUN" == "true" ]]; then
-            bundle_obj="gs://scanner-v4-test/${GCS_PREFIX}/test-runs/${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}/${STREAM}/vulnerabilities.zip"
-        fi
+        [[ "$DRY_RUN" == "true" ]]
+        bundle_obj="gs://scanner-v4-test/${GCS_PREFIX}/test-runs/${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}/${STREAM}/vulnerabilities.zip"
+        [[ "$bundle_obj" == gs://scanner-v4-test/* ]]
         gcloud storage cp vulnerabilities.zip "$bundle_obj"
         echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
 
@@ -445,7 +459,7 @@ jobs:
         T1_IMPORT_OUTCOME: ${{ steps.t1_import.outcome }}
         T1_UPLOAD_AUTH_OUTCOME: ${{ steps.t1_upload_auth.outcome }}
         T1_UPLOAD_OUTCOME: ${{ steps.t1_upload.outcome }}
-        T1_FAULT_OUTCOME: ${{ inputs.t1_case == 'W5' && steps.t1_fault_zip.outcome || inputs.t1_case == 'W6' && steps.t1_fault_source.outcome || steps.t1_fault_import.outcome }}
+        T1_FAULT_OUTCOME: ${{ inputs.t1_case == 'W5' && steps.t1_fault_zip.outcome || inputs.t1_case == 'W6' && steps.t1_fault_source.outcome || inputs.t1_case == 'N3c' && steps.t1_fault_n3c.outcome || steps.t1_fault_import.outcome }}
       run: python3 /tmp/t1-tests/verify-object.py
 
     - name: Retain disposable test evidence

@@ -25,10 +25,17 @@ def main():
             if any(outcomes[k] != "success" for k in ("content", "zip", "import", "upload_auth", "upload")):
                 raise RuntimeError("The healthy pipeline did not reach a successful real upload")
         else:
-            gate = {"W5": "zip", "W6": "content", "W7": "import", "W9": "import"}[case]
+            gate = {
+                "W5": "zip",
+                "W6": "content",
+                "W7": "import",
+                "W9": "import",
+                "N3c": "import",
+                "N4-go-zero": "import",
+            }[case]
             if outcomes[gate] != "failure" or outcomes["upload"] != "skipped" or outcomes["upload_auth"] != "skipped":
                 raise RuntimeError("The intended validation gate did not fail and block upload")
-            if case != "W9":
+            if case in ("W5", "W6", "W7", "N3c"):
                 injection = json.loads((evidence / "injection.json").read_text())
                 if outcomes["fault"] != "success" or injection["case"] != case:
                     raise RuntimeError("The intended fixture injection was not verified")
@@ -37,6 +44,23 @@ def main():
                 text = (evidence / "real-import.log").read_text(errors="replace")
                 if imported["import_exit"] != 1 or imported["timed_out"] or not lib.manual_json_error(text):
                     raise RuntimeError("W7 lacks a real malformed-JSON diagnostic attributable to the manual bundle")
+            if case == "N3c":
+                imported = json.loads((evidence / "import-result.json").read_text())
+                diagnostic = (evidence / "validator.log").read_text(errors="replace")
+                if imported.get("updater_exit") != 0 or imported.get("checker_exit") != 1 or imported.get("timed_out"):
+                    raise RuntimeError("N3c did not complete a real import and fail the corrected checker")
+                if "zero effective vulnerability relations" not in diagnostic:
+                    raise RuntimeError("N3c lacks the real persisted-link diagnostic")
+            if case == "N4-go-zero":
+                imported = json.loads((evidence / "import-result.json").read_text())
+                injection = json.loads((evidence / "injection.json").read_text())
+                diagnostic = (evidence / "validator.log").read_text(errors="replace")
+                if imported.get("updater_exit") != 0 or imported.get("checker_exit") != 1 or imported.get("timed_out"):
+                    raise RuntimeError("N4-go-zero did not complete a real import and fail the corrected checker")
+                if injection.get("case") != case or not injection.get("after_timestamp", "").startswith("0001-01-01"):
+                    raise RuntimeError("N4-go-zero did not mutate the manual metadata timestamp")
+                if "not later than Unix epoch" not in diagnostic:
+                    raise RuntimeError("N4-go-zero lacks the semantic timestamp diagnostic")
         if case in ("W9", "gate-control"):
             middle = json.loads((evidence / "mid-import.json").read_text())
             if middle["status"] != "Passed" or middle["mode"] != ("fail" if case == "W9" else "release"):

@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--run", type=int, required=True)
-    parser.add_argument("--case", choices=("healthy", "gate-control", "W5", "W6", "W7", "W9"), required=True)
+    parser.add_argument("--case", choices=("healthy", "gate-control", "W5", "W6", "W7", "W9", "N3c", "N4-go-zero"), required=True)
     parser.add_argument("--expected-sha", required=True)
     parser.add_argument("--evidence", type=Path, required=True)
     parser.add_argument("--healthy-assessment", type=Path)
@@ -77,12 +77,15 @@ def main():
             "--pattern", f"t1-{args.case}-*-{run['run_attempt']}",
             "--dir", str(evidence / "artifacts"),
         ], timeout=300)
-        configured = set(lib.document(args.repo.resolve(), lib.CONFIG)["bundles"])
+        configured_by_stream = lib.document(args.repo.resolve(), lib.CONFIG)["bundles"]
+        configured = set(configured_by_stream)
         seen = set()
         diagnostics = {
             "W5": r"(?:##\[error\]|::error::)unexpected ZIP entry: t1-negative-unexpected",
             "W6": r"manual: invalid vulnerability source",
             "W9": r"database|connection|SQLSTATE|context canceled|conn closed",
+            "N3c": r"manual: zero effective vulnerability relations",
+            "N4-go-zero": r"manual: update_timestamp.*not later than Unix epoch",
         }
         for manifest in (evidence / "artifacts").glob("*/run.json"):
             details = json.loads(manifest.read_text())
@@ -94,6 +97,16 @@ def main():
                 raise RuntimeError("Artifact provenance does not match the requested run/case")
             if details["dry_run"] != "true" or details["force"] != "true":
                 raise RuntimeError("Artifact inputs are not the required force/dry-run pair")
+            corrected_cases = ("healthy", "N3c", "N4-go-zero")
+            if args.case in corrected_cases:
+                validator = args.repo.resolve() / ".github/workflows/scripts/scanner-updater-validate-import.py"
+                if (
+                    details.get("part_c_checker") != "scanner-updater-validate-import.py"
+                    or details.get("corrected_validator_sha256") != lib.digest(validator)
+                ):
+                    raise RuntimeError("Artifact did not use the reviewed corrected Part C validator")
+                if details.get("configured_sources") != configured_by_stream.get(stream):
+                    raise RuntimeError("Artifact source manifest differs from the reviewed stream configuration")
             checked = json.loads(manifest.with_name("object-check.json").read_text())
             if checked["status"] != "Passed" or checked["http_status"] != (200 if positive else 404):
                 raise RuntimeError("Missing successful real object/read-back or authenticated absence check")
@@ -109,7 +122,14 @@ def main():
             (evidence / f"{stream}-job.log").write_text(log)
             steps = {step["name"]: step["conclusion"] for step in job["steps"]}
             if not positive:
-                gate = {"W5": "Validate ZIP entries", "W6": "Validate source content", "W7": "Validate bundle import", "W9": "Validate bundle import"}[args.case]
+                gate = {
+                    "W5": "Validate ZIP entries",
+                    "W6": "Validate source content",
+                    "W7": "Validate bundle import",
+                    "W9": "Validate bundle import",
+                    "N3c": "Validate bundle import",
+                    "N4-go-zero": "Validate bundle import",
+                }[args.case]
                 if steps.get(gate) != "failure" or steps.get("Upload bundle") != "skipped":
                     raise RuntimeError("Failure occurred at the wrong workflow gate")
                 if args.case != "W7" and not re.search(diagnostics[args.case], log, re.IGNORECASE):
@@ -121,7 +141,32 @@ def main():
                     text = manifest.with_name("real-import.log").read_text(errors="replace")
                     if imported["import_exit"] != 1 or imported["timed_out"] or not lib.manual_json_error(text):
                         raise RuntimeError("W7 did not report the intended JSON error for the manual bundle in actual import output")
-            if args.case in ("healthy", "gate-control", "W7", "W9"):
+                if args.case == "N3c":
+                    imported = json.loads(manifest.with_name("import-result.json").read_text())
+                    mutation = json.loads(manifest.with_name("injection.json").read_text())
+                    validator_log = manifest.with_name("validator.log").read_text(errors="replace")
+                    if (
+                        imported.get("updater_exit") != 0
+                        or imported.get("checker_exit") != 1
+                        or imported.get("timed_out")
+                        or mutation.get("case") != "N3c"
+                        or "zero effective vulnerability relations" not in validator_log
+                    ):
+                        raise RuntimeError("N3c did not exercise and reject zero persisted manual relations")
+                if args.case == "N4-go-zero":
+                    imported = json.loads(manifest.with_name("import-result.json").read_text())
+                    mutation = json.loads(manifest.with_name("injection.json").read_text())
+                    validator_log = manifest.with_name("validator.log").read_text(errors="replace")
+                    if (
+                        imported.get("updater_exit") != 0
+                        or imported.get("checker_exit") != 1
+                        or imported.get("timed_out")
+                        or mutation.get("case") != "N4-go-zero"
+                        or not mutation.get("after_timestamp", "").startswith("0001-01-01")
+                        or "not later than Unix epoch" not in validator_log
+                    ):
+                        raise RuntimeError("N4-go-zero did not exercise and reject the Go zero timestamp")
+            if args.case in ("healthy", "gate-control", "W7", "W9", "N3c", "N4-go-zero"):
                 build = json.loads(manifest.with_name("updater-build.json").read_text())
                 if build["stream"] != stream or not re.fullmatch(r"[0-9a-f]{40}", build["resolved_commit"]):
                     raise RuntimeError("Actual stream-build provenance is missing")
@@ -134,7 +179,12 @@ def main():
         if seen != configured:
             raise RuntimeError(f"Missing evidence for configured streams: {sorted(configured - seen)}")
         assessment["validation_status"] = "Passed"
-        assessment["publication_gate"] = "Positive control" if positive else "Passed (W8 real positive/negative pair)"
+        if positive:
+            assessment["publication_gate"] = "Positive control"
+        elif args.case in ("N3c", "N4-go-zero"):
+            assessment["publication_gate"] = "Passed (corrected Part C blocked the invalid candidate)"
+        else:
+            assessment["publication_gate"] = "Passed (W8 real positive/negative pair)"
         notify = [job for job in jobs if job["name"] == "notify"]
         if not positive and len(notify) == 1:
             final_notify = api(f"repos/{REPOSITORY}/actions/jobs/{notify[0]['id']}")

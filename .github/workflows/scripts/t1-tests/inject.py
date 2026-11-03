@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runner-local W5/W6/W7 faults; never modify a GCS object."""
+"""Runner-local validation faults; never modify a GCS object."""
 
 import argparse
 import json
@@ -12,7 +12,7 @@ import lib
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("case", choices=("W5", "W6", "W7"))
+    parser.add_argument("case", choices=("W5", "W6", "W7", "N3c"))
     args = parser.parse_args()
     if os.environ.get("T1_DRY_RUN") != "true" or os.environ.get("T1_FORCE") != "true":
         raise RuntimeError("Fault injection requires force=true and dry_run=true")
@@ -40,7 +40,7 @@ def main():
         if after[:-1] != before or after[-1]["name"] != name:
             raise RuntimeError("W5 changed more than the intended entry")
         record.update(before=before, after=after)
-    else:
+    elif args.case == "W7":
         payload = b'{"intentionally-malformed":\n'
         try:
             json.loads(payload)
@@ -52,6 +52,15 @@ def main():
         if lib.command(["zstd", "-d", "-q", "-c"], input=compressed) != payload:
             raise RuntimeError("W7 zstd round-trip failed")
         record.update(lib.replace_entry("vulnerabilities.zip", "bundles/manual.json.zst", compressed))
+    else:
+        payload = lib.manual_record(zero=True)
+        compressed = lib.compress(payload)
+        if lib.command(["zstd", "-d", "-q", "-c"], input=compressed) != payload:
+            raise RuntimeError("N3c zstd round-trip failed")
+        record.update(
+            lib.replace_entry("vulnerabilities.zip", "bundles/manual.json.zst", compressed)
+        )
+        record["mutation_type"] = "one well-formed but unsupported manual vulnerability record"
     lib.write_json(evidence / "injection.json", record)
     print(f"T1 {args.case}: intended runner-local fault verified")
 
