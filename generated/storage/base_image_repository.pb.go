@@ -270,7 +270,7 @@ func (x *BaseImageRepository) GetLastFailureMessage() string {
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 9
+// Next tag: 10
 type BaseImageTag struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique identifier.
@@ -291,7 +291,9 @@ type BaseImageTag struct {
 	// to only refetch platforms whose digest changed.
 	ListDigests map[string]string `protobuf:"bytes,7,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Layer digests for this tag, stored for promotion to base_images.
-	LayerDigests  []string `protobuf:"bytes,8,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
+	LayerDigests []string `protobuf:"bytes,8,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
+	// Config history, including empty lines, stored for promotion to base_images.
+	History       []*BaseImageHistoryEntry `protobuf:"bytes,9,rep,name=history,proto3" json:"history,omitempty" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -382,11 +384,18 @@ func (x *BaseImageTag) GetLayerDigests() []string {
 	return nil
 }
 
+func (x *BaseImageTag) GetHistory() []*BaseImageHistoryEntry {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
 var File_storage_base_image_repository_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\n" +
-	"#storage/base_image_repository.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\"\xaa\x05\n" +
+	"#storage/base_image_repository.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/base_image.proto\x1a\x12storage/user.proto\"\xaa\x05\n" +
 	"\x13BaseImageRepository\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0frepository_path\x18\x02 \x01(\tR\x0erepositoryPath\x12\x1f\n" +
@@ -414,7 +423,7 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\fHealthStatus\x12\v\n" +
 	"\aHEALTHY\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01\x12\f\n" +
-	"\bDISABLED\x10\x02\"\xa2\x03\n" +
+	"\bDISABLED\x10\x02\"\xdc\x03\n" +
 	"\fBaseImageTag\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x10\n" +
@@ -423,7 +432,8 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\x10is_manifest_list\x18\x05 \x01(\bR\x0eisManifestList\x124\n" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12I\n" +
 	"\flist_digests\x18\a \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x12#\n" +
-	"\rlayer_digests\x18\b \x03(\tR\flayerDigests\x1a>\n" +
+	"\rlayer_digests\x18\b \x03(\tR\flayerDigests\x128\n" +
+	"\ahistory\x18\t \x03(\v2\x1e.storage.BaseImageHistoryEntryR\ahistory\x1a>\n" +
 	"\x10ListDigestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B.\n" +
@@ -451,6 +461,7 @@ var file_storage_base_image_repository_proto_goTypes = []any{
 	nil,                                   // 4: storage.BaseImageTag.ListDigestsEntry
 	(*timestamppb.Timestamp)(nil),         // 5: google.protobuf.Timestamp
 	(*SlimUser)(nil),                      // 6: storage.SlimUser
+	(*BaseImageHistoryEntry)(nil),         // 7: storage.BaseImageHistoryEntry
 }
 var file_storage_base_image_repository_proto_depIdxs = []int32{
 	0, // 0: storage.BaseImageRepository.status:type_name -> storage.BaseImageRepository.Status
@@ -460,11 +471,12 @@ var file_storage_base_image_repository_proto_depIdxs = []int32{
 	5, // 4: storage.BaseImageRepository.last_polled_at:type_name -> google.protobuf.Timestamp
 	5, // 5: storage.BaseImageTag.created:type_name -> google.protobuf.Timestamp
 	4, // 6: storage.BaseImageTag.list_digests:type_name -> storage.BaseImageTag.ListDigestsEntry
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	7, // 7: storage.BaseImageTag.history:type_name -> storage.BaseImageHistoryEntry
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_storage_base_image_repository_proto_init() }
@@ -472,6 +484,7 @@ func file_storage_base_image_repository_proto_init() {
 	if File_storage_base_image_repository_proto != nil {
 		return
 	}
+	file_storage_base_image_proto_init()
 	file_storage_user_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
