@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import importlib.util
 import json
 import os
 import stat
@@ -19,6 +20,16 @@ HELPER = (
     / "scanner-updater-validate-import.py"
 )
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "scanner-updater-bundle.yaml"
+T1_TESTS = REPO_ROOT / ".github" / "workflows" / "scripts" / "t1-tests"
+
+if str(T1_TESTS) not in sys.path:
+    sys.path.insert(0, str(T1_TESTS))
+run_import_spec = importlib.util.spec_from_file_location(
+    "t1_run_import", T1_TESTS / "run-import.py"
+)
+run_import = importlib.util.module_from_spec(run_import_spec)
+sys.modules[run_import_spec.name] = run_import
+run_import_spec.loader.exec_module(run_import)
 
 VULN_REF = "11111111-1111-4111-8111-111111111111"
 VULN_REF_2 = "22222222-2222-4222-8222-222222222222"
@@ -498,6 +509,29 @@ class ImportValidatorTest(unittest.TestCase):
         self.assertIn("manual_record(zero=True)", injector)
         self.assertIn("zero effective vulnerability relations", verifier)
         self.assertIn("not later than Unix epoch", verifier)
+
+
+class N4PsqlMutationOutputTest(unittest.TestCase):
+    def test_accepts_returned_key_followed_by_update_command_tag(self):
+        output = "bundles/manual.json.zst\nUPDATE 1\n"
+
+        self.assertTrue(
+            run_import.psql_update_returned_exactly_one_key(
+                output, "bundles/manual.json.zst"
+            )
+        )
+
+    def test_rejects_wrong_key_or_update_count(self):
+        key = "bundles/manual.json.zst"
+        for output in (
+            f"{key}\n",
+            "bundles/other.json.zst\nUPDATE 1\n",
+            f"{key}\nUPDATE 0\n",
+            f"{key}\nUPDATE 2\n",
+            f"{key}\nUPDATE 1\n{key}\n",
+        ):
+            with self.subTest(output=output):
+                self.assertFalse(run_import.psql_update_returned_exactly_one_key(output, key))
 
 
 if __name__ == "__main__":

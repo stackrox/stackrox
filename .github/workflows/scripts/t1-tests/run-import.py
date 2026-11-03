@@ -14,6 +14,12 @@ CORRECTED_CASES = {"healthy", "N3c", "N4-go-zero"}
 DB_CONN = "host=postgres user=test password=test dbname=matcher sslmode=disable"
 
 
+def psql_update_returned_exactly_one_key(output, key):
+    """Require the one RETURNING row and its matching psql command tag."""
+    lines = output.splitlines()
+    return lines == [key, "UPDATE 1"]
+
+
 def terminate_process(process):
     if process is not None and process.poll() is None:
         os.killpg(process.pid, signal.SIGTERM)
@@ -90,7 +96,12 @@ def run_corrected_import(evidence):
                 "SELECT update_timestamp FROM public.last_vuln_update "
                 "WHERE key='bundles/manual.json.zst';"
             )
-            if not before or changed.splitlines() != [key] or not after.startswith("0001-01-01"):
+            changed_lines = changed.splitlines()
+            if (
+                not before
+                or not psql_update_returned_exactly_one_key(changed, key)
+                or not after.startswith("0001-01-01")
+            ):
                 raise RuntimeError("N4-go-zero metadata mutation did not affect exactly the manual row")
             mutation = {
                 "case": case,
@@ -98,7 +109,7 @@ def run_corrected_import(evidence):
                 "key": key,
                 "before_timestamp": before,
                 "after_timestamp": after,
-                "rows_updated": changed.splitlines(),
+                "rows_updated": changed_lines,
             }
             lib.write_json(evidence / "injection.json", mutation)
             result["metadata_mutation"] = mutation
