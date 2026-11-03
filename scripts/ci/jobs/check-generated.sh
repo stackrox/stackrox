@@ -8,9 +8,9 @@ set -euo pipefail
 export SHELLOPTS
 
 CHECK_GENERATED_STATE_DIR=$(mktemp -d)
-export CHECK_STATE ROOT
-trap 'rm -rf "$CHECK_STATE"' EXIT
-FAIL_FLAG="$CHECK_STATE/fail"
+export CHECK_GENERATED_STATE_DIR ROOT
+trap 'rm -rf "$CHECK_GENERATED_STATE_DIR"' EXIT
+FAIL_FLAG="$CHECK_GENERATED_STATE_DIR/fail"
 # shellcheck source=../generated-check-output.sh
 source "$ROOT/scripts/ci/generated-check-output.sh"
 
@@ -59,10 +59,10 @@ function check-go-mod-tidy() {
     generated_diff
 }
 export -f check-go-mod-tidy
-generated_command bash -c check-go-mod-tidy || {
+run_generator_command bash -c check-go-mod-tidy || {
     save_junit_failure "Check_Go_Mod_Tidy" \
         "go.mod/go.sum files are not tidy" \
-        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
+        "$(cat "$CHECK_GENERATED_STATE_DIR/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-go-mod-tidy >> "$FAIL_FLAG"
 }
@@ -70,7 +70,7 @@ generated_command bash -c check-go-mod-tidy || {
 # shellcheck disable=SC2016
 info 'Check: Generated files are up to date. If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.'
 function generated_files-are-up-to-date() {
-    git ls-files --others --exclude-standard >"${CHECK_STATE}/untracked"
+    git ls-files --others --exclude-standard >"${CHECK_GENERATED_STATE_DIR}/untracked"
 
     make proto-generated-srcs
 
@@ -81,27 +81,27 @@ function generated_files-are-up-to-date() {
 
     local changed=0
     generated_diff || changed=1
-    { git ls-files --others --exclude-standard ; cat "${CHECK_STATE}/untracked" ; } | sort | uniq -u >"${CHECK_STATE}/untracked-new"
+    { git ls-files --others --exclude-standard ; cat "${CHECK_GENERATED_STATE_DIR}/untracked" ; } | sort | uniq -u >"${CHECK_GENERATED_STATE_DIR}/untracked-new"
 
-    if [[ -s "${CHECK_STATE}/untracked-new" ]]; then
+    if [[ -s "${CHECK_GENERATED_STATE_DIR}/untracked-new" ]]; then
         # shellcheck disable=SC2016
         echo 'ERROR: Found new untracked files after running `make proto-generated-srcs` and `make go-generated-srcs`. Did you forget to `git add` generated mocks and protos?'
         while IFS= read -r file; do
-            generated_annotation "$file" "" "New generated file: run generation and add this file to Git."
-        done < "${CHECK_STATE}/untracked-new"
+            generated_check_error "$file" "" "New generated file: run generation and add this file to Git."
+        done < "${CHECK_GENERATED_STATE_DIR}/untracked-new"
 
         if is_OPENSHIFT_CI; then
-            cp "${CHECK_STATE}/untracked-new" "${ARTIFACT_DIR:-}/untracked-new"
+            cp "${CHECK_GENERATED_STATE_DIR}/untracked-new" "${ARTIFACT_DIR:-}/untracked-new"
         fi
         return 1
     fi
     return "$changed"
 }
 export -f generated_files-are-up-to-date
-generated_command bash -c generated_files-are-up-to-date || {
+run_generator_command bash -c generated_files-are-up-to-date || {
     save_junit_failure "Check_Generated_Files" \
         "Generated files check failed; see diagnostics" \
-        "$(cat "$CHECK_STATE/details")"
+        "$(cat "$CHECK_GENERATED_STATE_DIR/details")"
     git reset --hard HEAD
     echo generated_files-are-up-to-date >> "$FAIL_FLAG"
 }
@@ -152,10 +152,10 @@ function check-operator-generated-files-up-to-date() {
     diff -U 10 operator/dist/install-sorted.yaml operator/dist/chart-sorted.yaml
 }
 export -f check-operator-generated-files-up-to-date
-generated_command bash -c check-operator-generated-files-up-to-date || {
+run_generator_command bash -c check-operator-generated-files-up-to-date || {
     save_junit_failure "Check_Operator_Generated_Files" \
         "Operator generated files are not up to date" \
-        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
+        "$(cat "$CHECK_GENERATED_STATE_DIR/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
@@ -169,10 +169,10 @@ function check-config-controller-generated-files-up-to-date() {
     generated_diff
 }
 export -f check-config-controller-generated-files-up-to-date
-generated_command bash -c check-config-controller-generated-files-up-to-date || {
+run_generator_command bash -c check-config-controller-generated-files-up-to-date || {
     save_junit_failure "Check_Config_Controller_Generated_Files" \
         "Config controller generated files are not up to date" \
-        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
+        "$(cat "$CHECK_GENERATED_STATE_DIR/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-config-controller-generated-files-up-to-date >> "$FAIL_FLAG"
 }
@@ -188,7 +188,7 @@ function check-containerignore-is-in-sync() {
     > diff.txt
 }
 export -f check-containerignore-is-in-sync
-generated_command bash -c check-containerignore-is-in-sync || {
+run_generator_command bash -c check-containerignore-is-in-sync || {
     save_junit_failure "Check_Containerignore_File" \
         ".containerignore file is not in sync with .dockerignore" \
         "$(cat diff.txt)"
@@ -209,10 +209,10 @@ function check-shellcheck-failing-list() {
     fi
 }
 export -f check-shellcheck-failing-list
-generated_command bash -c check-shellcheck-failing-list || {
+run_generator_command bash -c check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \
         "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
-        "$(cat "$CHECK_STATE/details"; git diff HEAD || true)"
+        "$(cat "$CHECK_GENERATED_STATE_DIR/details"; git diff HEAD || true)"
     git reset --hard HEAD
     echo check-shellcheck-failing-list >> "$FAIL_FLAG"
 }

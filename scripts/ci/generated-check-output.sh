@@ -4,7 +4,7 @@
 
 generated_check_error() {
     local file="$1" line="$2" message="$3" properties=""
-    printf '%s\n' "$message" >> "$CHECK_STATE/details"
+    printf '%s\n' "$message" >> "$CHECK_GENERATED_STATE_DIR/details"
     if ! is_GITHUB_ACTIONS; then
         printf 'ERROR: %s: %s\n' "$file" "$message"
         return
@@ -25,15 +25,15 @@ generated_check_error() {
 }
 
 run_generator_command() {
-    : > "$CHECK_STATE/details"
+    : > "$CHECK_GENERATED_STATE_DIR/details"
     local status=0 log command
-    log=$(mktemp "$CHECK_STATE/command.XXXXXX")
+    log=$(mktemp "$CHECK_GENERATED_STATE_DIR/command.XXXXXX")
     printf -v command '%q ' "$@"
     github_group "$command"
     "$@" 2>&1 | tee "$log" || status=$?
     github_endgroup
     if (( status == 0 )); then return 0; fi
-    generated_annotation "" "" "Command failed (exit $status): $command. Open the '$command' log group."
+    generated_check_error "" "" "Command failed (exit $status): $command. Open the '$command' log group."
 
     # Extract selected diagnostic patterns from the output file and emit them in-line.
     # Only recognize explicit Go diagnostic locations, never infer a location
@@ -59,10 +59,10 @@ run_generator_command() {
         else
             file="" line=""
         fi
-        generated_annotation "$file" "$line" "$text — See '$command' log group."
+        generated_check_error "$file" "$line" "$text — See '$command' log group."
     done < "$log"
     if (( count > 10 )); then
-        generated_annotation "" "" "$((count - 10)) additional diagnostics omitted; see '$command' log group."
+        generated_check_error "" "" "$((count - 10)) additional diagnostics omitted; see '$command' log group."
     fi
     return "$status"
 }
@@ -72,7 +72,7 @@ generated_diff() {
     git diff --exit-code HEAD || status=$?
     (( status != 0 )) || return 0
     if (( status != 1 )); then
-        generated_annotation "" "" "git diff failed (exit $status)."
+        generated_check_error "" "" "git diff failed (exit $status)."
         return "$status"
     fi
     while IFS= read -r -d '' file; do
@@ -81,12 +81,12 @@ generated_diff() {
         line=$(git diff --no-ext-diff --unified=0 HEAD -- "$file" |
             sed -nE 's/^@@ -([0-9]+)(,[0-9]+)? .*/\1/p' | sed -n '1p')
         [[ "$line" != 0 ]] || line=""
-        generated_annotation "$file" "$line" "Generated output differs: $file. Regenerate the files using the instructions above and commit the result."
+        generated_check_error "$file" "$line" "Generated output differs: $file. Regenerate the files using the instructions above and commit the result."
     done < <(git diff --name-only -z HEAD)
     if (( count > 10 )); then
-        generated_annotation "" "" "$((count - 10)) additional changed files; see full diff in logs."
+        generated_check_error "" "" "$((count - 10)) additional changed files; see full diff in logs."
     fi
     return 1
 }
 
-export -f generated_annotation generated_command generated_diff
+export -f generated_check_error run_generator_command generated_diff
