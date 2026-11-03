@@ -454,8 +454,14 @@ var (
 	}
 )
 
-func getBadProcess(containerID string, numArgs int) *storage.ProcessSignal {
+func getBadProcess(containerID string, numArgs, numExecPaths int) *storage.ProcessSignal {
 	name := badProcessNames[rand.Int()%len(badProcessNames)]
+	if numExecPaths > 0 {
+		// Vary the exec path so each process is a distinct indicator/violation. The
+		// sensor process filter caps unique exec paths per container (maxUniqueProcesses),
+		// a far larger budget than the per-path arg fan-out.
+		name = fmt.Sprintf("badproc-%d", rand.Intn(numExecPaths))
+	}
 	process := getProcess("/bin", name, containerID)
 	if numArgs > 0 {
 		// Vary Args so each process is a distinct indicator/violation (Args is part of

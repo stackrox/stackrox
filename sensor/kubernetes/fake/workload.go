@@ -41,6 +41,11 @@ type ProcessWorkload struct {
 	// NumArgs, when > 0, gives bad processes one of NumArgs distinct Args values so
 	// each is a distinct violation instead of deduping. 0 (default) keeps fixed Args.
 	NumArgs int `yaml:"numArgs"`
+	// NumExecPaths, when > 0, gives bad processes one of NumExecPaths distinct exec
+	// paths. Exec path has a larger per-container budget than args in the sensor
+	// process filter, so this drives more distinct processes. 0 (default) keeps fixed
+	// names. Can be combined with NumArgs.
+	NumExecPaths int `yaml:"numExecPaths"`
 }
 
 // NetworkWorkload defines the rate and size of network flows
