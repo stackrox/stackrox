@@ -297,6 +297,10 @@ func Test_tagMetadata_FullMetadata(t *testing.T) {
 	metadata := &storage.ImageMetadata{
 		V1: &storage.V1Metadata{
 			Created: protoTime,
+			Layers: []*storage.ImageLayer{
+				{Instruction: "ADD", Value: "rootfs"},
+				{Instruction: "USER", Value: "1001", Empty: true},
+			},
 		},
 		V2: &storage.V2Metadata{
 			Digest: "sha256:abc123",
@@ -311,6 +315,13 @@ func Test_tagMetadata_FullMetadata(t *testing.T) {
 	assert.NotNil(t, result.Created)
 	assert.Equal(t, createdTime, *result.Created)
 	assert.Equal(t, []string{"sha256:layer1", "sha256:layer2", "sha256:layer3"}, result.LayerDigests)
+	require.Len(t, result.History, 2)
+	assert.Equal(t, "ADD", result.History[0].GetInstruction())
+	assert.Equal(t, "rootfs", result.History[0].GetValue())
+	assert.False(t, result.History[0].GetEmpty())
+	assert.Equal(t, "USER", result.History[1].GetInstruction())
+	assert.Equal(t, "1001", result.History[1].GetValue())
+	assert.True(t, result.History[1].GetEmpty())
 	assert.Nil(t, result.Error)
 }
 

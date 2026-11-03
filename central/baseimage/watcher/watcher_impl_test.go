@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/baseimage/tagfetcher"
 	delegatedRegistryMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -69,6 +70,51 @@ func runSchedulerPassAndWait(w Watcher) {
 	ctx := sac.WithAllAccess(context.Background())
 	impl.schedulerPass(ctx)
 	impl.wg.Wait()
+}
+
+func TestPromoteTags_CopiesHistory(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+
+	history := []*storage.BaseImageHistoryEntry{
+		{Instruction: "ADD", Value: "rootfs"},
+		{Instruction: "USER", Value: "1001", Empty: true},
+	}
+	tag := &storage.BaseImageTag{
+		Id:                    "tag-1",
+		BaseImageRepositoryId: "repo-1",
+		Tag:                   "8.10",
+		ManifestDigest:        "sha256:abc",
+		Created:               timestamppb.Now(),
+		LayerDigests:          []string{"sha256:layer1"},
+		History:               history,
+	}
+	repo := &storage.BaseImageRepository{
+		Id:             "repo-1",
+		RepositoryPath: "registry.redhat.io/ubi8/ubi",
+	}
+
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), "repo-1").
+		Return([]*storage.BaseImageTag{tag}, nil)
+	mockBaseImageDS.EXPECT().
+		ReplaceByRepository(gomock.Any(), "repo-1", gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, images map[*storage.BaseImage][]string) error {
+			require.Len(t, images, 1)
+			for img, digests := range images {
+				protoassert.SlicesEqual(t, history, img.GetHistory())
+				assert.Equal(t, []string{"sha256:layer1"}, digests)
+			}
+			return nil
+		})
+
+	w := &watcherImpl{
+		tagDS:       mockTagDS,
+		baseImageDS: mockBaseImageDS,
+		tagLimit:    10,
+	}
+	require.NoError(t, w.promoteTags(context.Background(), repo))
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
