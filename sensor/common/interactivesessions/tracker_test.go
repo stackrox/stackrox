@@ -22,14 +22,12 @@ func TestTracker(t *testing.T) {
 
 	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{testEvent("audit-1", "ResponseComplete", storage.KubernetesEvent_Object_PODS_EXEC)}})
 
-	// The closed session stays matchable during its grace period.
+	// Sanity check: the closed session stays matchable during its grace
+	// period. The close/grace expiry semantics are covered by
+	// TestTrackerClosedSessionMatchesDuringGraceButNotAfter.
 	matched, found = tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
 	assert.Equal(t, exec, matched)
-
-	now = now.Add(closedSessionGracePeriod)
-	_, found = tracker.Match("namespace", "pod", "container")
-	assert.False(t, found)
 }
 
 func TestTrackerDoesNotAttributeAmbiguousOrExpiredSessions(t *testing.T) {
@@ -100,6 +98,32 @@ func TestTrackerCloseOfUnknownSessionIsNoOp(t *testing.T) {
 	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{
 		testEvent("audit-2", "ResponseComplete", storage.KubernetesEvent_Object_PODS_EXEC),
 	}})
+	_, found = tracker.Match("namespace", "pod", "container")
+	assert.False(t, found)
+}
+
+func TestTrackerDuplicateResponseStartedResetsClosedSession(t *testing.T) {
+	now := time.Now()
+	tracker := newTracker(time.Minute, closedSessionGracePeriod, func() time.Time { return now })
+	exec := testEvent("audit-1", "ResponseStarted", storage.KubernetesEvent_Object_PODS_EXEC)
+	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{exec}})
+	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{
+		testEvent("audit-1", "ResponseComplete", storage.KubernetesEvent_Object_PODS_EXEC),
+	}})
+
+	// A duplicate ResponseStarted (e.g. an audit-log replay) resets the
+	// closed session to active with a fresh TTL.
+	replayed := testEvent("audit-1", "ResponseStarted", storage.KubernetesEvent_Object_PODS_EXEC)
+	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{replayed}})
+
+	// Past the grace period the closed session would have expired, but well
+	// before the TTL of the reset session: it must still match.
+	now = now.Add(closedSessionGracePeriod + time.Second)
+	matched, found := tracker.Match("namespace", "pod", "container")
+	require.True(t, found)
+	assert.Equal(t, replayed, matched)
+
+	now = now.Add(time.Minute)
 	_, found = tracker.Match("namespace", "pod", "container")
 	assert.False(t, found)
 }

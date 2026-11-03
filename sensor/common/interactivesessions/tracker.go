@@ -27,7 +27,6 @@ type key struct {
 type session struct {
 	event     *storage.KubernetesEvent
 	expiresAt time.Time
-	closed    bool
 }
 
 // Tracker retains active exec and attach sessions that can be unambiguously
@@ -99,14 +98,13 @@ func (t *Tracker) addLocked(key key, event *storage.KubernetesEvent) {
 	t.sessions[key][event.GetId()] = session{event: event, expiresAt: t.now().Add(t.ttl)}
 }
 
-// closeLocked marks the session closed and keeps it matchable for the grace
-// period, so file events still in the pipeline retain their attribution.
+// closeLocked retains a closed session for the grace period instead of the
+// full TTL, so file events still in the pipeline keep their attribution.
 func (t *Tracker) closeLocked(key key, auditID string) {
 	session, ok := t.sessions[key][auditID]
 	if !ok {
 		return
 	}
-	session.closed = true
 	session.expiresAt = t.now().Add(t.grace)
 	t.sessions[key][auditID] = session
 }

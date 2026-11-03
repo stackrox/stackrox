@@ -601,13 +601,13 @@ func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
 		// still in flight are attributed.
 		"session ended by ResponseComplete is attributed within the grace period": {
 			sessions: []*storage.KubernetesEvent{
-				execEvent("audit-exec-5", "ResponseStarted", "alice", ""),
-				execEvent("audit-exec-5", "ResponseComplete", "alice", ""),
+				execEvent("audit-exec-8", "ResponseStarted", "alice", ""),
+				execEvent("audit-exec-8", "ResponseComplete", "alice", ""),
 			},
 			want: &storage.FileAccess_InteractiveSession{
 				EffectiveUser:     "alice",
 				AuthenticatedUser: "alice",
-				AuditId:           "audit-exec-5",
+				AuditId:           "audit-exec-8",
 				Type:              "exec",
 				Confidence:        "high",
 				MatchBasis:        "namespace/pod/container",
@@ -615,8 +615,8 @@ func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
 		},
 		"session ended by ResponseComplete is not attributed past the grace period": {
 			sessions: []*storage.KubernetesEvent{
-				execEvent("audit-exec-5", "ResponseStarted", "alice", ""),
-				execEvent("audit-exec-5", "ResponseComplete", "alice", ""),
+				execEvent("audit-exec-9", "ResponseStarted", "alice", ""),
+				execEvent("audit-exec-9", "ResponseComplete", "alice", ""),
 			},
 			advance: pastClosedSessionGrace,
 		},
