@@ -16,14 +16,13 @@ import util.Env
 
 // Use basic authentication for API calls to central. Relies on:
 // ROX_USERNAME (defaults to admin)
-// ROX_ADMIN_PASSWORD (inferred from the most recent deploy/{k8s,openshift}/central-deploy/password)
+// ROX_ADMIN_PASSWORD (set in the environment or qa-test-settings.properties)
 // API_HOSTNAME & API_PORT
 BaseService.useBasicAuth()
 BaseService.setUseClientCert(false)
 
 // Get a cluster client. Assumes you have a working kube configuration. Relies on:
-// CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent
-//   `deploy/{k8s,openshift}/central-deploy` dir
+// CLUSTER: For local runs, an empty value defaults to `K8S`. Set it to `OPENSHIFT` for OpenShift.
 Kubernetes client = OrchestratorType.create(
         Env.mustGetOrchestratorType(),
         Constants.ORCHESTRATOR_NAMESPACE
