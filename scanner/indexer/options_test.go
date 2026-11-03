@@ -11,3 +11,10 @@ func TestForceOption(t *testing.T) {
 	assert.True(t, makeOptions(Force(true)).force)
 	assert.False(t, makeOptions(Force(true), Force(false)).force, "last Force option wins")
 }
+
+func TestResolveForce(t *testing.T) {
+	assert.False(t, ResolveForce())
+	assert.True(t, ResolveForce(Force(true)))
+	assert.False(t, ResolveForce(Force(false)))
+	assert.False(t, ResolveForce(WithPlatform(defaultPlatform), Force(false)))
+}

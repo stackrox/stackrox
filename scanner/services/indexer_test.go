@@ -58,10 +58,22 @@ func createRequest(id, url, username string, insecure bool) *v4.CreateIndexRepor
 	}
 }
 
+// matchOptions returns a gomock matcher for the variadic []indexer.Option
+// argument of IndexContainerImage, verifying both how many options were
+// passed and the resolved Force value -- a plain gomock.Len(optCount) check
+// can't tell Force(true) apart from Force(false), since Force is always
+// appended regardless of its value.
+func matchOptions(count int, force bool) gomock.Matcher {
+	return gomock.Cond(func(opts []indexer.Option) bool {
+		return len(opts) == count && indexer.ResolveForce(opts...) == force
+	})
+}
+
 func (s *indexerServiceTestSuite) setupMock(hashID string, optCount int, report *claircore.IndexReport, err error) {
 	s.indexerMock.
 		EXPECT().
-		IndexContainerImage(gomock.Any(), gomock.Eq(hashID), gomock.Eq(imageURL), gomock.Len(optCount)).
+		// CreateIndexReport always resolves to IndexContainerImage with force=true.
+		IndexContainerImage(gomock.Any(), gomock.Eq(hashID), gomock.Eq(imageURL), matchOptions(optCount, true)).
 		Return(report, err)
 }
 
@@ -98,7 +110,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError(
 	iURL := "https://foobar:443/image:sha256@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106"
 	s.indexerMock.
 		EXPECT().
-		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(2)).
+		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), matchOptions(2, true)).
 		Return(&claircore.IndexReport{Success: true}, nil)
 	req := createRequest(hashID, iURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
@@ -264,7 +276,10 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 			GetIndexReport(gomock.Any(), gomock.Eq(hashID), false).
 			Return(nil, false, nil)
 		s.indexerMock.EXPECT().
-			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			// The internal fallback must never force-discard an existing index:
+			// GetOrCreateIndexReport should only index manifests ClairCore hasn't
+			// seen before, unlike CreateIndexReport.
+			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), matchOptions(2, false)).
 			Return(&claircore.IndexReport{State: "sample state", Success: true}, nil)
 		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
 		s.NoError(err)
@@ -277,7 +292,7 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 			GetIndexReport(gomock.Any(), gomock.Eq(hashID), false).
 			Return(&claircore.IndexReport{}, true, nil)
 		s.indexerMock.EXPECT().
-			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Any(), matchOptions(2, false)).
 			Return(&claircore.IndexReport{State: "sample state", Success: true}, nil)
 		got, err := s.service.GetOrCreateIndexReport(s.ctx, req)
 		s.NoError(err)

@@ -45,6 +45,14 @@ func Force(force bool) Option {
 	}
 }
 
+// ResolveForce reports the force setting that the given Options resolve to.
+// Exported so callers in other packages (e.g. scanner/services tests) that
+// only hold a []Option can verify which value was actually set, since the
+// options struct itself is unexported.
+func ResolveForce(opts ...Option) bool {
+	return makeOptions(opts...).force
+}
+
 // defaultPlatform is the linux operating system
 // and the running program's architecture.
 var defaultPlatform = v1.Platform{
