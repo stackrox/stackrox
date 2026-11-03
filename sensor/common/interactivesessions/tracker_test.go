@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,7 @@ func TestTracker(t *testing.T) {
 
 	matched, found := tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
-	assert.Equal(t, exec, matched)
+	protoassert.Equal(t, exec, matched)
 
 	tracker.Observe(&sensor.AuditEvents{Events: []*storage.KubernetesEvent{testEvent("audit-1", "ResponseComplete", storage.KubernetesEvent_Object_PODS_EXEC)}})
 
@@ -27,7 +28,7 @@ func TestTracker(t *testing.T) {
 	// TestTrackerClosedSessionMatchesDuringGraceButNotAfter.
 	matched, found = tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
-	assert.Equal(t, exec, matched)
+	protoassert.Equal(t, exec, matched)
 }
 
 func TestTrackerNewSessionReplacesExistingSession(t *testing.T) {
@@ -45,7 +46,7 @@ func TestTrackerNewSessionReplacesExistingSession(t *testing.T) {
 
 	matched, found := tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
-	assert.Equal(t, attach, matched)
+	protoassert.Equal(t, attach, matched)
 
 	// The winning session still expires after the TTL.
 	now = now.Add(time.Minute)
@@ -65,7 +66,7 @@ func TestTrackerClosedSessionMatchesDuringGraceButNotAfter(t *testing.T) {
 
 	matched, found := tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
-	assert.Equal(t, exec, matched)
+	protoassert.Equal(t, exec, matched)
 
 	now = now.Add(closedSessionGracePeriod)
 	_, found = tracker.Match("namespace", "pod", "container")
@@ -86,7 +87,7 @@ func TestTrackerNewSessionReplacesClosedSessionInGrace(t *testing.T) {
 
 	matched, found := tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
-	assert.Equal(t, newSession, matched)
+	protoassert.Equal(t, newSession, matched)
 }
 
 func TestTrackerCloseOfUnknownSessionIsNoOp(t *testing.T) {
@@ -122,7 +123,7 @@ func TestTrackerCloseOfUnknownSessionIsNoOp(t *testing.T) {
 	}})
 	matched, found := tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
-	assert.Equal(t, replacing, matched)
+	protoassert.Equal(t, replacing, matched)
 }
 
 func TestTrackerEvictsOldestSessionAtCap(t *testing.T) {
@@ -159,7 +160,7 @@ func TestTrackerEvictsOldestSessionAtCap(t *testing.T) {
 	} {
 		matched, found := tracker.Match("namespace", pod, "container")
 		require.True(t, found)
-		assert.Equal(t, want, matched)
+		protoassert.Equal(t, want, matched)
 	}
 
 	// Preference: with a closed (grace-expiring) session and two active ones
@@ -186,7 +187,7 @@ func TestTrackerEvictsOldestSessionAtCap(t *testing.T) {
 	} {
 		matched, found := tracker.Match("namespace", pod, "container")
 		require.True(t, found)
-		assert.Equal(t, want, matched)
+		protoassert.Equal(t, want, matched)
 	}
 }
 
@@ -209,7 +210,7 @@ func TestTrackerDuplicateResponseStartedResetsClosedSession(t *testing.T) {
 	now = now.Add(closedSessionGracePeriod + time.Second)
 	matched, found := tracker.Match("namespace", "pod", "container")
 	require.True(t, found)
-	assert.Equal(t, replayed, matched)
+	protoassert.Equal(t, replayed, matched)
 
 	now = now.Add(time.Minute)
 	_, found = tracker.Match("namespace", "pod", "container")

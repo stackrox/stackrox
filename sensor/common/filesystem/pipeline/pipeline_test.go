@@ -9,6 +9,7 @@ import (
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -672,7 +673,7 @@ func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
 				synctest.Wait()
 
 				require.NotNil(t, access)
-				assert.Equal(t, tc.want, access.GetInteractiveSession())
+				protoassert.Equal(t, tc.want, access.GetInteractiveSession())
 			})
 		})
 	}

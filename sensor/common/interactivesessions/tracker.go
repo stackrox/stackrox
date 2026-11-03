@@ -1,11 +1,11 @@
 package interactivesessions
 
 import (
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (

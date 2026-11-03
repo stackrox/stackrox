@@ -134,10 +134,16 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                     <DescriptionListItem term="Process UID" desc={process.signal.uid} />
                 )}
                 {interactiveSession && (
-                    <DescriptionListItem term="Kubernetes actor" desc={interactiveSession.effectiveUser} />
+                    <DescriptionListItem
+                        term="Kubernetes actor"
+                        desc={interactiveSession.effectiveUser}
+                    />
                 )}
                 {interactiveSession && (
-                    <DescriptionListItem term="Interactive session" desc={interactiveSession.type} />
+                    <DescriptionListItem
+                        term="Interactive session"
+                        desc={interactiveSession.type}
+                    />
                 )}
                 {interactiveSession && (
                     <DescriptionListItem
