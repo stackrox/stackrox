@@ -9,9 +9,13 @@ import (
 )
 
 const (
-	defaultTTL      = 5 * time.Minute
-	maxSessions     = 1024
-	responseStarted = "ResponseStarted"
+	defaultTTL = 5 * time.Minute
+	// closedSessionGracePeriod is how long a closed session stays matchable
+	// after its closing event (e.g. ResponseComplete) is observed. It covers
+	// file events that are still in the pipeline when the session closes.
+	closedSessionGracePeriod = 30 * time.Second
+	maxSessions              = 1024
+	responseStarted          = "ResponseStarted"
 )
 
 type key struct {
@@ -23,23 +27,27 @@ type key struct {
 type session struct {
 	event     *storage.KubernetesEvent
 	expiresAt time.Time
+	closed    bool
 }
 
 // Tracker retains active exec and attach sessions that can be unambiguously
-// associated with a container file activity.
+// associated with a container file activity. Closed sessions remain
+// matchable for a grace period, so file events still in the pipeline when a
+// session closes keep their attribution.
 type Tracker struct {
 	mutex    sync.Mutex
 	sessions map[key]map[string]session
 	ttl      time.Duration
+	grace    time.Duration
 	now      func() time.Time
 }
 
 func New() *Tracker {
-	return newTracker(defaultTTL, time.Now)
+	return newTracker(defaultTTL, closedSessionGracePeriod, time.Now)
 }
 
-func newTracker(ttl time.Duration, now func() time.Time) *Tracker {
-	return &Tracker{sessions: make(map[key]map[string]session), ttl: ttl, now: now}
+func newTracker(ttl, grace time.Duration, now func() time.Time) *Tracker {
+	return &Tracker{sessions: make(map[key]map[string]session), ttl: ttl, grace: grace, now: now}
 }
 
 func (t *Tracker) Observe(events *sensor.AuditEvents) {
@@ -59,16 +67,13 @@ func (t *Tracker) Observe(events *sensor.AuditEvents) {
 			t.addLocked(key, event)
 			continue
 		}
-		if sessions := t.sessions[key]; sessions != nil {
-			delete(sessions, event.GetId())
-			if len(sessions) == 0 {
-				delete(t.sessions, key)
-			}
-		}
+		t.closeLocked(key, event.GetId())
 	}
 }
 
-// Match returns an active session only when exactly one session owns the container.
+// Match returns a session only when exactly one session owns the container.
+// A session closed within its grace period counts toward this rule just like
+// an active one, so ambiguity still results in no attribution.
 func (t *Tracker) Match(namespace, pod, container string) (*storage.KubernetesEvent, bool) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -92,6 +97,18 @@ func (t *Tracker) addLocked(key key, event *storage.KubernetesEvent) {
 		t.sessions[key] = make(map[string]session)
 	}
 	t.sessions[key][event.GetId()] = session{event: event, expiresAt: t.now().Add(t.ttl)}
+}
+
+// closeLocked marks the session closed and keeps it matchable for the grace
+// period, so file events still in the pipeline retain their attribution.
+func (t *Tracker) closeLocked(key key, auditID string) {
+	session, ok := t.sessions[key][auditID]
+	if !ok {
+		return
+	}
+	session.closed = true
+	session.expiresAt = t.now().Add(t.grace)
+	t.sessions[key][auditID] = session
 }
 
 func (t *Tracker) sessionCountLocked() int {

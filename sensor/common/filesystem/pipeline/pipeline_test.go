@@ -536,6 +536,8 @@ func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
 	// Must exceed the session tracker's default TTL of five minutes so that
 	// the session is pruned before the file activity is translated.
 	pastSessionTTL := 5*time.Minute + time.Second
+	// Must exceed the grace period a closed session stays matchable for.
+	pastClosedSessionGrace := 30*time.Second + time.Second
 
 	execEvent := func(auditID, stage, user, impersonatedUser string) *storage.KubernetesEvent {
 		return newSessionEvent(auditID, stage, testContainerName, storage.KubernetesEvent_Object_PODS_EXEC, user, impersonatedUser)
@@ -594,11 +596,29 @@ func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
 				execEvent("audit-exec-4", "ResponseStarted", "bob", ""),
 			},
 		},
-		"session ended by ResponseComplete is not attributed": {
+		// A session closed by ResponseComplete is retained for the tracker's
+		// closed-session grace period, so file events dispatched while it is
+		// still in flight are attributed.
+		"session ended by ResponseComplete is attributed within the grace period": {
 			sessions: []*storage.KubernetesEvent{
 				execEvent("audit-exec-5", "ResponseStarted", "alice", ""),
 				execEvent("audit-exec-5", "ResponseComplete", "alice", ""),
 			},
+			want: &storage.FileAccess_InteractiveSession{
+				EffectiveUser:     "alice",
+				AuthenticatedUser: "alice",
+				AuditId:           "audit-exec-5",
+				Type:              "exec",
+				Confidence:        "high",
+				MatchBasis:        "namespace/pod/container",
+			},
+		},
+		"session ended by ResponseComplete is not attributed past the grace period": {
+			sessions: []*storage.KubernetesEvent{
+				execEvent("audit-exec-5", "ResponseStarted", "alice", ""),
+				execEvent("audit-exec-5", "ResponseComplete", "alice", ""),
+			},
+			advance: pastClosedSessionGrace,
 		},
 		"expired session is not attributed": {
 			sessions: []*storage.KubernetesEvent{
