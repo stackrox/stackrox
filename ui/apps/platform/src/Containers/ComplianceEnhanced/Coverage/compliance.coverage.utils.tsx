@@ -240,7 +240,9 @@ export function getClusterResultsStatusObject(status: ComplianceCheckStatus): Cl
 }
 
 export function createScanConfigFilter(selectedScanConfigName: string | undefined) {
-    return selectedScanConfigName ? { [SCAN_CONFIG_NAME_QUERY]: selectedScanConfigName } : {};
+    return selectedScanConfigName
+        ? { [SCAN_CONFIG_NAME_QUERY]: `r/^${selectedScanConfigName}$` } // exact match
+        : {};
 }
 
 export function combineSearchFilterWithScanConfig(
