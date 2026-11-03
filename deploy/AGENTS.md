@@ -18,9 +18,9 @@ to retrieve the most up-to-date documentation for roxie.
 
 See @deploy/README.md, specifically the section "Installation" for installation instructions.
 The section also briefly describes the roxie backend supported by the `deploy/deploy.sh` shell
-script and enabled with `USE_ROXIE_DEPLOY=true`. You should be aware of this feature, but don't
-prominently suggest its usage. It is much better to install roxie on your system or --
-alternatively -- use `scripts/roxie.sh`, a wrapper that downloads roxie automatically.
+script. You should be aware of this feature, but don't prominently suggest its usage. It is
+much better to install roxie on your system or -- alternatively -- use `scripts/roxie.sh`, a
+wrapper that downloads roxie automatically.
 
 ## Usage
 

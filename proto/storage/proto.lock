@@ -4265,6 +4265,22 @@
             ]
           },
           {
+            "name": "ComplianceOperatorCheckResultV2.DataFreshness",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "CURRENT",
+                "integer": 1
+              },
+              {
+                "name": "STALE",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "ComplianceOperatorReportStatus.RunState",
             "enum_fields": [
               {
@@ -4930,6 +4946,11 @@
                 "id": 20,
                 "name": "last_started_time",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 21,
+                "name": "data_freshness",
+                "type": "DataFreshness"
               }
             ],
             "maps": [

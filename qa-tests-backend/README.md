@@ -16,25 +16,23 @@ Gradle is used to build and run tests written in Groovy using the Spock test fra
   vars. Read-only credentials are available in bitwarden's "ACS general engineering secrets"
   collection under `Quay.io readonly user`.
 
-## Test access to the Stackrox instance under test
-These tests work best against a StackRox deployed using `deploy/{k8s,openshift}/deploy.sh` scripts. If you deploy with
-another method e.g. helm, or want to test against an existing cluster, or want to switch between clusters you will
-need to consider the following environment variables:
-- API_HOSTNAME: defaults to 'localhost' because `deploy.sh` creates a proxy to central at localhost:8000
-- API_PORT: defaults to 8000
-- CLUSTER: For local runs, an empty value defaults to `K8S`. Set this to `OPENSHIFT` when testing an OpenShift cluster.
-- ROX_ADMIN_PASSWORD: Set this in the environment or `qa-test-settings.properties`.
+## Test access to the StackRox instance under test
+After deployment, source the roxie-generated envrc file to set `ROX_ADMIN_PASSWORD` and
+`API_ENDPOINT`. The QA client uses `API_HOSTNAME` and `API_PORT`, so set them to the host
+and port from `API_ENDPOINT` before running tests. Roxie's interactive sub-shell requires
+the same variables when the endpoint is not `localhost:8000`.
+For OpenShift clusters, also export `CLUSTER=OPENSHIFT`; Roxie's environment does not set `CLUSTER`.
 
-When deploying using `deploy/{k8s,openshift}/deploy.sh` scripts you may need:
-- MAIN_IMAGE_TAG: If your working directory has not been built and pushed and the output of `make tag` does not
-  result in a resolvable tag for stackrox/main then you can set this to use an image suitable to run your tests.
-- REGISTRY_USERNAME, REGISTRY_PASSWORD: Docker.io credentials. This is in conflict with the need to use quay.io
-  credentials when running tests.
+If you need to override connection settings (e.g. when testing against an existing cluster),
+the following environment variables are available:
+- `API_HOSTNAME`: defaults to `localhost`
+- `API_PORT`: defaults to `8000`
+- `CLUSTER`: either `OPENSHIFT` or `K8S`
+- `ROX_ADMIN_PASSWORD`: admin password for the Central instance
 
 ## Using IntelliJ
-If you have deployed StackRox into a cluster with the `deploy/{k8s,openshift}/deploy.sh` script,
-you can run tests in `src/test/groovy/` after setting `ROX_ADMIN_PASSWORD` in the environment
-or `qa-test-settings.properties`.
+If you have deployed StackRox into a cluster with roxie and roxies post-deployment environment
+has been loaded, the tests in `src/test/groovy/` can be run directly.
 
 ### Tests dependent on integration credentials
 - If your tests depend on an integration password or token in an environment variable such as:
@@ -54,7 +52,7 @@ or `qa-test-settings.properties`.
     - `API_HOSTNAME`: hostname central is running; default `localhost`
     - `API_PORT`: central port; default `8000`
     - `ROX_USERNAME`: default `admin`
-    - `ROX_ADMIN_PASSWORD`: set explicitly in the environment or `qa-test-settings.properties`
+    - `ROX_ADMIN_PASSWORD`: password for `admin` for accessing Central
     - `KUBECONFIG`: kubeconfig file to use
     - `POD_SECURITY_POLICIES`: set to `false` if the underlying kubernetes cluster does not support pod security policies
 
@@ -63,9 +61,9 @@ or `qa-test-settings.properties`.
 
 ## Using command-line
 
-If you have deployed StackRox into a cluster with the `deploy.sh` script,
-set `ROX_ADMIN_PASSWORD` in the environment or `qa-test-settings.properties`
-before running tests in `src/test/groovy/`.
+If you have deployed StackRox into a cluster with roxie and roxie's post-deployment environment
+has been loaded, the tests in `src/test/groovy/` can be run directly from the command-line without
+setting any additional environment variables.
 
 To run tests, from within `qa-tests-backend` directory:
 
@@ -113,9 +111,9 @@ You will need to start another proxy:
 
 `nohup oc port-forward -n stackrox svc/central 8000:443 &`
 
- Or use the script provided by the deployment script:
+ Or use `kubectl`/`oc`:
 
-`deploy/{k8s,openshift}/central-deploy/central/scripts/port-forward.sh 8000`
+`kubectl -n <central namespace> port-forward svc/central 8000:443`
 
 ## When image pulls from docker.io get throttled
 

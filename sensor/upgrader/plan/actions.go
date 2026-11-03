@@ -1,6 +1,8 @@
 package plan
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,11 +28,11 @@ type ActionDesc struct {
 // Actions returns all actions performed as part of an execution plan, in the correct order (creations, then updates,
 // then deletions).
 func (p *ExecutionPlan) Actions() []ActionDesc {
-	var allActions []ActionDesc
-	allActions = append(allActions, actionsForObjects(CreateAction, p.Creations)...)
-	allActions = append(allActions, actionsForObjects(UpdateAction, p.Updates)...)
-	allActions = append(allActions, actionsForObjectRefs(DeleteAction, p.Deletions)...)
-	return allActions
+	return slices.Concat(
+		actionsForObjects(CreateAction, p.Creations),
+		actionsForObjects(UpdateAction, p.Updates),
+		actionsForObjectRefs(DeleteAction, p.Deletions),
+	)
 }
 
 func actionsForObjects(actionName ActionName, objects []*unstructured.Unstructured) []ActionDesc {
