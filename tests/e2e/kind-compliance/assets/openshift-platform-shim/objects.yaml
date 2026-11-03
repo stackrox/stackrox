@@ -1,0 +1,330 @@
+# Namespaces backing the objects below. These normally exist on real OpenShift;
+# kind needs them created explicitly before namespaced objects (ConfigMaps,
+# IngressController, DaemonSet) can be applied into them.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-kube-apiserver
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-apiserver
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-kube-controller-manager
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-etcd
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-sdn
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-ingress-operator
+---
+# --- config.openshift.io/v1 singletons -------------------------------------
+apiVersion: config.openshift.io/v1
+kind: APIServer
+metadata:
+  name: cluster
+spec:
+  audit:
+    profile: Default
+  clientCA:
+    name: ""
+  encryption:
+    type: identity
+  servingCerts: {}
+  tlsSecurityProfile:
+    type: Intermediate
+---
+apiVersion: config.openshift.io/v1
+kind: Infrastructure
+metadata:
+  name: cluster
+spec:
+  platformSpec:
+    type: None
+status:
+  apiServerURL: https://api.kind-platform.example.com:6443
+  controlPlaneTopology: HighlyAvailable
+  cpuPartitioning: None
+  infrastructureName: kind-platform
+  infrastructureTopology: HighlyAvailable
+  platform: None
+  platformStatus:
+    type: None
+---
+apiVersion: config.openshift.io/v1
+kind: Network
+metadata:
+  name: cluster
+spec:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  externalIP:
+    policy: {}
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+status:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  clusterNetworkMTU: 1400
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+---
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: htpasswd_provider
+    mappingMethod: claim
+    type: HTPasswd
+    htpasswd:
+      fileData:
+        name: htpass-secret
+  tokenConfig:
+    accessTokenMaxAgeSeconds: 86400
+---
+apiVersion: config.openshift.io/v1
+kind: Image
+metadata:
+  name: cluster
+spec:
+  allowedRegistriesForImport: []
+  registrySources:
+    insecureRegistries: []
+    blockedRegistries: []
+status:
+  externalRegistryHostnames:
+  - default-route-openshift-image-registry.apps.kind-platform.example.com
+  internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
+---
+apiVersion: config.openshift.io/v1
+kind: ClusterOperator
+metadata:
+  name: kube-apiserver
+spec: {}
+status:
+  conditions:
+  - type: Available
+    status: "True"
+    lastTransitionTime: "2026-10-31T00:00:00Z"
+    reason: AsExpected
+  - type: Progressing
+    status: "False"
+    lastTransitionTime: "2026-10-31T00:00:00Z"
+    reason: AsExpected
+  - type: Degraded
+    status: "False"
+    lastTransitionTime: "2026-10-31T00:00:00Z"
+    reason: AsExpected
+  - type: Upgradeable
+    status: "True"
+    lastTransitionTime: "2026-10-31T00:00:00Z"
+    reason: AsExpected
+  relatedObjects:
+  - group: ""
+    resource: namespaces
+    name: openshift-kube-apiserver
+  versions:
+  - name: operator
+    version: 4.17.0
+---
+# --- operator.openshift.io/v1 singletons ------------------------------------
+apiVersion: operator.openshift.io/v1
+kind: Network
+metadata:
+  name: cluster
+spec:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  defaultNetwork:
+    ovnKubernetesConfig:
+      genevePort: 6081
+      mtu: 1400
+    type: OVNKubernetes
+  deployKubeProxy: false
+  logLevel: Normal
+  managementState: Managed
+  operatorLogLevel: Normal
+  serviceNetwork:
+  - 172.30.0.0/16
+---
+apiVersion: operator.openshift.io/v1
+kind: KubeAPIServer
+metadata:
+  name: cluster
+spec:
+  logLevel: Normal
+  managementState: Managed
+  operatorLogLevel: Normal
+---
+apiVersion: operator.openshift.io/v1
+kind: OpenShiftAPIServer
+metadata:
+  name: cluster
+spec:
+  logLevel: Normal
+  managementState: Managed
+  operatorLogLevel: Normal
+---
+apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: default
+  namespace: openshift-ingress-operator
+spec:
+  replicas: 2
+  domain: apps.kind-platform.example.com
+  tlsSecurityProfile:
+    type: Intermediate
+---
+# --- misc objects some ocp4-cis rules probe ---------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-debugger
+rules: []
+---
+# DaemonSet with a nodeSelector that matches no kind node: the object (and its
+# pod spec) is real and queryable by the api-resource-collector, but the
+# DaemonSet controller schedules zero pods, so this costs no CPU/RAM/image pulls.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: sdn
+  namespace: openshift-sdn
+spec:
+  selector:
+    matchLabels:
+      app: sdn
+  template:
+    metadata:
+      labels:
+        app: sdn
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/platform-shim-unscheduled: "true"
+      hostNetwork: true
+      containers:
+      - name: sdn
+        image: registry.redhat.io/openshift4/ose-sdn-rhel9@sha256:0000000000000000000000000000000000000000000000000000000000000
+        command: ["/bin/true"]
+        securityContext:
+          privileged: true
+          runAsUser: 0
+---
+# --- real captured/default control-plane ConfigMaps -------------------------
+# openshift-kube-apiserver/config: highest-leverage object, drives ~27 of the
+# 73 ocp4-cis platform rules. apiServerArguments is the REAL upstream default
+# from cluster-kube-apiserver-operator's bindata/assets/config/defaultconfig.yaml
+# (fetched at asset-build time, not hand-written).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: openshift-kube-apiserver
+data:
+  config.yaml: |-
+    {"apiVersion": "kubecontrolplane.config.openshift.io/v1", "kind": "KubeAPIServerConfig", "admission": {"pluginConfig": {"network.openshift.io/ExternalIPRanger": {"configuration": {"allowIngressIP": true, "apiVersion": "network.openshift.io/v1", "externalIPNetworkCIDRs": null, "kind": "ExternalIPRangerAdmissionConfig"}, "location": ""}, "PodSecurity": {"configuration": {"kind": "PodSecurityConfiguration", "apiVersion": "pod-security.admission.config.k8s.io/v1", "defaults": {"enforce": "invalid-to-force-substitution", "enforce-version": "invalid-to-force-substitution", "audit": "invalid-to-force-substitution", "audit-version": "invalid-to-force-substitution", "warn": "invalid-to-force-substitution", "warn-version": "invalid-to-force-substitution"}, "exemptions": {"usernames": ["system:serviceaccount:openshift-infra:build-controller"]}}}}}, "apiServerArguments": {"allow-privileged": ["true"], "anonymous-auth": ["true"], "audit-log-format": ["json"], "audit-log-maxbackup": ["10"], "audit-log-maxsize": ["200"], "audit-log-path": ["/var/log/kube-apiserver/audit.log"], "audit-policy-file": ["/etc/kubernetes/static-pod-resources/configmaps/kube-apiserver-audit-policies/policy.yaml"], "client-ca-file": ["/etc/kubernetes/static-pod-certs/configmaps/client-ca/ca-bundle.crt"], "enable-admission-plugins": ["CertificateApproval", "CertificateSigning", "CertificateSubjectRestriction", "DefaultIngressClass", "DefaultStorageClass", "DefaultTolerationSeconds", "LimitRanger", "MutatingAdmissionWebhook", "NamespaceLifecycle", "NodeRestriction", "OwnerReferencesPermissionEnforcement", "PersistentVolumeClaimResize", "PodNodeSelector", "PodTolerationRestriction", "Priority", "ResourceQuota", "RuntimeClass", "ServiceAccount", "StorageObjectInUseProtection", "TaintNodesByCondition", "ValidatingAdmissionWebhook", "ValidatingAdmissionPolicy", "config.openshift.io/DenyDeleteClusterConfiguration", "config.openshift.io/ValidateAPIServer", "config.openshift.io/ValidateAuthentication", "config.openshift.io/ValidateConsole", "config.openshift.io/ValidateFeatureGate", "config.openshift.io/ValidateImage", "config.openshift.io/ValidateOAuth", "config.openshift.io/ValidateProject", "config.openshift.io/ValidateScheduler", "image.openshift.io/ImagePolicy", "network.openshift.io/ExternalIPRanger", "network.openshift.io/RestrictedEndpointsAdmission", "quota.openshift.io/ClusterResourceQuota", "quota.openshift.io/ValidateClusterResourceQuota", "route.openshift.io/IngressAdmission", "scheduling.openshift.io/OriginPodNodeEnvironment", "security.openshift.io/DefaultSecurityContextConstraints", "security.openshift.io/SCCExecRestrictions", "security.openshift.io/SecurityContextConstraint", "security.openshift.io/ValidateSecurityContextConstraints", "storage.openshift.io/CSIInlineVolumeSecurity"], "enable-aggregator-routing": ["true"], "enable-logs-handler": ["false"], "endpoint-reconciler-type": ["lease"], "etcd-cafile": ["/etc/kubernetes/static-pod-resources/configmaps/etcd-serving-ca/ca-bundle.crt"], "etcd-certfile": ["/etc/kubernetes/static-pod-resources/secrets/etcd-client/tls.crt"], "etcd-keyfile": ["/etc/kubernetes/static-pod-resources/secrets/etcd-client/tls.key"], "etcd-prefix": ["kubernetes.io"], "etcd-healthcheck-timeout": ["9s"], "etcd-readycheck-timeout": ["9s"], "event-ttl": ["3h"], "goaway-chance": ["0.001"], "http2-max-streams-per-connection": ["2000"], "kubelet-certificate-authority": ["/etc/kubernetes/static-pod-resources/configmaps/kubelet-serving-ca/ca-bundle.crt"], "kubelet-client-certificate": ["/etc/kubernetes/static-pod-certs/secrets/kubelet-client/tls.crt"], "kubelet-client-key": ["/etc/kubernetes/static-pod-certs/secrets/kubelet-client/tls.key"], "kubelet-preferred-address-types": ["InternalIP"], "kubelet-read-only-port": ["0"], "kubernetes-service-node-port": ["0"], "max-mutating-requests-inflight": ["1000"], "max-requests-inflight": ["3000"], "min-request-timeout": ["3600"], "proxy-client-cert-file": ["/etc/kubernetes/static-pod-certs/secrets/aggregator-client/tls.crt"], "proxy-client-key-file": ["/etc/kubernetes/static-pod-certs/secrets/aggregator-client/tls.key"], "requestheader-allowed-names": ["kube-apiserver-proxy", "system:kube-apiserver-proxy", "system:openshift-aggregator"], "requestheader-client-ca-file": ["/etc/kubernetes/static-pod-certs/configmaps/aggregator-client-ca/ca-bundle.crt"], "requestheader-extra-headers-prefix": ["X-Remote-Extra-"], "requestheader-group-headers": ["X-Remote-Group"], "requestheader-username-headers": ["X-Remote-User"], "service-account-lookup": ["true"], "service-node-port-range": ["30000-32767"], "shutdown-delay-duration": ["70s"], "shutdown-send-retry-after": ["true"], "storage-backend": ["etcd3"], "storage-media-type": ["application/vnd.kubernetes.protobuf"], "tls-cert-file": ["/etc/kubernetes/static-pod-certs/secrets/service-network-serving-certkey/tls.crt"], "tls-private-key-file": ["/etc/kubernetes/static-pod-certs/secrets/service-network-serving-certkey/tls.key"], "strict-transport-security-directives": ["max-age=31536000,includeSubDomains,preload"]}, "authConfig": {"oauthMetadataFile": ""}, "consolePublicURL": "https://console-openshift-console.apps.kind-platform.example.com", "projectConfig": {"defaultNodeSelector": ""}, "servicesSubnet": "172.30.0.0/16", "servingInfo": {"bindAddress": "0.0.0.0:6443", "bindNetwork": "tcp4", "cipherSuites": ["TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"], "minTLSVersion": "VersionTLS12", "namedCertificates": null}}
+---
+# openshift-apiserver/config: captured from a real cluster (ComplianceAsCode/
+# compliance-operator unit-test fixture tests/data/configmap_json.json).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: openshift-apiserver
+data:
+  config.yaml: |-
+    {"apiServerArguments":{"audit-log-format":["json"],"audit-log-maxbackup":["10"],"audit-log-maxsize":["100"],"audit-log-path":["/var/log/openshift-apiserver/audit.log"],"audit-policy-file":["/var/run/configmaps/audit/policy.yaml"],"shutdown-delay-duration":["15s"],"shutdown-send-retry-after":["true"]},"apiVersion":"openshiftcontrolplane.config.openshift.io/v1","imagePolicyConfig":{"internalRegistryHostname":"image-registry.openshift-image-registry.svc:5000"},"kind":"OpenShiftAPIServerConfig","projectConfig":{"projectRequestMessage":""},"routingConfig":{"subdomain":"apps.ci-ln-xllhdgb-76ef8.origin-ci-int-aws.dev.rhcloud.com"},"servingInfo":{"bindNetwork":"tcp","cipherSuites":["TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256","TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"],"minTLSVersion":"VersionTLS12"},"storageConfig":{"urls":["https://10.0.137.27:2379","https://10.0.158.132:2379","https://10.0.204.8:2379"]}}
+---
+# openshift-kube-controller-manager/config: REAL upstream default from
+# cluster-kube-controller-manager-operator's bindata/assets/config/defaultconfig.yaml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: openshift-kube-controller-manager
+data:
+  config.yaml: |-
+    {"apiVersion":"kubecontrolplane.config.openshift.io/v1","kind":"KubeControllerManagerConfig","extendedArguments":{"enable-dynamic-provisioning":["true"],"allocate-node-cidrs":["false"],"use-service-account-credentials":["true"],"flex-volume-plugin-dir":["/etc/kubernetes/kubelet-plugins/volume/exec"],"pv-recycler-pod-template-filepath-nfs":["/etc/kubernetes/static-pod-resources/configmaps/recycler-config/recycler-pod.yaml"],"pv-recycler-pod-template-filepath-hostpath":["/etc/kubernetes/static-pod-resources/configmaps/recycler-config/recycler-pod.yaml"],"leader-elect":["true"],"leader-elect-retry-period":["3s"],"leader-elect-resource-lock":["leases"],"leader-elect-renew-deadline":["12s"],"controllers":["*","-ttl","-bootstrapsigner","-tokencleaner","selinux-warning-controller"],"cluster-signing-duration":["720h"],"secure-port":["10257"],"cert-dir":["/var/run/kubernetes"],"root-ca-file":["/etc/kubernetes/static-pod-resources/configmaps/serviceaccount-ca/ca-bundle.crt"],"service-account-private-key-file":["/etc/kubernetes/static-pod-resources/secrets/service-account-private-key/service-account.key"],"cluster-signing-cert-file":["/etc/kubernetes/static-pod-certs/secrets/csr-signer/tls.crt"],"cluster-signing-key-file":["/etc/kubernetes/static-pod-certs/secrets/csr-signer/tls.key"],"kube-api-qps":["150"],"kube-api-burst":["300"]},"servingInfo":{"cipherSuites":["TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"],"minTLSVersion":"VersionTLS12"}}
+---
+# openshift-etcd/etcd-pod: a trimmed-but-structurally-real rendering of
+# cluster-etcd-operator's bindata/etcd/pod.gotpl.yaml static pod template, with
+# template placeholders substituted for concrete values.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-pod
+  namespace: openshift-etcd
+data:
+  pod.yaml: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: etcd
+      namespace: openshift-etcd
+      labels:
+        app: etcd
+        k8s-app: etcd
+        etcd: "true"
+        revision: "7"
+    spec:
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      containers:
+      - name: etcd
+        image: registry.redhat.io/ocp-tools-4/etcd-rhel9@sha256:0000000000000000000000000000000000000000000000000000000000000
+        command:
+        - /bin/sh
+        - -c
+        - |
+          exec etcd \
+            --logger=zap \
+            --feature-gates=InitialCorruptCheck=true,StopGRPCServiceOnDefrag=true,NonBlockingDefrag=true \
+            --initial-advertise-peer-urls=https://10.0.0.2:2380 \
+            --cert-file=/etc/kubernetes/static-pod-certs/secrets/etcd-all-certs/etcd-serving-co-platform.crt \
+            --key-file=/etc/kubernetes/static-pod-certs/secrets/etcd-all-certs/etcd-serving-co-platform.key \
+            --trusted-ca-file=/etc/kubernetes/static-pod-certs/configmaps/etcd-all-bundles/server-ca-bundle.crt \
+            --client-cert-auth=true \
+            --peer-cert-file=/etc/kubernetes/static-pod-certs/secrets/etcd-all-certs/etcd-peer-co-platform.crt \
+            --peer-key-file=/etc/kubernetes/static-pod-certs/secrets/etcd-all-certs/etcd-peer-co-platform.key \
+            --peer-trusted-ca-file=/etc/kubernetes/static-pod-certs/configmaps/etcd-all-bundles/server-ca-bundle.crt \
+            --peer-client-cert-auth=true \
+            --advertise-client-urls=https://10.0.0.2:2379 \
+            --listen-client-urls=https://0.0.0.0:2379 \
+            --listen-peer-urls=https://0.0.0.0:2380 \
+            --metrics=extensive \
+            --listen-metrics-urls=https://0.0.0.0:9978
+        ports:
+        - {containerPort: 2379, name: etcd, protocol: TCP}
+        - {containerPort: 2380, name: etcd-peer, protocol: TCP}
+        securityContext: {privileged: true}
+      - name: etcd-metrics
+        image: registry.redhat.io/ocp-tools-4/etcd-rhel9@sha256:0000000000000000000000000000000000000000000000000000000000000
+        command:
+        - /bin/sh
+        - -c
+        - |
+          exec etcd grpc-proxy start \
+            --endpoints https://localhost:9978 \
+            --cacert /etc/kubernetes/static-pod-certs/configmaps/etcd-all-bundles/server-ca-bundle.crt \
+            --trusted-ca-file /etc/kubernetes/static-pod-certs/configmaps/etcd-all-bundles/metrics-ca-bundle.crt

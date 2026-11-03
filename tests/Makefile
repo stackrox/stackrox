@@ -33,6 +33,11 @@ compliance-v2-tests:
 	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -timeout 30m -cover -v -run TestComplianceV2 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=compliance-v2-tests-results
 
+.PHONY: compliance-v2-multicluster-tests
+compliance-v2-multicluster-tests:
+	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -timeout 45m -cover -v -run TestComplianceV2MultiCluster 2>&1 | tee test.log
+	@$(MAKE) report JUNIT_OUT=compliance-v2-multicluster-tests-results
+
 .PHONY: vm-scanning-tests
 vm-scanning-tests:
 	@echo "+ $@"

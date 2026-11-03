@@ -62,6 +62,8 @@ def main():
 
     jobs_registry = [
         Job(name='e2e-byodb-tests', require_pr_label=True),
+        # PoC: multi-cluster compliance e2e framework on kind (Central + N secured clusters).
+        Job(name='e2e-multicluster-compliance-kind', require_pr_label=True),
         Job(name='e2e-db-backup-restore-tests-gke'),
         Job(name='e2e-db-backup-restore-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-gke-upgrade-tests'),
