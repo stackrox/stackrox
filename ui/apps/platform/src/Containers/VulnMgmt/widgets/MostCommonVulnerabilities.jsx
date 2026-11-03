@@ -4,6 +4,7 @@ import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 
 import workflowStateContext from 'Containers/workflowStateContext';
+import { safeToFixed } from 'Containers/Vulnerabilities/utils/sortUtils';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -43,7 +44,7 @@ const processData = (data, workflowState) => {
 
         return {
             x: deploymentCount,
-            y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
+            y: `${cve} / CVSS: ${safeToFixed(cvss, 1)} (${scoreVersion}) ${
                 isFixable ? ' / Fixable' : ''
             }`,
             url,

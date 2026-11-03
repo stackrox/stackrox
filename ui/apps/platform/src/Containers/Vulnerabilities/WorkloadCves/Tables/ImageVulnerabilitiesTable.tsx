@@ -154,9 +154,9 @@ export type ImageVulnerability = {
     severity: string;
     cve: string;
     summary: string;
-    cvss: number;
+    cvss: number | null;
     scoreVersion: string;
-    nvdCvss: number;
+    nvdCvss: number | null;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     cveBaseInfo: CveBaseInfo;
     discoveredAtImage: string | null;
@@ -384,7 +384,7 @@ function ImageVulnerabilitiesTable({
                                         dataLabel="NVD CVSS"
                                     >
                                         <CvssFormatted
-                                            cvss={nvdCvss ?? 0}
+                                            cvss={nvdCvss}
                                             scoreVersion={nvdScoreVersion ?? 'UNKNOWN_VERSION'}
                                         />
                                     </Td>
