@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -135,6 +136,124 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStale() {
 
 	// Marking again is idempotent: the prior row is already STALE, nothing else changes.
 	updated, err = s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+}
+
+// TestMarkScanChecksStaleByConfig covers the time-driven sweeper's datastore method: keyed by scan
+// configuration name (not scan ref), it marks STALE only the matched rows whose LastStartedTime
+// predates the cutoff, leaving recent rows, nil-timestamp rows, and other configurations untouched.
+func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStaleByConfig() {
+	now := time.Now()
+	// cutoff sits between the old results (which predate it) and the recent one (which does not).
+	cutoff := now.Add(-1 * time.Hour)
+	oldTime := now.Add(-10 * time.Hour)
+	recentTime := now.Add(-5 * time.Minute)
+
+	const cfgA = "cfgA"
+	const cfgB = "cfgB"
+
+	// cfgA spans two clusters with mixed LastStartedTime: old (should go STALE), recent (newer than
+	// the cutoff, must stay), and nil (freshness cannot be evaluated, must stay).
+	oldA1 := getTestRecForScan(cfgA, testconsts.Cluster1, "scan-a-old")
+	oldA1.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	oldA2 := getTestRecForScan(cfgA, testconsts.Cluster2, "scan-a-old")
+	oldA2.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	recentA := getTestRecForScan(cfgA, testconsts.Cluster1, "scan-a-recent")
+	recentA.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&recentTime)
+	nilA := getTestRecForScan(cfgA, testconsts.Cluster2, "scan-a-nil")
+	nilA.LastStartedTime = nil
+
+	// cfgB predates the cutoff too, but a different scan configuration must never be touched.
+	oldB := getTestRecForScan(cfgB, testconsts.Cluster1, "scan-b-old")
+	oldB.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+
+	for _, rec := range []*storage.ComplianceOperatorCheckResultV2{oldA1, oldA2, recentA, nilA, oldB} {
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+	}
+
+	// Write context is required.
+	_, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasReadCtx, cfgA, cutoff)
+	s.Require().Error(err)
+
+	// An empty config name is a no-op.
+	updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, "", cutoff)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+
+	// Only the two old cfgA rows predate the cutoff, so only they are marked STALE.
+	updated, err = s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfgA, cutoff)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(2), updated)
+	s.assertFreshness(oldA1.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+	s.assertFreshness(oldA2.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+	// Recent row (newer than cutoff) and nil-timestamp row keep their initial UNKNOWN.
+	s.assertFreshness(recentA.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+	s.assertFreshness(nilA.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+	// The other scan configuration is untouched even though its row predates the cutoff.
+	s.assertFreshness(oldB.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+
+	// Marking again is idempotent: the two rows are already STALE, nothing else changes.
+	updated, err = s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfgA, cutoff)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+}
+
+// TestMarkScanChecksStaleByConfigAgreesWithWriteHooks verifies the time-driven sweeper never
+// disagrees with the write-time hooks: with a sweeper-style cutoff (expected refresh minus the two
+// scan-watcher timeouts), a row the ingest hook made CURRENT with a recent timestamp is not
+// reverted, and a row the timeout hook already made STALE stays STALE. The net effect is zero
+// changes, and re-running is a no-op.
+func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStaleByConfigAgreesWithWriteHooks() {
+	s.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
+	now := time.Now()
+	// grace mirrors the freshness sweeper's: the sum of the two scan-watcher timeouts.
+	grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
+	// Sweeper-style cutoff: a result refreshed within one grace window of the expected refresh
+	// (taken as now here) is fresh and must not be swept.
+	cutoff := now.Add(-grace)
+	recentTime := now.Add(-10 * time.Minute) // after the cutoff: genuinely fresh
+	oldTime := now.Add(-10 * time.Hour)      // before the cutoff
+	pivot := now.Add(-5 * time.Minute)
+
+	const cfg = "cfg-agree"
+
+	// Fresh rows: ingested with a recent LastStartedTime, so the write-time hook derives CURRENT.
+	fresh1 := getTestRecForScan(cfg, testconsts.Cluster1, "scan-fresh-1")
+	fresh1.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&recentTime)
+	fresh2 := getTestRecForScan(cfg, testconsts.Cluster2, "scan-fresh-2")
+	fresh2.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&recentTime)
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, fresh1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, fresh2))
+	s.assertFreshness(fresh1.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+	s.assertFreshness(fresh2.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+
+	// Stale rows: share one scan ref, ingested CURRENT, then marked STALE by the timeout hook.
+	staleA := getTestRecForScan(cfg, testconsts.Cluster3, "scan-stale")
+	staleA.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	staleB := getTestRecForScan(cfg, testconsts.Cluster3, "scan-stale")
+	staleB.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	s.Require().Equal(staleA.GetScanRefId(), staleB.GetScanRefId())
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, staleA))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, staleB))
+	marked, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, staleA.GetScanRefId(), pivot)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(2), marked)
+	s.assertFreshness(staleA.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+	s.assertFreshness(staleB.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+
+	// The sweeper agrees with both hooks: fresh rows stay CURRENT (newer than the cutoff), already
+	// STALE rows stay STALE, so nothing changes.
+	updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, cutoff)
+	s.Require().NoError(err)
+	s.Require().Zero(updated)
+	s.assertFreshness(fresh1.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+	s.assertFreshness(fresh2.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+	s.assertFreshness(staleA.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+	s.assertFreshness(staleB.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+
+	// Re-running is a no-op.
+	updated, err = s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, cutoff)
 	s.Require().NoError(err)
 	s.Require().Zero(updated)
 }
