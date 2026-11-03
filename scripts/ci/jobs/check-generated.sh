@@ -7,7 +7,7 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 export SHELLOPTS
 
-CHECK_STATE=$(mktemp -d)
+CHECK_GENERATED_STATE_DIR=$(mktemp -d)
 export CHECK_STATE ROOT
 trap 'rm -rf "$CHECK_STATE"' EXIT
 FAIL_FLAG="$CHECK_STATE/fail"

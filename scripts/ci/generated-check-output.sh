@@ -2,7 +2,7 @@
 # Diagnostics for check-generated.sh. Keep checks in child shells: invoking a
 # shell function in an || list would disable errexit throughout that function.
 
-generated_annotation() {
+generated_check_error() {
     local file="$1" line="$2" message="$3" properties=""
     printf '%s\n' "$message" >> "$CHECK_STATE/details"
     if ! is_GITHUB_ACTIONS; then
@@ -24,7 +24,7 @@ generated_annotation() {
     printf '::error%s::%s\n' "$properties" "$message"
 }
 
-generated_command() {
+run_generator_command() {
     : > "$CHECK_STATE/details"
     local status=0 log command
     log=$(mktemp "$CHECK_STATE/command.XXXXXX")
@@ -34,6 +34,8 @@ generated_command() {
     github_endgroup
     if (( status == 0 )); then return 0; fi
     generated_annotation "" "" "Command failed (exit $status): $command. Open the '$command' log group."
+
+    # Extract selected diagnostic patterns from the output file and emit them in-line.
     # Only recognize explicit Go diagnostic locations, never infer a location
     # from free-form error text. Nested generators may change directories, so
     # relative diagnostic paths cannot safely be resolved against our cwd.
