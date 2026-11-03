@@ -294,20 +294,21 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	}{
 		"success - secured-cluster metrics permission set": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-				ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
-				Permissions:      map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
-				Lifetime:         testExpirationDuration,
+				PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
+				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				Permissions:        map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:           testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {
-				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
-					DoAndReturn(func(ctx context.Context, _ string) (*storage.PermissionSet, bool, error) {
+				mocks.roleStore.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
 						_, hasDeadline := ctx.Deadline()
 						assert.True(t, hasDeadline)
-						return &storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+						assert.True(t, filter(&storage.PermissionSet{Name: centralproxy.MetricsPermissionSetName}))
+						return []*storage.PermissionSet{{ResourceToAccess: map[string]storage.Access{
 							"Deployment": storage.Access_READ_ACCESS,
-						}}, true, nil
+						}}}, nil
 					})
 				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{
@@ -648,10 +649,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	roleStore := roleDataStoreMocks.NewMockDataStore(ctrl)
-	roleStore.EXPECT().GetPermissionSet(gomock.Any(), centralproxy.MetricsPermissionSetID).
-		Return(&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+	roleStore.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
+		Return([]*storage.PermissionSet{{ResourceToAccess: map[string]storage.Access{
 			deploymentResource: storage.Access_READ_WRITE_ACCESS,
-		}}, true, nil)
+		}}}, nil)
 	svc := &serviceImpl{
 		issuer:      tokensMocks.NewMockIssuer(ctrl),
 		roleManager: &roleManager{roleStore},
@@ -661,9 +662,9 @@ func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(
 
 	rsp, err := svc.GenerateTokenForPermissionsAndScope(sensorContext(t, ctrl, fixtureconsts.Cluster1),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
-			PermissionSetIds: []string{centralproxy.MetricsPermissionSetID},
-			ClusterScopes:    []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
-			Lifetime:         testExpirationDuration,
+			PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
+			ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+			Lifetime:           testExpirationDuration,
 		})
 	assert.Nil(t, rsp)
 	assert.ErrorIs(t, err, errox.InvalidArgs)
