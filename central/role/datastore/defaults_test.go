@@ -12,7 +12,7 @@ import (
 
 func Test_getDefaultPermissionSets(t *testing.T) {
 	defaults := getDefaultPermissionSets()
-	assert.Equal(t, len(defaults), len(accesscontrol.DefaultPermissionSetIDs))
+	assert.Equal(t, len(accesscontrol.DefaultPermissionSetIDs)+1, len(defaults))
 	for _, ps := range defaults {
 		assert.True(t, accesscontrol.IsDefaultPermissionSet(ps.GetName()))
 		assert.Equal(t, storage.Traits_DEFAULT, ps.GetTraits().GetOrigin())

@@ -32,11 +32,14 @@ func TestIsDefaultAccessScope(t *testing.T) {
 func TestIsDefaultPermissionSet(t *testing.T) {
 	defaultPermissionSetWithTraits := &storage.PermissionSet{Name: accesscontrol.Admin,
 		Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
-	defaultPermissionSetWithoutTraits := &storage.PermissionSet{Name: accesscontrol.Admin}
+	defaultPermissionSetWithoutTraits := &storage.PermissionSet{Name: accesscontrol.Admin,
+		Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin]}
 	nonDefaultPermissionSet := &storage.PermissionSet{Name: "some-random-permission-set"}
 
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithTraits))
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithoutTraits))
-	assert.True(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy}))
+	assert.True(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy,
+		Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}))
+	assert.False(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy, Id: "custom-id"}))
 	assert.False(t, IsDefaultPermissionSet(nonDefaultPermissionSet))
 }
