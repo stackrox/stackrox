@@ -88,7 +88,8 @@ func TestAnd_Authorized(t *testing.T) {
 // TestAnd_NoShortCircuit verifies all authorizers are evaluated regardless of failures.
 func TestAnd_NoShortCircuit(t *testing.T) {
 	second := &recordingAuthorizer{}
-	And(deny, second).Authorized(context.Background(), "")
+	err := And(deny, second).Authorized(context.Background(), "")
+	assert.ErrorIs(t, err, errox.NotAuthorized)
 	assert.Len(t, second.calls, 1, "second authorizer must be called even when first fails")
 }
 
@@ -98,8 +99,9 @@ func TestAnd_ForwardsContextAndMethod(t *testing.T) {
 	const method = "/some.Service/Method"
 
 	rec := &recordingAuthorizer{}
-	And(rec).Authorized(ctx, method)
+	err := And(rec).Authorized(ctx, method)
 
+	assert.NoError(t, err)
 	require.Len(t, rec.calls, 1)
 	assert.Equal(t, ctx, rec.calls[0].ctx)
 	assert.Equal(t, method, rec.calls[0].methodName)
