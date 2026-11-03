@@ -1,6 +1,7 @@
 import { useCallback, useContext, useState } from 'react';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat';
 import {
+    Alert,
     Bullseye,
     Divider,
     Flex,
@@ -21,6 +22,7 @@ import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/compone
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSearch from 'hooks/useURLSearch';
@@ -48,7 +50,28 @@ import {
 
 const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfig];
 
+type StaleScanAlertProps = {
+    staleClusterCount: number;
+    staleCheckResultCount: number;
+};
+
+function StaleScanAlert({ staleClusterCount, staleCheckResultCount }: StaleScanAlertProps) {
+    return (
+        <Alert component="p" isInline title="Scan data not current" variant="warning">
+            <Flex direction={{ default: 'column' }}>
+                <p>
+                    Some compliance coverage data is stale or incomplete. Last known results remain
+                    listed to preserve visibility until the next successful scan.
+                </p>
+                <p>Clusters affected: {staleClusterCount}</p>
+                <p>Check results affected: {staleCheckResultCount}</p>
+            </Flex>
+        </Alert>
+    );
+}
+
 function CoveragesPage() {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
         COMPLIANCE_DISCLAIMER_KEY,
         false
@@ -93,6 +116,12 @@ function CoveragesPage() {
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
         (profile) => profile.name === profileName
     );
+    const staleClusterCount = selectedProfileStats?.staleClusterCount ?? 0;
+    const staleCheckResultCount = selectedProfileStats?.staleCheckResultCount ?? 0;
+
+    const showStaleScanAlert =
+        (staleClusterCount > 0 || staleCheckResultCount > 0) &&
+        isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
 
     return (
         <>
@@ -121,6 +150,14 @@ function CoveragesPage() {
                         handleToggleChange={handleProfilesToggleChange}
                     />
                     <Divider component="div" />
+                    {showStaleScanAlert && (
+                        <PageSection>
+                            <StaleScanAlert
+                                staleClusterCount={staleClusterCount}
+                                staleCheckResultCount={staleCheckResultCount}
+                            />
+                        </PageSection>
+                    )}
                     <Flex
                         alignItems={{ default: 'alignItemsStretch' }}
                         columnGap={{ default: 'columnGapNone' }}
@@ -159,30 +196,34 @@ function CoveragesPage() {
             )}
             <Divider component="div" />
             <PageSection>
-                <Toolbar>
-                    <ToolbarContent>
-                        <CompoundSearchFilter
-                            config={searchFilterConfig}
-                            defaultEntity="Profile check"
-                            searchFilter={searchFilter}
-                            onSearch={onSearch}
-                        />
-                        <SearchFilterSelectInclusive
-                            attribute={attributeForComplianceCheckStatus}
-                            isSeparate
-                            onSearch={onSearch}
-                            searchFilter={searchFilter}
-                        />
-                        <ToolbarGroup className="pf-v6-u-w-100">
-                            <CompoundSearchFilterLabels
-                                attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+                    <Toolbar>
+                        <ToolbarContent>
+                            <CompoundSearchFilter
                                 config={searchFilterConfig}
-                                onFilterChange={setSearchFilter}
+                                defaultEntity="Profile check"
+                                searchFilter={searchFilter}
+                                onSearch={onSearch}
+                            />
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForComplianceCheckStatus}
+                                isSeparate
+                                onSearch={onSearch}
                                 searchFilter={searchFilter}
                             />
-                        </ToolbarGroup>
-                    </ToolbarContent>
-                </Toolbar>
+                            <ToolbarGroup className="pf-v6-u-w-100">
+                                <CompoundSearchFilterLabels
+                                    attributesSeparateFromConfig={[
+                                        attributeForComplianceCheckStatus,
+                                    ]}
+                                    config={searchFilterConfig}
+                                    onFilterChange={setSearchFilter}
+                                    searchFilter={searchFilter}
+                                />
+                            </ToolbarGroup>
+                        </ToolbarContent>
+                    </Toolbar>
+                </Flex>
                 <Routes>
                     <Route path="checks" element={<ProfileChecksPage />} />
                     <Route path="clusters" element={<ProfileClustersPage />} />
