@@ -65,7 +65,7 @@ function ClusterDetailsTable({
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isScanStatusEnabled = !isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
     const colSpan = isScanStatusEnabled ? 4 : 3;
 
     function toggleRow(selectedRowIndex: number) {
