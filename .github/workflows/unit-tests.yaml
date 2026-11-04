@@ -259,7 +259,12 @@ jobs:
 
   ui:
     needs: detect-changes
-    if: ${{ !cancelled() }}
+    if: >-
+      !cancelled() &&
+      (needs.detect-changes.result != 'success' ||
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '^ui/') ||
+      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/'))
     runs-on: ubuntu-24.04
     env:
       CI_RUN_SUITE: >-
@@ -392,7 +397,7 @@ jobs:
 
   local-roxctl-tests:
     needs: detect-changes
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && (needs.detect-changes.result != 'success' || !needs.detect-changes.outputs.ui_only) }}
     runs-on: ubuntu-24.04
     env:
       CI_RUN_SUITE: ${{ needs.detect-changes.result == 'success' && !needs.detect-changes.outputs.ui_only }}
