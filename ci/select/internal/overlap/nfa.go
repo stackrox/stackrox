@@ -361,25 +361,21 @@ func (b *nfaBuilder) compilePattern(pattern string) nfaFragment {
 	return b.walk(full)
 }
 
-// epsClosure computes the epsilon closure of a state set.
-func epsClosure(n *nfa, set []int) []int {
-	seen := make([]bool, len(n.states))
-	out := make([]int, 0, len(set))
-	queue := append([]int(nil), set...)
+// epsClosure appends epsilon-reachable states to set using seen as scratch.
+// The returned slice aliases set; callers must copy closures they retain.
+func epsClosure(n *nfa, set []int, seen []bool) []int {
+	clear(seen)
 	for _, s := range set {
 		seen[s] = true
-		out = append(out, s)
 	}
-	for len(queue) > 0 {
-		s := queue[0]
-		queue = queue[1:]
+	for i := 0; i < len(set); i++ {
+		s := set[i]
 		for _, to := range n.states[s].epsilonEdges {
 			if !seen[to] {
 				seen[to] = true
-				out = append(out, to)
-				queue = append(queue, to)
+				set = append(set, to)
 			}
 		}
 	}
-	return out
+	return set
 }

@@ -73,6 +73,16 @@ func TestIntersectSets(t *testing.T) {
 		a, b        *rules.Rule
 		wantOverlap bool
 	}{
+		"should overlap on the first alternative": {
+			ruleFromPaths([]string{"^(ab|cd)$"}, nil),
+			ruleFromPaths([]string{"^ab$"}, nil),
+			true,
+		},
+		"should overlap on the second alternative": {
+			ruleFromPaths([]string{"^(ab|cd)$"}, nil),
+			ruleFromPaths([]string{"^cd$"}, nil),
+			true,
+		},
 		"should overlap on a shared directory": {
 			ruleFromPaths([]string{"^central/sac/"}, nil),
 			ruleFromPaths([]string{"^central/"}, nil),
