@@ -6,7 +6,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: secured-cluster-prometheus-k8s
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "secured-cluster-prometheus-k8s") | nindent 4 }}
   annotations:
@@ -29,7 +29,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: secured-cluster-prometheus-k8s
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "secured-cluster-prometheus-k8s") | nindent 4 }}
   annotations:
@@ -70,13 +70,13 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: "sensor.{{ .Release.Namespace }}.svc"
+      serverName: "sensor.{{ ._rox._namespace }}.svc"
   selector:
     matchLabels:
       app.kubernetes.io/component: sensor
   namespaceSelector:
     matchNames:
-    - "{{ .Release.Namespace }}"
+    - "{{ ._rox._namespace }}"
 
 ---
 
@@ -103,13 +103,13 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: "admission-control.{{ .Release.Namespace }}.svc"
+      serverName: "admission-control.{{ ._rox._namespace }}.svc"
   selector:
     matchLabels:
       app.kubernetes.io/component: admission-control
   namespaceSelector:
     matchNames:
-    - "{{ .Release.Namespace }}"
+    - "{{ ._rox._namespace }}"
 
 ---
 
@@ -132,7 +132,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: sensor
-    namespace: "{{ .Release.Namespace }}"
+    namespace: "{{ ._rox._namespace }}"
 
 ---
 
@@ -155,7 +155,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: admission-control
-    namespace: "{{ .Release.Namespace }}"
+    namespace: "{{ ._rox._namespace }}"
 
 ---
 
@@ -206,7 +206,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: sensor
-    namespace: "{{ .Release.Namespace }}"
+    namespace: "{{ ._rox._namespace }}"
 {{- end }}
 
 {{- if ._rox.monitoring.openshift.custom.enabled }}
@@ -230,11 +230,11 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: "sensor-proxy.{{ .Release.Namespace }}.svc"
+      serverName: "sensor-proxy.{{ ._rox._namespace }}.svc"
   selector:
     matchLabels:
       stackrox.io/sensor-proxy: "true"
   namespaceSelector:
     matchNames:
-    - "{{ .Release.Namespace }}"
+    - "{{ ._rox._namespace }}"
 {{- end }}

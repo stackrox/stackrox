@@ -42,6 +42,22 @@ tests:
     .servicemonitors["sensor-central-metrics-stackrox"] | assertThat(. == null)
     [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_SECURED_CLUSTER_METRICS_ENABLED")] | length | assertThat(. == 0)
 
+- name: "Custom monitoring uses the Sensor namespace override"
+  set:
+    env.openshift: 4
+    meta.namespaceOverride: custom-sensor-ns
+    allowNonstandardNamespace: true
+    monitoring.openshift.enabled: false
+    monitoring.openshift.custom.enabled: true
+  expect: |
+    .services["sensor-proxy"].metadata.namespace | assertThat(. == "custom-sensor-ns")
+    .roles["secured-cluster-prometheus-k8s"].metadata.namespace | assertThat(. == "custom-sensor-ns")
+    .rolebindings["secured-cluster-prometheus-k8s"].metadata.namespace | assertThat(. == "custom-sensor-ns")
+    .rolebindings["rhacs-sensor-auth-reader-stackrox"].subjects[0].namespace | assertThat(. == "custom-sensor-ns")
+    .networkpolicys["sensor-proxy"].metadata.namespace | assertThat(. == "custom-sensor-ns")
+    .servicemonitors["sensor-central-metrics-stackrox"].spec.namespaceSelector.matchNames[0] | assertThat(. == "custom-sensor-ns")
+    .servicemonitors["sensor-central-metrics-stackrox"].spec.endpoints[0].tlsConfig.serverName | assertThat(. == "sensor-proxy.custom-sensor-ns.svc")
+
 - name: "When enabled (legacy)"
   set:
     enableOpenShiftMonitoring: true
