@@ -96,6 +96,7 @@ test_upgrade_paths() {
 
     restore_backup
     wait_for_api
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name remote
 
     # Run with some scale to have data populated to migrate
     deploy_scaled_workload
@@ -223,17 +224,6 @@ test_upgrade_paths() {
 
     # Remove scaled Sensor from Central
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name scale-remote
-
-    info "Fetching an init bundle for cluster 'remote'"
-    # This is necessary since the cluster already exists in the database restored from backup, so the CRS
-    # created by roxie is useless (you cannot re-register a cluster using CRS by design).
-    # TODO(ROX-37449): switch to just sensor cert when possible.
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
-    local init_bundle
-    init_bundle="$(mktemp)"
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" central init-bundles generate remote --output-secrets - > "${init_bundle}"
-    kubectl apply -n stackrox -f "${init_bundle}"
-    rm -f "${init_bundle}"
 
     info "Installing sensor"
     roxie deploy secured-cluster --verbose \
