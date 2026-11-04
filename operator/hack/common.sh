@@ -192,33 +192,28 @@ function wait_for_clusterextension_installed() {
 
   # Wait for up to 10 minutes for the extension to install
   # Catalog unpacking can take 60-90 seconds on first use
-  local max_attempts=60
-  local attempt=0
-  while (( attempt < max_attempts )); do
-    (( ++attempt )) # Pre-increment to avoid set -e exit when attempt=0
+  local -r max_attempts=60
 
-    local installed_status
-    installed_status=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Installed")].status}' 2>/dev/null || echo "")
+  # Read all fields in one call so they come from the same resourceVersion. The Progressing
+  # message is excluded because it can span lines; it is fetched separately on failure only.
+  # Delimiter must not be IFS whitespace: fields are routinely empty and bash would collapse them.
+  local -r status_jsonpath='{.status.conditions[?(@.type=="Installed")].status}{"|"}{.status.install.bundle.version}{"|"}{.status.conditions[?(@.type=="Progressing")].status}{"|"}{.status.conditions[?(@.type=="Progressing")].reason}'
+
+  local attempt status_line installed_status installed_version progressing_status progressing_reason
+  for (( attempt = 1; attempt <= max_attempts; attempt++ )); do
+    status_line=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath="${status_jsonpath}" 2>/dev/null || echo "")
+    IFS='|' read -r installed_status installed_version progressing_status progressing_reason <<< "${status_line}"
 
     if [[ "$installed_status" == "True" ]]; then
-      local installed_version
-      installed_version=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.install.bundle.version}' 2>/dev/null || echo "")
-
       if [[ "${installed_version#v}" == "${expected_version#v}" ]]; then
         log "ClusterExtension ${extension_name} successfully installed version ${installed_version}"
         return 0
-      else
-        log "ClusterExtension installed with version ${installed_version} (expected ${expected_version}), continuing to wait..."
-        # Continue waiting - version might update as catalog unpacks
       fi
+      log "ClusterExtension installed with version ${installed_version} (expected ${expected_version}), continuing to wait..."
+      # Continue waiting - version might update as catalog unpacks
     fi
 
     # Check if it's in a failed state (but not Retrying, which is normal during catalog unpacking)
-    local progressing_status
-    local progressing_reason
-    progressing_status=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].status}' 2>/dev/null || echo "")
-    progressing_reason=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].reason}' 2>/dev/null || echo "")
-
     if [[ "$progressing_status" == "False" ]] && [[ "$progressing_reason" == "Failed" ]]; then
       log "ClusterExtension ${extension_name} installation failed"
       local error_msg
@@ -255,10 +250,13 @@ function inject_test_env_vars() {
     {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "NO_PROXY", "value": "127.1.2.3/8"}},
     {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "ROX_ADMISSION_CONTROLLER_CONFIG", "value": "true"}}
   ]'; then
-    log "Warning: Failed to inject test environment variables, tests may fail"
-  else
-    log "Successfully injected test environment variables"
+    # Fail rather than warn: the e2e assertions depend on these variables, so continuing would
+    # turn a clear setup failure into a confusing assertion failure much later in the run.
+    log "Failed to inject test environment variables"
+    return 1
   fi
+
+  log "Successfully injected test environment variables"
 }
 
 function gather_olmv1_resources() {
@@ -285,4 +283,18 @@ function gather_olmv1_resources() {
     ( cd "${path}" && run_oc_adm_must_gather >> "oc-adm-must-gather-output.txt"; )
   fi
   log "Resource collection completed, look before '${msg}' above for the cause of the failure."
+}
+
+function verify_operator_deployment() {
+  local -r operator_ns="$1"
+  local -r deployment_name="${2:-rhacs-operator-controller-manager}"
+
+  log "Verifying operator deployment is available..."
+  if ! retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps "${deployment_name}" --for condition=available --timeout 60s; then
+    log "Operator deployment failed to become available"
+    gather_olmv1_resources "${operator_ns}" "rhacs-operator-${operator_ns}"
+    return 1
+  fi
+
+  log "Operator deployment is healthy"
 }

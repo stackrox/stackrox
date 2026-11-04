@@ -1079,7 +1079,7 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
-        *nongroovy-e2e-tests*|*qa-e2e-tests*)
+        *nongroovy-e2e-tests*|*qa-e2e-tests*|*ui-e2e-tests*)
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
@@ -2814,22 +2814,17 @@ get_olm_version() {
   local ocp_version
   ocp_version="$(get_ocp_version)"
 
-  if [[ ! "$ocp_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+  if [[ ! "$ocp_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
     die "Could not parse OCP version '$ocp_version' - expected format X.Y.Z"
   fi
 
-  local major="${BASH_REMATCH[1]}"
-  local minor="${BASH_REMATCH[2]}"
-  local patch="${BASH_REMATCH[3]}"
-
-  # Check if version >= 4.20.1
-  if [[ $major -gt 4 ]] || \
-     [[ $major -eq 4 && $minor -gt 20 ]] || \
-     [[ $major -eq 4 && $minor -eq 20 && $patch -ge 1 ]]; then
-    info "OCP version $ocp_version >= 4.20.1, using OLMv1" >&2
+  local -r min_version="4.20.1"
+  # sort -cV succeeds iff the two lines are already in version order, i.e. ocp_version >= min_version.
+  if printf '%s\n%s\n' "$min_version" "$ocp_version" | sort -cV 2>/dev/null; then
+    info "OCP version $ocp_version >= $min_version, using OLMv1" >&2
     echo "v1"
   else
-    info "OCP version $ocp_version < 4.20.1, using OLMv0" >&2
+    info "OCP version $ocp_version < $min_version, using OLMv0" >&2
     echo "v0"
   fi
 }

@@ -291,13 +291,15 @@ Push your changes to a GitHub PR (draft is OK) to let CI build and push images f
 
 ### OLM Version Selection (OLMv0 vs OLMv1)
 
-The operator e2e tests automatically detect which OLM version to use based on the OpenShift cluster version:
+On OpenShift, the operator e2e tests automatically detect which OLM version to use based on the cluster version:
 
 - **OCP >= 4.20.1**: Uses OLMv1 (ClusterExtension API)
 - **OCP < 4.20.1**: Uses OLMv0 (Subscription/CSV API)
-- **Non-OpenShift clusters**: Uses OLMv0
 
-OLMv1 provides improved CRD upgrade safety through preflight checks that catch schema regressions early.
+Non-OpenShift clusters do not use OLM at all — the tests deploy the operator from its Helm chart
+(`deploy-previous-via-chart`), so the OLM targets below do not apply there.
+
+OLMv1 provides improved CRD upgrade safety through preflight checks that catch breaking changes early.
 
 #### Available Makefile Targets
 
@@ -309,6 +311,7 @@ The following targets are available for testing with OLM:
 - `upgrade-via-olmv0` - Upgrade operator via OLMv0
 
 **OLMv1 targets:**
+- `deploy-via-olmv1` - Deploy current version via OLMv1
 - `deploy-previous-via-olmv1` - Deploy previous version via OLMv1 (for upgrade tests)
 - `upgrade-via-olmv1` - Upgrade operator via OLMv1
 
@@ -323,10 +326,11 @@ The following targets are available for testing with OLM:
 To test OLMv1 installation on an OpenShift cluster >= 4.20.1:
 
 ```bash
-# Deploy previous version via OLMv1
-ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-previous-via-olmv1 TEST_NAMESPACE=test-olmv1
+# Deploy current version via OLMv1
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olmv1 TEST_NAMESPACE=test-olmv1
 
-# Upgrade to current version via OLMv1
+# Or, to exercise an upgrade: deploy the previous version first, then upgrade
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-previous-via-olmv1 TEST_NAMESPACE=test-olmv1
 ROX_PRODUCT_BRANDING=RHACS_BRANDING make upgrade-via-olmv1 TEST_NAMESPACE=test-olmv1
 ```
 

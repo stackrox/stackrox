@@ -4,10 +4,12 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: rhacs-operator-installer
-  namespace: ${NAMESPACE}
+  namespace: "${NAMESPACE}"
 ---
-# ClusterRole with permissions needed to install the operator bundle
-# The installer SA needs broad permissions to create CRDs, ClusterRoles, etc.
+# ClusterRole for the SA that OLMv1 acts as when applying the operator bundle.
+#
+# The verbs below are deliberately broad rather than enumerated. The bundle contains a
+# ClusterRole granting the operator itself `*/*/*`
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -20,7 +22,9 @@ rules:
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions/finalizers"]
   verbs: ["update"]
-# Need to create ClusterRoles and ClusterRoleBindings for the operator
+# Need to create ClusterRoles and ClusterRoleBindings for the operator.
+# Note: "*" here also matches the virtual `escalate` and `bind` verbs, which is what allows
+# this SA to create the operator's `*/*/*` ClusterRole. See the header comment above.
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
   verbs: ["*"]
@@ -66,7 +70,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: rhacs-operator-installer
-  namespace: ${NAMESPACE}
+  namespace: "${NAMESPACE}"
 ---
 # ClusterCatalog - points to the index image containing operator bundles
 apiVersion: olm.operatorframework.io/v1
@@ -77,7 +81,7 @@ spec:
   source:
     type: Image
     image:
-      ref: ${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}
+      ref: "${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}"
 ---
 # ClusterExtension - installs the operator from the catalog
 apiVersion: olm.operatorframework.io/v1
@@ -85,14 +89,14 @@ kind: ClusterExtension
 metadata:
   name: rhacs-operator-${NAMESPACE}
 spec:
-  namespace: ${NAMESPACE}
+  namespace: "${NAMESPACE}"
   serviceAccount:
     name: rhacs-operator-installer
   source:
     sourceType: Catalog
     catalog:
       packageName: rhacs-operator
-      version: ${OPERATOR_VERSION}
+      version: "${OPERATOR_VERSION}"
   install:
     preflight:
       crdUpgradeSafety:

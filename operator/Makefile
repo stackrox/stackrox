@@ -441,13 +441,21 @@ deploy-dirty-tag-via-olmv0: ## Deploy operator dirty tagged image to the cluster
 # This target ignores filter for dirty tagged images.
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
-.PHONY: deploy-previous-via-olmv0
-deploy-previous-via-olmv0: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv0.
+# Shared recipe body for deploy-previous-via-olmv0 and deploy-previous-via-olmv1, which differ only
+# in the installer script and in whether KUTTL has to be passed through (only the OLMv0 script waits
+# on a CSV, which common.sh does via kuttl).
+#   $(call deploy_previous_via_olm,<installer script>,<extra env assignments>)
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
-	set -x ;\
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+define deploy_previous_via_olm
+replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+set -x ;\
+$(2) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(1) $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+endef
+
+.PHONY: deploy-previous-via-olmv0
+deploy-previous-via-olmv0: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv0.
+	$(SILENT)$(call deploy_previous_via_olm,./hack/olm-operator-install.sh,KUTTL=$(KUTTL))
 
 .PHONY: deploy-via-chart
 deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
@@ -469,13 +477,15 @@ upgrade-via-olmv0: kuttl
 upgrade-dirty-tag-via-olmv0: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
-.PHONY: deploy-previous-via-olmv1
-deploy-previous-via-olmv1: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv1.
+.PHONY: deploy-via-olmv1
+deploy-via-olmv1: ## Deploy operator image to the cluster using OLMv1.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
-	set -x ;\
-	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
+
+.PHONY: deploy-previous-via-olmv1
+deploy-previous-via-olmv1: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv1.
+	$(SILENT)$(call deploy_previous_via_olm,./hack/olmv1-operator-install.sh)
 
 .PHONY: upgrade-via-olmv1
 upgrade-via-olmv1: kuttl
@@ -485,21 +495,23 @@ upgrade-via-olmv1: kuttl
 upgrade-dirty-tag-via-olmv1: kuttl
 	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
-# Backwards-compatible stubs for renamed targets (point to OLMv0 versions)
+# Backwards-compatible stubs for renamed targets (point to OLMv0 versions).
+# Deliberately not documented with `## ...`: they are aliases, not separate capabilities,
+# and listing them in `make help` alongside the -olmv0 targets they forward to is just noise.
 .PHONY: deploy-via-olm
-deploy-via-olm: deploy-via-olmv0 ## Backwards-compatible stub for deploy-via-olmv0
+deploy-via-olm: deploy-via-olmv0
 
 .PHONY: deploy-dirty-tag-via-olm
-deploy-dirty-tag-via-olm: deploy-dirty-tag-via-olmv0 ## Backwards-compatible stub for deploy-dirty-tag-via-olmv0
+deploy-dirty-tag-via-olm: deploy-dirty-tag-via-olmv0
 
 .PHONY: deploy-previous-via-olm
-deploy-previous-via-olm: deploy-previous-via-olmv0 ## Backwards-compatible stub for deploy-previous-via-olmv0
+deploy-previous-via-olm: deploy-previous-via-olmv0
 
 .PHONY: upgrade-via-olm
-upgrade-via-olm: upgrade-via-olmv0 ## Backwards-compatible stub for upgrade-via-olmv0
+upgrade-via-olm: upgrade-via-olmv0
 
 .PHONY: upgrade-dirty-tag-via-olm
-upgrade-dirty-tag-via-olm: upgrade-dirty-tag-via-olmv0 ## Backwards-compatible stub for upgrade-dirty-tag-via-olmv0
+upgrade-dirty-tag-via-olm: upgrade-dirty-tag-via-olmv0
 
 ##@ Bundle and Index build
 

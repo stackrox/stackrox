@@ -22,8 +22,8 @@ function main() {
     exit 1
   fi
 
-  local -r operator_ns="${1:-}"
-  local -r csv_version="${2:-}"
+  local -r operator_ns="${1}"
+  local -r csv_version="${2}"
 
   check_version_tag "${csv_version}" "${allow_dirty_tag}"
 
@@ -46,25 +46,17 @@ function upgrade_clusterextension() {
 
   log "Updating ClusterExtension to version ${new_version}..."
 
-  if ! "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null patch clusterextension "${extension_name}" --type=merge -p "{\"spec\":{\"source\":{\"catalog\":{\"version\":\"${new_version}\"}}}}"; then
+  local patch
+  patch="$(printf '{"spec":{"source":{"catalog":{"version":"%s"}}}}' "${new_version}")"
+  readonly patch
+
+  if ! "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null \
+    patch clusterextension "${extension_name}" \
+    --type=merge -p "${patch}"; then
     log "Failed to update ClusterExtension"
     gather_olmv1_resources "${operator_ns}" "${extension_name}"
     return 1
   fi
-}
-
-function verify_operator_deployment() {
-  local -r operator_ns="$1"
-  local -r deployment_name="rhacs-operator-controller-manager"
-
-  log "Verifying upgraded operator deployment is available..."
-  if ! retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps "${deployment_name}" --for condition=available --timeout 60s; then
-    log "Upgraded operator deployment failed to become available"
-    gather_olmv1_resources "${operator_ns}" "rhacs-operator-${operator_ns}"
-    return 1
-  fi
-
-  log "Upgraded operator deployment is healthy"
 }
 
 main "$@"
