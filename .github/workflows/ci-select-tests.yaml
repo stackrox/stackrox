@@ -36,4 +36,4 @@ jobs:
         run: go test -race ./ci/select/...
 
       - name: Test CI selection script integration
-        run: go test -race -tags=integration ./ci/select -run '^TestScript'
+        run: go test -race -tags=integration ./ci/select -run '^TestScript|^TestSuiteDecisionStepsShareBody'

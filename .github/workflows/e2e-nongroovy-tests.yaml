@@ -3,6 +3,10 @@ name: e2e-nongroovy-tests
 on:
   workflow_call:
     inputs:
+      ci-action:
+        description: Applied CI selection decision; missing or invalid values run.
+        type: string
+        default: run
       tag:
         description: Image tag to test.
         type: string
@@ -52,7 +56,20 @@ jobs:
     timeout-minutes: 361
     steps:
 
+    - name: Read CI selection
+      id: ci-decision
+      env:
+        CI_SELECT_ACTION: ${{ github.event_name == 'workflow_dispatch' && 'run' || inputs.ci-action }}
+      run: |
+        action=run
+        if [[ "$CI_SELECT_ACTION" == skip ]]; then
+            action=skip
+        fi
+        printf 'action=%s\n' "$action" >>"$GITHUB_OUTPUT"
+        printf 'CI selection: %s\n' "$action"
+
     - name: Checkout repo
+      if: &selected-suite steps.ci-decision.outputs.action != 'skip'
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
@@ -60,32 +77,38 @@ jobs:
         persist-credentials: false
 
     - name: Validate input tag
+      if: *selected-suite
       env:
         TAG: ${{ inputs.tag }}
       run: scripts/ci/lib.sh validate_image_tag "$TAG"
 
     - uses: ./.github/actions/job-preamble
+      if: *selected-suite
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set additional env vars
+      if: *selected-suite
       env:
         EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
       run: |
         printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
+      if: *selected-suite
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
+      if: *selected-suite
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
+      if: *selected-suite
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "1"
@@ -96,15 +119,18 @@ jobs:
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Retrieving roxie version from repository
+      if: *selected-suite
       id: roxie-version
       run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
     - name: Install roxie
+      if: *selected-suite
       uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
 
     - name: Build roxctl
+      if: *selected-suite
       # roxctl is used for generate (deploy) and CLI e2e tests (token-file, etc).
       # Copy to /usr/local/bin so it survives bats tests which mv the binary out of bin/.
       # A release Central must be generated with a release roxctl; otherwise generate
@@ -120,6 +146,7 @@ jobs:
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
     - name: Verify kubectl access and wait for cluster to stabilize
+      if: *selected-suite
       timeout-minutes: 5
       run: |
         kubectl cluster-info
@@ -127,9 +154,11 @@ jobs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
+      if: *selected-suite
       run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
+      if: *selected-suite
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -142,6 +171,7 @@ jobs:
         PreSystemTests().run()
 
     - name: Install bats
+      if: *selected-suite
       run: |
         sudo npm install -g bats bats-support bats-assert
         sudo mkdir -p /usr/lib/node_modules
@@ -149,6 +179,7 @@ jobs:
         sudo ln -s /usr/local/lib/node_modules/bats-assert /usr/lib/node_modules/bats-assert
 
     - name: Run e2e tests
+      if: *selected-suite
       # SETUP_WORKLOAD_IDENTITIES is intentionally omitted; WIF tests run in the Prow pipeline.
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -176,13 +207,13 @@ jobs:
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Ensure central stability before post-test
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: |
         source tests/e2e/lib.sh
         wait_for_api
 
     - name: Run post-test
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       shell: python
       env:
         ROX_USERNAME: admin
@@ -196,7 +227,7 @@ jobs:
         post.run(['/tmp/e2e-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       shell: python
       run: |
         import sys
@@ -205,7 +236,7 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
@@ -219,19 +250,19 @@ jobs:
 
     - name: Publish summary for failed tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "fail"
     - name: Publish summary for passed and skipped tests
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: "pass, skip"
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
