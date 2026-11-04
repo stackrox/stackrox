@@ -36,13 +36,14 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 	}
 }
 
-// defaultTokenPolicy retains the hardcoded permission allowlist for older Sensors.
-// Console requests use the Central-managed permission set instead when selected.
+// defaultTokenPolicy validates explicit permission requests from Sensors that do
+// not select a Central-managed permission set. Console requests use the managed
+// permission set instead when selected.
 // This policy caps lifetime to 1 hour and should remain compatible with the
 // OCP console plugin.
 func defaultTokenPolicy() *tokenPolicy {
-	// defaultAllowedPermissions lists the resource permissions that the default
-	// policy allows older Sensors to request. These must stay in sync with the
+	// defaultAllowedPermissions lists the resource permissions allowed for
+	// requests without a named permission set. These must stay in sync with the
 	// needs of the known token consumers (including the OCP console plugin).
 	defaultAllowedPermissions := map[string]v1.Access{
 		"Deployment": v1.Access_READ_ACCESS,
