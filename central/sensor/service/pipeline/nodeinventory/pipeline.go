@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
@@ -115,7 +116,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		len(node.GetScan().GetComponents()))
 
 	// Update the whole node in the database with the new and previous information.
-	err = p.riskManager.CalculateRiskAndUpsertNode(node)
+	err = p.calculateRiskAndUpsertNodeIfClusterActive(ctx, node)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -123,6 +124,20 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	replyCompliance(ctx, node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
 	return nil
+}
+
+func (p *pipelineImpl) calculateRiskAndUpsertNodeIfClusterActive(ctx context.Context, node *storage.Node) error {
+	active, release := lifecycle.Singleton().Enter(node.GetClusterId())
+	if !active {
+		return nil
+	}
+	defer release()
+
+	_, exists, err := p.clusterStore.GetClusterName(ctx, node.GetClusterId())
+	if err != nil || !exists {
+		return err
+	}
+	return p.riskManager.CalculateRiskAndUpsertNode(node)
 }
 
 // shouldDiscardMsg returns true if the pipeline should discard an incoming message or false if it should keep processing it.

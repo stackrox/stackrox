@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/cluster/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
@@ -120,7 +121,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	incomingScanTime := node.GetScan().GetScanTime()
 
 	// Update the whole node in the database with the new and previous information.
-	err = p.riskManager.CalculateRiskAndUpsertNode(node)
+	err = p.upsertNodeIfClusterActive(ctx, node)
 	if err != nil {
 		return errors.Wrapf(err, "failed calculating risk and upserting node %s", nodeDatastore.NodeString(node))
 	}
@@ -154,6 +155,20 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	sendComplianceAck(ctx, node, injector)
 	return nil
+}
+
+func (p *pipelineImpl) upsertNodeIfClusterActive(ctx context.Context, node *storage.Node) error {
+	active, release := lifecycle.Singleton().Enter(node.GetClusterId())
+	if !active {
+		return nil
+	}
+	defer release()
+
+	_, exists, err := p.clusterStore.GetClusterName(ctx, node.GetClusterId())
+	if err != nil || !exists {
+		return err
+	}
+	return p.riskManager.CalculateRiskAndUpsertNode(node)
 }
 
 func sendComplianceAck(ctx context.Context, node *storage.Node, injector common.MessageInjector) {

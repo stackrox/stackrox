@@ -171,6 +171,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			if tt.setUp != nil {
 				tt.setUp(t, &tt.args, &tt.mocks)
 			}
+			tt.mocks.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("", true, nil)
 			p := &pipelineImpl{
 				clusterStore:  tt.mocks.clusterStore,
 				nodeDatastore: tt.mocks.nodeDatastore,
@@ -196,6 +197,7 @@ func Test_pipelineImpl_Run_SendsSensorAndLegacyACKs(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 	ctrl := gomock.NewController(t)
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("", true, nil)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 	riskManager := riskManagerMocks.NewMockManager(ctrl)
 	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
@@ -263,6 +265,7 @@ func Test_pipelineImpl_Run_SkipsSensorACKWhenCapabilityMissing(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.LegacyScanner, true)
 	ctrl := gomock.NewController(t)
 	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("", true, nil)
 	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
 	riskManager := riskManagerMocks.NewMockManager(ctrl)
 	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
