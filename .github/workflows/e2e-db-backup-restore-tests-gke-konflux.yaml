@@ -3,6 +3,10 @@ name: e2e-db-backup-restore-tests-gke-konflux
 on:
   workflow_call:
     inputs:
+      ci-action:
+        description: Applied CI selection decision; missing or invalid values run.
+        type: string
+        default: run
       tag:
         description: |
           Konflux image tag to test. The caller needs to include the "-fast" suffix
@@ -30,6 +34,7 @@ jobs:
   run:
     uses: ./.github/workflows/e2e-db-backup-restore-tests.yaml
     with:
+      ci-action: ${{ inputs.ci-action }}
       tag: ${{ inputs.tag }}
       should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
       ci-job-name: gke-db-backup-restore-tests-konflux
