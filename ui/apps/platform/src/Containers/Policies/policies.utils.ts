@@ -84,8 +84,7 @@ export const initialPolicy: ClientPolicy = {
     source: 'IMPERATIVE',
     evaluationFilter: {
         skipContainerTypes: [],
-        // TODO: uncomment this once backend support is available
-        // skipImageLayers: 'SKIP_NONE',
+        skipImageLayers: 'SKIP_NONE',
     },
 };
 
