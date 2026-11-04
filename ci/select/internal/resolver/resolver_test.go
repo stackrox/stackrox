@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/ci/select/internal/rules"
+	"github.com/stackrox/rox/ci/select/internal/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -499,24 +500,9 @@ func TestResolveCapsLoggedPaths(t *testing.T) {
 	assert.Contains(t, d.Log, `- covered by: "frontend-no-backend-e2e"`)
 }
 
-// loadRules parses and compiles a rules file. The linter that rejects
-// claims no diff can make true is not part of this commit.
+// loadRules runs the production loader, validation.Load, so fixtures
+// fail the same way a real rules file would.
 func loadRules(path string) (rules.Mapping, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return rules.Mapping{}, err
-	}
-	m, err := rules.Parse(data)
-	if err != nil {
-		return m, err
-	}
-	for _, rule := range m.Rules {
-		if rule == nil {
-			continue
-		}
-		if err := rule.Compile(); err != nil {
-			return m, err
-		}
-	}
-	return m, nil
+	m, _, err := validation.Load(path)
+	return m, err
 }
