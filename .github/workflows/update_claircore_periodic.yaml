@@ -1,0 +1,69 @@
+name: Update ClairCore
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *'
+
+concurrency:
+  group: update-claircore-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  update-claircore:
+    if: github.repository_owner == 'stackrox'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Test ClairCore updater
+        run: python3 .github/workflows/scripts/test_update_claircore.py
+
+      - name: Update ClairCore to current main revision
+        id: update
+        run: |
+          changed="$(python3 .github/workflows/scripts/update_claircore.py)"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update human-reviewed pull request
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # ratchet:peter-evans/create-pull-request@v8
+        with:
+          token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+          commit-message: 'chore(scanner): update ClairCore to latest main'
+          committer: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
+          author: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
+          branch: update_claircore_main
+          delete-branch: true
+          add-paths: |
+            go.mod
+            go.sum
+          title: 'chore(scanner): update ClairCore to latest main'
+          body: |
+            Nightly check of github.com/quay/claircore@main.
+
+            This pins the current upstream main revision, including pseudo-versions
+            for commits that have not been tagged yet. The Scanner functional E2E
+            workflow is triggered for this PR. Reviewers should wait for its result
+            before merging. This workflow does not enable auto-merge.
+          labels: |
+            area/scanner
+            dependencies
+            scanner-functional-tests
+          team-reviewers: |
+            scanner
+          draft: false
