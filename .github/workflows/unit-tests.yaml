@@ -24,6 +24,10 @@ env:
   SHORTCOMMIT: "0000000"
 
 jobs:
+  ci-selection:
+    name: ACS CI selection
+    uses: ./.github/workflows/ci-selection.yaml
+
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
     with:
@@ -34,7 +38,10 @@ jobs:
         ^.github/actions/job-preamble/
 
   go:
-    needs: detect-changes
+    needs: [detect-changes, ci-selection]
+    # Explicit status handling keeps planner failures from suppressing tests.
+    # No UI-only gate: this job always starts; the decision step owns skip.
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -48,55 +55,71 @@ jobs:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
+    - name: Select CI job
+      id: ci-decision
+      env:
+        CI_SELECT_PLANNER_RESULT: ${{ needs.ci-selection.result }}
+        CI_SELECT_DECISIONS: ${{ needs.ci-selection.outputs.decisions }}
+      run: bash ci/select/gha-consume.sh go
+
     - uses: ./.github/actions/job-preamble
+      # Anchored for reuse within this job only.
+      if: &selected-suite steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
     - name: Cache Go dependencies
+      if: *selected-suite
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
+      if: *selected-suite
       run: ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
+      if: *selected-suite
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
     - name: Generate junit report
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
+      if: *selected-suite
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
+      if: *selected-suite
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
+      if: *selected-suite
       run: ${{ matrix.gotags }} make -C operator/ test-helm
 
     - name: Generate junit report
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
+    # Jira observes the final job status, including setup and test failures.
     - name: Report test failures to Jira
-      if: (!cancelled())
+      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -107,7 +130,10 @@ jobs:
         directory: 'junit-reports'
 
   go-postgres:
-    needs: detect-changes
+    needs: [detect-changes, ci-selection]
+    # Explicit status handling keeps planner failures from suppressing tests.
+    # No UI-only gate: this job always starts; the decision step owns skip.
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -124,10 +150,22 @@ jobs:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
+    - name: Select CI job
+      id: ci-decision
+      env:
+        CI_SELECT_PLANNER_RESULT: ${{ needs.ci-selection.result }}
+        CI_SELECT_DECISIONS: ${{ needs.ci-selection.outputs.decisions }}
+      run: bash ci/select/gha-consume.sh go-postgres
+
+    - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
     # Tests (e.g. central/splunk) require byte-order collation.
     - name: Start Postgres (pre-installed)
-      if: matrix.pg == 'default'
+      if: steps.ci-decision.outputs.action != 'skip' && matrix.pg == 'default'
       run: |
         # Run on tmpfs to avoid disk I/O overhead in tests.
         PG_VER=$(pg_lsclusters -h | awk '{print $1}')
@@ -140,7 +178,7 @@ jobs:
 
     # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
-      if: matrix.pg != 'default'
+      if: steps.ci-decision.outputs.action != 'skip' && matrix.pg != 'default'
       run: |
         docker build -t postgres-test -f .github/test-images/postgres.dockerfile .
         docker run --rm -d --name postgres --network=host \
@@ -150,16 +188,14 @@ jobs:
           -e LANG=C.UTF-8 \
           postgres-test
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
     - name: Cache Go dependencies
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         if [ "${{ matrix.pg }}" = "default" ]; then
           timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
@@ -170,25 +206,28 @@ jobs:
         fi
 
     - name: Go Unit Tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
     - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
     - name: Generate junit report
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
+    # Jira observes the final job status, including setup and test failures.
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -202,14 +241,38 @@ jobs:
   # they compile and execute without errors. A single postgres version is
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [detect-changes, ci-selection]
+    # Explicit status handling keeps planner failures from suppressing tests.
+    # Without the ci-dispatcher-enforce label, UI-only detection still owns
+    # this job; with the label, the job starts and gha-consume.sh owns skip.
+    # This is the same shape and sentence as sensor-integration-tests, so a
+    # UI-only pull request without the label skips both jobs the same way.
+    if: >-
+      !cancelled() &&
+      (needs.ci-selection.result != 'success' ||
+       (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) ||
+       !needs.detect-changes.outputs.ui_only)
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
+    - name: Select CI job
+      id: ci-decision
+      env:
+        CI_SELECT_PLANNER_RESULT: ${{ needs.ci-selection.result }}
+        CI_SELECT_DECISIONS: ${{ needs.ci-selection.outputs.decisions }}
+      run: bash ci/select/gha-consume.sh go-bench
+
+    - uses: ./.github/actions/job-preamble
+      # Anchored for reuse within this job only.
+      if: &selected-suite steps.ci-decision.outputs.action != 'skip'
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     - name: Start Postgres
+      if: *selected-suite
       run: |
         # Run on tmpfs to avoid disk I/O overhead in tests.
         PG_VER=$(pg_lsclusters -h | awk '{print $1}')
@@ -220,23 +283,22 @@ jobs:
         sudo cp .github/test-images/postgres-ci.conf "/etc/postgresql/$PG_VER/main/conf.d/ci.conf"
         sudo systemctl start postgresql.service
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
     - name: Cache Go dependencies
+      if: *selected-suite
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
+      if: *selected-suite
       run: |
         timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
           || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
     - name: Go Bench Tests
+      if: *selected-suite
       run: make go-postgres-bench-tests
 
     - name: Postgres diagnostics
-      if: failure()
+      if: (!cancelled()) && failure() && steps.ci-decision.outputs.action != 'skip'
       run: |
         pg_isready -h 127.0.0.1 || true
         pg_lsclusters || true
@@ -245,12 +307,12 @@ jobs:
         sudo cat /var/log/postgresql/postgresql-*-main.log | tail -60 || true
 
     - name: Generate junit report
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
@@ -513,8 +575,18 @@ jobs:
         run: make -C .openshift-ci test
 
   sensor-integration-tests:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    needs: [detect-changes, ci-selection]
+    # Explicit status handling keeps planner failures from suppressing tests.
+    # Without the ci-dispatcher-enforce label, UI-only detection still owns
+    # this job; with the label, the job starts and gha-consume.sh owns skip.
+    # This is the same shape and sentence as go-bench, so a UI-only pull
+    # request without the label skips both jobs the same way.
+    if: >-
+      !cancelled() &&
+      (needs.ci-selection.result != 'success' ||
+       (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'ci-dispatcher-enforce')) ||
+       !needs.detect-changes.outputs.ui_only)
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-24.04
@@ -524,14 +596,24 @@ jobs:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
+    - name: Select CI job
+      id: ci-decision
+      env:
+        CI_SELECT_PLANNER_RESULT: ${{ needs.ci-selection.result }}
+        CI_SELECT_DECISIONS: ${{ needs.ci-selection.outputs.decisions }}
+      run: bash ci/select/gha-consume.sh sensor-integration-tests
+
     - uses: ./.github/actions/job-preamble
+      if: steps.ci-decision.outputs.action != 'skip'
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Login to Quay.io
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # ratchet:docker/login-action@v4
       with:
         registry: quay.io
@@ -539,11 +621,13 @@ jobs:
         password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
     - name: Create k8s Kind Cluster
+      if: steps.ci-decision.outputs.action != 'skip'
       uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # ratchet:helm/kind-action@v1.15.0
       with:
         kubeconfig: "${{ env.KUBECONFIG }}"
 
     - name: Load test images into Kind
+      if: steps.ci-decision.outputs.action != 'skip'
       run: |
         source scripts/lib.sh
         # Read images from prefetch list (single source of truth)
@@ -562,20 +646,22 @@ jobs:
         done < sensor/tests/images-to-prefetch.txt
 
     - name: Run sensor integration tests
+      if: steps.ci-decision.outputs.action != 'skip'
       run: make sensor-integration-test
 
     - name: Generate junit report
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       run: make generate-junit-reports
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
+      if: always() && steps.ci-decision.outputs.action != 'skip'
       with:
         paths: 'junit-reports/report.xml'
 
+    # Jira observes the final job status, including setup and test failures.
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: (!cancelled()) && steps.ci-decision.outputs.action != 'skip'
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:

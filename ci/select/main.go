@@ -40,10 +40,11 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer) error
 		SilenceErrors:     true,
 		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return errors.New("a subcommand is required (validate or resolve)")
+			return errors.New("a subcommand is required (validate, resolve, or gha)")
 		},
 	}
-	root.AddCommand(newValidateCommand(), newResolveCommand())
+	root.AddCommand(newValidateCommand(), newResolveCommand(), newGHACommand())
+	// A nil argument list would make Cobra read the process arguments.
 	if args == nil {
 		args = []string{}
 	}
@@ -60,6 +61,10 @@ func newValidateCommand() *cobra.Command {
 		Short: "Validate the CI selection rules",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			// validation.Load is the linter: it runs every check on the
+			// file and returns the full report — errors for
+			// contradictions, warnings for overlaps — so one run shows
+			// the author everything at once.
 			_, warnings, err := validation.Load(rulesPath)
 			if lintErr := writeLint(cmd.ErrOrStderr(), warnings, err); lintErr != nil {
 				return lintErr
@@ -82,6 +87,9 @@ func newResolveCommand() *cobra.Command {
 		Short: "Resolve test decisions from changed paths",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			// The same report as validate when the file has errors. Resolve
+			// stops before using those rules, and still prints the warnings
+			// that came back with the errors.
 			m, warnings, err := validation.Load(rulesPath)
 			if err != nil {
 				return writeLint(cmd.ErrOrStderr(), warnings, err)
@@ -101,6 +109,9 @@ func newResolveCommand() *cobra.Command {
 			}
 			d := resolver.Resolve(files, m)
 			fmt.Fprint(cmd.ErrOrStderr(), d.Log)
+			// The summary is stdout while the trace is stderr; a header and
+			// leading blank line keep the two sections apart when a terminal
+			// merges the streams.
 			_, err = fmt.Fprint(cmd.OutOrStdout(), "\n-- decisions --\n"+d.String())
 			return errors.Wrap(err, "print decision")
 		},
@@ -108,6 +119,17 @@ func newResolveCommand() *cobra.Command {
 	command.Flags().StringVar(&rulesPath, "rules", "ci/test-selection-rules.yaml", "YAML rules")
 	command.Flags().StringVar(&filesPath, "files-file", "", "Changed paths, one per line")
 	return command
+}
+
+func newGHACommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "gha",
+		Short: "Report CI selection for GitHub Actions",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return gha(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr())
+		},
+	}
 }
 
 // passedMessage is the validate success line. Load returns rendered
@@ -146,4 +168,14 @@ func writeLint(w io.Writer, warnings []string, err error) error {
 		return errLintReported
 	}
 	return nil
+}
+
+// lintText is the same report as one string, for callers that record it
+// instead of printing it. The warnings carry the footer.
+func lintText(err error, warnings []string) string {
+	text := "validate rules: " + err.Error()
+	if len(warnings) == 0 {
+		return text
+	}
+	return text + "\n" + strings.Join(warnings, "\n")
 }
