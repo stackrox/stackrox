@@ -7,7 +7,7 @@ require (
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/spf13/cobra v1.10.2
-	go.yaml.in/yaml/v3 v3.0.5
+	go.yaml.in/yaml/v3 v3.0.6
 	k8s.io/client-go v0.37.2
 )
 
