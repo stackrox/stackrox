@@ -276,9 +276,9 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Require change detection
-      if: needs.detect-changes.result == 'failure'
+      if: needs.detect-changes.result != 'success'
       run: |
-        echo "Change detection failed; suite eligibility is unknown." >&2
+        echo "Change detection did not succeed; suite eligibility is unknown." >&2
         exit 1
 
     - name: Checkout
@@ -410,9 +410,9 @@ jobs:
         - /opt:/mnt/opt
     steps:
     - name: Require change detection
-      if: needs.detect-changes.result == 'failure'
+      if: needs.detect-changes.result != 'success'
       run: |
-        echo "Change detection failed; suite eligibility is unknown." >&2
+        echo "Change detection did not succeed; suite eligibility is unknown." >&2
         exit 1
 
     - name: Checkout
