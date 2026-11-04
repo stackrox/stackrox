@@ -216,14 +216,16 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		vmStats = vmScraper
 	}
 
+	metricsComponent := clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes(), vmStats)
+
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
-		clusterstatus.NewUpdater(cfg.k8sClient),
+		clusterstatus.NewUpdater(cfg.k8sClient, metricsComponent.SendInitialMetrics),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes(), vmStats),
+		metricsComponent,
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
