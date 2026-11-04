@@ -203,6 +203,22 @@ func TestCovers(t *testing.T) {
 			skip: ruleFromPaths([]string{`^docs/readme\.md$`}, nil), run: ruleFromPaths([]string{"^docs/"}, nil),
 			covers: false, exact: true,
 		},
+		"should not cover disjoint nonempty rules": {
+			skip: ruleFromPaths([]string{"^docs/"}, nil), run: ruleFromPaths([]string{"^[ab]*a[ab]{16}$"}, nil),
+			covers: false, exact: true,
+		},
+		"should cover an empty run language": {
+			skip: ruleFromPaths([]string{"^docs/"}, nil), run: ruleFromPaths(nil, nil),
+			covers: true, exact: true,
+		},
+		"should cover a run emptied by exclusions": {
+			skip: ruleFromPaths([]string{"^docs/"}, nil), run: ruleFromPaths([]string{"^code$"}, []string{"!^code$"}),
+			covers: true, exact: true,
+		},
+		"should cover a shared empty string": {
+			skip: ruleFromPaths([]string{"^a?$"}, nil), run: ruleFromPaths([]string{"^$"}, nil),
+			covers: true, exact: true,
+		},
 		"should not cover files the skip carves out": {
 			skip: ruleFromPaths([]string{"^docs/"}, []string{"!^docs/internal/"}), run: ruleFromPaths([]string{"^docs/"}, nil),
 			covers: false, exact: true,

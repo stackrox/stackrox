@@ -76,6 +76,10 @@ func coversSet(skip, run ruleSet) (covers, exact bool) {
 		run.includes.conservative || run.excludes.conservative {
 		return false, false
 	}
+	// Disjointness disproves coverage only when the effective run set is nonempty.
+	if run.noExclusions && disjointStarts(skip.includes, run.includes) && run.includes.hasMatch() {
+		return false, true
+	}
 	if runEscapes(skip, run, false) || runEscapes(skip, run, true) {
 		return false, true
 	}
@@ -183,6 +187,9 @@ func intersectSets(a, b ruleSet) (witness string, overlap, exact bool) {
 	if a.includes.conservative || a.excludes.conservative ||
 		b.includes.conservative || b.excludes.conservative {
 		return "", true, false
+	}
+	if disjointStarts(a.includes, b.includes) {
+		return "", false, true
 	}
 	nfas := []*nfa{a.includes, a.excludes, b.includes, b.excludes}
 	blocks := partitionOf(nfas)
