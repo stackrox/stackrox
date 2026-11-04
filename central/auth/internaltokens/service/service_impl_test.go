@@ -270,6 +270,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						assert.True(t, hasDeadline)
 						assert.True(t, filter(&storage.PermissionSet{Name: centralproxy.ConsoleProxyPermissionSetName}))
 						return []*storage.PermissionSet{{
+							Name: centralproxy.ConsoleProxyPermissionSetName,
 							ResourceToAccess: map[string]storage.Access{
 								"Deployment": storage.Access_READ_ACCESS,
 								"Image":      storage.Access_READ_ACCESS,
@@ -291,18 +292,22 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-token"},
 		},
-		"success - multiple permission set names": {
+		"success - duplicate permission set names": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{centralproxy.ConsoleProxyPermissionSetName, centralproxy.ConsoleProxyPermissionSetName},
 				ClusterScopes:      []*v1.ClusterScope{requestSingleNamespace},
 				Lifetime:           testExpirationDuration,
 			},
 			policy: permissivePolicy,
-			setup: func(_ *testing.T, mocks *mockContainer) {
-				mocks.roleStore.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
-					Return([]*storage.PermissionSet{{ResourceToAccess: map[string]storage.Access{
-						"Deployment": storage.Access_READ_ACCESS,
-					}}}, nil).Times(2)
+			setup: func(t *testing.T, mocks *mockContainer) {
+				expectPermissionSetLookup(t, mocks.roleStore,
+					[]string{centralproxy.ConsoleProxyPermissionSetName, centralproxy.ConsoleProxyPermissionSetName},
+					[]*storage.PermissionSet{{
+						Name: centralproxy.ConsoleProxyPermissionSetName,
+						ResourceToAccess: map[string]storage.Access{
+							"Deployment": storage.Access_READ_ACCESS,
+						},
+					}}, nil)
 				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{
 						RoleName: internalRoleName,

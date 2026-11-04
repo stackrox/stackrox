@@ -19,66 +19,96 @@ type roleManager struct {
 	roleStore roleDS.DataStore
 }
 
-func (rm *roleManager) createSensorRole(
-	ctx context.Context, permissionSetNames []string, scopes tokens.ClusterScopes,
-) (*tokens.InternalRole, error) {
-	if len(permissionSetNames) == 0 {
-		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
-	}
-	if rm.roleStore == nil {
-		return nil, errox.NotAuthorized.New("Sensor proxy permission set store unavailable")
-	}
-	role := &tokens.InternalRole{
-		RoleName:    internalRoleName,
-		Clusters:    scopes,
-		Permissions: make(map[storage.Access][]string),
-	}
-	permissions := make(map[string]storage.Access)
-	for _, permissionSetName := range permissionSetNames {
-		matches, err := rm.roleStore.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
-			return ps.GetName() == permissionSetName
-		})
-		if err != nil {
-			return nil, err
-		}
-		if len(matches) != 1 || matches[0] == nil {
-			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", permissionSetName)
-		}
-		for resource, access := range matches[0].GetResourceToAccess() {
-			if current, found := permissions[resource]; !found || access > current {
-				permissions[resource] = access
-			}
-		}
-	}
-	for resource, access := range permissions {
-		role.Permissions[access] = append(role.Permissions[access], resource)
-	}
-	for _, resources := range role.Permissions {
-		slices.Sort(resources)
-	}
-	return role, nil
-}
-
 func (rm *roleManager) createRoleForRoxClaims(
 	_ context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*tokens.InternalRole, error) {
-	role := &tokens.InternalRole{
-		RoleName: internalRoleName,
+	return &tokens.InternalRole{
+		RoleName:    internalRoleName,
+		Permissions: permissionsFromRequest(req.GetPermissions()),
+		Clusters:    clusterScopesFromRequest(req.GetClusterScopes()),
+	}, nil
+}
+
+func (rm *roleManager) createSensorRole(
+	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
+) (*tokens.InternalRole, error) {
+	if rm.roleStore == nil {
+		return nil, errox.ServerError.New("Sensor proxy permission set store unavailable")
 	}
-	requestedPermissions := req.GetPermissions()
-	if len(requestedPermissions) > 0 {
-		role.Permissions = make(map[storage.Access][]string)
+
+	permissionSetNames := req.GetPermissionSetNames()
+	if len(permissionSetNames) == 0 {
+		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
 	}
-	for resource, v1Access := range req.GetPermissions() {
-		access := convertAccess(v1Access)
-		if _, found := role.Permissions[access]; !found {
-			role.Permissions[access] = make([]string, 0)
+	permissionSets, err := rm.getPermissionSetsByNames(ctx, permissionSetNames)
+	if err != nil {
+		return nil, err
+	}
+	return &tokens.InternalRole{
+		RoleName:    internalRoleName,
+		Clusters:    clusterScopesFromRequest(req.GetClusterScopes()),
+		Permissions: permissionsFromSets(permissionSets),
+	}, nil
+}
+
+func (rm *roleManager) getPermissionSetsByNames(ctx context.Context, permissionSetNames []string) ([]*storage.PermissionSet, error) {
+	matches, err := rm.roleStore.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
+		return slices.Contains(permissionSetNames, ps.GetName())
+	})
+	if err != nil {
+		return nil, err
+	}
+	// Check if all requested permission sets have been found.
+	for _, name := range permissionSetNames {
+		found := false
+		for _, ps := range matches {
+			if name == ps.GetName() {
+				found = true
+			}
 		}
-		role.Permissions[access] = append(role.Permissions[access], resource)
+		if !found {
+			return nil, errox.NotFound.Newf("Sensor proxy permission set %q not found", name)
+		}
 	}
-	role.Clusters = clusterScopesFromRequest(req.GetClusterScopes())
-	return role, nil
+	return matches, nil
+}
+
+func permissionsFromSets(permissionSets []*storage.PermissionSet) map[storage.Access][]string {
+	// Pick the highest access to a resource from all matches.
+	resourceAccess := make(map[string]storage.Access)
+	for _, ps := range permissionSets {
+		for resource, access := range ps.GetResourceToAccess() {
+			if current, found := resourceAccess[resource]; !found || access > current {
+				resourceAccess[resource] = access
+			}
+		}
+	}
+	// Collect the resources per access.
+	permissions := make(map[storage.Access][]string)
+	for resource, access := range resourceAccess {
+		permissions[access] = append(permissions[access], resource)
+	}
+	// Sort the resources by name.
+	for _, resources := range permissions {
+		slices.Sort(resources)
+	}
+	return permissions
+}
+
+func permissionsFromRequest(requestedPermissions map[string]v1.Access) map[storage.Access][]string {
+	if len(requestedPermissions) == 0 {
+		return nil
+	}
+	permissions := make(map[storage.Access][]string)
+	for resource, v1Access := range requestedPermissions {
+		access := convertAccess(v1Access)
+		if _, found := permissions[access]; !found {
+			permissions[access] = make([]string, 0)
+		}
+		permissions[access] = append(permissions[access], resource)
+	}
+	return permissions
 }
 
 func clusterScopesFromRequest(scopes []*v1.ClusterScope) tokens.ClusterScopes {
