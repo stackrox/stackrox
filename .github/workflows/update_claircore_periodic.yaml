@@ -30,17 +30,10 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Test ClairCore updater
-        run: python3 .github/workflows/scripts/test_update_claircore.py
-
       - name: Update ClairCore to current main revision
-        id: update
-        run: |
-          changed="$(python3 .github/workflows/scripts/update_claircore.py)"
-          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+        run: go get github.com/quay/claircore@main
 
       - name: Create or update human-reviewed pull request
-        if: steps.update.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # ratchet:peter-evans/create-pull-request@v8
         with:
           token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
@@ -54,7 +47,7 @@ jobs:
             go.sum
           title: 'chore(scanner): update ClairCore to latest main'
           body: |
-            Nightly check of github.com/quay/claircore@main.
+            Updates github.com/quay/claircore to the current revision of its main branch.
 
             This pins the current upstream main revision, including pseudo-versions
             for commits that have not been tagged yet. The Scanner functional E2E
@@ -67,3 +60,19 @@ jobs:
           team-reviewers: |
             scanner
           draft: false
+
+  send-notification:
+    needs: update-claircore
+    if: failure()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: read
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      - name: Notify Scanner on-call
+        uses: ./.github/actions/notify-slack-on-failure
+        with:
+          slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
