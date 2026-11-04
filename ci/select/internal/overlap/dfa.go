@@ -69,11 +69,15 @@ func determinize(n *nfa, blocks []block) *dfa {
 	start := epsClosure(n, []int{n.start})
 	ids := map[string]int{stateKey(start): 0}
 	d := &dfa{accepting: []bool{containsInt(start, n.accept)}, transitions: [][]int{nil}}
-	queue := [][]int{start}
+	type queued struct {
+		id     int
+		states []int
+	}
+	queue := []queued{{id: 0, states: start}}
 	for len(queue) > 0 {
-		set := queue[0]
+		current := queue[0]
 		queue = queue[1:]
-		id := ids[stateKey(set)]
+		id, set := current.id, current.states
 		if d.transitions[id] != nil {
 			continue
 		}
@@ -99,7 +103,7 @@ func determinize(n *nfa, blocks []block) *dfa {
 				ids[k] = nid
 				d.accepting = append(d.accepting, containsInt(next, n.accept))
 				d.transitions = append(d.transitions, nil)
-				queue = append(queue, next)
+				queue = append(queue, queued{id: nid, states: next})
 			}
 			row[bi] = nid
 		}
