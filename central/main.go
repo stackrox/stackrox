@@ -625,17 +625,15 @@ func startGRPCServer() {
 	}
 
 	config := pkgGRPC.Config{
-		CustomRoutes: customRoutes(),
-		IdentityExtractors: []authn.IdentityExtractor{
-			openshiftAuth.GuardMetricsIdentity(authn.CombineExtractors(idExtractors...)),
-		},
-		AuthProviders: registry,
-		Auditor:       audit.New(processor.Singleton()),
-		RateLimiter:   newRateLimiter(),
-		GRPCMetrics:   metrics.GRPCSingleton(),
-		HTTPMetrics:   metrics.HTTPSingleton(),
-		Endpoints:     endpointCfgs,
-		Subsystem:     pkgMetrics.CentralSubsystem,
+		CustomRoutes:       customRoutes(),
+		IdentityExtractors: idExtractors,
+		AuthProviders:      registry,
+		Auditor:            audit.New(processor.Singleton()),
+		RateLimiter:        newRateLimiter(),
+		GRPCMetrics:        metrics.GRPCSingleton(),
+		HTTPMetrics:        metrics.HTTPSingleton(),
+		Endpoints:          endpointCfgs,
+		Subsystem:          pkgMetrics.CentralSubsystem,
 	}
 
 	if devbuild.IsEnabled() {
