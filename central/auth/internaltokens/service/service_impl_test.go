@@ -306,7 +306,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						_, hasDeadline := ctx.Deadline()
 						assert.True(t, hasDeadline)
 						assert.True(t, filter(&storage.PermissionSet{Name: centralproxy.MetricsPermissionSetName}))
-						return []*storage.PermissionSet{{ResourceToAccess: map[string]storage.Access{
+						return []*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
 							"Deployment": storage.Access_READ_ACCESS,
 						}}}, nil
 					})
@@ -648,7 +648,7 @@ func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(
 	ctrl := gomock.NewController(t)
 	roleStore := roleDataStoreMocks.NewMockDataStore(ctrl)
 	roleStore.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
-		Return([]*storage.PermissionSet{{ResourceToAccess: map[string]storage.Access{
+		Return([]*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
 			deploymentResource: storage.Access_READ_WRITE_ACCESS,
 		}}}, nil)
 	svc := &serviceImpl{

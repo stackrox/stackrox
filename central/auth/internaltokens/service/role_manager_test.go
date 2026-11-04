@@ -255,11 +255,11 @@ func TestCreateSensorRoleFailsIfAnyPermissionSetCannotBeLoaded(t *testing.T) {
 func TestCreateRoleFromMetricsPermissionSet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	roles := roleMocks.NewMockDataStore(ctrl)
-	expectPermissionSetLookup(t, roles, centralproxy.MetricsPermissionSetName,
-		&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+	expectPermissionSetLookup(t, roles, []string{centralproxy.MetricsPermissionSetName},
+		[]*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
 			"Deployment":     storage.Access_READ_ACCESS,
 			"Administration": storage.Access_READ_ACCESS,
-		}}, true, nil)
+		}}}, nil)
 
 	role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -284,10 +284,10 @@ func TestCreateRoleFromMetricsPermissionSetRejectsStoredWriteOrUnknownAccess(t *
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			roles := roleMocks.NewMockDataStore(ctrl)
-			expectPermissionSetLookup(t, roles, centralproxy.MetricsPermissionSetName,
-				&storage.PermissionSet{ResourceToAccess: map[string]storage.Access{
+			expectPermissionSetLookup(t, roles, []string{centralproxy.MetricsPermissionSetName},
+				[]*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
 					"Administration": access,
-				}}, true, nil)
+				}}}, nil)
 			role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
 					PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
@@ -302,7 +302,7 @@ func TestCreateRoleFromMetricsPermissionSetRejectsStoredWriteOrUnknownAccess(t *
 func TestCreateRoleFromMetricsPermissionSetFailsClosed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	roles := roleMocks.NewMockDataStore(ctrl)
-	expectPermissionSetLookup(t, roles, centralproxy.MetricsPermissionSetName, nil, false, nil)
+	expectPermissionSetLookup(t, roles, []string{centralproxy.MetricsPermissionSetName}, nil, nil)
 	manager := &roleManager{roles}
 	_, err := manager.createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
