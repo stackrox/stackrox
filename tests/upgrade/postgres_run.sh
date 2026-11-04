@@ -12,6 +12,11 @@ EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
 PREVIOUS_RELEASES=("4.10.11" "4.11.6")
+# Review these fixtures when the compatibility floor changes.
+DOWNGRADE_SUPPORTED_TAG="4.10.0"
+DOWNGRADE_REJECTED_TAG="4.9.0"
+DOWNGRADE_REJECTED_SEQUENCE=213
+DOWNGRADE_MINIMUM_SEQUENCE=220
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -27,6 +32,7 @@ source "$TEST_ROOT/tests/e2e/lib.sh"
 source "$TEST_ROOT/tests/upgrade/lib.sh"
 # shellcheck source=../../tests/upgrade/validation.sh
 source "$TEST_ROOT/tests/upgrade/validation.sh"
+source "$TEST_ROOT/tests/upgrade/downgrade.sh"
 
 test_upgrade() {
     info "Starting upgrade test"
@@ -62,7 +68,7 @@ test_upgrade() {
     test_upgrade_paths "$log_output_dir"
 }
 
-test_upgrade_paths() {
+test_upgrade_paths() (
     info "Testing various upgrade paths"
 
     if [[ "$#" -ne 1 ]]; then
@@ -200,9 +206,20 @@ test_upgrade_paths() {
     ########################################################################################
     # Rollback to the previous Postgres                                                    #
     ########################################################################################
-    info "Rolling back to previous version with Postgres still enabled"
-    force_rollback_to_previous_postgres
+    local original_config
+    test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.version')" "$CURRENT_TAG"
+    test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.canRollbackAfterUpgrade')" "true"
+    original_config="$(kubectl -n stackrox get configmap/central-config -o json | jq '{data}')"
+    # Preserve the original failure even if best-effort recovery also fails.
+    trap 'recover_downgrade_central "$?" "$original_config"' EXIT
+
+    test_rejected_downgrade "$DOWNGRADE_REJECTED_TAG" "$DOWNGRADE_REJECTED_SEQUENCE" \
+        "$DOWNGRADE_MINIMUM_SEQUENCE" "${ARTIFACT_DIR:-$log_output_dir}/downgrade-rejection"
+    set_downgrade_version "$DOWNGRADE_SUPPORTED_TAG"
+    kubectl -n stackrox rollout status deploy/central --timeout=600s
     wait_for_api
+    test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.version')" "$DOWNGRADE_SUPPORTED_TAG"
+    checkForPostgresAccessScopes
 
     validate_upgrade "04_postgres_postgres_rollback" "Rollback Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
@@ -215,8 +232,15 @@ test_upgrade_paths() {
 
     # Now go back to the current release. The HEAD installs Scanner V4,
     # which smoke test needs. Secured cluster still has reconciliation paused at this point.
+    kubectl -n stackrox patch configmap/central-config --type=merge -p "$original_config"
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$CURRENT_TAG"
+    kubectl -n stackrox scale deploy/central --replicas=1
+    kubectl -n stackrox rollout status deploy/central --timeout=600s
     upgrade_operator_to_head
     wait_for_background_migrations
+    test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.version')" "$CURRENT_TAG"
+    checkForPostgresAccessScopes
+    trap - EXIT
 
     # Cleanup the scaled sensor before smoke tests
     roxie teardown secured-cluster --verbose --single-namespace
@@ -262,38 +286,7 @@ test_upgrade_paths() {
     touch "${UPGRADE_PROGRESS_POSTGRES_SMOKE_TESTS}"
 
     collect_and_check_stackrox_logs "$log_output_dir" "04_final"
-}
-
-force_rollback_to_previous_postgres() {
-    info "Forcing a rollback to ${EARLIER_TAG}"
-
-    local upgradeStatus
-    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
-    echo "upgrade status: ${upgradeStatus}"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "${CURRENT_TAG}"
-    test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" "true"
-
-    kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - >/tmp/force_rollback_patch
-    local central_config
-    central_config=$(yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"${EARLIER_TAG}\"" -)
-    local config_patch
-    config_patch=$(yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch)
-    echo "config patch: $config_patch"
-
-    # downgrading to a version that does not understand process listening on ports
-    # so turning that off in sensor and collector to prevent central crashes.
-    # Sensor and Collector will be deleted a few steps after this so no need
-    # to turn these back on.  Going forward unexpected messages will result in
-    # an `UNEXPECTED` log instead of crashing central.  However that change is
-    # not present in the initial 3.74 version.
-    kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
-
-    kubectl -n stackrox patch configmap/central-config -p "$config_patch"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${EARLIER_TAG}"
-
-    # Keep the upgraded central-db image when rolling Central back, since the
-    # upgraded data directory cannot be used by an older PostgreSQL major version.
-}
+)
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     test_upgrade "$*"
