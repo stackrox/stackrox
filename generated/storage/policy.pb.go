@@ -392,6 +392,52 @@ func (Comparator) EnumDescriptor() ([]byte, []int) {
 	return file_storage_policy_proto_rawDescGZIP(), []int{6}
 }
 
+// SkipContainerType lists container kinds a policy may skip during evaluation.
+// The set is independent of ContainerType and currently contains only init containers.
+// An empty skip_container_types list evaluates every container type.
+type SkipContainerType int32
+
+const (
+	SkipContainerType_SKIP_INIT SkipContainerType = 0
+)
+
+// Enum value maps for SkipContainerType.
+var (
+	SkipContainerType_name = map[int32]string{
+		0: "SKIP_INIT",
+	}
+	SkipContainerType_value = map[string]int32{
+		"SKIP_INIT": 0,
+	}
+)
+
+func (x SkipContainerType) Enum() *SkipContainerType {
+	p := new(SkipContainerType)
+	*p = x
+	return p
+}
+
+func (x SkipContainerType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SkipContainerType) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_policy_proto_enumTypes[7].Descriptor()
+}
+
+func (SkipContainerType) Type() protoreflect.EnumType {
+	return &file_storage_policy_proto_enumTypes[7]
+}
+
+func (x SkipContainerType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SkipContainerType.Descriptor instead.
+func (SkipContainerType) EnumDescriptor() ([]byte, []int) {
+	return file_storage_policy_proto_rawDescGZIP(), []int{7}
+}
+
 // WorkloadKind is a Kubernetes workload kind that can be excluded from a policy in bulk.
 type Exclusion_WorkloadKind int32
 
@@ -426,11 +472,11 @@ func (x Exclusion_WorkloadKind) String() string {
 }
 
 func (Exclusion_WorkloadKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_policy_proto_enumTypes[7].Descriptor()
+	return file_storage_policy_proto_enumTypes[8].Descriptor()
 }
 
 func (Exclusion_WorkloadKind) Type() protoreflect.EnumType {
-	return &file_storage_policy_proto_enumTypes[7]
+	return &file_storage_policy_proto_enumTypes[8]
 }
 
 func (x Exclusion_WorkloadKind) Number() protoreflect.EnumNumber {
@@ -1058,7 +1104,7 @@ func (x *ListPolicy) GetEvaluationFilter() *EvaluationFilter {
 // EvaluationFilter pre-filters which entities a policy evaluates.
 type EvaluationFilter struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	SkipContainerTypes []ContainerType        `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.ContainerType" json:"skip_container_types,omitempty" crYaml:"skipContainerTypes,omitempty,stringer"` // @gotags: crYaml:"skipContainerTypes,omitempty,stringer"
+	SkipContainerTypes []SkipContainerType    `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.SkipContainerType" json:"skip_container_types,omitempty" crYaml:"skipContainerTypes,omitempty,stringer"` // @gotags: crYaml:"skipContainerTypes,omitempty,stringer"
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1093,7 +1139,7 @@ func (*EvaluationFilter) Descriptor() ([]byte, []int) {
 	return file_storage_policy_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *EvaluationFilter) GetSkipContainerTypes() []ContainerType {
+func (x *EvaluationFilter) GetSkipContainerTypes() []SkipContainerType {
 	if x != nil {
 		return x.SkipContainerTypes
 	}
@@ -1496,7 +1542,7 @@ var File_storage_policy_proto protoreflect.FileDescriptor
 
 const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xfc\t\n" +
+	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xfc\t\n" +
 	"\x06Policy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1564,9 +1610,9 @@ const file_storage_policy_proto_rawDesc = "" +
 	"is_default\x18\n" +
 	" \x01(\bR\tisDefault\x12-\n" +
 	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\x12F\n" +
-	"\x11evaluation_filter\x18\f \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilter\"\\\n" +
-	"\x10EvaluationFilter\x12H\n" +
-	"\x14skip_container_types\x18\x01 \x03(\x0e2\x16.storage.ContainerTypeR\x12skipContainerTypes\"\xdc\x04\n" +
+	"\x11evaluation_filter\x18\f \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilter\"`\n" +
+	"\x10EvaluationFilter\x12L\n" +
+	"\x14skip_container_types\x18\x01 \x03(\x0e2\x1a.storage.SkipContainerTypeR\x12skipContainerTypes\"\xdc\x04\n" +
 	"\tExclusion\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12.\n" +
 	"\x05image\x18\a \x01(\v2\x18.storage.Exclusion.ImageR\x05image\x12:\n" +
@@ -1635,7 +1681,9 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
 	"\x06EQUALS\x10\x02\x12\x1a\n" +
 	"\x16GREATER_THAN_OR_EQUALS\x10\x03\x12\x10\n" +
-	"\fGREATER_THAN\x10\x04B.\n" +
+	"\fGREATER_THAN\x10\x04*\"\n" +
+	"\x11SkipContainerType\x12\r\n" +
+	"\tSKIP_INIT\x10\x00B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -1650,7 +1698,7 @@ func file_storage_policy_proto_rawDescGZIP() []byte {
 	return file_storage_policy_proto_rawDescData
 }
 
-var file_storage_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
+var file_storage_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
 var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_storage_policy_proto_goTypes = []any{
 	(PolicySource)(0),                 // 0: storage.PolicySource
@@ -1660,57 +1708,57 @@ var file_storage_policy_proto_goTypes = []any{
 	(Severity)(0),                     // 4: storage.Severity
 	(LifecycleStage)(0),               // 5: storage.LifecycleStage
 	(Comparator)(0),                   // 6: storage.Comparator
-	(Exclusion_WorkloadKind)(0),       // 7: storage.Exclusion.WorkloadKind
-	(*Policy)(nil),                    // 8: storage.Policy
-	(*PolicySection)(nil),             // 9: storage.PolicySection
-	(*PolicyGroup)(nil),               // 10: storage.PolicyGroup
-	(*PolicyValue)(nil),               // 11: storage.PolicyValue
-	(*PolicyList)(nil),                // 12: storage.PolicyList
-	(*ListPolicy)(nil),                // 13: storage.ListPolicy
-	(*EvaluationFilter)(nil),          // 14: storage.EvaluationFilter
-	(*Exclusion)(nil),                 // 15: storage.Exclusion
-	(*ExportPoliciesResponse)(nil),    // 16: storage.ExportPoliciesResponse
-	(*Policy_MitreAttackVectors)(nil), // 17: storage.Policy.MitreAttackVectors
-	(*Exclusion_Container)(nil),       // 18: storage.Exclusion.Container
-	(*Exclusion_Deployment)(nil),      // 19: storage.Exclusion.Deployment
-	(*Exclusion_Image)(nil),           // 20: storage.Exclusion.Image
-	(*Exclusion_ExcludeByKind)(nil),   // 21: storage.Exclusion.ExcludeByKind
-	(*Scope)(nil),                     // 22: storage.Scope
-	(*timestamppb.Timestamp)(nil),     // 23: google.protobuf.Timestamp
-	(ContainerType)(0),                // 24: storage.ContainerType
+	(SkipContainerType)(0),            // 7: storage.SkipContainerType
+	(Exclusion_WorkloadKind)(0),       // 8: storage.Exclusion.WorkloadKind
+	(*Policy)(nil),                    // 9: storage.Policy
+	(*PolicySection)(nil),             // 10: storage.PolicySection
+	(*PolicyGroup)(nil),               // 11: storage.PolicyGroup
+	(*PolicyValue)(nil),               // 12: storage.PolicyValue
+	(*PolicyList)(nil),                // 13: storage.PolicyList
+	(*ListPolicy)(nil),                // 14: storage.ListPolicy
+	(*EvaluationFilter)(nil),          // 15: storage.EvaluationFilter
+	(*Exclusion)(nil),                 // 16: storage.Exclusion
+	(*ExportPoliciesResponse)(nil),    // 17: storage.ExportPoliciesResponse
+	(*Policy_MitreAttackVectors)(nil), // 18: storage.Policy.MitreAttackVectors
+	(*Exclusion_Container)(nil),       // 19: storage.Exclusion.Container
+	(*Exclusion_Deployment)(nil),      // 20: storage.Exclusion.Deployment
+	(*Exclusion_Image)(nil),           // 21: storage.Exclusion.Image
+	(*Exclusion_ExcludeByKind)(nil),   // 22: storage.Exclusion.ExcludeByKind
+	(*Scope)(nil),                     // 23: storage.Scope
+	(*timestamppb.Timestamp)(nil),     // 24: google.protobuf.Timestamp
 	(*ImageName)(nil),                 // 25: storage.ImageName
 }
 var file_storage_policy_proto_depIdxs = []int32{
 	5,  // 0: storage.Policy.lifecycle_stages:type_name -> storage.LifecycleStage
 	1,  // 1: storage.Policy.event_source:type_name -> storage.EventSource
-	15, // 2: storage.Policy.exclusions:type_name -> storage.Exclusion
-	22, // 3: storage.Policy.scope:type_name -> storage.Scope
+	16, // 2: storage.Policy.exclusions:type_name -> storage.Exclusion
+	23, // 3: storage.Policy.scope:type_name -> storage.Scope
 	4,  // 4: storage.Policy.severity:type_name -> storage.Severity
 	3,  // 5: storage.Policy.enforcement_actions:type_name -> storage.EnforcementAction
-	23, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
-	9,  // 7: storage.Policy.policy_sections:type_name -> storage.PolicySection
-	17, // 8: storage.Policy.mitre_attack_vectors:type_name -> storage.Policy.MitreAttackVectors
+	24, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
+	10, // 7: storage.Policy.policy_sections:type_name -> storage.PolicySection
+	18, // 8: storage.Policy.mitre_attack_vectors:type_name -> storage.Policy.MitreAttackVectors
 	0,  // 9: storage.Policy.source:type_name -> storage.PolicySource
-	14, // 10: storage.Policy.evaluation_filter:type_name -> storage.EvaluationFilter
-	10, // 11: storage.PolicySection.policy_groups:type_name -> storage.PolicyGroup
+	15, // 10: storage.Policy.evaluation_filter:type_name -> storage.EvaluationFilter
+	11, // 11: storage.PolicySection.policy_groups:type_name -> storage.PolicyGroup
 	2,  // 12: storage.PolicyGroup.boolean_operator:type_name -> storage.BooleanOperator
-	11, // 13: storage.PolicyGroup.values:type_name -> storage.PolicyValue
-	8,  // 14: storage.PolicyList.policies:type_name -> storage.Policy
+	12, // 13: storage.PolicyGroup.values:type_name -> storage.PolicyValue
+	9,  // 14: storage.PolicyList.policies:type_name -> storage.Policy
 	4,  // 15: storage.ListPolicy.severity:type_name -> storage.Severity
 	5,  // 16: storage.ListPolicy.lifecycle_stages:type_name -> storage.LifecycleStage
-	23, // 17: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
+	24, // 17: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
 	1,  // 18: storage.ListPolicy.event_source:type_name -> storage.EventSource
 	0,  // 19: storage.ListPolicy.source:type_name -> storage.PolicySource
-	14, // 20: storage.ListPolicy.evaluation_filter:type_name -> storage.EvaluationFilter
-	24, // 21: storage.EvaluationFilter.skip_container_types:type_name -> storage.ContainerType
-	20, // 22: storage.Exclusion.image:type_name -> storage.Exclusion.Image
-	23, // 23: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
-	19, // 24: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
-	21, // 25: storage.Exclusion.exclude_by_kind:type_name -> storage.Exclusion.ExcludeByKind
-	8,  // 26: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
+	15, // 20: storage.ListPolicy.evaluation_filter:type_name -> storage.EvaluationFilter
+	7,  // 21: storage.EvaluationFilter.skip_container_types:type_name -> storage.SkipContainerType
+	21, // 22: storage.Exclusion.image:type_name -> storage.Exclusion.Image
+	24, // 23: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
+	20, // 24: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
+	22, // 25: storage.Exclusion.exclude_by_kind:type_name -> storage.Exclusion.ExcludeByKind
+	9,  // 26: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
 	25, // 27: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
-	22, // 28: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
-	7,  // 29: storage.Exclusion.ExcludeByKind.kinds:type_name -> storage.Exclusion.WorkloadKind
+	23, // 28: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
+	8,  // 29: storage.Exclusion.ExcludeByKind.kinds:type_name -> storage.Exclusion.WorkloadKind
 	30, // [30:30] is the sub-list for method output_type
 	30, // [30:30] is the sub-list for method input_type
 	30, // [30:30] is the sub-list for extension type_name
@@ -1723,7 +1771,6 @@ func file_storage_policy_proto_init() {
 	if File_storage_policy_proto != nil {
 		return
 	}
-	file_storage_deployment_proto_init()
 	file_storage_image_proto_init()
 	file_storage_scope_proto_init()
 	file_storage_policy_proto_msgTypes[7].OneofWrappers = []any{
@@ -1735,7 +1782,7 @@ func file_storage_policy_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_policy_proto_rawDesc), len(file_storage_policy_proto_rawDesc)),
-			NumEnums:      8,
+			NumEnums:      9,
 			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,

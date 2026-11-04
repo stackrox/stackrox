@@ -258,7 +258,7 @@ func (m *EvaluationFilter) CloneVT() *EvaluationFilter {
 	}
 	r := new(EvaluationFilter)
 	if rhs := m.SkipContainerTypes; rhs != nil {
-		tmpContainer := make([]ContainerType, len(rhs))
+		tmpContainer := make([]SkipContainerType, len(rhs))
 		copy(tmpContainer, rhs)
 		r.SkipContainerTypes = tmpContainer
 	}
@@ -4441,7 +4441,7 @@ func (m *EvaluationFilter) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType == 0 {
-				var v ContainerType
+				var v SkipContainerType
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protohelpers.ErrIntOverflow
@@ -4451,7 +4451,7 @@ func (m *EvaluationFilter) UnmarshalVT(dAtA []byte) error {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					v |= ContainerType(b&0x7F) << shift
+					v |= SkipContainerType(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -4485,10 +4485,10 @@ func (m *EvaluationFilter) UnmarshalVT(dAtA []byte) error {
 				}
 				var elementCount int
 				if elementCount != 0 && len(m.SkipContainerTypes) == 0 {
-					m.SkipContainerTypes = make([]ContainerType, 0, elementCount)
+					m.SkipContainerTypes = make([]SkipContainerType, 0, elementCount)
 				}
 				for iNdEx < postIndex {
-					var v ContainerType
+					var v SkipContainerType
 					for shift := uint(0); ; shift += 7 {
 						if shift >= 64 {
 							return protohelpers.ErrIntOverflow
@@ -4498,7 +4498,7 @@ func (m *EvaluationFilter) UnmarshalVT(dAtA []byte) error {
 						}
 						b := dAtA[iNdEx]
 						iNdEx++
-						v |= ContainerType(b&0x7F) << shift
+						v |= SkipContainerType(b&0x7F) << shift
 						if b < 0x80 {
 							break
 						}
@@ -7215,7 +7215,7 @@ func (m *EvaluationFilter) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType == 0 {
-				var v ContainerType
+				var v SkipContainerType
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protohelpers.ErrIntOverflow
@@ -7225,7 +7225,7 @@ func (m *EvaluationFilter) UnmarshalVTUnsafe(dAtA []byte) error {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					v |= ContainerType(b&0x7F) << shift
+					v |= SkipContainerType(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -7259,10 +7259,10 @@ func (m *EvaluationFilter) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				var elementCount int
 				if elementCount != 0 && len(m.SkipContainerTypes) == 0 {
-					m.SkipContainerTypes = make([]ContainerType, 0, elementCount)
+					m.SkipContainerTypes = make([]SkipContainerType, 0, elementCount)
 				}
 				for iNdEx < postIndex {
-					var v ContainerType
+					var v SkipContainerType
 					for shift := uint(0); ; shift += 7 {
 						if shift >= 64 {
 							return protohelpers.ErrIntOverflow
@@ -7272,7 +7272,7 @@ func (m *EvaluationFilter) UnmarshalVTUnsafe(dAtA []byte) error {
 						}
 						b := dAtA[iNdEx]
 						iNdEx++
-						v |= ContainerType(b&0x7F) << shift
+						v |= SkipContainerType(b&0x7F) << shift
 						if b < 0x80 {
 							break
 						}

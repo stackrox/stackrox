@@ -25,7 +25,7 @@ function PolicyEvaluationFilterLabels({
 
     if (
         isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT') &&
-        evaluationFilter.skipContainerTypes?.includes('INIT')
+        evaluationFilter.skipContainerTypes?.includes('SKIP_INIT')
     ) {
         labels.push({ text: 'Skips init', color: 'blue' });
     }
