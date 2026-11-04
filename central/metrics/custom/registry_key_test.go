@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -32,13 +33,15 @@ func metricsIdentity(t *testing.T, tokenID, clusterID, resource string) authn.Id
 }
 
 func TestRegistryKeyForMetricsToken(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
 	first := metricsIdentity(t, "token-one", "cluster-one", "Deployment")
 	renewed := metricsIdentity(t, "token-two", "cluster-one", "Deployment")
 	otherCluster := metricsIdentity(t, "token-three", "cluster-two", "Deployment")
 	changedPermissions := metricsIdentity(t, "token-four", "cluster-one", "Image")
-	assert.Equal(t, registryKeyForIdentity(first), registryKeyForIdentity(renewed))
-	assert.NotEqual(t, registryKeyForIdentity(first), registryKeyForIdentity(otherCluster))
-	assert.NotEqual(t, registryKeyForIdentity(first), registryKeyForIdentity(changedPermissions))
+	assert.Equal(t, registryKeyForIdentity(ctx, first), registryKeyForIdentity(ctx, renewed))
+	assert.NotEqual(t, registryKeyForIdentity(ctx, first), registryKeyForIdentity(ctx, otherCluster))
+	assert.NotEqual(t, registryKeyForIdentity(ctx, first), registryKeyForIdentity(ctx, changedPermissions))
+	assert.Equal(t, renewed.UID(), registryKeyForIdentity(sac.WithNoAccess(ctx), renewed))
 }
 
 func TestRunnerReusesMetricsRegistryAfterTokenRotation(t *testing.T) {
@@ -46,7 +49,7 @@ func TestRunnerReusesMetricsRegistryAfterTokenRotation(t *testing.T) {
 	renewed := metricsIdentity(t, "token-two", "cluster-one", "Deployment")
 	otherCluster := metricsIdentity(t, "token-three", "cluster-two", "Deployment")
 	const metric = "metrics_rotation_test"
-	registryKey := registryKeyForIdentity(first)
+	registryKey := registryKeyForIdentity(sac.WithAllAccess(context.Background()), first)
 	registry, err := metrics.GetCustomRegistry(registryKey)
 	require.NoError(t, err)
 	t.Cleanup(func() { metrics.DeleteCustomRegistry(registryKey) })
@@ -57,13 +60,20 @@ func TestRunnerReusesMetricsRegistryAfterTokenRotation(t *testing.T) {
 		name     string
 		identity authn.Identity
 		want     string
+		denied   bool
 	}{
-		{"first token", first, "rox_central_" + metric + " 1"},
-		{"renewed token", renewed, "rox_central_" + metric + " 1"},
-		{"other cluster", otherCluster, ""},
+		{name: "first token", identity: first, want: "rox_central_" + metric + " 1"},
+		{name: "renewed token", identity: renewed, want: "rox_central_" + metric + " 1"},
+		{name: "cluster removed before renewal", identity: renewed, denied: true},
+		{name: "other cluster", identity: otherCluster},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := authn.ContextWithIdentity(context.Background(), test.identity, t)
+			if test.denied {
+				ctx = sac.WithNoAccess(ctx)
+			} else {
+				ctx = sac.WithAllAccess(ctx)
+			}
 			rec := httptest.NewRecorder()
 			runner.ServeHTTP(rec, httptest.NewRequestWithContext(ctx, http.MethodGet, "/metrics", nil))
 			require.Equal(t, http.StatusOK, rec.Code)
@@ -74,5 +84,8 @@ func TestRunnerReusesMetricsRegistryAfterTokenRotation(t *testing.T) {
 			}
 		})
 	}
-	t.Cleanup(func() { metrics.DeleteCustomRegistry(registryKeyForIdentity(otherCluster)) })
+	t.Cleanup(func() {
+		metrics.DeleteCustomRegistry(registryKeyForIdentity(sac.WithAllAccess(context.Background()), otherCluster))
+	})
+	t.Cleanup(func() { metrics.DeleteCustomRegistry(renewed.UID()) })
 }
