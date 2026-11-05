@@ -25,37 +25,29 @@ postgres_major_version() {
     echo "$version"
 }
 
-# bumps_postgres_major sets <prefix>_EARLIER_PG and <prefix>_CURRENT_PG from the
-# given Dockerfile, and succeeds if the current checkout bumps the major version.
-bumps_postgres_major() {
+# detect_postgres_upgrade determines if postgres upgrades from $EARLIER_SHA,
+# setting <prefix>_EARLIER_PG, <prefix>_CURRENT_PG and <prefix>_UPGRADE_REQUIRED.
+detect_postgres_upgrade() {
     local prefix=${1:?missing first required argument: prefix}
     local dockerfile=${2:?missing second required argument: dockerfile}
-    local earlier_version current_version
+    local earlier_version current_version required=false
 
     earlier_version="$(git -C "$TEST_ROOT" show "$EARLIER_SHA:$dockerfile" | postgres_major_version)" || \
-        die "Cannot determine the PostgreSQL major version of $dockerfile for $EARLIER_TAG ($EARLIER_SHA)"
+        die "Cannot determine PostgreSQL major version of $dockerfile for $EARLIER_TAG ($EARLIER_SHA)"
     current_version="$(postgres_major_version < "$TEST_ROOT/$dockerfile")" || \
-        die "Cannot determine the PostgreSQL major version of $dockerfile for the current checkout"
+        die "Cannot determine PostgreSQL major version of $dockerfile for the current checkout"
+
+    (( current_version > earlier_version )) && required=true
 
     printf -v "${prefix}_EARLIER_PG" '%s' "$earlier_version"
     printf -v "${prefix}_CURRENT_PG" '%s' "$current_version"
-
-    (( current_version > earlier_version ))
+    printf -v "${prefix}_UPGRADE_REQUIRED" '%s' "$required"
 }
 
 check_postgres_upgrade() {
-    # Either database bumping its major version is reason enough to run the
-    # suite, and each is asserted on independently: they are separate images
-    # with separate upgrade mechanisms, and the two bumps need not land
-    # together.
-    CENTRAL_DB_UPGRADE_REQUIRED=false
-    if bumps_postgres_major CENTRAL_DB "image/postgres/Dockerfile"; then
-        CENTRAL_DB_UPGRADE_REQUIRED=true
-    fi
-    SCANNER_V4_DB_UPGRADE_REQUIRED=false
-    if bumps_postgres_major SCANNER_V4_DB "scanner/image/db/Dockerfile"; then
-        SCANNER_V4_DB_UPGRADE_REQUIRED=true
-    fi
+    # Run tests when either database bump its major version
+    detect_postgres_upgrade CENTRAL_DB "image/postgres/Dockerfile"
+    detect_postgres_upgrade SCANNER_V4_DB "scanner/image/db/Dockerfile"
 
     local central_db="central-db PostgreSQL ${CENTRAL_DB_EARLIER_PG} -> ${CENTRAL_DB_CURRENT_PG}"
     local scanner_v4_db="scanner-v4-db PostgreSQL ${SCANNER_V4_DB_EARLIER_PG} -> ${SCANNER_V4_DB_CURRENT_PG}"
@@ -213,20 +205,6 @@ test_upgrade() {
 
     roxie teardown both --verbose --single-namespace
 
-    # TODO(cdu): review note, remove before the PR. Two things to weigh here.
-    #
-    # First, per your call, Central's test_not_enough_disk_space stays and
-    # scanner gets its own test rather than replacing it. The T7 subtask text
-    # literally says "replace", so if a reviewer quotes the ticket at you,
-    # this is the deviation they mean.
-    #
-    # Second, once both databases bump in the same release this runs two full
-    # deploy-and-upgrade cycles on top of the happy path, i.e. three. That is
-    # a long job. Worth deciding whether the scanner deferral test should be
-    # gated behind a pragma instead of running on every eligible PR.
-    #
-    # Each disk-space test asserts a different contract, so each only runs
-    # when its own database is the one bumping its major version.
     if [[ "$CENTRAL_DB_UPGRADE_REQUIRED" == true ]]; then
         remove_existing_stackrox_resources
         test_not_enough_disk_space "$log_output_dir"
@@ -234,7 +212,7 @@ test_upgrade() {
 
     if [[ "$SCANNER_V4_DB_UPGRADE_REQUIRED" == true ]]; then
         remove_existing_stackrox_resources
-        test_scanner_v4_db_upgrade_deferral "$log_output_dir"
+        test_scanner_v4_db_upgrade_fallback "$log_output_dir"
     fi
 }
 
@@ -371,19 +349,19 @@ $(wc -l </tmp/scanner-v4-db-rows-before | tr -d ' ') tables"
 
     touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}"
 
-    ########################################################################################
-    # Bounce scanner-v4-db a second time. This is the regression test for the              #
-    # .init-ready sentinel: were it not written before the swap, the init                  #
-    # container would see no sentinel on this restart and wipe the database it             #
-    # had just upgraded.                                                                   #
-    ########################################################################################
-    info "Bouncing scanner-v4-db"
-    kubectl -n stackrox delete po -l app=scanner-v4-db --grace-period=0
-    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
-    check_scanner_v4_db_upgraded /tmp/scanner-v4-db-rows-before
-    check_scanner_v4_no_warmup
+        ########################################################################################
+        # Bounce scanner-v4-db a second time. This is the regression test for the              #
+        # .init-ready sentinel: were it not written before the swap, the init                  #
+        # container would see no sentinel on this restart and wipe the database it             #
+        # had just upgraded.                                                                   #
+        ########################################################################################
+        info "Bouncing scanner-v4-db"
+        kubectl -n stackrox delete po -l app=scanner-v4-db --grace-period=0
+        kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+        check_scanner_v4_db_upgraded /tmp/scanner-v4-db-rows-before
+        check_scanner_v4_no_warmup
 
-    collect_and_check_stackrox_logs "$log_output_dir" "upgrade_03_final"
+        collect_and_check_stackrox_logs "$log_output_dir" "upgrade_03_final"
 }
 
 # Verify the upgrade will not proceed without having enough disk space
@@ -507,8 +485,8 @@ test_not_enough_disk_space() {
     collect_and_check_stackrox_logs "$log_output_dir" "disk_space_01_final"
 }
 
-# Verify scanner-v4-db defers the upgrade rather than aborting when pg_upgrade
-# cannot run, and completes it once the obstruction is removed.
+# Verify scanner-v4-db falls back to the previous major rather than aborting
+# when pg_upgrade cannot run, and upgrades once the obstruction is removed.
 #
 # This is deliberately not a port of test_not_enough_disk_space above.
 # central-db exits 1 and waits for an operator; scanner-v4-db must not, because
@@ -516,11 +494,11 @@ test_not_enough_disk_space() {
 # FailedPrecondition during a vulnerability store reload, which Central treats
 # as permanent. So the assertion is the opposite one: the pod comes up anyway,
 # on the previous major version, with the data intact.
-test_scanner_v4_db_upgrade_deferral() {
-    info "Testing scanner-v4-db upgrade deferral"
+test_scanner_v4_db_upgrade_fallback() {
+    info "Testing scanner-v4-db upgrade fallback"
 
     if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: test_scanner_v4_db_upgrade_deferral <log-output-dir>"
+        die "missing args. usage: test_scanner_v4_db_upgrade_fallback <log-output-dir>"
     fi
 
     local log_output_dir="$1"
@@ -561,9 +539,9 @@ test_scanner_v4_db_upgrade_deferral() {
     # docker-entrypoint.sh starts the binaries matching the data directory, so
     # a declined upgrade leaves a working server on the previous major.
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
-    scanner_v4_db_row_counts >/tmp/scanner-v4-db-rows-deferred
-    if ! diff -u /tmp/scanner-v4-db-rows-before /tmp/scanner-v4-db-rows-deferred; then
-        die "scanner-v4-db lost data while deferring the upgrade"
+    scanner_v4_db_row_counts >/tmp/scanner-v4-db-rows-fallback
+    if ! diff -u /tmp/scanner-v4-db-rows-before /tmp/scanner-v4-db-rows-fallback; then
+        die "scanner-v4-db lost data while falling back to the previous major"
     fi
     check_scanner_v4_no_warmup
 
@@ -575,7 +553,7 @@ test_scanner_v4_db_upgrade_deferral() {
     check_scanner_v4_db_upgraded /tmp/scanner-v4-db-rows-before
     check_scanner_v4_no_warmup
 
-    collect_and_check_stackrox_logs "$log_output_dir" "scanner_v4_db_deferral_final"
+    collect_and_check_stackrox_logs "$log_output_dir" "scanner_v4_db_fallback_final"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
