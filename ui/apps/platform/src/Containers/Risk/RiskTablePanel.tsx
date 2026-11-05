@@ -21,6 +21,7 @@ export const sortFields = [
     'Namespace',
     'Risk Priority Classification',
     'Deployment Risk Score',
+    'Proposed Deployment Risk Score',
     'Deployment Risk Priority',
 ];
 export const defaultSortOption = {
@@ -102,17 +103,23 @@ function RiskTablePanel({
                         </Th>
                         <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th sort={getSortParams('Namespace')}>Namespace</Th>
-                        <Th width={10} sort={getSortParams('Risk Priority Classification')}>
-                            Risk class
+                        <Th width={10} sort={getSortParams('Deployment Risk Priority')}>
+                            Priority
                         </Th>
                         <Th width={10} sort={getSortParams('Deployment Risk Score')}>
-                            Score
+                            Old score
+                        </Th>
+                        <Th width={10} sort={getSortParams('Proposed Deployment Risk Score')}>
+                            New score
+                        </Th>
+                        <Th width={10} sort={getSortParams('Risk Priority Classification')}>
+                            Risk class
                         </Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={6}
+                    colSpan={8}
                     emptyProps={{ message: 'No results found' }}
                     filteredEmptyProps={{ onClearFilters: () => onSearchFilterChange({}) }}
                     renderer={({ data }) =>
@@ -121,6 +128,11 @@ function RiskTablePanel({
 
                             const riskClass =
                                 deployment.riskPriorityClassification ?? 'RISK_PRIORITY_UNKNOWN';
+                            const priorityAsInt = parseInt(deployment.priority, 10);
+                            const priorityDisplay =
+                                Number.isNaN(priorityAsInt) || priorityAsInt < 1
+                                    ? 'N/A'
+                                    : priorityAsInt;
 
                             return (
                                 <Tbody key={deployment.id}>
@@ -135,12 +147,18 @@ function RiskTablePanel({
                                         </Td>
                                         <Td dataLabel="Cluster">{deployment.cluster}</Td>
                                         <Td dataLabel="Namespace">{deployment.namespace}</Td>
+                                        <Td dataLabel="Priority">{priorityDisplay}</Td>
+                                        <Td dataLabel="Old score">
+                                            {deployment.riskScore.toFixed(1)}
+                                        </Td>
+                                        <Td dataLabel="New score">
+                                            {deployment.proposedRiskScore.toFixed(1)}
+                                        </Td>
                                         <Td dataLabel="Risk class">
                                             <Label {...riskClassLabelProps[riskClass]}>
                                                 {riskClassLabels[riskClass]}
                                             </Label>
                                         </Td>
-                                        <Td dataLabel="Score">{deployment.riskScore.toFixed(1)}</Td>
                                     </Tr>
                                 </Tbody>
                             );

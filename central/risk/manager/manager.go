@@ -167,6 +167,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	}
 
 	deployment.RiskScore = risk.GetScore()
+	deployment.ProposedRiskScore = risk.GetProposedScore()
 	deployment.RiskPriorityClassification = risk.GetPriorityClassification()
 	deployment.RiskPrioritySortOrder = riskPkg.PriorityClassificationSortOrder(risk.GetPriorityClassification())
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {

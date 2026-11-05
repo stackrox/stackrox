@@ -10,9 +10,11 @@ option java_package = "io.stackrox.proto.storage";
 message Risk {
   string id = 1; // @gotags: sql:"pk"
   RiskSubject subject = 2;
+  // score is the legacy ACS risk score. proposed_score is the POC score used with priority_classification.
   float score = 3; // @gotags: search:"Risk Score,hidden"
   RiskPriorityClassification priority_classification = 5;
   RiskVulnerabilitySummary vulnerability_summary = 6;
+  float proposed_score = 7;
 
   message Result {
     message Factor {
@@ -21,7 +23,9 @@ message Risk {
     }
     string name = 1;
     repeated Factor factors = 2;
+    // score is the POC multiplier value; legacy_score is the pre-POC multiplier value.
     float score = 3;
+    float legacy_score = 4;
   }
   repeated Result results = 4;
 }

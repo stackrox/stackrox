@@ -6,6 +6,7 @@ import (
 
 type rankedObject struct {
 	score                  float32
+	proposedScore          float32
 	priorityClassification int32
 }
 
@@ -41,6 +42,14 @@ func (s *Ranker) GetPriorityClassificationForID(id string) int32 {
 	return s.idToRankedObject[id].priorityClassification
 }
 
+// GetProposedScoreForID returns the POC score for the given id.
+func (s *Ranker) GetProposedScoreForID(id string) float32 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.idToRankedObject[id].proposedScore
+}
+
 // GetRankForID returns the current ranking based on the id of the object added with the score.
 func (s *Ranker) GetRankForID(id string) int64 {
 	s.scoreSorterMutex.RLock()
@@ -73,6 +82,11 @@ func (s *Ranker) Add(id string, score float32) {
 
 // AddWithPriorityClassification upserts an id with score and a non-ranking priority classification.
 func (s *Ranker) AddWithPriorityClassification(id string, score float32, priorityClassification int32) {
+	s.AddWithPriorityClassificationAndProposedScore(id, score, 0, priorityClassification)
+}
+
+// AddWithPriorityClassificationAndProposedScore upserts an id with legacy score, POC score, and a non-ranking priority classification.
+func (s *Ranker) AddWithPriorityClassificationAndProposedScore(id string, score, proposedScore float32, priorityClassification int32) {
 	s.scoreSorterMutex.Lock()
 	defer s.scoreSorterMutex.Unlock()
 
@@ -82,6 +96,7 @@ func (s *Ranker) AddWithPriorityClassification(id string, score float32, priorit
 	s.sr.add(score)
 	s.idToRankedObject[id] = rankedObject{
 		score:                  score,
+		proposedScore:          proposedScore,
 		priorityClassification: priorityClassification,
 	}
 }

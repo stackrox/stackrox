@@ -4,10 +4,20 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestDeploymentSchemaHasRiskComparisonSortFields(t *testing.T) {
+	_, ok := pkgSchema.DeploymentsSchema.OptionsMap.Get(search.DeploymentRiskScore.String())
+	assert.True(t, ok)
+	_, ok = pkgSchema.DeploymentsSchema.OptionsMap.Get(search.ProposedDeploymentRiskScore.String())
+	assert.True(t, ok)
+	_, ok = pkgSchema.DeploymentsSchema.OptionsMap.Get(search.RiskPrioritySortOrder.String())
+	assert.True(t, ok)
+}
 
 func TestPrepareListDeploymentQueryExpandsRiskClassSort(t *testing.T) {
 	query := &v1.Query{
@@ -24,7 +34,7 @@ func TestPrepareListDeploymentQueryExpandsRiskClassSort(t *testing.T) {
 
 	assert.Equal(t, search.RiskPrioritySortOrder.String(), prepared.GetPagination().GetSortOptions()[0].GetField())
 	assert.False(t, prepared.GetPagination().GetSortOptions()[0].GetReversed())
-	assert.Equal(t, search.DeploymentRiskScore.String(), prepared.GetPagination().GetSortOptions()[1].GetField())
+	assert.Equal(t, search.ProposedDeploymentRiskScore.String(), prepared.GetPagination().GetSortOptions()[1].GetField())
 	assert.True(t, prepared.GetPagination().GetSortOptions()[1].GetReversed())
 
 	// The preparation must not mutate the caller-owned query.
@@ -47,6 +57,6 @@ func TestPrepareListDeploymentQueryExpandsReverseRiskClassSort(t *testing.T) {
 
 	assert.Equal(t, search.RiskPrioritySortOrder.String(), prepared.GetPagination().GetSortOptions()[0].GetField())
 	assert.True(t, prepared.GetPagination().GetSortOptions()[0].GetReversed())
-	assert.Equal(t, search.DeploymentRiskScore.String(), prepared.GetPagination().GetSortOptions()[1].GetField())
+	assert.Equal(t, search.ProposedDeploymentRiskScore.String(), prepared.GetPagination().GetSortOptions()[1].GetField())
 	assert.False(t, prepared.GetPagination().GetSortOptions()[1].GetReversed())
 }

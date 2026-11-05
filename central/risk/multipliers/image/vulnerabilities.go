@@ -45,7 +45,7 @@ func NewVulnerabilities() Multiplier {
 // Score takes an image and evaluates its risk based on vulnerabilities
 func (c *vulnerabilitiesMultiplier) Score(_ context.Context, image *storage.Image) *storage.Risk_Result {
 	imgComponents := image.GetScan().GetComponents()
-	min, max, score, num := processImageVulnerabilities(imgComponents)
+	min, max, score, legacyScore, num := processImageVulnerabilities(imgComponents)
 	if num == 0 {
 		return nil
 	}
@@ -58,14 +58,15 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, image *storage.Imag
 					image.GetName().GetFullName(), countDistinctCVEs(imgComponents), min.Severity, max.Severity),
 			},
 		},
-		Score: multipliers.NormalizeScore(score, vulnSaturation, vulnMaxScore),
+		Score:       multipliers.NormalizeScore(score, vulnSaturation, vulnMaxScore),
+		LegacyScore: multipliers.NormalizeScore(legacyScore, vulnSaturation, vulnMaxScore),
 	}
 }
 
 // ScoreV2 takes an image and evaluates its risk based on vulnerabilities
 func (c *vulnerabilitiesMultiplier) ScoreV2(_ context.Context, image *storage.ImageV2) *storage.Risk_Result {
 	imgComponents := image.GetScan().GetComponents()
-	min, max, score, num := processImageVulnerabilities(imgComponents)
+	min, max, score, legacyScore, num := processImageVulnerabilities(imgComponents)
 	if num == 0 {
 		return nil
 	}
@@ -78,18 +79,19 @@ func (c *vulnerabilitiesMultiplier) ScoreV2(_ context.Context, image *storage.Im
 					image.GetName().GetFullName(), countDistinctCVEs(imgComponents), min.Severity, max.Severity),
 			},
 		},
-		Score: multipliers.NormalizeScore(score, vulnSaturation, vulnMaxScore),
+		Score:       multipliers.NormalizeScore(score, vulnSaturation, vulnMaxScore),
+		LegacyScore: multipliers.NormalizeScore(legacyScore, vulnSaturation, vulnMaxScore),
 	}
 }
 
-func processImageVulnerabilities(imgComponents []*storage.EmbeddedImageScanComponent) (min, max vulns.ComponentScore, score float32, num int) {
+func processImageVulnerabilities(imgComponents []*storage.EmbeddedImageScanComponent) (min, max vulns.ComponentScore, score, legacyScore float32, num int) {
 	components := make([]scancomponent.ScanComponent, 0, len(imgComponents))
 	for _, imgComponent := range imgComponents {
 		components = append(components, scancomponent.NewFromImageComponent(imgComponent))
 	}
-	min, max, _, num = vulns.ProcessComponents(components)
+	min, max, legacyScore, num = vulns.ProcessComponents(components)
 	if num == 0 {
-		return vulns.ComponentScore{}, vulns.ComponentScore{}, 0, 0
+		return vulns.ComponentScore{}, vulns.ComponentScore{}, 0, 0, 0
 	}
 
 	var lowScore, moderateScore, importantScore, criticalScore float32
@@ -112,7 +114,7 @@ func processImageVulnerabilities(imgComponents []*storage.EmbeddedImageScanCompo
 		minFloat32(moderateScore, moderateVulnContributionCap) +
 		minFloat32(importantScore, importantVulnContributionCap) +
 		minFloat32(criticalScore, criticalVulnContributionCap)
-	return min, max, score, num
+	return min, max, score, legacyScore, num
 }
 
 func vulnerabilityContribution(vuln *storage.EmbeddedVulnerability, base float32) float32 {

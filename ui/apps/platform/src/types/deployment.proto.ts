@@ -16,6 +16,7 @@ export type ListDeployment = {
     priority: string; // int64
     riskPriorityClassification?: RiskPriorityClassification;
     riskScore: number; // float
+    proposedRiskScore: number; // float
 };
 
 export type Deployment = {
@@ -49,6 +50,7 @@ export type Deployment = {
     ports: PortConfig[];
     stateTimestamp: string; // int64
     riskScore: number; // float
+    proposedRiskScore: number; // float
     platformComponent: boolean;
 };
 

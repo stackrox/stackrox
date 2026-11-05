@@ -23,7 +23,8 @@ func TestIdentityBlastRadiusScore(t *testing.T) {
 		Factors: []*storage.Risk_Result_Factor{
 			{Message: "Service account \"secret-reader\" has cluster-admin permissions and its token is automounted"},
 		},
-		Score: 4,
+		Score:       4,
+		LegacyScore: 1,
 	}
 	protoassert.Equal(t, expectedScore, multiplier.Score(context.Background(), deployment, nil))
 }
