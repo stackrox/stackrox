@@ -468,8 +468,12 @@ func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID strin
 		return 0, nil
 	}
 
+	// Exclude already-STALE rows at the DB so the candidate scan does not read and deserialize
+	// results that would be skipped anyway.
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		AddStrings(search.ComplianceOperatorCheckDataFreshness,
+			search.NegateQueryString(search.ExactMatchString(storage.ComplianceOperatorCheckResultV2_STALE.String()))).
 		ProtoQuery()
 
 	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
@@ -479,14 +483,13 @@ func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID strin
 }
 
 // markStale performs a read-modify-upsert that flips to STALE every result matched by query for
-// which shouldStale reports true. Results already STALE, or for which shouldStale is false, are
-// left untouched.
+// which shouldStale reports true. Results for which shouldStale is false are left untouched.
 func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldStale func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
 	// Collect IDs during the read, upsert after it completes (upserting inside the callback would
 	// need a second connection, risking a deadlock)
 	var candidateIDs []string
 	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
-		if result.GetDataFreshness() != storage.ComplianceOperatorCheckResultV2_STALE && shouldStale(result) {
+		if shouldStale(result) {
 			candidateIDs = append(candidateIDs, result.GetId())
 		}
 		return nil
@@ -515,7 +518,7 @@ func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldSt
 			}
 			changed := results[:0]
 			for _, result := range results {
-				if result.GetDataFreshness() == storage.ComplianceOperatorCheckResultV2_STALE || !shouldStale(result) {
+				if !shouldStale(result) {
 					continue
 				}
 				result.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
