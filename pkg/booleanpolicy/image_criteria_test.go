@@ -918,6 +918,143 @@ func (suite *ImageCriteriaTestSuite) TestFilter_MissingBaseImageInfo() {
 		"without BaseImageInfo, filter is a no-op and image should produce violations")
 }
 
+func (suite *ImageCriteriaTestSuite) TestDockerfileLineBaseVsApp() {
+	suite.T().Setenv(features.ImageLayerFilter.EnvVar(), "true")
+
+	layers := []*storage.ImageLayer{
+		{Instruction: "ADD", Value: "base-rootfs"},
+		{Instruction: "COPY", Value: "base-pkgs"},
+		{Instruction: "USER", Value: "1001"},
+		{Instruction: "ADD", Value: "app-assets"},
+		{Instruction: "COPY", Value: "app-bin"},
+		{Instruction: "USER", Value: "1000"},
+	}
+	history := func(idx int32) *storage.BaseImageInfo {
+		return &storage.BaseImageInfo{
+			MaxLayerIndex: 1,
+			SetMaxHistoryIndex: &storage.BaseImageInfo_MaxHistoryIndex{
+				MaxHistoryIndex: idx,
+			},
+		}
+	}
+	contentOnly := &storage.BaseImageInfo{MaxLayerIndex: 1}
+	imageWithInfos := func(infos []*storage.BaseImageInfo) *storage.Image {
+		return &storage.Image{
+			Id:   "dockerfile-base-app",
+			Name: &storage.ImageName{FullName: "docker.io/example/app"},
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Layers: layers},
+			},
+			BaseImageInfo: infos,
+		}
+	}
+	line := func(instruction, value string) string {
+		return "Dockerfile line '" + instruction + " " + value + "' found"
+	}
+	allLines := []string{
+		line("ADD", "base-rootfs"),
+		line("COPY", "base-pkgs"),
+		line("USER", "1001"),
+		line("ADD", "app-assets"),
+		line("COPY", "app-bin"),
+		line("USER", "1000"),
+	}
+	appLines := []string{
+		line("ADD", "app-assets"),
+		line("COPY", "app-bin"),
+		line("USER", "1000"),
+	}
+	baseLines := []string{
+		line("ADD", "base-rootfs"),
+		line("COPY", "base-pkgs"),
+		line("USER", "1001"),
+	}
+
+	tests := map[string]struct {
+		skip     storage.SkipImageLayers
+		infos    []*storage.BaseImageInfo
+		expected []string
+	}{
+		"app policy skips base ADD, COPY, and USER": {
+			skip:     storage.SkipImageLayers_SKIP_BASE,
+			infos:    []*storage.BaseImageInfo{history(2)},
+			expected: appLines,
+		},
+		"base policy keeps base ADD, COPY, and USER": {
+			skip:     storage.SkipImageLayers_SKIP_APP,
+			infos:    []*storage.BaseImageInfo{history(2)},
+			expected: baseLines,
+		},
+		"several bases use the greatest history index": {
+			skip: storage.SkipImageLayers_SKIP_BASE,
+			infos: []*storage.BaseImageInfo{
+				history(2),
+				history(1),
+			},
+			expected: appLines,
+		},
+		"unset history does not cancel another base cut": {
+			skip: storage.SkipImageLayers_SKIP_BASE,
+			infos: []*storage.BaseImageInfo{
+				history(2),
+				contentOnly,
+			},
+			expected: appLines,
+		},
+		"unset history checks every ADD, COPY, and USER line": {
+			skip:     storage.SkipImageLayers_SKIP_BASE,
+			infos:    []*storage.BaseImageInfo{contentOnly},
+			expected: allLines,
+		},
+	}
+
+	commands := []struct {
+		name  string
+		value string
+	}{
+		{name: "ADD", value: "ADD=base-rootfs|app-assets"},
+		{name: "COPY", value: "COPY=base-pkgs|app-bin"},
+		{name: "USER", value: "USER=1001|1000"},
+	}
+
+	for name, tc := range tests {
+		suite.Run(name, func() {
+			for _, cmd := range commands {
+				suite.Run(cmd.name, func() {
+					policy := policyWithSingleKeyValue(fieldnames.DockerfileLine, cmd.value, false)
+					policy.EvaluationFilter = &storage.EvaluationFilter{SkipImageLayers: tc.skip}
+					var want []string
+					for _, msg := range tc.expected {
+						if strings.Contains(msg, "Dockerfile line '"+cmd.name+" ") {
+							want = append(want, msg)
+						}
+					}
+					suite.ElementsMatch(want, dockerfileViolations(suite.T(), imageWithInfos(tc.infos), policy))
+				})
+			}
+		})
+	}
+}
+
+func dockerfileViolations(t *testing.T, img *storage.Image, policy *storage.Policy) []string {
+	t.Helper()
+	filtered := img
+	for _, f := range filter.CompileEvaluationFilter(policy.GetEvaluationFilter()) {
+		_, imgs := f.Apply(nil, []*storage.Image{filtered})
+		require.Len(t, imgs, 1)
+		filtered = imgs[0]
+	}
+	matcher, err := BuildImageMatcher(policy)
+	require.NoError(t, err)
+	violations, err := matcher.MatchImage(nil, filtered)
+	require.NoError(t, err)
+	msgs := make([]string, 0, len(violations.AlertViolations))
+	for _, v := range violations.AlertViolations {
+		msgs = append(msgs, v.GetMessage())
+	}
+	return msgs
+}
+
 func excludeHighLayerComponents(t testing.TB) filter.EvaluationFilter {
 	return filter.NewTestFilter(t, func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
 		result := make([]*storage.Image, len(imgs))
