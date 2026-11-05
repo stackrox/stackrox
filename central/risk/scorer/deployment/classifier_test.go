@@ -57,6 +57,17 @@ func TestClassifyCuratedRiskWorkloads(t *testing.T) {
 			expectedReason: "posture-only score boosters should not become urgent risk",
 		},
 		{
+			name:       "internal-important-vulnerability-backlog",
+			deployment: deploymentWithExposures("internal-important-vulnerability-backlog", storage.PortConfig_INTERNAL),
+			imageRisk: imageRiskWithSummaryAndResults(
+				"internal-important-vulnerability-backlog-image",
+				&storage.RiskVulnerabilitySummary{ImportantCount: 12, ModerateCount: 200, LowCount: 100, MaxSeverity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY},
+				fixedRiskResult(imageMultiplier.VulnerabilitiesHeading, 4.0),
+			),
+			expected:       storage.RiskPriorityClassification_RISK_PRIORITY_IMPROVE_POSTURE,
+			expectedReason: "internal important/moderate/low vulnerability volume is posture backlog without exposure, KEV, high EPSS, critical severity, privilege, or elevated identity",
+		},
+		{
 			name:       "public-critical-rce-with-credential",
 			deployment: deploymentWithSecretForClassification(deploymentWithExposures("public-critical-rce-with-credential", storage.PortConfig_EXTERNAL), "prod-cloud-credentials"),
 			imageRisk: imageRiskWithSummaryAndResults(
