@@ -134,6 +134,40 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStale() {
 	s.Require().Zero(updated)
 }
 
+// TestMarkScanChecksStaleSubSecondBoundary guards the second-granularity trap in the DB pre-filter.
+// MarkScanChecksStale pushes an upper bound on LastStartedTime to the DB, but the search DSL formats
+// timestamps with second precision. A row whose LastStartedTime is in the same whole second as the
+// pivot, but strictly before it, must still be marked STALE. It would be dropped if the pushed bound
+// were the pivot floored to its second, so the bound is rounded up and the Go re-check decides. A row
+// in that same second but strictly after the pivot must be left untouched, proving the Go re-check
+// still trims the rows the widened bound over-selects.
+func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStaleSubSecondBoundary() {
+	// Fixed instant with a sub-second component so flooring to the second is observable.
+	base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	pivot := base.Add(700 * time.Millisecond)       // 12:00:00.700
+	beforePivot := base.Add(300 * time.Millisecond) // 12:00:00.300, same second, before pivot
+	afterPivot := base.Add(900 * time.Millisecond)  // 12:00:00.900, same second, after pivot
+
+	// Both rows share one scan ref. The seed goes through the store directly so its freshness is not
+	// re-derived; both start CURRENT, so the STALE-exclusion filter keeps them as candidates.
+	beforeRec := getTestRecForScan("sc-subsecond", testconsts.Cluster1, "scan-subsecond")
+	beforeRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&beforePivot)
+	beforeRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+	afterRec := getTestRecForScan("sc-subsecond", testconsts.Cluster1, "scan-subsecond")
+	afterRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&afterPivot)
+	afterRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+	s.Require().Equal(beforeRec.GetScanRefId(), afterRec.GetScanRefId())
+
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, beforeRec))
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, afterRec))
+
+	updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, beforeRec.GetScanRefId(), pivot)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(1), updated)
+	s.assertFreshness(beforeRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+	s.assertFreshness(afterRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+}
+
 // TestMarkStalePriorDoesNotRevertConcurrentUpsert is a regression test for the lost-update race:
 // the timeout hook's read-modify-upsert of the serialized proto must not overwrite a newer result
 // written concurrently by the ingest path, and vice versa. The key fence serializes the two

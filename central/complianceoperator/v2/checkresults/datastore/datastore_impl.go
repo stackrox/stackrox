@@ -468,12 +468,19 @@ func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID strin
 		return 0, nil
 	}
 
-	// Exclude already-STALE rows at the DB so the candidate scan does not read and deserialize
-	// results that would be skipped anyway.
+	// Narrow the candidate scan at the DB so it does not read and deserialize results that shouldStale would reject
+	// anyway: skip rows that are already STALE, and rows whose LastStartedTime is not older than olderThan.
+	//
+	// The search DSL formats timestamps with second granularity (see sqlTimeStampFormat), so pushing olderThan down
+	// verbatim could drop a row whose sub-second LastStartedTime is still before olderThan (under-selection). We round
+	// the upper bound up to the next whole second to guarantee the DB returns a superset, then shouldStale re-checks
+	// every candidate in Go with full precision.
+	upperBound := olderThan.Truncate(time.Second).Add(time.Second)
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
 		AddStrings(search.ComplianceOperatorCheckDataFreshness,
 			search.NegateQueryString(search.ExactMatchString(storage.ComplianceOperatorCheckResultV2_STALE.String()))).
+		AddTimeRangeField(search.ComplianceOperatorCheckLastStartedTime, time.Unix(0, 0), upperBound).
 		ProtoQuery()
 
 	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
