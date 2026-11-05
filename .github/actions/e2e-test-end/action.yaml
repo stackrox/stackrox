@@ -34,18 +34,22 @@ runs:
   steps:
     - name: Apply defaults and set shared environment
       shell: bash
+      env:
+        CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method || 'direct-gke' }}
+        CLUSTER_NAME: ${{ inputs.cluster-name }}
+        ARTIFACT_DIR: ${{ inputs.artifact-dir }}
       run: |
-        cat >> "$GITHUB_ENV" <<EOF
-        CLUSTER_PROVISIONING_METHOD=${{ inputs.cluster-provisioning-method || 'direct-gke' }}
-        CLUSTER_NAME=${{ inputs.cluster-name }}
-        ARTIFACT_DIR=${{ inputs.artifact-dir }}
-        EOF
+        {
+          echo "CLUSTER_PROVISIONING_METHOD=$CLUSTER_PROVISIONING_METHOD"
+          echo "CLUSTER_NAME=$CLUSTER_NAME"
+          echo "ARTIFACT_DIR=$ARTIFACT_DIR"
+        } | tee -a "$GITHUB_ENV"
 
         debug_run="false"
         if [[ "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
           debug_run="true"
         fi
-        echo "DEBUG_RUN=${debug_run}" >> "$GITHUB_ENV"
+        echo "DEBUG_RUN=${debug_run}" | tee -a "$GITHUB_ENV"
 
     - name: Validate inputs
       shell: bash

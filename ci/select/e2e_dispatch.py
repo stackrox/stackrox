@@ -67,8 +67,6 @@ def main():
         Job(name='e2e-gke-upgrade-tests'),
         Job(name='e2e-nongroovy-tests-gke'),
         Job(name='e2e-nongroovy-tests-gke-konflux', require_konflux_build=True),
-        Job(name='e2e-operator-tests-gke'),
-        Job(name='e2e-operator-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-qa-tests-gke', require_pr_label=True),
         Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
