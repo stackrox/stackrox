@@ -112,7 +112,6 @@ roxie_config="$(mktemp)"
 cat > "$roxie_config" <<EOF
 roxie:
   version: "${MAIN_IMAGE_TAG}"
-  konfluxImages: true
 central:
   namespace: ${ACS_NS}
   spec:

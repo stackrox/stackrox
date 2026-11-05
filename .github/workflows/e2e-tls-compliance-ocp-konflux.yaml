@@ -28,7 +28,6 @@ env:
   USE_LOCAL_ROXCTL: "true"
   ORCHESTRATOR_FLAVOR: openshift
   KUBERNETES_PROVIDER: ocp
-  USE_KONFLUX_IMAGES: "true"
   CLUSTER_NAME_PREFIX: "e2e-tls-compl"
   CLUSTER_NAME_PREFIX_MAX: "20"
   # Pinned tls-scanner ref. Bump deliberately.
