@@ -10,7 +10,7 @@ setup() {
 }
 
 @test "new rollback diagnostic is recognized" {
-    downgrade_rejection_observed "$POD" 'Central rollback blocked: database ACS "5.1" requires sequence 220, but ACS 4.9.0 only supports sequence 213. Use a compatible Central version.' "$IMAGE" 213 220
+    downgrade_rejection_observed "$POD" 'Central rollback blocked: database ACS "5.1" requires sequence 220, but ACS 4.9.0 only supports sequence 213. Use a compatible Central version.' "$IMAGE"
 }
 
 @test "polling is bounded and retains evidence without real sleeps" {
@@ -22,7 +22,7 @@ setup() {
         esac
     }
     sleep() { echo tick >>"$BATS_TEST_TMPDIR/ticks"; }
-    run wait_for_downgrade_rejection 4.9.0 213 220 "$BATS_TEST_TMPDIR/evidence" 2
+    run wait_for_downgrade_rejection 4.9.0 "$BATS_TEST_TMPDIR/evidence" 2
     [ "$status" -ne 0 ]
     [ "$(wc -l <"$BATS_TEST_TMPDIR/ticks")" -eq 2 ]
     [ -s "$BATS_TEST_TMPDIR/evidence/pods.json" ]
@@ -33,7 +33,7 @@ setup() {
     export REGISTRY=registry
     kubectl() { echo "${POD//False/True}"; }
     sleep() { echo tick >>"$BATS_TEST_TMPDIR/ticks"; }
-    run wait_for_downgrade_rejection 4.9.0 213 220 "$BATS_TEST_TMPDIR/evidence"
+    run wait_for_downgrade_rejection 4.9.0 "$BATS_TEST_TMPDIR/evidence"
     [ "$status" -ne 0 ]
     [[ "$output" == *'unexpectedly became ready'* ]]
     [ ! -f "$BATS_TEST_TMPDIR/ticks" ]
@@ -43,12 +43,11 @@ setup() {
     stop_downgrade_central() { echo stop >>"$BATS_TEST_TMPDIR/calls"; }
     set_downgrade_version() { echo "$1" >>"$BATS_TEST_TMPDIR/calls"; }
     wait_for_downgrade_rejection() {
-        [ "$1" = 4.9.0 ] && [ "$2" = 213 ] && [ "$3" = 220 ] &&
-            [ "$4" = "$BATS_TEST_TMPDIR/evidence" ] || return 1
+        [ "$1" = 4.9.0 ] && [ "$2" = "$BATS_TEST_TMPDIR/evidence" ] || return 1
         echo reject >>"$BATS_TEST_TMPDIR/calls"
     }
     downgrade_version_snapshot() { echo '[{"minseqnum":220,"version":"5.1"}]'; }
-    test_rejected_downgrade 4.9.0 213 220 "$BATS_TEST_TMPDIR/evidence"
+    test_rejected_downgrade 4.9.0 "$BATS_TEST_TMPDIR/evidence"
     [ "$(cat "$BATS_TEST_TMPDIR/calls")" = $'stop\n4.9.0\nreject\nstop' ]
     cmp "$BATS_TEST_TMPDIR/evidence/version-before.json" "$BATS_TEST_TMPDIR/evidence/version-after.json"
 
@@ -60,7 +59,7 @@ setup() {
             echo '[{"minseqnum":220,"version":"5.1"}]'
         fi
     }
-    run test_rejected_downgrade 4.9.0 213 220 "$BATS_TEST_TMPDIR/evidence"
+    run test_rejected_downgrade 4.9.0 "$BATS_TEST_TMPDIR/evidence"
     [ "$status" -ne 0 ]
     [[ "$output" == *'changed the database version record'* ]]
 }
@@ -69,7 +68,7 @@ setup() {
     stop_downgrade_central() { :; }
     downgrade_version_snapshot() { return 1; }
     set_downgrade_version() { touch "$BATS_TEST_TMPDIR/started"; }
-    run test_rejected_downgrade 4.9.0 213 220 "$BATS_TEST_TMPDIR/evidence"
+    run test_rejected_downgrade 4.9.0 "$BATS_TEST_TMPDIR/evidence"
     [ "$status" -ne 0 ]
     [ ! -f "$BATS_TEST_TMPDIR/started" ]
 }
@@ -169,33 +168,31 @@ setup() {
 }
 
 @test "rejection requires the expected image, nonzero exit and compatibility error" {
-    downgrade_rejection_observed "$POD" "$LOG" "$IMAGE" 213 220
+    downgrade_rejection_observed "$POD" "$LOG" "$IMAGE"
 }
 
-@test "unrelated crash, missing logs and wrong sequences are not rejection" {
-    ! downgrade_rejection_observed "$POD" 'connection refused' "$IMAGE" 213 220
-    ! downgrade_rejection_observed "$POD" '' "$IMAGE" 213 220
-    ! downgrade_rejection_observed "$POD" "$LOG" "$IMAGE" 214 220
-    ! downgrade_rejection_observed "$POD" "$LOG" "$IMAGE" 213 221
+@test "unrelated crash and missing logs are not rejection" {
+    ! downgrade_rejection_observed "$POD" 'connection refused' "$IMAGE"
+    ! downgrade_rejection_observed "$POD" '' "$IMAGE"
 }
 
 @test "ready, wrong image, successful exit and absent pods are not rejection" {
-    ! downgrade_rejection_observed "${POD//False/True}" "$LOG" "$IMAGE" 213 220
-    ! downgrade_rejection_observed "$POD" "$LOG" other-image 213 220
-    ! downgrade_rejection_observed "${POD//exitCode\":1/exitCode\":0}" "$LOG" "$IMAGE" 213 220
-    ! downgrade_rejection_observed '{"items":[]}' "$LOG" "$IMAGE" 213 220
+    ! downgrade_rejection_observed "${POD//False/True}" "$LOG" "$IMAGE"
+    ! downgrade_rejection_observed "$POD" "$LOG" other-image
+    ! downgrade_rejection_observed "${POD//exitCode\":1/exitCode\":0}" "$LOG" "$IMAGE"
+    ! downgrade_rejection_observed '{"items":[]}' "$LOG" "$IMAGE"
 }
 
 @test "current termination is accepted without requiring a restart" {
-    downgrade_rejection_observed "$(jq '.items[0].status.containerStatuses[0].state = .items[0].status.containerStatuses[0].lastState | del(.items[0].status.containerStatuses[0].lastState)' <<<"$POD")" "$LOG" "$IMAGE" 213 220
+    downgrade_rejection_observed "$(jq '.items[0].status.containerStatuses[0].state = .items[0].status.containerStatuses[0].lastState | del(.items[0].status.containerStatuses[0].lastState)' <<<"$POD")" "$LOG" "$IMAGE"
 }
 
-@test "version snapshot must contain exactly one record and the expected floor" {
-    downgrade_check_snapshot '[{"version":"5.1","minseqnum":220}]' 220
-    ! downgrade_check_snapshot '[]' 220
-    ! downgrade_check_snapshot '[{"minseqnum":220},{"minseqnum":220}]' 220
-    ! downgrade_check_snapshot '[{"minseqnum":213}]' 220
-    ! downgrade_check_snapshot 'invalid' 220
+@test "version snapshot must contain exactly one version record" {
+    downgrade_check_snapshot '[{"version":"5.1","minseqnum":220}]'
+    ! downgrade_check_snapshot '[]'
+    ! downgrade_check_snapshot '[{"minseqnum":220},{"minseqnum":220}]'
+    ! downgrade_check_snapshot '[{"minseqnum":213}]'
+    ! downgrade_check_snapshot 'invalid'
 }
 
 setup_snapshot_commands() {
@@ -236,4 +233,15 @@ EOF
             *) return 1 ;;
         esac
     }
+}
+
+@test "version based rejection is recognized" {
+    downgrade_rejection_observed "$POD" 'Central rollback blocked: cannot downgrade database from ACS 5.5 to ACS 5.1; maximum supported database source for this destination is ACS 5.4.' "$IMAGE"
+}
+
+@test "fixture stream must match before deployment" {
+    check_downgrade_target 5.1.x-12-gabcdef 5.1
+    check_downgrade_target 5.1.0-rc.1 5.1
+    ! check_downgrade_target 5.2.0 5.1
+    ! check_downgrade_target invalid 5.1
 }

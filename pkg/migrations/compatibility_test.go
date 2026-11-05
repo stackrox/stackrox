@@ -158,3 +158,26 @@ func setMainVersion(t *testing.T, target string) {
 	t.Cleanup(func() { versiontest.SetMainVersion(t, old) })
 	versiontest.SetMainVersion(t, target)
 }
+
+func TestRollbackReleaseWindow(t *testing.T) {
+	for name, tc := range map[string]struct {
+		source, target string
+		blocked        bool
+	}{
+		"boundary":        {"5.4.0", "5.1.0", false},
+		"outside":         {"5.5.0", "5.1.0", true},
+		"future boundary": {"5.9.0", "5.6.0", false},
+		"future outside":  {"5.9.0", "5.5.0", true},
+		"major boundary":  {"5.1.0", "4.10.0", false},
+		"suffix":          {"5.5.x-12-gabcdef", "5.1.1", true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := CheckRollbackCompatibility(MigrationVersion{MainVersion: tc.source, SeqNum: 227, MinimumSeqNum: 227}, tc.target, 227)
+			if tc.blocked {
+				require.ErrorContains(t, err, "Central rollback blocked: cannot downgrade")
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
