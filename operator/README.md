@@ -335,8 +335,9 @@ Older charts can render duplicate `RELATED_IMAGE_*` entries when using
 the duplicate. Recreate only the operator Deployment once when upgrading:
 
 - **Helm:** delete the operator Deployment, then run your usual
-  `helm upgrade --install` with the updated chart and your values file. Avoid
-  `--reuse-values`, which can retain the old chart's duplicate defaults.
+  `helm upgrade --install` with the updated chart and a complete values file,
+  including unrelated custom settings. Avoid `--reuse-values`, which can retain
+  the old chart's `manager.env` defaults and reintroduce duplicates.
 - **Argo CD:** sync the updated chart, delete the operator Deployment, then sync
   again to recreate it from the updated manifest.
 
