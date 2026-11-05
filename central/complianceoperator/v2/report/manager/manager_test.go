@@ -437,7 +437,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 	}
 }
 
-func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
+func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnError() {
 	m.T().Setenv(features.ComplianceSurfaceStaleData.EnvVar(), "true")
 	now := protocompat.TimestampNow()
 	scan := &storage.ComplianceOperatorScanV2{
@@ -452,13 +452,19 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 		err             error
 		expectMarkStale bool
 	}{
+		// Any error means the run did not refresh every result, so the prior ones it did not
+		// refresh are stale -- regardless of which error ended the run.
 		"timeout marks the scan's prior results stale": {
 			err:             watcher.ErrScanTimeout,
 			expectMarkStale: true,
 		},
-		"context cancelled does not mark stale": {
+		"context cancelled marks the scan's prior results stale": {
 			err:             watcher.ErrScanContextCancelled,
-			expectMarkStale: false,
+			expectMarkStale: true,
+		},
+		"any other error marks the scan's prior results stale": {
+			err:             errors.New("boom"),
+			expectMarkStale: true,
 		},
 		"success does not mark stale": {
 			err:             nil,
