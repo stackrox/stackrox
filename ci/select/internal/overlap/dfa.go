@@ -66,20 +66,26 @@ func stateKey(set []int) string {
 // determinize runs subset construction of n over the partition. Every
 // discovered state gets a complete transition row before it is processed.
 func determinize(n *nfa, blocks []block) *dfa {
-	start := epsClosure(n, []int{n.start})
+	seen := make([]bool, len(n.states))
+	scratch := make([]int, 0, len(n.states))
+	start := slices.Clone(epsClosure(n, append(scratch, n.start), seen))
 	ids := map[string]int{stateKey(start): 0}
 	d := &dfa{accepting: []bool{containsInt(start, n.accept)}, transitions: [][]int{nil}}
-	queue := [][]int{start}
+	type queued struct {
+		id     int
+		states []int
+	}
+	queue := []queued{{id: 0, states: start}}
 	for len(queue) > 0 {
-		set := queue[0]
+		current := queue[0]
 		queue = queue[1:]
-		id := ids[stateKey(set)]
+		id, set := current.id, current.states
 		if d.transitions[id] != nil {
 			continue
 		}
 		row := make([]int, len(blocks))
 		for bi, blk := range blocks {
-			var next []int
+			next := scratch[:0]
 			for _, s := range set {
 				for _, e := range n.states[s].rangeTransitions {
 					if e.low <= blk.hi && blk.lo <= e.high && !containsInt(next, e.nextState) {
@@ -91,7 +97,7 @@ func determinize(n *nfa, blocks []block) *dfa {
 				row[bi] = -1
 				continue
 			}
-			next = epsClosure(n, next)
+			next = epsClosure(n, next, seen)
 			k := stateKey(next)
 			nid, ok := ids[k]
 			if !ok {
@@ -99,7 +105,7 @@ func determinize(n *nfa, blocks []block) *dfa {
 				ids[k] = nid
 				d.accepting = append(d.accepting, containsInt(next, n.accept))
 				d.transitions = append(d.transitions, nil)
-				queue = append(queue, next)
+				queue = append(queue, queued{id: nid, states: slices.Clone(next)})
 			}
 			row[bi] = nid
 		}
