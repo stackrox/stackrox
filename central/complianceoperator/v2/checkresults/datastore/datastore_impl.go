@@ -54,39 +54,40 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 	// one time on insert and not everytime we pull the results.
 
 	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
-		if features.ComplianceSurfaceStaleData.Enabled() {
-			existing, found, err := d.store.Get(ctx, result.GetId())
-			if err != nil {
-				return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
-			}
-			reconcileReceivedResult(result, existing, found)
+		if !features.ComplianceSurfaceStaleData.Enabled() {
+			return d.store.Upsert(ctx, result)
 		}
+
+		existing, _, err := d.store.Get(ctx, result.GetId())
+		if err != nil {
+			return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
+		}
+
+		// If this is the first time we've seen a check result, it's CURRENT as long as its timestamp is set
+		if existing == nil {
+			if result.GetLastStartedTime() != nil {
+				result.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+			}
+			return d.store.Upsert(ctx, result)
+		}
+
+		// Ignore if we have already stored a newer version of the incoming result (out-of-order delivery)
+		isOlder := existing.GetLastStartedTime().AsTime().After(result.GetLastStartedTime().AsTime())
+		if isOlder {
+			return nil
+		}
+
+		// Set freshness to either CURRENT if the received result is newer than the stored one,
+		// otherwise keep the previous value.
+		isNewer := existing.GetLastStartedTime().AsTime().Before(result.GetLastStartedTime().AsTime())
+		if isNewer {
+			result.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		} else {
+			result.DataFreshness = existing.GetDataFreshness()
+		}
+
 		return d.store.Upsert(ctx, result)
 	})
-}
-
-// reconcileReceivedResult sets incoming's DataFreshness to CURRENT only when it is newer than the
-// stored row, otherwise preserves the stored freshness. incoming is mutated.
-func reconcileReceivedResult(incoming, existing *storage.ComplianceOperatorCheckResultV2, found bool) {
-	started := incoming.GetLastStartedTime()
-	if !found {
-		if started == nil {
-			incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_UNKNOWN
-		} else {
-			incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-		}
-		return
-	}
-
-	// LastStartedTime comes from the operator's last-scanned annotation, so it advances only on a
-	// real rerun. A strictly newer timestamp is the only genuine refresh.
-	existingStarted := existing.GetLastStartedTime()
-	if started != nil && (existingStarted == nil || started.AsTime().After(existingStarted.AsTime())) {
-		incoming.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-		return
-	}
-
-	incoming.DataFreshness = existing.GetDataFreshness()
 }
 
 // DeleteResult removes a result from the database
