@@ -96,7 +96,6 @@ test_upgrade_paths() {
 
     restore_backup
     wait_for_api
-    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name remote
 
     # Run with some scale to have data populated to migrate
     deploy_scaled_workload
@@ -225,6 +224,8 @@ test_upgrade_paths() {
     # Remove scaled Sensor from Central
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name scale-remote
 
+    # Remove the 268c98c6-e983-4f4e-95d2-9793cebddfd7 cluster restored from the backup, and create it anew.
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" cluster delete --name remote
     info "Installing sensor"
     roxie deploy secured-cluster --verbose \
         --single-namespace \
