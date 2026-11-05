@@ -125,10 +125,7 @@ func (w *scanConfigWatcherImpl) GetScans() []*storage.ComplianceOperatorReportSn
 	concurrency.WithLock(&w.resultsLock, func() {
 		// We return the current scans to be appended to the snapshot
 		for _, scanResult := range w.scanConfigResults.ScanResults {
-			scans = append(scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
-				ScanRefId:       scanResult.Scan.GetScanRefId(),
-				LastStartedTime: scanResult.Scan.GetLastStartedTime(),
-			})
+			scans = append(scans, scanResult.Scope.toSnapshotScan())
 		}
 	})
 	return scans
@@ -234,11 +231,10 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 	log.Debugf("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
 	scanResultKey := fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())
 	if found := w.scansToWait.Remove(scanResultKey); !found {
-		newScanResult := result.Scan
 		var timestampCmpResult int
 		concurrency.WithLock(&w.resultsLock, func() {
 			if prevScanResult, ok := w.scanConfigResults.ScanResults[scanResultKey]; ok {
-				timestampCmpResult = protocompat.CompareTimestamps(prevScanResult.Scan.GetLastStartedTime(), newScanResult.GetLastStartedTime())
+				timestampCmpResult = protocompat.CompareTimestamps(prevScanResult.Scope.LastStartedTime, result.Scope.LastStartedTime)
 			}
 		})
 		if timestampCmpResult > 0 {
@@ -265,7 +261,7 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 		w.scanConfigResults.ScanResults[scanResultKey] = result
 	})
 
-	return w.appendScanToSnapshots(w.ctx, result.Scan)
+	return w.appendScanToSnapshots(w.ctx, result.Scope)
 }
 
 func (w *scanConfigWatcherImpl) removeStaleResult(clusterID, scanName, currentKey string) {
@@ -280,16 +276,13 @@ func (w *scanConfigWatcherImpl) removeStaleResult(clusterID, scanName, currentKe
 	})
 }
 
-func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error {
+func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scope ScanScope) error {
 	errList := errorhelpers.NewErrorList("update snapshots' scans")
 	concurrency.WithLock(&w.resultsLock, func() {
 		for _, snapshot := range w.scanConfigResults.ReportSnapshot {
 			// The new Scan is appended to the Snapshot. This allows us later to make sure
 			// we do not generate duplicate Report Snapshots if we received an update in the Scan
-			snapshot.Scans = append(snapshot.Scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
-				ScanRefId:       scan.GetScanRefId(),
-				LastStartedTime: scan.GetLastStartedTime(),
-			})
+			snapshot.Scans = append(snapshot.Scans, scope.toSnapshotScan())
 			if err := w.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
 				errList.AddError(err)
 			}

@@ -12,6 +12,7 @@ import (
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -384,4 +385,53 @@ func TestScanConfigWatcherGetScans(t *testing.T) {
 
 	scans = scanConfigWatcher.GetScans()
 	require.Len(t, scans, 2)
+}
+
+// TestScanConfigWatcherGetScansUsesScope verifies that the scan ref and start time on the snapshot
+// scans come from the result's Scope, not its Scan. It covers the result-first timeout case where
+// Scan is nil but the watcher recorded the scope from check results. Before the single-source
+// change GetScans read these from Scan, so a nil-Scan result produced an empty scope.
+func TestScanConfigWatcherGetScansUsesScope(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
+	profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorProfileV2, error) {
+			return []*storage.ComplianceOperatorProfileV2{{Id: "profile-0"}}, nil
+		})
+	scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
+			return []*storage.ComplianceOperatorScanV2{{Id: "scan-0", ScanName: "scan-0"}}, nil
+		})
+
+	watcherID := "sc-id"
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{Id: watcherID}
+	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+
+	startTime := protocompat.TimestampNow()
+	// Scan is nil (result-first timeout); the run scope is known only from Scope.
+	err := scanConfigWatcher.PushScanResults(&ScanWatcherResults{
+		Scope: ScanScope{
+			ScanRefID:       "ref-from-scope",
+			LastStartedTime: startTime,
+		},
+	})
+	require.NoError(t, err)
+
+	require.Eventually(t, func() bool {
+		return len(scanConfigWatcher.GetScans()) == 1
+	}, 200*time.Millisecond, 10*time.Millisecond)
+
+	scans := scanConfigWatcher.GetScans()
+	require.Len(t, scans, 1)
+	assert.Equal(t, "ref-from-scope", scans[0].GetScanRefId())
+	assert.Equal(t, startTime, scans[0].GetLastStartedTime())
 }
