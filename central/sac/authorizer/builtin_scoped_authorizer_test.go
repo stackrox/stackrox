@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	rolePkg "github.com/stackrox/rox/central/role"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -14,6 +15,15 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 )
+
+func newGlobalScopeCheckerCore(clusters []effectiveaccessscope.Cluster, namespaces []effectiveaccessscope.Namespace,
+	roles []permissions.ResolvedRole, trace *observe.AuthzTrace,
+) sac.ScopeCheckerCore {
+	trace.RecordKnownClustersAndNamespaces(clusters, namespaces)
+	return newScopeChecker(roles, trace, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
+		return effectiveaccessscope.ComputeEffectiveAccessScope(rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+	})
+}
 
 const (
 	firstClusterID    = "cluster-1"

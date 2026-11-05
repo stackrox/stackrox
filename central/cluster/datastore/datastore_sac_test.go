@@ -338,26 +338,6 @@ func (s *clusterDatastoreSACSuite) TestGetClusters() {
 	}
 }
 
-func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
-	cluster1 := fixtures.GetCluster(testconsts.Cluster1)
-	clusterID1, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster1)
-	defer s.deleteCluster(clusterID1)
-	s.Require().NoError(err)
-	cluster1.Id = clusterID1
-	cluster2 := fixtures.GetCluster(testconsts.Cluster2)
-	clusterID2, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster2)
-	defer s.deleteCluster(clusterID2)
-	s.Require().NoError(err)
-
-	clusters, err := s.datastore.GetClustersForSAC(context.Background())
-	s.NoError(err)
-	clusterNames := make([]string, 0, len(clusters))
-	for _, cluster := range clusters {
-		clusterNames = append(clusterNames, cluster.GetName())
-	}
-	s.ElementsMatch([]string{testconsts.Cluster1, testconsts.Cluster2}, clusterNames)
-}
-
 func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 	// The cluster ID is generated at cluster insertion.
 	// In order to have a context having the cluster in or out of scope, the context has to be generated
