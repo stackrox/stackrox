@@ -107,7 +107,7 @@ function ExternalEntitiesSideBar({
                     </FlexItem>
                     <FlexItem>
                         <EntityTitleText text={entityNode?.label} id={labelledById} />
-                        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-color-200">
+                        <Content component="p" className="pf-v6-u-font-size-sm">
                             Connected entities outside your cluster
                         </Content>
                     </FlexItem>
