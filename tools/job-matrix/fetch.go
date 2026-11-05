@@ -14,10 +14,9 @@ func githubCloneURL(repo string) string {
 }
 
 // cloneSparse shallow-clones url at branch into a new temporary directory,
-// narrowed via cone-mode sparse-checkout to sparsePath, and returns the
-// path to sparsePath inside the clone plus a cleanup func that removes the
-// temporary directory.
-func cloneSparse(url, branch, sparsePath string) (dir string, cleanup func(), err error) {
+// narrowed via cone-mode sparse-checkout to sparsePaths, and returns the
+// clone's root directory plus a cleanup func that removes it.
+func cloneSparse(url, branch string, sparsePaths ...string) (repoDir string, cleanup func(), err error) {
 	tmpDir, err := os.MkdirTemp("", "job-matrix-")
 	if err != nil {
 		return "", nil, fmt.Errorf("creating temp dir: %w", err)
@@ -25,20 +24,19 @@ func cloneSparse(url, branch, sparsePath string) (dir string, cleanup func(), er
 	cleanup = func() { _ = os.RemoveAll(tmpDir) }
 
 	clone := exec.Command("git", "clone", "--quiet", "--depth=1", "--branch", branch, "--filter=blob:none", "--sparse", url, tmpDir)
-	clone.Stderr = os.Stderr
-	if err := clone.Run(); err != nil {
+	if output, err := clone.CombinedOutput(); err != nil {
 		cleanup()
-		return "", nil, fmt.Errorf("cloning %s (branch %s): %w", url, branch, err)
+		return "", nil, fmt.Errorf("cloning %s (branch %s): %w: %s", url, branch, err, output)
 	}
 
-	sparse := exec.Command("git", "-C", tmpDir, "sparse-checkout", "set", sparsePath)
-	sparse.Stderr = os.Stderr
-	if err := sparse.Run(); err != nil {
+	args := append([]string{"-C", tmpDir, "sparse-checkout", "set"}, sparsePaths...)
+	sparse := exec.Command("git", args...)
+	if output, err := sparse.CombinedOutput(); err != nil {
 		cleanup()
-		return "", nil, fmt.Errorf("setting sparse-checkout to %s: %w", sparsePath, err)
+		return "", nil, fmt.Errorf("setting sparse-checkout to %v: %w: %s", sparsePaths, err, output)
 	}
 
-	return filepath.Join(tmpDir, sparsePath), cleanup, nil
+	return tmpDir, cleanup, nil
 }
 
 // fetchWorkflowsDir fetches the .github directory of repo ("owner/name") at
@@ -48,5 +46,5 @@ func fetchWorkflowsDir(repo, branch string) (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	return filepath.Join(dir, "workflows"), cleanup, nil
+	return filepath.Join(dir, ".github", "workflows"), cleanup, nil
 }

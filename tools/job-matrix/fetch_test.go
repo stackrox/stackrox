@@ -31,6 +31,8 @@ func repository(t *testing.T) string {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".github", "workflows", "foo.yaml"), []byte("name: foo\n"), 0o644))
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, "other"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "other", "bar.txt"), []byte("bar\n"), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "unrelated"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "unrelated", "baz.txt"), []byte("baz\n"), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "README.md"), []byte("readme\n"), 0o644))
 
 	git("add", ".")
@@ -45,13 +47,33 @@ func Test_cloneSparse(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanup()
 
-	content, err := os.ReadFile(filepath.Join(dir, "workflows", "foo.yaml"))
+	content, err := os.ReadFile(filepath.Join(dir, ".github", "workflows", "foo.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, "name: foo\n", string(content))
 
 	// Sparse-checkout should have narrowed the clone to .github, excluding
 	// unrelated top-level directories.
-	_, err = os.Stat(filepath.Join(filepath.Dir(dir), "other", "bar.txt"))
+	_, err = os.Stat(filepath.Join(dir, "other", "bar.txt"))
+	require.True(t, os.IsNotExist(err))
+}
+
+func Test_cloneSparse_multiplePaths(t *testing.T) {
+	repoDir := repository(t)
+
+	dir, cleanup, err := cloneSparse("file://"+repoDir, "main", ".github", "other")
+	require.NoError(t, err)
+	defer cleanup()
+
+	content, err := os.ReadFile(filepath.Join(dir, ".github", "workflows", "foo.yaml"))
+	require.NoError(t, err)
+	require.Equal(t, "name: foo\n", string(content))
+
+	content, err = os.ReadFile(filepath.Join(dir, "other", "bar.txt"))
+	require.NoError(t, err)
+	require.Equal(t, "bar\n", string(content))
+
+	// The unrelated top-level directory should still be excluded.
+	_, err = os.Stat(filepath.Join(dir, "unrelated", "baz.txt"))
 	require.True(t, os.IsNotExist(err))
 }
 

@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
-	"golang.org/x/net/html"
 	"gopkg.in/yaml.v3"
 )
 
@@ -37,21 +38,28 @@ type ProwSource interface {
 	Tests() ([]ProwTest, error)
 }
 
-// htmlFileProwSource reads Prow test definitions out of a saved copy of the
-// ci-operator "test matrix" HTML page for stackrox/stackrox (the page
-// rendered at the config-summary anchor), rather than talking to Prow live.
-type htmlFileProwSource struct {
-	path string
+// yamlConfigProwSource reads Prow ci-operator test definitions directly out
+// of a repo's ci-operator/config/<org>/<repo> YAML files -- the same files
+// openshift/release's config.py reads to render its HTML summary -- rather
+// than running that script and parsing its output.
+type yamlConfigProwSource struct {
+	dir string
 }
 
-// NewHTMLFileProwSource returns a ProwSource that reads ci-operator test
-// definitions from the ci-operator test-matrix HTML export at path.
-func NewHTMLFileProwSource(path string) ProwSource {
-	return htmlFileProwSource{path: path}
+// NewYAMLConfigProwSource returns a ProwSource that reads ci-operator test
+// definitions from the ci-operator config YAML files in dir.
+func NewYAMLConfigProwSource(dir string) ProwSource {
+	return yamlConfigProwSource{dir: dir}
 }
 
-// prowTestConfig mirrors the subset of the ci-operator test schema that's
-// embedded in each config-summary table cell.
+// prowConfigFile is the top-level shape of a ci-operator config YAML file
+// under ci-operator/config/<org>/<repo>/.
+type prowConfigFile struct {
+	Tests []prowTestConfig `yaml:"tests"`
+}
+
+// prowTestConfig mirrors the subset of the ci-operator test schema relevant
+// to deriving a ProwTest.
 type prowTestConfig struct {
 	As string `yaml:"as"`
 	// AlwaysRun defaults to true in ci-operator when omitted; it's a
@@ -71,73 +79,60 @@ type prowTestConfig struct {
 	} `yaml:"steps"`
 }
 
-func (s htmlFileProwSource) Tests() ([]ProwTest, error) {
-	f, err := os.Open(s.path)
-	if err != nil {
-		return nil, fmt.Errorf("opening %s: %w", s.path, err)
+func (s yamlConfigProwSource) Tests() ([]ProwTest, error) {
+	var paths []string
+	for _, pattern := range []string{"*.yml", "*.yaml"} {
+		matches, err := filepath.Glob(filepath.Join(s.dir, pattern))
+		if err != nil {
+			return nil, fmt.Errorf("globbing %s in %s: %w", pattern, s.dir, err)
+		}
+		paths = append(paths, matches...)
 	}
-	defer f.Close()
+	sort.Strings(paths)
 
-	doc, err := html.Parse(f)
-	if err != nil {
-		return nil, fmt.Errorf("parsing %s as HTML: %w", s.path, err)
+	basenames := make([]string, len(paths))
+	for i, p := range paths {
+		basenames[i] = filepath.Base(p)
 	}
-
-	ordered := documentOrder(doc)
-
-	configSummaryHeading := findByID(ordered, "config-summary")
-	if configSummaryHeading == nil {
-		return nil, fmt.Errorf("%s: could not find a #config-summary section", s.path)
-	}
-	table := findNextElement(ordered, configSummaryHeading, "table")
-	if table == nil {
-		return nil, fmt.Errorf("%s: could not find the config summary table", s.path)
-	}
-
-	variants, rows, err := configSummaryVariantsAndRows(table)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", s.path, err)
-	}
+	prefix := commonPrefix(basenames)
 
 	type testVariant struct {
 		name string
-		yaml string
+		key  string
 	}
 	var order []testVariant
 	branchesFor := map[testVariant][]string{}
+	configFor := map[testVariant]prowTestConfig{}
 
-	for _, row := range rows {
-		cells := childElements(row, "td")
-		if len(cells) == 0 {
-			continue
+	for _, p := range paths {
+		base := filepath.Base(p)
+		shortName := strings.TrimSuffix(strings.TrimPrefix(base, prefix), filepath.Ext(base))
+
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return nil, fmt.Errorf("reading %s: %w", p, err)
 		}
-		name := strings.TrimSpace(textContent(cells[0]))
-		if name == "" {
-			continue
+		var cfgFile prowConfigFile
+		if err := yaml.Unmarshal(data, &cfgFile); err != nil {
+			return nil, fmt.Errorf("parsing %s: %w", p, err)
 		}
-		for i, cell := range cells[1:] {
-			pres := descendantElements(cell, "pre")
-			if len(pres) == 0 {
+
+		for _, cfg := range cfgFile.Tests {
+			if cfg.As == "" {
 				continue
 			}
-			variantIdx := i + 1
-			if variantIdx >= len(variants) {
-				continue
-			}
-			tv := testVariant{name: name, yaml: textContent(pres[0])}
+			tv := testVariant{name: cfg.As, key: prowTestConfigKey(cfg)}
 			if _, seen := branchesFor[tv]; !seen {
 				order = append(order, tv)
+				configFor[tv] = cfg
 			}
-			branchesFor[tv] = append(branchesFor[tv], variants[variantIdx])
+			branchesFor[tv] = append(branchesFor[tv], shortName)
 		}
 	}
 
 	tests := make([]ProwTest, 0, len(order))
 	for _, tv := range order {
-		var cfg prowTestConfig
-		if err := yaml.Unmarshal([]byte(tv.yaml), &cfg); err != nil {
-			return nil, fmt.Errorf("%s: parsing ci-operator config for test %q: %w", s.path, tv.name, err)
-		}
+		cfg := configFor[tv]
 		branches := branchesFor[tv]
 		tests = append(tests, ProwTest{
 			Name:              tv.name,
@@ -153,40 +148,38 @@ func (s htmlFileProwSource) Tests() ([]ProwTest, error) {
 	return tests, nil
 }
 
-// configSummaryVariantsAndRows reads the header's branch/variant column
-// names and the <tr> rows that make up the "tests" section of the config
-// summary table (skipping the base-image rows that precede it).
-func configSummaryVariantsAndRows(table *html.Node) ([]string, []*html.Node, error) {
-	theads := childElements(table, "thead")
-	tbodies := childElements(table, "tbody")
-	if len(theads) == 0 || len(tbodies) == 0 {
-		return nil, nil, fmt.Errorf("config summary table is missing a thead or tbody")
+// prowTestConfigKey returns a key that's equal for two prowTestConfig values
+// iff they'd produce the same ProwTest fields (aside from Name/Branches), so
+// the same-named test defined identically across multiple branch/variant
+// config files collapses into a single ProwTest spanning all those branches,
+// while a genuinely different definition under the same name stays distinct.
+func prowTestConfigKey(cfg prowTestConfig) string {
+	alwaysRun := "default"
+	if cfg.AlwaysRun != nil {
+		alwaysRun = fmt.Sprintf("%v", *cfg.AlwaysRun)
 	}
+	return fmt.Sprintf("always_run=%s|optional=%v|postsubmit=%v|cron=%s|workflow=%s|cluster_profile=%s",
+		alwaysRun, cfg.Optional, cfg.Postsubmit, cfg.Cron, cfg.Steps.Workflow, cfg.Steps.ClusterProfile)
+}
 
-	headerRows := childElements(theads[0], "tr")
-	if len(headerRows) == 0 {
-		return nil, nil, fmt.Errorf("config summary table has no header row")
+// commonPrefix returns the longest string that's a prefix of every string in
+// strs, mirroring Python's os.path.commonprefix (which openshift/release's
+// config.py uses to derive each config file's "short name" by stripping it
+// off the filename).
+func commonPrefix(strs []string) string {
+	if len(strs) == 0 {
+		return ""
 	}
-	headerCells := childElements(headerRows[0], "th")
-	variants := make([]string, len(headerCells))
-	for i, th := range headerCells {
-		variants[i] = strings.TrimSpace(textContent(th))
-	}
-
-	rows := childElements(tbodies[0], "tr")
-	testsHeaderIdx := -1
-	for i, row := range rows {
-		cells := childElements(row, "td")
-		if len(cells) > 0 && strings.TrimSpace(textContent(cells[0])) == "tests" {
-			testsHeaderIdx = i
-			break
+	prefix := strs[0]
+	for _, s := range strs[1:] {
+		for !strings.HasPrefix(s, prefix) {
+			prefix = prefix[:len(prefix)-1]
+			if prefix == "" {
+				return ""
+			}
 		}
 	}
-	if testsHeaderIdx == -1 {
-		return nil, nil, fmt.Errorf("could not find the \"tests\" section of the config summary table")
-	}
-
-	return variants, rows[testsHeaderIdx+1:], nil
+	return prefix
 }
 
 // triggersForProwTest derives the trigger category from the actual
@@ -400,89 +393,4 @@ func descriptionForTestFamily(family string) string {
 		return description
 	}
 	return "Unknown"
-}
-
-// --- small html.Node helpers (golang.org/x/net/html has no query API) ---
-
-func documentOrder(root *html.Node) []*html.Node {
-	var nodes []*html.Node
-	var walk func(*html.Node)
-	walk = func(n *html.Node) {
-		nodes = append(nodes, n)
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			walk(c)
-		}
-	}
-	walk(root)
-	return nodes
-}
-
-func findByID(nodes []*html.Node, id string) *html.Node {
-	for _, n := range nodes {
-		if n.Type != html.ElementNode {
-			continue
-		}
-		for _, a := range n.Attr {
-			if a.Key == "id" && a.Val == id {
-				return n
-			}
-		}
-	}
-	return nil
-}
-
-// findNextElement returns the first element with the given tag that appears
-// after `after` in document order.
-func findNextElement(nodes []*html.Node, after *html.Node, tag string) *html.Node {
-	passedAfter := false
-	for _, n := range nodes {
-		if n == after {
-			passedAfter = true
-			continue
-		}
-		if passedAfter && n.Type == html.ElementNode && n.Data == tag {
-			return n
-		}
-	}
-	return nil
-}
-
-func childElements(n *html.Node, tag string) []*html.Node {
-	var out []*html.Node
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if c.Type == html.ElementNode && c.Data == tag {
-			out = append(out, c)
-		}
-	}
-	return out
-}
-
-func descendantElements(n *html.Node, tag string) []*html.Node {
-	var out []*html.Node
-	var walk func(*html.Node)
-	walk = func(n *html.Node) {
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			if c.Type == html.ElementNode && c.Data == tag {
-				out = append(out, c)
-			}
-			walk(c)
-		}
-	}
-	walk(n)
-	return out
-}
-
-func textContent(n *html.Node) string {
-	var sb strings.Builder
-	var walk func(*html.Node)
-	walk = func(n *html.Node) {
-		if n.Type == html.TextNode {
-			sb.WriteString(n.Data)
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			walk(c)
-		}
-	}
-	walk(n)
-	return sb.String()
 }

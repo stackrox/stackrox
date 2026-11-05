@@ -45,17 +45,19 @@ type JobMatrix struct {
 }
 
 func main() {
-	prowHTMLPath := flag.String("prow-html", "tmp/prow-jobs.html", "path to the Prow ci-operator test-matrix HTML export")
 	workflowsDir := flag.String("workflows-dir", ".github/workflows", "directory containing GitHub Actions workflow files (mutually exclusive with -repo and -branch)")
-	repo := flag.String("repo", "stackrox/stackrox", "owner/repo on GitHub to fetch GitHub Actions workflows from (mutually exclusive with -workflows-dir)")
+	repo := flag.String("repo", "stackrox/stackrox", "owner/repo on GitHub to fetch GitHub Actions workflows from, and whose ci-operator config/jobs subdirectory to read under -prow-dir/-prow-repo (mutually exclusive with -workflows-dir)")
 	branch := flag.String("branch", "master", "branch to fetch GitHub Actions workflows from (mutually exclusive with -workflows-dir)")
+	prowDir := flag.String("prow-dir", "", "local directory containing -repo's ci-operator config YAML files (mutually exclusive with -prow-repo and -prow-branch)")
+	prowRepo := flag.String("prow-repo", "openshift/release", "owner/repo on GitHub to fetch -repo's Prow ci-operator config from (mutually exclusive with -prow-dir)")
+	prowBranch := flag.String("prow-branch", "main", "branch to fetch the Prow ci-operator config from (mutually exclusive with -prow-dir)")
 	var output string
 	flag.StringVar(&output, "o", "json", "output format: json or html")
 	flag.StringVar(&output, "output", "json", "output format: json or html")
 	outPath := flag.String("out", "", "optional path to write the output instead of stdout")
 	flag.Parse()
 
-	var workflowsDirSet, repoSet, branchSet bool
+	var workflowsDirSet, repoSet, branchSet, prowDirSet, prowRepoSet, prowBranchSet bool
 	flag.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case "workflows-dir":
@@ -64,6 +66,12 @@ func main() {
 			repoSet = true
 		case "branch":
 			branchSet = true
+		case "prow-dir":
+			prowDirSet = true
+		case "prow-repo":
+			prowRepoSet = true
+		case "prow-branch":
+			prowBranchSet = true
 		}
 	})
 
@@ -73,7 +81,16 @@ func main() {
 	}
 	defer cleanup()
 
-	matrix, err := buildJobMatrix(NewHTMLFileProwSource(*prowHTMLPath), resolvedWorkflowsDir)
+	fetchProwConfigDirForRepo := func(prowRepo, prowBranch string) (string, func(), error) {
+		return fetchProwConfigDir(prowRepo, prowBranch, *repo)
+	}
+	resolvedProwConfigDir, prowCleanup, err := resolveProwConfigDir(*prowDir, prowDirSet, *prowRepo, *prowBranch, prowRepoSet, prowBranchSet, fetchProwConfigDirForRepo)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer prowCleanup()
+
+	matrix, err := buildJobMatrix(NewYAMLConfigProwSource(resolvedProwConfigDir), resolvedWorkflowsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -137,6 +154,21 @@ func resolveWorkflowsDir(workflowsDir string, workflowsDirSet bool, repo, branch
 	}
 	if workflowsDirSet {
 		return workflowsDir, func() {}, nil
+	}
+	return fetch(repo, branch)
+}
+
+// resolveProwConfigDir decides whether to use prowDir as-is or fetch the
+// Prow ci-operator config from repo/branch, depending on which flags were
+// explicitly set on the command line. prowDir and repo/branch are mutually
+// exclusive: if neither is set, it falls back to fetching repo/branch's
+// defaults.
+func resolveProwConfigDir(prowDir string, prowDirSet bool, repo, branch string, repoSet, branchSet bool, fetch fetchFunc) (string, func(), error) {
+	if prowDirSet && (repoSet || branchSet) {
+		return "", nil, fmt.Errorf("-prow-dir is mutually exclusive with -prow-repo and -prow-branch")
+	}
+	if prowDirSet {
+		return prowDir, func() {}, nil
 	}
 	return fetch(repo, branch)
 }

@@ -227,58 +227,75 @@ func Test_triggersForProwTest(t *testing.T) {
 	}
 }
 
-func Test_htmlFileProwSource_Tests(t *testing.T) {
-	const fixture = `<!doctype html>
-<html><body>
-<h4 id="config-summary">Config summary</h4>
-<table>
-<thead>
-<tr><th><div></div></th><th><div>master</div></th><th><div>nightlies</div></th><th><div>release-4.10</div></th></tr>
-</thead>
-<tbody>
-<tr><td class="header-cell">tests</td><td colspan="3"></td></tr>
-<tr class="None"><td class="right-aligned"><div>qa-e2e-tests</div></td><td class="None"><div><div class="collapse"><pre>as: qa-e2e-tests
-steps:
-  workflow: stackrox-automation-flavors-ocp-4-e2e
-  env:
-    TEST_SUITE: ocp-qa-e2e-tests
-</pre></div></div></td><td class="None"><div></div></td><td class="None"><div></div></td></tr>
-<tr class="None"><td class="right-aligned"><div>opt-in-qa-e2e-tests</div></td><td class="None"><div><pre>as: opt-in-qa-e2e-tests
-always_run: false
-optional: true
-steps:
-  workflow: stackrox-automation-flavors-ocp-4-e2e
-</pre></div></td><td class="None"><div></div></td><td class="None"><div></div></td></tr>
-<tr class="None"><td class="right-aligned"><div>gke-qa-e2e-tests</div></td><td class="None"><div></div></td><td class="None"><div></div></td><td class="None"><div><pre>as: gke-qa-e2e-tests
-postsubmit: true
-steps:
-  workflow: stackrox-stackrox-e2e-job
-</pre></div></td></tr>
-<tr class="None"><td class="right-aligned"><div>nightly-postsubmit-test</div></td><td class="None"><div></div></td><td class="None"><div><pre>as: nightly-postsubmit-test
-postsubmit: true
-steps:
-  workflow: stackrox-stackrox-e2e-job
-</pre></div></td><td class="None"><div></div></td></tr>
-<tr class="None"><td class="right-aligned"><div>24nodes-scale-scannerv4-test</div></td><td class="None"><div></div></td><td class="None"><div><pre>as: 24nodes-scale-scannerv4-test
-cron: 0 6 * * *
-steps:
-  cluster_profile: aws-stackrox
-  workflow: stackrox-install-roxie
-</pre></div></td><td class="None"><div></div></td></tr>
-<tr class="None"><td class="right-aligned"><div>cr--acs--tests-aws</div></td><td class="None"><div><pre>as: cr--acs--tests-aws
-cron: 0 3,15 * * *
-steps:
-  cluster_profile: aws-cspi-qe
-  workflow: stackrox-firewatch-ipi-aws-cr
-</pre></div></td><td class="None"><div></div></td><td class="None"><div></div></td></tr>
-</tbody>
-</table>
-</body></html>
-`
-	path := filepath.Join(t.TempDir(), "prow-jobs.html")
-	require.NoError(t, os.WriteFile(path, []byte(fixture), 0o600))
+func Test_commonPrefix(t *testing.T) {
+	tests := map[string]struct {
+		in   []string
+		want string
+	}{
+		"empty":                  {in: nil, want: ""},
+		"single":                 {in: []string{"abc"}, want: "abc"},
+		"shared prefix":          {in: []string{"stackrox-stackrox-master.yaml", "stackrox-stackrox-nightlies.yaml"}, want: "stackrox-stackrox-"},
+		"no shared prefix":       {in: []string{"abc", "xyz"}, want: ""},
+		"one is prefix of other": {in: []string{"ab", "abc"}, want: "ab"},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, commonPrefix(tt.in))
+		})
+	}
+}
 
-	tests, err := NewHTMLFileProwSource(path).Tests()
+func Test_yamlConfigProwSource_Tests(t *testing.T) {
+	dir := t.TempDir()
+
+	// "qa-e2e-tests" is defined identically in both master and
+	// release-4.10, so it should collapse into a single ProwTest spanning
+	// both branches rather than appearing twice.
+	write := func(name, content string) {
+		t.Helper()
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600))
+	}
+	write("stackrox-stackrox-master.yaml", `tests:
+- as: qa-e2e-tests
+  steps:
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+    env:
+      TEST_SUITE: ocp-qa-e2e-tests
+- as: opt-in-qa-e2e-tests
+  always_run: false
+  optional: true
+  steps:
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+- as: cr--acs--tests-aws
+  cron: "0 3,15 * * *"
+  steps:
+    cluster_profile: aws-cspi-qe
+    workflow: stackrox-firewatch-ipi-aws-cr
+`)
+	write("stackrox-stackrox-nightlies.yaml", `tests:
+- as: nightly-postsubmit-test
+  postsubmit: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+- as: 24nodes-scale-scannerv4-test
+  cron: "0 6 * * *"
+  steps:
+    cluster_profile: aws-stackrox
+    workflow: stackrox-install-roxie
+`)
+	write("stackrox-stackrox-release-4.10.yaml", `tests:
+- as: qa-e2e-tests
+  steps:
+    workflow: stackrox-automation-flavors-ocp-4-e2e
+    env:
+      TEST_SUITE: ocp-qa-e2e-tests
+- as: gke-qa-e2e-tests
+  postsubmit: true
+  steps:
+    workflow: stackrox-stackrox-e2e-job
+`)
+
+	tests, err := NewYAMLConfigProwSource(dir).Tests()
 	require.NoError(t, err)
 	require.Len(t, tests, 6)
 
@@ -288,7 +305,7 @@ steps:
 	}
 
 	qaE2E := byName["qa-e2e-tests"]
-	assert.Equal(t, []string{"master"}, qaE2E.Branches)
+	assert.Equal(t, []string{"master", "release-4.10"}, qaE2E.Branches)
 	assert.Equal(t, "OpenShift (self-managed, AWS IPI)", qaE2E.ClusterType)
 	assert.Equal(t, []Trigger{TriggerPreMerge}, qaE2E.Triggers)
 	assert.True(t, qaE2E.RunsAutomatically)
