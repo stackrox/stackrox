@@ -1,0 +1,112 @@
+defs: |
+  def managerEnv:
+    .deployments["rhacs-operator-controller-manager"].spec.template.spec.containers[]
+    | select(.name == "manager") | .env;
+
+  def uniqueNames:
+    assertThat((map(.name) | length) == (map(.name) | unique | length));
+
+  def relatedImages:
+    map(select(.name | startswith("RELATED_IMAGE_")));
+
+tests:
+- name: default environment preserves related images and resource references
+  expect: |
+    managerEnv | [
+      uniqueNames,
+      (relatedImages | assertThat(length == 7)),
+      (map(select(.name == "MEMORY_LIMIT_BYTES")) | assertThat(.[0].valueFrom.resourceFieldRef.resource == "limits.memory"))
+      ]
+- name: a related image override replaces the predefined entry
+  set:
+    manager.envOverrides.RELATED_IMAGE_MAIN: registry.example.com/stackrox/main:4.11.7-amd64
+  expect: |
+    managerEnv | [
+      uniqueNames,
+      (relatedImages | assertThat(length == 7)),
+      (map(select(.name == "RELATED_IMAGE_MAIN")) | assertThat(. == [{"name": "RELATED_IMAGE_MAIN", "value": "registry.example.com/stackrox/main:4.11.7-amd64"}]))
+      ]
+- name: all predefined related images can be overridden together
+  set:
+    manager.envOverrides:
+      RELATED_IMAGE_MAIN: registry.example.com/stackrox/main:custom
+      RELATED_IMAGE_COLLECTOR: registry.example.com/stackrox/collector:custom
+      RELATED_IMAGE_FACT: registry.example.com/stackrox/fact:custom
+      RELATED_IMAGE_ROXCTL: registry.example.com/stackrox/roxctl:custom
+      RELATED_IMAGE_CENTRAL_DB: registry.example.com/stackrox/central-db:custom
+      RELATED_IMAGE_SCANNER_V4_DB: registry.example.com/stackrox/scanner-v4-db:custom
+      RELATED_IMAGE_SCANNER_V4: registry.example.com/stackrox/scanner-v4:custom
+  expect: |
+    managerEnv | [
+      uniqueNames,
+      (relatedImages | from_entries | assertThat(. == {
+        "RELATED_IMAGE_MAIN": "registry.example.com/stackrox/main:custom",
+        "RELATED_IMAGE_COLLECTOR": "registry.example.com/stackrox/collector:custom",
+        "RELATED_IMAGE_FACT": "registry.example.com/stackrox/fact:custom",
+        "RELATED_IMAGE_ROXCTL": "registry.example.com/stackrox/roxctl:custom",
+        "RELATED_IMAGE_CENTRAL_DB": "registry.example.com/stackrox/central-db:custom",
+        "RELATED_IMAGE_SCANNER_V4_DB": "registry.example.com/stackrox/scanner-v4-db:custom",
+        "RELATED_IMAGE_SCANNER_V4": "registry.example.com/stackrox/scanner-v4:custom"
+      })),
+      (map(select(.name == "MEMORY_LIMIT_BYTES")) | assertThat(.[0].valueFrom.resourceFieldRef.resource == "limits.memory"))
+      ]
+- name: an explicitly empty override still replaces the predefined entry
+  set:
+    manager.envOverrides.RELATED_IMAGE_MAIN: ""
+  expect: |
+    managerEnv | [
+      uniqueNames,
+      (map(select(.name == "RELATED_IMAGE_MAIN")) | assertThat(. == [{"name": "RELATED_IMAGE_MAIN", "value": ""}]))
+      ]
+- name: overrides replace value and valueFrom entries while preserving other references
+  set:
+    manager.env:
+    - name: MEMORY_LIMIT_BYTES
+      valueFrom:
+        resourceFieldRef:
+          containerName: manager
+          resource: limits.memory
+    - name: CUSTOM_VALUE
+      value: original
+    - name: CUSTOM_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: operator-secret
+          key: token
+    manager.envOverrides:
+      MEMORY_LIMIT_BYTES: "1073741824"
+      CUSTOM_VALUE: replacement
+  expect: |
+    managerEnv | [
+      uniqueNames,
+      (map(select(.name == "MEMORY_LIMIT_BYTES")) | assertThat(. == [{"name": "MEMORY_LIMIT_BYTES", "value": "1073741824"}])),
+      (map(select(.name == "CUSTOM_VALUE")) | assertThat(. == [{"name": "CUSTOM_VALUE", "value": "replacement"}])),
+      (map(select(.name == "CUSTOM_SECRET")) | assertThat(.[0].valueFrom.secretKeyRef == {"name": "operator-secret", "key": "token"}))
+      ]
+- name: additional overrides retain defaults and quote scalar values
+  set:
+    manager.envOverrides:
+      CUSTOM_FALSE: false
+      CUSTOM_ZERO: 0
+  expect: |
+    managerEnv | [
+      uniqueNames,
+      (relatedImages | assertThat(length == 7)),
+      (from_entries | assertThat(.CUSTOM_FALSE == "false" and .CUSTOM_ZERO == "0"))
+      ]
+- name: overrides work with an empty environment list
+  set:
+    manager.env: []
+    manager.envOverrides.RELATED_IMAGE_MAIN: registry.example.com/stackrox/main:custom
+  expect: |
+    managerEnv | assertThat(. == [{"name": "RELATED_IMAGE_MAIN", "value": "registry.example.com/stackrox/main:custom"}])
+- name: an empty environment and overrides render an empty list
+  set:
+    manager.env: []
+  expect: |
+    managerEnv | assertThat(. == [])
+- name: null overrides preserve the default environment
+  set:
+    manager.envOverrides: null
+  expect: |
+    managerEnv | [uniqueNames, (relatedImages | assertThat(length == 7))]
