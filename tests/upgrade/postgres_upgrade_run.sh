@@ -14,32 +14,62 @@ EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 source "$TEST_ROOT/scripts/lib.sh"
 
 postgres_major_version() {
-    # Current images use ARG PG_VERSION; older releases put the major directly in FROM.
+    # ROX-29205: Before postgres base image, scanner-v4-db used ENV PG_MAJOR.
     local version
     version="$(sed -n \
         -e 's/^[[:space:]]*ARG[[:space:]]\+PG_VERSION=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
+        -e 's/^[[:space:]]*ENV[[:space:]]\+PG_MAJOR=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
         -e 's/^[[:space:]]*FROM[[:space:]].*\/postgresql-\([1-9][0-9]*\)-.*$/\1/p')"
     # Missing or ambiguous versions must fail the check, not silently skip coverage.
     [[ "$version" =~ ^[1-9][0-9]*$ ]] || return 1
     echo "$version"
 }
 
-check_postgres_upgrade() {
+# bumps_postgres_major sets <prefix>_EARLIER_PG and <prefix>_CURRENT_PG from the
+# given Dockerfile, and succeeds if the current checkout bumps the major version.
+bumps_postgres_major() {
+    local prefix=${1:?missing first required argument: prefix}
+    local dockerfile=${2:?missing second required argument: dockerfile}
     local earlier_version current_version
-    earlier_version="$(git -C "$TEST_ROOT" show "$EARLIER_SHA:image/postgres/Dockerfile" | postgres_major_version)" || \
-        die "Cannot determine PostgreSQL major version for $EARLIER_TAG ($EARLIER_SHA)"
-    current_version="$(postgres_major_version < "$TEST_ROOT/image/postgres/Dockerfile")" || \
-        die "Cannot determine PostgreSQL major version for the current checkout"
 
-    EARLIER_POSTGRES_VERSION="$earlier_version"
-    CURRENT_POSTGRES_VERSION="$current_version"
+    earlier_version="$(git -C "$TEST_ROOT" show "$EARLIER_SHA:$dockerfile" | postgres_major_version)" || \
+        die "Cannot determine the PostgreSQL major version of $dockerfile for $EARLIER_TAG ($EARLIER_SHA)"
+    current_version="$(postgres_major_version < "$TEST_ROOT/$dockerfile")" || \
+        die "Cannot determine the PostgreSQL major version of $dockerfile for the current checkout"
+
+    printf -v "${prefix}_EARLIER_PG" '%s' "$earlier_version"
+    printf -v "${prefix}_CURRENT_PG" '%s' "$current_version"
+
+    (( current_version > earlier_version ))
+}
+
+check_postgres_upgrade() {
+    # Either database bumping its major version is reason enough to run the
+    # suite, and each is asserted on independently: they are separate images
+    # with separate upgrade mechanisms, and the two bumps need not land
+    # together.
+    CENTRAL_DB_UPGRADE_REQUIRED=false
+    if bumps_postgres_major CENTRAL_DB "image/postgres/Dockerfile"; then
+        CENTRAL_DB_UPGRADE_REQUIRED=true
+    fi
+    SCANNER_V4_DB_UPGRADE_REQUIRED=false
+    if bumps_postgres_major SCANNER_V4_DB "scanner/image/db/Dockerfile"; then
+        SCANNER_V4_DB_UPGRADE_REQUIRED=true
+    fi
+
+    local central_db="central-db PostgreSQL ${CENTRAL_DB_EARLIER_PG} -> ${CENTRAL_DB_CURRENT_PG}"
+    local scanner_v4_db="scanner-v4-db PostgreSQL ${SCANNER_V4_DB_EARLIER_PG} -> ${SCANNER_V4_DB_CURRENT_PG}"
+
+    # check_postgres_version queries central-db, so these track that image.
+    EARLIER_POSTGRES_VERSION="$CENTRAL_DB_EARLIER_PG"
+    CURRENT_POSTGRES_VERSION="$CENTRAL_DB_CURRENT_PG"
 
     POSTGRES_UPGRADE_REQUIRED=false
-    if (( current_version > earlier_version )); then
+    if [[ "$CENTRAL_DB_UPGRADE_REQUIRED" == true || "$SCANNER_V4_DB_UPGRADE_REQUIRED" == true ]]; then
         POSTGRES_UPGRADE_REQUIRED=true
-        POSTGRES_UPGRADE_REASON="Running PostgreSQL upgrade suite: $EARLIER_TAG uses PostgreSQL $earlier_version; current checkout uses PostgreSQL $current_version."
+        POSTGRES_UPGRADE_REASON="Running PostgreSQL upgrade suite against $EARLIER_TAG: ${central_db}, ${scanner_v4_db}."
     else
-        POSTGRES_UPGRADE_REASON="Skipping PostgreSQL upgrade suite: $EARLIER_TAG uses PostgreSQL $earlier_version; current checkout uses PostgreSQL $current_version. No major-version upgrade."
+        POSTGRES_UPGRADE_REASON="Skipping PostgreSQL upgrade suite: neither database bumps its major version against $EARLIER_TAG (${central_db}, ${scanner_v4_db})."
     fi
     info "$POSTGRES_UPGRADE_REASON"
 }
@@ -63,6 +93,89 @@ check_postgres_version() {
 
     info "Central DB is running PostgreSQL $actual_version; expected major version $expected_version"
     test_equals_non_silent "${actual_version%%.*}" "$expected_version"
+}
+
+SCANNER_V4_PGDATA="/var/lib/postgresql/data/pgdata"
+
+scanner_v4_db_exec() {
+    kubectl -n stackrox exec deploy/scanner-v4-db -c db -- bash -ec "$1"
+}
+
+# scanner_v4_db_script runs the script on stdin inside the db container, which
+# keeps SQL quoting readable -- nothing has to survive a round of shell
+# escaping on the way in.
+scanner_v4_db_script() {
+    kubectl -n stackrox exec -i deploy/scanner-v4-db -c db -- bash -s
+}
+
+# scanner_v4_db_pg_version echoes the major version of the data directory on
+# the scanner-v4-db volume. That, rather than the server's reported version,
+# is what the upgrade actually has to change.
+scanner_v4_db_pg_version() {
+    scanner_v4_db_exec "cat '$SCANNER_V4_PGDATA/PG_VERSION'" | tr -d '[:space:]'
+}
+
+# scanner_v4_db_row_counts echoes "<database>|<table>|<rows>" for every user
+# table. Derived from the catalogs rather than from Scanner's schema, so it
+# does not need updating when the schema changes.
+scanner_v4_db_row_counts() {
+    scanner_v4_db_script <<'EOF'
+set -eo pipefail
+q() { psql -U postgres -h 127.0.0.1 -XAt "$@"; }
+
+for db in $(q -c "SELECT datname FROM pg_database WHERE NOT datistemplate ORDER BY datname"); do
+    tables=$(q -d "$db" -c "
+        SELECT quote_ident(n.nspname) || '.' || quote_ident(c.relname)
+        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relkind = 'r' AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+        ORDER BY 1")
+    for tbl in $tables; do
+        echo "$db|$tbl|$(q -d "$db" -c "SELECT count(*) FROM $tbl")"
+    done
+done
+EOF
+}
+
+# check_scanner_v4_db_upgraded asserts the data directory moved to the major
+# version this checkout builds, that no leftovers from the swap survived, and
+# that nothing was lost. The row counts are compared against the file written
+# before the image bump.
+check_scanner_v4_db_upgraded() {
+    local baseline=${1:?missing first required argument: baseline-row-counts}
+    local version
+
+    version="$(scanner_v4_db_pg_version)"
+    test_equals_non_silent "$version" "$SCANNER_V4_DB_CURRENT_PG"
+
+    # A surviving ${PGDATA}-new means the swap never happened; a surviving
+    # ${PGDATA}-old means the cleanup after it did not run. Both would be
+    # invisible in the version check above.
+    scanner_v4_db_exec "test ! -e '${SCANNER_V4_PGDATA}-new'" || \
+        die "${SCANNER_V4_PGDATA}-new survived the scanner-v4-db upgrade"
+    scanner_v4_db_exec "test ! -e '${SCANNER_V4_PGDATA}-old'" || \
+        die "${SCANNER_V4_PGDATA}-old survived the scanner-v4-db upgrade"
+    scanner_v4_db_exec "test -e '$SCANNER_V4_PGDATA/.init-ready'" || \
+        die "The scanner-v4-db .init-ready sentinel is missing after the upgrade"
+
+    scanner_v4_db_row_counts >/tmp/scanner-v4-db-rows-after
+    if ! diff -u "$baseline" /tmp/scanner-v4-db-rows-after; then
+        die "scanner-v4-db row counts changed across the upgrade"
+    fi
+    info "scanner-v4-db is on PostgreSQL $version with all row counts preserved."
+}
+
+# check_scanner_v4_no_warmup is the acceptance criterion that matters: losing
+# the vulnerability store would force a matcher warm-up, and warm-up is a hard
+# scan outage, because the matcher reports FailedPrecondition and Central's
+# retry wrapper treats that as permanent rather than retrying.
+check_scanner_v4_no_warmup() {
+    kubectl -n stackrox rollout status deploy/scanner-v4-matcher --timeout=300s
+
+    if kubectl -n stackrox logs deploy/scanner-v4-matcher --since=20m | grep -q "FailedPrecondition"; then
+        kubectl -n stackrox logs deploy/scanner-v4-matcher --since=20m | grep "FailedPrecondition"
+        die "The matcher re-entered warm-up after the scanner-v4-db upgrade"
+    fi
+    info "The matcher did not re-enter warm-up."
 }
 
 test_upgrade() {
@@ -100,7 +213,29 @@ test_upgrade() {
 
     roxie teardown both --verbose --single-namespace
 
-    test_not_enough_disk_space "$log_output_dir"
+    # TODO(cdu): review note, remove before the PR. Two things to weigh here.
+    #
+    # First, per your call, Central's test_not_enough_disk_space stays and
+    # scanner gets its own test rather than replacing it. The T7 subtask text
+    # literally says "replace", so if a reviewer quotes the ticket at you,
+    # this is the deviation they mean.
+    #
+    # Second, once both databases bump in the same release this runs two full
+    # deploy-and-upgrade cycles on top of the happy path, i.e. three. That is
+    # a long job. Worth deciding whether the scanner deferral test should be
+    # gated behind a pragma instead of running on every eligible PR.
+    #
+    # Each disk-space test asserts a different contract, so each only runs
+    # when its own database is the one bumping its major version.
+    if [[ "$CENTRAL_DB_UPGRADE_REQUIRED" == true ]]; then
+        remove_existing_stackrox_resources
+        test_not_enough_disk_space "$log_output_dir"
+    fi
+
+    if [[ "$SCANNER_V4_DB_UPGRADE_REQUIRED" == true ]]; then
+        remove_existing_stackrox_resources
+        test_scanner_v4_db_upgrade_deferral "$log_output_dir"
+    fi
 }
 
 test_upgrade_path() {
@@ -172,12 +307,31 @@ test_upgrade_path() {
     # Extend the MUTEX timeout for this case as a restart of the db will cause locks to be held longer as it should
     kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=600
 
-    # Upgrade the image to PG16
+    # Recorded before the image bump, while the cluster is still on the
+    # earlier major version, so the post-upgrade comparison has something to
+    # compare against.
+    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    scanner_v4_db_row_counts >/tmp/scanner-v4-db-rows-before
+    info "scanner-v4-db before the upgrade: PostgreSQL $(scanner_v4_db_pg_version), \
+$(wc -l </tmp/scanner-v4-db-rows-before | tr -d ' ') tables"
+
+    # Upgrade the images
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/central-db "*=${REGISTRY}/central-db:${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/scanner-v4-db "*=${REGISTRY}/scanner-v4-db:${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/scanner-v4-indexer "*=${REGISTRY}/scanner-v4:${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/scanner-v4-matcher "*=${REGISTRY}/scanner-v4:${CURRENT_TAG}"
     wait_for_api
     check_postgres_version "$CURRENT_POSTGRES_VERSION"
+
+    ########################################################################################
+    # scanner-v4-db must have migrated in place, with the vulnerability store  #
+    # intact and no matcher warm-up.                                           #
+    ########################################################################################
+    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    check_scanner_v4_db_upgraded /tmp/scanner-v4-db-rows-before
+    check_scanner_v4_no_warmup
 
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
@@ -216,6 +370,18 @@ test_upgrade_path() {
     wait_for_api
 
     touch "${UPGRADE_PROGRESS_POSTGRES_CENTRAL_DB_BOUNCE}"
+
+    ########################################################################################
+    # Bounce scanner-v4-db a second time. This is the regression test for the              #
+    # .init-ready sentinel: were it not written before the swap, the init                  #
+    # container would see no sentinel on this restart and wipe the database it             #
+    # had just upgraded.                                                                   #
+    ########################################################################################
+    info "Bouncing scanner-v4-db"
+    kubectl -n stackrox delete po -l app=scanner-v4-db --grace-period=0
+    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    check_scanner_v4_db_upgraded /tmp/scanner-v4-db-rows-before
+    check_scanner_v4_no_warmup
 
     collect_and_check_stackrox_logs "$log_output_dir" "upgrade_03_final"
 }
@@ -339,6 +505,77 @@ test_not_enough_disk_space() {
     check_postgres_version "$EARLIER_POSTGRES_VERSION"
 
     collect_and_check_stackrox_logs "$log_output_dir" "disk_space_01_final"
+}
+
+# Verify scanner-v4-db defers the upgrade rather than aborting when pg_upgrade
+# cannot run, and completes it once the obstruction is removed.
+#
+# This is deliberately not a port of test_not_enough_disk_space above.
+# central-db exits 1 and waits for an operator; scanner-v4-db must not, because
+# a crashlooping init-db takes scanning offline, and the matcher reports
+# FailedPrecondition during a vulnerability store reload, which Central treats
+# as permanent. So the assertion is the opposite one: the pod comes up anyway,
+# on the previous major version, with the data intact.
+test_scanner_v4_db_upgrade_deferral() {
+    info "Testing scanner-v4-db upgrade deferral"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: test_scanner_v4_db_upgrade_deferral <log-output-dir>"
+    fi
+
+    local log_output_dir="$1"
+
+    cd "$REPO_FOR_TIME_TRAVEL"
+    git checkout "$EARLIER_SHA"
+
+    export MAX_WAIT_SECONDS=600
+
+    deploy_earlier_tag_central
+    wait_for_api
+    setup_client_TLS_certs
+    restore_backup
+    wait_for_api
+
+    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    scanner_v4_db_row_counts >/tmp/scanner-v4-db-rows-before
+
+    cd "$TEST_ROOT"
+
+    # Point maybe-upgrade at the previous major's pg_upgrade, which the image
+    # ships alongside the current one. It rejects the new data directory that
+    # initdb creates at the current major, so every transfer mode probe fails
+    # and the upgrade takes its give-up path. Filling the volume would not do:
+    # "pg_upgrade --clone" needs no second copy, so on a reflink-capable file
+    # system a full volume does not stop the upgrade at all.
+    local old_bindir="/usr/lib64/pgsql/postgresql-${SCANNER_V4_DB_EARLIER_PG}/bin"
+    kubectl -n stackrox set env deploy/scanner-v4-db "NEW_BINARIES=${old_bindir}"
+
+    info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/scanner-v4-db "*=${REGISTRY}/scanner-v4-db:${CURRENT_TAG}"
+
+    # The whole point: the pod comes up, rather than the init container
+    # aborting and crashlooping.
+    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    kubectl -n stackrox logs deploy/scanner-v4-db -c init-db
+
+    # docker-entrypoint.sh starts the binaries matching the data directory, so
+    # a declined upgrade leaves a working server on the previous major.
+    test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
+    scanner_v4_db_row_counts >/tmp/scanner-v4-db-rows-deferred
+    if ! diff -u /tmp/scanner-v4-db-rows-before /tmp/scanner-v4-db-rows-deferred; then
+        die "scanner-v4-db lost data while deferring the upgrade"
+    fi
+    check_scanner_v4_no_warmup
+
+    # Removing the override restores the current binaries and rolls the
+    # deployment, which retries the upgrade.
+    info "Restoring the current binaries and restarting scanner-v4-db"
+    kubectl -n stackrox set env deploy/scanner-v4-db NEW_BINARIES-
+    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    check_scanner_v4_db_upgraded /tmp/scanner-v4-db-rows-before
+    check_scanner_v4_no_warmup
+
+    collect_and_check_stackrox_logs "$log_output_dir" "scanner_v4_db_deferral_final"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
