@@ -47,6 +47,7 @@ func (m *Risk_Result) CloneVT() *Risk_Result {
 	r := new(Risk_Result)
 	r.Name = m.Name
 	r.Score = m.Score
+	r.LegacyScore = m.LegacyScore
 	if rhs := m.Factors; rhs != nil {
 		tmpContainer := make([]*Risk_Result_Factor, len(rhs))
 		for k, v := range rhs {
@@ -75,6 +76,7 @@ func (m *Risk) CloneVT() *Risk {
 	r.Score = m.Score
 	r.PriorityClassification = m.PriorityClassification
 	r.VulnerabilitySummary = m.VulnerabilitySummary.CloneVT()
+	r.ProposedScore = m.ProposedScore
 	if rhs := m.Results; rhs != nil {
 		tmpContainer := make([]*Risk_Result, len(rhs))
 		for k, v := range rhs {
@@ -189,6 +191,9 @@ func (this *Risk_Result) EqualVT(that *Risk_Result) bool {
 	if this.Score != that.Score {
 		return false
 	}
+	if this.LegacyScore != that.LegacyScore {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -235,6 +240,9 @@ func (this *Risk) EqualVT(that *Risk) bool {
 		return false
 	}
 	if !this.VulnerabilitySummary.EqualVT(that.VulnerabilitySummary) {
+		return false
+	}
+	if this.ProposedScore != that.ProposedScore {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -395,6 +403,12 @@ func (m *Risk_Result) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.LegacyScore != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.LegacyScore))))
+		i--
+		dAtA[i] = 0x25
+	}
 	if m.Score != 0 {
 		i -= 4
 		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Score))))
@@ -452,6 +466,12 @@ func (m *Risk) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ProposedScore != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.ProposedScore))))
+		i--
+		dAtA[i] = 0x3d
 	}
 	if m.VulnerabilitySummary != nil {
 		size, err := m.VulnerabilitySummary.MarshalToSizedBufferVT(dAtA[:i])
@@ -696,6 +716,9 @@ func (m *Risk_Result) SizeVT() (n int) {
 	if m.Score != 0 {
 		n += 5
 	}
+	if m.LegacyScore != 0 {
+		n += 5
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -729,6 +752,9 @@ func (m *Risk) SizeVT() (n int) {
 	if m.VulnerabilitySummary != nil {
 		l = m.VulnerabilitySummary.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.ProposedScore != 0 {
+		n += 5
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1017,6 +1043,17 @@ func (m *Risk_Result) UnmarshalVT(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.Score = float32(math.Float32frombits(v))
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LegacyScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.LegacyScore = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1236,6 +1273,17 @@ func (m *Risk) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposedScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ProposedScore = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1874,6 +1922,17 @@ func (m *Risk_Result) UnmarshalVTUnsafe(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.Score = float32(math.Float32frombits(v))
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LegacyScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.LegacyScore = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2097,6 +2156,17 @@ func (m *Risk) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposedScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ProposedScore = float32(math.Float32frombits(v))
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

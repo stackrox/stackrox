@@ -23,6 +23,7 @@ type ListDeploymentView struct {
 	Created                    *time.Time    `db:"created"`
 	RiskPriorityClassification sql.NullInt32 `db:"risk_priority_classification"`
 	RiskScore                  float32       `db:"deployment_risk_score"`
+	ProposedRiskScore          float32       `db:"proposed_deployment_risk_score"`
 	// Priority is NOT selected from DB - it's computed by the ranker
 }
 
@@ -42,6 +43,7 @@ func (v *ListDeploymentView) ToListDeployment() *storage.ListDeployment {
 		Created:                    protocompat.ConvertTimeToTimestampOrNil(v.Created),
 		RiskPriorityClassification: classification,
 		RiskScore:                  v.RiskScore,
+		ProposedRiskScore:          v.ProposedRiskScore,
 		// Priority is set by updateListDeploymentPriority in the datastore layer
 	}
 }
@@ -58,5 +60,6 @@ func ListDeploymentViewSelects() []*v1.QuerySelect {
 		search.NewQuerySelect(search.Created).Proto(),
 		search.NewQuerySelect(search.RiskPriorityClassification).Proto(),
 		search.NewQuerySelect(search.DeploymentRiskScore).Proto(),
+		search.NewQuerySelect(search.ProposedDeploymentRiskScore).Proto(),
 	}
 }

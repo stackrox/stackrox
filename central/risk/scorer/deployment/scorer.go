@@ -60,10 +60,12 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 	}
 
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
-	overallScore := float32(1.0)
+	proposedScore := float32(1.0)
+	legacyScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
 		if riskResult := mult.Score(ctx, deployment, imageRiskResults); riskResult != nil {
-			overallScore *= riskResult.GetScore()
+			proposedScore *= riskResult.GetScore()
+			legacyScore *= riskResultLegacyScore(riskResult)
 			riskResults = append(riskResults, riskResult)
 		}
 	}
@@ -72,8 +74,9 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 	}
 
 	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
+		Score:         legacyScore,
+		ProposedScore: proposedScore,
+		Results:       riskResults,
 		PriorityClassification: classifyRisk(classificationInputs{
 			deployment:       deployment,
 			riskResults:      riskResults,
@@ -96,4 +99,11 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 	risk.Id = riskID
 
 	return risk
+}
+
+func riskResultLegacyScore(r *storage.Risk_Result) float32 {
+	if r.GetLegacyScore() > 0 {
+		return r.GetLegacyScore()
+	}
+	return r.GetScore()
 }

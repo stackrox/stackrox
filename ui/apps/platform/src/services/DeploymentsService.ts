@@ -19,6 +19,7 @@ export type Risk = {
     id: string;
     subject: RiskSubject;
     score: number; // float
+    proposedScore: number; // float
     priorityClassification?: RiskPriorityClassification;
     results: RiskResult[];
 };
@@ -27,6 +28,7 @@ export type RiskResult = {
     name: string;
     factors: RiskFactor[];
     score: number; // float
+    legacyScore: number; // float
 };
 
 export type RiskFactor = {
