@@ -81,11 +81,6 @@ describe('entityRelationshipMap', () => {
     });
 });
 
-it('gets Matches relationships for Cluster', () => {
-    const matchesForCluster = getEntityTypesByRelationship('CLUSTER', 'MATCHES');
-    expect(matchesForCluster).not.toContain('CONTROL');
-});
-
 it('gets Matches relationships for Image CVE', () => {
     // should also get extended matches
     const matchesForImageCVE = getEntityTypesByRelationship('IMAGE_CVE', 'MATCHES');
@@ -112,8 +107,6 @@ it('gets Contains relationships for Cluster', () => {
     expect(containsForCluster).not.toContain('SERVICE_ACCOUNT');
     // should have grandchild
     expect(containsForCluster).toContain('DEPLOYMENT');
-    // should have grandchild's matches
-    expect(containsForCluster).not.toContain('CONTROL');
 });
 
 it('gets Contains relationships for Image', () => {

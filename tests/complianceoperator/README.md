@@ -1,16 +1,16 @@
-# Compliance V1 Integration Testing Data
+# Compliance Operator CRDs for Testing
 
-The `create.sh` script simulates the installation of the [Compliance
-Operator](https://github.com/ComplianceAsCode/compliance-operator) and creates
-various resources that make it look like it scanned the cluster. These
-resources are useful for testing against known state, making the tests more stable.
+The `crds` directory holds the [Compliance
+Operator](https://github.com/ComplianceAsCode/compliance-operator) custom
+resource definitions. They are applied by the sensor integration tests in
+`sensor/tests/complianceoperator`, which need the CRDs to exist on the cluster
+but do not need a running Compliance Operator.
 
-These resources are used in assertions in the
-`tests/compliance_operator_tests.go` test cases, which are specific to the v1
-integration of the Compliance Operator into stackrox/ACS.
+This directory previously also contained a `create.sh` script and a `resources`
+directory that fabricated scan results, making it look like the Compliance
+Operator had scanned the cluster. Those were only used by the Compliance 1.0
+integration tests and were removed along with Compliance 1.0.
 
-The compliance v2 integration tests should not use these resources. Instead,
-they install the Compliance Operator and perform integration tests by
-interacting with the Compliance Operator directly.
-
-This directory can be removed when Compliance v1 is no longer supported.
+The Compliance v2 tests do not use anything here. They install the Compliance
+Operator (see `install_the_compliance_operator` in `tests/e2e/lib.sh`) and interact
+with it directly.

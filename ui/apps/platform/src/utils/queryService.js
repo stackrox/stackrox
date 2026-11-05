@@ -9,11 +9,9 @@ import { SUBJECT_FRAGMENT, SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject
 import { K8S_ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
-import { CONTROL_FRAGMENT } from 'queries/controls';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
 import {
-    CLUSTER_CVE_LIST_FRAGMENT,
     CLUSTER_LIST_FRAGMENT_UPDATED as VULN_CLUSTER_LIST_FRAGMENT_UPDATED,
     DEPLOYMENT_LIST_FRAGMENT_UPDATED as VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED,
     IMAGE_LIST_FRAGMENT as VULN_IMAGE_LIST_FRAGMENT,
@@ -69,11 +67,7 @@ function entityContextToQueryObject(entityContext, isNewImageDataModelEnabled = 
             }
         } else if (key === entityTypes.IMAGE_COMPONENT || key === entityTypes.NODE_COMPONENT) {
             entityQueryObj['COMPONENT ID'] = entityContext[key];
-        } else if (
-            key === entityTypes.IMAGE_CVE ||
-            key === entityTypes.NODE_CVE ||
-            key === entityTypes.CLUSTER_CVE
-        ) {
+        } else if (key === entityTypes.IMAGE_CVE || key === entityTypes.NODE_CVE) {
             entityQueryObj['CVE ID'] = entityContext[key];
         } else {
             entityQueryObj[`${key} ID`] = entityContext[key];
@@ -123,10 +117,6 @@ function getListFieldName(entityType, listType, useCase) {
         return 'nodeVulnerabilities';
     }
 
-    if (listType === entityTypes.CLUSTER_CVE) {
-        return 'clusterVulnerabilities';
-    }
-
     if (entityType === entityTypes.IMAGE) {
         if (listType === entityTypes.CVE) {
             return 'vulns';
@@ -143,9 +133,6 @@ function getListFieldName(entityType, listType, useCase) {
 
         if (listType === entityTypes.ROLE) {
             return 'k8sRoles';
-        }
-        if (listType === entityTypes.CONTROL) {
-            return 'complianceResults';
         }
     }
 
@@ -218,14 +205,10 @@ function getFragmentName(listType) {
             return 'policyFields';
         case entityTypes.SERVICE_ACCOUNT:
             return 'serviceAccountFields';
-        case entityTypes.CONTROL:
-            return 'controlFields';
         case entityTypes.IMAGE_CVE:
             return 'imageCVEFields';
         case entityTypes.NODE_CVE:
             return 'nodeCVEFields';
-        case entityTypes.CLUSTER_CVE:
-            return 'clusterCVEFields';
         case entityTypes.NODE_COMPONENT:
             return 'nodeComponentFields';
         case entityTypes.IMAGE_COMPONENT:
@@ -246,7 +229,6 @@ function getFragment(entityType, listType, useCase) {
         [entityTypes.SECRET]: SECRET_FRAGMENT,
         [entityTypes.POLICY]: POLICY_FRAGMENT,
         [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_FRAGMENT,
-        [entityTypes.CONTROL]: CONTROL_FRAGMENT,
     };
 
     const fragmentsByUseCase = {
@@ -259,7 +241,6 @@ function getFragment(entityType, listType, useCase) {
             ...defaultFragments,
             [entityTypes.NODE_COMPONENT]: VULN_NODE_COMPONENT_LIST_FRAGMENT,
             [entityTypes.IMAGE_COMPONENT]: VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
-            [entityTypes.CLUSTER_CVE]: CLUSTER_CVE_LIST_FRAGMENT,
             [entityTypes.NODE_CVE]: NODE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE_CVE]: VULN_IMAGE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE]: VULN_IMAGE_LIST_FRAGMENT,
@@ -274,17 +255,13 @@ function getFragment(entityType, listType, useCase) {
 
     if (
         entityType === entityTypes.NODE_COMPONENT &&
-        (listType === entityTypes.CVE ||
-            listType === entityTypes.NODE_CVE ||
-            listType === entityTypes.CLUSTER_CVE)
+        (listType === entityTypes.CVE || listType === entityTypes.NODE_CVE)
     ) {
         return NODE_CVE_LIST_FRAGMENT;
     }
     if (
         entityType === entityTypes.IMAGE_COMPONENT &&
-        (listType === entityTypes.CVE ||
-            listType === entityTypes.NODE_CVE ||
-            listType === entityTypes.CLUSTER_CVE)
+        (listType === entityTypes.CVE || listType === entityTypes.NODE_CVE)
     ) {
         return VULN_IMAGE_CVE_LIST_FRAGMENT;
     }

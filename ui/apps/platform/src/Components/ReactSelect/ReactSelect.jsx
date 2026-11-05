@@ -75,7 +75,7 @@ function withAdjustedBehavior(SelectComponent) {
             /* Renamed react-select 'value' property that accepts full option objects for the select value */
             optionValue: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
             /* The value of the select reflected by the values of the selected option(s), ignored if optionValue is passed */
-            value: PropTypes.any, // eslint-disable-line react/forbid-prop-types
+            value: PropTypes.any,
             /* See react-select docs */
             options: PropTypes.arrayOf(PropTypes.object),
             styles: PropTypes.shape({}),

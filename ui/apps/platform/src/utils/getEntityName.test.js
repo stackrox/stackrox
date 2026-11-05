@@ -67,24 +67,6 @@ describe('getEntityName', () => {
         expect(entityName).toEqual('system:kube-dns');
     });
 
-    it('handles combined data for a CONTROL entity', () => {
-        const entityType = entityTypes.CONTROL;
-        const data = {
-            control: {
-                id: 'CIS_Docker_v1_2_0:1_2_1',
-                name: '1.2.1',
-                description: 'Ensure a separate partition for containers has been created',
-                __typename: 'ComplianceControl',
-            },
-        };
-
-        const entityName = getEntityName(entityType, data);
-
-        expect(entityName).toEqual(
-            '1.2.1 - Ensure a separate partition for containers has been created'
-        );
-    });
-
     it('handles nested data for a SUBJECT entity', () => {
         const entityType = entityTypes.SUBJECT;
         const data = {

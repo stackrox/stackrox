@@ -36,7 +36,7 @@ function RiskIndicatorCard({ result }: RiskIndicatorCardProps) {
                         {result.factors.map(({ message, url }, index) => (
                             // TODO is the link external or internal?
                             /* eslint-disable generic/ExternalLink-anchor */
-                            // eslint-disable-next-line react/no-array-index-key
+                            // eslint-disable-next-line @eslint-react/no-array-index-key
                             <ListItem key={index}>
                                 {url ? (
                                     <a href={url} target="_blank" rel="noopener noreferrer">

@@ -6,13 +6,7 @@
 import type { RelationshipType } from 'constants/relationshipTypes';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
-/*
-// For historical interest: never used.
-const complianceEntityTypes = ['CONTROL', 'NODE', 'CLUSTER', 'NAMESPACE', 'DEPLOYMENT'];
-*/
-
 const configurationManagementEntityTypes = [
-    'CONTROL',
     'NODE',
     'IMAGE',
     'ROLE',
@@ -49,7 +43,6 @@ export function getConfigurationManagementEntityTypes(
 const vulnerabilityManagementEntityTypes = [
     'IMAGE_CVE',
     'NODE_CVE',
-    'CLUSTER_CVE',
     'CLUSTER',
     'NAMESPACE',
     'DEPLOYMENT',
@@ -62,16 +55,17 @@ const vulnerabilityManagementEntityTypes = [
 export type VulnerabilityManagementEntityType = (typeof vulnerabilityManagementEntityTypes)[number];
 
 export function getVulnerabilityManagementEntityTypes(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isFeatureFlagEnabled?: IsFeatureFlagEnabled
 ): VulnerabilityManagementEntityType[] {
+    /*
     if (isFeatureFlagEnabled) {
         return vulnerabilityManagementEntityTypes.filter((entityType) => {
-            if (entityType === 'CLUSTER_CVE' && !isFeatureFlagEnabled('ROX_LEGACY_SCANNER')) {
-                return false;
-            }
+            // TODO add feature flag dependency if needed
             return true;
         });
     }
+        */
 
     return [...vulnerabilityManagementEntityTypes];
 }
@@ -108,10 +102,8 @@ export const entityGroupMap: Record<EntityType, EntityGroup> = {
     IMAGE_COMPONENT: 'APPLICATION_RESOURCES',
 
     POLICY: 'SECURITY',
-    CONTROL: 'SECURITY',
     NODE_CVE: 'SECURITY',
     IMAGE_CVE: 'SECURITY',
-    CLUSTER_CVE: 'SECURITY',
 };
 
 type EntityRelationshipData = {
@@ -126,13 +118,13 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
     CLUSTER: {
         children: ['NODE', 'NAMESPACE', 'ROLE'],
         parents: [],
-        matches: ['CONTROL', 'CLUSTER_CVE'],
+        matches: [],
         // extendedMatches: [entityTypes.POLICY]
     },
     NODE: {
         children: ['NODE_COMPONENT'],
         parents: ['CLUSTER'],
-        matches: ['CONTROL'],
+        matches: [],
     },
     NAMESPACE: {
         children: ['DEPLOYMENT', 'SERVICE_ACCOUNT', 'SECRET'],
@@ -143,7 +135,7 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
     DEPLOYMENT: {
         children: ['IMAGE'],
         parents: ['NAMESPACE', 'CLUSTER'],
-        matches: ['SERVICE_ACCOUNT', 'POLICY', 'CONTROL', 'SECRET'],
+        matches: ['SERVICE_ACCOUNT', 'POLICY', 'SECRET'],
     },
     IMAGE: {
         children: ['IMAGE_COMPONENT'],
@@ -173,17 +165,6 @@ const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
         parents: [],
         matches: ['NODE_COMPONENT'],
         extendedMatches: ['NODE'],
-    },
-    CLUSTER_CVE: {
-        children: [],
-        parents: [],
-        matches: [],
-        extendedMatches: ['CLUSTER'],
-    },
-    CONTROL: {
-        children: [],
-        parents: [],
-        matches: ['NODE', 'DEPLOYMENT', 'CLUSTER'],
     },
     POLICY: {
         children: [],

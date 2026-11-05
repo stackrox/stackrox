@@ -2,7 +2,7 @@
  * Application route paths constants.
  */
 
-import { rbacConfigTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
+import { rbacConfigTypes, resourceTypes } from 'constants/entityTypes';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import type { HasReadAccess } from 'hooks/usePermissions';
 import type { ResourceName } from 'types/roleResources';
@@ -29,16 +29,12 @@ export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
 export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-image-scanning`;
 export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
-export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
-export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
 export const clustersClusterRegistrationSecretsPath = `${clustersBasePath}/cluster-registration-secrets`;
 export const clustersClusterRegistrationSecretsPathWithParam = `${clustersClusterRegistrationSecretsPath}/:id?`;
 
-export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
 export const clustersSecureClusterCrsPath = `${clustersBasePath}/secure-a-cluster-crs`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const complianceBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
@@ -84,7 +80,6 @@ export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 // TODO Deprecate these paths
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
-export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platform-cves`;
 // TODO End Deprecate
 
 export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user-workloads`;
@@ -169,11 +164,7 @@ export type RouteKey =
     // Discovered clusters must precede generic Clusters in Body and so here for consistency.
     | 'clusters/discovered-clusters'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
-    | 'clusters/init-bundles'
-    // Cluster registration secrets must precede generic Clusters in Body and so here for consistency.
     | 'clusters/cluster-registration-secrets'
-    // Cluster secure-a-cluster must precede generic Clusters in Body and so here for consistency.
-    | 'clusters/secure-a-cluster'
     // Cluster secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
     | 'clusters/secure-a-cluster-crs'
     | 'clusters'
@@ -207,7 +198,6 @@ export type RouteKey =
     | 'vulnerabilities/all-images'
     | 'vulnerabilities/inactive-images'
     | 'vulnerabilities/images-without-cves'
-    | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
     | 'base-images'
     | 'vulnerability-management'
@@ -235,17 +225,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'clusters/discovered-clusters': {
         resourceAccessRequirements: everyResource(['Administration']),
     },
-    // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
-    'clusters/init-bundles': {
-        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
-    },
     // Cluster registration secrets must precede generic Clusters in Body and so here for consistency.
     'clusters/cluster-registration-secrets': {
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
-    },
-    // Clusters secure-a-cluster must precede generic Clusters in Body and so here for consistency.
-    'clusters/secure-a-cluster': {
-        resourceAccessRequirements: everyResource([]),
     },
     // Clusters secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
     'clusters/secure-a-cluster-crs': {
@@ -268,7 +250,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: someResource([
             everyResource(['Alert', 'WorkflowAdministration']), // PolicyViolationsBySeverity
             // 'Cluster',
-            'Compliance',
             // 'Deployment',
             // 'Image',
             // 'K8sRole',
@@ -353,10 +334,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'vulnerabilities/node-cves': {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
-    },
-    'vulnerabilities/platform-cves': {
-        featureFlagRequirements: allEnabled(['ROX_LEGACY_SCANNER']),
-        resourceAccessRequirements: everyResource(['Cluster']),
     },
     // This is a lightweight page with cards that link to the individually gated report types
     // below. NavigationSidebar decides link visibility by checking the sub-route keys directly
@@ -445,11 +422,9 @@ export const urlEntityListTypes: Record<string, string> = {
     [resourceTypes.CVE]: 'cves', // TODO verify obsolete because non-postgres
     [resourceTypes.IMAGE_CVE]: 'image-cves',
     [resourceTypes.NODE_CVE]: 'node-cves',
-    [resourceTypes.CLUSTER_CVE]: 'cluster-cves',
     [resourceTypes.COMPONENT]: 'components', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-components',
     [resourceTypes.IMAGE_COMPONENT]: 'image-components',
-    [standardEntityTypes.CONTROL]: 'controls',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
     [rbacConfigTypes.SUBJECT]: 'subjects',
     [rbacConfigTypes.ROLE]: 'roles',
@@ -466,12 +441,9 @@ export const urlEntityTypes: Record<string, string> = {
     [resourceTypes.CVE]: 'cve', // TODO verify obsolete because non-postgres
     [resourceTypes.IMAGE_CVE]: 'image-cve',
     [resourceTypes.NODE_CVE]: 'node-cve',
-    [resourceTypes.CLUSTER_CVE]: 'cluster-cve',
     [resourceTypes.COMPONENT]: 'component', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-component',
     [resourceTypes.IMAGE_COMPONENT]: 'image-component',
-    [standardEntityTypes.CONTROL]: 'control',
-    [standardEntityTypes.STANDARD]: 'standard',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccount',
     [rbacConfigTypes.SUBJECT]: 'subject',
     [rbacConfigTypes.ROLE]: 'role',
@@ -483,7 +455,6 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
-    [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Reports',
     [vulnerabilityImageReportsPath]: 'Image reports',
@@ -495,8 +466,6 @@ export const basePathToLabelMap: Record<string, string> = {
     [networkBasePath]: 'Network Graph',
     [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
-    [complianceBasePath]: 'Compliance',
-    // [complianceEnhancedBasePath]: 'Compliance (2.0)',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',

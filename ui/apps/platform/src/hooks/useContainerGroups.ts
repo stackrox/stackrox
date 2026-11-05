@@ -1,7 +1,9 @@
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import type { Container } from 'types/deployment.proto';
+import type { ContainerType } from 'types/deployment.proto';
 
-export default function useContainerGroups(containers: Container[] | null | undefined) {
+export default function useContainerGroups<T extends { type: ContainerType }>(
+    containers: T[] | null | undefined
+) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const showInitContainers = isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT');
     const all = containers ?? [];

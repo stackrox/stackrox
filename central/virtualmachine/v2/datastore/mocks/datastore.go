@@ -124,6 +124,22 @@ func (mr *MockDataStoreMockRecorder) GetVirtualMachine(ctx, id any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVirtualMachine", reflect.TypeOf((*MockDataStore)(nil).GetVirtualMachine), ctx, id)
 }
 
+// GetVirtualMachineWithLatestScan mocks base method.
+func (m *MockDataStore) GetVirtualMachineWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVirtualMachineWithLatestScan", ctx, id)
+	ret0, _ := ret[0].(*common.VMWithLatestScan)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetVirtualMachineWithLatestScan indicates an expected call of GetVirtualMachineWithLatestScan.
+func (mr *MockDataStoreMockRecorder) GetVirtualMachineWithLatestScan(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVirtualMachineWithLatestScan", reflect.TypeOf((*MockDataStore)(nil).GetVirtualMachineWithLatestScan), ctx, id)
+}
+
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, query *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()

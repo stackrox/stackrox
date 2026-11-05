@@ -15,7 +15,6 @@ const entityNameKeyMap = {
     [entityTypes.CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
     [entityTypes.IMAGE_CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
     [entityTypes.NODE_CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
-    [entityTypes.CLUSTER_CVE]: (data) => resolvePath(data, 'vulnerability.cve'),
     [entityTypes.DEPLOYMENT]: (data) => resolvePath(data, 'deployment.name'),
     [entityTypes.NAMESPACE]: (data) => resolvePath(data, 'namespace.metadata.name'),
     [entityTypes.ROLE]: (data) => {
@@ -31,12 +30,6 @@ const entityNameKeyMap = {
         return result;
     },
     [entityTypes.NODE]: (data) => resolvePath(data, 'node.name'),
-    [entityTypes.CONTROL]: (data) => {
-        if (!data.control) {
-            return null;
-        }
-        return `${data.control.name} - ${data.control.description}`;
-    },
     [entityTypes.IMAGE]: (data) => resolvePath(data, 'image.name.fullName'),
     [entityTypes.POLICY]: (data) => resolvePath(data, 'policy.name'),
     [entityTypes.SUBJECT]: (data) => resolvePath(data, 'subject.name'),

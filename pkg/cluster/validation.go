@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/distribution/reference"
@@ -29,6 +30,9 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 // Some fields are allowed to be left empty for the server to complete with default values.
 func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	errorList := errorhelpers.NewErrorList("Cluster Validation")
+	if err := ValidateConfiguredNamespaceFilter(cluster); err != nil {
+		errorList.AddError(err)
+	}
 	if cluster.GetName() == "" {
 		errorList.AddString("Cluster name is required")
 	}
@@ -77,6 +81,19 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	cluster.CentralApiEndpoint = centralEndpoint
 
 	return errorList
+}
+
+// ValidateConfiguredNamespaceFilter checks the stored filter even when NoPersistence masks it.
+func ValidateConfiguredNamespaceFilter(cluster *storage.Cluster) error {
+	config := getProcessIndicatorsConfig(cluster)
+	if config == nil {
+		return nil
+	}
+	filter := config.GetExcludeNamespaceFilter()
+	if _, err := regexp.Compile(filter); err != nil {
+		return fmt.Errorf("invalid excluded namespaces filter %q: %w", filter, err)
+	}
+	return nil
 }
 
 // GetAutoLockProcessBaselinesEnabled returns whether the auto-lock process baselines feature is enabled

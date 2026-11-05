@@ -117,6 +117,9 @@ jobs:
         free-disk-space: 50
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Preserve source validator
+      run: cp .github/workflows/scripts/scanner-updater-validate-source.sh "$RUNNER_TEMP/scanner-updater-validate-source.sh"
+
     - name: Checkout updater ref
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
@@ -173,6 +176,12 @@ jobs:
             echo "::error::expected output file not found: $src"
             exit 1
         fi
+
+        if ! record_count=$(bash "$RUNNER_TEMP/scanner-updater-validate-source.sh" "$src"); then
+            echo "::error::${UPDATER_SOURCE}: refusing to upload invalid source data"
+            exit 1
+        fi
+        echo "Validated ${UPDATER_SOURCE}: ${record_count} records"
 
         digest="sha256:$(sha256sum "$src" | cut -d' ' -f1)"
         completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"

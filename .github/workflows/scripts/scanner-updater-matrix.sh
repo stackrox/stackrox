@@ -10,6 +10,7 @@
 #
 # Inputs (environment):
 #   SOURCE_CONFIG — path to source-config.yaml
+#   SCHEDULE_TIME — workflow run creation time; defaults to the current time.
 #
 # Outputs (stdout):
 #   JSON object with "has_due", "has_errors", "errors", and "matrix"
@@ -32,6 +33,9 @@ sc="$(dirname "$0")/scanner-updater-config.sh"
 bucket=$("$sc" bucket)
 prefix=$("$sc" prefix)
 
+schedule_epoch=$(date -u -d "${SCHEDULE_TIME:-now}" +%s)
+schedule_hour=$(( schedule_epoch / 3600 ))
+
 # Expand stream/ref/updater triples, check freshness, emit due pairs.
 ./.github/workflows/scripts/scanner-get-released-tags.sh \
     | jq -r '.[] | "\(.version) \(.ref)"' \
@@ -44,10 +48,17 @@ prefix=$("$sc" prefix)
     | while read -r stream ref updater; do
           object="gs://${bucket}/${prefix}/${stream}/sources/${updater}.json.zst"
           interval_secs=$("$sc" interval-secs "$updater")
+          cadence_secs=$("$sc" attempt-cadence-secs "$updater")
+          if (( cadence_secs > 0 )); then
+              cadence_hours=$(( cadence_secs / 3600 ))
+              if (( schedule_hour % cadence_hours != 0 )); then
+                  continue
+              fi
+          fi
 
           fresh=$(GCS_OBJECT="$object" \
               ./.github/workflows/scripts/scanner-updater-check-freshness.sh --max-age "$interval_secs") || {
-              echo "::error::${object}: freshness check failed"
+              echo "::error::${object}: freshness check failed" >&2
               jq -n --arg msg "${object}: freshness check failed" '{error: $msg}'
               continue
           }

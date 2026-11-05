@@ -114,7 +114,7 @@ function DelegatedRegistriesTable({
                             : 'default';
 
                     // Even path and clusterId combined is not a unique key.
-                    /* eslint-disable react/no-array-index-key */
+                    /* eslint-disable @eslint-react/no-array-index-key */
                     return (
                         <Tr key={rowIndex}>
                             <Td dataLabel="Source registry">
@@ -180,7 +180,7 @@ function DelegatedRegistriesTable({
             </Tbody>
         </Table>
     );
-    /* eslint-enable react/no-array-index-key */
+    /* eslint-enable @eslint-react/no-array-index-key */
 }
 
 export default DelegatedRegistriesTable;

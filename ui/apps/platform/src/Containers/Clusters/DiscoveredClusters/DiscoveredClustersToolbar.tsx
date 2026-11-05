@@ -17,7 +17,7 @@ import { searchFilterConfig } from './searchFilterConfig';
 export type DiscoveredClustersToolbarProps = {
     count: number;
     // Comment out use of prop for MVP because testers complained about flicker.
-    isDisabled: boolean; // eslint-disable-line react/no-unused-prop-types
+    isDisabled: boolean;
     page: number;
     perPage: number;
     setPage: (newPage: number) => void;

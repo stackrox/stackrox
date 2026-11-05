@@ -1,6 +1,10 @@
 package reconciler
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -20,8 +24,27 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+// A Central in any namespace changes the derived cluster label for every SecuredCluster.
+func securedClusterRequests(ctx context.Context, client ctrlClient.Client) []reconcile.Request {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	list := &platform.SecuredClusterList{}
+	if err := client.List(ctx, list); err != nil {
+		// Match HandleSiblings: a failed list must not silently leave resources stale.
+		panic(fmt.Errorf("cannot retrieve SecuredClusters when processing Central event: %w", err))
+	}
+	requests := make([]reconcile.Request, 0, len(list.Items))
+	for i := range list.Items {
+		requests = append(requests, utils.RequestFor(&list.Items[i]))
+	}
+	return requests
+}
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlsprofile.TLSProfile) error {
@@ -31,9 +54,11 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlspro
 		source.Kind[*platform.Central](
 			mgr.GetCache(),
 			&platform.Central{},
-			reconciler.HandleSiblings[*platform.Central](platform.SecuredClusterGVK, mgr),
-			// Only appearance and disappearance of a Central resource can influence whether
-			// a local scanner should be deployed by the SecuredCluster controller.
+			handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, _ *platform.Central) []reconcile.Request {
+				return securedClusterRequests(ctx, mgr.GetClient())
+			}),
+			// Central creation and deletion affect the cluster-wide derived label; a
+			// Central in the same namespace also affects local scanner detection.
 			utils.CreateAndDeleteOnlyPredicate[*platform.Central]{}))
 	// IMPORTANT: The FeatureDefaultingExtension preExtensions implements feature-defaulting logic
 	// and therefore must be executed and registered first.

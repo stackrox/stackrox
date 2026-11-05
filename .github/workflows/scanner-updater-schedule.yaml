@@ -16,6 +16,9 @@ permissions:
 
 jobs:
   build-matrix:
+    permissions:
+      contents: read
+      actions: read
     if: >-
       github.repository_owner == 'stackrox' && (
         github.event_name != 'pull_request' ||
@@ -48,6 +51,9 @@ jobs:
         SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
       run: |
         set -euo pipefail
+        # Keep cadence eligibility stable if this job is queued or rerun.
+        schedule_time=$(GH_TOKEN="${{ github.token }}" gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" --jq '.created_at')
+        export SCHEDULE_TIME="$schedule_time"
         result=$(./.github/workflows/scripts/scanner-updater-matrix.sh)
         {
           echo "has_errors=$(echo "$result" | jq -r '.has_errors')"

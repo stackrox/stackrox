@@ -15,9 +15,28 @@ GORM AutoMigrate enforces this by design: it will not remove unused columns or m
 breaking data type changes, though it will perform updates on precision.
 See [GORM Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration).
 
-When a previously-supported version can no longer tolerate the current schema, update
-`MinimumSupportedDBVersionSeqNum` in `pkg/migrations/internal/fallback_seq_num.go`.
-The migrator will reject upgrades from versions below this threshold.
+## Upgrade compatibility
+
+Upgrades support the three preceding X.Y streams, ignoring patches and suffixes.
+Sequence-based rollback protection remains unchanged. Rejections are logged and
+written to `/dev/termination-log`; migrator releases database resources, waits one
+minute, and exits without starting Central. Pod shutdown may force termination.
+
+For support-assisted recovery only, `ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE=true`
+bypasses the product-version gate, not rollback/restore protections, missing
+migrations, invalid records, unsupported metadata formats, or database errors.
+Invalid metadata requires manual recovery with support guidance. Remove the override
+after recovery. Operator downgrade may be unsafe for Scanner DB.
+
+A missing `versions` table or an empty table is treated as a fresh installation,
+even if other application tables exist. Lost version metadata can therefore cause
+required migrations to be skipped.
+
+Migration availability is checked as each step executes. If a later migration is
+missing, earlier migrations may already have completed; their checkpoints are retained.
+
+Only column-based version metadata is supported (written since ACS 4.1).
+Legacy serialized-only metadata fails with a database query error; it is not decoded.
 
 ## Do you need a migration?
 
@@ -132,6 +151,18 @@ Central upgrade sequence:
 The rollout checker (step 9) ensures that no old-version Central pods are still running
 before background migrations begin. This prevents conflicts between old code writing data
 in the pre-migration format while the migration is transforming it.
+
+### Central Worker startup coordination
+
+Central Worker briefly acquires the startup migration lock to check the database
+version. If an upgrade is needed and Worker holds the lock, the migrator retries
+acquisition for up to 30 seconds. This limit does not apply to migration execution.
+
+Worker waits for the startup migration lock and a compatible database version
+until shutdown is requested. While waiting, its liveness endpoint succeeds and
+its readiness endpoint fails. Background migrations use a separate advisory lock
+and version sequence, so they do not block Worker startup. Worker must tolerate
+partially completed background backfills, like Central.
 
 ### Testing backwards compatibility
 

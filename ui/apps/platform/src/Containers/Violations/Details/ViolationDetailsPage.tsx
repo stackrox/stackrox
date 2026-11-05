@@ -135,11 +135,7 @@ function ViolationDetailsPage(): ReactElement {
                     </Label>
                 )}
             </LabelGroup>
-            <PageSection
-                hasBodyWrapper={false}
-                variant="default"
-                padding={{ default: 'noPadding' }}
-            >
+            <PageSection type="tabs">
                 <Tabs
                     mountOnEnter
                     activeKey={activeTabKey}

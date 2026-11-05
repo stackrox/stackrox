@@ -39,7 +39,11 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     mkdir /docker-entrypoint-initdb.d
 
-COPY --link scripts \
+COPY --link \
+    scripts/backup-cleanup.sh \
+    scripts/cert-watcher.sh \
+    scripts/docker-entrypoint.sh \
+    scripts/init-entrypoint.sh \
     /usr/local/bin/
 
 ENV LANG="en_US.utf8"

@@ -28,3 +28,8 @@ func IsEphemeralOrigin(resource ResourceWithTraits) bool {
 func IsImperativeOrigin(resource ResourceWithTraits) bool {
 	return resource.GetTraits().GetOrigin() == storage.Traits_IMPERATIVE
 }
+
+// IsDefaultOrigin returns whether origin of resource is default or not.
+func IsDefaultOrigin(resource ResourceWithTraits) bool {
+	return resource.GetTraits().GetOrigin() == storage.Traits_DEFAULT
+}

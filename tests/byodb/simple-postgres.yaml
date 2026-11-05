@@ -18,6 +18,7 @@ spec:
       containers:
       - name: postgres
         image: postgres:${POSTGRES_VERSION}
+        args: ["-c", "max_connections=150"]
         ports:
         - containerPort: 5432
           name: postgres

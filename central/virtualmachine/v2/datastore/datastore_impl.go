@@ -47,6 +47,11 @@ func (ds *datastoreImpl) GetManyVirtualMachines(ctx context.Context, ids []strin
 	return ds.store.GetMany(ctx, ids)
 }
 
+func (ds *datastoreImpl) GetVirtualMachineWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "GetVirtualMachineWithLatestScan")
+	return ds.store.GetWithLatestScan(ctx, id)
+}
+
 func (ds *datastoreImpl) EnsureVirtualMachineExists(ctx context.Context, vmID string, clusterID string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "EnsureVirtualMachineExists")
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/pkg/errors"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -13,7 +14,6 @@ import (
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/securedclustercertgen"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -59,7 +59,6 @@ type sensorConnection struct {
 
 	sendC chan *central.MsgToSensor
 
-	scrapeCtrl          scrape.Controller
 	networkPoliciesCtrl networkpolicies.Controller
 	networkEntitiesCtrl networkentities.Controller
 	telemetryCtrl       telemetry.Controller
@@ -143,7 +142,6 @@ func newConnection(ctx context.Context,
 
 	conn.hashDeduper = deduper
 	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
-	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
 	conn.telemetryCtrl = telemetry.NewController(conn.capabilities, conn, &conn.stopSig)
@@ -308,10 +306,6 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 	}
 }
 
-func (c *sensorConnection) Scrapes() scrape.Controller {
-	return c.scrapeCtrl
-}
-
 func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
 	c.multiplexedPush(sac.WithAllAccess(WithConnection(context.Background(), c)), msg, nil)
 }
@@ -346,8 +340,6 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 
 func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFromSensor) error {
 	switch m := msg.GetMsg().(type) {
-	case *central.MsgFromSensor_ScrapeUpdate:
-		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	case *central.MsgFromSensor_TelemetryDataResponse:
@@ -544,6 +536,13 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 		// Otherwise, sensor supports the same version or newer as central
 	}
 
+	// Remove exclude_by_kind exclusions before syncing to a Sensor that
+	// lacks WorkloadKindExclusionCap. Sensor forwards this same list to
+	// the admission controller, so AC evaluates the same copy.
+	if !c.HasCapability(centralsensor.WorkloadKindExclusionCap) {
+		policies = stripExcludeByKindExclusions(policies)
+	}
+
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_PolicySync{
 			PolicySync: &central.PolicySync{
@@ -551,6 +550,32 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 			},
 		},
 	}, nil
+}
+
+// stripExcludeByKindExclusions returns a copy of policies with every exclusion
+// that sets exclude_by_kind removed. Stored policies are not mutated. An old
+// Sensor compiles an exclude_by_kind item as an unconstrained exclusion (nil
+// name and nil scope match every workload). Sensor does not evaluate image
+// exclusions, so an image+kind item with only the kind matcher removed is that
+// same unconstrained exclusion and is removed entirely. An exclusion with no
+// kind matcher is kept, including an image combined with a deployment name or
+// scope.
+func stripExcludeByKindExclusions(policies []*storage.Policy) []*storage.Policy {
+	out := make([]*storage.Policy, 0, len(policies))
+	for _, p := range policies {
+		if !slices.ContainsFunc(p.GetExclusions(), exclusionSetsExcludeByKind) {
+			out = append(out, p)
+			continue
+		}
+		cloned := p.CloneVT()
+		cloned.Exclusions = slices.DeleteFunc(cloned.GetExclusions(), exclusionSetsExcludeByKind)
+		out = append(out, cloned)
+	}
+	return out
+}
+
+func exclusionSetsExcludeByKind(e *storage.Exclusion) bool {
+	return e.GetExcludeByKind() != nil
 }
 
 func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {

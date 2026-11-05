@@ -86,6 +86,124 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0}
 }
 
+// ComplianceCheckDataFreshness indicates whether a single compliance check
+// result is current relative to the scan configuration's schedule.
+type ComplianceCheckDataFreshness int32
+
+const (
+	// No freshness information available. Either the server could not evaluate
+	// freshness (no schedule, unresolvable config, or no data) or the field was
+	// not populated. This is the zero value.
+	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN ComplianceCheckDataFreshness = 0
+	// Data reflects the most recent expected scan cycle.
+	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT ComplianceCheckDataFreshness = 1
+	// Data predates the most recent expected scan cycle.
+	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE ComplianceCheckDataFreshness = 2
+)
+
+// Enum value maps for ComplianceCheckDataFreshness.
+var (
+	ComplianceCheckDataFreshness_name = map[int32]string{
+		0: "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
+		1: "COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT",
+		2: "COMPLIANCE_CHECK_DATA_FRESHNESS_STALE",
+	}
+	ComplianceCheckDataFreshness_value = map[string]int32{
+		"COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN": 0,
+		"COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT": 1,
+		"COMPLIANCE_CHECK_DATA_FRESHNESS_STALE":   2,
+	}
+)
+
+func (x ComplianceCheckDataFreshness) Enum() *ComplianceCheckDataFreshness {
+	p := new(ComplianceCheckDataFreshness)
+	*p = x
+	return p
+}
+
+func (x ComplianceCheckDataFreshness) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ComplianceCheckDataFreshness) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_compliance_common_proto_enumTypes[1].Descriptor()
+}
+
+func (ComplianceCheckDataFreshness) Type() protoreflect.EnumType {
+	return &file_api_v2_compliance_common_proto_enumTypes[1]
+}
+
+func (x ComplianceCheckDataFreshness) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ComplianceCheckDataFreshness.Descriptor instead.
+func (ComplianceCheckDataFreshness) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{1}
+}
+
+// ComplianceAggregateDataFreshness indicates the freshness of compliance data
+// aggregated over multiple checks (a cluster, a scan, or a cross-cluster rollup of
+// a single check). Unlike a single check, an aggregate can mix fresh and stale
+// results.
+type ComplianceAggregateDataFreshness int32
+
+const (
+	// No freshness information available. Either no contributing check could be
+	// resolved to current or stale, or the field was not populated. This is the
+	// zero value.
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN ComplianceAggregateDataFreshness = 0
+	// At least one contributing check is current and none are stale.
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT ComplianceAggregateDataFreshness = 1
+	// At least one contributing check is stale and none are current.
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE ComplianceAggregateDataFreshness = 2
+	// Contributing checks are a mix of stale and current data.
+	ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT ComplianceAggregateDataFreshness = 3
+)
+
+// Enum value maps for ComplianceAggregateDataFreshness.
+var (
+	ComplianceAggregateDataFreshness_name = map[int32]string{
+		0: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+		1: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT",
+		2: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE",
+		3: "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT",
+	}
+	ComplianceAggregateDataFreshness_value = map[string]int32{
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN":      0,
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT":      1,
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE":        2,
+		"COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT": 3,
+	}
+)
+
+func (x ComplianceAggregateDataFreshness) Enum() *ComplianceAggregateDataFreshness {
+	p := new(ComplianceAggregateDataFreshness)
+	*p = x
+	return p
+}
+
+func (x ComplianceAggregateDataFreshness) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ComplianceAggregateDataFreshness) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_compliance_common_proto_enumTypes[2].Descriptor()
+}
+
+func (ComplianceAggregateDataFreshness) Type() protoreflect.EnumType {
+	return &file_api_v2_compliance_common_proto_enumTypes[2]
+}
+
+func (x ComplianceAggregateDataFreshness) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ComplianceAggregateDataFreshness.Descriptor instead.
+func (ComplianceAggregateDataFreshness) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{2}
+}
+
 // OperatorKind is the kind of the Compliance Operator resource that this
 // `ComplianceRule` was sourced from. ACS represents both Compliance Operator
 // `Rules` and `CustomRules` as compliance rules.
@@ -125,11 +243,11 @@ func (x ComplianceRule_OperatorKind) String() string {
 }
 
 func (ComplianceRule_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_compliance_common_proto_enumTypes[1].Descriptor()
+	return file_api_v2_compliance_common_proto_enumTypes[3].Descriptor()
 }
 
 func (ComplianceRule_OperatorKind) Type() protoreflect.EnumType {
-	return &file_api_v2_compliance_common_proto_enumTypes[1]
+	return &file_api_v2_compliance_common_proto_enumTypes[3]
 }
 
 func (x ComplianceRule_OperatorKind) Number() protoreflect.EnumNumber {
@@ -180,11 +298,11 @@ func (x ComplianceProfileSummary_OperatorKind) String() string {
 }
 
 func (ComplianceProfileSummary_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_compliance_common_proto_enumTypes[2].Descriptor()
+	return file_api_v2_compliance_common_proto_enumTypes[4].Descriptor()
 }
 
 func (ComplianceProfileSummary_OperatorKind) Type() protoreflect.EnumType {
-	return &file_api_v2_compliance_common_proto_enumTypes[2]
+	return &file_api_v2_compliance_common_proto_enumTypes[4]
 }
 
 func (x ComplianceProfileSummary_OperatorKind) Number() protoreflect.EnumNumber {
@@ -459,12 +577,14 @@ func (x *ComplianceCheckStatusCount) GetStatus() ComplianceCheckStatus {
 
 // Group the number of occurrences by status
 type ComplianceCheckResultStatusCount struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	CheckName     string                        `protobuf:"bytes,1,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	Rationale     string                        `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	RuleName      string                        `protobuf:"bytes,3,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,4,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	Controls      []*ComplianceControl          `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
+	state      protoimpl.MessageState        `protogen:"open.v1"`
+	CheckName  string                        `protobuf:"bytes,1,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	Rationale  string                        `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	RuleName   string                        `protobuf:"bytes,3,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
+	CheckStats []*ComplianceCheckStatusCount `protobuf:"bytes,4,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	Controls   []*ComplianceControl          `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
+	// Rolled up across all clusters reporting this check.
+	DataFreshness ComplianceAggregateDataFreshness `protobuf:"varint,6,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceAggregateDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -532,6 +652,13 @@ func (x *ComplianceCheckResultStatusCount) GetControls() []*ComplianceControl {
 		return x.Controls
 	}
 	return nil
+}
+
+func (x *ComplianceCheckResultStatusCount) GetDataFreshness() ComplianceAggregateDataFreshness {
+	if x != nil {
+		return x.DataFreshness
+	}
+	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 }
 
 type ComplianceControl struct {
@@ -727,11 +854,12 @@ func (x *ListComplianceProfileResults) GetTotalCount() int32 {
 
 // ComplianceClusterOverallStats provides overall stats for cluster
 type ComplianceClusterOverallStats struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Cluster       *ComplianceScanCluster        `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	ClusterErrors []string                      `protobuf:"bytes,3,rep,name=cluster_errors,json=clusterErrors,proto3" json:"cluster_errors,omitempty"`
-	LastScanTime  *timestamppb.Timestamp        `protobuf:"bytes,4,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	state         protoimpl.MessageState           `protogen:"open.v1"`
+	Cluster       *ComplianceScanCluster           `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	CheckStats    []*ComplianceCheckStatusCount    `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	ClusterErrors []string                         `protobuf:"bytes,3,rep,name=cluster_errors,json=clusterErrors,proto3" json:"cluster_errors,omitempty"`
+	LastScanTime  *timestamppb.Timestamp           `protobuf:"bytes,4,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	DataFreshness ComplianceAggregateDataFreshness `protobuf:"varint,5,opt,name=data_freshness,json=dataFreshness,proto3,enum=v2.ComplianceAggregateDataFreshness" json:"data_freshness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -792,6 +920,13 @@ func (x *ComplianceClusterOverallStats) GetLastScanTime() *timestamppb.Timestamp
 		return x.LastScanTime
 	}
 	return nil
+}
+
+func (x *ComplianceClusterOverallStats) GetDataFreshness() ComplianceAggregateDataFreshness {
+	if x != nil {
+		return x.DataFreshness
+	}
+	return ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
 }
 
 // ListComplianceCheckScanStatsResponse provides stats per cluster
@@ -1150,7 +1285,7 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\"e\n" +
 	"\x1aComplianceCheckStatusCount\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\x121\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x19.v2.ComplianceCheckStatusR\x06status\"\xf0\x01\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x19.v2.ComplianceCheckStatusR\x06status\"\xbd\x02\n" +
 	" ComplianceCheckResultStatusCount\x12\x1d\n" +
 	"\n" +
 	"check_name\x18\x01 \x01(\tR\tcheckName\x12\x1c\n" +
@@ -1158,7 +1293,8 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\trule_name\x18\x03 \x01(\tR\bruleName\x12?\n" +
 	"\vcheck_stats\x18\x04 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x121\n" +
-	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\"I\n" +
+	"\bcontrols\x18\x05 \x03(\v2\x15.v2.ComplianceControlR\bcontrols\x12K\n" +
+	"\x0edata_freshness\x18\x06 \x01(\x0e2$.v2.ComplianceAggregateDataFreshnessR\rdataFreshness\"I\n" +
 	"\x11ComplianceControl\x12\x1a\n" +
 	"\bstandard\x18\x01 \x01(\tR\bstandard\x12\x18\n" +
 	"\acontrol\x18\x02 \x01(\tR\acontrol\"\xa0\x01\n" +
@@ -1173,13 +1309,14 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\x0fprofile_results\x18\x01 \x03(\v2$.v2.ComplianceCheckResultStatusCountR\x0eprofileResults\x12!\n" +
 	"\fprofile_name\x18\x02 \x01(\tR\vprofileName\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +
-	"totalCount\"\xfe\x01\n" +
+	"totalCount\"\xcb\x02\n" +
 	"\x1dComplianceClusterOverallStats\x123\n" +
 	"\acluster\x18\x01 \x01(\v2\x19.v2.ComplianceScanClusterR\acluster\x12?\n" +
 	"\vcheck_stats\x18\x02 \x03(\v2\x1e.v2.ComplianceCheckStatusCountR\n" +
 	"checkStats\x12%\n" +
 	"\x0ecluster_errors\x18\x03 \x03(\tR\rclusterErrors\x12@\n" +
-	"\x0elast_scan_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\"\x8e\x01\n" +
+	"\x0elast_scan_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\flastScanTime\x12K\n" +
+	"\x0edata_freshness\x18\x05 \x01(\x0e2$.v2.ComplianceAggregateDataFreshnessR\rdataFreshness\"\x8e\x01\n" +
 	")ListComplianceClusterOverallStatsResponse\x12@\n" +
 	"\n" +
 	"scan_stats\x18\x01 \x03(\v2!.v2.ComplianceClusterOverallStatsR\tscanStats\x12\x1f\n" +
@@ -1216,7 +1353,16 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\aB'\n" +
+	"\fINCONSISTENT\x10\a*\xa3\x01\n" +
+	"\x1cComplianceCheckDataFreshness\x12+\n" +
+	"'COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN\x10\x00\x12+\n" +
+	"'COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT\x10\x01\x12)\n" +
+	"%COMPLIANCE_CHECK_DATA_FRESHNESS_STALE\x10\x02*\xe9\x01\n" +
+	" ComplianceAggregateDataFreshness\x12/\n" +
+	"+COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN\x10\x00\x12/\n" +
+	"+COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT\x10\x01\x12-\n" +
+	")COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE\x10\x02\x124\n" +
+	"0COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT\x10\x03B'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2b\x06proto3"
 
 var (
@@ -1231,48 +1377,52 @@ func file_api_v2_compliance_common_proto_rawDescGZIP() []byte {
 	return file_api_v2_compliance_common_proto_rawDescData
 }
 
-var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_api_v2_compliance_common_proto_goTypes = []any{
 	(ComplianceCheckStatus)(0),                        // 0: v2.ComplianceCheckStatus
-	(ComplianceRule_OperatorKind)(0),                  // 1: v2.ComplianceRule.OperatorKind
-	(ComplianceProfileSummary_OperatorKind)(0),        // 2: v2.ComplianceProfileSummary.OperatorKind
-	(*ComplianceRule)(nil),                            // 3: v2.ComplianceRule
-	(*ComplianceScanCluster)(nil),                     // 4: v2.ComplianceScanCluster
-	(*ComplianceCheckStatusCount)(nil),                // 5: v2.ComplianceCheckStatusCount
-	(*ComplianceCheckResultStatusCount)(nil),          // 6: v2.ComplianceCheckResultStatusCount
-	(*ComplianceControl)(nil),                         // 7: v2.ComplianceControl
-	(*ComplianceBenchmark)(nil),                       // 8: v2.ComplianceBenchmark
-	(*ListComplianceProfileResults)(nil),              // 9: v2.ListComplianceProfileResults
-	(*ComplianceClusterOverallStats)(nil),             // 10: v2.ComplianceClusterOverallStats
-	(*ListComplianceClusterOverallStatsResponse)(nil), // 11: v2.ListComplianceClusterOverallStatsResponse
-	(*ComplianceProfileResultsRequest)(nil),           // 12: v2.ComplianceProfileResultsRequest
-	(*ComplianceProfileCheckRequest)(nil),             // 13: v2.ComplianceProfileCheckRequest
-	(*ComplianceProfileSummary)(nil),                  // 14: v2.ComplianceProfileSummary
-	(*ComplianceRule_Fix)(nil),                        // 15: v2.ComplianceRule.Fix
-	(*timestamppb.Timestamp)(nil),                     // 16: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                  // 17: v2.RawQuery
+	(ComplianceCheckDataFreshness)(0),                 // 1: v2.ComplianceCheckDataFreshness
+	(ComplianceAggregateDataFreshness)(0),             // 2: v2.ComplianceAggregateDataFreshness
+	(ComplianceRule_OperatorKind)(0),                  // 3: v2.ComplianceRule.OperatorKind
+	(ComplianceProfileSummary_OperatorKind)(0),        // 4: v2.ComplianceProfileSummary.OperatorKind
+	(*ComplianceRule)(nil),                            // 5: v2.ComplianceRule
+	(*ComplianceScanCluster)(nil),                     // 6: v2.ComplianceScanCluster
+	(*ComplianceCheckStatusCount)(nil),                // 7: v2.ComplianceCheckStatusCount
+	(*ComplianceCheckResultStatusCount)(nil),          // 8: v2.ComplianceCheckResultStatusCount
+	(*ComplianceControl)(nil),                         // 9: v2.ComplianceControl
+	(*ComplianceBenchmark)(nil),                       // 10: v2.ComplianceBenchmark
+	(*ListComplianceProfileResults)(nil),              // 11: v2.ListComplianceProfileResults
+	(*ComplianceClusterOverallStats)(nil),             // 12: v2.ComplianceClusterOverallStats
+	(*ListComplianceClusterOverallStatsResponse)(nil), // 13: v2.ListComplianceClusterOverallStatsResponse
+	(*ComplianceProfileResultsRequest)(nil),           // 14: v2.ComplianceProfileResultsRequest
+	(*ComplianceProfileCheckRequest)(nil),             // 15: v2.ComplianceProfileCheckRequest
+	(*ComplianceProfileSummary)(nil),                  // 16: v2.ComplianceProfileSummary
+	(*ComplianceRule_Fix)(nil),                        // 17: v2.ComplianceRule.Fix
+	(*timestamppb.Timestamp)(nil),                     // 18: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                  // 19: v2.RawQuery
 }
 var file_api_v2_compliance_common_proto_depIdxs = []int32{
-	15, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
-	1,  // 1: v2.ComplianceRule.operator_kind:type_name -> v2.ComplianceRule.OperatorKind
+	17, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
+	3,  // 1: v2.ComplianceRule.operator_kind:type_name -> v2.ComplianceRule.OperatorKind
 	0,  // 2: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
-	5,  // 3: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	7,  // 4: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
-	6,  // 5: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
-	4,  // 6: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
-	5,  // 7: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	16, // 8: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
-	10, // 9: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
-	17, // 10: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
-	17, // 11: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
-	8,  // 12: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	2,  // 13: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	7,  // 3: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	9,  // 4: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
+	2,  // 5: v2.ComplianceCheckResultStatusCount.data_freshness:type_name -> v2.ComplianceAggregateDataFreshness
+	8,  // 6: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
+	6,  // 7: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
+	7,  // 8: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	18, // 9: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
+	2,  // 10: v2.ComplianceClusterOverallStats.data_freshness:type_name -> v2.ComplianceAggregateDataFreshness
+	12, // 11: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
+	19, // 12: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
+	19, // 13: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
+	10, // 14: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
+	4,  // 15: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_common_proto_init() }
@@ -1286,7 +1436,7 @@ func file_api_v2_compliance_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_compliance_common_proto_rawDesc), len(file_api_v2_compliance_common_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      5,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,

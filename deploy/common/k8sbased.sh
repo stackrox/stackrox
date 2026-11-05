@@ -322,6 +322,9 @@ function launch_central {
           --set persistence.type="${STORAGE}"
           --set exposure.type="${MONITORING_LOAD_BALANCER}"
         )
+        if [[ -n "${SCANNER_V4_DB_CLAIM_NAME:-}" ]]; then
+          helm_args+=(--set-string "scannerV4DbPvcClaimName=${SCANNER_V4_DB_CLAIM_NAME}")
+        fi
         if [[ "${is_local_dev}" == "true" ]]; then
           helm_args+=(-f "${COMMON_DIR}/monitoring-values-local.yaml")
         fi
@@ -514,6 +517,9 @@ function launch_central {
 
       if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
         helm_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+      fi
+      if [[ -n "${SCANNER_V4_DB_CLAIM_NAME:-}" ]]; then
+        helm_args+=(--set-string "scannerV4.db.persistence.persistentVolumeClaim.claimName=${SCANNER_V4_DB_CLAIM_NAME}")
       fi
 
       # Add a custom values file to Helm

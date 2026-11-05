@@ -43,6 +43,8 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	// Get returns the VM with the given ID.
 	Get(ctx context.Context, id string) (*storage.VirtualMachineV2, bool, error)
+	// GetWithLatestScan returns a VM and its latest scan in one query.
+	GetWithLatestScan(ctx context.Context, id string) (*common.VMWithLatestScan, bool, error)
 	// GetMany returns the VMs with the given IDs.
 	GetMany(ctx context.Context, ids []string) ([]*storage.VirtualMachineV2, []int, error)
 

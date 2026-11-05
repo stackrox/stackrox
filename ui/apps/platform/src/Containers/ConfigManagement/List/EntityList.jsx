@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import PageNotFound from 'Components/PageNotFound';
 
 import ConfigManagementListClusters from './ConfigManagementListClusters';
-import ConfigManagementListControls from './ConfigManagementListControls';
 import ConfigManagementListDeployments from './ConfigManagementListDeployments';
 import ConfigManagementListImages from './ConfigManagementListImages';
 import ConfigManagementListNamespaces from './ConfigManagementListNamespaces';
@@ -16,7 +15,6 @@ import ConfigManagementListSubjects from './ConfigManagementListSubjects';
 
 const entityComponentMap = {
     CLUSTER: ConfigManagementListClusters,
-    CONTROL: ConfigManagementListControls,
     DEPLOYMENT: ConfigManagementListDeployments,
     IMAGE: ConfigManagementListImages,
     NAMESPACE: ConfigManagementListNamespaces,

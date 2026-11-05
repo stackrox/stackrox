@@ -140,6 +140,7 @@ func GetNextYStream(v XYVersion) XYVersion {
 // ParseXYFromVersionString extracts the major.minor (X.Y) components from
 // a full version string. It accepts formats such as "4.11", "4.11.2",
 // "4.11.0-rc.1", and "4.11.x-123-gabcdef1234".
+// The major version must be positive and the minor version non-negative.
 func ParseXYFromVersionString(version string) (XYVersion, error) {
 	before, _, _ := strings.Cut(version, "-")
 	parts := strings.Split(before, ".")
@@ -150,9 +151,15 @@ func ParseXYFromVersionString(version string) (XYVersion, error) {
 	if err != nil {
 		return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
 	}
+	if major <= 0 {
+		return XYVersion{}, fmt.Errorf("invalid major %q in version %q: must be positive", parts[0], version)
+	}
 	minor, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: %w", parts[1], version, err)
+	}
+	if minor < 0 {
+		return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: must be non-negative", parts[1], version)
 	}
 	return XYVersion{X: major, Y: minor}, nil
 }

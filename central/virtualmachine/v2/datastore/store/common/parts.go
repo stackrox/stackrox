@@ -2,6 +2,13 @@ package common
 
 import "github.com/stackrox/rox/generated/storage"
 
+// VMWithLatestScan contains VM metadata and its latest scan from one database snapshot.
+// Scan is nil when the VM has not been scanned.
+type VMWithLatestScan struct {
+	VM   *storage.VirtualMachineV2
+	Scan *storage.VirtualMachineScanV2
+}
+
 // VMScanParts groups the scan, components, and CVEs that together represent
 // a single VM scan result. UpsertScan consumes this structure.
 type VMScanParts struct {

@@ -116,7 +116,7 @@ This sets `localStorage.access_token` from the `ROX_AUTH_TOKEN` env var in `befo
 
 ## Feature Flag Gating
 
-Tests that depend on a feature flag should skip when the flag is not enabled. The test runner scripts (`scripts/cypress.sh`) fetch flags from the deployment API and export them as `CYPRESS_ROX_*` env vars.
+Tests that depend on a feature flag should skip when the flag is not enabled. The test runner scripts (`scripts/cypress.sh`) fetch flags from the deployment API and export them as `CYPRESS_ROX_*` env vars, which `cypress.config.js` copies to `Cypress.expose()` for synchronous access in tests.
 
 For individual tests, skip inside the `it` block:
 
@@ -263,7 +263,7 @@ Globally applicable helper functions (`cypress/helpers/*`). Use these frequently
 | `helpers/request.js` | API interception and waiting | `interceptRequests`, `waitForResponses`, `interactAndWaitForResponses`, `interceptAndWatchRequests`, `interceptAndOverridePermissions`, `interceptAndOverrideFeatureFlags` |
 | `helpers/visit.js` | Page navigation with auto auth handling and request awaiting | `visit`, `visitWithStaticResponseForPermissions`, `visitWithStaticResponseForAuthStatus` |
 | `helpers/basicAuth.js` | Test authentication setup | `withAuth` (default export) |
-| `helpers/features.js` | Feature flag and orchestrator checks | `hasFeatureFlag`, `hasOrchestratorFlavor` |
+| `helpers/features.js` | Feature flag and orchestrator checks via `Cypress.expose()` | `hasFeatureFlag`, `hasOrchestratorFlavor` |
 | `helpers/nav.ts` | Left navigation interactions | `visitFromLeftNav`, `visitFromLeftNavExpandable` |
 | `helpers/formHelpers.js` | Form element interactions | `getInputByLabel`, `getSelectButtonByLabel`, `getSelectOption`, `generateNameWithDate` |
 | `helpers/tableHelpers.ts` | Table row/column interactions | `getTableRowLinkByName`, `openTableRowActionMenu`, `sortByTableHeader`, `assertOnEachRowForColumn` |

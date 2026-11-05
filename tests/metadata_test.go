@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,7 +70,14 @@ func TestMetadataIsSetCorrectly(t *testing.T) {
 	}
 
 	metadataWithAuth := getMetadata(t, centralgrpc.GRPCConnectionToCentral(t))
-	assert.Equal(t, buildinfo.BuildFlavor, metadataWithAuth.GetBuildFlavor())
-	assert.Equal(t, buildinfo.ReleaseBuild, metadataWithAuth.GetReleaseBuild())
-	assert.Equal(t, version.GetMainVersion(), metadataWithAuth.GetVersion())
+
+	if usingKonfluxImages() {
+		assert.Equal(t, "release", metadataWithAuth.GetBuildFlavor())
+		assert.True(t, metadataWithAuth.GetReleaseBuild())
+		assert.Equal(t, strings.TrimSuffix(version.GetMainVersion(), "-fast"), strings.TrimSuffix(metadataWithAuth.GetVersion(), "-fast"))
+	} else {
+		assert.Equal(t, buildinfo.BuildFlavor, metadataWithAuth.GetBuildFlavor())
+		assert.Equal(t, buildinfo.ReleaseBuild, metadataWithAuth.GetReleaseBuild())
+		assert.Equal(t, version.GetMainVersion(), metadataWithAuth.GetVersion())
+	}
 }

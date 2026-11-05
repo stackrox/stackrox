@@ -51,8 +51,6 @@ _run_compatibility_tests() {
 
     "$ROOT/scripts/roxie.sh" teardown all --single-namespace || true
     setup_default_TLS_certs
-    info "Creating mocked compliance operator data for compliance v1 tests"
-    "$ROOT/tests/complianceoperator/create.sh"
 
     deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
 

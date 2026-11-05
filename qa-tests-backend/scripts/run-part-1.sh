@@ -25,13 +25,24 @@ source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.s
 set -euo pipefail
 
 run_part_1() {
+    local roxie_config="${1:-}"
+
+    if [[ -z "$roxie_config" ]]; then
+        # No roxie config provided by the caller, hence we use a new one.
+        roxie_config="$(mktemp)"
+        # RETURN traps also fire when callers return, after this local is out of scope.
+        trap 'rm -f "$roxie_config"; trap - RETURN' RETURN
+    fi
+
     info "Starting test (qa-tests-backend part I)"
 
-    config_part_1
+    config_part_1 "$roxie_config"
     test_part_1
 }
 
 config_part_1() {
+    local roxie_config="${1:-}"
+
     info "Configuring the cluster to run part 1 of e2e tests"
 
     require_environment "ORCHESTRATOR_FLAVOR"
@@ -65,8 +76,12 @@ config_part_1() {
 
         ensure_roxie_on_path
 
-        local config_file
-        config_file="$(mktemp)"
+        local config_file="$roxie_config"
+        if [[ -z ${config_file} ]]; then
+            config_file="$(mktemp)"
+            # No cleanup trap, we're deep in the call stack and it's not clear if it would be safe to
+            # override the global exit trap.
+        fi
 
         merge_yaml "$config_file" <<EOF
 central:
@@ -78,10 +93,6 @@ securedCluster:
   resourceProfile: ci
 EOF
 
-        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
-            info "Environment contains USE_KONFLUX_IMAGES=true, will be using Konflux-built images for deploying StackRox"
-            patch_yaml "$config_file" ".roxie.konfluxImages = true"
-        fi
         deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
         # Note: The traditional deployment path still references PodSecurityPolicies,
