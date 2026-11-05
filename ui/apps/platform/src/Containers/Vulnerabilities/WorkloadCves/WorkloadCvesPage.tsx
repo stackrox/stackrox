@@ -13,7 +13,6 @@ import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
 } from 'routePaths';
-import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
@@ -166,7 +165,6 @@ export type WorkloadCvesPageProps = {
 function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess } = usePermissions();
-    const hasReadAccessForIntegration = hasReadAccess('Integration');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
 
     const context = useMemo(
@@ -176,7 +174,6 @@ function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
 
     return (
         <WorkloadCveViewContext.Provider value={context}>
-            {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 {hasReadAccessForNamespaces && (
                     <Route path={'namespace-view'} element={<NamespaceViewPage />} />
