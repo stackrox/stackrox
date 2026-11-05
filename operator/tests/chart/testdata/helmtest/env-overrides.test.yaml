@@ -94,6 +94,22 @@ tests:
       (relatedImages | assertThat(length == 7)),
       (from_entries | assertThat(.CUSTOM_FALSE == "false" and .CUSTOM_ZERO == "0"))
       ]
+- name: replacements keep their position for dependent environment variables
+  set:
+    manager.env:
+    - name: FOO
+      value: original
+    - name: BAR
+      value: $(FOO)/path
+    manager.envOverrides:
+      FOO: replacement
+      ADDED: $(BAR)/more
+  expect: |
+    managerEnv | assertThat(. == [
+      {"name": "FOO", "value": "replacement"},
+      {"name": "BAR", "value": "$(FOO)/path"},
+      {"name": "ADDED", "value": "$(BAR)/more"}
+      ])
 - name: overrides work with an empty environment list
   set:
     manager.env: []

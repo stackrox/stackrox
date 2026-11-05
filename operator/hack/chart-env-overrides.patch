@@ -1,15 +1,28 @@
 --- a/templates/manager/manager.yaml
 +++ b/templates/manager/manager.yaml
-@@ -79,8 +79,10 @@
+@@ -79,14 +79,23 @@
          {{- end }}
          env:
          {{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) (not (empty .Values.manager.envOverrides))) }}
 -          {{- if .Values.manager.env }}
 -          {{- toYaml .Values.manager.env | nindent 10 }}
++          {{- $envNames := dict }}
 +          {{- range .Values.manager.env }}
-+          {{- if not (and (kindIs "map" $.Values.manager.envOverrides) (hasKey $.Values.manager.envOverrides .name)) }}
++          {{- $_ := set $envNames .name true }}
++          {{- if and (kindIs "map" $.Values.manager.envOverrides) (hasKey $.Values.manager.envOverrides .name) }}
++          - name: {{ .name }}
++            value: {{ index $.Values.manager.envOverrides .name | quote }}
++          {{- else }}
 +          {{- toYaml (list .) | nindent 10 }}
 +          {{- end }}
            {{- end }}
            {{- if kindIs "map" .Values.manager.envOverrides }}
            {{- range $k, $v := .Values.manager.envOverrides }}
++          {{- if not (hasKey $envNames $k) }}
+           - name: {{ $k }}
+             value: {{ $v | quote }}
+           {{ end }}
++          {{- end }}
+           {{- end }}
+           {{- else }}
+           []
