@@ -22,6 +22,7 @@ import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanC
 import type { SearchFilter } from 'types/search';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getPercentage } from 'utils/mathUtils';
+import { convertSearchValueToExactMatch } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
@@ -240,7 +241,9 @@ export function getClusterResultsStatusObject(status: ComplianceCheckStatus): Cl
 }
 
 export function createScanConfigFilter(selectedScanConfigName: string | undefined) {
-    return selectedScanConfigName ? { [SCAN_CONFIG_NAME_QUERY]: selectedScanConfigName } : {};
+    return selectedScanConfigName
+        ? { [SCAN_CONFIG_NAME_QUERY]: convertSearchValueToExactMatch(selectedScanConfigName) }
+        : {};
 }
 
 export function combineSearchFilterWithScanConfig(

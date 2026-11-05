@@ -3,31 +3,7 @@ import scopeSelectors from '../../helpers/scopeSelectors';
 const clusterPageSelector = `#main-page-container:has('a.pf-v6-c-breadcrumb__link:contains("Clusters")')`;
 
 export const selectors = {
-    clusters: {
-        // Ignore the first checkbox column and last delete column.
-        tableDataCell: '.rt-tr-group:not(.hidden) .rt-td:not(:first-child):not(.hidden)',
-    },
-    clusterForm: {
-        nameInput: `.pf-v6-c-form__group-label:contains("Cluster name") + .pf-v6-c-form__group-control input`,
-    },
     clusterHealth: scopeSelectors(clusterPageSelector, {
-        clusterStatus: '[data-testid="clusterStatus"]',
-        sensorStatus: '[data-testid="sensorStatus"]',
-        collectorStatus: '[data-testid="collectorStatus"]',
-        admissionControlStatus: '[data-testid="admissionControlStatus"]',
-        admissionControlHealthInfo: scopeSelectors('[data-testid="admissionControlHealthInfo"]', {
-            totalReadyPods: '[data-testid="totalReadyPods"]',
-            totalDesiredPods: '[data-testid="totalDesiredPods"]',
-        }),
-        admissionControlInfoComplete: '[data-testid="admissionControlInfoComplete"]',
-        collectorHealthInfo: scopeSelectors('[data-testid="collectorHealthInfo"]', {
-            totalReadyPods: '[data-testid="totalReadyPods"]',
-            totalDesiredPods: '[data-testid="totalDesiredPods"]',
-            totalRegisteredNodes: '[data-testid="totalRegisteredNodes"]',
-        }),
-        collectorInfoComplete: '[data-testid="collectorInfoComplete"]',
-        sensorVersion: '[data-testid="sensorVersion"]',
-        centralVersion: '[data-testid="centralVersion"]',
         credentialExpiration: '[data-testid="credentialExpiration"]',
         reissueCertificatesLink: '[data-testid="reissueCertificatesLink"]',
         reissueCertificateButton: '[data-testid="reissueCertificateButton"]',

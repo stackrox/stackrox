@@ -534,11 +534,17 @@ func (s *policyValidator) eventSourceError() error {
 }
 
 func (s *policyValidator) validateEvaluationFilter(policy *storage.Policy) error {
-	if len(policy.GetEvaluationFilter().GetSkipContainerTypes()) == 0 {
-		return nil
-	}
-	if !containerTypeFilterApplicable(policy) {
+	ef := policy.GetEvaluationFilter()
+	if len(ef.GetSkipContainerTypes()) > 0 && !containerTypeFilterApplicable(policy) {
 		return errors.New("container type filters apply only to deploy-time policies and runtime policies with a deployment event source")
+	}
+	if ef.GetSkipImageLayers() != storage.SkipImageLayers_SKIP_NONE {
+		if !features.ImageLayerFilter.Enabled() {
+			return fmt.Errorf("image layer filtering requires %s to be enabled", features.ImageLayerFilter.EnvVar())
+		}
+		if _, ok := storage.SkipImageLayers_name[int32(ef.GetSkipImageLayers())]; !ok {
+			return errors.Errorf("unknown image layer filter value: %d", ef.GetSkipImageLayers())
+		}
 	}
 	return nil
 }

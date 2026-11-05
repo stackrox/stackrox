@@ -18,5 +18,10 @@ func CompileEvaluationFilter(proto *storage.EvaluationFilter) []EvaluationFilter
 	if f := newContainerTypeFilter(proto.GetSkipContainerTypes()); f != nil {
 		filters = append(filters, *f)
 	}
+	if features.ImageLayerFilter.Enabled() {
+		if f := newImageLayerFilter(proto.GetSkipImageLayers()); f != nil {
+			filters = append(filters, *f)
+		}
+	}
 	return filters
 }
