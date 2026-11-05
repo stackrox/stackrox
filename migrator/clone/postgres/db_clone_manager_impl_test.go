@@ -450,3 +450,14 @@ func (s *PostgresCloneManagerSuite) TestPersistRestoreCloneWithoutCurrentClone()
 	s.Require().NoError(err)
 	s.Require().True(exists, "CurrentClone should exist after persist")
 }
+
+func (s *PostgresCloneManagerSuite) TestRollbackReleaseWindowEqualSequence() {
+	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
+	migVer.SetVersionPostgres(s.ctx, CurrentClone, &storage.Version{Version: "5.5.0", SeqNum: 227, MinSeqNum: 220})
+	before, err := migVer.ReadVersionPostgres(s.ctx, CurrentClone)
+	s.Require().NoError(err)
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "Central rollback blocked: cannot downgrade")
+	after, err := migVer.ReadVersionPostgres(s.ctx, CurrentClone)
+	s.Require().NoError(err)
+	s.Equal(before, after)
+}

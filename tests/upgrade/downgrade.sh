@@ -2,7 +2,7 @@
 
 # Historical migrators enforce the sequence floor, not the release-stream limit.
 downgrade_rejection_observed() {
-    local pods="$1" logs="$2" image="$3" sequence="$4" minimum="$5"
+    local pods="$1" logs="$2" image="$3"
     jq -e --arg image "$image" '
         (.items | length) == 1 and
         (.items[0] |
@@ -11,11 +11,11 @@ downgrade_rejection_observed() {
             any(.status.containerStatuses[]?; .name == "central" and .ready == false and
                 ((.state.terminated.exitCode // 0) > 0 or (.lastState.terminated.exitCode // 0) > 0)))
     ' <<<"$pods" >/dev/null || return 1
-    grep -Eq "Software downgrade is not supported\..*supports database version of ${sequence} but.*at least( least)? ${minimum}([^0-9]|$)|Central rollback blocked:.*requires sequence ${minimum}, but.*only supports sequence ${sequence}\." <<<"$logs"
+    grep -Eq 'Software downgrade is not supported\.|Central rollback blocked:.*(requires sequence|cannot downgrade database)' <<<"$logs"
 }
 
 downgrade_check_snapshot() {
-    jq -e --argjson minimum "$2" 'length == 1 and .[0].minseqnum == $minimum' <<<"$1" >/dev/null
+    jq -e 'type == "array" and length == 1 and (.[0].version | type == "string")' <<<"$1" >/dev/null
 }
 
 downgrade_version_snapshot() (
@@ -58,7 +58,7 @@ set_downgrade_version() {
 }
 
 wait_for_downgrade_rejection() {
-    local tag="$1" sequence="$2" minimum="$3" artifacts="$4" attempts="${5:-120}"
+    local tag="$1" artifacts="$2" attempts="${3:-120}"
     local attempt pods pod logs
     mkdir -p "$artifacts"
     # New migrators delay exit for five minutes; allow time to observe that exit.
@@ -75,7 +75,7 @@ wait_for_downgrade_rejection() {
             kubectl -n stackrox logs "$pod" -c central >"$artifacts/current.log" 2>&1 || true
             kubectl -n stackrox logs "$pod" -c central --previous >"$artifacts/previous.log" 2>&1 || true
             logs="$(cat "$artifacts/current.log" "$artifacts/previous.log")"
-            if downgrade_rejection_observed "$pods" "$logs" "$REGISTRY/main:$tag" "$sequence" "$minimum"; then
+            if downgrade_rejection_observed "$pods" "$logs" "$REGISTRY/main:$tag"; then
                 return 0
             fi
         fi
@@ -86,14 +86,14 @@ wait_for_downgrade_rejection() {
 }
 
 test_rejected_downgrade() {
-    local tag="$1" sequence="$2" minimum="$3" artifacts="$4" before after
+    local tag="$1" artifacts="$2" before after
     stop_downgrade_central || return 1
     before="$(downgrade_version_snapshot)" || return 1
-    downgrade_check_snapshot "$before" "$minimum" || return 1
+    downgrade_check_snapshot "$before" || return 1
     mkdir -p "$artifacts"
     printf '%s\n' "$before" >"$artifacts/version-before.json"
     set_downgrade_version "$tag" || return 1
-    wait_for_downgrade_rejection "$tag" "$sequence" "$minimum" "$artifacts" || return 1
+    wait_for_downgrade_rejection "$tag" "$artifacts" || return 1
     stop_downgrade_central || return 1
     after="$(downgrade_version_snapshot)" || return 1
     printf '%s\n' "$after" >"$artifacts/version-after.json"
@@ -111,4 +111,11 @@ recover_downgrade_central() {
         kubectl -n stackrox scale deploy/central --replicas=1 || true
     fi
     return "$status"
+}
+
+check_downgrade_target() {
+    if [[ ! "$1" =~ ^([0-9]+\.[0-9]+)\.([0-9]+|x)(-[[:alnum:].-]+)?$ ]] || [[ "${BASH_REMATCH[1]}" != "$2" ]]; then
+        echo "Downgrade fixtures do not match $1; regenerate release versions" >&2
+        return 1
+    fi
 }

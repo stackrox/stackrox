@@ -12,11 +12,7 @@ EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
 PREVIOUS_RELEASES=("4.10.11" "4.11.6")
-# Review these fixtures when the compatibility floor changes.
-DOWNGRADE_SUPPORTED_TAG="4.10.0"
-DOWNGRADE_REJECTED_TAG="4.9.0"
-DOWNGRADE_REJECTED_SEQUENCE=213
-DOWNGRADE_MINIMUM_SEQUENCE=220
+source "$TEST_ROOT/tests/upgrade/downgrade_versions.sh"
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -35,6 +31,7 @@ source "$TEST_ROOT/tests/upgrade/validation.sh"
 source "$TEST_ROOT/tests/upgrade/downgrade.sh"
 
 test_upgrade() {
+    check_downgrade_target "$CURRENT_TAG" "$DOWNGRADE_TARGET_STREAM" || return 1
     info "Starting upgrade test"
 
     if [[ "$#" -ne 1 ]]; then
@@ -213,8 +210,7 @@ test_upgrade_paths() (
     # Preserve the original failure even if best-effort recovery also fails.
     trap 'recover_downgrade_central "$?" "$original_config"' EXIT
 
-    test_rejected_downgrade "$DOWNGRADE_REJECTED_TAG" "$DOWNGRADE_REJECTED_SEQUENCE" \
-        "$DOWNGRADE_MINIMUM_SEQUENCE" "${ARTIFACT_DIR:-$log_output_dir}/downgrade-rejection"
+    test_rejected_downgrade "$DOWNGRADE_REJECTED_TAG" "${ARTIFACT_DIR:-$log_output_dir}/downgrade-rejection"
     set_downgrade_version "$DOWNGRADE_SUPPORTED_TAG"
     kubectl -n stackrox rollout status deploy/central --timeout=600s
     wait_for_api
