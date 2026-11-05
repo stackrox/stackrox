@@ -7,12 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -512,42 +510,20 @@ func (s *resolverSuite) Test_Send_SkipDedupingBehavior() {
 	}
 }
 
-func (s *resolverSuite) Test_ToEvent_InitContainerFiltering() {
-	cases := map[string]struct {
-		caps               []centralsensor.CentralCapability
-		expectedContainers []string
-	}{
-		"filters init containers when Central lacks capability": {
-			caps:               []centralsensor.CentralCapability{},
-			expectedContainers: []string{"main-app"},
-		},
-		"includes init containers when Central has capability": {
-			caps:               []centralsensor.CentralCapability{centralsensor.InitContainerSupport},
-			expectedContainers: []string{"init-setup", "main-app"},
+func (s *resolverSuite) Test_ToEvent_IncludesInitContainers() {
+	deployment := &storage.Deployment{
+		Id: "test-deploy",
+		Containers: []*storage.Container{
+			{Name: "init-setup", Type: storage.ContainerType_INIT},
+			{Name: "main-app", Type: storage.ContainerType_REGULAR},
 		},
 	}
 
-	for name, tc := range cases {
-		s.Run(name, func() {
-			centralcaps.Set(tc.caps)
-			s.T().Cleanup(func() { centralcaps.Set(nil) })
-
-			deployment := &storage.Deployment{
-				Id: "test-deploy",
-				Containers: []*storage.Container{
-					{Name: "init-setup", Type: storage.ContainerType_INIT},
-					{Name: "main-app", Type: storage.ContainerType_REGULAR},
-				},
-			}
-
-			event := toEvent(central.ResourceAction_CREATE_RESOURCE, deployment, nil)
-			dep := event.GetDeployment()
-			s.Require().Len(dep.GetContainers(), len(tc.expectedContainers))
-			for i, name := range tc.expectedContainers {
-				s.Assert().Equal(name, dep.GetContainers()[i].GetName())
-			}
-		})
-	}
+	event := toEvent(central.ResourceAction_CREATE_RESOURCE, deployment, nil)
+	dep := event.GetDeployment()
+	s.Require().Len(dep.GetContainers(), 2)
+	s.Assert().Equal("init-setup", dep.GetContainers()[0].GetName())
+	s.Assert().Equal("main-app", dep.GetContainers()[1].GetName())
 }
 
 // expectOutputSend sets up mock expectations for the resolver's output path.

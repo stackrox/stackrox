@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -21,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -342,9 +340,7 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 	for _, p := range pods {
 		// Process regular and init container statuses separately to avoid building a combined status slice.
 		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages, p.GetName())
-		if features.InitContainerSupport.Enabled() {
-			w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, p.GetName())
-		}
+		w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, p.GetName())
 	}
 }
 
@@ -520,9 +516,6 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 	defer w.mutex.RUnlock()
 
 	dep := w.GetDeployment().CloneVT()
-	if !centralcaps.Has(centralsensor.InitContainerSupport) {
-		dep.Containers = containers.FilterRegularContainers(dep.GetContainers())
-	}
 
 	return &central.SensorEvent{
 		Id:     w.GetId(),
