@@ -443,15 +443,8 @@ test_not_enough_disk_space() {
     collect_and_check_stackrox_logs "$log_output_dir" "disk_space_01_final"
 }
 
-# Verify scanner-v4-db falls back to the previous major rather than aborting
-# when pg_upgrade cannot run, and upgrades once the obstruction is removed.
-#
-# This is deliberately not a port of test_not_enough_disk_space above.
-# central-db exits 1 and waits for an operator; scanner-v4-db must not, because
-# a crashlooping init-db takes scanning offline, and the matcher reports
-# FailedPrecondition during a vulnerability store reload, which Central treats
-# as permanent. So the assertion is the opposite one: the pod comes up anyway,
-# on the previous major version, with the data intact.
+# Verify scanner-v4-db falls back to the previous major when pg_upgrade cannot run,
+# and upgrades once the obstruction is removed.
 test_scanner_v4_db_upgrade_fallback() {
     info "Testing scanner-v4-db upgrade fallback"
 
@@ -488,28 +481,21 @@ test_scanner_v4_db_upgrade_fallback() {
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/scanner-v4-db "*=${REGISTRY}/scanner-v4-db:${CURRENT_TAG}"
 
-    # The whole point: the pod comes up, rather than the init container
-    # aborting and crashlooping.
+    # The pod should come up instead of aborting and crashlooping.
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     kubectl -n stackrox logs deploy/scanner-v4-db -c init-db
 
-    # docker-entrypoint.sh starts the binaries matching the data directory, so
-    # a declined upgrade leaves a working server on the previous major.
+    # Fallback to EARLIER PG.
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
     test_gt_non_silent "$(scanner_v4_db_vuln_rows)" "$SCANNER_V4_DB_MIN_ROWS"
     check_scanner_v4_no_warmup
 
-    # Removing the override restores the current binaries and rolls the
-    # deployment, which retries the upgrade.
     info "Restoring the current binaries and restarting scanner-v4-db"
     kubectl -n stackrox set env deploy/scanner-v4-db NEW_BINARIES-
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     check_scanner_v4_db_upgraded
     check_scanner_v4_no_warmup
 
-    # Bounce once more, as the regression test for the .init-ready sentinel:
-    # were it not written before the swap, the init container would see no
-    # sentinel on this restart and wipe the database it had just upgraded.
     info "Bouncing scanner-v4-db"
     kubectl -n stackrox delete po -l app=scanner-v4-db --grace-period=0
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
