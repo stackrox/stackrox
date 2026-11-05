@@ -77,7 +77,7 @@ func TestFilterSingleImageByLayer_NilScan_StillFiltersLayers(t *testing.T) {
 	img := &storage.Image{
 		Id: "test-img",
 		BaseImageInfo: []*storage.BaseImageInfo{
-			{MaxLayerIndex: 4}, // Base layers: 0-4; App layers: 5-7
+			withHistoryIndex(4, 4), // Base layers: 0-4; App layers: 5-7
 		},
 		Scan: nil, // No scan data
 		Metadata: &storage.ImageMetadata{
@@ -303,7 +303,7 @@ func TestFilterSingleImageByLayer_LayersFiltering(t *testing.T) {
 			img := &storage.Image{
 				Id: "test-img",
 				BaseImageInfo: []*storage.BaseImageInfo{
-					{MaxLayerIndex: tc.maxBaseLayerIdx},
+					withHistoryIndex(tc.maxBaseLayerIdx, tc.maxBaseLayerIdx),
 				},
 				Scan: &storage.ImageScan{
 					Components: []*storage.EmbeddedImageScanComponent{},
@@ -538,7 +538,7 @@ func TestFilterSingleImageByLayer_SkipBase_PreservesComponentLayerIndexAndCompac
 	img := &storage.Image{
 		Id: "test-img",
 		BaseImageInfo: []*storage.BaseImageInfo{
-			{MaxLayerIndex: 4}, // Base layers: 0-4; App layers: 5-7
+			withHistoryIndex(4, 4), // Base layers: 0-4; App layers: 5-7
 		},
 		Scan: &storage.ImageScan{
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -596,4 +596,113 @@ func TestFilterSingleImageByLayer_SkipBase_PreservesComponentLayerIndexAndCompac
 	// Verify original not mutated
 	assert.Len(t, img.GetScan().GetComponents(), 2)
 	assert.Len(t, img.GetMetadata().GetV1().GetLayers(), 8)
+}
+
+func withHistoryIndex(maxLayer, history int32) *storage.BaseImageInfo {
+	return &storage.BaseImageInfo{
+		MaxLayerIndex: maxLayer,
+		SetMaxHistoryIndex: &storage.BaseImageInfo_MaxHistoryIndex{
+			MaxHistoryIndex: history,
+		},
+	}
+}
+
+func TestFilterSingleImageByLayer_UnsetHistoryDoesNotCutDockerfileLines(t *testing.T) {
+	img := &storage.Image{
+		Id: "test-img",
+		BaseImageInfo: []*storage.BaseImageInfo{
+			{MaxLayerIndex: 1},
+		},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "base-comp", HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0}},
+				{Name: "app-comp", HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 3}},
+			},
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{Instruction: "ADD", Value: "base-rootfs"},
+					{Instruction: "COPY", Value: "base-pkgs"},
+					{Instruction: "USER", Value: "1001"},
+					{Instruction: "COPY", Value: "app-bin"},
+				},
+			},
+		},
+	}
+
+	result := filterSingleImageByLayer(img, storage.SkipImageLayers_SKIP_BASE)
+	require.NotNil(t, result)
+	require.Len(t, result.GetScan().GetComponents(), 1)
+	assert.Equal(t, "app-comp", result.GetScan().GetComponents()[0].GetName())
+	require.Len(t, result.GetMetadata().GetV1().GetLayers(), 4)
+	assert.Equal(t, "USER", result.GetMetadata().GetV1().GetLayers()[2].GetInstruction())
+}
+
+func TestFilterSingleImageByLayer_HistoryIndexCutsDockerfileLines(t *testing.T) {
+	layers := []*storage.ImageLayer{
+		{Instruction: "ADD", Value: "base-rootfs"},
+		{Instruction: "COPY", Value: "base-pkgs"},
+		{Instruction: "USER", Value: "1001"},
+		{Instruction: "ADD", Value: "app-assets"},
+		{Instruction: "COPY", Value: "app-bin"},
+		{Instruction: "USER", Value: "1000"},
+	}
+	tests := map[string]struct {
+		skip          storage.SkipImageLayers
+		infos         []*storage.BaseImageInfo
+		expectedLines []string
+	}{
+		"app lines start after the history cut": {
+			skip:          storage.SkipImageLayers_SKIP_BASE,
+			infos:         []*storage.BaseImageInfo{withHistoryIndex(1, 2)},
+			expectedLines: []string{"ADD app-assets", "COPY app-bin", "USER 1000"},
+		},
+		"base lines include USER at the history cut": {
+			skip:          storage.SkipImageLayers_SKIP_APP,
+			infos:         []*storage.BaseImageInfo{withHistoryIndex(1, 2)},
+			expectedLines: []string{"ADD base-rootfs", "COPY base-pkgs", "USER 1001"},
+		},
+		"greatest history index wins": {
+			skip: storage.SkipImageLayers_SKIP_BASE,
+			infos: []*storage.BaseImageInfo{
+				withHistoryIndex(1, 2),
+				withHistoryIndex(1, 1),
+			},
+			expectedLines: []string{"ADD app-assets", "COPY app-bin", "USER 1000"},
+		},
+		"unset history does not cancel a set cut": {
+			skip: storage.SkipImageLayers_SKIP_BASE,
+			infos: []*storage.BaseImageInfo{
+				withHistoryIndex(1, 2),
+				{MaxLayerIndex: 1},
+			},
+			expectedLines: []string{"ADD app-assets", "COPY app-bin", "USER 1000"},
+		},
+		"zero history index drops only the first line": {
+			skip:          storage.SkipImageLayers_SKIP_BASE,
+			infos:         []*storage.BaseImageInfo{withHistoryIndex(1, 0)},
+			expectedLines: []string{"COPY base-pkgs", "USER 1001", "ADD app-assets", "COPY app-bin", "USER 1000"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			img := &storage.Image{
+				Id:            "test-img",
+				BaseImageInfo: tc.infos,
+				Metadata: &storage.ImageMetadata{
+					V1: &storage.V1Metadata{Layers: layers},
+				},
+			}
+			result := filterSingleImageByLayer(img, tc.skip)
+			require.NotNil(t, result)
+			got := make([]string, 0, len(result.GetMetadata().GetV1().GetLayers()))
+			for _, layer := range result.GetMetadata().GetV1().GetLayers() {
+				got = append(got, layer.GetInstruction()+" "+layer.GetValue())
+			}
+			assert.Equal(t, tc.expectedLines, got)
+			assert.Len(t, img.GetMetadata().GetV1().GetLayers(), len(layers))
+		})
+	}
 }
