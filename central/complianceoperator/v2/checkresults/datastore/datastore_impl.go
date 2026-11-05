@@ -478,6 +478,30 @@ func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID strin
 	}, "marking prior compliance check results stale")
 }
 
+// MarkScanChecksStaleByConfig marks STALE the check results (of the scan configuration specified
+// via scanConfigName) whose LastStartedTime predates olderThan. It mirrors MarkScanChecksStale but
+// is keyed by the scan configuration name, which the time-driven freshness sweeper derives from the
+// configuration's schedule.
+func (d *datastoreImpl) MarkScanChecksStaleByConfig(ctx context.Context, scanConfigName string, olderThan time.Time) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanConfigName == "" {
+		return 0, nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).
+		ProtoQuery()
+
+	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		started := result.GetLastStartedTime()
+		return started != nil && started.AsTime().Before(olderThan)
+	}, "marking stale compliance check results by scan configuration")
+}
+
 // markStale performs a read-modify-upsert that flips to STALE every result matched by query for
 // which shouldStale reports true. Results already STALE, or for which shouldStale is false, are
 // left untouched.
