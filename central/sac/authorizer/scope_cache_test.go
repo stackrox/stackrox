@@ -73,7 +73,12 @@ func TestScopeCacheKeepsReadAndWriteGrantsPairedWithRoles(t *testing.T) {
 		role(map[string]storage.Access{resources.Deployment.String(): storage.Access_READ_WRITE_ACCESS}, writeScope),
 	}, nil, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
 		queries++
-		return effectiveaccessscope.FromClustersAndNamespacesMap(rules.GetIncludedClusterIds(), nil), nil
+		clusterID := rules.GetIncludedClusterIds()[0]
+		return effectiveaccessscope.FromMatchingScopes([]effectiveaccessscope.Cluster{&storage.Cluster{Id: clusterID, Name: clusterID}}, nil,
+			[]effectiveaccessscope.MatchedNamespaceGroup{{ClusterName: clusterID, Complete: true,
+				Namespaces:         []effectiveaccessscope.MatchedNamespace{{Name: firstNamespaceName}, {Name: "other"}, {Name: "third"}},
+				ExcludedNamespaces: []effectiveaccessscope.MatchedNamespace{{Name: "excluded"}},
+			}}), nil
 	})
 	allowed := func(access storage.Access, resource permissions.ResourceMetadata, clusterID string) bool {
 		return checker.SubScopeChecker(sac.AccessModeScopeKey(access)).SubScopeChecker(sac.ResourceScopeKey(resource.GetResource())).

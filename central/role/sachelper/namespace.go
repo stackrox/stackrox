@@ -43,10 +43,7 @@ func listNamespaceNamesInScope(
 		if clusterScope.State == effectiveaccessscope.Included {
 			return noNamespaces, fullAccess, nil
 		}
-		for namespace, namespaceScope := range clusterScope.Namespaces {
-			if namespaceScope == nil || namespaceScope.State == effectiveaccessscope.Excluded {
-				continue
-			}
+		for namespace := range clusterScope.AllowedNamespaceNames() {
 			namespacesInScope.Add(namespace)
 		}
 	}

@@ -348,7 +348,5 @@ func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.Scope
 		return false
 	}
 
-	namespaceNode, ok := clusterNode.Namespaces[namespaceName]
-
-	return ok && namespaceNode.State == effectiveaccessscope.Included
+	return clusterNode.NamespaceAllowed(namespaceName)
 }

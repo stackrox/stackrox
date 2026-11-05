@@ -44,14 +44,14 @@ func (b *scopeQueryBuilder) clusterPredicate(rules *storage.SimpleAccessScope_Ru
 	if names := rules.GetIncludedClusters(); len(names) > 0 {
 		alternatives = append(alternatives, "c.name = ANY("+b.bind(names)+"::text[])")
 	}
-	selectors, err := b.labelPredicates(rules.GetClusterLabelSelectors(), "c.labels", effectiveaccessscope.ClusterNameLabel, "COALESCE(c.name, '')")
+	selectors, err := b.labelPredicates(rules.GetClusterLabelSelectors(), "c.labels", effectiveaccessscope.ClusterNameLabel, "COALESCE(c.name, '')", false)
 	if err != nil {
 		return "", errors.Wrap(err, "bad cluster label selector")
 	}
 	return scopeDisjunction(append(alternatives, selectors...)), nil
 }
 
-func (b *scopeQueryBuilder) namespacePredicate(rules *storage.SimpleAccessScope_Rules) (string, error) {
+func (b *scopeQueryBuilder) namespacePredicate(rules *storage.SimpleAccessScope_Rules, exclude bool) (string, error) {
 	var alternatives []string
 	byID := make(map[string][]string)
 	byName := make(map[string][]string)
@@ -79,12 +79,27 @@ func (b *scopeQueryBuilder) namespacePredicate(rules *storage.SimpleAccessScope_
 	for _, name := range slices.Sorted(maps.Keys(byName)) {
 		alternatives = append(alternatives, "(n.clustername = "+b.bind(name)+" AND n.name = ANY("+b.bind(byName[name])+"::text[]))")
 	}
+	if exclude {
+		for i, alternative := range alternatives {
+			alternatives[i] = "NOT COALESCE(" + alternative + ", FALSE)"
+		}
+	}
 	selectors, err := b.labelPredicates(rules.GetNamespaceLabelSelectors(), "n.labels", effectiveaccessscope.NamespaceNameLabel,
-		"COALESCE(n.clustername, '') || '::' || COALESCE(n.name, '')")
+		"COALESCE(n.clustername, '') || '::' || COALESCE(n.name, '')", exclude)
 	if err != nil {
 		return "", errors.Wrap(err, "bad namespace label selector")
 	}
+	if exclude {
+		return scopeConjunction(append(alternatives, selectors...)), nil
+	}
 	return scopeDisjunction(append(alternatives, selectors...)), nil
+}
+
+func scopeConjunction(requirements []string) string {
+	if len(requirements) == 0 {
+		return "TRUE"
+	}
+	return "(" + strings.Join(requirements, " AND ") + ")"
 }
 
 func scopeDisjunction(alternatives []string) string {
@@ -95,7 +110,7 @@ func scopeDisjunction(alternatives []string) string {
 }
 
 func (b *scopeQueryBuilder) labelPredicates(selectors []*storage.SetBasedLabelSelector,
-	column, virtualKey, virtualValue string,
+	column, virtualKey, virtualValue string, exclude bool,
 ) ([]string, error) {
 	var alternatives []string
 	for _, selector := range selectors {
@@ -109,9 +124,25 @@ func (b *scopeQueryBuilder) labelPredicates(selectors []*storage.SetBasedLabelSe
 				effectiveaccessscope.ConvertLabelSelectorOperatorToSelectionOperator(requirement.GetOp()), requirement.GetValues()); err != nil {
 				return nil, err
 			}
+			op := requirement.GetOp()
+			if exclude {
+				// Apply De Morgan's law to the grant predicate. In particular,
+				// NOT_IN exclusions become positive containment predicates that
+				// preserve the handling of missing labels.
+				switch op {
+				case storage.SetBasedLabelSelector_IN:
+					op = storage.SetBasedLabelSelector_NOT_IN
+				case storage.SetBasedLabelSelector_NOT_IN:
+					op = storage.SetBasedLabelSelector_IN
+				case storage.SetBasedLabelSelector_EXISTS:
+					op = storage.SetBasedLabelSelector_NOT_EXISTS
+				case storage.SetBasedLabelSelector_NOT_EXISTS:
+					op = storage.SetBasedLabelSelector_EXISTS
+				}
+			}
 			if requirement.GetKey() == virtualKey {
 				// Virtual names overwrite stored labels and are always present.
-				switch requirement.GetOp() {
+				switch op {
 				case storage.SetBasedLabelSelector_IN:
 					requirements = append(requirements, virtualValue+" = ANY("+b.bind(requirement.GetValues())+"::text[])")
 				case storage.SetBasedLabelSelector_NOT_IN:
@@ -123,14 +154,14 @@ func (b *scopeQueryBuilder) labelPredicates(selectors []*storage.SetBasedLabelSe
 				}
 				continue
 			}
-			switch requirement.GetOp() {
+			switch op {
 			case storage.SetBasedLabelSelector_IN, storage.SetBasedLabelSelector_NOT_IN:
 				var values []string
 				for _, value := range requirement.GetValues() {
 					values = append(values, column+" @> "+b.bind(map[string]string{requirement.GetKey(): value})+"::jsonb")
 				}
 				predicate := scopeDisjunction(values)
-				if requirement.GetOp() == storage.SetBasedLabelSelector_NOT_IN {
+				if op == storage.SetBasedLabelSelector_NOT_IN {
 					predicate = "NOT COALESCE(" + predicate + ", FALSE)"
 				}
 				requirements = append(requirements, predicate)
@@ -140,7 +171,11 @@ func (b *scopeQueryBuilder) labelPredicates(selectors []*storage.SetBasedLabelSe
 				requirements = append(requirements, "NOT COALESCE("+column+" ? "+b.bind(requirement.GetKey())+", FALSE)")
 			}
 		}
-		alternatives = append(alternatives, "("+strings.Join(requirements, " AND ")+")")
+		if exclude {
+			alternatives = append(alternatives, scopeDisjunction(requirements))
+		} else {
+			alternatives = append(alternatives, scopeConjunction(requirements))
+		}
 	}
 	return alternatives, nil
 }
@@ -151,12 +186,40 @@ func scopeQuery(rules *storage.SimpleAccessScope_Rules) (string, []any, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	namespaces, err := builder.namespacePredicate(rules)
+	exclusions := hasUnboundedNamespaceSelector(rules)
+	namespaces, err := builder.namespacePredicate(rules, exclusions)
 	if err != nil {
 		return "", nil, err
 	}
-	if clusters == "FALSE" && namespaces == "FALSE" {
+	if clusters == "FALSE" && ((!exclusions && namespaces == "FALSE") || (exclusions && namespaces == "TRUE")) {
 		return "", nil, nil
+	}
+	if exclusions {
+		// Pure negative selectors can grant most namespaces. Return exclusions
+		// plus a compact inventory of names/IDs, instead of allocating an
+		// Included tree node for every match. Sparse groups keep the IN form.
+		parentFilter := "TRUE"
+		if clusters != "FALSE" {
+			parentFilter = "NOT EXISTS (SELECT 1 FROM included_clusters i WHERE i.name = n.clustername)"
+		}
+		query := `WITH included_clusters AS (
+			SELECT c.id, c.name FROM clusters c WHERE ` + clusters + `
+		), namespace_groups AS (
+			SELECT n.clustername,
+				array_agg(n.id::text || COALESCE(n.name, '')) FILTER (WHERE NOT COALESCE(` + namespaces + `, FALSE)) AS matched,
+				array_agg(n.id::text || COALESCE(n.name, '')) FILTER (WHERE ` + namespaces + `) AS unmatched
+			FROM namespaces n WHERE ` + parentFilter + `
+			GROUP BY n.clustername
+		)
+		SELECT c.id, c.name, NULL::text, NULL::text[], NULL::text[]
+		FROM included_clusters c
+		UNION ALL
+		SELECT c.id, c.name, g.clustername, g.matched,
+			CASE WHEN cardinality(matched) > COALESCE(cardinality(unmatched), 0)
+				THEN COALESCE(unmatched, ARRAY[]::text[]) ELSE NULL::text[] END
+		FROM namespace_groups g LEFT JOIN clusters c ON c.name = g.clustername
+		WHERE cardinality(matched) > 0`
+		return query, builder.args, nil
 	}
 	// The existing evaluator groups namespaces by their recorded cluster name.
 	// Preserve that relationship, including orphaned or inconsistent metadata,
@@ -164,16 +227,38 @@ func scopeQuery(rules *storage.SimpleAccessScope_Rules) (string, []any, error) {
 	query := `WITH included_clusters AS (
 		SELECT c.id, c.name FROM clusters c WHERE ` + clusters + `
 	)
-	SELECT c.id, c.name, NULL::text, NULL::text[]
+	SELECT c.id, c.name, NULL::text, NULL::text[], NULL::text[]
 	FROM included_clusters c
 	UNION ALL
 	SELECT c.id, c.name, n.clustername,
-		array_agg(n.id::text || COALESCE(n.name, ''))
+		array_agg(n.id::text || COALESCE(n.name, '')), NULL::text[]
 	FROM namespaces n LEFT JOIN clusters c ON c.name = n.clustername
 	WHERE ` + namespaces + `
 	AND NOT EXISTS (SELECT 1 FROM included_clusters i WHERE i.name = n.clustername)
 	GROUP BY c.id, c.name, n.clustername`
 	return query, builder.args, nil
+}
+
+// A selector bounded by IN or EXISTS can use the indexed matching query. A
+// pure NOT_IN/NOT_EXISTS alternative may match most of the inventory, even when
+// other alternatives are positive. Requirements still AND and alternatives OR.
+func hasUnboundedNamespaceSelector(rules *storage.SimpleAccessScope_Rules) bool {
+	for _, selector := range rules.GetNamespaceLabelSelectors() {
+		if len(selector.GetRequirements()) == 0 {
+			continue
+		}
+		negative := true
+		for _, requirement := range selector.GetRequirements() {
+			if requirement.GetOp() != storage.SetBasedLabelSelector_NOT_IN && requirement.GetOp() != storage.SetBasedLabelSelector_NOT_EXISTS {
+				negative = false
+				break
+			}
+		}
+		if negative {
+			return true
+		}
+	}
+	return false
 }
 
 func computeSQLScope(ctx context.Context, db postgres.DB, rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
@@ -195,8 +280,8 @@ func computeSQLScope(ctx context.Context, db postgres.DB, rules *storage.SimpleA
 	seenClusters := make(map[string]bool)
 	for rows.Next() {
 		var clusterID, clusterName, namespaceClusterName *string
-		var namespaceMatches []string
-		if err := rows.Scan(&clusterID, &clusterName, &namespaceClusterName, &namespaceMatches); err != nil {
+		var namespaceMatches, namespaceExclusions []string
+		if err := rows.Scan(&clusterID, &clusterName, &namespaceClusterName, &namespaceMatches, &namespaceExclusions); err != nil {
 			return nil, errors.Wrap(err, "reading access scope metadata")
 		}
 		if clusterID != nil && !seenClusters[*clusterID] {
@@ -207,17 +292,26 @@ func computeSQLScope(ctx context.Context, db postgres.DB, rules *storage.SimpleA
 			// UUIDs have a fixed-width text representation. Return each ID/name
 			// pair as one array element, so pairing needs neither two array
 			// decoders nor SQL ORDER BY. Names can contain arbitrary characters.
-			matches := make([]effectiveaccessscope.MatchedNamespace, len(namespaceMatches))
-			for i, match := range namespaceMatches {
-				const idLength = len("00000000-0000-0000-0000-000000000000")
-				if len(match) < idLength {
-					return nil, errors.New("invalid namespace metadata from access scope query")
-				}
-				matches[i] = effectiveaccessscope.MatchedNamespace{ID: match[:idLength], Name: match[idLength:]}
+			group := effectiveaccessscope.MatchedNamespaceGroup{
+				ClusterName: scopeString(namespaceClusterName), Complete: namespaceExclusions != nil,
+				Namespaces:         make([]effectiveaccessscope.MatchedNamespace, len(namespaceMatches)),
+				ExcludedNamespaces: make([]effectiveaccessscope.MatchedNamespace, len(namespaceExclusions)),
 			}
-			namespaces = append(namespaces, effectiveaccessscope.MatchedNamespaceGroup{
-				ClusterName: scopeString(namespaceClusterName), Namespaces: matches,
-			})
+			for i, entries := range [][]string{namespaceMatches, namespaceExclusions} {
+				for j, match := range entries {
+					const idLength = len("00000000-0000-0000-0000-000000000000")
+					if len(match) < idLength {
+						return nil, errors.New("invalid namespace metadata from access scope query")
+					}
+					metadata := effectiveaccessscope.MatchedNamespace{ID: match[:idLength], Name: match[idLength:]}
+					if i == 0 {
+						group.Namespaces[j] = metadata
+					} else {
+						group.ExcludedNamespaces[j] = metadata
+					}
+				}
+			}
+			namespaces = append(namespaces, group)
 		} else if clusterID != nil {
 			includedClusterIDs = append(includedClusterIDs, *clusterID)
 		}
