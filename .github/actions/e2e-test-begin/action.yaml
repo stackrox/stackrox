@@ -6,14 +6,14 @@ description: >
   KUBECONFIG to $GITHUB_ENV so subsequent workflow steps can consume them.
   Paired with e2e-test-end, which handles reporting and cluster teardown.
   Both actions must be used together in the same job.
-# Inputs use description-level "Default: ..." instead of YAML `default:`.
-# When a reusable workflow passes an empty string for an optional input, GHA
-# treats it as "set" and the YAML default never kicks in. Since callers are
-# often multi-layer workflow chains where the middle layer forwards
-# ${{ inputs.x }} verbatim (empty when the leaf omits it), YAML defaults
-# silently break. Instead, the "Apply defaults" step below resolves effective
-# values with `${{ inputs.x || 'fallback' }}` and writes them to GITHUB_ENV.
 inputs:
+  # Inputs use description-level "Default: ..." instead of YAML `default:`.
+  # When a reusable workflow passes an empty string for an optional input, GHA
+  # treats it as "set" and the YAML default never kicks in. Since callers are
+  # often multi-layer workflow chains where the middle layer forwards
+  # ${{ inputs.x }} verbatim (empty when the leaf omits it), YAML defaults
+  # silently break. Instead, the "Apply defaults" step below resolves effective
+  # values with `${{ inputs.x || 'fallback' }}` and writes them to GITHUB_ENV.
   cluster-provisioning-method:
     description: "Selects cluster provisioning method to use (supported: direct-gke, infra, dbg-existing-infra). Default: direct-gke."
   cluster-name-prefix:
@@ -38,6 +38,8 @@ inputs:
     description: "Directory for JUnit reports and other artifacts. Created by this action. Default: ./junit-reports/"
   install-roxie:
     description: "Whether to install the roxie CLI. Default: true"
+  install-roxctl:
+    description: "Whether to install the roxctl CLI. Default: false"
   infra-token:
     description: "Token used to authenticate with infra. Required when cluster-provisioning-method is infra."
   quay-rhacs-eng-ro-username:
@@ -63,43 +65,19 @@ runs:
     #
     # (2) Composite actions don't support action-level env, so we write shared
     # constants to $GITHUB_ENV once and let all subsequent steps inherit them.
-    - name: Apply defaults and set shared environment
+    - name: Validate inputs and set shared environment
       shell: bash
       env:
+        CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method || 'direct-gke' }}
+        CLUSTER_NAME_PREFIX: ${{ inputs.cluster-name-prefix }}
+        ARTIFACT_DIR: ${{ inputs.artifact-dir || './junit-reports/' }}
         INFRA_ARGS_INPUT: ${{ inputs.infra-args }}
-      run: |
-        cat >> "$GITHUB_ENV" <<EOF
-        CLUSTER_PROVISIONING_METHOD=${{ inputs.cluster-provisioning-method || 'direct-gke' }}
-        CLUSTER_NAME_PREFIX=${{ inputs.cluster-name-prefix }}
-        CLUSTER_NAME_PREFIX_MAX=20
-        INFRA_FLAVOR=${{ inputs.infra-flavor || 'gke-default' }}
-        INFRA_LIFESPAN=${{ inputs.infra-lifespan || '5h' }}
-        CLUSTER_WAIT_TIMEOUT_MINUTES=${{ inputs.cluster-wait-timeout-minutes || '25' }}
-        MACHINE_TYPE=${{ inputs.gke-machine-type || 'e2-standard-8' }}
-        NUM_NODES=${{ inputs.gke-num-nodes || '3' }}
-        GKE_SPOT=${{ inputs.gke-spot || 'true' }}
-        ARTIFACT_DIR=${{ inputs.artifact-dir || './junit-reports/' }}
-        INSTALL_ROXIE=${{ inputs.install-roxie || 'true' }}
-        DBG_EXISTING_CLUSTER_NAME=${{ inputs.dbg-existing-cluster-name }}
-        DEBUG_RUN=${{ inputs.cluster-provisioning-method == 'dbg-existing-infra' || 'false' }}
-        EOF
-
-        {
-          echo "INFRA_ARGS<<EOF"
-          if [[ -n "$INFRA_ARGS_INPUT" ]]; then
-            echo "$INFRA_ARGS_INPUT"
-          else
-            echo "nodes=3"
-            echo "machine-type=e2-standard-8"
-          fi
-          echo "EOF"
-        } >> "$GITHUB_ENV"
-
-    - name: Validate inputs
-      shell: bash
-      env:
         INFRA_TOKEN: ${{ inputs.infra-token }}
+        MACHINE_TYPE: ${{ inputs.gke-machine-type || 'e2-standard-8' }}
+        NUM_NODES: ${{ inputs.gke-num-nodes || '3' }}
       run: |
+        cluster_name_prefix_max=20
+
         case "$CLUSTER_PROVISIONING_METHOD" in
           direct-gke|infra|dbg-existing-infra) ;;
           *) echo "::error::Unknown cluster-provisioning-method: '${CLUSTER_PROVISIONING_METHOD}'. Supported: direct-gke, infra, dbg-existing-infra."; exit 1 ;;
@@ -115,34 +93,55 @@ runs:
           exit 1
         fi
 
-        if [[ "$DEBUG_RUN" == "false" ]]; then
+        if [[ "$CLUSTER_PROVISIONING_METHOD" != "dbg-existing-infra" ]]; then
           if [[ -z "${CLUSTER_NAME_PREFIX}" ]]; then
-            echo "::error::Input cluster-name-prefix must be non-empty and at most $CLUSTER_NAME_PREFIX_MAX characters long."
+            echo "::error::Input cluster-name-prefix must be non-empty and at most $cluster_name_prefix_max characters long."
             exit 1
           fi
-          if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
-            echo "::error::Input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
+          if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$cluster_name_prefix_max" ]]; then
+            echo "::error::Input cluster-name-prefix must not be larger than $cluster_name_prefix_max characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
             exit 1
           fi
         fi
 
+        # After validation, set environment variables needed across multiple steps.
+        {
+          echo "CLUSTER_PROVISIONING_METHOD=$CLUSTER_PROVISIONING_METHOD"
+          echo "CLUSTER_NAME_PREFIX=$CLUSTER_NAME_PREFIX"
+          echo "CLUSTER_NAME_PREFIX_MAX=$cluster_name_prefix_max"
+          echo "ARTIFACT_DIR=$ARTIFACT_DIR"
+        } | tee -a "$GITHUB_ENV"
+
+        {
+          echo "INFRA_ARGS<<EOF"
+          if [[ -n "$INFRA_ARGS_INPUT" ]]; then
+            echo "$INFRA_ARGS_INPUT"
+          else
+            echo "nodes=$NUM_NODES"
+            echo "machine-type=$MACHINE_TYPE"
+          fi
+          echo "EOF"
+        } | tee -a "$GITHUB_ENV"
+
     - name: Compute cluster name for infra-provisioned cluster
       if: env.CLUSTER_PROVISIONING_METHOD == 'infra' || env.CLUSTER_PROVISIONING_METHOD == 'dbg-existing-infra'
       shell: bash
+      env:
+        DBG_EXISTING_CLUSTER_NAME: ${{ inputs.dbg-existing-cluster-name }}
       # infractl enforces a 28-char limit for cluster names.
       run: |
         if [[ "$CLUSTER_PROVISIONING_METHOD" == "infra" ]]; then
           cluster_name_max=28
 
           hash_length=$(( cluster_name_max - 1 - CLUSTER_NAME_PREFIX_MAX ))
-          hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+          hash_input="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           hash="$(echo "$hash_input" | sha256sum)"
           hash_truncated="${hash:0:$hash_length}"
 
           cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
-          echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
+          echo "CLUSTER_NAME=${cluster_name}" | tee -a "$GITHUB_ENV"
         elif [[ "$CLUSTER_PROVISIONING_METHOD" == "dbg-existing-infra" ]]; then
-          echo "CLUSTER_NAME=${DBG_EXISTING_CLUSTER_NAME}" >> "$GITHUB_ENV"
+          echo "CLUSTER_NAME=${DBG_EXISTING_CLUSTER_NAME}" | tee -a "$GITHUB_ENV"
         fi
 
     - name: Prepare infra args
@@ -158,9 +157,9 @@ runs:
       uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ inputs.infra-token }}
-        flavor: ${{ env.INFRA_FLAVOR }}
+        flavor: ${{ inputs.infra-flavor || 'gke-default' }}
         name: ${{ env.CLUSTER_NAME }}
-        lifespan: ${{ env.INFRA_LIFESPAN }}
+        lifespan: ${{ inputs.infra-lifespan || '5h' }}
         args: ${{ steps.prepare-infra-args.outputs.args }}
         wait: false
 
@@ -174,13 +173,18 @@ runs:
     - name: Create cluster via direct-gke
       if: env.CLUSTER_PROVISIONING_METHOD == 'direct-gke'
       shell: bash
+      env:
+        CLUSTER_WAIT_TIMEOUT_MINUTES: ${{ inputs.cluster-wait-timeout-minutes || '25' }}
+        MACHINE_TYPE: ${{ inputs.gke-machine-type || 'e2-standard-8' }}
+        NUM_NODES: ${{ inputs.gke-num-nodes || '3' }}
+        GKE_SPOT: ${{ inputs.gke-spot || 'true' }}
       # Composite action steps do not support timeout-minutes, so the provisioning
       # timeout is enforced with the timeout(1) command instead.
       # See https://github.com/actions/runner/issues/1979.
       run: |
         timeout -k 30s "${CLUSTER_WAIT_TIMEOUT_MINUTES}m" \
           scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
-        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
+        echo "KUBECONFIG=${HOME}/.kube/config" | tee -a "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       shell: bash
@@ -195,31 +199,28 @@ runs:
         EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
       run: |
         [[ -z "$EXTRA_ENV_VARS" ]] && exit 0
-        while IFS= read -r line; do
-          if [[ -n "$line" ]]; then
-            echo "$line" >> "$GITHUB_ENV"
-          fi
-        done <<< "$EXTRA_ENV_VARS"
+        printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
     - name: Install roxctl
+      if: (inputs.install-roxctl || 'false') == 'true'
       uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
       with:
         roxctl-release: latest
 
     - name: Retrieving roxie version from repository
-      if: env.INSTALL_ROXIE == 'true'
+      if: (inputs.install-roxie || 'true') == 'true'
       id: roxie-version
       shell: bash
       run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
 
     - name: Install roxie
-      if: env.INSTALL_ROXIE == 'true'
+      if: (inputs.install-roxie || 'true') == 'true'
       uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
       with:
         version: "v${{ steps.roxie-version.outputs.version }}"
 
     - name: Install oc
-      if: startsWith(env.INFRA_FLAVOR, 'openshift')
+      if: startsWith(inputs.infra-flavor, 'openshift')
       shell: bash
       run: |
         curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
@@ -234,11 +235,12 @@ runs:
       shell: bash
       env:
         INFRA_TOKEN: ${{ inputs.infra-token }}
+        CLUSTER_WAIT_TIMEOUT_MINUTES: ${{ inputs.cluster-wait-timeout-minutes || '25' }}
       run: |
         timeout -k 30s "${CLUSTER_WAIT_TIMEOUT_MINUTES}m" bash -c '
           infractl wait "${CLUSTER_NAME}"
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
-          echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+          echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" | tee -a "$GITHUB_ENV"
         '
 
     # gcloud container clusters create is synchronous, so the cluster is
