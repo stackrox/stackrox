@@ -194,6 +194,30 @@ func TestParseXYFromVersionString(t *testing.T) {
 			input: "4.11",
 			want:  XYVersion{X: 4, Y: 11},
 		},
+		"zero minor": {
+			input: "5.0",
+			want:  XYVersion{X: 5, Y: 0},
+		},
+		"zero major": {
+			input:   "0.1",
+			wantErr: "invalid major",
+		},
+		"negative major": {
+			input:   "-1.2",
+			wantErr: "expected major.minor",
+		},
+		"negative minor": {
+			input:   "4.-5.0",
+			wantErr: "invalid minor",
+		},
+		"major overflow": {
+			input:   "999999999999999999999999.0",
+			wantErr: "invalid major",
+		},
+		"minor overflow": {
+			input:   "5.999999999999999999999999",
+			wantErr: "invalid minor",
+		},
 		"X.Y.Z release": {
 			input: "4.11.2",
 			want:  XYVersion{X: 4, Y: 11},

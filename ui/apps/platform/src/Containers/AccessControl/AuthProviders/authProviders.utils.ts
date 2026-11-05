@@ -24,16 +24,12 @@ export function transformInitialValues(
 
         // backend doesn't return the exact value for the client secret for the security reasons,
         // instead it'll return some obfuscated data, but not an empty one
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
         alteredConfig.clientOnly = {
             clientSecretStored: !!alteredConfig.client_secret,
         };
 
         if (initialValues.name) {
             // if it's an existing auth provider, then we're using the secret if we have it
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
             alteredConfig.do_not_use_client_secret = !alteredConfig.client_secret;
         }
 
@@ -74,8 +70,6 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     newInitialValues.uiEndpoint = window.location.host;
     newInitialValues.enabled = true;
     if (authProvider.type === 'oidc') {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
         newInitialValues.config = {
             mode: 'auto',
             do_not_use_client_secret: false,

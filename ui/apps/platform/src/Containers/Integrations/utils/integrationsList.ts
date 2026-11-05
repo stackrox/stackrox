@@ -171,13 +171,6 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         type: 'ghcr',
     },
     {
-        categories: 'Image Scanner + Node Scanner',
-        Logo: LogoSvg,
-        label: '[DEPRECATED] StackRox Scanner',
-        type: 'clairify',
-        featureFlagDependency: ['ROX_LEGACY_SCANNER'],
-    },
-    {
         categories: 'Scanner',
         Logo: ClairSvg,
         label: '[DEPRECATED] CoreOS Clair',

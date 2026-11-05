@@ -59,20 +59,20 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
 
+    - name: Validate input tag
+      env:
+        TAG: ${{ inputs.tag }}
+      run: scripts/ci/lib.sh validate_image_tag "$TAG"
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set additional env vars
-      if: inputs.extra-env-vars != ''
       env:
         EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
       run: |
-        while IFS= read -r line; do
-          if [[ -n "$line" ]]; then
-            echo "$line" >> "$GITHUB_ENV"
-          fi
-        done <<< "$EXTRA_ENV_VARS"
+        printf '%s\n' "$EXTRA_ENV_VARS" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -187,14 +187,12 @@ jobs:
       env:
         ROX_USERNAME: admin
       run: |
-        import os, sys
+        import sys
         sys.path.append('.openshift-ci')
         from post_tests import PostClusterTest
         post = PostClusterTest(
             check_stackrox_logs=False,
         )
-        if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
-            post.openshift_namespaces = []
         post.run(['/tmp/e2e-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post

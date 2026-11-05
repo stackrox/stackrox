@@ -17,7 +17,6 @@ import {
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
@@ -94,14 +93,6 @@ function VulnerabilitiesSubnav({
                         'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
                     path: vulnerabilitiesImagesWithoutCvesPath,
                     routeKey: 'vulnerabilities/images-without-cves',
-                },
-                {
-                    type: 'link',
-                    content: 'Kubernetes components',
-                    description:
-                        'Vulnerabilities affecting the underlying Kubernetes infrastructure',
-                    path: vulnerabilitiesPlatformCvesPath,
-                    routeKey: 'vulnerabilities/platform-cves',
                 },
             ],
         },

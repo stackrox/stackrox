@@ -1,3 +1,4 @@
+import { addAutocompleteFilter } from '../../helpers/compoundFilters';
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
@@ -55,14 +56,11 @@ export function selectDeployment(deployment) {
     }, routeMatcherMapForClusterInNetworkGraph);
 }
 
-export function selectFilter(filterKey, filterValue) {
-    cy.get('.react-select__value-container').click();
-    cy.get(`.react-select__menu-list .react-select__option:contains("${filterKey}")`).click();
-    cy.focused().type(filterValue);
-    cy.get(`.react-select__menu-list .react-select__option:contains("${filterValue}")`)
-        .first()
-        .click();
-    cy.get('.react-select__value-container').click();
+// Applies a compound search filter. The Network Graph migrated from the legacy react-select
+// SearchFilterInput to the PatternFly CompoundSearchFilter, so this drives entity/attribute
+// selection plus an autocomplete value via the shared compound filter helper.
+export function selectFilter(entity, attribute, filterValue) {
+    addAutocompleteFilter(entity, attribute, filterValue);
 }
 
 // visit helpers
@@ -71,7 +69,8 @@ export const notifiersAlias = 'notifiers';
 export const clustersAlias = 'clusters';
 // Removed the following because request has 30 second delay from polling interval:
 // export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
-export const searchMetadataOptionsAlias = 'search/metadata/options';
+// Removed searchMetadataOptionsAlias: the CompoundSearchFilter migration dropped the
+// search/metadata/options request the legacy SearchFilterInput made on mount.
 
 const routeMatcherMapToVisitNetworkGraph = {
     [clustersAlias]: {

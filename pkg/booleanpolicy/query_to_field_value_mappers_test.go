@@ -225,6 +225,37 @@ func (s *SearchMapperTestSuite) TestConvertCVSS() {
 	s.testMapSearchString(search.CVSS, searchTerms, expectedGroup, false, true)
 }
 
+func (s *SearchMapperTestSuite) TestConvertEPSS() {
+	searchTerms := []string{">=0.75", "0.42", "<0.009999999776482582"}
+	expectedGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.EPSS,
+		Values: []*storage.PolicyValue{
+			{
+				Value: ">= 75",
+			},
+			{
+				Value: "42",
+			},
+			{
+				Value: "< 1",
+			},
+		},
+	}
+	s.testMapSearchString(search.EPSSProbablity, searchTerms, expectedGroup, false, true)
+
+	partial := []string{">=0.5", ">1"}
+	expectedPartial := &storage.PolicyGroup{
+		FieldName: fieldnames.EPSS,
+		Values: []*storage.PolicyValue{
+			{
+				Value: ">= 50",
+			},
+		},
+	}
+	s.testMapSearchString(search.EPSSProbablity, partial, expectedPartial, true, true)
+	s.testMapSearchString(search.EPSSProbablity, []string{">1", ">=1"}, nil, false, true)
+}
+
 func (s *SearchMapperTestSuite) TestConvertNVDCVSS() {
 	searchTerms := []string{">88", "7644"}
 	expectedGroup := &storage.PolicyGroup{

@@ -9,6 +9,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
@@ -22,6 +23,7 @@ import type { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
 import {
+    getCheckScanStatus,
     getClusterResultsStatusObject,
     getTimeDifferenceAsPhrase,
 } from './compliance.coverage.utils';
@@ -64,6 +66,10 @@ function CheckDetailsTable({
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const colSpan = isScanStatusEnabled ? 4 : 3;
+
     return (
         <div id={tabContentIdForResults}>
             <Toolbar>
@@ -105,12 +111,13 @@ function CheckDetailsTable({
                     <Tr>
                         <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th>Last scanned</Th>
+                        {isScanStatusEnabled && <Th modifier="fitContent">Scan status</Th>}
                         <Th>Compliance status</Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={3}
+                    colSpan={colSpan}
                     errorProps={{
                         title: 'There was an error loading results for this check',
                     }}
@@ -124,6 +131,7 @@ function CheckDetailsTable({
                             {data.map((clusterInfo) => {
                                 const {
                                     cluster: { clusterId, clusterName },
+                                    dataFreshness,
                                     lastScanTime,
                                     status,
                                 } = clusterInfo;
@@ -149,6 +157,11 @@ function CheckDetailsTable({
                                             </Link>
                                         </Td>
                                         <Td dataLabel="Last scanned">{lastScanTimeAsPhrase}</Td>
+                                        {isScanStatusEnabled && (
+                                            <Td dataLabel="Scan status">
+                                                {getCheckScanStatus(dataFreshness)}
+                                            </Td>
+                                        )}
                                         <Td dataLabel="Compliance status">
                                             <StatusIcon clusterStatusObject={clusterStatusObject} />
                                         </Td>

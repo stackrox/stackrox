@@ -336,6 +336,7 @@ func getFakeReportData() map[string][]*report.ResultRow {
 	results[clusterID1] = []*report.ResultRow{
 		{
 			ClusterName:    "test_cluster-1",
+			NodeRole:       "infra",
 			CheckName:      "test_check-1",
 			Profile:        "test_profile-1",
 			ProfileType:    "Profile",
@@ -347,6 +348,7 @@ func getFakeReportData() map[string][]*report.ResultRow {
 		},
 		{
 			ClusterName:    "test_cluster-1",
+			NodeRole:       "N/A",
 			CheckName:      "test_check-2",
 			Profile:        "test_profile-2",
 			ProfileType:    "Tailored Profile",

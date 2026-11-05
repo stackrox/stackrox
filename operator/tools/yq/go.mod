@@ -1,6 +1,6 @@
 module github.com/stackrox/rox/operator/tools/yq
 
-go 1.26.3
+go 1.26.10
 
 require github.com/mikefarah/yq/v4 v4.54.1
 

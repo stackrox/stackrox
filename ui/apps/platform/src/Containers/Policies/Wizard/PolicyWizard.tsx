@@ -115,7 +115,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         // Imperative call is needed to validate when the step changes,
         // before any value has changed to cause validation.
         validateForm().catch(() => {});
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line @eslint-react/exhaustive-deps
     }, [stepId]); // but not validateForm
 
     useEffect(() => {

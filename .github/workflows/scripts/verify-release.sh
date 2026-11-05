@@ -79,14 +79,17 @@ validate_helm_charts() {
     git clone --quiet https://github.com/stackrox/helm-charts
     check_dir_not_empty "helm-charts/${RELEASE_PATCH}"
     if [ "${LATEST_VERSION}" == "true" ]; then
-        if ! grep -q "${RELEASE_PATCH}" < "helm-charts/latest/central-services/Chart.yaml"; then
+        if ! grep -q "${RELEASE_PATCH}" < "helm-charts/latest/operator/Chart.yaml"; then
             mark_failed
             gh_log error "The symbolic link to the latest chart does not point to the ${RELEASE_PATCH} version."
         fi
     fi
 
-    check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.central-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
-    check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.secured-cluster-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
+    if [[ $(printf '%s\n' "5.1.0" "${RELEASE_PATCH}" | sort -V | head -n1) != 5.1.0 ]]; then
+        # The legacy charts are not published starting from 5.1.0.
+        check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.central-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
+        check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.secured-cluster-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
+    fi
     # The operator chart is published to charts.stackrox.io starting from 4.11.0.
     if [[ $(printf '%s\n' "4.11.0" "${RELEASE_PATCH}" | sort -V | head -n1) = 4.11.0 ]]; then
         check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.stackrox-operator[] | select( .appVersion == \"${RELEASE_PATCH}\")"

@@ -49,6 +49,18 @@ ensure_CI() {
     fi
 }
 
+# validate_image_tag rejects empty tags and tags that contain whitespace.
+# Docker and Kubernetes reject image references with leading or trailing whitespace.
+validate_image_tag() {
+    local tag="${1:-}"
+    if [[ -z "$tag" ]]; then
+        die "image tag is not provided or empty"
+    fi
+    if [[ "$tag" =~ [[:space:]] ]]; then
+        die "image tag '$(printf %q "$tag")' contains whitespace; image tags must not include spaces, tabs, or newlines"
+    fi
+}
+
 ci_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: ci_export <env-name> <env-value>"
@@ -1067,7 +1079,7 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
-        *nongroovy-e2e-tests*|*qa-e2e-tests*)
+        *nongroovy-e2e-tests*|*qa-e2e-tests*|*ui-e2e-tests*)
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${operator_controller_tag}
@@ -1095,16 +1107,24 @@ END
             fi
             ;;
         *)
-            cat >> "${image_list}" << END
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-central-db ${tag}
+release-main ${tag}
+release-roxctl ${tag}
+END
+            else
+                cat >> "${image_list}" << END
 central-db ${tag}
 main ${tag}
 roxctl ${tag}
 END
+            fi
             ;;
     esac
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" == "true" ]]; then
-            cat >> "${image_list}" << END
+        cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
 stackrox-operator-index ${operator_metadata_tag}
@@ -1193,23 +1213,17 @@ push_helm_charts() {
 
     local tag="$1"
 
-    echo "Publish Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
+    echo "Publish operator Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
 
-    local central_services_chart_dir
-    local secured_cluster_services_chart_dir
-    central_services_chart_dir="$(mktemp -d)"
-    secured_cluster_services_chart_dir="$(mktemp -d)"
+    local operator_chart_dir
     operator_chart_dir="$(mktemp -d)"
-    roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
-    roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
-    roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
-    roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
+
     ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/opensource"
     # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.
     ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/rhacs"
-    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
+    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${operator_chart_dir}"
 }
 
 gitbot() {
@@ -1806,9 +1820,10 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
         base_link="$(get_base_link)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.27/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.29/junit2jira-linux-amd64 -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
+            --enable-auto-priority \
             -base-link "${base_link}" \
             -build-id "${BUILD_ID}" \
             -build-link "${prow_job_link}" \
@@ -1856,7 +1871,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.27/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.29/flakechecker-linux-amd64 -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 

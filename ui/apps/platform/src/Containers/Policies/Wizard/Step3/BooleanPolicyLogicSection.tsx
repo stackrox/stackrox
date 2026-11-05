@@ -27,7 +27,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
         <>
             {values.policySections?.map((_, sectionIndex) =>
                 readOnly ? (
-                    // eslint-disable-next-line react/no-array-index-key
+                    // eslint-disable-next-line @eslint-react/no-array-index-key
                     <Fragment key={sectionIndex}>
                         {/* this grid item takes up the default 5 columns specified in the Grid component in PolicyDetailContent */}
                         <GridItem>
@@ -56,7 +56,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         </GridItem>
                     </Fragment>
                 ) : (
-                    // eslint-disable-next-line react/no-array-index-key
+                    // eslint-disable-next-line @eslint-react/no-array-index-key
                     <Fragment key={sectionIndex}>
                         <PolicySection
                             sectionIndex={sectionIndex}

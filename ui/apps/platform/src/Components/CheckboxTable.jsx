@@ -62,7 +62,6 @@ class CheckboxTable extends Component {
             {
                 id: 'checkbox',
                 accessor: '',
-                /* eslint-disable react/prop-types */
                 // original.id is the first item in the rows prop which would require a custom validator
                 Cell: ({ original }) => (
                     <input
@@ -74,7 +73,6 @@ class CheckboxTable extends Component {
                         aria-label="Toggle row select"
                     />
                 ),
-                /* eslint-enable react/prop-types */
                 Header: () => (
                     <input
                         type="checkbox"

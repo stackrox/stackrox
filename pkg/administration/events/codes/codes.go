@@ -9,8 +9,10 @@ const (
 	APITokenExpired = "api-token-expired"
 
 	// Auth Provider codes.
-	SAMLAssertionExpired = "saml-assertion-expired"
-	SAMLAudienceMismatch = "saml-audience-mismatch"
+	SAMLAssertionExpired   = "saml-assertion-expired"
+	SAMLAssertionReplay    = "saml-assertion-replay"
+	SAMLAssertionWithoutID = "saml-assertion-without-id"
+	SAMLAudienceMismatch   = "saml-audience-mismatch"
 
 	// Backup codes.
 	GCSGeneric          = "gcs-generic"

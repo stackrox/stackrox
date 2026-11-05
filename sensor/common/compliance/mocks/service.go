@@ -15,7 +15,6 @@ import (
 
 	runtime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	central "github.com/stackrox/rox/generated/internalapi/central"
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
@@ -175,20 +174,6 @@ func (mr *MockServiceMockRecorder) Notify(e any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockService)(nil).Notify), e)
 }
 
-// Output mocks base method.
-func (m *MockService) Output() chan *compliance.ComplianceReturn {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Output")
-	ret0, _ := ret[0].(chan *compliance.ComplianceReturn)
-	return ret0
-}
-
-// Output indicates an expected call of Output.
-func (mr *MockServiceMockRecorder) Output() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Output", reflect.TypeOf((*MockService)(nil).Output))
-}
-
 // ProcessMessage mocks base method.
 func (m *MockService) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
@@ -241,20 +226,6 @@ func (m *MockService) ResponsesC() <-chan *message.ExpiringMessage {
 func (mr *MockServiceMockRecorder) ResponsesC() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResponsesC", reflect.TypeOf((*MockService)(nil).ResponsesC))
-}
-
-// RunScrape mocks base method.
-func (m *MockService) RunScrape(msg *sensor.MsgToCompliance) int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunScrape", msg)
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// RunScrape indicates an expected call of RunScrape.
-func (mr *MockServiceMockRecorder) RunScrape(msg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunScrape", reflect.TypeOf((*MockService)(nil).RunScrape), msg)
 }
 
 // Start mocks base method.

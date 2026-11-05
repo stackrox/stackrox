@@ -12,7 +12,7 @@ type PortDescriptionListProps = {
 function PortDescriptionList({ port }: PortDescriptionListProps): ReactElement {
     const { name, containerPort, protocol, exposure, exposureInfos } = port;
 
-    /* eslint-disable react/no-array-index-key */
+    /* eslint-disable @eslint-react/no-array-index-key */
     return (
         <DescriptionList isCompact isHorizontal>
             {name && <DescriptionListItem term="name" desc={name} />}
@@ -78,7 +78,7 @@ function PortDescriptionList({ port }: PortDescriptionListProps): ReactElement {
             })}
         </DescriptionList>
     );
-    /* eslint-enable react/no-array-index-key */
+    /* eslint-enable @eslint-react/no-array-index-key */
 }
 
 export default PortDescriptionList;
