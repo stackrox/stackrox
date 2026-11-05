@@ -327,3 +327,30 @@ The above targets use `kuttl` internally, so if something goes wrong you may fin
 
 1. Generate a chart using `./hack/generate-chart.sh {opensource|development_build|rhacs}`
 2. Install the operator using for example: `helm install --create-namespace --namespace stackrox-operator-system stackrox-operator ./dist/chart`
+
+### Upgrading a chart with duplicate related-image variables
+
+Older charts included empty `RELATED_IMAGE_*` entries in `manager.env`. If an
+installation also sets these names through `manager.envOverrides`, its Deployment
+can contain duplicates. Removing a duplicate through Helm's normal upgrade or
+Argo CD's default client-side apply can delete **both** entries on the first update.
+
+For affected installations, use a one-time replacement when upgrading:
+
+- **[Helm 3](https://helm.sh/docs/v3/helm/helm_upgrade/):** add `--force --reset-values` to `helm upgrade` and pass your complete
+  user-supplied values file with `-f`. Avoid `--reuse-values`, which can retain the
+  old chart's `manager.env` defaults. If you explicitly configure `manager.env`,
+  remove the empty related-image placeholders there as well.
+- **[Argo CD](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#replace-resource-instead-of-applying-changes):** use the following chart values for the first sync to replace only
+  the operator Deployment, rather than enabling replacement for all resources:
+
+  ```yaml
+  manager:
+    annotations:
+      argocd.argoproj.io/sync-options: Replace=true
+  ```
+
+Replacement can restart the operator; plan the update accordingly. After the
+first update, inspect the Deployment and confirm that each configured
+`RELATED_IMAGE_*` appears exactly once with its intended value. Subsequent Helm
+upgrades can omit `--force`, and the Argo CD replacement annotation can be removed.

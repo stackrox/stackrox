@@ -335,7 +335,7 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 	echo 'resources: [ "../../config/flavors/$(ROX_IMAGE_FLAVOR)" ]' > build/dist/kustomization.yaml
 	cd build/dist && $(KUSTOMIZE) edit set image controller=${IMG}
 	mkdir -p dist
-	$(KUSTOMIZE) build build/dist > dist/install.yaml
+	$(KUSTOMIZE) build build/dist | grep -v 'name: RELATED_IMAGE' > dist/install.yaml
 
 .PHONY: chart
 chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
@@ -347,9 +347,6 @@ chart: kubebuilder manifests ## Generate a helm chart with all necessary resourc
 	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then sed -i'.bak' -e 's,^projectName: rhacs-operator,projectName: stackrox-operator,' PROJECT; fi; \
 	VERSION=$(VERSION) ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
 	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then mv PROJECT.bak PROJECT; fi
-# Kubebuilder appends envOverrides without removing matching manager.env entries.
-# Keep this correction in the generation path until the upstream Helm plugin handles overrides.
-	git -C .. apply --directory=operator/dist/chart operator/hack/chart-env-overrides.patch
 	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
 	rm -f dist/chart/Chart.yaml.bak
 
