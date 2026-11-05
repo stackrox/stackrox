@@ -36,7 +36,7 @@ func classifyRisk(inputs classificationInputs) storage.RiskPriorityClassificatio
 		}
 	}
 
-	if powerfulIdentity || privileged || hasImportantOrCriticalVulnerability(vuln) || hasCriticalPolicyViolation(inputs.riskResults) {
+	if powerfulIdentity || privileged || hasKnownExploitedOrCriticalVulnerability(vuln) || hasCriticalPolicyViolation(inputs.riskResults) {
 		return storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE
 	}
 	if len(inputs.riskResults) != 0 || hasAnyVulnerability(vuln) || hasImagePostureRisk(inputs.imageRiskResults) {
