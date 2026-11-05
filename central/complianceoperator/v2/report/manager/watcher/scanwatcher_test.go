@@ -367,9 +367,9 @@ func TestScanWatcherTimeoutResultFirstRecordsScope(t *testing.T) {
 	result := readyTestQueue.Pull()
 	assert.ErrorIs(t, result.Error, ErrScanTimeout)
 	assert.Nil(t, result.Scan)
-	assert.Equal(t, "ref-1", result.ScanRefID)
-	require.NotNil(t, result.LastStartedTime)
-	assert.Equal(t, timeNow.AsTime(), result.LastStartedTime.AsTime())
+	assert.Equal(t, "ref-1", result.Scope.ScanRefID)
+	require.NotNil(t, result.Scope.LastStartedTime)
+	assert.Equal(t, timeNow.AsTime(), result.Scope.LastStartedTime.AsTime())
 }
 
 // TestScanWatcherNewerResultAfterScanUpdatesScope covers M1: after a Scan is recorded, a result for
@@ -420,10 +420,10 @@ func TestScanWatcherNewerResultAfterScanUpdatesScope(t *testing.T) {
 	result := readyTestQueue.Pull()
 	assert.ErrorIs(t, result.Error, ErrScanTimeout)
 	// Recorded scope advanced to the newer run, not the Scan's older start time.
-	assert.Equal(t, "ref-1", result.ScanRefID)
-	require.NotNil(t, result.LastStartedTime)
-	assert.Equal(t, newerStart, result.LastStartedTime.AsTime())
-	assert.True(t, result.LastStartedTime.AsTime().After(scanStart.AsTime()))
+	assert.Equal(t, "ref-1", result.Scope.ScanRefID)
+	require.NotNil(t, result.Scope.LastStartedTime)
+	assert.Equal(t, newerStart, result.Scope.LastStartedTime.AsTime())
+	assert.True(t, result.Scope.LastStartedTime.AsTime().After(scanStart.AsTime()))
 }
 
 func TestGetIDFromScan(t *testing.T) {
@@ -652,54 +652,54 @@ func TestDeleteOldResults(t *testing.T) {
 	})
 	t.Run("results with error should also delete current CheckResults", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 			Error: errors.New("some error"),
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(true)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("results with no error should not delete current CheckResults", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(false)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("DataStore error should return an error", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(false)).Times(1).Return(errors.New("some error"))
 		assert.Error(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("DataStore success should not return error", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(false)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})

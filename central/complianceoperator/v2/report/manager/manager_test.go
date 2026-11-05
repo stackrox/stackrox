@@ -411,7 +411,11 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 			result := &watcher.ScanWatcherResults{
 				WatcherID: "watcher-1",
 				Scan:      scan,
-				Error:     tc.err,
+				Scope: watcher.ScanScope{
+					ScanRefID:       scan.GetScanRefId(),
+					LastStartedTime: scan.GetLastStartedTime(),
+				},
+				Error: tc.err,
 			}
 
 			done := make(chan struct{})
@@ -513,11 +517,13 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnTimeout() {
 				})
 
 			result := &watcher.ScanWatcherResults{
-				WatcherID:       "watcher-1",
-				Scan:            scan,
-				ScanRefID:       scan.GetScanRefId(),
-				LastStartedTime: scan.GetLastStartedTime(),
-				Error:           tc.err,
+				WatcherID: "watcher-1",
+				Scan:      scan,
+				Scope: watcher.ScanScope{
+					ScanRefID:       scan.GetScanRefId(),
+					LastStartedTime: scan.GetLastStartedTime(),
+				},
+				Error: tc.err,
 			}
 
 			concurrency.WithLock(&managerImp.watchingScansLock, func() {
@@ -637,11 +643,13 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarksStaleFromResultsWithoutScan()
 		})
 
 	result := &watcher.ScanWatcherResults{
-		WatcherID:       "watcher-result-first",
-		Scan:            nil,
-		ScanRefID:       "ref-1",
-		LastStartedTime: now,
-		Error:           watcher.ErrScanTimeout,
+		WatcherID: "watcher-result-first",
+		Scan:      nil,
+		Scope: watcher.ScanScope{
+			ScanRefID:       "ref-1",
+			LastStartedTime: now,
+		},
+		Error: watcher.ErrScanTimeout,
 	}
 
 	concurrency.WithLock(&managerImp.watchingScansLock, func() {
@@ -712,9 +720,11 @@ func (m *ManagerTestSuite) TestHandleReadyScanPrefersRecordedScopeOverStaleScan(
 			LastStartedTime: staleScanStart,
 		},
 		// Recorded scope reflects the newer run that reset the watcher.
-		ScanRefID:       "ref-1",
-		LastStartedTime: newerRunStart,
-		Error:           watcher.ErrScanTimeout,
+		Scope: watcher.ScanScope{
+			ScanRefID:       "ref-1",
+			LastStartedTime: newerRunStart,
+		},
+		Error: watcher.ErrScanTimeout,
 	}
 
 	concurrency.WithLock(&managerImp.watchingScansLock, func() {
