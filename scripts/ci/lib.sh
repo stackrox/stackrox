@@ -1820,9 +1820,10 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
         base_link="$(get_base_link)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.27/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.29/junit2jira-linux-amd64 -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
+            --enable-auto-priority \
             -base-link "${base_link}" \
             -build-id "${BUILD_ID}" \
             -build-link "${prow_job_link}" \
@@ -1870,7 +1871,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.27/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.29/flakechecker-linux-amd64 -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 
