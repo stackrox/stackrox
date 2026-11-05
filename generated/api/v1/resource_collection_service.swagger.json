@@ -503,9 +503,20 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        },
+        "riskPriorityClassification": {
+          "$ref": "#/definitions/storageRiskPriorityClassification"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "proposedRiskScore": {
+          "type": "number",
+          "format": "float"
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 12"
     },
     "storageMatchType": {
       "type": "string",
@@ -570,6 +581,19 @@
           "description": "`rules` resolve as a conjunction (AND)."
         }
       }
+    },
+    "storageRiskPriorityClassification": {
+      "type": "string",
+      "enum": [
+        "RISK_PRIORITY_UNKNOWN",
+        "RISK_PRIORITY_RESPOND_NOW",
+        "RISK_PRIORITY_INVESTIGATE_NOW",
+        "RISK_PRIORITY_REMEDIATE_NOW",
+        "RISK_PRIORITY_REMEDIATE",
+        "RISK_PRIORITY_IMPROVE_POSTURE"
+      ],
+      "default": "RISK_PRIORITY_UNKNOWN",
+      "description": "Next tag: 6"
     },
     "storageRuleValue": {
       "type": "object",

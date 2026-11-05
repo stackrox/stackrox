@@ -100,15 +100,15 @@ func TestCurrentRiskModelDemo_LowOrModerateCVEVolumeCanOutweighSingleCriticalExp
 	require.NotNil(t, internalModerateRisk)
 	require.NotNil(t, internalLowRisk)
 
-	t.Logf("deployment score: EXTERNAL workload with 1 Critical CVE = %.4f", externalRisk.GetScore())
-	t.Logf("deployment score: INTERNAL workload with 34 Moderate CVEs = %.4f", internalModerateRisk.GetScore())
-	t.Logf("deployment score: INTERNAL workload with 251 Low CVEs = %.4f", internalLowRisk.GetScore())
+	t.Logf("deployment proposed score: EXTERNAL workload with 1 Critical CVE = %.4f", externalRisk.GetProposedScore())
+	t.Logf("deployment proposed score: INTERNAL workload with 34 Moderate CVEs = %.4f", internalModerateRisk.GetProposedScore())
+	t.Logf("deployment proposed score: INTERNAL workload with 251 Low CVEs = %.4f", internalLowRisk.GetProposedScore())
 	t.Logf("demo point: the patched vulnerability formula caps low/moderate CVE volume, so a single critical externally exposed workload is no longer buried by arbitrary low/moderate CVE volume")
 
 	assert.Greater(t, riskResultScore(t, criticalVulnRisk, imageMultiplier.VulnerabilitiesHeading), riskResultScore(t, moderateVolumeRisk, imageMultiplier.VulnerabilitiesHeading))
 	assert.Greater(t, riskResultScore(t, criticalVulnRisk, imageMultiplier.VulnerabilitiesHeading), riskResultScore(t, lowVolumeRisk, imageMultiplier.VulnerabilitiesHeading))
-	assert.Greater(t, externalRisk.GetScore(), internalModerateRisk.GetScore())
-	assert.Greater(t, externalRisk.GetScore(), internalLowRisk.GetScore())
+	assert.Greater(t, externalRisk.GetProposedScore(), internalModerateRisk.GetProposedScore())
+	assert.Greater(t, externalRisk.GetProposedScore(), internalLowRisk.GetProposedScore())
 }
 
 func TestCurrentRiskModelDemo_ServiceAccountBlastRadiusAffectsScore(t *testing.T) {
@@ -129,11 +129,11 @@ func TestCurrentRiskModelDemo_ServiceAccountBlastRadiusAffectsScore(t *testing.T
 	require.NotNil(t, baselineRisk)
 	require.NotNil(t, clusterAdminRisk)
 
-	t.Logf("baseline internal workload score = %.4f", baselineRisk.GetScore())
-	t.Logf("otherwise identical workload with CLUSTER_ADMIN service account and automounted token score = %.4f", clusterAdminRisk.GetScore())
+	t.Logf("baseline internal workload proposed score = %.4f", baselineRisk.GetProposedScore())
+	t.Logf("otherwise identical workload with CLUSTER_ADMIN service account and automounted token proposed score = %.4f", clusterAdminRisk.GetProposedScore())
 	t.Logf("demo point: identity blast radius is now a direct score factor, but classification should still carry the primary semantic meaning")
 
-	assert.Greater(t, clusterAdminRisk.GetScore(), baselineRisk.GetScore())
+	assert.Greater(t, clusterAdminRisk.GetProposedScore(), baselineRisk.GetProposedScore())
 }
 
 type vulnCounts struct {
@@ -166,9 +166,16 @@ func imageVulnerabilityRiskFromCounts(t *testing.T, imageName string, counts vul
 	require.NotNil(t, result)
 
 	return &storage.Risk{
-		Score: result.GetScore(),
+		Score:         result.GetLegacyScore(),
+		ProposedScore: result.GetScore(),
 		Results: []*storage.Risk_Result{
 			result,
+		},
+		VulnerabilitySummary: &storage.RiskVulnerabilitySummary{
+			CriticalCount:  int32(counts.critical),
+			ImportantCount: int32(counts.important),
+			ModerateCount:  int32(counts.moderate),
+			LowCount:       int32(counts.low),
 		},
 	}
 }
@@ -340,12 +347,12 @@ func TestCurrentRiskModelDemo_DangerousCasesCanBeBuriedByBenignScoreBoosters(t *
 	}
 
 	sort.Slice(scored, func(i, j int) bool {
-		return scored[i].risk.GetScore() > scored[j].risk.GetScore()
+		return scored[i].risk.GetProposedScore() > scored[j].risk.GetProposedScore()
 	})
 
-	t.Log("current formula ranking, highest raw score first:")
+	t.Log("POC formula ranking, highest proposed score first:")
 	for i, workload := range scored {
-		t.Logf("%d. %s score=%.4f -- %s", i+1, workload.name, workload.risk.GetScore(), workload.description)
+		t.Logf("%d. %s old-score=%.4f new-score=%.4f class=%s -- %s", i+1, workload.name, workload.risk.GetScore(), workload.risk.GetProposedScore(), workload.risk.GetPriorityClassification().String(), workload.description)
 		logRiskResultsInScorerOrder(t, workload.risk)
 	}
 	t.Log("demo point: formula patches reduce the worst inversions, but the raw score still cannot fully express semantic classes such as Respond now, Remediate now, Remediate, and Improve posture")
@@ -410,9 +417,10 @@ func imageRiskWithResults(id string, results ...*storage.Risk_Result) *storage.R
 		score *= result.GetScore()
 	}
 	return &storage.Risk{
-		Id:      id,
-		Score:   score,
-		Results: results,
+		Id:            id,
+		Score:         score,
+		ProposedScore: score,
+		Results:       results,
 	}
 }
 

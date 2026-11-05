@@ -571,6 +571,11 @@
         },
         "score": {
           "type": "number",
+          "format": "float",
+          "description": "score is the POC multiplier value; legacy_score is the pre-POC multiplier value."
+        },
+        "legacyScore": {
+          "type": "number",
           "format": "float"
         }
       }
@@ -857,6 +862,13 @@
           "type": "string",
           "format": "int64"
         },
+        "riskPriorityClassification": {
+          "$ref": "#/definitions/storageRiskPriorityClassification"
+        },
+        "riskPrioritySortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
         "inactive": {
           "type": "boolean"
         },
@@ -910,11 +922,15 @@
           "type": "number",
           "format": "float"
         },
+        "proposedRiskScore": {
+          "type": "number",
+          "format": "float"
+        },
         "platformComponent": {
           "type": "boolean"
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 39"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -1005,9 +1021,20 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        },
+        "riskPriorityClassification": {
+          "$ref": "#/definitions/storageRiskPriorityClassification"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "proposedRiskScore": {
+          "type": "number",
+          "format": "float"
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 12"
     },
     "storageLivenessProbe": {
       "type": "object",
@@ -1100,6 +1127,17 @@
         },
         "score": {
           "type": "number",
+          "format": "float",
+          "description": "score is the legacy ACS risk score. proposed_score is the POC score used with priority_classification."
+        },
+        "priorityClassification": {
+          "$ref": "#/definitions/storageRiskPriorityClassification"
+        },
+        "vulnerabilitySummary": {
+          "$ref": "#/definitions/storageRiskVulnerabilitySummary"
+        },
+        "proposedScore": {
+          "type": "number",
           "format": "float"
         },
         "results": {
@@ -1110,6 +1148,19 @@
           }
         }
       }
+    },
+    "storageRiskPriorityClassification": {
+      "type": "string",
+      "enum": [
+        "RISK_PRIORITY_UNKNOWN",
+        "RISK_PRIORITY_RESPOND_NOW",
+        "RISK_PRIORITY_INVESTIGATE_NOW",
+        "RISK_PRIORITY_REMEDIATE_NOW",
+        "RISK_PRIORITY_REMEDIATE",
+        "RISK_PRIORITY_IMPROVE_POSTURE"
+      ],
+      "default": "RISK_PRIORITY_UNKNOWN",
+      "description": "Next tag: 6"
     },
     "storageRiskSubject": {
       "type": "object",
@@ -1143,6 +1194,43 @@
       ],
       "default": "UNKNOWN",
       "description": "Next tag: 9"
+    },
+    "storageRiskVulnerabilitySummary": {
+      "type": "object",
+      "properties": {
+        "maxSeverity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "criticalCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "importantCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "moderateCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lowCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cisaKev": {
+          "type": "boolean"
+        },
+        "knownRansomwareCampaign": {
+          "type": "boolean"
+        },
+        "networkAttackVector": {
+          "type": "boolean"
+        },
+        "maxEpssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      }
     },
     "storageSecurityContext": {
       "type": "object",
@@ -1234,6 +1322,17 @@
           "$ref": "#/definitions/VolumeMountPropagation"
         }
       }
+    },
+    "storageVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
     },
     "v1AggregateBy": {
       "type": "object",

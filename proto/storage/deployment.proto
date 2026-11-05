@@ -13,7 +13,7 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 37
+// Next available tag: 39
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -50,6 +50,7 @@ message Deployment {
 
   int64 state_timestamp = 27; // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
   float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
+  float proposed_risk_score = 38; // @gotags: search:"Proposed Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
 
   reserved 30; // was tags
 
@@ -279,7 +280,7 @@ message SecurityContext {
   bool allow_privilege_escalation = 7; // @gotags: policy:"Allow Privilege Escalation"
 }
 
-// Next available tag: 11
+// Next available tag: 12
 message ListDeployment {
   string id = 1;
   uint64 hash = 8;
@@ -291,4 +292,5 @@ message ListDeployment {
   int64 priority = 7;
   RiskPriorityClassification risk_priority_classification = 9;
   float risk_score = 10;
+  float proposed_risk_score = 11;
 }

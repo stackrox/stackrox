@@ -20,7 +20,8 @@ func TestPortExposureScore(t *testing.T) {
 			{Message: "Port 23 is exposed in the cluster"},
 			{Message: "Port 24 is exposed on node interfaces"},
 		},
-		Score: 4.0,
+		Score:       4.0,
+		LegacyScore: 1.6,
 	}
 	score := portMultiplier.Score(context.Background(), deployment, nil)
 	protoassert.Equal(t, expectedScore, score)

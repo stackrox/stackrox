@@ -54,6 +54,7 @@ var (
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
+			{Name: "deployments_proposedriskscore", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_proposedriskscore ON deployments USING btree (proposedriskscore)"},
 			{Name: "deployments_riskprioritysortorder", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskprioritysortorder ON deployments USING btree (riskprioritysortorder)"},
 			{Name: "deployments_riskscore", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskscore ON deployments USING btree (riskscore)"},
 			{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (namespace, clusterid)"},
@@ -134,6 +135,7 @@ type Deployments struct {
 	ServiceAccount                string                             `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel            `gorm:"column:serviceaccountpermissionlevel;type:integer"`
 	RiskScore                     float32                            `gorm:"column:riskscore;type:numeric"`
+	ProposedRiskScore             float32                            `gorm:"column:proposedriskscore;type:numeric"`
 	PlatformComponent             bool                               `gorm:"column:platformcomponent;type:bool"`
 	Serialized                    []byte                             `gorm:"column:serialized;type:bytea"`
 }

@@ -51,6 +51,7 @@ func (m *identityBlastRadiusMultiplier) Score(_ context.Context, deployment *sto
 		Factors: []*storage.Risk_Result_Factor{
 			{Message: fmt.Sprintf("Service account %q has %s and its token is automounted", serviceAccount, description)},
 		},
-		Score: score,
+		Score:       score,
+		LegacyScore: 1,
 	}
 }

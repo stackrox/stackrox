@@ -1002,6 +1002,13 @@
           "type": "string",
           "format": "int64"
         },
+        "riskPriorityClassification": {
+          "$ref": "#/definitions/storageRiskPriorityClassification"
+        },
+        "riskPrioritySortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
         "inactive": {
           "type": "boolean"
         },
@@ -1055,11 +1062,15 @@
           "type": "number",
           "format": "float"
         },
+        "proposedRiskScore": {
+          "type": "number",
+          "format": "float"
+        },
         "platformComponent": {
           "type": "boolean"
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 39"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -1643,6 +1654,19 @@
           "format": "float"
         }
       }
+    },
+    "storageRiskPriorityClassification": {
+      "type": "string",
+      "enum": [
+        "RISK_PRIORITY_UNKNOWN",
+        "RISK_PRIORITY_RESPOND_NOW",
+        "RISK_PRIORITY_INVESTIGATE_NOW",
+        "RISK_PRIORITY_REMEDIATE_NOW",
+        "RISK_PRIORITY_REMEDIATE",
+        "RISK_PRIORITY_IMPROVE_POSTURE"
+      ],
+      "default": "RISK_PRIORITY_UNKNOWN",
+      "description": "Next tag: 6"
     },
     "storageScope": {
       "type": "object",

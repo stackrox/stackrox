@@ -23,14 +23,16 @@ func TestScore(t *testing.T) {
 	scorer := NewImageScorer()
 
 	// Without user defined function
-	expectedRiskScore := 2.525
+	expectedLegacyRiskScore := 1.9418751
+	expectedProposedRiskScore := 2.525
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 distinct CVEs with severities ranging between Moderate and Critical"},
 			},
-			Score: 2.02,
+			Score:       2.02,
+			LegacyScore: 1.5535,
 		},
 		{
 			Name: imageMultiplier.ImageAgeHeading,
@@ -43,7 +45,8 @@ func TestScore(t *testing.T) {
 
 	actualRisk := scorer.Score(ctx, image)
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedLegacyRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedProposedRiskScore, actualRisk.GetProposedScore(), 0.0001)
 	assert.Equal(t, &storage.RiskVulnerabilitySummary{
 		MaxSeverity:    storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 		CriticalCount:  1,
@@ -53,7 +56,8 @@ func TestScore(t *testing.T) {
 
 	actualRisk = scorer.Score(ctx, image)
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedLegacyRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedProposedRiskScore, actualRisk.GetProposedScore(), 0.0001)
 
 	mockCtrl.Finish()
 }
@@ -68,14 +72,16 @@ func TestScoreV2(t *testing.T) {
 	scorer := NewImageScorer()
 
 	// Without user defined function
-	expectedRiskScore := 2.525
+	expectedLegacyRiskScore := 1.9418751
+	expectedProposedRiskScore := 2.525
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 distinct CVEs with severities ranging between Moderate and Critical"},
 			},
-			Score: 2.02,
+			Score:       2.02,
+			LegacyScore: 1.5535,
 		},
 		{
 			Name: imageMultiplier.ImageAgeHeading,
@@ -88,7 +94,8 @@ func TestScoreV2(t *testing.T) {
 
 	actualRisk := scorer.ScoreV2(ctx, image)
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedLegacyRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedProposedRiskScore, actualRisk.GetProposedScore(), 0.0001)
 	assert.Equal(t, &storage.RiskVulnerabilitySummary{
 		MaxSeverity:    storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 		CriticalCount:  1,
@@ -98,7 +105,8 @@ func TestScoreV2(t *testing.T) {
 
 	actualRisk = scorer.ScoreV2(ctx, image)
 	protoassert.SlicesEqual(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedLegacyRiskScore, actualRisk.GetScore(), 0.0001)
+	assert.InDelta(t, expectedProposedRiskScore, actualRisk.GetProposedScore(), 0.0001)
 
 	mockCtrl.Finish()
 }

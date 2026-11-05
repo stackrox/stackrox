@@ -62,7 +62,7 @@ var (
 					Reversed: option.GetReversed(),
 				},
 				{
-					Field:    search.DeploymentRiskScore.String(),
+					Field:    search.ProposedDeploymentRiskScore.String(),
 					Reversed: !option.GetReversed(),
 				},
 			}

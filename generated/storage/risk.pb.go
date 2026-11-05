@@ -149,12 +149,14 @@ func (RiskSubjectType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Risk struct {
-	state                  protoimpl.MessageState     `protogen:"open.v1"`
-	Id                     string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Subject                *RiskSubject               `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Id      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Subject *RiskSubject           `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	// score is the legacy ACS risk score. proposed_score is the POC score used with priority_classification.
 	Score                  float32                    `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
 	PriorityClassification RiskPriorityClassification `protobuf:"varint,5,opt,name=priority_classification,json=priorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"priority_classification,omitempty"`
 	VulnerabilitySummary   *RiskVulnerabilitySummary  `protobuf:"bytes,6,opt,name=vulnerability_summary,json=vulnerabilitySummary,proto3" json:"vulnerability_summary,omitempty"`
+	ProposedScore          float32                    `protobuf:"fixed32,7,opt,name=proposed_score,json=proposedScore,proto3" json:"proposed_score,omitempty"`
 	Results                []*Risk_Result             `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -223,6 +225,13 @@ func (x *Risk) GetVulnerabilitySummary() *RiskVulnerabilitySummary {
 		return x.VulnerabilitySummary
 	}
 	return nil
+}
+
+func (x *Risk) GetProposedScore() float32 {
+	if x != nil {
+		return x.ProposedScore
+	}
+	return 0
 }
 
 func (x *Risk) GetResults() []*Risk_Result {
@@ -409,10 +418,12 @@ func (x *RiskSubject) GetType() RiskSubjectType {
 }
 
 type Risk_Result struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Factors       []*Risk_Result_Factor  `protobuf:"bytes,2,rep,name=factors,proto3" json:"factors,omitempty"`
-	Score         float32                `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Factors []*Risk_Result_Factor  `protobuf:"bytes,2,rep,name=factors,proto3" json:"factors,omitempty"`
+	// score is the POC multiplier value; legacy_score is the pre-POC multiplier value.
+	Score         float32 `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty"`
+	LegacyScore   float32 `protobuf:"fixed32,4,opt,name=legacy_score,json=legacyScore,proto3" json:"legacy_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -464,6 +475,13 @@ func (x *Risk_Result) GetFactors() []*Risk_Result_Factor {
 func (x *Risk_Result) GetScore() float32 {
 	if x != nil {
 		return x.Score
+	}
+	return 0
+}
+
+func (x *Risk_Result) GetLegacyScore() float32 {
+	if x != nil {
+		return x.LegacyScore
 	}
 	return 0
 }
@@ -524,18 +542,20 @@ var File_storage_risk_proto protoreflect.FileDescriptor
 
 const file_storage_risk_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/risk.proto\x12\astorage\x1a\x11storage/cve.proto\"\xe4\x03\n" +
+	"\x12storage/risk.proto\x12\astorage\x1a\x11storage/cve.proto\"\xae\x04\n" +
 	"\x04Risk\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
 	"\asubject\x18\x02 \x01(\v2\x14.storage.RiskSubjectR\asubject\x12\x14\n" +
 	"\x05score\x18\x03 \x01(\x02R\x05score\x12\\\n" +
 	"\x17priority_classification\x18\x05 \x01(\x0e2#.storage.RiskPriorityClassificationR\x16priorityClassification\x12V\n" +
-	"\x15vulnerability_summary\x18\x06 \x01(\v2!.storage.RiskVulnerabilitySummaryR\x14vulnerabilitySummary\x12.\n" +
-	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultR\aresults\x1a\x9f\x01\n" +
+	"\x15vulnerability_summary\x18\x06 \x01(\v2!.storage.RiskVulnerabilitySummaryR\x14vulnerabilitySummary\x12%\n" +
+	"\x0eproposed_score\x18\a \x01(\x02R\rproposedScore\x12.\n" +
+	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultR\aresults\x1a\xc2\x01\n" +
 	"\x06Result\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
 	"\afactors\x18\x02 \x03(\v2\x1b.storage.Risk.Result.FactorR\afactors\x12\x14\n" +
-	"\x05score\x18\x03 \x01(\x02R\x05score\x1a4\n" +
+	"\x05score\x18\x03 \x01(\x02R\x05score\x12!\n" +
+	"\flegacy_score\x18\x04 \x01(\x02R\vlegacyScore\x1a4\n" +
 	"\x06Factor\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\"\xac\x03\n" +

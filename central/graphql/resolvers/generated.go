@@ -481,7 +481,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"podLabels: [Label!]!",
 		"ports: [PortConfig]!",
 		"priority: Int!",
+		"proposedRiskScore: Float!",
 		"replicas: Int!",
+		"riskPriorityClassification: RiskPriorityClassification!",
+		"riskPrioritySortOrder: Int!",
 		"riskScore: Float!",
 		"runtimeClass: String!",
 		"serviceAccount: String!",
@@ -607,8 +610,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"skipTLSVerify: Boolean!",
 		"username: String!",
 	}))
-	utils.Must(builder.AddType("GetPermissionsResponse", []string{
-	}))
+	utils.Must(builder.AddType("GetPermissionsResponse", []string{}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
 		"project: String!",
@@ -1148,10 +1150,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Risk", []string{
 		"id: ID!",
+		"priorityClassification: RiskPriorityClassification!",
+		"proposedScore: Float!",
 		"results: [Risk_Result]!",
 		"score: Float!",
 		"subject: RiskSubject",
+		"vulnerabilitySummary: RiskVulnerabilitySummary",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.RiskPriorityClassification(0)))
 	utils.Must(builder.AddType("RiskSubject", []string{
 		"clusterId: String!",
 		"id: ID!",
@@ -1159,8 +1165,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: RiskSubjectType!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.RiskSubjectType(0)))
+	utils.Must(builder.AddType("RiskVulnerabilitySummary", []string{
+		"cisaKev: Boolean!",
+		"criticalCount: Int!",
+		"importantCount: Int!",
+		"knownRansomwareCampaign: Boolean!",
+		"lowCount: Int!",
+		"maxEpssPercentile: Float!",
+		"maxSeverity: VulnerabilitySeverity!",
+		"moderateCount: Int!",
+		"networkAttackVector: Boolean!",
+	}))
 	utils.Must(builder.AddType("Risk_Result", []string{
 		"factors: [Risk_Result_Factor]!",
+		"legacyScore: Float!",
 		"name: String!",
 		"score: Float!",
 	}))
@@ -5950,11 +5968,17 @@ func (resolver *deploymentResolver) Ports(ctx context.Context) ([]*portConfigRes
 }
 
 func (resolver *deploymentResolver) Priority(ctx context.Context) int32 {
-	value := resolver.data.GetPriority()
 	if resolver.data == nil {
-		value = resolver.list.GetPriority()
+		return int32(resolver.list.GetPriority())
 	}
-	return int32(value)
+	return int32(resolver.data.GetPriority())
+}
+
+func (resolver *deploymentResolver) ProposedRiskScore(ctx context.Context) float64 {
+	if resolver.data == nil {
+		return float64(resolver.list.GetProposedRiskScore())
+	}
+	return float64(resolver.data.GetProposedRiskScore())
 }
 
 func (resolver *deploymentResolver) Replicas(ctx context.Context) int32 {
@@ -5963,10 +5987,24 @@ func (resolver *deploymentResolver) Replicas(ctx context.Context) int32 {
 	return int32(value)
 }
 
-func (resolver *deploymentResolver) RiskScore(ctx context.Context) float64 {
+func (resolver *deploymentResolver) RiskPriorityClassification(ctx context.Context) string {
+	if resolver.data == nil {
+		return resolver.list.GetRiskPriorityClassification().String()
+	}
+	return resolver.data.GetRiskPriorityClassification().String()
+}
+
+func (resolver *deploymentResolver) RiskPrioritySortOrder(ctx context.Context) int32 {
 	resolver.ensureData(ctx)
-	value := resolver.data.GetRiskScore()
-	return float64(value)
+	value := resolver.data.GetRiskPrioritySortOrder()
+	return value
+}
+
+func (resolver *deploymentResolver) RiskScore(ctx context.Context) float64 {
+	if resolver.data == nil {
+		return float64(resolver.list.GetRiskScore())
+	}
+	return float64(resolver.data.GetRiskScore())
 }
 
 func (resolver *deploymentResolver) RuntimeClass(ctx context.Context) string {
@@ -12376,6 +12414,16 @@ func (resolver *riskResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *riskResolver) PriorityClassification(ctx context.Context) string {
+	value := resolver.data.GetPriorityClassification()
+	return value.String()
+}
+
+func (resolver *riskResolver) ProposedScore(ctx context.Context) float64 {
+	value := resolver.data.GetProposedScore()
+	return float64(value)
+}
+
 func (resolver *riskResolver) Results(ctx context.Context) ([]*risk_ResultResolver, error) {
 	value := resolver.data.GetResults()
 	return resolver.root.wrapRisk_Results(value, nil)
@@ -12389,6 +12437,29 @@ func (resolver *riskResolver) Score(ctx context.Context) float64 {
 func (resolver *riskResolver) Subject(ctx context.Context) (*riskSubjectResolver, error) {
 	value := resolver.data.GetSubject()
 	return resolver.root.wrapRiskSubject(value, true, nil)
+}
+
+func (resolver *riskResolver) VulnerabilitySummary(ctx context.Context) (*riskVulnerabilitySummaryResolver, error) {
+	value := resolver.data.GetVulnerabilitySummary()
+	return resolver.root.wrapRiskVulnerabilitySummary(value, true, nil)
+}
+
+func toRiskPriorityClassification(value *string) storage.RiskPriorityClassification {
+	if value != nil {
+		return storage.RiskPriorityClassification(storage.RiskPriorityClassification_value[*value])
+	}
+	return storage.RiskPriorityClassification(0)
+}
+
+func toRiskPriorityClassifications(values *[]string) []storage.RiskPriorityClassification {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.RiskPriorityClassification, len(*values))
+	for i, v := range *values {
+		output[i] = toRiskPriorityClassification(&v)
+	}
+	return output
 }
 
 type riskSubjectResolver struct {
@@ -12471,6 +12542,93 @@ func toRiskSubjectTypes(values *[]string) []storage.RiskSubjectType {
 	return output
 }
 
+type riskVulnerabilitySummaryResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.RiskVulnerabilitySummary
+}
+
+func (resolver *Resolver) wrapRiskVulnerabilitySummary(value *storage.RiskVulnerabilitySummary, ok bool, err error) (*riskVulnerabilitySummaryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &riskVulnerabilitySummaryResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapRiskVulnerabilitySummaries(values []*storage.RiskVulnerabilitySummary, err error) ([]*riskVulnerabilitySummaryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*riskVulnerabilitySummaryResolver, len(values))
+	for i, v := range values {
+		output[i] = &riskVulnerabilitySummaryResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapRiskVulnerabilitySummaryWithContext(ctx context.Context, value *storage.RiskVulnerabilitySummary, ok bool, err error) (*riskVulnerabilitySummaryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &riskVulnerabilitySummaryResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapRiskVulnerabilitySummariesWithContext(ctx context.Context, values []*storage.RiskVulnerabilitySummary, err error) ([]*riskVulnerabilitySummaryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*riskVulnerabilitySummaryResolver, len(values))
+	for i, v := range values {
+		output[i] = &riskVulnerabilitySummaryResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) CisaKev(ctx context.Context) bool {
+	value := resolver.data.GetCisaKev()
+	return value
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) CriticalCount(ctx context.Context) int32 {
+	value := resolver.data.GetCriticalCount()
+	return value
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) ImportantCount(ctx context.Context) int32 {
+	value := resolver.data.GetImportantCount()
+	return value
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) KnownRansomwareCampaign(ctx context.Context) bool {
+	value := resolver.data.GetKnownRansomwareCampaign()
+	return value
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) LowCount(ctx context.Context) int32 {
+	value := resolver.data.GetLowCount()
+	return value
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) MaxEpssPercentile(ctx context.Context) float64 {
+	value := resolver.data.GetMaxEpssPercentile()
+	return float64(value)
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) MaxSeverity(ctx context.Context) string {
+	value := resolver.data.GetMaxSeverity()
+	return value.String()
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) ModerateCount(ctx context.Context) int32 {
+	value := resolver.data.GetModerateCount()
+	return value
+}
+
+func (resolver *riskVulnerabilitySummaryResolver) NetworkAttackVector(ctx context.Context) bool {
+	value := resolver.data.GetNetworkAttackVector()
+	return value
+}
+
 type risk_ResultResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -12516,6 +12674,11 @@ func (resolver *Resolver) wrapRisk_ResultsWithContext(ctx context.Context, value
 func (resolver *risk_ResultResolver) Factors(ctx context.Context) ([]*risk_Result_FactorResolver, error) {
 	value := resolver.data.GetFactors()
 	return resolver.root.wrapRisk_Result_Factors(value, nil)
+}
+
+func (resolver *risk_ResultResolver) LegacyScore(ctx context.Context) float64 {
+	value := resolver.data.GetLegacyScore()
+	return float64(value)
 }
 
 func (resolver *risk_ResultResolver) Name(ctx context.Context) string {
