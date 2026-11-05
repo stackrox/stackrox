@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1461,22 +1463,44 @@ func TestConvert(t *testing.T) {
 	}
 }
 
-func TestToEventIncludesInitContainers(t *testing.T) {
-	wrap := &deploymentWrap{
-		Deployment: &storage.Deployment{
-			Id: "test-deploy",
-			Containers: []*storage.Container{
-				{Name: "init-setup", Type: storage.ContainerType_INIT},
-				{Name: "main-app", Type: storage.ContainerType_REGULAR},
-			},
+func TestToEventInitContainerCompatibility(t *testing.T) {
+	cases := map[string]struct {
+		caps               []centralsensor.CentralCapability
+		expectedContainers []string
+	}{
+		"filters init containers when Central lacks capability": {
+			caps:               []centralsensor.CentralCapability{},
+			expectedContainers: []string{"main-app"},
+		},
+		"includes init containers when Central has capability": {
+			caps:               []centralsensor.CentralCapability{centralsensor.InitContainerSupport},
+			expectedContainers: []string{"init-setup", "main-app"},
 		},
 	}
 
-	event := wrap.toEvent(central.ResourceAction_CREATE_RESOURCE)
-	dep := event.GetDeployment()
-	require.Len(t, dep.GetContainers(), 2)
-	assert.Equal(t, "init-setup", dep.GetContainers()[0].GetName())
-	assert.Equal(t, "main-app", dep.GetContainers()[1].GetName())
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			centralcaps.Set(tc.caps)
+			t.Cleanup(func() { centralcaps.Set(nil) })
+
+			wrap := &deploymentWrap{
+				Deployment: &storage.Deployment{
+					Id: "test-deploy",
+					Containers: []*storage.Container{
+						{Name: "init-setup", Type: storage.ContainerType_INIT},
+						{Name: "main-app", Type: storage.ContainerType_REGULAR},
+					},
+				},
+			}
+
+			event := wrap.toEvent(central.ResourceAction_CREATE_RESOURCE)
+			dep := event.GetDeployment()
+			require.Len(t, dep.GetContainers(), len(tc.expectedContainers))
+			for i, name := range tc.expectedContainers {
+				assert.Equal(t, name, dep.GetContainers()[i].GetName())
+			}
+		})
+	}
 }
 
 type mockPodLister struct {

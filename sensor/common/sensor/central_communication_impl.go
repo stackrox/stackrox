@@ -159,6 +159,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	if features.FlattenImageData.Enabled() {
 		capsSet.Add(centralsensor.FlattenImageData)
 	}
+	capsSet.Add(centralsensor.InitContainerSupport)
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
