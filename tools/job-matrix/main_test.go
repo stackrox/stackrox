@@ -18,13 +18,13 @@ func Test_renderOutput(t *testing.T) {
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"tests":[{"name":"test with <script> content","source":"","source_ref":"","cluster_type":"","triggers":null,"description":""}],"duplicate_families":null}`, string(jsonOutput))
 
-	htmlOutput, err := renderOutput(matrix, "html", "job-matrix.html")
+	htmlOutput, err := renderOutput(matrix, "html", "job-matrix.html.tmpl")
 	require.NoError(t, err)
 	assert.Contains(t, string(htmlOutput), "const data = {")
 	assert.Contains(t, string(htmlOutput), `\u003cscript\u003e`)
 	assert.NotContains(t, string(htmlOutput), "fetch(")
 
-	_, err = renderOutput(matrix, "xml", "job-matrix.html")
+	_, err = renderOutput(matrix, "xml", "job-matrix.html.tmpl")
 	assert.ErrorContains(t, err, `invalid output format "xml"`)
 }
 
@@ -107,6 +107,75 @@ func Test_buildJobMatrix(t *testing.T) {
 	// the hand-curated metadata, not just the parsed trigger.
 	assert.Empty(t, byName["gke-qa-e2e-tests"].RequiredLabel)
 	assert.NotEmpty(t, byName["backport-pr.yaml"].RequiredLabel)
+}
+
+func Test_resolveWorkflowsDir(t *testing.T) {
+	for name, tc := range map[string]struct {
+		workflowsDirSet bool
+		repoSet         bool
+		branchSet       bool
+		wantErr         string
+		wantFetchCalled bool
+	}{
+		"workflows-dir only": {
+			workflowsDirSet: true,
+		},
+		"neither set falls back to fetch defaults": {
+			wantFetchCalled: true,
+		},
+		"repo set only": {
+			repoSet:         true,
+			wantFetchCalled: true,
+		},
+		"branch set only": {
+			branchSet:       true,
+			wantFetchCalled: true,
+		},
+		"workflows-dir and repo both set": {
+			workflowsDirSet: true,
+			repoSet:         true,
+			wantErr:         "mutually exclusive",
+		},
+		"workflows-dir and branch both set": {
+			workflowsDirSet: true,
+			branchSet:       true,
+			wantErr:         "mutually exclusive",
+		},
+		"workflows-dir, repo, and branch all set": {
+			workflowsDirSet: true,
+			repoSet:         true,
+			branchSet:       true,
+			wantErr:         "mutually exclusive",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var fetchCalled bool
+			var gotRepo, gotBranch string
+			fetch := func(repo, branch string) (string, func(), error) {
+				fetchCalled = true
+				gotRepo, gotBranch = repo, branch
+				return "fetched-dir", func() {}, nil
+			}
+
+			dir, cleanup, err := resolveWorkflowsDir("local-dir", tc.workflowsDirSet, "some/repo", "some-branch", tc.repoSet, tc.branchSet, fetch)
+
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				assert.False(t, fetchCalled)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, cleanup)
+			assert.Equal(t, tc.wantFetchCalled, fetchCalled)
+			if tc.wantFetchCalled {
+				assert.Equal(t, "fetched-dir", dir)
+				assert.Equal(t, "some/repo", gotRepo)
+				assert.Equal(t, "some-branch", gotBranch)
+			} else {
+				assert.Equal(t, "local-dir", dir)
+			}
+		})
+	}
 }
 
 func Test_duplicateFamilies(t *testing.T) {

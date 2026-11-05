@@ -46,14 +46,34 @@ type JobMatrix struct {
 
 func main() {
 	prowHTMLPath := flag.String("prow-html", "tmp/prow-jobs.html", "path to the Prow ci-operator test-matrix HTML export")
-	workflowsDir := flag.String("workflows-dir", ".github/workflows", "directory containing GitHub Actions workflow files")
+	workflowsDir := flag.String("workflows-dir", ".github/workflows", "directory containing GitHub Actions workflow files (mutually exclusive with -repo and -branch)")
+	repo := flag.String("repo", "stackrox/stackrox", "owner/repo on GitHub to fetch GitHub Actions workflows from (mutually exclusive with -workflows-dir)")
+	branch := flag.String("branch", "master", "branch to fetch GitHub Actions workflows from (mutually exclusive with -workflows-dir)")
 	var output string
 	flag.StringVar(&output, "o", "json", "output format: json or html")
 	flag.StringVar(&output, "output", "json", "output format: json or html")
 	outPath := flag.String("out", "", "optional path to write the output instead of stdout")
 	flag.Parse()
 
-	matrix, err := buildJobMatrix(NewHTMLFileProwSource(*prowHTMLPath), *workflowsDir)
+	var workflowsDirSet, repoSet, branchSet bool
+	flag.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "workflows-dir":
+			workflowsDirSet = true
+		case "repo":
+			repoSet = true
+		case "branch":
+			branchSet = true
+		}
+	})
+
+	resolvedWorkflowsDir, cleanup, err := resolveWorkflowsDir(*workflowsDir, workflowsDirSet, *repo, *branch, repoSet, branchSet, fetchWorkflowsDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cleanup()
+
+	matrix, err := buildJobMatrix(NewHTMLFileProwSource(*prowHTMLPath), resolvedWorkflowsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,6 +121,24 @@ func writeOutput(outPath string, data []byte) error {
 		return fmt.Errorf("writing %s: %w", outPath, err)
 	}
 	return nil
+}
+
+// fetchFunc fetches GitHub Actions workflow definitions for repo at branch
+// and returns their directory on disk plus a cleanup func.
+type fetchFunc func(repo, branch string) (dir string, cleanup func(), err error)
+
+// resolveWorkflowsDir decides whether to use workflowsDir as-is or fetch
+// workflows from repo/branch, depending on which flags were explicitly set
+// on the command line. workflowsDir and repo/branch are mutually exclusive:
+// if neither is set, it falls back to fetching repo/branch's defaults.
+func resolveWorkflowsDir(workflowsDir string, workflowsDirSet bool, repo, branch string, repoSet, branchSet bool, fetch fetchFunc) (string, func(), error) {
+	if workflowsDirSet && (repoSet || branchSet) {
+		return "", nil, fmt.Errorf("-workflows-dir is mutually exclusive with -repo and -branch")
+	}
+	if workflowsDirSet {
+		return workflowsDir, func() {}, nil
+	}
+	return fetch(repo, branch)
 }
 
 func buildJobMatrix(prowSource ProwSource, workflowsDir string) (JobMatrix, error) {
