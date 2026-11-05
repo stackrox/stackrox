@@ -17,8 +17,6 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 	switch t := msg.GetMsg().(type) {
 	case *central.MsgFromSensor_NetworkFlowUpdate:
 		return "NetworkFlow"
-	case *central.MsgFromSensor_ScrapeUpdate:
-		return "ScrapeUpdate"
 	case *central.MsgFromSensor_Event:
 		if msg.GetEvent().GetResource() == nil {
 			return "Unknown"

@@ -7,7 +7,6 @@
 package central
 
 import (
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -1147,380 +1146,6 @@ func (x *ContainerInstanceEnforcement) GetDeploymentEnforcement() *DeploymentEnf
 	return nil
 }
 
-type ScrapeCommand struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	ScrapeId string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId,proto3" json:"scrape_id,omitempty"`
-	// Types that are valid to be assigned to Command:
-	//
-	//	*ScrapeCommand_StartScrape
-	//	*ScrapeCommand_KillScrape
-	Command       isScrapeCommand_Command `protobuf_oneof:"command"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ScrapeCommand) Reset() {
-	*x = ScrapeCommand{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ScrapeCommand) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ScrapeCommand) ProtoMessage() {}
-
-func (x *ScrapeCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ScrapeCommand.ProtoReflect.Descriptor instead.
-func (*ScrapeCommand) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ScrapeCommand) GetScrapeId() string {
-	if x != nil {
-		return x.ScrapeId
-	}
-	return ""
-}
-
-func (x *ScrapeCommand) GetCommand() isScrapeCommand_Command {
-	if x != nil {
-		return x.Command
-	}
-	return nil
-}
-
-func (x *ScrapeCommand) GetStartScrape() *StartScrape {
-	if x != nil {
-		if x, ok := x.Command.(*ScrapeCommand_StartScrape); ok {
-			return x.StartScrape
-		}
-	}
-	return nil
-}
-
-func (x *ScrapeCommand) GetKillScrape() *KillScrape {
-	if x != nil {
-		if x, ok := x.Command.(*ScrapeCommand_KillScrape); ok {
-			return x.KillScrape
-		}
-	}
-	return nil
-}
-
-type isScrapeCommand_Command interface {
-	isScrapeCommand_Command()
-}
-
-type ScrapeCommand_StartScrape struct {
-	StartScrape *StartScrape `protobuf:"bytes,2,opt,name=start_scrape,json=startScrape,proto3,oneof"`
-}
-
-type ScrapeCommand_KillScrape struct {
-	KillScrape *KillScrape `protobuf:"bytes,3,opt,name=kill_scrape,json=killScrape,proto3,oneof"`
-}
-
-func (*ScrapeCommand_StartScrape) isScrapeCommand_Command() {}
-
-func (*ScrapeCommand_KillScrape) isScrapeCommand_Command() {}
-
-type StartScrape struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Dictates the hosts we expect results from.
-	Hostnames []string `protobuf:"bytes,1,rep,name=hostnames,proto3" json:"hostnames,omitempty"`
-	// Dictates which standards the compliance pods should run.
-	Standards     []string `protobuf:"bytes,2,rep,name=standards,proto3" json:"standards,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *StartScrape) Reset() {
-	*x = StartScrape{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *StartScrape) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StartScrape) ProtoMessage() {}
-
-func (x *StartScrape) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StartScrape.ProtoReflect.Descriptor instead.
-func (*StartScrape) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *StartScrape) GetHostnames() []string {
-	if x != nil {
-		return x.Hostnames
-	}
-	return nil
-}
-
-func (x *StartScrape) GetStandards() []string {
-	if x != nil {
-		return x.Standards
-	}
-	return nil
-}
-
-type KillScrape struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *KillScrape) Reset() {
-	*x = KillScrape{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *KillScrape) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*KillScrape) ProtoMessage() {}
-
-func (x *KillScrape) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use KillScrape.ProtoReflect.Descriptor instead.
-func (*KillScrape) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{9}
-}
-
-type ScrapeUpdate struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	ScrapeId string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId,proto3" json:"scrape_id,omitempty"`
-	// Types that are valid to be assigned to Update:
-	//
-	//	*ScrapeUpdate_ComplianceReturn
-	//	*ScrapeUpdate_ScrapeStarted
-	//	*ScrapeUpdate_ScrapeKilled
-	Update        isScrapeUpdate_Update `protobuf_oneof:"update"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ScrapeUpdate) Reset() {
-	*x = ScrapeUpdate{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ScrapeUpdate) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ScrapeUpdate) ProtoMessage() {}
-
-func (x *ScrapeUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ScrapeUpdate.ProtoReflect.Descriptor instead.
-func (*ScrapeUpdate) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *ScrapeUpdate) GetScrapeId() string {
-	if x != nil {
-		return x.ScrapeId
-	}
-	return ""
-}
-
-func (x *ScrapeUpdate) GetUpdate() isScrapeUpdate_Update {
-	if x != nil {
-		return x.Update
-	}
-	return nil
-}
-
-func (x *ScrapeUpdate) GetComplianceReturn() *compliance.ComplianceReturn {
-	if x != nil {
-		if x, ok := x.Update.(*ScrapeUpdate_ComplianceReturn); ok {
-			return x.ComplianceReturn
-		}
-	}
-	return nil
-}
-
-func (x *ScrapeUpdate) GetScrapeStarted() *ScrapeStarted {
-	if x != nil {
-		if x, ok := x.Update.(*ScrapeUpdate_ScrapeStarted); ok {
-			return x.ScrapeStarted
-		}
-	}
-	return nil
-}
-
-func (x *ScrapeUpdate) GetScrapeKilled() *ScrapeKilled {
-	if x != nil {
-		if x, ok := x.Update.(*ScrapeUpdate_ScrapeKilled); ok {
-			return x.ScrapeKilled
-		}
-	}
-	return nil
-}
-
-type isScrapeUpdate_Update interface {
-	isScrapeUpdate_Update()
-}
-
-type ScrapeUpdate_ComplianceReturn struct {
-	ComplianceReturn *compliance.ComplianceReturn `protobuf:"bytes,2,opt,name=compliance_return,json=complianceReturn,proto3,oneof"`
-}
-
-type ScrapeUpdate_ScrapeStarted struct {
-	ScrapeStarted *ScrapeStarted `protobuf:"bytes,3,opt,name=scrape_started,json=scrapeStarted,proto3,oneof"`
-}
-
-type ScrapeUpdate_ScrapeKilled struct {
-	ScrapeKilled *ScrapeKilled `protobuf:"bytes,4,opt,name=scrape_killed,json=scrapeKilled,proto3,oneof"`
-}
-
-func (*ScrapeUpdate_ComplianceReturn) isScrapeUpdate_Update() {}
-
-func (*ScrapeUpdate_ScrapeStarted) isScrapeUpdate_Update() {}
-
-func (*ScrapeUpdate_ScrapeKilled) isScrapeUpdate_Update() {}
-
-type ScrapeStarted struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ScrapeStarted) Reset() {
-	*x = ScrapeStarted{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ScrapeStarted) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ScrapeStarted) ProtoMessage() {}
-
-func (x *ScrapeStarted) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ScrapeStarted.ProtoReflect.Descriptor instead.
-func (*ScrapeStarted) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *ScrapeStarted) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
-type ScrapeKilled struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ScrapeKilled) Reset() {
-	*x = ScrapeKilled{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ScrapeKilled) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ScrapeKilled) ProtoMessage() {}
-
-func (x *ScrapeKilled) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ScrapeKilled.ProtoReflect.Descriptor instead.
-func (*ScrapeKilled) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *ScrapeKilled) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
 type NetworkPoliciesCommand struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
 	SeqId         int64                           `protobuf:"varint,1,opt,name=seq_id,json=seqId,proto3" json:"seq_id,omitempty"`
@@ -1531,7 +1156,7 @@ type NetworkPoliciesCommand struct {
 
 func (x *NetworkPoliciesCommand) Reset() {
 	*x = NetworkPoliciesCommand{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[13]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1543,7 +1168,7 @@ func (x *NetworkPoliciesCommand) String() string {
 func (*NetworkPoliciesCommand) ProtoMessage() {}
 
 func (x *NetworkPoliciesCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[13]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1556,7 +1181,7 @@ func (x *NetworkPoliciesCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkPoliciesCommand.ProtoReflect.Descriptor instead.
 func (*NetworkPoliciesCommand) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{13}
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *NetworkPoliciesCommand) GetSeqId() int64 {
@@ -1583,7 +1208,7 @@ type NetworkPoliciesResponse struct {
 
 func (x *NetworkPoliciesResponse) Reset() {
 	*x = NetworkPoliciesResponse{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[14]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1595,7 +1220,7 @@ func (x *NetworkPoliciesResponse) String() string {
 func (*NetworkPoliciesResponse) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[14]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1608,7 +1233,7 @@ func (x *NetworkPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkPoliciesResponse.ProtoReflect.Descriptor instead.
 func (*NetworkPoliciesResponse) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{14}
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *NetworkPoliciesResponse) GetSeqId() int64 {
@@ -1634,7 +1259,7 @@ type SensorEvent_ResourcesSynced struct {
 
 func (x *SensorEvent_ResourcesSynced) Reset() {
 	*x = SensorEvent_ResourcesSynced{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[15]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1646,7 +1271,7 @@ func (x *SensorEvent_ResourcesSynced) String() string {
 func (*SensorEvent_ResourcesSynced) ProtoMessage() {}
 
 func (x *SensorEvent_ResourcesSynced) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[15]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1679,7 +1304,7 @@ type NetworkPoliciesCommand_Apply struct {
 
 func (x *NetworkPoliciesCommand_Apply) Reset() {
 	*x = NetworkPoliciesCommand_Apply{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[16]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1691,7 +1316,7 @@ func (x *NetworkPoliciesCommand_Apply) String() string {
 func (*NetworkPoliciesCommand_Apply) ProtoMessage() {}
 
 func (x *NetworkPoliciesCommand_Apply) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[16]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1704,7 +1329,7 @@ func (x *NetworkPoliciesCommand_Apply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkPoliciesCommand_Apply.ProtoReflect.Descriptor instead.
 func (*NetworkPoliciesCommand_Apply) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{13, 0}
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{7, 0}
 }
 
 func (x *NetworkPoliciesCommand_Apply) GetApplyId() string {
@@ -1733,7 +1358,7 @@ type NetworkPoliciesCommand_Payload struct {
 
 func (x *NetworkPoliciesCommand_Payload) Reset() {
 	*x = NetworkPoliciesCommand_Payload{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[17]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1745,7 +1370,7 @@ func (x *NetworkPoliciesCommand_Payload) String() string {
 func (*NetworkPoliciesCommand_Payload) ProtoMessage() {}
 
 func (x *NetworkPoliciesCommand_Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[17]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1758,7 +1383,7 @@ func (x *NetworkPoliciesCommand_Payload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkPoliciesCommand_Payload.ProtoReflect.Descriptor instead.
 func (*NetworkPoliciesCommand_Payload) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{13, 1}
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{7, 1}
 }
 
 func (x *NetworkPoliciesCommand_Payload) GetCmd() isNetworkPoliciesCommand_Payload_Cmd {
@@ -1797,7 +1422,7 @@ type NetworkPoliciesResponse_Apply struct {
 
 func (x *NetworkPoliciesResponse_Apply) Reset() {
 	*x = NetworkPoliciesResponse_Apply{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[18]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1809,7 +1434,7 @@ func (x *NetworkPoliciesResponse_Apply) String() string {
 func (*NetworkPoliciesResponse_Apply) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse_Apply) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[18]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1822,7 +1447,7 @@ func (x *NetworkPoliciesResponse_Apply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkPoliciesResponse_Apply.ProtoReflect.Descriptor instead.
 func (*NetworkPoliciesResponse_Apply) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{14, 0}
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{8, 0}
 }
 
 func (x *NetworkPoliciesResponse_Apply) GetApplyId() string {
@@ -1848,7 +1473,7 @@ type NetworkPoliciesResponse_Error struct {
 
 func (x *NetworkPoliciesResponse_Error) Reset() {
 	*x = NetworkPoliciesResponse_Error{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[19]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1860,7 +1485,7 @@ func (x *NetworkPoliciesResponse_Error) String() string {
 func (*NetworkPoliciesResponse_Error) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse_Error) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[19]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1873,7 +1498,7 @@ func (x *NetworkPoliciesResponse_Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkPoliciesResponse_Error.ProtoReflect.Descriptor instead.
 func (*NetworkPoliciesResponse_Error) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{14, 1}
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{8, 1}
 }
 
 func (x *NetworkPoliciesResponse_Error) GetMessage() string {
@@ -1896,7 +1521,7 @@ type NetworkPoliciesResponse_Payload struct {
 
 func (x *NetworkPoliciesResponse_Payload) Reset() {
 	*x = NetworkPoliciesResponse_Payload{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[20]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1908,7 +1533,7 @@ func (x *NetworkPoliciesResponse_Payload) String() string {
 func (*NetworkPoliciesResponse_Payload) ProtoMessage() {}
 
 func (x *NetworkPoliciesResponse_Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[20]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1921,7 +1546,7 @@ func (x *NetworkPoliciesResponse_Payload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkPoliciesResponse_Payload.ProtoReflect.Descriptor instead.
 func (*NetworkPoliciesResponse_Payload) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{14, 2}
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{8, 2}
 }
 
 func (x *NetworkPoliciesResponse_Payload) GetCmd() isNetworkPoliciesResponse_Payload_Cmd {
@@ -1969,7 +1594,7 @@ var File_internalapi_central_sensor_events_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
+	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
 	"\x17ReprocessDeploymentRisk\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\x81\x02\n" +
 	"\fAlertResults\x12#\n" +
@@ -2052,28 +1677,7 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"policyName\"\x8c\x01\n" +
 	"\x1cContainerInstanceEnforcement\x12\x15\n" +
 	"\x06pod_id\x18\x02 \x01(\tR\x05podId\x12U\n" +
-	"\x16deployment_enforcement\x18\x03 \x01(\v2\x1e.central.DeploymentEnforcementR\x15deploymentEnforcement\"\xaa\x01\n" +
-	"\rScrapeCommand\x12\x1b\n" +
-	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x129\n" +
-	"\fstart_scrape\x18\x02 \x01(\v2\x14.central.StartScrapeH\x00R\vstartScrape\x126\n" +
-	"\vkill_scrape\x18\x03 \x01(\v2\x13.central.KillScrapeH\x00R\n" +
-	"killScrapeB\t\n" +
-	"\acommand\"I\n" +
-	"\vStartScrape\x12\x1c\n" +
-	"\thostnames\x18\x01 \x03(\tR\thostnames\x12\x1c\n" +
-	"\tstandards\x18\x02 \x03(\tR\tstandards\"\f\n" +
-	"\n" +
-	"KillScrape\"\x81\x02\n" +
-	"\fScrapeUpdate\x12\x1b\n" +
-	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x12K\n" +
-	"\x11compliance_return\x18\x02 \x01(\v2\x1c.compliance.ComplianceReturnH\x00R\x10complianceReturn\x12?\n" +
-	"\x0escrape_started\x18\x03 \x01(\v2\x16.central.ScrapeStartedH\x00R\rscrapeStarted\x12<\n" +
-	"\rscrape_killed\x18\x04 \x01(\v2\x15.central.ScrapeKilledH\x00R\fscrapeKilledB\b\n" +
-	"\x06update\"4\n" +
-	"\rScrapeStarted\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"3\n" +
-	"\fScrapeKilled\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"\xaf\x02\n" +
+	"\x16deployment_enforcement\x18\x03 \x01(\v2\x1e.central.DeploymentEnforcementR\x15deploymentEnforcement\"\xaf\x02\n" +
 	"\x16NetworkPoliciesCommand\x12\x15\n" +
 	"\x06seq_id\x18\x01 \x01(\x03R\x05seqId\x12A\n" +
 	"\apayload\x18\x02 \x01(\v2'.central.NetworkPoliciesCommand.PayloadR\apayload\x1aj\n" +
@@ -2115,7 +1719,7 @@ func file_internalapi_central_sensor_events_proto_rawDescGZIP() []byte {
 }
 
 var file_internalapi_central_sensor_events_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_internalapi_central_sensor_events_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_internalapi_central_sensor_events_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_internalapi_central_sensor_events_proto_goTypes = []any{
 	(ResourceAction)(0),                                  // 0: central.ResourceAction
 	(AlertResults_Source)(0),                             // 1: central.AlertResults.Source
@@ -2126,114 +1730,102 @@ var file_internalapi_central_sensor_events_proto_goTypes = []any{
 	(*SensorEnforcement)(nil),                            // 6: central.SensorEnforcement
 	(*DeploymentEnforcement)(nil),                        // 7: central.DeploymentEnforcement
 	(*ContainerInstanceEnforcement)(nil),                 // 8: central.ContainerInstanceEnforcement
-	(*ScrapeCommand)(nil),                                // 9: central.ScrapeCommand
-	(*StartScrape)(nil),                                  // 10: central.StartScrape
-	(*KillScrape)(nil),                                   // 11: central.KillScrape
-	(*ScrapeUpdate)(nil),                                 // 12: central.ScrapeUpdate
-	(*ScrapeStarted)(nil),                                // 13: central.ScrapeStarted
-	(*ScrapeKilled)(nil),                                 // 14: central.ScrapeKilled
-	(*NetworkPoliciesCommand)(nil),                       // 15: central.NetworkPoliciesCommand
-	(*NetworkPoliciesResponse)(nil),                      // 16: central.NetworkPoliciesResponse
-	(*SensorEvent_ResourcesSynced)(nil),                  // 17: central.SensorEvent.ResourcesSynced
-	(*NetworkPoliciesCommand_Apply)(nil),                 // 18: central.NetworkPoliciesCommand.Apply
-	(*NetworkPoliciesCommand_Payload)(nil),               // 19: central.NetworkPoliciesCommand.Payload
-	(*NetworkPoliciesResponse_Apply)(nil),                // 20: central.NetworkPoliciesResponse.Apply
-	(*NetworkPoliciesResponse_Error)(nil),                // 21: central.NetworkPoliciesResponse.Error
-	(*NetworkPoliciesResponse_Payload)(nil),              // 22: central.NetworkPoliciesResponse.Payload
-	(*storage.Alert)(nil),                                // 23: storage.Alert
-	(storage.LifecycleStage)(0),                          // 24: storage.LifecycleStage
-	(*storage.NetworkPolicy)(nil),                        // 25: storage.NetworkPolicy
-	(*storage.Deployment)(nil),                           // 26: storage.Deployment
-	(*storage.Pod)(nil),                                  // 27: storage.Pod
-	(*storage.NamespaceMetadata)(nil),                    // 28: storage.NamespaceMetadata
-	(*storage.Secret)(nil),                               // 29: storage.Secret
-	(*storage.Node)(nil),                                 // 30: storage.Node
-	(*storage.NodeInventory)(nil),                        // 31: storage.NodeInventory
-	(*v4.IndexReport)(nil),                               // 32: scanner.v4.IndexReport
-	(*storage.ServiceAccount)(nil),                       // 33: storage.ServiceAccount
-	(*storage.K8SRole)(nil),                              // 34: storage.K8sRole
-	(*storage.K8SRoleBinding)(nil),                       // 35: storage.K8sRoleBinding
-	(*storage.ProcessIndicator)(nil),                     // 36: storage.ProcessIndicator
-	(*storage.ProviderMetadata)(nil),                     // 37: storage.ProviderMetadata
-	(*storage.OrchestratorMetadata)(nil),                 // 38: storage.OrchestratorMetadata
-	(*storage.ImageIntegration)(nil),                     // 39: storage.ImageIntegration
-	(*storage.ComplianceOperatorCheckResult)(nil),        // 40: storage.ComplianceOperatorCheckResult
-	(*storage.ComplianceOperatorProfile)(nil),            // 41: storage.ComplianceOperatorProfile
-	(*storage.ComplianceOperatorRule)(nil),               // 42: storage.ComplianceOperatorRule
-	(*storage.ComplianceOperatorScanSettingBinding)(nil), // 43: storage.ComplianceOperatorScanSettingBinding
-	(*storage.ComplianceOperatorScan)(nil),               // 44: storage.ComplianceOperatorScan
-	(*v1.IndexReportEvent)(nil),                          // 45: virtualmachine.v1.IndexReportEvent
-	(*v1.VirtualMachine)(nil),                            // 46: virtualmachine.v1.VirtualMachine
-	(*ComplianceOperatorCheckResultV2)(nil),              // 47: central.ComplianceOperatorCheckResultV2
-	(*ComplianceOperatorProfileV2)(nil),                  // 48: central.ComplianceOperatorProfileV2
-	(*ComplianceOperatorRuleV2)(nil),                     // 49: central.ComplianceOperatorRuleV2
-	(*ComplianceOperatorScanV2)(nil),                     // 50: central.ComplianceOperatorScanV2
-	(*ComplianceOperatorScanSettingBindingV2)(nil),       // 51: central.ComplianceOperatorScanSettingBindingV2
-	(*ComplianceOperatorSuiteV2)(nil),                    // 52: central.ComplianceOperatorSuiteV2
-	(*ComplianceOperatorRemediationV2)(nil),              // 53: central.ComplianceOperatorRemediationV2
-	(storage.EnforcementAction)(0),                       // 54: storage.EnforcementAction
-	(*compliance.ComplianceReturn)(nil),                  // 55: compliance.ComplianceReturn
-	(*storage.NetworkPolicyModification)(nil),            // 56: storage.NetworkPolicyModification
+	(*NetworkPoliciesCommand)(nil),                       // 9: central.NetworkPoliciesCommand
+	(*NetworkPoliciesResponse)(nil),                      // 10: central.NetworkPoliciesResponse
+	(*SensorEvent_ResourcesSynced)(nil),                  // 11: central.SensorEvent.ResourcesSynced
+	(*NetworkPoliciesCommand_Apply)(nil),                 // 12: central.NetworkPoliciesCommand.Apply
+	(*NetworkPoliciesCommand_Payload)(nil),               // 13: central.NetworkPoliciesCommand.Payload
+	(*NetworkPoliciesResponse_Apply)(nil),                // 14: central.NetworkPoliciesResponse.Apply
+	(*NetworkPoliciesResponse_Error)(nil),                // 15: central.NetworkPoliciesResponse.Error
+	(*NetworkPoliciesResponse_Payload)(nil),              // 16: central.NetworkPoliciesResponse.Payload
+	(*storage.Alert)(nil),                                // 17: storage.Alert
+	(storage.LifecycleStage)(0),                          // 18: storage.LifecycleStage
+	(*storage.NetworkPolicy)(nil),                        // 19: storage.NetworkPolicy
+	(*storage.Deployment)(nil),                           // 20: storage.Deployment
+	(*storage.Pod)(nil),                                  // 21: storage.Pod
+	(*storage.NamespaceMetadata)(nil),                    // 22: storage.NamespaceMetadata
+	(*storage.Secret)(nil),                               // 23: storage.Secret
+	(*storage.Node)(nil),                                 // 24: storage.Node
+	(*storage.NodeInventory)(nil),                        // 25: storage.NodeInventory
+	(*v4.IndexReport)(nil),                               // 26: scanner.v4.IndexReport
+	(*storage.ServiceAccount)(nil),                       // 27: storage.ServiceAccount
+	(*storage.K8SRole)(nil),                              // 28: storage.K8sRole
+	(*storage.K8SRoleBinding)(nil),                       // 29: storage.K8sRoleBinding
+	(*storage.ProcessIndicator)(nil),                     // 30: storage.ProcessIndicator
+	(*storage.ProviderMetadata)(nil),                     // 31: storage.ProviderMetadata
+	(*storage.OrchestratorMetadata)(nil),                 // 32: storage.OrchestratorMetadata
+	(*storage.ImageIntegration)(nil),                     // 33: storage.ImageIntegration
+	(*storage.ComplianceOperatorCheckResult)(nil),        // 34: storage.ComplianceOperatorCheckResult
+	(*storage.ComplianceOperatorProfile)(nil),            // 35: storage.ComplianceOperatorProfile
+	(*storage.ComplianceOperatorRule)(nil),               // 36: storage.ComplianceOperatorRule
+	(*storage.ComplianceOperatorScanSettingBinding)(nil), // 37: storage.ComplianceOperatorScanSettingBinding
+	(*storage.ComplianceOperatorScan)(nil),               // 38: storage.ComplianceOperatorScan
+	(*v1.IndexReportEvent)(nil),                          // 39: virtualmachine.v1.IndexReportEvent
+	(*v1.VirtualMachine)(nil),                            // 40: virtualmachine.v1.VirtualMachine
+	(*ComplianceOperatorCheckResultV2)(nil),              // 41: central.ComplianceOperatorCheckResultV2
+	(*ComplianceOperatorProfileV2)(nil),                  // 42: central.ComplianceOperatorProfileV2
+	(*ComplianceOperatorRuleV2)(nil),                     // 43: central.ComplianceOperatorRuleV2
+	(*ComplianceOperatorScanV2)(nil),                     // 44: central.ComplianceOperatorScanV2
+	(*ComplianceOperatorScanSettingBindingV2)(nil),       // 45: central.ComplianceOperatorScanSettingBindingV2
+	(*ComplianceOperatorSuiteV2)(nil),                    // 46: central.ComplianceOperatorSuiteV2
+	(*ComplianceOperatorRemediationV2)(nil),              // 47: central.ComplianceOperatorRemediationV2
+	(storage.EnforcementAction)(0),                       // 48: storage.EnforcementAction
+	(*storage.NetworkPolicyModification)(nil),            // 49: storage.NetworkPolicyModification
 }
 var file_internalapi_central_sensor_events_proto_depIdxs = []int32{
-	23, // 0: central.AlertResults.alerts:type_name -> storage.Alert
-	24, // 1: central.AlertResults.stage:type_name -> storage.LifecycleStage
+	17, // 0: central.AlertResults.alerts:type_name -> storage.Alert
+	18, // 1: central.AlertResults.stage:type_name -> storage.LifecycleStage
 	1,  // 2: central.AlertResults.source:type_name -> central.AlertResults.Source
 	0,  // 3: central.SensorEvent.action:type_name -> central.ResourceAction
 	4,  // 4: central.SensorEvent.timing:type_name -> central.Timing
-	25, // 5: central.SensorEvent.network_policy:type_name -> storage.NetworkPolicy
-	26, // 6: central.SensorEvent.deployment:type_name -> storage.Deployment
-	27, // 7: central.SensorEvent.pod:type_name -> storage.Pod
-	28, // 8: central.SensorEvent.namespace:type_name -> storage.NamespaceMetadata
-	29, // 9: central.SensorEvent.secret:type_name -> storage.Secret
-	30, // 10: central.SensorEvent.node:type_name -> storage.Node
-	31, // 11: central.SensorEvent.node_inventory:type_name -> storage.NodeInventory
-	32, // 12: central.SensorEvent.index_report:type_name -> scanner.v4.IndexReport
-	33, // 13: central.SensorEvent.service_account:type_name -> storage.ServiceAccount
-	34, // 14: central.SensorEvent.role:type_name -> storage.K8sRole
-	35, // 15: central.SensorEvent.binding:type_name -> storage.K8sRoleBinding
-	36, // 16: central.SensorEvent.process_indicator:type_name -> storage.ProcessIndicator
-	37, // 17: central.SensorEvent.provider_metadata:type_name -> storage.ProviderMetadata
-	17, // 18: central.SensorEvent.synced:type_name -> central.SensorEvent.ResourcesSynced
-	38, // 19: central.SensorEvent.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
-	39, // 20: central.SensorEvent.image_integration:type_name -> storage.ImageIntegration
+	19, // 5: central.SensorEvent.network_policy:type_name -> storage.NetworkPolicy
+	20, // 6: central.SensorEvent.deployment:type_name -> storage.Deployment
+	21, // 7: central.SensorEvent.pod:type_name -> storage.Pod
+	22, // 8: central.SensorEvent.namespace:type_name -> storage.NamespaceMetadata
+	23, // 9: central.SensorEvent.secret:type_name -> storage.Secret
+	24, // 10: central.SensorEvent.node:type_name -> storage.Node
+	25, // 11: central.SensorEvent.node_inventory:type_name -> storage.NodeInventory
+	26, // 12: central.SensorEvent.index_report:type_name -> scanner.v4.IndexReport
+	27, // 13: central.SensorEvent.service_account:type_name -> storage.ServiceAccount
+	28, // 14: central.SensorEvent.role:type_name -> storage.K8sRole
+	29, // 15: central.SensorEvent.binding:type_name -> storage.K8sRoleBinding
+	30, // 16: central.SensorEvent.process_indicator:type_name -> storage.ProcessIndicator
+	31, // 17: central.SensorEvent.provider_metadata:type_name -> storage.ProviderMetadata
+	11, // 18: central.SensorEvent.synced:type_name -> central.SensorEvent.ResourcesSynced
+	32, // 19: central.SensorEvent.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
+	33, // 20: central.SensorEvent.image_integration:type_name -> storage.ImageIntegration
 	2,  // 21: central.SensorEvent.reprocess_deployment:type_name -> central.ReprocessDeploymentRisk
 	3,  // 22: central.SensorEvent.alert_results:type_name -> central.AlertResults
-	40, // 23: central.SensorEvent.compliance_operator_result:type_name -> storage.ComplianceOperatorCheckResult
-	41, // 24: central.SensorEvent.compliance_operator_profile:type_name -> storage.ComplianceOperatorProfile
-	42, // 25: central.SensorEvent.compliance_operator_rule:type_name -> storage.ComplianceOperatorRule
-	43, // 26: central.SensorEvent.compliance_operator_scan_setting_binding:type_name -> storage.ComplianceOperatorScanSettingBinding
-	44, // 27: central.SensorEvent.compliance_operator_scan:type_name -> storage.ComplianceOperatorScan
-	45, // 28: central.SensorEvent.virtual_machine_index_report:type_name -> virtualmachine.v1.IndexReportEvent
-	46, // 29: central.SensorEvent.virtual_machine:type_name -> virtualmachine.v1.VirtualMachine
-	47, // 30: central.SensorEvent.compliance_operator_result_v2:type_name -> central.ComplianceOperatorCheckResultV2
-	48, // 31: central.SensorEvent.compliance_operator_profile_v2:type_name -> central.ComplianceOperatorProfileV2
-	49, // 32: central.SensorEvent.compliance_operator_rule_v2:type_name -> central.ComplianceOperatorRuleV2
-	50, // 33: central.SensorEvent.compliance_operator_scan_v2:type_name -> central.ComplianceOperatorScanV2
-	51, // 34: central.SensorEvent.compliance_operator_scan_setting_binding_v2:type_name -> central.ComplianceOperatorScanSettingBindingV2
-	52, // 35: central.SensorEvent.compliance_operator_suite_v2:type_name -> central.ComplianceOperatorSuiteV2
-	53, // 36: central.SensorEvent.compliance_operator_remediation_v2:type_name -> central.ComplianceOperatorRemediationV2
-	54, // 37: central.SensorEnforcement.enforcement:type_name -> storage.EnforcementAction
+	34, // 23: central.SensorEvent.compliance_operator_result:type_name -> storage.ComplianceOperatorCheckResult
+	35, // 24: central.SensorEvent.compliance_operator_profile:type_name -> storage.ComplianceOperatorProfile
+	36, // 25: central.SensorEvent.compliance_operator_rule:type_name -> storage.ComplianceOperatorRule
+	37, // 26: central.SensorEvent.compliance_operator_scan_setting_binding:type_name -> storage.ComplianceOperatorScanSettingBinding
+	38, // 27: central.SensorEvent.compliance_operator_scan:type_name -> storage.ComplianceOperatorScan
+	39, // 28: central.SensorEvent.virtual_machine_index_report:type_name -> virtualmachine.v1.IndexReportEvent
+	40, // 29: central.SensorEvent.virtual_machine:type_name -> virtualmachine.v1.VirtualMachine
+	41, // 30: central.SensorEvent.compliance_operator_result_v2:type_name -> central.ComplianceOperatorCheckResultV2
+	42, // 31: central.SensorEvent.compliance_operator_profile_v2:type_name -> central.ComplianceOperatorProfileV2
+	43, // 32: central.SensorEvent.compliance_operator_rule_v2:type_name -> central.ComplianceOperatorRuleV2
+	44, // 33: central.SensorEvent.compliance_operator_scan_v2:type_name -> central.ComplianceOperatorScanV2
+	45, // 34: central.SensorEvent.compliance_operator_scan_setting_binding_v2:type_name -> central.ComplianceOperatorScanSettingBindingV2
+	46, // 35: central.SensorEvent.compliance_operator_suite_v2:type_name -> central.ComplianceOperatorSuiteV2
+	47, // 36: central.SensorEvent.compliance_operator_remediation_v2:type_name -> central.ComplianceOperatorRemediationV2
+	48, // 37: central.SensorEnforcement.enforcement:type_name -> storage.EnforcementAction
 	7,  // 38: central.SensorEnforcement.deployment:type_name -> central.DeploymentEnforcement
 	8,  // 39: central.SensorEnforcement.container_instance:type_name -> central.ContainerInstanceEnforcement
 	7,  // 40: central.ContainerInstanceEnforcement.deployment_enforcement:type_name -> central.DeploymentEnforcement
-	10, // 41: central.ScrapeCommand.start_scrape:type_name -> central.StartScrape
-	11, // 42: central.ScrapeCommand.kill_scrape:type_name -> central.KillScrape
-	55, // 43: central.ScrapeUpdate.compliance_return:type_name -> compliance.ComplianceReturn
-	13, // 44: central.ScrapeUpdate.scrape_started:type_name -> central.ScrapeStarted
-	14, // 45: central.ScrapeUpdate.scrape_killed:type_name -> central.ScrapeKilled
-	19, // 46: central.NetworkPoliciesCommand.payload:type_name -> central.NetworkPoliciesCommand.Payload
-	22, // 47: central.NetworkPoliciesResponse.payload:type_name -> central.NetworkPoliciesResponse.Payload
-	56, // 48: central.NetworkPoliciesCommand.Apply.modification:type_name -> storage.NetworkPolicyModification
-	18, // 49: central.NetworkPoliciesCommand.Payload.apply:type_name -> central.NetworkPoliciesCommand.Apply
-	56, // 50: central.NetworkPoliciesResponse.Apply.undo_modification:type_name -> storage.NetworkPolicyModification
-	21, // 51: central.NetworkPoliciesResponse.Payload.error:type_name -> central.NetworkPoliciesResponse.Error
-	20, // 52: central.NetworkPoliciesResponse.Payload.apply:type_name -> central.NetworkPoliciesResponse.Apply
-	53, // [53:53] is the sub-list for method output_type
-	53, // [53:53] is the sub-list for method input_type
-	53, // [53:53] is the sub-list for extension type_name
-	53, // [53:53] is the sub-list for extension extendee
-	0,  // [0:53] is the sub-list for field type_name
+	13, // 41: central.NetworkPoliciesCommand.payload:type_name -> central.NetworkPoliciesCommand.Payload
+	16, // 42: central.NetworkPoliciesResponse.payload:type_name -> central.NetworkPoliciesResponse.Payload
+	49, // 43: central.NetworkPoliciesCommand.Apply.modification:type_name -> storage.NetworkPolicyModification
+	12, // 44: central.NetworkPoliciesCommand.Payload.apply:type_name -> central.NetworkPoliciesCommand.Apply
+	49, // 45: central.NetworkPoliciesResponse.Apply.undo_modification:type_name -> storage.NetworkPolicyModification
+	15, // 46: central.NetworkPoliciesResponse.Payload.error:type_name -> central.NetworkPoliciesResponse.Error
+	14, // 47: central.NetworkPoliciesResponse.Payload.apply:type_name -> central.NetworkPoliciesResponse.Apply
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_sensor_events_proto_init() }
@@ -2281,19 +1873,10 @@ func file_internalapi_central_sensor_events_proto_init() {
 		(*SensorEnforcement_Deployment)(nil),
 		(*SensorEnforcement_ContainerInstance)(nil),
 	}
-	file_internalapi_central_sensor_events_proto_msgTypes[7].OneofWrappers = []any{
-		(*ScrapeCommand_StartScrape)(nil),
-		(*ScrapeCommand_KillScrape)(nil),
-	}
-	file_internalapi_central_sensor_events_proto_msgTypes[10].OneofWrappers = []any{
-		(*ScrapeUpdate_ComplianceReturn)(nil),
-		(*ScrapeUpdate_ScrapeStarted)(nil),
-		(*ScrapeUpdate_ScrapeKilled)(nil),
-	}
-	file_internalapi_central_sensor_events_proto_msgTypes[17].OneofWrappers = []any{
+	file_internalapi_central_sensor_events_proto_msgTypes[11].OneofWrappers = []any{
 		(*NetworkPoliciesCommand_Payload_Apply)(nil),
 	}
-	file_internalapi_central_sensor_events_proto_msgTypes[20].OneofWrappers = []any{
+	file_internalapi_central_sensor_events_proto_msgTypes[14].OneofWrappers = []any{
 		(*NetworkPoliciesResponse_Payload_Error)(nil),
 		(*NetworkPoliciesResponse_Payload_Apply)(nil),
 	}
@@ -2303,7 +1886,7 @@ func file_internalapi_central_sensor_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_sensor_events_proto_rawDesc), len(file_internalapi_central_sensor_events_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   21,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
