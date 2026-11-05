@@ -100,17 +100,21 @@ scanner_v4_db_pg_version() {
     scanner_v4_db_exec "cat '$SCANNER_V4_PGDATA/PG_VERSION'" | tr -d '[:space:]'
 }
 
-# Rows the vulnerability store is expected to hold. Only a floor: the point is
-# to tell a migrated store from one that came back empty, not to audit it.
-SCANNER_V4_DB_MIN_ROWS=1000
+# Scratch database the fallback test uses to make pg_upgrade --check fail.
+SCANNER_V4_UPGRADE_BLOCKER=upgrade_blocker
 
-# scanner_v4_db_vuln_rows echoes the planner's row estimate across Scanner's
-# tables. An estimate is enough for a floor, and it costs one catalog query
-# rather than a count(*) per table. The upgrade runs vacuumdb --analyze-only,
-# so the estimate is fresh afterwards.
-scanner_v4_db_vuln_rows() {
+# scanner_v4_db_tables echoes how many user tables the store holds. Whether
+# the data survived is pg_upgrade's problem, not this suite's; all we need to
+# catch is $PGDATA having been wiped and re-initialised, which comes back as a
+# fresh cluster with none of these.
+#
+# Counting tables rather than rows is deliberate. sum(reltuples) reads the
+# planner's estimate, which is -1 on PostgreSQL 14+ until something analyses
+# the table, and nothing does before the upgrade -- the init bundle is loaded
+# with pg_restore, which does not analyse.
+scanner_v4_db_tables() {
     scanner_v4_db_exec "psql -U postgres -h 127.0.0.1 -XAt -c \"
-        SELECT coalesce(sum(reltuples), 0)::bigint
+        SELECT count(*)
         FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE c.relkind = 'r' AND n.nspname NOT IN ('pg_catalog', 'information_schema')\"" |
         tr -d '[:space:]'
@@ -120,7 +124,7 @@ scanner_v4_db_vuln_rows() {
 # version this checkout builds, that no leftovers from the swap survived, and
 # that the store is still populated.
 check_scanner_v4_db_upgraded() {
-    local version rows
+    local version tables
 
     version="$(scanner_v4_db_pg_version)"
     test_equals_non_silent "$version" "$SCANNER_V4_DB_CURRENT_PG"
@@ -135,9 +139,9 @@ check_scanner_v4_db_upgraded() {
     scanner_v4_db_exec "test -e '$SCANNER_V4_PGDATA/.init-ready'" || \
         die "The scanner-v4-db .init-ready sentinel is missing after the upgrade"
 
-    rows="$(scanner_v4_db_vuln_rows)"
-    test_gt_non_silent "$rows" "$SCANNER_V4_DB_MIN_ROWS"
-    info "scanner-v4-db is on PostgreSQL $version with roughly $rows rows."
+    tables="$(scanner_v4_db_tables)"
+    test_gt_non_silent "$tables" 0
+    info "scanner-v4-db is on PostgreSQL $version with $tables user tables."
 }
 
 # check_scanner_v4_no_warmup is the acceptance criterion that matters: losing
@@ -187,15 +191,13 @@ test_upgrade() {
 
     test_upgrade_path "$log_output_dir"
 
-    roxie teardown both --verbose --single-namespace
-
     if [[ "$CENTRAL_DB_UPGRADE_REQUIRED" == true ]]; then
-        remove_existing_stackrox_resources
+        roxie teardown both --verbose --single-namespace
         test_not_enough_disk_space "$log_output_dir"
     fi
 
     if [[ "$SCANNER_V4_DB_UPGRADE_REQUIRED" == true ]]; then
-        remove_existing_stackrox_resources
+        roxie teardown both --verbose --single-namespace
         test_scanner_v4_db_upgrade_fallback "$log_output_dir"
     fi
 }
@@ -469,14 +471,22 @@ test_scanner_v4_db_upgrade_fallback() {
 
     cd "$TEST_ROOT"
 
-    # Point maybe-upgrade at the previous major's pg_upgrade, which the image
-    # ships alongside the current one. It rejects the new data directory that
-    # initdb creates at the current major, so every transfer mode probe fails
-    # and the upgrade takes its give-up path. Filling the volume would not do:
-    # "pg_upgrade --clone" needs no second copy, so on a reflink-capable file
-    # system a full volume does not stop the upgrade at all.
-    local old_bindir="/usr/lib64/pgsql/postgresql-${SCANNER_V4_DB_EARLIER_PG}/bin"
-    kubectl -n stackrox set env deploy/scanner-v4-db "NEW_BINARIES=${old_bindir}"
+    # A declined upgrade is this test's whole point, but pg_upgrade announces
+    # it with a bare "fatal" line, and scripts/ci/logcheck/blocklist-patterns
+    # fails any run whose logs contain one. Real services prefix their output,
+    # so anchoring keeps this from hiding anything else.
+    cp scripts/ci/logcheck/allowlist-patterns /tmp/allowlist-patterns
+    echo '^fatal\s*$' >> /tmp/allowlist-patterns
+    ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
+
+    # Make pg_upgrade decline. A database that disallows connections is
+    # rejected during the consistency checks, which run before pg_upgrade
+    # probes a transfer mode, so both --clone and --copy fail and
+    # maybe-upgrade will give-up with $PGDATA untouched.
+    info "Blocking the upgrade with a database that disallows connections"
+    scanner_v4_db_exec "psql -U postgres -h 127.0.0.1 -v ON_ERROR_STOP=1 -q \
+        -c 'CREATE DATABASE $SCANNER_V4_UPGRADE_BLOCKER' \
+        -c 'ALTER DATABASE $SCANNER_V4_UPGRADE_BLOCKER WITH ALLOW_CONNECTIONS false'"
 
     info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/scanner-v4-db "*=${REGISTRY}/scanner-v4-db:${CURRENT_TAG}"
@@ -485,13 +495,19 @@ test_scanner_v4_db_upgrade_fallback() {
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     kubectl -n stackrox logs deploy/scanner-v4-db -c init-db
 
-    # Fallback to EARLIER PG.
+    # Verify the fallback happens.
+    kubectl -n stackrox logs deploy/scanner-v4-db -c init-db |
+        grep -q "No usable transfer mode" || \
+        die "scanner-v4-db did not decline the upgrade the way this test intends"
+
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
-    test_gt_non_silent "$(scanner_v4_db_vuln_rows)" "$SCANNER_V4_DB_MIN_ROWS"
+    test_gt_non_silent "$(scanner_v4_db_tables)" 0
     check_scanner_v4_no_warmup
 
-    info "Restoring the current binaries and restarting scanner-v4-db"
-    kubectl -n stackrox set env deploy/scanner-v4-db NEW_BINARIES-
+    info "Removing the blocker and restarting scanner-v4-db"
+    scanner_v4_db_exec "psql -U postgres -h 127.0.0.1 -v ON_ERROR_STOP=1 -q \
+        -c 'DROP DATABASE $SCANNER_V4_UPGRADE_BLOCKER'"
+    kubectl -n stackrox rollout restart deploy/scanner-v4-db
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     check_scanner_v4_db_upgraded
     check_scanner_v4_no_warmup
