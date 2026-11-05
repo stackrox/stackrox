@@ -1115,7 +1115,7 @@ export default [
             'src/Containers/Collections/CollectionsFormModal.tsx',
             'src/Containers/Compliance/Dashboard/ManageStandardsError.tsx',
             'src/Containers/Compliance/Dashboard/ManageStandardsModal.tsx',
-            'src/Containers/ComplianceEnhanced/Schedules/Wizard/ScanConfigWizardForm.tsx',
+            'src/Containers/ComplianceEnhanced/Schedules/Wizard/ScanConfigWizardPageSection.tsx',
             'src/Containers/MainPage/InviteUsers/InviteUsersModal.tsx',
             'src/Containers/NetworkGraph/components/CIDRFormModal.tsx',
             'src/Containers/NetworkGraph/simulation/CompareYAMLModal.tsx',
