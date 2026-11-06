@@ -1,0 +1,26 @@
+name: Auto rebase
+on:
+  schedule:
+  - cron: 00,10,20,30,40,50 * * * *
+concurrency:
+  group: Auto rebase
+  cancel-in-progress: false
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  rebase:
+    if: ${{ github.repository_owner == 'stackrox' }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        ref: ${{ github.event.repository.default_branch }}
+    - name: Rebase labeled PRs
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+      run: |
+        source .github/workflows/scripts/common.sh
+        .github/workflows/scripts/auto-rebase.sh
