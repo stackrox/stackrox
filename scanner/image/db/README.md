@@ -9,7 +9,7 @@ The image also ships the previous major version's server binaries under
 major-version upgrade in `scripts/init-entrypoint.sh` possible: when the upgrade
 cannot be performed safely it leaves the data directory alone, and
 `scripts/docker-entrypoint.sh` starts the server matching whatever is on disk
-rather than crashlooping. See `scripts/tests/` for the unit tests.
+rather than crashlooping. See `bats/` for the unit tests.
 
 The image requires a pg_hba.conf (client authentication configuration) file and postgresql.conf (server configuration) file.
 These are specified via ConfigMap for the ScannerDB Kubernetes deployment.
