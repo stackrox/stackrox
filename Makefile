@@ -592,6 +592,18 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
+# Run one package's tests locally with the CI unit test env and build tags:
+#   make go-test PKG=<pkg> [RUN=<regex>] [TAGS=<tag1,tag2>] [RACE=1]
+# RACE is overridden to false for scripts/go-test.sh so -race is passed exactly once.
+.PHONY: go-test
+go-test:
+	$(SILENT)if [ -z "$(PKG)" ]; then \
+		echo >&2 "Usage: make go-test PKG=<pkg> [RUN=<regex>] [TAGS=<tag1,tag2>] [RACE=1]"; \
+		exit 1; \
+	fi
+	RACE=false CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test$(if $(TAGS),$(comma)$(TAGS)) scripts/go-test.sh -timeout 25m -count=1 -v \
+		$(if $(filter 1 true,$(RACE)),-race) $(if $(RUN),-run '$(subst ','\'',$(value RUN))') $(PKG)
+
 .PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -o pipefail ; \
