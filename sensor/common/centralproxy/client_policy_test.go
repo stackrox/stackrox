@@ -391,6 +391,18 @@ func TestClientPolicyCacheTracksCAReferences(t *testing.T) {
 	assert.False(t, policy.ready.Load())
 }
 
+func TestClientPolicyCARefs(t *testing.T) {
+	first := clientPolicyCARef{Namespace: "monitoring", ConfigMap: "first-ca", Key: "ca.crt"}
+	second := clientPolicyCARef{Namespace: "monitoring", ConfigMap: "second-ca", Key: "ca.crt"}
+	document := &clientPolicyDocument{Clients: []clientPolicyEntry{
+		{AuthType: clientAuthMTLS, caRef: first},
+		{AuthType: clientAuthMTLS, caRef: first},
+		{AuthType: clientAuthKubernetesBearer},
+		{AuthType: clientAuthMTLS, caRef: second},
+	}}
+	assert.Equal(t, map[clientPolicyCARef]struct{}{first: {}, second: {}}, clientPolicyCARefs(document))
+}
+
 func TestClientPolicyCacheInvalidatesCAAndIgnoresOtherObjects(t *testing.T) {
 	_, _, caPEM := clientPolicyTestCA(t)
 	ref := clientPolicyCARef{Namespace: "monitoring", ConfigMap: "client-ca", Key: "ca.crt"}

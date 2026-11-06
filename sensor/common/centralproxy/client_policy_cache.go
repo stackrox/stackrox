@@ -84,37 +84,34 @@ func (p *ClientPolicy) updatePolicy(obj any) {
 		return
 	default:
 	}
-	watching := make(map[clientPolicyCARef]*clientCAWatch)
+	watching := p.reconcileCAWatches(document)
+	p.policy.Store(&clientPolicySnapshot{document: document, caRoots: watching})
+}
+
+func clientPolicyCARefs(document *clientPolicyDocument) map[clientPolicyCARef]struct{} {
+	refs := make(map[clientPolicyCARef]struct{})
 	for _, entry := range document.Clients {
-		if entry.AuthType != clientAuthMTLS {
-			continue
+		if entry.AuthType == clientAuthMTLS {
+			refs[entry.caRef] = struct{}{}
 		}
-		ref := entry.caRef
-		if existing := watching[ref]; existing != nil {
-			continue
-		}
+	}
+	return refs
+}
+
+func (p *ClientPolicy) reconcileCAWatches(document *clientPolicyDocument) map[clientPolicyCARef]*clientCAWatch {
+	refs := clientPolicyCARefs(document)
+	watching := make(map[clientPolicyCARef]*clientCAWatch, len(refs))
+	for ref := range refs {
 		if existing := p.caWatches[ref]; existing != nil {
 			watching[ref] = existing
 			continue
 		}
-		watch := &clientCAWatch{stop: make(chan struct{})}
-		informer := p.configMapInformer(ref.Namespace, ref.ConfigMap)
-		registration, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc:    func(obj any) { watch.update(obj, ref) },
-			UpdateFunc: func(_, obj any) { watch.update(obj, ref) },
-			DeleteFunc: func(obj any) {
-				if watchedConfigMap(obj, ref.Namespace, ref.ConfigMap) != nil {
-					watch.roots.Store(nil)
-				}
-			},
-		})
+		watch, err := p.startCAWatch(ref)
 		if err != nil {
 			log.Warnf("Cannot watch client CA ConfigMap: %v", err)
 			continue
 		}
-		watch.synced = func() bool { return informer.HasSynced() && registration.HasSynced() }
 		watching[ref] = watch
-		go informer.Run(watch.stop)
 	}
 	for ref, watch := range p.caWatches {
 		if watching[ref] == nil {
@@ -122,7 +119,27 @@ func (p *ClientPolicy) updatePolicy(obj any) {
 		}
 	}
 	p.caWatches = watching
-	p.policy.Store(&clientPolicySnapshot{document: document, caRoots: watching})
+	return watching
+}
+
+func (p *ClientPolicy) startCAWatch(ref clientPolicyCARef) (*clientCAWatch, error) {
+	watch := &clientCAWatch{stop: make(chan struct{})}
+	informer := p.configMapInformer(ref.Namespace, ref.ConfigMap)
+	registration, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj any) { watch.update(obj, ref) },
+		UpdateFunc: func(_, obj any) { watch.update(obj, ref) },
+		DeleteFunc: func(obj any) {
+			if watchedConfigMap(obj, ref.Namespace, ref.ConfigMap) != nil {
+				watch.roots.Store(nil)
+			}
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	watch.synced = func() bool { return informer.HasSynced() && registration.HasSynced() }
+	go informer.Run(watch.stop)
+	return watch, nil
 }
 
 func watchedConfigMap(obj any, namespace, name string) *corev1.ConfigMap {
