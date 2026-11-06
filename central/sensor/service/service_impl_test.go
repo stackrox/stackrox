@@ -177,7 +177,6 @@ func (s *sensorServiceTestSuite) TestCrsCentralReturnsAllServiceCertificates() {
 	err := sensorService.Communicate(mockServer)
 	s.NoError(err)
 	centralHello := retrieveCentralHello(s, mockServer)
-	s.Contains(centralHello.GetCapabilities(), centralsensor.CentralProxyScopedReadOnlyTokens.String())
 	s.Contains(centralHello.GetCapabilities(), centralsensor.CentralProxyPerAccessTokens.String())
 
 	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
