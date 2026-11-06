@@ -228,9 +228,7 @@ test_upgrade_paths() (
 
     # Now go back to the current release. The HEAD installs Scanner V4,
     # which smoke test needs. Secured cluster still has reconciliation paused at this point.
-    kubectl -n stackrox patch configmap/central-config --type=merge -p "$original_config"
-    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox scale deploy/central --replicas=1
+    restore_downgraded_central "$original_config"
     kubectl -n stackrox rollout status deploy/central --timeout=600s
     upgrade_operator_to_head
     wait_for_background_migrations
