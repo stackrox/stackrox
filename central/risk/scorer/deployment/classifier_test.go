@@ -68,6 +68,17 @@ func TestClassifyCuratedRiskWorkloads(t *testing.T) {
 			expectedReason: "internal important/moderate/low vulnerability volume is posture backlog without exposure, KEV, high EPSS, critical severity, privilege, or elevated identity",
 		},
 		{
+			name:       "internal-high-epss-important-vulnerability-backlog",
+			deployment: deploymentWithExposures("internal-high-epss-important-vulnerability-backlog", storage.PortConfig_INTERNAL),
+			imageRisk: imageRiskWithSummaryAndResults(
+				"internal-high-epss-important-vulnerability-backlog-image",
+				&storage.RiskVulnerabilitySummary{ImportantCount: 12, ModerateCount: 200, LowCount: 100, MaxSeverity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, MaxEpssPercentile: 0.99},
+				fixedRiskResult(imageMultiplier.VulnerabilitiesHeading, 4.0),
+			),
+			expected:       storage.RiskPriorityClassification_RISK_PRIORITY_IMPROVE_POSTURE,
+			expectedReason: "internal high-EPSS Important vulnerability volume remains posture backlog without Critical/KEV/ransomware, exposure, privilege, or elevated identity",
+		},
+		{
 			name:       "public-critical-rce-with-credential",
 			deployment: deploymentWithSecretForClassification(deploymentWithExposures("public-critical-rce-with-credential", storage.PortConfig_EXTERNAL), "prod-cloud-credentials"),
 			imageRisk: imageRiskWithSummaryAndResults(
@@ -77,6 +88,17 @@ func TestClassifyCuratedRiskWorkloads(t *testing.T) {
 			),
 			expected:       storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW,
 			expectedReason: "external exposure plus critical/known-exploited vulnerability is immediate remediation",
+		},
+		{
+			name:       "public-high-epss-important-vulnerability",
+			deployment: deploymentWithExposures("public-high-epss-important-vulnerability", storage.PortConfig_EXTERNAL),
+			imageRisk: imageRiskWithSummaryAndResults(
+				"public-high-epss-important-vulnerability-image",
+				&storage.RiskVulnerabilitySummary{ImportantCount: 1, MaxSeverity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, MaxEpssPercentile: 0.99},
+				fixedRiskResult(imageMultiplier.VulnerabilitiesHeading, 2.0),
+			),
+			expected:       storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW,
+			expectedReason: "external high-EPSS vulnerability is immediate remediation",
 		},
 		{
 			name:       "critical-runtime-alert-and-baseline-break",
