@@ -1,7 +1,8 @@
+// Package validation declares the linting seam: callers check rules
+// documents through Validator without depending on how deep the checks
+// go or on the rules language. Concrete checks live beside the engine
+// that owns the language.
 package validation
-
-// validator.go declares the seam: callers lint documents through
-// Validator without depending on how deep the checks go.
 
 // Validator lints one rules document: the same raw bytes an Engine
 // would compile, checked for authoring errors before selection runs.

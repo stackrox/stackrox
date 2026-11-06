@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/ci/select/internal/engine/regexengine/rulesvalidation"
 	"github.com/stackrox/rox/ci/select/internal/rules"
-	"github.com/stackrox/rox/ci/select/internal/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -509,7 +509,7 @@ func loadRules(path string) (rules.Mapping, error) {
 	if err != nil {
 		return rules.Mapping{}, err
 	}
-	if _, err := (validation.Full{}).Validate(data); err != nil {
+	if _, err := (rulesvalidation.Full{}).Validate(data); err != nil {
 		return rules.Mapping{}, err
 	}
 	m, err := rules.Parse(data)

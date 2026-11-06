@@ -1,4 +1,4 @@
-package validation
+package rulesvalidation
 
 // This suite pins the error half of the severity split: mutually
 // exclusive statements no diff can satisfy. Overlapping claims that only

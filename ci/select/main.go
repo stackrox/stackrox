@@ -21,7 +21,7 @@ var errLintReported = errors.New("lint findings were reported")
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr); err != nil {
+	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr, productionDeps()); err != nil {
 		if !errors.Is(err, errLintReported) {
 			fmt.Fprintln(os.Stderr, "ci-select:", err)
 		}
@@ -29,7 +29,7 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, args []string, output, diagnostic io.Writer) error {
+func run(ctx context.Context, args []string, output, diagnostic io.Writer, d deps) error {
 	root := &cobra.Command{
 		Use:               "ci-select",
 		Short:             "Select CI tests from changed paths",
@@ -41,7 +41,7 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer) error
 			return errors.New("a subcommand is required (validate, resolve, or gha)")
 		},
 	}
-	root.AddCommand(newValidateCommand(), newResolveCommand(), newGHACommand())
+	root.AddCommand(newValidateCommand(d), newResolveCommand(d), newGHACommand(d))
 	// A nil argument list would make Cobra read the process arguments.
 	if args == nil {
 		args = []string{}
@@ -52,7 +52,7 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer) error
 	return errors.Wrap(root.ExecuteContext(ctx), "execute command")
 }
 
-func newValidateCommand() *cobra.Command {
+func newValidateCommand(d deps) *cobra.Command {
 	var rulesPath string
 	command := &cobra.Command{
 		Use:   "validate",
@@ -63,7 +63,7 @@ func newValidateCommand() *cobra.Command {
 			// on the file and returns the full report — errors for
 			// contradictions, warnings for overlaps — so one run shows
 			// the author everything at once.
-			warnings, err := lintRules(rulesPath)
+			warnings, err := d.lint(rulesPath)
 			if lintErr := writeLint(cmd.ErrOrStderr(), warnings, err); lintErr != nil {
 				return lintErr
 			}
@@ -75,7 +75,7 @@ func newValidateCommand() *cobra.Command {
 	return command
 }
 
-func newResolveCommand() *cobra.Command {
+func newResolveCommand(d deps) *cobra.Command {
 	var (
 		rulesPath string
 		filesPath string
@@ -89,7 +89,7 @@ func newResolveCommand() *cobra.Command {
 			// engine stops before loading rules the validator rejected,
 			// and still prints the warnings that came back with the
 			// errors.
-			compiled, warnings, err := prepareRules(rulesPath)
+			compiled, warnings, err := d.prepare(rulesPath)
 			if err != nil {
 				return writeLint(cmd.ErrOrStderr(), warnings, err)
 			}
@@ -106,12 +106,12 @@ func newResolveCommand() *cobra.Command {
 					files = append(files, line)
 				}
 			}
-			d := rulesEngine.Resolve(files, compiled)
-			fmt.Fprint(cmd.ErrOrStderr(), d.Log)
+			decision := d.engine.Resolve(files, compiled)
+			fmt.Fprint(cmd.ErrOrStderr(), decision.Log)
 			// The summary is stdout while the trace is stderr; a header and
 			// leading blank line keep the two sections apart when a terminal
 			// merges the streams.
-			_, err = fmt.Fprint(cmd.OutOrStdout(), "\n-- decisions --\n"+d.String())
+			_, err = fmt.Fprint(cmd.OutOrStdout(), "\n-- decisions --\n"+decision.String())
 			return errors.Wrap(err, "print decision")
 		},
 	}
@@ -120,13 +120,13 @@ func newResolveCommand() *cobra.Command {
 	return command
 }
 
-func newGHACommand() *cobra.Command {
+func newGHACommand(d deps) *cobra.Command {
 	return &cobra.Command{
 		Use:   "gha",
 		Short: "Report CI selection for GitHub Actions",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return gha(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr())
+			return gha(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), d)
 		},
 	}
 }

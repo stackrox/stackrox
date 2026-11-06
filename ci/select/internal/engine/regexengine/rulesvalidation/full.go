@@ -1,8 +1,8 @@
-// Package validation lints a job-selection rules file. Validator is
-// the pluggable entry; Full, the default implementation, returns
-// warnings for run/skip overlaps and an error when the file contradicts
-// itself.
-package validation
+// Package rulesvalidation lints documents of the regex rules language:
+// the checks this engine's authors run before selection. It sits beside
+// the engine because what counts as a rule defect depends on the
+// language, while the Validator contract is engine-agnostic.
+package rulesvalidation
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/ci/select/internal/rules"
+	"github.com/stackrox/rox/ci/select/internal/validation"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -18,6 +19,10 @@ import (
 // structure, target and pattern defects, contradictions that need no
 // diff to be wrong, and run/skip conflicts, in one numbered report.
 type Full struct{}
+
+// Full implements the engine-agnostic contract, so callers can swap it
+// for any other validator implementation.
+var _ validation.Validator = Full{}
 
 // Validate runs the whole check pipeline on one document. Contradictions
 // — a pattern excluded by its own rule, the same include text used to

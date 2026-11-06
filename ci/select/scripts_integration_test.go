@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/ci/select/internal/engine/regexengine/rulesvalidation"
 	"github.com/stackrox/rox/ci/select/internal/rules"
-	"github.com/stackrox/rox/ci/select/internal/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.yaml.in/yaml/v3"
@@ -159,7 +159,7 @@ func TestScriptE2EDispatch(t *testing.T) {
 		require.NoError(t, err)
 		// The production validator gates the fixture; Parse yields the
 		// target inventory the compiled engine.Rules keeps private.
-		_, err = (validation.Full{}).Validate(rulesData)
+		_, err = (rulesvalidation.Full{}).Validate(rulesData)
 		require.NoError(t, err)
 		policy, err := rules.Parse(rulesData)
 		require.NoError(t, err)

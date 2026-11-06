@@ -1,4 +1,4 @@
-package validation
+package rulesvalidation
 
 // This suite pins Full's problem report: single-rule structure (targets,
 // names, patterns, the final remaining rule) and the conflict half

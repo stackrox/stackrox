@@ -150,16 +150,23 @@ with both rules and the affected path.
 
 ## Pluggable engine and validation
 
-The selector has two seams, both wired in `engines.go`. `engine.Engine`
-owns a rules language end to end: it compiles a rules document and
-resolves it against changed paths. `validation.Validator` lints the same
-document bytes. Callers — the CLI commands and the GitHub Actions
-planner — depend only on those interfaces, so replacing the rules
-syntax means adding an implementation next to
-`internal/engine/regexengine` and pointing the `rulesEngine` variable at
-it; likewise `rulesValidator` for validation. Two implementations exist
-today: `validation.Full`, today's complete report, and
-`validation.Trivial`, the no-op end of the seam.
+The selector has two seams, both provided by the `deps` value in
+`engines.go`. `engine.Engine` owns a rules language end to end: it
+compiles a rules document and resolves it against changed paths.
+`validation.Validator` lints the same document bytes. Every command
+receives that value, so callers depend only on the interfaces: replacing
+the rules syntax means adding an implementation and returning it from a
+new constructor, and replacing the checks means passing a different
+validator. Tests pass their own `deps` instead of mutating shared state.
+
+The concrete pieces live beside the language they belong to. Today's
+engine is `internal/engine/regexengine`, and its checks — `Full`, the
+complete report, plus their overlap analysis — are in
+`internal/engine/regexengine/rulesvalidation`. The neutral
+`internal/validation` package holds only the `Validator` contract and
+`Trivial`, the no-op end of the seam. A second language therefore brings
+its own validators without touching the contract, and the deferred
+intermediate levels slot in the same way.
 
 The split keeps fail-closed intact whichever validator runs: the engine
 itself rejects malformed documents, unknown versions, and uncompilable

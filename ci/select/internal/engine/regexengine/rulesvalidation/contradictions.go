@@ -1,4 +1,4 @@
-package validation
+package rulesvalidation
 
 // contradictions.go reports claims that need no diff to be wrong.
 // A crossing only some diffs hit stays a warning in conflicts.go.

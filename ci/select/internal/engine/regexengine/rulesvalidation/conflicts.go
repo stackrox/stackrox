@@ -2,7 +2,7 @@
 // file. The crossing is legal. An inexact automaton still warns, without
 // an example path.
 
-package validation
+package rulesvalidation
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package validation
+package rulesvalidation
 
 // This suite pins Check's conflict report: every run/skip crossing is
 // legal but warned about, with a witness file the overlap engine

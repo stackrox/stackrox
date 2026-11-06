@@ -32,7 +32,7 @@ type pullRequestEvent struct {
 	} `json:"pull_request"`
 }
 
-func ghaDecision(ctx context.Context, root string) (engine.Decision, bool) {
+func ghaDecision(ctx context.Context, root string, d deps) (engine.Decision, bool) {
 	if os.Getenv("GITHUB_EVENT_NAME") != "pull_request" {
 		return engine.Fallback(errors.New("selection applies only to pull requests")), false
 	}
@@ -51,7 +51,7 @@ func ghaDecision(ctx context.Context, root string) (engine.Decision, bool) {
 	enforce := slices.ContainsFunc(pr.Labels, func(label struct{ Name string }) bool { return label.Name == enforceLabel })
 	// The same linter entry as the CLI: rules are checked before the
 	// engine loads them.
-	compiled, warnings, err := prepareRules(filepath.Join(root, "ci/test-selection-rules.yaml"))
+	compiled, warnings, err := d.prepare(filepath.Join(root, "ci/test-selection-rules.yaml"))
 	if err != nil {
 		return engine.Fallback(errors.New(lintText(err, warnings))), enforce
 	}
@@ -59,28 +59,28 @@ func ghaDecision(ctx context.Context, root string) (engine.Decision, bool) {
 	if err != nil {
 		return engine.Fallback(err), enforce
 	}
-	return rulesEngine.Resolve(files, compiled), enforce
+	return d.engine.Resolve(files, compiled), enforce
 }
 
-func gha(ctx context.Context, output, diagnostic io.Writer) error {
+func gha(ctx context.Context, output, diagnostic io.Writer, d deps) error {
 	root := os.Getenv("CI_SELECT_ROOT")
 	if root == "" {
 		root = "."
 	}
-	d, enforce := ghaDecision(ctx, root)
+	decision, enforce := ghaDecision(ctx, root, d)
 	var details []string
-	applied := make(map[string]string, len(d.Actions))
-	for _, target := range slices.Sorted(maps.Keys(d.Actions)) {
+	applied := make(map[string]string, len(decision.Actions))
+	for _, target := range slices.Sorted(maps.Keys(decision.Actions)) {
 		applied[target] = "run"
 		if enforce {
-			applied[target] = d.Action(target)
+			applied[target] = decision.Action(target)
 		}
-		details = append(details, fmt.Sprintf("%s: planned=%s; applied=%s\n", target, d.Action(target), applied[target]))
+		details = append(details, fmt.Sprintf("%s: planned=%s; applied=%s\n", target, decision.Action(target), applied[target]))
 	}
 	// Section headers keep the step summary readable: the decisions list and
 	// the trace are separated from each other and from the enforce flag.
 	body := fmt.Sprintf("enforce=%t\n-- decisions --\n%s\n-- trace --\n%s%s",
-		enforce, d.String(), d.Log, strings.Join(details, ""))
+		enforce, decision.String(), decision.Log, strings.Join(details, ""))
 	data, err := json.Marshal(applied)
 	if err != nil {
 		return errors.Wrap(err, "encode decisions")
