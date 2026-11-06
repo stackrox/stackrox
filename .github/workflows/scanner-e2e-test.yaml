@@ -7,13 +7,17 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
 
 jobs:
   scanner-ft-images:
     name: Wait for images
     if: >
       github.event_name != 'pull_request'
-      || contains(github.event.pull_request.labels.*.name, 'scanner-functional-tests')
+      || (github.event.action == 'labeled'
+          && github.event.label.name == 'scanner-functional-tests')
+      || (github.event.action != 'labeled'
+          && contains(github.event.pull_request.labels.*.name, 'scanner-functional-tests'))
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repo
