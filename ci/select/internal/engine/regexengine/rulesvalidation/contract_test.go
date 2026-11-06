@@ -1,7 +1,7 @@
 package rulesvalidation
 
-// contract_test.go checks the concrete validator against the contract
-// the engine hands out: Full and TrivialValidator must be interchangeable
+// contract_test.go checks the concrete validators against the contract
+// the engine hands out: YAML and TrivialValidator must be interchangeable
 // behind engine.Validator, so a language can offer either depth.
 
 import (
@@ -18,7 +18,6 @@ func TestValidatorsShareOneContract(t *testing.T) {
 		validator engine.Validator
 		wantError bool
 	}{
-		"full should keep rejecting unknown versions":   {Full{}, true},
 		"yaml should keep accepting parsable documents": {YAML{}, false},
 		"trivial should keep accepting every document":  {engine.TrivialValidator{}, false},
 	} {

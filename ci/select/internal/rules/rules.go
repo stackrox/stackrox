@@ -71,19 +71,6 @@ func Parse(data []byte) (Mapping, error) {
 	return m, nil
 }
 
-// PathSources splits path patterns on the '!' exclusion prefix.
-// The automata and the production matchers both start from this split.
-func (r Rule) PathSources() (includes, excludes []string) {
-	for _, pattern := range r.Paths {
-		if expression, excluded := strings.CutPrefix(pattern, "!"); excluded {
-			excludes = append(excludes, expression)
-		} else {
-			includes = append(includes, pattern)
-		}
-	}
-	return includes, excludes
-}
-
 // includesPrefix reports a match that starts at index 0. The pattern
 // does not have to consume the rest of the path.
 func (r Rule) includesPrefix(path string) bool {
@@ -124,7 +111,7 @@ func rejectNull(value any) error {
 }
 
 // Compile builds the matchers Matches uses, splitting '!' exclusions
-// the same way as PathSources. An uncompiled rule matches nothing.
+// from inclusions. An uncompiled rule matches nothing.
 func (r *Rule) Compile() error {
 	for _, pattern := range r.Paths {
 		expression, exclude := strings.CutPrefix(pattern, "!")

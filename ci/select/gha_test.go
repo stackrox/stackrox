@@ -196,25 +196,11 @@ func TestGHA(t *testing.T) {
 			mutate: func(t *testing.T) { writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), "[") },
 			want:   "run", log: "selection unavailable",
 		},
-		"should keep lint warnings when rules contradict": {
+		"should run with rules that are not yaml": {
 			mutate: func(t *testing.T) {
-				writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), `version: 1
-jobs: [go]
-rules:
-  - name: docs
-    when: any-file-matches
-    paths: ['^docs/', '!^docs/internal/']
-    skip: [go]
-  - name: code
-    when: any-file-matches
-    paths: ['^docs/']
-    run: [go]
-  - name: remaining
-    when: remaining
-    run: ['*']
-`)
+				writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), "version: 1\njobs: [go]\nrules: [\n")
 			},
-			want: "run", log: "Warning:",
+			want: "run", log: "decode rules",
 		},
 		"should run with missing rules": {
 			mutate: func(t *testing.T) { require.NoError(t, os.Remove(filepath.Join(root, "ci/test-selection-rules.yaml"))) },

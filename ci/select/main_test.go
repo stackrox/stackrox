@@ -23,8 +23,8 @@ func TestRun(t *testing.T) {
 			var output, diagnostic bytes.Buffer
 			require.NoError(t, run(t.Context(), args, &output, &diagnostic, regexengine.New()))
 			if args[0] == "validate" {
-				assert.Contains(t, output.String(), "Validation passed, with")
-				assert.Contains(t, diagnostic.String(), "Warning:")
+				assert.Equal(t, "Validation passed\n", output.String())
+				assert.Empty(t, diagnostic.String())
 			} else {
 				for _, target := range []string{"go", "go-bench", "go-postgres", "sensor-integration-tests"} {
 					assert.Contains(t, output.String(), target+" skip\n")
@@ -81,31 +81,14 @@ func TestRun(t *testing.T) {
 	}
 }
 
-func TestResolvePrintsTheFullLintReport(t *testing.T) {
+func TestResolveReportsMalformedRules(t *testing.T) {
 	t.Parallel()
-	const rules = `version: 1
-jobs: [go]
-rules:
-  - name: docs
-    when: any-file-matches
-    paths: ['^docs/', '!^docs/internal/']
-    skip: [go]
-  - name: code
-    when: any-file-matches
-    paths: ['^docs/']
-    run: [go]
-  - name: remaining
-    when: remaining
-    run: ['*']
-`
-	path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), rules)
+	path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), "version: 1\njobs: [go]\nrules: [\n")
 	var output, diagnostic bytes.Buffer
 	err := run(t.Context(), []string{"resolve", "--rules", path}, &output, &diagnostic, regexengine.New())
 	require.ErrorIs(t, err, errLintReported)
 	assert.Empty(t, output.String())
-	assert.Contains(t, diagnostic.String(), "001 Error:")
-	assert.Contains(t, diagnostic.String(), "Warning:")
-	assert.Contains(t, diagnostic.String(), "Result: 1 error, 1 warning.")
+	assert.Contains(t, diagnostic.String(), "decode rules")
 }
 
 func TestValidatePassedLine(t *testing.T) {
@@ -124,27 +107,7 @@ rules:
 	var output, diagnostic bytes.Buffer
 	require.NoError(t, run(t.Context(), []string{"validate", "--rules", clean}, &output, &diagnostic, regexengine.New()))
 	assert.Equal(t, "Validation passed\n", output.String())
-
-	crossing := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), `version: 1
-jobs: [go]
-rules:
-  - name: special-input
-    when: any-file-matches
-    paths: ['^config/.*\.txt$']
-    run: [go]
-  - name: special-documentation
-    when: any-file-matches
-    paths: ['^config/special\.txt$']
-    skip: [go]
-  - name: remaining
-    when: remaining
-    run: ['*']
-`)
-	output.Reset()
-	diagnostic.Reset()
-	require.NoError(t, run(t.Context(), []string{"validate", "--rules", crossing}, &output, &diagnostic, regexengine.New()))
-	assert.Equal(t, "Validation passed, with 1 warning\n", output.String())
-	assert.Contains(t, diagnostic.String(), "Warning:")
+	assert.Empty(t, diagnostic.String())
 }
 
 func TestRunHelp(t *testing.T) {

@@ -48,7 +48,7 @@ rules:
   # files used by tests, image builds, generators, and dependency setup.
   # This rule crosses the domain run rules on domain READMEs; the skip
   # default settles those crossings (a README skips rather than runs the
-  # domain suites), and validation warns about the crossing.
+  # domain suites).
   - name: documentation-only
     when: any-file-matches
     paths:

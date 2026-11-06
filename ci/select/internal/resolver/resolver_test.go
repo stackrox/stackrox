@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/ci/select/internal/engine/regexengine/rulesvalidation"
 	"github.com/stackrox/rox/ci/select/internal/rules"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -500,16 +499,12 @@ func TestResolveCapsLoggedPaths(t *testing.T) {
 	assert.Contains(t, d.Log, `- covered by: "frontend-no-backend-e2e"`)
 }
 
-// loadRules parses the production policy for resolution after checking
-// it with the production validator, so fixtures fail the same way a
-// real rules file would. The compile loop mirrors regexengine.Compile,
-// which these tests cannot use without an import cycle.
+// loadRules parses the production policy for resolution. The compile
+// loop mirrors regexengine.Compile, which these tests cannot use without
+// an import cycle.
 func loadRules(path string) (rules.Mapping, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return rules.Mapping{}, err
-	}
-	if _, err := (rulesvalidation.Full{}).Validate(data); err != nil {
 		return rules.Mapping{}, err
 	}
 	m, err := rules.Parse(data)

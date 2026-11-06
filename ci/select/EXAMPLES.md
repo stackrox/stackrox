@@ -51,8 +51,7 @@ rule also matches it (Markdown anywhere except test fixtures) and marks it
 safe to skip Go. The skip default settles it the same way every crossing is
 settled, and the trace names both sides and the outcome:
 `documentation-only` covers the file, so the README is documentation first
-and every target skips. Validation warns about the crossing while the
-rules file is checked; the resolver just applies the default.
+and every target skips; the resolver just applies the default.
 
 ## Example 3: domain code
 

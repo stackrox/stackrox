@@ -7,13 +7,10 @@ package resolver
 //   - TestSkipWinsOnFileSpecific: a skip specific to the file (a README)
 //     wins over a domain-wide run request.
 //   - TestRunWinsThroughCarveOut: a '!' exclusion lets the run count.
-//     Dropping it leaves a run pattern the skip covers entirely, which
-//     is an error.
 //   - TestSkipWinsOnIdenticalScope: the same scope with opposite decisions
-//     ends in skip; one of the rules must change.
+//     ends in skip.
 //
-// A crossing only some files hit is a warning. A run pattern one skip
-// rule covers entirely is an error. See README.md ("Composition of rules").
+// See README.md ("Composition of rules").
 
 import (
 	"path/filepath"
@@ -50,9 +47,8 @@ rules:
 func loadValidatedRules(t *testing.T, data string) rules.Mapping {
 	t.Helper()
 	path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), data)
-	// loadRules is the production loader: a fixture is checked fully —
-	// structure and conflicts — like a real rules file, so a fixture
-	// typo cannot silently pass.
+	// loadRules is the production loader, so a fixture typo cannot
+	// silently pass.
 	m, err := loadRules(path)
 	require.NoError(t, err)
 	return m
@@ -84,9 +80,8 @@ func TestSkipWinsOnFileSpecificConflict(t *testing.T) {
 
 func TestRunWinsThroughCarveOut(t *testing.T) {
 	t.Parallel()
-	// generator-header includes the header file and documentation excludes it,
-	// so the run request counts. Dropping that exclusion makes documentation
-	// cover every file of the run pattern, which validation rejects.
+	// generator-header includes the header file and documentation
+	// excludes it, so the run request counts.
 	const withCarveOut = `version: 1
 jobs: [go]
 rules:
@@ -116,16 +111,13 @@ rules:
 		assert.Contains(t, d.Log, `"tools/boilerplate.go.txt" matched: generator-header`)
 	})
 
-	t.Run("dropping the carve-out is an error", func(t *testing.T) {
+	t.Run("dropping the carve-out makes the skip cover the run", func(t *testing.T) {
 		t.Parallel()
-		// Without the exclusion, documentation matches every file of the
-		// run pattern, so the request can never count.
+		// Without the exclusion, documentation covers every file of the
+		// run pattern, so the request never counts.
 		withoutCarveOut := strings.Replace(withCarveOut, "      - '!^tools/boilerplate\\.go\\.txt$'\n", "", 1)
-		path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), withoutCarveOut)
-		_, err := loadRules(path)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), `never runs "go"`)
-		assert.Contains(t, err.Error(), "documentation")
+		m := loadValidatedRules(t, withoutCarveOut)
+		assert.Equal(t, "skip", Resolve([]string{"tools/boilerplate.go.txt"}, m).Action("go"))
 	})
 }
 

@@ -47,33 +47,28 @@ rules:
 	assert.Contains(t, diagnostic.String(), "compile patterns")
 }
 
-func TestValidatorSeamChangesRejectionsNotFailClosed(t *testing.T) {
+func TestCheckDepthChangesRejectionsNotFailClosed(t *testing.T) {
 	t.Parallel()
-	// A document Full rejects only for authoring quality (duplicate
-	// targets): swapping to Trivial lets it resolve, proving the
-	// validator choice changes which findings stop selection while the
-	// engine keeps deciding normally.
-	loose := `version: 1
-jobs: [go, go]
-rules:
-  - name: docs
-    when: any-file-matches
-    paths: ['^docs/']
-    skip: [go]
-  - name: remaining
-    when: remaining
-    run: ['*']
-`
-	path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), loose)
+	// Malformed YAML: syntax-only checks reject it before selection, and
+	// with checks disabled the engine still refuses to compile it, so the
+	// choice of depth never lets a bad document through.
+	malformed := "version: 1\njobs: [go]\nrules: [\n"
+	path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), malformed)
 	files := writeTestFile(t, filepath.Join(t.TempDir(), "files"), "docs/guide.md\n")
 
 	var output, diagnostic bytes.Buffer
-	require.NoError(t, run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, regexengine.NewTrivial()))
-	assert.Contains(t, output.String(), "go skip\n")
+	err := run(t.Context(), []string{"validate", "--rules", path}, &output, &diagnostic, regexengine.New())
+	require.ErrorIs(t, err, errLintReported)
+	assert.Contains(t, diagnostic.String(), "decode rules")
 
 	output.Reset()
 	diagnostic.Reset()
-	err := run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, regexengine.New())
+	require.NoError(t, run(t.Context(), []string{"validate", "--rules", path}, &output, &diagnostic, regexengine.NewTrivial()))
+	assert.Equal(t, "Validation passed\n", output.String())
+
+	output.Reset()
+	diagnostic.Reset()
+	err = run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, regexengine.NewTrivial())
 	require.ErrorIs(t, err, errLintReported)
-	assert.Contains(t, diagnostic.String(), "duplicate job")
+	assert.Contains(t, diagnostic.String(), "parse rules")
 }

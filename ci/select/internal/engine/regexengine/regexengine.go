@@ -13,15 +13,10 @@ import (
 	"github.com/stackrox/rox/ci/select/internal/rules"
 )
 
-// New returns the engine for the current rules language with its
-// complete check set.
+// New returns the engine for the current rules language with
+// syntax-only checks: the document must be one well-formed YAML
+// document, nothing more.
 func New() engine.Engine {
-	return newEngine(rulesvalidation.Full{})
-}
-
-// NewYAML returns the same language with syntax-only checks: the
-// document must be one well-formed YAML document, nothing more.
-func NewYAML() engine.Engine {
 	return newEngine(rulesvalidation.YAML{})
 }
 

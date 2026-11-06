@@ -70,17 +70,17 @@ func TestResolveRefusesForeignRules(t *testing.T) {
 
 func TestValidateUsesThisLanguageChecks(t *testing.T) {
 	t.Parallel()
-	duplicateJob := strings.Replace(baseRules, "jobs: [go]", "jobs: [go, go]", 1)
+	malformed := "version: 1\njobs: [go]\nrules: [\n"
 	for name, c := range map[string]struct {
 		engine    func() engine.Engine
 		wantError string
 	}{
-		"should run the full checks by default":      {New, `duplicate job "go"`},
+		"should check yaml syntax by default":        {New, "decode rules"},
 		"should disable authoring checks on request": {NewTrivial, ""},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, err := c.engine().Validate([]byte(duplicateJob))
+			_, err := c.engine().Validate([]byte(malformed))
 			if c.wantError == "" {
 				require.NoError(t, err)
 				return

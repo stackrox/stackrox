@@ -43,8 +43,8 @@ jobs: [go, sensor-integration-tests]
 rules:
   # Documentation outside test fixtures is safe without either test suite.
   # Documentation inside the security tree crosses the security rule
-  # below; the skip default settles that crossing (skip), and validation
-  # warns about it while the file is checked.
+  # below; the skip default settles that crossing (skip), and the trace
+  # names it.
   - name: documentation
     when: any-file-matches
     paths: ['^docs/', '^[^/]+\.md$', '!^docs/testdata/']
@@ -138,15 +138,12 @@ there (a run request counts only for a path no skip rule covers). A job
 still runs when another changed path has a counting request, so a
 crossing never silently disables a whole job.
 
-Because a conflict couples two rules that each read plausibly alone,
-validation reports every conflict as a warning, with a witness file both
-rules match, when the rules file is checked (`ci-select validate`, or any
-load). Read the warning and decide: if the skip rule is factually wrong
-about the file, correct it with a `!` exclusion (`boilerplate.go.txt` is
-a generator input, not documentation); if both claims are honest policies
-that happen to cross, the skip default stands and the warning documents
-the coupling. The resolver's trace also names the crossing when it fires,
-with both rules and the affected path.
+A conflict couples two rules that each read plausibly alone, so the
+resolver's trace names every crossing it settles, with both rules and the
+affected path. If the skip rule is factually wrong about the file, correct
+it with a `!` exclusion (`boilerplate.go.txt` is a generator input, not
+documentation). If both claims are honest policies that happen to cross,
+the skip default stands and the trace documents the coupling.
 
 ## Pluggable engine and validation
 
@@ -166,15 +163,15 @@ wave through documents the engine cannot interpret or reject valid ones.
 `Engine.Validate` hands out the checks that belong to the language, so
 there is no separate validator to pair incorrectly. Today's
 engine is `internal/engine/regexengine`, and its checks live beside it in
-`internal/engine/regexengine/rulesvalidation` at three depths:
-`Full` runs every check, `YAML` only requires one parsable YAML document,
-and `engine.TrivialValidator` reports nothing at all.
-`regexengine.New`, `NewYAML`, and `NewTrivial` select them. A second
-language brings its own checks in the same shape.
+`internal/engine/regexengine/rulesvalidation` at two depths:
+`YAML` requires one parsable YAML document, and
+`engine.TrivialValidator` reports nothing at all. `regexengine.New` and
+`NewTrivial` select them. A second language brings its own checks in the
+same shape.
 
 Because checks can be disabled but not replaced, fail-closed behavior
 does not depend on them: `Compile` rejects malformed documents, unknown
-versions, and uncompilable patterns regardless of the configured depth.
+versions, and uncompilable patterns at either depth.
 
 ## Composition of rules
 
