@@ -315,8 +315,7 @@ func (h *Handler) servePolicyRequest(writer http.ResponseWriter, request *http.R
 		return
 	}
 	perAccess := centralcaps.Has(centralsensor.CentralProxyPerAccessTokens)
-	if !perAccess && (len(grant.ScopedPermissionSets) != 1 ||
-		(!centralcaps.Has(centralsensor.CentralProxyScopedReadOnlyTokens) && !legacyProxyGrantAllowed(grant, request))) {
+	if !perAccess && !legacyProxyGrantAllowed(grant, request) {
 		*result = requestResultNotImplemented
 		http.Error(writer, "Central does not support this proxy client profile", http.StatusNotImplemented)
 		return

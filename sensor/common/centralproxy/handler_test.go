@@ -68,8 +68,7 @@ func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {
 		return true, &authv1.SubjectAccessReview{Status: authv1.SubjectAccessReviewStatus{Allowed: true}}, nil
 	})
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyScopedReadOnlyTokens,
-		centralsensor.CentralProxyPerAccessTokens,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	var forwarded bool
@@ -129,7 +128,7 @@ func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {
 	assert.Equal(t, "kubernetesBearer:test-user", requester)
 	assert.EqualValues(t, 1, tokenCalls.Load(), "both routes should reuse one token for the same client and namespace")
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyScopedReadOnlyTokens,
+		centralsensor.InternalTokenAPISupported,
 	})
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, request(http.MethodGet, "/v1/custom"))
@@ -176,7 +175,7 @@ func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
 	t.Cleanup(policy.Stop)
 	require.NoError(t, policy.EnsureDefaults(context.Background()))
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyScopedReadOnlyTokens,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	var forwarded bool
@@ -211,11 +210,14 @@ func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, forwarded)
 	assert.Equal(t, "mtls:"+leaf.Subject.CommonName, tokenClient.lastRequest.GetRequester())
-	assert.Equal(t, []string{centralproxy.MetricsPermissionSetName}, tokenClient.lastRequest.GetPermissionSetNames())
+	assert.Empty(t, tokenClient.lastRequest.GetPermissionSetNames())
 	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
 		tokenClient.lastRequest.GetClusterScopes())
-	protoassert.SlicesEqual(t, []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
-		tokenClient.lastRequest.GetHttpRequestScopes())
+	protoassert.SlicesEqual(t, []*centralv1.ScopedPermissionSet{{
+		PermissionSetName: centralproxy.MetricsPermissionSetName,
+		HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
+	}}, tokenClient.lastRequest.GetScopedPermissionSets())
+	assert.Empty(t, tokenClient.lastRequest.GetHttpRequestScopes())
 
 	otherCA, otherKey, _ := clientPolicyTestCA(t)
 	badCert := signedTestCertificate(t, otherCA, otherKey, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
@@ -250,7 +252,7 @@ func TestPolicyHandlerDoesNotEnableConsoleWhenOnlyMetricsEnabled(t *testing.T) {
 		}}, nil
 	})
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyScopedReadOnlyTokens,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	h := &Handler{policy: policy, authorizer: newK8sAuthorizer(client), metricsEnabled: true}
@@ -284,7 +286,7 @@ func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
 		}}, nil
 	})
 	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyScopedReadOnlyTokens,
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
 	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 	baseURL, err := url.Parse("https://central:443")
