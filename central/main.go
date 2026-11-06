@@ -945,12 +945,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			// User configured Prometheus metrics will be exposed on this path.
-			// The access is behind authorization because the metric label
-			// values may include sensitive data, such as deployment names and
-			// CVEs.
+			// Authenticate scrapes; the metrics collectors apply resource permissions
+			// and access scopes to the data they expose.
 			Route:         "GET /metrics",
-			Authorizer:    user.With(permissions.View(resources.Administration)),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: customMetrics.Singleton(),
 			Compression:   true,
 		},
