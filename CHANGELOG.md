@@ -38,6 +38,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
 - ROX-37385: Scanner V4 node scans now record the operating system (for example `rhcos:9.6`) for OpenShift 4.19 and later nodes. RHCOS switched to RHEL-based dotted versions such as `9.6.20250701-0` in OpenShift 4.19, and Central previously stored an empty operating system for these nodes.
 - ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
+- ROX-37430: Scanner V4 DB now runs PostgreSQL 16, upgraded from 15. The data directory is upgraded in place the first time the new image starts, and the vulnerability store is preserved, so no re-download is needed. If the upgrade cannot be completed, Scanner V4 DB keeps serving with PostgreSQL 15 and retries on the next restart.
 
 ## [5.0.0]
 
