@@ -51,34 +51,6 @@ jobs:
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
-  # EXPERIMENT (do not merge): verify that a restored GOCACHE does not
-  # reintroduce the #20369 failure mode in `go mod tidy` — the reason this
-  # job above has no Go build cache. The mtime scheme that replaced the one
-  # implicated in #20369 landed in #21719; this test replicates the original
-  # scenario (stale module index from a prior tree state meeting a changed
-  # tree) against the current machinery. See the script for the full design.
-  tidy-gocache-verify:
-    needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    steps:
-    - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Download scanner module for proto generation
-      run: go mod download github.com/stackrox/scanner
-
-    - name: Verify tidy with stale GOCACHE
-      run: scripts/ci/jobs/verify-tidy-gocache.sh
-
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/

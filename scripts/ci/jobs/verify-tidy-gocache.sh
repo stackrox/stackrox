@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# EXPERIMENT (do not merge): verify that a restored GOCACHE does not reintroduce
-# the #20369 failure mode in `go mod tidy`.
+# Regression test: verify that a restored GOCACHE does not reintroduce the
+# #20369 failure mode in `go mod tidy`. Runs from the verify-tidy-gocache
+# workflow, triggered only when the cache-go-dependencies action, this
+# script, or that workflow changes.
 #
 # #20369 (May 2026) removed GOCACHE from check-generated-files because Go's
 # module index caches parsed imports keyed by (filename, mtime, size) — not
