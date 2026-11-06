@@ -24,6 +24,7 @@ import (
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/suse"
@@ -258,6 +259,8 @@ func findMatcher(ctx context.Context, record *claircore.IndexRecord) (matcher, v
 		return &gobin.Matcher{}, goSemverVersionType
 	case (*java.Matcher)(nil).Filter(record):
 		return &java.Matcher{}, urlEncodedVersionType
+	case (*rheljava.RedHatMatcher)(nil).Filter(record):
+		return &rheljava.RedHatMatcher{}, normalVersionType
 	case (*nodejs.Matcher)(nil).Filter(record):
 		return &nodejs.Matcher{}, semverVersionType
 	case (*python.Matcher)(nil).Filter(record):
