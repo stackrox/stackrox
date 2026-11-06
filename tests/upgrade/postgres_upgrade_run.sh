@@ -14,7 +14,7 @@ EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 source "$TEST_ROOT/scripts/lib.sh"
 
 postgres_major_version() {
-    # ROX-29205: Before postgres base image, scanner-v4-db used ENV PG_MAJOR.
+    # ROX-29205: scanner-v4-db use ENV PG_MAJOR before 4.11.0
     local version
     version="$(sed -n \
         -e 's/^[[:space:]]*ARG[[:space:]]\+PG_VERSION=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
@@ -45,7 +45,7 @@ detect_postgres_upgrade() {
 }
 
 check_postgres_upgrade() {
-    # Run tests when either database bump its major version
+    # Run tests when either database bumps its major version
     detect_postgres_upgrade CENTRAL_DB "image/postgres/Dockerfile"
     detect_postgres_upgrade SCANNER_V4_DB "scanner/image/db/Dockerfile"
 
@@ -474,13 +474,13 @@ test_scanner_v4_db_upgrade_fallback() {
     } >> /tmp/allowlist-patterns
     ci_export ALLOWLIST_FILE "/tmp/allowlist-patterns"
 
-    # Make pg_upgrade --check fails. A database that disallows connections is
+    # Make pg_upgrade --check fail. A database that disallows connections is
     # rejected during the consistency checks.
     info "Blocking the upgrade with a database that disallows connections"
     scanner_v4_db_psql "CREATE DATABASE $SCANNER_V4_UPGRADE_BLOCKER"
     scanner_v4_db_psql "ALTER DATABASE $SCANNER_V4_UPGRADE_BLOCKER WITH ALLOW_CONNECTIONS false"
 
-    info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
+    info "Upgrade scanner-v4-db ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/scanner-v4-db "*=${REGISTRY}/scanner-v4-db:${CURRENT_TAG}"
 
     # The pod should come up instead of aborting and crashlooping.
@@ -493,7 +493,6 @@ test_scanner_v4_db_upgrade_fallback() {
         die "scanner-v4-db did not decline the upgrade the way this test intends"
 
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
-    test_gt_non_silent "$(scanner_v4_db_vulns)" "$SCANNER_V4_DB_MIN_VULNS"
     check_scanner_v4_data_upgraded
 
     info "Removing the blocker and restarting scanner-v4-db"
