@@ -130,7 +130,7 @@ func (h *Handler) validateRequest(request *http.Request) error {
 		if request.URL.EscapedPath() != "/metrics" || request.Method != http.MethodGet {
 			return pkghttputil.NewError(http.StatusForbidden, "invalid metrics scrape path or method")
 		}
-		if !h.metricsEnabled || !centralcaps.Has(centralsensor.CentralProxyScopedReadOnlyTokens) {
+		if !h.metricsEnabled || !centralcaps.Has(centralsensor.CentralProxyPerAccessTokens) {
 			return pkghttputil.NewError(http.StatusForbidden, "secured-cluster metrics proxy unavailable")
 		}
 	}
