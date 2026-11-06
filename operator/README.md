@@ -327,25 +327,3 @@ The above targets use `kuttl` internally, so if something goes wrong you may fin
 
 1. Generate a chart using `./hack/generate-chart.sh {opensource|development_build|rhacs}`
 2. Install the operator using for example: `helm install --create-namespace --namespace stackrox-operator-system stackrox-operator ./dist/chart`
-
-### Upgrading a chart with duplicate related-image variables
-
-Older charts can render duplicate `RELATED_IMAGE_*` entries when using
-`manager.envOverrides`. During the first client-side upgrade, Helm's three-way
-patch can delete both entries by name, temporarily removing the override.
-
-- **Helm 4:** use `helm upgrade --server-side=true` with the updated chart to
-  preserve the override on the first upgrade. Helm 4's default `auto` mode keeps
-  client-side updates for releases originally installed with Helm 3.
-- **Helm 3 or client-side Helm 4:** run the same `helm upgrade` command twice
-  with the updated chart and values. The first upgrade can remove the override;
-  the second restores it. Verify the live Deployment after the second upgrade.
-- **Argo CD:** sync the updated chart, delete the operator Deployment, then sync
-  again to recreate it from the updated manifest. Deletion temporarily
-  interrupts the operator.
-
-Supply a complete values file on each upgrade, including your image overrides
-and unrelated custom settings. Avoid `--reuse-values`, which can retain the old
-chart's `manager.env` defaults and reintroduce duplicates. If you explicitly set
-`manager.env`, remove its empty related-image placeholders too. After upgrading,
-check that each configured `RELATED_IMAGE_*` appears once with the intended value.

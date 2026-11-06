@@ -29,6 +29,28 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-37861: Fixed duplicate related-image environment variables in the operator Helm chart.
+
+  Older charts can render duplicate `RELATED_IMAGE_*` entries when using
+  `manager.envOverrides`. During the first client-side upgrade, Helm's three-way
+  patch can delete both entries by name, temporarily removing the override.
+
+  - **Helm 4:** use `helm upgrade --server-side=true` with the updated chart to
+    preserve the override on the first upgrade. Helm 4's default `auto` mode keeps
+    client-side updates for releases originally installed with Helm 3.
+  - **Helm 3 or client-side Helm 4:** run the same `helm upgrade` command twice
+    with the updated chart and values. The first upgrade can remove the override;
+    the second restores it. Verify the live Deployment after the second upgrade.
+  - **Argo CD:** sync the updated chart, delete the operator Deployment, then sync
+    again to recreate it from the updated manifest. Deletion temporarily
+    interrupts the operator.
+
+  Supply a complete values file on each upgrade, including your image overrides
+  and unrelated custom settings. Avoid `--reuse-values`, which can retain the old
+  chart's `manager.env` defaults and reintroduce duplicates. If you explicitly set
+  `manager.env`, remove its empty related-image placeholders too. After upgrading,
+  check that each configured `RELATED_IMAGE_*` appears once with the intended value.
+
 - ROX-33976: Virtual machine components now report pending scans and distinguish missing CPEs from missing repository metadata.
 - ROX-36950: Central DB cleans up recognized physical backups from earlier PostgreSQL major-version upgrades after verifying the new backup, or earlier if needed to reclaim upgrade space. The current upgrade's rollback backup is retained without age-based expiration.
 - ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
