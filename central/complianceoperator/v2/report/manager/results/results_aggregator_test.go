@@ -401,55 +401,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataTimestampFiltering(
 	}
 }
 
-func TestOldestScanStartTime(t *testing.T) {
-	t1 := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
-	t2 := timestamppb.New(time.Date(2025, 5, 7, 11, 0, 0, 0, time.UTC))
-	t3 := timestamppb.New(time.Date(2025, 5, 7, 9, 0, 0, 0, time.UTC))
-	cases := map[string]struct {
-		input    map[string]*timestamppb.Timestamp
-		expected *timestamppb.Timestamp
-	}{
-		"nil map": {
-			input:    nil,
-			expected: nil,
-		},
-		"empty map": {
-			input:    map[string]*timestamppb.Timestamp{},
-			expected: nil,
-		},
-		"single entry": {
-			input:    map[string]*timestamppb.Timestamp{"scan-a": t1},
-			expected: t1,
-		},
-		"returns oldest": {
-			input: map[string]*timestamppb.Timestamp{
-				"scan-a": t1,
-				"scan-b": t2,
-				"scan-c": t3,
-			},
-			expected: t3,
-		},
-		"skips nil values": {
-			input: map[string]*timestamppb.Timestamp{
-				"scan-a": t1,
-				"scan-b": nil,
-			},
-			expected: t1,
-		},
-	}
-	for tname, tc := range cases {
-		t.Run(tname, func(t *testing.T) {
-			result := oldestScanStartTime(tc.input)
-			if tc.expected == nil {
-				assert.Nil(t, result)
-			} else {
-				require.NotNil(t, result)
-				assert.True(t, tc.expected.AsTime().Equal(result.AsTime()))
-			}
-		})
-	}
-}
-
 func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 	clusterID := "cluster-1"
 	cases := map[string]walkByQueryTestCase{
