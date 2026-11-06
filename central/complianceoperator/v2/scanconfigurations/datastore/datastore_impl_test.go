@@ -630,6 +630,21 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 	s.Require().NoError(err)
 	s.Require().Equal(2, len(clusterStatuses))
 
+	// A non-empty clusterStatus (error) must be persisted as a single-element Errors slice.
+	for _, cs := range clusterStatuses {
+		s.Require().Equal([]string{"testing status"}, cs.GetErrors())
+	}
+
+	// An empty clusterStatus (success case) must not be persisted as [""] but as an empty slice.
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID1, s.clusterID1, "", ""))
+	clusterStatuses, err = s.dataStore.GetScanConfigClusterStatus(s.testContexts[unrestrictedReadCtx], configID1)
+	s.Require().NoError(err)
+	for _, cs := range clusterStatuses {
+		if cs.GetClusterId() == s.clusterID1 {
+			s.Require().Empty(cs.GetErrors())
+		}
+	}
+
 	// Try to add one with no existing scan config
 	s.Require().NotNil(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], uuid.NewDummy().String(), fixtureconsts.Cluster1, "testing status", ""))
 	clusterStatuses, err = s.dataStore.GetScanConfigClusterStatus(s.testContexts[unrestrictedReadCtx], uuid.NewDummy().String())
