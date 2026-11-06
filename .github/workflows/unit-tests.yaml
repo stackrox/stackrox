@@ -31,7 +31,7 @@ jobs:
         ^Makefile$
         ^make/
         ^.github/workflows/unit-tests.yaml$
-        ^.github/actions/job-preamble/
+        ^.github/actions/
 
   go:
     needs: detect-changes
