@@ -296,6 +296,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
 				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 				Permissions:        map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
 				Lifetime:           testExpirationDuration,
 			},
@@ -662,6 +663,7 @@ func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
 			PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
 			ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+			HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 			Lifetime:           testExpirationDuration,
 		})
 	assert.Nil(t, rsp)

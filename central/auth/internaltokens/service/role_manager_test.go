@@ -257,8 +257,8 @@ func TestCreateRoleFromMetricsPermissionSet(t *testing.T) {
 	roles := roleMocks.NewMockDataStore(ctrl)
 	expectPermissionSetLookup(t, roles, []string{centralproxy.MetricsPermissionSetName},
 		[]*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
-			"Deployment":     storage.Access_READ_ACCESS,
-			"Administration": storage.Access_READ_ACCESS,
+			"Deployment": storage.Access_READ_ACCESS,
+			"Node":       storage.Access_READ_ACCESS,
 		}}}, nil)
 
 	role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
@@ -271,7 +271,7 @@ func TestCreateRoleFromMetricsPermissionSet(t *testing.T) {
 		RoleName: internalRoleName,
 		Clusters: tokens.ClusterScopes{"sensor-cluster": {"*"}},
 		Permissions: map[storage.Access][]string{
-			storage.Access_READ_ACCESS: {"Administration", "Deployment"},
+			storage.Access_READ_ACCESS: {"Deployment", "Node"},
 		},
 	}, role)
 }

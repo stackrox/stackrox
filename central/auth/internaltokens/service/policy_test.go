@@ -247,6 +247,7 @@ func TestEnforce(t *testing.T) {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
 				ClusterScopes:      metricsScope,
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 				Permissions:        map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
 				Lifetime:           durationpb.New(30 * time.Minute),
 			},
