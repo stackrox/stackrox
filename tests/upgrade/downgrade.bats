@@ -40,7 +40,7 @@ setup() {
 }
 
 @test "rejected rollback verifies unchanged metadata and stops the rejected pod" {
-    stop_downgrade_central() { echo stop >>"$BATS_TEST_TMPDIR/calls"; }
+    stop_central() { echo stop >>"$BATS_TEST_TMPDIR/calls"; }
     set_downgrade_version() { echo "$1" >>"$BATS_TEST_TMPDIR/calls"; }
     wait_for_downgrade_rejection() {
         [ "$1" = 4.9.0 ] && [ "$2" = "$BATS_TEST_TMPDIR/evidence" ] || return 1
@@ -65,7 +65,7 @@ setup() {
 }
 
 @test "snapshot read failure never starts rollback" {
-    stop_downgrade_central() { :; }
+    stop_central() { :; }
     downgrade_version_snapshot() { return 1; }
     set_downgrade_version() { touch "$BATS_TEST_TMPDIR/started"; }
     run test_rejected_downgrade 4.9.0 "$BATS_TEST_TMPDIR/evidence"
