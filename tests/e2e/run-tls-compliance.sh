@@ -152,6 +152,15 @@ fi
 
 info "Validating scan results..."
 
+info "Scan summary per endpoint:"
+jq -r '
+    .ip_results[]? |
+    (.openshift_component.component // .pod.Name) as $name |
+    .port_results[]? |
+    select(.status == "OK") |
+    "\($name):\(.port) tls_versions=\(.tls_versions // [] | join(",")) ciphers=\(.tls_ciphers // [] | join(",")) groups=\(.supported_groups // [] | join(",")) mlkem=\(.mlkem_supported)"
+' "$SCAN_RESULTS" | sort -u
+
 # central-db must have TLS enabled (guards against tls-scanner malfunction).
 central_db_status=$(jq -r '
     [.ip_results[]? |
