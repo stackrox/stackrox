@@ -14,7 +14,8 @@ EARLIER_SHA="7b817fa511ac4533cdf2d79a1b8e04d4d7557ad2"
 source "$TEST_ROOT/scripts/lib.sh"
 
 postgres_major_version() {
-    # ROX-29205: scanner-v4-db use ENV PG_MAJOR before 4.11.0
+    # Current images use ARG PG_VERSION; older releases put the major directly in FROM.
+    # scanner-v4-db use ENV PG_MAJOR before 4.11.0
     local version
     version="$(sed -n \
         -e 's/^[[:space:]]*ARG[[:space:]]\+PG_VERSION=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
