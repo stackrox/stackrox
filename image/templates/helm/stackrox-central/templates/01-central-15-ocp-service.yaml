@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.monitoring.openshift.enabled -}}
+{{- if or ._rox.monitoring.openshift.enabled ._rox.monitoring.openshift.custom.enabled -}}
 {{- /*
 Separate Service so OpenShift can issue a distinct service-serving certificate
 (SNI: central-ocp.<ns>.svc). The main "central" Service keeps the StackRox

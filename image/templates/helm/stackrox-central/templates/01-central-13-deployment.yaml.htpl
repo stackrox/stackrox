@@ -210,6 +210,8 @@ spec:
         - name: monitoring-tls
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
+        {{- end }}
+        {{- if or ._rox.monitoring.openshift.enabled ._rox.monitoring.openshift.custom.enabled }}
         - name: ocp-tls
           mountPath: /run/secrets/stackrox.io/ocp-tls
           readOnly: true
@@ -307,6 +309,8 @@ spec:
       - name: monitoring-tls
         secret:
           secretName: central-monitoring-tls
+      {{- end }}
+      {{- if or ._rox.monitoring.openshift.enabled ._rox.monitoring.openshift.custom.enabled }}
       - name: ocp-tls
         secret:
           secretName: central-ocp-tls

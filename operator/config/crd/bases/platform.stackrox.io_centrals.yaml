@@ -2181,7 +2181,7 @@ spec:
                       custom:
                         description: |-
                           Enables scraping Central custom metrics, directly for Central or through Sensor's proxy for SecuredCluster.
-                          Independent of openshift.enabled for SecuredCluster. The default is: false.
+                          Independent of openshift.enabled for Central and SecuredCluster. The default is: false.
                         properties:
                           enabled:
                             description: 'The default is: false.'
