@@ -1,8 +1,9 @@
-import { Alert, Bullseye, Flex, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Flex, List, ListItem, Spinner } from '@patternfly/react-core';
 
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import { getClusterScanErrors, hasScanConfigErrors } from '../compliance.scanConfigs.utils';
 import ScanConfigActivityView from './ScanConfigActivityView';
 import ScanConfigClustersTable from './ScanConfigClustersTable';
 import ScanConfigDeliveryView from './ScanConfigDeliveryView';
@@ -18,6 +19,14 @@ export type ConfigDetailsProps = {
 const headingLevel = 'h2';
 
 function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
+    const scanErrorItems = scanConfig?.clusterStatus.flatMap((clusterStatus) =>
+        getClusterScanErrors(clusterStatus).map((scanError) => ({
+            clusterId: clusterStatus.clusterId,
+            clusterName: clusterStatus.clusterName || clusterStatus.clusterId,
+            scanError,
+        }))
+    );
+
     if (isLoading) {
         return (
             <Bullseye>
@@ -44,6 +53,25 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                     scanSchedule={scanConfig.scanConfig.scanSchedule}
                 />
                 <ScanConfigActivityView headingLevel={headingLevel} scanConfig={scanConfig} />
+                {hasScanConfigErrors(scanConfig) && (
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsXs' }}
+                    >
+                        <Alert variant="danger" title="Scan error" component="p" isInline>
+                            One or more clusters reported scan errors.
+                        </Alert>
+                        {scanErrorItems && scanErrorItems.length > 0 && (
+                            <List>
+                                {scanErrorItems.map(({ clusterId, clusterName, scanError }) => (
+                                    <ListItem key={`${clusterId}-${scanError}`}>
+                                        {clusterName}: {scanError}
+                                    </ListItem>
+                                ))}
+                            </List>
+                        )}
+                    </Flex>
+                )}
                 <ScanConfigClustersTable
                     headingLevel={headingLevel}
                     clusterScanStatuses={scanConfig.clusterStatus}
