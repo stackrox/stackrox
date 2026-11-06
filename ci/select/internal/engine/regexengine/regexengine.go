@@ -19,6 +19,12 @@ func New() engine.Engine {
 	return newEngine(rulesvalidation.Full{})
 }
 
+// NewYAML returns the same language with syntax-only checks: the
+// document must be one well-formed YAML document, nothing more.
+func NewYAML() engine.Engine {
+	return newEngine(rulesvalidation.YAML{})
+}
+
 // NewTrivial returns the same language with authoring checks disabled.
 // Compilation still rejects documents the engine cannot evaluate, so the
 // only thing lowered is the rule-quality report.

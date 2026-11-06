@@ -18,8 +18,9 @@ func TestValidatorsShareOneContract(t *testing.T) {
 		validator engine.Validator
 		wantError bool
 	}{
-		"full should keep rejecting unknown versions":  {Full{}, true},
-		"trivial should keep accepting every document": {engine.TrivialValidator{}, false},
+		"full should keep rejecting unknown versions":   {Full{}, true},
+		"yaml should keep accepting parsable documents": {YAML{}, false},
+		"trivial should keep accepting every document":  {engine.TrivialValidator{}, false},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

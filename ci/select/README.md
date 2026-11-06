@@ -165,12 +165,12 @@ YAML, so a validator that does not read the same syntax would either
 wave through documents the engine cannot interpret or reject valid ones.
 `Engine.Validate` hands out the checks that belong to the language, so
 there is no separate validator to pair incorrectly. Today's
-engine is `internal/engine/regexengine`; its checks — `Full`, the
-complete report, plus their overlap analysis — live beside it in
-`internal/engine/regexengine/rulesvalidation`. `engine.TrivialValidator`
-is the no-op implementation a language may offer to disable authoring
-checks; `regexengine.NewTrivial` wires it. A second language brings its
-own checks, and the deferred intermediate levels slot in the same way.
+engine is `internal/engine/regexengine`, and its checks live beside it in
+`internal/engine/regexengine/rulesvalidation` at three depths:
+`Full` runs every check, `YAML` only requires one parsable YAML document,
+and `engine.TrivialValidator` reports nothing at all.
+`regexengine.New`, `NewYAML`, and `NewTrivial` select them. A second
+language brings its own checks in the same shape.
 
 Because checks can be disabled but not replaced, fail-closed behavior
 does not depend on them: `Compile` rejects malformed documents, unknown
