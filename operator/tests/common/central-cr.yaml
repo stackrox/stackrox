@@ -12,26 +12,24 @@ spec:
       name: admin-pass
     resources:
       requests:
+        cpu: 150m
         memory: 1Gi
-        cpu: 250m
       limits:
-        memory: 4Gi
-        cpu: 1
+        memory: 1Gi
     db:
       resources:
         requests:
+          cpu: 100m
           memory: 1Gi
-          cpu: 250m
         limits:
-          memory: 4Gi
-          cpu: 1
+          memory: 1Gi
     telemetry:
       enabled: false
   centralWorker:
     enabled: true
     resources:
       requests:
-        cpu: 10m
+        cpu: 50m
         memory: 128Mi
       limits:
         memory: 128Mi
@@ -43,11 +41,10 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: "250m"
-          memory: "1500Mi"
+          cpu: 50m
+          memory: 512Mi
         limits:
-          cpu: "1000m"
-          memory: "2Gi"
+          memory: 512Mi
     matcher:
       scaling:
         autoScaling: Disabled
@@ -55,19 +52,17 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: "250m"
-          memory: "1Gi"
+          cpu: 50m
+          memory: 256Mi
         limits:
-          cpu: "1000m"
-          memory: "5500Mi"
+          memory: 256Mi
     db:
       resources:
         requests:
-          cpu: "400m"
-          memory: "2Gi"
+          cpu: 100m
+          memory: 4Gi
         limits:
-          cpu: "1000m"
-          memory: "2500Mi"
+          memory: 4Gi
 ---
 apiVersion: v1
 kind: Secret

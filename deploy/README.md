@@ -252,3 +252,12 @@ Another important roxie command is `roxie teardown <component>`, where component
 We're actively improving roxie and would love your feedback! If you run into
 issues, have feature requests, or just want to share your experience, please
 reach out to the **ACS Install team**.
+
+### Local and E2E resource budgets
+
+The QA, UI, and non-Groovy E2E runners merge `deploy/roxie-config-resources.yaml`
+into their Roxie configuration. Local deployments and the common Operator test
+fixtures use the same resource budgets. When changing them, keep
+`deploy/roxie-config-local-dev.yaml`, `deploy/common/local-dev-values.yaml`, the
+local deployment patches, and the Operator Central/SecuredCluster fixtures in
+sync. Replica counts and other deployment settings remain specific to each flow.

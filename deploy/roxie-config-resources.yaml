@@ -1,0 +1,55 @@
+# Shared QA/UI resource budget. Keep local Helm values and Operator test fixtures in sync.
+central:
+  spec:
+    central:
+      resources:
+        requests:
+          cpu: 150m
+          memory: 1Gi
+        limits:
+          memory: 1Gi
+      db:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1Gi
+          limits:
+            memory: 1Gi
+    centralWorker:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 128Mi
+    scannerV4:
+      db:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 4Gi
+          limits:
+            memory: 4Gi
+      indexer:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 512Mi
+          limits:
+            memory: 512Mi
+      matcher:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 256Mi
+securedCluster:
+  spec:
+    sensor:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 512Mi
+        limits:
+          memory: 512Mi

@@ -6,16 +6,16 @@ spec:
         resources:
           limits:
             cpu: null
-            memory: 4Gi
+            memory: 1Gi
           requests:
-            cpu: 250m
+            cpu: 100m
             memory: 1Gi
       containers:
       - name: central-db
         resources:
           limits:
             cpu: null
-            memory: 4Gi
+            memory: 1Gi
           requests:
-            cpu: 250m
+            cpu: 100m
             memory: 1Gi

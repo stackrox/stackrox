@@ -1,4 +1,4 @@
-# Roxie config mirroring the legacy LOCAL_DEPLOYMENT=true (deploy-local.sh) settings.
+# Local development settings using the QA/UI resource budget.
 # Reduces resource requests/limits for local dev clusters, disables telemetry,
 # monitoring, and scanner autoscaling.
 #
@@ -10,19 +10,17 @@ central:
     central:
       resources:
         requests:
-          cpu: 250m
+          cpu: 150m
           memory: 1Gi
         limits:
-          cpu: 1
-          memory: 4Gi
+          memory: 1Gi
       db:
         resources:
           requests:
-            cpu: 250m
+            cpu: 100m
             memory: 1Gi
           limits:
-            cpu: 1
-            memory: 4Gi
+            memory: 1Gi
       telemetry:
         enabled: false
 
@@ -34,11 +32,10 @@ central:
       enabled: true
       resources:
         requests:
-          cpu: 10m
+          cpu: 50m
           memory: 128Mi
         limits:
           memory: 128Mi
-
     scannerV4:
       indexer:
         scaling:
@@ -47,11 +44,10 @@ central:
           replicas: 1
         resources:
           requests:
-            cpu: 250m
-            memory: 1500Mi
+            cpu: 50m
+            memory: 512Mi
           limits:
-            cpu: 1000m
-            memory: 2Gi
+            memory: 512Mi
       matcher:
         scaling:
           autoScaling: Disabled
@@ -59,20 +55,17 @@ central:
           replicas: 1
         resources:
           requests:
-            cpu: 250m
-            memory: 1Gi
+            cpu: 50m
+            memory: 256Mi
           limits:
-            cpu: 1000m
-            memory: 5500Mi
+            memory: 256Mi
       db:
         resources:
           requests:
-            cpu: 400m
-            memory: 2Gi
+            cpu: 100m
+            memory: 4Gi
           limits:
-            cpu: 1000m
-            memory: 2500Mi
-
+            memory: 4Gi
 securedCluster:
   namespace: stackrox
   spec:
@@ -83,9 +76,10 @@ securedCluster:
     sensor:
       resources:
         requests:
-          cpu: 500m
-          memory: 500Mi
-
+          cpu: 50m
+          memory: 512Mi
+        limits:
+          memory: 512Mi
     perNode:
       collector:
         collection: CORE_BPF

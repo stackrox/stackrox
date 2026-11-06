@@ -5,5 +5,7 @@ spec:
       - name: sensor
         resources:
           requests:
-            cpu: 500m
-            memory: 500Mi
+            cpu: 50m
+            memory: 512Mi
+          limits:
+            memory: 512Mi

@@ -6,7 +6,7 @@ spec:
         resources:
           limits:
             cpu: null
-            memory: 4Gi
+            memory: 1Gi
           requests:
-            cpu: 250m
+            cpu: 150m
             memory: 1Gi
