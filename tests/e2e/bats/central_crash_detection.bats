@@ -1,0 +1,375 @@
+#!/usr/bin/env bats
+# shellcheck disable=SC1091,SC2034,SC2119,SC2120,SC2153
+#
+# Unit tests for Central pod crash-state detection in tests/e2e/lib.sh:
+#   - check_central_pod_error_state()
+#   - wait_for_ready_deployment() Central-specific crash check
+#   - wait_for_api() fail-fast on startup crash (CRITICAL regression test)
+#
+# Test strategy:
+#   Place a kubectl stub on PATH that returns fixture JSON per scenario.
+#   Override retrying_kubectl to call the stub directly (skip retry wrapper).
+#   Override sleep to be instant (no real delays) for deterministic timing.
+#   Track kubectl calls in KUBECTL_CALL_LOG for call-order assertions.
+
+load "../../../scripts/test_helpers.bats"
+
+FIXTURE_DIR="${BATS_TEST_DIRNAME}/fixtures"
+
+setup() {
+    BIN_DIR="${BATS_TEST_TMPDIR}/bin"
+    mkdir -p "${BIN_DIR}"
+
+    KUBECTL_CALL_LOG="${BATS_TEST_TMPDIR}/kubectl-calls.log"
+    : > "${KUBECTL_CALL_LOG}"
+
+    # Default fixture: CrashLoopBackOff (overridden per test as needed).
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+    # Default deployment fixture: never-ready.
+    KUBECTL_DEPLOY_READY="false"
+
+    export KUBECTL_CALL_LOG KUBECTL_POD_FIXTURE KUBECTL_DEPLOY_READY
+
+    # Stub envsubst (not available in all dev environments; the CI image has it).
+    echo '#!/usr/bin/env bash' > "${BIN_DIR}/envsubst"
+    chmod +x "${BIN_DIR}/envsubst"
+
+    # Create kubectl stub that dispatches on subcommand.
+    cat > "${BIN_DIR}/kubectl" <<'STUB'
+#!/usr/bin/env bash
+# Append the full command for call-order assertions.
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get pods"*|*"get pod"*"-l"*)
+        # Pod listing — return the fixture if set, else empty.
+        if [[ -n "${KUBECTL_POD_FIXTURE:-}" && -f "${KUBECTL_POD_FIXTURE}" ]]; then
+            cat "${KUBECTL_POD_FIXTURE}"
+        else
+            echo '{"apiVersion":"v1","kind":"PodList","items":[]}'
+        fi
+        ;;
+    *"get deploy/"*|*"get deployment/"*)
+        # Deployment readiness check.
+        if [[ "${KUBECTL_DEPLOY_READY}" == "true" ]]; then
+            echo '{"status":{"replicas":1,"readyReplicas":1}}'
+        else
+            echo '{"status":{"replicas":1,"readyReplicas":0}}'
+        fi
+        ;;
+    *"logs"*)
+        echo "FATAL: migration schema check failed"
+        echo "panic: unable to initialize database"
+        ;;
+    *"get pod"*"-o json"*)
+        # Single pod state query (diagnostics).
+        pod_name=""
+        for arg in $*; do
+            if [[ "$arg" =~ ^central- ]]; then
+                pod_name="$arg"
+                break
+            fi
+        done
+        if [[ -n "${KUBECTL_POD_FIXTURE:-}" && -f "${KUBECTL_POD_FIXTURE}" ]]; then
+            if [[ -n "$pod_name" ]]; then
+                jq --arg name "$pod_name" '.items[] | select(.metadata.name == $name)' "${KUBECTL_POD_FIXTURE}" 2>/dev/null || echo '{}'
+            else
+                jq '.items[0]' "${KUBECTL_POD_FIXTURE}" 2>/dev/null || echo '{}'
+            fi
+        else
+            echo '{}'
+        fi
+        ;;
+    *)
+        echo '{}'
+        ;;
+esac
+STUB
+    chmod +x "${BIN_DIR}/kubectl"
+    export PATH="${BIN_DIR}:${PATH}"
+
+    # Source lib.sh (which sources scripts/lib.sh for info/die, etc.).
+    source "${BATS_TEST_DIRNAME}/../lib.sh"
+
+    # Override retrying_kubectl to use the stub directly (skip retry wrapper).
+    retrying_kubectl() {
+        # Drain stdin like the real retry-kubectl.sh does.
+        cat > /dev/null
+        kubectl "$@"
+    }
+    export -f retrying_kubectl
+
+    # Override sleep to be instant for deterministic tests.
+    sleep() {
+        : # no-op
+    }
+    export -f sleep
+
+    # Override curl (used by wait_for_api ping loop) — should not be reached
+    # in crash-during-readiness tests, but fail visibly if it is.
+    curl() {
+        echo "UNEXPECTED: curl should not be reached in readiness-crash tests" >&2
+        return 1
+    }
+    export -f curl
+}
+
+# =============================================================================
+# check_central_pod_error_state — individual state detection
+# =============================================================================
+
+@test "check_central_pod_error_state detects CrashLoopBackOff" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+    run check_central_pod_error_state stackrox
+    assert_success   # returns 0 = crash detected
+    assert_output --partial "crash state detected"
+    assert_output --partial "CrashLoopBackOff"
+    # Per-pod diagnostics: pod name and container name are included.
+    assert_output --partial "central-abc123-def45/central"
+}
+
+@test "check_central_pod_error_state detects current terminated OOMKilled" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-oomkilled.json"
+    run check_central_pod_error_state stackrox
+    assert_success
+    assert_output --partial "OOMKilled"
+    assert_output --partial "central-abc123-def45/central"
+}
+
+@test "check_central_pod_error_state detects current terminated Error" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-error.json"
+    run check_central_pod_error_state stackrox
+    assert_success
+    assert_output --partial "terminated"
+    assert_output --partial "Error"
+    assert_output --partial "central-abc123-def45/central"
+}
+
+@test "check_central_pod_error_state reports healthy pod as no crash" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-healthy.json"
+    run check_central_pod_error_state stackrox
+    assert_failure   # returns 1 = no crash
+    refute_output --partial "crash state detected"
+}
+
+@test "check_central_pod_error_state ignores recovered OOM in lastState (no false positive)" {
+    # Regression test for the 3e865ed fix: a pod that OOMed once but recovered
+    # to running state must NOT be flagged. Only current .state matters.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-recovered-oom.json"
+    run check_central_pod_error_state stackrox
+    assert_failure   # returns 1 = no crash
+    refute_output --partial "crash state detected"
+    refute_output --partial "OOMKilled"
+}
+
+@test "check_central_pod_error_state detects crash in second pod (multi-pod)" {
+    # During a rolling update, multiple app=central pods coexist.
+    # The check must inspect all pods, not just items[0].
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-two-pods-second-crashing.json"
+    run check_central_pod_error_state stackrox
+    assert_success
+    assert_output --partial "crash state detected"
+    # Must name the CRASHING pod, not the healthy one.
+    assert_output --partial "central-new-xyz78/central"
+    assert_output --partial "CrashLoopBackOff"
+    # Logs should be fetched for the crashing pod.
+    assert_output --partial "logs from pod central-new-xyz78"
+}
+
+@test "check_central_pod_error_state handles kubectl failure gracefully" {
+    # Simulate kubectl failure by pointing to a nonexistent fixture.
+    KUBECTL_POD_FIXTURE="/nonexistent/path.json"
+    run check_central_pod_error_state stackrox
+    assert_failure   # returns 1 = no crash (safe default)
+}
+
+@test "check_central_pod_error_state handles empty pod list" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-empty.json"
+    run check_central_pod_error_state stackrox
+    assert_failure   # returns 1 = no crash
+    refute_output --partial "crash state detected"
+}
+
+# =============================================================================
+# wait_for_ready_deployment — Central-specific crash check integration
+# =============================================================================
+
+@test "wait_for_ready_deployment with Central crash dies with crash message, not timeout" {
+    # Central deployment is never ready + pod is crashing.
+    KUBECTL_DEPLOY_READY="false"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+
+    # max_seconds=300 is passed as a positional arg (not MAX_WAIT_SECONDS env).
+    # run executes in a subshell; die's exit 1 is captured.
+    run bash -c '
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        wait_for_ready_deployment stackrox central 300
+    ' 2>&1
+
+    assert_failure
+    # Must show crash-specific message.
+    assert_output --partial "crash state"
+    # Must NOT show generic readiness timeout.
+    refute_output --partial "wait_for_ready_deployment() timeout"
+}
+
+@test "wait_for_ready_deployment with non-Central deployment does not check crash state" {
+    # scanner-v4-indexer deployment: never ready, crash check should NOT run.
+    KUBECTL_DEPLOY_READY="false"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+
+    # Run with very low timeout so it times out quickly.
+    run bash -c '
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        wait_for_ready_deployment stackrox scanner-v4-indexer 1
+    ' 2>&1
+
+    assert_failure
+    # For non-Central deployments, only the generic timeout fires.
+    assert_output --partial "wait_for_ready_deployment() timeout"
+    refute_output --partial "crash state"
+}
+
+@test "wait_for_ready_deployment generic timeout still works for Central when not crashing" {
+    # Central deployment never ready, but pod is healthy (no crash to detect).
+    KUBECTL_DEPLOY_READY="false"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-healthy.json"
+
+    run bash -c '
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        wait_for_ready_deployment stackrox central 1
+    ' 2>&1
+
+    assert_failure
+    # Falls through to generic timeout since pod is healthy.
+    assert_output --partial "wait_for_ready_deployment() timeout"
+    refute_output --partial "crash state"
+}
+
+# =============================================================================
+# wait_for_api — CRITICAL: fail-fast on startup crash before readiness timeout
+#
+# This is the primary regression test proving the blocker fix works.
+# wait_for_api() calls wait_for_ready_deployment() which now checks for
+# crash states. A crashing Central must be detected BEFORE the readiness
+# timeout, with crash diagnostics instead of a generic timeout message.
+# =============================================================================
+
+@test "wait_for_api fails fast on startup crash — crash detected before readiness timeout" {
+    # Setup: deployment never becomes ready + pod is in CrashLoopBackOff.
+    KUBECTL_DEPLOY_READY="false"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+
+    # Use a wrapper script to source lib.sh and call wait_for_api in a
+    # subprocess. timeout(1) cannot call an unexported shell function directly,
+    # so we use a bash -c wrapper. The 30-second external timeout is a safety
+    # net (sleep is mocked to be instant, so this should complete in <1s).
+    run bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
+        export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        # Override retrying_kubectl and sleep for deterministic execution.
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        # Set a high MAX_WAIT_SECONDS — the crash check should fire well before.
+        MAX_WAIT_SECONDS=300 wait_for_api stackrox
+    ' 2>&1
+
+    # Assert intended failure (exit 1 from die), NOT timeout (exit 124).
+    assert_failure
+    [[ "$status" -eq 1 ]]
+
+    # Must print crash diagnostics.
+    assert_output --partial "crash state"
+    assert_output --partial "CrashLoopBackOff"
+
+    # Must NOT print the generic readiness timeout.
+    refute_output --partial "wait_for_ready_deployment() timeout"
+
+    # Call-order assertion: verify crash check ran during readiness wait.
+    # The kubectl stub logs every call; "get pods" proves crash check executed.
+    assert [ -f "${KUBECTL_CALL_LOG}" ]
+    run grep -c "get pods" "${KUBECTL_CALL_LOG}"
+    assert_success
+    # Crash check should have fired (at iteration 5), meaning at most ~5
+    # deployment readiness checks plus one crash check.
+    local deploy_checks
+    deploy_checks="$(grep -c "get deploy" "${KUBECTL_CALL_LOG}" || true)"
+    # Fail-fast: should have far fewer than MAX_WAIT_SECONDS/5=60 iterations.
+    [[ "$deploy_checks" -le 10 ]]
+}
+
+@test "wait_for_api prints crash log markers from affected pod" {
+    KUBECTL_DEPLOY_READY="false"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+
+    run bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
+        export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        MAX_WAIT_SECONDS=300 wait_for_api stackrox
+    ' 2>&1
+
+    assert_failure
+    # Log marker from kubectl stub: diagnostic logs are shown.
+    assert_output --partial "migration schema check failed"
+}
+
+# =============================================================================
+# wait_for_api — ping-loop crash detection (deployment ready, then crash)
+#
+# Covers the secondary path: Central passes the readiness gate but crashes
+# during the ping loop (e.g., post-startup migration failure or OOM under load).
+# The every-5th-iteration check in the ping loop should detect it.
+# =============================================================================
+
+@test "wait_for_api ping loop detects crash after deployment becomes ready" {
+    # Deployment IS ready (passes readiness gate), but pod is crashing.
+    KUBECTL_DEPLOY_READY="true"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+
+    run bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
+        export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        # curl always fails (API unreachable because pod is crashing).
+        curl() { echo "curl: (7) Failed to connect"; return 7; }
+        export -f curl
+        MAX_WAIT_SECONDS=300 wait_for_api stackrox
+    ' 2>&1
+
+    assert_failure
+    [[ "$status" -eq 1 ]]
+    # Crash diagnostics from the ping-loop check.
+    assert_output --partial "crash state"
+    assert_output --partial "CrashLoopBackOff"
+    # Confirm the ping loop was entered (deployment readiness passed).
+    assert_output --partial "Deployment central is ready"
+}

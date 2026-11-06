@@ -1586,6 +1586,7 @@ wait_for_ready_deployment() {
 
     info "Waiting for deployment ${deployment_name} to be ready in namespace ${namespace}"
 
+    local iteration=0
     start_time="$(date '+%s')"
     while true; do
         deployment_json="$(retrying_kubectl </dev/null -n "${namespace}" get "deploy/${deployment_name}" -o json)"
@@ -1600,6 +1601,16 @@ wait_for_ready_deployment() {
         if [[ "$replicas" =~ ^[0-9]+$ && "$replicas" -gt 0 && "$replicas" == "$ready_replicas" ]]; then
             sleep 10
             break
+        fi
+
+        # Central-specific: check for pod crash states every 5th iteration
+        # (~25s) so we fail fast with diagnostics instead of waiting for the
+        # full deployment timeout. Other deployments are unaffected.
+        iteration=$(( iteration + 1 ))
+        if [[ "$deployment_name" == "central" ]] && (( iteration % 5 == 0 )); then
+            if check_central_pod_error_state "$namespace"; then
+                die "Central pod is in a crash state during deployment readiness wait."
+            fi
         fi
 
         # Timeout case
@@ -1647,6 +1658,73 @@ wait_for_scanner_V4() {
     wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$matcher_max_seconds"
 }
 
+# Description: Check whether any Central pod is in a crash or error state
+#   (CrashLoopBackOff, OOMKilled, Error). Inspects all pods matching the
+#   app=central selector, not just the first. Uses current container state
+#   only (.state.waiting/.state.terminated), not .lastState, to avoid false
+#   positives from previous restarts. When a crash state is detected,
+#   per-pod/container diagnostic information (logs and state) is printed.
+# Arguments:
+#   $1 - Kubernetes namespace (default: stackrox)
+# Returns:
+#   0 - crash state detected
+#   1 - no crash state (pods are healthy or not found)
+check_central_pod_error_state() {
+    local namespace="${1:-stackrox}"
+    local pod_json
+    local crash_info
+
+    pod_json="$(retrying_kubectl </dev/null -n "$namespace" get pods -l "app=central" -o json 2>/dev/null || true)"
+    if [[ -z "$pod_json" ]]; then
+        return 1
+    fi
+
+    # Inspect all pods and all containers for current crash/error states.
+    # Output format: "pod-name/container-name: state-type — reason"
+    crash_info="$(echo "$pod_json" | jq -r '
+        .items[] | .metadata.name as $pod | .status.containerStatuses[]? | (
+            select(.state.waiting.reason == "CrashLoopBackOff") |
+            "\($pod)/\(.name): waiting — \(.state.waiting.reason)"
+        ), (
+            select(.state.terminated.reason == "OOMKilled" or .state.terminated.reason == "Error") |
+            "\($pod)/\(.name): terminated — \(.state.terminated.reason)"
+        )
+    ' 2>/dev/null || true)"
+
+    if [[ -n "$crash_info" ]]; then
+        info "Central pod crash state detected!"
+        while IFS= read -r line; do
+            info "  ${line}"
+        done <<< "$crash_info"
+
+        # Show targeted diagnostics for each affected pod.
+        local affected_pods
+        affected_pods="$(echo "$crash_info" | cut -d'/' -f1 | sort -u)"
+        while IFS= read -r pod_name; do
+            [[ -z "$pod_name" ]] && continue
+            info "Last 30 lines of logs from pod ${pod_name}:"
+            kubectl logs -n "$namespace" "$pod_name" --all-containers --tail=30 2>/dev/null || true
+            info "Container state for pod ${pod_name}:"
+            kubectl get pod -n "$namespace" "$pod_name" -o json 2>/dev/null \
+                | jq -r '.status.containerStatuses[]? |
+                    "\(.name): state=\(.state | keys[0]) ready=\(.ready) restartCount=\(.restartCount)"' \
+                || true
+        done <<< "$affected_pods"
+        return 0
+    fi
+
+    return 1
+}
+
+# Description: Wait for the Central API to become ready by polling /v1/ping.
+#   Requires multiple consecutive successful responses before declaring readiness.
+#   Checks for Central pod crash states every 5th iteration to fail fast with
+#   diagnostic output instead of waiting for the full timeout.
+# Arguments:
+#   $1 - Kubernetes namespace for Central (default: stackrox)
+# Returns:
+#   Exits 1 on failure (timeout or pod crash); exports API_HOSTNAME, API_PORT,
+#   API_ENDPOINT on success.
 # shellcheck disable=SC2120
 wait_for_api() {
     local central_namespace=${1:-stackrox}
@@ -1694,6 +1772,12 @@ wait_for_api() {
     set +e
     # shellcheck disable=SC2034
     for i in $(seq 1 150); do
+        if (( i % 5 == 0 )); then
+            if check_central_pod_error_state "$central_namespace"; then
+                info "Central pod is in a crash state — failing fast instead of waiting for timeout."
+                exit 1
+            fi
+        fi
         pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
         pong_exitstatus="$?"
         status="$(echo "$pong" | jq -r '.status')"
