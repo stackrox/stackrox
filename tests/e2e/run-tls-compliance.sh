@@ -165,7 +165,28 @@ SCAN_RESULTS="$TLS_SCANNER_DIR/artifacts/results.json"
 
 popd > /dev/null
 
-# --- Step 5: Validate results ---
+# --- Step 5: Check pod logs for TLS errors ---
+
+TLS_ERROR_PATTERN='tls:|x509:|TLS handshake error|SSL_ERROR|SSL routines|SSL error|Handshake failed|certificate verify failed|could not accept SSL connection'
+info "Checking pod logs for TLS errors..."
+tls_errors=""
+for pod in $(oc get pods -n "$ACS_NS" -o name | grep -v tls-scanner); do
+    pod_errors=$(oc logs "$pod" -n "$ACS_NS" --all-containers 2>/dev/null \
+        | grep -iE "$TLS_ERROR_PATTERN" || true)
+    if [[ -n "$pod_errors" ]]; then
+        info "TLS errors in $pod:"
+        echo "$pod_errors"
+        tls_errors+="$pod_errors"$'\n'
+    fi
+done
+
+if [[ -n "$tls_errors" ]]; then
+    fail "TLS errors found in pod logs"
+else
+    info "No TLS errors in pod logs."
+fi
+
+# --- Step 6: Validate scan results ---
 
 if [[ ! -f "$SCAN_RESULTS" ]]; then
     fail "Scan results not found at $SCAN_RESULTS"
@@ -232,13 +253,13 @@ else
     info "All endpoints support ML-KEM (exceptions: ${MLKEM_EXCEPTIONS})."
 fi
 
-# --- Step 6: BAT tests ---
+# --- Step 7: BAT tests ---
 
 info "Running BAT tests..."
 roxctl --insecure-skip-tls-verify -e "${API_ENDPOINT}" -p "${ROX_ADMIN_PASSWORD}" \
     central whoami || fail "roxctl central whoami failed"
 
-# --- Step 7: Collect artifacts ---
+# --- Step 8: Collect artifacts ---
 
 artifact_dest="${ARTIFACT_DIR:-/tmp/tls-compliance-artifacts}"
 mkdir -p "$artifact_dest"
