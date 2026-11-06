@@ -22,7 +22,7 @@ os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 ClusterTestRunner(
-    cluster=GKECluster("byodb-test", machine_type="e2-standard-8"),
+    cluster=GKECluster("byodb-test", machine_type="n4d-standard-8"),
     pre_test=PreSystemTests(),
     test=BYODBTest(),
     post_test=PostClusterTest(

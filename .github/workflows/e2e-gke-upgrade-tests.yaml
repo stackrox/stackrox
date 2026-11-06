@@ -62,7 +62,7 @@ jobs:
 
     - name: Create GKE cluster
       env:
-        MACHINE_TYPE: e2-standard-16
+        MACHINE_TYPE: n4d-standard-16
         # Leave room for the scale workload alongside both Scanner versions.
         NUM_NODES: "1"
         GKE_SPOT: "false"
@@ -244,7 +244,7 @@ jobs:
 
     - name: Create GKE cluster
       env:
-        MACHINE_TYPE: e2-standard-16
+        MACHINE_TYPE: n4d-standard-16
         # Leave room for the scale workload alongside both Scanner versions.
         NUM_NODES: "1"
         GKE_SPOT: "false"
@@ -408,7 +408,7 @@ jobs:
 
     - name: Create GKE cluster
       env:
-        MACHINE_TYPE: e2-standard-8
+        MACHINE_TYPE: n4d-standard-8
         NUM_NODES: "1"
         GKE_SPOT: "false"
       timeout-minutes: 20

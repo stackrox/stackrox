@@ -35,9 +35,9 @@ jobs:
       infra-flavor: openshift-4
       infra-args: |
         openshift-version=ocp/stable
-        master-node-type=e2-standard-4
+        master-node-type=n4d-standard-4
         master-node-count=3
-        worker-node-type=e2-standard-8
+        worker-node-type=n4d-standard-8
         worker-node-count=3
         ssd-storage-class=true
         fips-enabled=true

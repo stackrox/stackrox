@@ -66,7 +66,7 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
         # Selecting nodes with KVM support
         set_ci_shared_export WORKER_NODE_TYPE n2-standard-8
     else
-        set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
+        set_ci_shared_export WORKER_NODE_TYPE n4d-standard-8
     fi
 fi
 
