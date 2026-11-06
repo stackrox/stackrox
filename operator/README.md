@@ -331,17 +331,21 @@ The above targets use `kuttl` internally, so if something goes wrong you may fin
 ### Upgrading a chart with duplicate related-image variables
 
 Older charts can render duplicate `RELATED_IMAGE_*` entries when using
-`manager.envOverrides`. A client-side upgrade can remove the override along with
-the duplicate. Recreate only the operator Deployment once when upgrading:
+`manager.envOverrides`. During the first client-side upgrade, Helm's three-way
+patch can delete both entries by name, temporarily removing the override.
 
-- **Helm:** delete the operator Deployment, then run your usual
-  `helm upgrade --install` with the updated chart and a complete values file,
-  including unrelated custom settings. Avoid `--reuse-values`, which can retain
-  the old chart's `manager.env` defaults and reintroduce duplicates.
+- **Helm 4:** use `helm upgrade --server-side=true` with the updated chart to
+  preserve the override on the first upgrade. Helm 4's default `auto` mode keeps
+  client-side updates for releases originally installed with Helm 3.
+- **Helm 3 or client-side Helm 4:** run the same `helm upgrade` command twice
+  with the updated chart and values. The first upgrade can remove the override;
+  the second restores it. Verify the live Deployment after the second upgrade.
 - **Argo CD:** sync the updated chart, delete the operator Deployment, then sync
-  again to recreate it from the updated manifest.
+  again to recreate it from the updated manifest. Deletion temporarily
+  interrupts the operator.
 
-Keep your image overrides in the supplied values. If you explicitly set
-`manager.env`, remove its empty related-image placeholders too. Deleting the
-Deployment temporarily interrupts the operator. After recreation, check that
-each configured `RELATED_IMAGE_*` appears once with the intended value.
+Supply a complete values file on each upgrade, including your image overrides
+and unrelated custom settings. Avoid `--reuse-values`, which can retain the old
+chart's `manager.env` defaults and reintroduce duplicates. If you explicitly set
+`manager.env`, remove its empty related-image placeholders too. After upgrading,
+check that each configured `RELATED_IMAGE_*` appears once with the intended value.
