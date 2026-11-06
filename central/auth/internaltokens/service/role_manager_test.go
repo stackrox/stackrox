@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -74,6 +75,27 @@ func TestCreateSensorRole(t *testing.T) {
 	}
 }
 
+func TestCreateScopedRolesKeepsPermissionsSeparate(t *testing.T) {
+	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+	expectPermissionSetLookup(t, roles, []string{"Deployment Reader", "Image Reader"}, []*storage.PermissionSet{
+		{Name: "Image Reader", ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS}},
+		{Name: "Deployment Reader", ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS}},
+	}, nil)
+	access, err := (&roleManager{roles}).createScopedRoles(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
+		ScopedPermissionSets: []*v1.ScopedPermissionSet{
+			{PermissionSetName: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
+			{PermissionSetName: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []*tokens.InternalRole{
+		{RoleName: internalRoleName, Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}}},
+		{RoleName: internalRoleName, Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Image"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}}},
+	}, access)
+}
+
 func TestCreateSensorRoleFailsClosed(t *testing.T) {
 	manager := &roleManager{}
 	_, err := manager.createSensorRole(t.Context(), nil)
@@ -111,6 +133,7 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissions map[string]storage.Access
 		expected    map[storage.Access][]string
+		denied      bool
 	}{
 		"global permission": {
 			permissions: map[string]storage.Access{
@@ -118,17 +141,14 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 				"Image":      storage.Access_READ_ACCESS,
 				"Access":     storage.Access_READ_ACCESS,
 			},
-			expected: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Access", "Deployment", "Image"}},
+			denied: true,
 		},
 		"write permission": {
 			permissions: map[string]storage.Access{
 				"Deployment": storage.Access_READ_ACCESS,
 				"Image":      storage.Access_READ_WRITE_ACCESS,
 			},
-			expected: map[storage.Access][]string{
-				storage.Access_READ_ACCESS:       {"Deployment"},
-				storage.Access_READ_WRITE_ACCESS: {"Image"},
-			},
+			denied: true,
 		},
 		"missing permission": {
 			permissions: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
@@ -146,6 +166,11 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
 					PermissionSetNames: []string{centralproxy.ConsoleProxyPermissionSetName}})
+			if tc.denied {
+				require.ErrorIs(t, err, errox.InvalidArgs)
+				assert.Nil(t, role)
+				return
+			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, role.Permissions)
 		})
@@ -161,7 +186,7 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 				Name: centralproxy.ConsoleProxyPermissionSetName,
 				ResourceToAccess: map[string]storage.Access{
 					"Deployment":   storage.Access_READ_ACCESS,
-					"Image":        storage.Access_READ_WRITE_ACCESS,
+					"Image":        storage.Access_NO_ACCESS,
 					"Access":       storage.Access_NO_ACCESS,
 					"NetworkGraph": storage.Access_READ_ACCESS,
 				},
@@ -169,10 +194,10 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 			{
 				Name: centralproxy.MetricsPermissionSetName,
 				ResourceToAccess: map[string]storage.Access{
-					"Deployment":     storage.Access_READ_WRITE_ACCESS,
+					"Deployment":     storage.Access_READ_ACCESS,
 					"Image":          storage.Access_READ_ACCESS,
-					"Access":         storage.Access_READ_ACCESS,
-					"Administration": storage.Access_READ_ACCESS,
+					"Node":           storage.Access_READ_ACCESS,
+					"Administration": storage.Access_NO_ACCESS,
 				},
 			},
 		}, nil)
@@ -187,8 +212,8 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 		RoleName: internalRoleName,
 		Clusters: tokens.ClusterScopes{"sensor-cluster": {"*"}},
 		Permissions: map[storage.Access][]string{
-			storage.Access_READ_ACCESS:       {"Access", "Administration", "NetworkGraph"},
-			storage.Access_READ_WRITE_ACCESS: {"Deployment", "Image"},
+			storage.Access_READ_ACCESS: {"Deployment", "Image", "NetworkGraph", "Node"},
+			storage.Access_NO_ACCESS:   {"Access", "Administration"},
 		},
 	}, role)
 }
