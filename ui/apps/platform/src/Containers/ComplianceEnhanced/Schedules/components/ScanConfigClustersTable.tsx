@@ -5,8 +5,11 @@ import { Flex, FlexItem, Pagination, Title } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { ThProps } from '@patternfly/react-table';
 
+import TBodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { ClusterScanStatus } from 'services/ComplianceScanConfigurationService';
+import { getTableUIState } from 'utils/getTableUIState';
 
+import { getClusterScanErrors } from '../compliance.scanConfigs.utils';
 import ComplianceClusterStatus from './ComplianceClusterStatus';
 
 type ScanConfigClustersTableProps = {
@@ -52,7 +55,7 @@ function ScanConfigClustersTable({
 
     // Note that we perform the sort as part of the component's render logic and not in onSort.
     // We shouldn't store the list of data in state because we don't want to have to sync that with props.
-    const sortedClusters = clusterScanStatuses.sort((a, b) => {
+    const sortedClusters = [...clusterScanStatuses].sort((a, b) => {
         const aValue = getSortableRowValues(a)[activeSortIndex];
         const bValue = getSortableRowValues(b)[activeSortIndex];
         if (typeof aValue === 'number' && typeof bValue === 'number') {
@@ -90,6 +93,12 @@ function ScanConfigClustersTable({
     const startNumber = (page - 1) * perPage;
     const endNumber = page * perPage;
     const clustersWindow = sortedClusters.slice(startNumber, endNumber);
+    const tableState = getTableUIState({
+        isLoading: false,
+        data: clusterScanStatuses.length > 0 ? clustersWindow : [],
+        error: undefined,
+        searchFilter: {},
+    });
 
     return (
         <Flex>
@@ -114,18 +123,30 @@ function ScanConfigClustersTable({
                         </Th>
                     </Tr>
                 </Thead>
-                <Tbody>
-                    {clustersWindow.map((cluster) => {
-                        return (
-                            <Tr key={cluster.clusterId}>
-                                <Td dataLabel="Cluster">{cluster.clusterName}</Td>
-                                <Td dataLabel="Scan schedule status">
-                                    <ComplianceClusterStatus errors={cluster.errors} />
-                                </Td>
-                            </Tr>
-                        );
-                    })}
-                </Tbody>
+                <TBodyUnified
+                    tableState={tableState}
+                    colSpan={2}
+                    emptyProps={{
+                        title: 'No scan status available',
+                        message: 'This scan schedule does not have status for any clusters.',
+                    }}
+                    renderer={({ data }) => (
+                        <Tbody>
+                            {data.map((cluster) => {
+                                return (
+                                    <Tr key={cluster.clusterId}>
+                                        <Td dataLabel="Cluster">{cluster.clusterName}</Td>
+                                        <Td dataLabel="Scan schedule status">
+                                            <ComplianceClusterStatus
+                                                errors={getClusterScanErrors(cluster)}
+                                            />
+                                        </Td>
+                                    </Tr>
+                                );
+                            })}
+                        </Tbody>
+                    )}
+                />
             </Table>
         </Flex>
     );
