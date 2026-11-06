@@ -194,15 +194,15 @@ function wait_for_clusterextension_installed() {
   # Catalog unpacking can take 60-90 seconds on first use
   local -r max_attempts=60
 
-  # Read all fields in one call so they come from the same resourceVersion. The Progressing
-  # message is excluded because it can span lines; it is fetched separately on failure only.
-  # Delimiter must not be IFS whitespace: fields are routinely empty and bash would collapse them.
-  local -r status_jsonpath='{.status.conditions[?(@.type=="Installed")].status}{"|"}{.status.install.bundle.version}{"|"}{.status.conditions[?(@.type=="Progressing")].status}{"|"}{.status.conditions[?(@.type=="Progressing")].reason}'
-
-  local attempt status_line installed_status installed_version progressing_status progressing_reason
+  local attempt status_json installed_status installed_version progressing_status progressing_reason progressing_message
   for (( attempt = 1; attempt <= max_attempts; attempt++ )); do
-    status_line=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath="${status_jsonpath}" 2>/dev/null || echo "")
-    IFS='|' read -r installed_status installed_version progressing_status progressing_reason <<< "${status_line}"
+    # Fetch full JSON once to get consistent snapshot from same resourceVersion
+    status_json=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o json 2>/dev/null || echo "{}")
+
+    installed_status=$(jq -r '.status.conditions[] | select(.type=="Installed") | .status // ""' <<< "$status_json")
+    installed_version=$(jq -r '.status.install.bundle.version // ""' <<< "$status_json")
+    progressing_status=$(jq -r '.status.conditions[] | select(.type=="Progressing") | .status // ""' <<< "$status_json")
+    progressing_reason=$(jq -r '.status.conditions[] | select(.type=="Progressing") | .reason // ""' <<< "$status_json")
 
     if [[ "$installed_status" == "True" ]]; then
       if [[ "${installed_version#v}" == "${expected_version#v}" ]]; then
@@ -216,9 +216,8 @@ function wait_for_clusterextension_installed() {
     # Check if it's in a failed state (but not Retrying, which is normal during catalog unpacking)
     if [[ "$progressing_status" == "False" ]] && [[ "$progressing_reason" == "Failed" ]]; then
       log "ClusterExtension ${extension_name} installation failed"
-      local error_msg
-      error_msg=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get clusterextension "${extension_name}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].message}' 2>/dev/null || echo "")
-      log "Error: ${error_msg}"
+      progressing_message=$(jq -r '.status.conditions[] | select(.type=="Progressing") | .message // ""' <<< "$status_json")
+      log "Error: ${progressing_message}"
       gather_olmv1_resources "${operator_ns}" "${extension_name}"
       return 1
     fi

@@ -2819,12 +2819,12 @@ get_olm_version() {
   fi
 
   local -r min_version="4.20.1"
-  # sort -cV succeeds iff the two lines are already in version order, i.e. ocp_version >= min_version.
-  if printf '%s\n%s\n' "$min_version" "$ocp_version" | sort -cV 2>/dev/null; then
+  # sort -CV succeeds iff the two lines are already in version order, i.e. ocp_version >= min_version.
+  if printf '%s\n%s\n' "$min_version" "$ocp_version" | sort -CV; then
     info "OCP version $ocp_version >= $min_version, using OLMv1" >&2
-    echo "v1"
+    echo "v1"  # Function return value (captured by caller)
   else
     info "OCP version $ocp_version < $min_version, using OLMv0" >&2
-    echo "v0"
+    echo "v0"  # Function return value (captured by caller)
   fi
 }

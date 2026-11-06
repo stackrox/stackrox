@@ -97,6 +97,9 @@ spec:
     catalog:
       packageName: rhacs-operator
       version: "${OPERATOR_VERSION}"
+      selector:
+        matchLabels:
+          olm.operatorframework.io/metadata.name: rhacs-operator-catalog-${NAMESPACE}
   install:
     preflight:
       crdUpgradeSafety:

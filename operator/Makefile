@@ -441,21 +441,18 @@ deploy-dirty-tag-via-olmv0: ## Deploy operator dirty tagged image to the cluster
 # This target ignores filter for dirty tagged images.
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
-# Shared recipe body for deploy-previous-via-olmv0 and deploy-previous-via-olmv1, which differ only
-# in the installer script and in whether KUTTL has to be passed through (only the OLMv0 script waits
-# on a CSV, which common.sh does via kuttl).
-#   $(call deploy_previous_via_olm,<installer script>,<extra env assignments>)
+# Shared recipe body for deploy-previous-via-olmv0 and deploy-previous-via-olmv1.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 define deploy_previous_via_olm
 replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 set -x ;\
-$(2) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(1) $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
+KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(1) $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
 endef
 
 .PHONY: deploy-previous-via-olmv0
 deploy-previous-via-olmv0: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv0.
-	$(SILENT)$(call deploy_previous_via_olm,./hack/olm-operator-install.sh,KUTTL=$(KUTTL))
+	$(SILENT)$(call deploy_previous_via_olm,./hack/olm-operator-install.sh)
 
 .PHONY: deploy-via-chart
 deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
