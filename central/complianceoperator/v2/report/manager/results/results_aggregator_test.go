@@ -191,6 +191,265 @@ type walkByQueryTestCase struct {
 	expectError            bool
 }
 
+func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataTimestampFiltering() {
+	scanStartTime := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
+	cases := map[string]struct {
+		scanStartTimes map[string]*timestamppb.Timestamp
+		checkResults   []*storage.ComplianceOperatorCheckResultV2
+		expectedPass   int
+		expectedFail   int
+		expectedMixed  int
+		expectedTotal  int
+	}{
+		"results after scan start are included": {
+			scanStartTimes: map[string]*timestamppb.Timestamp{
+				"scan-a": scanStartTime,
+			},
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName:       "check-current",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC)),
+				},
+			},
+			expectedPass:  1,
+			expectedTotal: 1,
+		},
+		"results at exact scan start time are included": {
+			scanStartTimes: map[string]*timestamppb.Timestamp{
+				"scan-a": scanStartTime,
+			},
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName:       "check-exact",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: scanStartTime,
+				},
+			},
+			expectedPass:  1,
+			expectedTotal: 1,
+		},
+		"stale results before scan start are excluded": {
+			scanStartTimes: map[string]*timestamppb.Timestamp{
+				"scan-a": scanStartTime,
+			},
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName:       "check-stale",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_FAIL,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 6, 10, 0, 0, 0, time.UTC)),
+				},
+			},
+			expectedTotal: 0,
+		},
+		"results with nil LastStartedTime are excluded when scan has start time": {
+			scanStartTimes: map[string]*timestamppb.Timestamp{
+				"scan-a": scanStartTime,
+			},
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName: "check-nil-time",
+					ScanName:  "scan-a",
+					Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
+				},
+			},
+			expectedTotal: 0,
+		},
+		"mixed: stale and current results are filtered correctly": {
+			scanStartTimes: map[string]*timestamppb.Timestamp{
+				"scan-a": scanStartTime,
+			},
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName:       "check-current",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC)),
+				},
+				{
+					CheckName:       "check-stale",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_FAIL,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 6, 10, 0, 0, 0, time.UTC)),
+				},
+				{
+					CheckName: "check-nil-time",
+					ScanName:  "scan-a",
+					Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
+				},
+				{
+					CheckName:       "check-exact",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: scanStartTime,
+				},
+			},
+			expectedPass:  2,
+			expectedTotal: 2,
+		},
+		"no ScanStartTimes passes all results through": {
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName:       "check-1",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 6, 10, 0, 0, 0, time.UTC)),
+				},
+				{
+					CheckName: "check-2",
+					ScanName:  "scan-a",
+					Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
+				},
+			},
+			expectedPass:  1,
+			expectedFail:  1,
+			expectedTotal: 2,
+		},
+		"results from a newer scan cycle are not excluded": {
+			scanStartTimes: map[string]*timestamppb.Timestamp{
+				"scan-a": scanStartTime,
+			},
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName:       "check-current",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC)),
+				},
+				{
+					CheckName:       "check-newer-cycle",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 8, 10, 0, 0, 0, time.UTC)),
+				},
+			},
+			expectedPass:  2,
+			expectedTotal: 2,
+		},
+		"multiple scans filter independently": {
+			scanStartTimes: map[string]*timestamppb.Timestamp{
+				"scan-a": scanStartTime,
+				"scan-b": timestamppb.New(time.Date(2025, 5, 7, 11, 0, 0, 0, time.UTC)),
+			},
+			checkResults: []*storage.ComplianceOperatorCheckResultV2{
+				{
+					CheckName:       "check-a-current",
+					ScanName:        "scan-a",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC)),
+				},
+				{
+					CheckName:       "check-b-stale",
+					ScanName:        "scan-b",
+					Status:          storage.ComplianceOperatorCheckResultV2_FAIL,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 10, 30, 0, 0, time.UTC)),
+				},
+				{
+					CheckName:       "check-b-current",
+					ScanName:        "scan-b",
+					Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+					LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 11, 5, 0, 0, time.UTC)),
+				},
+			},
+			expectedPass:  2,
+			expectedTotal: 2,
+		},
+	}
+	for tname, tc := range cases {
+		s.Run(tname, func() {
+			ctx := context.Background()
+			clusterID := "cluster-0"
+			scanNames := make([]string, 0)
+			for name := range tc.scanStartTimes {
+				scanNames = append(scanNames, name)
+			}
+			if len(scanNames) == 0 {
+				scanNames = []string{"scan-a"}
+			}
+			req := &report.Request{
+				Ctx:          ctx,
+				ScanConfigID: scanConfigID,
+				ClusterIDs:   []string{clusterID},
+				Profiles:     []string{"profile-0"},
+				ClusterData: map[string]*report.ClusterData{
+					clusterID: {
+						ClusterId:      clusterID,
+						ClusterName:    clusterID,
+						ScanNames:      scanNames,
+						ScanStartTimes: tc.scanStartTimes,
+					},
+				},
+			}
+			s.checkResultsDS.EXPECT().WalkByQuery(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+				Times(1).
+				DoAndReturn(func(_ context.Context, _ *v1.Query, fn checkResultWalkByQuery) error {
+					for _, cr := range tc.checkResults {
+						_ = fn(cr)
+					}
+					return nil
+				})
+			s.aggregator.aggreateResults = mockWalkByQueryWrapper
+			res := s.aggregator.GetReportData(req)
+			assert.Equal(s.T(), tc.expectedPass, res.TotalPass)
+			assert.Equal(s.T(), tc.expectedFail, res.TotalFail)
+			assert.Equal(s.T(), tc.expectedMixed, res.TotalMixed)
+			assert.Len(s.T(), res.ResultCSVs[clusterID], tc.expectedTotal)
+		})
+	}
+}
+
+func TestOldestScanStartTime(t *testing.T) {
+	t1 := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
+	t2 := timestamppb.New(time.Date(2025, 5, 7, 11, 0, 0, 0, time.UTC))
+	t3 := timestamppb.New(time.Date(2025, 5, 7, 9, 0, 0, 0, time.UTC))
+	cases := map[string]struct {
+		input    map[string]*timestamppb.Timestamp
+		expected *timestamppb.Timestamp
+	}{
+		"nil map": {
+			input:    nil,
+			expected: nil,
+		},
+		"empty map": {
+			input:    map[string]*timestamppb.Timestamp{},
+			expected: nil,
+		},
+		"single entry": {
+			input:    map[string]*timestamppb.Timestamp{"scan-a": t1},
+			expected: t1,
+		},
+		"returns oldest": {
+			input: map[string]*timestamppb.Timestamp{
+				"scan-a": t1,
+				"scan-b": t2,
+				"scan-c": t3,
+			},
+			expected: t3,
+		},
+		"skips nil values": {
+			input: map[string]*timestamppb.Timestamp{
+				"scan-a": t1,
+				"scan-b": nil,
+			},
+			expected: t1,
+		},
+	}
+	for tname, tc := range cases {
+		t.Run(tname, func(t *testing.T) {
+			result := oldestScanStartTime(tc.input)
+			if tc.expected == nil {
+				assert.Nil(t, result)
+			} else {
+				require.NotNil(t, result)
+				assert.True(t, tc.expected.AsTime().Equal(result.AsTime()))
+			}
+		})
+	}
+}
+
 func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 	clusterID := "cluster-1"
 	cases := map[string]walkByQueryTestCase{
