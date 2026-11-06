@@ -16,11 +16,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/timestamp"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -120,15 +117,11 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 		}
 		successfulScanNames = allScansSet.Difference(failedScansSet).AsSlice()
 	}
-	queryBuilder := search.NewQueryBuilder().
+	scanConfigQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
 		AddExactMatches(search.ClusterID, clusterID).
-		AddExactMatches(search.ComplianceOperatorScanName, successfulScanNames...)
-	if oldestStartTime := oldestScanStartTime(clusterData.ScanStartTimes); oldestStartTime != nil {
-		queryBuilder.AddTimeRangeField(search.ComplianceOperatorCheckLastStartedTime,
-			oldestStartTime.AsTime(), timestamp.InfiniteFuture.GoTime())
-	}
-	scanConfigQuery := queryBuilder.ProtoQuery()
+		AddExactMatches(search.ComplianceOperatorScanName, successfulScanNames...).
+		ProtoQuery()
 	walkFn := g.aggreateResults(ctx, clusterID, &ret, statuses)
 	// No upper-bound filter: results from a newer scan cycle are not excluded. A race where a
 	// later scan completes during aggregation is practically impossible (scans take minutes,
@@ -144,16 +137,6 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 	}
 	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, filteredWalkFn)
 	return ret, statuses, err
-}
-
-func oldestScanStartTime(scanStartTimes map[string]*timestamppb.Timestamp) *timestamppb.Timestamp {
-	var oldest *timestamppb.Timestamp
-	for _, t := range scanStartTimes {
-		if t != nil && (oldest == nil || protoutils.After(oldest, t)) {
-			oldest = t
-		}
-	}
-	return oldest
 }
 
 func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clusterResults *[]*report.ResultRow, checkStatus *checkStatus) checkResultWalkByQuery {
