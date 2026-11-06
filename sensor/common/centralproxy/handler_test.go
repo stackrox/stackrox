@@ -166,8 +166,8 @@ func TestMetricsScrapeRoute(t *testing.T) {
 			[]string{"/metrics"}, http.StatusUnauthorized},
 		{"wrong client identity", "/metrics", http.MethodGet, "other", true,
 			[]string{"/metrics"}, http.StatusUnauthorized},
-		{"legacy Central without allowlist", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
-			nil, http.StatusForbidden},
+		{"metrics does not need an advertised path", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			nil, http.StatusOK},
 		{"POST rejected", "/metrics", http.MethodPost, env.SecureMetricsClientCertCN.Setting(), true,
 			[]string{"/metrics"}, http.StatusForbidden},
 		{"trailing slash rejected", "/metrics/", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
@@ -197,13 +197,26 @@ func TestMetricsScrapeRoute(t *testing.T) {
 			assert.Equal(t, tc.wantCode == http.StatusOK, f.proxyCalled)
 		})
 	}
+	t.Run("Central without scoped token support", func(t *testing.T) {
+		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+		f.handler.metricsEnabled = true
+		centralcaps.Set([]centralsensor.CentralCapability{
+			centralsensor.InternalTokenAPISupported,
+			centralsensor.CentralProxyPathFiltering,
+		})
+		req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+		w := httptest.NewRecorder()
+		f.handler.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.False(t, f.proxyCalled)
+	})
 }
 
 func TestMetricsOptInDoesNotEnableConsoleProxy(t *testing.T) {
 	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
 	f := newProxyTestFixture(t, newDenyingAuthorizer(t))
 	f.handler.metricsEnabled = true
-	allowedpaths.Set([]string{"/metrics", "/api/graphql"})
+	allowedpaths.Set([]string{"/api/graphql"})
 
 	w := f.serveHTTP(t, http.MethodGet, "/api/graphql", map[string]string{"Authorization": "Bearer console-token"})
 	assert.Equal(t, http.StatusForbidden, w.Code)
