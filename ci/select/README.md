@@ -150,29 +150,31 @@ with both rules and the affected path.
 
 ## Pluggable engine and validation
 
-The selector has two seams, both provided by the `deps` value in
-`engines.go`. `engine.Engine` owns a rules language end to end: it
-compiles a rules document and resolves it against changed paths.
-`validation.Validator` lints the same document bytes. Every command
-receives that value, so callers depend only on the interfaces: replacing
-the rules syntax means adding an implementation and returning it from a
-new constructor, and replacing the checks means passing a different
-validator. Tests pass their own `deps` instead of mutating shared state.
+The selector has one seam, provided by the `deps` value in `engines.go`.
+`engine.Engine` owns a rules language end to end: it validates a rules
+document, compiles it, and resolves it against changed paths. Every
+command receives that value, so callers depend only on the interface:
+replacing the rules syntax means adding an implementation and returning
+it from `productionDeps`. Tests pass their own `deps` instead of
+mutating shared state.
 
-The concrete pieces live beside the language they belong to. Today's
-engine is `internal/engine/regexengine`, and its checks — `Full`, the
-complete report, plus their overlap analysis — are in
-`internal/engine/regexengine/rulesvalidation`. The neutral
-`internal/validation` package holds only the `Validator` contract and
-`Trivial`, the no-op end of the seam. A second language therefore brings
-its own validators without touching the contract, and the deferred
-intermediate levels slot in the same way.
+Validation is part of that interface rather than a free-standing
+dependency, because whether a document is well-formed is defined by the
+language it is written in. Two engines may accept entirely different
+YAML, so a validator that does not read the same syntax would either
+wave through documents the engine cannot interpret or reject valid ones.
+`Engine.Validate` hands out the checks that belong to the language, and
+`deps` has no separate validator field to pair incorrectly. Today's
+engine is `internal/engine/regexengine`; its checks — `Full`, the
+complete report, plus their overlap analysis — live beside it in
+`internal/engine/regexengine/rulesvalidation`. `engine.TrivialValidator`
+is the no-op implementation a language may offer to disable authoring
+checks; `regexengine.NewTrivial` wires it. A second language brings its
+own checks, and the deferred intermediate levels slot in the same way.
 
-The split keeps fail-closed intact whichever validator runs: the engine
-itself rejects malformed documents, unknown versions, and uncompilable
-patterns before resolving anything, and undecided or unknown targets
-run. A weaker validator only skips rule-quality findings, never the
-checks the engine needs to evaluate faithfully.
+Because checks can be disabled but not replaced, fail-closed behavior
+does not depend on them: `Compile` rejects malformed documents, unknown
+versions, and uncompilable patterns regardless of the configured depth.
 
 ## Composition of rules
 

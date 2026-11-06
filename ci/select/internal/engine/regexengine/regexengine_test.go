@@ -2,12 +2,14 @@ package regexengine
 
 // regexengine_test.go pins the engine's own fail-closed line: Compile
 // must reject every document it cannot evaluate faithfully, whatever
-// the validator accepted, and Resolve must refuse foreign rules.
+// its checks accepted, and Resolve must refuse foreign rules. It also
+// pins that the language hands out its own checks, at two depths.
 
 import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/ci/select/internal/engine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -64,4 +66,48 @@ func TestResolveRefusesForeignRules(t *testing.T) {
 	d := New().Resolve(nil, foreignRules{})
 	assert.Empty(t, d.Actions)
 	assert.Contains(t, d.Log, "rules compiled by another engine")
+}
+
+func TestValidateUsesThisLanguageChecks(t *testing.T) {
+	t.Parallel()
+	duplicateJob := strings.Replace(baseRules, "jobs: [go]", "jobs: [go, go]", 1)
+	for name, c := range map[string]struct {
+		engine    func() engine.Engine
+		wantError string
+	}{
+		"should run the full checks by default":      {New, `duplicate job "go"`},
+		"should disable authoring checks on request": {NewTrivial, ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			_, err := c.engine().Validate([]byte(duplicateJob))
+			if c.wantError == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, c.wantError)
+		})
+	}
+}
+
+// TestAcceptedDocumentsAlwaysCompile pins the ordering the wiring
+// relies on: whatever this language's default checks accept, Compile can
+// evaluate, so validation can never wave through a document the engine
+// then refuses to interpret.
+func TestAcceptedDocumentsAlwaysCompile(t *testing.T) {
+	t.Parallel()
+	e := New()
+	for name, data := range map[string]string{
+		"minimal policy": baseRules,
+		"exclusions":     strings.Replace(baseRules, "'^docs/'", "'^docs/', '!^docs/testdata/'", 1),
+		"wildcard run":   strings.Replace(baseRules, "skip: [go]", "run: ['*']", 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			_, err := e.Validate([]byte(data))
+			require.NoError(t, err, "fixture must pass validation")
+			_, err = e.Compile([]byte(data))
+			require.NoError(t, err, "accepted documents must compile")
+		})
+	}
 }

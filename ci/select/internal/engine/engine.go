@@ -62,10 +62,15 @@ type Rules = any
 
 // Engine implements one rules language behind the selection callers.
 type Engine interface {
+	// Validate lints one document with this language's checks. The
+	// engine supplies the implementation, so a validator can never be
+	// paired with a language it cannot read.
+	Validate(data []byte) (warnings []string, err error)
+
 	// Compile parses one rules document and prepares it for Resolve.
 	// It must reject anything it cannot evaluate faithfully — malformed
 	// input, unknown versions, uncompilable patterns — so fail-closed
-	// never depends on which validation implementation ran.
+	// never depends on the depth of the configured checks.
 	Compile(data []byte) (Rules, error)
 
 	// Resolve decides run or skip for every target given the changed

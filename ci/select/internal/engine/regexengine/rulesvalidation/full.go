@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/ci/select/internal/engine"
 	"github.com/stackrox/rox/ci/select/internal/rules"
-	"github.com/stackrox/rox/ci/select/internal/validation"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -20,9 +20,8 @@ import (
 // diff to be wrong, and run/skip conflicts, in one numbered report.
 type Full struct{}
 
-// Full implements the engine-agnostic contract, so callers can swap it
-// for any other validator implementation.
-var _ validation.Validator = Full{}
+// Full satisfies the contract this language's engine hands out.
+var _ engine.Validator = Full{}
 
 // Validate runs the whole check pipeline on one document. Contradictions
 // — a pattern excluded by its own rule, the same include text used to

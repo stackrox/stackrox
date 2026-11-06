@@ -1,14 +1,13 @@
 package rulesvalidation
 
-// contract_test.go checks the concrete validator against the
-// engine-agnostic seam: Full and the neutral Trivial must be
-// interchangeable behind validation.Validator, so wiring can swap them
-// without touching callers.
+// contract_test.go checks the concrete validator against the contract
+// the engine hands out: Full and TrivialValidator must be interchangeable
+// behind engine.Validator, so a language can offer either depth.
 
 import (
 	"testing"
 
-	"github.com/stackrox/rox/ci/select/internal/validation"
+	"github.com/stackrox/rox/ci/select/internal/engine"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,11 +15,11 @@ func TestValidatorsShareOneContract(t *testing.T) {
 	t.Parallel()
 	version2 := "version: 2\njobs: [go, postgres]\nrules: []\n"
 	for name, c := range map[string]struct {
-		validator validation.Validator
+		validator engine.Validator
 		wantError bool
 	}{
 		"full should keep rejecting unknown versions":  {Full{}, true},
-		"trivial should keep accepting every document": {validation.Trivial{}, false},
+		"trivial should keep accepting every document": {engine.TrivialValidator{}, false},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

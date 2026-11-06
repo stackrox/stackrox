@@ -1,9 +1,10 @@
 package main
 
-// engines_test.go pins the wiring seams together: swapping the
-// validator changes which findings stop selection, while the engine
-// still fails closed on anything it cannot evaluate. Each test builds
-// its own deps value, so they run in parallel without shared state.
+// engines_test.go pins the wiring: the engine supplies its own checks,
+// so choosing a check depth changes which findings stop selection while
+// the language still fails closed on anything it cannot evaluate. Each
+// test builds its own deps value, so they run in parallel without
+// shared state.
 
 import (
 	"bytes"
@@ -14,12 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/stackrox/rox/ci/select/internal/engine/regexengine"
-	"github.com/stackrox/rox/ci/select/internal/validation"
 )
 
-// trivialDeps pairs today's engine with the no-op validator.
+// trivialDeps is today's language with its authoring checks disabled.
 func trivialDeps() deps {
-	return deps{engine: regexengine.New(), validator: validation.Trivial{}}
+	return deps{engine: regexengine.NewTrivial()}
 }
 
 func TestTrivialValidatorDemonstratesTheSeam(t *testing.T) {
