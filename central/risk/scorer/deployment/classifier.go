@@ -31,7 +31,7 @@ func classifyRisk(inputs classificationInputs) storage.RiskPriorityClassificatio
 	secret := mountsSecret(inputs.deployment)
 	vuln := mergedVulnerabilitySummary(inputs.imageSummaries)
 	if external {
-		if hasKnownExploitedOrCriticalVulnerability(vuln) || (secret && hasImportantOrCriticalVulnerability(vuln)) || powerfulIdentity || privileged {
+		if hasExternallyExploitableVulnerability(vuln) || (secret && hasImportantOrCriticalVulnerability(vuln)) || powerfulIdentity || privileged {
 			return storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW
 		}
 	}
@@ -157,11 +157,18 @@ func mergedVulnerabilitySummary(summaries []*storage.RiskVulnerabilitySummary) *
 	return merged
 }
 
+func hasExternallyExploitableVulnerability(summary *storage.RiskVulnerabilitySummary) bool {
+	if summary == nil {
+		return false
+	}
+	return hasKnownExploitedOrCriticalVulnerability(summary) || summary.GetMaxEpssPercentile() >= highEPSSPercentileThreshold
+}
+
 func hasKnownExploitedOrCriticalVulnerability(summary *storage.RiskVulnerabilitySummary) bool {
 	if summary == nil {
 		return false
 	}
-	return summary.GetCisaKev() || summary.GetKnownRansomwareCampaign() || summary.GetMaxEpssPercentile() >= highEPSSPercentileThreshold || summary.GetCriticalCount() > 0
+	return summary.GetCisaKev() || summary.GetKnownRansomwareCampaign() || summary.GetCriticalCount() > 0
 }
 
 func hasImportantOrCriticalVulnerability(summary *storage.RiskVulnerabilitySummary) bool {
