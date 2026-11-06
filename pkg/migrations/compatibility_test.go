@@ -9,6 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// missingMetadataVersion is valid but requires intentionally absent release metadata.
+const missingMetadataVersion = "99.9.9"
+
 func TestMinimumSupportedForVersion(t *testing.T) {
 	for name, tc := range map[string]struct {
 		target, minimum string
@@ -34,11 +37,14 @@ func TestMinimumSupportedForVersionInvalidTarget(t *testing.T) {
 		"malformed version": "garbage",
 		"negative major":    "-1.2",
 		"negative minor":    "5.-1",
-		"missing metadata":  "5.5.0",
+		"missing metadata":  missingMetadataVersion,
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := MinimumSupportedForVersion(target)
 			require.Error(t, err)
+			if target == missingMetadataVersion {
+				require.ErrorContains(t, err, "missing initial database sequence")
+			}
 		})
 	}
 }
@@ -57,12 +63,15 @@ func TestMinimumGettersInvalidTarget(t *testing.T) {
 	for name, target := range map[string]string{
 		"missing version":  "",
 		"invalid version":  "garbage",
-		"missing metadata": "5.5.0",
+		"missing metadata": missingMetadataVersion,
 	} {
 		t.Run(name, func(t *testing.T) {
 			setMainVersion(t, target)
 			_, expectedErr := MinimumSupportedForVersion(target)
 			require.Error(t, expectedErr)
+			if target == missingMetadataVersion {
+				require.ErrorContains(t, expectedErr, "missing initial database sequence")
+			}
 			minimum, err := MinimumSupportedDBVersion()
 			require.EqualError(t, err, expectedErr.Error())
 			assert.Empty(t, minimum)
@@ -144,10 +153,13 @@ func TestReleaseSequenceMetadata(t *testing.T) {
 }
 
 func TestUnsafeOverrideCannotBypassInvalidTarget(t *testing.T) {
-	for name, target := range map[string]string{"missing version": "", "missing metadata": "5.5.0"} {
+	for name, target := range map[string]string{"missing version": "", "missing metadata": missingMetadataVersion} {
 		t.Run(name, func(t *testing.T) {
 			_, err := CheckUpgradeCompatibility(MigrationVersion{MainVersion: "4.9.0", SeqNum: 213}, target, 227, true)
 			require.Error(t, err)
+			if target == missingMetadataVersion {
+				require.ErrorContains(t, err, "missing initial database sequence")
+			}
 		})
 	}
 }
