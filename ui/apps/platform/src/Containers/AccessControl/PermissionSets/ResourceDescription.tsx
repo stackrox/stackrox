@@ -56,7 +56,7 @@ export type ResourceDescriptionProps = {
     resource: string;
 };
 
-export function ResourceDescription({ resource }: ResourceDescriptionProps): ReactElement {
+function ResourceDescription({ resource }: ResourceDescriptionProps): ReactElement {
     // The description becomes the prop for possible future request from backend.
     const description = resourceDescriptions[resource] ?? '';
     const readIndex = description.indexOf('Read: ');
