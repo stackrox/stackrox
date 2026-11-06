@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -34,10 +35,20 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 	registry, roleDS, groupDS := setupMocks(t)
 	ctx := context.Background()
 
-	roleDS.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).Return(nil, false, nil)
-	roleDS.EXPECT().AddPermissionSet(gomock.Any(), gomock.Any()).Return(nil)
+	roleDS.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
+	var createdID string
+	roleDS.EXPECT().AddPermissionSet(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, ps *storage.PermissionSet) error {
+			createdID = ps.GetId()
+			assert.NotEmpty(t, createdID)
+			return nil
+		})
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
-	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
+	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, role *storage.Role) error {
+			assert.Equal(t, createdID, role.GetPermissionSetId())
+			return nil
+		})
 
 	providerCreated := false
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
@@ -55,8 +66,7 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 			return nil
 		})
 
-	ensurePermissionSet(ctx, roleDS)
-	ensureRole(ctx, roleDS)
+	ensureRole(ctx, roleDS, ensurePermissionSet(ctx, roleDS))
 	ensureAuthProvider(ctx, registry, testCAPEM)
 	ensureGroup(ctx, groupDS)
 }
@@ -78,7 +88,8 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 	registry, roleDS, groupDS := setupMocks(t)
 	ctx := context.Background()
 
-	roleDS.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).Return(&storage.PermissionSet{}, true, nil)
+	roleDS.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return(
+		[]*storage.PermissionSet{{Id: "8df4a4a0-a292-4e33-a076-fab229cbbcea", Name: permissionSetName}}, nil)
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
 	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
@@ -86,10 +97,60 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 	groupDS.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
 	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).Return(nil)
 
-	ensurePermissionSet(ctx, roleDS)
-	ensureRole(ctx, roleDS)
+	ensureRole(ctx, roleDS, ensurePermissionSet(ctx, roleDS))
 	ensureAuthProvider(ctx, registry, testCAPEM)
 	ensureGroup(ctx, groupDS)
+}
+
+func TestSeed_ExistingPermissionSetNameUsesExistingID(t *testing.T) {
+	_, roleDS, _ := setupMocks(t)
+	const administratorID = "7a6a18e6-f82c-4832-816a-604e3655f249"
+	roleDS.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+			assert.True(t, filter(&storage.PermissionSet{Name: permissionSetName}))
+			return []*storage.PermissionSet{{Id: administratorID, Name: permissionSetName}}, nil
+		})
+	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
+	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, role *storage.Role) error {
+			assert.Equal(t, administratorID, role.GetPermissionSetId())
+			return nil
+		})
+	ensureRole(t.Context(), roleDS, ensurePermissionSet(t.Context(), roleDS))
+}
+
+func TestSeed_MetricsPermissionSetNameCollisionDuringCreate(t *testing.T) {
+	_, roleDS, _ := setupMocks(t)
+	const administratorID = "8320c699-af1b-4ef2-b7d1-04ec05ece046"
+	roleDS.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
+	roleDS.EXPECT().AddPermissionSet(gomock.Any(), gomock.Any()).Return(errox.AlreadyExists.New("name collision"))
+	roleDS.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return(
+		[]*storage.PermissionSet{{Id: administratorID, Name: permissionSetName}}, nil)
+	assert.Equal(t, administratorID, ensurePermissionSet(t.Context(), roleDS))
+}
+
+func TestSeededAccessScopeName(t *testing.T) {
+	for name, tc := range map[string]struct {
+		existing map[string]string
+		want     string
+	}{
+		"available":      {want: accessScopeName},
+		"already seeded": {existing: map[string]string{accessScopeName: accessScopeID}, want: accessScopeName},
+		"name collision": {existing: map[string]string{accessScopeName: "custom-id"},
+			want: accessScopeName + " (built-in 1)"},
+		"suffix collision": {existing: map[string]string{
+			accessScopeName:                   "custom-id",
+			accessScopeName + " (built-in 1)": "other-id",
+		}, want: accessScopeName + " (built-in 2)"},
+		"repeat seed": {existing: map[string]string{
+			accessScopeName:                   "custom-id",
+			accessScopeName + " (built-in 1)": accessScopeID,
+		}, want: accessScopeName + " (built-in 1)"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, seededAccessScopeName(tc.existing))
+		})
+	}
 }
 
 func TestSeed_Group_IsDefaultOriginAndImmutable(t *testing.T) {
