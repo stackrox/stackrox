@@ -181,7 +181,7 @@ jq -r '
     (.openshift_component.component // .pod.Name) as $name |
     .port_results[]? |
     select(.status == "OK") |
-    "\($name):\(.port) tls_versions=\(.tls_versions // [] | join(",")) ciphers=\(.tls_ciphers // [] | join(",")) groups=\(.supported_groups // [] | join(",")) mlkem=\(.mlkem_supported)"
+    "\($name):\(.port) tls_versions=\(.tls_versions // [] | join(",")) ciphers=\(.tls_ciphers // [] | join(",")) groups=\(.tls_key_exchange.groups // [] | join(",")) mlkem=\(.mlkem_supported)"
 ' "$SCAN_RESULTS" | sort -u
 
 # central-db must have TLS enabled (guards against tls-scanner malfunction).
