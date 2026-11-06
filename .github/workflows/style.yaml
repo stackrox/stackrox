@@ -93,6 +93,53 @@ jobs:
     - name: Experiment (serial reference)
       run: scripts/ci/jobs/check-generated-experiment.sh all
 
+  cg-exp-serial-modcache:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Download scanner module for proto generation
+      run: go mod download github.com/stackrox/scanner
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Determine Go cache paths
+      id: go-cache
+      run: |
+        echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Go build cache (from lint lineage, investigation)
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+      with:
+        path: ${{ steps.go-cache.outputs.GOCACHE }}
+        key: cg-exp-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-golangci-lint-amd64-
+
+    - name: Module cache (investigation, full module graph via go mod tidy)
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6
+      with:
+        path: ${{ steps.go-cache.outputs.GOMODCACHE }}
+        key: cg-modcache-v1-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          cg-modcache-v1-
+
+    - name: Experiment (serial with module cache)
+      run: scripts/ci/jobs/check-generated-experiment.sh all
+
   cg-exp-parallel:
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
