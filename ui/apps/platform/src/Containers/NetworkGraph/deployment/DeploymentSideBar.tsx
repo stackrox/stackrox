@@ -179,7 +179,7 @@ function DeploymentSideBar({
                         </Title>
                         <Content
                             component="p"
-                            className="pf-v6-u-font-size-sm pf-v6-u-color-200"
+                            className="pf-v6-u-font-size-sm"
                             data-testid="drawer-subtitle"
                         >
                             in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;

@@ -1,7 +1,6 @@
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { PolicySeverity } from 'types/policy.proto';
 
-export const noViolationsClassName = 'pf-v6-u-color-200';
 export const noViolationsColor = 'var(--pf-t--global--icon--color--disabled)';
 
 /*
