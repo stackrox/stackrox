@@ -135,12 +135,30 @@ func TestPerAccessTokenAudienceAndValidation(t *testing.T) {
 	claims := RoxClaims{
 		Clusters: ClusterScopes{"cluster": {"namespace"}},
 		InternalRoles: []*InternalRole{
-			{RoleName: "deployments", HTTPRequestScopes: HTTPRequestScopes{"/v1/deployments": {"GET"}}},
-			{RoleName: "images", HTTPRequestScopes: HTTPRequestScopes{"/v1/images": {"GET"}}},
+			{RoleName: "deployments", Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+				HTTPRequestScopes: HTTPRequestScopes{"/v1/deployments": {"GET"}}},
+			{RoleName: "images", Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Image"}},
+				HTTPRequestScopes: HTTPRequestScopes{"/v1/images": {"GET"}}},
 		},
 	}
 	info, err := issuer.Issue(t.Context(), claims)
 	require.NoError(t, err)
+	parts := strings.Split(info.Token, ".")
+	require.Len(t, parts, 3)
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	require.NoError(t, err)
+	var signed struct {
+		Access []struct {
+			Permissions       map[string][]string `json:"permissions"`
+			HTTPRequestScopes HTTPRequestScopes    `json:"http"`
+		} `json:"access"`
+	}
+	require.NoError(t, json.Unmarshal(payload, &signed))
+	require.Len(t, signed.Access, 2)
+	for i, resource := range []string{"Deployment", "Image"} {
+		assert.Equal(t, []string{resource}, signed.Access[i].Permissions["read"])
+		assert.Equal(t, claims.InternalRoles[i].HTTPRequestScopes, signed.Access[i].HTTPRequestScopes)
+	}
 	parsed, err := validator.Validate(t.Context(), info.Token)
 	require.NoError(t, err)
 	assert.Equal(t, jwt.Audience{src.ID(), scopedTokenAudience}, parsed.Audience)
