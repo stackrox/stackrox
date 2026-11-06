@@ -178,7 +178,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetProcessBaseline() {
 			fillDB(t, suite.datastore, c.baselines)
 			defer emptyDB(t, suite.datastore, c.baselines)
 			requestByKey := &v1.GetProcessBaselineRequest{Key: knownBaseline.GetKey()}
-			suite.deployments.EXPECT().GetDeployment(hasReadCtx, gomock.Any()).Return(nil, true, nil).AnyTimes()
+			suite.deployments.EXPECT().DeploymentExists(hasReadCtx, gomock.Any()).Return(true, nil).AnyTimes()
 			baseline, err := suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
 			if c.shouldFail {
 				assert.Error(t, err)
@@ -196,7 +196,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetLoadProcessBaseline() {
 	indicators := getIndicators(key)
 
 	requestByKey := &v1.GetProcessBaselineRequest{Key: knownBaseline.GetKey()}
-	suite.deployments.EXPECT().GetDeployment(hasWriteCtx, gomock.Any()).Return(nil, true, nil)
+	suite.deployments.EXPECT().DeploymentExists(hasWriteCtx, gomock.Any()).Return(true, nil)
 	suite.indicatorMockStore.EXPECT().GetByQueryFn(hasWriteCtx, gomock.Any(), gomock.Any()).DoAndReturn(
 		func(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
 			for _, indicator := range indicators {
@@ -216,7 +216,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetLoadProcessBaselineDeletedD
 	knownBaseline := fixtures.GetProcessBaselineWithKey()
 
 	requestByKey := &v1.GetProcessBaselineRequest{Key: knownBaseline.GetKey()}
-	suite.deployments.EXPECT().GetDeployment(hasWriteCtx, gomock.Any()).Return(nil, false, nil)
+	suite.deployments.EXPECT().DeploymentExists(hasWriteCtx, gomock.Any()).Return(false, nil)
 
 	baseline, _ := suite.service.GetProcessBaseline(hasWriteCtx, requestByKey)
 
@@ -566,7 +566,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 		},
 	}
 
-	suite.deployments.EXPECT().GetDeployment(hasWriteCtx, gomock.Any()).Return(nil, true, nil).AnyTimes()
+	suite.deployments.EXPECT().DeploymentExists(hasWriteCtx, gomock.Any()).Return(true, nil).AnyTimes()
 	suite.lifecycleManager.EXPECT().RemoveDeploymentFromObservation(fixtureconsts.Deployment1).AnyTimes()
 	suite.lifecycleManager.EXPECT().RemoveDeploymentFromObservation(fixtureconsts.Deployment2).AnyTimes()
 
