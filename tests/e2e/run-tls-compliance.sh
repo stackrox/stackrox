@@ -62,6 +62,10 @@ popd > /dev/null
 
 # --- Step 2: Enable OCP TLS feature gates and set TLS profile ---
 
+master_config_before=$(oc get mcp master -o jsonpath='{.status.configuration.name}')
+worker_config_before=$(oc get mcp worker -o jsonpath='{.status.configuration.name}')
+info "MCP configs before changes: master=$master_config_before worker=$worker_config_before"
+
 info "Enabling TLSGroupPreferences and TLSAdherence feature gates..."
 oc patch featuregate cluster --type=merge -p '{
     "spec": {
@@ -102,9 +106,28 @@ oc patch apiserver cluster --type=merge -p '{
     }
 }'
 
-info "Waiting for API server to stabilize..."
-oc wait --for=condition=Available clusteroperator/kube-apiserver --timeout=600s
-info "API server stable."
+info "Waiting for MCO to pick up TLS profile change..."
+for i in $(seq 1 30); do
+    master_config_after=$(oc get mcp master -o jsonpath='{.spec.configuration.name}')
+    worker_config_after=$(oc get mcp worker -o jsonpath='{.spec.configuration.name}')
+    if [[ "$master_config_after" != "$master_config_before" || "$worker_config_after" != "$worker_config_before" ]]; then
+        info "MCO picked up TLS change: master=$master_config_after worker=$worker_config_after"
+        break
+    fi
+    if [[ "$i" -eq 30 ]]; then
+        info "MCO did not pick up TLS change within 300s, proceeding anyway."
+        break
+    fi
+    sleep 10
+done
+
+info "Waiting for MCO to finish rolling out to all nodes (this can take 30+ minutes)..."
+oc get mcp
+oc get nodes
+oc wait mcp --all --for=condition=Updated --timeout=3600s
+info "MCO rollout complete."
+oc get mcp
+oc get nodes
 
 # --- Step 3: Deploy ACS ---
 

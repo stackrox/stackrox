@@ -25,9 +25,8 @@ concurrency:
 env:
   MAIN_IMAGE_TAG: ${{ inputs.tag }}
   ARTIFACT_DIR: ./junit-reports/
-  USE_LOCAL_ROXCTL: "true"
   ORCHESTRATOR_FLAVOR: openshift
-  KUBERNETES_PROVIDER: ocp
+  LOAD_BALANCER: lb
   CLUSTER_NAME_PREFIX: "e2e-tls-compl"
   CLUSTER_NAME_PREFIX_MAX: "20"
   # Pinned tls-scanner ref. Bump deliberately.
