@@ -483,8 +483,7 @@ func TestCompileEvaluationFilter_ImageLayerFilter_FeatureDisabled(t *testing.T) 
 }
 
 func TestCompileEvaluationFilter_FeatureGates(t *testing.T) {
-	t.Run("only EvaluationFilter enabled", func(t *testing.T) {
-		t.Setenv(features.EvaluationFilter.EnvVar(), "true")
+	t.Run("image layer filter disabled", func(t *testing.T) {
 		t.Setenv(features.ImageLayerFilter.EnvVar(), "false")
 
 		filters := CompileEvaluationFilter(&storage.EvaluationFilter{
@@ -495,20 +494,7 @@ func TestCompileEvaluationFilter_FeatureGates(t *testing.T) {
 		require.Len(t, filters, 1, "should only have container type filter")
 	})
 
-	t.Run("EvaluationFilter disabled gates all filters", func(t *testing.T) {
-		t.Setenv(features.EvaluationFilter.EnvVar(), "false")
-		t.Setenv(features.ImageLayerFilter.EnvVar(), "true")
-
-		filters := CompileEvaluationFilter(&storage.EvaluationFilter{
-			SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
-			SkipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
-		})
-
-		assert.Nil(t, filters, "evaluation filtering is disabled")
-	})
-
-	t.Run("both features enabled", func(t *testing.T) {
-		t.Setenv(features.EvaluationFilter.EnvVar(), "true")
+	t.Run("image layer filter enabled", func(t *testing.T) {
 		t.Setenv(features.ImageLayerFilter.EnvVar(), "true")
 
 		filters := CompileEvaluationFilter(&storage.EvaluationFilter{
@@ -517,18 +503,6 @@ func TestCompileEvaluationFilter_FeatureGates(t *testing.T) {
 		})
 
 		require.Len(t, filters, 2, "should have both filters")
-	})
-
-	t.Run("both features disabled", func(t *testing.T) {
-		t.Setenv(features.EvaluationFilter.EnvVar(), "false")
-		t.Setenv(features.ImageLayerFilter.EnvVar(), "false")
-
-		filters := CompileEvaluationFilter(&storage.EvaluationFilter{
-			SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
-			SkipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
-		})
-
-		assert.Nil(t, filters, "should return nil when both features disabled")
 	})
 }
 

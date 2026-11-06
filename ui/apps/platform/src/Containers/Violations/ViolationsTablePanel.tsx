@@ -260,7 +260,7 @@ function ViolationsTablePanel({
                 <Toolbar className="pf-v6-u-py-md">
                     <ToolbarContent>
                         <ToolbarItem alignSelf="center">
-                            <Title headingLevel="h2" className="pf-v6-u-color-100">
+                            <Title headingLevel="h2">
                                 {pluralize(violationsCount, 'result')} found
                             </Title>
                         </ToolbarItem>

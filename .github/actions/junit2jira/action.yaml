@@ -34,10 +34,10 @@ runs:
   - name: Download junit2jira
     shell: bash
     env:
-      VERSION: "v0.0.27"
+      VERSION: "v0.0.29"
     run: |
       set -u
-      LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira"
+      LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira-linux-amd64"
       # Skip downloading release if downloaded already, e.g. when the action is used multiple times.
       if [[ ! -x junit2jira ]]; then
         curl --retry 5 --retry-connrefused --silent --show-error --fail --location --output junit2jira "$LOCATION"
@@ -77,6 +77,7 @@ runs:
       csv_output="$(mktemp --suffix=.csv)"
       summary_file="$(mktemp --suffix=.json)"
       ./junit2jira \
+          --enable-auto-priority \
           -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
           -build-id "${{ github.run_id }}"  \
           -build-link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \

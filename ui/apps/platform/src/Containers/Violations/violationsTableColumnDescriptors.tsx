@@ -42,7 +42,7 @@ function EntityTableCell({ original }: EntityTableCellProps): ReactElement {
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem className="pf-v6-u-mb-0">{name}</FlexItem>
-            <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-xs">{`in "${entityPath}"`}</FlexItem>
+            <FlexItem className="pf-v6-u-font-size-xs">{`in "${entityPath}"`}</FlexItem>
         </Flex>
     );
 }

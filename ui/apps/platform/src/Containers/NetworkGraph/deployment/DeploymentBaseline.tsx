@@ -183,7 +183,7 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
                                     </div>
                                 }
                             >
-                                <HelpIcon className="pf-v6-u-color-200" />
+                                <HelpIcon />
                             </Tooltip>
                         </FlexItem>
                     </Flex>

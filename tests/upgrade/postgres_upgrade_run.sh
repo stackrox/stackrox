@@ -115,7 +115,7 @@ scanner_v4_db_pg_version() {
 SCANNER_V4_UPGRADE_BLOCKER=upgrade_blocker
 
 # Floor for the vulnerability store. It is used to verify the store was not wiped out.
-SCANNER_V4_DB_MIN_VULNS=1000
+SCANNER_V4_DB_MIN_VULNS=100000
 
 # scanner_v4_db_vulns echoes how many rows the vulnerability table holds.
 scanner_v4_db_vulns() {

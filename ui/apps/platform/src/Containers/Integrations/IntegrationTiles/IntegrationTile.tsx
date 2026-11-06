@@ -55,13 +55,13 @@ function IntegrationTile({
                         />
                     </>
                 </CardHeader>
-                <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
+                <CardTitle style={{ whiteSpace: 'nowrap' }}>
                     <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                         <Truncate position="middle" content={label} />
                         {isTechPreview && <TechPreviewLabel />}
                     </Flex>
                 </CardTitle>
-                {categories && <CardFooter className="pf-v6-u-color-200">{categories}</CardFooter>}
+                {categories && <CardFooter>{categories}</CardFooter>}
             </Card>
         </GalleryItem>
     );

@@ -175,6 +175,9 @@ jobs:
     - name: Export HOME for cache paths
       run: echo "HOME=$HOME" >> "$GITHUB_ENV"
 
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
