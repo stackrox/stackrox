@@ -87,14 +87,14 @@ wait_for_downgrade_rejection() {
 
 test_rejected_downgrade() {
     local tag="$1" artifacts="$2" before after
-    stop_downgrade_central || return 1
+    stop_central || return 1
     before="$(downgrade_version_snapshot)" || return 1
     downgrade_check_snapshot "$before" || return 1
     mkdir -p "$artifacts"
     printf '%s\n' "$before" >"$artifacts/version-before.json"
     set_downgrade_version "$tag" || return 1
     wait_for_downgrade_rejection "$tag" "$artifacts" || return 1
-    stop_downgrade_central || return 1
+    stop_central || return 1
     after="$(downgrade_version_snapshot)" || return 1
     printf '%s\n' "$after" >"$artifacts/version-after.json"
     if [[ "$before" != "$after" ]]; then
