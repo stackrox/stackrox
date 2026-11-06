@@ -12,14 +12,31 @@ case "${UPGRADE_BACKUP_MODE}" in
     *) echo "Invalid ROX_POSTGRES_UPGRADE_BACKUP_MODE: expected tar or directory" >&2; exit 1 ;;
 esac
 
-RECOVERY_REQUESTED=false
-for flag in FORCE_CLEANUP FORCE_NEW_BACKUP RESTORE_BACKUP FORCE_OLD_BINARIES; do
+# Copy semantics for directory mode. `never` is the portable default; `auto`
+# reflinks when the destination filesystem supports it and copies otherwise.
+COPY_REFLINK="${ROX_POSTGRES_UPGRADE_COPY_REFLINK:-never}"
+case "${COPY_REFLINK}" in
+    never|auto|always) ;;
+    *) echo "Invalid ROX_POSTGRES_UPGRADE_COPY_REFLINK: expected never, auto or always" >&2; exit 1 ;;
+esac
+
+# A directory backup is only usable when its metadata and data directory are
+# both published. The staging name is never eligible for recovery or cleanup.
+DIRECTORY_ARTIFACT_DIR="directory-v1"
+DIRECTORY_ARTIFACT_STAGING="directory-v1.partial"
+DIRECTORY_ARTIFACT_DATA="pgdata"
+DIRECTORY_ARTIFACT_METADATA="metadata.tsv"
+
+# FORCE_CLEANUP only removes the unfinished conversion directory, which is safe
+# for a directory backup. The remaining flags assume the legacy archive format.
+DIRECTORY_UNSUPPORTED_RECOVERY=false
+for flag in FORCE_NEW_BACKUP RESTORE_BACKUP FORCE_OLD_BINARIES; do
     if [[ "${!flag:-}" == true ]]; then
-        RECOVERY_REQUESTED=true
+        DIRECTORY_UNSUPPORTED_RECOVERY=true
     fi
 done
-if [[ "${UPGRADE_BACKUP_MODE}" == directory && "${RECOVERY_REQUESTED}" == true ]]; then
-    echo "Directory backup prototype does not support recovery flags; use a fresh trial or manual recovery" >&2
+if [[ "${UPGRADE_BACKUP_MODE}" == directory && "${DIRECTORY_UNSUPPORTED_RECOVERY}" == true ]]; then
+    echo "Directory backup prototype does not support that recovery flag; use FORCE_CLEANUP or manual recovery" >&2
     exit 1
 fi
 
@@ -42,6 +59,66 @@ upgrade_timing_exit() {
         "${UPGRADE_BACKUP_MODE}" "${UPGRADE_PHASE}" "$((now - UPGRADE_PHASE_STARTED))" "${result}"
     printf 'PG_UPGRADE_TIMING mode=%s phase=initializer_total event=end elapsed_s=%s exit_code=%s\n' \
         "${UPGRADE_BACKUP_MODE}" "$((now - UPGRADE_STARTED))" "${result}"
+}
+
+# The runtime images ship coreutils; macOS only matters for the local tests.
+sha256_file() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# Report bytes, preferring apparent size so sparse files are not undercounted.
+# `du` output differs between GNU and BSD, hence the fallback.
+apparent_bytes() {
+    local kb
+    kb=$(du --apparent-size -s -k "$1" 2>/dev/null | awk '{print $1}') || kb=""
+    if [[ -z "${kb}" ]]; then
+        kb=$(du -s -k "$1" | awk '{print $1}')
+    fi
+    echo "$((kb * 1024))"
+}
+
+allocated_bytes() {
+    local kb
+    kb=$(du -s -k "$1" | awk '{print $1}')
+    echo "$((kb * 1024))"
+}
+
+# metadata.tsv is data, never sourced: fixed TAB-separated keys, no duplicates,
+# written before publication so an artifact without it is not a usable backup.
+write_directory_metadata() {
+    local artifact="$1" data="$2"
+    local control="${data}/global/pg_control"
+    local control_data source_identifier="" checkpoint_location="" checkpoint_timeline=""
+    local operation_id artifact_id
+
+    control_data=$("${OLD_BINARIES}/pg_controldata" "$data")
+    source_identifier=$(sed -n 's/^Database system identifier: *//p' <<< "${control_data}")
+    checkpoint_location=$(sed -n 's/^Latest checkpoint location: *//p' <<< "${control_data}")
+    checkpoint_timeline=$(sed -n "s/^Latest checkpoint's TimeLineID: *//p" <<< "${control_data}")
+
+    operation_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+    artifact_id="${DIRECTORY_ARTIFACT_DIR}:${source_identifier}:${PG_DATA_VERSION}->${PG_BINARY_VERSION}"
+
+    {
+        printf 'format_version\t1\n'
+        printf 'artifact_id\t%s\n' "${artifact_id}"
+        printf 'operation_id\t%s\n' "${operation_id}"
+        printf 'source_major\t%s\n' "${PG_DATA_VERSION}"
+        printf 'target_major\t%s\n' "${PG_BINARY_VERSION}"
+        printf 'source_system_identifier\t%s\n' "${source_identifier}"
+        printf 'source_checkpoint_location\t%s\n' "${checkpoint_location}"
+        printf 'source_checkpoint_timeline\t%s\n' "${checkpoint_timeline}"
+        printf 'source_control_file_hash\t%s\n' "${SOURCE_CONTROL_FILE_HASH}"
+        printf 'verified_control_file_hash\t%s\n' "$(sha256_file "${control}")"
+        printf 'backup_data_path\t%s\n' "${DIRECTORY_ARTIFACT_DATA}"
+        printf 'logical_bytes\t%s\n' "$(apparent_bytes "${data}")"
+        printf 'allocated_bytes\t%s\n' "$(allocated_bytes "${data}")"
+        printf 'verified\ttrue\n'
+    } > "${artifact}/${DIRECTORY_ARTIFACT_METADATA}"
 }
 
 # Return the list of possible backup locations based on the mounted volumes.
@@ -112,13 +189,21 @@ else
     backup_locations=()
     get_backup_locations backup_locations
 
-    # A prototype directory is not a legacy archive. Protect it even if a later
+    # A directory backup is not a legacy archive. Protect it even if a later
     # attempt selects tar mode, especially before FORCE_NEW_BACKUP can delete it.
     for location in "${backup_locations[@]}"; do
-        prototype_backup="${location}/${POSTGRESQL_PREV_VERSION}-${PG_BINARY_VERSION}/directory-copy"
-        if [[ -e "${prototype_backup}" || -L "${prototype_backup}" ]]; then
-            if [[ "${PG_DATA_VERSION}" -lt "${PG_BINARY_VERSION}" || "${RECOVERY_REQUESTED}" == true ]]; then
-                echo "Existing directory backup prototype requires manual recovery or a fresh trial: ${prototype_backup}" >&2
+        directory_backup="${location}/${POSTGRESQL_PREV_VERSION}-${PG_BINARY_VERSION}/${DIRECTORY_ARTIFACT_DIR}"
+        if [[ -e "${directory_backup}" || -L "${directory_backup}" ]]; then
+            # This artifact is the only recovery point for the previous version
+            # and this image cannot rebuild it. Directory mode may reuse it for
+            # its own version pair; everything else must stop before deletion.
+            if [[ "${FORCE_NEW_BACKUP:-}" == true ]]; then
+                echo "Refusing to remove ${directory_backup}: it contains a verified directory backup" >&2
+                exit 1
+            fi
+            if [[ "${RESTORE_BACKUP:-}" == true || "${FORCE_OLD_BINARIES:-}" == true ||
+                "${UPGRADE_BACKUP_MODE}" != directory ]]; then
+                echo "Existing directory backup requires a matching DB image or manual recovery: ${directory_backup}" >&2
                 exit 1
             fi
         fi
@@ -140,8 +225,11 @@ else
         # postgresql-container image itself.
         for location in "${backup_locations[@]}"
         do
-            echo "Removing ${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
-            rm -rf "${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
+            # The protection check above refuses to reach this point when the
+            # pair contains a verified directory backup.
+            backup_pair="${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION"
+            echo "Removing ${backup_pair}/"
+            rm -rf "${backup_pair:?}/"
         done
     fi
 
@@ -173,6 +261,15 @@ else
             echo "Restoring from ${PG_BACKUP_DIR}"
         fi
 
+        if [[ ! -f "${PG_BACKUP_DIR}/backup.tar" ]]; then
+            if [[ -d "${PG_BACKUP_DIR}/${DIRECTORY_ARTIFACT_DIR}" ]]; then
+                echo "Cannot restore ${PG_BACKUP_DIR}: it contains a directory backup; use a DB image that supports that format or recover manually" >&2
+                exit 1
+            fi
+            echo "Upgrade backup archive is missing in ${PG_BACKUP_DIR}, restore is cancelled." >&2
+            exit 1
+        fi
+
         PGDATA_NEW="${PGDATA}-new"
         mkdir -p "${PGDATA_NEW}"
         tar -xf "${PG_BACKUP_DIR}/backup.tar" -C "${PGDATA_NEW}" --checkpoint=10000
@@ -191,11 +288,15 @@ else
         trap 'upgrade_timing_exit "$?"' EXIT
 
         if [[ "${UPGRADE_BACKUP_MODE}" == directory ]]; then
-            # No completion/retry protocol in this prototype. Never reuse an
-            # existing version-pair directory, including a partial copy or tar.
+            # A completed artifact for this pair is reused; an incomplete one is
+            # discarded and recopied. Legacy archives are never overwritten.
             for location in "${backup_locations[@]}"; do
                 backup_path="${location}/${PG_DATA_VERSION}-${PG_BINARY_VERSION}"
-                if [[ -L "${location}" || -e "${backup_path}" || -L "${backup_path}" ]]; then
+                if [[ -L "${location}" || -L "${backup_path}" ]]; then
+                    echo "Directory backup prototype does not support linked backup paths: ${backup_path}" >&2
+                    exit 1
+                fi
+                if [[ -e "${backup_path}/backup.tar" || -L "${backup_path}/backup.tar" ]]; then
                     echo "Directory backup prototype requires a fresh backup location: ${backup_path}" >&2
                     exit 1
                 fi
@@ -301,15 +402,35 @@ else
 
         BACKUP_STARTED=${SECONDS}
         BACKUP_DIR="${PG_BACKUP_VOLUME}/$PG_DATA_VERSION-$PG_BINARY_VERSION/"
+        DIRECTORY_STAGING=""
         if [[ "${UPGRADE_BACKUP_MODE}" == directory ]]; then
-            upgrade_phase directory_copy
-            # mkdir (without -p) also refuses a directory created since preflight.
-            mkdir "${BACKUP_DIR}"
-            BACKUP_VERIFY_PGDATA="${BACKUP_DIR}/directory-copy"
-            mkdir "${BACKUP_VERIFY_PGDATA}"
-            cp -a --reflink=never "${PGDATA}/." "${BACKUP_VERIFY_PGDATA}/"
-            upgrade_phase backup_flush
-            sync -f "${BACKUP_VERIFY_PGDATA}"
+            DIRECTORY_BACKUP="${BACKUP_DIR}/${DIRECTORY_ARTIFACT_DIR}"
+            if is_complete_upgrade_backup "${BACKUP_DIR}"; then
+                upgrade_phase directory_reuse
+                BACKUP_VERIFY_PGDATA="${DIRECTORY_BACKUP}/${DIRECTORY_ARTIFACT_DATA}"
+                echo "Reusing verified directory backup ${DIRECTORY_BACKUP}"
+            else
+                upgrade_phase directory_copy
+                # mkdir (without -p) also refuses a directory created since preflight.
+                if [[ ! -d "${BACKUP_DIR}" ]]; then
+                    mkdir "${BACKUP_DIR}"
+                fi
+                DIRECTORY_STAGING="${BACKUP_DIR}/${DIRECTORY_ARTIFACT_STAGING}"
+                # An incomplete staging directory is never eligible; start over.
+                rm -rf -- "${DIRECTORY_STAGING}"
+                mkdir "${DIRECTORY_STAGING}"
+                BACKUP_VERIFY_PGDATA="${DIRECTORY_STAGING}/${DIRECTORY_ARTIFACT_DATA}"
+                mkdir "${BACKUP_VERIFY_PGDATA}"
+                # Record the source identity before the copy: verification starts
+                # the copy, which rewrites its control file.
+                SOURCE_CONTROL_FILE_HASH=$(sha256_file "${PGDATA}/global/pg_control")
+                # Skip the SELinux context: the destination volume already has the
+                # label the pod needs, and preserving it can fail on OpenShift.
+                cp -a --no-preserve=context --reflink="${COPY_REFLINK}" \
+                    "${PGDATA}/." "${BACKUP_VERIFY_PGDATA}/"
+                upgrade_phase backup_flush
+                sync -f "${BACKUP_VERIFY_PGDATA}"
+            fi
         else
             upgrade_phase tar_create
             # Do not care about symlinks yet
@@ -347,7 +468,15 @@ else
             # retained copy must remain independent of link-mode working data.
             upgrade_phase verification_flush
             sync -f "${BACKUP_VERIFY_PGDATA}"
-            echo "Retained experimental directory backup: ${BACKUP_VERIFY_PGDATA}"
+            if [[ -n "${DIRECTORY_STAGING}" ]]; then
+                # Publish in a fixed order: metadata, rename, parent flush. A
+                # directory without metadata is never treated as a backup.
+                write_directory_metadata "${DIRECTORY_STAGING}" "${BACKUP_VERIFY_PGDATA}"
+                sync -f "${DIRECTORY_STAGING}"
+                mv "${DIRECTORY_STAGING}" "${DIRECTORY_BACKUP}"
+                sync -f "${BACKUP_DIR}"
+            fi
+            echo "Retained experimental directory backup: ${DIRECTORY_BACKUP}"
         else
             upgrade_phase verification_cleanup
             rm -rf "${BACKUP_VERIFY_PGDATA}"
