@@ -1,14 +1,6 @@
 import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
-import {
-    Button,
-    Content,
-    ContentVariants,
-    Flex,
-    FlexItem,
-    List,
-    ListItem,
-} from '@patternfly/react-core';
+import { Button, Content, Flex, FlexItem, List, ListItem } from '@patternfly/react-core';
 import { Modal } from '@patternfly/react-core/deprecated';
 
 import { exceptionManagementPath } from 'routePaths';
@@ -187,9 +179,7 @@ export function RequestComment({ comment }: RequestCommentProps) {
                 <Content component="p" className="pf-v6-u-font-weight-bold">
                     {comment.user.name}
                 </Content>
-                <Content component={ContentVariants.small}>
-                    ({getDateTime(comment.createdAt)})
-                </Content>
+                <Content component="small">({getDateTime(comment.createdAt)})</Content>
             </Flex>
             <FlexItem>{comment.message}</FlexItem>
         </Flex>
