@@ -28,7 +28,6 @@ const TableWidget = ({
         noDataText,
         setTableRef,
         trClassName,
-        showThead,
         SubComponent,
         hasNestedTable,
         defaultSorted,
@@ -78,7 +77,6 @@ const TableWidget = ({
                         noDataText={noDataText}
                         setTableRef={setTableRef}
                         trClassName={trClassName}
-                        showThead={showThead}
                         SubComponent={SubComponent}
                         page={currentPage}
                         defaultSorted={defaultSorted}
