@@ -68,6 +68,7 @@ jobs:
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
+
     - name: Ensure no trailing whitespaces
       if: github.event_name == 'pull_request'
       # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
@@ -263,8 +264,7 @@ jobs:
     needs: detect-changes
     if: >-
       !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^.github/') ||
-      contains(needs.detect-changes.outputs.files, '^scripts/ci/jobs/verify-tidy-gocache.sh$')
+      contains(needs.detect-changes.outputs.files, '^.github/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -273,14 +273,6 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       - name: Check workflow files
         run: make github-actions-lint
-      # Regression test for the #20369 failure mode (stale GOCACHE module-index
-      # entries altering go mod tidy). Runs whenever .github/ or the test script
-      # changes — which includes any change to the cache-go-dependencies action
-      # whose mtime scheme is the safeguard under test.
-      - name: Download scanner module for proto generation
-        run: go mod download github.com/stackrox/scanner
-      - name: Verify tidy with stale GOCACHE
-        run: scripts/ci/jobs/verify-tidy-gocache.sh
 
   github-actions-shellcheck:
     needs: detect-changes

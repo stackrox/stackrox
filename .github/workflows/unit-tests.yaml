@@ -106,6 +106,34 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  # Regression test for the #20369 failure mode: a restored GOCACHE serving
+  # stale module-index data to `go mod tidy`. Gated to changes under .github/
+  # (which includes the cache-go-dependencies action whose mtime scheme is
+  # the safeguard under test) and to the test script itself.
+  tidy-gocache-verify:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '^.github/') ||
+      contains(needs.detect-changes.outputs.files, '^scripts/ci/jobs/verify-tidy-gocache.sh$')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
+
+      - name: Verify tidy with stale GOCACHE
+        run: scripts/ci/jobs/verify-tidy-gocache.sh
+
   go-postgres:
     needs: detect-changes
     strategy:
