@@ -48,6 +48,28 @@ jobs:
     - name: Download scanner module for proto generation
       run: go mod download github.com/stackrox/scanner
 
+    # Cache the Go build cache: code generation compiles hundreds of packages
+    # (mockgen reflect mode compiles each target package; the generator tools
+    # themselves are built from source), all of which recompiled from scratch
+    # on every run without this.
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    # INVESTIGATION (remove before merge): restore the golangci-lint lineage's
+    # build cache entry so this PR run can measure the warm-cache potential
+    # before the job's own lineage exists on the default branch.
+    - name: Determine Go cache path
+      id: go-cache
+      run: echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Go build cache (from lint lineage, investigation)
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+      with:
+        path: ${{ steps.go-cache.outputs.GOCACHE }}
+        key: cgf-gocache-test-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-golangci-lint-amd64-
+
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
