@@ -9,13 +9,15 @@ central:
       memory: 1Gi
     limits:
       memory: 1Gi
+
   db:
     resources:
       requests:
         cpu: 100m
-        memory: 1Gi
+        memory: 4Gi
       limits:
-        memory: 1Gi
+        memory: 4Gi
+
   telemetry:
     enabled: false
 
@@ -23,10 +25,11 @@ centralWorker:
   enabled: true
   resources:
     requests:
-      cpu: 50m
+      cpu: 10m
       memory: 128Mi
     limits:
       memory: 128Mi
+
 scannerV4:
   indexer:
     scaling:
@@ -35,10 +38,10 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: 50m
-        memory: 512Mi
+        cpu: "50m"
+        memory: "512Mi"
       limits:
-        memory: 512Mi
+        memory: "512Mi"
   matcher:
     scaling:
       autoScaling: Disabled
@@ -46,14 +49,14 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: 50m
-        memory: 256Mi
+        cpu: "50m"
+        memory: "256Mi"
       limits:
-        memory: 256Mi
+        memory: "256Mi"
   db:
     resources:
       requests:
-        cpu: 100m
-        memory: 4Gi
+        cpu: "100m"
+        memory: "4Gi"
       limits:
-        memory: 4Gi
+        memory: "4Gi"
