@@ -52,6 +52,31 @@ The default document has this shape (the actual CN and CA reference come from
 }
 ```
 
+For the mTLS `/metrics` client above, the **decoded JWT payload** issued by a
+Central supporting per-access tokens looks like this (selected claims shown;
+the source and cluster IDs are illustrative):
+
+```json
+{
+  "aud": ["sensor-token-source", "https://stackrox.io/jwt-sources#scoped-rox-tokens"],
+  "req": "mtls:system:serviceaccount:openshift-monitoring:prometheus-k8s",
+  "clusters": {"cluster-id": ["*"]},
+  "access": [{
+    "name": "internal role",
+    "http": {"/metrics": ["GET"]}
+  }]
+}
+```
+
+The issued token is a signed JWT string (`header.payload.signature`); its
+payload also contains time, issuer, and token-ID claims omitted above. Each
+`access` role carries its own `http` map, so multiple policy grants become
+separately scoped roles. `access[].name` is the generic generated role name,
+not the policy's `permissionSetName`. Central resolves the permission set to
+resource `permissions` in the role: for example, a Deployment read grant adds
+`"permissions": {"read": ["Deployment"]}` alongside `http`. The seeded metrics
+set has no resource permissions by default, so `permissions` is absent above.
+
 Bearer `subject` is an exact TokenReview username or `*` for any authenticated
 user. The wildcard is reserved for the console permission set; custom bearer
 clients must use an exact username. Custom bearer clients require a namespace
@@ -75,10 +100,8 @@ most specific matching path determines access, even if its method is denied.
 Duplicate permission-set names or overlapping path/method pairs within a client
 are invalid, as are repeated JSON keys. An entry must have at least one path.
 Unsupported versions, unknown/duplicate JSON fields, and malformed entries
-reject the entire policy. The earlier version-1 shape with `permissionSetName`
-and `httpRequestScopes` at the client level is replaced by `access` and must be
-updated before upgrading Sensor. Names are resolved by Central, so update a
-renamed permission set in this ConfigMap or the client cannot obtain a token.
+reject the entire policy. Names are resolved by Central, so update a renamed
+permission set in this ConfigMap or the client cannot obtain a token.
 
 Sensor authenticates bearer clients via Kubernetes TokenReview and keeps the
 existing namespace SubjectAccessReview. Sensor checks the selected route locally
@@ -91,24 +114,26 @@ metrics token is restricted to `GET /metrics` and cannot be combined with other
 permission sets. Custom scrapers need their own permission set if their grants
 differ from the built-in Prometheus reader. At least one HTTP method is required.
 A request naming a permission set must include explicit HTTP method/path scopes,
-including for the built-in console and metrics sets. Older Sensors that send only
-resource permissions do not need HTTP scopes. Central enforces signed scopes on
-HTTP requests. A client's grants must share a single cluster/namespace scope;
-metrics grants cannot be combined with other permission sets. The signed
-`requester` identity is for audit only: a stolen bearer token is reusable until
-expiry and is **not** proof-of-possession bound to the original client. Sensor
-replaces the incoming Authorization header and never sends a Kubernetes token
-to Central.
-Sensor requires `CentralProxyPerAccessTokens` to issue one token containing
-multiple access grants. On older Centrals, only a single-grant client can use the
-previous `CentralProxyScopedReadOnlyTokens` capability; only the built-in console
-profile falls back to Centrals without scoped tokens. Those Centrals cannot
-enforce custom HTTP scopes. This
-implementation supports OpenShift clusters, whose Sensor proxy uses an OpenShift
-service-CA certificate. Cluster scopes do not confine permissions for globally
-scoped Central resources. A read-only permission set
-also does not prove that every HTTP method/route is side-effect-free; review
-each policy entry's route scope. Limit writes to this
+including for the built-in console and metrics sets. Sensors using the
+pre-existing console proxy still send only resource permissions; Central accepts
+those requests without HTTP scopes. Centrals that issue HTTP-scoped tokens
+enforce the signed scopes on HTTP requests. A client's grants must share a
+single cluster/namespace scope; metrics grants cannot be combined with other
+permission sets. The signed `requester` identity is for audit only: a stolen
+bearer token is reusable until expiry and is **not** proof-of-possession bound
+to the original client. Sensor replaces the incoming Authorization header and
+never sends a Kubernetes token to Central.
+
+New metrics and custom clients require `CentralProxyPerAccessTokens` to issue
+HTTP-scoped tokens, including tokens with multiple access grants. Centrals
+predating this capability cannot issue these tokens. The built-in console
+profile can still use the pre-existing console token flow with those Centrals,
+which cannot enforce custom HTTP scopes. This implementation supports OpenShift
+clusters, whose Sensor proxy uses an OpenShift service-CA certificate.
+
+Cluster scopes do not confine permissions for globally scoped Central resources.
+A read-only permission set also does not prove that every HTTP method/route is
+side-effect-free; review each policy entry's route scope. Limit writes to this
 ConfigMap and referenced CA ConfigMaps to trusted administrators and Sensor's
 service account. Enable `sensor.centralProxy.enabled` in Helm or
 `spec.sensor.centralProxyEnabled` in the Operator to serve custom-only clients
