@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/jwt"
@@ -31,7 +32,24 @@ func (v *validator) Validate(ctx context.Context, token string) (*TokenInfo, err
 	if err := v.validator.Validate(token, &claims.Claims, &claims.RoxClaims, &claims.Extra); err != nil {
 		return nil, err
 	}
-	srcs, err := v.sources.GetAll(claims.Audience...)
+	sourceIDs := claims.Audience
+	perAccess, err := ValidatePerAccessHTTPScopes(&claims.RoxClaims)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid per-access HTTP scopes")
+	}
+	if claims.HTTPRequestScopes != nil || perAccess {
+		if len(sourceIDs) != 2 || sourceIDs[1] != scopedTokenAudience {
+			return nil, errors.New("HTTP-scoped token is missing its audience marker")
+		}
+		if err := ValidateHTTPRequestScopes(claims.HTTPRequestScopes); err != nil {
+			return nil, errors.Wrap(err, "invalid HTTP request scopes")
+		}
+		// The marker makes old validators reject the token, but is not itself a token source.
+		sourceIDs = sourceIDs[:1]
+	} else if slices.Contains(sourceIDs, scopedTokenAudience) {
+		return nil, errors.New("unscoped token has an HTTP-scope audience marker")
+	}
+	srcs, err := v.sources.GetAll(sourceIDs...)
 	if err != nil {
 		return nil, err
 	}

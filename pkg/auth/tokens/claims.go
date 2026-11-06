@@ -6,6 +6,11 @@ import (
 	"github.com/go-jose/go-jose/v4/jwt"
 )
 
+// scopedTokenAudience makes HTTP-scoped tokens incompatible with Centrals that do not enforce HTTP scopes.
+// Older validators reject audiences that are not registered token sources.
+// #nosec G101 -- This constant is only there as a source identifier, not as a credential.
+const scopedTokenAudience = "https://stackrox.io/jwt-sources#scoped-rox-tokens"
+
 // ExternalUserClaim represents the claim that this token identifies a user from an external identity provider.
 type ExternalUserClaim struct {
 	UserID   string `json:"user_id"`
@@ -32,6 +37,20 @@ type RoxClaims struct {
 	Name string `json:"name,omitempty"`
 	// Requester represents the name of the token requester, assigned by the creator.
 	Requester string `json:"req,omitempty"`
+	// HTTPRequestScopes restricts the token to the listed methods for each HTTP path.
+	HTTPRequestScopes HTTPRequestScopes `json:"http,omitempty"`
+	// Clusters is the shared cluster scope of HTTP-scoped internal roles.
+	Clusters ClusterScopes `json:"clusters,omitempty"`
+}
+
+// HTTPRequestScopes maps allowed HTTP paths to the methods permitted on each path.
+type HTTPRequestScopes map[string][]string
+
+// HTTPRequestScope binds a token to an HTTP method and an exact path, or a
+// prefix when Path ends in a slash.
+type HTTPRequestScope struct {
+	Method string
+	Path   string
 }
 
 // Claims are the claims contained in a token.

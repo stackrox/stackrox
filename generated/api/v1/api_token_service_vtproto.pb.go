@@ -36,6 +36,13 @@ func (m *GenerateTokenRequest) CloneVT() *GenerateTokenRequest {
 		copy(tmpContainer, rhs)
 		r.Roles = tmpContainer
 	}
+	if rhs := m.HttpRequestScopes; rhs != nil {
+		tmpContainer := make([]*HTTPRequestScope, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.HttpRequestScopes = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -172,6 +179,23 @@ func (this *GenerateTokenRequest) EqualVT(that *GenerateTokenRequest) bool {
 	}
 	if !(*timestamppb1.Timestamp)(this.Expiration).EqualVT((*timestamppb1.Timestamp)(that.Expiration)) {
 		return false
+	}
+	if len(this.HttpRequestScopes) != len(that.HttpRequestScopes) {
+		return false
+	}
+	for i, vx := range this.HttpRequestScopes {
+		vy := that.HttpRequestScopes[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &HTTPRequestScope{}
+			}
+			if q == nil {
+				q = &HTTPRequestScope{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -349,6 +373,18 @@ func (m *GenerateTokenRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.HttpRequestScopes) > 0 {
+		for iNdEx := len(m.HttpRequestScopes) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.HttpRequestScopes[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x2a
+		}
 	}
 	if m.Expiration != nil {
 		size, err := (*timestamppb1.Timestamp)(m.Expiration).MarshalToSizedBufferVT(dAtA[:i])
@@ -630,6 +666,12 @@ func (m *GenerateTokenRequest) SizeVT() (n int) {
 		l = (*timestamppb1.Timestamp)(m.Expiration).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if len(m.HttpRequestScopes) > 0 {
+		for _, e := range m.HttpRequestScopes {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -876,6 +918,40 @@ func (m *GenerateTokenRequest) UnmarshalVT(dAtA []byte) error {
 				m.Expiration = &timestamppb.Timestamp{}
 			}
 			if err := (*timestamppb1.Timestamp)(m.Expiration).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HttpRequestScopes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HttpRequestScopes = append(m.HttpRequestScopes, &HTTPRequestScope{})
+			if err := m.HttpRequestScopes[len(m.HttpRequestScopes)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1446,6 +1522,40 @@ func (m *GenerateTokenRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Expiration = &timestamppb.Timestamp{}
 			}
 			if err := (*timestamppb1.Timestamp)(m.Expiration).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HttpRequestScopes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HttpRequestScopes = append(m.HttpRequestScopes, &HTTPRequestScope{})
+			if err := m.HttpRequestScopes[len(m.HttpRequestScopes)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

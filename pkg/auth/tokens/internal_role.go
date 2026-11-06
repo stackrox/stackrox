@@ -45,6 +45,8 @@ type InternalRole struct {
 	Permissions map[storage.Access][]string `json:"permissions,omitempty"`
 	// The key for this cluster scope map is the cluster ID.
 	Clusters ClusterScopes `json:"clusters,omitempty"`
+	// HTTPRequestScopes limits this role to the listed HTTP methods and paths.
+	HTTPRequestScopes HTTPRequestScopes `json:"http,omitempty"`
 }
 
 // MarshalJSON implements json.Marshaler for InternalRole.

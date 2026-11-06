@@ -33,6 +33,19 @@ func (i *issuerForSource) Issue(ctx context.Context, roxClaims RoxClaims, option
 	for _, opt := range i.factory.options {
 		opt.apply(claims)
 	}
+	if err := ValidateHTTPRequestScopes(claims.HTTPRequestScopes); err != nil {
+		return nil, errors.Wrap(err, "invalid HTTP request scopes")
+	}
+	perAccess, err := ValidatePerAccessHTTPScopes(&claims.RoxClaims)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid per-access HTTP scopes")
+	}
+	if claims.HTTPRequestScopes != nil || perAccess {
+		if len(claims.Audience) != 1 || claims.Audience[0] != i.source.ID() {
+			return nil, errors.New("HTTP-scoped token must have exactly one source audience")
+		}
+		claims.Audience = append(claims.Audience, scopedTokenAudience)
+	}
 	// Sanity check: the source should accept the token.
 	if err := i.source.Validate(ctx, claims); err != nil {
 		return nil, errors.Wrap(err, "issued token was rejected by source")
