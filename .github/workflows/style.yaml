@@ -42,8 +42,13 @@ jobs:
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
 
-    # No GOCACHE here — this job must validate go.mod/go.sum against
-    # real source files, not a cached module index that may be stale.
+    # A Go build cache is safe for the tidy check: #20369 removed it because the
+    # then-current fixed-mtime scheme let stale module-index entries alter
+    # `go mod tidy` results, but #21719 replaced that scheme with content-derived
+    # (git blob hash) mtimes, which re-key the index on any content change. The
+    # original #20369 scenario (stale cache from a prior tree state meeting a
+    # changed tree, same dependency) was re-tested against the current machinery
+    # with identical tidy results — see the tidy-gocache-verify job (PR #23929).
 
     - name: Download scanner module for proto generation
       run: go mod download github.com/stackrox/scanner
