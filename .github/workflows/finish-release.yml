@@ -85,7 +85,7 @@ jobs:
     needs: [variables, properties, preflight-checks]
     steps:
       - name: Check out code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
         with:
           ref: ${{ needs.variables.outputs.branch }}
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -189,7 +189,7 @@ jobs:
       BRANCH: "bump-demo-versions-${{ inputs.version }}"
     steps:
       - name: Checkout stackrox/infra repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
         with:
           repository: stackrox/infra
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}

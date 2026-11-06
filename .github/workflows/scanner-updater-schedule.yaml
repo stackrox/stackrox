@@ -29,7 +29,7 @@ jobs:
       needs-notification: ${{ steps.matrix-scheduled.outputs.has_errors }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
       with:
         fetch-depth: 0
         persist-credentials: false
@@ -110,7 +110,7 @@ jobs:
       matrix: ${{ steps.emit.outputs.matrix }}
     steps:
     - name: Download matrix result
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # ratchet:actions/download-artifact@v8
       with:
         name: matrix-result
 
@@ -165,7 +165,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
     - uses: ./.github/actions/notify-slack-on-failure
       with:
         slack-webhook: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
