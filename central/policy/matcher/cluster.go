@@ -48,6 +48,10 @@ func (m *clusterMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bo
 }
 
 func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
+	if !appliesToDeployments(exclusion) {
+		return false
+	}
+
 	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope(), nil, nil)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "could not compile excluded scopes"))
