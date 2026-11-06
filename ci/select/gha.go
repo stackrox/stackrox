@@ -32,7 +32,7 @@ type pullRequestEvent struct {
 	} `json:"pull_request"`
 }
 
-func ghaDecision(ctx context.Context, root string, d deps) (engine.Decision, bool) {
+func ghaDecision(ctx context.Context, root string, eng engine.Engine) (engine.Decision, bool) {
 	if os.Getenv("GITHUB_EVENT_NAME") != "pull_request" {
 		return engine.Fallback(errors.New("selection applies only to pull requests")), false
 	}
@@ -51,7 +51,7 @@ func ghaDecision(ctx context.Context, root string, d deps) (engine.Decision, boo
 	enforce := slices.ContainsFunc(pr.Labels, func(label struct{ Name string }) bool { return label.Name == enforceLabel })
 	// The same linter entry as the CLI: rules are checked before the
 	// engine loads them.
-	compiled, warnings, err := d.prepare(filepath.Join(root, "ci/test-selection-rules.yaml"))
+	compiled, warnings, err := prepareRules(eng, filepath.Join(root, "ci/test-selection-rules.yaml"))
 	if err != nil {
 		return engine.Fallback(errors.New(lintText(err, warnings))), enforce
 	}
@@ -59,15 +59,15 @@ func ghaDecision(ctx context.Context, root string, d deps) (engine.Decision, boo
 	if err != nil {
 		return engine.Fallback(err), enforce
 	}
-	return d.engine.Resolve(files, compiled), enforce
+	return eng.Resolve(files, compiled), enforce
 }
 
-func gha(ctx context.Context, output, diagnostic io.Writer, d deps) error {
+func gha(ctx context.Context, output, diagnostic io.Writer, eng engine.Engine) error {
 	root := os.Getenv("CI_SELECT_ROOT")
 	if root == "" {
 		root = "."
 	}
-	decision, enforce := ghaDecision(ctx, root, d)
+	decision, enforce := ghaDecision(ctx, root, eng)
 	var details []string
 	applied := make(map[string]string, len(decision.Actions))
 	for _, target := range slices.Sorted(maps.Keys(decision.Actions)) {

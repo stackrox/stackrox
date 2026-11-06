@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stackrox/rox/ci/select/internal/engine/regexengine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +21,7 @@ func TestRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			var output, diagnostic bytes.Buffer
-			require.NoError(t, run(t.Context(), args, &output, &diagnostic, productionDeps()))
+			require.NoError(t, run(t.Context(), args, &output, &diagnostic, regexengine.New()))
 			if args[0] == "validate" {
 				assert.Contains(t, output.String(), "Validation passed, with")
 				assert.Contains(t, diagnostic.String(), "Warning:")
@@ -64,7 +65,7 @@ func TestRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			var output, diagnostic bytes.Buffer
-			err := run(t.Context(), args, &output, &diagnostic, productionDeps())
+			err := run(t.Context(), args, &output, &diagnostic, regexengine.New())
 			require.Error(t, err)
 			assert.Empty(t, output.String())
 			if lintReported[name] {
@@ -99,7 +100,7 @@ rules:
 `
 	path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), rules)
 	var output, diagnostic bytes.Buffer
-	err := run(t.Context(), []string{"resolve", "--rules", path}, &output, &diagnostic, productionDeps())
+	err := run(t.Context(), []string{"resolve", "--rules", path}, &output, &diagnostic, regexengine.New())
 	require.ErrorIs(t, err, errLintReported)
 	assert.Empty(t, output.String())
 	assert.Contains(t, diagnostic.String(), "001 Error:")
@@ -121,7 +122,7 @@ rules:
     run: ['*']
 `)
 	var output, diagnostic bytes.Buffer
-	require.NoError(t, run(t.Context(), []string{"validate", "--rules", clean}, &output, &diagnostic, productionDeps()))
+	require.NoError(t, run(t.Context(), []string{"validate", "--rules", clean}, &output, &diagnostic, regexengine.New()))
 	assert.Equal(t, "Validation passed\n", output.String())
 
 	crossing := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), `version: 1
@@ -141,7 +142,7 @@ rules:
 `)
 	output.Reset()
 	diagnostic.Reset()
-	require.NoError(t, run(t.Context(), []string{"validate", "--rules", crossing}, &output, &diagnostic, productionDeps()))
+	require.NoError(t, run(t.Context(), []string{"validate", "--rules", crossing}, &output, &diagnostic, regexengine.New()))
 	assert.Equal(t, "Validation passed, with 1 warning\n", output.String())
 	assert.Contains(t, diagnostic.String(), "Warning:")
 }
@@ -160,7 +161,7 @@ func TestRunHelp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			var output, diagnostic bytes.Buffer
-			require.NoError(t, run(t.Context(), c.args, &output, &diagnostic, productionDeps()))
+			require.NoError(t, run(t.Context(), c.args, &output, &diagnostic, regexengine.New()))
 			for _, text := range c.want {
 				assert.Contains(t, output.String(), text)
 			}

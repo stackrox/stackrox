@@ -3,7 +3,7 @@ package main
 // engines_test.go pins the wiring: the engine supplies its own checks,
 // so choosing a check depth changes which findings stop selection while
 // the language still fails closed on anything it cannot evaluate. Each
-// test builds its own deps value, so they run in parallel without
+// test builds its own engine value, so they run in parallel without
 // shared state.
 
 import (
@@ -16,11 +16,6 @@ import (
 
 	"github.com/stackrox/rox/ci/select/internal/engine/regexengine"
 )
-
-// trivialDeps is today's language with its authoring checks disabled.
-func trivialDeps() deps {
-	return deps{engine: regexengine.NewTrivial()}
-}
 
 func TestTrivialValidatorDemonstratesTheSeam(t *testing.T) {
 	t.Parallel()
@@ -41,13 +36,13 @@ rules:
 	path := writeTestFile(t, filepath.Join(t.TempDir(), "rules.yaml"), broken)
 
 	var output, diagnostic bytes.Buffer
-	require.NoError(t, run(t.Context(), []string{"validate", "--rules", path}, &output, &diagnostic, trivialDeps()))
+	require.NoError(t, run(t.Context(), []string{"validate", "--rules", path}, &output, &diagnostic, regexengine.NewTrivial()))
 	assert.Equal(t, "Validation passed\n", output.String())
 
 	files := writeTestFile(t, filepath.Join(t.TempDir(), "files"), "docs/guide.md\n")
 	output.Reset()
 	diagnostic.Reset()
-	err := run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, trivialDeps())
+	err := run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, regexengine.NewTrivial())
 	require.ErrorIs(t, err, errLintReported)
 	assert.Contains(t, diagnostic.String(), "compile patterns")
 }
@@ -73,12 +68,12 @@ rules:
 	files := writeTestFile(t, filepath.Join(t.TempDir(), "files"), "docs/guide.md\n")
 
 	var output, diagnostic bytes.Buffer
-	require.NoError(t, run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, trivialDeps()))
+	require.NoError(t, run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, regexengine.NewTrivial()))
 	assert.Contains(t, output.String(), "go skip\n")
 
 	output.Reset()
 	diagnostic.Reset()
-	err := run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, productionDeps())
+	err := run(t.Context(), []string{"resolve", "--rules", path, "--files-file", files}, &output, &diagnostic, regexengine.New())
 	require.ErrorIs(t, err, errLintReported)
 	assert.Contains(t, diagnostic.String(), "duplicate job")
 }

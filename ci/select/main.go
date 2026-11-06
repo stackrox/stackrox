@@ -11,6 +11,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/ci/select/internal/engine"
+	"github.com/stackrox/rox/ci/select/internal/engine/regexengine"
 )
 
 // errLintReported marks a failure the validate command already printed
@@ -21,7 +23,7 @@ var errLintReported = errors.New("lint findings were reported")
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr, productionDeps()); err != nil {
+	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr, regexengine.New()); err != nil {
 		if !errors.Is(err, errLintReported) {
 			fmt.Fprintln(os.Stderr, "ci-select:", err)
 		}
@@ -29,7 +31,7 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, args []string, output, diagnostic io.Writer, d deps) error {
+func run(ctx context.Context, args []string, output, diagnostic io.Writer, eng engine.Engine) error {
 	root := &cobra.Command{
 		Use:               "ci-select",
 		Short:             "Select CI tests from changed paths",
@@ -41,7 +43,7 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer, d dep
 			return errors.New("a subcommand is required (validate, resolve, or gha)")
 		},
 	}
-	root.AddCommand(newValidateCommand(d), newResolveCommand(d), newGHACommand(d))
+	root.AddCommand(newValidateCommand(eng), newResolveCommand(eng), newGHACommand(eng))
 	// A nil argument list would make Cobra read the process arguments.
 	if args == nil {
 		args = []string{}
@@ -52,18 +54,18 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer, d dep
 	return errors.Wrap(root.ExecuteContext(ctx), "execute command")
 }
 
-func newValidateCommand(d deps) *cobra.Command {
+func newValidateCommand(eng engine.Engine) *cobra.Command {
 	var rulesPath string
 	command := &cobra.Command{
 		Use:   "validate",
 		Short: "Validate the CI selection rules",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			// The selected validator is the linter: it runs its checks
-			// on the file and returns the full report — errors for
-			// contradictions, warnings for overlaps — so one run shows
-			// the author everything at once.
-			warnings, err := d.lint(rulesPath)
+			// The engine's checks are the linter: they run on the file
+			// and return the full report — errors for contradictions,
+			// warnings for overlaps — so one run shows the author
+			// everything at once.
+			warnings, err := lintRules(eng, rulesPath)
 			if lintErr := writeLint(cmd.ErrOrStderr(), warnings, err); lintErr != nil {
 				return lintErr
 			}
@@ -75,7 +77,7 @@ func newValidateCommand(d deps) *cobra.Command {
 	return command
 }
 
-func newResolveCommand(d deps) *cobra.Command {
+func newResolveCommand(eng engine.Engine) *cobra.Command {
 	var (
 		rulesPath string
 		filesPath string
@@ -86,10 +88,10 @@ func newResolveCommand(d deps) *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			// The same report as validate when the file has errors. The
-			// engine stops before loading rules the validator rejected,
-			// and still prints the warnings that came back with the
-			// errors.
-			compiled, warnings, err := d.prepare(rulesPath)
+			// engine stops before compiling rules its own checks
+			// rejected, and still prints the warnings that came back
+			// with the errors.
+			compiled, warnings, err := prepareRules(eng, rulesPath)
 			if err != nil {
 				return writeLint(cmd.ErrOrStderr(), warnings, err)
 			}
@@ -106,7 +108,7 @@ func newResolveCommand(d deps) *cobra.Command {
 					files = append(files, line)
 				}
 			}
-			decision := d.engine.Resolve(files, compiled)
+			decision := eng.Resolve(files, compiled)
 			fmt.Fprint(cmd.ErrOrStderr(), decision.Log)
 			// The summary is stdout while the trace is stderr; a header and
 			// leading blank line keep the two sections apart when a terminal
@@ -120,13 +122,13 @@ func newResolveCommand(d deps) *cobra.Command {
 	return command
 }
 
-func newGHACommand(d deps) *cobra.Command {
+func newGHACommand(eng engine.Engine) *cobra.Command {
 	return &cobra.Command{
 		Use:   "gha",
 		Short: "Report CI selection for GitHub Actions",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return gha(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), d)
+			return gha(cmd.Context(), cmd.OutOrStdout(), cmd.ErrOrStderr(), eng)
 		},
 	}
 }

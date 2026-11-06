@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/ci/select/internal/engine/regexengine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -247,7 +248,7 @@ rules:
 				c.mutate(t)
 			}
 			var output, diagnostic bytes.Buffer
-			require.NoError(t, run(t.Context(), []string{"gha"}, &output, &diagnostic, productionDeps()))
+			require.NoError(t, run(t.Context(), []string{"gha"}, &output, &diagnostic, regexengine.New()))
 			assert.Contains(t, output.String(), c.log)
 			data, err := os.ReadFile(os.Getenv("GITHUB_OUTPUT"))
 			require.NoError(t, err)
@@ -272,7 +273,7 @@ rules:
 		t.Setenv("GITHUB_OUTPUT", filepath.Join(t.TempDir(), "output"))
 		t.Setenv("GITHUB_STEP_SUMMARY", filepath.Join(t.TempDir(), "summary"))
 		var output, diagnostic bytes.Buffer
-		require.NoError(t, run(t.Context(), []string{"gha"}, &output, &diagnostic, productionDeps()))
+		require.NoError(t, run(t.Context(), []string{"gha"}, &output, &diagnostic, regexengine.New()))
 		assert.Contains(t, output.String(), "enforce=false")
 		assert.Contains(t, output.String(), "sensor-integration-tests skip")
 		assert.Empty(t, diagnostic.String())

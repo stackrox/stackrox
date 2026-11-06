@@ -150,21 +150,21 @@ with both rules and the affected path.
 
 ## Pluggable engine and validation
 
-The selector has one seam, provided by the `deps` value in `engines.go`.
-`engine.Engine` owns a rules language end to end: it validates a rules
-document, compiles it, and resolves it against changed paths. Every
-command receives that value, so callers depend only on the interface:
-replacing the rules syntax means adding an implementation and returning
-it from `productionDeps`. Tests pass their own `deps` instead of
-mutating shared state.
+The selector has one dependency: an `engine.Engine`. It owns a rules
+language end to end, validating a rules document, compiling it, and
+resolving it against changed paths. `main` constructs the implementation
+and passes it to every command, so callers depend only on the interface:
+replacing the rules syntax means adding an implementation and
+constructing it there instead. Tests pass their own engine value rather
+than mutating shared state.
 
 Validation is part of that interface rather than a free-standing
 dependency, because whether a document is well-formed is defined by the
 language it is written in. Two engines may accept entirely different
 YAML, so a validator that does not read the same syntax would either
 wave through documents the engine cannot interpret or reject valid ones.
-`Engine.Validate` hands out the checks that belong to the language, and
-`deps` has no separate validator field to pair incorrectly. Today's
+`Engine.Validate` hands out the checks that belong to the language, so
+there is no separate validator to pair incorrectly. Today's
 engine is `internal/engine/regexengine`; its checks — `Full`, the
 complete report, plus their overlap analysis — live beside it in
 `internal/engine/regexengine/rulesvalidation`. `engine.TrivialValidator`
