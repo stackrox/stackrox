@@ -178,6 +178,22 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
+    # INVESTIGATION BRANCH (do not merge): measure whether caching GOMODCACHE is
+    # worth its ~1.3GB quota cost. Leg 1 runs with cold modules (current behavior)
+    # and saves a PR-scoped module cache entry; leg 2 (empty commit) restores it.
+    # The job-time delta between the legs is the value of module caching.
+    - name: Determine Go module cache path
+      id: modcache
+      run: echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Module cache (investigation)
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6
+      with:
+        path: ${{ steps.modcache.outputs.GOMODCACHE }}
+        key: lint-modcache-v1-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          lint-modcache-v1-
+
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
