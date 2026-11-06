@@ -67,8 +67,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),
 		ScannerHealthStatus:          clusterhealth.PopulateLocalScannerStatus(sInfo),
 		LastContact:                  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		// When sensor health monitoring is revised update the sensor capability
-		HealthInfoComplete: conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap),
+		HealthInfoComplete:           conn != nil,
 	}
 	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
 

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/sac"
@@ -170,13 +169,6 @@ func (m *manager) updateClusterHealthForever() {
 			conn := m.GetConnection(cluster.GetId())
 			if conn == nil {
 				m.updateInactiveClusterHealth(cluster)
-				continue
-			}
-
-			// Update cluster contact times for active sensors from here iff they do not have health monitoring capability.
-			// Otherwise, rely on cluster health pipeline.
-			if !conn.HasCapability(centralsensor.HealthMonitoringCap) {
-				m.updateActiveClusterHealth(cluster)
 			}
 		}
 	}
@@ -192,19 +184,6 @@ func (m *manager) updateInactiveClusterHealth(cluster *storage.Cluster) {
 		LastContact:           oldHealth.GetLastContact(),
 		CollectorHealthInfo:   oldHealth.GetCollectorHealthInfo(),
 		HealthInfoComplete:    oldHealth.GetHealthInfoComplete(),
-	}
-	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
-
-	if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), clusterHealthStatus); err != nil {
-		log.Errorf("error updating health for cluster %s (id: %s): %v", cluster.GetName(), cluster.GetId(), err)
-	}
-}
-
-func (m *manager) updateActiveClusterHealth(cluster *storage.Cluster) {
-	clusterHealthStatus := &storage.ClusterHealthStatus{
-		SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
-		CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
-		LastContact:           protocompat.TimestampNow(),
 	}
 	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
 
@@ -515,22 +494,12 @@ func (m *manager) PushExternalNetworkEntitiesToSensor(ctx context.Context, clust
 		return nil
 	}
 
-	// This is not perfect, however, the closest.
-	if !conn.HasCapability(centralsensor.NetworkGraphExternalSrcsCap) {
-		return errors.New("sensor version must be up-to-date with Central")
-	}
 	return conn.NetworkEntities().SyncNow(ctx)
 }
 
 func (m *manager) PushExternalNetworkEntitiesToAllSensors(ctx context.Context) error {
 	var errs errorhelpers.ErrorList
 	for _, conn := range m.GetActiveConnections() {
-		// This is not perfect, however, the closest.
-		if !conn.HasCapability(centralsensor.NetworkGraphExternalSrcsCap) {
-			errs.AddError(errors.Errorf("sensor version for cluster %q is not up-to-date with Central", conn.ClusterID()))
-			continue
-		}
-
 		if err := conn.NetworkEntities().SyncNow(ctx); err != nil {
 			errs.AddError(err)
 		}
