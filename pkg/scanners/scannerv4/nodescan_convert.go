@@ -8,6 +8,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/rhcos"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -54,12 +55,39 @@ func toOperatingSystem(ref string) string {
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
 	packages := packagesByID(r.GetContents())
 	result := make([]*storage.EmbeddedNodeScanComponent, 0, len(packages))
+	canonical := packages[rhcos.PackageID]
 
 	for id, pkg := range packages {
+		if canonical != nil {
+			switch id {
+			case rhcos.PackageID:
+				result = append(result, createEmbeddedComponent(pkg, rhcosImageVulns(r)))
+				continue
+			case rhcos.SourceID, rhcos.LegacyPackageID, rhcos.LegacySourceID:
+				continue
+			}
+		}
 		vulns := getPackageVulns(id, r)
 		result = append(result, createEmbeddedComponent(pkg, vulns))
 	}
 	return result
+}
+
+// rhcosImageVulns prefers canonical findings per CVE, retaining legacy-only
+// findings during the VEX migration. An empty canonical result does not prove
+// that legacy findings are obsolete. Whole findings are selected, so legacy
+// fix information cannot overwrite a canonical finding without a fixed version.
+func rhcosImageVulns(r *v4.VulnerabilityReport) []*storage.EmbeddedVulnerability {
+	var vulns []*storage.EmbeddedVulnerability
+	seen := set.NewStringSet()
+	for _, id := range []string{rhcos.PackageID, rhcos.SourceID, rhcos.LegacyPackageID, rhcos.LegacySourceID} {
+		for _, vuln := range getPackageVulns(id, r) {
+			if seen.Add(vuln.GetCve()) {
+				vulns = append(vulns, vuln)
+			}
+		}
+	}
+	return vulns
 }
 
 func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.EmbeddedVulnerability {

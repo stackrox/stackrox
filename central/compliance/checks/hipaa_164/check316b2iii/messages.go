@@ -1,5 +1,0 @@
-package check316b2ii
-
-const interpretationText = `StackRox continuously monitors, updates security polices and protects assets.
-Vulnerability databases used by our image scanners are continuously updated with latest CVE definitions. 
-Therefore, the cluster is compliant if there is an image scanner in use.`

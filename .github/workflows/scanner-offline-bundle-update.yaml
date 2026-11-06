@@ -67,6 +67,7 @@ jobs:
         name: offline-bundle-${{ matrix.versions.vulnerability_version }}
         path: bundle
         if-no-files-found: error
+        retention-days: '1'
 
   offline-bundle-upload:
     runs-on: ubuntu-24.04

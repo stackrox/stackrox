@@ -24,9 +24,8 @@ Installation of roxie is straightforward:
    the hood.
 1. there is also a containerized version of roxie living at quay.io/rhacs-eng/roxie, which can be used ad-hoc.
 
-Furthermore, the `deploy/deploy.sh` shell script uses a roxie backend by default. It will automatically
-download and run the roxie version specified in the `ROXIE_VERSION` file. To fall back to the legacy
-deploy flow, set `USE_ROXIE_DEPLOY=false` in the environment.
+Furthermore, the `deploy/deploy.sh` shell script uses roxie under the hood. It will automatically
+download and run the roxie version specified in the `ROXIE_VERSION` file.
 
 Any extra arguments you pass to `deploy.sh` are forwarded directly to roxie,
 so you can use roxie CLI flags even with `deploy.sh`, e.g.:
@@ -35,8 +34,7 @@ so you can use roxie CLI flags even with `deploy.sh`, e.g.:
 ./deploy/deploy.sh --tag 4.11.0
 ```
 
-The roxie backend in `deploy.sh` is **opt-out**. Set `USE_ROXIE_DEPLOY=false` to fall
-back to the legacy flow. The legacy deployment scripts will be removed entirely soon.
+The legacy deployment scripts will be removed entirely soon.
 
 If you would like to use roxie directly, but roxie is not installed on your system, all `roxie`
 commands below can also be run via `scripts/roxie.sh` instead:
@@ -247,49 +245,10 @@ Another important roxie command is `roxie teardown <component>`, where component
 1. securedcluster
 1. both (meaning central + securedcluster)
 1. all (meaning both + operator)
+1. operator (just operator)
 
 ### Feedback
 
 We're actively improving roxie and would love your feedback! If you run into
 issues, have feature requests, or just want to share your experience, please
 reach out to the **ACS Install team**.
-
----
-
-## Legacy deployment flow
-
-> **Note:** The sections below describe the legacy `kubectl`-based deployment
-> flow. Consider switching to roxie (see above) for a better experience.
-
-### Usage
-
-```
-# Deploy scripts should be used from the git root of this repo
-# Deploy StackRox locally
-$ USE_ROXIE_DEPLOY=false ./deploy/deploy-local.sh
-
-# Deploy StackRox on a remote OpenShift cluster with an exposed route
-$ LOAD_BALANCER=route ./deploy/openshift/deploy.sh
-```
-
-### Env variables
-
-Most environment variables can be found in [common/env.sh](common/env.sh).
-
-| **Name**                             | **Values**            | **Description**                                                                                                                                                                                                                                                            |
-|--------------------------------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `COLLECTION_METHOD`                  | `core_bpf`            | Set the collection method for collector.                                                                                                                                                                                                                                   |
-| `ROX_HOTRELOAD`                      | `true`  \ `false`     | `HOTRELOAD` mounts Sensor and Central local binaries into locally running pods. Only works with docker-desktop.  Alternatively you can use ./dev-tools/enabled-hotreload.sh. Note however that this will break the linter: https://stack-rox.atlassian.net/browse/ROX-6562 |
-| `LOAD_BALANCER`                      | `route` \ `lb`        | Configure how to expose Central, important if deployed on remote clusters. Use `route` for OpenShift, `lb` for Kubernetes.                                                                                                                                                 |
-| `MAIN_IMAGE_TAG`                     | `string`              | Configure the image tag of the `stackrox/main` image to be deployed.                                                                                                                                                                                                       |
-| `MONITORING_SUPPORT`                 | `true`  \ `false`     | Enable StackRox monitoring.                                                                                                                                                                                                                                                |
-| `MONITORING_ENABLE_PSP`              | `true` \ `false`      | Generate PodSecurityPolicies for monitoring. Defaults to `false`, as PSPs were deprecated in k8s 1.25.                                                                                                                                                                     |
-| `REGISTRY_USERNAME`                  | `string`              | Set docker registry username to pull the docker.io/stackrox/main image.                                                                                                                                                                                                    |
-| `REGISTRY_PASSWORD`                  | `string`              | Set docker registry password to pull the docker.io/stackrox/main image.                                                                                                                                                                                                    |
-| `STORAGE`                            | `none`  \ `pvc`       | Defines which storage to use for the Central database, to preserve data between Central restarts it is recommended to use `pvc`.                                                                                                                                           |
-| `SENSOR_DEV_RESOURCES`               | `true`  \ `false`     | (defaults to `true`) When set to true, Sensor will be deployed with reduced memory/cpu requests. This should be used exclusively for testing and development environments.                                                                                                 |
-| `ROX_LOCAL_SOURCE_PATH`              | `string`              | When `ROX_HOTRELOAD` is enabled this variable sets the path to the local binary. This is useful when the `hostPath` mount links into a VM or container, e.g. when using KIND.                                                                                              |
-| `ROX_INIT_BUNDLE_PATH`               | `string`              | Sets a custom init-bundle file path for Sensor.                                                                                                                                                                                                                            |
-| `ROX_CENTRAL_EXTRA_HELM_VALUES_FILE` | `string`              | Adds a custom value file path to the Central Helm chart.                                                                                                                                                                                                                   |
-| `SCANNER_V4_DB_CLAIM_NAME`           | `string`              | Sets the Scanner V4 DB PVC claim name in both Central and bundled monitoring when using classic Helm deploy.                                                                                                                                                |
-| `ROX_SENSOR_EXTRA_HELM_VALUES_FILE`  | `string`              | Adds a custom value file path to the Sensor Helm chart.                                                                                                                                                                                                                    |

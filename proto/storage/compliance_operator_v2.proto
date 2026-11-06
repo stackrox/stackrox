@@ -181,7 +181,7 @@ message ComplianceOperatorBenchmarkV2 {
   repeated Profile profiles = 8;
 }
 
-// Next Tag: 21
+// Next Tag: 22
 // This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
 // while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
 // as the rules can change without impacting the historical result.
@@ -195,6 +195,16 @@ message ComplianceOperatorCheckResultV2 {
     MANUAL = 5;
     NOT_APPLICABLE = 6;
     INCONSISTENT = 7;
+  }
+  // DataFreshness indicates whether a stored check result is current relative to its scan
+  // configuration's schedule.
+  enum DataFreshness {
+    // Cannot evaluate: no schedule, unresolvable config, or not yet swept.
+    UNKNOWN = 0;
+    // Data reflects the most recent expected scan cycle.
+    CURRENT = 1;
+    // Data predates the most recent expected scan cycle.
+    STALE = 2;
   }
   string id = 1; // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
   string check_id = 2; // @gotags: search:"Compliance Check ID,hidden"
@@ -217,6 +227,7 @@ message ComplianceOperatorCheckResultV2 {
   string rule_ref_id = 19; // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
   // last_started_time is the last time the Scan resource was triggered
   google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time,hidden"
+  DataFreshness data_freshness = 21; // @gotags: search:"Compliance Check Data Freshness,hidden"
 }
 
 //Next Tag: 4

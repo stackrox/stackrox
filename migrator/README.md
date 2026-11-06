@@ -152,6 +152,18 @@ The rollout checker (step 9) ensures that no old-version Central pods are still 
 before background migrations begin. This prevents conflicts between old code writing data
 in the pre-migration format while the migration is transforming it.
 
+### Central Worker startup coordination
+
+Central Worker briefly acquires the startup migration lock to check the database
+version. If an upgrade is needed and Worker holds the lock, the migrator retries
+acquisition for up to 30 seconds. This limit does not apply to migration execution.
+
+Worker waits for the startup migration lock and a compatible database version
+until shutdown is requested. While waiting, its liveness endpoint succeeds and
+its readiness endpoint fails. Background migrations use a separate advisory lock
+and version sequence, so they do not block Worker startup. Worker must tolerate
+partially completed background backfills, like Central.
+
 ### Testing backwards compatibility
 
 The `gke-upgrade-tests` start with a 4.1.3 deployment and upgrade to the current

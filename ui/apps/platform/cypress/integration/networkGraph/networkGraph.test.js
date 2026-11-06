@@ -132,8 +132,8 @@ describe('Network Graph smoke tests', () => {
 
         // Remove the central-db selection from the scope filter
         selectDeployment('central-db');
-        // Apply a general filter of "Deployment Label" for 'app=scanner-v4-db'
-        selectFilter('Deployment Label', 'app=scanner-v4-db');
+        // Apply a general filter of Deployment > Label for 'app=scanner-v4-db'
+        selectFilter('Deployment', 'Label', 'app=scanner-v4-db');
 
         ['scanner-v4-indexer', 'scanner-v4-matcher', 'scanner-v4-db'].forEach((deployment) => {
             cy.get(networkGraphSelectors.deploymentNode(deployment));

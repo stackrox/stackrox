@@ -27,13 +27,14 @@ option go_package = "./internalapi/central;central";
 
 // next available tag: 20
 message MsgFromSensor {
+  reserved 3;
+
   string hash_key = 7;
   string dedupe_key = 8;
   int32 processing_attempt = 15;
   oneof msg {
     SensorEvent event = 1;
     NetworkFlowUpdate network_flow_update = 2;
-    ScrapeUpdate scrape_update = 3;
     NetworkPoliciesResponse network_policies_response = 4;
     ClusterStatusUpdate cluster_status_update = 5;
     PullTelemetryDataResponse telemetry_data_response = 6;
@@ -57,15 +58,15 @@ message ReprocessDeployments {
 
 // next available tag: 31
 message MsgToSensor {
+  reserved 2, 8;
+
   oneof msg {
     SensorEnforcement enforcement = 1;
-    ScrapeCommand scrape_command = 2;
     NetworkPoliciesCommand network_policies_command = 3;
     ClusterConfig cluster_config = 4;
     SensorUpgradeTrigger sensor_upgrade_trigger = 5;
     PullTelemetryDataRequest telemetry_data_request = 6;
     PolicySync policy_sync = 7;
-    // 8 was ReassessPolicies
     BaselineSync baseline_sync = 9;
     CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
     PushNetworkEntitiesRequest push_network_entities_request = 11;
