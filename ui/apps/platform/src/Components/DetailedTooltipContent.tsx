@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
-import { Content, ContentVariants, Divider } from '@patternfly/react-core';
+import { Content, Divider } from '@patternfly/react-core';
 
 export type DetailedTooltipContentProps = {
     title: string;
@@ -34,7 +34,7 @@ function DetailedTooltipContent({
             <div>
                 <Content
                     className="pf-v6-u-font-weight-bold"
-                    component={ContentVariants.h3}
+                    component="h3"
                     data-testid="tooltip-title"
                 >
                     {title}
