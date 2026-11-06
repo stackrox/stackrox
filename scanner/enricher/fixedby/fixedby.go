@@ -171,7 +171,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 				// fixedBy.Package.Version.
 				// If so, then we replace the current fixedBy.Package.Version
 				// with v.FixedInVersion.
-				vulnerable, err := matcher.Vulnerable(ctx, fixedBy, v)
+				vulnerable, err := vulnerableInRepositories(ctx, matcher, fixedBy, v, env.RepositoryIDs, vr.Repositories)
 				if err != nil {
 					slog.WarnContext(ctx, "skipping", "reason", err, "package", pkg.Name, "vulnerability_id", v.ID, "vulnerability", v.Name, "fixed_in_version", v.FixedInVersion)
 					continue
@@ -225,6 +225,31 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 	}
 
 	return fixedby.Type, []json.RawMessage{b}, nil
+}
+
+// vulnerableInRepositories checks every Red Hat Java product repository when
+// calculating a package's fixed-by version. Enrich selects the first repository
+// to choose a matcher, but a Java SBOM package can belong to multiple products.
+// For example, a 2.6.9 package associated with EAP and Quarkus may have an EAP
+// fix in 2.6.10 and a Quarkus fix in 2.6.12. Checking only EAP misses the
+// Quarkus fix because its CPE does not match EAP, yielding 2.6.10 instead of
+// 2.6.12 as the package's fixed-by version.
+func vulnerableInRepositories(ctx context.Context, m matcher, record *claircore.IndexRecord, vuln *claircore.Vulnerability, repoIDs []string, repos map[string]*claircore.Repository) (bool, error) {
+	if _, ok := m.(*rheljava.RedHatMatcher); !ok {
+		return m.Vulnerable(ctx, record, vuln)
+	}
+	for _, repoID := range repoIDs {
+		repo := repos[repoID]
+		if repo == nil || repo.Key != rheljava.RepositoryKey {
+			continue
+		}
+		record.Repository = repo
+		vulnerable, err := m.Vulnerable(ctx, record, vuln)
+		if err != nil || vulnerable {
+			return vulnerable, err
+		}
+	}
+	return false, nil
 }
 
 func parseURLEncoding(v string) string {
