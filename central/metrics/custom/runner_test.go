@@ -196,6 +196,7 @@ func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
 
 	runner := makeRunner(&runnerDatastores{})
 	workflowIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
+	workflowIdentity.EXPECT().Roles().AnyTimes().Return(nil)
 	workflowIdentity.EXPECT().UID().AnyTimes().Return("workflow-authz-test")
 	workflowIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
 		"WorkflowAdministration": storage.Access_READ_ACCESS,
@@ -203,6 +204,7 @@ func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
 	workflowCtx := authn.ContextWithIdentity(context.Background(), workflowIdentity, t)
 	t.Cleanup(func() { metrics.DeleteCustomRegistry("workflow-authz-test") })
 	scopedIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
+	scopedIdentity.EXPECT().Roles().AnyTimes().Return(nil)
 	scopedIdentity.EXPECT().UID().AnyTimes().Return("scoped-only-authz-test")
 	scopedIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
 		"Deployment": storage.Access_READ_ACCESS,
