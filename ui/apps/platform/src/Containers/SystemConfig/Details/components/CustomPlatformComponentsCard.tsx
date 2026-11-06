@@ -38,15 +38,11 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
                             applications and products.
                         </Content>
                         <Divider component="div" />
-                        <Content component="small" className="pf-v6-u-color-200">
-                            Namespaces match (Regex)
-                        </Content>
+                        <Content component="small">Namespaces match (Regex)</Content>
                         {customRules.length === 0 && <CodeBlock>None</CodeBlock>}
                         {customRules.length >= 1 && (
                             <CodeBlock>
-                                <Content component="small" className="pf-v6-u-color-200">
-                                    {customRules[0].name}
-                                </Content>
+                                <Content component="small">{customRules[0].name}</Content>
                                 <div className="truncate-multiline">
                                     {customRules[0].namespaceRule.regex}
                                 </div>
@@ -71,15 +67,11 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
                 tabIndex={0} // enables keyboard-accessible scrolling of a modal’s content
             >
                 <Stack hasGutter>
-                    <Title headingLevel="h2" className="pf-v6-u-color-100">
-                        {pluralize(customRules.length, 'result')} found
-                    </Title>
+                    <Title headingLevel="h2">{pluralize(customRules.length, 'result')} found</Title>
                     {customRules.map((rule) => {
                         return (
                             <CodeBlock key={rule.name}>
-                                <Content component="small" className="pf-v6-u-color-200">
-                                    {rule.name}
-                                </Content>
+                                <Content component="small">{rule.name}</Content>
                                 <div>{rule.namespaceRule.regex}</div>
                             </CodeBlock>
                         );
