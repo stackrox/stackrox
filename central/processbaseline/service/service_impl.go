@@ -81,7 +81,7 @@ func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetPro
 	}
 	if !exists {
 		// Make sure the deployment still exists before we try to build a baseline.
-		_, deploymentExists, err := s.deployments.GetDeployment(ctx, request.GetKey().GetDeploymentId())
+		deploymentExists, err := s.deployments.DeploymentExists(ctx, request.GetKey().GetDeploymentId())
 		if err != nil {
 			return nil, err
 		}
@@ -262,7 +262,7 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 		key, _ := datastore.IDToKey(r.ID)
 
 		// make sure the deployment still exists, if not that process will take care fo the baseline
-		_, exists, err := s.deployments.GetDeployment(ctx, key.GetDeploymentId())
+		exists, err := s.deployments.DeploymentExists(ctx, key.GetDeploymentId())
 
 		if exists && err == nil {
 			toClear = append(toClear, r.ID)
