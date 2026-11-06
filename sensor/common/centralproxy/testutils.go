@@ -181,6 +181,7 @@ func setupCentralCapsForTest(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{
 		centralsensor.InternalTokenAPISupported,
 		centralsensor.CentralProxyPathFiltering,
+		centralsensor.CentralProxyScopedReadOnlyTokens,
 	})
 	allowedpaths.Set([]string{"/v1/", "/v2/", "/api/graphql", "/api/v1/"})
 	t.Cleanup(func() {
