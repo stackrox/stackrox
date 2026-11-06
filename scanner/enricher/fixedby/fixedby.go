@@ -81,7 +81,8 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 
 		// Copy pkg so we can overwrite the version.
 		p := *pkg
-		fixedBy.Package = &p
+		// Reset before processing, since an early continue can skip the end of the loop.
+		*fixedBy = claircore.IndexRecord{Package: &p}
 
 		// Set the Distribution.
 		// If we cannot identify the distribution, then use a dummy one,
@@ -212,10 +213,6 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 			m[pkgID] = fixedBy.Package.Version
 		}
 
-		// Reset fixedBy.
-		fixedBy.Package = nil
-		fixedBy.Distribution = nil
-		fixedBy.Repository = nil
 	}
 
 	if len(m) == 0 {
