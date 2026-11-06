@@ -14,8 +14,8 @@ spec:
   sensor:
     resources:
       requests:
-        cpu: 50m
         memory: 512Mi
+        cpu: 50m
       limits:
         memory: 512Mi
   perNode:

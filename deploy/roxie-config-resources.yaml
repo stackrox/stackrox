@@ -12,13 +12,13 @@ central:
         resources:
           requests:
             cpu: 100m
-            memory: 1Gi
+            memory: 4Gi
           limits:
-            memory: 1Gi
+            memory: 4Gi
     centralWorker:
       resources:
         requests:
-          cpu: 50m
+          cpu: 10m
           memory: 128Mi
         limits:
           memory: 128Mi

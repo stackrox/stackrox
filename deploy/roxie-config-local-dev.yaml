@@ -1,4 +1,4 @@
-# Local development settings using the QA/UI resource budget.
+# Roxie config mirroring the legacy LOCAL_DEPLOYMENT=true (deploy-local.sh) settings.
 # Reduces resource requests/limits for local dev clusters, disables telemetry,
 # monitoring, and scanner autoscaling.
 #
@@ -18,9 +18,9 @@ central:
         resources:
           requests:
             cpu: 100m
-            memory: 1Gi
+            memory: 4Gi
           limits:
-            memory: 1Gi
+            memory: 4Gi
       telemetry:
         enabled: false
 
@@ -32,10 +32,11 @@ central:
       enabled: true
       resources:
         requests:
-          cpu: 50m
+          cpu: 10m
           memory: 128Mi
         limits:
           memory: 128Mi
+
     scannerV4:
       indexer:
         scaling:
@@ -66,6 +67,7 @@ central:
             memory: 4Gi
           limits:
             memory: 4Gi
+
 securedCluster:
   namespace: stackrox
   spec:
@@ -80,6 +82,7 @@ securedCluster:
           memory: 512Mi
         limits:
           memory: 512Mi
+
     perNode:
       collector:
         collection: CORE_BPF

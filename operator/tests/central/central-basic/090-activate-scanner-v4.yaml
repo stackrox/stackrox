@@ -12,10 +12,10 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: 50m
-          memory: 512Mi
+          cpu: "50m"
+          memory: "512Mi"
         limits:
-          memory: 512Mi
+          memory: "512Mi"
     matcher:
       scaling:
         autoScaling: Disabled
@@ -23,14 +23,14 @@ spec:
         replicas: 1
       resources:
         requests:
-          cpu: 50m
-          memory: 256Mi
+          cpu: "50m"
+          memory: "256Mi"
         limits:
-          memory: 256Mi
+          memory: "256Mi"
     db:
       resources:
         requests:
-          cpu: 100m
-          memory: 4Gi
+          cpu: "100m"
+          memory: "4Gi"
         limits:
-          memory: 4Gi
+          memory: "4Gi"
