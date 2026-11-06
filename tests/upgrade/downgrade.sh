@@ -36,10 +36,10 @@ downgrade_version_snapshot() (
             "SELECT coalesce(json_agg(v), '\''[]'\''::json) FROM versions v"
     ' | jq -ceS .)" || return 1
     [[ -n "$snapshot" ]] || return 1
-    printf '%s\n' "$snapshot"
+    echo "$snapshot"
 )
 
-stop_downgrade_central() {
+stop_central() {
     kubectl -n stackrox scale deploy/central --replicas=0 || return 1
     kubectl -n stackrox wait --for=delete pod -l app=central --timeout=120s
 }
