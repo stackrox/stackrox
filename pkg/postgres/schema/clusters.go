@@ -19,6 +19,9 @@ var (
 	CreateTableClustersStmt = &postgres.CreateStmts{
 		GormModel: (*Clusters)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "clusters_labels", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS clusters_labels ON clusters USING gin (labels)"},
+		},
 	}
 
 	// ClustersSchema is the go schema for table `clusters`.
