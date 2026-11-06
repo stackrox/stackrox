@@ -297,3 +297,17 @@ func (mr *MockBatchResultsMockRecorder) QueryRow() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRow", reflect.TypeOf((*MockBatchResults)(nil).QueryRow))
 }
+
+// Tx mocks base method.
+func (m *MockBatchResults) Tx() pgx.Tx {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Tx")
+	ret0, _ := ret[0].(pgx.Tx)
+	return ret0
+}
+
+// Tx indicates an expected call of Tx.
+func (mr *MockBatchResultsMockRecorder) Tx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tx", reflect.TypeOf((*MockBatchResults)(nil).Tx))
+}
