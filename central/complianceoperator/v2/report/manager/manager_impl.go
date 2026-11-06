@@ -501,6 +501,11 @@ func (m *managerImpl) handleReadyScan() {
 			}
 		} else {
 			log.Debugf("Skipping DeleteOldResults for scan %s: %v", scanWatcherResult.Scan.GetScanName(), scanWatcherResult.Error)
+			// Stale marking: prior results the failed scan did NOT refresh are now stale.
+			// The fresh results it delivered carry this run's start time and remain fresh.
+			if features.ComplianceSurfaceStaleData.Enabled() {
+				m.markPriorResultsStale(scanWatcherResult)
+			}
 		}
 		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
@@ -528,6 +533,30 @@ func (m *managerImpl) handleReadyScan() {
 	}
 }
 
+// markPriorResultsStale marks STALE the prior results of a scan run that ended on an error -- the
+// rows its run did not refresh. It reads the run scope from scanWatcherResult.Scope, which the
+// watcher records from both Scan updates and check results, so it works even when no Scan ever
+// arrived.
+func (m *managerImpl) markPriorResultsStale(scanWatcherResult *watcher.ScanWatcherResults) {
+	displayID := scanWatcherResult.Scan.GetScanName()
+	if displayID == "" {
+		displayID = scanWatcherResult.WatcherID
+	}
+	scope := scanWatcherResult.Scope
+	if scope.ScanRefID == "" || scope.LastStartedTime == nil {
+		log.Debugf("Skipping stale marking for watcher %s: no scan scope available", scanWatcherResult.WatcherID)
+		return
+	}
+	updated, err := m.checkResultDataStore.MarkScanChecksStale(m.automaticReportingCtx, scope.ScanRefID, scope.LastStartedTime.AsTime())
+	if err != nil {
+		log.Errorf("unable to mark prior results of scan %s stale: %v", displayID, err)
+		return
+	}
+	if updated > 0 {
+		log.Infof("Marked %d prior check results stale for scan %s", updated, displayID)
+	}
+}
+
 // getOrCreateScanConfigWatcher returns the ScanConfigWatcher of a given scan
 func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results *watcher.ScanWatcherResults, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults]) (watcher.ScanConfigWatcher, *storage.ComplianceOperatorScanConfigurationV2, bool, error) {
 	sc, err := watcher.GetScanConfigFromScan(m.automaticReportingCtx, results.Scan, ds)
@@ -543,8 +572,8 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 	})
 	if !watcherIsRunning {
 		query := search.NewQueryBuilder().
-			AddExactMatches(search.ComplianceOperatorScanRef, results.Scan.GetScanRefId()).
-			AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, results.Scan.GetLastStartedTime().AsTime(), timestamp.InfiniteFuture.GoTime()).
+			AddExactMatches(search.ComplianceOperatorScanRef, results.Scope.ScanRefID).
+			AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, results.Scope.LastStartedTime.AsTime(), timestamp.InfiniteFuture.GoTime()).
 			ProtoQuery()
 		snapshot, err := m.snapshotDataStore.SearchSnapshots(m.automaticReportingCtx, query)
 		if err != nil {

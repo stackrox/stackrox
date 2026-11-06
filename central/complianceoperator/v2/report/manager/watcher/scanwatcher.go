@@ -53,6 +53,25 @@ type ScanWatcher interface {
 	Stop(err error)
 }
 
+// ScanScope identifies a scan run by its scan ref and start time. The watcher records it from
+// whichever events it sees -- Scan updates and check results alike -- so it is the single source of
+// truth for the run's scan ref and start time, including the result-first timeout case where no
+// Scan is ever populated (see GetWatcherIDFromCheckResult).
+type ScanScope struct {
+	ScanRefID       string
+	LastStartedTime *protocompat.Timestamp
+}
+
+// toSnapshotScan renders the scope as the scan entry stored on a report snapshot. Both the
+// per-watcher scans (GetScans) and the incremental snapshot updates (appendScanToSnapshots) build
+// this entry from the scope, so the snapshot's scan ref and start time always come from one source.
+func (s ScanScope) toSnapshotScan() *storage.ComplianceOperatorReportSnapshotV2_Scan {
+	return &storage.ComplianceOperatorReportSnapshotV2_Scan{
+		ScanRefId:       s.ScanRefID,
+		LastStartedTime: s.LastStartedTime,
+	}
+}
+
 // ScanWatcherResults is returned when the watcher detects that the scan is completed.
 type ScanWatcherResults struct {
 	SensorCtx    context.Context
@@ -60,17 +79,20 @@ type ScanWatcherResults struct {
 	Scan         *storage.ComplianceOperatorScanV2
 	CheckResults set.StringSet
 	Error        error
+	// Scope identifies the run (scan ref and start time). Prefer it over Scan for that information:
+	// it is recorded from both Scan updates and check results, so reading scope from one place
+	// avoids a second source of truth and works even when Scan is nil.
+	Scope ScanScope
 }
 
-// DeleteOldResults associated with the Scan of the given ScanWatcherResults
+// DeleteOldResults associated with the run of the given ScanWatcherResults
 func DeleteOldResults(ctx context.Context, results *ScanWatcherResults, store resultsDS.DataStore) error {
 	if results == nil {
 		return errors.New("unable to delete old CheckResults from an nil ScanWatcherResults")
 	}
 	// If the scan failed we remove old and current results
 	includeCurrentResults := results.Error != nil
-	scan := results.Scan
-	return store.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), includeCurrentResults)
+	return store.DeleteOldResults(ctx, results.Scope.LastStartedTime, results.Scope.ScanRefID, includeCurrentResults)
 }
 
 // IsComplianceOperatorHealthy indicates whether Compliance Operator is ready for automatic reporting
@@ -364,13 +386,24 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 		s.lastStartedTime = scan.GetLastStartedTime()
 		s.scanResults.Scan = scan
 		s.scanResults.CheckResults = set.NewStringSet()
+		s.recordScope(scan.GetScanRefId())
 		s.timeout.Reset()
 	} else if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) == 0 {
 		s.totalChecks = numChecks
 		// Same timestamp: update scan to pick up status changes (e.g., NOT-APPLICABLE).
 		s.scanResults.Scan = scan
+		s.recordScope(scan.GetScanRefId())
 	}
 	return nil
+}
+
+// recordScope stores the run's scan ref and start time on the results so the manager can mark prior
+// results stale on timeout from whichever events the watcher saw. s.lastStartedTime is the single
+// source of truth for the run start: both handleScan and handleResult keep it current, so a Scan and
+// a newer result that raced each other never leave a stale pivot. Callers hold resultsLock.
+func (s *scanWatcherImpl) recordScope(scanRefID string) {
+	s.scanResults.Scope.ScanRefID = scanRefID
+	s.scanResults.Scope.LastStartedTime = s.lastStartedTime
 }
 
 func (s *scanWatcherImpl) handleResult(result *storage.ComplianceOperatorCheckResultV2) error {
@@ -403,6 +436,9 @@ func (s *scanWatcherImpl) handleResult(result *storage.ComplianceOperatorCheckRe
 		s.scanResults.CheckResults = set.NewStringSet()
 		s.timeout.Reset()
 	}
+	// Record the run's scope from the results so the manager can mark prior results stale even if no
+	// Scan update ever arrives (result-first timeout). All results of a watcher share the scan ref.
+	s.recordScope(result.GetScanRefId())
 	s.scanResults.CheckResults.Add(result.GetCheckId())
 	return nil
 }
