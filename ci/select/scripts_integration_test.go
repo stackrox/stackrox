@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/ci/select/internal/rules"
 	"github.com/stackrox/rox/ci/select/internal/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -154,7 +155,13 @@ func TestScriptE2EDispatch(t *testing.T) {
 	require.NotEmpty(t, baselineActions)
 
 	t.Run("should enroll the same E2E targets in policy, dispatcher, and workflows", func(t *testing.T) {
-		policy, _, err := validation.Load("../test-selection-rules.yaml")
+		rulesData, err := os.ReadFile("../test-selection-rules.yaml")
+		require.NoError(t, err)
+		// The production validator gates the fixture; Parse yields the
+		// target inventory the compiled engine.Rules keeps private.
+		_, err = (validation.Full{}).Validate(rulesData)
+		require.NoError(t, err)
+		policy, err := rules.Parse(rulesData)
 		require.NoError(t, err)
 		var policyTargets []string
 		for _, target := range policy.Jobs {

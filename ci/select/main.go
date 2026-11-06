@@ -11,8 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/ci/select/internal/resolver"
-	"github.com/stackrox/rox/ci/select/internal/validation"
 )
 
 // errLintReported marks a failure the validate command already printed
@@ -61,11 +59,11 @@ func newValidateCommand() *cobra.Command {
 		Short: "Validate the CI selection rules",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			// validation.Load is the linter: it runs every check on the
-			// file and returns the full report — errors for
+			// The selected validator is the linter: it runs its checks
+			// on the file and returns the full report — errors for
 			// contradictions, warnings for overlaps — so one run shows
 			// the author everything at once.
-			_, warnings, err := validation.Load(rulesPath)
+			warnings, err := lintRules(rulesPath)
 			if lintErr := writeLint(cmd.ErrOrStderr(), warnings, err); lintErr != nil {
 				return lintErr
 			}
@@ -87,10 +85,11 @@ func newResolveCommand() *cobra.Command {
 		Short: "Resolve test decisions from changed paths",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			// The same report as validate when the file has errors. Resolve
-			// stops before using those rules, and still prints the warnings
-			// that came back with the errors.
-			m, warnings, err := validation.Load(rulesPath)
+			// The same report as validate when the file has errors. The
+			// engine stops before loading rules the validator rejected,
+			// and still prints the warnings that came back with the
+			// errors.
+			compiled, warnings, err := prepareRules(rulesPath)
 			if err != nil {
 				return writeLint(cmd.ErrOrStderr(), warnings, err)
 			}
@@ -107,7 +106,7 @@ func newResolveCommand() *cobra.Command {
 					files = append(files, line)
 				}
 			}
-			d := resolver.Resolve(files, m)
+			d := rulesEngine.Resolve(files, compiled)
 			fmt.Fprint(cmd.ErrOrStderr(), d.Log)
 			// The summary is stdout while the trace is stderr; a header and
 			// leading blank line keep the two sections apart when a terminal
@@ -132,7 +131,7 @@ func newGHACommand() *cobra.Command {
 	}
 }
 
-// passedMessage is the validate success line. Load returns rendered
+// passedMessage is the validate success line. Validators return rendered
 // lines, so warnings are counted from "Warning:" lines. They do not
 // fail the command.
 func passedMessage(warnings []string) string {
@@ -152,9 +151,10 @@ func passedMessage(warnings []string) string {
 	return fmt.Sprintf("Validation passed, with %d %s", n, word)
 }
 
-// writeLint prints Load's report: the numbered errors, then the warnings
-// and the footer. The error text is already the finding lines, so a
-// failure returns errLintReported instead of wrapping those lines again.
+// writeLint prints the validator's report: the numbered errors, then the
+// warnings and the footer. The error text is already the finding lines,
+// so a failure returns errLintReported instead of wrapping those lines
+// again.
 func writeLint(w io.Writer, warnings []string, err error) error {
 	if err != nil {
 		for line := range strings.SplitSeq(err.Error(), "\n") {

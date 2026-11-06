@@ -148,6 +148,25 @@ that happen to cross, the skip default stands and the warning documents
 the coupling. The resolver's trace also names the crossing when it fires,
 with both rules and the affected path.
 
+## Pluggable engine and validation
+
+The selector has two seams, both wired in `engines.go`. `engine.Engine`
+owns a rules language end to end: it compiles a rules document and
+resolves it against changed paths. `validation.Validator` lints the same
+document bytes. Callers — the CLI commands and the GitHub Actions
+planner — depend only on those interfaces, so replacing the rules
+syntax means adding an implementation next to
+`internal/engine/regexengine` and pointing the `rulesEngine` variable at
+it; likewise `rulesValidator` for validation. Two implementations exist
+today: `validation.Full`, today's complete report, and
+`validation.Trivial`, the no-op end of the seam.
+
+The split keeps fail-closed intact whichever validator runs: the engine
+itself rejects malformed documents, unknown versions, and uncompilable
+patterns before resolving anything, and undecided or unknown targets
+run. A weaker validator only skips rule-quality findings, never the
+checks the engine needs to evaluate faithfully.
+
 ## Composition of rules
 
 The selector considers all matching path rules for each changed file. A rule's

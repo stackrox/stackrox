@@ -14,8 +14,9 @@ import (
 )
 
 // Check reports the run/skip conflicts in the mapped rules, one bare
-// line per contested pair; Load numbers the findings and appends the
-// footer. Load runs it after the structural checks.
+// line per contested pair; report in full.go numbers the findings and
+// appends the footer. Full.Validate runs it after the structural
+// checks.
 func Check(m rules.Mapping) []string {
 	runRules, skipRules := partitionRules(m.Rules)
 	var conflicts []string

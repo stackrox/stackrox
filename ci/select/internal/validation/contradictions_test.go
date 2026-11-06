@@ -14,7 +14,7 @@ import (
 
 // TestLoadRejectsDeadInclusion pins an inclusion a rule's own exclusion
 // covers entirely. A dead run line and a dead skip line are both errors.
-func TestLoadRejectsDeadInclusion(t *testing.T) {
+func TestFullRejectsDeadInclusion(t *testing.T) {
 	t.Parallel()
 	const deadInclusion = `version: 1
 jobs: [go]
@@ -37,7 +37,7 @@ rules:
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			rules := strings.Replace(deadInclusion, "skip: [go]", decision, 1)
-			_, warnings, err := Load(writeRules(t, rules))
+			warnings, err := Full{}.Validate([]byte(rules))
 			require.Error(t, err)
 			require.ErrorContains(t, err, `rule "docs-with-dead-line": pattern "^docs/never/used\\.md$" matches only files its own exclusions cover`)
 			require.ErrorContains(t, err, "e.g. \"docs/never/used.md\"")
@@ -45,14 +45,14 @@ rules:
 		})
 	}
 	// Without the dead line the same file is valid again.
-	_, _, err := Load(writeRules(t, strings.Replace(deadInclusion, "      - '^docs/never/used\\.md$'\n", "", 1)))
+	_, err := Full{}.Validate([]byte(strings.Replace(deadInclusion, "      - '^docs/never/used\\.md$'\n", "", 1)))
 	require.NoError(t, err)
 }
 
 // TestLoadAcceptsAnchorThatMatchesNothing pins a later '^', which the
 // production matcher rejects. It must not be reported as covering the
 // files of a leading '^'.
-func TestLoadAcceptsAnchorThatMatchesNothing(t *testing.T) {
+func TestFullAcceptsAnchorThatMatchesNothing(t *testing.T) {
 	t.Parallel()
 	const live = `version: 1
 jobs: [go]
@@ -65,7 +65,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, live))
+	warnings, err := Full{}.Validate([]byte(live))
 	require.NoError(t, err)
 	require.Equal(t, []string{"Result: no issues found."}, warnings)
 }
@@ -90,7 +90,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, rules))
+	warnings, err := Full{}.Validate([]byte(rules))
 	require.NoError(t, err)
 	require.Contains(t, warnings, `001 Warning: "boundary" vs "docs" for "go"`)
 	require.NotContains(t, strings.Join(warnings, "\n"), "e.g.")
@@ -101,7 +101,7 @@ rules:
 // the two copies still match a common file. The skip covers the whole
 // run, so the overlap warning is omitted and the covered-pattern error
 // is not repeated.
-func TestLoadRejectsDuelingPins(t *testing.T) {
+func TestFullRejectsDuelingPins(t *testing.T) {
 	t.Parallel()
 	for name, pattern := range map[string]string{
 		"exact file":   `^central/blah/readme\.md$`,
@@ -125,13 +125,13 @@ rules:
     when: remaining
     run: ['*']
 `
-			_, _, err := Load(writeRules(t, fmt.Sprintf(duel, pattern, pattern)))
+			_, err := Full{}.Validate([]byte(fmt.Sprintf(duel, pattern, pattern)))
 			require.Error(t, err)
 			require.ErrorContains(t, err, "both use")
 			require.NotContains(t, err.Error(), "never runs")
 		})
 	}
-	_, warnings, err := Load(writeRules(t, `version: 1
+	warnings, err := Full{}.Validate([]byte(`version: 1
 jobs: [go]
 rules:
   - name: documentation
@@ -171,7 +171,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, rules))
+	warnings, err := Full{}.Validate([]byte(rules))
 	require.Error(t, err)
 	require.ErrorContains(t, err, `rule "mixed": pattern "^README\\.md$" never runs "go"`)
 	require.NotContains(t, err.Error(), "main\\.go")
@@ -198,7 +198,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, broad))
+	warnings, err := Full{}.Validate([]byte(broad))
 	require.NoError(t, err, "a broad overlap is not a contradiction")
 	require.Contains(t, warnings,
 		`001 Warning: "central-domain" vs "documentation" for "go": both match e.g. "central/blah/readme.md"`)
@@ -223,7 +223,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, fuzzy))
+	warnings, err := Full{}.Validate([]byte(fuzzy))
 	require.NoError(t, err, "an operator pattern matches many files, so the crossing degrades to a warning")
 	// Warning line, blank separator, footer.
 	require.Len(t, warnings, 3)
@@ -250,7 +250,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, rules))
+	warnings, err := Full{}.Validate([]byte(rules))
 	require.Error(t, err)
 	require.ErrorContains(t, err, `rules "code" and "docs" both use "^docs/" for "go" and both match "docs/"`)
 	require.NotContains(t, err.Error(), "never runs")
@@ -277,7 +277,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, rules))
+	warnings, err := Full{}.Validate([]byte(rules))
 	require.Error(t, err)
 	require.ErrorContains(t, err, `rule "one-readme": pattern "^README\\.md$" never runs "go"; "docs" matches every file of that pattern (e.g. "README.md")`)
 	require.Contains(t, warnings, "Result: 1 error, 0 warnings. Errors fail the resolver.")
@@ -302,7 +302,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, _, err := Load(writeRules(t, rules))
+	_, err := Full{}.Validate([]byte(rules))
 	require.Error(t, err)
 	require.ErrorContains(t, err, "matches only files its own exclusions cover")
 	require.NotContains(t, err.Error(), "both use")
@@ -310,7 +310,7 @@ rules:
 
 // TestLoadKeepsARunPastAnUnscopedDollar covers a '$' that binds to one
 // alternative. fooX matches the run rule only, so the run claim is live.
-func TestLoadKeepsARunPastAnUnscopedDollar(t *testing.T) {
+func TestFullKeepsARunPastAnUnscopedDollar(t *testing.T) {
 	t.Parallel()
 	const rules = `version: 1
 jobs: [go]
@@ -327,7 +327,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, rules))
+	warnings, err := Full{}.Validate([]byte(rules))
 	require.NoError(t, err)
 	body := strings.Join(warnings, "\n")
 	require.Contains(t, body, `"run" vs "skip" for "go"`)

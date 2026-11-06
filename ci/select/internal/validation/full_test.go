@@ -1,8 +1,8 @@
 package validation
 
-// This suite pins Load's full problem report: single-rule structure
-// (targets, names, patterns, the final remaining rule) and the conflict
-// half together, because a rule author sees one report, not two.
+// This suite pins Full's problem report: single-rule structure (targets,
+// names, patterns, the final remaining rule) and the conflict half
+// together, because a rule author sees one report, not two.
 
 import (
 	"strings"
@@ -23,7 +23,7 @@ rules:
     run: ['*']
 `
 
-func TestLoadRejectsStructuralProblems(t *testing.T) {
+func TestFullRejectsStructuralProblems(t *testing.T) {
 	t.Parallel()
 	for name, data := range map[string]string{
 		"should reject unsupported versions": strings.Replace(validRules, "version: 1", "version: 2", 1),
@@ -45,13 +45,13 @@ func TestLoadRejectsStructuralProblems(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, _, err := Load(writeRules(t, data))
+			_, err := Full{}.Validate([]byte(data))
 			require.Error(t, err)
 		})
 	}
 }
 
-func TestLoadRejectsTargetProblems(t *testing.T) {
+func TestFullRejectsTargetProblems(t *testing.T) {
 	t.Parallel()
 	for name, data := range map[string]string{
 		"should reject wildcard skips":       strings.Replace(validRules, "skip: [go, postgres]", "skip: ['*']", 1),
@@ -71,13 +71,13 @@ func TestLoadRejectsTargetProblems(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, _, err := Load(writeRules(t, data))
+			_, err := Full{}.Validate([]byte(data))
 			require.Error(t, err)
 		})
 	}
 }
 
-func TestLoadRejectsPatternProblems(t *testing.T) {
+func TestFullRejectsPatternProblems(t *testing.T) {
 	t.Parallel()
 	for name, data := range map[string]string{
 		"should reject bad patterns":         strings.Replace(validRules, "'^docs/'", "'^[broken'", 1),
@@ -92,13 +92,13 @@ func TestLoadRejectsPatternProblems(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, _, err := Load(writeRules(t, data))
+			_, err := Full{}.Validate([]byte(data))
 			require.Error(t, err)
 		})
 	}
 }
 
-func TestLoadReportsSpecificProblems(t *testing.T) {
+func TestFullReportsSpecificProblems(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
 		data, wantError string
@@ -114,13 +114,13 @@ func TestLoadReportsSpecificProblems(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, _, err := Load(writeRules(t, c.data))
+			_, err := Full{}.Validate([]byte(c.data))
 			require.ErrorContains(t, err, c.wantError)
 		})
 	}
 }
 
-func TestLoadAcceptsValidVariants(t *testing.T) {
+func TestFullAcceptsValidVariants(t *testing.T) {
 	t.Parallel()
 	for name, actions := range map[string]string{
 		"should accept skip targets":     "skip: [go, postgres]",
@@ -131,7 +131,7 @@ func TestLoadAcceptsValidVariants(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			data := strings.Replace(validRules, "skip: [go, postgres]", actions, 1)
-			_, _, err := Load(writeRules(t, data))
+			_, err := Full{}.Validate([]byte(data))
 			require.NoError(t, err)
 		})
 	}

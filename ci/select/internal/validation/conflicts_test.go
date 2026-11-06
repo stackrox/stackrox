@@ -3,23 +3,14 @@ package validation
 // This suite pins Check's conflict report: every run/skip crossing is
 // legal but warned about, with a witness file the overlap engine
 // produced and the production matcher confirmed. Rejections (structure,
-// targets, patterns) are pinned in load_test.go; how a crossing resolves
+// targets, patterns) are pinned in full_test.go; how a crossing resolves
 // at selection time is pinned in internal/resolver.
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-func writeRules(t *testing.T, data string) string {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), "rules.yaml")
-	require.NoError(t, os.WriteFile(path, []byte(data), 0o600))
-	return path
-}
 
 // Two rules with overlapping but differently written scope and opposite
 // decisions: the crossing is warned about, not rejected — the skip
@@ -42,7 +33,7 @@ rules:
 
 func TestCheckWarnsAboutConflict(t *testing.T) {
 	t.Parallel()
-	_, warnings, err := Load(writeRules(t, identicalScope))
+	warnings, err := Full{}.Validate([]byte(identicalScope))
 	require.NoError(t, err, "conflicts are legal: the skip default decides them")
 	require.Contains(t, warnings,
 		`001 Warning: "special-input" vs "special-documentation" for "go": both match e.g. "config/special.txt"`)
@@ -70,7 +61,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, coveredWildcard))
+	warnings, err := Full{}.Validate([]byte(coveredWildcard))
 	require.NoError(t, err)
 	require.Contains(t, warnings,
 		`001 Warning: "force-on-config" vs "documentation" for "go": both match e.g. "config/.md"`)
@@ -79,7 +70,7 @@ rules:
 // A run pattern the skip covers entirely can never count. That is an
 // error, and the overlap warning is omitted because no diff lets the
 // run win.
-func TestLoadRejectsRunPatternTheSkipCovers(t *testing.T) {
+func TestFullRejectsRunPatternTheSkipCovers(t *testing.T) {
 	t.Parallel()
 	const covered = `version: 1
 jobs: [go]
@@ -96,7 +87,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, covered))
+	warnings, err := Full{}.Validate([]byte(covered))
 	require.Error(t, err)
 	require.ErrorContains(t, err, `rule "generator-header": pattern "^tools/boilerplate\\.go\\.txt$" never runs "go"; "documentation" matches every file of that pattern (e.g. "tools/boilerplate.go.txt")`)
 	require.Contains(t, warnings, "Result: 1 error, 0 warnings. Errors fail the resolver.")
@@ -120,7 +111,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, disjoint))
+	warnings, err := Full{}.Validate([]byte(disjoint))
 	require.NoError(t, err)
 	// The footer is "no issues found" even on the empty report, so the
 	// warnings slice holds exactly that line.
@@ -147,7 +138,7 @@ rules:
     when: remaining
     run: ['*']
 `
-	_, warnings, err := Load(writeRules(t, rules))
+	warnings, err := Full{}.Validate([]byte(rules))
 	require.NoError(t, err)
 	require.Equal(t, []string{"Result: no issues found."}, warnings)
 }

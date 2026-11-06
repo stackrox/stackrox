@@ -1,24 +1,15 @@
-// Package resolver decides run or skip for each CI target.
-// Inputs must have passed validation.Load. On one path, a skip claim
-// defeats a run request.
+// Package resolver decides run or skip for each CI target. Inputs must
+// have passed validation, and reach it through regexengine. On one
+// path, a skip claim defeats a run request.
 package resolver
 
 import (
-	"fmt"
-	"maps"
 	"slices"
-	"strings"
 
+	"github.com/stackrox/rox/ci/select/internal/engine"
 	"github.com/stackrox/rox/ci/select/internal/rules"
 	"github.com/stackrox/rox/pkg/set"
 )
-
-// Decision carries one action ("run" or "skip") per CI target plus the
-// human-readable trace explaining every decision.
-type Decision struct {
-	Actions map[string]string
-	Log     string
-}
 
 // crossEvent records one path where a run request and a skip claim cross:
 // both a run rule and a covering skip rule matched the path. Each claim
@@ -56,7 +47,7 @@ type decisionTrace struct {
 // traceable explanation. The pipeline inside: match rules against changed
 // paths once (rules match files, not jobs), evaluate every job from those
 // matches, let the remaining rule decide what nothing else did, render.
-func Resolve(files []string, m rules.Mapping) Decision {
+func Resolve(files []string, m rules.Mapping) engine.Decision {
 	matches := matchRules(files, m)
 	traces := evaluateJobs(m, files, matches)
 	fallbackToRemaining(m, traces)
@@ -67,7 +58,7 @@ func Resolve(files []string, m rules.Mapping) Decision {
 			actions[job] = traces[job].action
 		}
 	}
-	return Decision{Actions: actions, Log: renderTrace(files, m, matches, traces)}
+	return engine.Decision{Actions: actions, Log: renderTrace(files, m, matches, traces)}
 }
 
 // matchRules lists, for each changed path, the non-remaining rules that
@@ -202,25 +193,3 @@ func skipsJob(r *rules.Rule, job string) bool {
 
 // Matches on rules.Rule (in the rules package) holds the production
 // prefix-match semantics the resolver evaluates each path with.
-
-func Fallback(err error) Decision {
-	return Decision{Log: fmt.Sprintf("selection unavailable: %v; all targets run\n", err)}
-}
-
-func (d Decision) Action(job string) string {
-	if action := d.Actions[job]; action != "" {
-		return action
-	}
-	return "run"
-}
-
-func (d Decision) String() string {
-	if d.Actions == nil {
-		return "all targets run\n"
-	}
-	var text strings.Builder
-	for _, job := range slices.Sorted(maps.Keys(d.Actions)) {
-		fmt.Fprintf(&text, "%s %s\n", job, d.Actions[job])
-	}
-	return text.String()
-}

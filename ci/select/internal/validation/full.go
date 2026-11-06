@@ -1,11 +1,11 @@
-// Package validation lints a job-selection rules file.
-// Load returns compiled rules, warnings for run/skip overlaps, and an
-// error when the file contradicts itself.
+// Package validation lints a job-selection rules file. Validator is
+// the pluggable entry; Full, the default implementation, returns
+// warnings for run/skip overlaps and an error when the file contradicts
+// itself.
 package validation
 
 import (
 	"fmt"
-	"os"
 	"slices"
 	"strings"
 
@@ -14,31 +14,30 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// Load reads, parses, and checks the job-selection rules file at path.
-// Contradictions — a pattern excluded by its own rule, the same include
-// text used to run and skip a job when those copies still meet, or a run
-// pattern one skip rule covers entirely — are errors. A run/skip overlap
-// that some diffs miss is a warning. A passed file yields a Mapping with
-// compiled patterns plus the warnings.
-func Load(path string) (rules.Mapping, []string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return rules.Mapping{}, nil, errors.Wrap(err, "read rules")
-	}
+// Full checks every finding today's authoring workflow knows: file
+// structure, target and pattern defects, contradictions that need no
+// diff to be wrong, and run/skip conflicts, in one numbered report.
+type Full struct{}
+
+// Validate runs the whole check pipeline on one document. Contradictions
+// — a pattern excluded by its own rule, the same include text used to
+// run and skip a job when those copies still meet, or a run pattern one
+// skip rule covers entirely — are errors. A run/skip overlap that some
+// diffs miss is a warning.
+func (Full) Validate(data []byte) ([]string, error) {
 	m, err := rules.Parse(data)
 	if err != nil {
-		return m, nil, errors.Wrap(err, "parse rules")
+		return nil, errors.Wrap(err, "parse rules")
 	}
 	if err := checkStructure(m); err != nil {
-		return m, nil, err
+		return nil, err
 	}
 	for _, r := range m.Rules {
 		if err := r.Compile(); err != nil {
-			return m, nil, errors.Wrap(err, "compile patterns")
+			return nil, errors.Wrap(err, "compile patterns")
 		}
 	}
-	warnings, err := report(m)
-	return m, warnings, err
+	return report(m)
 }
 
 // report numbers every finding, errors before warnings, in one continuous

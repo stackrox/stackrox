@@ -500,9 +500,26 @@ func TestResolveCapsLoggedPaths(t *testing.T) {
 	assert.Contains(t, d.Log, `- covered by: "frontend-no-backend-e2e"`)
 }
 
-// loadRules runs the production loader, validation.Load, so fixtures
-// fail the same way a real rules file would.
+// loadRules parses the production policy for resolution after checking
+// it with the production validator, so fixtures fail the same way a
+// real rules file would. The compile loop mirrors regexengine.Compile,
+// which these tests cannot use without an import cycle.
 func loadRules(path string) (rules.Mapping, error) {
-	m, _, err := validation.Load(path)
-	return m, err
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return rules.Mapping{}, err
+	}
+	if _, err := (validation.Full{}).Validate(data); err != nil {
+		return rules.Mapping{}, err
+	}
+	m, err := rules.Parse(data)
+	if err != nil {
+		return m, err
+	}
+	for _, r := range m.Rules {
+		if err := r.Compile(); err != nil {
+			return m, err
+		}
+	}
+	return m, nil
 }

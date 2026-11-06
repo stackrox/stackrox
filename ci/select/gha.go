@@ -1,10 +1,10 @@
 package main
 
 // gha.go reports a selection as GitHub outputs: it reads the pull-request
-// event, loads the rules through validation.Load, computes the diff with
-// changedFiles (diff.go), resolves it, then writes GITHUB_OUTPUT, the step
-// summary, and the enforce label behavior. The diff mechanics live in
-// diff.go.
+// event, loads the rules through the engine and validator seams
+// (engines.go), computes the diff with changedFiles (diff.go), then
+// writes GITHUB_OUTPUT, the step summary, and the enforce label
+// behavior. The diff mechanics live in diff.go.
 
 import (
 	"context"
@@ -19,8 +19,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/ci/select/internal/resolver"
-	"github.com/stackrox/rox/ci/select/internal/validation"
+	"github.com/stackrox/rox/ci/select/internal/engine"
 )
 
 const enforceLabel = "ci-dispatcher-enforce"
@@ -33,34 +32,34 @@ type pullRequestEvent struct {
 	} `json:"pull_request"`
 }
 
-func ghaDecision(ctx context.Context, root string) (resolver.Decision, bool) {
+func ghaDecision(ctx context.Context, root string) (engine.Decision, bool) {
 	if os.Getenv("GITHUB_EVENT_NAME") != "pull_request" {
-		return resolver.Fallback(errors.New("selection applies only to pull requests")), false
+		return engine.Fallback(errors.New("selection applies only to pull requests")), false
 	}
 	data, err := os.ReadFile(os.Getenv("GITHUB_EVENT_PATH"))
 	if err != nil {
-		return resolver.Fallback(errors.Wrap(err, "read PR event")), false
+		return engine.Fallback(errors.Wrap(err, "read PR event")), false
 	}
 	var event pullRequestEvent
 	if err := json.Unmarshal(data, &event); err != nil {
-		return resolver.Fallback(errors.Wrap(err, "decode PR event")), false
+		return engine.Fallback(errors.Wrap(err, "decode PR event")), false
 	}
 	if event.PullRequest == nil {
-		return resolver.Fallback(errors.New("event has no pull request")), false
+		return engine.Fallback(errors.New("event has no pull request")), false
 	}
 	pr := event.PullRequest
 	enforce := slices.ContainsFunc(pr.Labels, func(label struct{ Name string }) bool { return label.Name == enforceLabel })
-	// The same linter entry as the CLI: rules are fully checked before
-	// anything is resolved.
-	m, warnings, err := validation.Load(filepath.Join(root, "ci/test-selection-rules.yaml"))
+	// The same linter entry as the CLI: rules are checked before the
+	// engine loads them.
+	compiled, warnings, err := prepareRules(filepath.Join(root, "ci/test-selection-rules.yaml"))
 	if err != nil {
-		return resolver.Fallback(errors.New(lintText(err, warnings))), enforce
+		return engine.Fallback(errors.New(lintText(err, warnings))), enforce
 	}
 	files, err := changedFiles(ctx, root, pr.Base.SHA, pr.Head.SHA)
 	if err != nil {
-		return resolver.Fallback(err), enforce
+		return engine.Fallback(err), enforce
 	}
-	return resolver.Resolve(files, m), enforce
+	return rulesEngine.Resolve(files, compiled), enforce
 }
 
 func gha(ctx context.Context, output, diagnostic io.Writer) error {
