@@ -98,8 +98,7 @@ oc patch apiserver cluster --type=merge -p '{
             "custom": {
                 "minTLSVersion": "VersionTLS13",
                 "groups": [
-                    "X25519MLKEM768",
-                    "X25519"
+                    "X25519MLKEM768"
                 ]
             }
         }
