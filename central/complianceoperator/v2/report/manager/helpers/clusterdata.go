@@ -73,12 +73,10 @@ func populateScanNames(ctx context.Context, data *report.ClusterData, reportData
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to retrieve scans associated with the ScanConfiguration %q in the cluster %q", reportData.GetScanConfiguration().GetId(), clusterID)
 	}
+	data.ScanStartTimes = make(map[string]*timestamppb.Timestamp, len(scans))
 	for _, scan := range scans {
 		data.ScanNames = append(data.ScanNames, scan.GetScanName())
 		if t := scan.GetLastStartedTime(); t != nil {
-			if data.ScanStartTimes == nil {
-				data.ScanStartTimes = make(map[string]*timestamppb.Timestamp)
-			}
 			data.ScanStartTimes[scan.GetScanName()] = t
 		}
 	}
