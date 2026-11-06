@@ -103,12 +103,19 @@ test_rejected_downgrade() {
     fi
 }
 
+restore_downgraded_central() {
+    local config="$1" status=0
+    # Attempt every restoration step for recovery, but report any failure to normal callers.
+    kubectl -n stackrox patch configmap/central-config --type=merge -p "$config" || status=1
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$CURRENT_TAG" || status=1
+    kubectl -n stackrox scale deploy/central --replicas=1 || status=1
+    return "$status"
+}
+
 recover_downgrade_central() {
     local status="$1" config="$2"
     if (( status != 0 )); then
-        kubectl -n stackrox patch configmap/central-config --type=merge -p "$config" || true
-        kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$CURRENT_TAG" || true
-        kubectl -n stackrox scale deploy/central --replicas=1 || true
+        restore_downgraded_central "$config" || true
     fi
     return "$status"
 }

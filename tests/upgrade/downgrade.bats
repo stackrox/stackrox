@@ -139,6 +139,34 @@ setup() {
     [[ "$output" != *"$SNAPSHOT_SECRET"* ]]
 }
 
+@test "restoration attempts every step and reports any failure" {
+    export REGISTRY=registry CURRENT_TAG=5.1.x
+    local failure
+    kubectl() {
+        echo "$*" >>"$BATS_TEST_TMPDIR/calls"
+        if [[ -n "$failure" && "$*" == *"$failure"* ]]; then
+            return 1
+        fi
+    }
+    for failure in '' 'patch configmap/' 'set image' 'scale deploy/'; do
+        : >"$BATS_TEST_TMPDIR/calls"
+        run restore_downgraded_central '{"data":{}}'
+        if [[ -z "$failure" ]]; then
+            [ "$status" -eq 0 ]
+        else
+            [ "$status" -eq 1 ]
+        fi
+        [ "$(cat "$BATS_TEST_TMPDIR/calls")" = $'-n stackrox patch configmap/central-config --type=merge -p {"data":{}}\n-n stackrox set image deploy/central central=registry/main:5.1.x\n-n stackrox scale deploy/central --replicas=1' ]
+    done
+}
+
+@test "recovery does nothing after success" {
+    kubectl() { touch "$BATS_TEST_TMPDIR/called"; }
+    run recover_downgrade_central 0 '{"data":{}}'
+    [ "$status" -eq 0 ]
+    [ ! -f "$BATS_TEST_TMPDIR/called" ]
+}
+
 @test "recovery preserves failure and never touches database images" {
     export REGISTRY=registry CURRENT_TAG=5.1.x
     kubectl() { echo "$*" >>"$BATS_TEST_TMPDIR/calls"; return 1; }
