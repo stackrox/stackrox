@@ -151,12 +151,16 @@ get_target_bg_migration_seqnum() {
 deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    local roxie_envrc
+    local roxie_envrc bundle_config
     roxie_envrc="$(mktemp)"
+    bundle_config="$(mktemp)"
+    printf 'central: {spec: {}}\n' > "$bundle_config"
+    CI=true _configure_roxie_ci_vuln_bundle "$bundle_config" || return 1
     roxie deploy central --verbose \
         --single-namespace \
         --envrc "${roxie_envrc}" \
         --tag "${EARLIER_TAG}" \
+        --config "$bundle_config" \
         --resources ci \
         --pause-reconciliation `# subsequent tests mangle resources and image` \
         --exposure loadbalancer \
@@ -165,7 +169,7 @@ deploy_earlier_tag_central() {
         "$@"
     # shellcheck disable=SC1090
     source "${roxie_envrc}"
-    rm -f "${roxie_envrc}"
+    rm -f "${roxie_envrc}" "$bundle_config"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
@@ -184,8 +188,11 @@ upgrade_operator_to_head() {
 
     # SCANNER_V4_MATCHER_READINESS=vulnerability keeps matcher unready until
     # the vuln DB is loaded, which wait_for_scanner_V4 then waits on.
+    local readiness_patch
+    readiness_patch="$(kubectl -n "${namespace}" get centrals.platform.stackrox.io stackrox-central-services -o json |
+        jq -c '{spec: {customize: {envVars: (((.spec.customize.envVars // []) | map(select(.name != "SCANNER_V4_MATCHER_READINESS"))) + [{name: "SCANNER_V4_MATCHER_READINESS", value: "vulnerability"}])}}}')"
     kubectl -n "${namespace}" patch centrals.platform.stackrox.io stackrox-central-services --type merge \
-        -p '{"spec":{"customize":{"envVars":[{"name": "SCANNER_V4_MATCHER_READINESS","value":"vulnerability"}]}}}'
+        -p "$readiness_patch"
 
     kubectl annotate -n "${namespace}" centrals.platform.stackrox.io stackrox-central-services \
         stackrox.io/pause-reconcile-

@@ -45,4 +45,6 @@ jobs:
       run: pg_isready -h 127.0.0.1
 
     - name: DB Integration tests
+      env:
+        SCANNER_CI_TEST_DB: postgresql://postgres@127.0.0.1:5432/postgres?sslmode=disable
       run: make -C scanner db-integration-test
