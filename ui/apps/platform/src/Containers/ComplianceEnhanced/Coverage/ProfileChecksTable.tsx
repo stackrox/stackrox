@@ -191,7 +191,7 @@ function ProfileChecksTable({
                                                     <div style={{ display: 'grid' }}>
                                                         <Content
                                                             component={ContentVariants.small}
-                                                            className="pf-v6-u-color-200 pf-v6-u-text-truncate"
+                                                            className="pf-v6-u-text-truncate"
                                                         >
                                                             {rationale}
                                                         </Content>

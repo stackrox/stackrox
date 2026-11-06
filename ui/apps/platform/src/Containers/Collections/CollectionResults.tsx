@@ -71,7 +71,7 @@ function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
                 </FlexItem>
                 <FlexItem>
                     <div>{deployment.name}</div>
-                    <span className="pf-v6-u-color-300 pf-v6-u-font-size-xs">
+                    <span className="pf-v6-u-font-size-xs">
                         In &quot;{deployment.cluster} / {deployment.namespace}
                         &quot;
                     </span>
@@ -206,7 +206,7 @@ function CollectionResults({
                                     View more
                                 </Button>
                             ) : (
-                                <span className="pf-v6-u-color-300">end of results</span>
+                                <span>end of results</span>
                             )}
                         </FlexItem>
                     </>

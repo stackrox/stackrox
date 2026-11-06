@@ -6,15 +6,12 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func BenchmarkPopulateImageMetadata(b *testing.B) {
-	b.Setenv(features.InitContainerSupport.EnvVar(), "true")
-
 	cases := []struct {
 		numContainers int
 		numPods       int
