@@ -163,6 +163,29 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveProcessBaseline() {
 	suite.doGet(key, false, nil)
 }
 
+func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveProcessBaselineKeepsResultsWhenOthersRemain() {
+	key := &storage.ProcessBaselineKey{
+		DeploymentId:  uuid.NewV4().String(),
+		ContainerName: uuid.NewV4().String(),
+		ClusterId:     uuid.NewV4().String(),
+		Namespace:     uuid.NewV4().String(),
+	}
+	suite.createAndStoreBaseline(key)
+	remainingKey := &storage.ProcessBaselineKey{
+		DeploymentId:  key.GetDeploymentId(),
+		ContainerName: uuid.NewV4().String(),
+		ClusterId:     key.GetClusterId(),
+		Namespace:     key.GetNamespace(),
+	}
+	suite.createAndStoreBaseline(remainingKey)
+
+	// No DeleteBaselineResults expectation: the deployment still has a baseline, so its
+	// results must be preserved.
+	suite.NoError(suite.datastore.RemoveProcessBaseline(suite.requestContext, key))
+	suite.doGet(key, false, nil)
+	suite.doGet(remainingKey, true, nil)
+}
+
 func (suite *ProcessBaselineDataStoreTestSuite) TestLockAndUnlockBaseline() {
 	baseline := suite.createAndStoreBaselineWithRandomKey()
 	key := baseline.GetKey()
