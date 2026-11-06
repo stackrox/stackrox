@@ -60,10 +60,11 @@ gitbot -C "$tmp_remote_repository" push origin "$branch_name"
 
 message="Hello Release Managers!
 
-Engineering has signed off on release **${version}**! The new Helm charts are ready to be published.
-Once the version is GA, please complete the publishing by merging this PR using the 'Squash and Merge' option.
+The upstream images for release **${version}** are published!
+Once the downstream images are published and you are publishing the FBC releases, please complete publishing the Helm charts by merging this PR using the 'Squash and Merge' option.
+There is a workflow that will automatically check for the downstream images being available.
 
-**CAUTION**: If this PR is merged prior to the GA announcement, customers might accidentally and unknowingly upgrade
+**CAUTION**: If this PR is merged prior to all images being available, customers might accidentally and unknowingly upgrade
 to an unreleased version."
 
 curl -sS --fail \
