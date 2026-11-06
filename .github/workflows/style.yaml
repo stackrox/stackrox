@@ -51,6 +51,126 @@ jobs:
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
+  # EXPERIMENT JOBS (do not merge): parallel variants of check-generated-files.
+  # cg-exp-serial is the reference (same checks, serial, with Go build cache);
+  # cg-exp-parallel runs the four groups concurrently in git worktrees on one
+  # runner; cg-exp-split runs each group as its own job. The original
+  # check-generated-files job above is the untouched control.
+  cg-exp-serial:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Download scanner module for proto generation
+      run: go mod download github.com/stackrox/scanner
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Determine Go cache path
+      id: go-cache
+      run: echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Go build cache (from lint lineage, investigation)
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+      with:
+        path: ${{ steps.go-cache.outputs.GOCACHE }}
+        key: cg-exp-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-golangci-lint-amd64-
+
+    - name: Experiment (serial reference)
+      run: scripts/ci/jobs/check-generated-experiment.sh all
+
+  cg-exp-parallel:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Download scanner module for proto generation
+      run: go mod download github.com/stackrox/scanner
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Determine Go cache path
+      id: go-cache
+      run: echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Go build cache (from lint lineage, investigation)
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+      with:
+        path: ${{ steps.go-cache.outputs.GOCACHE }}
+        key: cg-exp-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-golangci-lint-amd64-
+
+    - name: Experiment (in-runner parallel via git worktrees)
+      run: scripts/ci/jobs/check-generated-experiment.sh parallel
+
+  cg-exp-split:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [tidy, generated, operator, misc]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Download scanner module for proto generation
+      run: go mod download github.com/stackrox/scanner
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Determine Go cache path
+      id: go-cache
+      run: echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Go build cache (from lint lineage, investigation)
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6
+      with:
+        path: ${{ steps.go-cache.outputs.GOCACHE }}
+        key: cg-exp-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-golangci-lint-amd64-
+
+    - name: Experiment (split job, group ${{ matrix.group }})
+      run: scripts/ci/jobs/check-generated-experiment.sh ${{ matrix.group }}
+
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
