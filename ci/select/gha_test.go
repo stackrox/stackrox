@@ -196,6 +196,20 @@ func TestGHA(t *testing.T) {
 			mutate: func(t *testing.T) { writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), "[") },
 			want:   "run", log: "selection unavailable",
 		},
+		"should run with an empty skip pattern": {
+			mutate: func(t *testing.T) {
+				data := strings.Replace(string(rules), "'^ui/'", "''", 1)
+				writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), data)
+			},
+			want: "run", log: "must be rooted with ^",
+		},
+		"should run with unsupported rule conditions": {
+			mutate: func(t *testing.T) {
+				data := strings.Replace(string(rules), "when: any-file-matches", "when: any-files-match", 1)
+				writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), data)
+			},
+			want: "run", log: "must use any-file-matches",
+		},
 		"should run with rules that are not yaml": {
 			mutate: func(t *testing.T) {
 				writeTestFile(t, filepath.Join(root, "ci/test-selection-rules.yaml"), "version: 1\njobs: [go]\nrules: [\n")

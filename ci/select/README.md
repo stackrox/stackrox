@@ -169,9 +169,12 @@ engine is `internal/engine/regexengine`, and its checks live beside it in
 `NewTrivial` select them. A second language brings its own checks in the
 same shape.
 
-Because checks can be disabled but not replaced, fail-closed behavior
-does not depend on them: `Compile` rejects malformed documents, unknown
-versions, and uncompilable patterns at either depth.
+Fail-closed behavior does not depend on the check depth: `Compile` rejects
+malformed documents, unknown versions, invalid rule structure, and
+uncompilable patterns. Structural checks enforce the target inventory,
+rule conditions, rooted path patterns, and final `remaining` rule. These
+are language requirements, not overlap or contradiction analysis; neither
+validator performs that analysis.
 
 ## Composition of rules
 

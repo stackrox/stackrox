@@ -45,11 +45,8 @@ func (e engineImpl) Validate(data []byte) ([]string, error) {
 	return e.checks.Validate(data) //nolint:wrapcheck
 }
 
-// Compile parses the document, enforces the version this engine
-// implements, and compiles the patterns. The version check is the
-// engine's own, not a validator's: an engine must never guess the
-// meaning of a document it does not know, so trivial validation still
-// fails closed here instead of mis-selecting.
+// Compile enforces the language's structure and patterns independently of
+// optional authoring checks, so invalid rules cannot silently alter selection.
 func (engineImpl) Compile(data []byte) (engine.Rules, error) {
 	m, err := rules.Parse(data)
 	if err != nil {
@@ -57,6 +54,9 @@ func (engineImpl) Compile(data []byte) (engine.Rules, error) {
 	}
 	if m.Version != 1 {
 		return nil, fmt.Errorf("unsupported rules version %d, only 1 is supported", m.Version)
+	}
+	if err := checkStructure(m); err != nil {
+		return nil, errors.Wrap(err, "check rules structure")
 	}
 	for _, r := range m.Rules {
 		if err := r.Compile(); err != nil {
