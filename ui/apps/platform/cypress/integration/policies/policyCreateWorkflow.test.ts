@@ -112,13 +112,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions
         assertStepHeading('Actions');
@@ -181,13 +176,9 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters (container type filter enabled for Deploy lifecycle)
-        const hasFiltersStep =
-            hasFeatureFlag('ROX_EVALUATION_FILTER') && hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT');
-        if (hasFiltersStep) {
-            assertStepHeading('Filters');
-            cy.contains('label', 'Skip init containers').click();
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        cy.contains('label', 'Skip init containers').click();
+        clickNext();
 
         // Step 5 — Actions
         assertStepHeading('Actions');
@@ -211,7 +202,7 @@ describe('Policy creation workflow', () => {
                 'system-admin',
                 ...(hasWorkloadKindExclusion ? ['Workload kind', 'CronJobs'] : []),
             ],
-            ...(hasFiltersStep ? { filters: { containerTypes: 'Skip init containers' } } : {}),
+            filters: { containerTypes: 'Skip init containers' },
         });
 
         if (hasWorkloadKindExclusion) {
@@ -256,13 +247,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions
         assertStepHeading('Actions');
@@ -324,13 +310,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions (enforcement disabled for audit log)
         assertStepHeading('Actions');
@@ -394,13 +375,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions (enforcement disabled for node events)
         assertStepHeading('Actions');
