@@ -3,6 +3,7 @@ package tracker
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"iter"
 	"maps"
@@ -15,6 +16,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
@@ -59,6 +62,10 @@ type Tracker interface {
 	Reconfigure(*Configuration)
 	// GetPrefix returns the metric prefix.
 	GetPrefix() string
+	// CanView checks whether the caller may read this tracker's cached series.
+	CanView(context.Context) bool
+	// IsGlobal reports whether the tracker shares its registry between identities.
+	IsGlobal() bool
 	// Refresh the data on the next scrape request without waiting for the next
 	// gathering period.
 	Refresh()
@@ -100,6 +107,14 @@ func (g *gatherer[F]) updateMetrics(generator iter.Seq2[F, error]) error {
 	return nil
 }
 
+func (g *gatherer[F]) clearMetrics() {
+	g.registry.Lock()
+	defer g.registry.Unlock()
+	for metric := range g.aggregator.result {
+		g.registry.Reset(string(metric))
+	}
+}
+
 func (g *gatherer[F]) trySetRunning() bool {
 	return g.running.CompareAndSwap(false, true)
 }
@@ -117,6 +132,7 @@ type TrackerBase[F Finding] struct {
 	getters      LazyLabelGetters[F]
 	generator    FindingGenerator[F]
 	scoped       bool
+	requiredView *permissions.ResourceMetadata
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
@@ -166,6 +182,26 @@ func makeTrackerBase[F Finding](metricPrefix, description string, scoped bool,
 
 func (tracker *TrackerBase[F]) GetPrefix() string {
 	return tracker.metricPrefix
+}
+
+// RequireView protects a global tracker's cached series with the specified permission.
+func (tracker *TrackerBase[F]) RequireView(resource permissions.ResourceMetadata) *TrackerBase[F] {
+	tracker.requiredView = &resource
+	return tracker
+}
+
+// IsGlobal reports whether this tracker uses the shared registry.
+func (tracker *TrackerBase[F]) IsGlobal() bool {
+	return !tracker.scoped
+}
+
+// CanView checks the caller's current permissions before reading cached global series.
+func (tracker *TrackerBase[F]) CanView(ctx context.Context) bool {
+	if tracker.requiredView == nil {
+		return tracker.scoped
+	}
+	id, err := authn.IdentityFromContext(ctx)
+	return err == nil && tracker.requiredView.IsPermittedBy(id.Permissions(), storage.Access_READ_ACCESS)
 }
 
 // NewConfiguration does not apply the configuration.
@@ -346,6 +382,9 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	}
 	begin := time.Now()
 	if err := gatherer.updateMetrics(tracker.generator(ctx, cfg.metrics)); err != nil {
+		if tracker.scoped && errors.Is(err, errox.NotAuthorized) {
+			gatherer.clearMetrics()
+		}
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
 	end := time.Now()

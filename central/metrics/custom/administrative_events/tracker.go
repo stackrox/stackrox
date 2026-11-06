@@ -6,6 +6,7 @@ import (
 	adminEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -17,7 +18,7 @@ func New(ds adminEventDS.DataStore) *tracker.TrackerBase[*finding] {
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
-	)
+	).RequireView(resources.Administration)
 }
 
 func track(ctx context.Context, ds adminEventDS.DataStore) tracker.FindingErrorSequence[*finding] {
