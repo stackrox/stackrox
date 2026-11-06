@@ -119,6 +119,12 @@
 ## Sensor specific configuration.
 #sensor:
 #
+#  # Expose the OpenShift Sensor Central API proxy for custom policy clients.
+#  # Default: false. Clients need their own ingress NetworkPolicy and an entry
+#  # in the Sensor namespace's sensor-central-proxy-clients ConfigMap.
+#  centralProxy:
+#    enabled: false
+#
 #  # Kubernetes image pull policy for Sensor.
 #  imagePullPolicy: IfNotPresent
 #
