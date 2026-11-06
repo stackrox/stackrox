@@ -23,7 +23,7 @@ set -euo pipefail
 export SHELLOPTS
 
 ZLOG_FILE=scanner/internal/logging/logging.go
-STALE_GC="${GOCACHE:?GOCACHE must be set}"
+STALE_GC="${GOCACHE:-$(go env GOCACHE)}"
 WORK=$(mktemp -d)
 
 step() { echo "::group::verify-tidy: $1"; }
