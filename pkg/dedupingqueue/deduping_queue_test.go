@@ -140,6 +140,40 @@ func (s *uniQueueSuite) TestMergeablePreservesQueueOrder() {
 	s.Assert().Equal("b", second.id)
 }
 
+func (s *uniQueueSuite) TestMaxSizeEvictsOldest() {
+	q := NewDedupingQueue[string](WithMaxSize[string](2))
+	q.Push(&testItem{value: 1})
+	q.Push(&testItem{value: 2})
+	q.Push(&testItem{value: 3}) // should evict value 1, the oldest
+
+	s.Assert().Equal(2, q.queue.Len(), "queue should be capped at maxSize")
+
+	stopSignal := concurrency.NewSignal()
+	defer stopSignal.Signal()
+	remaining := []int{}
+	for range 2 {
+		item := q.PullBlocking(&stopSignal)
+		remaining = append(remaining, item.(*testItem).value)
+	}
+	s.Assert().Equal([]int{2, 3}, remaining, "oldest item should be evicted, most recent retained")
+	// The evicted key must be removed from the indexer so it can be queued again later.
+	s.Assert().Empty(q.indexer, "indexer should not leak the evicted key")
+}
+
+func (s *uniQueueSuite) TestMaxSizeDedupeDoesNotEvict() {
+	q := NewDedupingQueue[string](WithMaxSize[string](2))
+	q.Push(&testItem{value: 1})
+	q.Push(&testItem{value: 2})
+	q.Push(&testItem{value: 2, payload: "newer"}) // dedupes, does not grow the queue
+
+	s.Assert().Equal(2, q.queue.Len(), "dedupe should not trigger eviction")
+
+	stopSignal := concurrency.NewSignal()
+	defer stopSignal.Signal()
+	first := q.PullBlocking(&stopSignal).(*testItem)
+	s.Assert().Equal(1, first.value, "oldest unique item should be retained when a later push dedupes")
+}
+
 type testItem struct {
 	value   int
 	payload string

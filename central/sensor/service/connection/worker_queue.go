@@ -31,12 +31,15 @@ type workerQueue struct {
 	sync.WaitGroup
 }
 
-func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector) *workerQueue {
+func newWorkerQueue(poolSize int, workerType string, injector common.MessageInjector) *workerQueue {
 	totalSize := poolSize + 1
+	name := stripTypePrefix(workerType)
+	maxShardSize := maxShardSizeForType(workerType)
 	queues := make([]*dedupingqueue.DedupingQueue[string], totalSize)
 	for i := range totalSize {
 		queues[i] = dedupingqueue.NewDedupingQueue[string](
-			dedupingqueue.WithQueueName[string](typ),
+			dedupingqueue.WithQueueName[string](name),
+			dedupingqueue.WithMaxSize[string](maxShardSize),
 			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))
 	}
 
