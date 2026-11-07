@@ -277,6 +277,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForNetworkPolicies() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForNetworkPolicies", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForNetworkPolicies))
 }
 
+// ForPolicyReports mocks base method.
+func (m *MockDispatcherRegistry) ForPolicyReports() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForPolicyReports")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForPolicyReports indicates an expected call of ForPolicyReports.
+func (mr *MockDispatcherRegistryMockRecorder) ForPolicyReports() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForPolicyReports", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForPolicyReports))
+}
+
 // ForNodes mocks base method.
 func (m *MockDispatcherRegistry) ForNodes() resources.Dispatcher {
 	m.ctrl.T.Helper()
