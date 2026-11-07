@@ -192,8 +192,18 @@ EOF
 do_sync() {
     step "syncing new entries"
     local sync_dir="$UPPER_DIR"
-    if [ "$BACKEND" = "prefetch" ]; then
+    if [ "$BACKEND" = "prefetch" ] || [ ! -d "$sync_dir" ]; then
         sync_dir="$OVERLAY_DIR"
+    fi
+    if [ ! -d "$sync_dir" ]; then
+        step "no sync directory found, skipping"
+        return
+    fi
+    local entry_count
+    entry_count=$(find "$sync_dir" -type f 2>/dev/null | wc -l)
+    if [ "$entry_count" -eq 0 ]; then
+        step "0 entries to sync, skipping"
+        return
     fi
     case "$BACKEND" in
         azure|prefetch)
@@ -201,22 +211,23 @@ do_sync() {
             export AZURE_SPA_CLIENT_ID="${AZURE_CLIENT_ID:?}"
             export AZURE_SPA_CLIENT_SECRET="${AZURE_CLIENT_SECRET:?}"
             export AZURE_TENANT_ID="${AZURE_TENANT_ID:?}"
-            azcopy login --service-principal > /dev/null 2>&1 || true
+            azcopy login --service-principal 2>&1 | tail -1
             azcopy sync "$sync_dir" \
                 "https://${AZURE_STORAGE_ACCOUNT:?}.blob.core.windows.net/$AZURE_CONTAINER" \
-                --recursive --delete-destination=false --from-to Local Blob --output-level quiet
+                --recursive --delete-destination=false \
+                --output-level quiet 2>&1 | tail -3
             azcopy logout > /dev/null 2>&1 || true
             ;;
         gcs)
             gcloud storage rsync --recursive --no-clobber \
-                "$sync_dir" "gs://$GCS_BUCKET" 2>&1 | tail -3
+                "$sync_dir" "gs://$GCS_BUCKET" 2>&1 | tail -5
             ;;
         s3)
             aws s3 sync "$sync_dir" "s3://$S3_BUCKET" \
-                --only-show-errors --no-progress
+                --only-show-errors --no-progress 2>&1 | tail -3
             ;;
     esac
-    step "sync complete"
+    step "sync complete ($entry_count entries)"
 }
 
 # ---------------------------------------------------------------- unmount
