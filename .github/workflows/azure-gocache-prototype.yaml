@@ -1,0 +1,64 @@
+name: Azure GOCACHE prototype
+# PROTOTYPE (do not merge): Azure Blob-backed GOCACHE for the golangci-lint
+# job, replacing the GHA cache's all-or-nothing 2.2 GB archive restores with
+# lazy, parallel, per-entry reads from a container that mirrors GOCACHE's
+# content-addressed layout. Runners are in Azure, so this is same-cloud.
+#
+# Legs: the first run on this branch seeds the container (empty container ->
+# local compiles -> sync up). Subsequent runs (empty commits) measure the
+# warm read path. Compare against the GHA-cache lint job (~3 min warm).
+on:
+  push:
+    branches:
+      - davdhacs/azure-gocache-prototype
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-azure-gocache:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
+
+      - name: Mount Azure GOCACHE overlay
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_GOCACHE_CONTAINER: ${{ secrets.AZURE_GOCACHE_CONTAINER }}
+        run: |
+          echo "=== mount started at $(date -u +%H:%M:%S) ==="
+          out=$(scripts/ci/azure-gocache.sh mount 2>&1 | tee /dev/stderr | grep '^GOCACHE=' | cut -d= -f2)
+          echo "GOCACHE=$out" >> "$GITHUB_ENV"
+          echo "=== mount finished at $(date -u +%H:%M:%S) ==="
+
+      - name: make golangci-lint (with Azure GOCACHE)
+        env:
+          GOMEMLIMIT: 12GiB
+        run: |
+          echo "=== lint started at $(date -u +%H:%M:%S) ==="
+          make golangci-lint
+          echo "=== lint finished at $(date -u +%H:%M:%S) ==="
+
+      - name: Sync new cache entries to Azure
+        if: always()
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_GOCACHE_CONTAINER: ${{ secrets.AZURE_GOCACHE_CONTAINER }}
+        run: |
+          echo "=== sync started at $(date -u +%H:%M:%S) ==="
+          scripts/ci/azure-gocache.sh sync
+          echo "=== sync finished at $(date -u +%H:%M:%S) ==="
+
+      - name: Unmount
+        if: always()
+        run: scripts/ci/azure-gocache.sh unmount
