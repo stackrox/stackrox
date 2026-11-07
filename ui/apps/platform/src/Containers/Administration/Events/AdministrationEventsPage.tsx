@@ -119,7 +119,7 @@ function AdministrationEventsPage(): ReactElement {
                         <AdministrationEventsToolbar
                             count={count}
                             countAvailable={countAvailable}
-                            isDisabled={isLoading}
+                            isDisabled={isLoading && !lastUpdatedTime}
                             lastUpdatedTime={lastUpdatedTime}
                             page={page}
                             perPage={perPage}
