@@ -67,8 +67,8 @@ jobs:
             echo "=== building gocache-serve ==="
             (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
             echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
-            echo "GOCACHE_SERVE_BACKEND=noop" >> "$GITHUB_ENV"  # local-only for seed leg
-            echo "GOCACHE set via GOCACHEPROG (no mount needed)"
+            echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+            echo "gocache-serve ready (GOCACHEPROG=$GOCACHEPROG, backend=azure)"
           else
             scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount
             # Verify the overlay directory exists and is writable
@@ -87,6 +87,11 @@ jobs:
         env:
           GOMEMLIMIT: 12GiB
           GOCACHE: ${{ matrix.backend == 'cacheprog' && '' || env.CLOUD_GOCACHE_DIR }}
+          # gocache-serve reads these directly for the Azure backend
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
           echo "=== workload=${{ matrix.workload }} backend=${{ matrix.backend }} started at $(date -u +%H:%M:%S) ==="
           echo "GOCACHE=$GOCACHE"
