@@ -1,12 +1,8 @@
 package centralsensor
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -15,15 +11,6 @@ const (
 	// unless it has received the header metadata from sensor, with the metadata value for that key set to true.
 	SensorHelloMetadataKey = `Rox-Sensor-Hello`
 )
-
-// AppendSensorHelloInfoToOutgoingMetadata takes information from the given SensorHello message, and uses it to populate
-// legacy sensor info outgoing metadata in the given context. It does *not* indicate that the client wants to send
-// a SensorHello message.
-func AppendSensorHelloInfoToOutgoingMetadata(ctx context.Context, hello *central.SensorHello) (context.Context, error) {
-	ctx = appendCapsInfoToContext(ctx, set.NewSet(sliceutils.
-		FromStringSlice[SensorCapability](hello.GetCapabilities()...)...))
-	return appendSensorVersionInfoToContext(ctx, hello.GetSensorVersion())
-}
 
 // SecuredClusterIsNotManagedManually returns true if the cluster is not manually managed
 // (i.e., it is managed by Helm or by the Operator)

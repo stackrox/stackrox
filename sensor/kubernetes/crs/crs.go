@@ -195,10 +195,6 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 	}
 
 	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
-	ctx, err = centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
-	if err != nil {
-		return nil, errors.Wrap(err, "appending SensorHello info to outgoing metadata")
-	}
 
 	client := central.NewSensorServiceClient(centralConnection)
 	stream, err := sensorCommon.CommunicateWithAutoSensedEncoding(ctx, client)
