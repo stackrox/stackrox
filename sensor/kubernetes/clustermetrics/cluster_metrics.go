@@ -25,6 +25,10 @@ var (
 	log = logging.LoggerForModule()
 	// Interval for querying cluster metrics from Kubernetes and sending to Central.
 	defaultInterval = 5 * time.Minute
+	// Delay before the first metrics send after CentralReachable, giving
+	// ClusterStatusUpdate time to persist the sensor version so that the
+	// first telemetry event reports the correct compatibility status.
+	defaultFirstSendDelay = 1 * time.Minute
 	// Timeout for querying cluster metrics from Kubernetes.
 	defaultTimeout = 10 * time.Second
 )
@@ -62,6 +66,7 @@ func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, 
 		pollTicker:      ticker,
 		clusterID:       clusterID,
 		vmStats:         vmStats,
+		firstSendDelay:  defaultFirstSendDelay,
 	}
 }
 
@@ -86,8 +91,10 @@ type clusterMetricsImpl struct {
 	k8sClient       kubernetes.Interface
 	pollTicker      *time.Ticker
 
-	clusterID clusterIDPeeker
-	vmStats   VMStatsSource
+	clusterID      clusterIDPeeker
+	vmStats        VMStatsSource
+	firstSendDelay time.Duration
+	firstSendTimer *time.Timer
 }
 
 func (cm *clusterMetricsImpl) Name() string {
@@ -101,6 +108,7 @@ func (cm *clusterMetricsImpl) Start() error {
 
 func (cm *clusterMetricsImpl) Stop() {
 	cm.pollTicker.Stop()
+	cm.stopFirstSendTimer()
 	cm.stopper.Client().Stop()
 	_ = cm.stopper.Client().Stopped().Wait()
 }
@@ -110,8 +118,18 @@ func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		cm.pollTicker.Reset(cm.pollingInterval)
+		cm.stopFirstSendTimer()
+		cm.firstSendTimer = time.AfterFunc(cm.firstSendDelay, cm.runPipeline)
 	case common.SensorComponentEventOfflineMode:
 		cm.pollTicker.Stop()
+		cm.stopFirstSendTimer()
+	}
+}
+
+func (cm *clusterMetricsImpl) stopFirstSendTimer() {
+	if cm.firstSendTimer != nil {
+		cm.firstSendTimer.Stop()
+		cm.firstSendTimer = nil
 	}
 }
 
@@ -128,7 +146,6 @@ func (cm *clusterMetricsImpl) ProcessIndicator(_ *storage.ProcessIndicator) {}
 func (cm *clusterMetricsImpl) Poll(tickerC <-chan time.Time) {
 	defer cm.stopper.Flow().ReportStopped()
 
-	cm.runPipeline()
 	go func() {
 		for {
 			select {
