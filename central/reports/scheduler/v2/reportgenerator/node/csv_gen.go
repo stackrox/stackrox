@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/stringutils"
+	pkgZip "github.com/stackrox/rox/pkg/zip"
 )
 
 var csvHeader = []string{
@@ -51,8 +52,9 @@ func generateCSV(cveResponses []*NodeCVEQueryResponse, configName string) (*byte
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	truncatedName := configName
-	if runes := []rune(configName); len(runes) > 80 {
+	safeConfigName := pkgZip.GetSafeFilename(configName)
+	truncatedName := safeConfigName
+	if runes := []rune(safeConfigName); len(runes) > 80 {
 		truncatedName = string(runes[:80]) + "..."
 	}
 
