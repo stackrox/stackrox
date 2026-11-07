@@ -13,6 +13,14 @@ inputs:
     description: "VM OS: rhel8, rhel9, or rhel10"
     required: false
     default: "rhel9"
+  agent-type:
+    description: "Agent install method: quadlet or native"
+    required: false
+    default: "native"
+  image-tag:
+    description: "ACS image tag for roxagent container (auto-detected from Central if omitted)"
+    required: false
+    default: ""
   ssh-public-key:
     description: "Optional SSH public key to add for human access to all target VMs"
     required: false
@@ -135,12 +143,21 @@ runs:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ inputs.quay-username }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ inputs.quay-password }}
         SKIP_VIRT_OPERATOR: "true"
+        NUM_VMS: ${{ inputs.num-vms }}
+        VM_OS: ${{ inputs.vm-os }}
+        AGENT_TYPE: ${{ inputs.agent-type }}
+        IMAGE_TAG: ${{ inputs.image-tag }}
       run: |
         ARGS=(
-            --num-vms "${{ inputs.num-vms }}"
-            --os "${{ inputs.vm-os }}"
+            --num-vms "$NUM_VMS"
+            --os "$VM_OS"
+            --agent "$AGENT_TYPE"
             --artifacts-dir "$ARTIFACTS_DIR"
         )
+
+        if [[ -n "$IMAGE_TAG" ]]; then
+            ARGS+=(--image-tag "$IMAGE_TAG")
+        fi
 
         if [[ -n "${USER_SSH_KEY_PATH:-}" ]]; then
             ARGS+=(--ssh-key "$USER_SSH_KEY_PATH")
