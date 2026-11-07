@@ -189,6 +189,20 @@ func (p *tokenPolicy) enforce(
 		return nil, nil, errox.InvalidArgs.CausedBy(err)
 	}
 	if len(req.GetPermissionSetNames()) > 0 {
+		if slices.Contains(req.GetPermissionSetNames(), centralproxy.MetricsPermissionSetName) {
+			if len(req.GetPermissionSetNames()) != 1 {
+				return nil, nil, errox.InvalidArgs.New("metrics permission set cannot be combined with other permission sets")
+			}
+			if len(req.GetClusterScopes()) != 1 ||
+				req.GetClusterScopes()[0].GetClusterId() != sensorClusterID ||
+				!req.GetClusterScopes()[0].GetFullClusterAccess() ||
+				len(req.GetClusterScopes()[0].GetNamespaces()) != 0 {
+				return nil, nil, errox.InvalidArgs.New("metrics permission set requests require full access to the Sensor's cluster")
+			}
+			if len(scopes) != 1 || !slices.Equal(scopes["/metrics"], centralproxy.MetricsHTTPScopes["/metrics"]) {
+				return nil, nil, errox.InvalidArgs.New("metrics permission set tokens may only access GET /metrics")
+			}
+		}
 		if len(req.GetClusterScopes()) == 0 && (len(req.GetPermissionSetNames()) != 1 ||
 			req.GetPermissionSetNames()[0] != centralproxy.ConsoleProxyPermissionSetName) {
 			return nil, nil, errox.InvalidArgs.New("generic Sensor proxy tokens require a cluster scope")
