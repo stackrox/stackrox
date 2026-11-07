@@ -25,9 +25,8 @@ GCS_BUCKET="ci-gocache-proto"
 S3_BUCKET="ci-gocache-proto"
 AZURE_CONTAINER="ci-gocache"
 
-BLOBFUSE2_VERSION="2.4.2"
-GCSFUSE_VERSION="2.13.0"
-MOUNTPOINT_S3_VERSION="1.17.1"
+BLOBFUSE2_VERSION="2.5.6"
+GCSFUSE_VERSION="3.13.0"
 
 step() { echo "=== cloud-gocache [$BACKEND] $1 at $(date -u +%H:%M:%S) ==="; }
 
@@ -36,8 +35,9 @@ step() { echo "=== cloud-gocache [$BACKEND] $1 at $(date -u +%H:%M:%S) ==="; }
 install_blobfuse2() {
     command -v blobfuse2 >/dev/null 2>&1 && return
     step "installing blobfuse2"
+    # Debian 12 build is compatible with Ubuntu 24.04
     curl -fsSL -o /tmp/blobfuse2.deb \
-        "https://github.com/Azure/azure-storage-fuse/releases/download/blobfuse2-${BLOBFUSE2_VERSION}/blobfuse2-${BLOBFUSE2_VERSION}-ubuntu-24.04-x86_64.deb"
+        "https://github.com/Azure/azure-storage-fuse/releases/download/blobfuse2-${BLOBFUSE2_VERSION}/blobfuse2-${BLOBFUSE2_VERSION}-Debian-12.0.x86_64.deb"
     sudo dpkg -i /tmp/blobfuse2.deb
 }
 
@@ -52,9 +52,10 @@ install_gcsfuse() {
 install_mountpoint_s3() {
     command -v mount-s3 >/dev/null 2>&1 && return
     step "installing mountpoint-s3"
-    curl -fsSL -o /tmp/mountpoint-s3.deb \
-        "https://github.com/awslabs/mountpoint-s3/releases/download/v${MOUNTPOINT_S3_VERSION}/mountpoint-s3-${MOUNTPOINT_S3_VERSION}_x86_64.deb"
-    sudo dpkg -i /tmp/mountpoint-s3.deb
+    # Distributed from AWS's own S3 release bucket, not GitHub releases
+    curl -fsSL -o /tmp/mount-s3.deb \
+        "https://s3.amazonaws.com/mountpoint-s3-release/latest/x86_64/mount-s3.deb"
+    sudo apt-get install -y /tmp/mount-s3.deb
 }
 
 install_azcopy() {
