@@ -162,22 +162,39 @@ export function sortCveDistroList<Summary extends { operatingSystem: string }>(
     return sortBy(withDistroKeys, ({ distro }) => distroPriorityMap[distro]);
 }
 
+type CvssScore = number | string | null | undefined;
+
+// Format available scores, including zero, and display unavailable scores as N/A.
+export function safeToFixed(num: CvssScore, digits: number): string {
+    return typeof num === 'number' && Number.isFinite(num) ? num.toFixed(digits) : 'N/A';
+}
+
 export function getScoreVersionsForTopCVSS(
-    topCvss: number,
-    scores: { cvss: number; scoreVersion: string }[]
+    topCvss: CvssScore,
+    scores: { cvss: CvssScore; scoreVersion: string }[]
 ): string[] {
+    const topScore = safeToFixed(topCvss, 1);
+    if (topScore === 'N/A') {
+        return [];
+    }
+
     const scoreVersions = scores
-        .filter(({ cvss }) => cvss.toFixed(1) === topCvss.toFixed(1))
+        .filter(({ cvss }) => safeToFixed(cvss, 1) === topScore)
         .map(({ scoreVersion }) => scoreVersion);
     return Array.from(new Set(scoreVersions)).sort();
 }
 
 export function getScoreVersionsForTopNvdCVSS(
-    topNvdCvss: number,
-    scores: { nvdCvss: number; nvdScoreVersion: string }[]
+    topNvdCvss: CvssScore,
+    scores: { nvdCvss: CvssScore; nvdScoreVersion: string }[]
 ): string[] {
+    const topScore = safeToFixed(topNvdCvss, 1);
+    if (topScore === 'N/A') {
+        return [];
+    }
+
     const scoreVersions = scores
-        .filter(({ nvdCvss = 0 }) => nvdCvss.toFixed(1) === topNvdCvss.toFixed(1))
+        .filter(({ nvdCvss }) => safeToFixed(nvdCvss, 1) === topScore)
         .map(({ nvdScoreVersion = 'UNKNOWN_VERSION' }) => nvdScoreVersion);
     return Array.from(new Set(scoreVersions)).sort();
 }
