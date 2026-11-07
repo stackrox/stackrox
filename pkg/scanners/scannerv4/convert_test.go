@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	rheljava "github.com/quay/claircore/rhel/java"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
@@ -308,6 +309,92 @@ func TestConvert(t *testing.T) {
 			protoassert.SlicesEqual(t, tc.expected.GetComponents(), got.GetComponents())
 			assert.Equal(t, tc.expected.GetOperatingSystem(), got.GetOperatingSystem())
 			assert.Equal(t, scannerVersion, got.GetScannerVersion())
+		})
+	}
+}
+
+func TestConvertRedHatJavaSBOM(t *testing.T) {
+	report := &v4.VulnerabilityReport{
+		Contents: &v4.Contents{
+			Packages: map[string]*v4.Package{
+				"java": {Id: "java", Name: "org.example:artifact", Version: "1.2.3"},
+			},
+			Environments: map[string]*v4.Environment_List{
+				"java": {Environments: []*v4.Environment{{
+					PackageDb:     "sbom:opt/java/app.cdx.json:lib/artifact.jar",
+					RepositoryIds: []string{"rhel-java"},
+				}}},
+			},
+			Repositories: map[string]*v4.Repository{
+				"rhel-java": {Key: rheljava.RepositoryKey},
+			},
+		},
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"cve": {Id: "cve", Name: "CVE-2026-12345", Updater: "rhel-vex"},
+		},
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"java": {Values: []string{"cve"}},
+		},
+	}
+
+	components := imageScan(nil, report, scannerVersion).GetComponents()
+	require.Len(t, components, 1)
+	assert.Equal(t, storage.SourceType_JAVA, components[0].GetSource())
+	assert.Equal(t, "opt/java/app.cdx.json:lib/artifact.jar", components[0].GetLocation())
+	require.Len(t, components[0].GetVulns(), 1)
+	assert.Equal(t, "CVE-2026-12345", components[0].GetVulns()[0].GetCve())
+	assert.Equal(t, "rhel-vex", components[0].GetVulns()[0].GetDatasource())
+	assert.Equal(t, storage.VulnOrigin_VULN_ORIGIN_RED_HAT, components[0].GetVulns()[0].GetOrigin())
+}
+
+func TestRedHatJavaSourceRequiresRepository(t *testing.T) {
+	const sbomPackageDB = "sbom:opt/java/app.cdx.json:lib/pkg.jar"
+	testcases := map[string]struct {
+		packageDB     string
+		repositoryIDs []string
+		wantSource    storage.SourceType
+		wantLocation  string
+	}{
+		"Red Hat Java repository": {
+			packageDB:     sbomPackageDB,
+			repositoryIDs: []string{"other", "rhel-java"},
+			wantSource:    storage.SourceType_JAVA,
+			wantLocation:  "opt/java/app.cdx.json:lib/pkg.jar",
+		},
+		"unrelated repository": {
+			packageDB:     sbomPackageDB,
+			repositoryIDs: []string{"other"},
+			wantSource:    storage.SourceType_OS,
+			wantLocation:  sbomPackageDB,
+		},
+		"no repository": {
+			packageDB:    sbomPackageDB,
+			wantSource:   storage.SourceType_OS,
+			wantLocation: sbomPackageDB,
+		},
+		"other prefix with Red Hat Java repository": {
+			packageDB:     "other:opt/java/pkg.jar",
+			repositoryIDs: []string{"rhel-java"},
+			wantSource:    storage.SourceType_OS,
+			wantLocation:  "other:opt/java/pkg.jar",
+		},
+	}
+	for name, testcase := range testcases {
+		t.Run(name, func(t *testing.T) {
+			report := &v4.VulnerabilityReport{Contents: &v4.Contents{
+				Packages: map[string]*v4.Package{"pkg": {Id: "pkg", Name: "artifact"}},
+				Environments: map[string]*v4.Environment_List{
+					"pkg": {Environments: []*v4.Environment{{PackageDb: testcase.packageDB, RepositoryIds: testcase.repositoryIDs}}},
+				},
+				Repositories: map[string]*v4.Repository{
+					"rhel-java": {Key: rheljava.RepositoryKey},
+					"other":     {Key: "other-repository"},
+				},
+			}}
+			components := componentsWithLayerMap(nil, report, nil)
+			require.Len(t, components, 1)
+			assert.Equal(t, testcase.wantSource, components[0].GetSource())
+			assert.Equal(t, testcase.wantLocation, components[0].GetLocation())
 		})
 	}
 }

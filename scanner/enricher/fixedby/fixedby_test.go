@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/quay/claircore"
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
@@ -734,6 +735,89 @@ func TestEnrich_Java(t *testing.T) {
 			runTest(t, tc)
 		})
 	}
+}
+
+func TestEnrich_RedHatJava(t *testing.T) {
+	eap := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform:8.1")
+	vuln := func(fixedVersion string) *claircore.Vulnerability {
+		return &claircore.Vulnerability{
+			Name:           "CVE-2026-85511",
+			FixedInVersion: fixedVersion,
+			Repo:           &claircore.Repository{Name: eap.String(), Key: rheljava.RepositoryKey},
+		}
+	}
+	testcases := map[string]struct {
+		vulnerabilities map[string]*claircore.Vulnerability
+		want            string
+	}{
+		"highest fixed version": {
+			vulnerabilities: map[string]*claircore.Vulnerability{
+				"first":  vuln("2.6.11.Final-redhat-00001"),
+				"second": vuln("2.6.12.Final-redhat-00001"),
+			},
+			want: "2.6.12.Final-redhat-00001",
+		},
+		"higher Red Hat release suffix": {
+			vulnerabilities: map[string]*claircore.Vulnerability{
+				"first":  vuln("2.6.9.Final-redhat-00002"),
+				"second": vuln("2.6.9.Final-redhat-00010"),
+			},
+			want: "2.6.9.Final-redhat-00010",
+		},
+		"unfixed": {
+			vulnerabilities: map[string]*claircore.Vulnerability{
+				"unfixed": vuln(""),
+			},
+		},
+	}
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			vulnIDs := make([]string, 0, len(tc.vulnerabilities))
+			for id := range tc.vulnerabilities {
+				vulnIDs = append(vulnIDs, id)
+			}
+			runTest(t, testcase{
+				report: &claircore.VulnerabilityReport{
+					Packages:               map[string]*claircore.Package{"1": {Name: "org.wildfly.security:wildfly-elytron-asn1", Version: "2.6.9.Final-redhat-00001"}},
+					Repositories:           map[string]*claircore.Repository{"eap": {Name: eap.String(), Key: rheljava.RepositoryKey, CPE: eap}},
+					Environments:           map[string][]*claircore.Environment{"1": {{RepositoryIDs: []string{"eap"}}}},
+					Vulnerabilities:        tc.vulnerabilities,
+					PackageVulnerabilities: map[string][]string{"1": vulnIDs},
+				},
+				expected: tc.want,
+			})
+		})
+	}
+}
+
+func TestEnrich_RedHatJavaMultipleRepositories(t *testing.T) {
+	eap := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform:8.1")
+	quarkus := cpe.MustUnbind("cpe:/a:redhat:quarkus:3.33")
+	vuln := func(fixedVersion string, product cpe.WFN) *claircore.Vulnerability {
+		return &claircore.Vulnerability{
+			Name:           "CVE-2026-85511",
+			FixedInVersion: fixedVersion,
+			Repo:           &claircore.Repository{Name: product.String(), Key: rheljava.RepositoryKey},
+		}
+	}
+	runTest(t, testcase{
+		report: &claircore.VulnerabilityReport{
+			Packages: map[string]*claircore.Package{"1": {
+				Name: "org.wildfly.security:wildfly-elytron-asn1", Version: "2.6.9.Final-redhat-00001",
+			}},
+			Repositories: map[string]*claircore.Repository{
+				"eap":     {Name: eap.String(), Key: rheljava.RepositoryKey, CPE: eap},
+				"quarkus": {Name: quarkus.String(), Key: rheljava.RepositoryKey, CPE: quarkus},
+			},
+			Environments: map[string][]*claircore.Environment{"1": {{RepositoryIDs: []string{"eap", "quarkus"}}}},
+			Vulnerabilities: map[string]*claircore.Vulnerability{
+				"eap":     vuln("2.6.10.Final-redhat-00001", eap),
+				"quarkus": vuln("2.6.12.Final-redhat-00001", quarkus),
+			},
+			PackageVulnerabilities: map[string][]string{"1": {"eap", "quarkus"}},
+		},
+		expected: "2.6.12.Final-redhat-00001",
+	})
 }
 
 func TestEnrich_Nodejs(t *testing.T) {
