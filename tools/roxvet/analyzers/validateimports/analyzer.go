@@ -23,6 +23,7 @@ var (
 	// Keep this in alphabetic order.
 	validRoots = set.NewFrozenStringSet(
 		"central",
+		"ci/select",
 		"compliance",
 		"config-controller",
 		"govulncheck",

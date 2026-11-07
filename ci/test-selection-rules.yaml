@@ -1,0 +1,102 @@
+version: 1
+
+# Semantics and syntax: ci/select/README.md. Every job must be decided exactly
+# once (always_run or one rule), which validation enforces.
+jobs:
+  - go
+  - go-postgres
+  - go-bench
+  - sensor-integration-tests
+  - e2e-byodb-tests
+  - e2e-db-backup-restore-tests-gke
+  - e2e-db-backup-restore-tests-gke-konflux
+  - e2e-gke-upgrade-tests
+  - e2e-nongroovy-tests-gke
+  - e2e-nongroovy-tests-gke-konflux
+  - e2e-qa-tests-gke
+  - e2e-qa-tests-gke-konflux
+  - e2e-qa-tests-ocp-fips-konflux
+  - e2e-ui-tests-gke
+  - e2e-ui-tests-gke-konflux
+
+# Jobs that run on every pull request regardless of the diff.
+always_run: []
+
+rules:
+  # Go has no frontend/doc code, so only an entirely-ui-or-docs diff is safe.
+  # Deliberate broad doc match + '!' denylist (not a narrow allowlist): new
+  # docs can live anywhere without touching this file; only test/build inputs
+  # with doc-like paths need an exclusion to avoid a wrong skip. The
+  # &docs-and-ui anchor shares this set with backend-e2e.
+  - name: go-unit
+    jobs: [go]
+    skip_if_only_changed: &docs-and-ui
+      - '^ui/'
+      - '^(?is:.*\.(md|txt))$'
+      - '^central/.*/readme\.md$'
+      - '!^sensor/tests/images-to-prefetch\.txt$'
+      - '!^tests/images-to-prefetch\.txt$'
+      - '!^qa-tests-backend/scripts/images-to-prefetch\.txt$'
+      - '!^(?s:.*/)?(testdata|fixtures)/'
+      - '!^tests/roxctl/bats-tests/local/expect/'
+      - '!^qa-tests-backend/test-images/'
+      - '!^(tools|operator/hack|config-controller/hack)/boilerplate\.go\.txt$'
+      - '!^\.openshift-ci/dev-requirements\.txt$'
+      - '!^tests/performance/scripts/opensearch-upload/requirements\.txt$'
+
+  # Postgres is driven by Central, shared packages, schema sources, and the Go
+  # module. Scanner/Operator/Sensor-only changes do not reach it.
+  - name: postgres
+    jobs: [go-postgres, go-bench]
+    run_if_changed:
+      - '^central/'
+      - '^pkg/'
+      - '^migrator/'
+      - '^proto/'
+      - '^generated/'
+      - '^tools/'
+      - '^go\.(mod|sum)$'
+
+  # Sensor integration covers Sensor plus the shared code it imports.
+  - name: sensor-integration
+    jobs: [sensor-integration-tests]
+    run_if_changed:
+      - '^sensor/'
+      - '^pkg/'
+      - '^proto/'
+      - '^generated/'
+      - '^go\.(mod|sum)$'
+
+  # Backend e2e drives APIs and clusters, not the browser: same ui-or-docs
+  # safe set as go-unit.
+  - name: backend-e2e
+    jobs:
+      - e2e-byodb-tests
+      - e2e-db-backup-restore-tests-gke
+      - e2e-db-backup-restore-tests-gke-konflux
+      - e2e-gke-upgrade-tests
+      - e2e-nongroovy-tests-gke
+      - e2e-nongroovy-tests-gke-konflux
+      - e2e-qa-tests-gke
+      - e2e-qa-tests-gke-konflux
+      - e2e-qa-tests-ocp-fips-konflux
+    skip_if_only_changed: *docs-and-ui
+
+  # UI e2e must run on frontend changes, so (unlike backend-e2e) ui/ is not in
+  # its safe set — only docs are. The exclusions mirror go-unit's.
+  - name: ui-e2e
+    jobs:
+      - e2e-ui-tests-gke
+      - e2e-ui-tests-gke-konflux
+    skip_if_only_changed:
+      - '^(?is:.*\.(md|txt))$'
+      - '^central/.*/readme\.md$'
+      - '!^sensor/tests/images-to-prefetch\.txt$'
+      - '!^tests/images-to-prefetch\.txt$'
+      - '!^qa-tests-backend/scripts/images-to-prefetch\.txt$'
+      - '!^(?s:.*/)?(testdata|fixtures)/'
+      - '!^tests/roxctl/bats-tests/local/expect/'
+      - '!^qa-tests-backend/test-images/'
+      - '!^(tools|operator/hack|config-controller/hack)/boilerplate\.go\.txt$'
+      - '!^\.openshift-ci/dev-requirements\.txt$'
+      - '!^tests/performance/scripts/opensearch-upload/requirements\.txt$'
