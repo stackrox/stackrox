@@ -2787,3 +2787,39 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     shift
     "$fn" "$@"
 fi
+
+# OLM version detection for operator e2e tests
+
+get_ocp_version() {
+  # Returns OCP version as X.Y.Z
+  # Fails if not an OpenShift cluster or version cannot be retrieved
+  local version
+  if ! version=$("${SCRIPTS_ROOT}/operator/hack/retry-kubectl.sh" < /dev/null get clusterversion -o jsonpath='{.items[0].status.desired.version}' 2>/dev/null); then
+    die "Failed to get OpenShift version - cluster may not be OpenShift or clusterversion resource is unavailable"
+  fi
+  if [[ -z "$version" ]]; then
+    die "OpenShift version is empty - clusterversion resource may be misconfigured"
+  fi
+  echo "$version"
+}
+
+get_olm_version() {
+  # Returns "v1" if OLMv1 should be used (OCP >= 4.20.1), "v0" otherwise
+  # Fails if OCP version cannot be determined
+  local ocp_version
+  ocp_version="$(get_ocp_version)"
+
+  if [[ ! "$ocp_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+    die "Could not parse OCP version '$ocp_version' - expected format X.Y.Z"
+  fi
+
+  local -r min_version="4.20.1"
+  # sort -CV succeeds iff the two lines are already in version order, i.e. ocp_version >= min_version.
+  if printf '%s\n%s\n' "$min_version" "$ocp_version" | sort -CV; then
+    info "OCP version $ocp_version >= $min_version, using OLMv1" >&2
+    echo "v1"  # Function return value (captured by caller)
+  else
+    info "OCP version $ocp_version < $min_version, using OLMv0" >&2
+    echo "v0"  # Function return value (captured by caller)
+  fi
+}
