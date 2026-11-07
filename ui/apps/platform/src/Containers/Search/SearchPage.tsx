@@ -9,10 +9,19 @@ import {
     Stack,
     StackItem,
     Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
 } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
-import SearchFilterInput from 'Components/SearchFilterInput';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { fetchGlobalSearchResults, getSearchOptionsForCategory } from 'services/SearchService';
 import type { SearchResponse } from 'services/SearchService';
 import type { SearchFilter } from 'types/search';
@@ -21,6 +30,7 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { searchPath } from 'routePaths';
 
 import SearchNavAndTable from './SearchNavAndTable';
+import { searchFilterConfig } from './searchFilterConfig';
 import {
     parseQueryString,
     parseSearchFilter,
@@ -33,16 +43,18 @@ import './SearchPage.css';
 function SearchPage(): ReactElement {
     const navigate = useNavigate();
     const { search } = useLocation();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const config = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfig
+    );
 
     /*
-     * To avoid incomplete updates to the query string which produce uneeded items in browser history,
-     * store a key which does not yet have a value in component state.
+     * The curated compound search filter config is static, but the dynamic list of search
+     * options is still requested so that a URL (for example, a saved bookmark) which uses a
+     * search term outside the curated config continues to apply to the query.
      */
-    const [searchFilterKeyWithoutValue, setSearchFilterKeyWithoutValue] = useState<
-        string | undefined
-    >();
-
-    const [isLoadingSearchOptions, setIsLoadingSearchOptions] = useState(false);
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const [searchOptionsErrorMessage, setSeachOptionsErrorMessage] = useState<string | null>(null);
 
@@ -53,16 +65,10 @@ function SearchPage(): ReactElement {
     );
 
     useEffect(() => {
-        setIsLoadingSearchOptions(true);
         const { request, cancel } = getSearchOptionsForCategory();
-        request
-            .then(setSearchOptions)
-            .catch((error) => {
-                setSeachOptionsErrorMessage(getAxiosErrorMessage(error));
-            })
-            .finally(() => {
-                setIsLoadingSearchOptions(false);
-            });
+        request.then(setSearchOptions).catch((error) => {
+            setSeachOptionsErrorMessage(getAxiosErrorMessage(error));
+        });
 
         return cancel;
     }, []);
@@ -92,39 +98,32 @@ function SearchPage(): ReactElement {
         }
     }, [stringifiedSearchFilter]);
 
+    // The compound search filter only emits complete search filters (an attribute always has a
+    // value), so updating the URL is a simple push, or replace when there is no current filter.
     function handleChangeSearchFilter(searchFilterNext: SearchFilter) {
-        const searchFilterKeyWithoutValueNext = Object.keys(searchFilterNext).find(
-            (key) => !searchFilterNext[key]
-        );
+        const queryString = stringifyQueryObject({
+            searchFilter: searchFilterNext,
+            navCategory,
+        });
+        const searchPathWithQueryString = `${searchPath}${queryString}`;
 
-        // If the changed search filter is complete, push the updated query string.
-        if (!searchFilterKeyWithoutValueNext) {
-            const queryString = stringifyQueryObject({
-                searchFilter: searchFilterNext,
-                navCategory,
-            });
-            const searchPathWithQueryString = `${searchPath}${queryString}`;
-
-            // If the current search filter is empty, then replace, else push.
-            if (stringifiedSearchFilter.length === 0) {
-                navigate(searchPathWithQueryString, { replace: true });
-            } else {
-                navigate(searchPathWithQueryString);
-            }
+        // If the current search filter is empty, then replace, else push.
+        if (stringifiedSearchFilter.length === 0) {
+            navigate(searchPathWithQueryString, { replace: true });
+        } else {
+            navigate(searchPathWithQueryString);
         }
-
-        setSearchFilterKeyWithoutValue(searchFilterKeyWithoutValueNext);
     }
 
     let content: ReactElement | null = null;
 
-    if (isLoadingSearchOptions || isLoadingSearchResponse) {
+    if (isLoadingSearchResponse) {
         content = (
             <Bullseye>
                 <Spinner />
             </Bullseye>
         );
-    } else if (searchOptions.length !== 0 && stringifiedSearchFilter.length === 0) {
+    } else if (stringifiedSearchFilter.length === 0) {
         content = (
             <Alert variant="info" isInline title="Enter a new search filter" component="p">
                 <p>
@@ -182,29 +181,40 @@ function SearchPage(): ReactElement {
                     <Title headingLevel="h1" className="pf-v6-u-mb-md">
                         Search
                     </Title>
-                    {typeof searchOptionsErrorMessage === 'string' ? (
+                    {typeof searchOptionsErrorMessage === 'string' && (
                         <Alert
-                            variant="danger"
+                            variant="warning"
                             isInline
-                            title="Request failed for search options"
+                            className="pf-v6-u-mb-md"
+                            title="Request failed for the full list of search options"
                             component="p"
                         >
-                            {searchOptionsErrorMessage}
+                            {searchOptionsErrorMessage} You can still filter using the options below.
                         </Alert>
-                    ) : (
-                        <SearchFilterInput
-                            className="pf-search-shim z-sm-201"
-                            handleChangeSearchFilter={handleChangeSearchFilter}
-                            isDisabled={isLoadingSearchOptions || isLoadingSearchResponse}
-                            placeholder="Filter resources"
-                            searchFilter={
-                                searchFilterKeyWithoutValue
-                                    ? { ...searchFilter, [searchFilterKeyWithoutValue]: '' }
-                                    : searchFilter
-                            }
-                            searchOptions={searchOptions}
-                        />
                     )}
+                    <Toolbar>
+                        <ToolbarContent>
+                            <CompoundSearchFilter
+                                config={config}
+                                defaultEntity="Deployment"
+                                isDisabled={isLoadingSearchResponse}
+                                searchFilter={searchFilter}
+                                onSearch={(payload) =>
+                                    handleChangeSearchFilter(
+                                        updateSearchFilter(searchFilter, payload)
+                                    )
+                                }
+                            />
+                            <ToolbarGroup className="pf-v6-u-w-100">
+                                <CompoundSearchFilterLabels
+                                    attributesSeparateFromConfig={[]}
+                                    config={config}
+                                    onFilterChange={handleChangeSearchFilter}
+                                    searchFilter={searchFilter}
+                                />
+                            </ToolbarGroup>
+                        </ToolbarContent>
+                    </Toolbar>
                 </StackItem>
                 <StackItem isFilled>{content}</StackItem>
             </Stack>
