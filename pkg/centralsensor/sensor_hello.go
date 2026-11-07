@@ -3,7 +3,6 @@ package centralsensor
 import (
 	"context"
 
-	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,21 +23,6 @@ func AppendSensorHelloInfoToOutgoingMetadata(ctx context.Context, hello *central
 	ctx = appendCapsInfoToContext(ctx, set.NewSet(sliceutils.
 		FromStringSlice[SensorCapability](hello.GetCapabilities()...)...))
 	return appendSensorVersionInfoToContext(ctx, hello.GetSensorVersion())
-}
-
-// DeriveSensorHelloFromIncomingMetadata derives a SensorHello message from incoming sensor metadata in a legacy
-// fashion (i.e., without an explicit message exchange).
-// Note: Even when this function returns an error, it will still return a partially populated SensorHello message.
-func DeriveSensorHelloFromIncomingMetadata(md metautils.MD) (*central.SensorHello, error) {
-	sensorHello := &central.SensorHello{}
-
-	versionInfo, versionErr := deriveSensorVersionInfo(md)
-	if versionInfo != nil {
-		sensorHello.SensorVersion = versionInfo.MainVersion
-	}
-
-	sensorHello.Capabilities = sliceutils.StringSlice(extractCapsFromMD(md).AsSlice()...)
-	return sensorHello, versionErr
 }
 
 // SecuredClusterIsNotManagedManually returns true if the cluster is not manually managed

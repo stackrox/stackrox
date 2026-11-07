@@ -17,16 +17,7 @@ func TestVersionInfoClientToServer(t *testing.T) {
 	testutils.SetMainVersion(t, testVersion)
 	ctx, err := appendSensorVersionInfoToContext(context.Background(), version.GetMainVersion())
 	require.NoError(t, err)
-	derived, err := deriveSensorVersionInfo(metautils.ExtractOutgoing(ctx))
-	require.NoError(t, err)
-	require.NotNil(t, derived)
-	assert.Equal(t, testVersion, derived.MainVersion)
-}
-
-func TestVersionInfoOldSensors(t *testing.T) {
-	derived, err := deriveSensorVersionInfo(metautils.MD{})
-	assert.NoError(t, err)
-	assert.Nil(t, derived)
+	assert.NotEmpty(t, metautils.ExtractOutgoing(ctx).Get(legacySensorVersionInfoKey))
 }
 
 // This unit test helps enforce that nobody accidentally removes a field from

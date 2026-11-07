@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/metadata"
 )
@@ -21,19 +20,4 @@ func appendCapsInfoToContext(ctx context.Context, caps set.Set[SensorCapability]
 		capsStrs = append(capsStrs, string(capability))
 	}
 	return metadata.AppendToOutgoingContext(ctx, legacyCapsMetadataKey, strings.Join(capsStrs, ","))
-}
-
-// extractCapsFromMD retrieves the set of sensor capabilities from the metadata set.
-func extractCapsFromMD(md metautils.MD) set.Set[SensorCapability] {
-	capsStr := md.Get(legacyCapsMetadataKey)
-
-	result := set.NewSet[SensorCapability]()
-	if capsStr != "" {
-		capsStrs := strings.SplitSeq(capsStr, ",")
-		for capsStr := range capsStrs {
-			result.Add(SensorCapability(capsStr))
-		}
-	}
-
-	return result
 }
