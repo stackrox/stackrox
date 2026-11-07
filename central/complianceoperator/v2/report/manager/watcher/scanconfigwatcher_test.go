@@ -387,11 +387,9 @@ func TestScanConfigWatcherGetScans(t *testing.T) {
 	require.Len(t, scans, 2)
 }
 
-// TestScanConfigWatcherGetScansUsesScope verifies that the scan ref and start time on the snapshot
-// scans come from the result's Scope, not its Scan. It covers the result-first timeout case where
-// Scan is nil but the watcher recorded the scope from check results. Before the single-source
-// change GetScans read these from Scan, so a nil-Scan result produced an empty scope.
-func TestScanConfigWatcherGetScansUsesScope(t *testing.T) {
+// TestScanConfigWatcherPropagatesScopeWhenScanIsNil verifies the snapshot scans take scan ref and
+// start time from the result's Scope, so a result-first timeout (nil Scan) still yields the scope.
+func TestScanConfigWatcherPropagatesScopeWhenScanIsNil(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
