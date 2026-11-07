@@ -50,4 +50,10 @@ var (
 	// - There were four (20-16) 1-hour-long time-windows with two scans were running in parallel
 	// - There were fourteen (34-20) 1-hour-long time-windows with three scans were running in parallel
 	ComplianceScansRunningInParallelMetricObservationPeriod = registerDurationSetting("ROX_COMPLIANCE_METRIC_OBSERVATION_PERIOD", 15*time.Minute)
+
+	// ComplianceNodeRoleReconcileInterval defines how often Sensor recomputes the auto-discovered node roles and
+	// reconciles them into ACS-managed ScanSettings. Only used when ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES is
+	// enabled. Values below the reconciler's internal minimum are clamped (logged); see
+	// sensor/kubernetes/complianceoperator.minNodeRoleReconcileInterval.
+	ComplianceNodeRoleReconcileInterval = registerDurationSetting("ROX_COMPLIANCE_NODE_ROLE_RECONCILE_INTERVAL", 5*time.Minute)
 )
