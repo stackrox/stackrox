@@ -3,10 +3,8 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -25,7 +23,17 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.LogImbue)(nil)), "log_imbues")
+		schema = &walker.Schema{
+			Table:    "log_imbues",
+			Type:     "*storage.LogImbue",
+			TypeName: "LogImbue",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Timestamp", ProtoBufName: "timestamp", ColumnName: "Timestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTimestamp()", false), Search: walker.SearchField{FieldName: "Log Imbue Creation Time", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableLogImbuesStmt)
 		return schema

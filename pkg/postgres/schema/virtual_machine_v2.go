@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,8 +32,36 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineV2)(nil)), "virtual_machine_v2")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VIRTUAL_MACHINES_V2, "virtualmachinev2", (*storage.VirtualMachineV2)(nil)))
+		schema = &walker.Schema{
+			Table:    "virtual_machine_v2",
+			Type:     "*storage.VirtualMachineV2",
+			TypeName: "VirtualMachineV2",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Virtual Machine ID", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Search: walker.SearchField{FieldName: "Virtual Machine Name", Enabled: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterName", ProtoBufName: "cluster_name", ColumnName: "ClusterName", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterName()", false), Search: walker.SearchField{FieldName: "Cluster", Enabled: true}},
+			{Schema: schema, Name: "GuestOs", ProtoBufName: "guest_os", ColumnName: "GuestOs", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetGuestOs()", false), Search: walker.SearchField{FieldName: "Guest OS", Enabled: true}},
+			{Schema: schema, Name: "State", ProtoBufName: "state", ColumnName: "State", Type: "storage.VirtualMachineV2_State", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.VirtualMachineV2_State", ObjectGetter: walker.MakeObjectGetter("GetState()", false), Search: walker.SearchField{FieldName: "Virtual Machine State", Enabled: true}},
+			{Schema: schema, Name: "LastUpdated", ProtoBufName: "last_updated", ColumnName: "LastUpdated", Type: "*timestamppb.Timestamp", DataType: postgres.DateTimeTZ, SQLType: "timestamptz", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastUpdated()", false), Options: walker.PostgresOptions{ColumnType: "timestamptz"}, Search: walker.SearchField{FieldName: "Last Updated", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_VIRTUAL_MACHINES_V2, map[search.FieldLabel]*search.Field{
+			"Cluster":               {FieldPath: "virtualmachinev2.cluster_name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+			"Cluster ID":            {FieldPath: "virtualmachinev2.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+			"Guest OS":              {FieldPath: "virtualmachinev2.guest_os", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+			"Last Updated":          {FieldPath: "virtualmachinev2.last_updated.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+			"Namespace":             {FieldPath: "virtualmachinev2.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+			"Virtual Machine ID":    {FieldPath: "virtualmachinev2.id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+			"Virtual Machine Name":  {FieldPath: "virtualmachinev2.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+			"Virtual Machine State": {FieldPath: "virtualmachinev2.state", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_VIRTUAL_MACHINES_V2},
+		}))
+		enumregistry.AddValues("virtualmachinev2.notes", map[string]int32{"MISSING_METADATA": 0, "MISSING_SCANNER": 4, "MISSING_SCAN_DATA": 1, "MISSING_SIGNATURE": 2, "MISSING_SIGNATURE_VERIFICATION_DATA": 3, "SCAN_FAILED": 5})
+		enumregistry.AddValues("virtualmachinev2.state", map[string]int32{"RUNNING": 2, "STOPPED": 1, "UNKNOWN": 0})
+
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2,
 			v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2,

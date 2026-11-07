@@ -6,7 +6,6 @@ package schema
 import (
     "context"
     "fmt"
-    "reflect"
     "time"
 
     "github.com/lib/pq"
@@ -19,6 +18,7 @@ import (
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
+    "github.com/stackrox/rox/pkg/search/enumregistry"
     "github.com/stackrox/rox/pkg/search/postgres/mapping"
     "github.com/stackrox/rox/pkg/uuid"
 )
@@ -61,9 +61,10 @@ var (
         if schema != nil {
             return schema
         }
-        schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}"{{- if .NoSerialized }}, walker.WithNoSerialized(){{- end }})
+        {{.SchemaBuilder}}
         {{- else}}
-        schema := walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}"{{- if .NoSerialized }}, walker.WithNoSerialized(){{- end }})
+        var schema *walker.Schema
+        {{.SchemaBuilder}}
         {{- end}}
 
         {{- if gt (len .References) 0 }}
@@ -79,7 +80,7 @@ var (
          {{- end }}
 
         {{- if .SearchCategory }}
-            schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{.Schema.Type}})(nil)))
+            schema.SetOptionsMap(search.OptionsMapFromMap(v1.{{.SearchCategory}}, {{.SearchFieldsVariable}}))
             {{- if .SearchScope }}
             schema.SetSearchScope([]v1.SearchCategory{
             {{- range $category := .SearchScope }}
