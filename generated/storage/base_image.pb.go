@@ -34,8 +34,11 @@ type BaseImage struct {
 	FirstLayerDigest      string                 `protobuf:"bytes,8,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"`                  // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
 	Layers                []*BaseImageLayer      `protobuf:"bytes,9,rep,name=layers,proto3" json:"layers,omitempty"`
 	Created               *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created,proto3" json:"created,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Config history in order, including empty lines.
+	// Enrichment compares this with the workload image history.
+	History       []*BaseImageHistoryEntry `protobuf:"bytes,11,rep,name=history,proto3" json:"history,omitempty" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BaseImage) Reset() {
@@ -138,6 +141,76 @@ func (x *BaseImage) GetCreated() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *BaseImage) GetHistory() []*BaseImageHistoryEntry {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
+// BaseImageHistoryEntry is one config-history line from a base image.
+// Instruction and value are the Dockerfile line. Empty is true when that
+// line has no content blob, such as USER, ENV, or CMD.
+type BaseImageHistoryEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Instruction   string                 `protobuf:"bytes,1,opt,name=instruction,proto3" json:"instruction,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Empty         bool                   `protobuf:"varint,3,opt,name=empty,proto3" json:"empty,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BaseImageHistoryEntry) Reset() {
+	*x = BaseImageHistoryEntry{}
+	mi := &file_storage_base_image_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BaseImageHistoryEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BaseImageHistoryEntry) ProtoMessage() {}
+
+func (x *BaseImageHistoryEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_base_image_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BaseImageHistoryEntry.ProtoReflect.Descriptor instead.
+func (*BaseImageHistoryEntry) Descriptor() ([]byte, []int) {
+	return file_storage_base_image_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BaseImageHistoryEntry) GetInstruction() string {
+	if x != nil {
+		return x.Instruction
+	}
+	return ""
+}
+
+func (x *BaseImageHistoryEntry) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *BaseImageHistoryEntry) GetEmpty() bool {
+	if x != nil {
+		return x.Empty
+	}
+	return false
+}
+
 type BaseImageLayer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                        // @gotags: sql:"pk,type(uuid)"
@@ -150,7 +223,7 @@ type BaseImageLayer struct {
 
 func (x *BaseImageLayer) Reset() {
 	*x = BaseImageLayer{}
-	mi := &file_storage_base_image_proto_msgTypes[1]
+	mi := &file_storage_base_image_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -162,7 +235,7 @@ func (x *BaseImageLayer) String() string {
 func (*BaseImageLayer) ProtoMessage() {}
 
 func (x *BaseImageLayer) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_base_image_proto_msgTypes[1]
+	mi := &file_storage_base_image_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -175,7 +248,7 @@ func (x *BaseImageLayer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseImageLayer.ProtoReflect.Descriptor instead.
 func (*BaseImageLayer) Descriptor() ([]byte, []int) {
-	return file_storage_base_image_proto_rawDescGZIP(), []int{1}
+	return file_storage_base_image_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *BaseImageLayer) GetId() string {
@@ -210,7 +283,7 @@ var File_storage_base_image_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9d\x03\n" +
+	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd7\x03\n" +
 	"\tBaseImage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x1e\n" +
@@ -224,7 +297,12 @@ const file_storage_base_image_proto_rawDesc = "" +
 	"\x12first_layer_digest\x18\b \x01(\tR\x10firstLayerDigest\x12/\n" +
 	"\x06layers\x18\t \x03(\v2\x17.storage.BaseImageLayerR\x06layers\x124\n" +
 	"\acreated\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\acreated\"}\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x128\n" +
+	"\ahistory\x18\v \x03(\v2\x1e.storage.BaseImageHistoryEntryR\ahistory\"e\n" +
+	"\x15BaseImageHistoryEntry\x12 \n" +
+	"\vinstruction\x18\x01 \x01(\tR\vinstruction\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12\x14\n" +
+	"\x05empty\x18\x03 \x01(\bR\x05empty\"}\n" +
 	"\x0eBaseImageLayer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\rbase_image_id\x18\x02 \x01(\tR\vbaseImageId\x12!\n" +
@@ -244,21 +322,23 @@ func file_storage_base_image_proto_rawDescGZIP() []byte {
 	return file_storage_base_image_proto_rawDescData
 }
 
-var file_storage_base_image_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_storage_base_image_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_base_image_proto_goTypes = []any{
 	(*BaseImage)(nil),             // 0: storage.BaseImage
-	(*BaseImageLayer)(nil),        // 1: storage.BaseImageLayer
-	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
+	(*BaseImageHistoryEntry)(nil), // 1: storage.BaseImageHistoryEntry
+	(*BaseImageLayer)(nil),        // 2: storage.BaseImageLayer
+	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
 }
 var file_storage_base_image_proto_depIdxs = []int32{
-	2, // 0: storage.BaseImage.discovered_at:type_name -> google.protobuf.Timestamp
-	1, // 1: storage.BaseImage.layers:type_name -> storage.BaseImageLayer
-	2, // 2: storage.BaseImage.created:type_name -> google.protobuf.Timestamp
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	3, // 0: storage.BaseImage.discovered_at:type_name -> google.protobuf.Timestamp
+	2, // 1: storage.BaseImage.layers:type_name -> storage.BaseImageLayer
+	3, // 2: storage.BaseImage.created:type_name -> google.protobuf.Timestamp
+	1, // 3: storage.BaseImage.history:type_name -> storage.BaseImageHistoryEntry
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storage_base_image_proto_init() }
@@ -272,7 +352,7 @@ func file_storage_base_image_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_base_image_proto_rawDesc), len(file_storage_base_image_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

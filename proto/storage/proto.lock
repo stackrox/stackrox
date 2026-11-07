@@ -1416,6 +1416,32 @@
                 "id": 10,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "history",
+                "type": "BaseImageHistoryEntry",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "BaseImageHistoryEntry",
+            "fields": [
+              {
+                "id": 1,
+                "name": "instruction",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "value",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "empty",
+                "type": "bool"
               }
             ]
           },
@@ -1609,6 +1635,12 @@
                 "name": "layer_digests",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "history",
+                "type": "BaseImageHistoryEntry",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -1626,6 +1658,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/base_image.proto"
           },
           {
             "path": "storage/user.proto"
@@ -9975,6 +10010,12 @@
                 "id": 5,
                 "name": "max_layer_index",
                 "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "max_history_index",
+                "type": "int32",
+                "oneof_parent": "set_max_history_index"
               }
             ]
           }

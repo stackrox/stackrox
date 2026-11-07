@@ -3,6 +3,7 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
+import "storage/base_image.proto";
 import "storage/user.proto";
 
 option go_package = "./storage;storage";
@@ -64,7 +65,7 @@ message BaseImageRepository {
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 9
+// Next tag: 10
 message BaseImageTag {
   // Unique identifier.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
@@ -92,4 +93,7 @@ message BaseImageTag {
 
   // Layer digests for this tag, stored for promotion to base_images.
   repeated string layer_digests = 8;
+
+  // Config history, including empty lines, stored for promotion to base_images.
+  repeated BaseImageHistoryEntry history = 9; // @gotags: search:"-" sql:"-"
 }
