@@ -1,0 +1,135 @@
+name: Cloud GOCACHE multi-job prototype
+# PROTOTYPE (do not merge): cloud-backed GOCACHE across multiple CI jobs
+# with different compilation profiles, verifying that one content-addressed
+# store serves all users and that the upload/sync path expands correctly.
+#
+# Jobs tested (4 backends x 3 workloads):
+#   lint:      make golangci-lint (package loading — export data for all deps)
+#   cli:       make cli (binary compilation — roxctl + its dependency tree)
+#   unittests: make go-unit-tests (test compilation — repo + tests + coverage)
+#
+# Backends:
+#   azure:     blobfuse2 FUSE mount (same-cloud, runners are in Azure)
+#   gcs:       gcsfuse FUSE mount (cross-cloud via existing GCP creds)
+#   s3:        Mountpoint for S3 FUSE mount (cross-cloud via existing AWS creds)
+#   prefetch:  no FUSE — parallel bulk download to local disk, native fs speed
+on:
+  push:
+    branches:
+      - davdhacs/azure-gocache-prototype
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Deterministic overlay path used by all backends
+  CLOUD_GOCACHE_DIR: /tmp/cloud-gocache/gocache
+
+jobs:
+  cloud-gocache:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [azure, gcs, s3, prefetch]
+        workload: [lint, cli, unittests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    name: cg-${{ matrix.workload }}-${{ matrix.backend }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          # fetch-depth: 0 needed for make cli (git describe for version info)
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
+
+      - name: Mount ${{ matrix.backend }} GOCACHE overlay
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount
+          # Verify the overlay directory exists and is writable
+          if [ ! -d "$CLOUD_GOCACHE_DIR" ]; then
+            echo "::error::GOCACHE overlay directory $CLOUD_GOCACHE_DIR does not exist"
+            exit 1
+          fi
+          # Test write access
+          echo "test" > "$CLOUD_GOCACHE_DIR/.write-test" && rm "$CLOUD_GOCACHE_DIR/.write-test"
+          # Persist GOCACHE via go env (affects all go invocations)
+          go env -w "GOCACHE=$CLOUD_GOCACHE_DIR"
+          echo "GOCACHE set to: $(go env GOCACHE)"
+
+      - name: Run workload (${{ matrix.workload }})
+        env:
+          GOMEMLIMIT: 12GiB
+          GOCACHE: ${{ env.CLOUD_GOCACHE_DIR }}
+        run: |
+          echo "=== workload=${{ matrix.workload }} backend=${{ matrix.backend }} started at $(date -u +%H:%M:%S) ==="
+          echo "GOCACHE=$GOCACHE"
+          go env GOCACHE
+          case "${{ matrix.workload }}" in
+            lint)
+              make golangci-lint
+              ;;
+            cli)
+              make cli
+              echo "CLI binary size: $(du -sh bin/ 2>/dev/null | cut -f1)"
+              ;;
+            unittests)
+              # Compile-only: don't run tests, just build them
+              go build -tags test,test_e2e ./... 2>&1 | tail -5
+              go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -5 || true
+              ;;
+          esac
+          echo "=== workload finished at $(date -u +%H:%M:%S) ==="
+
+      - name: Measure and sync new cache entries
+        if: always()
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          echo "=== sync started at $(date -u +%H:%M:%S) ==="
+
+          # Measure what's new (upper layer for FUSE, whole dir for prefetch)
+          SYNC_DIR="/tmp/cloud-gocache/rw"
+          if [ "${{ matrix.backend }}" = "prefetch" ] || [ ! -d "$SYNC_DIR" ]; then
+            SYNC_DIR="$CLOUD_GOCACHE_DIR"
+          fi
+          if [ -d "$SYNC_DIR" ]; then
+            entry_count=$(find "$SYNC_DIR" -type f 2>/dev/null | wc -l)
+            total_bytes=$(du -sb "$SYNC_DIR" 2>/dev/null | cut -f1 || echo 0)
+            echo "NEW_ENTRIES: $entry_count files, $total_bytes bytes ($(( ${total_bytes:-0} / 1048576 )) MB)"
+          else
+            echo "WARNING: sync dir $SYNC_DIR does not exist"
+          fi
+
+          # Sync (tolerate empty dirs — nothing to upload on a fully warm run)
+          if [ "$entry_count" -gt 0 ] 2>/dev/null; then
+            scripts/ci/cloud-gocache.sh ${{ matrix.backend }} sync
+          else
+            echo "Nothing to sync (0 new entries)"
+          fi
+          echo "=== sync finished at $(date -u +%H:%M:%S) ==="
+
+      - name: Unmount
+        if: always()
+        run: scripts/ci/cloud-gocache.sh ${{ matrix.backend }} unmount
