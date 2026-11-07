@@ -654,8 +654,8 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	// Before authorization is checked, we want to inject the sac client into the context.
-	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
+	// Once authorization is checked, we want to inject the user scope into the context.
+	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
