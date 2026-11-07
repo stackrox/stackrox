@@ -32,6 +32,7 @@ func NewDeploymentScorer(alertSearcher getters.AlertSearcher, allowlistEvaluator
 			deployment.NewViolations(alertSearcher),
 			deployment.NewProcessBaselines(allowlistEvaluator),
 			deployment.NewImageMultiplier(image.VulnerabilitiesHeading),
+			deployment.NewIdentityBlastRadius(),
 			deployment.NewServiceConfig(),
 			deployment.NewReachability(),
 			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
@@ -48,17 +49,23 @@ type deploymentScorerImpl struct {
 // Score takes a deployment and evaluates its risk
 func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Risk) *storage.Risk {
 	imageRiskResults := make(map[string][]*storage.Risk_Result)
+	imageVulnerabilitySummaries := make([]*storage.RiskVulnerabilitySummary, 0, len(images))
 	for _, risk := range images {
+		if summary := risk.GetVulnerabilitySummary(); summary != nil {
+			imageVulnerabilitySummaries = append(imageVulnerabilitySummaries, summary)
+		}
 		for _, result := range risk.GetResults() {
 			imageRiskResults[result.GetName()] = append(imageRiskResults[result.GetName()], result)
 		}
 	}
 
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
-	overallScore := float32(1.0)
+	proposedScore := float32(1.0)
+	legacyScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
 		if riskResult := mult.Score(ctx, deployment, imageRiskResults); riskResult != nil {
-			overallScore *= riskResult.GetScore()
+			proposedScore *= riskResult.GetScore()
+			legacyScore *= riskResultLegacyScore(riskResult)
 			riskResults = append(riskResults, riskResult)
 		}
 	}
@@ -67,8 +74,15 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 	}
 
 	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
+		Score:         legacyScore,
+		ProposedScore: proposedScore,
+		Results:       riskResults,
+		PriorityClassification: classifyRisk(classificationInputs{
+			deployment:       deployment,
+			riskResults:      riskResults,
+			imageSummaries:   imageVulnerabilitySummaries,
+			imageRiskResults: imageRiskResults,
+		}),
 		Subject: &storage.RiskSubject{
 			Id:        deployment.GetId(),
 			Type:      storage.RiskSubjectType_DEPLOYMENT,
@@ -85,4 +99,11 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 	risk.Id = riskID
 
 	return risk
+}
+
+func riskResultLegacyScore(r *storage.Risk_Result) float32 {
+	if r.GetLegacyScore() > 0 {
+		return r.GetLegacyScore()
+	}
+	return r.GetScore()
 }

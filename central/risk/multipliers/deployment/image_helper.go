@@ -24,16 +24,28 @@ func (i *imageMultiplier) Score(_ context.Context, _ *storage.Deployment, imageR
 		return nil
 	}
 
-	var maxScore float32
+	var maxScore, maxLegacyScore float32
 	var factors []*storage.Risk_Result_Factor
 	for _, r := range riskResults {
 		factors = append(factors, r.GetFactors()...)
 		maxScore = max(maxScore, r.GetScore())
+		maxLegacyScore = max(maxLegacyScore, riskResultLegacyScore(r))
 	}
 
-	return &storage.Risk_Result{
+	result := &storage.Risk_Result{
 		Name:    i.heading,
 		Factors: factors,
 		Score:   maxScore,
 	}
+	if maxLegacyScore != maxScore {
+		result.LegacyScore = maxLegacyScore
+	}
+	return result
+}
+
+func riskResultLegacyScore(r *storage.Risk_Result) float32 {
+	if r.GetLegacyScore() > 0 {
+		return r.GetLegacyScore()
+	}
+	return r.GetScore()
 }

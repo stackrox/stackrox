@@ -199,6 +199,8 @@ var (
 	SeccompProfileType            = newFieldLabel("Seccomp Profile Type")
 	ServiceAccountName            = newFieldLabel("Service Account")
 	ServiceAccountPermissionLevel = newFieldLabel("Service Account Permission Level")
+	RiskPriorityClassification    = newFieldLabel("Risk Priority Classification")
+	RiskPrioritySortOrder         = newFieldLabel("Risk Priority Sort Order")
 	ServiceAccountLabel           = newFieldLabel("Service Account Label")
 	ServiceAccountAnnotation      = newFieldLabel("Service Account Annotation")
 	Created                       = newFieldLabel("Created")
@@ -345,13 +347,14 @@ var (
 	Inactive = newFieldLabel("Inactive Deployment")
 
 	// Risk Search Fields
-	RiskScore           = newFieldLabel("Risk Score")
-	NodeRiskScore       = newFieldLabel("Node Risk Score")
-	DeploymentRiskScore = newFieldLabel("Deployment Risk Score")
-	ImageRiskScore      = newFieldLabel("Image Risk Score")
-	ComponentRiskScore  = newFieldLabel("Component Risk Score")
-	RiskSubjectType     = newFieldLabel("Risk Subject Type")
-	ComponentLayerType  = newFieldLabel("Component Layer Type")
+	RiskScore                   = newFieldLabel("Risk Score")
+	NodeRiskScore               = newFieldLabel("Node Risk Score")
+	DeploymentRiskScore         = newFieldLabel("Deployment Risk Score")
+	ProposedDeploymentRiskScore = newFieldLabel("Proposed Deployment Risk Score")
+	ImageRiskScore              = newFieldLabel("Image Risk Score")
+	ComponentRiskScore          = newFieldLabel("Component Risk Score")
+	RiskSubjectType             = newFieldLabel("Risk Subject Type")
+	ComponentLayerType          = newFieldLabel("Component Layer Type")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 

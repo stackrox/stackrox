@@ -17,6 +17,7 @@ import (
 	imageutils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	riskPkg "github.com/stackrox/rox/pkg/risk"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -559,6 +560,62 @@ func TestSearchListDeployments(t *testing.T) {
 			assert.ElementsMatch(t, tc.expectedIDs, actualIDs)
 		})
 	}
+}
+
+func TestSearchListDeploymentsSortsByRiskClassThenScore(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	deploymentDS, err := GetTestPostgresDataStore(t, testDB.DB)
+	require.NoError(t, err)
+
+	mkDeployment := func(name string, classification storage.RiskPriorityClassification, score float32) *storage.Deployment {
+		return &storage.Deployment{
+			Id:                         uuid.NewV4().String(),
+			Hash:                       uint64(len(name)),
+			Name:                       name,
+			ClusterId:                  testconsts.Cluster1,
+			ClusterName:                "cluster-1-name",
+			Namespace:                  "namespace-1",
+			NamespaceId:                testconsts.Cluster1 + "namespace-1",
+			RiskScore:                  score,
+			RiskPriorityClassification: classification,
+			RiskPrioritySortOrder:      riskPkg.PriorityClassificationSortOrder(classification),
+		}
+	}
+
+	unknown := mkDeployment("unknown", storage.RiskPriorityClassification_RISK_PRIORITY_UNKNOWN, 100)
+	remediateNowLowerScore := mkDeployment("remediate-now-lower-score", storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW, 10)
+	remediateNowHigherScore := mkDeployment("remediate-now-higher-score", storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW, 20)
+	remediate := mkDeployment("remediate", storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE, 200)
+	improvePosture := mkDeployment("improve-posture", storage.RiskPriorityClassification_RISK_PRIORITY_IMPROVE_POSTURE, 300)
+
+	for _, deployment := range []*storage.Deployment{unknown, remediateNowLowerScore, remediateNowHigherScore, remediate, improvePosture} {
+		require.NoError(t, deploymentDS.UpsertDeployment(ctx, deployment))
+	}
+
+	query := pkgSearch.EmptyQuery()
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{{Field: pkgSearch.RiskPriorityClassification.String()}},
+	}
+
+	results, err := deploymentDS.SearchListDeployments(ctx, query)
+	require.NoError(t, err)
+	require.Len(t, results, 5)
+
+	assert.Equal(t, []string{
+		remediateNowHigherScore.GetId(),
+		remediateNowLowerScore.GetId(),
+		remediate.GetId(),
+		improvePosture.GetId(),
+		unknown.GetId(),
+	}, []string{
+		results[0].GetId(),
+		results[1].GetId(),
+		results[2].GetId(),
+		results[3].GetId(),
+		results[4].GetId(),
+	})
 }
 
 func TestContainerImagesView(t *testing.T) {
