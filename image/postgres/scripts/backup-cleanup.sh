@@ -1,5 +1,26 @@
 #!/usr/bin/env bash
 
+# Minimal structural check for a completed upgrade backup. Tangible artifacts
+# only: a legacy non-empty archive, or a published directory artifact whose
+# metadata asserts completion and whose data directory has a PG_VERSION.
+# Staging directories, links, and unverified copies are never backups.
+is_complete_upgrade_backup() {
+    local upgrade_dir="$1" metadata data
+
+    if [[ -f "${upgrade_dir}/backup.tar" && -s "${upgrade_dir}/backup.tar" &&
+        ! -L "${upgrade_dir}/backup.tar" ]]; then
+        return 0
+    fi
+
+    metadata="${upgrade_dir}/directory-v1/metadata.tsv"
+    data="${upgrade_dir}/directory-v1/pgdata"
+    [[ -f "${metadata}" && ! -L "${metadata}" ]] || return 1
+    [[ -d "${data}" && ! -L "${data}" && -f "${data}/PG_VERSION" && ! -L "${data}/PG_VERSION" ]] || return 1
+    grep -qx $'format_version\t1' "${metadata}" || return 1
+    grep -qx $'verified\ttrue' "${metadata}" || return 1
+    return 0
+}
+
 # Remove recognized backups outside the current image's supported rollback path.
 # Call only during a supported forward upgrade, after validating the source DB.
 # Missing, ambiguous, or linked backups are preserved. Cleanup is best effort;
@@ -30,8 +51,7 @@ cleanup_stale_upgrade_backups() {
             # Preserve the current rollback version and any newer or ambiguous pair.
             (( backup_old_version < backup_new_version && backup_old_version < current_old_version &&
                 backup_new_version <= current_old_version )) || continue
-            [[ -f "${old_backup}/backup.tar" && -s "${old_backup}/backup.tar" &&
-                ! -L "${old_backup}/backup.tar" ]] || continue
+            is_complete_upgrade_backup "${old_backup}" || continue
 
             echo "Removing obsolete upgrade backup ${old_backup}"
             if ! rm -rf -- "${old_backup}"; then

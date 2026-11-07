@@ -130,7 +130,7 @@ make_backup() {
         fi
         command rm "$@"
     }
-    export -f rm cleanup_stale_upgrade_backups
+    export -f rm cleanup_stale_upgrade_backups is_complete_upgrade_backup
 
     run bash -ec 'cleanup_stale_upgrade_backups 15-16 "$1"; echo continued' _ "${BACKUP_VOLUME}"
 
@@ -139,4 +139,53 @@ make_backup() {
     [[ "${output}" == *continued* ]]
     [ -f "${BACKUP_VOLUME}/13-15/backup.tar" ]
     [ ! -d "${BACKUP_VOLUME}/14-15" ]
+}
+
+make_directory_backup() {
+    mkdir -p "$1/directory-v1/pgdata"
+    printf 'format_version\t1\nverified\ttrue\n' > "$1/directory-v1/metadata.tsv"
+    echo 15 > "$1/directory-v1/pgdata/PG_VERSION"
+}
+
+@test "cleanup removes complete directory backups from earlier upgrades" {
+    make_directory_backup "${BACKUP_VOLUME}/13-15"
+    make_directory_backup "${DATA_VOLUME}/14-15"
+
+    cleanup_stale_upgrade_backups "15-16" "${BACKUP_VOLUME}" "${DATA_VOLUME}"
+
+    [ ! -d "${BACKUP_VOLUME}/13-15" ]
+    [ ! -d "${DATA_VOLUME}/14-15" ]
+}
+
+@test "cleanup preserves staging, unverified, and incomplete directory artifacts" {
+    # Only a staging copy exists: the attempt never published.
+    mkdir -p "${BACKUP_VOLUME}/12-15/directory-v1.partial/pgdata"
+    echo 12 > "${BACKUP_VOLUME}/12-15/directory-v1.partial/pgdata/PG_VERSION"
+    # Published data but no metadata.
+    mkdir -p "${BACKUP_VOLUME}/13-15/directory-v1/pgdata"
+    echo 13 > "${BACKUP_VOLUME}/13-15/directory-v1/pgdata/PG_VERSION"
+    # Metadata that does not assert completion.
+    mkdir -p "${BACKUP_VOLUME}/14-15/directory-v1/pgdata"
+    echo 14 > "${BACKUP_VOLUME}/14-15/directory-v1/pgdata/PG_VERSION"
+    printf 'format_version\t1\nverified\tfalse\n' > "${BACKUP_VOLUME}/14-15/directory-v1/metadata.tsv"
+
+    cleanup_stale_upgrade_backups "15-16" "${BACKUP_VOLUME}"
+
+    [ -f "${BACKUP_VOLUME}/12-15/directory-v1.partial/pgdata/PG_VERSION" ]
+    [ -f "${BACKUP_VOLUME}/13-15/directory-v1/pgdata/PG_VERSION" ]
+    [ -f "${BACKUP_VOLUME}/14-15/directory-v1/pgdata/PG_VERSION" ]
+}
+
+@test "cleanup preserves directory artifacts with linked or unknown metadata" {
+    make_directory_backup "${BACKUP_VOLUME}/13-15"
+    printf 'format_version\t2\nverified\ttrue\n' > "${BACKUP_VOLUME}/13-15/directory-v1/metadata.tsv"
+    make_directory_backup "${BACKUP_VOLUME}/14-15"
+    rm "${BACKUP_VOLUME}/14-15/directory-v1/metadata.tsv"
+    ln -s "${TEST_ROOT}/metadata.tsv" "${BACKUP_VOLUME}/14-15/directory-v1/metadata.tsv"
+    printf 'format_version\t1\nverified\ttrue\n' > "${TEST_ROOT}/metadata.tsv"
+
+    cleanup_stale_upgrade_backups "15-16" "${BACKUP_VOLUME}"
+
+    [ -f "${BACKUP_VOLUME}/13-15/directory-v1/pgdata/PG_VERSION" ]
+    [ -f "${BACKUP_VOLUME}/14-15/directory-v1/pgdata/PG_VERSION" ]
 }
