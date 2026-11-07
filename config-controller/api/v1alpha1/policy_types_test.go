@@ -234,9 +234,10 @@ func TestConditionUpdates(t *testing.T) {
 
 func TestToProtobufEvaluationFilter(t *testing.T) {
 	tests := map[string]struct {
-		filter         *EvaluationFilter
-		expectedTypes  []storage.ContainerType
-		expectNilProto bool
+		filter              *EvaluationFilter
+		expectedTypes       []storage.ContainerType
+		expectedImageLayers storage.SkipImageLayers
+		expectNilProto      bool
 	}{
 		"skip init containers": {
 			filter:        &EvaluationFilter{SkipContainerTypes: []ContainerType{"INIT"}},
@@ -249,6 +250,30 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 		"skip both container types": {
 			filter:        &EvaluationFilter{SkipContainerTypes: []ContainerType{"REGULAR", "INIT"}},
 			expectedTypes: []storage.ContainerType{storage.ContainerType_REGULAR, storage.ContainerType_INIT},
+		},
+		"skip base image layers only": {
+			filter:              &EvaluationFilter{SkipImageLayers: "SKIP_BASE"},
+			expectedImageLayers: storage.SkipImageLayers_SKIP_BASE,
+		},
+		"skip app image layers only": {
+			filter:              &EvaluationFilter{SkipImageLayers: "SKIP_APP"},
+			expectedImageLayers: storage.SkipImageLayers_SKIP_APP,
+		},
+		"explicit skip none image layers is not stored": {
+			filter:         &EvaluationFilter{SkipImageLayers: "SKIP_NONE"},
+			expectNilProto: true,
+		},
+		"unknown image layers value is dropped": {
+			filter:         &EvaluationFilter{SkipImageLayers: "BOGUS"},
+			expectNilProto: true,
+		},
+		"both container types and image layers": {
+			filter: &EvaluationFilter{
+				SkipContainerTypes: []ContainerType{"INIT"},
+				SkipImageLayers:    "SKIP_BASE",
+			},
+			expectedTypes:       []storage.ContainerType{storage.ContainerType_INIT},
+			expectedImageLayers: storage.SkipImageLayers_SKIP_BASE,
 		},
 		"nil filter": {
 			filter:         nil,
@@ -285,7 +310,12 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 			if tc.expectNilProto {
 				assert.Nil(t, proto.GetEvaluationFilter())
 			} else {
-				assert.Equal(t, tc.expectedTypes, proto.GetEvaluationFilter().GetSkipContainerTypes())
+				if len(tc.expectedTypes) > 0 {
+					assert.Equal(t, tc.expectedTypes, proto.GetEvaluationFilter().GetSkipContainerTypes())
+				}
+				if tc.expectedImageLayers != storage.SkipImageLayers_SKIP_NONE {
+					assert.Equal(t, tc.expectedImageLayers, proto.GetEvaluationFilter().GetSkipImageLayers())
+				}
 			}
 		})
 	}
