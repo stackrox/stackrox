@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/debug"
 	"github.com/stackrox/rox/roxctl/central/export"
-	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/initbundles"
 	"github.com/stackrox/rox/roxctl/central/login"
 	"github.com/stackrox/rox/roxctl/central/m2m"
@@ -27,7 +26,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	c.AddCommand(
 		cert.Command(cliEnvironment),
-		generate.Command(cliEnvironment),
 		db.Command(cliEnvironment),
 		backup.Command(cliEnvironment, new(true)),
 		debug.Command(cliEnvironment),
