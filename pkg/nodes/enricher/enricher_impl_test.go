@@ -5,10 +5,12 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -446,6 +448,37 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 			FillScanStats(c.node)
 			assert.Equal(t, c.expectedVulns, c.node.GetCves())
 			assert.Equal(t, c.expectedFixableVulns, c.node.GetFixableCves())
+		})
+	}
+}
+
+func TestNew_LegacyScannerGating(t *testing.T) {
+	cases := map[string]struct {
+		legacyScannerEnabled bool
+		expectClairify       bool
+	}{
+		"legacy scanner disabled: only the Scanner V4 node creator is registered": {
+			legacyScannerEnabled: false,
+			expectClairify:       false,
+		},
+		"legacy scanner enabled: the Clairify node creator is also registered": {
+			legacyScannerEnabled: true,
+			expectClairify:       true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			testutils.MustUpdateFeature(t, features.LegacyScanner, tc.legacyScannerEnabled)
+
+			e, ok := New(nil, pkgMetrics.CentralSubsystem).(*enricherImpl)
+			require.True(t, ok)
+
+			_, hasClairify := e.creators[types.Clairify]
+			_, hasV4 := e.creators[types.ScannerV4]
+			assert.True(t, hasV4, "Scanner V4 node creator must always be registered")
+			assert.Equal(t, tc.expectClairify, hasClairify,
+				"Clairify (Scanner V2) node creator registration must follow the LegacyScanner flag")
 		})
 	}
 }
