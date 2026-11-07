@@ -4,19 +4,25 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore/mocks"
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -172,6 +178,55 @@ func TestRunner_ServeHTTP(t *testing.T) {
 				"Categories, Cluster, Policy",
 				`Categories="catA,catB",Cluster="cluster1",Policy="Test Policy"`))
 	})
+}
+
+func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
+	globalRegistry, err := metrics.GetGlobalRegistry()
+	require.NoError(t, err)
+	for _, metric := range []string{
+		"admin_event_authz_test",
+		"cfg_authz_test",
+		"cert_exp_authz_test",
+		"unknown_authz_test",
+	} {
+		require.NoError(t, globalRegistry.RegisterMetric(metric, metric, nil))
+		globalRegistry.SetTotal(metric, nil, 1)
+		t.Cleanup(func() { globalRegistry.UnregisterMetric(metric) })
+	}
+
+	runner := makeRunner(&runnerDatastores{})
+	workflowIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
+	workflowIdentity.EXPECT().UID().AnyTimes().Return("workflow-authz-test")
+	workflowIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
+		"WorkflowAdministration": storage.Access_READ_ACCESS,
+	})
+	workflowCtx := authn.ContextWithIdentity(context.Background(), workflowIdentity, t)
+	t.Cleanup(func() { metrics.DeleteCustomRegistry("workflow-authz-test") })
+	for _, test := range []struct {
+		name          string
+		ctx           context.Context
+		allowedMetric string
+	}{
+		{"admin", makeAdminContext(t), "all"},
+		{"workflow only", workflowCtx, "cfg_authz_test"},
+		{"no access after admin", basic.ContextWithNoAccessIdentity(t, nil), ""},
+		{"anonymous", context.Background(), ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			runner.ServeHTTP(rec, httptest.NewRequestWithContext(test.ctx, http.MethodGet, "/metrics", nil))
+			require.Equal(t, http.StatusOK, rec.Code)
+			for _, metric := range []string{"admin_event_authz_test", "cfg_authz_test", "cert_exp_authz_test"} {
+				assert.Equal(t, test.allowedMetric == "all" || test.allowedMetric == metric,
+					containsMetric(rec.Body.String(), metric), metric)
+			}
+			assert.False(t, containsMetric(rec.Body.String(), "unknown_authz_test"))
+		})
+	}
+}
+
+func containsMetric(body, metric string) bool {
+	return strings.Contains(body, "rox_central_"+metric+" 1\n")
 }
 
 func makeAdminContext(t *testing.T) context.Context {
