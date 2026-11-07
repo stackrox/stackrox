@@ -252,3 +252,10 @@ Another important roxie command is `roxie teardown <component>`, where component
 We're actively improving roxie and would love your feedback! If you run into
 issues, have feature requests, or just want to share your experience, please
 reach out to the **ACS Install team**.
+
+### Resource budgets
+
+QA, UI, and non-Groovy E2E share `deploy/roxie-config-resources.yaml`.
+Keep local Roxie/Helm overrides, local patches, and Operator test fixtures aligned
+with it. Central DB needs 4 GiB for its default 2 GB shared buffers plus query and
+maintenance allocations. Replica counts remain specific to each flow.

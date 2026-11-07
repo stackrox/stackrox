@@ -93,6 +93,7 @@ securedCluster:
   resourceProfile: ci
 EOF
 
+        merge_yaml "$config_file" < "$ROOT/deploy/roxie-config-resources.yaml"
         deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
         # Note: The traditional deployment path still references PodSecurityPolicies,

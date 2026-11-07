@@ -8,8 +8,8 @@ spec:
             cpu: null
             memory: 4Gi
           requests:
-            cpu: 250m
-            memory: 1Gi
+            cpu: 100m
+            memory: 4Gi
       containers:
       - name: central-db
         resources:
@@ -17,5 +17,5 @@ spec:
             cpu: null
             memory: 4Gi
           requests:
-            cpu: 250m
-            memory: 1Gi
+            cpu: 100m
+            memory: 4Gi
