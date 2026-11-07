@@ -159,11 +159,9 @@ EOF
             install_gcsfuse
             # gcsfuse auth: uses GOOGLE_APPLICATION_CREDENTIALS (set by job-preamble's gcloud auth)
             step "mounting gcs bucket (gcsfuse)"
-            gcsfuse --implicit-dirs --only-dir= "$GCS_BUCKET" "$RO_DIR" \
+            gcsfuse --implicit-dirs "$GCS_BUCKET" "$RO_DIR" \
                 --o ro \
                 --metadata-cache-ttl-secs 7200 \
-                --metadata-cache-stat-cache-capacity 4096 \
-                --metadata-cache-type-cache-capacity 4096 \
                 --client-protocol http2
             ;;
         s3)
@@ -171,8 +169,9 @@ EOF
             # mountpoint-s3 auth: uses AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY env
             step "mounting s3 bucket (mountpoint-s3)"
             mount-s3 "$S3_BUCKET" "$RO_DIR" --read-only \
-                --metadata-ttl 120 \
-                --max-parallel-requests 16
+                --metadata-ttl 120sec \
+                --allow-overwrite \
+                --allow-delete
             ;;
     esac
 
