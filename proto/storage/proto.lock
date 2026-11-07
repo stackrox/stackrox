@@ -8880,9 +8880,49 @@
                 "id": 6,
                 "name": "hostname",
                 "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "interactive_session",
+                "type": "InteractiveSession"
               }
             ],
             "messages": [
+              {
+                "name": "InteractiveSession",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "effective_user",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "authenticated_user",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "audit_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "confidence",
+                    "type": "string"
+                  },
+                  {
+                    "id": 6,
+                    "name": "match_basis",
+                    "type": "string"
+                  }
+                ]
+              },
               {
                 "name": "FileMetadata",
                 "fields": [
@@ -11223,6 +11263,11 @@
               {
                 "id": 20,
                 "name": "request_uri",
+                "type": "string"
+              },
+              {
+                "id": 22,
+                "name": "audit_stage",
                 "type": "string"
               }
             ],

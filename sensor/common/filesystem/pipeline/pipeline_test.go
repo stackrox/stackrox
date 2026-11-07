@@ -9,10 +9,12 @@ import (
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/interactivesessions"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
@@ -26,6 +28,12 @@ const (
 	testContainerID  = "test-container-1"
 	testDeploymentID = "test-deployment-1"
 	testSignalID     = "test-signal-1"
+
+	// Identity of the (namespace, pod, container) tracked by interactive
+	// session audit events in the enrichment tests below.
+	testNamespace     = "test-namespace"
+	testPodName       = "test-pod"
+	testContainerName = "test-container"
 )
 
 func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
@@ -67,12 +75,17 @@ type testPipeline struct {
 
 func newTestPipeline(t *testing.T) *testPipeline {
 	t.Helper()
+	return newTestPipelineWithTracker(t, nil)
+}
+
+func newTestPipelineWithTracker(t *testing.T, tracker *interactivesessions.Tracker) *testPipeline {
+	t.Helper()
 	mockCtrl := gomock.NewController(t)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 	clusterStore := clusterentities.NewStore(0, nil, false)
 	dispatcher := newTestDispatcher(t)
 	activityChan := make(chan *sensorAPI.FileActivity, 10)
-	p := NewFileSystemPipeline(mockDetector, clusterStore, activityChan, dispatcher)
+	p := NewFileSystemPipeline(mockDetector, clusterStore, activityChan, dispatcher, tracker)
 	t.Cleanup(func() { p.Stop() })
 	return &testPipeline{
 		Pipeline:     p,
@@ -469,6 +482,198 @@ func TestFileSystemPipelineTranslation(t *testing.T) {
 
 				tp.activityChan <- tc.activity
 				synctest.Wait()
+			})
+		})
+	}
+}
+
+// newSessionEvent returns an audit event describing an interactive exec or
+// attach session on the given container. The pod and namespace match
+// newSessionEnrichedIndicator unless a different container is passed.
+func newSessionEvent(auditID, stage, container string, resource storage.KubernetesEvent_Object_Resource, user, impersonatedUser string) *storage.KubernetesEvent {
+	event := &storage.KubernetesEvent{
+		Id:         auditID,
+		Object:     &storage.KubernetesEvent_Object{Name: testPodName, Namespace: testNamespace, Resource: resource},
+		AuditStage: stage,
+		User:       &storage.KubernetesEvent_User{Username: user},
+	}
+	switch resource {
+	case storage.KubernetesEvent_Object_PODS_EXEC:
+		event.ObjectArgs = &storage.KubernetesEvent_PodExecArgs_{
+			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{Container: container},
+		}
+	case storage.KubernetesEvent_Object_PODS_ATTACH:
+		event.ObjectArgs = &storage.KubernetesEvent_PodAttachArgs_{
+			PodAttachArgs: &storage.KubernetesEvent_PodAttachArgs{Container: container},
+		}
+	}
+	if impersonatedUser != "" {
+		event.ImpersonatedUser = &storage.KubernetesEvent_User{Username: impersonatedUser}
+	}
+	return event
+}
+
+// newSessionEnrichedIndicator returns an enriched process indicator for a
+// process running in the container targeted by newSessionEvent.
+func newSessionEnrichedIndicator() *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
+		Id:            "enriched-indicator-1",
+		DeploymentId:  testDeploymentID,
+		Namespace:     testNamespace,
+		PodId:         testPodName,
+		ContainerName: testContainerName,
+		Signal: &storage.ProcessSignal{
+			Id:          testSignalID,
+			ContainerId: testContainerID,
+			Name:        "test-process",
+		},
+	}
+}
+
+func TestFileSystemPipelineInteractiveSessionEnrichment(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	// Must exceed the session tracker's default TTL of six hours so that
+	// the session is pruned before the file activity is translated.
+	pastSessionTTL := 6*time.Hour + time.Second
+	// Must exceed the grace period a closed session stays matchable for.
+	pastClosedSessionGrace := 30*time.Second + time.Second
+
+	execEvent := func(auditID, stage, user, impersonatedUser string) *storage.KubernetesEvent {
+		return newSessionEvent(auditID, stage, testContainerName, storage.KubernetesEvent_Object_PODS_EXEC, user, impersonatedUser)
+	}
+
+	cases := map[string]struct {
+		// sessions observed by the tracker before the file activity is dispatched.
+		sessions []*storage.KubernetesEvent
+		// advance moves the fake clock forward before the file activity is
+		// dispatched, e.g. to expire tracked sessions.
+		advance time.Duration
+		want    *storage.FileAccess_InteractiveSession
+	}{
+		"single exec session enriches the file access": {
+			sessions: []*storage.KubernetesEvent{
+				execEvent("audit-exec-1", "ResponseStarted", "alice", ""),
+			},
+			want: &storage.FileAccess_InteractiveSession{
+				EffectiveUser:     "alice",
+				AuthenticatedUser: "alice",
+				AuditId:           "audit-exec-1",
+				Type:              "exec",
+				Confidence:        "high",
+				MatchBasis:        "namespace/pod/container",
+			},
+		},
+		"single attach session enriches the file access": {
+			sessions: []*storage.KubernetesEvent{
+				newSessionEvent("audit-attach-1", "ResponseStarted", testContainerName, storage.KubernetesEvent_Object_PODS_ATTACH, "bob", ""),
+			},
+			want: &storage.FileAccess_InteractiveSession{
+				EffectiveUser:     "bob",
+				AuthenticatedUser: "bob",
+				AuditId:           "audit-attach-1",
+				Type:              "attach",
+				Confidence:        "high",
+				MatchBasis:        "namespace/pod/container",
+			},
+		},
+		"impersonated user is the effective user": {
+			sessions: []*storage.KubernetesEvent{
+				execEvent("audit-exec-2", "ResponseStarted", "system:admin", "alice"),
+			},
+			want: &storage.FileAccess_InteractiveSession{
+				EffectiveUser:     "alice",
+				AuthenticatedUser: "system:admin",
+				AuditId:           "audit-exec-2",
+				Type:              "exec",
+				Confidence:        "high",
+				MatchBasis:        "namespace/pod/container",
+			},
+		},
+		"a newer session on the same container replaces the older one": {
+			sessions: []*storage.KubernetesEvent{
+				execEvent("audit-exec-3", "ResponseStarted", "alice", ""),
+				execEvent("audit-exec-4", "ResponseStarted", "bob", ""),
+			},
+			want: &storage.FileAccess_InteractiveSession{
+				EffectiveUser:     "bob",
+				AuthenticatedUser: "bob",
+				AuditId:           "audit-exec-4",
+				Type:              "exec",
+				Confidence:        "high",
+				MatchBasis:        "namespace/pod/container",
+			},
+		},
+		// A session closed by ResponseComplete is retained for the tracker's
+		// closed-session grace period, so file events dispatched while it is
+		// still in flight are attributed.
+		"session ended by ResponseComplete is attributed within the grace period": {
+			sessions: []*storage.KubernetesEvent{
+				execEvent("audit-exec-8", "ResponseStarted", "alice", ""),
+				execEvent("audit-exec-8", "ResponseComplete", "alice", ""),
+			},
+			want: &storage.FileAccess_InteractiveSession{
+				EffectiveUser:     "alice",
+				AuthenticatedUser: "alice",
+				AuditId:           "audit-exec-8",
+				Type:              "exec",
+				Confidence:        "high",
+				MatchBasis:        "namespace/pod/container",
+			},
+		},
+		"session ended by ResponseComplete is not attributed past the grace period": {
+			sessions: []*storage.KubernetesEvent{
+				execEvent("audit-exec-9", "ResponseStarted", "alice", ""),
+				execEvent("audit-exec-9", "ResponseComplete", "alice", ""),
+			},
+			advance: pastClosedSessionGrace,
+		},
+		"expired session is not attributed": {
+			sessions: []*storage.KubernetesEvent{
+				execEvent("audit-exec-6", "ResponseStarted", "alice", ""),
+			},
+			advance: pastSessionTTL,
+		},
+		"session on another container is not attributed": {
+			sessions: []*storage.KubernetesEvent{
+				newSessionEvent("audit-exec-7", "ResponseStarted", "other-container", storage.KubernetesEvent_Object_PODS_EXEC, "alice", ""),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				// The tracker must be constructed inside the bubble so that its
+				// clock advances together with the pipeline's.
+				tracker := interactivesessions.New()
+				tp := newTestPipelineWithTracker(t, tracker)
+
+				tracker.Observe(&sensorAPI.AuditEvents{Events: tc.sessions})
+				if tc.advance > 0 {
+					time.Sleep(tc.advance)
+				}
+
+				// Send a file activity for the container that may have an active
+				// session; with no container metadata in the cluster entities
+				// store it is buffered.
+				tp.activityChan <- newTestFileActivity(testContainerID, testSignalID, "/etc/passwd")
+				synctest.Wait()
+
+				var access *storage.FileAccess
+				tp.detector.EXPECT().ProcessFileAccess(gomock.Any(), gomock.Any()).DoAndReturn(
+					func(_ context.Context, a *storage.FileAccess) { access = a },
+				)
+
+				// Simulate the enriched process indicator arriving via pub/sub,
+				// which drains the buffer and translates the file access.
+				require.NoError(t, tp.dispatcher.Publish(processsignal.NewEnrichedProcessIndicatorEvent(context.Background(), newSessionEnrichedIndicator())))
+
+				synctest.Wait()
+
+				require.NotNil(t, access)
+				protoassert.Equal(t, tc.want, access.GetInteractiveSession())
 			})
 		})
 	}
