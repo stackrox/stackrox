@@ -5,8 +5,9 @@
 #   - The storage container mirrors GOCACHE's content-addressed layout
 #     (entries under 00-FF/ hash dirs). One container serves ALL jobs —
 #     entries are shared globally, deduplicated by content.
-#   - blobfuse2 mounts the container READ-ONLY (lazy, parallel, on-demand
-#     fetch — a job only downloads the entries it actually hits).
+#   - blobfuse2 mounts the container READ-ONLY via service principal auth
+#     (lazy, parallel, on-demand fetch — a job only downloads the entries
+#     it actually hits).
 #   - overlayfs puts a local writable layer on top; the Go toolchain reads
 #     through to the cloud on miss-local/hit-cloud and writes locally at
 #     full speed.
@@ -14,13 +15,13 @@
 #     (content-addressed keys make concurrent uploads idempotent).
 #
 # Required GitHub secrets:
-#   AZURE_STORAGE_CONNECTION_STRING  - connection string for the cache
-#                                      storage account
-#   AZURE_GOCACHE_CONTAINER          - container name (e.g. ci-gocache)
+#   AZURE_TENANT_ID       - Entra ID tenant
+#   AZURE_CLIENT_ID       - service principal client ID
+#   AZURE_CLIENT_SECRET   - service principal client secret
+#   AZURE_STORAGE_ACCOUNT - storage account name (e.g. ci-gocache storage)
 #
 # Usage: azure-gocache.sh <mount|sync|unmount>
-#   mount    - install blobfuse2, mount RO, set up overlay, export GOCACHE
-#              (sourced: sets GOCACHE env var)
+#   mount    - install blobfuse2, mount RO via SPN, set up overlay
 #   sync     - upload new entries from the local upper layer
 #   unmount  - unmount everything
 
@@ -33,9 +34,12 @@ UPPER_DIR="$AZ_ROOT/rw"
 WORK_DIR="$AZ_ROOT/work"
 OVERLAY_DIR="${AZ_CACHE_DIR:-$AZ_ROOT/gocache}"
 BLOBFUSE2_VERSION="2.4.2"  # ratchet: check https://github.com/Azure/azure-storage-fuse/releases
-
-CONNECTION_STRING="${AZURE_STORAGE_CONNECTION_STRING:?secret AZURE_STORAGE_CONNECTION_STRING must be set}"
 CONTAINER="${AZURE_GOCACHE_CONTAINER:-ci-gocache}"
+
+TENANT_ID="${AZURE_TENANT_ID:?secret AZURE_TENANT_ID must be set}"
+CLIENT_ID="${AZURE_CLIENT_ID:?secret AZURE_CLIENT_ID must be set}"
+CLIENT_SECRET="${AZURE_CLIENT_SECRET:?secret AZURE_CLIENT_SECRET must be set}"
+STORAGE_ACCOUNT="${AZURE_STORAGE_ACCOUNT:?secret AZURE_STORAGE_ACCOUNT must be set}"
 
 install_blobfuse2() {
     if command -v blobfuse2 >/dev/null 2>&1; then
@@ -59,27 +63,18 @@ install_azcopy() {
     azcopy --version
 }
 
-account_and_key() {
-    # Extract account name and key from the connection string for blobfuse2 config.
-    local acct="" key=""
-    acct=$(echo "$CONNECTION_STRING" | tr ';' '\n' | grep '^AccountName=' | cut -d= -f2)
-    key=$(echo "$CONNECTION_STRING" | tr ';' '\n' | grep '^AccountKey=' | cut -d= -f2)
-    echo "$acct $key"
-}
-
 do_mount() {
     install_blobfuse2
     mkdir -p "$RO_DIR" "$UPPER_DIR" "$WORK_DIR" "${OVERLAY_DIR:?OVERLAY_DIR must be set}"
 
-    read -r acct key <<<"$(account_and_key)"
-
-    # blobfuse2 config: read-only mount, lazy on-demand reads, streaming.
+    # blobfuse2 config: SPN auth, read-only mount, lazy on-demand reads, streaming.
     cat > "$AZ_ROOT/blobfuse2-config.yaml" <<EOF
 allow-other: false
 read-only: true
 logging:
   type: base
   level: log_warning
+  file-path: $AZ_ROOT/blobfuse2.log
 components:
   - libfuse
   - attr_cache
@@ -92,11 +87,12 @@ attr_cache:
   timeout-sec: 7200
 azstorage:
   type: block
-  account-name: $acct
-  account-key: $key
-  endpoint: https://$acct.blob.core.windows.net
-  mode: key
+  account-name: $STORAGE_ACCOUNT
   container: $CONTAINER
+  mode: spn
+  tenantid: $TENANT_ID
+  clientid: $CLIENT_ID
+  clientsecret: $CLIENT_SECRET
   block-size-mb: 8
   max-concurrency: 16
 EOF
@@ -120,13 +116,17 @@ EOF
 
 do_sync() {
     install_azcopy
-    local acct
-    acct=$(echo "$CONNECTION_STRING" | tr ';' '\n' | grep '^AccountName=' | cut -d= -f2)
     echo "Syncing new cache entries (upper layer) to the container..."
-    azcopy sync "$UPPER_DIR" "https://$acct.blob.core.windows.net/$CONTAINER" \
+    # azcopy SPN auth via env vars
+    export AZURE_SPA_CLIENT_ID="$CLIENT_ID"
+    export AZURE_SPA_CLIENT_SECRET="$CLIENT_SECRET"
+    export AZURE_TENANT_ID="$TENANT_ID"
+    azcopy login --service-principal > /dev/null 2>&1 || true
+    azcopy sync "$UPPER_DIR" "https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER" \
         --recursive --delete-destination=false \
         --from-to Local Blob \
         --output-level quiet
+    azcopy logout > /dev/null 2>&1 || true
     echo "Sync complete."
 }
 

@@ -33,8 +33,10 @@ jobs:
 
       - name: Mount Azure GOCACHE overlay
         env:
-          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-          AZURE_GOCACHE_CONTAINER: ${{ secrets.AZURE_GOCACHE_CONTAINER }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
           echo "=== mount started at $(date -u +%H:%M:%S) ==="
           out=$(scripts/ci/azure-gocache.sh mount 2>&1 | tee /dev/stderr | grep '^GOCACHE=' | cut -d= -f2)
@@ -52,8 +54,10 @@ jobs:
       - name: Sync new cache entries to Azure
         if: always()
         env:
-          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-          AZURE_GOCACHE_CONTAINER: ${{ secrets.AZURE_GOCACHE_CONTAINER }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
           echo "=== sync started at $(date -u +%H:%M:%S) ==="
           scripts/ci/azure-gocache.sh sync
