@@ -8,47 +8,38 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
-// newBackend creates a cloud storage backend based on GOCACHE_SERVE_BACKEND
-func newBackend() (Backend, error) {
-	backendType := os.Getenv("GOCACHE_SERVE_BACKEND")
-	if backendType == "" {
-		backendType = "azure"
-	}
-
-	switch backendType {
-	case "azure":
-		return newAzureBackend()
-	case "gcs":
-		return newGCSBackend()
-	case "s3":
-		return newS3Backend()
-	case "noop":
-		return &NoopBackend{}, nil
-	default:
-		return nil, fmt.Errorf("unknown backend: %s", backendType)
-	}
+// Backend interface for cloud storage
+type Backend interface {
+	Get(actionID string) ([]byte, error) // nil, nil = not found
+	Put(actionID string, body []byte) error
+	Close() error
 }
 
-// NoopBackend does nothing (for testing the protocol without cloud)
+// NoopBackend does nothing (for protocol testing)
 type NoopBackend struct{}
 
-func (n *NoopBackend) Get(actionID string) ([]byte, error) { return nil, nil }
-func (n *NoopBackend) Put(actionID string, body []byte) error { return nil }
-func (n *NoopBackend) Close() error { return nil }
+func (n *NoopBackend) Get(string) ([]byte, error)    { return nil, nil }
+func (n *NoopBackend) Put(string, []byte) error      { return nil }
+func (n *NoopBackend) Close() error                  { return nil }
 
-// AzureBackend uses Azure Blob Storage via the REST API with SPN auth
+// AzureBackend talks directly to Azure Blob Storage via REST API.
+// Zero dependencies — uses net/http with SPN OAuth for auth.
 type AzureBackend struct {
-	account   string
-	container string
-	tenantID  string
-	clientID  string
+	account      string
+	container    string
+	tenantID     string
+	clientID     string
 	clientSecret string
+
+	tokenMu   sync.Mutex
 	token     string
 	tokenExp  time.Time
-	client    *http.Client
+
+	client *http.Client
 }
 
 func newAzureBackend() (*AzureBackend, error) {
@@ -65,71 +56,74 @@ func newAzureBackend() (*AzureBackend, error) {
 		client:       &http.Client{Timeout: 30 * time.Second},
 	}
 	if b.tenantID == "" || b.clientID == "" || b.clientSecret == "" {
-		return nil, fmt.Errorf("Azure SPN credentials not set (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET)")
+		return nil, fmt.Errorf("Azure SPN env not set (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET)")
 	}
 	return b, nil
 }
 
-func (a *AzureBackend) baseURL() string {
-	return fmt.Sprintf("https://%s.blob.core.windows.net/%s", a.account, a.container)
+func (a *AzureBackend) blobURL(actionID string) string {
+	return fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s", a.account, a.container, actionID)
 }
 
-// getToken obtains an OAuth token via the client credentials flow
+// getToken fetches an OAuth token via client credentials, cached until expiry.
 func (a *AzureBackend) getToken() (string, error) {
+	a.tokenMu.Lock()
+	defer a.tokenMu.Unlock()
+
 	if a.token != "" && time.Now().Before(a.tokenExp.Add(-time.Minute)) {
 		return a.token, nil
 	}
 
 	tokenURL := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", a.tenantID)
-	data := fmt.Sprintf(
-		"grant_type=client_credentials&client_id=%s&client_secret=%s&scope=%s",
+	form := fmt.Sprintf(
+		"grant_type=client_credentials&client_id=%s&client_secret=%s&scope=https://storage.azure.com/.default",
 		a.clientID, a.clientSecret,
-		"https://storage.azure.com/.default",
 	)
-	resp, err := a.client.Post(tokenURL, "application/x-www-form-urlencoded", strings.NewReader(data))
+	resp, err := a.client.Post(tokenURL, "application/x-www-form-urlencoded", strings.NewReader(form))
 	if err != nil {
-		return "", fmt.Errorf("get token: %w", err)
+		return "", fmt.Errorf("token request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	var tokenResp struct {
+	var tr struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int    `json:"expires_in"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
-		return "", fmt.Errorf("decode token response: %w", err)
+	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
+		return "", fmt.Errorf("token decode: %w", err)
 	}
-	if tokenResp.AccessToken == "" {
-		return "", fmt.Errorf("empty access token")
+	if tr.AccessToken == "" {
+		return "", fmt.Errorf("empty token")
 	}
 
-	a.token = tokenResp.AccessToken
-	a.tokenExp = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	a.token = tr.AccessToken
+	a.tokenExp = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
 	return a.token, nil
 }
 
 func (a *AzureBackend) Get(actionID string) ([]byte, error) {
 	token, err := a.getToken()
 	if err != nil {
-		return nil, fmt.Errorf("auth: %w", err)
+		return nil, err
 	}
-	url := fmt.Sprintf("%s/%s", a.baseURL(), actionID)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", a.blobURL(actionID), nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("x-ms-version", "2023-11-03")
+
 	resp, err := a.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil
+		return nil, nil // miss
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("azure GET %s: HTTP %d", actionID[:8], resp.StatusCode)
+		return nil, fmt.Errorf("GET %s: HTTP %d", shortID(actionID), resp.StatusCode)
 	}
 	return io.ReadAll(resp.Body)
 }
@@ -137,144 +131,44 @@ func (a *AzureBackend) Get(actionID string) ([]byte, error) {
 func (a *AzureBackend) Put(actionID string, body []byte) error {
 	token, err := a.getToken()
 	if err != nil {
-		return fmt.Errorf("auth: %w", err)
+		return err
 	}
-	url := fmt.Sprintf("%s/%s", a.baseURL(), actionID)
-	req, err := http.NewRequest("PUT", url, bytes.NewReader(body))
+	req, err := http.NewRequest("PUT", a.blobURL(actionID), bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("x-ms-blob-type", "BlockBlob")
 	req.Header.Set("x-ms-version", "2023-11-03")
+
 	resp, err := a.client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("azure PUT %s: HTTP %d", actionID[:8], resp.StatusCode)
+		return fmt.Errorf("PUT %s: HTTP %d", shortID(actionID), resp.StatusCode)
 	}
 	return nil
 }
 
 func (a *AzureBackend) Close() error { return nil }
 
-// GCSBackend uses Google Cloud Storage via the REST API
-type GCSBackend struct {
-	bucket string
-	token  string
-	client *http.Client
+func shortID(s string) string {
+	if len(s) > 8 {
+		return s[:8]
+	}
+	return s
 }
 
-func newGCSBackend() (*GCSBackend, error) {
-	bucket := os.Getenv("GCS_BUCKET")
-	if bucket == "" {
-		bucket = "ci-gocache-proto"
+func newBackend() (Backend, error) {
+	switch os.Getenv("GOCACHE_SERVE_BACKEND") {
+	case "", "azure":
+		return newAzureBackend()
+	case "noop":
+		return &NoopBackend{}, nil
+	default:
+		return nil, fmt.Errorf("unknown backend (azure, noop)")
 	}
-	return &GCSBackend{
-		bucket: bucket,
-		client: &http.Client{Timeout: 30 * time.Second},
-	}, nil
 }
-
-func (g *GCSBackend) Get(actionID string) ([]byte, error) {
-	url := fmt.Sprintf("https://storage.googleapis.com/storage/v1/b/%s/o/%s?alt=media", g.bucket, actionID)
-	resp, err := g.client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("gcs GET %s: HTTP %d", actionID[:8], resp.StatusCode)
-	}
-	return io.ReadAll(resp.Body)
-}
-
-func (g *GCSBackend) Put(actionID string, body []byte) error {
-	url := fmt.Sprintf("https://storage.googleapis.com/upload/storage/v1/b/%s/o?uploadType=media&name=%s", g.bucket, actionID)
-	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/octet-stream")
-	resp, err := g.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("gcs PUT %s: HTTP %d", actionID[:8], resp.StatusCode)
-	}
-	return nil
-}
-
-func (g *GCSBackend) Close() error { return nil }
-
-// S3Backend uses AWS S3 via the REST API
-type S3Backend struct {
-	bucket string
-	client *http.Client
-}
-
-func newS3Backend() (*S3Backend, error) {
-	bucket := os.Getenv("S3_BUCKET")
-	if bucket == "" {
-		bucket = "ci-gocache-proto"
-	}
-	return &S3Backend{
-		bucket: bucket,
-		client: &http.Client{Timeout: 30 * time.Second},
-	}, nil
-}
-
-func (s *S3Backend) Get(actionID string) ([]byte, error) {
-	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.bucket, actionID)
-	resp, err := s.client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("s3 GET %s: HTTP %d", actionID[:8], resp.StatusCode)
-	}
-	return io.ReadAll(resp.Body)
-}
-
-func (s *S3Backend) Put(actionID string, body []byte) error {
-	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.bucket, actionID)
-	req, err := http.NewRequest("PUT", url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/octet-stream")
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("s3 PUT %s: HTTP %d", actionID[:8], resp.StatusCode)
-	}
-	return nil
-}
-
-func (s *S3Backend) Close() error { return nil }
-
-// helper for actionID truncation
-func truncate(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "..."
-}
-
-var _ = strings.TrimSpace // keep import for future use
-var _ = truncate          // keep for future use

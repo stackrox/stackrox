@@ -62,13 +62,6 @@ type Response struct {
 	DiskPath      string     `json:",omitempty"`
 }
 
-// Backend interface for cloud storage
-type Backend interface {
-	Get(actionID string) ([]byte, error)  // returns body or nil if not found
-	Put(actionID string, body []byte) error
-	Close() error
-}
-
 // Local disk cache manager
 type LocalCache struct {
 	dir string
