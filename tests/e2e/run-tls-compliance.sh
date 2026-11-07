@@ -277,21 +277,36 @@ collect_artifacts() {
     mkdir -p "$artifact_dest"
     cp -r "$TLS_SCANNER_DIR/artifacts/"* "$artifact_dest/" 2>/dev/null || true
     info "Artifacts copied to $artifact_dest"
+}
 
-    # Cleanup tls-scanner job.
-    pushd "$TLS_SCANNER_DIR" > /dev/null
-    NAMESPACE="$ACS_NS" ./deploy.sh cleanup 2>/dev/null || true
-    popd > /dev/null
+cleanup_tls_scanner() {
+    if pushd "$TLS_SCANNER_DIR" > /dev/null; then
+        NAMESPACE="$ACS_NS" ./deploy.sh cleanup 2>/dev/null || true
+        popd > /dev/null || true
+    fi
+}
+
+# validate_scan_results exits before the normal collection call when results are missing.
+on_exit() {
+    local exit_status=$?
+    local original_dir
+
+    set +e
+    original_dir="$(pwd)"
+    collect_artifacts
+    cleanup_tls_scanner
+    cd "$original_dir"
+    exit "$exit_status"
 }
 
 build_and_push_tls_scanner
 enable_tls_feature_gates_and_set_profile
 deploy_acs
-run_tls_scanner
+trap on_exit EXIT
 check_pod_logs_for_tls_errors
+run_tls_scanner
 validate_scan_results
 run_bat_tests
-collect_artifacts
 
 if (( FAILED )); then
     echo "TLS compliance test FAILED."
