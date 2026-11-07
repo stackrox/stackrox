@@ -1,5 +1,7 @@
 import { useContext } from 'react';
 import { gql } from '@apollo/client';
+import { Tooltip } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -138,8 +140,17 @@ const ConfigManagementEntitySubject = ({
                 const metadataKeyValuePairs = [
                     { key: 'Role type', value: type },
                     {
-                        key: 'Cluster Admin Role',
-                        value: clusterAdmin ? 'Enabled' : 'Disabled',
+                        key: 'Cluster Admin',
+                        value: (
+                            <span className="flex items-center">
+                                {clusterAdmin ? 'Yes' : 'No'}
+                                <Tooltip content="Full, unrestricted cluster access">
+                                    <span className="pf-v6-c-button pf-m-plain pf-m-smallest pf-v6-u-ml-sm">
+                                        <OutlinedQuestionCircleIcon />
+                                    </span>
+                                </Tooltip>
+                            </span>
+                        ),
                     },
                 ];
 
