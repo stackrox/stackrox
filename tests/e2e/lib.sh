@@ -58,38 +58,27 @@ export -f retrying_kubectl
 # shellcheck disable=SC2120
 deploy_stackrox() {
     local tls_client_certs=${1:-}
-    local central_namespace=${2:-stackrox}
-    local sensor_namespace=${3:-stackrox}
 
     info "About to deploy StackRox (Central + Sensor)."
 
-    setup_podsecuritypolicies_config
+    ensure_roxie_on_path
 
-    deploy_stackrox_operator
+    local roxie_config; roxie_config="$(mktemp)"
+    merge_yaml "$roxie_config" <<'EOF'
+central:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+securedCluster:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+EOF
 
-    deploy_central "${central_namespace}"
-
-    export_central_basic_auth_creds
-    wait_for_api "${central_namespace}"
+    deploy_stackrox_with_roxie_compat "$roxie_config"
+    rm -f "$roxie_config"
 
     setup_client_TLS_certs "${tls_client_certs}"
-    record_build_info "${central_namespace}"
-
-    deploy_sensor "${sensor_namespace}" "${central_namespace}"
-    echo "Sensor deployed. Waiting for sensor to be up"
-    sensor_wait "${sensor_namespace}"
-
-    sensor_wait "${sensor_namespace}"
-
-    wait_for_collectors_to_be_operational "${sensor_namespace}"
-
-    pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
-
-    if retrying_kubectl </dev/null -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
-        wait_for_scanner_V4 "${central_namespace}"
-    fi
-
-    touch "${STATE_DEPLOYED}"
 }
 
 # Ensure the roxie CLI is installed and on PATH. run.sh runs under both GitHub Actions and
@@ -168,11 +157,6 @@ deploy_stackrox_with_roxie() {
     done < <(yq eval --prettyPrint "$config_file")
     info "------------------------------------"
 
-    # Replaces deploy_stackrox steps:
-    # - deploy_stackrox_operator (implicit)
-    # - deploy_central
-    # - pause_stackrox_operator_reconcile (--pause-reconciliation)
-    # - wait_for_api (implicit)
     local roxie_envrc; roxie_envrc="$(mktemp)"
 
     # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
@@ -233,7 +217,7 @@ EOF
 
 check_for_roxie() {
     if ! command -v roxie >/dev/null 2>&1; then
-        die "ERROR: roxie command not found in PATH. Please install roxie or set USE_ROXIE_DEPLOY=false"
+        die "ERROR: roxie command not found in PATH. Please install roxie."
     fi
 
     info "roxie found, version: $(roxie version)"
@@ -487,14 +471,9 @@ deploy_central() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_central_via_operator "${central_namespace}"
     else
-        if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
-            if [[ "${CI:-}" == "true" ]] && pr_has_label ci-helm-deploy; then
-                ci_export OUTPUT_FORMAT helm
-            fi
-        fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
+        # ROX-37649: Legacy deployment scripts (deploy/k8s/central.sh, deploy/openshift/central.sh) were removed
+        # Use operator deployment or roxie instead
+        die "Legacy deployment scripts have been removed. Set DEPLOY_STACKROX_VIA_OPERATOR=true to use operator deployment, or use deploy_stackrox_with_roxie() instead."
     fi
 }
 
@@ -682,22 +661,9 @@ deploy_sensor() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else
-        if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
-            echo "Preparing deployment of Sensor using Helm ..."
-            ci_export SENSOR_HELM_DEPLOY "true"
-            ci_export ADMISSION_CONTROLLER "true"
-        else
-            echo "Preparing deployment of Sensor using kubectl ... "
-            if [[ -n "${IS_RACE_BUILD:-}" ]]; then
-                # builds with -race are slow at generating the sensor bundle
-                # https://stack-rox.atlassian.net/browse/ROX-6987
-                ci_export ROXCTL_TIMEOUT "60s"
-            fi
-        fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        ROX_CA_CERT_FILE="" # force sensor.sh to fetch the actual cert.
-        CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
+        # ROX-37649: Legacy deployment scripts (deploy/k8s/sensor.sh, deploy/openshift/sensor.sh) were removed
+        # Use operator deployment or roxie instead
+        die "Legacy deployment scripts have been removed. Set DEPLOY_STACKROX_VIA_OPERATOR=true to use operator deployment, or use deploy_stackrox_with_roxie() instead."
     fi
 }
 
@@ -799,24 +765,6 @@ deploy_sensor_via_operator() {
     if [[ ${#collector_envs[@]} -gt 0 ]]; then
         retrying_kubectl </dev/null -n "${sensor_namespace}" set env ds/collector "${collector_envs[@]}"
     fi
-}
-
-pause_stackrox_operator_reconcile() {
-    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
-        return
-    fi
-    local central_namespace=${1:-stackrox}
-    local sensor_namespace=${2:-stackrox}
-
-    retrying_kubectl </dev/null annotate -n "${central_namespace}" \
-        centrals.platform.stackrox.io \
-        stackrox-central-services \
-        stackrox.io/pause-reconcile=true
-
-    retrying_kubectl </dev/null annotate -n "${sensor_namespace}" \
-        securedclusters.platform.stackrox.io \
-        stackrox-secured-cluster-services \
-        stackrox.io/pause-reconcile=true
 }
 
 export_central_basic_auth_creds() {

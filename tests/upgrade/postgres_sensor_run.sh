@@ -36,12 +36,15 @@ test_upgrade() {
     export_test_environment
 
     REPO_FOR_TIME_TRAVEL="/tmp/rox-postgres-sensor-upgrade-test"
-    DEPLOY_DIR="deploy/k8s"
+    # ROX-37649: Use deploy/ directly and operator deployment since legacy scripts were removed
+    DEPLOY_DIR="deploy"
     QUAY_REPO="rhacs-eng"
     REGISTRY="quay.io/$QUAY_REPO"
 
     export STORAGE="pvc"
     export CLUSTER_TYPE_FOR_TEST=K8S
+    # ROX-37649: Use operator deployment since legacy deploy scripts were removed
+    export DEPLOY_STACKROX_VIA_OPERATOR=true
 
     if is_CI; then
         export ROXCTL_IMAGE_REPO="quay.io/$QUAY_REPO/roxctl"
@@ -55,13 +58,13 @@ test_upgrade() {
     remove_existing_stackrox_resources
 
     info "Deploying central"
-    "$TEST_ROOT/$DEPLOY_DIR/central.sh"
+    deploy_central
     export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs
 
     info "Deploying sensor"
-    "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
+    deploy_sensor
     validate_sensor_bundle_via_upgrader "$TEST_ROOT/$DEPLOY_DIR"
     sensor_wait
 

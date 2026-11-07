@@ -1,1 +1,9 @@
+# ROX-37649: Runtime deployment artifacts (moved from deploy/k8s and deploy/openshift)
+central-deploy/
+sensor-deploy/
+default_TLS_certs/
+client_TLS_certs/
+webhook_server_certs/
+
+# Deployment bundles
 *.zip
