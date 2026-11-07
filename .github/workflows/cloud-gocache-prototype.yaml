@@ -1,12 +1,14 @@
-name: Azure GOCACHE prototype
-# PROTOTYPE (do not merge): Azure Blob-backed GOCACHE for the golangci-lint
-# job, replacing the GHA cache's all-or-nothing 2.2 GB archive restores with
-# lazy, parallel, per-entry reads from a container that mirrors GOCACHE's
-# content-addressed layout. Runners are in Azure, so this is same-cloud.
+name: Cloud GOCACHE prototype
+# PROTOTYPE (do not merge): cloud-backed GOCACHE for the golangci-lint job,
+# comparing three backends in parallel: Azure Blob (blobfuse2, same-cloud),
+# GCS (gcsfuse, cross-cloud via existing GCP creds), and S3 (Mountpoint for
+# S3, cross-cloud via existing AWS creds). All use the same overlayfs
+# pattern: lazy per-entry reads from a read-only cloud mount + local
+# writable upper + post-job sync.
 #
-# Legs: the first run on this branch seeds the container (empty container ->
-# local compiles -> sync up). Subsequent runs (empty commits) measure the
-# warm read path. Compare against the GHA-cache lint job (~3 min warm).
+# Legs: the first run seeds each backend's bucket (empty -> local compiles
+# -> sync up). Subsequent runs (empty commits) measure the warm read path.
+# Compare all three against the GHA-cache lint job (~3 min warm).
 on:
   push:
     branches:
@@ -17,9 +19,18 @@ permissions:
   contents: read
 
 jobs:
-  lint-azure-gocache:
+  lint-cloud-gocache:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [azure, gcs, s3]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      # S3 backend needs AWS creds
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -31,19 +42,17 @@ jobs:
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
 
-      - name: Mount Azure GOCACHE overlay
+      - name: Mount ${{ matrix.backend }} GOCACHE overlay
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
-          echo "=== mount started at $(date -u +%H:%M:%S) ==="
-          out=$(scripts/ci/azure-gocache.sh mount 2>&1 | tee /dev/stderr | grep '^GOCACHE=' | cut -d= -f2)
+          out=$(scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount 2>&1 | tee /dev/stderr | grep '^GOCACHE=' | cut -d= -f2)
           echo "GOCACHE=$out" >> "$GITHUB_ENV"
-          echo "=== mount finished at $(date -u +%H:%M:%S) ==="
 
-      - name: make golangci-lint (with Azure GOCACHE)
+      - name: make golangci-lint (with ${{ matrix.backend }} GOCACHE)
         env:
           GOMEMLIMIT: 12GiB
         run: |
@@ -51,18 +60,15 @@ jobs:
           make golangci-lint
           echo "=== lint finished at $(date -u +%H:%M:%S) ==="
 
-      - name: Sync new cache entries to Azure
+      - name: Sync new cache entries to ${{ matrix.backend }}
         if: always()
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
-        run: |
-          echo "=== sync started at $(date -u +%H:%M:%S) ==="
-          scripts/ci/azure-gocache.sh sync
-          echo "=== sync finished at $(date -u +%H:%M:%S) ==="
+        run: scripts/ci/cloud-gocache.sh ${{ matrix.backend }} sync
 
       - name: Unmount
         if: always()
-        run: scripts/ci/azure-gocache.sh unmount
+        run: scripts/ci/cloud-gocache.sh ${{ matrix.backend }} unmount
