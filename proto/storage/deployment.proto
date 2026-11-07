@@ -90,6 +90,21 @@ message Container {
   ReadinessProbe readiness_probe = 12;
 
   ContainerType type = 13; // @gotags: search:"Container Type" hash:"ignore" sensorhash:"ignore"
+
+  // oldest_container_started is the earliest start time of any live pod instance
+  // running this container. Populated at policy evaluation time from pod store data;
+  // not persisted. Used by the "Container Age" policy criterion.
+  //
+  // SPIKE NOTE: This field is set transiently by the detection enrichment step and
+  // intentionally not stored. The open question is WHERE enrichment happens:
+  //   (a) Central-side, in reprocessing/pipeline.go before forwarding to lifecycle
+  //       manager — requires pod datastore access in central.
+  //   (b) Sensor-side, in detector.go before calling DetectDeployment — requires
+  //       the sensor pod cache to be queryable by deployment ID at detection time.
+  // Option (b) is preferred to avoid a round-trip but needs investigation into
+  // whether sensor's podsByUID/podsByDeploymentID cache supports this lookup.
+  // @gotags: search:"Container Start Time,hidden" hash:"ignore" sensorhash:"ignore"
+  google.protobuf.Timestamp oldest_container_started = 14;
 }
 
 message Resources {
