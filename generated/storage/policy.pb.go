@@ -1111,7 +1111,7 @@ func (x *ListPolicy) GetEvaluationFilter() *EvaluationFilter {
 type EvaluationFilter struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	SkipContainerTypes []ContainerType        `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.ContainerType" json:"skip_container_types,omitempty" crYaml:"skipContainerTypes,omitempty,stringer"` // @gotags: crYaml:"skipContainerTypes,omitempty,stringer"
-	SkipImageLayers    SkipImageLayers        `protobuf:"varint,2,opt,name=skip_image_layers,json=skipImageLayers,proto3,enum=storage.SkipImageLayers" json:"skip_image_layers,omitempty" crYaml:"skipImageLayers,omitempty,stringer"`               // @gotags: crYaml:"skipImageLayers,omitempty,stringer"
+	SkipImageLayers    SkipImageLayers        `protobuf:"varint,2,opt,name=skip_image_layers,json=skipImageLayers,proto3,enum=storage.SkipImageLayers" json:"skip_image_layers,omitempty" search:"Skip Image Layers" crYaml:"skipImageLayers,omitempty,stringer"`               // @gotags: search:"Skip Image Layers" crYaml:"skipImageLayers,omitempty,stringer"
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
