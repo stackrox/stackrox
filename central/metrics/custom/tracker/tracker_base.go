@@ -40,13 +40,18 @@ type Getter[F Finding] func(F) string
 // specific label only when provided with a finding.
 type LazyLabelGetters[F Finding] map[Label]Getter[F]
 
-// GetLabels returns a slice of labels from the list of lazy getters.
+// GetLabels returns a slice of label names from the list of lazy getters.
 func (ll LazyLabelGetters[F]) GetLabels() []string {
 	result := make([]string, 0, len(ll))
-	for _, label := range slices.Sorted(maps.Keys(ll)) {
+	for _, label := range ll.Labels() {
 		result = append(result, string(label))
 	}
 	return result
+}
+
+// Labels returns a sorted slice of labels from the list of lazy getters.
+func (ll LazyLabelGetters[F]) Labels() []Label {
+	return slices.Sorted(maps.Keys(ll))
 }
 
 type Tracker interface {
@@ -62,6 +67,14 @@ type Tracker interface {
 	// Refresh the data on the next scrape request without waiting for the next
 	// gathering period.
 	Refresh()
+}
+
+// Registration is a helper structure for the runner to use this tracker.
+type Registration = struct {
+	Tracker
+	// GetGroupConfig returns the storage configuration associated to the
+	// tracker.
+	GetGroupConfig func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group
 }
 
 // FindingErrorSequence is a sequence of pairs of findings and errors.
@@ -126,6 +139,11 @@ type TrackerBase[F Finding] struct {
 	cleanupWG sync.WaitGroup // for sync in testing.
 
 	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
+
+	// KnownLabels returns the list of labels accepted by this tracker for the
+	// given descriptors. Default implementation returns the getters map keys.
+	// Override to support dynamic labels (e.g., driven by the configuration).
+	KnownLabels func(map[string]*storage.PrometheusMetrics_Group_Labels) []Label
 }
 
 // MakeTrackerBase initializes a scoped tracker without any period or metrics
@@ -161,6 +179,9 @@ func makeTrackerBase[F Finding](metricPrefix, description string, scoped bool,
 		generator:       generator,
 		scoped:          scoped,
 		registryFactory: registryFactory,
+		KnownLabels: func(map[string]*storage.PrometheusMetrics_Group_Labels) []Label {
+			return getters.Labels()
+		},
 	}
 }
 
@@ -175,7 +196,8 @@ func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_G
 		current = &Configuration{}
 	}
 
-	md, incFilters, excFilters, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
+	descriptors := cfg.GetDescriptors()
+	md, incFilters, excFilters, err := translateStorageConfiguration(descriptors, tracker.metricPrefix, tracker.KnownLabels(descriptors))
 	if err != nil {
 		return nil, err
 	}
