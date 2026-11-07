@@ -48,6 +48,8 @@ jobs:
       STORAGE_CLASS: faster
       SCANNER_V4_DB_STORAGE_CLASS: faster
       ROX_SCANNER_V4: "true"
+      GKE_SPOT: ${{ github.event_name == 'pull_request' && inputs.should-run }}
+      NUM_NODES: "1"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 361
     steps:
@@ -88,8 +90,6 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "1"
-        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
         scripts/ci/gke.sh provision_gke_cluster nongroovy
@@ -148,7 +148,7 @@ jobs:
         sudo ln -s /usr/local/lib/node_modules/bats-support /usr/lib/node_modules/bats-support
         sudo ln -s /usr/local/lib/node_modules/bats-assert /usr/lib/node_modules/bats-assert
 
-    - name: Run e2e tests
+    - name: Run e2e tests with node name polling
       # SETUP_WORKLOAD_IDENTITIES is intentionally omitted; WIF tests run in the Prow pipeline.
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -173,16 +173,18 @@ jobs:
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       timeout-minutes: 245
+      # Node name changes do not establish whether Spot caused a replacement.
+      shell: python3 .openshift-ci/node_disruption.py run -- bash --noprofile --norc -e -o pipefail {0}
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Ensure central stability before post-test
-      if: always()
+      if: always() && !cancelled()
       run: |
         source tests/e2e/lib.sh
         wait_for_api
 
     - name: Run post-test
-      if: always()
+      if: always() && !cancelled()
       shell: python
       env:
         ROX_USERNAME: admin
@@ -196,13 +198,23 @@ jobs:
         post.run(['/tmp/e2e-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
-      if: always()
+      if: always() && !cancelled()
       shell: python
       run: |
         import sys
         sys.path.append('.openshift-ci')
         from post_tests import FinalPost
-        FinalPost(store_qa_tests_data=False).run()
+        FinalPost(store_qa_tests_data=False, handle_e2e_progress_failures=False).run()
+
+    - name: Upload test and node monitoring artifacts
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      with:
+        name: nongroovy-spot-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          ${{ env.ARTIFACT_DIR }}/
+          /tmp/e2e-test-logs/
+        if-no-files-found: ignore
 
     - name: Teardown GKE cluster
       if: always()
