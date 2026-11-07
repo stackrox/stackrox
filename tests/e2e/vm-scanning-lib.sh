@@ -21,7 +21,11 @@ ensure_vm_scanning_cluster_prereqs() {
             export MAIN_IMAGE_TAG
         fi
         if [[ -z "${MAIN_IMAGE_REPO:-}" ]]; then
-            MAIN_IMAGE_REPO="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" default-image-registry)/main"
+            # Konflux publishes the main image as "release-main", not "main"
+            # (see scripts/ci/lib.sh's populate_stackrox_image_list()).
+            local main_image_name="main"
+            [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]] && main_image_name="release-main"
+            MAIN_IMAGE_REPO="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" default-image-registry)/${main_image_name}"
             export MAIN_IMAGE_REPO
         fi
         export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
