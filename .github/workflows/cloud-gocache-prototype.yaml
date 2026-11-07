@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        backend: [azure, gcs, s3, prefetch]
+        backend: [azure, gcs, s3, prefetch, cacheprog]
         workload: [lint, cli, unittests]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -62,22 +62,31 @@ jobs:
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
         run: |
           set -euo pipefail
-          scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount
-          # Verify the overlay directory exists and is writable
-          if [ ! -d "$CLOUD_GOCACHE_DIR" ]; then
-            echo "::error::GOCACHE overlay directory $CLOUD_GOCACHE_DIR does not exist"
-            exit 1
+          if [ "${{ matrix.backend }}" = "cacheprog" ]; then
+            # Build and set up the GOCACHEPROG program
+            echo "=== building gocache-serve ==="
+            (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
+            echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_BACKEND=noop" >> "$GITHUB_ENV"  # local-only for seed leg
+            echo "GOCACHE set via GOCACHEPROG (no mount needed)"
+          else
+            scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount
+            # Verify the overlay directory exists and is writable
+            if [ ! -d "$CLOUD_GOCACHE_DIR" ]; then
+              echo "::error::GOCACHE overlay directory $CLOUD_GOCACHE_DIR does not exist"
+              exit 1
+            fi
+            # Test write access
+            echo "test" > "$CLOUD_GOCACHE_DIR/.write-test" && rm "$CLOUD_GOCACHE_DIR/.write-test"
+            # Persist GOCACHE via go env (affects all go invocations)
+            go env -w "GOCACHE=$CLOUD_GOCACHE_DIR"
+            echo "GOCACHE set to: $(go env GOCACHE)"
           fi
-          # Test write access
-          echo "test" > "$CLOUD_GOCACHE_DIR/.write-test" && rm "$CLOUD_GOCACHE_DIR/.write-test"
-          # Persist GOCACHE via go env (affects all go invocations)
-          go env -w "GOCACHE=$CLOUD_GOCACHE_DIR"
-          echo "GOCACHE set to: $(go env GOCACHE)"
 
       - name: Run workload (${{ matrix.workload }})
         env:
           GOMEMLIMIT: 12GiB
-          GOCACHE: ${{ env.CLOUD_GOCACHE_DIR }}
+          GOCACHE: ${{ matrix.backend == 'cacheprog' && '' || env.CLOUD_GOCACHE_DIR }}
         run: |
           echo "=== workload=${{ matrix.workload }} backend=${{ matrix.backend }} started at $(date -u +%H:%M:%S) ==="
           echo "GOCACHE=$GOCACHE"
@@ -132,4 +141,9 @@ jobs:
 
       - name: Unmount
         if: always()
-        run: scripts/ci/cloud-gocache.sh ${{ matrix.backend }} unmount
+        run: |
+          if [ "${{ matrix.backend }}" = "cacheprog" ]; then
+            echo "cacheprog mode: GOCACHEPROG handles lifecycle automatically"
+          else
+            scripts/ci/cloud-gocache.sh ${{ matrix.backend }} unmount
+          fi
