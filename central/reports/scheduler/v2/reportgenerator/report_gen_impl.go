@@ -191,12 +191,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 		return errors.Wrap(err, "Error generating email body")
 	}
 
-	configDetailsHTML, err := formatReportConfigDetails(req.ReportSnapshot, reportData.NumDeployedImageResults,
-		reportData.NumWatchedImageResults)
-	if err != nil {
-		return errors.Wrap(err, "Error adding report config details")
-	}
-
+	hasAttachment := zippedCSVData != nil
 	errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
 	for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
 		nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
@@ -205,21 +200,25 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 			errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
 			continue
 		}
-		customBody := notifierSnap.GetEmailConfig().GetCustomBody()
-		emailBody := defaultEmailBody
-		if customBody != "" {
-			emailBody = customBody
+		emailIntro := defaultEmailBody
+		if customBody := notifierSnap.GetEmailConfig().GetCustomBody(); customBody != "" {
+			emailIntro = customBody
 		}
-		customSubject := notifierSnap.GetEmailConfig().GetCustomSubject()
 		emailSubject := defaultEmailSubject
-		if customSubject != "" {
+		if customSubject := notifierSnap.GetEmailConfig().GetCustomSubject(); customSubject != "" {
 			emailSubject = customSubject
 		}
-		emailBodyWithConfigDetails := AddReportConfigDetails(emailBody, configDetailsHTML)
-		reportName := req.ReportSnapshot.GetName()
-		err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
-			zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
+		reportURL := BuildWorkloadReportURL(nf.ProtoNotifier().GetUiEndpoint(), req.ReportSnapshot.GetReportConfigurationId())
+		emailBody, err := FormatWorkloadReportEmailBody(emailIntro, req.ReportSnapshot,
+			reportData.NumDeployedImageResults, reportData.NumWatchedImageResults, hasAttachment, reportURL)
 		if err != nil {
+			errorList.AddError(errors.Errorf("Error generating email body for notifier '%s': %s",
+				notifierSnap.GetEmailConfig().GetNotifierId(), err))
+			continue
+		}
+		reportName := req.ReportSnapshot.GetName()
+		if err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
+			zippedCSVData, emailSubject, emailBody, reportName); err != nil {
 			errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
 				notifierSnap.GetEmailConfig().GetNotifierId(), err))
 		}
