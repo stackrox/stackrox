@@ -16,12 +16,14 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	nodeRoleStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/store"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -40,6 +42,8 @@ const (
 type handlerImpl struct {
 	client                 dynamic.Interface
 	complianceOperatorInfo StatusInfo
+	nodeRoleStore          *nodeRoleStore.Store
+	pubSubDispatcher       common.PubSubDispatcher
 
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
@@ -66,10 +70,12 @@ type scanScheduleConfiguration struct {
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, coIsReady *concurrency.Signal) common.SensorComponent {
+func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, coIsReady *concurrency.Signal, nodeRoles *nodeRoleStore.Store, pubSubDispatcher common.PubSubDispatcher) common.SensorComponent {
 	return &handlerImpl{
 		client:                 client,
 		complianceOperatorInfo: complianceOperatorInfo,
+		nodeRoleStore:          nodeRoles,
+		pubSubDispatcher:       pubSubDispatcher,
 
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
@@ -84,9 +90,23 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 	}
 }
 
+func (m *handlerImpl) nodeRoles() []string {
+	if m.nodeRoleStore != nil {
+		if roles := m.nodeRoleStore.GetRoles(); len(roles) > 0 {
+			return roles
+		}
+	}
+	return []string{masterRole, workerRole}
+}
+
 func (m *handlerImpl) Start() error {
 	defer m.started.Store(true)
-	// TODO: create default scan setting for ad-hoc scan
+	if features.SensorInternalPubSub.Enabled() && m.pubSubDispatcher != nil && m.nodeRoleStore != nil {
+		reconciler := NewNodeRoleReconciler(m.client, m.complianceOperatorInfo, m.nodeRoleStore, &m.stopSignal)
+		if err := reconciler.Register(m.pubSubDispatcher); err != nil {
+			log.Errorf("Failed to register node-role reconciler: %v", err)
+		}
+	}
 	go m.run()
 	return nil
 }
@@ -228,7 +248,7 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 }
 
 func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron, m.nodeRoles()))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -298,7 +318,8 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request)
+	roles := m.nodeRoles()
+	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request, roles)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -331,7 +352,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
-			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
+			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request, roles)
 			if err != nil {
 				return err
 			}
@@ -760,6 +781,13 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 	// Compare with the ScanConfig in the request.
 	var errList errorhelpers.ErrorList
 	inCentralSet := set.NewStringSet()
+	roles := m.nodeRoles()
+	scanSettingConvertFn := func(ns string, req *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
+		return convertCentralRequestToScanSetting(ns, req, cron, roles)
+	}
+	scanSettingUpdateFn := func(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+		return updateScanSettingFromUpdateRequest(obj, req, roles)
+	}
 	for _, scanCfg := range request.GetScanConfigs() {
 		if err := validateUpdateScheduledScanConfigRequest(scanCfg.GetUpdateScan()); err != nil {
 			errList.AddError(err)
@@ -771,8 +799,8 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			complianceNamespace,
 			scanCfg.GetUpdateScan(),
 			scanSettingsInCluster,
-			updateScanSettingFromUpdateRequest,
-			convertCentralRequestToScanSetting,
+			scanSettingUpdateFn,
+			scanSettingConvertFn,
 			complianceoperator.ScanSetting,
 		); err != nil {
 			errList.AddError(err)

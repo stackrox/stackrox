@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/utils"
@@ -86,7 +88,7 @@ func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.
 }
 
 // NewInfoUpdater return a sensor component that periodically collect information about the compliance operator.
-func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, readySignal *concurrency.Signal) InfoUpdater {
+func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, readySignal *concurrency.Signal, pubSubDispatcher common.PubSubDispatcher) InfoUpdater {
 	if updateInterval == 0 {
 		updateInterval = defaultInterval
 	}
@@ -102,6 +104,7 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, r
 		updateTicker:         updateTicker,
 		complianceOperatorNS: "openshift-compliance",
 		isReady:              readySignal,
+		pubSubDispatcher:     pubSubDispatcher,
 	}
 }
 
@@ -114,6 +117,7 @@ type updaterImpl struct {
 	stopSig              concurrency.Signal
 	complianceOperatorNS string
 	isReady              *concurrency.Signal
+	pubSubDispatcher     common.PubSubDispatcher
 }
 
 func (u *updaterImpl) Name() string {
@@ -121,7 +125,24 @@ func (u *updaterImpl) Name() string {
 }
 
 func (u *updaterImpl) Start() error {
+	if features.SensorInternalPubSub.Enabled() && u.pubSubDispatcher != nil {
+		if err := u.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceOperatorUpdaterConsumer,
+			pubsub.ResourceSyncFinishedTopic,
+			pubsub.ResourceSyncFinishedLane,
+			u.onResourceSyncFinished,
+		); err != nil {
+			log.Errorf("Unable to register consumer for ResourceSyncFinished: %v", err)
+		}
+	}
 	go u.run(u.updateTicker.C)
+	return nil
+}
+
+func (u *updaterImpl) onResourceSyncFinished(_ pubsub.Event) error {
+	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		u.updateTicker.Reset(u.updateInterval)
+	}
 	return nil
 }
 
@@ -134,6 +155,11 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventSyncFinished:
+		// When pubsub is enabled the ticker is started by onResourceSyncFinished
+		// which fires after all k8s informers (including MachineConfigPools) have synced.
+		if features.SensorInternalPubSub.Enabled() && u.pubSubDispatcher != nil {
+			return
+		}
 		if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 			u.updateTicker.Reset(u.updateInterval)
 			return

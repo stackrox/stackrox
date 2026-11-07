@@ -101,7 +101,7 @@ func validateScanName(req scanNameGetter) error {
 	return nil
 }
 
-func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) runtime.Object {
+func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string, roles []string) runtime.Object {
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
@@ -113,7 +113,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 			Labels:      utils.GetSensorKubernetesLabels(),
 			Annotations: utils.GetSensorKubernetesAnnotations(),
 		},
-		Roles: []string{masterRole, workerRole},
+		Roles: roles,
 		ComplianceSuiteSettings: v1alpha1.ComplianceSuiteSettings{
 			AutoApplyRemediations:  false,
 			AutoUpdateRemediations: false,
@@ -151,9 +151,9 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 	}
 }
 
-func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) *v1alpha1.ScanSetting {
+func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan, roles []string) *v1alpha1.ScanSetting {
 	// TODO:  Update additional fields as ACS capability expands
-	scanSetting.Roles = []string{masterRole, workerRole}
+	scanSetting.Roles = roles
 	scanSetting.ComplianceSuiteSettings = v1alpha1.ComplianceSuiteSettings{
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
@@ -249,13 +249,13 @@ func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, e
 	}, nil
 }
 
-func updateScanSettingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
+func updateScanSettingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan, roles []string) (*unstructured.Unstructured, error) {
 	var scanSetting v1alpha1.ScanSetting
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
 		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
 	}
 
-	return runtimeObjToUnstructured(updateScanSettingFromCentralRequest(&scanSetting, req))
+	return runtimeObjToUnstructured(updateScanSettingFromCentralRequest(&scanSetting, req, roles))
 }
 
 func updateScanSettingBindingFromUpdateRequest(obj *unstructured.Unstructured, req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error) {
