@@ -382,6 +382,12 @@ func (p *Pipeline) handleFakeFileActivityEvent(event pubsub.Event) error {
 }
 
 func (p *Pipeline) processFileActivity(fs *sensorAPI.FileActivity) {
+	// Count every event entering the processing pipeline here, at the single entry
+	// point shared by both the real gRPC path (run(), reading activityChan) and the
+	// fake-workload path (handleFakeFileActivityEvent). Previously the increment
+	// lived in run() only, so fake-workload events were never counted.
+	detectorMetrics.FileAccessEventsReceived.Inc()
+
 	process := fs.GetProcess()
 	if process == nil {
 		return
@@ -489,7 +495,6 @@ func (p *Pipeline) run() {
 				// Channel closed, no more messages
 				return
 			}
-			detectorMetrics.FileAccessEventsReceived.Inc()
 			p.processFileActivity(fs)
 		}
 	}

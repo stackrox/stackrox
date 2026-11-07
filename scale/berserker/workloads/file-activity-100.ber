@@ -1,0 +1,9 @@
+machine {
+  path("/tmp/data");
+}
+
+main (workers = 2, duration = 0) {
+  open(random_path("/tmp/data"));
+} : exp {
+  rate = 16.67;
+}

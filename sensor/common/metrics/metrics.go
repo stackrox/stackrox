@@ -77,6 +77,13 @@ var (
 		Help:      "Current number of container entries waiting in the process-enrichment LRU cache",
 	})
 
+	processFilterRejected = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_filter_rejected_total",
+		Help:      "Count of enriched process indicators dropped by the process filter (per-container exec-path/arg-fan-out limits) before being sent to Central",
+	})
+
 	fileActivityBufferDrops = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -471,6 +478,12 @@ func IncrementProcessEnrichmentDrops() {
 // IncrementProcessEnrichmentHits increments the number of times we could enrich.
 func IncrementProcessEnrichmentHits() {
 	processEnrichmentHits.Inc()
+}
+
+// IncrementProcessFilterRejected increments the number of process indicators dropped
+// by the process filter before being sent to Central.
+func IncrementProcessFilterRejected() {
+	processFilterRejected.Inc()
 }
 
 // SetProcessEnrichmentCacheSize sets the enrichment cache size.
