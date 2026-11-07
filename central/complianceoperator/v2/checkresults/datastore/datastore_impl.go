@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -510,10 +511,7 @@ func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldSt
 		end := min(start+freshnessUpdateBatchSize, len(candidateIDs))
 		batchIDs := candidateIDs[start:end]
 
-		keys := make([][]byte, 0, len(batchIDs))
-		for _, id := range batchIDs {
-			keys = append(keys, []byte(id))
-		}
+		keys := sliceutils.Map(batchIDs, func(id string) []byte { return []byte(id) })
 
 		// Re-read and upsert under the key fence: freshness lives in the serialized proto, so the
 		// whole row is rewritten. Ingest takes the same fence, so the re-read sees any concurrent

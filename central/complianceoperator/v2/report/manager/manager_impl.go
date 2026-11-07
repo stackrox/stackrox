@@ -538,10 +538,7 @@ func (m *managerImpl) handleReadyScan() {
 // watcher records from both Scan updates and check results, so it works even when no Scan ever
 // arrived.
 func (m *managerImpl) markPriorResultsStale(scanWatcherResult *watcher.ScanWatcherResults) {
-	displayID := scanWatcherResult.Scan.GetScanName()
-	if displayID == "" {
-		displayID = scanWatcherResult.WatcherID
-	}
+	displayID := scanWatcherResult.ScanName()
 	scope := scanWatcherResult.Scope
 	if scope.ScanRefID == "" || scope.LastStartedTime == nil {
 		log.Debugf("Skipping stale marking for watcher %s: no scan scope available", scanWatcherResult.WatcherID)

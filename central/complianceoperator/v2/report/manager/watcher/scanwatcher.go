@@ -284,11 +284,16 @@ func (s *scanWatcherImpl) Stop(err error) {
 	s.cancel()
 }
 
-func (s *scanWatcherImpl) scanName() string {
-	if s.scanResults.Scan != nil {
-		return s.scanResults.Scan.GetScanName()
+// ScanName identifies the run by scan name, falling back to the watcher ID when no Scan was seen.
+func (r *ScanWatcherResults) ScanName() string {
+	if r.Scan != nil {
+		return r.Scan.GetScanName()
 	}
-	return s.scanResults.WatcherID
+	return r.WatcherID
+}
+
+func (s *scanWatcherImpl) scanName() string {
+	return s.scanResults.ScanName()
 }
 
 func (s *scanWatcherImpl) run() {
