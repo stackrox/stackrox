@@ -606,7 +606,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context) error {
 		incompatible = true
 		log.Debugf("offline bundle compatibility check: missing V4 definitions (and V4 is enabled)")
 	}
-	if _, ok := defs[offlineScannerV2DefsBlobName]; !ok {
+	if _, ok := defs[offlineScannerV2DefsBlobName]; features.LegacyScanner.Enabled() && !ok {
 		incompatible = true
 		log.Debugf("offline bundle compatibility check: missing V2 definitions")
 	}
