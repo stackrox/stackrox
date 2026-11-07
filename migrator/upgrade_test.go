@@ -94,7 +94,7 @@ func (s *UpgradeSuite) TestLockAcquired_OldPodOverwritesSeqNum() {
 	// Old version should overwrite SeqNum to its current SeqNum.
 	curSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	futureSeqNum := curSeqNum + 10
-	s.setDBVersion(futureSeqNum, "99.0.0")
+	s.setDBVersion(futureSeqNum, "5.2.0")
 
 	err := upgradeAcquireLock(s.ctx, s.pool, s.gormDB, s.source)
 	s.Require().NoError(err)
