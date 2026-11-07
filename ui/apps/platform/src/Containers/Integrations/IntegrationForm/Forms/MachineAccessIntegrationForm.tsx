@@ -127,6 +127,21 @@ function MachineAccessIntegrationForm({
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
+                        {values.type === 'SPIFFE' && (
+                            <Alert
+                                variant="info"
+                                isInline
+                                isPlain
+                                title="SPIFFE / SPIRE configuration"
+                                component="p"
+                            >
+                                Authenticate workloads using SPIFFE JWT-SVIDs. Your
+                                SPIRE deployment must have the OIDC Discovery Provider
+                                component enabled and HTTPS-accessible from Central.
+                                Workload identities are matched via the SPIFFE ID in the
+                                token&apos;s sub claim.
+                            </Alert>
+                        )}
                         <FormLabelGroup
                             isRequired
                             label="Select configuration type"
@@ -145,6 +160,18 @@ function MachineAccessIntegrationForm({
                                             ? 'https://token.actions.githubusercontent.com'
                                             : ''
                                     );
+                                    if (
+                                        value === 'SPIFFE' &&
+                                        values.mappings.length === 0
+                                    ) {
+                                        setFieldValue('mappings', [
+                                            {
+                                                key: 'sub',
+                                                valueExpression: '',
+                                                role: '',
+                                            },
+                                        ]);
+                                    }
                                 }}
                                 direction="down"
                                 isDisabled={!isEditable}
@@ -154,6 +181,13 @@ function MachineAccessIntegrationForm({
                                 </SelectOption>
                                 <SelectOption key={'GITHUB_ACTIONS'} value={'GITHUB_ACTIONS'}>
                                     GitHub action
+                                </SelectOption>
+                                <SelectOption
+                                    key={'SPIFFE'}
+                                    value={'SPIFFE'}
+                                    description="Authenticate workloads using SPIFFE JWT-SVIDs from a SPIRE deployment"
+                                >
+                                    SPIFFE / SPIRE
                                 </SelectOption>
                             </SelectSingle>
                         </FormLabelGroup>
@@ -169,10 +203,26 @@ function MachineAccessIntegrationForm({
                                 type="text"
                                 id="issuer"
                                 value={values.issuer}
+                                placeholder={
+                                    values.type === 'SPIFFE'
+                                        ? 'https://oidc-discovery.spire.example.com'
+                                        : undefined
+                                }
                                 onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || values.type === 'GITHUB_ACTIONS'}
                             />
+                            {values.type === 'SPIFFE' && (
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem>
+                                            HTTPS URL of the SPIRE OIDC Discovery
+                                            Provider. This is not the spiffe:// trust
+                                            domain URI.
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
+                            )}
                         </FormLabelGroup>
                         <FormLabelGroup
                             label="Audience"
@@ -191,8 +241,9 @@ function MachineAccessIntegrationForm({
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem>
-                                        Expected audience (aud) claim of the identity token. Leave
-                                        blank to accept any audience.
+                                        {values.type === 'SPIFFE'
+                                            ? 'The audience value your workloads request in their JWT-SVIDs. Must match the aud claim in presented tokens.'
+                                            : 'Expected audience (aud) claim of the identity token. Leave blank to accept any audience.'}
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
@@ -220,6 +271,18 @@ function MachineAccessIntegrationForm({
                             </FormHelperText>
                         </FormLabelGroup>
                         <FormSection title="Rules" titleElement="h2" className="pf-v6-u-mt-0">
+                            {values.type === 'SPIFFE' && (
+                                <HelperText>
+                                    <HelperTextItem>
+                                        Map the SPIFFE ID from the sub claim to a role.
+                                        Use regex to match specific workloads (e.g.,{' '}
+                                        <code>
+                                            ^spiffe://trust-domain/ns/ci-cd/.*
+                                        </code>
+                                        ).
+                                    </HelperTextItem>
+                                </HelperText>
+                            )}
                             <FieldArray
                                 name="mappings"
                                 render={(arrayHelpers) => (

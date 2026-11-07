@@ -16,6 +16,9 @@ func newClaimExtractorFromConfig(config *storage.AuthMachineToMachineConfig) cla
 		return &githubClaimExtractor{}
 	case storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT:
 		return &kubeClaimExtractor{}
+	case storage.AuthMachineToMachineConfig_SPIFFE:
+		// ponytail: SPIFFE JWT-SVIDs are standard JWTs with sub=SPIFFE ID. Generic extractor handles this.
+		return &genericClaimExtractor{}
 	default:
 		return &genericClaimExtractor{}
 	}
