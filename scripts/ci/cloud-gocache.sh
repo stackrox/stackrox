@@ -67,7 +67,56 @@ install_azcopy() {
 
 # ---------------------------------------------------------------- mount
 
+# Prefetch backend: no FUSE, no overlayfs. Bulk-parallel download the
+# entire bucket to local disk before the job, run at native filesystem
+# speed, then sync new entries back after. The read tool is the cloud
+# CLI (azcopy/gcloud/aws), not a filesystem layer.
+do_prefetch() {
+    mkdir -p "$OVERLAY_DIR"
+
+    case "$BACKEND" in
+        azure)
+            install_azcopy
+            export AZURE_SPA_CLIENT_ID="${AZURE_CLIENT_ID:?}"
+            export AZURE_SPA_CLIENT_SECRET="${AZURE_CLIENT_SECRET:?}"
+            export AZURE_TENANT_ID="${AZURE_TENANT_ID:?}"
+            azcopy login --service-principal > /dev/null 2>&1 || true
+            step "prefetching from azure blob (parallel bulk download)"
+            azcopy copy \
+                "https://${AZURE_STORAGE_ACCOUNT:?}.blob.core.windows.net/$AZURE_CONTAINER/*" \
+                "$OVERLAY_DIR" \
+                --recursive --parallel-level 32 --output-level quiet
+            ;;
+        gcs)
+            step "prefetching from gcs (parallel bulk download)"
+            gcloud storage cp -r "gs://$GCS_BUCKET/*" "$OVERLAY_DIR" \
+                --no-user-output-enabled 2>/dev/null || true
+            ;;
+        s3)
+            step "prefetching from s3 (parallel bulk download)"
+            aws s3 cp "s3://$S3_BUCKET" "$OVERLAY_DIR" \
+                --recursive --only-show-errors --no-progress
+            ;;
+    esac
+
+    local entry_count=$(find "$OVERLAY_DIR" -type f 2>/dev/null | wc -l)
+    local total_bytes=$(du -sb "$OVERLAY_DIR" 2>/dev/null | cut -f1 || echo 0)
+    step "prefetch complete: $entry_count entries, $(( ${total_bytes:-0} / 1048576 )) MB"
+
+    echo "GOCACHE=${OVERLAY_DIR}"
+}
+
+do_prefetch_sync() {
+    # Same sync logic as FUSE backends, but the "upper layer" is the
+    # entire local directory (everything not already in the cloud is new).
+    do_sync
+}
+
 do_mount() {
+    if [ "$BACKEND" = "prefetch" ]; then
+        do_prefetch
+        return
+    fi
     mkdir -p "$RO_DIR" "$UPPER_DIR" "$WORK_DIR" "$OVERLAY_DIR"
 
     case "$BACKEND" in
@@ -142,27 +191,28 @@ EOF
 
 do_sync() {
     step "syncing new entries"
+    local sync_dir="$UPPER_DIR"
+    if [ "$BACKEND" = "prefetch" ]; then
+        sync_dir="$OVERLAY_DIR"
+    fi
     case "$BACKEND" in
-        azure)
+        azure|prefetch)
             install_azcopy
             export AZURE_SPA_CLIENT_ID="${AZURE_CLIENT_ID:?}"
             export AZURE_SPA_CLIENT_SECRET="${AZURE_CLIENT_SECRET:?}"
             export AZURE_TENANT_ID="${AZURE_TENANT_ID:?}"
             azcopy login --service-principal > /dev/null 2>&1 || true
-            azcopy sync "$UPPER_DIR" \
+            azcopy sync "$sync_dir" \
                 "https://${AZURE_STORAGE_ACCOUNT:?}.blob.core.windows.net/$AZURE_CONTAINER" \
                 --recursive --delete-destination=false --from-to Local Blob --output-level quiet
             azcopy logout > /dev/null 2>&1 || true
             ;;
         gcs)
-            # gcloud storage rsync (uses existing gcloud auth from job-preamble)
-            # gcloud storage rsync doesn't have a dry-run-only sync; use cp for new files
             gcloud storage rsync --recursive --no-clobber \
-                "$UPPER_DIR" "gs://$GCS_BUCKET" 2>&1 | tail -3
+                "$sync_dir" "gs://$GCS_BUCKET" 2>&1 | tail -3
             ;;
         s3)
-            # aws s3 sync (uses AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)
-            aws s3 sync "$UPPER_DIR" "s3://$S3_BUCKET" \
+            aws s3 sync "$sync_dir" "s3://$S3_BUCKET" \
                 --only-show-errors --no-progress
             ;;
     esac
@@ -172,6 +222,10 @@ do_sync() {
 # ---------------------------------------------------------------- unmount
 
 do_unmount() {
+    if [ "$BACKEND" = "prefetch" ]; then
+        step "prefetch mode: nothing to unmount"
+        return
+    fi
     sudo umount "$OVERLAY_DIR" 2>/dev/null || true
     case "$BACKEND" in
         azure) blobfuse2 unmount all 2>/dev/null || true ;;

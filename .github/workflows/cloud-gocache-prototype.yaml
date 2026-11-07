@@ -1,14 +1,20 @@
-name: Cloud GOCACHE prototype
-# PROTOTYPE (do not merge): cloud-backed GOCACHE for the golangci-lint job,
-# comparing three backends in parallel: Azure Blob (blobfuse2, same-cloud),
-# GCS (gcsfuse, cross-cloud via existing GCP creds), and S3 (Mountpoint for
-# S3, cross-cloud via existing AWS creds). All use the same overlayfs
-# pattern: lazy per-entry reads from a read-only cloud mount + local
-# writable upper + post-job sync.
+name: Cloud GOCACHE multi-job prototype
+# PROTOTYPE (do not merge): cloud-backed GOCACHE across multiple CI jobs
+# with different compilation profiles, verifying that one content-addressed
+# store serves all users and that the upload/sync path expands correctly.
 #
-# Legs: the first run seeds each backend's bucket (empty -> local compiles
-# -> sync up). Subsequent runs (empty commits) measure the warm read path.
-# Compare all three against the GHA-cache lint job (~3 min warm).
+# Jobs tested (3 backends x 3 workloads):
+#   lint:      make golangci-lint (package loading — export data for all deps)
+#   cli:       make cli (binary compilation — roxctl + its dependency tree)
+#   unittests: make go-unit-tests (test compilation — repo + tests + coverage)
+#
+# The lint workload is the same as the first prototype; cli and unittests
+# exercise different compilation profiles against the same buckets,
+# verifying the shared-store property: entries uploaded by one workload
+# are consumed by the others where they overlap.
+#
+# Legs: first run seeds; subsequent empty-commit runs measure warm reads.
+# The sync step logs entry counts and bytes to characterize upload volume.
 on:
   push:
     branches:
@@ -19,15 +25,16 @@ permissions:
   contents: read
 
 jobs:
-  lint-cloud-gocache:
+  cloud-gocache:
     strategy:
       fail-fast: false
       matrix:
-        backend: [azure, gcs, s3]
+        backend: [azure, gcs, s3, prefetch]
+        workload: [lint, cli, unittests]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    name: cg-${{ matrix.workload }}-${{ matrix.backend }}
     env:
-      # S3 backend needs AWS creds
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
@@ -52,22 +59,45 @@ jobs:
           out=$(scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount 2>&1 | tee /dev/stderr | grep '^GOCACHE=' | cut -d= -f2)
           echo "GOCACHE=$out" >> "$GITHUB_ENV"
 
-      - name: make golangci-lint (with ${{ matrix.backend }} GOCACHE)
+      - name: Run workload (${{ matrix.workload }})
         env:
           GOMEMLIMIT: 12GiB
         run: |
-          echo "=== lint started at $(date -u +%H:%M:%S) ==="
-          make golangci-lint
-          echo "=== lint finished at $(date -u +%H:%M:%S) ==="
+          echo "=== workload=${{ matrix.workload }} backend=${{ matrix.backend }} started at $(date -u +%H:%M:%S) ==="
+          case "${{ matrix.workload }}" in
+            lint)
+              make golangci-lint
+              ;;
+            cli)
+              make cli
+              echo "CLI binary size: $(du -sh bin/ 2>/dev/null | cut -f1)"
+              ;;
+            unittests)
+              # Compile-only: don't run tests, just build them (the compilation
+              # is what exercises the GOCACHE; test execution is orthogonal)
+              go build -tags test,test_e2e ./... 2>&1 | tail -5
+              go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -5 || true
+              ;;
+          esac
+          echo "=== workload finished at $(date -u +%H:%M:%S) ==="
 
-      - name: Sync new cache entries to ${{ matrix.backend }}
+      - name: Measure and sync new cache entries
         if: always()
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
-        run: scripts/ci/cloud-gocache.sh ${{ matrix.backend }} sync
+        run: |
+          echo "=== sync started at $(date -u +%H:%M:%S) ==="
+          # Measure what's in the upper layer before syncing
+          if [ -d /tmp/cloud-gocache/rw ]; then
+            entry_count=$(find /tmp/cloud-gocache/rw -type f | wc -l)
+            total_bytes=$(du -sb /tmp/cloud-gocache/rw | cut -f1)
+            echo "NEW_ENTRIES: $entry_count files, $total_bytes bytes ($(( total_bytes / 1048576 )) MB)"
+          fi
+          scripts/ci/cloud-gocache.sh ${{ matrix.backend }} sync
+          echo "=== sync finished at $(date -u +%H:%M:%S) ==="
 
       - name: Unmount
         if: always()
