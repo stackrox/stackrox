@@ -76,7 +76,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rep, found, err := h.snapshotStore.Get(ctx, id)
+	rep, found, err := h.snapshotStore.Get(SnapshotReadContext(ctx), id)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "Error finding report snapshot with job ID %q.", id))
 		return
@@ -149,11 +149,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Length", fmt.Sprint(buf.Len()))
 	_, err = w.Write(buf.Bytes())
 
-	writeSnapshotCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration)),
-	)
+	writeSnapshotCtx := SnapshotWriteContext(ctx)
 	if err == nil && status.GetRunState() == storage.ReportStatus_GENERATED {
 		rep.ReportStatus.RunState = storage.ReportStatus_DELIVERED
 		err = h.snapshotStore.UpdateReportSnapshot(writeSnapshotCtx, rep)
