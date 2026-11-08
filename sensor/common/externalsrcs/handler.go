@@ -72,7 +72,7 @@ func (h *handlerImpl) Name() string {
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.NetworkGraphExternalSrcsCap}
+	return nil
 }
 
 func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {

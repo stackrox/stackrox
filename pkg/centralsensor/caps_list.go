@@ -1,29 +1,8 @@
 package centralsensor
 
 const (
-	// PullMetricsCap identifies the capability to pull metrics from sensor.
-	PullMetricsCap SensorCapability = "PullMetrics"
-
-	// PullTelemetryDataCap identifies the capability to pull telemetry data from sensor.
-	PullTelemetryDataCap SensorCapability = "PullTelemetryData"
-
-	// SensorDetectionCap identifies the capability to run detection from sensor
-	SensorDetectionCap SensorCapability = "SensorDetection"
-
 	// SensorEnhancedDeploymentCheckCap identifies the capability for sensor to enhance roxctl deployment check
 	SensorEnhancedDeploymentCheckCap SensorCapability = "SensorEnhancedDeploymentCheck"
-
-	// ComplianceInNodesCap identifies the capability to run compliance in compliance pods
-	ComplianceInNodesCap SensorCapability = "ComplianceInNodes"
-
-	// HealthMonitoringCap identifies the capability to send health information
-	HealthMonitoringCap SensorCapability = "HealthMonitoring"
-
-	// NetworkGraphExternalSrcsCap identifies the capability to handle custom network graph external sources.
-	NetworkGraphExternalSrcsCap SensorCapability = "NetworkGraphExternalSrcs" //#nosec G101
-
-	// AuditLogEventsCap identifies the capability to handle audit log event detection.
-	AuditLogEventsCap SensorCapability = "AuditLogEvents"
 
 	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries).
 	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"

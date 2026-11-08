@@ -154,7 +154,6 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
-	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
 	capsSet.Add(centralsensor.VirtualMachineTelemetryCap)
 	if features.FlattenImageData.Enabled() {
 		capsSet.Add(centralsensor.FlattenImageData)
