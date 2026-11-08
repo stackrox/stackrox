@@ -22,6 +22,11 @@ type BundleEntry struct {
 // SerializeBundle encodes entries into a gzip-compressed binary blob.
 // Format: gzip([int32 count] then per entry: [int32 keyLen][key][int32 bodyLen][body])
 // Go build cache entries (export data, DWARF, object code) compress ~2-3x.
+// TODO: benchmark zstd (github.com/klauspost/compress/zstd) vs gzip —
+// zstd decompresses 3-4x faster (~1.5-2GB/s vs ~300-500MB/s). For 5MB
+// bundles: gzip=17ms, zstd=3ms. Only worth the dependency if the
+// instrumentation shows decompression time is a meaningful fraction of
+// total time (currently network-bound at 20-50ms per bundle).
 func SerializeBundle(entries []BundleEntry) []byte {
 	var raw bytes.Buffer
 	binary.Write(&raw, binary.LittleEndian, int32(len(entries)))
