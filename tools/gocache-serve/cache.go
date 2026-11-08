@@ -160,7 +160,8 @@ func NewAsyncUploader(backend Backend, workers int) *AsyncUploader {
 	}
 	au := &AsyncUploader{
 		backend: backend,
-		ch:      make(chan uploadJob, 1000),
+		ch:      make(chan uploadJob, 8192),
+		pri:     make(chan uploadJob, 8192),
 		done:    make(chan struct{}),
 	}
 	for i := 0; i < workers; i++ {
@@ -210,17 +211,25 @@ func (au *AsyncUploader) worker() {
 	}
 }
 
-// QueuePri enqueues a lease-held upload on the priority lane.
+// QueuePri enqueues a lease-held upload on the priority lane, falling back
+// to the normal lane if full. Drops are data loss for the shared cache
+// (the entry exists only on this runner's disk), so the last resort blocks
+// briefly — the local disk write already satisfied Go, so the put response
+// is not on the compile critical path.
 func (au *AsyncUploader) QueuePri(actionID string, body []byte) {
 	select {
 	case au.pri <- uploadJob{actionID, body}:
+		return
 	default:
-		atomic.AddInt64(&au.droppedPri, 1)
-		// A dropped priority upload stalls followers until their wait
-		// budget expires — loud by design.
-		log.Printf("gocache-serve: WARNING priority upload queue full, dropping %s (followers will recompile)",
-			shortID(actionID))
 	}
+	select {
+	case au.ch <- uploadJob{actionID, body}:
+		return
+	default:
+	}
+	atomic.AddInt64(&au.droppedPri, 1)
+	log.Printf("gocache-serve: WARNING both upload queues full, blocking on %s", shortID(actionID))
+	au.ch <- uploadJob{actionID, body} // block rather than lose the entry
 }
 
 // QueueDepth reports pending upload jobs (both lanes).
@@ -239,7 +248,12 @@ func (au *AsyncUploader) Queue(actionID string, body []byte) {
 	select {
 	case au.ch <- uploadJob{actionID, body}:
 	default:
+		// Never drop: the entry exists only on this runner's disk, and a
+		// lost upload permanently caps the cache's hit rate. Block instead
+		// (the local disk write already satisfied Go; the queue drains at
+		// ~4 workers x 50ms = 80/s).
 		atomic.AddInt64(&au.dropped, 1)
+		au.ch <- uploadJob{actionID, body}
 	}
 }
 

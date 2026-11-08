@@ -9,6 +9,22 @@ inputs:
     description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
     required: false
     default: ''
+  gocache-backend:
+    description: "GOCACHE backend: 'gha' (GitHub Actions cache) or 'cloud' (gocache-serve GOCACHEPROG, Azure Blob)"
+    required: false
+    default: 'gha'
+  azure-tenant-id:
+    description: Azure SPN tenant ID (cloud backend)
+    required: false
+    default: ''
+  azure-client-id:
+    description: Azure SPN client ID (cloud backend)
+    required: false
+    default: ''
+  azure-client-secret:
+    description: Azure SPN client secret (cloud backend)
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -45,7 +61,7 @@ runs:
       shell: bash
 
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: inputs.gocache-backend != 'cloud' && inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -55,7 +71,7 @@ runs:
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: inputs.gocache-backend != 'cloud' && ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -64,7 +80,52 @@ runs:
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
+    # Cloud backend: replace the GHA GOCACHE archive with gocache-serve
+    # (GOCACHEPROG). Entries are content-addressed in Azure Blob Storage:
+    # selective lazy fetches instead of an all-or-nothing archive restore,
+    # async uploads during the build, and advisory compile leases between
+    # concurrent runners. The GHA save/restore/backdate/trim steps above
+    # are skipped (content addressing makes mtime-based stale detection
+    # unnecessary); the mtime-stabilization step below still applies (it
+    # protects the module index and test cache, which are not GOCACHEPROG).
+    - name: Set up cloud GOCACHE (gocache-serve)
+      if: inputs.gocache-backend == 'cloud'
+      env:
+        AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
+        AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
+        AZURE_CLIENT_SECRET: ${{ inputs.azure-client-secret }}
+      run: |
+        set -euo pipefail
+        if [ -z "$AZURE_TENANT_ID" ] || [ -z "$AZURE_CLIENT_ID" ] || [ -z "$AZURE_CLIENT_SECRET" ]; then
+          echo "::error::cloud GOCACHE backend requires azure-tenant-id, azure-client-id and azure-client-secret inputs"
+          exit 1
+        fi
+        echo "=== building gocache-serve ==="
+        (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
+        # Manifest name mirrors the GHA cache key structure: job + matrix
+        # suffix + arch. Matrix legs and architectures have disjoint
+        # ActionID working sets, so their manifests must not mix.
+        manifest="$(echo "${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}" \
+          | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed 's/-\+/-/g; s/^-//; s/-$//')"
+        echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
+        echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+        echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
+        echo "GOCACHE_SERVE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+        echo "AZURE_TENANT_ID=$AZURE_TENANT_ID" >> "$GITHUB_ENV"
+        echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" >> "$GITHUB_ENV"
+        echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> "$GITHUB_ENV"
+        # Manifests are written only on default-branch pushes (PR runs read
+        # them for prefetch but don't overwrite the canonical working set
+        # with PR-specific entries). The repo variable overrides this for
+        # experiment branches.
+        if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ vars.GOCACHE_TEST_MANIFEST_WRITE }}" != "1" ]; then
+          echo "GOCACHE_SERVE_MANIFEST_WRITE=0" >> "$GITHUB_ENV"
+        fi
+        echo "gocache-serve ready: manifest=$manifest (write=$([ "${{ github.event_name }}" = "push" ] && echo yes || echo $([ "${{ vars.GOCACHE_TEST_MANIFEST_WRITE }}" = "1" ] && echo yes || echo no)))"
+      shell: bash
+
     - name: Mark GOCACHE entries for stale detection
+      if: inputs.gocache-backend != 'cloud'
       run: |
         gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
         if [[ -d "$gocache" ]]; then
@@ -84,6 +145,7 @@ runs:
     # Registered AFTER cache steps so the post-step runs BEFORE cache save
     # (GHA runs post-steps in reverse registration order).
     - name: Trim stale GOCACHE entries (post-step)
+      if: inputs.gocache-backend != 'cloud'
       uses: gacts/run-and-post-run@fc6503862aba998e2f2123225ad63c09a92ed46e # v1.4.0
       with:
         post: >
