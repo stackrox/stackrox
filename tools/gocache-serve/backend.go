@@ -86,6 +86,15 @@ func storageAccountForRegion(region string) string {
 	}
 }
 
+// containerFromEnv returns the blob container name, overridable for
+// A/B experiments (fresh containers = identical cold-start state).
+func containerFromEnv() string {
+	if c := os.Getenv("GOCACHE_SERVE_CONTAINER"); c != "" {
+		return c
+	}
+	return "ci-gocache"
+}
+
 func newAzureBackend() (*AzureBackend, error) {
 	// Use explicitly-set account, or detect from runner region
 	account := os.Getenv("AZURE_STORAGE_ACCOUNT")
@@ -99,7 +108,7 @@ func newAzureBackend() (*AzureBackend, error) {
 	}
 	b := &AzureBackend{
 		account:      account,
-		container:    "ci-gocache",
+		container:    containerFromEnv(),
 		tenantID:     os.Getenv("AZURE_TENANT_ID"),
 		clientID:     os.Getenv("AZURE_CLIENT_ID"),
 		clientSecret: os.Getenv("AZURE_CLIENT_SECRET"),

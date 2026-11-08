@@ -18,6 +18,23 @@ on:
     branches:
       - davdhacs/azure-gocache-prototype
   workflow_dispatch:
+    inputs:
+      backends:
+        description: 'Comma-separated backends to run (default: all)'
+        default: 'azure,gcs,s3,prefetch,cacheprog'
+        type: string
+      container:
+        description: 'Blob container for cacheprog backend (A/B experiments)'
+        default: 'ci-gocache'
+        type: string
+      storage_account:
+        description: 'Pin storage account (empty = region auto-detect)'
+        default: ''
+        type: string
+      wait_concurrent:
+        description: 'GOCACHE_SERVE_WAIT_FOR_CONCURRENT (-1=lease default, 0=off)'
+        default: '-1'
+        type: string
 
 permissions:
   contents: read
@@ -35,6 +52,8 @@ jobs:
         workload: [lint, cli, unittests]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    # Backend filter for dispatch-driven experiments (push runs execute all)
+    if: ${{ github.event_name != 'workflow_dispatch' || contains(inputs.backends, matrix.backend) }}
     name: cg-${{ matrix.workload }}-${{ matrix.backend }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -68,6 +87,11 @@ jobs:
             echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_MANIFEST=${{ matrix.workload }}" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_CONTAINER=${{ inputs.container || 'ci-gocache' }}" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=${{ inputs.wait_concurrent || '-1' }}" >> "$GITHUB_ENV"
+            if [ -n "${{ inputs.storage_account }}" ]; then
+              echo "AZURE_STORAGE_ACCOUNT=${{ inputs.storage_account }}" >> "$GITHUB_ENV"
+            fi
             # Cache entries are ALWAYS uploaded (even from PRs — different
             # ActionIDs coexist harmlessly and become useful after merge).
             # Manifests are master-only by default; PRs read but don't write.
