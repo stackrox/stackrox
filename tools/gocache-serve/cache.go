@@ -70,6 +70,11 @@ type Manifest struct {
 	mu      sync.Mutex
 	entries []string
 	jobName string
+	// readOnly: if true, Upload() is a no-op. PR runs set this so they
+	// benefit from the master manifest's prefetch without overwriting
+	// the canonical working set with PR-specific entries (which produce
+	// different ActionIDs due to different source content).
+	readOnly bool
 }
 
 func NewManifest(jobName string) *Manifest {
@@ -86,7 +91,7 @@ func (m *Manifest) Record(actionID string) {
 }
 
 func (m *Manifest) Upload(backend Backend) error {
-	if m == nil || m.jobName == "" || len(m.entries) == 0 {
+	if m == nil || m.jobName == "" || len(m.entries) == 0 || m.readOnly {
 		return nil
 	}
 	m.mu.Lock()

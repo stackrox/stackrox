@@ -25,10 +25,10 @@ type Backend interface {
 // NoopBackend does nothing (for protocol testing)
 type NoopBackend struct{}
 
-func (n *NoopBackend) Get(string) ([]byte, error)     { return nil, nil }
-func (n *NoopBackend) Put(string, []byte) error       { return nil }
-func (n *NoopBackend) ListKeys() ([]string, error)    { return nil, nil }
-func (n *NoopBackend) Close() error                   { return nil }
+func (n *NoopBackend) Get(string) ([]byte, error)  { return nil, nil }
+func (n *NoopBackend) Put(string, []byte) error    { return nil }
+func (n *NoopBackend) ListKeys() ([]string, error) { return nil, nil }
+func (n *NoopBackend) Close() error                { return nil }
 
 // AzureBackend talks directly to Azure Blob Storage via REST API.
 // Zero dependencies — uses net/http with SPN OAuth for auth.

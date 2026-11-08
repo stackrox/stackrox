@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -44,6 +45,15 @@ type Response struct {
 	DiskPath      string     `json:",omitempty"`
 }
 
+func envInt(name string, def int) int {
+	if v := os.Getenv(name); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
+
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 	log.SetPrefix("gocache-serve: ")
@@ -68,6 +78,11 @@ func main() {
 
 	jobName := os.Getenv("GOCACHE_SERVE_MANIFEST")
 	manifest := NewManifest(jobName)
+	// Read-only for PR runs (don't pollute the master working set);
+	// testable via GOCACHE_SERVE_MANIFEST_WRITE=0.
+	if os.Getenv("GOCACHE_SERVE_MANIFEST_WRITE") == "0" {
+		manifest.readOnly = true
+	}
 
 	// Prefetch from manifest (see bundle.go for BundledBackend)
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
@@ -140,6 +155,8 @@ func main() {
 
 	// Concurrency limit: adaptive by default (self-tunes via AIMD),
 	// or fixed via GOCACHE_SERVE_CONCURRENCY=N (for testing).
+	waitForConcurrent := envInt("GOCACHE_SERVE_WAIT_FOR_CONCURRENT", 1500) // ms; 0 disables
+	var concurrentHits int64
 	var writeMu sync.Mutex
 	var wg sync.WaitGroup
 
@@ -200,10 +217,14 @@ func main() {
 				netStats = fmt.Sprintf(" GET: %d bytes in %dms (%.1f MB/s)",
 					getBytes, getNs/1e6, getMBps)
 			}
-			log.Printf("closing: %d gets (%d hits, %.1f%%), %d puts, elapsed %v%s",
+			var concurrentStats string
+			if n := atomic.LoadInt64(&concurrentHits); n > 0 {
+				concurrentStats = fmt.Sprintf(", %d concurrent hits (leader-shared)", n)
+			}
+			log.Printf("closing: %d gets (%d hits, %.1f%%), %d puts, elapsed %v%s%s",
 				atomic.LoadInt64(&totalGets), atomic.LoadInt64(&totalHits),
 				float64(atomic.LoadInt64(&totalHits))/float64(atomic.LoadInt64(&totalGets)+1)*100,
-				atomic.LoadInt64(&totalPuts), elapsed.Round(time.Millisecond), netStats)
+				atomic.LoadInt64(&totalPuts), elapsed.Round(time.Millisecond), netStats, concurrentStats)
 			// Send close response
 			writeMu.Lock()
 			enc.Encode(Response{ID: req.ID})
@@ -245,7 +266,7 @@ func main() {
 					cloudSem.Acquire()
 				}
 				getStart := time.Now()
-				
+
 				// Timeout: if the fetch takes too long, return Miss so Go
 				// recompiles rather than blocking its critical path. The
 				// recompiled result gets `put` back to the cache (self-healing).
@@ -259,7 +280,7 @@ func main() {
 					body, err := backend.Get(actionID)
 					ch <- getResult{body, err}
 				}()
-				
+
 				var getBody []byte
 				var getErr error
 				timedOut := false
@@ -271,7 +292,7 @@ func main() {
 					getBody, getErr = nil, nil
 					log.Printf("gocache-serve: get %s timed out after %v (returning miss)", shortID(actionID), timeout)
 				}
-				
+
 				getDur := time.Since(getStart)
 				if cloudSem != nil {
 					cloudSem.Release(getDur)
@@ -287,8 +308,44 @@ func main() {
 					break
 				}
 				if getBody == nil {
-					resp.Miss = true
-					break
+					// Miss — but another concurrent runner might be uploading
+					// this entry right now. Wait briefly and re-check before
+					// giving up and letting Go recompile (which costs 30-60s
+					// for a typical package vs 2-3s of wait). This implements
+					// "lead of the pack helps others catch up" — the first
+					// runner to compile a package shares it with the rest.
+					if waitForConcurrent > 0 {
+						for retry := 1; retry <= 3; retry++ {
+							time.Sleep(time.Duration(waitForConcurrent) * time.Millisecond)
+							if cloudSem != nil {
+								cloudSem.Acquire()
+							}
+							retryStart := time.Now()
+							body, retryErr := backend.Get(actionID)
+							retryDur := time.Since(retryStart)
+							if cloudSem != nil {
+								cloudSem.Release(retryDur)
+							}
+							timeoutTracker.Record(retryDur, false)
+							if retryErr == nil && body != nil {
+								// Another runner delivered while we waited
+								atomic.AddInt64(&concurrentHits, 1)
+								log.Printf("gocache-serve: concurrent hit for %s after %dms wait (retry %d)",
+									shortID(actionID), retry*waitForConcurrent, retry)
+								getBody = body
+								getErr = nil
+								atomic.AddInt64(&getBytes, int64(len(getBody)))
+								break
+							}
+						}
+						if getBody == nil {
+							resp.Miss = true
+							break
+						}
+					} else {
+						resp.Miss = true
+						break
+					}
 				}
 				atomic.AddInt64(&getBytes, int64(len(getBody)))
 				path, putErr := local.Put(actionID, req.ActionID, getBody)

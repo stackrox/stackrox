@@ -21,10 +21,11 @@ import (
 // cross-region (~250ms normal, ~750ms timeout) vs degraded network.
 //
 // Configuration (env vars):
-//   GOCACHE_SERVE_TIMEOUT      fixed timeout in ms (0 = adaptive)
-//   GOCACHE_SERVE_TIMEOUT_MULT adaptive multiplier (default 3.0)
-//   GOCACHE_SERVE_TIMEOUT_MIN  minimum timeout in ms (default 100)
-//   GOCACHE_SERVE_TIMEOUT_MAX  maximum timeout in ms (default 5000)
+//
+//	GOCACHE_SERVE_TIMEOUT      fixed timeout in ms (0 = adaptive)
+//	GOCACHE_SERVE_TIMEOUT_MULT adaptive multiplier (default 3.0)
+//	GOCACHE_SERVE_TIMEOUT_MIN  minimum timeout in ms (default 100)
+//	GOCACHE_SERVE_TIMEOUT_MAX  maximum timeout in ms (default 5000)
 type TimeoutTracker struct {
 	mu        sync.Mutex
 	latencies []time.Duration

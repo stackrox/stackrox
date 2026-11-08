@@ -107,6 +107,7 @@ type BundledBackend struct {
 	pendingBytes   int64 // total serialized size estimate
 	maxEntries     int
 	maxSize        int64
+	flushTimeout   time.Duration // max wait before a partial bundle is uploaded
 	bundleSeq      int64
 
 	// Download bundle cache: bundle key → parsed entries
@@ -121,11 +122,12 @@ type BundledBackend struct {
 
 func NewBundledBackend(inner Backend, maxEntries int, maxSize int64) (*BundledBackend, error) {
 	bb := &BundledBackend{
-		inner:       inner,
-		index:       make(map[string]string),
-		maxEntries:  maxEntries,
-		maxSize:     maxSize,
-		bundleCache: make(map[string][]BundleEntry),
+		inner:        inner,
+		index:        make(map[string]string),
+		maxEntries:   maxEntries,
+		maxSize:      maxSize,
+		flushTimeout: 5 * time.Second,
+		bundleCache:  make(map[string][]BundleEntry),
 	}
 
 	// Load existing bundle index from cloud
@@ -214,6 +216,19 @@ func (bb *BundledBackend) Put(actionID string, body []byte) error {
 
 	if len(bb.pendingEntries) >= bb.maxEntries || bb.pendingSize >= bb.maxSize {
 		return bb.flushBundle()
+	}
+
+	// If this is the first entry in a new bundle, start a flush timer.
+	// This ensures entries become visible to concurrent jobs within
+	// flushTimeout, even if the bundle never fills.
+	if len(bb.pendingEntries) == 1 {
+		time.AfterFunc(bb.flushTimeout, func() {
+			bb.uploadMu.Lock()
+			defer bb.uploadMu.Unlock()
+			if len(bb.pendingEntries) > 0 && len(bb.pendingEntries) < bb.maxEntries {
+				bb.flushBundle()
+			}
+		})
 	}
 	return nil
 }

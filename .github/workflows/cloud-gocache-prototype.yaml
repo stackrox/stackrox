@@ -68,7 +68,17 @@ jobs:
             echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_MANIFEST=${{ matrix.workload }}" >> "$GITHUB_ENV"
-            echo "gocache-serve ready (binary at /usr/local/bin/gocache-serve, backend=azure, manifest=${{ matrix.workload }})"
+            # Cache entries are ALWAYS uploaded (even from PRs — different
+            # ActionIDs coexist harmlessly and become useful after merge).
+            # Manifests are master-only by default; PRs read but don't write.
+            # For this test workflow we enable manifest writes in PRs so
+            # the prefetch can be exercised across runs.
+            if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ vars.GOCACHE_TEST_MANIFEST_WRITE }}" != "1" ]; then
+              echo "GOCACHE_SERVE_MANIFEST_WRITE=0" >> "$GITHUB_ENV"
+              echo "gocache-serve: manifest=${{ matrix.workload }} (read-only, PR)"
+            else
+              echo "gocache-serve: manifest=${{ matrix.workload }} (read+write)"
+            fi
           else
             scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount
             # Verify the overlay directory exists and is writable
