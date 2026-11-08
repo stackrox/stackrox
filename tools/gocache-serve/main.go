@@ -134,8 +134,32 @@ func main() {
 	// The protocol allows responses in any order. Writes to stdout are
 	// serialized via writeMu; reads from stdin happen only in the main
 	// goroutine (PUT bodies are read before dispatch).
+	//
+	// Timeout tracker: adaptive by default (P95-based), configurable via env
+	timeoutTracker := NewTimeoutTracker()
+
+	// Concurrency limit: adaptive by default (self-tunes via AIMD),
+	// or fixed via GOCACHE_SERVE_CONCURRENCY=N (for testing).
 	var writeMu sync.Mutex
 	var wg sync.WaitGroup
+
+	var cloudSem *AdaptiveSem
+	switch n := os.Getenv("GOCACHE_SERVE_CONCURRENCY"); {
+	case n == "" || n == "auto":
+		// Adaptive: start at 2, max 64, self-tunes based on latency
+		cloudSem = NewAdaptiveSem(2, 64)
+		log.Printf("gocache-serve: adaptive cloud GET concurrency (2-64)")
+	case n == "0":
+		// Unlimited
+		cloudSem = nil
+	default:
+		// Fixed limit
+		var limit int
+		if _, err := fmt.Sscanf(n, "%d", &limit); err == nil && limit > 0 {
+			cloudSem = NewAdaptiveSem(limit, limit)
+			log.Printf("gocache-serve: fixed cloud GET concurrency: %d", limit)
+		}
+	}
 
 	for {
 		var req Request
@@ -217,21 +241,58 @@ func main() {
 				}
 
 				// Cloud fetch (this is the slow path — benefits from concurrency)
+				if cloudSem != nil {
+					cloudSem.Acquire()
+				}
 				getStart := time.Now()
-				body, err = backend.Get(actionID)
-				getDur := time.Since(getStart).Nanoseconds()
-				atomic.AddInt64(&getNs, getDur)
-				if err != nil {
+				
+				// Timeout: if the fetch takes too long, return Miss so Go
+				// recompiles rather than blocking its critical path. The
+				// recompiled result gets `put` back to the cache (self-healing).
+				timeout := timeoutTracker.Timeout()
+				type getResult struct {
+					body []byte
+					err  error
+				}
+				ch := make(chan getResult, 1)
+				go func() {
+					body, err := backend.Get(actionID)
+					ch <- getResult{body, err}
+				}()
+				
+				var getBody []byte
+				var getErr error
+				timedOut := false
+				select {
+				case r := <-ch:
+					getBody, getErr = r.body, r.err
+				case <-time.After(timeout):
+					timedOut = true
+					getBody, getErr = nil, nil
+					log.Printf("gocache-serve: get %s timed out after %v (returning miss)", shortID(actionID), timeout)
+				}
+				
+				getDur := time.Since(getStart)
+				if cloudSem != nil {
+					cloudSem.Release(getDur)
+				}
+				timeoutTracker.Record(getDur, timedOut)
+				atomic.AddInt64(&getNs, getDur.Nanoseconds())
+				if timedOut {
 					resp.Miss = true
 					break
 				}
-				if body == nil {
+				if getErr != nil {
 					resp.Miss = true
 					break
 				}
-				atomic.AddInt64(&getBytes, int64(len(body)))
-				path, err := local.Put(actionID, req.ActionID, body)
-				if err != nil {
+				if getBody == nil {
+					resp.Miss = true
+					break
+				}
+				atomic.AddInt64(&getBytes, int64(len(getBody)))
+				path, putErr := local.Put(actionID, req.ActionID, getBody)
+				if putErr != nil {
 					resp.Err = fmt.Sprintf("local put: %v", err)
 					break
 				}
