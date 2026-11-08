@@ -83,17 +83,27 @@ func (lc *LocalCache) path(actionID string) string {
 	return filepath.Join(lc.dir, actionID[:2], actionID[2:])
 }
 
-func (lc *LocalCache) Get(actionID string) ([]byte, error) {
-	lc.mu.RLock()
-	defer lc.mu.RUnlock()
-	data, err := os.ReadFile(lc.path(actionID))
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	return data, err
+func (lc *LocalCache) metaPath(actionID string) string {
+	return lc.path(actionID) + ".meta"
 }
 
-func (lc *LocalCache) Put(actionID string, body []byte) (string, error) {
+func (lc *LocalCache) Get(actionID string) ([]byte, []byte, error) {
+	// returns (body, outputID, error); outputID is nil on miss
+	lc.mu.RLock()
+	defer lc.mu.RUnlock()
+	body, err := os.ReadFile(lc.path(actionID))
+	if os.IsNotExist(err) {
+		return nil, nil, nil
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	// Read the stored OutputID from the sidecar metadata file
+	outputID, _ := os.ReadFile(lc.metaPath(actionID))
+	return body, outputID, nil
+}
+
+func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error) {
 	lc.mu.Lock()
 	defer lc.mu.Unlock()
 	p := lc.path(actionID)
@@ -102,6 +112,12 @@ func (lc *LocalCache) Put(actionID string, body []byte) (string, error) {
 	}
 	if err := os.WriteFile(p, body, 0o644); err != nil {
 		return "", err
+	}
+	// Store the OutputID in a sidecar file so we can return it on get
+	if len(outputID) > 0 {
+		if err := os.WriteFile(lc.metaPath(actionID), outputID, 0o644); err != nil {
+			return "", err
+		}
 	}
 	return p, nil
 }
@@ -247,7 +263,7 @@ func main() {
 			actionID := fmt.Sprintf("%x", req.ActionID)
 
 			// Try local disk first
-			body, err := local.Get(actionID)
+			body, storedOutputID, err := local.Get(actionID)
 			if err != nil {
 				resp.Err = fmt.Sprintf("local get: %v", err)
 				break
@@ -258,14 +274,14 @@ func main() {
 				totalHits++
 				resp.DiskPath = local.path(actionID)
 				resp.Size = int64(len(body))
-				resp.OutputID = req.ActionID // echo back what we know
+				resp.OutputID = storedOutputID
 				break
 			}
 
 			// Try cloud
 			body, err = backend.Get(actionID)
 			if err != nil {
-				log.Printf("cloud get %s: %v", actionID[:8], err)
+				log.Printf("cloud get %s: %v", shortID(actionID), err)
 				resp.Miss = true
 				break
 			}
@@ -276,7 +292,9 @@ func main() {
 			}
 
 			// Cloud hit — download to local for future access
-			path, err := local.Put(actionID, body)
+			// We don't have the OutputID from cloud (stored as body only);
+			// return the ActionID as a fallback (Go will verify via checksum)
+			path, err := local.Put(actionID, req.ActionID, body)
 			if err != nil {
 				resp.Err = fmt.Sprintf("local put after cloud get: %v", err)
 				break
@@ -306,8 +324,8 @@ func main() {
 				}
 			}
 
-			// Write to local disk
-			path, err := local.Put(actionID, body)
+			// Write to local disk (store both body and OutputID)
+			path, err := local.Put(actionID, req.OutputID, body)
 			if err != nil {
 				resp.Err = fmt.Sprintf("local put: %v", err)
 				break
