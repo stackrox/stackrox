@@ -108,11 +108,12 @@ func (lc *LocalCache) Put(actionID string, body []byte) (string, error) {
 
 // Async uploader: queues puts and uploads to cloud in background
 type AsyncUploader struct {
-	backend Backend
-	ch      chan uploadJob
-	wg      sync.WaitGroup
-	done    chan struct{}
-	stats   UploadStats
+	backend   Backend
+	ch        chan uploadJob
+	wg        sync.WaitGroup
+	done      chan struct{}
+	flushOnce sync.Once
+	stats     UploadStats
 }
 
 type uploadJob struct {
@@ -175,12 +176,14 @@ func (au *AsyncUploader) Queue(actionID string, body []byte) {
 }
 
 func (au *AsyncUploader) Flush() {
-	close(au.done)
-	au.wg.Wait()
-	au.stats.mu.Lock()
-	defer au.stats.mu.Unlock()
-	log.Printf("gocache-serve: uploads: %d ok, %d failed, %d bytes",
-		au.stats.uploaded, au.stats.failed, au.stats.bytesSent)
+	au.flushOnce.Do(func() {
+		close(au.done)
+		au.wg.Wait()
+		au.stats.mu.Lock()
+		defer au.stats.mu.Unlock()
+		log.Printf("gocache-serve: uploads: %d ok, %d failed, %d bytes",
+			au.stats.uploaded, au.stats.failed, au.stats.bytesSent)
+	})
 }
 
 func main() {
