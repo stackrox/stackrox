@@ -190,20 +190,17 @@ func (lm *LeaseManager) HolderIsFresh(actionID string) bool {
 	return time.Since(time.UnixMilli(lb.TS)) <= lm.ttl
 }
 
-// Release removes the lease for actionID, called after the entry upload
-// succeeds. Unconditional by design: once the entry exists in the cloud,
-// the lease is unreachable garbage (the lease path is only entered from a
-// cloud miss, and there are no miss-followers once the entry exists), so
-// whoever's marker the blob carries — ours, a thief's, or a crashed
-// leader's — deleting it is pure cleanup. The follower-thief's own later
-// release is a harmless 404.
+// Release drops our in-memory bookkeeping for actionID, called after the
+// entry upload succeeds. The lease blob itself is NOT deleted per-entry:
+// the upload path is latency-sensitive (followers wait on it), and the
+// blob is unreachable garbage once the entry exists (the lease path is
+// only entered from a cloud miss). Lease blobs are GC'd server-side by a
+// storage lifecycle rule that deletes lease-* blobs after one day —
+// which also covers orphans from crashed leaders that per-entry deletes
+// would miss.
 func (lm *LeaseManager) Release(actionID string) {
 	lm.mu.Lock()
 	delete(lm.held, actionID)
 	delete(lm.acquired, actionID)
 	lm.mu.Unlock()
-	if err := lm.backend.DeleteKey(leaseKey(actionID)); err != nil {
-		log.Printf("gocache-serve: lease release for %s failed (TTL will expire it): %v",
-			shortID(actionID), err)
-	}
 }

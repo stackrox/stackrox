@@ -19,7 +19,6 @@ type Backend interface {
 	Get(actionID string) ([]byte, error) // nil, nil = not found
 	Put(actionID string, body []byte) error
 	PutIfNotExist(actionID string, body []byte) (bool, error) // atomic; false = exists
-	DeleteKey(actionID string) error                          // not-found is not an error
 	ListKeys() ([]string, error)                              // list all blob keys in the container
 	Close() error
 }
@@ -30,7 +29,6 @@ type NoopBackend struct{}
 func (n *NoopBackend) Get(string) ([]byte, error)                 { return nil, nil }
 func (n *NoopBackend) Put(string, []byte) error                   { return nil }
 func (n *NoopBackend) PutIfNotExist(string, []byte) (bool, error) { return true, nil }
-func (n *NoopBackend) DeleteKey(string) error                     { return nil }
 func (n *NoopBackend) ListKeys() ([]string, error)                { return nil, nil }
 func (n *NoopBackend) Close() error                               { return nil }
 
@@ -241,31 +239,10 @@ func (a *AzureBackend) PutIfNotExist(actionID string, body []byte) (bool, error)
 	return false, fmt.Errorf("PUT-if-none-match %s: HTTP %d", shortID(actionID), resp.StatusCode)
 }
 
-// DeleteKey removes a blob, ignoring not-found. Best-effort: failures are
-// returned but callers may log-and-continue (leases expire via TTL anyway).
-func (a *AzureBackend) DeleteKey(actionID string) error {
-	token, err := a.getToken()
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequest("DELETE", a.blobURL(actionID), nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("x-ms-version", "2023-11-03")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusAccepted || resp.StatusCode == http.StatusNotFound {
-		return nil
-	}
-	return fmt.Errorf("DELETE %s: HTTP %d", shortID(actionID), resp.StatusCode)
-}
+// DeleteKey is intentionally NOT used for lease release: deleting the lease
+// right after an entry upload would let late missers (whose GET raced the
+// upload) acquire and recompile redundantly instead of waiting-and-hitting.
+// Lease blobs are GC'd server-side by a lifecycle rule (see lease.go).
 
 // ListKeys returns all blob names in the container (paginated).
 func (a *AzureBackend) ListKeys() ([]string, error) {
