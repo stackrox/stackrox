@@ -190,29 +190,18 @@ func (lm *LeaseManager) HolderIsFresh(actionID string) bool {
 	return time.Since(time.UnixMilli(lb.TS)) <= lm.ttl
 }
 
-// Release drops our lease for actionID. Called after the entry upload
-// succeeds. Best-effort: a failed delete just costs followers their
-// remaining wait, and the lease expires via TTL regardless.
-// The lease is only deleted if it still carries our runnerID — if the
-// lease was stolen from us (we overran the TTL), the current holder's
-// marker is left alone. Note the entry upload itself is the authoritative
-// signal: once the entry exists in the cloud, the marker no longer
-// matters, so a mis-timed release can only cause bounded redundant work.
+// Release removes the lease for actionID, called after the entry upload
+// succeeds. Unconditional by design: once the entry exists in the cloud,
+// the lease is unreachable garbage (the lease path is only entered from a
+// cloud miss, and there are no miss-followers once the entry exists), so
+// whoever's marker the blob carries — ours, a thief's, or a crashed
+// leader's — deleting it is pure cleanup. The follower-thief's own later
+// release is a harmless 404.
 func (lm *LeaseManager) Release(actionID string) {
 	lm.mu.Lock()
-	ours := lm.held[actionID]
 	delete(lm.held, actionID)
 	delete(lm.acquired, actionID)
 	lm.mu.Unlock()
-	if !ours {
-		return
-	}
-	if data, err := lm.backend.Get(leaseKey(actionID)); err == nil && data != nil {
-		var lb leaseBody
-		if json.Unmarshal(data, &lb) == nil && lb.Runner != lm.runnerID {
-			return // stolen from us; current holder keeps its marker
-		}
-	}
 	if err := lm.backend.DeleteKey(leaseKey(actionID)); err != nil {
 		log.Printf("gocache-serve: lease release for %s failed (TTL will expire it): %v",
 			shortID(actionID), err)
