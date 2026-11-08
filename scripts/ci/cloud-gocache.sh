@@ -183,7 +183,9 @@ EOF
     sudo mount -t overlay overlay \
         -o "lowerdir=$RO_DIR,upperdir=$UPPER_DIR,workdir=$WORK_DIR" \
         "$OVERLAY_DIR"
-
+    # The overlayfs mount is root-owned (created by sudo mount). Fix
+    # ownership so the runner user can create cache subdirectories.
+    sudo chown -R "$(id -u):$(id -g)" "$OVERLAY_DIR" "$UPPER_DIR" "$WORK_DIR"
     echo "GOCACHE=${OVERLAY_DIR}"
 }
 
