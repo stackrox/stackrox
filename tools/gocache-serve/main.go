@@ -171,6 +171,7 @@ func main() {
 	if waitForConcurrent != 0 {
 		leaseMgr = NewLeaseManager(backend, leaseTTL)
 		uploader.onUploaded = leaseMgr.Release // release after entry lands in cloud
+		defer leaseMgr.Stop()                  // stop the renewal sweeper at exit
 	}
 	var writeMu sync.Mutex
 	var wg sync.WaitGroup
