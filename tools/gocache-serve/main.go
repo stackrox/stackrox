@@ -30,6 +30,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -224,6 +225,48 @@ func main() {
 
 	uploader := NewAsyncUploader(backend, 4)
 	defer uploader.Flush()
+
+	// Prefetch: list the bucket and start background downloads.
+	// This warms the local cache before Go sends its first get request,
+	// eliminating per-request cloud latency for entries that exist.
+	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" {
+		go func() {
+			start := time.Now()
+			keys, err := backend.ListKeys()
+			if err != nil {
+				log.Printf("gocache-serve: prefetch list failed: %v", err)
+				return
+			}
+			log.Printf("gocache-serve: prefetching %d entries from cloud...", len(keys))
+
+			sem := make(chan struct{}, 16) // 16 concurrent downloads
+			var wg sync.WaitGroup
+			var downloaded int64
+			for _, key := range keys {
+				wg.Add(1)
+				go func(key string) {
+					defer wg.Done()
+					sem <- struct{}{}
+					defer func() { <-sem }()
+
+					// Skip if already in local cache
+					if _, _, err := local.Get(key); err == nil {
+						return
+					}
+
+					body, err := backend.Get(key)
+					if err != nil || body == nil {
+						return
+					}
+					local.Put(key, nil, body) // no OutputID for prefetch
+					atomic.AddInt64(&downloaded, 1)
+				}(key)
+			}
+			wg.Wait()
+			log.Printf("gocache-serve: prefetch complete: %d/%d entries in %v",
+				atomic.LoadInt64(&downloaded), len(keys), time.Since(start).Round(time.Millisecond))
+		}()
+	}
 
 	// Protocol: send capabilities first
 	stdout := bufio.NewWriter(os.Stdout)

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,15 +17,17 @@ import (
 type Backend interface {
 	Get(actionID string) ([]byte, error) // nil, nil = not found
 	Put(actionID string, body []byte) error
+	ListKeys() ([]string, error) // list all blob keys in the container
 	Close() error
 }
 
 // NoopBackend does nothing (for protocol testing)
 type NoopBackend struct{}
 
-func (n *NoopBackend) Get(string) ([]byte, error)    { return nil, nil }
-func (n *NoopBackend) Put(string, []byte) error      { return nil }
-func (n *NoopBackend) Close() error                  { return nil }
+func (n *NoopBackend) Get(string) ([]byte, error)     { return nil, nil }
+func (n *NoopBackend) Put(string, []byte) error       { return nil }
+func (n *NoopBackend) ListKeys() ([]string, error)    { return nil, nil }
+func (n *NoopBackend) Close() error                   { return nil }
 
 // AzureBackend talks directly to Azure Blob Storage via REST API.
 // Zero dependencies — uses net/http with SPN OAuth for auth.
@@ -35,9 +38,9 @@ type AzureBackend struct {
 	clientID     string
 	clientSecret string
 
-	tokenMu   sync.Mutex
-	token     string
-	tokenExp  time.Time
+	tokenMu  sync.Mutex
+	token    string
+	tokenExp time.Time
 
 	client *http.Client
 }
@@ -61,8 +64,12 @@ func newAzureBackend() (*AzureBackend, error) {
 	return b, nil
 }
 
+func (a *AzureBackend) containerURL() string {
+	return fmt.Sprintf("https://%s.blob.core.windows.net/%s", a.account, a.container)
+}
+
 func (a *AzureBackend) blobURL(actionID string) string {
-	return fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s", a.account, a.container, actionID)
+	return fmt.Sprintf("%s/%s", a.containerURL(), actionID)
 }
 
 // getToken fetches an OAuth token via client credentials, cached until expiry.
@@ -151,6 +158,56 @@ func (a *AzureBackend) Put(actionID string, body []byte) error {
 		return fmt.Errorf("PUT %s: HTTP %d", shortID(actionID), resp.StatusCode)
 	}
 	return nil
+}
+
+// ListKeys returns all blob names in the container (paginated).
+func (a *AzureBackend) ListKeys() ([]string, error) {
+	token, err := a.getToken()
+	if err != nil {
+		return nil, err
+	}
+
+	var keys []string
+	marker := ""
+	for {
+		url := a.containerURL() + "?restype=container&comp=list&maxresults=5000"
+		if marker != "" {
+			url += "&marker=" + marker
+		}
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("x-ms-version", "2023-11-03")
+
+		resp, err := a.client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("list: HTTP %d", resp.StatusCode)
+		}
+
+		var listResp struct {
+			Blobs []struct {
+				Name string `xml:"Name"`
+			} `xml:"Blobs>Blob"`
+			NextMarker string `xml:"NextMarker"`
+		}
+		if err := xml.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+			return nil, fmt.Errorf("list decode: %w", err)
+		}
+		for _, b := range listResp.Blobs {
+			keys = append(keys, b.Name)
+		}
+		if listResp.NextMarker == "" {
+			break
+		}
+		marker = listResp.NextMarker
+	}
+	return keys, nil
 }
 
 func (a *AzureBackend) Close() error { return nil }
