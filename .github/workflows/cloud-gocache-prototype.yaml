@@ -68,7 +68,8 @@ jobs:
             (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
             echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
-            echo "gocache-serve ready (binary at /usr/local/bin/gocache-serve, backend=azure)"
+            echo "GOCACHE_SERVE_MANIFEST=${{ matrix.workload }}" >> "$GITHUB_ENV"
+            echo "gocache-serve ready (binary at /usr/local/bin/gocache-serve, backend=azure, manifest=${{ matrix.workload }})"
           else
             scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount
             # Verify the overlay directory exists and is writable

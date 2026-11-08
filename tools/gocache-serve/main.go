@@ -29,6 +29,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -61,6 +62,61 @@ type Response struct {
 	Size          int64      `json:",omitempty"`
 	Time          *time.Time `json:",omitempty"`
 	DiskPath      string     `json:",omitempty"`
+}
+
+// Manifest tracks which cache entries a job actually uses, in request order.
+// Uploaded to cloud on close; downloaded on startup to order the prefetch.
+type Manifest struct {
+	mu      sync.Mutex
+	entries []string
+	jobName string
+}
+
+func NewManifest(jobName string) *Manifest {
+	return &Manifest{jobName: jobName}
+}
+
+func (m *Manifest) Record(actionID string) {
+	if m == nil || m.jobName == "" {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.entries = append(m.entries, actionID)
+}
+
+func (m *Manifest) Upload(backend Backend) error {
+	if m == nil || m.jobName == "" || len(m.entries) == 0 {
+		return nil
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	data := []byte(strings.Join(m.entries, "\n"))
+	return backend.Put("manifest-"+m.jobName, data)
+}
+
+// DownloadManifest fetches the recorded entry list for a job type.
+// Returns nil (no error) if no manifest exists yet.
+func DownloadManifest(backend Backend, jobName string) ([]string, error) {
+	if jobName == "" {
+		return nil, nil
+	}
+	data, err := backend.Get("manifest-" + jobName)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, nil // no manifest yet
+	}
+	entries := strings.Split(strings.TrimSpace(string(data)), "\n")
+	// Filter empty lines
+	var result []string
+	for _, e := range entries {
+		if e != "" {
+			result = append(result, e)
+		}
+	}
+	return result, nil
 }
 
 // Local disk cache manager
@@ -226,23 +282,49 @@ func main() {
 	uploader := NewAsyncUploader(backend, 4)
 	defer uploader.Flush()
 
-	// Prefetch: list the bucket and start background downloads.
-	// This warms the local cache before Go sends its first get request,
-	// eliminating per-request cloud latency for entries that exist.
+	// Manifest: tracks which entries this job uses, in request order.
+	// On startup, downloads the previous run's manifest to order the prefetch.
+	// On close, uploads the updated manifest for future runs.
+	jobName := os.Getenv("GOCACHE_SERVE_MANIFEST")
+	manifest := NewManifest(jobName)
+
+	// Prefetch: use the manifest if available (entries in optimal order),
+	// otherwise fall back to listing all keys in the bucket.
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" {
 		go func() {
 			start := time.Now()
-			keys, err := backend.ListKeys()
-			if err != nil {
-				log.Printf("gocache-serve: prefetch list failed: %v", err)
-				return
+
+			// Try manifest first (entries in the order this job type needs them)
+			var keys []string
+			if jobName != "" {
+				manifestKeys, err := DownloadManifest(backend, jobName)
+				if err != nil {
+					log.Printf("gocache-serve: manifest download failed: %v", err)
+				} else if len(manifestKeys) > 0 {
+					keys = manifestKeys
+					log.Printf("gocache-serve: using manifest '%s' (%d entries)", jobName, len(keys))
+				}
 			}
-			log.Printf("gocache-serve: prefetching %d entries from cloud...", len(keys))
+
+			// Fall back to listing all keys if no manifest
+			if len(keys) == 0 {
+				var err error
+				keys, err = backend.ListKeys()
+				if err != nil {
+					log.Printf("gocache-serve: prefetch list failed: %v", err)
+					return
+				}
+				log.Printf("gocache-serve: prefetching %d entries from cloud (no manifest)...", len(keys))
+			}
 
 			sem := make(chan struct{}, 16) // 16 concurrent downloads
 			var wg sync.WaitGroup
 			var downloaded int64
 			for _, key := range keys {
+				// Skip manifest metadata blobs
+				if strings.HasPrefix(key, "manifest-") {
+					continue
+				}
 				wg.Add(1)
 				go func(key string) {
 					defer wg.Done()
@@ -319,6 +401,7 @@ func main() {
 				resp.DiskPath = local.path(actionID)
 				resp.Size = int64(len(body))
 				resp.OutputID = storedOutputID
+				manifest.Record(actionID)
 				break
 			}
 
@@ -388,6 +471,12 @@ func main() {
 		case CmdClose:
 			// Flush pending uploads and exit
 			uploader.Flush()
+
+			// Upload the manifest for this job type
+			if err := manifest.Upload(backend); err != nil {
+				log.Printf("gocache-serve: manifest upload failed: %v", err)
+			}
+
 			elapsed := time.Since(startTime)
 
 			// Network performance summary
