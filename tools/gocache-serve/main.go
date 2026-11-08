@@ -155,10 +155,47 @@ func main() {
 
 	// Concurrency limit: adaptive by default (self-tunes via AIMD),
 	// or fixed via GOCACHE_SERVE_CONCURRENCY=N (for testing).
-	waitForConcurrent := envInt("GOCACHE_SERVE_WAIT_FOR_CONCURRENT", 1500) // ms; 0 disables
+	// waitForConcurrent: max total ms a follower waits for the leader's
+	// upload. Default -1 = wait until the lease goes stale (TTL-bounded),
+	// which is the correct shape: after giving up, the follower pays the
+	// full compile time anyway, so waiting while the leader is alive is
+	// nearly always cheaper than duplicating its work. A dead leader is
+	// detected by lease staleness, not by this deadline.
+	// 0 disables lease coordination entirely.
+	waitForConcurrent := envInt("GOCACHE_SERVE_WAIT_FOR_CONCURRENT", -1)
 	var concurrentHits int64
+	var leaseMgr *LeaseManager
+	// Lease TTL must cover the leader's compile + async upload for the
+	// largest package; a too-short TTL risks stealing live work.
+	leaseTTL := time.Duration(envInt("GOCACHE_SERVE_LEASE_TTL_MS", 120000)) * time.Millisecond
+	if waitForConcurrent != 0 {
+		leaseMgr = NewLeaseManager(backend, leaseTTL)
+		uploader.onUploaded = leaseMgr.Release // release after entry lands in cloud
+	}
 	var writeMu sync.Mutex
 	var wg sync.WaitGroup
+
+	// Periodic health ticker: correlates upload backlog with get activity.
+	// If concurrent-hit rates are low on same-region runs, this log shows
+	// whether uploads were saturating the pipe at that moment (queue depth
+	// high while gets slow) or whether something else was the cause.
+	if os.Getenv("GOCACHE_SERVE_HEALTH_TICKER") != "0" {
+		go func() {
+			var lastUploaded, lastGetBytes int64
+			for range time.Tick(10 * time.Second) {
+				up, _, dropped := uploader.Stats()
+				uploadedDelta := up - lastUploaded
+				lastUploaded = up
+				gb := atomic.LoadInt64(&getBytes)
+				getDelta := (gb - lastGetBytes) / 1048576
+				lastGetBytes = gb
+				log.Printf("gocache-serve: health: uploadQ=%d uploads=%d (+%d) dropped=%d gets=%d hits=%d concurrentHits=%d getMB+=%d",
+					uploader.QueueDepth(), up, uploadedDelta, dropped,
+					atomic.LoadInt64(&totalGets), atomic.LoadInt64(&totalHits),
+					atomic.LoadInt64(&concurrentHits), getDelta)
+			}
+		}()
+	}
 
 	var cloudSem *AdaptiveSem
 	switch n := os.Getenv("GOCACHE_SERVE_CONCURRENCY"); {
@@ -308,44 +345,53 @@ func main() {
 					break
 				}
 				if getBody == nil {
-					// Miss — but another concurrent runner might be uploading
-					// this entry right now. Wait briefly and re-check before
-					// giving up and letting Go recompile (which costs 30-60s
-					// for a typical package vs 2-3s of wait). This implements
-					// "lead of the pack helps others catch up" — the first
-					// runner to compile a package shares it with the rest.
-					if waitForConcurrent > 0 {
-						for retry := 1; retry <= 3; retry++ {
-							time.Sleep(time.Duration(waitForConcurrent) * time.Millisecond)
-							if cloudSem != nil {
-								cloudSem.Acquire()
+					if leaseMgr != nil {
+						// Advisory lease: divide compilation among concurrent
+						// runners. The leader compiles immediately (no wait);
+						// followers wait while the leader's lease is fresh.
+						if !leaseMgr.Acquire(actionID) {
+							// Follower budget: TTL-bounded by default (wait
+							// until the lease goes stale), or the explicit
+							// GOCACHE_SERVE_WAIT_FOR_CONCURRENT override.
+							budget := leaseTTL
+							if waitForConcurrent > 0 {
+								budget = time.Duration(waitForConcurrent) * time.Millisecond
 							}
-							retryStart := time.Now()
-							body, retryErr := backend.Get(actionID)
-							retryDur := time.Since(retryStart)
-							if cloudSem != nil {
-								cloudSem.Release(retryDur)
-							}
-							timeoutTracker.Record(retryDur, false)
-							if retryErr == nil && body != nil {
-								// Another runner delivered while we waited
-								atomic.AddInt64(&concurrentHits, 1)
-								log.Printf("gocache-serve: concurrent hit for %s after %dms wait (retry %d)",
-									shortID(actionID), retry*waitForConcurrent, retry)
-								getBody = body
-								getErr = nil
-								atomic.AddInt64(&getBytes, int64(len(getBody)))
-								break
+							waitDeadline := time.Now().Add(budget)
+							for time.Now().Before(waitDeadline) {
+								time.Sleep(1500 * time.Millisecond)
+								if cloudSem != nil {
+									cloudSem.Acquire()
+								}
+								retryStart := time.Now()
+								body, retryErr := backend.Get(actionID)
+								retryDur := time.Since(retryStart)
+								if cloudSem != nil {
+									cloudSem.Release(retryDur)
+								}
+								timeoutTracker.Record(retryDur, false)
+								if retryErr == nil && body != nil {
+									// Leader delivered while we waited
+									atomic.AddInt64(&concurrentHits, 1)
+									log.Printf("gocache-serve: concurrent hit for %s (leader delivered)",
+										shortID(actionID))
+									getBody = body
+									break
+								}
+								// Entry still absent: if the leader's lease went
+								// stale (crash/hang), take over compilation.
+								if !leaseMgr.HolderIsFresh(actionID) && leaseMgr.Acquire(actionID) {
+									log.Printf("gocache-serve: lease for %s expired, taking over",
+										shortID(actionID))
+									break // fall through to Miss — we compile
+								}
 							}
 						}
-						if getBody == nil {
-							resp.Miss = true
-							break
-						}
-					} else {
-						resp.Miss = true
-						break
 					}
+				}
+				if getBody == nil {
+					resp.Miss = true
+					break
 				}
 				atomic.AddInt64(&getBytes, int64(len(getBody)))
 				path, putErr := local.Put(actionID, req.ActionID, getBody)
@@ -370,7 +416,13 @@ func main() {
 				resp.DiskPath = path
 				resp.Size = req.BodySize
 				if len(req.Body) > 0 {
-					uploader.Queue(actionID, req.Body)
+					if leaseMgr != nil && leaseMgr.Holds(actionID) {
+						// Lease-held: followers are waiting for this entry —
+						// priority lane so it reaches the cloud fast.
+						uploader.QueuePri(actionID, req.Body)
+					} else {
+						uploader.Queue(actionID, req.Body)
+					}
 				}
 			}
 

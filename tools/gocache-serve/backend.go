@@ -18,17 +18,21 @@ import (
 type Backend interface {
 	Get(actionID string) ([]byte, error) // nil, nil = not found
 	Put(actionID string, body []byte) error
-	ListKeys() ([]string, error) // list all blob keys in the container
+	PutIfNotExist(actionID string, body []byte) (bool, error) // atomic; false = exists
+	DeleteKey(actionID string) error                          // not-found is not an error
+	ListKeys() ([]string, error)                              // list all blob keys in the container
 	Close() error
 }
 
 // NoopBackend does nothing (for protocol testing)
 type NoopBackend struct{}
 
-func (n *NoopBackend) Get(string) ([]byte, error)  { return nil, nil }
-func (n *NoopBackend) Put(string, []byte) error    { return nil }
-func (n *NoopBackend) ListKeys() ([]string, error) { return nil, nil }
-func (n *NoopBackend) Close() error                { return nil }
+func (n *NoopBackend) Get(string) ([]byte, error)                 { return nil, nil }
+func (n *NoopBackend) Put(string, []byte) error                   { return nil }
+func (n *NoopBackend) PutIfNotExist(string, []byte) (bool, error) { return true, nil }
+func (n *NoopBackend) DeleteKey(string) error                     { return nil }
+func (n *NoopBackend) ListKeys() ([]string, error)                { return nil, nil }
+func (n *NoopBackend) Close() error                               { return nil }
 
 // AzureBackend talks directly to Azure Blob Storage via REST API.
 // Zero dependencies — uses net/http with SPN OAuth for auth.
@@ -203,6 +207,64 @@ func (a *AzureBackend) Put(actionID string, body []byte) error {
 		return fmt.Errorf("PUT %s: HTTP %d", shortID(actionID), resp.StatusCode)
 	}
 	return nil
+}
+
+// PutIfNotExist writes a blob only if it does not already exist (atomic).
+// Returns false if another writer got there first (HTTP 409/412).
+// Used for advisory compilation leases between concurrent runners.
+func (a *AzureBackend) PutIfNotExist(actionID string, body []byte) (bool, error) {
+	token, err := a.getToken()
+	if err != nil {
+		return false, err
+	}
+	req, err := http.NewRequest("PUT", a.blobURL(actionID), bytes.NewReader(body))
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("x-ms-blob-type", "BlockBlob")
+	req.Header.Set("x-ms-version", "2023-11-03")
+	req.Header.Set("If-None-Match", "*") // atomic: fail if blob exists
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusCreated {
+		return true, nil
+	}
+	if resp.StatusCode == http.StatusConflict || resp.StatusCode == http.StatusPreconditionFailed {
+		return false, nil // someone else holds it
+	}
+	return false, fmt.Errorf("PUT-if-none-match %s: HTTP %d", shortID(actionID), resp.StatusCode)
+}
+
+// DeleteKey removes a blob, ignoring not-found. Best-effort: failures are
+// returned but callers may log-and-continue (leases expire via TTL anyway).
+func (a *AzureBackend) DeleteKey(actionID string) error {
+	token, err := a.getToken()
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("DELETE", a.blobURL(actionID), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("x-ms-version", "2023-11-03")
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusAccepted || resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+	return fmt.Errorf("DELETE %s: HTTP %d", shortID(actionID), resp.StatusCode)
 }
 
 // ListKeys returns all blob names in the container (paginated).

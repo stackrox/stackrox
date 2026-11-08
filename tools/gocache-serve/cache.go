@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // Local disk cache manager
@@ -121,13 +122,24 @@ func DownloadManifest(backend Backend, jobName string) ([]string, error) {
 }
 
 // AsyncUploader queues puts and uploads to cloud in background.
+// Upload latency matters: entries under an active lease unblock followers
+// on other runners, so lease-held entries are prioritized and drops are
+// counted loudly (a dropped lease-held upload stalls followers).
 type AsyncUploader struct {
 	backend   Backend
 	ch        chan uploadJob
+	pri       chan uploadJob // lease-held entries: served before ch
 	wg        sync.WaitGroup
 	done      chan struct{}
 	flushOnce sync.Once
 	stats     UploadStats
+
+	// onUploaded, if set, is invoked after each successful cloud Put
+	// (used to release advisory compilation leases).
+	onUploaded func(actionID string)
+
+	dropped    int64 // jobs dropped because both queues were full
+	droppedPri int64 // ...of which were lease-held (stalls followers)
 }
 
 type uploadJob struct {
@@ -161,28 +173,73 @@ func NewAsyncUploader(backend Backend, workers int) *AsyncUploader {
 func (au *AsyncUploader) worker() {
 	defer au.wg.Done()
 	for {
+		// Lease-held (priority) uploads are served first: followers on
+		// other runners are actively waiting on these entries, so their
+		// latency converts directly into cross-runner hit rate.
+		var job uploadJob
+		var ok bool
 		select {
-		case job := <-au.ch:
-			if err := au.backend.Put(job.actionID, job.body); err != nil {
-				au.stats.mu.Lock()
-				au.stats.failed++
-				au.stats.mu.Unlock()
-			} else {
-				au.stats.mu.Lock()
-				au.stats.uploaded++
-				au.stats.bytesSent += int64(len(job.body))
-				au.stats.mu.Unlock()
+		case job = <-au.pri:
+			ok = true
+		default:
+			select {
+			case job = <-au.pri:
+				ok = true
+			case job = <-au.ch:
+				ok = true
+			case <-au.done:
+				return
 			}
-		case <-au.done:
-			return
+		}
+		if !ok {
+			continue
+		}
+		if err := au.backend.Put(job.actionID, job.body); err != nil {
+			au.stats.mu.Lock()
+			au.stats.failed++
+			au.stats.mu.Unlock()
+		} else {
+			au.stats.mu.Lock()
+			au.stats.uploaded++
+			au.stats.bytesSent += int64(len(job.body))
+			au.stats.mu.Unlock()
+			if au.onUploaded != nil {
+				au.onUploaded(job.actionID) // release lease, best-effort
+			}
 		}
 	}
+}
+
+// QueuePri enqueues a lease-held upload on the priority lane.
+func (au *AsyncUploader) QueuePri(actionID string, body []byte) {
+	select {
+	case au.pri <- uploadJob{actionID, body}:
+	default:
+		atomic.AddInt64(&au.droppedPri, 1)
+		// A dropped priority upload stalls followers until their wait
+		// budget expires — loud by design.
+		log.Printf("gocache-serve: WARNING priority upload queue full, dropping %s (followers will recompile)",
+			shortID(actionID))
+	}
+}
+
+// QueueDepth reports pending upload jobs (both lanes).
+func (au *AsyncUploader) QueueDepth() int {
+	return len(au.ch) + len(au.pri)
+}
+
+// Stats returns current upload counters.
+func (au *AsyncUploader) Stats() (uploaded, failed, dropped int64) {
+	au.stats.mu.Lock()
+	defer au.stats.mu.Unlock()
+	return au.stats.uploaded, au.stats.failed, atomic.LoadInt64(&au.dropped)
 }
 
 func (au *AsyncUploader) Queue(actionID string, body []byte) {
 	select {
 	case au.ch <- uploadJob{actionID, body}:
 	default:
+		atomic.AddInt64(&au.dropped, 1)
 	}
 }
 
