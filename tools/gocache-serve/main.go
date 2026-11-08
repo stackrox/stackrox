@@ -110,7 +110,9 @@ func main() {
 					defer wg.Done()
 					sem <- struct{}{}
 					defer func() { <-sem }()
-					if _, _, err := local.Get(key); err == nil {
+					// LocalCache.Get returns (nil, nil, nil) for a missing entry —
+					// err==nil alone means "checked", not "present".
+					if body, _, err := local.Get(key); err == nil && body != nil {
 						return
 					}
 					body, err := backend.Get(key)
