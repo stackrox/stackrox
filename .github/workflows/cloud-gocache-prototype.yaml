@@ -52,11 +52,9 @@ jobs:
         workload: [lint, cli, unittests]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    # Mode gating (push): commit-message directives drive experiments —
-    #   "ab-lease-*" / "ab-nolease-*"  -> cacheprog-only A/B arms
-    #   "bench:*"                      -> matrix skipped, bench job runs
-    # workflow_dispatch still honors inputs.backends.
-    if: ${{ (github.event_name != 'workflow_dispatch' || contains(inputs.backends, matrix.backend)) && !(github.event_name == 'push' && startsWith(github.event.head_commit.message || '', 'bench:')) && !(github.event_name == 'push' && startsWith(github.event.head_commit.message || '', 'ab-') && matrix.backend != 'cacheprog') }}
+    # Skip the full matrix for A/B and bench pushes (driven by the
+    # cloud-gocache-ab workflow instead). No matrix context allowed here.
+    if: ${{ !(github.event_name == 'push' && (startsWith(github.event.head_commit.message || '', 'ab-') || startsWith(github.event.head_commit.message || '', 'bench:'))) }}
     name: cg-${{ matrix.workload }}-${{ matrix.backend }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -95,19 +93,6 @@ jobs:
             if [ -n "${{ inputs.storage_account }}" ]; then
               echo "AZURE_STORAGE_ACCOUNT=${{ inputs.storage_account }}" >> "$GITHUB_ENV"
             fi
-            # A/B arms via commit message (push events; see job-level if)
-            case "${{ github.event.head_commit.message }}" in
-              ab-lease-*)
-                echo "GOCACHE_SERVE_CONTAINER=ci-gocache-lease" >> "$GITHUB_ENV"
-                echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=-1" >> "$GITHUB_ENV"
-                echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
-                echo "gocache-serve: A/B arm=lease" ;;
-              ab-nolease-*)
-                echo "GOCACHE_SERVE_CONTAINER=ci-gocache-nolease" >> "$GITHUB_ENV"
-                echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=0" >> "$GITHUB_ENV"
-                echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
-                echo "gocache-serve: A/B arm=nolease" ;;
-            esac
             # Cache entries are ALWAYS uploaded (even from PRs — different
             # ActionIDs coexist harmlessly and become useful after merge).
             # Manifests are master-only by default; PRs read but don't write.
@@ -206,32 +191,3 @@ jobs:
           else
             scripts/ci/cloud-gocache.sh ${{ matrix.backend }} unmount
           fi
-
-  # Storage scalability bench: push with commit message "bench: <levels>"
-  # e.g. "bench: 1,5,10,25,50,100". The matrix job above is skipped for
-  # bench pushes (see its if:), so the account sees only bench load.
-  blob-bench:
-    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'bench:') }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-
-      - name: Record runner region (IMDS)
-        run: |
-          region=$(curl -s -H "Metadata: true" \
-            "http://169.254.169.254/metadata/instance/compute/location?api-version=2021-02-01&format=text" || echo unknown)
-          echo "runner region: $region"
-
-      - name: Run blob-bench
-        env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          AZURE_STORAGE_ACCOUNT: cigocache
-        run: |
-          LEVELS=$(echo "${{ github.event.head_commit.message }}" | head -1 | sed 's/^bench:[[:space:]]*//')
-          echo "bench levels: $LEVELS"
-          cd tools/blob-bench
-          go run . -concurrency "$LEVELS" -duration 45s

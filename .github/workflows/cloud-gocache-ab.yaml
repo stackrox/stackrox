@@ -1,0 +1,122 @@
+# A/B experiment workflow: advisory compile leases, driven by commit message.
+#   "ab-lease-N"    -> lease arm    (container ci-gocache-lease,    wait=-1)
+#   "ab-nolease-N"  -> nolease arm  (container ci-gocache-nolease,  wait=0)
+#   "bench: <levels>" -> blob storage scalability bench (matrix skipped)
+# The main prototype workflow skips its matrix for these prefixes.
+name: Cloud GOCACHE A/B
+
+on:
+  push:
+    branches:
+      - davdhacs/azure-gocache-prototype
+
+permissions:
+  contents: read
+
+env:
+  CLOUD_GOCACHE_DIR: /tmp/cloud-gocache/gocache
+
+jobs:
+  cacheprog-matrix:
+    # matrix context is unavailable in job-level if, but we don't need it:
+    # this workflow only ever runs cacheprog.
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message || '', 'ab-') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        workload: [lint, cli, unittests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    name: cg-${{ matrix.workload }}-cacheprog
+    env:
+      COMMIT_MSG: ${{ github.event.head_commit.message }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
+
+      - name: Mount cacheprog GOCACHE overlay
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          echo "=== building gocache-serve ==="
+          (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
+          echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_MANIFEST=${{ matrix.workload }}" >> "$GITHUB_ENV"
+          echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
+          # Arm selection from the commit message (injection-safe via env)
+          case "$COMMIT_MSG" in
+            ab-lease-*)
+              echo "GOCACHE_SERVE_CONTAINER=ci-gocache-lease" >> "$GITHUB_ENV"
+              echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=-1" >> "$GITHUB_ENV"
+              echo "gocache-serve: A/B arm=lease" ;;
+            ab-nolease-*)
+              echo "GOCACHE_SERVE_CONTAINER=ci-gocache-nolease" >> "$GITHUB_ENV"
+              echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=0" >> "$GITHUB_ENV"
+              echo "gocache-serve: A/B arm=nolease" ;;
+            *)
+              echo "::error::commit message '$COMMIT_MSG' does not select an arm"
+              exit 1 ;;
+          esac
+
+      - name: Run workload (${{ matrix.workload }})
+        env:
+          GOMEMLIMIT: 12GiB
+          GOCACHE: /tmp/.gocache-fuzz
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          echo "=== workload=${{ matrix.workload }} ab-backend started at $(date -u +%H:%M:%S) ==="
+          case "${{ matrix.workload }}" in
+            lint)
+              make golangci-lint ;;
+            cli)
+              make cli
+              echo "CLI binary size: $(du -sh bin/ 2>/dev/null | cut -f1)" ;;
+            unittests)
+              # Compile-only: don't run tests, just build them
+              go build -tags test,test_e2e ./... 2>&1 | tail -5
+              go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -5 || true ;;
+          esac
+          echo "=== workload finished at $(date -u +%H:%M:%S) ==="
+
+  blob-bench:
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'bench:') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      COMMIT_MSG: ${{ github.event.head_commit.message }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+      - name: Record runner region (IMDS)
+        run: |
+          region=$(curl -s -H "Metadata: true" \
+            "http://169.254.169.254/metadata/instance/compute/location?api-version=2021-02-01&format=text" || echo unknown)
+          echo "runner region: $region"
+
+      - name: Run blob-bench
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_STORAGE_ACCOUNT: cigocache
+        run: |
+          LEVELS=$(echo "$COMMIT_MSG" | head -1 | sed 's/^bench:[[:space:]]*//')
+          echo "bench levels: $LEVELS"
+          cd tools/blob-bench
+          go run . -concurrency "$LEVELS" -duration 45s
