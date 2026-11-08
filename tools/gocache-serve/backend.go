@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -45,10 +46,54 @@ type AzureBackend struct {
 	client *http.Client
 }
 
+// detectRegion returns the runner's Azure region via Instance Metadata
+// Service (IMDS). Falls back to the default region if IMDS is unavailable.
+func detectRegion() string {
+	client := &http.Client{Timeout: 2 * time.Second}
+	req, err := http.NewRequest("GET",
+		"http://169.254.169.254/metadata/instance/compute/location?api-version=2021-02-01&format=text", nil)
+	if err != nil {
+		return ""
+	}
+	req.Header.Set("Metadata", "true")
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(body))
+}
+
+// storageAccountForRegion selects the nearest storage account for a runner region.
+// The primary is westus3; eastus is an object-replication replica.
+func storageAccountForRegion(region string) string {
+	switch region {
+	case "eastus", "eastus2", "centralus", "northcentralus", "southcentralus",
+		"westeurope", "northeurope", "uk south", "francecentral":
+		return "cigocacheeast" // eastus replica
+	case "westus3", "westus2", "westus", "northwestus",
+		"eastasia", "southeastasia", "japaneast", "japanwest",
+		"australiaeast", "australiasoutheast":
+		return "cigocache" // westus3 primary
+	default:
+		return "cigocache" // fallback to primary
+	}
+}
+
 func newAzureBackend() (*AzureBackend, error) {
+	// Use explicitly-set account, or detect from runner region
 	account := os.Getenv("AZURE_STORAGE_ACCOUNT")
 	if account == "" {
-		return nil, fmt.Errorf("AZURE_STORAGE_ACCOUNT not set")
+		region := detectRegion()
+		account = storageAccountForRegion(region)
+		log.Printf("gocache-serve: region=%s account=%s", region, account)
+	}
+	if account == "" {
+		return nil, fmt.Errorf("AZURE_STORAGE_ACCOUNT not set and region detection failed")
 	}
 	b := &AzureBackend{
 		account:      account,
