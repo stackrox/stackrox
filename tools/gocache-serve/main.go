@@ -288,34 +288,25 @@ func main() {
 	jobName := os.Getenv("GOCACHE_SERVE_MANIFEST")
 	manifest := NewManifest(jobName)
 
-	// Prefetch: use the manifest if available (entries in optimal order),
-	// otherwise fall back to listing all keys in the bucket.
-	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" {
+	// Prefetch: download entries from the manifest in request order.
+	// If no manifest exists yet (first run), skip prefetch entirely —
+	// lazy on-demand fetching handles it, and we avoid downloading
+	// entries this job type doesn't need (or filling the runner's disk
+	// with an entire bucket of unknown size).
+	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
 		go func() {
 			start := time.Now()
 
-			// Try manifest first (entries in the order this job type needs them)
-			var keys []string
-			if jobName != "" {
-				manifestKeys, err := DownloadManifest(backend, jobName)
-				if err != nil {
-					log.Printf("gocache-serve: manifest download failed: %v", err)
-				} else if len(manifestKeys) > 0 {
-					keys = manifestKeys
-					log.Printf("gocache-serve: using manifest '%s' (%d entries)", jobName, len(keys))
-				}
+			keys, err := DownloadManifest(backend, jobName)
+			if err != nil {
+				log.Printf("gocache-serve: manifest download failed: %v", err)
+				return
 			}
-
-			// Fall back to listing all keys if no manifest
 			if len(keys) == 0 {
-				var err error
-				keys, err = backend.ListKeys()
-				if err != nil {
-					log.Printf("gocache-serve: prefetch list failed: %v", err)
-					return
-				}
-				log.Printf("gocache-serve: prefetching %d entries from cloud (no manifest)...", len(keys))
+				log.Printf("gocache-serve: no manifest for '%s', skipping prefetch (first run)", jobName)
+				return
 			}
+			log.Printf("gocache-serve: prefetching %d entries from manifest '%s'...", len(keys), jobName)
 
 			sem := make(chan struct{}, 16) // 16 concurrent downloads
 			var wg sync.WaitGroup
