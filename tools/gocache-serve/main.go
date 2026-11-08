@@ -242,6 +242,7 @@ func main() {
 	dec := json.NewDecoder(stdin)
 
 	var totalGets, totalHits, totalPuts int64
+	var getBytes, getNs, putBytes, putNs int64 // network timing
 	startTime := time.Now()
 
 	for {
@@ -279,7 +280,9 @@ func main() {
 			}
 
 			// Try cloud
+			getStart := time.Now()
 			body, err = backend.Get(actionID)
+			getNs += time.Since(getStart).Nanoseconds()
 			if err != nil {
 				log.Printf("cloud get %s: %v", shortID(actionID), err)
 				resp.Miss = true
@@ -290,6 +293,7 @@ func main() {
 				resp.Miss = true
 				break
 			}
+			getBytes += int64(len(body))
 
 			// Cloud hit — download to local for future access
 			// We don't have the OutputID from cloud (stored as body only);
@@ -342,10 +346,24 @@ func main() {
 			// Flush pending uploads and exit
 			uploader.Flush()
 			elapsed := time.Since(startTime)
-			log.Printf("closing: %d gets (%d hits, %.1f%% hit rate), %d puts, elapsed %v",
+
+			// Network performance summary
+			var netStats string
+			if getNs > 0 {
+				getMBps := float64(getBytes) / (float64(getNs) / 1e9) / 1048576
+				getAvgMs := float64(getNs) / float64(totalHits+1) / 1e6
+				netStats = fmt.Sprintf(" GET: %d bytes in %dms (%.1f MB/s, avg %.1fms/blob)",
+					getBytes, getNs/1e6, getMBps, getAvgMs)
+			}
+			if putNs > 0 {
+				putMBps := float64(putBytes) / (float64(putNs) / 1e9) / 1048576
+				netStats += fmt.Sprintf(" PUT: %d bytes in %dms (%.1f MB/s)", putBytes, putNs/1e6, putMBps)
+			}
+
+			log.Printf("closing: %d gets (%d hits, %.1f%% hit rate), %d puts, elapsed %v%s",
 				totalGets, totalHits,
 				float64(totalHits)/float64(totalGets+1)*100,
-				totalPuts, elapsed.Round(time.Millisecond))
+				totalPuts, elapsed.Round(time.Millisecond), netStats)
 			resp.ID = req.ID
 			if err := enc.Encode(resp); err != nil {
 				log.Printf("send close response: %v", err)
