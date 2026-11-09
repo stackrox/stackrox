@@ -259,13 +259,13 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 			filter:              &EvaluationFilter{SkipImageLayers: "SKIP_APP"},
 			expectedImageLayers: storage.SkipImageLayers_SKIP_APP,
 		},
-		"explicit skip none image layers is not stored": {
-			filter:         &EvaluationFilter{SkipImageLayers: "SKIP_NONE"},
-			expectNilProto: true,
+		"explicit skip none image layers maps to proto default": {
+			filter:              &EvaluationFilter{SkipImageLayers: "SKIP_NONE"},
+			expectedImageLayers: storage.SkipImageLayers_SKIP_NONE,
 		},
 		"unknown image layers value is dropped": {
-			filter:         &EvaluationFilter{SkipImageLayers: "BOGUS"},
-			expectNilProto: true,
+			filter:              &EvaluationFilter{SkipImageLayers: "BOGUS"},
+			expectedImageLayers: storage.SkipImageLayers_SKIP_NONE,
 		},
 		"both container types and image layers": {
 			filter: &EvaluationFilter{
@@ -280,8 +280,7 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 			expectNilProto: true,
 		},
 		"empty filter": {
-			filter:         &EvaluationFilter{},
-			expectNilProto: true,
+			filter: &EvaluationFilter{},
 		},
 	}
 
@@ -310,12 +309,9 @@ func TestToProtobufEvaluationFilter(t *testing.T) {
 			if tc.expectNilProto {
 				assert.Nil(t, proto.GetEvaluationFilter())
 			} else {
-				if len(tc.expectedTypes) > 0 {
-					assert.Equal(t, tc.expectedTypes, proto.GetEvaluationFilter().GetSkipContainerTypes())
-				}
-				if tc.expectedImageLayers != storage.SkipImageLayers_SKIP_NONE {
-					assert.Equal(t, tc.expectedImageLayers, proto.GetEvaluationFilter().GetSkipImageLayers())
-				}
+				assert.NotNil(t, proto.GetEvaluationFilter())
+				assert.Equal(t, tc.expectedTypes, proto.GetEvaluationFilter().GetSkipContainerTypes())
+				assert.Equal(t, tc.expectedImageLayers, proto.GetEvaluationFilter().GetSkipImageLayers())
 			}
 		})
 	}

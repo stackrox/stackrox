@@ -498,11 +498,7 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 		if skipLayers := p.EvaluationFilter.SkipImageLayers; skipLayers != "" {
 			protoFilter.SkipImageLayers = storage.SkipImageLayers(storage.SkipImageLayers_value[string(skipLayers)])
 		}
-		// An empty filter filters nothing; leave the proto field unset instead of
-		// storing a non-nil no-op.
-		if len(protoFilter.GetSkipContainerTypes()) > 0 || protoFilter.GetSkipImageLayers() != storage.SkipImageLayers_SKIP_NONE {
-			proto.EvaluationFilter = protoFilter
-		}
+		proto.EvaluationFilter = protoFilter
 	}
 
 	return &proto, nil
