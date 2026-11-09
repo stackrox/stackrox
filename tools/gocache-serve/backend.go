@@ -343,12 +343,12 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 	}
 
 	// Fetch remaining ranges in parallel.
-	nParts := (total-1)/partSize + 1
+	nParts := (total-1)/int64(partSize) + 1
 	if nParts > rangeGetMaxParallel {
 		// fewer, bigger parts
 		nParts = rangeGetMaxParallel
-		partSize = (total-1)/nParts + 1
-		if len(first) >= int(partSize) {
+		partSize = int((total-1)/nParts + 1)
+		if int64(len(first)) >= int64(partSize) {
 			first = first[:partSize]
 		}
 	}
@@ -361,8 +361,8 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 		wg.Add(1)
 		go func(i int64) {
 			defer wg.Done()
-			lo := i * partSize
-			hi := lo + partSize - 1
+			lo := i * int64(partSize)
+			hi := lo + int64(partSize) - 1
 			if hi >= total {
 				hi = total - 1
 			}
