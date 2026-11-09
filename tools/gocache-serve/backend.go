@@ -300,10 +300,125 @@ func (a *AzureBackend) getToken() (string, error) {
 	return a.token, nil
 }
 
+// rangeGetThreshold: blobs larger than this download via parallel ranged
+// GETs. Measured: the prefetch floor is set by the largest entries' serial
+// transfer times (an 88MB blob at ~6MB/s cross-region = 15s alone), while
+// aggregate bandwidth is 6MB/s per connection — splitting big blobs across
+// connections makes the tail match the aggregate.
+const rangeGetThreshold = 4 << 20
+const rangeGetMaxParallel = 16
+
+// getRanged downloads a blob with parallel HTTP range requests.
+func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) {
+	// First ranged GET also discovers the total size from Content-Range.
+	partSize := rangeGetThreshold
+	req, _ := http.NewRequest("GET", a.blobURL(actionID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("x-ms-version", "2023-11-03")
+	req.Header.Set("x-ms-range", fmt.Sprintf("bytes=0-%d", partSize-1))
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		return nil, nil
+	}
+	if resp.StatusCode != http.StatusPartialContent {
+		// blob smaller than a part (or ranges unsupported): read whole
+		b, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return b, err
+	}
+	first, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	// Parse total size: "bytes 0-N/TOTAL"
+	var start, last, total int64
+	if _, err := fmt.Sscanf(resp.Header.Get("Content-Range"), "bytes %d-%d/%d", &start, &last, &total); err != nil {
+		return first, nil // fall back to partial — better than nothing
+	}
+	if total <= int64(partSize) {
+		return first, nil
+	}
+
+	// Fetch remaining ranges in parallel.
+	nParts := (total-1)/partSize + 1
+	if nParts > rangeGetMaxParallel {
+		// fewer, bigger parts
+		nParts = rangeGetMaxParallel
+		partSize = (total-1)/nParts + 1
+		if len(first) >= int(partSize) {
+			first = first[:partSize]
+		}
+	}
+	parts := make([][]byte, nParts)
+	parts[0] = first
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var firstErr error
+	for i := int64(1); i < nParts; i++ {
+		wg.Add(1)
+		go func(i int64) {
+			defer wg.Done()
+			lo := i * partSize
+			hi := lo + partSize - 1
+			if hi >= total {
+				hi = total - 1
+			}
+			r, _ := http.NewRequest("GET", a.blobURL(actionID), nil)
+			r.Header.Set("Authorization", "Bearer "+token)
+			r.Header.Set("x-ms-version", "2023-11-03")
+			r.Header.Set("x-ms-range", fmt.Sprintf("bytes=%d-%d", lo, hi))
+			rr, err := a.client.Do(r)
+			if err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
+				return
+			}
+			defer rr.Body.Close()
+			b, err := io.ReadAll(rr.Body)
+			if err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
+				return
+			}
+			parts[i] = b
+		}(i)
+	}
+	wg.Wait()
+	if firstErr != nil {
+		return nil, firstErr
+	}
+	var out []byte
+	for _, p := range parts {
+		out = append(out, p...)
+	}
+	if int64(len(out)) != total {
+		// size mismatch (concurrent rewrite?) — treat as corrupt, caller misses
+		return nil, nil
+	}
+	return out, nil
+}
+
 func (a *AzureBackend) Get(actionID string) ([]byte, error) {
 	token, err := a.getToken()
 	if err != nil {
 		return nil, err
+	}
+	// Big blobs: parallel ranged download (tail of prefetch is set by the
+	// largest entries' serial transfer time).
+	if size, ok := a.blobSize(actionID, token); ok && size > rangeGetThreshold {
+		if b, err := a.getRanged(actionID, token); err == nil && b != nil {
+			return maybeGunzip(b), nil
+		}
+		// fall through to plain GET on ranged failure
 	}
 	req, err := http.NewRequest("GET", a.blobURL(actionID), nil)
 	if err != nil {
@@ -326,6 +441,21 @@ func (a *AzureBackend) Get(actionID string) ([]byte, error) {
 	}
 	b, err := io.ReadAll(resp.Body)
 	return maybeGunzip(b), err
+}
+
+// blobSize returns the blob's (compressed) size via HEAD.
+func (a *AzureBackend) blobSize(actionID string, token string) (int64, bool) {
+	req, err := http.NewRequest("HEAD", a.blobURL(actionID), nil)
+	if err != nil {
+		return 0, false
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("x-ms-version", "2023-11-03")
+	resp, err := a.client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return 0, false
+	}
+	return resp.ContentLength, resp.ContentLength > 0
 }
 
 func (a *AzureBackend) Put(actionID string, body []byte) error {
