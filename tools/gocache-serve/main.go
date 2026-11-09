@@ -67,14 +67,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("backend init: %v", err)
 	}
-	// Bundle backend: groups entries (~50 or 5MB) into gzip-compressed
-	// blobs so warm prefetch downloads whole bundles — one HTTP GET per
-	// ~50 entries instead of one per entry. Bundle composition follows
-	// upload order, which follows request order, which matches manifest
-	// order — so sequential prefetch gets near-perfect locality.
+	// Bundle backend: groups entries into gzip-compressed blobs so warm
+	// prefetch downloads whole bundles — one HTTP GET per bundle instead
+	// of one per entry. Bundle composition follows upload order, which
+	// follows request order, which matches manifest order — so sequential
+	// prefetch gets near-perfect locality.
+	// Size is a trade-off: big bundles amortize request overhead for
+	// parallel prefetch; small bundles limit over-fetch latency when a
+	// lazy cross-job get needs one entry from a foreign bundle. With
+	// ~460KB average entries, 5MB ≈ 11 entries. Tunable for experiments:
+	// GOCACHE_SERVE_BUNDLE_MAX_BYTES, GOCACHE_SERVE_BUNDLE_MAX_ENTRIES.
 	// GOCACHE_SERVE_BUNDLES=0 disables (individual entry blobs).
 	if os.Getenv("GOCACHE_SERVE_BUNDLES") != "0" {
-		bundled, err := NewBundledBackend(backend, 50, 5<<20)
+		maxEntries := envInt("GOCACHE_SERVE_BUNDLE_MAX_ENTRIES", 50)
+		maxBytes := int64(envInt("GOCACHE_SERVE_BUNDLE_MAX_BYTES", 5<<20))
+		bundled, err := NewBundledBackend(backend, maxEntries, maxBytes)
 		if err != nil {
 			log.Fatalf("bundle backend init: %v", err)
 		}
