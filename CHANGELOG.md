@@ -10,6 +10,12 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [5.0.1]
+
+**Full Changelog**: [5.0.0...5.0.1](https://github.com/stackrox/stackrox/compare/5.0.0...5.0.1)
+
+For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/5.0/html/release_notes/index) on the Red Hat Documentation portal.
+
 ## [5.0.0]
 
 ### Added Features
