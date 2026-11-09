@@ -514,8 +514,15 @@ func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, err
 	return cx, nil
 }
 
+// appliesToDeployments reports whether the exclusion has a deployment part. Image-only exclusions are
+// applied to images, so they must not match deployments or audit events. Without this check, the nil
+// deployment scope matches everything and the exclusion turns the policy off for every deployment.
+func (cw *compiledExclusion) appliesToDeployments() bool {
+	return cw.exclusion.GetDeployment() != nil
+}
+
 func (cw *compiledExclusion) MatchesDeployment(ctx context.Context, deployment *storage.Deployment) bool {
-	if exclusionIsExpired(cw.exclusion) {
+	if !cw.appliesToDeployments() || exclusionIsExpired(cw.exclusion) {
 		return false
 	}
 
@@ -527,7 +534,7 @@ func (cw *compiledExclusion) MatchesDeployment(ctx context.Context, deployment *
 }
 
 func (cw *compiledExclusion) MatchesAuditEvent(ctx context.Context, auditEvent *storage.KubernetesEvent) bool {
-	if exclusionIsExpired(cw.exclusion) {
+	if !cw.appliesToDeployments() || exclusionIsExpired(cw.exclusion) {
 		return false
 	}
 	if !cw.cs.MatchesAuditEvent(ctx, auditEvent) {
