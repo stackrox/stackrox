@@ -197,7 +197,7 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetScopedPermissionSets() [
 // ScopedPermissionSet binds a named permission set to its HTTP method/path scope.
 type ScopedPermissionSet struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	PermissionSetName string                 `protobuf:"bytes,1,opt,name=permission_set_name,json=permissionSetName,proto3" json:"permission_set_name,omitempty"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	HttpRequestScopes []*v1.HTTPRequestScope `protobuf:"bytes,2,rep,name=http_request_scopes,json=httpRequestScopes,proto3" json:"http_request_scopes,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -233,9 +233,9 @@ func (*ScopedPermissionSet) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ScopedPermissionSet) GetPermissionSetName() string {
+func (x *ScopedPermissionSet) GetName() string {
 	if x != nil {
-		return x.PermissionSetName
+		return x.Name
 	}
 	return ""
 }
@@ -375,9 +375,9 @@ const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\x16scoped_permission_sets\x18\a \x03(\v2\x1f.central.v1.ScopedPermissionSetR\x14scopedPermissionSets\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"\x8b\x01\n" +
-	"\x13ScopedPermissionSet\x12.\n" +
-	"\x13permission_set_name\x18\x01 \x01(\tR\x11permissionSetName\x12D\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"o\n" +
+	"\x13ScopedPermissionSet\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12D\n" +
 	"\x13http_request_scopes\x18\x02 \x03(\v2\x14.v1.HTTPRequestScopeR\x11httpRequestScopes\"}\n" +
 	"\fClusterScope\x12\x1d\n" +
 	"\n" +

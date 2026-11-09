@@ -66,7 +66,7 @@ func (rm *roleManager) createScopedRoles(
 	}
 	names := make([]string, 0, len(req.GetScopedPermissionSets()))
 	for _, grant := range req.GetScopedPermissionSets() {
-		names = append(names, grant.GetPermissionSetName())
+		names = append(names, grant.GetName())
 	}
 	sets, err := rm.getPermissionSetsByNames(ctx, names)
 	if err != nil {
@@ -88,7 +88,7 @@ func (rm *roleManager) createScopedRoles(
 		}
 		roles = append(roles, &tokens.InternalRole{
 			RoleName:          internalRoleName,
-			Permissions:       permissionsFromSets([]*storage.PermissionSet{byName[grant.GetPermissionSetName()]}),
+			Permissions:       permissionsFromSets([]*storage.PermissionSet{byName[grant.GetName()]}),
 			HTTPRequestScopes: scopes,
 		})
 	}

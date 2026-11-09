@@ -83,7 +83,7 @@ func (m *ScopedPermissionSet) CloneVT() *ScopedPermissionSet {
 		return (*ScopedPermissionSet)(nil)
 	}
 	r := new(ScopedPermissionSet)
-	r.PermissionSetName = m.PermissionSetName
+	r.Name = m.Name
 	if rhs := m.HttpRequestScopes; rhs != nil {
 		tmpContainer := make([]*v1.HTTPRequestScope, len(rhs))
 		for k, v := range rhs {
@@ -252,7 +252,7 @@ func (this *ScopedPermissionSet) EqualVT(that *ScopedPermissionSet) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.PermissionSetName != that.PermissionSetName {
+	if this.Name != that.Name {
 		return false
 	}
 	if len(this.HttpRequestScopes) != len(that.HttpRequestScopes) {
@@ -516,10 +516,10 @@ func (m *ScopedPermissionSet) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0x12
 		}
 	}
-	if len(m.PermissionSetName) > 0 {
-		i -= len(m.PermissionSetName)
-		copy(dAtA[i:], m.PermissionSetName)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.PermissionSetName)))
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -687,7 +687,7 @@ func (m *ScopedPermissionSet) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.PermissionSetName)
+	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -1149,7 +1149,7 @@ func (m *ScopedPermissionSet) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetName", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1177,7 +1177,7 @@ func (m *ScopedPermissionSet) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PermissionSetName = string(dAtA[iNdEx:postIndex])
+			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1878,7 +1878,7 @@ func (m *ScopedPermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetName", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1910,7 +1910,7 @@ func (m *ScopedPermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.PermissionSetName = stringValue
+			m.Name = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {

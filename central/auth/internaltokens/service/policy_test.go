@@ -158,8 +158,8 @@ func TestEnforceScopedPermissionSets(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"team-a"}}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 			ScopedPermissionSets: []*v1.ScopedPermissionSet{
-				{PermissionSetName: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
-				{PermissionSetName: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
+				{Name: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
+				{Name: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
 			},
 		}
 	}
@@ -169,7 +169,7 @@ func TestEnforceScopedPermissionSets(t *testing.T) {
 			r.ScopedPermissionSets[1].HttpRequestScopes[0].Path = "/v1/deployments"
 		},
 		"duplicate permission set": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			r.ScopedPermissionSets[1].PermissionSetName = "Deployment Reader"
+			r.ScopedPermissionSets[1].Name = "Deployment Reader"
 		},
 		"missing methods": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
 			r.ScopedPermissionSets[0].HttpRequestScopes[0].Methods = nil
@@ -194,7 +194,7 @@ func TestEnforceScopedPermissionSets(t *testing.T) {
 		},
 		"no cluster": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) { r.ClusterScopes = nil },
 		"metrics combined": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			r.ScopedPermissionSets[1].PermissionSetName = centralproxy.MetricsPermissionSetName
+			r.ScopedPermissionSets[1].Name = centralproxy.MetricsPermissionSetName
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

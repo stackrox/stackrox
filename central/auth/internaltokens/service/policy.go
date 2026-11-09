@@ -146,10 +146,10 @@ func (p *tokenPolicy) enforce(
 		claims := tokens.RoxClaims{Clusters: clusterScopesFromRequest(req.GetClusterScopes())}
 		seen := make(map[string]struct{})
 		for _, grant := range req.GetScopedPermissionSets() {
-			if grant == nil || grant.GetPermissionSetName() == "" {
+			if grant == nil || grant.GetName() == "" {
 				return nil, nil, errox.InvalidArgs.New("per-access grant requires a permission set name")
 			}
-			name := grant.GetPermissionSetName()
+			name := grant.GetName()
 			if _, exists := seen[name]; exists {
 				return nil, nil, errox.InvalidArgs.Newf("duplicate per-access permission set %q", name)
 			}

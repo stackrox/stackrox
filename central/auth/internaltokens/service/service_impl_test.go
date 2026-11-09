@@ -79,8 +79,8 @@ func TestGenerateTokenWithPerAccessPermissions(t *testing.T) {
 			Lifetime:      testExpirationDuration,
 			Requester:     "test-client",
 			ScopedPermissionSets: []*v1.ScopedPermissionSet{
-				{PermissionSetName: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
-				{PermissionSetName: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
+				{Name: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
+				{Name: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
 			},
 		})
 	require.NoError(t, err)

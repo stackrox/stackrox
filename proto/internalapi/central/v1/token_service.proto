@@ -55,7 +55,7 @@ message GenerateTokenForPermissionsAndScopeRequest {
 
 // ScopedPermissionSet binds a named permission set to its HTTP method/path scope.
 message ScopedPermissionSet {
-  string permission_set_name = 1;
+  string name = 1;
   repeated .v1.HTTPRequestScope http_request_scopes = 2;
 }
 
