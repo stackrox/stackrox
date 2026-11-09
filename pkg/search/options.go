@@ -450,10 +450,6 @@ var (
 	DeferralUpdateCVEs          = newFieldLabel("Deferral Update CVEs")
 	FalsePositiveUpdateCVEs     = newFieldLabel("False Positive Update CVEs")
 
-	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
-	ComplianceRunID                = newFieldLabel("Compliance Run ID")
-	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
-
 	// Resource Collection fields
 	CollectionID         = newFieldLabel("Collection ID")
 	CollectionName       = newFieldLabel("Collection Name")
