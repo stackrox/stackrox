@@ -360,7 +360,6 @@ func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context,
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{
 		centralsensor.PullTelemetryDataCap,
-		centralsensor.CancelTelemetryPullCap,
 		centralsensor.PullMetricsCap,
 	}
 }
