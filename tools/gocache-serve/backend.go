@@ -219,8 +219,24 @@ func newAzureBackend() (*AzureBackend, error) {
 		tenantID:     os.Getenv("AZURE_TENANT_ID"),
 		clientID:     os.Getenv("AZURE_CLIENT_ID"),
 		clientSecret: os.Getenv("AZURE_CLIENT_SECRET"),
-		client:       &http.Client{Timeout: 30 * time.Second},
-		tokenCache:   newTokenDiskCache(),
+		// Tuned transport: the default Go transport keeps only 2 idle
+		// connections per host — with 64-way prefetch, nearly every request
+		// paid a fresh TLS handshake (~150ms cross-region). The scalability
+		// bench measured 593MB/s at 100 connections with this setting; the
+		// default throttled effective prefetch to ~30MB/s.
+		client: &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				MaxIdleConns:          256,
+				MaxIdleConnsPerHost:   128,
+				MaxConnsPerHost:       256,
+				IdleConnTimeout:       90 * time.Second,
+				ForceAttemptHTTP2:     true,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ResponseHeaderTimeout: 20 * time.Second,
+			},
+		},
+		tokenCache: newTokenDiskCache(),
 	}
 	if b.tenantID == "" || b.clientID == "" || b.clientSecret == "" {
 		return nil, fmt.Errorf("Azure SPN env not set (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET)")
