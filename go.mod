@@ -83,7 +83,6 @@ require (
 	github.com/klauspost/compress v1.20.3
 	github.com/lib/pq v1.12.3
 	github.com/machinebox/graphql v0.2.2
-	github.com/mailru/easyjson v0.9.2
 	github.com/mdlayher/vsock v1.4.0
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
@@ -174,7 +173,6 @@ require (
 	k8s.io/cli-runtime v0.37.2
 	k8s.io/client-go v0.37.2
 	k8s.io/kubectl v0.37.2
-	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd
 	kubevirt.io/api v1.9.1
 	kubevirt.io/client-go v1.10.0-beta.0
@@ -352,6 +350,7 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
+	github.com/mailru/easyjson v0.9.2 // indirect
 	github.com/matryer/is v1.4.1 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
