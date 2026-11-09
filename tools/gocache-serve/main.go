@@ -98,7 +98,10 @@ func main() {
 				return
 			}
 			log.Printf("prefetching %d entries from manifest '%s'...", len(keys), jobName)
-			sem := make(chan struct{}, 16)
+			// 64-way concurrency: the scalability bench measured ~6MB/s per
+			// connection cross-region with flat latency to 100 connections,
+			// so bulk prefetch throughput is connection-count-bound.
+			sem := make(chan struct{}, 64)
 			var wg sync.WaitGroup
 			var downloaded int64
 			for _, key := range keys {
@@ -157,14 +160,13 @@ func main() {
 
 	// Concurrency limit: adaptive by default (self-tunes via AIMD),
 	// or fixed via GOCACHE_SERVE_CONCURRENCY=N (for testing).
-	// waitForConcurrent: max total ms a follower waits for the leader's
-	// upload. Default -1 = wait until the lease goes stale (TTL-bounded),
-	// which is the correct shape: after giving up, the follower pays the
-	// full compile time anyway, so waiting while the leader is alive is
-	// nearly always cheaper than duplicating its work. A dead leader is
-	// detected by lease staleness, not by this deadline.
-	// 0 disables lease coordination entirely.
-	waitForConcurrent := envInt("GOCACHE_SERVE_WAIT_FOR_CONCURRENT", -1)
+	// waitForConcurrent: lease coordination between concurrent runners.
+	// A/B experiment (3 reps x 3 workloads, 2026-11-08) showed the lease
+	// wait/recheck delivered zero concurrent hits while adding acquire-PUT
+	// latency to every miss — the pack effect comes from plain
+	// content-addressed GETs. Default OFF; set -1 to re-enable for
+	// experimentation.
+	waitForConcurrent := envInt("GOCACHE_SERVE_WAIT_FOR_CONCURRENT", 0)
 	var concurrentHits int64
 	var leaseMgr *LeaseManager
 	// Lease TTL must cover the leader's compile + async upload for the

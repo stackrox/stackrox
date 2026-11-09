@@ -91,13 +91,50 @@ func (m *Manifest) Record(actionID string) {
 	m.entries = append(m.entries, actionID)
 }
 
+// Upload merges this session's entries into the stored manifest. Merge (not
+// last-writer-wins) is essential: every `go` invocation spawns a separate
+// gocache-serve process, and a trivial trailing command (`go version`-class)
+// would otherwise clobber the real workload's working set with 2-41 entries,
+// leaving prefetch nothing to bulk-download on warm runs. This session's
+// entries come first (most recent working set = prefetch priority), then any
+// older entries not seen this session. Capped to bound growth across
+// branches whose ActionIDs diverge.
+const maxManifestEntries = 20000
+
 func (m *Manifest) Upload(backend Backend) error {
-	if m == nil || m.jobName == "" || len(m.entries) == 0 || m.readOnly {
+	if m == nil || m.jobName == "" || m.readOnly {
 		return nil
 	}
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	data := []byte(strings.Join(m.entries, "\n"))
+	entries := make([]string, len(m.entries))
+	copy(entries, m.entries)
+	m.mu.Unlock()
+	if len(entries) == 0 {
+		return nil // never clobber with an empty session
+	}
+
+	// Merge with the existing manifest so small sessions add rather
+	// than replace.
+	var merged []string
+	seen := make(map[string]bool, len(entries))
+	for _, e := range entries {
+		if !seen[e] {
+			seen[e] = true
+			merged = append(merged, e)
+		}
+	}
+	if existing, err := DownloadManifest(backend, m.jobName); err == nil {
+		for _, e := range existing {
+			if !seen[e] {
+				seen[e] = true
+				merged = append(merged, e)
+			}
+		}
+	}
+	if len(merged) > maxManifestEntries {
+		merged = merged[:maxManifestEntries]
+	}
+	data := []byte(strings.Join(merged, "\n"))
 	return backend.Put("manifest-"+m.jobName, data)
 }
 
