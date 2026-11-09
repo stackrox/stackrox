@@ -43,11 +43,27 @@ func checkRuleShape(m rules.Mapping) []string {
 		if len(r.Jobs) == 0 {
 			findings = append(findings, fmt.Sprintf("rule %q lists no jobs", label))
 		}
-		if !r.HasRun() && !r.HasSkip() {
-			findings = append(findings, fmt.Sprintf("rule %q declares neither run_if_changed nor skip_if_only_changed", label))
+		switch clauseCount(r) {
+		case 0:
+			findings = append(findings, fmt.Sprintf("rule %q declares none of run_if_changed, skip_if_only_changed, always_run", label))
+		case 1:
+		default:
+			findings = append(findings, fmt.Sprintf("rule %q declares more than one of run_if_changed, skip_if_only_changed, always_run", label))
 		}
 	}
 	return findings
+}
+
+// clauseCount counts the mutually exclusive behavior clauses a rule declares;
+// exactly one is required.
+func clauseCount(r *rules.Rule) int {
+	n := 0
+	for _, set := range []bool{r.HasRun(), r.HasSkip(), r.AlwaysRun} {
+		if set {
+			n++
+		}
+	}
+	return n
 }
 
 func checkJobCoverage(m rules.Mapping) []string {
@@ -63,9 +79,6 @@ func checkJobCoverage(m rules.Mapping) []string {
 		}
 	}
 
-	for _, job := range m.AlwaysRun {
-		record(job, "always_run")
-	}
 	for _, r := range m.Rules {
 		for _, job := range r.Jobs {
 			record(job, fmt.Sprintf("rule %q", r.Name))
@@ -79,7 +92,7 @@ func checkJobCoverage(m rules.Mapping) []string {
 	}
 	for _, job := range m.Jobs {
 		if _, ok := decidedBy[job]; !ok {
-			findings = append(findings, fmt.Sprintf("job %q is in the inventory but no rule or always_run decides it", job))
+			findings = append(findings, fmt.Sprintf("job %q is in the inventory but no rule decides it", job))
 		}
 	}
 	return findings

@@ -10,41 +10,36 @@ The selector reads the changed files, applies the rules, and prints `run` or
 
 ## The model is job-centric
 
-Every job is decided in exactly one place: the `always_run` list, or exactly
-one rule. Because a job belongs to one rule, no two rules can disagree about
-it — there is nothing to resolve across rules, and no cross-rule contradiction
-to detect. Validation only checks structure.
+Every job is decided by exactly one rule. Because a job belongs to one rule,
+no two rules can disagree about it — there is nothing to resolve across rules,
+and no cross-rule contradiction to detect. Validation only checks structure.
 
 ```yaml
 version: 1
 
-# The inventory of jobs these rules decide for. Each must be decided exactly
-# once below.
-jobs: [go, go-postgres, sensor-integration-tests, e2e-ui-tests-gke]
-
-# Jobs that run on every pull request, whatever the diff.
-always_run: []
+# The inventory of jobs these rules decide for. Each must be decided by
+# exactly one rule below.
+jobs: [go, go-postgres, sensor-integration-tests, e2e-ui-tests-gke, lint]
 
 rules:
-  # run_if_changed: run these jobs only when a changed file matches.
+  # run_if_changed: default skip, run only when a changed file matches.
   - name: postgres
     jobs: [go-postgres]
     run_if_changed: ['^central/', '^pkg/']
 
-  # skip_if_only_changed: skip these jobs only when every changed file matches.
+  # skip_if_only_changed: default run, skip only when every changed file matches.
   - name: go-unit
-    jobs: [go]
+    jobs: [go, sensor-integration-tests]
     skip_if_only_changed: ['^ui/', '^.*\.md$']
-
-  # A rule may use both. See the decision table below.
-  - name: sensor
-    jobs: [sensor-integration-tests]
-    run_if_changed: ['^sensor/critical/']
-    skip_if_only_changed: ['^sensor/']
 
   - name: ui-e2e
     jobs: [e2e-ui-tests-gke]
     skip_if_only_changed: ['^.*\.md$']
+
+  # always_run: run on every pull request, whatever the diff.
+  - name: lint
+    jobs: [lint]
+    always_run: true
 ```
 
 ### Fields
@@ -53,13 +48,16 @@ rules:
 | --- | --- |
 | `version` | Rules format version. Only `1` is supported. |
 | `jobs` | Inventory of job names the rules decide for. Listing a name does not create a workflow job. |
-| `always_run` | Jobs that run on every pull request. |
 | `name` | Unique, nonempty rule name, used in the trace. |
-| `jobs` (rule) | The jobs this rule decides. Each inventory job appears in exactly one rule or in `always_run`. |
-| `run_if_changed` | Positive patterns. The rule's jobs run when any changed file matches. |
-| `skip_if_only_changed` | Negative patterns. The rule's jobs skip when every changed file matches. |
+| `jobs` (rule) | The jobs this rule decides. Each inventory job appears in exactly one rule. |
+| `run_if_changed` | Positive patterns. Default skip; the rule's jobs run when any changed file matches. |
+| `skip_if_only_changed` | Negative patterns. Default run; the rule's jobs skip when every changed file matches. |
+| `always_run` | `true` to run the rule's jobs on every pull request. |
 
-A rule must declare at least one of `run_if_changed` / `skip_if_only_changed`.
+A rule must declare **exactly one** of `run_if_changed`, `skip_if_only_changed`,
+or `always_run`. The one clause it declares sets the baseline, so there is no
+cross-clause conflict to resolve. To carve an exception (run a subset of a skip,
+or skip a subset of a run), use a `!` exclusion inside that clause — see below.
 
 ### Patterns
 
@@ -77,18 +75,30 @@ skip_if_only_changed:
 
 ## Decision semantics
 
-For each rule, given the changed files:
+Each rule decides its jobs by its single clause:
 
-- `run_if_changed` **matches** when any changed file matches it.
-- `skip_if_only_changed` **covers** when every changed file matches it.
-
-| Clauses declared | Decision for the rule's jobs |
+| Clause | Decision for the rule's jobs |
 | --- | --- |
-| only `run_if_changed` | run if it matches, else skip |
-| only `skip_if_only_changed` | skip if it covers the diff, else run |
-| both | run on a match, or on any file the skip set does not cover; otherwise skip. **Run wins** when both fire. |
+| `run_if_changed` | run if any changed file matches it, else skip |
+| `skip_if_only_changed` | skip if every changed file matches it, else run |
+| `always_run` | always run |
 
-An **empty diff** runs every job — nothing changed that a rule could clear.
+An **empty diff** runs every job — nothing changed that a skip rule could clear.
+
+### Exceptions with `!`
+
+Because a rule has one clause, exceptions are expressed as `!` holes within it,
+not a second clause. A `!` entry only ever forces a *run* (it removes a file
+from the skip set, so the skip can no longer cover it):
+
+```yaml
+# Skip Sensor for operator-only diffs, but still run it when the bundled
+# charts change (a subset of operator/).
+skip_if_only_changed: ['^operator/', '!^operator/tests/chart/']
+```
+
+This covers the cases a combined run/skip rule would — see the git history for
+why the two clauses are mutually exclusive.
 
 ## Enforcement
 

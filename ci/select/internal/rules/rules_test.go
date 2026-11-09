@@ -10,8 +10,7 @@ import (
 func TestParse(t *testing.T) {
 	data := []byte(`
 version: 1
-jobs: [go, postgres]
-always_run: [lint]
+jobs: [go, postgres, lint]
 rules:
   - name: go-unit
     jobs: [go]
@@ -19,21 +18,24 @@ rules:
   - name: db
     jobs: [postgres]
     run_if_changed: ['^central/']
+  - name: lint
+    jobs: [lint]
+    always_run: true
 `)
 	m, err := Parse(data)
 	require.NoError(t, err)
 	assert.Equal(t, 1, m.Version)
-	assert.Equal(t, []string{"go", "postgres"}, m.Jobs)
-	assert.Equal(t, []string{"lint"}, m.AlwaysRun)
-	require.Len(t, m.Rules, 2)
+	assert.Equal(t, []string{"go", "postgres", "lint"}, m.Jobs)
+	require.Len(t, m.Rules, 3)
 	assert.Equal(t, []string{"^ui/"}, m.Rules[0].SkipIfOnlyChanged)
 	assert.Equal(t, []string{"^central/"}, m.Rules[1].RunIfChanged)
+	assert.True(t, m.Rules[2].AlwaysRun)
 }
 
 func TestParseRejects(t *testing.T) {
 	cases := map[string]string{
 		"unknown field": "version: 1\njobs: [go]\nbogus: 1\n",
-		"null value":    "version: 1\njobs: [go]\nalways_run:\n",
+		"null value":    "version: 1\njobs:\n",
 		"two documents": "version: 1\njobs: [go]\n---\nversion: 1\njobs: [x]\n",
 	}
 	for name, doc := range cases {

@@ -22,14 +22,14 @@ func mapping(t *testing.T, m rules.Mapping) rules.Mapping {
 func TestResolve(t *testing.T) {
 	m := func(t *testing.T) rules.Mapping {
 		return mapping(t, rules.Mapping{
-			Version:   1,
-			Jobs:      []string{"go", "postgres", "sensor", "ui-e2e", "always"},
-			AlwaysRun: []string{"always"},
+			Version: 1,
+			Jobs:    []string{"go", "postgres", "sensor", "ui-e2e", "always"},
 			Rules: []*rules.Rule{
 				{Name: "go-unit", Jobs: []string{"go"}, SkipIfOnlyChanged: []string{`^ui/`, `^.*\.md$`}},
 				{Name: "db", Jobs: []string{"postgres"}, RunIfChanged: []string{`^central/`, `^pkg/`}},
-				{Name: "both", Jobs: []string{"sensor"}, RunIfChanged: []string{`^sensor/critical/`}, SkipIfOnlyChanged: []string{`^sensor/`}},
+				{Name: "sensor", Jobs: []string{"sensor"}, RunIfChanged: []string{`^sensor/`}},
 				{Name: "ui-e2e", Jobs: []string{"ui-e2e"}, SkipIfOnlyChanged: []string{`^.*\.md$`}},
+				{Name: "lint", Jobs: []string{"always"}, AlwaysRun: true},
 			},
 		})
 	}
@@ -44,31 +44,23 @@ func TestResolve(t *testing.T) {
 		},
 		"docs only": {
 			files: []string{"README.md"},
-			want:  map[string]string{"go": "skip", "postgres": "skip", "sensor": "run", "ui-e2e": "skip", "always": "run"},
+			want:  map[string]string{"go": "skip", "postgres": "skip", "sensor": "skip", "ui-e2e": "skip", "always": "run"},
 		},
 		"ui only": {
 			files: []string{"ui/App.tsx"},
-			want:  map[string]string{"go": "skip", "postgres": "skip", "sensor": "run", "ui-e2e": "run", "always": "run"},
+			want:  map[string]string{"go": "skip", "postgres": "skip", "sensor": "skip", "ui-e2e": "run", "always": "run"},
 		},
 		"central change": {
 			files: []string{"central/sac/client.go"},
-			want:  map[string]string{"go": "run", "postgres": "run", "sensor": "run", "ui-e2e": "run", "always": "run"},
+			want:  map[string]string{"go": "run", "postgres": "run", "sensor": "skip", "ui-e2e": "run", "always": "run"},
 		},
 		"run_if_changed with no match skips": {
 			files: []string{"scanner/x.go"},
-			want:  map[string]string{"go": "run", "postgres": "skip", "sensor": "run", "ui-e2e": "run", "always": "run"},
-		},
-		"both clauses: skip set covers diff, no run match -> skip": {
-			files: []string{"sensor/kubernetes/fake.go"},
 			want:  map[string]string{"go": "run", "postgres": "skip", "sensor": "skip", "ui-e2e": "run", "always": "run"},
 		},
-		"both clauses: run match wins over skip coverage": {
-			files: []string{"sensor/critical/reconcile.go"},
+		"run_if_changed with a match runs": {
+			files: []string{"sensor/kubernetes/fake.go"},
 			want:  map[string]string{"go": "run", "postgres": "skip", "sensor": "run", "ui-e2e": "run", "always": "run"},
-		},
-		"both clauses: file outside skip set -> run": {
-			files: []string{"sensor/kubernetes/fake.go", "pkg/x.go"},
-			want:  map[string]string{"go": "run", "postgres": "run", "sensor": "run", "ui-e2e": "run", "always": "run"},
 		},
 	}
 
@@ -95,6 +87,23 @@ func TestExclusionPattern(t *testing.T) {
 	require.Equal(t, "skip", Resolve([]string{"notes.txt"}, m).Action("go"))
 	require.Equal(t, "run", Resolve([]string{"tests/images-to-prefetch.txt"}, m).Action("go"))
 	require.Equal(t, "run", Resolve([]string{"notes.txt", "tests/images-to-prefetch.txt"}, m).Action("go"))
+}
+
+// A '!' hole inside a skip set punches a run-exception out of a broader skip,
+// which is how a subset rescue is expressed without a second clause.
+func TestExclusionPunchesRunHole(t *testing.T) {
+	m := mapping(t, rules.Mapping{
+		Version: 1,
+		Jobs:    []string{"sensor"},
+		Rules: []*rules.Rule{
+			{Name: "sensor", Jobs: []string{"sensor"}, SkipIfOnlyChanged: []string{
+				`^operator/`, `!^operator/tests/chart/`,
+			}},
+		},
+	})
+
+	require.Equal(t, "skip", Resolve([]string{"operator/internal/foo.go"}, m).Action("sensor"))
+	require.Equal(t, "run", Resolve([]string{"operator/internal/foo.go", "operator/tests/chart/v.yaml"}, m).Action("sensor"))
 }
 
 func TestFallbackRunsEverything(t *testing.T) {

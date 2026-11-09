@@ -10,12 +10,12 @@ import (
 
 func TestCheckStructure(t *testing.T) {
 	good := rules.Mapping{
-		Version:   1,
-		Jobs:      []string{"go", "postgres", "lint"},
-		AlwaysRun: []string{"lint"},
+		Version: 1,
+		Jobs:    []string{"go", "postgres", "lint"},
 		Rules: []*rules.Rule{
 			{Name: "go-unit", Jobs: []string{"go"}, SkipIfOnlyChanged: []string{`^ui/`}},
 			{Name: "db", Jobs: []string{"postgres"}, RunIfChanged: []string{`^central/`}},
+			{Name: "lint", Jobs: []string{"lint"}, AlwaysRun: true},
 		},
 	}
 	require.Empty(t, checkStructure(good))
@@ -46,14 +46,18 @@ func TestCheckStructure(t *testing.T) {
 		},
 		"rule with no clauses": {
 			mutate: func(m *rules.Mapping) { m.Rules[0].SkipIfOnlyChanged = nil },
-			want:   "declares neither run_if_changed nor skip_if_only_changed",
+			want:   "declares none of run_if_changed, skip_if_only_changed, always_run",
+		},
+		"rule with more than one clause": {
+			mutate: func(m *rules.Mapping) { m.Rules[0].RunIfChanged = []string{`^pkg/`} },
+			want:   "declares more than one of run_if_changed, skip_if_only_changed, always_run",
+		},
+		"always_run combined with a path clause": {
+			mutate: func(m *rules.Mapping) { m.Rules[2].RunIfChanged = []string{`^pkg/`} },
+			want:   "declares more than one of run_if_changed, skip_if_only_changed, always_run",
 		},
 		"job decided twice": {
 			mutate: func(m *rules.Mapping) { m.Rules[1].Jobs = []string{"go"} },
-			want:   `job "go" is decided more than once`,
-		},
-		"job decided by rule and always_run": {
-			mutate: func(m *rules.Mapping) { m.AlwaysRun = []string{"go"} },
 			want:   `job "go" is decided more than once`,
 		},
 		"unknown job in rule": {
@@ -62,7 +66,7 @@ func TestCheckStructure(t *testing.T) {
 		},
 		"inventory job undecided": {
 			mutate: func(m *rules.Mapping) { m.Jobs = append(m.Jobs, "orphan") },
-			want:   `job "orphan" is in the inventory but no rule or always_run decides it`,
+			want:   `job "orphan" is in the inventory but no rule decides it`,
 		},
 	}
 
@@ -70,10 +74,10 @@ func TestCheckStructure(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			m := good
 			m.Jobs = append([]string(nil), good.Jobs...)
-			m.AlwaysRun = append([]string(nil), good.AlwaysRun...)
 			m.Rules = []*rules.Rule{
 				{Name: "go-unit", Jobs: []string{"go"}, SkipIfOnlyChanged: []string{`^ui/`}},
 				{Name: "db", Jobs: []string{"postgres"}, RunIfChanged: []string{`^central/`}},
+				{Name: "lint", Jobs: []string{"lint"}, AlwaysRun: true},
 			}
 			tc.mutate(&m)
 			findings := checkStructure(m)

@@ -19,20 +19,24 @@ import (
 )
 
 type (
-	// Mapping is one parsed rules file. Jobs is the inventory; AlwaysRun and
-	// Rules together must decide each inventory job exactly once.
+	// Mapping is one parsed rules file. Jobs is the inventory; the rules must
+	// decide each inventory job exactly once.
 	Mapping struct {
-		Version   int      `json:"version"`
-		Jobs      []string `json:"jobs"`
-		AlwaysRun []string `json:"always_run"`
-		Rules     []*Rule  `json:"rules"`
+		Version int      `json:"version"`
+		Jobs    []string `json:"jobs"`
+		Rules   []*Rule  `json:"rules"`
 	}
 
+	// Rule governs one job group. It declares exactly one of three things
+	// (validation enforces it): RunIfChanged (default skip, run on a match),
+	// SkipIfOnlyChanged (default run, skip when the whole diff is covered), or
+	// AlwaysRun.
 	Rule struct {
 		Name              string   `json:"name"`
 		Jobs              []string `json:"jobs"`
 		RunIfChanged      []string `json:"run_if_changed"`
 		SkipIfOnlyChanged []string `json:"skip_if_only_changed"`
+		AlwaysRun         bool     `json:"always_run"`
 
 		runPatterns  []*matcher
 		skipPatterns []*matcher

@@ -22,8 +22,8 @@ type Decision struct {
 type ruleOutcome struct {
 	name      string
 	jobs      []string
+	alwaysRun bool
 	hasRun    bool
-	hasSkip   bool
 	runMatch  bool
 	skipCover bool
 	action    string
@@ -31,10 +31,6 @@ type ruleOutcome struct {
 
 func Resolve(files []string, m rules.Mapping) Decision {
 	actions := make(map[string]string, len(m.Jobs))
-	for _, job := range m.AlwaysRun {
-		actions[job] = "run"
-	}
-
 	outcomes := make([]ruleOutcome, 0, len(m.Rules))
 	for _, r := range m.Rules {
 		outcome := decideRule(files, r)
@@ -43,35 +39,34 @@ func Resolve(files []string, m rules.Mapping) Decision {
 			actions[job] = outcome.action
 		}
 	}
-
-	return Decision{Actions: actions, Log: renderTrace(files, m, outcomes)}
+	return Decision{Actions: actions, Log: renderTrace(files, outcomes)}
 }
 
-// decideRule computes the verdict for one rule's jobs. The clause the rule
-// declares sets the default: run_if_changed defaults to skip (run only on a
-// match), skip_if_only_changed defaults to run (skip only when it covers the
-// whole diff). With both, run wins — the safe bias when the two disagree.
-// An empty diff always runs: nothing changed that a rule could clear.
+// decideRule computes the verdict for one rule's jobs. The single clause the
+// rule declares sets the baseline: run_if_changed defaults to skip (run only
+// on a match), skip_if_only_changed defaults to run (skip only when it covers
+// the whole diff), always_run always runs. An empty diff runs everything:
+// nothing changed that a skip rule could clear.
 func decideRule(files []string, r *rules.Rule) ruleOutcome {
 	outcome := ruleOutcome{
 		name:      r.Name,
 		jobs:      r.Jobs,
+		alwaysRun: r.AlwaysRun,
 		hasRun:    r.HasRun(),
-		hasSkip:   r.HasSkip(),
 		runMatch:  r.RunMatchesAny(files),
 		skipCover: r.SkipCoversAll(files),
 	}
 
 	run := true
 	switch {
+	case r.AlwaysRun:
+		run = true
 	case len(files) == 0:
 		run = true
-	case outcome.hasRun && !outcome.hasSkip:
+	case r.HasRun():
 		run = outcome.runMatch
-	case !outcome.hasRun && outcome.hasSkip:
+	case r.HasSkip():
 		run = !outcome.skipCover
-	case outcome.hasRun && outcome.hasSkip:
-		run = outcome.runMatch || !outcome.skipCover
 	}
 
 	outcome.action = "skip"

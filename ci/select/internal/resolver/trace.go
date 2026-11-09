@@ -3,29 +3,22 @@ package resolver
 import (
 	"fmt"
 	"strings"
-
-	"github.com/stackrox/rox/ci/select/internal/rules"
 )
 
 // loggedPathLimit caps the path list so a large diff cannot flood the log.
 const loggedPathLimit = 50
 
-const traceLegend = "Trace legend: every job is governed by exactly one rule, or by always_run.\n" +
-	"A rule with run_if_changed runs its jobs when any changed file matches,\n" +
-	"else skips them. A rule with skip_if_only_changed skips its jobs when every\n" +
-	"changed file matches, else runs them. A rule with both runs on a positive\n" +
-	"match or on any file the skip set does not cover; on an overlap, run wins.\n" +
+const traceLegend = "Trace legend: every job is governed by exactly one rule.\n" +
+	"A run_if_changed rule runs its jobs when any changed file matches, else\n" +
+	"skips them. A skip_if_only_changed rule skips its jobs when every changed\n" +
+	"file matches, else runs them. An always_run rule always runs its jobs.\n" +
 	"An empty diff runs every job.\n\n"
 
-func renderTrace(files []string, m rules.Mapping, outcomes []ruleOutcome) string {
+func renderTrace(files []string, outcomes []ruleOutcome) string {
 	var b strings.Builder
 	b.WriteString(traceLegend)
 
 	b.WriteString(renderPaths(files))
-
-	if len(m.AlwaysRun) > 0 {
-		fmt.Fprintf(&b, "\nalways_run: %s\n", strings.Join(m.AlwaysRun, ", "))
-	}
 
 	b.WriteString("\nRules:\n")
 	for _, outcome := range outcomes {
@@ -57,28 +50,17 @@ func renderRule(o ruleOutcome) string {
 
 func ruleReason(o ruleOutcome) string {
 	switch {
-	case o.hasRun && !o.hasSkip:
+	case o.alwaysRun:
+		return "always_run"
+	case o.hasRun:
 		if o.runMatch {
 			return "a changed file matches run_if_changed"
 		}
 		return "no changed file matches run_if_changed"
-	case !o.hasRun && o.hasSkip:
+	default:
 		if o.skipCover {
 			return "every changed file matches skip_if_only_changed"
 		}
 		return "a changed file is outside skip_if_only_changed"
-	case o.hasRun && o.hasSkip:
-		switch {
-		case o.runMatch && o.skipCover:
-			return "run_if_changed matches and skip_if_only_changed covers the diff; run wins"
-		case o.runMatch:
-			return "a changed file matches run_if_changed"
-		case !o.skipCover:
-			return "a changed file is outside skip_if_only_changed"
-		default:
-			return "every changed file matches skip_if_only_changed and nothing matches run_if_changed"
-		}
-	default:
-		return "the rule declares no path conditions"
 	}
 }

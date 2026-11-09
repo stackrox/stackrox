@@ -19,9 +19,6 @@ jobs:
   - e2e-ui-tests-gke
   - e2e-ui-tests-gke-konflux
 
-# Jobs that run on every pull request regardless of the diff.
-always_run: []
-
 rules:
   # Go has no frontend/doc code, so only an entirely-ui-or-docs diff is safe.
   # Deliberate broad doc match + '!' denylist (not a narrow allowlist): new
