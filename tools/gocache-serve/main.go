@@ -131,13 +131,16 @@ func main() {
 	}
 
 	// Prefetch completion gate: the first get waits for prefetch to finish.
-	// Prefetching thousands of files concurrently with go's own package
-	// loading (which mmaps the module index) reproducibly SIGBUS-crashes
-	// the go process on CoW/overlay filesystems (observed on CI overlayfs
-	// and local APFS). Serializing writes-before-reads eliminates the race;
-	// after prefetch completes the channel is closed and the wait is free.
+	// Added after prefetching thousands of files concurrently with go's own
+	// package loading (which mmaps the module index) reproducibly
+	// SIGBUS-crashed the go process on CoW/overlay filesystems. Since then
+	// the write pattern changed substantially (pfb bundles unpack in
+	// ~300ms, range-GETs, negative cache) — whether the race still exists
+	// is unverified. GOCACHE_SERVE_GATE=0 disables for A/B; the default
+	// keeps the safety until an ungated CI run proves it unnecessary.
+	gatePrefetch := os.Getenv("GOCACHE_SERVE_GATE") != "0"
 	prefetchDone := make(chan struct{})
-	if jobName == "" || os.Getenv("GOCACHE_SERVE_PREFETCH") == "0" {
+	if jobName == "" || os.Getenv("GOCACHE_SERVE_PREFETCH") == "0" || !gatePrefetch {
 		close(prefetchDone)
 	}
 
