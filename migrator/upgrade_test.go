@@ -35,9 +35,13 @@ func TestUpgradeSuite(t *testing.T) {
 
 func (s *UpgradeSuite) SetupTest() {
 	t := s.T()
+	// Synthetic releases keep compatibility checks independent of generated release metadata.
+	pkgMigrations.OverrideReleaseVersionsForTesting(t, []pkgMigrations.ReleaseVersion{
+		{Version: "99.1", Sequence: 220},
+	})
 	oldVersion := version.GetMainVersion()
 	t.Cleanup(func() { versiontest.SetMainVersion(t, oldVersion) })
-	versiontest.SetMainVersion(t, "5.1.0")
+	versiontest.SetMainVersion(t, "99.4.0")
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	s.source = pgtest.GetConnectionString(s.T())
@@ -72,7 +76,7 @@ func (s *UpgradeSuite) TestLockNotAcquired_OldPodProceeds() {
 	// DB is at higher version, and the lock is held by another instance.
 	// Old pod should proceed without error and without modifying the DB.
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
-	s.setDBVersion(currSeqNum+5, "4.10.0")
+	s.setDBVersion(currSeqNum+5, "99.1.0")
 
 	// Acquire the lock to simulate another instance holding it.
 	acquired, release, err := lock.TryAcquireMigrationLock(s.ctx, s.pool)
@@ -94,7 +98,7 @@ func (s *UpgradeSuite) TestLockAcquired_OldPodOverwritesSeqNum() {
 	// Old version should overwrite SeqNum to its current SeqNum.
 	curSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	futureSeqNum := curSeqNum + 10
-	s.setDBVersion(futureSeqNum, "5.2.0")
+	s.setDBVersion(futureSeqNum, "99.5.0")
 
 	err := upgradeAcquireLock(s.ctx, s.pool, s.gormDB, s.source)
 	s.Require().NoError(err)
@@ -123,7 +127,7 @@ func (s *UpgradeSuite) TestNewPodUpgrade() {
 	// Old pod is running at current seqnum. New pod starts, acquires lock,
 	// upgrades successfully.
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
-	s.setDBVersion(currSeqNum, "4.10.0")
+	s.setDBVersion(currSeqNum, "99.1.0")
 
 	err := upgradeAcquireLock(s.ctx, s.pool, s.gormDB, s.source)
 	s.Require().NoError(err)
@@ -137,7 +141,7 @@ func (s *UpgradeSuite) TestLockNotAcquired_NewPodWaitTimesOut() {
 	// DB is at lower version, and the lock is held by another instance.
 	// New pod should wait until its acquisition context expires.
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
-	s.setDBVersion(currSeqNum-1, "4.10.0")
+	s.setDBVersion(currSeqNum-1, "99.1.0")
 
 	acquired, release, err := lock.TryAcquireMigrationLock(s.ctx, s.pool)
 	s.Require().NoError(err)
@@ -187,8 +191,8 @@ func (s *UpgradeSuite) TestCompatibilityGate() {
 		source string
 		held   bool
 	}{
-		"old same sequence":  {source: "4.9.0"},
-		"old with lock held": {source: "4.9.0", held: true},
+		"old same sequence":  {source: "99.0.0"},
+		"old with lock held": {source: "99.0.0", held: true},
 		"unknown source":     {source: ""},
 	} {
 		s.Run(name, func() {
@@ -213,15 +217,15 @@ func (s *UpgradeSuite) TestCompatibilityGate() {
 }
 
 func (s *UpgradeSuite) TestCompatibilityRecheckedUnderLock() {
-	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "4.10.0")
+	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "99.1.0")
 	acquired, release, err := lock.TryAcquireMigrationLock(s.ctx, s.pool)
 	s.Require().NoError(err)
 	s.Require().True(acquired)
 	defer release()
 	// Simulate a metadata change after the initial read but before the locked read.
-	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "4.9.0")
+	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "99.0.0")
 	err = upgradeWithLock(s.ctx, s.pool, s.gormDB, s.source)
-	s.Require().ErrorContains(err, "4.9")
+	s.Require().ErrorContains(err, "99.0")
 	s.False(s.gormDB.Migrator().HasTable("clusters"))
 }
 
@@ -231,13 +235,13 @@ func (s *UpgradeSuite) TestUnsafeUpgradeOverride() {
 	s.Require().NoError(upgradeAcquireLock(s.ctx, s.pool, s.gormDB, s.source))
 	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
-	s.Equal("5.1.0", ver.MainVersion)
+	s.Equal("99.4.0", ver.MainVersion)
 	s.Equal(220, ver.MinimumSeqNum)
 }
 
 func (s *UpgradeSuite) TestOverrideCannotBypassMissingMigrations() {
 	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
-	s.setDBVersion(199, "4.4.0")
+	s.setDBVersion(199, "99.0.0")
 	s.Require().ErrorContains(upgradeAcquireLock(s.ctx, s.pool, s.gormDB, s.source), "no migration found")
 	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
@@ -250,7 +254,7 @@ func (s *UpgradeSuite) TestOverrideCannotBypassMissingMigrations() {
 }
 
 func (s *UpgradeSuite) TestSchemaFailureDoesNotPublishTargetVersion() {
-	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "4.10.0")
+	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "99.1.0")
 	s.Require().PanicsWithValue("schema failure", func() {
 		_ = upgradeWithLockAndSchema(s.ctx, s.pool, s.gormDB, s.source, func(context.Context, *gorm.DB) {
 			panic("schema failure")
@@ -258,7 +262,7 @@ func (s *UpgradeSuite) TestSchemaFailureDoesNotPublishTargetVersion() {
 	})
 	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
-	s.Equal("4.10.0", ver.MainVersion)
+	s.Equal("99.1.0", ver.MainVersion)
 }
 
 func (s *UpgradeSuite) TestInterruptedFreshInstallRemainsFresh() {
@@ -276,13 +280,13 @@ func (s *UpgradeSuite) TestInterruptedFreshInstallRemainsFresh() {
 
 func (s *UpgradeSuite) TestRollbackPreservesMinimumSequence() {
 	migVer.SetVersion(s.ctx, s.gormDB, &storage.Version{
-		Version: "5.2.0", SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum() + 1), MinSeqNum: 225,
+		Version: "99.5.0", SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum() + 1), MinSeqNum: 225,
 	}, true)
 	s.Require().NoError(upgradeAcquireLock(s.ctx, s.pool, s.gormDB, s.source))
 	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
 	s.Equal(pkgMigrations.CurrentDBVersionSeqNum(), ver.SeqNum)
-	s.Equal("5.1.0", ver.MainVersion)
+	s.Equal("99.4.0", ver.MainVersion)
 	s.Equal(225, ver.MinimumSeqNum, "rollback must not reopen an unsafe older rollback path")
 }
 
@@ -295,7 +299,7 @@ func (s *UpgradeSuite) TestMissingMetadataInitializesAsFresh() {
 	s.Require().NoError(upgradeWithLockAndSchema(s.ctx, s.pool, s.gormDB, s.source, applySchemas))
 	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
-	s.Equal("5.1.0", ver.MainVersion)
+	s.Equal("99.4.0", ver.MainVersion)
 	s.Equal(pkgMigrations.CurrentDBVersionSeqNum(), ver.SeqNum)
 	s.Equal(220, ver.MinimumSeqNum)
 	s.True(s.gormDB.Migrator().HasTable("existing_data"))

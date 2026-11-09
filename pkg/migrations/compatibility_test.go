@@ -193,3 +193,28 @@ func TestRollbackReleaseWindow(t *testing.T) {
 		})
 	}
 }
+
+func TestOverrideReleaseVersionsForTesting(t *testing.T) {
+	original := append([]ReleaseVersion(nil), releaseVersions...)
+	t.Run("override", func(t *testing.T) {
+		fixture := []ReleaseVersion{{Version: "99.1", Sequence: 220}}
+		OverrideReleaseVersionsForTesting(t, fixture)
+		fixture[0].Sequence = 999
+		minimum, err := MinimumSupportedForVersion("99.4.0")
+		require.NoError(t, err)
+		assert.Equal(t, ReleaseVersion{Version: "99.1", Sequence: 220}, minimum)
+		_, err = MinimumSupportedForVersion("5.1.0")
+		require.ErrorContains(t, err, "missing initial database sequence")
+
+		t.Run("nested", func(t *testing.T) {
+			OverrideReleaseVersionsForTesting(t, []ReleaseVersion{{Version: "99.2", Sequence: 225}})
+			minimum, err := MinimumSupportedForVersion("99.5.0")
+			require.NoError(t, err)
+			assert.Equal(t, ReleaseVersion{Version: "99.2", Sequence: 225}, minimum)
+		})
+		minimum, err = MinimumSupportedForVersion("99.4.0")
+		require.NoError(t, err)
+		assert.Equal(t, ReleaseVersion{Version: "99.1", Sequence: 220}, minimum)
+	})
+	assert.Equal(t, original, releaseVersions)
+}
