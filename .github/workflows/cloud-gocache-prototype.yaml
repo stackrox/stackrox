@@ -147,6 +147,11 @@ jobs:
         env:
           GOMEMLIMIT: 12GiB
           GOCACHE: ${{ matrix.backend == 'cacheprog' && '/tmp/.gocache-fuzz' || env.CLOUD_GOCACHE_DIR }}
+          # buildvcs stamps vcs.revision into every main package and test
+          # binary — the commit SHA changes per run, churning link
+          # ActionIDs even on identical trees (see the 2026 ldflags/version
+          # stabilization work). Disabled for cache-stable measurement.
+          GOFLAGS: -buildvcs=false
           # gocache-serve reads these directly for the Azure backend
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
