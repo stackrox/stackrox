@@ -49,7 +49,7 @@ func Singleton() Backend {
 		utils.Should(errors.Wrap(err, "could not create token issuer"))
 
 		// Create the final backend.
-		backendInstance = newBackend(issuer, provider, datastore.Singleton())
+		backendInstance = New(issuer, provider, datastore.Singleton())
 	})
 	return backendInstance
 }
