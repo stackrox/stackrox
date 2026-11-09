@@ -152,6 +152,13 @@ jobs:
           # ActionIDs even on identical trees (see the 2026 ldflags/version
           # stabilization work). Disabled for cache-stable measurement.
           GOFLAGS: -buildvcs=false
+          # Stable version stamping: make/env.mk maps BUILD_TAG -> TAG ->
+          # the -X MainVersion ldflag; SHORTCOMMIT -> GitShortSha. Without
+          # these, every commit changes all binary content (the version
+          # embedding followup notes). Verified locally: byte-identical
+          # binaries and 100%-hit/0-put warm sessions with these set.
+          BUILD_TAG: 0.0.0
+          SHORTCOMMIT: '0000000'
           # gocache-serve reads these directly for the Azure backend
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
