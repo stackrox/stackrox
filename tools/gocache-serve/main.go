@@ -67,6 +67,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("backend init: %v", err)
 	}
+	// Bundle backend: groups entries (~50 or 5MB) into gzip-compressed
+	// blobs so warm prefetch downloads whole bundles — one HTTP GET per
+	// ~50 entries instead of one per entry. Bundle composition follows
+	// upload order, which follows request order, which matches manifest
+	// order — so sequential prefetch gets near-perfect locality.
+	// GOCACHE_SERVE_BUNDLES=0 disables (individual entry blobs).
+	if os.Getenv("GOCACHE_SERVE_BUNDLES") != "0" {
+		bundled, err := NewBundledBackend(backend, 50, 5<<20)
+		if err != nil {
+			log.Fatalf("bundle backend init: %v", err)
+		}
+		backend = bundled
+	}
+	defer backend.Close() // flushes pending bundle + uploads index
 
 	local, err := NewLocalCache(cacheDir)
 	if err != nil {
@@ -88,47 +102,50 @@ func main() {
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
 		go func() {
 			start := time.Now()
-			keys, err := DownloadManifest(backend, jobName)
+			entries, err := DownloadManifest(backend, jobName)
 			if err != nil {
 				log.Printf("manifest download failed: %v", err)
 				return
 			}
-			if len(keys) == 0 {
+			if len(entries) == 0 {
 				log.Printf("no manifest for '%s', skipping prefetch (first run)", jobName)
 				return
 			}
-			log.Printf("prefetching %d entries from manifest '%s'...", len(keys), jobName)
+			log.Printf("prefetching %d entries from manifest '%s'...", len(entries), jobName)
 			// 64-way concurrency: the scalability bench measured ~6MB/s per
 			// connection cross-region with flat latency to 100 connections,
 			// so bulk prefetch throughput is connection-count-bound.
 			sem := make(chan struct{}, 64)
 			var wg sync.WaitGroup
 			var downloaded int64
-			for _, key := range keys {
+			for _, ent := range entries {
+				key := ent.id
 				if strings.HasPrefix(key, "manifest-") || strings.HasPrefix(key, "bundle-") || key == "bundle-index" {
 					continue
 				}
 				wg.Add(1)
-				go func(key string) {
+				go func(ent manifestEntry) {
 					defer wg.Done()
 					sem <- struct{}{}
 					defer func() { <-sem }()
 					// LocalCache.Get returns (nil, nil, nil) for a missing entry —
 					// err==nil alone means "checked", not "present".
-					if body, _, err := local.Get(key); err == nil && body != nil {
+					if body, _, err := local.Get(ent.id); err == nil && body != nil {
 						return
 					}
-					body, err := backend.Get(key)
+					body, err := backend.Get(ent.id)
 					if err != nil || body == nil {
 						return
 					}
-					local.Put(key, nil, body)
+					// Store the meta sidecar (OutputID) from the manifest so
+					// later local hits serve complete protocol responses.
+					local.Put(ent.id, []byte(ent.meta), body)
 					atomic.AddInt64(&downloaded, 1)
-				}(key)
+				}(ent)
 			}
 			wg.Wait()
 			log.Printf("prefetch complete: %d/%d entries in %v",
-				atomic.LoadInt64(&downloaded), len(keys), time.Since(start).Round(time.Millisecond))
+				atomic.LoadInt64(&downloaded), len(entries), time.Since(start).Round(time.Millisecond))
 		}()
 	}
 
@@ -299,7 +316,7 @@ func main() {
 					resp.DiskPath = local.path(actionID)
 					resp.Size = int64(len(body))
 					resp.OutputID = storedOutputID
-					manifest.Record(actionID)
+					manifest.Record(actionID, fmt.Sprintf("%x", storedOutputID))
 					break
 				}
 
@@ -408,7 +425,7 @@ func main() {
 				resp.DiskPath = path
 				resp.Size = int64(len(body))
 				resp.OutputID = req.ActionID
-				manifest.Record(actionID)
+				manifest.Record(actionID, actionID) // meta matches the .meta written by this path
 
 			case CmdPut:
 				atomic.AddInt64(&totalPuts, 1)

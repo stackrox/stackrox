@@ -66,10 +66,12 @@ func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error
 	return p, nil
 }
 
-// Manifest tracks which cache entries a job uses, in request order.
+// Manifest tracks which cache entries a job uses, in request order, along
+// with each entry's stored meta (the OutputID sidecar) so prefetch can
+// write complete local entries.
 type Manifest struct {
 	mu      sync.Mutex
-	entries []string
+	entries []manifestEntry
 	jobName string
 	// readOnly: if true, Upload() is a no-op. PR runs set this so they
 	// benefit from the master manifest's prefetch without overwriting
@@ -78,17 +80,22 @@ type Manifest struct {
 	readOnly bool
 }
 
+type manifestEntry struct {
+	id   string
+	meta string // hex of the stored .meta (OutputID); may be empty for legacy lines
+}
+
 func NewManifest(jobName string) *Manifest {
 	return &Manifest{jobName: jobName}
 }
 
-func (m *Manifest) Record(actionID string) {
+func (m *Manifest) Record(actionID, meta string) {
 	if m == nil || m.jobName == "" {
 		return
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.entries = append(m.entries, actionID)
+	m.entries = append(m.entries, manifestEntry{id: actionID, meta: meta})
 }
 
 // Upload merges this session's entries into the stored manifest. Merge (not
@@ -106,7 +113,7 @@ func (m *Manifest) Upload(backend Backend) error {
 		return nil
 	}
 	m.mu.Lock()
-	entries := make([]string, len(m.entries))
+	entries := make([]manifestEntry, len(m.entries))
 	copy(entries, m.entries)
 	m.mu.Unlock()
 	if len(entries) == 0 {
@@ -114,19 +121,20 @@ func (m *Manifest) Upload(backend Backend) error {
 	}
 
 	// Merge with the existing manifest so small sessions add rather
-	// than replace.
-	var merged []string
+	// than replace. Keyed by entry ID; on collision this session's meta
+	// wins (fresher).
+	var merged []manifestEntry
 	seen := make(map[string]bool, len(entries))
 	for _, e := range entries {
-		if !seen[e] {
-			seen[e] = true
+		if !seen[e.id] {
+			seen[e.id] = true
 			merged = append(merged, e)
 		}
 	}
 	if existing, err := DownloadManifest(backend, m.jobName); err == nil {
 		for _, e := range existing {
-			if !seen[e] {
-				seen[e] = true
+			if !seen[e.id] {
+				seen[e.id] = true
 				merged = append(merged, e)
 			}
 		}
@@ -134,11 +142,21 @@ func (m *Manifest) Upload(backend Backend) error {
 	if len(merged) > maxManifestEntries {
 		merged = merged[:maxManifestEntries]
 	}
-	data := []byte(strings.Join(merged, "\n"))
-	return backend.Put("manifest-"+m.jobName, data)
+	var buf strings.Builder
+	for _, e := range merged {
+		buf.WriteString(e.id)
+		if e.meta != "" {
+			buf.WriteString(" ")
+			buf.WriteString(e.meta)
+		}
+		buf.WriteString("\n")
+	}
+	return backend.Put("manifest-"+m.jobName, []byte(buf.String()))
 }
 
-func DownloadManifest(backend Backend, jobName string) ([]string, error) {
+// DownloadManifest fetches and parses a stored manifest. Lines are
+// "actionID [meta]"; legacy single-field lines get an empty meta.
+func DownloadManifest(backend Backend, jobName string) ([]manifestEntry, error) {
 	if jobName == "" {
 		return nil, nil
 	}
@@ -149,11 +167,17 @@ func DownloadManifest(backend Backend, jobName string) ([]string, error) {
 	if data == nil {
 		return nil, nil
 	}
-	var result []string
-	for _, e := range strings.Split(strings.TrimSpace(string(data)), "\n") {
-		if e != "" {
-			result = append(result, e)
+	var result []manifestEntry
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		if line == "" {
+			continue
 		}
+		id := line
+		meta := ""
+		if i := strings.IndexByte(line, ' '); i >= 0 {
+			id, meta = line[:i], line[i+1:]
+		}
+		result = append(result, manifestEntry{id: id, meta: meta})
 	}
 	return result, nil
 }

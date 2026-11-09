@@ -271,6 +271,12 @@ func (bb *BundledBackend) flushBundle() error {
 	return nil
 }
 
+// PutIfNotExist passes through to the inner backend (lease support; bundles
+// don't participate in lease coordination).
+func (bb *BundledBackend) PutIfNotExist(actionID string, body []byte) (bool, error) {
+	return bb.inner.PutIfNotExist(actionID, body)
+}
+
 func (bb *BundledBackend) ListKeys() ([]string, error) {
 	return bb.inner.ListKeys()
 }
@@ -281,18 +287,33 @@ func (bb *BundledBackend) Close() error {
 	bb.flushBundle()
 	bb.uploadMu.Unlock()
 
-	// Upload the updated bundle index
-	bb.indexMu.RLock()
+	// Upload the merged bundle index. Merge-on-write (not last-writer-wins):
+	// every gocache-serve process rewrites this blob, so a plain write would
+	// drop mappings added by concurrent processes since our startup snapshot.
+	// Ours win on conflict (we just wrote those bundles).
 	indexData, _ := json.Marshal(bb.index)
-	bb.indexMu.RUnlock()
+	if current, err := bb.inner.Get("bundle-index"); err == nil && current != nil {
+		var currentMap map[string]string
+		if json.Unmarshal(current, &currentMap) == nil {
+			bb.indexMu.Lock()
+			for k, v := range currentMap {
+				if _, ours := bb.index[k]; !ours {
+					bb.index[k] = v
+				}
+			}
+			bb.indexMu.Unlock()
+			indexData, _ = json.Marshal(bb.index)
+		}
+	}
 	if err := bb.inner.Put("bundle-index", indexData); err != nil {
 		return fmt.Errorf("upload bundle index: %w", err)
 	}
 
-	log.Printf("gocache-serve: bundles: %d uploaded, %d downloaded, %d cache-hits from bundles",
+	log.Printf("gocache-serve: bundles: %d uploaded, %d downloaded, %d cache-hits from bundles, index=%d entries",
 		atomic.LoadInt64(&bb.bundlesUploaded),
 		atomic.LoadInt64(&bb.bundlesDownload),
-		atomic.LoadInt64(&bb.entriesSavedGet))
+		atomic.LoadInt64(&bb.entriesSavedGet),
+		len(bb.index))
 
 	return bb.inner.Close()
 }
