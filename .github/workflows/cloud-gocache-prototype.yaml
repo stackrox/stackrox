@@ -90,6 +90,13 @@ jobs:
             echo "GOCACHE_SERVE_MANIFEST=${{ matrix.workload }}" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_CONTAINER=${{ inputs.container || 'ci-gocache' }}" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=${{ inputs.wait_concurrent || '-1' }}" >> "$GITHUB_ENV"
+            # "nobundle:" commit messages disable bundle packing for this
+            # run — used to A/B individual-entry parallel prefetch vs bundles.
+            case "${{ github.event.head_commit.message }}" in
+              nobundle:*)
+                echo "GOCACHE_SERVE_BUNDLES=0" >> "$GITHUB_ENV"
+                echo "gocache-serve: bundles disabled (nobundle mode)" ;;
+            esac
             if [ -n "${{ inputs.storage_account }}" ]; then
               echo "AZURE_STORAGE_ACCOUNT=${{ inputs.storage_account }}" >> "$GITHUB_ENV"
             fi
