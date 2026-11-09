@@ -251,6 +251,26 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 			in:       "Red Hat Enterprise Linux CoreOS 41712345.94.2024",
 			expected: "rhcos:4.1712345",
 		},
+		"legacy single-digit minor version": {
+			in:       "Red Hat Enterprise Linux CoreOS 41.84.201907030753-0",
+			expected: "rhcos:4.1",
+		},
+		"RHCOS 9.6 (OCP 4.19)": {
+			in:       "Red Hat Enterprise Linux CoreOS 9.6.20250701-0 (Plow)",
+			expected: "rhcos:9.6",
+		},
+		"RHCOS 9.8": {
+			in:       "Red Hat Enterprise Linux CoreOS 9.8.20260908-0 (Plow)",
+			expected: "rhcos:9.8",
+		},
+		"RHCOS 10.1": {
+			in:       "Red Hat Enterprise Linux CoreOS 10.1.20260908-0 (Plow)",
+			expected: "rhcos:10.1",
+		},
+		"RHCOS dotted version without build suffix": {
+			in:       "Red Hat Enterprise Linux CoreOS 9.8 (Plow)",
+			expected: "rhcos:9.8",
+		},
 		"non-RHCOS": {
 			in:       "Oracle Linux Server release 6.8",
 			expected: "",
