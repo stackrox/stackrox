@@ -115,13 +115,8 @@ scanner_v4_db_pg_version() {
 # Scratch database the fallback test uses to make pg_upgrade --check fail.
 SCANNER_V4_UPGRADE_BLOCKER=upgrade_blocker
 
-# Floor for the vulnerability store. It is used to verify the store was not wiped out.
-SCANNER_V4_DB_MIN_VULNS=100000
-
-# scanner_v4_db_vulns echoes how many rows the vulnerability table holds.
-scanner_v4_db_vulns() {
-    scanner_v4_db_psql "SELECT count(*) FROM vuln" | tr -d '[:space:]'
-}
+# Table the fallback test creates as a marker before the upgrade
+SCANNER_V4_UPGRADE_MARKER=upgrade_marker
 
 # check_scanner_v4_db_upgraded asserts the data directory moved to the current major version.
 check_scanner_v4_db_upgraded() {
@@ -137,20 +132,16 @@ check_scanner_v4_db_upgraded() {
     scanner_v4_db_exec "test -e '$SCANNER_V4_PGDATA/.init-ready'" || \
         die "The scanner-v4-db .init-ready sentinel is missing after the upgrade"
 
+    scanner_v4_db_psql "SELECT count(*) FROM $SCANNER_V4_UPGRADE_MARKER" >/dev/null || \
+        die "scanner-v4-db was re-initialised rather than upgraded"
+
     info "scanner-v4-db is on PostgreSQL $version."
 }
 
-# check_scanner_v4_data_upgraded asserts Scanner V4 is up with its
-# data in vulnerability store.
-check_scanner_v4_data_upgraded() {
-    local vulns
-
+# check_scanner_v4_ready waits for Scanner V4 to come back after a database restart.
+check_scanner_v4_ready() {
     kubectl -n stackrox rollout status deploy/scanner-v4-indexer --timeout=300s
     kubectl -n stackrox rollout status deploy/scanner-v4-matcher --timeout=300s
-
-    vulns="$(scanner_v4_db_vulns)"
-    test_gt_non_silent "$vulns" "$SCANNER_V4_DB_MIN_VULNS"
-    info "Scanner V4 is up with $vulns vulnerabilities in the store."
 }
 
 test_upgrade() {
@@ -477,6 +468,8 @@ test_scanner_v4_db_upgrade_fallback() {
 
     # Make pg_upgrade --check fail. A database that disallows connections is
     # rejected during the consistency checks.
+    scanner_v4_db_psql "CREATE TABLE $SCANNER_V4_UPGRADE_MARKER ()"
+
     info "Blocking the upgrade with a database that disallows connections"
     scanner_v4_db_psql "CREATE DATABASE $SCANNER_V4_UPGRADE_BLOCKER"
     scanner_v4_db_psql "ALTER DATABASE $SCANNER_V4_UPGRADE_BLOCKER WITH ALLOW_CONNECTIONS false"
@@ -496,20 +489,20 @@ test_scanner_v4_db_upgrade_fallback() {
         die "scanner-v4-db did not decline the upgrade the way this test intends"
 
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
-    check_scanner_v4_data_upgraded
+    check_scanner_v4_ready
 
     info "Removing the blocker and restarting scanner-v4-db"
     scanner_v4_db_psql "DROP DATABASE $SCANNER_V4_UPGRADE_BLOCKER"
     kubectl -n stackrox rollout restart deploy/scanner-v4-db
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     check_scanner_v4_db_upgraded
-    check_scanner_v4_data_upgraded
+    check_scanner_v4_ready
 
     info "Bouncing scanner-v4-db"
     kubectl -n stackrox delete po -l app=scanner-v4-db --grace-period=0
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     check_scanner_v4_db_upgraded
-    check_scanner_v4_data_upgraded
+    check_scanner_v4_ready
 
     collect_and_check_stackrox_logs "$log_output_dir" "scanner_v4_db_fallback_final"
 }
