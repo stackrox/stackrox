@@ -83,7 +83,7 @@ jobs:
         run: echo "HOME=$HOME" >> "$GITHUB_ENV"
       - name: Restore golangci-lint analysis cache
         if: matrix.workload == 'lint' && matrix.backend == 'cacheprog'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
         with:
           path: ${{ env.HOME }}/.cache/golangci-lint
           key: go-lint-v2-${{ github.sha }}
