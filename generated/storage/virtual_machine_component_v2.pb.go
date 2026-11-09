@@ -80,10 +80,10 @@ type VirtualMachineComponentV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,type(uuid)"` // @gotags: search:"Component ID,hidden" sql:"pk,type(uuid)"
 	// FK to VirtualMachineScanV2.id. CASCADE DELETE ensures cleanup when scan is replaced.
-	VmScanId        string     `protobuf:"bytes,2,opt,name=vm_scan_id,json=vmScanId,proto3" json:"vm_scan_id,omitempty" sql:"fk(VirtualMachineScanV2:id),type(uuid),index=btree"`                    // @gotags: sql:"fk(VirtualMachineScanV2:id),type(uuid),index=btree"
-	Name            string     `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Component" sql:"index=btree"`                                              // @gotags: search:"Component" sql:"index=btree"
-	Version         string     `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"`                                        // @gotags: search:"Component Version"
-	Source          SourceType `protobuf:"varint,5,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"`                 // @gotags: search:"Component Source"
+	VmScanId        string     `protobuf:"bytes,2,opt,name=vm_scan_id,json=vmScanId,proto3" json:"vm_scan_id,omitempty" sql:"fk(VirtualMachineScanV2:id),type(uuid),index=btree"`       // @gotags: sql:"fk(VirtualMachineScanV2:id),type(uuid),index=btree"
+	Name            string     `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Component" sql:"index=btree"`                                                     // @gotags: search:"Component" sql:"index=btree"
+	Version         string     `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"`                                                         // @gotags: search:"Component Version"
+	Source          SourceType `protobuf:"varint,5,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"`                                   // @gotags: search:"Component Source"
 	OperatingSystem string     `protobuf:"bytes,6,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System" sql:"index=btree"` // @gotags: search:"Operating System" sql:"index=btree"
 	// Cached highest CVSS score across all CVEs affecting this component.
 	//

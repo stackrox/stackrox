@@ -455,7 +455,7 @@ func (x *NetworkEntity) GetScope() *NetworkEntity_Scope {
 type NetworkEntityInfo struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Type  NetworkEntityInfo_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty" sql:"index"` // @gotags: sql:"index"
-	Id    string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                          // @gotags: sql:"pk"
+	Id    string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                             // @gotags: sql:"pk"
 	// Types that are valid to be assigned to Desc:
 	//
 	//	*NetworkEntityInfo_Deployment_

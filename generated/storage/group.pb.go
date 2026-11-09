@@ -91,8 +91,8 @@ type GroupProperties struct {
 	Id             string  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	Traits         *Traits `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
 	AuthProviderId string  `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty" search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"` // @gotags: search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"
-	Key            string  `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty" search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                               // @gotags: search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"
-	Value          string  `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty" search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                           // @gotags: search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	Key            string  `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty" search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                                         // @gotags: search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	Value          string  `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty" search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                                   // @gotags: search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }

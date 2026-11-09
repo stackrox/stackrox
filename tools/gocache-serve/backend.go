@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +24,109 @@ type Backend interface {
 	ListKeys() ([]string, error)                              // list all blob keys in the container
 	Close() error
 }
+
+// gzipAtRest compresses blobs for transfer: cross-region, the network
+// (~6MB/s, 46ms RTT) is far slower than the compute to decompress
+// (~400MB/s gzip), and Go object data compresses 2-3x. Level 1 keeps
+// the put path fast while capturing most of the ratio.
+func gzipBytes(body []byte) []byte {
+	// already gzip (e.g. pfb bundles from SerializeBundle) — don't double-wrap
+	if len(body) >= 2 && body[0] == 0x1f && body[1] == 0x8b {
+		return body
+	}
+	var buf bytes.Buffer
+	zw, _ := gzip.NewWriterLevel(&buf, gzip.BestSpeed)
+	zw.Write(body)
+	zw.Close()
+	return buf.Bytes()
+}
+
+// maybeGunzip reverses gzipBytes; non-gzip payloads (legacy raw blobs)
+// pass through unchanged. A false positive would require a raw blob that
+// both starts with the gzip magic AND passes the full CRC32 trailer
+// check — effectively impossible for object files.
+func maybeGunzip(body []byte) []byte {
+	if len(body) < 2 || body[0] != 0x1f || body[1] != 0x8b {
+		return body
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(body))
+	if err != nil {
+		return body
+	}
+	raw, err := io.ReadAll(zr)
+	if err != nil {
+		return body
+	}
+	return raw
+}
+
+// DirBackend is a filesystem-backed store for local end-to-end testing of
+// the full pipeline (manifests, run-scoping, prefetch bundles) without
+// Azure. Blobs are files under a root dir; keys are sanitized paths.
+type DirBackend struct {
+	root string
+}
+
+func newDirBackend() (*DirBackend, error) {
+	root := os.Getenv("GOCACHE_SERVE_DIR_STORE")
+	if root == "" {
+		root = "/tmp/gocache-serve-store"
+	}
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return nil, err
+	}
+	return &DirBackend{root: root}, nil
+}
+
+func (d *DirBackend) path(key string) string {
+	// keep key readable but flat-safe
+	return filepath.Join(d.root, strings.Map(func(r rune) rune {
+		if r == '/' || r == '\\' || r == ':' {
+			return '_'
+		}
+		return r
+	}, key))
+}
+
+func (d *DirBackend) Get(key string) ([]byte, error) {
+	b, err := os.ReadFile(d.path(key))
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	return maybeGunzip(b), err
+}
+
+func (d *DirBackend) Put(key string, body []byte) error {
+	p := d.path(key)
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(p, gzipBytes(body), 0o644)
+}
+
+func (d *DirBackend) PutIfNotExist(key string, body []byte) (bool, error) {
+	p := d.path(key)
+	if _, err := os.Stat(p); err == nil {
+		return false, nil
+	}
+	return true, d.Put(key, body)
+}
+
+func (d *DirBackend) ListKeys() ([]string, error) {
+	var keys []string
+	entries, err := os.ReadDir(d.root)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			keys = append(keys, e.Name())
+		}
+	}
+	return keys, nil
+}
+
+func (d *DirBackend) Close() error { return nil }
 
 // NoopBackend does nothing (for protocol testing)
 type NoopBackend struct{}
@@ -46,6 +151,8 @@ type AzureBackend struct {
 	tokenExp time.Time
 
 	client *http.Client
+
+	tokenCache *tokenDiskCache
 }
 
 // detectRegion returns the runner's Azure region via Instance Metadata
@@ -113,6 +220,7 @@ func newAzureBackend() (*AzureBackend, error) {
 		clientID:     os.Getenv("AZURE_CLIENT_ID"),
 		clientSecret: os.Getenv("AZURE_CLIENT_SECRET"),
 		client:       &http.Client{Timeout: 30 * time.Second},
+		tokenCache:   newTokenDiskCache(),
 	}
 	if b.tenantID == "" || b.clientID == "" || b.clientSecret == "" {
 		return nil, fmt.Errorf("Azure SPN env not set (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET)")
@@ -135,6 +243,15 @@ func (a *AzureBackend) getToken() (string, error) {
 
 	if a.token != "" && time.Now().Before(a.tokenExp.Add(-time.Minute)) {
 		return a.token, nil
+	}
+
+	// Disk cache: every `go` invocation spawns a new gocache-serve process;
+	// without this each pays a ~300ms OAuth round trip.
+	if a.tokenCache != nil {
+		if tok, exp, ok := a.tokenCache.Load(); ok && time.Now().Before(exp.Add(-2*time.Minute)) {
+			a.token, a.tokenExp = tok, exp
+			return tok, nil
+		}
 	}
 
 	tokenURL := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", a.tenantID)
@@ -161,6 +278,9 @@ func (a *AzureBackend) getToken() (string, error) {
 
 	a.token = tr.AccessToken
 	a.tokenExp = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
+	if a.tokenCache != nil {
+		a.tokenCache.Save(a.token, a.tokenExp)
+	}
 	return a.token, nil
 }
 
@@ -188,7 +308,8 @@ func (a *AzureBackend) Get(actionID string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GET %s: HTTP %d", shortID(actionID), resp.StatusCode)
 	}
-	return io.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
+	return maybeGunzip(b), err
 }
 
 func (a *AzureBackend) Put(actionID string, body []byte) error {
@@ -196,6 +317,7 @@ func (a *AzureBackend) Put(actionID string, body []byte) error {
 	if err != nil {
 		return err
 	}
+	body = gzipBytes(body)
 	req, err := http.NewRequest("PUT", a.blobURL(actionID), bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -316,9 +438,11 @@ func newBackend() (Backend, error) {
 	switch os.Getenv("GOCACHE_SERVE_BACKEND") {
 	case "", "azure":
 		return newAzureBackend()
+	case "dir":
+		return newDirBackend()
 	case "noop":
 		return &NoopBackend{}, nil
 	default:
-		return nil, fmt.Errorf("unknown backend (azure, noop)")
+		return nil, fmt.Errorf("unknown backend (azure, dir, noop)")
 	}
 }

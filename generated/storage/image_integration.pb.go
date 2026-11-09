@@ -77,7 +77,7 @@ func (ImageIntegrationCategory) EnumDescriptor() ([]byte, []int) {
 // Next Tag: 25
 type ImageIntegration struct {
 	state      protoimpl.MessageState     `protogen:"open.v1"`
-	Id         string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`     // @gotags: sql:"pk,type(uuid)"
+	Id         string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                               // @gotags: sql:"pk,type(uuid)"
 	Name       string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name,hidden"` // @gotags: sql:"unique" search:"Integration Name,hidden"
 	Type       string                     `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	Categories []ImageIntegrationCategory `protobuf:"varint,6,rep,packed,name=categories,proto3,enum=storage.ImageIntegrationCategory" json:"categories,omitempty"`
@@ -644,7 +644,7 @@ func (x *ClairifyConfig) GetNumConcurrentScans() int32 {
 type DockerConfig struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Endpoint string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"`                            // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
 	Password      string `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	Insecure      bool   `protobuf:"varint,4,opt,name=insecure,proto3" json:"insecure,omitempty"`
@@ -718,8 +718,8 @@ type ECRConfig struct {
 	// The secret access key for the integration. The server will mask the value of this credential in responses and logs.
 	SecretAccessKey      string                       `protobuf:"bytes,3,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	Region               string                       `protobuf:"bytes,4,opt,name=region,proto3" json:"region,omitempty"`
-	UseIam               bool                         `protobuf:"varint,5,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	Endpoint             string                       `protobuf:"bytes,6,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"`            // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	UseIam               bool                         `protobuf:"varint,5,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"`                 // @gotags: scrub:"dependent"
+	Endpoint             string                       `protobuf:"bytes,6,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
 	UseAssumeRole        bool                         `protobuf:"varint,7,opt,name=use_assume_role,json=useAssumeRole,proto3" json:"use_assume_role,omitempty"`
 	AssumeRoleId         string                       `protobuf:"bytes,8,opt,name=assume_role_id,json=assumeRoleId,proto3" json:"assume_role_id,omitempty"`
 	AssumeRoleExternalId string                       `protobuf:"bytes,9,opt,name=assume_role_external_id,json=assumeRoleExternalId,proto3" json:"assume_role_external_id,omitempty"`
@@ -961,7 +961,7 @@ func (x *ScannerV4Config) GetMatcherEndpoint() string {
 type AzureConfig struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Endpoint string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"`                            // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
 	Password string `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	// Enables authentication with short-lived tokens using Azure managed identities or Azure workload identities.

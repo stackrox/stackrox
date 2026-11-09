@@ -111,6 +111,7 @@ runs:
         echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
         echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
         echo "GOCACHE_SERVE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+        echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
         echo "AZURE_TENANT_ID=$AZURE_TENANT_ID" >> "$GITHUB_ENV"
         echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" >> "$GITHUB_ENV"
         echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> "$GITHUB_ENV"

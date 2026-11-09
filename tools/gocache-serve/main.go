@@ -68,18 +68,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("backend init: %v", err)
 	}
-	// Bundle backend: groups entries into gzip-compressed blobs so warm
-	// prefetch downloads whole bundles — one HTTP GET per bundle instead
-	// of one per entry. Bundle composition follows upload order, which
-	// follows request order, which matches manifest order — so sequential
-	// prefetch gets near-perfect locality.
-	// Size is a trade-off: big bundles amortize request overhead for
-	// parallel prefetch; small bundles limit over-fetch latency when a
-	// lazy cross-job get needs one entry from a foreign bundle. With
-	// ~460KB average entries, 5MB ≈ 11 entries. Tunable for experiments:
-	// GOCACHE_SERVE_BUNDLE_MAX_BYTES, GOCACHE_SERVE_BUNDLE_MAX_ENTRIES.
-	// GOCACHE_SERVE_BUNDLES=0 disables (individual entry blobs).
-	if os.Getenv("GOCACHE_SERVE_BUNDLES") != "0" {
+	// Control plane (manifests, prefetch bundles, indexes) always uses the
+	// raw backend — bundling must never swallow these keys.
+	rawBackend := backend
+	// Bundle backend: OPTIONAL opt-in (GOCACHE_SERVE_BUNDLES=1). The A/B
+	// data showed order-based bundles add index cost without measurable
+	// prefetch benefit at 64-way parallel individual fetch; the size-gated
+	// per-job prefetch bundles (pfb.go) replace this concept.
+	if os.Getenv("GOCACHE_SERVE_BUNDLES") == "1" {
 		maxEntries := envInt("GOCACHE_SERVE_BUNDLE_MAX_ENTRIES", 50)
 		maxBytes := int64(envInt("GOCACHE_SERVE_BUNDLE_MAX_BYTES", 5<<20))
 		bundled, err := NewBundledBackend(backend, maxEntries, maxBytes)
@@ -106,11 +102,14 @@ func main() {
 		manifest.readOnly = true
 	}
 
+	// Prefetch bundles: size-gated, per-job, written by manifest-writing runs.
+	pfbEnabled, pfbMaxEntry, pfbBundleBytes := pfbEnvs()
+
 	// Prefetch from manifest (see bundle.go for BundledBackend)
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
 		go func() {
 			start := time.Now()
-			entries, err := DownloadManifest(backend, jobName)
+			entries, _, err := DownloadManifest(rawBackend, jobName)
 			if err != nil {
 				log.Printf("manifest download failed: %v", err)
 				return
@@ -120,6 +119,16 @@ func main() {
 				return
 			}
 			log.Printf("prefetching %d entries from manifest '%s'...", len(entries), jobName)
+			// Size-gated prefetch bundles first: the small (<50KB, RTT-bound)
+			// half of the working set lands as a handful of parallel bundle
+			// GETs; the per-entry loop below then only pulls large entries.
+			if pfbEnabled {
+				metas := make(map[string]string, len(entries))
+				for _, e := range entries {
+					metas[e.id] = e.meta
+				}
+				PrefetchPFBs(rawBackend, jobName, local, metas)
+			}
 			// 64-way concurrency: the scalability bench measured ~6MB/s per
 			// connection cross-region with flat latency to 100 connections,
 			// so bulk prefetch throughput is connection-count-bound.
@@ -281,8 +290,16 @@ func main() {
 		if req.Command == CmdClose {
 			wg.Wait()
 			uploader.Flush()
-			if err := manifest.Upload(backend); err != nil {
+			mergedEntries, err := manifest.Upload(rawBackend)
+			if err != nil {
 				log.Printf("manifest upload failed: %v", err)
+			}
+			// Pack the run's small entries into prefetch bundles for the
+			// next run (same gating as the manifest itself).
+			if pfbEnabled && err == nil && len(mergedEntries) > 0 {
+				if err := UploadPFBs(rawBackend, jobName, manifest.runID, mergedEntries, local, pfbMaxEntry, pfbBundleBytes); err != nil {
+					log.Printf("pfb upload failed: %v", err)
+				}
 			}
 			elapsed := time.Since(startTime)
 			var netStats string
@@ -452,6 +469,9 @@ func main() {
 					log.Printf("TRACE put id=%s out=%x bodyLen=%d size=%d disk=%q",
 						shortID(actionID), req.OutputID, len(req.Body), req.BodySize, req.DiskPath)
 				}
+				// Record produced entries too: a cold run has no hits, but
+				// its puts ARE the working set (they'll be hits next run).
+				manifest.Record(actionID, fmt.Sprintf("%x", req.OutputID))
 				path, err := local.Put(actionID, req.OutputID, req.Body)
 				if err != nil {
 					resp.Err = fmt.Sprintf("local put: %v", err)

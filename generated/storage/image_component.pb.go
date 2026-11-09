@@ -212,11 +212,11 @@ func (*ImageComponent_TopCvss) isImageComponent_SetTopCvss() {}
 type ImageComponentV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID will be form of Name+version+arch+imageID
-	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,id"`                                  // @gotags: search:"Component ID,hidden" sql:"pk,id"
-	Name      string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component"`                              // @gotags: search:"Component"
-	Version   string     `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"`                        // @gotags: search:"Component Version"
-	Priority  int64      `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    SourceType `protobuf:"varint,5,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"` // @gotags: search:"Component Source"
+	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,id"`                              // @gotags: search:"Component ID,hidden" sql:"pk,id"
+	Name      string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component"`                                                // @gotags: search:"Component"
+	Version   string     `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"`                                  // @gotags: search:"Component Version"
+	Priority  int64      `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                  // @gotags: search:"Component Risk Priority,hidden"
+	Source    SourceType `protobuf:"varint,5,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"`            // @gotags: search:"Component Source"
 	RiskScore float32    `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//

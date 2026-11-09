@@ -318,7 +318,7 @@ func (VulnerabilityReportFilters_ImageType) EnumDescriptor() ([]byte, []int) {
 
 type ReportConfiguration struct {
 	state       protoimpl.MessageState         `protogen:"open.v1"`
-	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                 // @gotags: sql:"pk"
 	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"` // @gotags: search:"Report Name"
 	Description string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty" search:"Report Type"` // @gotags: search:"Report Type"
@@ -348,8 +348,8 @@ type ReportConfiguration struct {
 	LastSuccessfulRunTime *timestamppb.Timestamp   `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
 	ResourceScope         *ResourceScope           `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
 	Notifiers             []*NotifierConfiguration `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	Creator               *SlimUser                `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
-	Version               int32                    `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"` // V1 configs (version 0 and 1) have been removed by migration m_221_to_m_222. Only version=2 (V2) configs exist.
+	Creator               *SlimUser                `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	Version               int32                    `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"`                             // V1 configs (version 0 and 1) have been removed by migration m_221_to_m_222. Only version=2 (V2) configs exist.
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }

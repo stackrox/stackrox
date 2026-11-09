@@ -183,7 +183,7 @@ func (Syslog_MessageFormat) EnumDescriptor() ([]byte, []int) {
 // Next Tag: 21
 type Notifier struct {
 	state        protoimpl.MessageState `protogen:"open.v1"`
-	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`         // @gotags: sql:"pk"
 	Name         string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
 	Type         string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	UiEndpoint   string                 `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
@@ -578,8 +578,8 @@ func (x *CSCC) GetWifEnabled() bool {
 
 type Jira struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
-	Url      string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty" scrub:"dependent" validate:"nolocalendpoint"`           // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Url      string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	Username string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"`                  // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
 	Password          string                  `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	IssueType         string                  `protobuf:"bytes,4,opt,name=issue_type,json=issueType,proto3" json:"issue_type,omitempty"`
@@ -799,7 +799,7 @@ func (x *Email) GetHostnameHeloEhlo() string {
 type Splunk struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
-	HttpToken           string `protobuf:"bytes,1,opt,name=http_token,json=httpToken,proto3" json:"http_token,omitempty" scrub:"always"`          // @gotags: scrub:"always"
+	HttpToken           string `protobuf:"bytes,1,opt,name=http_token,json=httpToken,proto3" json:"http_token,omitempty" scrub:"always"`                                        // @gotags: scrub:"always"
 	HttpEndpoint        string `protobuf:"bytes,2,opt,name=http_endpoint,json=httpEndpoint,proto3" json:"http_endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
 	Insecure            bool   `protobuf:"varint,3,opt,name=insecure,proto3" json:"insecure,omitempty"`
 	Truncate            int64  `protobuf:"varint,4,opt,name=truncate,proto3" json:"truncate,omitempty"`

@@ -313,8 +313,8 @@ func (x *ImageCVEEdge) GetImageCveId() string {
 type NodeComponentEdge struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// base 64 encoded Node:Component ids.
-	Id              string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                    // @gotags: sql:"pk,id"
-	NodeId          string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" sql:"fk(Node:id),index=hash,type(uuid)"`                              // @gotags: sql:"fk(Node:id),index=hash,type(uuid)"
+	Id              string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                                               // @gotags: sql:"pk,id"
+	NodeId          string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" sql:"fk(Node:id),index=hash,type(uuid)"`                                             // @gotags: sql:"fk(Node:id),index=hash,type(uuid)"
 	NodeComponentId string `protobuf:"bytes,3,opt,name=node_component_id,json=nodeComponentId,proto3" json:"node_component_id,omitempty" sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -373,7 +373,7 @@ func (x *NodeComponentEdge) GetNodeComponentId() string {
 
 type NodeComponentCVEEdge struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
-	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                      // @gotags: sql:"pk,id"
 	IsFixable bool                   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable"` // @gotags: search:"Fixable"
 	// Whether there is a version the CVE is fixed in the component.
 	//
@@ -382,7 +382,7 @@ type NodeComponentCVEEdge struct {
 	//	*NodeComponentCVEEdge_FixedBy
 	HasFixedBy      isNodeComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
 	NodeComponentId string                            `protobuf:"bytes,4,opt,name=node_component_id,json=nodeComponentId,proto3" json:"node_component_id,omitempty" sql:"fk(NodeComponent:id),index=hash"` // @gotags: sql:"fk(NodeComponent:id),index=hash"
-	NodeCveId       string                            `protobuf:"bytes,5,opt,name=node_cve_id,json=nodeCveId,proto3" json:"node_cve_id,omitempty" sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"`                   // @gotags: sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"
+	NodeCveId       string                            `protobuf:"bytes,5,opt,name=node_cve_id,json=nodeCveId,proto3" json:"node_cve_id,omitempty" sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"`        // @gotags: sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -474,7 +474,7 @@ func (*NodeComponentCVEEdge_FixedBy) isNodeComponentCVEEdge_HasFixedBy() {}
 type ClusterCVEEdge struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// base 64 encoded Cluster:CVE ids.
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
+	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                         // @gotags: sql:"pk,id"
 	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Cluster CVE Fixable,hidden"` // @gotags: search:"Cluster CVE Fixable,hidden"
 	// Whether there is a version the CVE is fixed in the Cluster.
 	//
@@ -482,8 +482,8 @@ type ClusterCVEEdge struct {
 	//
 	//	*ClusterCVEEdge_FixedBy
 	HasFixedBy    isClusterCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	ClusterId     string                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"fk(Cluster:id),type(uuid)"` // @gotags: sql:"fk(Cluster:id),type(uuid)"
-	CveId         string                      `protobuf:"bytes,5,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty" sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"`             // @gotags: sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"
+	ClusterId     string                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"fk(Cluster:id),type(uuid)"`         // @gotags: sql:"fk(Cluster:id),type(uuid)"
+	CveId         string                      `protobuf:"bytes,5,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty" sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -574,9 +574,9 @@ func (*ClusterCVEEdge_FixedBy) isClusterCVEEdge_HasFixedBy() {}
 
 type PolicyCategoryEdge struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                   // @gotags: sql:"pk,id"
-	PolicyId      string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty" sql:"fk(Policy:id)" search:"Policy ID,hidden"`       // @gotags: sql:"fk(Policy:id)" search:"Policy ID,hidden"
-	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty" sql:"fk(PolicyCategory:id)"` // @gotags: sql:"fk(PolicyCategory:id)"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                               // @gotags: sql:"pk,id"
+	PolicyId      string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty" sql:"fk(Policy:id)" search:"Policy ID,hidden"` // @gotags: sql:"fk(Policy:id)" search:"Policy ID,hidden"
+	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty" sql:"fk(PolicyCategory:id)"`             // @gotags: sql:"fk(PolicyCategory:id)"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

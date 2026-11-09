@@ -39,7 +39,7 @@ type VirtualMachineCVEV2 struct {
 	// Extensible for CVSS v5+ without DB migration.
 	PreferredCvssVersion CvssScoreVersion      `protobuf:"varint,6,opt,name=preferred_cvss_version,json=preferredCvssVersion,proto3,enum=storage.CvssScoreVersion" json:"preferred_cvss_version,omitempty"`
 	Severity             VulnerabilitySeverity `protobuf:"varint,7,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity" sql:"index=btree"` // @gotags: search:"Severity" sql:"index=btree"
-	ImpactScore          float32               `protobuf:"fixed32,8,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
+	ImpactScore          float32               `protobuf:"fixed32,8,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`                        // @gotags: search:"Impact Score"
 	// NVD-specific CVSS score.
 	Nvdcvss         float32          `protobuf:"fixed32,9,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS"` // @gotags: search:"NVD CVSS"
 	NvdScoreVersion CvssScoreVersion `protobuf:"varint,10,opt,name=nvd_score_version,json=nvdScoreVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`

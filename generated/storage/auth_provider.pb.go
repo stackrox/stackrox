@@ -25,7 +25,7 @@ const (
 // Next Tag: 15.
 type AuthProvider struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                           // @gotags: sql:"pk"
 	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"AuthProvider Name,hidden"` // @gotags: sql:"unique" search:"AuthProvider Name,hidden"
 	Type  string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	// The UI endpoint of the Central instance, e.g. "central.example.com:443".

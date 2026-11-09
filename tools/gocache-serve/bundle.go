@@ -44,19 +44,25 @@ func SerializeBundle(entries []BundleEntry) []byte {
 	return compressed.Bytes()
 }
 
-// DeserializeBundle decodes a gzip-compressed bundle blob back into entries.
+// DeserializeBundle decodes a bundle blob back into entries. The payload
+// may arrive still gzip-wrapped (direct SerializeBundle output) or already
+// unwrapped (backends with compression-at-rest gunzip any gzip-magic blob
+// in Get) — both are handled.
 func DeserializeBundle(data []byte) ([]BundleEntry, error) {
-	zr, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return nil, fmt.Errorf("gzip open: %w", err)
-	}
-	defer zr.Close()
-	raw, err := io.ReadAll(zr)
-	if err != nil {
-		return nil, fmt.Errorf("gzip read: %w", err)
+	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
+		zr, err := gzip.NewReader(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("gzip open: %w", err)
+		}
+		defer zr.Close()
+		raw, err := io.ReadAll(zr)
+		if err != nil {
+			return nil, fmt.Errorf("gzip read: %w", err)
+		}
+		data = raw
 	}
 
-	r := bytes.NewReader(raw)
+	r := bytes.NewReader(data)
 	var count int32
 	if err := binary.Read(r, binary.LittleEndian, &count); err != nil {
 		return nil, fmt.Errorf("bundle count: %w", err)
@@ -68,14 +74,14 @@ func DeserializeBundle(data []byte) ([]BundleEntry, error) {
 			return nil, fmt.Errorf("key len %d: %w", i, err)
 		}
 		key := make([]byte, keyLen)
-		if _, err := r.Read(key); err != nil {
+		if _, err := io.ReadFull(r, key); err != nil {
 			return nil, fmt.Errorf("key %d: %w", i, err)
 		}
 		if err := binary.Read(r, binary.LittleEndian, &bodyLen); err != nil {
 			return nil, fmt.Errorf("body len %d: %w", i, err)
 		}
 		body := make([]byte, bodyLen)
-		if _, err := r.Read(body); err != nil {
+		if _, err := io.ReadFull(r, body); err != nil {
 			return nil, fmt.Errorf("body %d: %w", i, err)
 		}
 		entries = append(entries, BundleEntry{Key: string(key), Body: body})
