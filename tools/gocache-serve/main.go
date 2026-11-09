@@ -126,9 +126,21 @@ func main() {
 		}
 	}
 
+	// Prefetch completion gate: the first get waits for prefetch to finish.
+	// Prefetching thousands of files concurrently with go's own package
+	// loading (which mmaps the module index) reproducibly SIGBUS-crashes
+	// the go process on CoW/overlay filesystems (observed on CI overlayfs
+	// and local APFS). Serializing writes-before-reads eliminates the race;
+	// after prefetch completes the channel is closed and the wait is free.
+	prefetchDone := make(chan struct{})
+	if jobName == "" || os.Getenv("GOCACHE_SERVE_PREFETCH") == "0" {
+		close(prefetchDone)
+	}
+
 	// Prefetch from manifest (see bundle.go for BundledBackend)
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
 		go func() {
+			defer close(prefetchDone)
 			start := time.Now()
 			entries := manifestEntries
 			if len(entries) == 0 {
@@ -353,6 +365,10 @@ func main() {
 			switch req.Command {
 			case CmdGet:
 				atomic.AddInt64(&totalGets, 1)
+				// Block until prefetch completes (no-op after the first
+				// process's prefetch): our bulk writes must not race go's
+				// mmap'd package loading (SIGBUS on CoW filesystems).
+				<-prefetchDone
 				actionID := fmt.Sprintf("%x", req.ActionID)
 				if trace {
 					// hash the served file so put-after-get comparisons show
