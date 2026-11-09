@@ -84,6 +84,63 @@ func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error
 	return p, nil
 }
 
+// negativeCache remembers entries confirmed absent from the cloud store.
+// Go issues speculative gets for entries it never puts (~42% of gets on
+// warm cli builds); without this, every session in a job re-checks the
+// same phantoms at pure RTT cost — measured 11-13s per session, ~2.5 min
+// per multi-platform job. Scoped to the job's local dir (fresh per
+// runner), so staleness across jobs is not a concern.
+type negativeCache struct {
+	mu   sync.Mutex
+	seen map[string]bool
+	path string
+}
+
+func newNegativeCache() *negativeCache {
+	dir := os.Getenv("GOCACHE_SERVE_DIR")
+	if dir == "" {
+		dir = "/tmp/gocache-serve"
+	}
+	nc := &negativeCache{seen: make(map[string]bool), path: filepath.Join(dir, "negative.txt")}
+	if b, err := os.ReadFile(nc.path); err == nil {
+		for _, id := range strings.Fields(string(b)) {
+			nc.seen[id] = true
+		}
+	}
+	return nc
+}
+
+func (nc *negativeCache) Has(id string) bool {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+	return nc.seen[id]
+}
+
+func (nc *negativeCache) Add(id string) {
+	nc.mu.Lock()
+	nc.seen[id] = true
+	nc.mu.Unlock()
+}
+
+// Persist appends newly-confirmed negatives (bounded; the set is a hint,
+// losing entries only costs the old cloud-check behavior).
+func (nc *negativeCache) Persist() {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+	if len(nc.seen) == 0 {
+		return
+	}
+	ids := make([]string, 0, len(nc.seen))
+	for id := range nc.seen {
+		ids = append(ids, id)
+	}
+	if len(ids) > 50000 {
+		ids = ids[:50000]
+	}
+	os.MkdirAll(filepath.Dir(nc.path), 0o755)
+	os.WriteFile(nc.path, []byte(strings.Join(ids, "\n")), 0o644)
+}
+
 // Manifest tracks which cache entries a job uses, in request order, along
 // with each entry's stored meta (the OutputID sidecar) so prefetch can
 // write complete local entries.

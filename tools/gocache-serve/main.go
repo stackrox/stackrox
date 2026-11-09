@@ -107,6 +107,10 @@ func main() {
 	// Prefetch bundles: size-gated, per-job, written by manifest-writing runs.
 	pfbEnabled, pfbMaxEntry, pfbBundleBytes := pfbEnvs()
 
+	// Negative cache: skip cloud round trips for entries already confirmed
+	// absent (Go's speculative gets re-check phantoms every session).
+	negatives := newNegativeCache()
+
 	// Manifest load (synchronous: one small blob GET, and the get handler
 	// needs the metas to serve correct OutputIDs on cloud hits — Go's
 	// client rejects any get response whose OutputID isn't exactly 32
@@ -324,6 +328,7 @@ func main() {
 			if err != nil {
 				log.Printf("manifest upload failed: %v", err)
 			}
+			negatives.Persist() // phantom entries: skip cloud checks next session
 			// Pack the run's small entries into prefetch bundles for the
 			// next run (same gating as the manifest itself).
 			if pfbEnabled && err == nil && len(mergedEntries) > 0 {
@@ -395,6 +400,10 @@ func main() {
 				}
 
 				// Cloud fetch (this is the slow path — benefits from concurrency)
+				if negatives.Has(actionID) {
+					resp.Miss = true
+					break
+				}
 				if cloudSem != nil {
 					cloudSem.Acquire()
 				}
@@ -486,6 +495,9 @@ func main() {
 					}
 				}
 				if getBody == nil {
+					// Confirmed absent — remember so later sessions in this
+					// job skip the cloud round trip.
+					negatives.Add(actionID)
 					resp.Miss = true
 					break
 				}
