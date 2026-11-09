@@ -108,18 +108,27 @@ jobs:
             echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_CONTAINER=${{ inputs.container || 'ci-gocache' }}" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=${{ inputs.wait_concurrent || '-1' }}" >> "$GITHUB_ENV"
-            # "nobundle:" commit messages disable bundle packing for this
-            # run — used to A/B individual-entry parallel prefetch vs bundles.
-            # "trace:" enables per-request protocol tracing (phantom-get
-            # diagnosis: entries Go requests but never puts).
-            case "$COMMIT_MSG" in
-              nobundle:*)
-                echo "GOCACHE_SERVE_BUNDLES=0" >> "$GITHUB_ENV"
-                echo "gocache-serve: bundles disabled (nobundle mode)" ;;
-              trace:*)
-                echo "GOCACHE_SERVE_TRACE=1" >> "$GITHUB_ENV"
-                echo "gocache-serve: protocol tracing enabled" ;;
-            esac
+            # Commit-message experiment modes (independent — combinable,
+            # e.g. "gate0+pfb500: warm leg"):
+            #   gate0:    disable the prefetch gate (SIGBUS A/B)
+            #   pfb500:   raise the pfb size gate to 500KB (all-under-bundle)
+            #   nobundle: disable bundle packing
+            #   trace:    per-request protocol tracing
+            case "$COMMIT_MSG" in *gate0*)
+              echo "GOCACHE_SERVE_GATE=0" >> "$GITHUB_ENV"
+              echo "gocache-serve: prefetch gate disabled (gate0)" ;; esac
+            case "$COMMIT_MSG" in *pfb500*)
+              echo "GOCACHE_SERVE_PFB_MAX_ENTRY=512000" >> "$GITHUB_ENV"
+              echo "gocache-serve: pfb gate 500KB (pfb500)" ;; esac
+            case "$COMMIT_MSG" in *nobundle:*)
+              echo "GOCACHE_SERVE_BUNDLES=0" >> "$GITHUB_ENV"
+              echo "gocache-serve: bundles disabled (nobundle)" ;; esac
+            case "$COMMIT_MSG" in *trace:*)
+              echo "GOCACHE_SERVE_TRACE=1" >> "$GITHUB_ENV"
+              echo "gocache-serve: protocol tracing enabled" ;; esac
+            case "$COMMIT_MSG" in *westpin*)
+              echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
+              echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
             if [ -n "${{ inputs.storage_account }}" ]; then
               echo "AZURE_STORAGE_ACCOUNT=${{ inputs.storage_account }}" >> "$GITHUB_ENV"
             fi

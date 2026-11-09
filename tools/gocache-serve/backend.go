@@ -178,12 +178,16 @@ func detectRegion() string {
 }
 
 // storageAccountForRegion selects the nearest storage account for a runner region.
-// The primary is westus3; eastus is an object-replication replica.
+// Three replicas, westus3 as the replication hub (west<->east bidirectional,
+// west->central one-way). Coverage of observed runner distribution (1900+
+// samples): eastus 33%, centralus 27%, westus2+westus+northwestus ~34%.
 func storageAccountForRegion(region string) string {
 	switch region {
-	case "eastus", "eastus2", "centralus", "northcentralus", "southcentralus",
+	case "eastus", "eastus2", "northcentralus", "CanadaEast",
 		"westeurope", "northeurope", "uk south", "francecentral":
 		return "cigocacheeast" // eastus replica
+	case "centralus", "southcentralus", "northcentralus2":
+		return "cigochachecentral" // centralus replica
 	case "westus3", "westus2", "westus", "northwestus",
 		"eastasia", "southeastasia", "japaneast", "japanwest",
 		"australiaeast", "australiasoutheast":
