@@ -118,6 +118,12 @@ SCANNER_V4_UPGRADE_BLOCKER=upgrade_blocker
 # Table the fallback test creates as a marker before the upgrade
 SCANNER_V4_UPGRADE_MARKER=upgrade_marker
 
+# scanner_v4_db_pod echoes the current pod name, or nothing if there is none.
+scanner_v4_db_pod() {
+    kubectl -n stackrox get po -l app=scanner-v4-db \
+        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | head -1
+}
+
 # check_scanner_v4_db_upgraded asserts the data directory moved to the current major version.
 check_scanner_v4_db_upgraded() {
     local version
@@ -498,9 +504,18 @@ test_scanner_v4_db_upgrade_fallback() {
     check_scanner_v4_db_upgraded
     check_scanner_v4_ready
 
-    info "Bouncing scanner-v4-db"
-    kubectl -n stackrox delete po -l app=scanner-v4-db --grace-period=0
-    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    local old_pod new_pod=""
+    old_pod="$(scanner_v4_db_pod)"
+    info "Bouncing scanner-v4-db ($old_pod)"
+    kubectl -n stackrox delete po "$old_pod" --grace-period=0
+    for _ in $(seq 150); do
+        new_pod="$(scanner_v4_db_pod)"
+        [[ -n "$new_pod" ]] && break
+        sleep 2
+    done
+    [[ -n "$new_pod" ]] || die "scanner-v4-db was not recreated after the bounce"
+    kubectl -n stackrox wait --for=condition=Ready "po/$new_pod" --timeout=600s
+
     check_scanner_v4_db_upgraded
     check_scanner_v4_ready
 
