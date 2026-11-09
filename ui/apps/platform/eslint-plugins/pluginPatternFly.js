@@ -597,19 +597,21 @@ const rules = {
         },
     },
     'no-Variant': {
-        // Replace Variant enum member with corresponding string literal.
+        // Replace Variant or Variants enum member with corresponding string literal.
         // Because TypeScript string enumeration is source of truth for prop.
         // For example, replace variant={AlertVariant.info} with variant="info"
         meta: {
             type: 'problem',
             docs: {
-                description: 'Replace Variant enum member with corresponding string literal',
+                description:
+                    'Replace Variant or Variants enum member with corresponding string literal',
             },
             schema: [],
         },
         create(context) {
             return {
                 ImportDeclaration(node) {
+                    const variantRegExp = /Variants?$/;
                     if (
                         typeof node.source?.value === 'string' &&
                         node.source.value.startsWith('@patternfly/react-core') // startsWith also matches deprecated
@@ -618,13 +620,13 @@ const rules = {
                             node.specifiers.some(
                                 (specifier) =>
                                     typeof specifier.imported?.name === 'string' &&
-                                    specifier.imported.name.endsWith('Variant')
+                                    variantRegExp.test(specifier.imported.name)
                             )
                         ) {
                             context.report({
                                 node,
                                 message:
-                                    'Replace Variant enum member with corresponding string literal',
+                                    'Replace Variant or Variants enum member with corresponding string literal',
                             });
                         }
                     }

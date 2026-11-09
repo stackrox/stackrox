@@ -733,13 +733,7 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 }
 
 func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
-	suite.deployments.EXPECT().GetDeployment(gomock.Any(), "some-deployment").Return(
-		&storage.Deployment{
-			Id:        "some-deployment",
-			Namespace: "some-namespace",
-		},
-		true,
-		nil)
+	suite.deployments.EXPECT().DeploymentExists(gomock.Any(), "some-deployment").Return(true, nil)
 	suite.
 		networkPolicies.
 		EXPECT().

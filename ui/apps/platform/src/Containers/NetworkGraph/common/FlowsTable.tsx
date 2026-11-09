@@ -11,15 +11,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
-import {
-    Button,
-    Content,
-    ContentVariants,
-    Flex,
-    FlexItem,
-    Icon,
-    Tooltip,
-} from '@patternfly/react-core';
+import { Button, Content, Flex, FlexItem, Icon, Tooltip } from '@patternfly/react-core';
 import {
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
@@ -107,9 +99,7 @@ function ExtraneousFlowsRow({
                             <div>+ {numExtraneousEgressFlows} allowed flows</div>
                             <div>
                                 <Content>
-                                    <Content component={ContentVariants.small}>
-                                        Across this cluster
-                                    </Content>
+                                    <Content component="small">Across this cluster</Content>
                                 </Content>
                             </div>
                         </FlexItem>
@@ -298,7 +288,7 @@ function FlowsTable({
                                         </div>
                                         <div>
                                             <Content>
-                                                <Content component={ContentVariants.small}>
+                                                <Content component="small">
                                                     {getFlowSubtext(row)}
                                                 </Content>
                                             </Content>

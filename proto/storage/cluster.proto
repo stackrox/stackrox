@@ -174,7 +174,7 @@ message Cluster {
   string id = 1; // @gotags: search:"Cluster ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Cluster" sql:"unique"
   ClusterType type = 3; // @gotags: search:"Cluster Platform Type"
-  map<string, string> labels = 27; // @gotags: search:"Cluster Label"
+  map<string, string> labels = 27; // @gotags: search:"Cluster Label" sql:"index=gin"
   string main_image = 4;
   string collector_image = 16;
   string central_api_endpoint = 5;
