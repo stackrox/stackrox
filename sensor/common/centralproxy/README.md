@@ -54,11 +54,11 @@ The default document has this shape (the actual CN and CA reference come from
 
 For the mTLS `/metrics` client above, the **decoded JWT payload** issued by a
 Central supporting per-access tokens looks like this (selected claims shown;
-the source and cluster IDs are illustrative):
+the cluster ID is illustrative):
 
 ```json
 {
-  "aud": ["sensor-token-source", "https://stackrox.io/jwt-sources#scoped-rox-tokens"],
+  "aud": "https://stackrox.io/jwt-sources#internal-rox-tokens-http-scoped",
   "req": "mtls:system:serviceaccount:openshift-monitoring:prometheus-k8s",
   "clusters": {"cluster-id": ["*"]},
   "access": [{
@@ -69,7 +69,9 @@ the source and cluster IDs are illustrative):
 ```
 
 The issued token is a signed JWT string (`header.payload.signature`); its
-payload also contains time, issuer, and token-ID claims omitted above. Each
+payload also contains time, issuer, and token-ID claims omitted above. The
+scoped audience identifies the internal token source with an `-http-scoped`
+suffix, which Centrals without HTTP-scope enforcement reject. Each
 `access` role carries its own `http` map, so multiple policy grants become
 separately scoped roles. `access[].name` is the generic generated role name,
 not the policy's `permissionSetName`. Central resolves the permission set to

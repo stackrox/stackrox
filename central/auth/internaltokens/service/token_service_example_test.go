@@ -201,10 +201,7 @@ func ExampleService_scopedAPIToken() {
 	// }
 	// JWT payload (excluding iat and jti):
 	// {
-	//   "aud": [
-	//     "https://stackrox.io/jwt-sources#api-tokens",
-	//     "https://stackrox.io/jwt-sources#scoped-rox-tokens"
-	//   ],
+	//   "aud": "https://stackrox.io/jwt-sources#api-tokens-http-scoped",
 	//   "exp": 4102444800,
 	//   "http": {
 	//     "/v1/images": [
@@ -337,10 +334,7 @@ func ExampleService_scopedInternalToken() {
 	//       }
 	//     }
 	//   ],
-	//   "aud": [
-	//     "https://stackrox.io/jwt-sources#internal-rox-tokens",
-	//     "https://stackrox.io/jwt-sources#scoped-rox-tokens"
-	//   ],
+	//   "aud": "https://stackrox.io/jwt-sources#internal-rox-tokens-http-scoped",
 	//   "clusters": {
 	//     "example-cluster": [
 	//       "*"
