@@ -44,7 +44,7 @@ func (i *issuerForSource) Issue(ctx context.Context, roxClaims RoxClaims, option
 		if len(claims.Audience) != 1 || claims.Audience[0] != i.source.ID() {
 			return nil, errors.New("HTTP-scoped token must have exactly one source audience")
 		}
-		claims.Audience = append(claims.Audience, scopedTokenAudience)
+		claims.Audience[0] = scopedSourceID(i.source.ID())
 	}
 	// Sanity check: the source should accept the token.
 	if err := i.source.Validate(ctx, claims); err != nil {

@@ -6,10 +6,13 @@ import (
 	"github.com/go-jose/go-jose/v4/jwt"
 )
 
-// scopedTokenAudience makes HTTP-scoped tokens incompatible with Centrals that do not enforce HTTP scopes.
-// Older validators reject audiences that are not registered token sources.
-// #nosec G101 -- This constant is only there as a source identifier, not as a credential.
-const scopedTokenAudience = "https://stackrox.io/jwt-sources#scoped-rox-tokens"
+// Older Centrals reject HTTP-scoped tokens because they do not recognize the scoped source ID.
+// Scoped source IDs are reserved so newer Centrals can resolve them to their original token source.
+const httpScopedSourceSuffix = "-http-scoped"
+
+func scopedSourceID(sourceID string) string {
+	return sourceID + httpScopedSourceSuffix
+}
 
 // ExternalUserClaim represents the claim that this token identifies a user from an external identity provider.
 type ExternalUserClaim struct {

@@ -80,7 +80,7 @@ func TestTokenAudienceCompatibility(t *testing.T) {
 	issuer, err := factory.CreateIssuer(src)
 	require.NoError(t, err)
 
-	// This mirrors the old validator: verify the JWT, then resolve every audience as a token source.
+	// This mirrors the old validator: verify the JWT, then resolve its audience as a token source.
 	oldJWTValidator := stackroxjwt.NewRS256Validator(
 		stackroxjwt.NewSingleKeyStore(key.Public(), "test-key-id"), "test-issuer", nil)
 	oldSources := newSourceStore()
@@ -97,7 +97,7 @@ func TestTokenAudienceCompatibility(t *testing.T) {
 		},
 		"HTTP-scoped tokens carry an incompatible audience": {
 			scopes:   HTTPRequestScopes{"/metrics": {"GET"}},
-			audience: jwt.Audience{src.ID(), scopedTokenAudience},
+			audience: jwt.Audience{scopedSourceID(src.ID())},
 		},
 	}
 	for name, tc := range tests {
@@ -118,7 +118,7 @@ func TestTokenAudienceCompatibility(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, []Source{src}, oldTokenSources)
 			} else {
-				require.ErrorContains(t, err, "invalid source "+scopedTokenAudience)
+				require.ErrorContains(t, err, "invalid source "+scopedSourceID(src.ID()))
 			}
 		})
 	}
@@ -150,7 +150,7 @@ func TestPerAccessTokenAudienceAndValidation(t *testing.T) {
 	var signed struct {
 		Access []struct {
 			Permissions       map[string][]string `json:"permissions"`
-			HTTPRequestScopes HTTPRequestScopes    `json:"http"`
+			HTTPRequestScopes HTTPRequestScopes   `json:"http"`
 		} `json:"access"`
 	}
 	require.NoError(t, json.Unmarshal(payload, &signed))
@@ -161,17 +161,18 @@ func TestPerAccessTokenAudienceAndValidation(t *testing.T) {
 	}
 	parsed, err := validator.Validate(t.Context(), info.Token)
 	require.NoError(t, err)
-	assert.Equal(t, jwt.Audience{src.ID(), scopedTokenAudience}, parsed.Audience)
+	assert.Equal(t, jwt.Audience{scopedSourceID(src.ID())}, parsed.Audience)
+	require.Equal(t, []Source{src}, parsed.Sources)
 	assert.Nil(t, parsed.HTTPRequestScopes)
 	assert.Equal(t, claims.Clusters, parsed.Clusters)
 	assert.Equal(t, claims.InternalRoles[0].HTTPRequestScopes, parsed.InternalRoles[0].HTTPRequestScopes)
 
-	withoutMarker := *info.Claims
-	withoutMarker.Audience = jwt.Audience{src.ID()}
-	badToken, err := factory.(*issuerFactory).encode(&withoutMarker)
+	withoutScopedSource := *info.Claims
+	withoutScopedSource.Audience = jwt.Audience{src.ID()}
+	badToken, err := factory.(*issuerFactory).encode(&withoutScopedSource)
 	require.NoError(t, err)
 	_, err = validator.Validate(t.Context(), badToken)
-	require.ErrorContains(t, err, "missing its audience marker")
+	require.ErrorContains(t, err, "missing its scoped source audience")
 
 	claims.HTTPRequestScopes = HTTPRequestScopes{"/": {"GET"}}
 	_, err = issuer.Issue(t.Context(), claims)
@@ -199,27 +200,32 @@ func TestTokenValidatorRejectsInvalidAudiences(t *testing.T) {
 			audience: jwt.Audience{"unknown-source"},
 			wantErr:  "invalid source unknown-source",
 		},
-		"unknown source audience": {
-			audience: jwt.Audience{"unknown-source", scopedTokenAudience},
+		"unknown scoped source audience": {
+			audience: jwt.Audience{scopedSourceID("unknown-source")},
 			scopes:   HTTPRequestScopes{"/metrics": {"GET"}},
 			wantErr:  "invalid source unknown-source",
 		},
-		"scoped token missing marker": {
+		"scoped token missing scoped source": {
 			audience: jwt.Audience{src.ID()},
 			scopes:   HTTPRequestScopes{"/metrics": {"GET"}},
-			wantErr:  "HTTP-scoped token is missing its audience marker",
+			wantErr:  "HTTP-scoped token is missing its scoped source audience",
 		},
-		"scoped token with marker only": {
-			audience: jwt.Audience{scopedTokenAudience},
+		"scoped token with empty source": {
+			audience: jwt.Audience{scopedSourceID("")},
 			scopes:   HTTPRequestScopes{"/metrics": {"GET"}},
-			wantErr:  "HTTP-scoped token is missing its audience marker",
+			wantErr:  "HTTP-scoped token is missing its scoped source audience",
 		},
-		"unscoped token with marker": {
-			audience: jwt.Audience{src.ID(), scopedTokenAudience},
-			wantErr:  "unscoped token has an HTTP-scope audience marker",
+		"scoped token with multiple audiences": {
+			audience: jwt.Audience{src.ID(), scopedSourceID(src.ID())},
+			scopes:   HTTPRequestScopes{"/metrics": {"GET"}},
+			wantErr:  "HTTP-scoped token must have exactly one scoped source audience",
+		},
+		"unscoped token with scoped source": {
+			audience: jwt.Audience{scopedSourceID(src.ID())},
+			wantErr:  "unscoped token has an HTTP-scoped source audience",
 		},
 		"scoped token with invalid HTTP path": {
-			audience: jwt.Audience{src.ID(), scopedTokenAudience},
+			audience: jwt.Audience{scopedSourceID(src.ID())},
 			scopes:   HTTPRequestScopes{"/v1/../admin": {"GET"}},
 			wantErr:  "invalid HTTP request scopes",
 		},
@@ -235,4 +241,13 @@ func TestTokenValidatorRejectsInvalidAudiences(t *testing.T) {
 			require.ErrorContains(t, err, tc.wantErr)
 		})
 	}
+}
+
+func TestScopedSourceIDCannotBeRegistered(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	factory, _, err := CreateIssuerFactoryAndValidator("test-issuer", key, "test-key-id")
+	require.NoError(t, err)
+	_, err = factory.CreateIssuer(&testSource{id: scopedSourceID("test-source")})
+	require.ErrorContains(t, err, "reserved for HTTP-scoped tokens")
 }
