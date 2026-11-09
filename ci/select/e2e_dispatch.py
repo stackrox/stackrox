@@ -10,6 +10,7 @@ class Job:
     require_pr_label: bool = False
     require_konflux_build: bool = False
     is_ui_test: bool = False
+    require_nightly: bool = False
 
     def should_run(self, inputs):
         """Return whether the job is eligible for the workflow inputs.
@@ -21,6 +22,8 @@ class Job:
             return False
 
         if inputs.event_name != 'pull_request':
+            if self.require_nightly:
+                return '-nightly-' in getattr(inputs, 'ref_name', '')
             return True
         elif self.name in inputs.pr_labels:
             return True
@@ -70,6 +73,7 @@ def main():
         Job(name='e2e-qa-tests-gke', require_pr_label=True),
         Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
+        Job(name='e2e-tls-compliance-ocp-konflux', require_pr_label=True, require_konflux_build=True, require_nightly=True),
         Job(name='e2e-ui-tests-gke', require_pr_label=True, is_ui_test=True),
         Job(name='e2e-ui-tests-gke-konflux', require_konflux_build=True, is_ui_test=True),
     ]
