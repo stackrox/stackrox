@@ -1,4 +1,4 @@
-import { alertAttributes } from 'Components/CompoundSearchFilter/attributes/alert';
+import { EntityType as alertEntityType } from 'Components/CompoundSearchFilter/attributes/alert';
 import {
     clusterIdAttribute,
     clusterKubernetesVersionAttribute,
@@ -11,7 +11,12 @@ import { deploymentAttributes } from 'Components/CompoundSearchFilter/attributes
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
 import { namespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
 import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
-import { policyAttributes } from 'Components/CompoundSearchFilter/attributes/policy';
+import {
+    Category as attributeForPolicyCategory,
+    LifecycleStage as attributeForPolicyLifecycleStage,
+    Name as attributeForPolicyName,
+    Severity as attributeForPolicySeverity,
+} from 'Components/CompoundSearchFilter/attributes/policy';
 import { policyCategoryAttributes } from 'Components/CompoundSearchFilter/attributes/policyCategory';
 import { roleAttributes } from 'Components/CompoundSearchFilter/attributes/role';
 import { roleBindingAttributes } from 'Components/CompoundSearchFilter/attributes/roleBinding';
@@ -19,6 +24,7 @@ import { secretAttributes } from 'Components/CompoundSearchFilter/attributes/sec
 import { serviceAccountAttributes } from 'Components/CompoundSearchFilter/attributes/serviceAccount';
 import { subjectAttributes } from 'Components/CompoundSearchFilter/attributes/subject';
 import type {
+    CompoundSearchFilterAttribute,
     CompoundSearchFilterConfig,
     CompoundSearchFilterEntity,
 } from 'Components/CompoundSearchFilter/types';
@@ -65,10 +71,18 @@ const entityForNode: CompoundSearchFilterEntity = {
     attributes: nodeAttributes,
 };
 
+// Reuse only the policy-identity attributes. The policyAttributes bundle also carries
+// Violation time, Entity type, and Deployment status, but those share search terms with the
+// Violations and Deployment entities and would render duplicate filter chips in global search.
 const entityForPolicy: CompoundSearchFilterEntity = {
     displayName: 'Policy',
     searchCategory: 'POLICIES',
-    attributes: policyAttributes,
+    attributes: [
+        attributeForPolicyName,
+        attributeForPolicyCategory,
+        attributeForPolicySeverity,
+        attributeForPolicyLifecycleStage,
+    ],
 };
 
 const entityForPolicyCategory: CompoundSearchFilterEntity = {
@@ -107,10 +121,19 @@ const entityForSubject: CompoundSearchFilterEntity = {
     attributes: subjectAttributes,
 };
 
+// Mirror the shared alert ViolationTime attribute but with a shorter display name: the
+// "Violation" entity already supplies that context, so the attribute reads as just "Time".
+const attributeForViolationTime: CompoundSearchFilterAttribute = {
+    displayName: 'Time',
+    filterChipLabel: 'Violation time',
+    searchTerm: 'Violation Time',
+    inputType: 'date-picker',
+};
+
 const entityForViolation: CompoundSearchFilterEntity = {
-    displayName: 'Violations',
+    displayName: 'Violation',
     searchCategory: 'ALERTS',
-    attributes: alertAttributes,
+    attributes: [attributeForViolationTime, alertEntityType],
 };
 
 export const searchFilterConfig: CompoundSearchFilterConfig = [
