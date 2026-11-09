@@ -174,23 +174,44 @@ run_tls_scanner() {
 }
 
 check_pod_logs_for_tls_errors() {
-    local TLS_ERROR_PATTERN pod pod_errors tls_errors
+    local TLS_ERROR_PATTERN pod pod_errors tls_errors pod_list pods logs
+    local log_retrieval_failed=0
 
     TLS_ERROR_PATTERN='TLS handshake error|tls: handshake failure|tls: protocol version|tls: no cipher suite|tls: client offered only unsupported|SSL_ERROR|SSL routines|Handshake failed'
     info "Checking pod logs for TLS errors..."
     tls_errors=""
-    for pod in $(oc get pods -n "$ACS_NS" -o name | grep -v tls-scanner); do
-        pod_errors=$(oc logs "$pod" -n "$ACS_NS" --all-containers 2>/dev/null \
-            | grep -iE "$TLS_ERROR_PATTERN" || true)
+
+    if ! pod_list=$(oc get pods -n "$ACS_NS" -o name); then
+        fail "Failed to list pods in namespace ${ACS_NS}"
+        return
+    fi
+
+    pods=$(printf '%s\n' "$pod_list" | grep -v tls-scanner || true)
+    if [[ -z "$pods" ]]; then
+        fail "No ACS pods found in namespace ${ACS_NS} to check for TLS errors"
+        return
+    fi
+
+    while IFS= read -r pod; do
+        [[ -z "$pod" ]] && continue
+        if ! logs=$(oc logs "$pod" -n "$ACS_NS" --all-containers 2>&1); then
+            fail "Failed to get logs for $pod"
+            info "$logs"
+            log_retrieval_failed=1
+            continue
+        fi
+        pod_errors=$(printf '%s\n' "$logs" | grep -iE "$TLS_ERROR_PATTERN" || true)
         if [[ -n "$pod_errors" ]]; then
             info "TLS errors in $pod:"
             echo "$pod_errors"
             tls_errors+="$pod_errors"$'\n'
         fi
-    done
+    done <<< "$pods"
 
     if [[ -n "$tls_errors" ]]; then
         fail "TLS errors found in pod logs"
+    elif (( log_retrieval_failed )); then
+        info "Skipped TLS error summary because some pod logs could not be retrieved."
     else
         info "No TLS errors in pod logs."
     fi
