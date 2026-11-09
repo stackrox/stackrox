@@ -137,8 +137,11 @@ func (m *Manifest) Record(actionID, meta string) {
 // entries come first (most recent working set = prefetch priority), then any
 // older entries not seen this session. Capped to bound growth across
 // branches whose ActionIDs diverge.
-// maxManifestEntries bounds manifest size (merge growth cap).
-const maxManifestEntries = 20000
+// maxManifestEntries bounds manifest size (merge growth cap). Multi-platform
+// jobs (make cli: 7 platforms x outputs+aux) measure ~37k entries; the old
+// 20k cap truncated a third of the working set out of the manifest, freezing
+// those entries as permanent prefetch misses.
+const maxManifestEntries = 100000
 
 // Upload writes the run's manifest and returns the final entry set (used
 // by the prefetch-bundle packer). Within a run, sessions merge; a new run

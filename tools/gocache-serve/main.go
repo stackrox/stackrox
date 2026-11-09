@@ -529,15 +529,12 @@ func main() {
 				}
 				resp.DiskPath = path
 				resp.Size = req.BodySize
-				if len(req.Body) > 0 {
-					if leaseMgr != nil && leaseMgr.Holds(actionID) {
-						// Lease-held: followers are waiting for this entry —
-						// priority lane so it reaches the cloud fast.
-						uploader.QueuePri(actionID, req.Body)
-					} else {
-						uploader.Queue(actionID, req.Body)
-					}
-				}
+				// Always queue the upload, including zero-length bodies:
+				// Go issues empty-body puts (min bodyLen=0 in the observed
+				// distribution), and an empty blob is a valid hittable
+				// entry — skipping it froze ~35% of gets as permanent
+				// misses (manifest recorded, store never served).
+				uploader.Queue(actionID, req.Body)
 			}
 
 			// Serialize response writes
