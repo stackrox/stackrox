@@ -603,6 +603,35 @@ func (s *GraphQLImageComponentV2TestSuite) TestTopImageVulnerability() {
 	vuln, err := comp.TopImageVulnerability(ctx)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), expectedID, vuln.Id(ctx))
+
+	// Fields of the top vulnerability are resolved for its own occurrence in component scope.
+	for name, tc := range map[string]struct {
+		componentID       string
+		expectedCVE       string
+		expectedFixedBy   string
+		expectedIsFixable bool
+	}{
+		"not fixable": {componentID: s.componentIDMap[comp31], expectedCVE: "cve-2019-1"},
+		"fixable":     {componentID: s.componentIDMap[comp11], expectedCVE: "cve-2018-1", expectedFixedBy: "1.1", expectedIsFixable: true},
+	} {
+		s.Run(name, func() {
+			top, err := s.getImageComponentResolver(ctx, tc.componentID).TopImageVulnerability(ctx)
+			s.Require().NoError(err)
+			s.Equal(tc.expectedCVE, top.CVE(ctx))
+
+			fixedBy, err := top.FixedByVersion(ctx)
+			s.NoError(err)
+			s.Equal(tc.expectedFixedBy, fixedBy)
+
+			advisory, err := top.Advisory(ctx)
+			s.NoError(err)
+			s.Nil(advisory)
+
+			isFixable, err := top.IsFixable(ctx, RawQuery{})
+			s.NoError(err)
+			s.Equal(tc.expectedIsFixable, isFixable)
+		})
+	}
 }
 
 func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context, id string) ImageResolver {
