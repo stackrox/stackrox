@@ -283,7 +283,7 @@ func ExampleService_scopedInternalToken() {
 		ClusterScopes: []*internalV1.ClusterScope{{ClusterId: "example-cluster", FullClusterAccess: true}},
 		Lifetime:      durationpb.New(time.Hour), Requester: "example-sensor",
 		ScopedPermissionSets: []*internalV1.ScopedPermissionSet{{
-			PermissionSetName: "Image Reader",
+			Name:              "Image Reader",
 			HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}},
 		}},
 	}
@@ -308,7 +308,7 @@ func ExampleService_scopedInternalToken() {
 	//   "requester": "example-sensor",
 	//   "scoped_permission_sets": [
 	//     {
-	//       "permission_set_name": "Image Reader",
+	//       "name": "Image Reader",
 	//       "http_request_scopes": [
 	//         {
 	//           "path": "/v1/images",

@@ -257,7 +257,7 @@ func clientPolicyAccessToProto(access []clientPolicyAccess) []*centralv1.ScopedP
 	result := make([]*centralv1.ScopedPermissionSet, 0, len(access))
 	for _, grant := range access {
 		result = append(result, &centralv1.ScopedPermissionSet{
-			PermissionSetName: grant.PermissionSetName,
+			Name:              grant.PermissionSetName,
 			HttpRequestScopes: clientPolicyScopesToProto(grant.HTTPScopes),
 		})
 	}

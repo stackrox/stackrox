@@ -243,8 +243,8 @@ func TestPerAccessProfileSharesTokenAcrossRoutesButNotNamespaces(t *testing.T) {
 		identity: "kubernetesBearer:alice", permissionSetName: "Deployment Reader",
 		httpScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
 		scopedPermissionSets: []*centralv1.ScopedPermissionSet{
-			{PermissionSetName: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
-			{PermissionSetName: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
+			{Name: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
+			{Name: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
 		},
 		clusterScope: "team-a",
 	}

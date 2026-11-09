@@ -155,7 +155,7 @@ func TestLegacyProxyGrantAllowed(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			grant := &ClientPolicyGrant{PermissionSetName: tc.permissionSet,
 				HTTPRequestScopes:    []*apiV1.HTTPRequestScope{{Path: tc.path, Methods: []string{tc.method}}},
-				ScopedPermissionSets: []*centralv1.ScopedPermissionSet{{PermissionSetName: tc.permissionSet}}}
+				ScopedPermissionSets: []*centralv1.ScopedPermissionSet{{Name: tc.permissionSet}}}
 			assert.Equal(t, tc.allowed, legacyProxyGrantAllowed(grant, httptest.NewRequest(tc.method, tc.path, nil)))
 		})
 	}
@@ -214,7 +214,7 @@ func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
 	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
 		tokenClient.lastRequest.GetClusterScopes())
 	protoassert.SlicesEqual(t, []*centralv1.ScopedPermissionSet{{
-		PermissionSetName: centralproxy.MetricsPermissionSetName,
+		Name:              centralproxy.MetricsPermissionSetName,
 		HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
 	}}, tokenClient.lastRequest.GetScopedPermissionSets())
 	assert.Empty(t, tokenClient.lastRequest.GetHttpRequestScopes())
