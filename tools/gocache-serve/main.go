@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -105,15 +107,30 @@ func main() {
 	// Prefetch bundles: size-gated, per-job, written by manifest-writing runs.
 	pfbEnabled, pfbMaxEntry, pfbBundleBytes := pfbEnvs()
 
+	// Manifest load (synchronous: one small blob GET, and the get handler
+	// needs the metas to serve correct OutputIDs on cloud hits — Go's
+	// client rejects any get response whose OutputID isn't exactly 32
+	// bytes, silently treating the hit as a miss and recompiling).
+	var manifestEntries []manifestEntry
+	metaBy := make(map[string][]byte) // actionID -> raw decoded OutputID
+	if jobName != "" {
+		var err error
+		manifestEntries, _, err = DownloadManifest(rawBackend, jobName)
+		if err != nil {
+			log.Printf("manifest download failed: %v", err)
+		}
+		for _, e := range manifestEntries {
+			if raw, err := hex.DecodeString(e.meta); err == nil && len(raw) > 0 {
+				metaBy[e.id] = raw
+			}
+		}
+	}
+
 	// Prefetch from manifest (see bundle.go for BundledBackend)
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
 		go func() {
 			start := time.Now()
-			entries, _, err := DownloadManifest(rawBackend, jobName)
-			if err != nil {
-				log.Printf("manifest download failed: %v", err)
-				return
-			}
+			entries := manifestEntries
 			if len(entries) == 0 {
 				log.Printf("no manifest for '%s', skipping prefetch (first run)", jobName)
 				return
@@ -155,9 +172,10 @@ func main() {
 					if err != nil || body == nil {
 						return
 					}
-					// Store the meta sidecar (OutputID) from the manifest so
-					// later local hits serve complete protocol responses.
-					local.Put(ent.id, []byte(ent.meta), body)
+					// Store the raw decoded OutputID sidecar: Go's client
+					// rejects get responses whose OutputID isn't exactly
+					// 32 bytes (hex-string-as-bytes = silent miss).
+					local.Put(ent.id, metaBy[ent.id], body)
 					atomic.AddInt64(&downloaded, 1)
 				}(ent)
 			}
@@ -337,7 +355,14 @@ func main() {
 				atomic.AddInt64(&totalGets, 1)
 				actionID := fmt.Sprintf("%x", req.ActionID)
 				if trace {
-					log.Printf("TRACE get id=%s out=%x", shortID(actionID), req.OutputID)
+					// hash the served file so put-after-get comparisons show
+					// whether Go recompiled different content or re-put the same
+					h := ""
+					if b, err := os.ReadFile(local.path(actionID)); err == nil {
+						sum := sha256.Sum256(b)
+						h = fmt.Sprintf("%x", sum[:8])
+					}
+					log.Printf("TRACE get id=%s out=%x bodyHash=%s", shortID(actionID), req.OutputID, h)
 				}
 
 				// Local cache first (no network). Meta+stat only: the body
@@ -449,7 +474,11 @@ func main() {
 					break
 				}
 				atomic.AddInt64(&getBytes, int64(len(getBody)))
-				path, putErr := local.Put(actionID, req.ActionID, getBody)
+				cloudMeta := metaBy[actionID]
+				if cloudMeta == nil {
+					cloudMeta = req.ActionID // length-correct fallback
+				}
+				path, putErr := local.Put(actionID, cloudMeta, getBody)
 				if putErr != nil {
 					resp.Err = fmt.Sprintf("local put: %v", err)
 					break
@@ -457,15 +486,22 @@ func main() {
 				atomic.AddInt64(&totalHits, 1)
 				resp.DiskPath = path
 				resp.Size = int64(len(getBody))
-				resp.OutputID = req.ActionID
-				manifest.Record(actionID, actionID) // meta matches the .meta written by this path
+				// Serve the true OutputID from the manifest meta (Go rejects
+				// non-32-byte OutputIDs); fall back to the actionID which at
+				// least has the right length.
+				resp.OutputID = metaBy[actionID]
+				if resp.OutputID == nil {
+					resp.OutputID = req.ActionID
+				}
+				manifest.Record(actionID, fmt.Sprintf("%x", resp.OutputID))
 
 			case CmdPut:
 				atomic.AddInt64(&totalPuts, 1)
 				actionID := fmt.Sprintf("%x", req.ActionID)
 				if trace {
-					log.Printf("TRACE put id=%s out=%x bodyLen=%d size=%d disk=%q",
-						shortID(actionID), req.OutputID, len(req.Body), req.BodySize, req.DiskPath)
+					sum := sha256.Sum256(req.Body)
+					log.Printf("TRACE put id=%s out=%x bodyHash=%x bodyLen=%d size=%d disk=%q",
+						shortID(actionID), req.OutputID, sum[:8], len(req.Body), req.BodySize, req.DiskPath)
 				}
 				// Record produced entries too: a cold run has no hits, but
 				// its puts ARE the working set (they'll be hits next run).

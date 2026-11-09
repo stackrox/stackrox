@@ -26,6 +26,7 @@ package main
 // = 500KB).
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -170,7 +171,10 @@ func PrefetchPFBs(backend Backend, jobName string, local *LocalCache, metas map[
 			}
 			n := 0
 			for _, e := range entries {
-				local.Put(e.Key, []byte(metas[e.Key]), e.Body)
+				// hex-decode the manifest meta to the raw 32-byte OutputID —
+				// the hex string itself would make Go reject the get hit
+				meta, _ := hex.DecodeString(metas[e.Key])
+				local.Put(e.Key, meta, e.Body)
 				n++
 			}
 			mu.Lock()
