@@ -652,10 +652,18 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	// Before authorization is checked, we want to inject the sac client into the context.
-	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
-		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
-	)
+	// Inject the SAC scope checker into the context. When ACM access control delegation is
+	// enabled the enricher runs post-auth so it can rely on the authenticated principal;
+	// otherwise it runs pre-auth as before.
+	if features.ACMAccessControlDelegation.Enabled() {
+		config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
+			centralSAC.GetEnricher().GetScopedAccessControlContextEnricher(authzTraceSink),
+		)
+	} else {
+		config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
+			centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
+		)
+	}
 
 	config.UnaryInterceptors = append(config.UnaryInterceptors, versionheader.CentralVersionServerInterceptor())
 

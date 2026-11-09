@@ -56,10 +56,20 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 	return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), observe.ScopeCheckerBuiltIn, nil
 }
 
+// GetScopedAccessControlContextEnricher returns a contextutil.ContextUpdater which adds a
+// scope checker to the context for later use in scope checking. It also enables
+// authorization tracing on demand by injecting an instance of a specific struct
+// into the context.
+func (se *Enricher) GetScopedAccessControlContextEnricher(authzTraceSink observe.AuthzTraceSink) contextutil.ContextUpdater {
+	return se.GetPreAuthContextEnricher(authzTraceSink)
+}
+
 // GetPreAuthContextEnricher returns a contextutil.ContextUpdater which adds a
 // scope checker to the context for later use in scope checking. It also enables
 // authorization tracing on demand by injecting an instance of a specific struct
 // into the context.
+//
+// Deprecated: use GetScopedAccessControlContextEnricher instead.
 func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink observe.AuthzTraceSink) contextutil.ContextUpdater {
 	return func(ctx context.Context) (context.Context, error) {
 		// Collect authz trace iff it is turned on globally. An alternative
