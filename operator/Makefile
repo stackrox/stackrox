@@ -335,7 +335,7 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 	echo 'resources: [ "../../config/flavors/$(ROX_IMAGE_FLAVOR)" ]' > build/dist/kustomization.yaml
 	cd build/dist && $(KUSTOMIZE) edit set image controller=${IMG}
 	mkdir -p dist
-	$(KUSTOMIZE) build build/dist > dist/install.yaml
+	$(KUSTOMIZE) build build/dist | grep -v 'name: RELATED_IMAGE' > dist/install.yaml
 
 .PHONY: chart
 chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
