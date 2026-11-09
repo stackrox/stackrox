@@ -34,6 +34,11 @@ func (lc *LocalCache) metaPath(actionID string) string {
 	return lc.path(actionID) + ".meta"
 }
 
+func (lc *LocalCache) Has(actionID string) bool {
+	_, err := os.Stat(lc.path(actionID))
+	return err == nil
+}
+
 func (lc *LocalCache) Get(actionID string) ([]byte, []byte, error) {
 	lc.mu.RLock()
 	defer lc.mu.RUnlock()

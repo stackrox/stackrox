@@ -135,9 +135,10 @@ func main() {
 					defer wg.Done()
 					sem <- struct{}{}
 					defer func() { <-sem }()
-					// LocalCache.Get returns (nil, nil, nil) for a missing entry —
-					// err==nil alone means "checked", not "present".
-					if body, _, err := local.Get(ent.id); err == nil && body != nil {
+					// Stat-based existence check: reading the body here
+					// cost ~21s per warm session for 20k entries (~7GB of
+					// pointless disk reads).
+					if local.Has(ent.id) {
 						return
 					}
 					body, err := backend.Get(ent.id)
