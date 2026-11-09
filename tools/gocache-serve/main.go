@@ -340,16 +340,14 @@ func main() {
 					log.Printf("TRACE get id=%s out=%x", shortID(actionID), req.OutputID)
 				}
 
-				// Local cache first (no network)
-				body, storedOutputID, err := local.Get(actionID)
-				if err != nil {
-					resp.Err = fmt.Sprintf("local get: %v", err)
-					break
-				}
-				if body != nil {
+				// Local cache first (no network). Meta+stat only: the body
+				// is handed to Go via DiskPath — reading it here would
+				// double-copy every entry.
+				storedOutputID, entrySize, hit := local.GetMeta(actionID)
+				if hit {
 					atomic.AddInt64(&totalHits, 1)
 					resp.DiskPath = local.path(actionID)
-					resp.Size = int64(len(body))
+					resp.Size = entrySize
 					resp.OutputID = storedOutputID
 					manifest.Record(actionID, fmt.Sprintf("%x", storedOutputID))
 					break
@@ -458,7 +456,7 @@ func main() {
 				}
 				atomic.AddInt64(&totalHits, 1)
 				resp.DiskPath = path
-				resp.Size = int64(len(body))
+				resp.Size = int64(len(getBody))
 				resp.OutputID = req.ActionID
 				manifest.Record(actionID, actionID) // meta matches the .meta written by this path
 

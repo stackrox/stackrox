@@ -74,6 +74,22 @@ jobs:
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
 
+      # golangci-lint analysis cache (same mechanism as style.yaml — the
+      # #23753/#23804 fix): without it, analyzers re-analyze the whole repo
+      # every run (measured 25-36 min of analyzer CPU), which dominates the
+      # lint job wall clock independently of the build cache.
+      - name: Export HOME for cache paths
+        if: matrix.workload == 'lint' && matrix.backend == 'cacheprog'
+        run: echo "HOME=$HOME" >> "$GITHUB_ENV"
+      - name: Restore golangci-lint analysis cache
+        if: matrix.workload == 'lint' && matrix.backend == 'cacheprog'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
+        with:
+          path: ${{ env.HOME }}/.cache/golangci-lint
+          key: go-lint-v2-${{ github.sha }}
+          restore-keys: |
+            go-lint-v2-
+
       - name: Mount ${{ matrix.backend }} GOCACHE overlay
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}

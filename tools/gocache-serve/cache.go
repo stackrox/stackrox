@@ -39,6 +39,19 @@ func (lc *LocalCache) Has(actionID string) bool {
 	return err == nil
 }
 
+// GetMeta returns just the entry's sidecar and size without reading the
+// body — the GOCACHEPROG get response only carries the DiskPath; Go reads
+// the file itself, so reading the body here would be a redundant full copy
+// of every entry on every local hit.
+func (lc *LocalCache) GetMeta(actionID string) (meta []byte, size int64, ok bool) {
+	meta, _ = os.ReadFile(lc.metaPath(actionID))
+	st, err := os.Stat(lc.path(actionID))
+	if err != nil {
+		return nil, 0, false
+	}
+	return meta, st.Size(), true
+}
+
 func (lc *LocalCache) Get(actionID string) ([]byte, []byte, error) {
 	lc.mu.RLock()
 	defer lc.mu.RUnlock()
