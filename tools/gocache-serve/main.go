@@ -32,6 +32,7 @@ type Request struct {
 	OutputID []byte `json:",omitempty"`
 	Body     []byte `json:"-"` // decoded from base64 line after JSON, for put
 	BodySize int64  `json:",omitempty"`
+	DiskPath string `json:",omitempty"` // set when Go wrote the output file itself (no body line follows)
 }
 
 type Response struct {
@@ -202,6 +203,11 @@ func main() {
 		uploader.onUploaded = leaseMgr.Release // release after entry lands in cloud
 		defer leaseMgr.Stop()                  // stop the renewal sweeper at exit
 	}
+	// Request tracing for protocol inspection: logs every get/put with
+	// truncated IDs, sizes, and DiskPath usage. stderr only (stdout is
+	// the GOCACHEPROG JSON channel).
+	trace := os.Getenv("GOCACHE_SERVE_TRACE") == "1"
+
 	var writeMu sync.Mutex
 	var wg sync.WaitGroup
 
@@ -255,8 +261,9 @@ func main() {
 			break
 		}
 
-		// Read PUT body in the main goroutine (stdin is sequential)
-		if req.Command == CmdPut && req.BodySize > 0 {
+		// Read PUT body in the main goroutine (stdin is sequential).
+		// DiskPath puts carry no body line — Go wrote the file itself.
+		if req.Command == CmdPut && req.BodySize > 0 && req.DiskPath == "" {
 			var bodyStr string
 			if err := dec.Decode(&bodyStr); err != nil {
 				log.Printf("decode body: %v", err)
@@ -312,6 +319,9 @@ func main() {
 			case CmdGet:
 				atomic.AddInt64(&totalGets, 1)
 				actionID := fmt.Sprintf("%x", req.ActionID)
+				if trace {
+					log.Printf("TRACE get id=%s out=%x", shortID(actionID), req.OutputID)
+				}
 
 				// Local cache first (no network)
 				body, storedOutputID, err := local.Get(actionID)
@@ -438,6 +448,10 @@ func main() {
 			case CmdPut:
 				atomic.AddInt64(&totalPuts, 1)
 				actionID := fmt.Sprintf("%x", req.ActionID)
+				if trace {
+					log.Printf("TRACE put id=%s out=%x bodyLen=%d size=%d disk=%q",
+						shortID(actionID), req.OutputID, len(req.Body), req.BodySize, req.DiskPath)
+				}
 				path, err := local.Put(actionID, req.OutputID, req.Body)
 				if err != nil {
 					resp.Err = fmt.Sprintf("local put: %v", err)
