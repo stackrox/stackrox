@@ -486,11 +486,15 @@ test_scanner_v4_db_upgrade_fallback() {
 
     # The pod should come up instead of aborting and crashlooping.
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
-    kubectl -n stackrox logs deploy/scanner-v4-db -c init-db
+
+    # Captured rather than piped into grep: under pipefail, grep -q exiting on
+    # the first match can SIGPIPE kubectl and fail the pipeline on success.
+    local init_log
+    init_log="$(kubectl -n stackrox logs deploy/scanner-v4-db -c init-db)"
+    echo "$init_log"
 
     # Verify the fallback happens.
-    kubectl -n stackrox logs deploy/scanner-v4-db -c init-db |
-        grep -q "No usable transfer mode" || \
+    grep -q "No usable transfer mode" <<< "$init_log" || \
         die "scanner-v4-db did not decline the upgrade the way this test intends"
 
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
@@ -503,8 +507,10 @@ test_scanner_v4_db_upgrade_fallback() {
     check_scanner_v4_db_upgraded
     check_scanner_v4_data_upgraded
 
+    # Restarted through the Deployment: deleting the pod creates no new
+    # revision, so rollout status can return against the previous one.
     info "Bouncing scanner-v4-db"
-    kubectl -n stackrox delete po -l app=scanner-v4-db --grace-period=0
+    kubectl -n stackrox rollout restart deploy/scanner-v4-db
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     check_scanner_v4_db_upgraded
     check_scanner_v4_data_upgraded
