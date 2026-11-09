@@ -79,6 +79,7 @@ jobs:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
           if [ "${{ matrix.backend }}" = "cacheprog" ]; then
@@ -92,7 +93,7 @@ jobs:
             echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=${{ inputs.wait_concurrent || '-1' }}" >> "$GITHUB_ENV"
             # "nobundle:" commit messages disable bundle packing for this
             # run — used to A/B individual-entry parallel prefetch vs bundles.
-            case "${{ github.event.head_commit.message }}" in
+            case "$COMMIT_MSG" in
               nobundle:*)
                 echo "GOCACHE_SERVE_BUNDLES=0" >> "$GITHUB_ENV"
                 echo "gocache-serve: bundles disabled (nobundle mode)" ;;
