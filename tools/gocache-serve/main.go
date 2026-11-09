@@ -383,7 +383,7 @@ func main() {
 						sum := sha256.Sum256(b)
 						h = fmt.Sprintf("%x", sum[:8])
 					}
-					log.Printf("TRACE get id=%s out=%x bodyHash=%s", shortID(actionID), req.OutputID, h)
+					log.Printf("TRACE get id=%s out=%x bodyHash=%s", actionID, req.OutputID, h)
 				}
 
 				// Local cache first (no network). Meta+stat only: the body
@@ -529,7 +529,7 @@ func main() {
 				if trace {
 					sum := sha256.Sum256(req.Body)
 					log.Printf("TRACE put id=%s out=%x bodyHash=%x bodyLen=%d size=%d disk=%q",
-						shortID(actionID), req.OutputID, sum[:8], len(req.Body), req.BodySize, req.DiskPath)
+						actionID, req.OutputID, sum[:8], len(req.Body), req.BodySize, req.DiskPath)
 				}
 				// Record produced entries too: a cold run has no hits, but
 				// its puts ARE the working set (they'll be hits next run).
