@@ -10,14 +10,14 @@ central:
     central:
       resources:
         requests:
-          cpu: 150m
+          cpu: 100m
           memory: 1Gi
         limits:
           memory: 1Gi
       db:
         resources:
           requests:
-            cpu: 100m
+            cpu: 50m
             memory: 4Gi
           limits:
             memory: 4Gi
@@ -45,7 +45,7 @@ central:
           replicas: 1
         resources:
           requests:
-            cpu: 50m
+            cpu: 10m
             memory: 512Mi
           limits:
             memory: 512Mi
@@ -56,14 +56,14 @@ central:
           replicas: 1
         resources:
           requests:
-            cpu: 50m
+            cpu: 10m
             memory: 256Mi
           limits:
             memory: 256Mi
       db:
         resources:
           requests:
-            cpu: 100m
+            cpu: 50m
             memory: 4Gi
           limits:
             memory: 4Gi
@@ -74,6 +74,11 @@ securedCluster:
     monitoring:
       openshift:
         enabled: false
+
+    admissionControl:
+      resources:
+        requests:
+          cpu: 10m
 
     sensor:
       resources:
@@ -86,3 +91,14 @@ securedCluster:
     perNode:
       collector:
         collection: CORE_BPF
+        resources:
+          requests:
+            cpu: 10m
+      compliance:
+        resources:
+          requests:
+            cpu: 10m
+      nodeInventory:
+        resources:
+          requests:
+            cpu: 10m

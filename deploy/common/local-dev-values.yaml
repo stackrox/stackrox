@@ -5,7 +5,7 @@
 central:
   resources:
     requests:
-      cpu: 150m
+      cpu: 100m
       memory: 1Gi
     limits:
       memory: 1Gi
@@ -13,7 +13,7 @@ central:
   db:
     resources:
       requests:
-        cpu: 100m
+        cpu: 50m
         memory: 4Gi
       limits:
         memory: 4Gi
@@ -38,7 +38,7 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: "50m"
+        cpu: "10m"
         memory: "512Mi"
       limits:
         memory: "512Mi"
@@ -49,14 +49,14 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: "50m"
+        cpu: "10m"
         memory: "256Mi"
       limits:
         memory: "256Mi"
   db:
     resources:
       requests:
-        cpu: "100m"
+        cpu: "50m"
         memory: "4Gi"
       limits:
         memory: "4Gi"

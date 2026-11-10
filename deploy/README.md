@@ -259,3 +259,10 @@ QA, UI, and non-Groovy E2E share `deploy/roxie-config-resources.yaml`.
 Keep local Roxie/Helm overrides, local patches, and Operator test fixtures aligned
 with it. Central DB needs 4 GiB for its default 2 GB shared buffers plus query and
 maintenance allocations. Replica counts remain specific to each flow.
+
+The single-node GKE QA, UI, non-Groovy, BYODB, and Operator E2E jobs use
+`e2-highmem-2` (2 vCPUs, 16 GiB RAM). CPU requests reserve 100m for Central,
+50m for each database and Sensor, and 10m for each Scanner V4 indexer/matcher,
+Central worker, admission controller, Collector, compliance, and node inventory
+container. Leave room for init containers (including Sensor's 400m certificate
+initialization), GKE system pods, and test workloads when sizing these clusters.

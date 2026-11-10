@@ -4,14 +4,14 @@ central:
     central:
       resources:
         requests:
-          cpu: 150m
+          cpu: 100m
           memory: 1Gi
         limits:
           memory: 1Gi
       db:
         resources:
           requests:
-            cpu: 100m
+            cpu: 50m
             memory: 4Gi
           limits:
             memory: 4Gi
@@ -26,26 +26,30 @@ central:
       db:
         resources:
           requests:
-            cpu: 100m
+            cpu: 50m
             memory: 4Gi
           limits:
             memory: 4Gi
       indexer:
         resources:
           requests:
-            cpu: 50m
+            cpu: 10m
             memory: 512Mi
           limits:
             memory: 512Mi
       matcher:
         resources:
           requests:
-            cpu: 50m
+            cpu: 10m
             memory: 256Mi
           limits:
             memory: 256Mi
 securedCluster:
   spec:
+    admissionControl:
+      resources:
+        requests:
+          cpu: 10m
     sensor:
       resources:
         requests:
@@ -53,3 +57,16 @@ securedCluster:
           memory: 512Mi
         limits:
           memory: 512Mi
+    perNode:
+      collector:
+        resources:
+          requests:
+            cpu: 10m
+      compliance:
+        resources:
+          requests:
+            cpu: 10m
+      nodeInventory:
+        resources:
+          requests:
+            cpu: 10m
