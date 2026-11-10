@@ -92,7 +92,7 @@ func benchmarkSQLScope(b *testing.B, rules func([]*storage.Cluster) *storage.Sim
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			checker := newScopeChecker(roles, nil, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
+			checker := newScopeChecker(ctx, roles, nil, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
 				return computeSQLScope(ctx, db, rules)
 			})
 			requestCtx := sac.WithGlobalAccessScopeChecker(ctx, checker)
