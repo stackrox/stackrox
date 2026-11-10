@@ -147,7 +147,11 @@ func main() {
 	// Prefetch from manifest (see bundle.go for BundledBackend)
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
 		go func() {
-			defer close(prefetchDone)
+			// Only the gated mode owns the channel's close; ungated closed
+			// it at startup so compilation overlaps prefetch immediately.
+			if gatePrefetch {
+				defer close(prefetchDone)
+			}
 			start := time.Now()
 			entries := manifestEntries
 			if len(entries) == 0 {
