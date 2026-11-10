@@ -968,6 +968,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"id: ID!",
 		"name: String!",
+		"readAccessOnly: Boolean!",
+		"scopedOnly: Boolean!",
 		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("Pod", []string{
@@ -10717,6 +10719,16 @@ func (resolver *permissionSetResolver) Id(ctx context.Context) graphql.ID {
 
 func (resolver *permissionSetResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *permissionSetResolver) ReadAccessOnly(ctx context.Context) bool {
+	value := resolver.data.GetReadAccessOnly()
+	return value
+}
+
+func (resolver *permissionSetResolver) ScopedOnly(ctx context.Context) bool {
+	value := resolver.data.GetScopedOnly()
 	return value
 }
 
