@@ -143,11 +143,13 @@ roxie:
   konfluxImages: true
 central:
   namespace: ${ACS_NS}
+  resourceProfile: ci
   spec:
     network:
       policies: Disabled
 securedCluster:
   namespace: ${ACS_NS}
+  resourceProfile: ci
   spec:
     network:
       policies: Disabled
