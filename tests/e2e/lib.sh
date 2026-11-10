@@ -1579,6 +1579,18 @@ remove_compliance_operator_resources() {
 }
 
 
+# Description: Wait for a Kubernetes deployment to become ready. Polls
+#   deployment status in a loop until replicas == readyReplicas > 0, or
+#   until max_seconds elapses. For the "central" deployment, periodically
+#   checks for pod crash states (CrashLoopBackOff, OOMKilled, Error) to
+#   fail fast with diagnostics instead of waiting for the full timeout.
+#   Other deployments are unaffected by the crash check.
+# Arguments:
+#   $1 - Kubernetes namespace
+#   $2 - deployment name
+#   $3 - maximum seconds to wait before timing out
+# Returns:
+#   Exits via die on timeout or crash detection; returns normally on success.
 wait_for_ready_deployment() {
     local namespace="$1"
     local deployment_name="$2"
