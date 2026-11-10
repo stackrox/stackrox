@@ -1,6 +1,7 @@
 **/go.sum
 **/zz_generated.deepcopy.go
 .github/workflows/build.yaml
+.github/workflows/detect-changes-generated.yml
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/baseimage/watcher/watcher_impl_test.go
