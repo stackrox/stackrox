@@ -85,7 +85,7 @@ jobs:
         sc=./.github/workflows/scripts/scanner-updater-config.sh
         bucket="scanner-v4-test"
         prefix=$("$sc" prefix)
-        matrix="{\"include\":[{\"source\":\"manual\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual.json.zst\"}]}"
+        matrix="{\"include\":[{\"source\":\"manual\",\"stream\":\"dev\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual.json.zst\"}]}"
         printf '{"has_due":true,"has_errors":false,"errors":[],"matrix":%s}\n' "$matrix" > matrix-result.json
 
     - name: Validate matrix builder (PR)
@@ -141,6 +141,7 @@ jobs:
     uses: ./.github/workflows/scanner-updater-export.yaml
     with:
       source: ${{ matrix.source }}
+      stream: ${{ matrix.stream }}
       ref: ${{ matrix.ref }}
       object: ${{ matrix.object }}
       manual_url: ${{ github.event_name == 'pull_request' && format('https://raw.githubusercontent.com/stackrox/stackrox/{0}/scanner/updater/manual/vulns.yaml', github.event.pull_request.head.sha) || 'https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml' }}
