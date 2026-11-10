@@ -274,22 +274,23 @@ validate_scan_results() {
         info "All TLS endpoints offer only TLS 1.3."
     fi
 
-    # All OK endpoints must support ML-KEM (with temporary PG exceptions).
-    # TODO: Once TLS groups adherence is implemented tighten this to
-    # verify ML-KEM is the *only* offered group.
+    # OK endpoints must offer only X25519MLKEM768 (profile groups list).
     mlkem_failures=$(jq -r '
         .ip_results[]? |
         (.openshift_component.component // .pod.Name) as $name |
         .port_results[]? |
         select(.status == "OK") |
-        select(.mlkem_supported != true) |
-        "\($name):\(.port)"
-    ' "$SCAN_RESULTS" | grep -vE "^(${MLKEM_EXCEPTIONS})$" | sort -u || true)
+        select(
+            (.tls_key_exchange.groups | type) != "array" or
+            .tls_key_exchange.groups != ["X25519MLKEM768"]
+        ) |
+        "\($name):\(.port) groups=\(.tls_key_exchange.groups // [] | join(","))"
+    ' "$SCAN_RESULTS" | grep -vE "^(${MLKEM_EXCEPTIONS}) " | sort -u || true)
 
     if [[ -n "$mlkem_failures" ]]; then
-        fail "Endpoints without ML-KEM: ${mlkem_failures}"
+        fail "Endpoints not offering only X25519MLKEM768: ${mlkem_failures}"
     else
-        info "All endpoints support ML-KEM (exceptions: ${MLKEM_EXCEPTIONS})."
+        info "All endpoints offer only X25519MLKEM768 (exceptions: ${MLKEM_EXCEPTIONS})."
     fi
 }
 
