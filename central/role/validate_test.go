@@ -107,6 +107,67 @@ func TestValidatePermissionSet(t *testing.T) {
 	}
 }
 
+func TestValidatePermissionSetConstraints(t *testing.T) {
+	for name, tc := range map[string]struct {
+		readAccessOnly bool
+		scopedOnly     bool
+		access         map[string]storage.Access
+		wantError      string
+	}{
+		"read-access-only scoped grant": {
+			readAccessOnly: true, scopedOnly: true,
+			access: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+		},
+		"read-access-only with global read": {
+			readAccessOnly: true,
+			access:         map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+		},
+		"scoped-only with scoped write": {
+			scopedOnly: true,
+			access:     map[string]storage.Access{"Deployment": storage.Access_READ_WRITE_ACCESS},
+		},
+		"scoped-only with denied global resource": {
+			scopedOnly: true,
+			access:     map[string]storage.Access{"Administration": storage.Access_NO_ACCESS},
+		},
+		"read-access-only rejects write": {
+			readAccessOnly: true,
+			access: map[string]storage.Access{
+				"Deployment": storage.Access_READ_WRITE_ACCESS,
+			},
+			wantError: "read-access-only permission set",
+		},
+		"read-access-only rejects unknown access": {
+			readAccessOnly: true,
+			access:         map[string]storage.Access{"Deployment": storage.Access(99)},
+			wantError:      "read-access-only permission set",
+		},
+		"scoped-only rejects global read": {
+			scopedOnly: true,
+			access:     map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+			wantError:  "scoped-only permission set",
+		},
+		"both reject global write": {
+			readAccessOnly: true, scopedOnly: true,
+			access:    map[string]storage.Access{"Administration": storage.Access_READ_WRITE_ACCESS},
+			wantError: "read-access-only permission set",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ps := &storage.PermissionSet{
+				Id: uuid.NewDummy().String(), Name: "test", ResourceToAccess: tc.access,
+				ReadAccessOnly: tc.readAccessOnly, ScopedOnly: tc.scopedOnly,
+			}
+			err := ValidatePermissionSet(ps)
+			if tc.wantError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tc.wantError)
+			}
+		})
+	}
+}
+
 func TestGeneratePermissionSetID(t *testing.T) {
 	generatedID := GeneratePermissionSetID()
 	_, err := uuid.FromString(generatedID)

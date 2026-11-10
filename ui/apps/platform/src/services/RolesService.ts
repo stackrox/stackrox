@@ -5,10 +5,16 @@ import type { Empty } from './types';
 
 const resourcesUrl = '/v1/resources';
 
-export function fetchResources(): Promise<string[]> {
-    return axios
-        .get<{ resources: string[] }>(resourcesUrl)
-        .then((response) => response?.data?.resources ?? []);
+export type PermissionSetResources = {
+    resources: string[];
+    globalResources: string[];
+};
+
+export function fetchResources(): Promise<PermissionSetResources> {
+    return axios.get<PermissionSetResources>(resourcesUrl).then((response) => ({
+        resources: response?.data?.resources ?? [],
+        globalResources: response?.data?.globalResources ?? [],
+    }));
 }
 
 const rolesUrl = '/v1/roles';
@@ -87,6 +93,8 @@ export type PermissionSet = {
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
+    readAccessOnly?: boolean;
+    scopedOnly?: boolean;
     traits?: Traits;
 };
 

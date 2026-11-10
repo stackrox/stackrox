@@ -748,6 +748,14 @@
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
+        },
+        "readAccessOnly": {
+          "type": "boolean",
+          "description": "read_access_only restricts granted permissions to read access."
+        },
+        "scopedOnly": {
+          "type": "boolean",
+          "description": "scoped_only restricts granted permissions to cluster- or namespace-scoped resources."
         }
       },
       "description": "This encodes a set of permissions for StackRox resources."
@@ -990,6 +998,14 @@
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
+        },
+        "readAccessOnly": {
+          "type": "boolean",
+          "description": "read_access_only restricts granted permissions to read access."
+        },
+        "scopedOnly": {
+          "type": "boolean",
+          "description": "scoped_only restricts granted permissions to cluster- or namespace-scoped resources."
         }
       },
       "description": "This encodes a set of permissions for StackRox resources."
@@ -1181,6 +1197,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "globalResources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Resources whose permissions are not restricted by a cluster or namespace scope."
         }
       }
     },

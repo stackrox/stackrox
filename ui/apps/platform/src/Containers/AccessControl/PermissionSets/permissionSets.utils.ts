@@ -17,7 +17,33 @@ export function getNewPermissionSet(resources: string[]): PermissionSet {
         name: '',
         description: '',
         resourceToAccess,
+        readAccessOnly: false,
+        scopedOnly: false,
     };
+}
+
+export function setPermissionSetConstraint(
+    permissionSet: PermissionSet,
+    constraint: 'readAccessOnly' | 'scopedOnly',
+    enabled: boolean,
+    globalResources: readonly string[]
+): PermissionSet {
+    const resourceToAccess = { ...permissionSet.resourceToAccess };
+    if (enabled && constraint === 'readAccessOnly') {
+        Object.keys(resourceToAccess).forEach((resource) => {
+            if (resourceToAccess[resource] === 'READ_WRITE_ACCESS') {
+                resourceToAccess[resource] = 'READ_ACCESS';
+            }
+        });
+    }
+    if (enabled && constraint === 'scopedOnly') {
+        globalResources.forEach((resource) => {
+            if (resource in resourceToAccess) {
+                resourceToAccess[resource] = 'NO_ACCESS';
+            }
+        });
+    }
+    return { ...permissionSet, [constraint]: enabled, resourceToAccess };
 }
 
 function getCompletePermissions(permissions: PermissionsMap, resources: string[]): PermissionsMap {

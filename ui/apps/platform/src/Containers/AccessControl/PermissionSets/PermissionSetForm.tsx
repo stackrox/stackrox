@@ -12,6 +12,9 @@ import {
     HelperText,
     HelperTextItem,
     Label,
+    Stack,
+    StackItem,
+    Switch,
     TextInput,
     Title,
     Toolbar,
@@ -28,12 +31,14 @@ import type { PermissionSet } from 'services/RolesService';
 import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
+import { setPermissionSetConstraint } from './permissionSets.utils';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     permissionSet: PermissionSet;
     permissionSets: PermissionSet[];
+    globalResources: readonly string[];
     handleCancel: () => void;
     handleEdit: () => void;
     handleSubmit: (values: PermissionSet) => Promise<null>; // because the form has only catch and finally
@@ -44,6 +49,7 @@ function PermissionSetForm({
     action,
     permissionSet,
     permissionSets,
+    globalResources,
     handleCancel,
     handleEdit,
     handleSubmit,
@@ -53,26 +59,27 @@ function PermissionSetForm({
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
-    const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
-        initialValues: permissionSet,
-        onSubmit: () => {},
-        validationSchema: yup.object({
-            name: yup
-                .string()
-                .required()
-                .test(
-                    'non-unique-name',
-                    'Another permission set already has this name',
-                    // Return true if current input name is initial name
-                    // or no other permission set already has this name.
-                    (nameInput) =>
-                        nameInput === permissionSet.name ||
-                        permissionSets.every(({ name }) => nameInput !== name)
-                ),
-            description: yup.string(),
-            // resourceToAccess is valid because selections of access level
-        }),
-    });
+    const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, setValues, values } =
+        useFormik({
+            initialValues: permissionSet,
+            onSubmit: () => {},
+            validationSchema: yup.object({
+                name: yup
+                    .string()
+                    .required()
+                    .test(
+                        'non-unique-name',
+                        'Another permission set already has this name',
+                        // Return true if current input name is initial name
+                        // or no other permission set already has this name.
+                        (nameInput) =>
+                            nameInput === permissionSet.name ||
+                            permissionSets.every(({ name }) => nameInput !== name)
+                    ),
+                description: yup.string(),
+                // resourceToAccess is valid because selections of access level
+            }),
+        });
 
     function setResourceValue(resource, value) {
         const { resourceToAccess } = values;
@@ -183,7 +190,56 @@ function PermissionSetForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            {action === 'create' && (
+            <FormGroup label="Permission constraints" fieldId="read-access-only">
+                <Stack hasGutter>
+                    <StackItem>
+                        <Switch
+                            id="read-access-only"
+                            label="Read-access-only"
+                            isChecked={Boolean(values.readAccessOnly)}
+                            isDisabled={isViewing}
+                            onChange={(_event, checked) =>
+                                setValues((current) =>
+                                    setPermissionSetConstraint(
+                                        current,
+                                        'readAccessOnly',
+                                        checked,
+                                        globalResources
+                                    )
+                                )
+                            }
+                        />
+                    </StackItem>
+                    <StackItem>
+                        <Switch
+                            id="scoped-only"
+                            label="Scoped resources only"
+                            isChecked={Boolean(values.scopedOnly)}
+                            isDisabled={isViewing}
+                            onChange={(_event, checked) =>
+                                setValues((current) =>
+                                    setPermissionSetConstraint(
+                                        current,
+                                        'scopedOnly',
+                                        checked,
+                                        globalResources
+                                    )
+                                )
+                            }
+                        />
+                    </StackItem>
+                </Stack>
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem>
+                            Read-only removes write access. Scoped resources only removes access to
+                            global resources. Turning off a constraint does not restore removed
+                            access.
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
+            </FormGroup>
+            {action === 'create' && !values.scopedOnly && (
                 <Alert
                     title="Recommended minimum set of read permissions"
                     component="p"
@@ -212,6 +268,9 @@ function PermissionSetForm({
                     resourceToAccess={values.resourceToAccess}
                     setResourceValue={setResourceValue}
                     isDisabled={isViewing}
+                    readAccessOnly={Boolean(values.readAccessOnly)}
+                    scopedOnly={Boolean(values.scopedOnly)}
+                    globalResources={globalResources}
                 />
             </FormGroup>
             {hasAction && (

@@ -12,9 +12,11 @@ import (
 
 // PermissionSet is representation of storage.PermissionSet that supports transformation from YAML.
 type PermissionSet struct {
-	Name        string               `yaml:"name,omitempty"`
-	Description string               `yaml:"description,omitempty"`
-	Resources   []ResourceWithAccess `yaml:"resources,omitempty"`
+	Name           string               `yaml:"name,omitempty"`
+	Description    string               `yaml:"description,omitempty"`
+	Resources      []ResourceWithAccess `yaml:"resources,omitempty"`
+	ReadAccessOnly bool                 `yaml:"readAccessOnly,omitempty"`
+	ScopedOnly     bool                 `yaml:"scopedOnly,omitempty"`
 }
 
 // ConfigurationType returns the PermissionSetConfiguration type.

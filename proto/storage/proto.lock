@@ -16806,6 +16806,16 @@
                 "id": 5,
                 "name": "traits",
                 "type": "Traits"
+              },
+              {
+                "id": 6,
+                "name": "read_access_only",
+                "type": "bool"
+              },
+              {
+                "id": 7,
+                "name": "scoped_only",
+                "type": "bool"
               }
             ],
             "maps": [

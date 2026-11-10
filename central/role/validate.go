@@ -92,10 +92,21 @@ func ValidatePermissionSet(ps *storage.PermissionSet) error {
 	if ps.GetName() == "" {
 		multiErr = multierror.Append(multiErr, errors.New("name field must be set"))
 	}
-	for resource := range ps.GetResourceToAccess() {
-		if _, ok := resources.MetadataForResource(permissions.Resource(resource)); !ok {
+	for resource, access := range ps.GetResourceToAccess() {
+		metadata, ok := resources.MetadataForResource(permissions.Resource(resource))
+		if !ok {
 			multiErr = multierror.Append(multiErr, errors.Errorf(
 				"resource %q does not exist", resource))
+			continue
+		}
+		if ps.GetReadAccessOnly() && access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
+			multiErr = multierror.Append(multiErr, errors.Errorf(
+				"read-access-only permission set cannot grant %s access to resource %q", access, resource))
+		}
+		if ps.GetScopedOnly() && access != storage.Access_NO_ACCESS &&
+			metadata.GetScope() == permissions.GlobalScope {
+			multiErr = multierror.Append(multiErr, errors.Errorf(
+				"scoped-only permission set cannot grant access to global resource %q", resource))
 		}
 	}
 

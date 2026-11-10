@@ -53,6 +53,11 @@ message PermissionSet {
   map<string, Access> resource_to_access = 4;
 
   Traits traits = 5;
+
+  // read_access_only restricts granted permissions to read access.
+  bool read_access_only = 6;
+  // scoped_only restricts granted permissions to cluster- or namespace-scoped resources.
+  bool scoped_only = 7;
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.

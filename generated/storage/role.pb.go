@@ -241,8 +241,12 @@ type PermissionSet struct {
 	Description      string            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	ResourceToAccess map[string]Access `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
 	Traits           *Traits           `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// read_access_only restricts granted permissions to read access.
+	ReadAccessOnly bool `protobuf:"varint,6,opt,name=read_access_only,json=readAccessOnly,proto3" json:"read_access_only,omitempty"`
+	// scoped_only restricts granted permissions to cluster- or namespace-scoped resources.
+	ScopedOnly    bool `protobuf:"varint,7,opt,name=scoped_only,json=scopedOnly,proto3" json:"scoped_only,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PermissionSet) Reset() {
@@ -308,6 +312,20 @@ func (x *PermissionSet) GetTraits() *Traits {
 		return x.Traits
 	}
 	return nil
+}
+
+func (x *PermissionSet) GetReadAccessOnly() bool {
+	if x != nil {
+		return x.ReadAccessOnly
+	}
+	return false
+}
+
+func (x *PermissionSet) GetScopedOnly() bool {
+	if x != nil {
+		return x.ScopedOnly
+	}
+	return false
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.
@@ -744,13 +762,16 @@ const file_storage_role_proto_rawDesc = "" +
 	"\x06traits\x18\b \x01(\v2\x0f.storage.TraitsR\x06traits\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x04\x10\x05\"\xb0\x02\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x04\x10\x05\"\xfb\x02\n" +
 	"\rPermissionSet\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12Z\n" +
 	"\x12resource_to_access\x18\x04 \x03(\v2,.storage.PermissionSet.ResourceToAccessEntryR\x10resourceToAccess\x12'\n" +
-	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1aT\n" +
+	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x12(\n" +
+	"\x10read_access_only\x18\x06 \x01(\bR\x0ereadAccessOnly\x12\x1f\n" +
+	"\vscoped_only\x18\a \x01(\bR\n" +
+	"scopedOnly\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\"\xaa\x05\n" +
