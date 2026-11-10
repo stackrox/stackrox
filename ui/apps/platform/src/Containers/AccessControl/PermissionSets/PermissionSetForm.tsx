@@ -195,7 +195,7 @@ function PermissionSetForm({
                     <StackItem>
                         <Switch
                             id="read-access-only"
-                            label="Read-access-only"
+                            label="Read access only"
                             isChecked={Boolean(values.readAccessOnly)}
                             isDisabled={isViewing}
                             onChange={(_event, checked) =>
