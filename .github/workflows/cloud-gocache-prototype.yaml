@@ -215,7 +215,8 @@ jobs:
           if [ -n "$GOCACHE_MEMSNAP" ]; then
             kill $MEMSNAP_PID 2>/dev/null || true
             echo "=== memsnap (15s intervals):"; tail -30 /tmp/memsnap.log
-            echo "=== tmpfs mount limits:"; df -h /dev/shm /tmp 2>/dev/null || true
+            echo "=== tmpfs mount limits:"; df -hT /dev/shm /tmp /mnt / 2>/dev/null || true
+            echo "=== /mnt contents (Azure local temp disk?):"; ls /mnt 2>/dev/null || echo "no /mnt"
             echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill 2>/dev/null || true
           fi
 
