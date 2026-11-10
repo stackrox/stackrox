@@ -169,10 +169,18 @@ func main() {
 				}
 				PrefetchPFBs(rawBackend, jobName, local, metas)
 			}
-			// 64-way concurrency: the scalability bench measured ~6MB/s per
-			// connection cross-region with flat latency to 100 connections,
-			// so bulk prefetch throughput is connection-count-bound.
-			sem := make(chan struct{}, 64)
+			// Prefetch concurrency: the direct prefetch is slot-bound, not
+			// bandwidth-bound (measured ~160 entries/s at 64 slots cross-
+			// region — raising range-parallelism per entry didn't move it;
+			// the slot count is the limiter). The bench measured flat
+			// latency to 100+ connections, so 128 slots. Overridable.
+			pfConc := 128
+			if v := os.Getenv("GOCACHE_SERVE_PREFETCH_CONCURRENCY"); v != "" {
+				if n, err := strconv.Atoi(v); err == nil && n > 0 {
+					pfConc = n
+				}
+			}
+			sem := make(chan struct{}, pfConc)
 			var wg sync.WaitGroup
 			var downloaded int64
 			for _, ent := range entries {
