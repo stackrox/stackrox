@@ -76,11 +76,23 @@ func populateScanNames(ctx context.Context, data *report.ClusterData, reportData
 	data.ScanStartTimes = make(map[string]*timestamppb.Timestamp, len(scans))
 	for _, scan := range scans {
 		data.ScanNames = append(data.ScanNames, scan.GetScanName())
-		if t := scan.GetLastStartedTime(); t != nil {
+		if t := scan.GetLastStartedTime(); t != nil && shouldFilterByStartedTime(scan.GetStatus().GetPhase()) {
 			data.ScanStartTimes[scan.GetScanName()] = t
 		}
 	}
 	return data, nil
+}
+
+// shouldFilterByStartedTime returns true when the scan is far enough along
+// that its LastStartedTime can safely be used to exclude stale results.
+// During RUNNING, the new results have not landed yet, so filtering by the
+// updated start time would drop all previous-cycle results and produce an
+// empty report. By AGGREGATING, the snapshot is already in WAITING state
+// and on-demand reports queue behind it, so reaching this code path means
+// the DONE event is imminent. An empty phase is treated as terminal to
+// avoid silently disabling the filter on a missing-phase bug.
+func shouldFilterByStartedTime(phase string) bool {
+	return phase == "AGGREGATING" || phase == "DONE" || phase == ""
 }
 
 func populateFailedScans(ctx context.Context, failedScanNames []string, snapshotScans []*storage.ComplianceOperatorReportSnapshotV2_Scan, scanStore scanDS.DataStore) ([]*storage.ComplianceOperatorScanV2, error) {
