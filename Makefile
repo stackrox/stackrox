@@ -688,6 +688,17 @@ docker-build-main-image: copy-binaries-to-image-dir
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
+.PHONY: operator-image
+operator-image:
+	$(MAKE) -C operator/ docker-build
+
+.PHONY: operator-bundle-image
+operator-bundle-image:
+	$(MAKE) -C operator/ bundle-build
+
+.PHONY: all-images
+all-images: main-image operator-image operator-bundle-image
+
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
 	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl-linux

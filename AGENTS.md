@@ -55,6 +55,9 @@ When creating pull requests, you must follow these requirements:
 
 ### Build Commands
 - `make image` - Build the main StackRox container image with tag from `make tag`
+- `make all-images` - Build main, operator, and operator bundle images (all artifacts for operator-based deployment)
+- `make operator-image` - Build the operator container image
+- `make operator-bundle-image` - Build the operator bundle image
 - `make main-build-dockerized` - Compile all Go binaries using Docker
 - `make main-build` - Build main binaries with dependency prep
 - `make cli` - Build and install CLI tools for all platforms
