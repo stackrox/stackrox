@@ -20,7 +20,7 @@ message BaseImage {
   google.protobuf.Timestamp created = 10;
   // Config history in order, including empty lines.
   // Enrichment compares this with the workload image history.
-  repeated BaseImageHistoryEntry history = 11; // @gotags: search:"-" sql:"-"
+  repeated BaseImageHistoryEntry history = 11;
 }
 
 // BaseImageHistoryEntry is one config-history line from a base image.

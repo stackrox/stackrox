@@ -293,7 +293,7 @@ type BaseImageTag struct {
 	// Layer digests for this tag, stored for promotion to base_images.
 	LayerDigests []string `protobuf:"bytes,8,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
 	// Config history, including empty lines, stored for promotion to base_images.
-	History       []*BaseImageHistoryEntry `protobuf:"bytes,9,rep,name=history,proto3" json:"history,omitempty" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
+	History       []*BaseImageHistoryEntry `protobuf:"bytes,9,rep,name=history,proto3" json:"history,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -36,7 +36,7 @@ type BaseImage struct {
 	Created               *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created,proto3" json:"created,omitempty"`
 	// Config history in order, including empty lines.
 	// Enrichment compares this with the workload image history.
-	History       []*BaseImageHistoryEntry `protobuf:"bytes,11,rep,name=history,proto3" json:"history,omitempty" search:"-" sql:"-"` // @gotags: search:"-" sql:"-"
+	History       []*BaseImageHistoryEntry `protobuf:"bytes,11,rep,name=history,proto3" json:"history,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

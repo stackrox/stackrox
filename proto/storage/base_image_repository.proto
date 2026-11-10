@@ -95,5 +95,5 @@ message BaseImageTag {
   repeated string layer_digests = 8;
 
   // Config history, including empty lines, stored for promotion to base_images.
-  repeated BaseImageHistoryEntry history = 9; // @gotags: search:"-" sql:"-"
+  repeated BaseImageHistoryEntry history = 9;
 }
