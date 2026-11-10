@@ -10,7 +10,7 @@ spec:
     resources:
       requests:
         memory: 100Mi
-        cpu: 100m
+        cpu: 10m
   sensor:
     resources:
       requests:
@@ -23,14 +23,14 @@ spec:
       resources:
         requests:
           memory: 100Mi
-          cpu: 100m
+          cpu: 10m
     compliance:
       resources:
         requests:
           memory: 100Mi
-          cpu: 100m
+          cpu: 10m
     nodeInventory:
       resources:
         requests:
           memory: 100Mi
-          cpu: 100m
+          cpu: 10m
