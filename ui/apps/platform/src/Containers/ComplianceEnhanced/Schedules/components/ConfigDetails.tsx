@@ -58,18 +58,22 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsXs' }}
                     >
-                        <Alert variant="danger" title="Scan error" component="p" isInline>
-                            One or more clusters reported scan errors.
+                        <Alert
+                            variant="danger"
+                            title="One or more clusters reported scan errors"
+                            component="p"
+                            isInline
+                        >
+                            {scanErrorItems && scanErrorItems.length > 0 && (
+                                <List>
+                                    {scanErrorItems.map(({ clusterId, clusterName, scanError }) => (
+                                        <ListItem key={`${clusterId}-${scanError}`}>
+                                            {clusterName}: {scanError}
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            )}
                         </Alert>
-                        {scanErrorItems && scanErrorItems.length > 0 && (
-                            <List>
-                                {scanErrorItems.map(({ clusterId, clusterName, scanError }) => (
-                                    <ListItem key={`${clusterId}-${scanError}`}>
-                                        {clusterName}: {scanError}
-                                    </ListItem>
-                                ))}
-                            </List>
-                        )}
                     </Flex>
                 )}
                 <ScanConfigClustersTable

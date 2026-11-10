@@ -95,7 +95,7 @@ function ScanConfigClustersTable({
     const clustersWindow = sortedClusters.slice(startNumber, endNumber);
     const tableState = getTableUIState({
         isLoading: false,
-        data: clusterScanStatuses.length > 0 ? clustersWindow : [],
+        data: clustersWindow,
         error: undefined,
         searchFilter: {},
     });
