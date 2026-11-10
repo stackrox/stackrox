@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
+	sacEnricher "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -177,7 +178,11 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		newCtx := authn.CopyContextIdentity(context.Background(), reqCtx)
-		newCtx = sac.CopyAccessScopeCheckerCore(newCtx, reqCtx)
+		newCtx, err := sacEnricher.GetEnricher().EnrichContext(newCtx)
+		if err != nil {
+			httputil.WriteError(w, err)
+			return
+		}
 		for _, tracker := range tr {
 			go tracker.Gather(newCtx)
 		}

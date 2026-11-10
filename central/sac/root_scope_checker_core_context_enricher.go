@@ -56,6 +56,18 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 	return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), observe.ScopeCheckerBuiltIn, nil
 }
 
+// EnrichContext creates a scope checker from the identity in ctx. Its SQL lookups
+// use ctx's lifetime; detached work must create its own checker rather than copy
+// a checker bound to the original request.
+func (se *Enricher) EnrichContext(ctx context.Context) (context.Context, error) {
+	ctxWithSCC, sccType, err := se.getRootScopeCheckerCore(ctx)
+	if err != nil {
+		return nil, err
+	}
+	observe.AuthzTraceFromContext(ctx).RecordScopeCheckerCoreType(sccType)
+	return ctxWithSCC, nil
+}
+
 // GetPreAuthContextEnricher returns a contextutil.ContextUpdater which adds a
 // scope checker to the context for later use in scope checking. It also enables
 // authorization tracing on demand by injecting an instance of a specific struct
@@ -71,11 +83,6 @@ func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink observe.AuthzTraceS
 			ctx = observe.ContextWithAuthzTrace(ctx, trace)
 		}
 
-		ctxWithSCC, sccType, err := se.getRootScopeCheckerCore(ctx)
-		if err != nil {
-			return nil, err
-		}
-		trace.RecordScopeCheckerCoreType(sccType)
-		return ctxWithSCC, nil
+		return se.EnrichContext(ctx)
 	}
 }

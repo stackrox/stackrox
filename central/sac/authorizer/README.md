@@ -14,6 +14,8 @@ hold the shared cache mutex. Checks waiting for the same scope can be canceled.
 Permissions remain paired with their role's scope. Built-in unrestricted/deny-all
 scopes and global resources do not query cluster or namespace metadata. Queries
 retain request cancellation and deadlines; failures never grant access.
+Background metrics collection creates a fresh checker bound to its own context,
+so it does not inherit a completed request's cancellation or cached lookup errors.
 
 The predicates preserve selector AND/OR composition, empty selectors matching
 nothing, missing labels matching `NOT_IN`/`NOT_EXISTS`, ID precedence in namespace
