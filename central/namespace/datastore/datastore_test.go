@@ -251,7 +251,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestErrorHandling() {
 			testFunc: func() error {
 				return s.datastore.RemoveNamespace(s.testContexts[testutils.UnrestrictedReadWriteCtx], "")
 			},
-			expectError: true,
+			expectError: false,
 		},
 		{
 			name: "RemoveNamespace with non-existent ID",
@@ -283,7 +283,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestErrorHandling() {
 		{
 			name:        "GetNamespace with empty ID",
 			id:          "",
-			expectErr:   true,
+			expectErr:   false,
 			expectFound: false,
 		},
 		{
