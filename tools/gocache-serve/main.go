@@ -208,6 +208,7 @@ func main() {
 			return s
 		}
 		p1, p2 := loadSet("served-prev.txt"), loadSet("served-prev2.txt")
+		log.Printf("gocache-serve: served sets: prev=%d prev2=%d (dir %s)", len(p1), len(p2), dir)
 		if len(p1) > 0 && len(p2) > 0 {
 			core := 0
 			for id := range p1 {
@@ -467,7 +468,9 @@ func main() {
 				prev2 := filepath.Join(cacheDir, "served-prev2.txt")
 				os.Rename(prev, prev2) // best-effort
 				if ids := manifest.LocalIDs(); len(ids) > 0 {
-					os.WriteFile(prev, []byte(strings.Join(ids, "\n")), 0o644)
+					if err := os.WriteFile(prev, []byte(strings.Join(ids, "\n")), 0o644); err != nil {
+						log.Printf("gocache-serve: served-set write failed: %v", err)
+					}
 				}
 			}
 			// Pack the run's small entries into prefetch bundles for the
