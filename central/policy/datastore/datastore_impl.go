@@ -521,14 +521,10 @@ func findPolicyWithSameName(policyNameToPolicyMap map[string]*storage.Policy, na
 
 func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Policy, policyNameToPolicyMap map[string]*storage.Policy) error {
 	if policy.GetId() != "" {
-		_, exists, err := ds.storage.Get(ctx, policy.GetId())
-		if err != nil {
-			return errorsPkg.Wrapf(err, "getting policy %s", policy.GetId())
-		}
-		if exists {
-			if err := ds.removePolicyNoLock(ctx, policy.GetId()); err != nil {
-				return errorsPkg.Wrapf(err, "removing policy %s", policy.GetId())
-			}
+		// removePolicyNoLock is a plain delete, which is a no-op when no policy carries
+		// this ID, so the previous existence check is not needed.
+		if err := ds.removePolicyNoLock(ctx, policy.GetId()); err != nil {
+			return errorsPkg.Wrapf(err, "removing policy %s", policy.GetId())
 		}
 	}
 
@@ -634,7 +630,7 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 		for _, notifier := range policy.GetNotifiers() {
 			exists, cached := notifierCache[notifier]
 			if !cached {
-				_, exists, err = ds.notifierDatastore.GetNotifier(ctx, notifier)
+				exists, err = ds.notifierDatastore.Exists(ctx, notifier)
 				if err != nil {
 					return set.NewIntSet(), err
 				}
