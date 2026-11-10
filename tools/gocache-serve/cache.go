@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -8,12 +9,19 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
+	"time"
 )
 
-// Local disk cache manager
+// Local disk cache manager. Supports a spill tier: when the primary dir
+// is space-limited (e.g. tmpfs /dev/shm), writes that hit ENOSPC fall
+// back to the spill dir on real disk; reads resolve to whichever tier
+// holds the entry. Entries never move between tiers (no stale-path
+// hazard: we hand Go a fresh DiskPath per get).
 type LocalCache struct {
-	dir string
-	mu  sync.RWMutex
+	dir   string
+	spill string // optional fallback dir for ENOSPC on the primary
+	mu    sync.RWMutex
 }
 
 func NewLocalCache(dir string) (*LocalCache, error) {
@@ -23,11 +31,42 @@ func NewLocalCache(dir string) (*LocalCache, error) {
 	return &LocalCache{dir: dir}, nil
 }
 
+// SetSpill enables the fallback tier (created lazily on first use).
+func (lc *LocalCache) SetSpill(dir string) {
+	lc.mu.Lock()
+	lc.spill = dir
+	lc.mu.Unlock()
+}
+
 func (lc *LocalCache) path(actionID string) string {
 	if len(actionID) < 2 {
 		return filepath.Join(lc.dir, actionID)
 	}
 	return filepath.Join(lc.dir, actionID[:2], actionID[2:])
+}
+
+func (lc *LocalCache) spillPath(actionID string) string {
+	if len(actionID) < 2 {
+		return filepath.Join(lc.spill, actionID)
+	}
+	return filepath.Join(lc.spill, actionID[:2], actionID[2:])
+}
+
+// resolve returns the path where the entry actually resides — primary
+// first, then the spill tier. Callers serving a DiskPath must use this,
+// not path(), when a spill tier is configured.
+func (lc *LocalCache) resolve(actionID string) string {
+	p := lc.path(actionID)
+	if _, err := os.Stat(p); err == nil {
+		return p
+	}
+	if lc.spill != "" {
+		sp := lc.spillPath(actionID)
+		if _, err := os.Stat(sp); err == nil {
+			return sp
+		}
+	}
+	return p
 }
 
 func (lc *LocalCache) metaPath(actionID string) string {
@@ -36,6 +75,12 @@ func (lc *LocalCache) metaPath(actionID string) string {
 
 func (lc *LocalCache) Has(actionID string) bool {
 	_, err := os.Stat(lc.path(actionID))
+	if err == nil {
+		return true
+	}
+	if lc.spill != "" {
+		_, err = os.Stat(lc.spillPath(actionID))
+	}
 	return err == nil
 }
 
@@ -44,18 +89,19 @@ func (lc *LocalCache) Has(actionID string) bool {
 // the file itself, so reading the body here would be a redundant full copy
 // of every entry on every local hit.
 func (lc *LocalCache) GetMeta(actionID string) (meta []byte, size int64, ok bool) {
-	meta, _ = os.ReadFile(lc.metaPath(actionID))
-	st, err := os.Stat(lc.path(actionID))
+	p := lc.resolve(actionID)
+	st, err := os.Stat(p)
 	if err != nil {
 		return nil, 0, false
 	}
+	meta, _ = os.ReadFile(p + ".meta")
 	return meta, st.Size(), true
 }
 
 func (lc *LocalCache) Get(actionID string) ([]byte, []byte, error) {
 	lc.mu.RLock()
 	defer lc.mu.RUnlock()
-	body, err := os.ReadFile(lc.path(actionID))
+	body, err := os.ReadFile(lc.resolve(actionID))
 	if os.IsNotExist(err) {
 		return nil, nil, nil
 	}
@@ -74,7 +120,23 @@ func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error
 		return "", err
 	}
 	if err := writeFileAtomic(p, body); err != nil {
-		return "", err
+		// Primary full (ENOSPC on tmpfs): spill to the disk tier.
+		if lc.spill == "" || !os.IsPermission(err) && !errors.Is(err, syscall.ENOSPC) && !isNoSpace(err) {
+			return "", err
+		}
+		sp := lc.spillPath(actionID)
+		if err := os.MkdirAll(filepath.Dir(sp), 0o755); err != nil {
+			return "", err
+		}
+		if err := writeFileAtomic(sp, body); err != nil {
+			return "", err
+		}
+		if len(outputID) > 0 {
+			if err := writeFileAtomic(sp+".meta", outputID); err != nil {
+				return "", err
+			}
+		}
+		return sp, nil
 	}
 	if len(outputID) > 0 {
 		if err := writeFileAtomic(lc.metaPath(actionID), outputID); err != nil {
@@ -82,6 +144,15 @@ func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error
 		}
 	}
 	return p, nil
+}
+
+// isNoSpace matches ENOSPC wrapped by CreateTemp/Write errors.
+func isNoSpace(err error) bool {
+	var pe *os.PathError
+	if errors.As(err, &pe) {
+		return errors.Is(pe.Err, syscall.ENOSPC)
+	}
+	return errors.Is(err, syscall.ENOSPC)
 }
 
 // writeFileAtomic writes via temp file + rename so a concurrent reader
@@ -110,6 +181,69 @@ func writeFileAtomic(path string, body []byte) error {
 		return err
 	}
 	return os.Rename(name, path)
+}
+
+// inflightMap coordinates concurrent downloads of the same entry between
+// the prefetch loop and the get path, and measures "conversions": moments
+// when the compiler's get arrives for an entry whose prefetch hasn't
+// finished — the prefetch fell behind need (each conversion = a blocked
+// compile worker waiting on cloud latency). Waiters don't trust the
+// outcome: after the channel closes they re-check local and fall through
+// to their own fetch if the download failed.
+type inflightMap struct {
+	mu sync.Mutex
+	m  map[string]*inflightEntry
+}
+
+type inflightEntry struct {
+	done    chan struct{}
+	started time.Time
+	src     string // "prefetch" or "get"
+	waiters int    // gets that joined this download
+}
+
+func newInflightMap() *inflightMap {
+	return &inflightMap{m: make(map[string]*inflightEntry)}
+}
+
+// start registers a download if none is in flight; returns nil if another
+// path already owns it (caller should skip or wait).
+func (im *inflightMap) start(id, src string) *inflightEntry {
+	im.mu.Lock()
+	defer im.mu.Unlock()
+	if _, ok := im.m[id]; ok {
+		return nil
+	}
+	e := &inflightEntry{done: make(chan struct{}), started: time.Now(), src: src}
+	im.m[id] = e
+	return e
+}
+
+// join attaches to an in-flight download (a get arriving before prefetch
+// finished = a conversion). Returns the entry to wait on, or nil if no
+// download is in flight.
+func (im *inflightMap) join(id string) *inflightEntry {
+	im.mu.Lock()
+	defer im.mu.Unlock()
+	e, ok := im.m[id]
+	if !ok {
+		return nil
+	}
+	e.waiters++
+	return e
+}
+
+// finish closes the entry's channel and removes it.
+func (im *inflightMap) finish(id string) {
+	im.mu.Lock()
+	e, ok := im.m[id]
+	if ok {
+		delete(im.m, id)
+	}
+	im.mu.Unlock()
+	if ok {
+		close(e.done)
+	}
 }
 
 // negativeCache remembers entries confirmed absent from the cloud store.
@@ -212,6 +346,22 @@ func (m *Manifest) Record(actionID, meta string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.entries = append(m.entries, manifestEntry{id: actionID, meta: meta})
+}
+
+// LocalIDs returns this session's recorded entry ids (gets served + puts)
+// — the served set, for local persistence (hot-core measurement + future
+// page-cache rewarm at session start).
+func (m *Manifest) LocalIDs() []string {
+	if m == nil {
+		return nil
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ids := make([]string, 0, len(m.entries))
+	for _, e := range m.entries {
+		ids = append(ids, e.id)
+	}
+	return ids
 }
 
 // Upload merges this session's entries into the stored manifest. Merge (not

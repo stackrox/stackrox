@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -92,6 +93,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("local cache init: %v", err)
 	}
+	// tmpfs primary (e.g. /dev/shm): enable the disk spill tier so a
+	// working set overflowing the RAM ceiling lands on real disk instead
+	// of failing the job. No-sudo default /dev/shm is 3.4GB on runners.
+	if strings.HasPrefix(cacheDir, "/dev/shm") || os.Getenv("GOCACHE_SERVE_SPILL") != "" {
+		spill := os.Getenv("GOCACHE_SERVE_SPILL")
+		if spill == "" {
+			spill = "/tmp/gocache-serve-spill"
+		}
+		local.SetSpill(spill)
+		log.Printf("gocache-serve: spill tier enabled: %s (primary %s)", spill, cacheDir)
+	}
 
 	uploader := NewAsyncUploader(backend, 4)
 	defer uploader.Flush()
@@ -110,6 +122,34 @@ func main() {
 	// Negative cache: skip cloud round trips for entries already confirmed
 	// absent (Go's speculative gets re-check phantoms every session).
 	negatives := newNegativeCache()
+	// In-flight download coordination between prefetch and get paths.
+	inflights := newInflightMap()
+	var conversions int64 // gets that waited on a prefetch (prefetch behind need)
+
+	// Hot-core measurement: the intersection of the previous two sessions'
+	// served sets = entries re-read across sessions — the population a
+	// page-cache pin/rewarm should protect. Logged once per session.
+	if dir := os.Getenv("GOCACHE_SERVE_DIR"); dir != "" {
+		loadSet := func(name string) map[string]bool {
+			s := map[string]bool{}
+			if b, err := os.ReadFile(filepath.Join(dir, name)); err == nil {
+				for _, id := range strings.Fields(string(b)) {
+					s[id] = true
+				}
+			}
+			return s
+		}
+		p1, p2 := loadSet("served-prev.txt"), loadSet("served-prev2.txt")
+		if len(p1) > 0 && len(p2) > 0 {
+			core := 0
+			for id := range p1 {
+				if p2[id] {
+					core++
+				}
+			}
+			log.Printf("gocache-serve: hot core (served in 2 consecutive sessions): %d of %d entries", core, len(p1))
+		}
+	}
 
 	// Manifest load (synchronous: one small blob GET, and the get handler
 	// needs the metas to serve correct OutputIDs on cloud hits — Go's
@@ -199,6 +239,12 @@ func main() {
 					if local.Has(ent.id) {
 						return
 					}
+					// In-flight coordination with the get path: if a get is
+					// already downloading this entry, skip (it will local.Put).
+					if inflights.start(ent.id, "prefetch") == nil {
+						return
+					}
+					defer inflights.finish(ent.id)
 					body, err := backend.Get(ent.id)
 					if err != nil || body == nil {
 						return
@@ -344,6 +390,17 @@ func main() {
 				log.Printf("manifest upload failed: %v", err)
 			}
 			negatives.Persist() // phantom entries: skip cloud checks next session
+			// Persist the served set: the previous two sessions' sets give
+			// the hot core (cross-session intersection) at startup, and are
+			// the rewarm input for page-cache pinning. Rotation keeps two.
+			if dir := os.Getenv("GOCACHE_SERVE_DIR"); dir != "" {
+				prev := filepath.Join(dir, "served-prev.txt")
+				prev2 := filepath.Join(dir, "served-prev2.txt")
+				os.Rename(prev, prev2) // best-effort
+				if ids := manifest.LocalIDs(); len(ids) > 0 {
+					os.WriteFile(prev, []byte(strings.Join(ids, "\n")), 0o644)
+				}
+			}
 			// Pack the run's small entries into prefetch bundles for the
 			// next run (same gating as the manifest itself).
 			if pfbEnabled && err == nil && len(mergedEntries) > 0 {
@@ -361,6 +418,9 @@ func main() {
 			var concurrentStats string
 			if n := atomic.LoadInt64(&concurrentHits); n > 0 {
 				concurrentStats = fmt.Sprintf(", %d concurrent hits (leader-shared)", n)
+			}
+			if n := atomic.LoadInt64(&conversions); n > 0 {
+				concurrentStats += fmt.Sprintf(", %d conversions (prefetch behind need)", n)
 			}
 			log.Printf("closing: %d gets (%d hits, %.1f%%), %d puts, elapsed %v%s%s",
 				atomic.LoadInt64(&totalGets), atomic.LoadInt64(&totalHits),
@@ -394,7 +454,7 @@ func main() {
 					// hash the served file so put-after-get comparisons show
 					// whether Go recompiled different content or re-put the same
 					h := ""
-					if b, err := os.ReadFile(local.path(actionID)); err == nil {
+					if b, err := os.ReadFile(local.resolve(actionID)); err == nil {
 						sum := sha256.Sum256(b)
 						h = fmt.Sprintf("%x", sum[:8])
 					}
@@ -407,7 +467,7 @@ func main() {
 				storedOutputID, entrySize, hit := local.GetMeta(actionID)
 				if hit {
 					atomic.AddInt64(&totalHits, 1)
-					resp.DiskPath = local.path(actionID)
+					resp.DiskPath = local.resolve(actionID)
 					resp.Size = entrySize
 					resp.OutputID = storedOutputID
 					manifest.Record(actionID, fmt.Sprintf("%x", storedOutputID))
@@ -419,6 +479,30 @@ func main() {
 					resp.Miss = true
 					break
 				}
+				// In-flight coordination: if a prefetch (or another get) is
+				// already downloading this entry, wait for it and reuse the
+				// local result — a get joining a prefetch is a "conversion"
+				// (prefetch fell behind need; each one cost a blocked worker).
+				if e := inflights.join(actionID); e != nil {
+					waitStart := time.Now()
+					<-e.done
+					// The download finished (or failed); local is the truth.
+					if body, meta, err := local.Get(actionID); err == nil && len(meta) > 0 {
+						resp.DiskPath = local.resolve(actionID)
+						if raw, err := hex.DecodeString(string(meta)); err == nil {
+							resp.OutputID = raw
+						}
+						resp.Size = int64(len(body))
+						atomic.AddInt64(&conversions, 1)
+						if ms := time.Since(waitStart).Milliseconds(); ms > 100 {
+							log.Printf("gocache-serve: conversion %s waited %dms (prefetch started %v ago)",
+								shortID(actionID), ms, time.Since(e.started).Round(time.Millisecond))
+						}
+						break
+					}
+					// Download failed — fall through to our own fetch.
+				}
+
 				if cloudSem != nil {
 					cloudSem.Acquire()
 				}
@@ -432,6 +516,14 @@ func main() {
 					body []byte
 					err  error
 				}
+				// Register our download so concurrent gets join it and the
+				// prefetch skips it.
+				mine := inflights.start(actionID, "get")
+				defer func() {
+					if mine != nil {
+						inflights.finish(actionID)
+					}
+				}()
 				ch := make(chan getResult, 1)
 				go func() {
 					body, err := backend.Get(actionID)

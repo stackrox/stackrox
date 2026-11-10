@@ -126,6 +126,12 @@ jobs:
             case "$COMMIT_MSG" in *trace:*)
               echo "GOCACHE_SERVE_TRACE=1" >> "$GITHUB_ENV"
               echo "gocache-serve: protocol tracing enabled" ;; esac
+            case "$COMMIT_MSG" in *shm:*)
+              echo "GOCACHE_SERVE_DIR=/dev/shm/gocache-serve" >> "$GITHUB_ENV"
+              echo "gocache-serve: local cache on tmpfs /dev/shm (spill to disk enabled)" ;; esac
+            case "$COMMIT_MSG" in *memsnap:*)
+              echo "GOCACHE_MEMSNAP=1" >> "$GITHUB_ENV"
+              echo "page-cache meminfo snapshots enabled" ;; esac
             case "$COMMIT_MSG" in *westpin*)
               echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
               echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
@@ -178,6 +184,16 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
+          if [ -n "$GOCACHE_MEMSNAP" ]; then
+            # page-cache ledger: memory composition around the workload
+            # (Cached = kernel page cache, Shmem = tmpfs tier, AnonPages =
+            # compiler RSS, Dirty = writeback debt)
+            (while true; do
+              awk '/^(Cached|Shmem|AnonPages|Dirty|MemFree|Buffers):/ {printf "%s=%s ", $1, $2} END {print ""}' /proc/meminfo
+              sleep 15
+            done) > /tmp/memsnap.log 2>&1 &
+            MEMSNAP_PID=$!
+          fi
           echo "=== workload=${{ matrix.workload }} backend=${{ matrix.backend }} started at $(date -u +%H:%M:%S) ==="
           echo "GOCACHE=$GOCACHE"
           go env GOCACHE
@@ -196,6 +212,11 @@ jobs:
               ;;
           esac
           echo "=== workload finished at $(date -u +%H:%M:%S) ==="
+          if [ -n "$GOCACHE_MEMSNAP" ]; then
+            kill $MEMSNAP_PID 2>/dev/null || true
+            echo "=== memsnap (15s intervals):"; tail -30 /tmp/memsnap.log
+            echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill 2>/dev/null || true
+          fi
 
       - name: Measure and sync new cache entries
         if: always()
