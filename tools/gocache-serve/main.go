@@ -520,11 +520,13 @@ func main() {
 				prev := filepath.Join(cacheDir, "served-prev.txt")
 				prev2 := filepath.Join(cacheDir, "served-prev2.txt")
 				os.Rename(prev, prev2) // best-effort
-				if ids := manifest.LocalIDs(); len(ids) > 0 {
+				ids := manifest.LocalIDs()
+				if len(ids) > 0 {
 					if err := os.WriteFile(prev, []byte(strings.Join(ids, "\n")), 0o644); err != nil {
 						log.Printf("gocache-serve: served-set write failed: %v", err)
 					}
 				}
+				log.Printf("gocache-serve: served-set close: %d ids -> %s", len(ids), prev)
 			}
 			// Pack the run's small entries into prefetch bundles for the
 			// next run (same gating as the manifest itself).
