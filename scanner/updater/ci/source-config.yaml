@@ -4,8 +4,10 @@
 # pattern is gs://<bucket>/<prefix>/<stream>/sources/<updater>.json.zst,
 # constructed by the matrix builder and passed to all downstream consumers.
 #
-# bundles: defines which updaters to include in each version stream's bundle.
-# The stream-to-ref mapping comes from VULNERABILITY_BUNDLE_VERSION.
+# bundles: defines sources and optional updater environment variables for each
+# version stream. The stream-to-ref mapping comes from
+# VULNERABILITY_BUNDLE_VERSION. Environment variables that are absent use the
+# updater's default behavior.
 #
 # updaters: per-updater configuration. Each updater inherits from 'default'
 # unless it overrides a field. New configuration sections can be added here
@@ -25,75 +27,86 @@ storage:
 
 bundles:
   dev:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
+    sources:
+      - alpine
+      - aws
+      - debian
+      - epss
+      - manual
+      - nvd
+      - oracle
+      - osv
+      - photon
+      - rhel-vex
+      - stackrox-rhel-csaf
+      - suse
+      - ubuntu
   v2:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
+    sources:
+      - alpine
+      - aws
+      - debian
+      - epss
+      - manual
+      - nvd
+      - oracle
+      - osv
+      - photon
+      - rhel-vex
+      - stackrox-rhel-csaf
+      - suse
+      - ubuntu
+    env:
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
   v3:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
+    sources:
+      - alpine
+      - aws
+      - debian
+      - epss
+      - manual
+      - nvd
+      - oracle
+      - osv
+      - photon
+      - rhel-vex
+      - stackrox-rhel-csaf
+      - suse
+      - ubuntu
+    env:
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
   v4:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
+    sources:
+      - alpine
+      - aws
+      - debian
+      - epss
+      - manual
+      - nvd
+      - oracle
+      - osv
+      - photon
+      - rhel-vex
+      - stackrox-rhel-csaf
+      - suse
+      - ubuntu
+    env:
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
   v5:
-    - alpine
-    - aws
-    - debian
-    - epss
-    - manual
-    - nvd
-    - oracle
-    - osv
-    - photon
-    - rhel-vex
-    - stackrox-rhel-csaf
-    - suse
-    - ubuntu
+    sources:
+      - alpine
+      - aws
+      - debian
+      - epss
+      - manual
+      - nvd
+      - oracle
+      - osv
+      - photon
+      - rhel-vex
+      - stackrox-rhel-csaf
+      - suse
+      - ubuntu
 
 updaters:
   default:

@@ -23,8 +23,12 @@ storage:
   bucket: test-bucket
   prefix: test-prefix
 bundles:
-  dev: [oracle, debian]
-  v4: [oracle, debian]
+  dev:
+    sources: [oracle, debian]
+  v4:
+    sources: [oracle, debian]
+    env:
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
 updaters:
   default:
     interval: 4h
@@ -62,6 +66,21 @@ SH
     run grep -c 'debian.json.zst --max-age 14400' "$FRESHNESS_CALLS"
     assert_success
     assert_output "2"
+    run jq -e '
+        [.matrix.include[] | select(.source == "oracle" and (.object | test("/dev/"))) | .stream] == ["dev"] and
+        [.matrix.include[] | select(.source == "oracle" and (.object | test("/v4/"))) | .stream] == ["v4"]' <<< "$output"
+    assert_success
+}
+
+@test "pull-request manual export uses the dev stream configuration" {
+    run yq -e '
+        .jobs.build-matrix.steps[] |
+        select(.name == "Build updater matrix (PR)") |
+        .run |
+        contains("\\\"stream\\\":\\\"dev\\\"")
+    ' "${repo_root}/.github/workflows/scanner-updater-schedule.yaml"
+    assert_success
+    assert_output "true"
 }
 
 @test "ineligible hours skip Oracle before freshness checks but retain other sources" {
