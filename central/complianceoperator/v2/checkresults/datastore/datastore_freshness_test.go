@@ -114,82 +114,80 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStale() {
 	pivot := now.Add(-5 * time.Minute)
 	oldTime := now.Add(-10 * time.Hour)
 
-	tests := map[string]func(){
-		"write context required": func() {
-			_, err := s.dataStore.MarkScanChecksStale(s.hasReadCtx, "some-scan-ref", pivot)
-			s.Require().Error(err)
-		},
-		"empty scan ref is a no-op": func() {
-			updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, "", pivot)
-			s.Require().NoError(err)
-			s.Require().Zero(updated)
-		},
-		"marks only the prior row stale, keeps refreshed row and other scan untouched": func() {
-			refreshedRec := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
-			refreshedRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&pivot)
-			refreshedRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-			priorRec := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
-			priorRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
-			otherRec := getTestRecForScan("sc-timeout", testconsts.Cluster2, "scan-healthy")
-			otherRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
-			s.Require().Equal(refreshedRec.GetScanRefId(), priorRec.GetScanRefId())
-			s.Require().NotEqual(refreshedRec.GetScanRefId(), otherRec.GetScanRefId())
+	s.Run("write context required", func() {
+		_, err := s.dataStore.MarkScanChecksStale(s.hasReadCtx, "some-scan-ref", pivot)
+		s.Require().Error(err)
+	})
 
-			s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, refreshedRec))
-			s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, priorRec))
-			s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, otherRec))
+	s.Run("empty scan ref is a no-op", func() {
+		updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, "", pivot)
+		s.Require().NoError(err)
+		s.Require().Zero(updated)
+	})
 
-			updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
-			s.Require().NoError(err)
-			s.Require().Equal(int64(1), updated)
-			s.assertFreshness(priorRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
-			s.assertFreshness(refreshedRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
-			s.assertFreshness(otherRec.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
-		},
-		"second call is idempotent": func() {
-			refreshedRec := getTestRecForScan("sc-timeout-idem", testconsts.Cluster1, "scan-timed-out")
-			refreshedRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&pivot)
-			priorRec := getTestRecForScan("sc-timeout-idem", testconsts.Cluster1, "scan-timed-out")
-			priorRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
-			s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, refreshedRec))
-			s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, priorRec))
+	s.Run("marks only the prior row stale, keeps refreshed row and other scan untouched", func() {
+		refreshedRec := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
+		refreshedRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&pivot)
+		refreshedRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		priorRec := getTestRecForScan("sc-timeout", testconsts.Cluster1, "scan-timed-out")
+		priorRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		otherRec := getTestRecForScan("sc-timeout", testconsts.Cluster2, "scan-healthy")
+		otherRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		s.Require().Equal(refreshedRec.GetScanRefId(), priorRec.GetScanRefId())
+		s.Require().NotEqual(refreshedRec.GetScanRefId(), otherRec.GetScanRefId())
 
-			updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
-			s.Require().NoError(err)
-			s.Require().Equal(int64(1), updated)
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, refreshedRec))
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, priorRec))
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, otherRec))
 
-			updated, err = s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
-			s.Require().NoError(err)
-			s.Require().Zero(updated)
-		},
-		"sub-second boundary: before pivot in the same second is STALE, after is CURRENT": func() {
-			base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
-			subPivot := base.Add(700 * time.Millisecond)    // 12:00:00.700
-			beforePivot := base.Add(300 * time.Millisecond) // 12:00:00.300, same second, before pivot
-			afterPivot := base.Add(900 * time.Millisecond)  // 12:00:00.900, same second, after pivot
+		updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(1), updated)
+		s.assertFreshness(priorRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+		s.assertFreshness(refreshedRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+		s.assertFreshness(otherRec.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+	})
 
-			beforeRec := getTestRecForScan("sc-subsecond", testconsts.Cluster1, "scan-subsecond")
-			beforeRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&beforePivot)
-			beforeRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-			afterRec := getTestRecForScan("sc-subsecond", testconsts.Cluster1, "scan-subsecond")
-			afterRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&afterPivot)
-			afterRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-			s.Require().Equal(beforeRec.GetScanRefId(), afterRec.GetScanRefId())
+	s.Run("second call is idempotent", func() {
+		refreshedRec := getTestRecForScan("sc-timeout-idem", testconsts.Cluster1, "scan-timed-out")
+		refreshedRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&pivot)
+		priorRec := getTestRecForScan("sc-timeout-idem", testconsts.Cluster1, "scan-timed-out")
+		priorRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, refreshedRec))
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, priorRec))
 
-			s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, beforeRec))
-			s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, afterRec))
+		updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(1), updated)
 
-			updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, beforeRec.GetScanRefId(), subPivot)
-			s.Require().NoError(err)
-			s.Require().Equal(int64(1), updated)
-			s.assertFreshness(beforeRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
-			s.assertFreshness(afterRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
-		},
-	}
+		updated, err = s.dataStore.MarkScanChecksStale(s.hasWriteCtx, refreshedRec.GetScanRefId(), pivot)
+		s.Require().NoError(err)
+		s.Require().Zero(updated)
+	})
 
-	for name, run := range tests {
-		s.Run(name, run)
-	}
+	s.Run("sub-second boundary: before pivot in the same second is STALE, after is CURRENT", func() {
+		base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+		subPivot := base.Add(700 * time.Millisecond)    // 12:00:00.700
+		beforePivot := base.Add(300 * time.Millisecond) // 12:00:00.300, same second, before pivot
+		afterPivot := base.Add(900 * time.Millisecond)  // 12:00:00.900, same second, after pivot
+
+		beforeRec := getTestRecForScan("sc-subsecond", testconsts.Cluster1, "scan-subsecond")
+		beforeRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&beforePivot)
+		beforeRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		afterRec := getTestRecForScan("sc-subsecond", testconsts.Cluster1, "scan-subsecond")
+		afterRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&afterPivot)
+		afterRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		s.Require().Equal(beforeRec.GetScanRefId(), afterRec.GetScanRefId())
+
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, beforeRec))
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, afterRec))
+
+		updated, err := s.dataStore.MarkScanChecksStale(s.hasWriteCtx, beforeRec.GetScanRefId(), subPivot)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(1), updated)
+		s.assertFreshness(beforeRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+		s.assertFreshness(afterRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+	})
 }
 
 // TestConcurrentUpsertVsStaleMarking is a regression test for the lost-update race between the
