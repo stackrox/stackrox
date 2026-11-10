@@ -52,6 +52,7 @@ type ImageCVEQueryResponse struct {
 	AdvisoryName            *string                        `db:"advisory_name"`
 	AdvisoryLink            *string                        `db:"advisory_link"`
 	Origin                  *storage.VulnOrigin            `db:"cve_origin"`
+	State                   *storage.VulnerabilityState    `db:"vulnerability_state"`
 
 	Link string
 }
@@ -145,6 +146,22 @@ func (res *ImageCVEQueryResponse) GetOrigin() storage.VulnOrigin {
 		return storage.VulnOrigin_VULN_ORIGIN_OTHER
 	}
 	return *res.Origin
+}
+
+func (res *ImageCVEQueryResponse) GetVulnerabilityState() string {
+	if res.State == nil {
+		return "Not Available"
+	}
+	switch *res.State {
+	case storage.VulnerabilityState_OBSERVED:
+		return "Observed"
+	case storage.VulnerabilityState_DEFERRED:
+		return "Deferred"
+	case storage.VulnerabilityState_FALSE_POSITIVE:
+		return "False Positive"
+	default:
+		return res.State.String()
+	}
 }
 
 func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {

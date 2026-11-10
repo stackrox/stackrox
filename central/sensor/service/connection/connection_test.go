@@ -140,7 +140,8 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		sendC:              make(chan *central.MsgToSensor),
 	}
 
-	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).Times(2)
+	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).Times(1)
+	mgrMock.EXPECT().Exists(ctx, gomock.Any()).Return(true, nil).Times(1)
 	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
 
 	server := &mockServer{
@@ -179,6 +180,68 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 				s.Assert().Equal(internaltov2storage.StorageToCentralProfileKind(stored.GetProfileRefs()[i].GetKind()), ref.GetKind())
 			}
 		}
+	}
+}
+
+func (s *testSuite) TestGetScanConfigurationMsgChecksClusterExistence() {
+	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
+
+	ctx := sac.WithAllAccess(context.Background())
+	clusterID := "cluster-id"
+	existsErr := errors.New("datastore unavailable")
+
+	testCases := map[string]struct {
+		exists         bool
+		existsErr      error
+		expectConfigs  bool
+		expectedErrMsg string
+	}{
+		"cluster exists": {
+			exists:        true,
+			expectConfigs: true,
+		},
+		"cluster missing": {
+			exists:         false,
+			expectedErrMsg: "does not exist",
+		},
+		"cluster not visible to caller": {
+			// The cluster datastore reports access-denied clusters as absent.
+			exists:         false,
+			expectedErrMsg: "does not exist",
+		},
+		"existence check fails": {
+			existsErr:      existsErr,
+			expectedErrMsg: existsErr.Error(),
+		},
+	}
+
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			ctrl := gomock.NewController(s.T())
+			mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+			conn := &sensorConnection{
+				clusterMgr:    mgrMock,
+				clusterID:     clusterID,
+				scanSettingDS: s.scanConfigDS,
+			}
+
+			mgrMock.EXPECT().Exists(ctx, clusterID).Return(tc.exists, tc.existsErr)
+			if tc.expectConfigs {
+				s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
+			}
+
+			msg, err := conn.getScanConfigurationMsg(ctx)
+			if tc.expectedErrMsg != "" {
+				s.Require().Error(err)
+				s.ErrorContains(err, tc.expectedErrMsg)
+				s.Nil(msg)
+				return
+			}
+
+			s.Require().NoError(err)
+			s.Require().NotNil(msg)
+			s.NotEmpty(msg.GetComplianceRequest().GetSyncScanConfigs().GetScanConfigs())
+		})
 	}
 }
 

@@ -225,6 +225,22 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 	rows := s.readBlobCSV(blobStore, snap.GetReportConfigurationId(), snap.GetReportId())
 	// 8 deployed (4 deps × 2 CVEs) + 4 watched (2 images × 2 CVEs) + 1 header = 13
 	s.Require().Len(rows, 13, "1 header + 8 deployed + 4 watched")
+	stateColumn := slices.Index(rows[0], "Vulnerability State")
+	s.Require().NotEqual(-1, stateColumn)
+	statesByCVE := map[string]string{
+		"CVE-nonFixable_low-c1_ns1_dep0_img_comp": "Deferred",
+		"CVE-nonFixable_low-c1_ns2_dep0_img_comp": "False Positive",
+		"CVE-fixable_critical-w0_img_comp":        "Deferred",
+		"CVE-fixable_critical-w1_img_comp":        "False Positive",
+	}
+	for _, row := range rows[1:] {
+		s.Require().Len(row, len(rows[0]))
+		state, ok := statesByCVE[row[colCVE]]
+		if !ok {
+			state = "Observed"
+		}
+		s.Equal(state, row[stateColumn], "CVE %s", row[colCVE])
+	}
 }
 
 // TestGenerateReportTransaction_EmptyResult verifies that a query matching

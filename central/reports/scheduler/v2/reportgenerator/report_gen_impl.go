@@ -762,6 +762,7 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.AdvisoryName).Proto(),
 		search.NewQuerySelect(search.AdvisoryLink).Proto(),
 		search.NewQuerySelect(search.CVEOrigin).Proto(),
+		search.NewQuerySelect(search.VulnerabilityState).Proto(),
 	}
 	return ret
 }
@@ -789,6 +790,7 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.AdvisoryName).Proto(),
 		search.NewQuerySelect(search.AdvisoryLink).Proto(),
 		search.NewQuerySelect(search.CVEOrigin).Proto(),
+		search.NewQuerySelect(search.VulnerabilityState).Proto(),
 	}
 	return ret
 }
