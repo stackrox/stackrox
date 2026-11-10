@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -58,13 +59,79 @@ func envInt(name string, def int) int {
 	return def
 }
 
+// pickLocalDir selects the local cache location by capability, with
+// graceful fallback for runners that lack a given tier:
+//  1. /mnt — Azure's physically-local temp SSD (if present AND passes the
+//     fsync-latency probe; future runner images may drop it or remount it
+//     on network storage, and the probe detects that, not the path)
+//  2. /dev/shm — tmpfs (RAM), with the disk spill tier for overflow
+//  3. /tmp — the network OS disk (always present; today's default)
+//
+// The fsync probe is the honest "is it actually local" test: write 64KB,
+// fsync, measure. Local SSD: sub-millisecond. Network storage: tens of ms.
+func pickLocalDir() string {
+	type candidate struct {
+		dir     string
+		maxSync time.Duration
+		spill   string // spill tier for capacity overflow ("" = none needed)
+		why     string
+	}
+	candidates := []candidate{
+		{"/mnt/gocache-serve", 5 * time.Millisecond, "", "local temp disk (fsync-probed)"},
+		{"/dev/shm/gocache-serve", 0, "/tmp/gocache-serve-spill", "tmpfs (RAM) + disk spill"},
+		{"/tmp/gocache-serve", 0, "", "network OS disk (default)"},
+	}
+	for _, c := range candidates {
+		if err := os.MkdirAll(c.dir, 0o755); err != nil {
+			continue
+		}
+		if c.maxSync > 0 {
+			d, err := probeSyncLatency(c.dir)
+			if err != nil || d > c.maxSync {
+				log.Printf("gocache-serve: %s rejected (fsync %v, err %v) — falling back", c.dir, d, err)
+				os.RemoveAll(c.dir)
+				continue
+			}
+			log.Printf("gocache-serve: local cache on %s — %s, fsync %v", c.dir, c.why, d)
+			return c.dir
+		}
+		log.Printf("gocache-serve: local cache on %s — %s", c.dir, c.why)
+		return c.dir
+	}
+	return "/tmp/gocache-serve"
+}
+
+// probeSyncLatency measures median write+fsync latency in a directory.
+func probeSyncLatency(dir string) (time.Duration, error) {
+	var times []time.Duration
+	for i := 0; i < 3; i++ {
+		p := filepath.Join(dir, fmt.Sprintf(".probe-%d", i))
+		start := time.Now()
+		err := os.WriteFile(p, make([]byte, 64<<10), 0o644)
+		if err == nil {
+			f, ferr := os.Open(p)
+			if ferr == nil {
+				err = f.Sync()
+				f.Close()
+			}
+		}
+		os.Remove(p)
+		if err != nil {
+			return 0, err
+		}
+		times = append(times, time.Since(start))
+	}
+	sort.Slice(times, func(a, b int) bool { return times[a] < times[b] })
+	return times[len(times)/2], nil
+}
+
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 	log.SetPrefix("gocache-serve: ")
 
 	cacheDir := os.Getenv("GOCACHE_SERVE_DIR")
 	if cacheDir == "" {
-		cacheDir = "/tmp/gocache-serve"
+		cacheDir = pickLocalDir()
 	}
 
 	backend, err := newBackend()
@@ -93,10 +160,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("local cache init: %v", err)
 	}
-	// tmpfs primary (e.g. /dev/shm): enable the disk spill tier so a
-	// working set overflowing the RAM ceiling lands on real disk instead
-	// of failing the job. No-sudo default /dev/shm is 3.4GB on runners.
-	if strings.HasPrefix(cacheDir, "/dev/shm") || os.Getenv("GOCACHE_SERVE_SPILL") != "" {
+	// tmpfs or local-temp-disk primary: enable the disk spill tier so a
+	// working set overflowing the tier's capacity lands on slower storage
+	// instead of failing the job. /dev/shm is ~3.4GB on runners; the Azure
+	// temp disk ~14GB; the cli working set measures ~16GB.
+	if strings.HasPrefix(cacheDir, "/dev/shm") || strings.HasPrefix(cacheDir, "/mnt/") || os.Getenv("GOCACHE_SERVE_SPILL") != "" {
 		spill := os.Getenv("GOCACHE_SERVE_SPILL")
 		if spill == "" {
 			spill = "/tmp/gocache-serve-spill"
