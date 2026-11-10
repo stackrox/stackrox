@@ -73,15 +73,43 @@ func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error
 	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 		return "", err
 	}
-	if err := os.WriteFile(p, body, 0o644); err != nil {
+	if err := writeFileAtomic(p, body); err != nil {
 		return "", err
 	}
 	if len(outputID) > 0 {
-		if err := os.WriteFile(lc.metaPath(actionID), outputID, 0o644); err != nil {
+		if err := writeFileAtomic(lc.metaPath(actionID), outputID); err != nil {
 			return "", err
 		}
 	}
 	return p, nil
+}
+
+// writeFileAtomic writes via temp file + rename so a concurrent reader
+// (go mmaps export data from this tree) never observes a truncated file —
+// the in-place truncate of os.WriteFile was the SIGBUS mechanism when
+// prefetch overlapped compilation (go/internal/list.collectDeps faulting
+// on a mapped page mid-write). Rename preserves the old inode for any
+// concurrent mmap reader; a fresh complete file appears atomically.
+func writeFileAtomic(path string, body []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".tmp-*")
+	if err != nil {
+		return err
+	}
+	name := tmp.Name()
+	if _, err := tmp.Write(body); err != nil {
+		tmp.Close()
+		os.Remove(name)
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(name)
+		return err
+	}
+	if err := os.Chmod(name, 0o644); err != nil {
+		os.Remove(name)
+		return err
+	}
+	return os.Rename(name, path)
 }
 
 // negativeCache remembers entries confirmed absent from the cloud store.
