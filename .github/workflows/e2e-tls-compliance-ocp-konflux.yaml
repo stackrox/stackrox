@@ -143,15 +143,14 @@ jobs:
       - name: Run post-test
         if: always() && env.KUBECONFIG != ''
         continue-on-error: true
-        shell: python
         run: |
-          import os, sys
-          sys.path.append('.openshift-ci')
-          from post_tests import CheckStackroxLogs
-          CheckStackroxLogs(
-              check_for_errors_in_stackrox_logs=True,
-              artifact_destination_prefix="tls-compliance",
-          ).run([os.environ['ARTIFACT_DIR']])
+          # Collect via kubectl only. CheckStackroxLogs doesn't work because the
+          # runner cannot handshake when the cluster TLS profile allows only ML-KEM.
+          dest=/tmp/stackrox-logs
+          scripts/ci/collect-service-logs.sh stackrox "$dest"
+          tests/e2e/lib.sh check_for_errors_in_stackrox_logs "$dest" || true
+          scripts/ci/store-artifacts.sh store_artifacts "$dest" tls-compliance/stackrox-logs
+          scripts/ci/store-artifacts.sh store_artifacts "${ARTIFACT_DIR}" tls-compliance/junit-reports
 
       - name: Publish test summary
         uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
