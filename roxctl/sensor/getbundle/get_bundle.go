@@ -14,13 +14,17 @@ import (
 )
 
 func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration,
-	createUpgraderSA bool, istioVersion string, env environment.Environment,
+	istioVersion string, env environment.Environment,
 ) error {
 	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, 20*time.Second, env)
 	if err != nil {
 		return errors.Wrapf(err, "error resolving cluster ID for %q", clusterIDOrName)
 	}
 
+	// The sensor auto-upgrader has been removed, so the upgrader service account
+	// (cluster-admin) is never created. Force false so even older Central versions,
+	// which still honor this field, do not create the privileged binding.
+	createUpgraderSA := false
 	params := apiparams.ClusterZip{
 		ID:               clusterID,
 		CreateUpgraderSA: &createUpgraderSA,
@@ -47,7 +51,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Long:       "Download a bundle with the required YAML configuration files to deploy StackRox Sensor, Collector, and Admission controller (optional).",
 		Deprecated: common.DeprecatedInFavorOfOperator,
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, istioVersion, cliEnvironment); err != nil {
+			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), istioVersion, cliEnvironment); err != nil {
 				return errors.Wrap(err, "error downloading sensor bundle")
 			}
 			return nil
@@ -55,9 +59,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory).")
-	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
-	// The sensor auto-upgrader has been removed; this flag is a no-op kept for backward compatibility.
-	utils.Must(c.PersistentFlags().MarkDeprecated("create-upgrader-sa", "the sensor auto-upgrader has been removed; this flag no longer has any effect"))
+	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
+	// The sensor auto-upgrader has been removed; this flag is an inert no-op kept for backward
+	// compatibility. Its value is ignored: no upgrader service account is created for any Central version.
+	utils.Must(c.PersistentFlags().MarkDeprecated("create-upgrader-sa", "the sensor auto-upgrader has been removed; this flag is ignored and no upgrader service account is created"))
 	utils.Must(c.PersistentFlags().MarkHidden("create-upgrader-sa"))
 	c.PersistentFlags().StringVar(&istioVersion, "istio-support", "",
 		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).")

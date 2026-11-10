@@ -144,9 +144,14 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		}
 	}
 
+	// The sensor auto-upgrader has been removed, so the upgrader service account
+	// (which would carry cluster-admin) is never created, regardless of the
+	// deprecated --create-upgrader-sa flag. Force false so that even older Central
+	// versions (which still honor this field) do not create the privileged binding.
+	createUpgraderSA := false
 	params := apiparams.ClusterZip{
 		ID:               id,
-		CreateUpgraderSA: &s.createUpgraderSA,
+		CreateUpgraderSA: &createUpgraderSA,
 		IstioVersion:     s.istioVersion,
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
@@ -190,9 +195,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf).")
 
-	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
-	// The sensor auto-upgrader has been removed; this flag is a no-op kept for backward compatibility.
-	utils.Must(c.PersistentFlags().MarkDeprecated("create-upgrader-sa", "the sensor auto-upgrader has been removed; this flag no longer has any effect"))
+	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", false, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
+	// The sensor auto-upgrader has been removed; this flag is an inert no-op kept for backward
+	// compatibility. Its value is ignored: no upgrader service account is created for any Central version.
+	utils.Must(c.PersistentFlags().MarkDeprecated("create-upgrader-sa", "the sensor auto-upgrader has been removed; this flag is ignored and no upgrader service account is created"))
 	utils.Must(c.PersistentFlags().MarkHidden("create-upgrader-sa"))
 
 	c.PersistentFlags().StringVar(&generateCmd.istioVersion, "istio-support", "",
