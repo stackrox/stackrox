@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,26 +40,10 @@ var (
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster)))
-
-	clusterSAC = sac.ForResource(resources.Cluster)
 )
 
-func checkClusterWriteAccess(ctx context.Context, clusterID string) error {
-	if ok, err := clusterSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	return nil
-}
-
-type connectionAndUpgradeController struct {
-	connection  *sensorConnection
-	upgradeCtrl upgradecontroller.UpgradeController
-}
-
 type manager struct {
-	connectionsByClusterID      map[string]connectionAndUpgradeController
+	connectionsByClusterID      map[string]*sensorConnection
 	connectionsByClusterIDMutex sync.RWMutex
 
 	// connectionPreference stores preferences based on sensor connections
@@ -76,7 +59,6 @@ type manager struct {
 	manager                    hashManager.Manager
 	complianceOperatorMgr      common.ComplianceOperatorManager
 	initSyncMgr                *initSyncManager
-	autoTriggerUpgrades        *concurrency.Flag
 	rateLimiter                *rate.Limiter
 	adminEventsStream          events.Stream
 }
@@ -84,7 +66,7 @@ type manager struct {
 // NewManager returns a new connection manager
 func NewManager(mgr hashManager.Manager) Manager {
 	return &manager{
-		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
+		connectionsByClusterID: make(map[string]*sensorConnection),
 		manager:                mgr,
 		initSyncMgr:            NewInitSyncManager(),
 		rateLimiter:            newVMIndexReportRateLimiter(),
@@ -108,26 +90,6 @@ func newVMIndexReportRateLimiter() *rate.Limiter {
 	return rl
 }
 
-func (m *manager) initializeUpgradeControllers() error {
-	clusters, err := m.clusters.GetClusters(managerCtx)
-	if err != nil {
-		return err
-	}
-
-	m.connectionsByClusterIDMutex.Lock()
-	defer m.connectionsByClusterIDMutex.Unlock()
-	for _, cluster := range clusters {
-		upgradeCtrl, err := upgradecontroller.New(cluster.GetId(), m.clusters, m.autoTriggerUpgrades)
-		if err != nil {
-			return err
-		}
-		m.connectionsByClusterID[cluster.GetId()] = connectionAndUpgradeController{
-			upgradeCtrl: upgradeCtrl,
-		}
-	}
-	return nil
-}
-
 func (m *manager) Start(clusterManager common.ClusterManager,
 	networkEntityManager common.NetworkEntityManager,
 	policyManager common.PolicyManager,
@@ -136,7 +98,6 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	delegatedRegistryConfigManager common.DelegatedRegistryConfigManager,
 	imageIntegrationMgr common.ImageIntegrationManager,
 	complianceOperatorMgr common.ComplianceOperatorManager,
-	autoTriggerUpgrades *concurrency.Flag,
 ) error {
 	m.clusters = clusterManager
 	m.networkEntities = networkEntityManager
@@ -146,11 +107,6 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	m.delegatedRegistryConfigMgr = delegatedRegistryConfigManager
 	m.imageIntegrationMgr = imageIntegrationMgr
 	m.complianceOperatorMgr = complianceOperatorMgr
-	m.autoTriggerUpgrades = autoTriggerUpgrades
-	err := m.initializeUpgradeControllers()
-	if err != nil {
-		return errors.Wrap(err, "failed to initialize upgrade controllers")
-	}
 
 	go m.updateClusterHealthForever()
 	return nil
@@ -217,7 +173,7 @@ func (m *manager) GetConnection(clusterID string) SensorConnection {
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
 
-	conn := m.connectionsByClusterID[clusterID].connection
+	conn := m.connectionsByClusterID[clusterID]
 	if conn == nil {
 		return nil
 	}
@@ -229,8 +185,7 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 	m.connectionsByClusterIDMutex.Lock()
 	defer m.connectionsByClusterIDMutex.Unlock()
 
-	connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]
-	oldConnection = connAndUpgradeCtrl.connection
+	oldConnection = m.connectionsByClusterID[clusterID]
 	if oldConnection != nil {
 		if err := common.CheckConnReplace(newConnection.sensorHello.GetDeploymentIdentification(), oldConnection.sensorHello.GetDeploymentIdentification()); err != nil {
 			return nil, errors.Wrapf(err, "replacing connection for cluster: %s", cluster.GetName())
@@ -241,22 +196,7 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 		return nil, errors.Wrap(err, "updating deployment identification")
 	}
 
-	upgradeCtrl := connAndUpgradeCtrl.upgradeCtrl
-
-	if upgradeCtrl == nil {
-		upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
-		if err != nil {
-			return nil, err
-		}
-	}
-	upgradeCtrlErrSig := upgradeCtrl.RegisterConnection(ctx, newConnection)
-	if upgradeCtrlErrSig != nil {
-		go newConnection.stopSig.SignalWhen(upgradeCtrlErrSig, concurrency.Never())
-	}
-	m.connectionsByClusterID[clusterID] = connectionAndUpgradeController{
-		connection:  newConnection,
-		upgradeCtrl: upgradeCtrl,
-	}
+	m.connectionsByClusterID[clusterID] = newConnection
 
 	return oldConnection, nil
 }
@@ -333,10 +273,8 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	m.initSyncMgr.Remove(clusterID)
 
 	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {
-		connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]
-		if connAndUpgradeCtrl.connection == conn {
-			connAndUpgradeCtrl.connection = nil
-			m.connectionsByClusterID[clusterID] = connAndUpgradeCtrl
+		if m.connectionsByClusterID[clusterID] == conn {
+			delete(m.connectionsByClusterID, clusterID)
 		}
 	})
 
@@ -371,82 +309,14 @@ func (m *manager) GetConnectionPreference(clusterID string) Preferences {
 	return p
 }
 
-func (m *manager) getOrCreateUpgradeCtrl(clusterID string) (upgradecontroller.UpgradeController, error) {
-	m.connectionsByClusterIDMutex.Lock()
-	defer m.connectionsByClusterIDMutex.Unlock()
-
-	connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]
-	if connAndUpgradeCtrl.upgradeCtrl == nil {
-		var err error
-		connAndUpgradeCtrl.upgradeCtrl, err = upgradecontroller.New(clusterID, m.clusters, m.autoTriggerUpgrades)
-		if err != nil {
-			return nil, err
-		}
-		m.connectionsByClusterID[clusterID] = connAndUpgradeCtrl
-	}
-	return connAndUpgradeCtrl.upgradeCtrl, nil
-}
-
-func (m *manager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
-	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
-		return nil, err
-	}
-	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
-	if err != nil {
-		return nil, err
-	}
-	return upgradeCtrl.ProcessCheckInFromUpgrader(req)
-}
-
-func (m *manager) ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error {
-	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
-		return err
-	}
-	upgradeCtrl, err := m.getOrCreateUpgradeCtrl(clusterID)
-	if err != nil {
-		return err
-	}
-	return upgradeCtrl.ProcessCheckInFromSensor(req)
-}
-
-func (m *manager) checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx context.Context, clusterID string) (upgradecontroller.UpgradeController, error) {
-	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
-		return nil, err
-	}
-
-	upgradeCtrl := concurrency.WithRLock1(&m.connectionsByClusterIDMutex, func() upgradecontroller.UpgradeController {
-		return m.connectionsByClusterID[clusterID].upgradeCtrl
-	})
-	if upgradeCtrl == nil {
-		return nil, errors.Errorf("no upgrade controller found for cluster ID %s; either the sensor has not checked in or the clusterID is invalid. Cannot trigger upgrade", clusterID)
-	}
-	return upgradeCtrl, nil
-}
-
-func (m *manager) TriggerUpgrade(ctx context.Context, clusterID string) error {
-	upgradeCtrl, err := m.checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx, clusterID)
-	if err != nil {
-		return err
-	}
-	return upgradeCtrl.Trigger(ctx)
-}
-
-func (m *manager) TriggerCertRotation(ctx context.Context, clusterID string) error {
-	upgradeCtrl, err := m.checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx, clusterID)
-	if err != nil {
-		return err
-	}
-	return upgradeCtrl.TriggerCertRotation(ctx)
-}
-
 func (m *manager) GetActiveConnections() []SensorConnection {
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
 
 	result := make([]SensorConnection, 0, len(m.connectionsByClusterID))
 
-	for _, connAndUpgradeCtrl := range m.connectionsByClusterID {
-		if conn := connAndUpgradeCtrl.connection; conn != nil {
+	for _, conn := range m.connectionsByClusterID {
+		if conn != nil {
 			result = append(result, conn)
 		}
 	}
@@ -460,20 +330,20 @@ func (m *manager) PreparePoliciesAndBroadcast(policies []*storage.Policy) {
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
 
-	for clusterID, connAndUpgradeCtrl := range m.connectionsByClusterID {
-		if connAndUpgradeCtrl.connection == nil {
+	for clusterID, conn := range m.connectionsByClusterID {
+		if conn == nil {
 			log.Debugf("could not broadcast message to cluster %q which has no active connection", clusterID)
 			continue
 		}
 
 		// Downgrade policies based on the target sensor's supported version.
-		msg, err := connAndUpgradeCtrl.connection.getPolicySyncMsgFromPolicies(policies)
+		msg, err := conn.getPolicySyncMsgFromPolicies(policies)
 		if err != nil {
 			log.Errorf("error getting policy sync msg for cluster %q: %v", clusterID, err)
 			continue
 		}
 
-		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
+		if err := conn.InjectMessage(concurrency.Never(), msg); err != nil {
 			log.Errorf("error broadcasting message to cluster %q", clusterID)
 		}
 	}
@@ -484,12 +354,12 @@ func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
 
-	for clusterID, connAndUpgradeCtrl := range m.connectionsByClusterID {
-		if connAndUpgradeCtrl.connection == nil {
+	for clusterID, conn := range m.connectionsByClusterID {
+		if conn == nil {
 			log.Debugf("could not broadcast message to cluster %q which has no active connection", clusterID)
 			continue
 		}
-		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
+		if err := conn.InjectMessage(concurrency.Never(), msg); err != nil {
 			log.Errorf("error broadcasting message to cluster %q", clusterID)
 		}
 	}
@@ -499,14 +369,14 @@ func (m *manager) SendMessage(clusterID string, msg *central.MsgToSensor) error 
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
 
-	connAndUpgradeCtrl, ok := m.connectionsByClusterID[clusterID]
+	conn, ok := m.connectionsByClusterID[clusterID]
 	if !ok {
 		return errors.Errorf("no cluster %q connection exists", clusterID)
 	}
-	if connAndUpgradeCtrl.connection == nil {
+	if conn == nil {
 		return errors.Errorf("no valid cluster %q connection", clusterID)
 	}
-	return connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg)
+	return conn.InjectMessage(concurrency.Never(), msg)
 }
 
 func (m *manager) PushExternalNetworkEntitiesToSensor(ctx context.Context, clusterID string) error {

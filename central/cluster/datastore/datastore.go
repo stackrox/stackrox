@@ -58,11 +58,10 @@ type DataStore interface {
 	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
 	RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error
-	// UpdateClusterStatus updates the cluster status. Note that any cluster-upgrade or cluster-cert-expiry status
+	// UpdateClusterStatus updates the cluster status. Note that any cluster-cert-expiry status
 	// passed to this endpoint will be ignored. To insert that, callers MUST separately call
-	// UpdateClusterUpgradeStatus or UpdateClusterCertExpiry status.
+	// UpdateClusterCertExpiry status.
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
-	UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error
 	UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error
 	UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error
 	UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error

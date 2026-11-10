@@ -9,7 +9,6 @@ import (
 
 // ClusterManager envelopes functions that interact with clusters
 type ClusterManager interface {
-	UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error
 	UpdateClusterHealth(ctx context.Context, id string, status *storage.ClusterHealthStatus) error
 	UpdateSensorDeploymentIdentification(ctx context.Context, clusterID string, identification *storage.SensorDeploymentIdentification) error
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)

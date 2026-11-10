@@ -105,7 +105,6 @@ func init() {
 		&storage.ComplianceOperatorScanSettingBindingV2{}:       resources.Compliance,
 		&storage.Secret{}:                                       resources.Secret,
 		&storage.SecuredUnits{}:                                 resources.Administration,
-		&storage.SensorUpgradeConfig{}:                          resources.Administration,
 		&storage.ServiceAccount{}:                               resources.ServiceAccount,
 		&storage.ServiceIdentity{}:                              resources.Administration,
 		&storage.SignatureIntegration{}:                         resources.Integration,

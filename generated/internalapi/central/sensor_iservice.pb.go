@@ -577,7 +577,6 @@ type MsgToSensor struct {
 	//	*MsgToSensor_Enforcement
 	//	*MsgToSensor_NetworkPoliciesCommand
 	//	*MsgToSensor_ClusterConfig
-	//	*MsgToSensor_SensorUpgradeTrigger
 	//	*MsgToSensor_TelemetryDataRequest
 	//	*MsgToSensor_PolicySync
 	//	*MsgToSensor_BaselineSync
@@ -666,15 +665,6 @@ func (x *MsgToSensor) GetClusterConfig() *ClusterConfig {
 	if x != nil {
 		if x, ok := x.Msg.(*MsgToSensor_ClusterConfig); ok {
 			return x.ClusterConfig
-		}
-	}
-	return nil
-}
-
-func (x *MsgToSensor) GetSensorUpgradeTrigger() *SensorUpgradeTrigger {
-	if x != nil {
-		if x, ok := x.Msg.(*MsgToSensor_SensorUpgradeTrigger); ok {
-			return x.SensorUpgradeTrigger
 		}
 	}
 	return nil
@@ -912,10 +902,6 @@ type MsgToSensor_ClusterConfig struct {
 	ClusterConfig *ClusterConfig `protobuf:"bytes,4,opt,name=cluster_config,json=clusterConfig,proto3,oneof"`
 }
 
-type MsgToSensor_SensorUpgradeTrigger struct {
-	SensorUpgradeTrigger *SensorUpgradeTrigger `protobuf:"bytes,5,opt,name=sensor_upgrade_trigger,json=sensorUpgradeTrigger,proto3,oneof"`
-}
-
 type MsgToSensor_TelemetryDataRequest struct {
 	TelemetryDataRequest *PullTelemetryDataRequest `protobuf:"bytes,6,opt,name=telemetry_data_request,json=telemetryDataRequest,proto3,oneof"`
 }
@@ -1017,8 +1003,6 @@ func (*MsgToSensor_Enforcement) isMsgToSensor_Msg() {}
 func (*MsgToSensor_NetworkPoliciesCommand) isMsgToSensor_Msg() {}
 
 func (*MsgToSensor_ClusterConfig) isMsgToSensor_Msg() {}
-
-func (*MsgToSensor_SensorUpgradeTrigger) isMsgToSensor_Msg() {}
 
 func (*MsgToSensor_TelemetryDataRequest) isMsgToSensor_Msg() {}
 
@@ -1561,7 +1545,7 @@ var File_internalapi_central_sensor_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\n" +
-	")internalapi/central/sensor_iservice.proto\x12\acentral\x1a'internalapi/central/baseline_sync.proto\x1a(internalapi/central/cluster_config.proto\x1a)internalapi/central/cluster_metrics.proto\x1a(internalapi/central/cluster_status.proto\x1a-internalapi/central/compliance_operator.proto\x1a3internalapi/central/delegated_registry_config.proto\x1a0internalapi/central/deployment_enhancement.proto\x1a\x1finternalapi/central/hello.proto\x1a\x1finternalapi/central/image.proto\x1a'internalapi/central/local_scanner.proto\x1a/internalapi/central/network_baseline_sync.proto\x1a&internalapi/central/network_flow.proto\x1a%internalapi/central/policy_sync.proto\x1a;internalapi/central/process_listening_on_ports_update.proto\x1a6internalapi/central/secured_cluster_cert_refresh.proto\x1a'internalapi/central/sensor_events.proto\x1a(internalapi/central/sensor_upgrade.proto\x1a#internalapi/central/telemetry.proto\x1a\x15storage/cluster.proto\x1a\x13storage/image.proto\"\xa7\v\n" +
+	")internalapi/central/sensor_iservice.proto\x12\acentral\x1a'internalapi/central/baseline_sync.proto\x1a(internalapi/central/cluster_config.proto\x1a)internalapi/central/cluster_metrics.proto\x1a(internalapi/central/cluster_status.proto\x1a-internalapi/central/compliance_operator.proto\x1a3internalapi/central/delegated_registry_config.proto\x1a0internalapi/central/deployment_enhancement.proto\x1a\x1finternalapi/central/hello.proto\x1a\x1finternalapi/central/image.proto\x1a'internalapi/central/local_scanner.proto\x1a/internalapi/central/network_baseline_sync.proto\x1a&internalapi/central/network_flow.proto\x1a%internalapi/central/policy_sync.proto\x1a;internalapi/central/process_listening_on_ports_update.proto\x1a6internalapi/central/secured_cluster_cert_refresh.proto\x1a'internalapi/central/sensor_events.proto\x1a#internalapi/central/telemetry.proto\x1a\x15storage/cluster.proto\x1a\x13storage/image.proto\"\xa7\v\n" +
 	"\rMsgFromSensor\x12\x19\n" +
 	"\bhash_key\x18\a \x01(\tR\ahashKey\x12\x1d\n" +
 	"\n" +
@@ -1585,12 +1569,11 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"#issue_secured_cluster_certs_request\x18\x13 \x01(\v2(.central.IssueSecuredClusterCertsRequestH\x00R\x1fissueSecuredClusterCertsRequestB\x05\n" +
 	"\x03msgJ\x04\b\x03\x10\x04\"@\n" +
 	"\x14ReprocessDeployments\x12(\n" +
-	"\x10skip_cache_flush\x18\x01 \x01(\bR\x0eskipCacheFlush\"\x82\x12\n" +
+	"\x10skip_cache_flush\x18\x01 \x01(\bR\x0eskipCacheFlush\"\xc9\x11\n" +
 	"\vMsgToSensor\x12>\n" +
 	"\venforcement\x18\x01 \x01(\v2\x1a.central.SensorEnforcementH\x00R\venforcement\x12[\n" +
 	"\x18network_policies_command\x18\x03 \x01(\v2\x1f.central.NetworkPoliciesCommandH\x00R\x16networkPoliciesCommand\x12?\n" +
-	"\x0ecluster_config\x18\x04 \x01(\v2\x16.central.ClusterConfigH\x00R\rclusterConfig\x12U\n" +
-	"\x16sensor_upgrade_trigger\x18\x05 \x01(\v2\x1d.central.SensorUpgradeTriggerH\x00R\x14sensorUpgradeTrigger\x12Y\n" +
+	"\x0ecluster_config\x18\x04 \x01(\v2\x16.central.ClusterConfigH\x00R\rclusterConfig\x12Y\n" +
 	"\x16telemetry_data_request\x18\x06 \x01(\v2!.central.PullTelemetryDataRequestH\x00R\x14telemetryDataRequest\x126\n" +
 	"\vpolicy_sync\x18\a \x01(\v2\x13.central.PolicySyncH\x00R\n" +
 	"policySync\x12<\n" +
@@ -1619,7 +1602,7 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\n" +
 	"sensor_ack\x18\x1d \x01(\v2\x12.central.SensorACKH\x00R\tsensorAck\x12V\n" +
 	"\x17refresh_image_cache_ttl\x18\x1e \x01(\v2\x1d.central.RefreshImageCacheTTLH\x00R\x14refreshImageCacheTtlB\x05\n" +
-	"\x03msgJ\x04\b\x02\x10\x03J\x04\b\b\x10\t\"\xd5\x01\n" +
+	"\x03msgJ\x04\b\x02\x10\x03J\x04\b\x05\x10\x06J\x04\b\b\x10\tR\x16sensor_upgrade_trigger\"\xd5\x01\n" +
 	"\fDeduperState\x12R\n" +
 	"\x0fresource_hashes\x18\x01 \x03(\v2).central.DeduperState.ResourceHashesEntryR\x0eresourceHashes\x12\x18\n" +
 	"\acurrent\x18\x02 \x01(\x05R\acurrent\x12\x14\n" +
@@ -1728,24 +1711,23 @@ var file_internalapi_central_sensor_iservice_proto_goTypes = []any{
 	(*SensorEnforcement)(nil),                // 33: central.SensorEnforcement
 	(*NetworkPoliciesCommand)(nil),           // 34: central.NetworkPoliciesCommand
 	(*ClusterConfig)(nil),                    // 35: central.ClusterConfig
-	(*SensorUpgradeTrigger)(nil),             // 36: central.SensorUpgradeTrigger
-	(*PullTelemetryDataRequest)(nil),         // 37: central.PullTelemetryDataRequest
-	(*PolicySync)(nil),                       // 38: central.PolicySync
-	(*BaselineSync)(nil),                     // 39: central.BaselineSync
-	(*CancelPullTelemetryDataRequest)(nil),   // 40: central.CancelPullTelemetryDataRequest
-	(*PushNetworkEntitiesRequest)(nil),       // 41: central.PushNetworkEntitiesRequest
-	(*CentralHello)(nil),                     // 42: central.CentralHello
-	(*NetworkBaselineSync)(nil),              // 43: central.NetworkBaselineSync
-	(*IssueLocalScannerCertsResponse)(nil),   // 44: central.IssueLocalScannerCertsResponse
-	(*storage.Image)(nil),                    // 45: storage.Image
-	(*DelegatedRegistryConfig)(nil),          // 46: central.DelegatedRegistryConfig
-	(*ScanImage)(nil),                        // 47: central.ScanImage
-	(*ImageIntegrations)(nil),                // 48: central.ImageIntegrations
-	(*ComplianceRequest)(nil),                // 49: central.ComplianceRequest
-	(*ClusterHealthResponse)(nil),            // 50: central.ClusterHealthResponse
-	(*DeploymentEnhancementRequest)(nil),     // 51: central.DeploymentEnhancementRequest
-	(*IssueSecuredClusterCertsResponse)(nil), // 52: central.IssueSecuredClusterCertsResponse
-	(*storage.AuditLogFileState)(nil),        // 53: storage.AuditLogFileState
+	(*PullTelemetryDataRequest)(nil),         // 36: central.PullTelemetryDataRequest
+	(*PolicySync)(nil),                       // 37: central.PolicySync
+	(*BaselineSync)(nil),                     // 38: central.BaselineSync
+	(*CancelPullTelemetryDataRequest)(nil),   // 39: central.CancelPullTelemetryDataRequest
+	(*PushNetworkEntitiesRequest)(nil),       // 40: central.PushNetworkEntitiesRequest
+	(*CentralHello)(nil),                     // 41: central.CentralHello
+	(*NetworkBaselineSync)(nil),              // 42: central.NetworkBaselineSync
+	(*IssueLocalScannerCertsResponse)(nil),   // 43: central.IssueLocalScannerCertsResponse
+	(*storage.Image)(nil),                    // 44: storage.Image
+	(*DelegatedRegistryConfig)(nil),          // 45: central.DelegatedRegistryConfig
+	(*ScanImage)(nil),                        // 46: central.ScanImage
+	(*ImageIntegrations)(nil),                // 47: central.ImageIntegrations
+	(*ComplianceRequest)(nil),                // 48: central.ComplianceRequest
+	(*ClusterHealthResponse)(nil),            // 49: central.ClusterHealthResponse
+	(*DeploymentEnhancementRequest)(nil),     // 50: central.DeploymentEnhancementRequest
+	(*IssueSecuredClusterCertsResponse)(nil), // 51: central.IssueSecuredClusterCertsResponse
+	(*storage.AuditLogFileState)(nil),        // 52: storage.AuditLogFileState
 }
 var file_internalapi_central_sensor_iservice_proto_depIdxs = []int32{
 	19, // 0: central.MsgFromSensor.event:type_name -> central.SensorEvent
@@ -1766,49 +1748,48 @@ var file_internalapi_central_sensor_iservice_proto_depIdxs = []int32{
 	33, // 15: central.MsgToSensor.enforcement:type_name -> central.SensorEnforcement
 	34, // 16: central.MsgToSensor.network_policies_command:type_name -> central.NetworkPoliciesCommand
 	35, // 17: central.MsgToSensor.cluster_config:type_name -> central.ClusterConfig
-	36, // 18: central.MsgToSensor.sensor_upgrade_trigger:type_name -> central.SensorUpgradeTrigger
-	37, // 19: central.MsgToSensor.telemetry_data_request:type_name -> central.PullTelemetryDataRequest
-	38, // 20: central.MsgToSensor.policy_sync:type_name -> central.PolicySync
-	39, // 21: central.MsgToSensor.baseline_sync:type_name -> central.BaselineSync
-	40, // 22: central.MsgToSensor.cancel_pull_telemetry_data_request:type_name -> central.CancelPullTelemetryDataRequest
-	41, // 23: central.MsgToSensor.push_network_entities_request:type_name -> central.PushNetworkEntitiesRequest
-	42, // 24: central.MsgToSensor.hello:type_name -> central.CentralHello
-	43, // 25: central.MsgToSensor.network_baseline_sync:type_name -> central.NetworkBaselineSync
-	10, // 26: central.MsgToSensor.audit_log_sync:type_name -> central.AuditLogSync
-	12, // 27: central.MsgToSensor.reprocess_deployment:type_name -> central.ReprocessDeployment
-	14, // 28: central.MsgToSensor.invalidate_image_cache:type_name -> central.InvalidateImageCache
-	44, // 29: central.MsgToSensor.issue_local_scanner_certs_response:type_name -> central.IssueLocalScannerCertsResponse
-	45, // 30: central.MsgToSensor.updated_image:type_name -> storage.Image
-	5,  // 31: central.MsgToSensor.reprocess_deployments:type_name -> central.ReprocessDeployments
-	9,  // 32: central.MsgToSensor.node_inventory_ack:type_name -> central.NodeInventoryACK
-	46, // 33: central.MsgToSensor.delegated_registry_config:type_name -> central.DelegatedRegistryConfig
-	47, // 34: central.MsgToSensor.scan_image:type_name -> central.ScanImage
-	48, // 35: central.MsgToSensor.image_integrations:type_name -> central.ImageIntegrations
-	49, // 36: central.MsgToSensor.compliance_request:type_name -> central.ComplianceRequest
-	50, // 37: central.MsgToSensor.cluster_health_response:type_name -> central.ClusterHealthResponse
-	7,  // 38: central.MsgToSensor.deduper_state:type_name -> central.DeduperState
-	51, // 39: central.MsgToSensor.deployment_enhancement_request:type_name -> central.DeploymentEnhancementRequest
-	52, // 40: central.MsgToSensor.issue_secured_cluster_certs_response:type_name -> central.IssueSecuredClusterCertsResponse
-	8,  // 41: central.MsgToSensor.sensor_ack:type_name -> central.SensorACK
-	15, // 42: central.MsgToSensor.refresh_image_cache_ttl:type_name -> central.RefreshImageCacheTTL
-	16, // 43: central.DeduperState.resource_hashes:type_name -> central.DeduperState.ResourceHashesEntry
-	0,  // 44: central.SensorACK.action:type_name -> central.SensorACK.Action
-	1,  // 45: central.SensorACK.message_type:type_name -> central.SensorACK.MessageType
-	2,  // 46: central.NodeInventoryACK.action:type_name -> central.NodeInventoryACK.Action
-	3,  // 47: central.NodeInventoryACK.messageType:type_name -> central.NodeInventoryACK.MessageType
-	17, // 48: central.AuditLogSync.node_audit_log_file_states:type_name -> central.AuditLogSync.NodeAuditLogFileStatesEntry
-	18, // 49: central.AuditLogStatusInfo.node_audit_log_file_states:type_name -> central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
-	13, // 50: central.InvalidateImageCache.image_keys:type_name -> central.ImageKey
-	13, // 51: central.RefreshImageCacheTTL.image_keys:type_name -> central.ImageKey
-	53, // 52: central.AuditLogSync.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
-	53, // 53: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
-	4,  // 54: central.SensorService.Communicate:input_type -> central.MsgFromSensor
-	6,  // 55: central.SensorService.Communicate:output_type -> central.MsgToSensor
-	55, // [55:56] is the sub-list for method output_type
-	54, // [54:55] is the sub-list for method input_type
-	54, // [54:54] is the sub-list for extension type_name
-	54, // [54:54] is the sub-list for extension extendee
-	0,  // [0:54] is the sub-list for field type_name
+	36, // 18: central.MsgToSensor.telemetry_data_request:type_name -> central.PullTelemetryDataRequest
+	37, // 19: central.MsgToSensor.policy_sync:type_name -> central.PolicySync
+	38, // 20: central.MsgToSensor.baseline_sync:type_name -> central.BaselineSync
+	39, // 21: central.MsgToSensor.cancel_pull_telemetry_data_request:type_name -> central.CancelPullTelemetryDataRequest
+	40, // 22: central.MsgToSensor.push_network_entities_request:type_name -> central.PushNetworkEntitiesRequest
+	41, // 23: central.MsgToSensor.hello:type_name -> central.CentralHello
+	42, // 24: central.MsgToSensor.network_baseline_sync:type_name -> central.NetworkBaselineSync
+	10, // 25: central.MsgToSensor.audit_log_sync:type_name -> central.AuditLogSync
+	12, // 26: central.MsgToSensor.reprocess_deployment:type_name -> central.ReprocessDeployment
+	14, // 27: central.MsgToSensor.invalidate_image_cache:type_name -> central.InvalidateImageCache
+	43, // 28: central.MsgToSensor.issue_local_scanner_certs_response:type_name -> central.IssueLocalScannerCertsResponse
+	44, // 29: central.MsgToSensor.updated_image:type_name -> storage.Image
+	5,  // 30: central.MsgToSensor.reprocess_deployments:type_name -> central.ReprocessDeployments
+	9,  // 31: central.MsgToSensor.node_inventory_ack:type_name -> central.NodeInventoryACK
+	45, // 32: central.MsgToSensor.delegated_registry_config:type_name -> central.DelegatedRegistryConfig
+	46, // 33: central.MsgToSensor.scan_image:type_name -> central.ScanImage
+	47, // 34: central.MsgToSensor.image_integrations:type_name -> central.ImageIntegrations
+	48, // 35: central.MsgToSensor.compliance_request:type_name -> central.ComplianceRequest
+	49, // 36: central.MsgToSensor.cluster_health_response:type_name -> central.ClusterHealthResponse
+	7,  // 37: central.MsgToSensor.deduper_state:type_name -> central.DeduperState
+	50, // 38: central.MsgToSensor.deployment_enhancement_request:type_name -> central.DeploymentEnhancementRequest
+	51, // 39: central.MsgToSensor.issue_secured_cluster_certs_response:type_name -> central.IssueSecuredClusterCertsResponse
+	8,  // 40: central.MsgToSensor.sensor_ack:type_name -> central.SensorACK
+	15, // 41: central.MsgToSensor.refresh_image_cache_ttl:type_name -> central.RefreshImageCacheTTL
+	16, // 42: central.DeduperState.resource_hashes:type_name -> central.DeduperState.ResourceHashesEntry
+	0,  // 43: central.SensorACK.action:type_name -> central.SensorACK.Action
+	1,  // 44: central.SensorACK.message_type:type_name -> central.SensorACK.MessageType
+	2,  // 45: central.NodeInventoryACK.action:type_name -> central.NodeInventoryACK.Action
+	3,  // 46: central.NodeInventoryACK.messageType:type_name -> central.NodeInventoryACK.MessageType
+	17, // 47: central.AuditLogSync.node_audit_log_file_states:type_name -> central.AuditLogSync.NodeAuditLogFileStatesEntry
+	18, // 48: central.AuditLogStatusInfo.node_audit_log_file_states:type_name -> central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry
+	13, // 49: central.InvalidateImageCache.image_keys:type_name -> central.ImageKey
+	13, // 50: central.RefreshImageCacheTTL.image_keys:type_name -> central.ImageKey
+	52, // 51: central.AuditLogSync.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
+	52, // 52: central.AuditLogStatusInfo.NodeAuditLogFileStatesEntry.value:type_name -> storage.AuditLogFileState
+	4,  // 53: central.SensorService.Communicate:input_type -> central.MsgFromSensor
+	6,  // 54: central.SensorService.Communicate:output_type -> central.MsgToSensor
+	54, // [54:55] is the sub-list for method output_type
+	53, // [53:54] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_sensor_iservice_proto_init() }
@@ -1832,7 +1813,6 @@ func file_internalapi_central_sensor_iservice_proto_init() {
 	file_internalapi_central_process_listening_on_ports_update_proto_init()
 	file_internalapi_central_secured_cluster_cert_refresh_proto_init()
 	file_internalapi_central_sensor_events_proto_init()
-	file_internalapi_central_sensor_upgrade_proto_init()
 	file_internalapi_central_telemetry_proto_init()
 	file_internalapi_central_sensor_iservice_proto_msgTypes[0].OneofWrappers = []any{
 		(*MsgFromSensor_Event)(nil),
@@ -1855,7 +1835,6 @@ func file_internalapi_central_sensor_iservice_proto_init() {
 		(*MsgToSensor_Enforcement)(nil),
 		(*MsgToSensor_NetworkPoliciesCommand)(nil),
 		(*MsgToSensor_ClusterConfig)(nil),
-		(*MsgToSensor_SensorUpgradeTrigger)(nil),
 		(*MsgToSensor_TelemetryDataRequest)(nil),
 		(*MsgToSensor_PolicySync)(nil),
 		(*MsgToSensor_BaselineSync)(nil),
