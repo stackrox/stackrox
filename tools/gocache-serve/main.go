@@ -197,7 +197,7 @@ func main() {
 	// Hot-core measurement: the intersection of the previous two sessions'
 	// served sets = entries re-read across sessions — the population a
 	// page-cache pin/rewarm should protect. Logged once per session.
-	if dir := os.Getenv("GOCACHE_SERVE_DIR"); dir != "" {
+	if dir := cacheDir; dir != "" {
 		loadSet := func(name string) map[string]bool {
 			s := map[string]bool{}
 			if b, err := os.ReadFile(filepath.Join(dir, name)); err == nil {
@@ -461,9 +461,10 @@ func main() {
 			// Persist the served set: the previous two sessions' sets give
 			// the hot core (cross-session intersection) at startup, and are
 			// the rewarm input for page-cache pinning. Rotation keeps two.
-			if dir := os.Getenv("GOCACHE_SERVE_DIR"); dir != "" {
-				prev := filepath.Join(dir, "served-prev.txt")
-				prev2 := filepath.Join(dir, "served-prev2.txt")
+			// (cacheDir, not the env: CI uses the default dir.)
+			{
+				prev := filepath.Join(cacheDir, "served-prev.txt")
+				prev2 := filepath.Join(cacheDir, "served-prev2.txt")
 				os.Rename(prev, prev2) // best-effort
 				if ids := manifest.LocalIDs(); len(ids) > 0 {
 					os.WriteFile(prev, []byte(strings.Join(ids, "\n")), 0o644)
