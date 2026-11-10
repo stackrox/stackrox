@@ -1,0 +1,1445 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from: ci/test-selection-rules.yaml
+# To regenerate: make generate-ci-selection
+
+name: Detect changed files
+
+on:
+  workflow_call:
+    outputs:
+      files:
+        description: >
+          Newline-separated list of changed filenames, or empty
+          string on push/failure (falsy, so jobs default to run).
+        value: ${{ jobs.detect.outputs.files }}
+      ui_only:
+        description: >
+          'true' when every changed file is under ui/, empty
+          otherwise. Skip non-UI jobs with: if: !needs.X.outputs.ui_only
+        value: ${{ jobs.detect.outputs.ui_only }}
+      should_run_check_crd_compatibility:
+        description: >
+          'true' if check-crd-compatibility should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_check_crd_compatibility }}
+      should_run_check_generated_files:
+        description: >
+          'true' if check-generated-files should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_check_generated_files }}
+      should_run_db_integration_tests:
+        description: >
+          'true' if db-integration-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_db_integration_tests }}
+      should_run_e2e_byodb_tests:
+        description: >
+          'true' if e2e-byodb-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_e2e_byodb_tests }}
+      should_run_e2e_db_backup_restore_tests:
+        description: >
+          'true' if e2e-db-backup-restore-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_e2e_db_backup_restore_tests }}
+      should_run_e2e_gke_upgrade_tests:
+        description: >
+          'true' if e2e-gke-upgrade-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_e2e_gke_upgrade_tests }}
+      should_run_e2e_nongroovy_tests:
+        description: >
+          'true' if e2e-nongroovy-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_e2e_nongroovy_tests }}
+      should_run_e2e_qa_tests_gke:
+        description: >
+          'true' if e2e-qa-tests-gke should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_e2e_qa_tests_gke }}
+      should_run_e2e_qa_tests_gke_konflux:
+        description: >
+          'true' if e2e-qa-tests-gke-konflux should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_e2e_qa_tests_gke_konflux }}
+      should_run_e2e_qa_tests_ocp_4_22:
+        description: >
+          'true' if e2e-qa-tests-ocp-4-22 should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_e2e_qa_tests_ocp_4_22 }}
+      should_run_github_actions_lint:
+        description: >
+          'true' if github-actions-lint should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_github_actions_lint }}
+      should_run_gke_nongroovy_e2e_tests:
+        description: >
+          'true' if gke-nongroovy-e2e-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_gke_nongroovy_e2e_tests }}
+      should_run_gke_qa_e2e_tests:
+        description: >
+          'true' if gke-qa-e2e-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_gke_qa_e2e_tests }}
+      should_run_gke_ui_e2e_tests:
+        description: >
+          'true' if gke-ui-e2e-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_gke_ui_e2e_tests }}
+      should_run_go:
+        description: >
+          'true' if go should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_go }}
+      should_run_go_postgres:
+        description: >
+          'true' if go-postgres should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_go_postgres }}
+      should_run_golangci_lint:
+        description: >
+          'true' if golangci-lint should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_golangci_lint }}
+      should_run_local_roxctl_tests:
+        description: >
+          'true' if local-roxctl-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_local_roxctl_tests }}
+      should_run_ocp_vm_scanning_e2e_tests:
+        description: >
+          'true' if ocp-vm-scanning-e2e-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_ocp_vm_scanning_e2e_tests }}
+      should_run_openshift_ci_lint:
+        description: >
+          'true' if openshift-ci-lint should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_openshift_ci_lint }}
+      should_run_sensor_integration_tests:
+        description: >
+          'true' if sensor-integration-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_sensor_integration_tests }}
+      should_run_shell_unit_tests:
+        description: >
+          'true' if shell-unit-tests should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_shell_unit_tests }}
+      should_run_should_dispatch:
+        description: >
+          'true' if should-dispatch should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_should_dispatch }}
+      should_run_style_check:
+        description: >
+          'true' if style-check should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_style_check }}
+      should_run_ui:
+        description: >
+          'true' if ui should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_ui }}
+      should_run_ui_component:
+        description: >
+          'true' if ui-component should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_ui_component }}
+      should_run_wait_for_images:
+        description: >
+          'true' if wait-for-images should run based on test selection rules
+        value: ${{ jobs.detect.outputs.should_run_wait_for_images }}
+
+jobs:
+  detect:
+    runs-on: ubuntu-24.04
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+      ui_only: ${{ steps.list.outputs.ui_only }}
+      should_run_check_crd_compatibility: ${{ steps.evaluate.outputs.should_run_check_crd_compatibility }}
+      should_run_check_generated_files: ${{ steps.evaluate.outputs.should_run_check_generated_files }}
+      should_run_db_integration_tests: ${{ steps.evaluate.outputs.should_run_db_integration_tests }}
+      should_run_e2e_byodb_tests: ${{ steps.evaluate.outputs.should_run_e2e_byodb_tests }}
+      should_run_e2e_db_backup_restore_tests: ${{ steps.evaluate.outputs.should_run_e2e_db_backup_restore_tests }}
+      should_run_e2e_gke_upgrade_tests: ${{ steps.evaluate.outputs.should_run_e2e_gke_upgrade_tests }}
+      should_run_e2e_nongroovy_tests: ${{ steps.evaluate.outputs.should_run_e2e_nongroovy_tests }}
+      should_run_e2e_qa_tests_gke: ${{ steps.evaluate.outputs.should_run_e2e_qa_tests_gke }}
+      should_run_e2e_qa_tests_gke_konflux: ${{ steps.evaluate.outputs.should_run_e2e_qa_tests_gke_konflux }}
+      should_run_e2e_qa_tests_ocp_4_22: ${{ steps.evaluate.outputs.should_run_e2e_qa_tests_ocp_4_22 }}
+      should_run_github_actions_lint: ${{ steps.evaluate.outputs.should_run_github_actions_lint }}
+      should_run_gke_nongroovy_e2e_tests: ${{ steps.evaluate.outputs.should_run_gke_nongroovy_e2e_tests }}
+      should_run_gke_qa_e2e_tests: ${{ steps.evaluate.outputs.should_run_gke_qa_e2e_tests }}
+      should_run_gke_ui_e2e_tests: ${{ steps.evaluate.outputs.should_run_gke_ui_e2e_tests }}
+      should_run_go: ${{ steps.evaluate.outputs.should_run_go }}
+      should_run_go_postgres: ${{ steps.evaluate.outputs.should_run_go_postgres }}
+      should_run_golangci_lint: ${{ steps.evaluate.outputs.should_run_golangci_lint }}
+      should_run_local_roxctl_tests: ${{ steps.evaluate.outputs.should_run_local_roxctl_tests }}
+      should_run_ocp_vm_scanning_e2e_tests: ${{ steps.evaluate.outputs.should_run_ocp_vm_scanning_e2e_tests }}
+      should_run_openshift_ci_lint: ${{ steps.evaluate.outputs.should_run_openshift_ci_lint }}
+      should_run_sensor_integration_tests: ${{ steps.evaluate.outputs.should_run_sensor_integration_tests }}
+      should_run_shell_unit_tests: ${{ steps.evaluate.outputs.should_run_shell_unit_tests }}
+      should_run_should_dispatch: ${{ steps.evaluate.outputs.should_run_should_dispatch }}
+      should_run_style_check: ${{ steps.evaluate.outputs.should_run_style_check }}
+      should_run_ui: ${{ steps.evaluate.outputs.should_run_ui }}
+      should_run_ui_component: ${{ steps.evaluate.outputs.should_run_ui_component }}
+      should_run_wait_for_images: ${{ steps.evaluate.outputs.should_run_wait_for_images }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 0
+
+      - name: List changed files
+        id: list
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          WORKFLOW_FILE_PATH: ".github/workflows/detect-changes-generated.yml"
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          if [[ -z "${PR_NUMBER}" ]]; then
+            echo "Not a PR" >&2
+            exit 0
+          fi
+
+          if ! output="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename')"; then
+            echo "::warning::GitHub API call failed" >&2
+            exit 0
+          fi
+
+          mapfile -t files < <(echo -n "${output}")
+          echo "Changed files (${#files[@]}):" >&2
+          printf '  %s\n' "${files[@]}" >&2
+
+          if [[ ${#files[@]} -ge 3000 ]]; then
+            echo "::warning::PR has 3000+ changed files" >&2
+            exit 0
+          fi
+
+          anchored=$(printf '^%s$\n' "${files[@]}")
+
+          if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
+            echo "detect-changes-generated.yml modified, running all jobs" >&2
+            exit 0
+          fi
+
+          if [[ ${#files[@]} -gt 0 ]]; then
+            {
+              echo "files<<EOF"
+              printf '%s\n' "${files[@]}"
+              echo "EOF"
+            } >> "${GITHUB_OUTPUT}"
+
+            if ! echo "${anchored}" | grep -qv '^\^ui/'; then
+              echo "All changed files are under ui/" >&2
+              echo "ui_only=true" >> "${GITHUB_OUTPUT}"
+            fi
+          fi
+
+      - name: Evaluate test selection rules
+        id: evaluate
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FILES: ${{ steps.list.outputs.files }}
+        run: |
+          import os
+          import re
+          import subprocess
+          import sys
+
+          pr_number = os.environ.get('PR_NUMBER')
+          files_output = os.environ.get('FILES', '')
+
+          # Get changed files
+          if not files_output:
+              print("No files changed or not a PR, running all jobs by default", file=sys.stderr)
+              sys.exit(0)
+
+          files = [line.strip() for line in files_output.strip().split('\n') if line]
+          print(f"Evaluating {len(files)} changed files", file=sys.stderr)
+
+          # Get PR labels
+          labels = []
+          if pr_number:
+              try:
+                  result = subprocess.run(
+                      ['gh', 'pr', 'view', pr_number, '--repo', os.environ['GH_REPO'],
+                       '--json', 'labels', '--jq', '.labels[].name'],
+                      check=True, capture_output=True, text=True
+                  )
+                  labels = result.stdout.strip().split('\n') if result.stdout.strip() else []
+                  print(f"PR labels: {labels}", file=sys.stderr)
+              except subprocess.CalledProcessError:
+                  print("Warning: Could not fetch PR labels", file=sys.stderr)
+
+          # Check for /test override comments
+          test_overrides = set()
+          if pr_number:
+              try:
+                  result = subprocess.run(
+                      ['gh', 'pr', 'view', pr_number, '--repo', os.environ['GH_REPO'],
+                       '--json', 'comments', '--jq', '.comments[].body'],
+                      check=True, capture_output=True, text=True
+                  )
+                  for line in result.stdout.strip().split('\n'):
+                      if line.startswith('/test '):
+                          job = line[6:].strip()
+                          test_overrides.add(job)
+                          print(f"Found /test override: {job}", file=sys.stderr)
+              except subprocess.CalledProcessError:
+                  pass
+
+          # Helper: Check if file matches any pattern
+          def matches_any_pattern(file, patterns):
+              for pattern in patterns:
+                  try:
+                      if re.search(pattern, file):
+                          return True
+                  except re.error as e:
+                      print(f"Warning: Invalid regex '{pattern}': {e}", file=sys.stderr)
+              return False
+
+          # Helper: Check if condition matches (always, label, or files)
+          def matches_condition(cond, file=None):
+              if cond.get('always'):
+                  return True
+              if cond.get('label'):
+                  return cond['label'] in labels
+              if file and cond.get('files'):
+                  return matches_any_pattern(file, cond['files'])
+              return False
+
+          # Check run_all_tests global trigger
+          run_all = False
+          for cond in [{'label': 'ci-run-all-tests'}, {'files': ['^go\\.mod$', '^go\\.sum$', '^proto/', '^generated/', '\\.proto$']}]:
+              if cond.get('label') and cond['label'] in labels:
+                  run_all = True
+                  print(f"run_all_tests triggered by label: {cond['label']}", file=sys.stderr)
+                  break
+              if cond.get('files'):
+                  for file in files:
+                      if matches_any_pattern(file, cond['files']):
+                          run_all = True
+                          print(f"run_all_tests triggered by file: {file}", file=sys.stderr)
+                          break
+              if run_all:
+                  break
+
+          # Evaluate each job with per-file logic
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              # Job: check-crd-compatibility
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'check-crd-compatibility' in test_overrides:
+                  should_run = True
+                  print("check-crd-compatibility: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("check-crd-compatibility: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/operator'}, {'files': ['^operator/', '\\.crd\\.yaml$', '^config-controller/']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"check-crd-compatibility: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("check-crd-compatibility: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_check_crd_compatibility={str(should_run).lower()}\n")
+              # Job: check-generated-files
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'check-generated-files' in test_overrides:
+                  should_run = True
+                  print("check-generated-files: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("check-generated-files: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^proto/', '^generated/']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"check-generated-files: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("check-generated-files: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_check_generated_files={str(should_run).lower()}\n")
+              # Job: db-integration-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'db-integration-tests' in test_overrides:
+                  should_run = True
+                  print("db-integration-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("db-integration-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/scanner'}, {'files': ['^scanner/']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"db-integration-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("db-integration-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_db_integration_tests={str(should_run).lower()}\n")
+              # Job: e2e-byodb-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'e2e-byodb-tests' in test_overrides:
+                  should_run = True
+                  print("e2e-byodb-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("e2e-byodb-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^central/', '^scanner/']}]
+                  when_not_conditions = [{'files': ['^ui/', '^roxctl/', '^operator/', '^sensor/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"e2e-byodb-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("e2e-byodb-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_e2e_byodb_tests={str(should_run).lower()}\n")
+              # Job: e2e-db-backup-restore-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'e2e-db-backup-restore-tests' in test_overrides:
+                  should_run = True
+                  print("e2e-db-backup-restore-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("e2e-db-backup-restore-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^central/']}]
+                  when_not_conditions = [{'files': ['^ui/', '^roxctl/', '^operator/', '^sensor/', '^scanner/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"e2e-db-backup-restore-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("e2e-db-backup-restore-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_e2e_db_backup_restore_tests={str(should_run).lower()}\n")
+              # Job: e2e-gke-upgrade-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'e2e-gke-upgrade-tests' in test_overrides:
+                  should_run = True
+                  print("e2e-gke-upgrade-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("e2e-gke-upgrade-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^central/', '^sensor/', '^scanner/', '^operator/']}]
+                  when_not_conditions = [{'files': ['^ui/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"e2e-gke-upgrade-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("e2e-gke-upgrade-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_e2e_gke_upgrade_tests={str(should_run).lower()}\n")
+              # Job: e2e-nongroovy-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'e2e-nongroovy-tests' in test_overrides:
+                  should_run = True
+                  print("e2e-nongroovy-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("e2e-nongroovy-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^roxctl/', '^central/', '^sensor/']}]
+                  when_not_conditions = [{'files': ['^ui/', '^operator/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"e2e-nongroovy-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("e2e-nongroovy-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_e2e_nongroovy_tests={str(should_run).lower()}\n")
+              # Job: e2e-qa-tests-gke
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'e2e-qa-tests-gke' in test_overrides:
+                  should_run = True
+                  print("e2e-qa-tests-gke: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("e2e-qa-tests-gke: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = []
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"e2e-qa-tests-gke: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("e2e-qa-tests-gke: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_e2e_qa_tests_gke={str(should_run).lower()}\n")
+              # Job: e2e-qa-tests-gke-konflux
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'e2e-qa-tests-gke-konflux' in test_overrides:
+                  should_run = True
+                  print("e2e-qa-tests-gke-konflux: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("e2e-qa-tests-gke-konflux: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = []
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"e2e-qa-tests-gke-konflux: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("e2e-qa-tests-gke-konflux: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_e2e_qa_tests_gke_konflux={str(should_run).lower()}\n")
+              # Job: e2e-qa-tests-ocp-4-22
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'e2e-qa-tests-ocp-4-22' in test_overrides:
+                  should_run = True
+                  print("e2e-qa-tests-ocp-4-22: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("e2e-qa-tests-ocp-4-22: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = []
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"e2e-qa-tests-ocp-4-22: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("e2e-qa-tests-ocp-4-22: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_e2e_qa_tests_ocp_4_22={str(should_run).lower()}\n")
+              # Job: github-actions-lint
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'github-actions-lint' in test_overrides:
+                  should_run = True
+                  print("github-actions-lint: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("github-actions-lint: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^\\.github/workflows/']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"github-actions-lint: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("github-actions-lint: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_github_actions_lint={str(should_run).lower()}\n")
+              # Job: gke-nongroovy-e2e-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'gke-nongroovy-e2e-tests' in test_overrides:
+                  should_run = True
+                  print("gke-nongroovy-e2e-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("gke-nongroovy-e2e-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^roxctl/', '^central/', '^sensor/']}]
+                  when_not_conditions = [{'files': ['^ui/', '^operator/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"gke-nongroovy-e2e-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("gke-nongroovy-e2e-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_gke_nongroovy_e2e_tests={str(should_run).lower()}\n")
+              # Job: gke-qa-e2e-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'gke-qa-e2e-tests' in test_overrides:
+                  should_run = True
+                  print("gke-qa-e2e-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("gke-qa-e2e-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = []
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"gke-qa-e2e-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("gke-qa-e2e-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_gke_qa_e2e_tests={str(should_run).lower()}\n")
+              # Job: gke-ui-e2e-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'gke-ui-e2e-tests' in test_overrides:
+                  should_run = True
+                  print("gke-ui-e2e-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("gke-ui-e2e-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/ui'}, {'files': ['^ui/']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"gke-ui-e2e-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("gke-ui-e2e-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_gke_ui_e2e_tests={str(should_run).lower()}\n")
+              # Job: go
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'go' in test_overrides:
+                  should_run = True
+                  print("go: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("go: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['\\.go$']}]
+                  when_not_conditions = [{'files': ['^ui/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"go: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("go: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_go={str(should_run).lower()}\n")
+              # Job: go-postgres
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'go-postgres' in test_overrides:
+                  should_run = True
+                  print("go-postgres: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("go-postgres: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/central'}, {'files': ['^central/(sac|search|auth|authprovider|apitoken|user|group|role|rbac|jwt|serviceidentities)/', '^central/(postgres|globaldb|globalindex|graphdb|dackbox|blob|views)/', '^central/(notifier|notifiers|reports|reportconfigurations)/', '^central/(externalbackups|declarativeconfig|config|installation)/', '^central/(ui|graphql|grpc|endpoints)/', '^central/(featureflags|development|audit|logimbue|trace)/', '^central/(helmcharts|ping|version|systeminfo|docs|internal)/', '^pkg/(sac|search|postgres|notifiers|migrations|renderer|backup)/', '^central/(cluster|deployment|image|baseimage|node|pod|namespace|secret|serviceaccount|virtualmachine)/', '^central/(alert|detection|policy|policycat)/', '^central/(networkbaseline|networkgraph|networkpolicies)/', '^central/(complianceoperator|processindicator)/', '^central/(imageintegration|delegatedregistryconfig|enrichment|reprocessor)/', '^central/(sensor|sensorupgrade|clusterinit|securedclustercertgen)/', '^central/(metrics|telemetry|debug|scrape|vulnmgmt|hash)/', '^pkg/(grpc|sync|concurrency|features|logging|utils|set|retry|env|errorhelpers|testutils|mtls|x509utils|buildinfo|version|cryptoutils|urlfmt|stringutils|timestamps|cloudproviders|cloudsources|roxctl)/', '^pkg/(centralsensor|kubernetes|detection|networkgraph|protoconv|sensor|alerts|images|metrics|telemetry)/']}]
+                  when_not_conditions = [{'files': ['^ui/', '^scanner/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"go-postgres: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("go-postgres: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_go_postgres={str(should_run).lower()}\n")
+              # Job: golangci-lint
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'golangci-lint' in test_overrides:
+                  should_run = True
+                  print("golangci-lint: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("golangci-lint: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['\\.go$', '^\\.golangci\\.yml$']}]
+                  when_not_conditions = [{'files': ['^ui/', '^docs/', '\\.md$', '^CHANGELOG', '^README', '^\\.github/', '^\\.openshift-ci/', '^scripts/ci/']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"golangci-lint: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("golangci-lint: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_golangci_lint={str(should_run).lower()}\n")
+              # Job: local-roxctl-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'local-roxctl-tests' in test_overrides:
+                  should_run = True
+                  print("local-roxctl-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("local-roxctl-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/roxctl'}, {'files': ['^roxctl/']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"local-roxctl-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("local-roxctl-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_local_roxctl_tests={str(should_run).lower()}\n")
+              # Job: ocp-vm-scanning-e2e-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'ocp-vm-scanning-e2e-tests' in test_overrides:
+                  should_run = True
+                  print("ocp-vm-scanning-e2e-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("ocp-vm-scanning-e2e-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = []
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"ocp-vm-scanning-e2e-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("ocp-vm-scanning-e2e-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_ocp_vm_scanning_e2e_tests={str(should_run).lower()}\n")
+              # Job: openshift-ci-lint
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'openshift-ci-lint' in test_overrides:
+                  should_run = True
+                  print("openshift-ci-lint: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("openshift-ci-lint: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['^\\.openshift-ci/']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"openshift-ci-lint: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("openshift-ci-lint: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_openshift_ci_lint={str(should_run).lower()}\n")
+              # Job: sensor-integration-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'sensor-integration-tests' in test_overrides:
+                  should_run = True
+                  print("sensor-integration-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("sensor-integration-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/sensor'}, {'files': ['^sensor/(admission-control|upgrader|debugger|testutils|tests)/', '^sensor/kubernetes/(fake|client|enforcer)/', '^pkg/(admissioncontrol|docker|enforcers|complianceoperator|k8sintrospect|protocompat|compliance/checks|binenc)/', '^sensor/common/(admissioncontroller|centralclient|centralproxy|compliance|config|detector|enforcer|networkflow|sensor|image|scannerclient|virtualmachine)/', '^sensor/kubernetes/(eventpipeline|listener|complianceoperator|networkpolicies|telemetry|upgrade|clusterhealth|clustermetrics|clusterstatus|certrefresh)/', '^pkg/(grpc|sync|concurrency|features|logging|utils|set|retry|env|errorhelpers|testutils|mtls|x509utils|buildinfo|version|cryptoutils|urlfmt|stringutils|timestamps|cloudproviders|cloudsources|roxctl)/', '^pkg/(centralsensor|kubernetes|detection|networkgraph|protoconv|sensor|alerts|images|metrics|telemetry)/']}]
+                  when_not_conditions = [{'files': ['^ui/', '^scanner/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"sensor-integration-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("sensor-integration-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_sensor_integration_tests={str(should_run).lower()}\n")
+              # Job: shell-unit-tests
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'shell-unit-tests' in test_overrides:
+                  should_run = True
+                  print("shell-unit-tests: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("shell-unit-tests: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'files': ['\\.sh$', '^scripts/', '^tests/.*\\.sh$']}]
+                  when_not_conditions = [{'files': ['\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"shell-unit-tests: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("shell-unit-tests: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_shell_unit_tests={str(should_run).lower()}\n")
+              # Job: should-dispatch
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'should-dispatch' in test_overrides:
+                  should_run = True
+                  print("should-dispatch: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("should-dispatch: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'always': True}]
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"should-dispatch: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("should-dispatch: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_should_dispatch={str(should_run).lower()}\n")
+              # Job: style-check
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'style-check' in test_overrides:
+                  should_run = True
+                  print("style-check: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("style-check: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'always': True}]
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"style-check: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("style-check: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_style_check={str(should_run).lower()}\n")
+              # Job: ui
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'ui' in test_overrides:
+                  should_run = True
+                  print("ui: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("ui: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/ui'}, {'files': ['^ui/']}]
+                  when_not_conditions = [{'files': ['^central/', '^sensor/', '^scanner/', '^operator/', '^roxctl/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"ui: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("ui: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_ui={str(should_run).lower()}\n")
+              # Job: ui-component
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'ui-component' in test_overrides:
+                  should_run = True
+                  print("ui-component: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("ui-component: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'label': 'area/ui'}, {'files': ['^ui/']}]
+                  when_not_conditions = [{'files': ['^central/', '^sensor/', '^scanner/', '\\.md$', '^docs/', '^CHANGELOG', '^README']}]
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"ui-component: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("ui-component: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_ui_component={str(should_run).lower()}\n")
+              # Job: wait-for-images
+              should_run = False
+
+              # Check /test override first (highest priority)
+              if 'wait-for-images' in test_overrides:
+                  should_run = True
+                  print("wait-for-images: RUN (/test override)", file=sys.stderr)
+              # Check run_all_tests
+              elif run_all:
+                  should_run = True
+                  print("wait-for-images: RUN (run_all_tests)", file=sys.stderr)
+              else:
+                  # Per-file evaluation: run if ANY file matches when AND NOT when_not
+                  when_conditions = [{'always': True}]
+                  when_not_conditions = []
+
+                  for file in files:
+                      # Check if file matches ANY when condition
+                      matches_when = False
+                      for cond in when_conditions:
+                          if matches_condition(cond, file):
+                              matches_when = True
+                              break
+
+                      if matches_when:
+                          # Check if file matches ANY when_not condition
+                          matches_when_not = False
+                          for cond in when_not_conditions:
+                              if matches_condition(cond, file):
+                                  matches_when_not = True
+                                  break
+
+                          if not matches_when_not:
+                              # File matches when AND NOT when_not → trigger!
+                              should_run = True
+                              print(f"wait-for-images: RUN (triggered by {file})", file=sys.stderr)
+                              break
+
+                  if not should_run:
+                      print("wait-for-images: SKIP (no triggering files)", file=sys.stderr)
+
+              output.write(f"should_run_wait_for_images={str(should_run).lower()}\n")
