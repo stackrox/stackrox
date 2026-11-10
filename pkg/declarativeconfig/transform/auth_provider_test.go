@@ -467,8 +467,8 @@ func TestTransformAuthProvider_NormalizesUIEndpoints(t *testing.T) {
 	authProviderProto, ok := protos[authProviderType][0].(*storage.AuthProvider)
 	require.True(t, ok)
 
-	assert.Equal(t, "central.example.com:443", authProviderProto.GetUiEndpoint())
-	assert.Equal(t, []string{"localhost:8080", "central.example.com:443"}, authProviderProto.GetExtraUiEndpoints())
+	assert.Equal(t, "central.example.com", authProviderProto.GetUiEndpoint())
+	assert.Equal(t, []string{"localhost:8080", "central.example.com"}, authProviderProto.GetExtraUiEndpoints())
 }
 
 func TestTransformAuthProvider_NoMinimumRoleName(t *testing.T) {
