@@ -209,11 +209,13 @@ func containerFromEnv() string {
 func newAzureBackend() (*AzureBackend, error) {
 	// Use explicitly-set account, or detect from runner region
 	account := os.Getenv("AZURE_STORAGE_ACCOUNT")
+	// Always log the runner region (observability for same-region
+	// classification of pinned runs); only select by it when unpinned.
+	region := detectRegion()
 	if account == "" {
-		region := detectRegion()
 		account = storageAccountForRegion(region)
-		log.Printf("gocache-serve: region=%s account=%s", region, account)
 	}
+	log.Printf("gocache-serve: region=%s account=%s", region, account)
 	if account == "" {
 		return nil, fmt.Errorf("AZURE_STORAGE_ACCOUNT not set and region detection failed")
 	}
