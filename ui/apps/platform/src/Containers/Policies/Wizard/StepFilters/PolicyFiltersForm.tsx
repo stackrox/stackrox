@@ -58,9 +58,6 @@ function PolicyFiltersForm() {
     const skipContainerTypes = values.evaluationFilter?.skipContainerTypes ?? [];
     const skipImageLayers = values.evaluationFilter?.skipImageLayers ?? 'SKIP_NONE';
 
-    const isBuildOnly =
-        values.lifecycleStages.length === 1 && values.lifecycleStages.includes('BUILD');
-
     const containerFilterDisabled = !containerTypeFilterApplies(
         values.lifecycleStages,
         values.eventSource
@@ -122,14 +119,6 @@ function PolicyFiltersForm() {
                                     isInline
                                     variant="info"
                                     title="Image layer filtering requires at least one criterion from Image Contents or Image Scanning."
-                                    component="p"
-                                />
-                            )}
-                            {!imageLayerFilterDisabled && isBuildOnly && (
-                                <Alert
-                                    isInline
-                                    variant="info"
-                                    title="Image layer filtering applies to all lifecycle stages, including Build."
                                     component="p"
                                 />
                             )}
