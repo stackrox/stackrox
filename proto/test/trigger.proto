@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+// Test trigger for global run_all_tests
+message TestTrigger {
+  string test = 1;
+}
