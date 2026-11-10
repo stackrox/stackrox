@@ -190,7 +190,7 @@ function PermissionSetForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            <FormGroup label="Permission constraints" fieldId="read-access-only">
+            <FormGroup label="Permission constraints" fieldId="permission-constraints" role="group">
                 <Stack hasGutter>
                     <StackItem>
                         <Switch
