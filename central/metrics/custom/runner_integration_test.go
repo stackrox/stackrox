@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	sacEnricher "github.com/stackrox/rox/central/sac"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -36,6 +38,11 @@ func (tr contextCapturingTracker) Gather(ctx context.Context) {
 }
 
 func TestRunnerBackgroundScopeSurvivesRequestCancellation(t *testing.T) {
+	// Initialize telemetry before ServeHTTP can bind its singleton to the
+	// temporary database in a goroutine that outlives this test.
+	t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
+	centralclient.Singleton()
+
 	db := pgtest.ForT(t)
 	previousDB := globaldb.GetPostgres()
 	globaldb.SetPostgresTest(t, db)
