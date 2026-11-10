@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -59,13 +60,61 @@ func envInt(name string, def int) int {
 	return def
 }
 
+// tryMountResourceDisk looks for an unmounted Azure resource disk (the
+// physically-local SSD) and mounts it for our use. Pure use-if-found:
+// every failure path falls back to the normal ladder. Idempotent across
+// the sessions of a job (mountpoint check first). Only ever formats the
+// /dev/disk/azure/resource symlink target — never an arbitrary device.
+func tryMountResourceDisk() string {
+	res := "/dev/disk/azure/resource"
+	target := "/mnt/azresource"
+	if _, err := os.Stat(res); err != nil {
+		return "" // no azure device symlinks (non-Azure or image change)
+	}
+	// Already mounted by us (earlier session in this job)? Reuse.
+	if st, err := os.Stat(target + "/.gocache-serve"); err == nil && st.IsDir() {
+		return target
+	}
+	// Refuse if something else is mounted there or the resource disk is
+	// already in use elsewhere.
+	if out, err := os.ReadFile("/proc/mounts"); err == nil {
+		for _, line := range strings.Split(string(out), "\n") {
+			if strings.HasPrefix(line, target+" ") {
+				return "" // mounted but not ours — don't touch
+			}
+		}
+	}
+	// Mount (format only if no filesystem present).
+	os.MkdirAll(target, 0o755)
+	if sh("sudo", "mount", res, target) != nil {
+		// No filesystem: format first (resource disk is scratch by
+		// definition — safe to reformat).
+		if sh("sudo", "mkfs.ext4", "-F", res) != nil {
+			return ""
+		}
+		if sh("sudo", "mount", res, target) != nil {
+			return ""
+		}
+	}
+	os.MkdirAll(target+"/.gocache-serve", 0o755)
+	log.Printf("gocache-serve: mounted Azure resource disk %s at %s", res, target)
+	return target
+}
+
+func sh(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	return cmd.Run()
+}
+
 // pickLocalDir selects the local cache location by capability, with
 // graceful fallback for runners that lack a given tier:
-//  1. /mnt — Azure's physically-local temp SSD (if present AND passes the
-//     fsync-latency probe; future runner images may drop it or remount it
-//     on network storage, and the probe detects that, not the path)
-//  2. /dev/shm — tmpfs (RAM), with the disk spill tier for overflow
-//  3. /tmp — the network OS disk (always present; today's default)
+//  1. Azure resource disk — the physically-local SSD, mounted if found
+//     raw (fsync-probed; use-if-found)
+//  2. /mnt — a pre-mounted local temp disk, if present and probed local
+//  3. /dev/shm — tmpfs (RAM), with the disk spill tier for overflow
+//  4. /tmp — the network OS disk (always present; today's default)
 //
 // The fsync probe is the honest "is it actually local" test: write 64KB,
 // fsync, measure. Local SSD: sub-millisecond. Network storage: tens of ms.
@@ -76,11 +125,15 @@ func pickLocalDir() string {
 		spill   string // spill tier for capacity overflow ("" = none needed)
 		why     string
 	}
-	candidates := []candidate{
-		{"/mnt/gocache-serve", 5 * time.Millisecond, "", "local temp disk (fsync-probed)"},
-		{"/dev/shm/gocache-serve", 0, "/tmp/gocache-serve-spill", "tmpfs (RAM) + disk spill"},
-		{"/tmp/gocache-serve", 0, "", "network OS disk (default)"},
+	var candidates []candidate
+	if d := tryMountResourceDisk(); d != "" {
+		candidates = append(candidates, candidate{d, 5 * time.Millisecond, "/tmp/gocache-serve-spill", "Azure resource disk (mounted)"})
 	}
+	candidates = append(candidates,
+		candidate{"/mnt/gocache-serve", 5 * time.Millisecond, "/tmp/gocache-serve-spill", "local temp disk (fsync-probed)"},
+		candidate{"/dev/shm/gocache-serve", 0, "/tmp/gocache-serve-spill", "tmpfs (RAM) + disk spill"},
+		candidate{"/tmp/gocache-serve", 0, "", "network OS disk (default)"},
+	)
 	for _, c := range candidates {
 		if err := os.MkdirAll(c.dir, 0o755); err != nil {
 			continue

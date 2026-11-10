@@ -217,6 +217,10 @@ jobs:
             echo "=== memsnap (15s intervals):"; tail -30 /tmp/memsnap.log
             echo "=== tmpfs mount limits:"; df -hT /dev/shm /tmp /mnt / 2>/dev/null || true
             echo "=== /mnt contents (Azure local temp disk?):"; ls /mnt 2>/dev/null || echo "no /mnt"
+            echo "=== all block devices:"; lsblk -o NAME,SIZE,TYPE,ROTA,MOUNTPOINT 2>/dev/null || true
+            echo "=== azure device symlinks (resource = local temp disk):"; ls -la /dev/disk/azure/ 2>/dev/null || echo "no /dev/disk/azure"
+            echo "=== unformatted disks:"; sudo blkid 2>/dev/null || true
+            echo "=== waagent resource-disk config:"; grep -i "^ResourceDisk" /etc/waagent.conf 2>/dev/null || echo "no waagent.conf"
             echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill 2>/dev/null || true
           fi
 
