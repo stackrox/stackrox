@@ -229,15 +229,6 @@ function PermissionSetForm({
                         />
                     </StackItem>
                 </Stack>
-                <FormHelperText>
-                    <HelperText>
-                        <HelperTextItem>
-                            Read-only removes write access. Scoped resources only removes access to
-                            global resources. Turning off a constraint does not restore removed
-                            access.
-                        </HelperTextItem>
-                    </HelperText>
-                </FormHelperText>
             </FormGroup>
             {action === 'create' && !values.scopedOnly && (
                 <Alert
