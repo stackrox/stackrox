@@ -153,6 +153,9 @@ securedCluster:
   spec:
     network:
       policies: Disabled
+    perNode:
+      fileActivityMonitoring:
+        mode: Enabled
 EOF
 
     info "Deploying ACS with roxie..."
