@@ -31,28 +31,29 @@ type reportEmailSubjectFormat struct {
 
 // ImageCVEQueryResponse contains the fields of report query response
 type ImageCVEQueryResponse struct {
-	Cluster                 *string                        `db:"cluster"`
-	Namespace               *string                        `db:"namespace"`
-	Deployment              *string                        `db:"deployment"`
-	Image                   *string                        `db:"image"`
-	Component               *string                        `db:"component"`
-	ComponentVersion        *string                        `db:"component_version"`
-	CVEID                   *string                        `db:"cve_id"`
-	CVE                     *string                        `db:"cve"`
-	Fixable                 *bool                          `db:"fixable"`
-	FixedByVersion          *string                        `db:"fixed_by"`
-	Severity                *storage.VulnerabilitySeverity `db:"severity"`
-	CVSS                    *float64                       `db:"cvss"`
-	NVDCVSS                 *float64                       `db:"nvd_cvss"`
-	EPSSProbability         *float64                       `db:"epss_probability"`
-	CisaKev                 *bool                          `db:"cisa_kev"`
-	KnownRansomwareCampaign *bool                          `db:"known_ransomware_campaign"`
-	DiscoveredAtImage       *time.Time                     `db:"first_image_occurrence_timestamp"`
-	ImageCreatedAt          *time.Time                     `db:"image_created_time"`
-	AdvisoryName            *string                        `db:"advisory_name"`
-	AdvisoryLink            *string                        `db:"advisory_link"`
-	Origin                  *storage.VulnOrigin            `db:"cve_origin"`
-	State                   *storage.VulnerabilityState    `db:"vulnerability_state"`
+	Cluster                  *string                        `db:"cluster"`
+	Namespace                *string                        `db:"namespace"`
+	Deployment               *string                        `db:"deployment"`
+	Image                    *string                        `db:"image"`
+	Component                *string                        `db:"component"`
+	ComponentVersion         *string                        `db:"component_version"`
+	CVEID                    *string                        `db:"cve_id"`
+	CVE                      *string                        `db:"cve"`
+	Fixable                  *bool                          `db:"fixable"`
+	FixedByVersion           *string                        `db:"fixed_by"`
+	Severity                 *storage.VulnerabilitySeverity `db:"severity"`
+	CVSS                     *float64                       `db:"cvss"`
+	NVDCVSS                  *float64                       `db:"nvd_cvss"`
+	EPSSProbability          *float64                       `db:"epss_probability"`
+	CisaKev                  *bool                          `db:"cisa_kev"`
+	KnownRansomwareCampaign  *bool                          `db:"known_ransomware_campaign"`
+	DiscoveredAtImage        *time.Time                     `db:"first_image_occurrence_timestamp"`
+	CVEFixAvailableTimestamp *time.Time                     `db:"cve_fix_available_timestamp"`
+	ImageCreatedAt           *time.Time                     `db:"image_created_time"`
+	AdvisoryName             *string                        `db:"advisory_name"`
+	AdvisoryLink             *string                        `db:"advisory_link"`
+	Origin                   *storage.VulnOrigin            `db:"cve_origin"`
+	State                    *storage.VulnerabilityState    `db:"vulnerability_state"`
 
 	Link string
 }
@@ -202,6 +203,13 @@ func (res *ImageCVEQueryResponse) GetDiscoveredAtImage() string {
 		return "Not Available"
 	}
 	return res.DiscoveredAtImage.Format("January 02, 2006")
+}
+
+func (res *ImageCVEQueryResponse) GetFixDate() string {
+	if res.CVEFixAvailableTimestamp == nil {
+		return "Not Available"
+	}
+	return res.CVEFixAvailableTimestamp.Format("January 02, 2006")
 }
 
 func (res *ImageCVEQueryResponse) GetImageCreatedAt() string {

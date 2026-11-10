@@ -205,7 +205,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_F
 // TestGenerateReportTransaction_DeployedAndWatched verifies that both deployed
 // and watched image queries are executed within the same transaction.
 //
-// Test data: 4 deployed CVEs + 4 watched CVEs (2 watched images × 2 CVEs) = 8 data rows.
+// Test data: 8 deployed CVEs + 4 watched CVEs (2 watched images × 2 CVEs) = 12 data rows.
 func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_DeployedAndWatched() {
 	rg, blobStore, configStore := s.setupTransactionDeps()
 	snap := s.prepareSnapshot(configStore, "col1",
@@ -233,6 +233,12 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 		"CVE-fixable_critical-w0_img_comp":        "Deferred",
 		"CVE-fixable_critical-w1_img_comp":        "False Positive",
 	}
+	fixDateColumn := slices.Index(rows[0], "Fix Date")
+	s.Require().NotEqual(-1, fixDateColumn)
+	fixDatesByCVE := map[string]string{
+		"CVE-fixable_critical-c1_ns1_dep0_img_comp": "July 01, 2024",
+		"CVE-fixable_critical-w0_img_comp":          "July 01, 2024",
+	}
 	for _, row := range rows[1:] {
 		s.Require().Len(row, len(rows[0]))
 		state, ok := statesByCVE[row[colCVE]]
@@ -240,6 +246,11 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 			state = "Observed"
 		}
 		s.Equal(state, row[stateColumn], "CVE %s", row[colCVE])
+		fixDate, ok := fixDatesByCVE[row[colCVE]]
+		if !ok {
+			fixDate = "Not Available"
+		}
+		s.Equal(fixDate, row[fixDateColumn], "CVE %s", row[colCVE])
 	}
 }
 
