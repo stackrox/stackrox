@@ -306,12 +306,14 @@ func (a *AzureBackend) getToken() (string, error) {
 	return a.token, nil
 }
 
-// rangeGetThreshold: blobs larger than this download via parallel ranged
-// GETs. Measured: the prefetch floor is set by the largest entries' serial
-// transfer times (an 88MB blob at ~6MB/s cross-region = 15s alone), while
-// aggregate bandwidth is 6MB/s per connection — splitting big blobs across
-// connections makes the tail match the aggregate.
-const rangeGetThreshold = 4 << 20
+// Range-parallel downloads: every GET goes through getRanged — the first
+// range request doubles as size discovery (no separate HEAD), small blobs
+// return complete in one shot, and anything above rangeGetThreshold splits
+// into parallel ranges. This unifies entries, bundles, and manifests under
+// one large-object policy: per-request latency stops being the prefetch
+// bottleneck (measured: 13,578-entry direct prefetch was request-bound at
+// ~170/s / 25MB/s aggregate with single-stream mid-band entries).
+const rangeGetThreshold = 512 << 10
 const rangeGetMaxParallel = 16
 
 // getRanged downloads a blob with parallel HTTP range requests.
@@ -330,11 +332,22 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 		resp.Body.Close()
 		return nil, nil
 	}
-	if resp.StatusCode != http.StatusPartialContent {
-		// blob smaller than a part (or ranges unsupported): read whole
+	if resp.StatusCode == http.StatusRequestedRangeNotSatisfiable {
+		// Range on a zero-length blob: it exists and is empty.
+		resp.Body.Close()
+		return []byte{}, nil
+	}
+	if resp.StatusCode == http.StatusOK {
+		// Service returned the full body (range covered everything, or
+		// ranges unsupported): read it whole.
 		b, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		return b, err
+	}
+	if resp.StatusCode != http.StatusPartialContent {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 256))
+		resp.Body.Close()
+		return nil, fmt.Errorf("GET %s: HTTP %d: %s", shortID(actionID), resp.StatusCode, body)
 	}
 	first, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -418,50 +431,14 @@ func (a *AzureBackend) Get(actionID string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Big blobs: parallel ranged download (tail of prefetch is set by the
-	// largest entries' serial transfer time).
-	if size, ok := a.blobSize(actionID, token); ok && size > rangeGetThreshold {
-		if b, err := a.getRanged(actionID, token); err == nil && b != nil {
-			return maybeGunzip(b), nil
-		}
-		// fall through to plain GET on ranged failure
-	}
-	req, err := http.NewRequest("GET", a.blobURL(actionID), nil)
+	// Universal range path: getRanged discovers size from the first range's
+	// Content-Range (no HEAD round trip), returns small blobs whole, and
+	// splits larger ones across parallel connections.
+	b, err := a.getRanged(actionID, token)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("x-ms-version", "2023-11-03")
-
-	resp, err := a.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil // miss
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET %s: HTTP %d", shortID(actionID), resp.StatusCode)
-	}
-	b, err := io.ReadAll(resp.Body)
-	return maybeGunzip(b), err
-}
-
-// blobSize returns the blob's (compressed) size via HEAD.
-func (a *AzureBackend) blobSize(actionID string, token string) (int64, bool) {
-	req, err := http.NewRequest("HEAD", a.blobURL(actionID), nil)
-	if err != nil {
-		return 0, false
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("x-ms-version", "2023-11-03")
-	resp, err := a.client.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return 0, false
-	}
-	return resp.ContentLength, resp.ContentLength > 0
+	return maybeGunzip(b), nil
 }
 
 func (a *AzureBackend) Put(actionID string, body []byte) error {
