@@ -22,3 +22,8 @@ type anonymous struct{}
 func (anonymous) Authorized(context.Context, string) error {
 	return nil
 }
+
+// EnrichContext returns the input context unchanged.
+func (anonymous) EnrichContext(ctx context.Context, _ string) context.Context {
+	return ctx
+}

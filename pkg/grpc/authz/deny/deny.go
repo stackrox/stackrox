@@ -29,3 +29,8 @@ type everyone struct{}
 func (everyone) Authorized(context.Context, string) error {
 	return errox.NoAuthzConfigured
 }
+
+// EnrichContext returns the input context unchanged.
+func (everyone) EnrichContext(ctx context.Context, _ string) context.Context {
+	return ctx
+}
