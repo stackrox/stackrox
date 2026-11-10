@@ -521,8 +521,7 @@ func findPolicyWithSameName(policyNameToPolicyMap map[string]*storage.Policy, na
 
 func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Policy, policyNameToPolicyMap map[string]*storage.Policy) error {
 	if policy.GetId() != "" {
-		// removePolicyNoLock is a plain delete, which is a no-op when no policy carries
-		// this ID, so the previous existence check is not needed.
+		// removePolicyNoLock deletes by ID and is a no-op when the policy does not exist.
 		if err := ds.removePolicyNoLock(ctx, policy.GetId()); err != nil {
 			return errorsPkg.Wrapf(err, "removing policy %s", policy.GetId())
 		}
