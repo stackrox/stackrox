@@ -30,9 +30,9 @@ env:
   CLUSTER_NAME_PREFIX: "e2e-tls-compl"
   CLUSTER_NAME_PREFIX_MAX: "20"
   TLS_SCANNER_REF: "df6f8d462cd22d4a515946602936a4ac117e4c74"
-  # Pin OCP version while TLSGroupPreferences / TLSAdherence are feature-gated.
-  # Switch to ocp/stable once both features graduate to GA.
-  OPENSHIFT_VERSION: "ocp/5.0.1"
+  # Pin OCP to 5.0 while TLSGroupPreferences / TLSAdherence are feature-gated.
+  # After feature flag GA: switch to ocp/stable and drop the feature-gate setup in the e2e test.
+  OPENSHIFT_VERSION: "ocp/stable-5.0"
 
 jobs:
   run:
