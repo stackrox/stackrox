@@ -682,6 +682,38 @@ docker-build-main-image: copy-binaries-to-image-dir
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
+# $(call unless-image-exists,<image-ref>,<command>) runs <command>, unless SKIP_EXISTING_IMAGES=1
+# and <image-ref> already exists in the local image store.
+unless-image-exists = \
+    $(if $(filter 1,$(SKIP_EXISTING_IMAGES)), \
+        $(call image-exists-or-skip,$(1)) || \
+    ) \
+    $(2)
+
+# Shell snippet which succeeds, announcing the skip, if <image-ref> exists locally.
+image-exists-or-skip = \
+    ref="$(1)"; \
+    $(CONTAINER_ENGINE) image inspect "$$ref" >/dev/null 2>&1 && \
+    echo "Skipping $$ref: image exists"
+
+# Image refs of subdirectory builds are queried from the owning Makefile.
+subdir-image-ref = $$($(MAKE) --quiet --no-print-directory -C $(1) $(2)-image-ref)
+
+# Set SKIP_EXISTING_IMAGES=1 to only build images which do not exist locally yet.
+.PHONY: all-images
+all-images:
+ifeq ($(SKIP_EXISTING_IMAGES),1)
+ifneq ($(filter %-dirty,$(TAG)),)
+	@echo "WARNING: Working tree is dirty (tag $(TAG)). Existing images for this tag may be stale and will not be rebuilt." >&2
+endif
+endif
+	$(call unless-image-exists,$(DEFAULT_IMAGE_REGISTRY)/main:$(TAG),CGO_ENABLED=0 $(MAKE) main-image)
+	$(call unless-image-exists,$(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG),CGO_ENABLED=0 $(MAKE) central-db-image)
+	$(call unless-image-exists,$(call subdir-image-ref,operator/,operator),$(MAKE) -C operator/ docker-build)
+	$(call unless-image-exists,$(call subdir-image-ref,operator/,operator-bundle),DOCKER_BUILD_LOAD=1 $(MAKE) -C operator/ bundle-build)
+	$(call unless-image-exists,$(call subdir-image-ref,scanner/,scanner),$(MAKE) -C scanner/ image-scanner)
+	$(call unless-image-exists,$(call subdir-image-ref,scanner/,scanner-db),$(MAKE) -C scanner/ image-db)
+
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
 	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl-linux
