@@ -258,11 +258,21 @@ type negativeCache struct {
 	path string
 }
 
-func newNegativeCache() *negativeCache {
-	dir := os.Getenv("GOCACHE_SERVE_DIR")
-	if dir == "" {
-		dir = "/tmp/gocache-serve"
+// metaDir returns a guaranteed-writable location for small metadata files
+// (served-sets, negative cache): the spill tier when configured (the tmpfs
+// primary can be 100% full of cache entries — measured: served-set writes
+// failed ENOSPC on /dev/shm while the cache worked fine via spill), else
+// the cache dir itself.
+func metaDir(cacheDir, spill string) string {
+	if spill != "" {
+		os.MkdirAll(spill, 0o755)
+		return spill
 	}
+	return cacheDir
+}
+
+func newNegativeCache(cacheDir, spill string) *negativeCache {
+	dir := metaDir(cacheDir, spill)
 	nc := &negativeCache{seen: make(map[string]bool), path: filepath.Join(dir, "negative.txt")}
 	if b, err := os.ReadFile(nc.path); err == nil {
 		for _, id := range strings.Fields(string(b)) {

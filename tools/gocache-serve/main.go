@@ -118,6 +118,18 @@ func sh(name string, args ...string) error {
 //
 // The fsync probe is the honest "is it actually local" test: write 64KB,
 // fsync, measure. Local SSD: sub-millisecond. Network storage: tens of ms.
+// spillDirFor mirrors the SetSpill condition: the disk fallback tier for
+// tmpfs/local-disk primaries.
+func spillDirFor(cacheDir string) string {
+	if os.Getenv("GOCACHE_SERVE_SPILL") != "" {
+		return os.Getenv("GOCACHE_SERVE_SPILL")
+	}
+	if strings.HasPrefix(cacheDir, "/dev/shm") || strings.HasPrefix(cacheDir, "/mnt/") {
+		return "/tmp/gocache-serve-spill"
+	}
+	return ""
+}
+
 func pickLocalDir() string {
 	type candidate struct {
 		dir     string
@@ -242,7 +254,10 @@ func main() {
 
 	// Negative cache: skip cloud round trips for entries already confirmed
 	// absent (Go's speculative gets re-check phantoms every session).
-	negatives := newNegativeCache()
+	// Metadata lives on the spill tier when one is configured: the tmpfs
+	// primary can be 100% full of cache entries (measured ENOSPC on
+	// served-set writes while the cache itself worked fine via spill).
+	negatives := newNegativeCache(cacheDir, spillDirFor(cacheDir))
 	// In-flight download coordination between prefetch and get paths.
 	inflights := newInflightMap()
 	var conversions int64 // gets that waited on a prefetch (prefetch behind need)
@@ -250,7 +265,7 @@ func main() {
 	// Hot-core measurement: the intersection of the previous two sessions'
 	// served sets = entries re-read across sessions — the population a
 	// page-cache pin/rewarm should protect. Logged once per session.
-	if dir := cacheDir; dir != "" {
+	if dir := metaDir(cacheDir, spillDirFor(cacheDir)); dir != "" {
 		loadSet := func(name string) map[string]bool {
 			s := map[string]bool{}
 			if b, err := os.ReadFile(filepath.Join(dir, name)); err == nil {
@@ -517,8 +532,9 @@ func main() {
 			// the rewarm input for page-cache pinning. Rotation keeps two.
 			// (cacheDir, not the env: CI uses the default dir.)
 			{
-				prev := filepath.Join(cacheDir, "served-prev.txt")
-				prev2 := filepath.Join(cacheDir, "served-prev2.txt")
+				mdir := metaDir(cacheDir, spillDirFor(cacheDir))
+				prev := filepath.Join(mdir, "served-prev.txt")
+				prev2 := filepath.Join(mdir, "served-prev2.txt")
 				os.Rename(prev, prev2) // best-effort
 				ids := manifest.LocalIDs()
 				if len(ids) > 0 {
