@@ -800,24 +800,41 @@ func TestEnrich_RedHatJavaMultipleRepositories(t *testing.T) {
 			Repo:           &claircore.Repository{Name: product.String(), Key: rheljava.RepositoryKey},
 		}
 	}
-	runTest(t, testcase{
-		report: &claircore.VulnerabilityReport{
-			Packages: map[string]*claircore.Package{"1": {
-				Name: "org.wildfly.security:wildfly-elytron-asn1", Version: "2.6.9.Final-redhat-00001",
-			}},
-			Repositories: map[string]*claircore.Repository{
-				"eap":     {Name: eap.String(), Key: rheljava.RepositoryKey, CPE: eap},
-				"quarkus": {Name: quarkus.String(), Key: rheljava.RepositoryKey, CPE: quarkus},
-			},
-			Environments: map[string][]*claircore.Environment{"1": {{RepositoryIDs: []string{"eap", "quarkus"}}}},
-			Vulnerabilities: map[string]*claircore.Vulnerability{
-				"eap":     vuln("2.6.10.Final-redhat-00001", eap),
-				"quarkus": vuln("2.6.12.Final-redhat-00001", quarkus),
-			},
-			PackageVulnerabilities: map[string][]string{"1": {"eap", "quarkus"}},
+	testcases := map[string]struct {
+		repositoryIDs []string
+		expected      string
+	}{
+		"both repositories": {
+			repositoryIDs: []string{"eap", "quarkus"},
+			expected:      "2.6.12.Final-redhat-00001",
 		},
-		expected: "2.6.12.Final-redhat-00001",
-	})
+		"eap only": {
+			repositoryIDs: []string{"eap"},
+			expected:      "2.6.10.Final-redhat-00001",
+		},
+	}
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			runTest(t, testcase{
+				report: &claircore.VulnerabilityReport{
+					Packages: map[string]*claircore.Package{"1": {
+						Name: "org.wildfly.security:wildfly-elytron-asn1", Version: "2.6.9.Final-redhat-00001",
+					}},
+					Repositories: map[string]*claircore.Repository{
+						"eap":     {Name: eap.String(), Key: rheljava.RepositoryKey, CPE: eap},
+						"quarkus": {Name: quarkus.String(), Key: rheljava.RepositoryKey, CPE: quarkus},
+					},
+					Environments: map[string][]*claircore.Environment{"1": {{RepositoryIDs: tc.repositoryIDs}}},
+					Vulnerabilities: map[string]*claircore.Vulnerability{
+						"eap":     vuln("2.6.10.Final-redhat-00001", eap),
+						"quarkus": vuln("2.6.12.Final-redhat-00001", quarkus),
+					},
+					PackageVulnerabilities: map[string][]string{"1": {"eap", "quarkus"}},
+				},
+				expected: tc.expected,
+			})
+		})
+	}
 }
 
 func TestEnrich_Nodejs(t *testing.T) {
