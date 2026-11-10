@@ -242,14 +242,14 @@ enum SensorVersionCompatibility {
 }
 
 message ClusterStatus {
-  reserved 5; // formerly ClusterUpgradeStatus upgrade_status, removed with the sensor auto-upgrader
-  reserved "upgrade_status";
-
   string sensor_version = 1;
   // This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
   google.protobuf.Timestamp DEPRECATED_last_contact = 2;
   ProviderMetadata provider_metadata = 3;
   OrchestratorMetadata orchestrator_metadata = 4;
+  // Field 5 formerly held ClusterUpgradeStatus upgrade_status, removed with the sensor auto-upgrader.
+  reserved 5;
+  reserved "upgrade_status";
   ClusterCertExpiryStatus cert_expiry_status = 6;
   // Computed at runtime, not persisted.
   SensorVersionCompatibility sensor_version_compatibility = 7; // @gotags: search:"Sensor Version Compatibility" sql:"-"
