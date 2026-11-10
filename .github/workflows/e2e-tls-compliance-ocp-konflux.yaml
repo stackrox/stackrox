@@ -35,7 +35,7 @@ env:
   OPENSHIFT_VERSION: "ocp/stable-5.0"
 
 jobs:
-  run:
+  ocp-tls-compliance-e2e-tests:
     if: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
