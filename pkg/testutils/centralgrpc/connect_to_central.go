@@ -5,8 +5,6 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -29,10 +27,8 @@ const (
 
 	apiEndpointEnvVar = "API_ENDPOINT"
 
-	defaultUsername = "admin"
-	//#nosec G101 -- This is a false positive
-	defaultPasswordPath = "deploy/central-deploy/password"
-	defaultAPIEndpoint  = "localhost:8000"
+	defaultUsername    = "admin"
+	defaultAPIEndpoint = "localhost:8000"
 )
 
 var (
@@ -54,14 +50,9 @@ func RoxUsername(t testutils.T) string {
 
 // RoxPassword returns the rox basic auth password (or fails the test if not found).
 func RoxPassword(t testutils.T) string {
-	if pw := mustGetEnvVarInCI(t, env.PasswordEnv.EnvVar()); pw != "" {
-		return pw
-	}
-
-	pwFromFileBytes, err := os.ReadFile(filepath.Join(testutils.GetTestWorkspaceDir(t), defaultPasswordPath))
-	require.NoErrorf(t, err, "no password set via %s, and could not read password file", env.PasswordEnv.EnvVar())
-
-	return strings.TrimSpace(string(pwFromFileBytes))
+	pw := mustGetEnvVarInCI(t, env.PasswordEnv.EnvVar())
+	require.NotEmpty(t, pw, "Please set %s (roxie provides this in its shell environment)", env.PasswordEnv.EnvVar())
+	return pw
 }
 
 // RoxAPIEndpoint returns the central API endpoint (or fails the test if not found).

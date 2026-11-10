@@ -46,6 +46,7 @@ spec:
 EOF
 )
 
+  kubectl -n "${namespace}" set env "deploy/${deployment}" "ROX_HOTRELOAD=true"
   kubectl -n "${namespace}" delete "pod" -l "app=${deployment}"
 }
 

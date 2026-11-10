@@ -37,7 +37,6 @@ config_custom() {
 
     # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
     DEPLOY_DIR="deploy"
-
     export_test_environment
 
     setup_gcp
@@ -61,7 +60,6 @@ reuse_config_part_1() {
 
     # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
     DEPLOY_DIR="deploy"
-
     export_test_environment
     setup_deployment_env false false
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"

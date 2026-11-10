@@ -36,7 +36,6 @@ test_byodb() {
     require_environment "KUBECONFIG"
 
     export_test_environment
-
     # ROX-37649: Use deploy/ directly since deploy/k8s was removed
     DEPLOY_DIR="deploy"
     QUAY_REPO="stackrox-io"

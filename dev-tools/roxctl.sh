@@ -52,7 +52,7 @@ elif is_operator_on_openshift; then
   password=$(oc get secret -n stackrox central-htpasswd -o json | jq -r '.data.password' | base64 --decode)
   printf "$endpoint\t$password" > "${cache}"
 elif [[ -f "$DIR/../deploy/central-deploy/password" ]]; then
-  # ROX-37649: Read from deploy/central-deploy (legacy deploy location)
+  # TODO(ROX-37941): Read from deploy/central-deploy (legacy deploy location)
   password="$(cat "$DIR/../deploy/central-deploy/password")"
 elif kubectl get secret -n stackrox central-htpasswd &>/dev/null; then
   # Get password from Kubernetes secret (operator or Helm deployment)

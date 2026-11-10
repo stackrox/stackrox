@@ -50,7 +50,6 @@ config_part_1() {
 
     # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
     DEPLOY_DIR="deploy"
-
     # ROX-37649: Default to roxie since legacy deploy scripts were removed
     local use_roxie_deploy="${USE_ROXIE_DEPLOY:-true}"
     export_test_environment
@@ -122,7 +121,6 @@ reuse_config_part_1() {
 
     # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
     DEPLOY_DIR="deploy"
-
     export_test_environment
     setup_deployment_env false false
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
