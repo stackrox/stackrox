@@ -1,5 +1,17 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
+# This step runs before the operator upgrade, so require Scanner V2 only when
+# the installed product version predates its removal in ACS 5.0.
+commands:
+- script: |
+    set -eu
+    product_version=$(retry-kubectl.sh get securedcluster stackrox-secured-cluster-services -n "$NAMESPACE" -o jsonpath='{.status.productVersion}')
+    product_major=${product_version%%.*}
+    test "$product_major" -ge 0
+    if [ "$product_major" -lt 5 ]; then
+      available_replicas=$(retry-kubectl.sh get deployment scanner -n "$NAMESPACE" -o jsonpath='{.status.availableReplicas}')
+      test "$available_replicas" = 1
+    fi
 collectors:
 - type: pod
   selector: app=sensor
@@ -41,18 +53,6 @@ metadata:
   name: admission-control
 status:
   availableReplicas: 3
----
-# Scanner V2 (the "scanner" deployment) is still expected here because this step runs against
-# the *previous released* operator, before the upgrade in step 020. The current operator no
-# longer deploys Scanner V2.
-# TODO(ROX-36705): Remove this Scanner V2 deployment assertion once the oldest supported
-# upgrade-from operator version (see hack/upgrade-autoselect.sh) no longer deploys Scanner V2.
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner
-status:
-  availableReplicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
