@@ -3,10 +3,7 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -88,13 +85,15 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			tailoredProfile.GetName(), scannerType, profileID)
 	}
 
-	protoProfile := &storage.ComplianceOperatorProfile{
-		Id:          string(tailoredProfile.GetUID()),
-		ProfileId:   profileID,
-		Name:        tailoredProfile.GetName(),
-		Labels:      tailoredProfile.GetLabels(),
-		Annotations: tailoredProfile.GetAnnotations(),
-		Description: tailoredProfile.Spec.Description,
+	protoProfileV2 := &central.ComplianceOperatorProfileV2{
+		Id:           string(tailoredProfile.GetUID()),
+		ProfileId:    profileID,
+		Name:         tailoredProfile.GetName(),
+		Labels:       tailoredProfile.GetLabels(),
+		Annotations:  tailoredProfile.GetAnnotations(),
+		Description:  tailoredProfile.Spec.Description,
+		Title:        tailoredProfile.Spec.Title,
+		OperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
 	}
 
 	removedRules := set.NewStringSet()
@@ -106,50 +105,23 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		if removedRules.Contains(string(r)) {
 			continue
 		}
-		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: string(r),
+		protoProfileV2.Rules = append(protoProfileV2.Rules, &central.ComplianceOperatorProfileV2_Rule{
+			RuleName: string(r),
 		})
 	}
 	for _, rule := range tailoredProfile.Spec.EnableRules {
-		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: rule.Name,
+		protoProfileV2.Rules = append(protoProfileV2.Rules, &central.ComplianceOperatorProfileV2_Rule{
+			RuleName: rule.Name,
 		})
 	}
 
-	events := []*central.SensorEvent{
-		{
-			Id:     protoProfile.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorProfile{
-				ComplianceOperatorProfile: protoProfile,
-			},
+	event := &central.SensorEvent{
+		Id:     protoProfileV2.GetId(),
+		Action: action,
+		Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
+			ComplianceOperatorProfileV2: protoProfileV2,
 		},
 	}
 
-	if centralcaps.Has(centralsensor.ComplianceV2TailoredProfiles) {
-		protoProfileV2 := &central.ComplianceOperatorProfileV2{
-			Id:           protoProfile.GetId(),
-			ProfileId:    protoProfile.GetProfileId(),
-			Name:         protoProfile.GetName(),
-			Labels:       protoProfile.GetLabels(),
-			Annotations:  protoProfile.GetAnnotations(),
-			Description:  protoProfile.GetDescription(),
-			Title:        tailoredProfile.Spec.Title,
-			OperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
-		}
-
-		for _, rule := range protoProfile.GetRules() {
-			protoProfileV2.Rules = append(protoProfileV2.Rules, &central.ComplianceOperatorProfileV2_Rule{RuleName: rule.GetName()})
-		}
-
-		events = append(events, &central.SensorEvent{
-			Id:     protoProfileV2.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
-				ComplianceOperatorProfileV2: protoProfileV2,
-			},
-		})
-	}
-
-	return component.NewEvent(events...)
+	return component.NewEvent(event)
 }
