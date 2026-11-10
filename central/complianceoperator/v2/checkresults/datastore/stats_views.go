@@ -28,6 +28,8 @@ type ResultStatusCountByCluster struct {
 	ManualCount        int        `db:"compliance_manual_count"`
 	NotApplicableCount int        `db:"compliance_not_applicable_count"`
 	InconsistentCount  int        `db:"compliance_inconsistent_count"`
+	CurrentCount       int        `db:"compliance_current_count"`
+	StaleCount         int        `db:"compliance_stale_count"`
 	ClusterID          string     `db:"cluster_id"`
 	ClusterName        string     `db:"cluster"`
 	LastScanTime       *time.Time `db:"compliance_scan_last_executed_time_max"`
@@ -42,6 +44,9 @@ type ResourceResultCountByProfile struct {
 	ManualCount        int    `db:"compliance_manual_count"`
 	NotApplicableCount int    `db:"compliance_not_applicable_count"`
 	InconsistentCount  int    `db:"compliance_inconsistent_count"`
+	CurrentCount       int    `db:"compliance_current_count"`
+	StaleCount         int    `db:"compliance_stale_count"`
+	StaleClusterCount  int    `db:"compliance_stale_cluster_count"`
 	ProfileName        string `db:"compliance_profile_name"`
 }
 
@@ -54,6 +59,8 @@ type ResourceResultsByProfile struct {
 	ManualCount        int    `db:"compliance_manual_count"`
 	NotApplicableCount int    `db:"compliance_not_applicable_count"`
 	InconsistentCount  int    `db:"compliance_inconsistent_count"`
+	CurrentCount       int    `db:"compliance_current_count"`
+	StaleCount         int    `db:"compliance_stale_count"`
 	ProfileName        string `db:"compliance_profile_name"`
 	CheckName          string `db:"compliance_check_name"`
 	RuleName           string `db:"compliance_rule_name"`
