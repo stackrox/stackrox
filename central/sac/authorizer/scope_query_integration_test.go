@@ -194,7 +194,7 @@ func TestSQLScopeFreshnessAndCancellation(t *testing.T) {
 	}}}
 	ctx := context.Background()
 	newChecker := func() sac.ScopeCheckerCore {
-		return newScopeChecker([]permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "label-scope", Rules: rules})}, nil,
+		return newScopeChecker(ctx, []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "label-scope", Rules: rules})}, nil,
 			func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
 				return computeSQLScope(ctx, db, rules)
 			})
@@ -250,7 +250,7 @@ func TestSQLScopeFiltersDeploymentReads(t *testing.T) {
 		}}}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			checker := newScopeChecker([]permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "scope", Rules: rules})}, nil,
+			checker := newScopeChecker(ctx, []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "scope", Rules: rules})}, nil,
 				func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
 					return computeSQLScope(ctx, db, rules)
 				})

@@ -8,6 +8,7 @@ import (
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -32,20 +33,21 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 			return nil, err
 		}
 	}
-	return newScopeChecker(roles, trace, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
+	return newScopeChecker(ctx, roles, trace, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
 		return computeSQLScope(ctx, globaldb.GetPostgres(), rules)
 	}), nil
 }
 
-func newScopeChecker(roles []permissions.ResolvedRole, trace *observe.AuthzTrace,
+func newScopeChecker(ctx context.Context, roles []permissions.ResolvedRole, trace *observe.AuthzTrace,
 	compute func(*storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error),
 ) sac.ScopeCheckerCore {
 	scc := &globalScopeChecker{
 		roles: roles,
 		trace: trace,
 		cache: &authorizerDataCache{
+			ctx:                       ctx,
 			compute:                   compute,
-			effectiveAccessScopesByID: make(map[string]scopeResult),
+			effectiveAccessScopesByID: make(map[string]*scopeResult),
 			trace:                     trace,
 		},
 	}
@@ -277,37 +279,48 @@ func errorScopeChecker(level interface{}, scopeKey sac.ScopeKey) sac.ScopeChecke
 }
 
 type authorizerDataCache struct {
+	ctx                       context.Context
 	lock                      sync.Mutex
 	compute                   func(*storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error)
-	effectiveAccessScopesByID map[string]scopeResult
+	effectiveAccessScopesByID map[string]*scopeResult
 
 	// Should be nil unless authorization tracing is enabled for this instance.
 	trace *observe.AuthzTrace
 }
 
 type scopeResult struct {
-	tree *effectiveaccessscope.ScopeTree
-	err  error
+	ready chan struct{}
+	tree  *effectiveaccessscope.ScopeTree
+	err   error
 }
 
 func (c *authorizerDataCache) getEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	if result, found := c.effectiveAccessScopesByID[accessScope.GetId()]; found {
-		return result.tree, result.err
+	result, loaded := concurrency.WithLock2(&c.lock, func() (*scopeResult, bool) {
+		if result := c.effectiveAccessScopesByID[accessScope.GetId()]; result != nil {
+			return result, true
+		}
+		result := &scopeResult{ready: make(chan struct{})}
+		// nil accessScope has empty ("") id => it will be cached as well.
+		c.effectiveAccessScopesByID[accessScope.GetId()] = result
+		return result, false
+	})
+	if loaded {
+		select {
+		case <-result.ready:
+			return result.tree, result.err
+		case <-c.ctx.Done():
+			return nil, c.ctx.Err()
+		}
 	}
-	eas, err := c.computeEffectiveAccessScope(accessScope)
 
-	// nil accessScope has empty ("") id => it will be cached as well
-	c.effectiveAccessScopesByID[accessScope.GetId()] = scopeResult{tree: eas, err: err}
-	if err != nil {
-		return nil, err
+	// Publish one result per scope without holding the cache lock during SQL or
+	// tree construction. Other scopes and cached results can proceed meanwhile.
+	defer close(result.ready)
+	result.tree, result.err = c.computeEffectiveAccessScope(accessScope)
+	if result.err == nil && c.trace != nil {
+		c.trace.RecordEffectiveAccessScope(accessScope.GetId(), accessScope.GetName(), result.tree.String())
 	}
-	if c.trace != nil {
-		c.trace.RecordEffectiveAccessScope(accessScope.GetId(), accessScope.GetName(), eas.String())
-	}
-
-	return eas, nil
+	return result.tree, result.err
 }
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {

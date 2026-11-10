@@ -1,6 +1,7 @@
 package authorizer
 
 import (
+	"context"
 	"testing"
 
 	rolePkg "github.com/stackrox/rox/central/role"
@@ -20,7 +21,7 @@ func newGlobalScopeCheckerCore(clusters []effectiveaccessscope.Cluster, namespac
 	roles []permissions.ResolvedRole, trace *observe.AuthzTrace,
 ) sac.ScopeCheckerCore {
 	trace.RecordKnownClustersAndNamespaces(clusters, namespaces)
-	return newScopeChecker(roles, trace, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
+	return newScopeChecker(context.Background(), roles, trace, func(rules *storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
 		return effectiveaccessscope.ComputeEffectiveAccessScope(rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 	})
 }

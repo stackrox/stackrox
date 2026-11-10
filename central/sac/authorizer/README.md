@@ -9,6 +9,8 @@ required. Ordinary cluster and namespace store reads also go to PostgreSQL.
 Scope metadata is read on first use of an access scope in a request. The resulting
 tree or query error is cached by scope ID for the rest of that request and shared
 across resources and access modes. Concurrent checks cannot duplicate a lookup.
+Lookups for different scopes run independently; SQL and tree construction do not
+hold the shared cache mutex. Checks waiting for the same scope can be canceled.
 Permissions remain paired with their role's scope. Built-in unrestricted/deny-all
 scopes and global resources do not query cluster or namespace metadata. Queries
 retain request cancellation and deadlines; failures never grant access.
