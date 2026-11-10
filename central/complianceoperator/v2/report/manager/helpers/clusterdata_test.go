@@ -197,6 +197,61 @@ func TestGetClusterData(t *testing.T) {
 		assert.NoError(tt, err)
 		assertClusterData(tt, expectedClusterData, clusterData)
 	})
+	t.Run("running scan excluded from start times", func(tt *testing.T) {
+		scan1Time := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
+		scan2Time := timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC))
+		gomock.InOrder(
+			scanStore.EXPECT().
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
+					Status:          &storage.ScanStatus{Phase: "DONE"},
+				},
+				{
+					ScanName:        "scan-2",
+					LastStartedTime: scan2Time,
+					Status:          &storage.ScanStatus{Phase: "RUNNING"},
+				},
+			}, nil),
+			scanStore.EXPECT().
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
+					Status:          &storage.ScanStatus{Phase: "DONE"},
+				},
+				{
+					ScanName:        "scan-2",
+					LastStartedTime: scan2Time,
+					Status:          &storage.ScanStatus{Phase: "RUNNING"},
+				},
+			}, nil),
+		)
+		expectedClusterData := map[string]*report.ClusterData{
+			"cluster-1": {
+				ClusterId:   "cluster-1",
+				ClusterName: "cluster-1",
+				ScanNames:   []string{"scan-1", "scan-2"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+				},
+			},
+			"cluster-2": {
+				ClusterId:   "cluster-2",
+				ClusterName: "cluster-2",
+				ScanNames:   []string{"scan-1", "scan-2"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+				},
+			},
+		}
+		clusterData, err := GetClusterData(ctx, reportData, nil, scanStore)
+		assert.NoError(tt, err)
+		assertClusterData(tt, expectedClusterData, clusterData)
+	})
 	t.Run("with failed clusters", func(tt *testing.T) {
 		scan1Time := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
 		scan2Time := timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC))
@@ -264,6 +319,25 @@ func TestGetClusterData(t *testing.T) {
 		assert.NoError(tt, err)
 		assertClusterData(tt, expectedClusterData, clusterData)
 	})
+}
+
+func TestShouldFilterByStartedTime(t *testing.T) {
+	cases := map[string]struct {
+		phase    string
+		expected bool
+	}{
+		"PENDING":     {phase: "PENDING", expected: false},
+		"LAUNCHING":   {phase: "LAUNCHING", expected: false},
+		"RUNNING":     {phase: "RUNNING", expected: false},
+		"AGGREGATING": {phase: "AGGREGATING", expected: true},
+		"DONE":        {phase: "DONE", expected: true},
+		"empty phase": {phase: "", expected: true},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, shouldFilterByStartedTime(tc.phase))
+		})
+	}
 }
 
 func assertClusterData(t *testing.T, expected map[string]*report.ClusterData, actual map[string]*report.ClusterData) {
