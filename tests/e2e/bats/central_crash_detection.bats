@@ -27,8 +27,11 @@ setup() {
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
     # Default deployment fixture: never-ready.
     KUBECTL_DEPLOY_READY="false"
+    # When set to "true", the kubectl stub's pod-query exits nonzero (simulates
+    # API-server failure). Reset per test; default is normal (exit 0).
+    KUBECTL_POD_QUERY_FAIL="false"
 
-    export KUBECTL_CALL_LOG KUBECTL_POD_FIXTURE KUBECTL_DEPLOY_READY
+    export KUBECTL_CALL_LOG KUBECTL_POD_FIXTURE KUBECTL_DEPLOY_READY KUBECTL_POD_QUERY_FAIL
 
     # Stub envsubst (not available in all dev environments; the CI image has it).
     echo '#!/usr/bin/env bash' > "${BIN_DIR}/envsubst"
@@ -41,6 +44,11 @@ setup() {
 echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
 case "$*" in
     *"get pods"*|*"get pod"*"-l"*)
+        # Configurable failure mode: simulate API-server error.
+        if [[ "${KUBECTL_POD_QUERY_FAIL}" == "true" ]]; then
+            echo "error: the server is currently unable to handle the request" >&2
+            exit 1
+        fi
         # Pod listing — return the fixture if set, else empty.
         if [[ -n "${KUBECTL_POD_FIXTURE:-}" && -f "${KUBECTL_POD_FIXTURE}" ]]; then
             cat "${KUBECTL_POD_FIXTURE}"
@@ -176,10 +184,12 @@ STUB
 }
 
 @test "check_central_pod_error_state handles kubectl failure gracefully" {
-    # Simulate kubectl failure by pointing to a nonexistent fixture.
-    KUBECTL_POD_FIXTURE="/nonexistent/path.json"
+    # Simulate kubectl/API-server failure: pod query returns nonzero exit.
+    KUBECTL_POD_QUERY_FAIL="true"
+    export KUBECTL_POD_QUERY_FAIL
     run check_central_pod_error_state stackrox
-    assert_failure   # returns 1 = no crash (safe default)
+    assert_failure   # returns 1 = no crash (safe default on API error)
+    refute_output --partial "crash state detected"
 }
 
 @test "check_central_pod_error_state handles empty pod list" {
@@ -271,11 +281,10 @@ STUB
     KUBECTL_DEPLOY_READY="false"
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
 
-    # Use a wrapper script to source lib.sh and call wait_for_api in a
-    # subprocess. timeout(1) cannot call an unexported shell function directly,
-    # so we use a bash -c wrapper. The 30-second external timeout is a safety
-    # net (sleep is mocked to be instant, so this should complete in <1s).
-    run bash -c '
+    # timeout(1) enforces a 30-second safety guard: with mocked sleep the
+    # crash check fires in <1s, so hitting 30s means a runaway loop. timeout
+    # cannot call unexported shell functions, so we wrap in bash -c.
+    run timeout 30 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
         export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
         export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
@@ -290,7 +299,7 @@ STUB
         MAX_WAIT_SECONDS=300 wait_for_api stackrox
     ' 2>&1
 
-    # Assert intended failure (exit 1 from die), NOT timeout (exit 124).
+    # Assert intended failure (exit 1 from die), NOT timeout guard (exit 124).
     assert_failure
     [[ "$status" -eq 1 ]]
 
@@ -306,10 +315,10 @@ STUB
     assert [ -f "${KUBECTL_CALL_LOG}" ]
     run grep -c "get pods" "${KUBECTL_CALL_LOG}"
     assert_success
-    # Crash check should have fired (at iteration 5), meaning at most ~5
-    # deployment readiness checks plus one crash check.
+    # At least 1 deployment readiness query must have occurred.
     local deploy_checks
     deploy_checks="$(grep -c "get deploy" "${KUBECTL_CALL_LOG}" || true)"
+    [[ "$deploy_checks" -ge 1 ]]
     # Fail-fast: should have far fewer than MAX_WAIT_SECONDS/5=60 iterations.
     [[ "$deploy_checks" -le 10 ]]
 }
@@ -318,7 +327,8 @@ STUB
     KUBECTL_DEPLOY_READY="false"
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
 
-    run bash -c '
+    # 30-second timeout guard; crash detection completes in <1s with mocked sleep.
+    run timeout 30 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
         export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
         export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
@@ -331,7 +341,9 @@ STUB
         MAX_WAIT_SECONDS=300 wait_for_api stackrox
     ' 2>&1
 
+    # Intended exit 1 from die, not timeout guard 124.
     assert_failure
+    [[ "$status" -eq 1 ]]
     # Log marker from kubectl stub: diagnostic logs are shown.
     assert_output --partial "migration schema check failed"
 }
@@ -349,7 +361,9 @@ STUB
     KUBECTL_DEPLOY_READY="true"
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
 
-    run bash -c '
+    # 30-second timeout guard; ping-loop crash detection fires in <1s with
+    # mocked sleep/curl.
+    run timeout 30 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
         export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
         export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
@@ -365,6 +379,7 @@ STUB
         MAX_WAIT_SECONDS=300 wait_for_api stackrox
     ' 2>&1
 
+    # Intended exit 1 from die/exit, not timeout guard 124.
     assert_failure
     [[ "$status" -eq 1 ]]
     # Crash diagnostics from the ping-loop check.
