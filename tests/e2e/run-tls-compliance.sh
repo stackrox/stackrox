@@ -218,7 +218,7 @@ check_pod_logs_for_tls_errors() {
 }
 
 validate_scan_results() {
-    local central_db_status tls13_failures mlkem_failures
+    local central_db_status tls_version_failures mlkem_failures
 
     if [[ ! -f "$SCAN_RESULTS" ]]; then
         fail "Scan results not found at $SCAN_RESULTS"
@@ -252,20 +252,24 @@ validate_scan_results() {
         info "central-db:5432 TLS OK."
     fi
 
-    # All OK endpoints must support TLS 1.3.
-    tls13_failures=$(jq -r '
+    # All OK endpoints must offer only TLS 1.3 (profile sets minTLSVersion: VersionTLS13).
+    tls_version_failures=$(jq -r '
         .ip_results[]? |
         (.openshift_component.component // .pod.Name) as $name |
         .port_results[]? |
         select(.status == "OK") |
-        select(.tls13_supported != true) |
-        "\($name):\(.port)"
+        select(
+            (.tls_versions | type) != "array" or
+            (.tls_versions | length) == 0 or
+            any(.tls_versions[]; . != "TLSv1.3")
+        ) |
+        "\($name):\(.port) versions=\(.tls_versions // [] | join(","))"
     ' "$SCAN_RESULTS" | sort -u || true)
 
-    if [[ -n "$tls13_failures" ]]; then
-        fail "Endpoints without TLS 1.3: ${tls13_failures}"
+    if [[ -n "$tls_version_failures" ]]; then
+        fail "Endpoints not offering only TLS 1.3: ${tls_version_failures}"
     else
-        info "All TLS endpoints support TLS 1.3."
+        info "All TLS endpoints offer only TLS 1.3."
     fi
 
     # All OK endpoints must support ML-KEM (with temporary PG exceptions).
