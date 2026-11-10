@@ -1,7 +1,6 @@
 # This file contains basic configuration options for all services
 
 centralEndpoint: "central.{{ required "unknown namespace" ._rox._namespace }}.svc:443"
-createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
 
 {{- if .Release.IsInstall }}
 createSecrets: true

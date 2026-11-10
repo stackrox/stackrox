@@ -459,11 +459,6 @@ cli: cli-build cli-install
 .PHONY: cli_host-arch
 cli_host-arch: roxctl_$(HOST_OS)-$(GOARCH) roxagent_$(HOST_OS)-$(GOARCH)
 
-upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
-
-bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep
-	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/upgrader
-
 bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/admission-control
 
@@ -490,7 +485,6 @@ sensor-kubernetes-build-dockerized: build-volumes
 .PHONY: sensor-build
 sensor-build:
 	$(GOBUILD) sensor/kubernetes sensor/admission-control
-	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 
 .PHONY: sensor-kubernetes-build
 sensor-kubernetes-build:
@@ -513,7 +507,6 @@ main-build-nodeps:
 		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
-		sensor/upgrader \
 		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 ifndef CI
@@ -719,7 +712,6 @@ endif
 endif
 	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
 	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
 	cp bin/linux_$(GOARCH)/roxagent          image/rhel/bin/roxagent
