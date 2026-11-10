@@ -93,7 +93,7 @@ require (
 	github.com/onsi/gomega v1.44.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.520
+	github.com/openshift-online/ocm-sdk-go v0.1.521
 	github.com/openshift/api v0.0.0-20261026215420-da0032bf0c5f
 	github.com/openshift/client-go v0.0.0-20261027103500-48133ed95dad
 	github.com/openshift/controller-runtime-common v0.0.0-20261026124434-bdfc411d93cd
@@ -382,8 +382,8 @@ require (
 	github.com/olekukonko/errors v1.2.0 // indirect
 	github.com/olekukonko/ll v0.1.6 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
-	github.com/openshift-online/ocm-api-model/clientapi v0.0.472 // indirect
-	github.com/openshift-online/ocm-api-model/model v0.0.472 // indirect
+	github.com/openshift-online/ocm-api-model/clientapi v0.0.473 // indirect
+	github.com/openshift-online/ocm-api-model/model v0.0.473 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
 	github.com/pandatix/go-abnf v0.5.3 // indirect
