@@ -215,6 +215,7 @@ jobs:
           if [ -n "$GOCACHE_MEMSNAP" ]; then
             kill $MEMSNAP_PID 2>/dev/null || true
             echo "=== memsnap (15s intervals):"; tail -30 /tmp/memsnap.log
+            echo "=== tmpfs mount limits:"; df -h /dev/shm /tmp 2>/dev/null || true
             echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill 2>/dev/null || true
           fi
 
