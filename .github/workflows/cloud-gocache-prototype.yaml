@@ -375,6 +375,90 @@ jobs:
               go build -tags test,test_e2e ./... 2>&1 | tail -5
               go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -5 || true
               ;;
+            docker)
+              # Docker layer caching experiment: build a minimal image
+              # with COPY --from=cached, comparing cold vs warm builds.
+              # Uses the roxctl binary from the link-output cache.
+              echo "=== Docker layer caching experiment ==="
+
+              # First: build roxctl (with outbin cache — fast on warm runs)
+              if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null; then
+                echo "docker: roxctl restored from outbin cache"
+              else
+                rm -f bin/linux_amd64/roxctl
+                make roxctl_linux-amd64
+              fi
+              ROXCTL_SIZE=$(stat -c%s bin/linux_amd64/roxctl 2>/dev/null || echo 0)
+              echo "docker: roxctl size: $ROXCTL_SIZE bytes"
+
+              # Create a minimal Dockerfile with two stages:
+              # 1. "cached" stage — references a previously-built image
+              # 2. Final stage — COPY --from=cached for unchanged, from build context for changed
+              mkdir -p /tmp/docker-test
+
+              # Build a "previous" image (simulates the registry's cached image)
+              echo "FROM scratch
+COPY bin/linux_amd64/roxctl /roxctl" > /tmp/docker-test/Dockerfile.base
+
+              echo "--- Phase 1: cold build (no cache) ---"
+              COLD_START=$(date +%s%N)
+              docker build -t docker-test-cold -f /tmp/docker-test/Dockerfile.base . 2>&1 | tail -3
+              COLD_END=$(date +%s%N)
+              COLD_MS=$(( (COLD_END - COLD_START) / 1000000 ))
+              echo "Cold build: ${COLD_MS}ms"
+
+              echo ""
+              echo "--- Phase 2: warm build (COPY --link, same content) ---"
+              echo "FROM scratch
+COPY --link bin/linux_amd64/roxctl /roxctl" > /tmp/docker-test/Dockerfile.warm
+
+              WARM_START=$(date +%s%N)
+              docker build -t docker-test-warm -f /tmp/docker-test/Dockerfile.warm . 2>&1 | tail -3
+              WARM_END=$(date +%s%N)
+              WARM_MS=$(( (WARM_END - WARM_START) / 1000000 ))
+              echo "Warm build (--link): ${WARM_MS}ms"
+
+              echo ""
+              echo "--- Phase 3: --from=cached (reference existing layer) ---"
+              # Create a "cached" image that already has the binary
+              echo "FROM docker-test-cold AS cached
+FROM scratch
+COPY --link --from=cached /roxctl /roxctl" > /tmp/docker-test/Dockerfile.cached
+
+              CACHED_START=$(date +%s%N)
+              docker build -t docker-test-cached -f /tmp/docker-test/Dockerfile.cached /tmp/docker-test 2>&1 | tail -3
+              CACHED_END=$(date +%s%N)
+              CACHED_MS=$(( (CACHED_END - CACHED_START) / 1000000 ))
+              echo "Cached build (--from=cached): ${CACHED_MS}ms"
+
+              echo ""
+              echo "--- Phase 4: --from=cached with buildx (lazy layer reference) ---"
+              if docker buildx version >/dev/null 2>&1; then
+                BUILDX_START=$(date +%s%N)
+                docker buildx build --tag docker-test-buildx \
+                  -f /tmp/docker-test/Dockerfile.cached \
+                  --push=false --load /tmp/docker-test 2>&1 | tail -3
+                BUILDX_END=$(date +%s%N)
+                BUILDX_MS=$(( (BUILDX_END - BUILDX_START) / 1000000 ))
+                echo "Buildx cached (--from=cached): ${BUILDX_MS}ms"
+              else
+                echo "(buildx not available)"
+              fi
+
+              echo ""
+              echo "--- Results ---"
+              echo "Cold (no cache):        ${COLD_MS}ms"
+              echo "Warm (--link, same):    ${WARM_MS}ms"
+              echo "Cached (--from=cached): ${CACHED_MS}ms"
+              [ -n "${BUILDX_MS:-}" ] && echo "Buildx (--from=cached): ${BUILDX_MS}ms"
+
+              echo ""
+              echo "--- Verify images have same content ---"
+              docker run --rm docker-test-cold ls -la /roxctl 2>/dev/null | awk '{print "cold:   ", $5, $9}'
+              docker run --rm docker-test-cached ls -la /roxctl 2>/dev/null | awk '{print "cached: ", $5, $9}'
+
+              # Clean up test images
+              docker rmi docker-test-cold docker-test-warm docker-test-cached docker-test-buildx 2>/dev/null || true
             testexec)
               # Item 4: actually EXECUTE a subset of tests to measure
               # the test-execution stage (not just compile)
@@ -385,6 +469,7 @@ jobs:
               echo "=== executing medium tests (pkg/mtls, pkg/search, pkg/stringutils) ==="
               time go test -count=1 -timeout 300s ./pkg/mtls/... ./pkg/search/... ./pkg/stringutils/... 2>&1 | tail -20
               ;;
+          esac
           esac
           echo "=== workload finished at $(date -u +%H:%M:%S) ==="
           if [ -n "$GOCACHE_MEMSNAP" ]; then
