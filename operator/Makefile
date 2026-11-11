@@ -466,13 +466,18 @@ deploy-previous-via-chart: kuttl bundle-post-process ## Deploy replaced version 
 	set -x ;\
 	TEST_NAMESPACE=$(TEST_NAMESPACE) ./hack/generate-and-install-chart.sh "$${replaced_version}"
 
+# Shared recipe body for upgrade-via-olmv0/olmv1 and upgrade-dirty-tag-via-olmv0/olmv1.
+define upgrade_via_olm
+KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(1) $(2) $(TEST_NAMESPACE) $(INSTALL_VERSION)
+endef
+
 .PHONY: upgrade-via-olmv0
 upgrade-via-olmv0: kuttl
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
+	$(call upgrade_via_olm,./hack/olm-operator-upgrade.sh)
 
 .PHONY: upgrade-dirty-tag-via-olmv0
 upgrade-dirty-tag-via-olmv0: kuttl
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
+	$(call upgrade_via_olm,./hack/olm-operator-upgrade.sh,--allow-dirty-tag)
 
 .PHONY: deploy-via-olmv1
 deploy-via-olmv1: ## Deploy operator image to the cluster using OLMv1.
@@ -486,11 +491,11 @@ deploy-previous-via-olmv1: kuttl bundle-post-process ## Deploy replaced version 
 
 .PHONY: upgrade-via-olmv1
 upgrade-via-olmv1: kuttl
-	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
+	$(call upgrade_via_olm,./hack/olmv1-operator-upgrade.sh)
 
 .PHONY: upgrade-dirty-tag-via-olmv1
 upgrade-dirty-tag-via-olmv1: kuttl
-	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
+	$(call upgrade_via_olm,./hack/olmv1-operator-upgrade.sh,--allow-dirty-tag)
 
 # Backwards-compatible stubs for renamed targets (point to OLMv0 versions).
 # Deliberately not documented with `## ...`: they are aliases, not separate capabilities,
