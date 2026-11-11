@@ -33,10 +33,11 @@ const (
 	colCVE         = 6
 	colFixable     = 7
 	colFixedBy     = 8
-	colSeverity    = 9
-	colCVSS        = 10
-	colNVDCVSS     = 11
-	colEPSS        = 12
+	colFixDate     = 9
+	colSeverity    = 10
+	colCVSS        = 11
+	colNVDCVSS     = 12
+	colEPSS        = 13
 )
 
 // colOf returns the index of the named column in the current CSV layout, which
@@ -235,6 +236,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 	}
 	fixDateColumn := slices.Index(rows[0], "Fix Date")
 	s.Require().NotEqual(-1, fixDateColumn)
+	s.Require().Equal(colFixDate, fixDateColumn)
 	fixDatesByCVE := map[string]string{
 		"CVE-fixable_critical-c1_ns1_dep0_img_comp": "July 01, 2024",
 		"CVE-fixable_critical-w0_img_comp":          "July 01, 2024",
