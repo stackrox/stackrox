@@ -397,8 +397,7 @@ jobs:
               mkdir -p /tmp/docker-test
 
               # Build a "previous" image (simulates the registry's cached image)
-              echo "FROM scratch
-COPY bin/linux_amd64/roxctl /roxctl" > /tmp/docker-test/Dockerfile.base
+              echo 'FROM scratch' > /tmp/docker-test/Dockerfile.base && echo 'COPY bin/linux_amd64/roxctl /roxctl' >> /tmp/docker-test/Dockerfile.base
 
               echo "--- Phase 1: cold build (no cache) ---"
               COLD_START=$(date +%s%N)
@@ -409,8 +408,7 @@ COPY bin/linux_amd64/roxctl /roxctl" > /tmp/docker-test/Dockerfile.base
 
               echo ""
               echo "--- Phase 2: warm build (COPY --link, same content) ---"
-              echo "FROM scratch
-COPY --link bin/linux_amd64/roxctl /roxctl" > /tmp/docker-test/Dockerfile.warm
+              echo 'FROM scratch' > /tmp/docker-test/Dockerfile.warm && echo 'COPY --link bin/linux_amd64/roxctl /roxctl' >> /tmp/docker-test/Dockerfile.warm
 
               WARM_START=$(date +%s%N)
               docker build -t docker-test-warm -f /tmp/docker-test/Dockerfile.warm . 2>&1 | tail -3
@@ -421,9 +419,7 @@ COPY --link bin/linux_amd64/roxctl /roxctl" > /tmp/docker-test/Dockerfile.warm
               echo ""
               echo "--- Phase 3: --from=cached (reference existing layer) ---"
               # Create a "cached" image that already has the binary
-              echo "FROM docker-test-cold AS cached
-FROM scratch
-COPY --link --from=cached /roxctl /roxctl" > /tmp/docker-test/Dockerfile.cached
+              echo 'FROM docker-test-cold AS cached' > /tmp/docker-test/Dockerfile.cached && echo 'FROM scratch' >> /tmp/docker-test/Dockerfile.cached && echo 'COPY --link --from=cached /roxctl /roxctl' >> /tmp/docker-test/Dockerfile.cached
 
               CACHED_START=$(date +%s%N)
               docker build -t docker-test-cached -f /tmp/docker-test/Dockerfile.cached /tmp/docker-test 2>&1 | tail -3
