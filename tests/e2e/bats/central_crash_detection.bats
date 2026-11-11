@@ -849,55 +849,100 @@ HANGSTUB
 }
 
 @test "exact deadline boundary: >= fires at max_seconds without extra poll cycle" {
-    # Real wall-clock test: max_seconds=1 with no-op sleep. Deployment never
-    # ready. The >= comparison fires after 1 second of real elapsed time.
-    # Count deployment queries: with >=, the loop terminates as soon as
-    # elapsed reaches 1s. With old >, it would allow another full cycle
-    # (query + sleep + query) before timing out, producing more queries.
+    # Deterministic test: controlled date returns 100 until a flag file
+    # exists, then 103 (= start + max_seconds). The crash helper at
+    # iteration 5 creates the flag and returns 1 (no crash). With >=,
+    # elapsed==max_seconds fires the timeout immediately. With old >,
+    # an extra poll sleep + deploy query would occur after the helper.
     KUBECTL_DEPLOY_READY="false"
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-healthy.json"
 
-    local start_time end_time elapsed
-    start_time="$(date +%s)"
+    local FLAG="${BATS_TEST_TMPDIR}/clock-flag"
+    local CALL_ORDER="${BATS_TEST_TMPDIR}/call-order.log"
+    rm -f "${FLAG}"; : > "${CALL_ORDER}"
+
     run timeout 10 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
         export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
         export PATH='"'${BIN_DIR}:${PATH}'"'
+        export FLAG='"'${FLAG}'"'
+        export CALL_ORDER='"'${CALL_ORDER}'"'
         source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
         retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
         export -f retrying_kubectl
-        sleep() { :; }
+
+        # Controlled clock: 100 before flag, 103 after.
+        date() {
+            case "$*" in
+                *+%s*) if [ -f "${FLAG}" ]; then echo 103; else echo 100; fi ;;
+                *) command date "$@" ;;
+            esac
+        }
+        export -f date
+
+        # Crash helper: record marker, create flag, return no-crash.
+        check_central_pod_error_state() {
+            echo "helper-finished" >> "${CALL_ORDER}"
+            touch "${FLAG}"
+            return 1
+        }
+        export -f check_central_pod_error_state
+
+        # Sleep records itself.
+        sleep() { echo "poll-sleep" >> "${CALL_ORDER}"; }
         export -f sleep
-        wait_for_ready_deployment stackrox central 1
+
+        wait_for_ready_deployment stackrox central 3
     ' 2>&1
-    end_time="$(date +%s)"
-    elapsed=$(( end_time - start_time ))
 
     assert_failure
     [[ "$status" -eq 1 ]]
     assert_output --partial "wait_for_ready_deployment() timeout"
     refute_output --partial "crash state"
-    # Elapsed must be close to 1s (the deadline), not 10s (outer guard).
-    [[ "$elapsed" -ge 1 ]]
-    [[ "$elapsed" -le 4 ]]
+
+    # Four poll sleeps allowed (iterations 1-4 before the 5th triggers helper).
+    # After helper-finished marker: NO poll-sleep, NO deploy readiness query.
+    local after_helper
+    after_helper="$(sed -n '/helper-finished/,$ p' "${CALL_ORDER}" | grep -c 'poll-sleep' || true)"
+    [[ "$after_helper" -eq 0 ]]
+
+    # Verify deploy queries stopped after helper (timeout diagnostics use
+    # "get pod" and "get deploy" but those are final timeout output, not
+    # readiness poll queries which use "get deploy/central").
+    local deploy_poll_after
+    deploy_poll_after="$(grep -c 'get deploy/central' "${KUBECTL_CALL_LOG}" || true)"
+    # First 5 iterations queried deploy/central. No more after helper.
+    [[ "$deploy_poll_after" -le 6 ]]
 }
 
-@test "exact deadline boundary: nonCentral deployment times out at >= boundary" {
-    # Simple guard: nonCentral deployment also uses >= for timeout.
+@test "exact deadline boundary: nonCentral >= exits without poll sleep" {
+    # Controlled date fixed at 100 so elapsed==0==max_seconds immediately.
+    # With >=, timeout fires on first check without a poll sleep.
+    # With old >, elapsed(0) is NOT > 0, so it would sleep and loop.
     KUBECTL_DEPLOY_READY="false"
+    local CALL_ORDER="${BATS_TEST_TMPDIR}/call-order.log"
+    : > "${CALL_ORDER}"
+
     run timeout 10 bash -c '
+        export CALL_ORDER='"'${CALL_ORDER}'"'
         export PATH='"'${BIN_DIR}:${PATH}'"'
         source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
         retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
         export -f retrying_kubectl
-        sleep() { :; }
+        date() { case "$*" in *+%s*) echo 100 ;; *) command date "$@" ;; esac; }
+        export -f date
+        sleep() { echo "poll-sleep" >> "${CALL_ORDER}"; }
         export -f sleep
         wait_for_ready_deployment stackrox scanner-v4-indexer 0
     ' 2>&1
+
     assert_failure
     [[ "$status" -eq 1 ]]
     assert_output --partial "wait_for_ready_deployment() timeout"
-    refute_output --partial "crash state"
+    # With >=, no poll sleep occurs (timeout fires immediately).
+    local sleep_count
+    sleep_count="$(grep -c 'poll-sleep' "${CALL_ORDER}" || true)"
+    [[ "$sleep_count" -eq 0 ]]
 }
 
 @test "wait_for_api budget stops loop on own deadline not after 149 more curls" {
