@@ -182,7 +182,7 @@ class Kubernetes {
     @Retry()
     void ensureNamespaceExists(String ns) {
         Namespace namespace = newNamespace(ns)
-        createNamespaceUnlessTerminating(ns) {
+        provisionNamespaceUnlessTerminating(ns) {
             client.namespaces().create(namespace)
         }
 
@@ -2842,8 +2842,8 @@ class Kubernetes {
     }
 
     /**
-     * Creates a namespace through create, waiting out an existing namespace
-     * that is Terminating before trying again.
+     * Provisions a namespace through the given create, waiting out an existing
+     * namespace that is Terminating before trying again.
      *
      * A namespace that is still listed but has a deletionTimestamp is being
      * emptied by the namespace controller. Creating objects in it succeeds and
@@ -2854,7 +2854,7 @@ class Kubernetes {
      *        KubernetesClientException with code 409 when it already exists
      */
     @CompileDynamic
-    protected void createNamespaceUnlessTerminating(String ns, Closure create) {
+    protected void provisionNamespaceUnlessTerminating(String ns, Closure create) {
         while (true) {
             try {
                 create.call()
@@ -2874,7 +2874,7 @@ class Kubernetes {
     }
 
     @CompileDynamic
-    private def getNamespaceQuietly(String ns) {
+    private Namespace getNamespaceQuietly(String ns) {
         try {
             return client.namespaces().withName(ns).get()
         } catch (KubernetesClientException e) {

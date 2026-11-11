@@ -40,7 +40,7 @@ class OpenShift extends Kubernetes {
                 .endMetadata()
                 .build()
 
-        createNamespaceUnlessTerminating(ns) {
+        provisionNamespaceUnlessTerminating(ns) {
             oClient.projectrequests().create(projectRequest)
         }
 
