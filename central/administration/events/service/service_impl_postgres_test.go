@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -252,16 +253,17 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 func (s *servicePostgresTestSuite) TestFilterByCluster() {
 	dep := &storage.Deployment{
-		Id:          "dep-1",
+		Id:          uuid.NewV4().String(),
 		Name:        "my-app",
 		Namespace:   "default",
-		ClusterId:   "cluster-1",
+		ClusterId:   uuid.NewV4().String(),
 		ClusterName: "test-cluster",
 		Containers: []*storage.Container{
 			{
 				Name: "main",
 				Image: &storage.ContainerImage{
-					Id: "sha256:abc",
+					Id:   "sha256:abc",
+					IdV2: "image-abc",
 				},
 			},
 		},
@@ -273,7 +275,7 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 		Hint:         "hint",
 		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:      "scan failed for sha256:abc",
-		ResourceID:   "sha256:abc",
+		ResourceID:   "image-abc",
 		ResourceType: "Image",
 		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
 	}
@@ -297,7 +299,7 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 	})
 	s.NoError(err)
 	s.Require().Len(resp.GetEvents(), 1)
-	s.Equal("sha256:abc", resp.GetEvents()[0].GetResource().GetId())
+	s.Equal("image-abc", resp.GetEvents()[0].GetResource().GetId())
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
