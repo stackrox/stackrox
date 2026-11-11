@@ -51,4 +51,10 @@ func (s *migrationTestSuite) TestMigration() {
 	// Ensure the table is gone after the migration runs.
 	err = dbs.PostgresDB.QueryRow(dbs.DBCtx, "SELECT 1 FROM information_schema.tables WHERE table_name = $1", oldSchema.SensorUpgradeConfigsTableName).Scan(&num)
 	s.Require().ErrorIs(err, pgx.ErrNoRows)
+
+	// Idempotency: running again (e.g. roll-forward after a rollback) must be a no-op,
+	// even when the table is already gone.
+	s.Require().NoError(migration.Run(dbs))
+	err = dbs.PostgresDB.QueryRow(dbs.DBCtx, "SELECT 1 FROM information_schema.tables WHERE table_name = $1", oldSchema.SensorUpgradeConfigsTableName).Scan(&num)
+	s.Require().ErrorIs(err, pgx.ErrNoRows)
 }
