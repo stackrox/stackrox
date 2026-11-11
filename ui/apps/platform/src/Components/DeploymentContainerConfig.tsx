@@ -8,17 +8,37 @@ import {
     StackItem,
 } from '@patternfly/react-core';
 
-import type { Container } from 'types/deployment.proto';
-import ContainerImageInfo from 'Components/ContainerImageInfo';
-import ContainerResourcesInfo from 'Components/ContainerResourcesInfo';
-import ContainerVolumesInfo from 'Components/ContainerVolumesInfo';
-import ContainerSecretsInfo from 'Components/ContainerSecretsInfo';
 import ContainerArgumentsInfo from 'Components/ContainerArgumentsInfo';
 import ContainerCommandInfo from 'Components/ContainerCommandInfo';
+import ContainerImageInfo from 'Components/ContainerImageInfo';
+import type { ContainerImageSummary } from 'Components/ContainerImageInfo';
+import ContainerResourcesInfo from 'Components/ContainerResourcesInfo';
+import ContainerSecretsInfo from 'Components/ContainerSecretsInfo';
+import ContainerVolumesInfo from 'Components/ContainerVolumesInfo';
 import SecurityContext from 'Components/SecurityContext';
+import type {
+    ContainerConfig,
+    ContainerResources,
+    ContainerSecurityContext,
+    ContainerType,
+    ContainerVolume,
+    EmbeddedSecret,
+} from 'types/deployment.proto';
+
+export type DeploymentContainerView = {
+    id: string;
+    name: string;
+    type: ContainerType;
+    image: ContainerImageSummary | null;
+    resources: ContainerResources | null;
+    volumes: ContainerVolume[];
+    secrets: EmbeddedSecret[];
+    config: Pick<ContainerConfig, 'args' | 'command'> | null;
+    securityContext: ContainerSecurityContext | null;
+};
 
 type DeploymentContainerConfigProps = {
-    container: Container;
+    container: DeploymentContainerView;
     getImageUrl: (imageId: string) => string;
 };
 
