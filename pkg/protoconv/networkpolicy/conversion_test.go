@@ -21,7 +21,8 @@ var (
 		// Kubernetes is very picky about a nil slice vs a non nil slice in terms of the implication in a network policy
 		"Empty to Empty": {
 			TypeMeta: metav1.TypeMeta{
-				Kind: "NetworkPolicy",
+				APIVersion: "networking.k8s.io/v1",
+				Kind:       "NetworkPolicy",
 			},
 			Spec: v1.NetworkPolicySpec{
 				PolicyTypes: []v1.PolicyType{
@@ -290,6 +291,39 @@ func TestNoStatusFieldInRoxNetworkPolicyYaml(t *testing.T) {
 			assert.NoError(t, err, "yaml generation should succeed")
 
 			assertNoStatusField(t, yaml)
+		})
+	}
+}
+
+func TestRoxNetworkPolicyYamlAPIVersion(t *testing.T) {
+	cases := map[string]struct {
+		storedAPIVersion   string
+		expectedAPIVersion string
+	}{
+		"empty API version defaults to networking.k8s.io/v1": {
+			storedAPIVersion:   "",
+			expectedAPIVersion: "networking.k8s.io/v1",
+		},
+		"stored API version is preserved": {
+			storedAPIVersion:   "extensions/v1beta1",
+			expectedAPIVersion: "extensions/v1beta1",
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			np := &v1.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-np", Namespace: "default"},
+			}
+			protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
+			protoNetworkPolicy.ApiVersion = c.storedAPIVersion
+
+			yaml, err := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToYaml()
+			assert.NoError(t, err)
+
+			uObj, err := k8sutil.UnstructuredFromYAML(yaml)
+			assert.NoError(t, err)
+			assert.Equal(t, c.expectedAPIVersion, uObj.GetAPIVersion())
+			assert.Equal(t, "NetworkPolicy", uObj.GetKind())
 		})
 	}
 }
