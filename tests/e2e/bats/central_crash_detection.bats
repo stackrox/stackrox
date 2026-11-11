@@ -791,6 +791,8 @@ case "$*" in
 esac
 HANGSTUB
     chmod +x "${HANG_BIN}/kubectl"
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
     # 15s outer safety guard.
     run timeout 15 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
@@ -803,16 +805,17 @@ HANGSTUB
         export -f sleep
         wait_for_ready_deployment stackrox central 3
     ' 2>&1
-    local start_time end_time elapsed
-    # Use status/output to verify.
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
     assert_failure
     [[ "$status" -eq 1 ]]
-    # Generic deployment timeout, NOT crash state (query timed out → no crash found).
     assert_output --partial "wait_for_ready_deployment() timeout"
     refute_output --partial "crash state detected"
-    # The blocked pod query was attempted (marker in log).
     run grep "get pods" "${KUBECTL_CALL_LOG}"
     assert_success
+    # Completed within 3s budget + margin, not hung 60s or outer 15s.
+    [[ "$elapsed" -ge 1 ]]
+    [[ "$elapsed" -le 8 ]]
 }
 
 @test "wait_for_ready_deployment expired deadline skips helper entirely" {
@@ -862,6 +865,8 @@ case "$*" in
 esac
 HANGSTUB
     chmod +x "${HANG_BIN}/kubectl"
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
     # 15s outer safety guard.
     run timeout 15 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
@@ -873,20 +878,25 @@ HANGSTUB
         export -f retrying_kubectl
         sleep() { :; }
         export -f sleep
-        curl() { echo "curl: (7) Failed"; return 7; }
+        # curl stub logs each call to KUBECTL_CALL_LOG for counting.
+        curl() { echo "ping-curl" >> "${KUBECTL_CALL_LOG}"; echo "curl: (7) Failed"; return 7; }
         export -f curl
         CRASH_CHECK_API_PING_BUDGET=3 MAX_WAIT_SECONDS=300 wait_for_api stackrox
     ' 2>&1
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
     assert_failure
     [[ "$status" -eq 1 ]]
-    # Output should mention deadline reached, NOT crash state (query timed out).
     assert_output --partial "deadline"
     refute_output --partial "crash state detected"
-    # Pod query was attempted (blocked call marker).
     run grep "get pods" "${KUBECTL_CALL_LOG}"
     assert_success
-    # Should NOT have run 149 curl calls — budget stops the loop.
-    local curl_msg_count
-    curl_msg_count="$(grep -c 'Curl exited' "${KUBECTL_CALL_LOG}" || true)"
-    [[ "$curl_msg_count" -le 5 ]]
+    # Curl calls actually logged; budget stops the loop well before 149.
+    local curl_count
+    curl_count="$(grep -c 'ping-curl' "${KUBECTL_CALL_LOG}" || true)"
+    [[ "$curl_count" -ge 1 ]]
+    [[ "$curl_count" -le 5 ]]
+    # Completed within 3s budget + margin, not outer 15s.
+    [[ "$elapsed" -ge 1 ]]
+    [[ "$elapsed" -le 8 ]]
 }
