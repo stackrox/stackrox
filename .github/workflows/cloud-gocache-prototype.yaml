@@ -133,25 +133,24 @@ jobs:
               echo "GOCACHE_MEMSNAP=1" >> "$GITHUB_ENV"
               echo "page-cache meminfo snapshots enabled" ;; esac
             case "$COMMIT_MSG" in *zram:*)
-              # Compressed local cache: ext4 on a zram device. Entries
-              # compress ~2.5-3x, so 12G holds the full ~16G working set.
-              # Use-if-found: falls back to the normal ladder if the module
-              # is absent.
+              # Compressed tmpfs: tmpfs primary + zram swap backing.
+              # Hot entries: single uncompressed copy in tmpfs. Overflow:
+              # cold tmpfs pages swap into zram compressed (uncompressed
+              # copy freed — net RAM savings, the zram goal; the ext4-on-
+              # zram shape double-buffers eagerly and was counter to it).
+              # Compiler RSS cold pages also become swappable.
               if sudo modprobe zram 2>/dev/null; then
-                # zstd preferred (better ratio; we're capacity-motivated —
-                # decompression is far from the bottleneck either way),
-                # lz4 fallback if the kernel lacks zstd in zram.
                 echo zstd | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || \
                   echo lz4 | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || true
-                echo 12G | sudo tee /sys/block/zram0/disksize >/dev/null
-                if sudo mkfs.ext4 -q /dev/zram0 2>/dev/null; then
-                  sudo mkdir -p /mnt/zram-cache
-                  sudo mount /dev/zram0 /mnt/zram-cache
-                  sudo chmod 777 /mnt/zram-cache
-                  echo "GOCACHE_SERVE_DIR=/mnt/zram-cache/gocache-serve" >> "$GITHUB_ENV"
-                  echo "gocache-serve: local cache on zram-backed ext4 (12G, compressed)"
+                echo 8G | sudo tee /sys/block/zram0/disksize >/dev/null
+                if sudo mkswap /dev/zram0 >/dev/null 2>&1 && sudo swapon -p 100 /dev/zram0 2>/dev/null; then
+                  sudo mkdir -p /mnt/compressed-shm
+                  sudo mount -t tmpfs -o size=12g tmpfs /mnt/compressed-shm
+                  sudo chmod 777 /mnt/compressed-shm
+                  echo "GOCACHE_SERVE_DIR=/mnt/compressed-shm/gocache-serve" >> "$GITHUB_ENV"
+                  echo "gocache-serve: compressed tmpfs (12g tmpfs + 8g zram swap, zstd)"
                 else
-                  echo "zram device create failed — using default ladder"
+                  echo "zram swap setup failed — using default ladder"
                 fi
               else
                 echo "zram module unavailable — using default ladder"
@@ -259,6 +258,7 @@ jobs:
             echo "=== unformatted disks:"; sudo blkid 2>/dev/null || true
             echo "=== waagent resource-disk config:"; grep -i "^ResourceDisk" /etc/waagent.conf 2>/dev/null || echo "no waagent.conf"
             echo "=== zram stats (orig_data compr_data mem_used = ratio):"; cat /sys/block/zram0/mm_stat 2>/dev/null || echo "no zram"
+            echo "=== swap activity:"; grep -a . /proc/swaps 2>/dev/null; awk '/^SwapCached|^SwapTotal|^SwapFree|^SwapIn|^SwapOut/ {printf "%s=%s ", $1, $2} END {print ""}' /proc/vmstat 2>/dev/null || true
             echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill /mnt/zram-cache/gocache-serve 2>/dev/null || true
           fi
 
