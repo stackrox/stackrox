@@ -156,6 +156,12 @@ jobs:
               else
                 echo "zram module unavailable — using default ladder"
               fi ;; esac
+            case "$COMMIT_MSG" in *p8*)
+              echo "GOFLAGS=-buildvcs=false -p=8" >> "$GITHUB_ENV"
+              echo "gocache-serve: -p=8 (overlap cache-fetch waits with compile)" ;; esac
+            case "$COMMIT_MSG" in *moldlink*)
+              echo "GOCACHE_MOLD=1" >> "$GITHUB_ENV"
+              echo "gocache-serve: mold external linker enabled" ;; esac
             case "$COMMIT_MSG" in *westpin*)
               echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
               echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
@@ -226,8 +232,15 @@ jobs:
               make golangci-lint
               ;;
             cli)
-              make cli
-              echo "CLI binary size: $(du -sh bin/ 2>/dev/null | cut -f1)"
+              # PR-CI shape: linux/amd64 only. Single platform gives the
+              # 99.9% warm-cache confirmation; cross-platform builds belong
+              # to release CI. Working set ~4-5GB (fits tmpfs), one link.
+              if [ -n "$GOCACHE_MOLD" ]; then
+                sudo apt-get install -y mold >/dev/null 2>&1 || echo "mold install failed — internal linker"
+                export ROX_LINKER=mold
+              fi
+              make roxctl_linux-amd64
+              echo "CLI binary size: $(du -sh bin/linux_amd64/roxctl 2>/dev/null | cut -f1), linker: ${ROX_LINKER:-internal}"
               ;;
             unittests)
               # Compile-only: don't run tests, just build them

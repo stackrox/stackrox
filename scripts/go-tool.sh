@@ -55,6 +55,11 @@ ldflags=("${x_defs[@]}")
 if [[ "$DEBUG_BUILD" != "yes" ]]; then
   ldflags+=(-s -w)
 fi
+# Optional external linker (e.g. ROX_LINKER=mold): substantially faster
+# links on large binaries than Go's internal linker.
+if [[ -n "$ROX_LINKER" ]]; then
+  ldflags+=(-linkmode=external "-extldflags=-fuse-ld=${ROX_LINKER}")
+fi
 
 function invoke_go() {
   local tool="${1:?"invoke_go tool argument required"}"
