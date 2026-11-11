@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	maxPaginationLimit = 1000
+	maxPaginationLimit    = 1000
+	maxWorkloadImageViews = 10000
 )
 
 var (
@@ -195,9 +196,15 @@ func (s *serviceImpl) resolveWorkloadImageIDs(ctx context.Context, filter *v1.Ad
 		return nil, errox.InvalidArgs.CausedByf("invalid workload query: %v", err)
 	}
 
+	// Bound both the projection and the resulting Resource ID filter. Fetch one
+	// extra result to detect overflow and fail rather than return partial events.
+	parsedQuery.Pagination = &v1.QueryPagination{Limit: maxWorkloadImageViews + 1}
 	imageViews, err := s.deployments.GetContainerImageViews(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolving workload images")
+	}
+	if len(imageViews) > maxWorkloadImageViews {
+		return nil, errox.ResourceExhausted.Newf("workload query exceeds the limit of %d image results; narrow the cluster, namespace, or deployment filters", maxWorkloadImageViews)
 	}
 
 	imageIDSet := set.NewStringSet()

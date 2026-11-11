@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -286,18 +287,25 @@ func TestWorkloadFilterErrors(t *testing.T) {
 	for name, tc := range map[string]struct {
 		workloadQuery string
 		lookupError   error
+		imageViews    []*views.ContainerImageView
+		expectedError error
 	}{
-		"invalid query":     {workloadQuery: `INVALIDQUERY`},
-		"deployment lookup": {workloadQuery: `Cluster:prod`, lookupError: errFake},
+		"invalid query":     {workloadQuery: `INVALIDQUERY`, expectedError: errox.InvalidArgs},
+		"deployment lookup": {workloadQuery: `Cluster:prod`, lookupError: errFake, expectedError: errFake},
+		"too many images": {
+			workloadQuery: `Cluster:prod`,
+			imageViews:    make([]*views.ContainerImageView, maxWorkloadImageViews+1),
+			expectedError: errox.ResourceExhausted,
+		},
 	} {
 		for _, rpc := range []string{"count", "list"} {
 			t.Run(name+"/"+rpc, func(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				deployments := deploymentMocks.NewMockDataStore(ctrl)
 				ds := dsMocks.NewMockDataStore(ctrl)
-				if tc.lookupError != nil {
+				if tc.lookupError != nil || tc.imageViews != nil {
 					deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).Return(
-						[]*views.ContainerImageView{{ImageIDV2: "image-id"}}, tc.lookupError)
+						tc.imageViews, tc.lookupError)
 				}
 				svc := newService(ds, deployments)
 				filter := &v1.AdministrationEventsFilter{WorkloadQuery: tc.workloadQuery}
@@ -307,12 +315,38 @@ func TestWorkloadFilterErrors(t *testing.T) {
 				} else {
 					_, err = svc.ListAdministrationEvents(context.Background(), &v1.ListAdministrationEventsRequest{Filter: filter})
 				}
-				if tc.lookupError != nil {
-					assert.ErrorIs(t, err, errFake)
-				} else {
-					assert.ErrorIs(t, err, errox.InvalidArgs)
-				}
+				assert.ErrorIs(t, err, tc.expectedError)
 			})
 		}
+	}
+}
+
+func TestWorkloadImageProjectionLimit(t *testing.T) {
+	for name, size := range map[string]int{
+		"at limit":   maxWorkloadImageViews,
+		"over limit": maxWorkloadImageViews + 1,
+	} {
+		t.Run(name, func(t *testing.T) {
+			imageViews := make([]*views.ContainerImageView, size)
+			for i := range imageViews {
+				imageViews[i] = &views.ContainerImageView{ImageIDV2: strconv.Itoa(i)}
+			}
+			deployments := deploymentMocks.NewMockDataStore(gomock.NewController(t))
+			deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).DoAndReturn(
+				func(_ context.Context, query *v1.Query) ([]*views.ContainerImageView, error) {
+					assert.EqualValues(t, maxWorkloadImageViews+1, query.GetPagination().GetLimit())
+					return imageViews, nil
+				})
+			svc := &serviceImpl{deployments: deployments}
+			ids, err := svc.resolveWorkloadImageIDs(context.Background(), &v1.AdministrationEventsFilter{WorkloadQuery: `Cluster:prod`})
+			if size > maxWorkloadImageViews {
+				require.ErrorIs(t, err, errox.ResourceExhausted)
+				assert.ErrorContains(t, err, "narrow the cluster, namespace, or deployment filters")
+				assert.Nil(t, ids)
+			} else {
+				require.NoError(t, err)
+				assert.Len(t, ids, size)
+			}
+		})
 	}
 }

@@ -122,15 +122,6 @@ function AdministrationEventsPage(): ReactElement {
                     <Bullseye>
                         <Spinner />
                     </Bullseye>
-                ) : errorMessage ? (
-                    <Alert
-                        variant="warning"
-                        title="Unable to fetch administration events"
-                        component="p"
-                        isInline
-                    >
-                        {errorMessage}
-                    </Alert>
                 ) : (
                     <>
                         <AdministrationEventsToolbar
@@ -146,11 +137,22 @@ function AdministrationEventsPage(): ReactElement {
                             setSearchFilter={setSearchFilter}
                             updateEvents={updateEvents}
                         />
-                        <AdministrationEventsTable
-                            events={events}
-                            getSortParams={getSortParams}
-                            searchFilter={searchFilter}
-                        />
+                        {errorMessage ? (
+                            <Alert
+                                variant="warning"
+                                title="Unable to fetch administration events"
+                                component="p"
+                                isInline
+                            >
+                                {errorMessage}
+                            </Alert>
+                        ) : (
+                            <AdministrationEventsTable
+                                events={events}
+                                getSortParams={getSortParams}
+                                searchFilter={searchFilter}
+                            />
+                        )}
                     </>
                 )}
             </PageSection>
