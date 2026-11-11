@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Bullseye, Content, PageSection, Spinner, Title } from '@patternfly/react-core';
 
@@ -32,6 +32,7 @@ function AdministrationEventsPage(): ReactElement {
     const [isLoading, setIsLoading] = useState(false);
     const [lastUpdatedEventIds, setLastUpdatedEventIds] = useState<Set<string>>(new Set());
     const [lastUpdatedTime, setLastUpdatedTime] = useState('');
+    const requestIdRef = useRef(0);
 
     /*
      * Request count and events at initial page load or after user action:
@@ -42,6 +43,7 @@ function AdministrationEventsPage(): ReactElement {
      * 2. click events available button which has `onClick={updateEvents}` prop.
      */
     const updateEvents = useCallback(() => {
+        const requestId = ++requestIdRef.current;
         setIsLoading(true);
 
         const listArg = getListAdministrationEventsArg({ page, perPage, searchFilter, sortOption });
@@ -49,6 +51,9 @@ function AdministrationEventsPage(): ReactElement {
 
         Promise.all([countAdministrationEvents(filter), listAdministrationEvents(listArg)])
             .then(([countArg, eventsArg]) => {
+                if (requestId !== requestIdRef.current) {
+                    return;
+                }
                 setCount(countArg);
                 setCountAvailable(0);
                 setErrorMessage('');
@@ -57,26 +62,38 @@ function AdministrationEventsPage(): ReactElement {
                 setLastUpdatedTime(new Date().toISOString());
             })
             .catch((error) => {
+                if (requestId !== requestIdRef.current) {
+                    return;
+                }
                 setCount(0);
                 setErrorMessage(getAxiosErrorMessage(error));
                 setEvents([]);
             })
             .finally(() => {
-                setIsLoading(false);
+                if (requestId === requestIdRef.current) {
+                    setIsLoading(false);
+                }
             });
     }, [page, perPage, searchFilter, setIsLoading, sortOption]);
 
     useEffect(() => {
         updateEvents();
+        return () => {
+            requestIdRef.current += 1;
+        };
     }, [updateEvents]);
 
     /*
      * Request events every minute to compute count of events available.
      */
     useInterval(() => {
+        const requestId = requestIdRef.current;
         const arg = getListAdministrationEventsArg({ page, perPage, searchFilter, sortOption });
         listAdministrationEvents(arg)
             .then((eventsArg) => {
+                if (requestId !== requestIdRef.current) {
+                    return;
+                }
                 setCountAvailable(
                     eventsArg.reduce(
                         (countAvailableAccumulator, { id }) =>
