@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -154,10 +153,6 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 	res := &gatherResult{}
 	callback := gatherResultCallback(res, clusterName)
 
-	if !sensorConn.HasCapability(centralsensor.PullTelemetryDataCap) {
-		return []k8sintrospect.File{createErrorFile(clusterName,
-			errors.New("sensor does not support pulling telemetry data"))}, nil
-	}
 	err := sensorConn.Telemetry().PullKubernetesInfo(ctx, callback, telemetry.PullKubernetesInfoOpts{
 		WithComplianceOperator: opts.withComplianceOperator,
 		Since:                  opts.since,
@@ -176,11 +171,6 @@ func pullMetricsFromSensor(ctx context.Context, clusterName string,
 	res := &gatherResult{}
 	callback := gatherResultCallback(res, clusterName)
 
-	if !sensorConn.HasCapability(centralsensor.PullMetricsCap) {
-		return []k8sintrospect.File{
-			createErrorFile(clusterName, errors.New("sensor does not support pulling metrics")),
-		}, nil
-	}
 	err := sensorConn.Telemetry().PullMetrics(ctx, callback)
 	if err != nil {
 		log.Warnw("Error pulling metrics from sensor", logging.ClusterName(clusterName), logging.Err(err))
