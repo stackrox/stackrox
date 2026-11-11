@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         backend: [azure, gcs, s3, prefetch, cacheprog]
-        workload: [lint, cli, unittests]
+        workload: [lint, cli, unittests, testexec]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     # Skip the full matrix for A/B and bench pushes (driven by the
@@ -174,6 +174,14 @@ jobs:
             case "$COMMIT_MSG" in *stubmode:*)
               echo "GOCACHE_OUTBIN_MODE=stub" >> "$GITHUB_ENV"
               echo "link-output STUB mode (bytes-only transfer)" ;; esac
+            case "$COMMIT_MSG" in *multibin:*)
+              echo "GOCACHE_MULTIBIN=1" >> "$GITHUB_ENV"
+              echo "multi-binary outbin inventory (roxctl + roxagent)" ;; esac
+            case "$COMMIT_MSG" in *dockerlayer:*)
+              echo "GOCACHE_DOCKER=1" >> "$GITHUB_ENV"
+              echo "docker COPY --link layer composition test" ;; esac
+            case "$COMMIT_MSG" in *testexec:*)
+              echo "test execution workload (not just compile)" ;; esac
             case "$COMMIT_MSG" in *westpin*)
               echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
               echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
@@ -290,6 +298,29 @@ jobs:
                   fi
                 fi
                 make roxctl_linux-amd64
+                # Item 5: multi-binary — also build roxagent
+                if [ -n "$GOCACHE_MULTIBIN" ]; then
+                  if "$GOCACHEPROG" -fetch "outbin-LATEST-roxagent-linux_amd64" bin/linux_amd64/roxagent 2>/dev/null; then
+                    echo "roxagent link-output restored"
+                  else
+                    rm -f bin/linux_amd64/roxagent
+                  fi
+                  make roxagent_linux-amd64 2>/dev/null || echo "roxagent build attempted"
+                  if [ -f bin/linux_amd64/roxagent ]; then
+                    "$GOCACHEPROG" -store "outbin-LATEST-roxagent-linux_amd64" bin/linux_amd64/roxagent 2>&1 | tail -1 || true
+                    echo "roxagent sha256: $(sha256sum bin/linux_amd64/roxagent 2>/dev/null | cut -c1-32)"
+                  fi
+                fi
+                # Item 10: Docker layer composition
+                if [ -n "$GOCACHE_DOCKER" ] && [ -f bin/linux_amd64/roxctl ] && [ $(stat -c%s bin/linux_amd64/roxctl 2>/dev/null || echo 0) -gt 1000000 ]; then
+                  echo "=== Docker layer composition (COPY --link) ==="
+                  echo 'FROM scratch' > /tmp/Dockerfile.layer
+                  echo 'COPY --link bin/linux_amd64/roxctl /roxctl' >> /tmp/Dockerfile.layer
+                  echo "First build (cold layer):"
+                  timeout 60 docker build -t test-layer-1 -f /tmp/Dockerfile.layer . 2>&1 | tail -3 || echo "docker unavailable"
+                  echo "Second build (should reuse layer):"
+                  timeout 60 docker build -t test-layer-2 -f /tmp/Dockerfile.layer . 2>&1 | tail -3 || echo "docker unavailable"
+                fi
               fi
               echo "CLI binary size: $(du -sh bin/linux_amd64/roxctl 2>/dev/null | cut -f1), linker: ${ROX_LINKER:-internal}"
               echo "CLI binary sha256: $(sha256sum bin/linux_amd64/roxctl 2>/dev/null | cut -c1-32)"
@@ -301,6 +332,16 @@ jobs:
               # Compile-only: don't run tests, just build them
               go build -tags test,test_e2e ./... 2>&1 | tail -5
               go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -5 || true
+              ;;
+            testexec)
+              # Item 4: actually EXECUTE a subset of tests to measure
+              # the test-execution stage (not just compile)
+              echo "=== compiling tests ==="
+              go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -3 || true
+              echo "=== executing fast tests (pkg/version, pkg/env, pkg/utils) ==="
+              time go test -count=1 -timeout 300s ./pkg/version/... ./pkg/env/... ./pkg/utils/... 2>&1 | tail -20
+              echo "=== executing medium tests (pkg/mtls, pkg/search, pkg/stringutils) ==="
+              time go test -count=1 -timeout 300s ./pkg/mtls/... ./pkg/search/... ./pkg/stringutils/... 2>&1 | tail -20
               ;;
           esac
           echo "=== workload finished at $(date -u +%H:%M:%S) ==="
