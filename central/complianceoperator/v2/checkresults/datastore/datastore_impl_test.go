@@ -1096,6 +1096,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultSta
 	}
 }
 
+// TestComplianceFreshnessAggregation verifies the current/stale counts and the
+// per-check, per-cluster, and per-profile freshness rollups, including SAC scoping.
 func (s *complianceCheckResultDataStoreTestSuite) TestComplianceFreshnessAggregation() {
 	s.setupFreshnessTestData()
 	ctx := s.testContexts[testutils.UnrestrictedReadCtx]
@@ -1148,6 +1150,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceFreshnessAggrega
 	s.Equal(1, scopedStats[0].StaleClusterCount)
 }
 
+// setupFreshnessTestData seeds two clusters of one profile with mixed CURRENT/STALE
+// check results so the freshness aggregation can be exercised end to end.
 func (s *complianceCheckResultDataStoreTestSuite) setupFreshnessTestData() {
 	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
 	s.Require().NoError(err)

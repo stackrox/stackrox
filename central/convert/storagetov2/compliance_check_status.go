@@ -29,6 +29,7 @@ func convertComplianceCheckStatus(status storage.ComplianceOperatorCheckResultV2
 	}
 }
 
+// convertComplianceDataFreshness maps the stored per-check freshness enum to its v2 API equivalent.
 func convertComplianceDataFreshness(freshness storage.ComplianceOperatorCheckResultV2_DataFreshness) v2.ComplianceCheckDataFreshness {
 	switch freshness {
 	case storage.ComplianceOperatorCheckResultV2_UNKNOWN:
