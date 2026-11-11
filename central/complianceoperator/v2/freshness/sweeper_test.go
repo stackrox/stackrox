@@ -41,11 +41,11 @@ func newTestSweeper(scanCfg *scanConfigMocks.MockDataStore, checkRes *checkResul
 	}
 }
 
-func TestExpectedRefresh(t *testing.T) {
-	now := time.Now()
+func TestPreviousScheduledStart(t *testing.T) {
+	ref := time.Now()
 
 	t.Run("nil schedule returns false", func(t *testing.T) {
-		_, ok := expectedRefresh(nil, now)
+		_, ok := previousScheduledStart(nil, ref)
 		assert.False(t, ok)
 	})
 
@@ -53,56 +53,89 @@ func TestExpectedRefresh(t *testing.T) {
 		sched := dailySchedule(3, 30)
 		cron, err := schedule.ConvertToCronTab(sched)
 		require.NoError(t, err)
-		want, err := gronx.PrevTickBefore(cron, now, false)
+		want, err := gronx.PrevTickBefore(cron, ref, false)
 		require.NoError(t, err)
 
-		got, ok := expectedRefresh(sched, now)
+		got, ok := previousScheduledStart(sched, ref)
 		require.True(t, ok)
 		assert.True(t, got.Equal(want), "got %s, want %s", got, want)
-		assert.True(t, got.Before(now))
+		assert.True(t, got.Before(ref))
 	})
 
 	t.Run("unconvertible schedule returns false", func(t *testing.T) {
 		// An UNSET interval does not convert to a cron expression.
-		_, ok := expectedRefresh(&storage.Schedule{IntervalType: storage.Schedule_UNSET}, now)
+		_, ok := previousScheduledStart(&storage.Schedule{IntervalType: storage.Schedule_UNSET}, ref)
 		assert.False(t, ok)
 	})
 }
 
-func TestSweep(t *testing.T) {
+// TestSweepGraceWindow pins the core staleness rule: a result is stale only once a scheduled start
+// has passed AND its full grace window elapsed without new results. In particular, a fresh scheduled
+// scan must not flip the previous cycle's results to STALE while that scan is still within its grace
+// window (the bug yuumasato caught on PR #23851).
+func TestSweepGraceWindow(t *testing.T) {
 	grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
+	require.Positive(t, grace)
+	require.Less(t, grace, 24*time.Hour, "test assumes grace is shorter than the daily interval")
 
-	t.Run("scheduled config is marked stale with cutoff = prevTick - grace", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-		sw := newTestSweeper(scanConfigMock, checkResultMock)
+	sched := dailySchedule(3, 0)
+	// start is a scheduled scan start; the previous cycle's results carry laststartedtime == prevCycle.
+	start := time.Date(2026, 1, 2, 3, 0, 0, 0, time.UTC)
+	prevCycle := start.Add(-24 * time.Hour)
 
-		sched := dailySchedule(3, 30)
-		cron, err := schedule.ConvertToCronTab(sched)
-		require.NoError(t, err)
+	cases := map[string]struct {
+		now        time.Time
+		wantCutoff time.Time
+	}{
+		"within grace window keeps previous cycle current": {
+			// The scan at start is running; its grace has not elapsed. The cutoff must not pass the
+			// previous cycle's start, so markStale (strict <) leaves those results CURRENT.
+			now:        start.Add(time.Minute),
+			wantCutoff: prevCycle,
+		},
+		"at grace boundary still keeps previous cycle current": {
+			now:        start.Add(grace),
+			wantCutoff: prevCycle,
+		},
+		"after grace elapses marks the previous cycle stale": {
+			// start's grace fully elapsed with no new results, so the cutoff advances to start and the
+			// previous cycle (laststartedtime < start) becomes stale.
+			now:        start.Add(grace + time.Minute),
+			wantCutoff: start,
+		},
+	}
 
-		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
-			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgA", sched)}, nil)
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
+			checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+			sw := newTestSweeper(scanConfigMock, checkResultMock)
 
-		var gotOlderThan time.Time
-		checkResultMock.EXPECT().
-			MarkScanChecksStaleByConfig(gomock.Any(), "cfgA", gomock.Any()).
-			DoAndReturn(func(_ context.Context, _ string, olderThan time.Time) (int64, error) {
-				gotOlderThan = olderThan
-				return 1, nil
-			})
+			scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+				Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgA", sched)}, nil)
 
-		before := time.Now()
-		sw.sweep()
+			var gotCutoff time.Time
+			checkResultMock.EXPECT().
+				MarkScanChecksStaleByConfig(gomock.Any(), "cfgA", gomock.Any()).
+				DoAndReturn(func(_ context.Context, _ string, cutoff time.Time) (int64, error) {
+					gotCutoff = cutoff
+					return 0, nil
+				})
 
-		// The daily tick has minute granularity, so the previous tick computed from `before` matches
-		// the one the sweeper computed from its own time.Now() a few microseconds later.
-		prev, err := gronx.PrevTickBefore(cron, before, false)
-		require.NoError(t, err)
-		want := prev.Add(-grace)
-		assert.True(t, gotOlderThan.Equal(want), "olderThan = %s, want prevTick(%s) - grace(%s) = %s", gotOlderThan, prev, grace, want)
-	})
+			sw.sweep(tc.now)
+
+			assert.True(t, gotCutoff.Equal(tc.wantCutoff), "cutoff = %s, want %s", gotCutoff, tc.wantCutoff)
+			// markStale uses a strict "<", so the previous cycle is stale iff its start predates the cutoff.
+			prevCycleStale := prevCycle.Before(gotCutoff)
+			wantStale := tc.wantCutoff.Equal(start)
+			assert.Equal(t, wantStale, prevCycleStale, "previous-cycle staleness mismatch for cutoff %s", gotCutoff)
+		})
+	}
+}
+
+func TestSweep(t *testing.T) {
+	now := time.Now()
 
 	t.Run("config with nil schedule is skipped", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -114,7 +147,7 @@ func TestSweep(t *testing.T) {
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgNil", nil)}, nil)
 		// No MarkScanChecksStaleByConfig expectation: gomock fails if it is called.
 
-		sw.sweep()
+		sw.sweep(now)
 	})
 
 	t.Run("list error is tolerated and marks nothing", func(t *testing.T) {
@@ -127,7 +160,7 @@ func TestSweep(t *testing.T) {
 			Return(nil, errors.New("boom"))
 		// No MarkScanChecksStaleByConfig expectation.
 
-		sw.sweep()
+		sw.sweep(now)
 	})
 
 	t.Run("mark error on one config does not stop the next", func(t *testing.T) {
@@ -148,7 +181,7 @@ func TestSweep(t *testing.T) {
 		checkResultMock.EXPECT().MarkScanChecksStaleByConfig(gomock.Any(), "cfg2", gomock.Any()).
 			Return(int64(0), nil)
 
-		sw.sweep()
+		sw.sweep(now)
 	})
 }
 
