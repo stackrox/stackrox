@@ -216,6 +216,19 @@ func writeStub(buildID, outfile string) error {
 	if len(buildID) == 0 {
 		return fmt.Errorf("empty buildID")
 	}
+	// Validate: a go buildID is 1-4 slash-separated URL-safe base64
+	// segments. A malformed string would produce a stub that silently
+	// fails go's check — catch it here.
+	for _, seg := range strings.Split(buildID, "/") {
+		if len(seg) == 0 {
+			return fmt.Errorf("empty segment in buildID %q", buildID)
+		}
+		for _, c := range seg {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '_') {
+				return fmt.Errorf("invalid character %q in buildID segment (URL-safe base64 expected)", c)
+			}
+		}
+	}
 	noteLen := 12 + 4 + len(buildID)
 	buf := make([]byte, 120+noteLen)
 	le := func(off int, n int, v uint64) {
@@ -328,6 +341,26 @@ func main() {
 			fmt.Fprintf(os.Stderr, "stored %s (%d bytes)\n", os.Args[2], len(body))
 		case "-stub":
 			fmt.Fprintln(os.Stderr, "unreachable: -stub handled above")
+		case "-verify":
+			// Verify a binary's actual buildID matches the expected one —
+			// the post-restore validation for the paranoid path, and the
+			// way to confirm the link-bypass is working correctly.
+			if len(os.Args) < 4 {
+				fmt.Fprintln(os.Stderr, "usage: -verify EXPECTED_BUILdid FILE")
+				os.Exit(2)
+			}
+			actual, err := exec.Command("go", "tool", "buildid", os.Args[3]).Output()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "buildid: %v\n", err)
+				os.Exit(1)
+			}
+			expected := os.Args[2]
+			got := strings.TrimSpace(string(actual))
+			if got != expected {
+				fmt.Fprintf(os.Stderr, "MISMATCH: expected %s got %s\n", expected, got)
+				os.Exit(1)
+			}
+			fmt.Fprintf(os.Stderr, "verified: %s\n", got)
 		default:
 			fmt.Fprintf(os.Stderr, "unknown subcommand %s\n", os.Args[1])
 			os.Exit(2)
