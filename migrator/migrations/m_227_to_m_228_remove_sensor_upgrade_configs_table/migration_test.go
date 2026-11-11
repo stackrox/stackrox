@@ -31,6 +31,10 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.db = pghelper.ForT(s.T(), false)
 }
 
+func (s *migrationTestSuite) TearDownSuite() {
+	s.db.Teardown(s.T())
+}
+
 func (s *migrationTestSuite) TestMigration() {
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
