@@ -281,3 +281,38 @@ func TestWorkloadFilterMatches(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkloadFilterErrors(t *testing.T) {
+	for name, tc := range map[string]struct {
+		workloadQuery string
+		lookupError   error
+	}{
+		"invalid query":     {workloadQuery: `INVALIDQUERY`},
+		"deployment lookup": {workloadQuery: `Cluster:prod`, lookupError: errFake},
+	} {
+		for _, rpc := range []string{"count", "list"} {
+			t.Run(name+"/"+rpc, func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				deployments := deploymentMocks.NewMockDataStore(ctrl)
+				ds := dsMocks.NewMockDataStore(ctrl)
+				if tc.lookupError != nil {
+					deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).Return(
+						[]*views.ContainerImageView{{ImageIDV2: "image-id"}}, tc.lookupError)
+				}
+				svc := newService(ds, deployments)
+				filter := &v1.AdministrationEventsFilter{WorkloadQuery: tc.workloadQuery}
+				var err error
+				if rpc == "count" {
+					_, err = svc.CountAdministrationEvents(context.Background(), &v1.CountAdministrationEventsRequest{Filter: filter})
+				} else {
+					_, err = svc.ListAdministrationEvents(context.Background(), &v1.ListAdministrationEventsRequest{Filter: filter})
+				}
+				if tc.lookupError != nil {
+					assert.ErrorIs(t, err, errFake)
+				} else {
+					assert.ErrorIs(t, err, errox.InvalidArgs)
+				}
+			})
+		}
+	}
+}

@@ -11,10 +11,10 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,8 +39,6 @@ var (
 		},
 	})
 )
-
-var log = logging.LoggerForModule()
 
 type serviceImpl struct {
 	v1.UnimplementedAdministrationEventServiceServer
@@ -141,7 +139,10 @@ func (s *serviceImpl) getQueryFromFilter(ctx context.Context, filter *v1.Adminis
 	}
 
 	resourceTypes := sliceutils.Unique(filter.GetResourceType())
-	imageIDs := s.resolveWorkloadImageIDs(ctx, filter)
+	imageIDs, err := s.resolveWorkloadImageIDs(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
 
 	if imageIDs == nil {
 		if len(resourceTypes) != 0 {
@@ -176,25 +177,23 @@ func (s *serviceImpl) getQueryFromFilter(ctx context.Context, filter *v1.Adminis
 
 // resolveWorkloadImageIDs returns image IDs for deployments matching the workload
 // query, or nil if the workload filter does not apply.
-func (s *serviceImpl) resolveWorkloadImageIDs(ctx context.Context, filter *v1.AdministrationEventsFilter) []string {
+func (s *serviceImpl) resolveWorkloadImageIDs(ctx context.Context, filter *v1.AdministrationEventsFilter) ([]string, error) {
 	rawQuery := filter.GetWorkloadQuery()
 	if rawQuery == "" {
-		return nil
+		return nil, nil
 	}
 	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 && !slices.Contains(resourceTypes, "Image") {
-		return nil
+		return nil, nil
 	}
 
 	parsedQuery, err := search.ParseQuery(rawQuery)
 	if err != nil {
-		log.Warnw("Ignoring workload filter due to query parse error", logging.Err(err))
-		return nil
+		return nil, errox.InvalidArgs.CausedByf("invalid workload query: %v", err)
 	}
 
 	imageViews, err := s.deployments.GetContainerImageViews(ctx, parsedQuery)
 	if err != nil {
-		log.Warnw("Ignoring workload filter due to deployment search error", logging.Err(err))
-		return nil
+		return nil, errors.Wrap(err, "resolving workload images")
 	}
 
 	imageIDSet := set.NewStringSet()
@@ -204,7 +203,7 @@ func (s *serviceImpl) resolveWorkloadImageIDs(ctx context.Context, filter *v1.Ad
 		}
 	}
 	if imageIDSet.Cardinality() == 0 {
-		return []string{}
+		return []string{}, nil
 	}
-	return imageIDSet.AsSlice()
+	return imageIDSet.AsSlice(), nil
 }
