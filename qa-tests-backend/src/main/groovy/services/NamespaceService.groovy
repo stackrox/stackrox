@@ -53,10 +53,12 @@ class NamespaceService extends BaseService {
      * rather than failing cleanup.
      *
      * @param name namespace name
-     * @param timeoutSeconds how long to wait
+     * @param timeoutSeconds how long to wait for the sensor-to-Central
+     *        propagation, not for the cluster-side deletion; callers delete the
+     *        namespace first
      * @return true when Central no longer lists the namespace
      */
-    static boolean waitForNamespaceDeletion(String name, int timeoutSeconds = 30) {
+    static boolean waitForNamespaceDeletion(String name, int timeoutSeconds = 60) {
         int intervalSeconds = 1
         int retries = (timeoutSeconds / intervalSeconds) as int
         Timer t = new Timer(retries, intervalSeconds)
