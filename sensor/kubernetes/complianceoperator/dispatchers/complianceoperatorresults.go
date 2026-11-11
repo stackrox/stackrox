@@ -3,7 +3,9 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -56,6 +58,10 @@ func getSuiteName(labels map[string]string) string {
 
 // ProcessEvent processes a compliance operator check result
 func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		return nil
+	}
+
 	var complianceCheckResult v1alpha1.ComplianceCheckResult
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

@@ -3,7 +3,9 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,6 +26,10 @@ func NewProfileDispatcher() *ProfileDispatcher {
 
 // ProcessEvent processes a compliance operator profile
 func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		return nil
+	}
+
 	var complianceProfile v1alpha1.Profile
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

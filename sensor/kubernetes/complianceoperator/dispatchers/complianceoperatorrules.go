@@ -3,6 +3,8 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,6 +20,10 @@ func NewRulesDispatcher() *RulesDispatcher {
 
 // ProcessEvent processes a rule event
 func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		return nil
+	}
+
 	var complianceRule v1alpha1.Rule
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
