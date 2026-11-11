@@ -258,19 +258,17 @@ jobs:
               if [ -n "$GOCACHE_ALLPLAT" ]; then
                 make cli
               else
-                # Link-output cache: the manifest hash predicts the binary
-                # (entry set = deterministic function of source+flags).
-                # Restore it and go's on-disk buildID check skips the
-                # relink — go build never caches linked binaries itself;
-                # this is the missing half.
-                OBKEY=$("$GOCACHEPROG" -hash-manifest cli 2>/dev/null | tail -1)
-                if [ -n "$OBKEY" ]; then
-                  mkdir -p bin/linux_amd64
-                  if "$GOCACHEPROG" -fetch "outbin-${OBKEY}-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null; then
-                    echo "link-output restored (key outbin-${OBKEY}) — buildID check may skip the link"
-                  else
-                    rm -f bin/linux_amd64/roxctl
-                  fi
+                # Link-output cache, keyless: fetch the latest stored
+                # binary and let go's on-disk buildID check validate it —
+                # match skips the relink, mismatch relinks (one wasted
+                # fetch, never incorrectness). Measured: binaries are
+                # byte-identical across runners/SHAs with stable envs, so
+                # the hit case is the common one on unchanged trees.
+                mkdir -p bin/linux_amd64
+                if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null; then
+                  echo "link-output restored (latest) — buildID check will skip or relink"
+                else
+                  rm -f bin/linux_amd64/roxctl
                 fi
                 make roxctl_linux-amd64
               fi
@@ -313,14 +311,11 @@ jobs:
 
           if [ "${{ matrix.backend }}" = "cacheprog" ]; then
             echo "cacheprog mode: uploads handled by gocache-serve's async uploader during the build"
-            # Link-output cache store side: upload the built binary keyed
-            # by the (post-run) manifest hash — the next run's restore
-            # lets go's on-disk buildID check skip the relink.
+            # Link-output cache store side: latest-pointer (keyless). The
+            # buildID check on the next run validates; content-addressed
+            # dupes are fine (overwrites keep one copy).
             if [ -f bin/linux_amd64/roxctl ] && [ "${{ matrix.workload }}" = "cli" ]; then
-              OBKEY=$("$GOCACHEPROG" -hash-manifest cli 2>/dev/null | tail -1 || true)
-              if [ -n "$OBKEY" ]; then
-                "$GOCACHEPROG" -store "outbin-${OBKEY}-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
-              fi
+              "$GOCACHEPROG" -store "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
             fi
             echo "=== sync finished at $(date -u +%H:%M:%S) ==="
             exit 0
