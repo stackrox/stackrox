@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         backend: [azure, gcs, s3, prefetch, cacheprog]
-        workload: [lint, cli, unittests, testexec]
+        workload: [lint, cli, unittests, testexec, docker]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     # Skip the full matrix for A/B and bench pushes (driven by the
@@ -455,8 +455,9 @@ jobs:
 
               # Clean up test images
               docker rmi docker-test-cold docker-test-warm docker-test-cached docker-test-buildx 2>/dev/null || true
+              ;;
             testexec)
-              # Item 4: actually EXECUTE a subset of tests to measure
+              # actually EXECUTE a subset of tests to measure
               # the test-execution stage (not just compile)
               echo "=== compiling tests ==="
               go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -3 || true
