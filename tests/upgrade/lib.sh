@@ -238,6 +238,46 @@ get_target_bg_migration_seqnum() {
         "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
+# configure_scanner_v4_matcher makes the matcher's readiness probe wait for its
+# vulnerability store and restricts imports to the CI bundle allowlist. The
+# roxie deploy path does not translate SCANNER_V4_VULN_READINESS or
+# SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST into the matcher deployment, so without
+# this the matcher reports ready while the initial import is still running.
+configure_scanner_v4_matcher() {
+    local namespace="${1:-stackrox}"
+    local envs=(SCANNER_V4_MATCHER_READINESS=vulnerability)
+    if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+        envs+=("SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}")
+    fi
+    info "Configuring Scanner V4 matcher readiness and vulnerability bundle allowlist"
+    kubectl -n "${namespace}" set env deploy/scanner-v4-matcher "${envs[@]}"
+}
+
+# wait_for_scanner_v4_readiness waits until the Scanner V4 matcher has loaded its
+# vulnerability store. Image enrichment fails with "the matcher is not
+# initialized" until then, so image assertions must not run before this returns.
+wait_for_scanner_v4_readiness() {
+    local namespace="${1:-stackrox}"
+    local max_seconds="${SCANNER_V4_VULN_READINESS_TIMEOUT:-7200}"
+    export SCANNER_V4_VULN_READINESS=true
+    # Re-apply before waiting in case a reconcile reverted the deployment; the
+    # kubectl patch is a no-op when the values already match.
+    configure_scanner_v4_matcher "${namespace}"
+    # The readiness probe is gated on a vulnerability store load that outlasts the
+    # deployment's default 600s progress deadline, which would make rollout status
+    # fail early. Raising the deadline only changes the controller's monitoring
+    # window; the pod template is untouched, so the pods are not restarted again.
+    kubectl -n "${namespace}" patch deploy/scanner-v4-matcher --type=merge \
+        -p "{\"spec\":{\"progressDeadlineSeconds\":${max_seconds}}}"
+    # wait_for_scanner_V4 only compares total and ready replicas, so the previous
+    # matcher pod satisfies it until the rollout replaces it. rollout status waits
+    # for the updated replicas, which become available only after the readiness
+    # probe passes.
+    kubectl -n "${namespace}" rollout status deploy/scanner-v4-matcher --timeout="${max_seconds}s"
+    info "Waiting for the Scanner V4 vulnerability store to load"
+    wait_for_scanner_V4 "${namespace}"
+}
+
 deploy_earlier_tag_central() {
     info "Deploying: $EARLIER_TAG..."
 
@@ -258,6 +298,10 @@ deploy_earlier_tag_central() {
     rm -f "${roxie_envrc}"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
+
+    # Configuring the matcher now, before it has done much importing, avoids
+    # restarting it mid-import later.
+    configure_scanner_v4_matcher
 }
 
 # upgrade_operator_to_head upgrades the operator to the HEAD version
