@@ -138,7 +138,11 @@ jobs:
               # Use-if-found: falls back to the normal ladder if the module
               # is absent.
               if sudo modprobe zram 2>/dev/null; then
-                echo lz4 | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || true
+                # zstd preferred (better ratio; we're capacity-motivated —
+                # decompression is far from the bottleneck either way),
+                # lz4 fallback if the kernel lacks zstd in zram.
+                echo zstd | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || \
+                  echo lz4 | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || true
                 echo 12G | sudo tee /sys/block/zram0/disksize >/dev/null
                 if sudo mkfs.ext4 -q /dev/zram0 2>/dev/null; then
                   sudo mkdir -p /mnt/zram-cache
