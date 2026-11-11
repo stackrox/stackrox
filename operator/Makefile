@@ -430,11 +430,16 @@ deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s c
 undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | $(PROJECT_DIR)/hack/retry-kubectl.sh delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: deploy-via-olmv0
-deploy-via-olmv0: ## Deploy operator image to the cluster using OLMv0.
+# Shared recipe body for deploy-via-olmv0 and deploy-via-olmv1.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
+define deploy_via_olm
+KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(1) $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
+endef
+
+.PHONY: deploy-via-olmv0
+deploy-via-olmv0: ## Deploy operator image to the cluster using OLMv0.
+	$(call deploy_via_olm,./hack/olm-operator-install.sh)
 
 .PHONY: deploy-dirty-tag-via-olmv0
 deploy-dirty-tag-via-olmv0: ## Deploy operator dirty tagged image to the cluster using OLMv0.
@@ -481,9 +486,7 @@ upgrade-dirty-tag-via-olmv0: kuttl
 
 .PHONY: deploy-via-olmv1
 deploy-via-olmv1: ## Deploy operator image to the cluster using OLMv1.
-# This requires operator, bundle and index images to already be pushed, but we do not depend on the
-# target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olmv1-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
+	$(call deploy_via_olm,./hack/olmv1-operator-install.sh)
 
 .PHONY: deploy-previous-via-olmv1
 deploy-previous-via-olmv1: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLMv1.
