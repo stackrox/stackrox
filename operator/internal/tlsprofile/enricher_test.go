@@ -14,6 +14,7 @@ var intermediateProfile = &TLSProfile{
 	MinVersion:     "TLSv1.2",
 	CipherSuites:   "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
 	OpenSSLCiphers: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384",
+	Groups:         "X25519,secp256r1",
 }
 
 func TestEnricher_InjectsEnvVars(t *testing.T) {
@@ -29,6 +30,7 @@ func TestEnricher_InjectsEnvVars(t *testing.T) {
 	assert.Equal(t, "TLSv1.2", envVars["ROX_TLS_MIN_VERSION"])
 	assert.Contains(t, envVars["ROX_TLS_CIPHER_SUITES"], "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384")
 	assert.Contains(t, envVars["ROX_OPENSSL_TLS_CIPHER_SUITES"], "ECDHE-ECDSA-AES256-GCM-SHA384")
+	assert.Equal(t, "X25519,secp256r1", envVars["ROX_TLS_GROUPS"])
 }
 
 func TestEnricher_UserValuesOverrideInjected(t *testing.T) {

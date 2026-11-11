@@ -95,6 +95,7 @@ func main() {
 	tlsOpts = append(tlsOpts, func(c *tls.Config) {
 		c.MinVersion = tlsprofile.MinVersion()
 		c.CipherSuites = tlsprofile.CipherSuites()
+		c.CurvePreferences = tlsprofile.CurvePreferences()
 	})
 
 	if !enableHTTP2 {

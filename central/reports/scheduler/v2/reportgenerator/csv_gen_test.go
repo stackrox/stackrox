@@ -3,6 +3,9 @@ package reportgenerator
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/csv"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -25,6 +28,46 @@ func TestGenerateCSV_ZipEntryHasModifiedTimestamp(t *testing.T) {
 	assert.True(t, reader.File[0].Modified.After(before), "ZIP entry Modified timestamp should be recent")
 }
 
+func TestGenerateCSV_VulnerabilityStates(t *testing.T) {
+	observed := storage.VulnerabilityState_OBSERVED
+	deferred := storage.VulnerabilityState_DEFERRED
+	falsePositive := storage.VulnerabilityState_FALSE_POSITIVE
+	responses := []*ImageCVEQueryResponse{
+		{State: &observed},
+		{State: &deferred},
+		{State: &falsePositive},
+		{},
+	}
+	expectedStates := []string{"Observed", "Deferred", "False Positive", "Not Available"}
+
+	for name, enabled := range map[string]bool{"KEV disabled": false, "KEV enabled": true} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), strconv.FormatBool(enabled))
+
+			buf, err := GenerateCSV(responses, "test")
+			require.NoError(t, err)
+
+			reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+			require.NoError(t, err)
+			require.Len(t, reader.File, 1)
+			file, err := reader.File[0].Open()
+			require.NoError(t, err)
+			defer func() { assert.NoError(t, file.Close()) }()
+
+			rows, err := csv.NewReader(file).ReadAll()
+			require.NoError(t, err)
+			require.Len(t, rows, len(expectedStates)+1)
+			assert.Equal(t, formatCol(), rows[0])
+			stateColumn := slices.Index(rows[0], "Vulnerability State")
+			require.NotEqual(t, -1, stateColumn)
+			for i, state := range expectedStates {
+				require.Len(t, rows[i+1], len(rows[0]))
+				assert.Equal(t, state, rows[i+1][stateColumn])
+			}
+		})
+	}
+}
+
 func TestFormatCSVRow(t *testing.T) {
 	cluster := "test-cluster"
 	ns := "test-ns"
@@ -36,6 +79,7 @@ func TestFormatCSVRow(t *testing.T) {
 	fixable := true
 	fixedBy := "1.1.2"
 	severity := storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+	state := storage.VulnerabilityState_OBSERVED
 	cvss := 9.8
 	nvdcvss := 9.5
 	epss := 0.95
@@ -54,6 +98,7 @@ func TestFormatCSVRow(t *testing.T) {
 		Fixable:           &fixable,
 		FixedByVersion:    &fixedBy,
 		Severity:          &severity,
+		State:             &state,
 		CVSS:              &cvss,
 		NVDCVSS:           &nvdcvss,
 		EPSSProbability:   &epss,
@@ -77,6 +122,7 @@ func TestFormatCSVRow(t *testing.T) {
 		assert.Equal(t, "95.000", row[12])
 		assert.Equal(t, "Not Available", row[14]) // Image Created Date (nil → "Not Available")
 		assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[15])
+		assert.Equal(t, "Observed", row[slices.Index(formatCol(), "Vulnerability State")])
 	})
 
 	t.Run("KEV enabled", func(t *testing.T) {
@@ -92,6 +138,7 @@ func TestFormatCSVRow(t *testing.T) {
 		assert.Equal(t, "Not Available", row[14]) // Known Ransomware Campaign (nil → "Not Available")
 		assert.Equal(t, "Not Available", row[16]) // Image Created Date (nil → "Not Available")
 		assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[17])
+		assert.Equal(t, "Observed", row[slices.Index(formatCol(), "Vulnerability State")])
 	})
 }
 
@@ -107,6 +154,7 @@ func TestFormatCSVRow_NilFields(t *testing.T) {
 		assert.Equal(t, "Not Available", row[12]) // EPSS Probability Percentage
 		assert.Equal(t, "Not Available", row[13]) // Discovered At
 		assert.Equal(t, "Not Available", row[14]) // Image Created Date
+		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Vulnerability State")])
 	})
 
 	t.Run("KEV enabled", func(t *testing.T) {
@@ -120,6 +168,7 @@ func TestFormatCSVRow_NilFields(t *testing.T) {
 		assert.Equal(t, "Not Available", row[14]) // Known Ransomware Campaign
 		assert.Equal(t, "Not Available", row[15]) // Discovered At
 		assert.Equal(t, "Not Available", row[16]) // Image Created Date
+		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Vulnerability State")])
 	})
 }
 

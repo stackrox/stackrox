@@ -256,7 +256,7 @@ func (s *policyValidator) validateCategories(policy *storage.Policy) error {
 
 func (s *policyValidator) validateNotifiers(ctx context.Context, policy *storage.Policy) error {
 	for _, n := range policy.GetNotifiers() {
-		_, exists, err := s.notifierStorage.GetNotifier(ctx, n)
+		exists, err := s.notifierStorage.Exists(ctx, n)
 		if err != nil {
 			return fmt.Errorf("error checking if notifier %s is valid", n)
 		}

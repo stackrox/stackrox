@@ -121,6 +121,9 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	}
 
 	deployments, images := testDeploymentsWithImages(namespaces, 1)
+	// Include non-observed findings in both deployed and watched images to exercise report output.
+	images[0].Scan.Components[0].Vulns[1].State = storage.VulnerabilityState_DEFERRED
+	images[1].Scan.Components[0].Vulns[1].State = storage.VulnerabilityState_FALSE_POSITIVE
 	// insert deployments in deployment table
 	for _, dep := range deployments {
 		err := resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
@@ -142,6 +145,8 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	// upsert watched images
 	watchedImages := testWatchedImages(2)
+	watchedImages[0].Scan.Components[0].Vulns[0].State = storage.VulnerabilityState_DEFERRED
+	watchedImages[1].Scan.Components[0].Vulns[0].State = storage.VulnerabilityState_FALSE_POSITIVE
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	if features.FlattenImageData.Enabled() {
 		for _, image := range watchedImages {

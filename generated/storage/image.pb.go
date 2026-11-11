@@ -1960,11 +1960,21 @@ type BaseImageInfo struct {
 	BaseImageFullName string                 `protobuf:"bytes,2,opt,name=base_image_full_name,json=baseImageFullName,proto3" json:"base_image_full_name,omitempty"`
 	BaseImageDigest   string                 `protobuf:"bytes,3,opt,name=base_image_digest,json=baseImageDigest,proto3" json:"base_image_digest,omitempty"`
 	Created           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
-	// Index of the last base image layer, taking into account
-	// "empty layers" (aka. metadata history without SHA).
+	// Manifest index of the last base content blob.
+	// Empty history lines are skipped so this matches component layer indexes.
+	// Dockerfile-line cuts use max_history_index.
 	MaxLayerIndex int32 `protobuf:"varint,5,opt,name=max_layer_index,json=maxLayerIndex,proto3" json:"max_layer_index,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Index of the last base history line, including empty lines.
+	// Set when stored base history is a prefix of this image, compared by
+	// instruction and value, and this image is strictly longer.
+	// Zero is a valid index. An unset oneof means Dockerfile-line filtering must not cut.
+	//
+	// Types that are valid to be assigned to SetMaxHistoryIndex:
+	//
+	//	*BaseImageInfo_MaxHistoryIndex
+	SetMaxHistoryIndex isBaseImageInfo_SetMaxHistoryIndex `protobuf_oneof:"set_max_history_index"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *BaseImageInfo) Reset() {
@@ -2031,6 +2041,32 @@ func (x *BaseImageInfo) GetMaxLayerIndex() int32 {
 	}
 	return 0
 }
+
+func (x *BaseImageInfo) GetSetMaxHistoryIndex() isBaseImageInfo_SetMaxHistoryIndex {
+	if x != nil {
+		return x.SetMaxHistoryIndex
+	}
+	return nil
+}
+
+func (x *BaseImageInfo) GetMaxHistoryIndex() int32 {
+	if x != nil {
+		if x, ok := x.SetMaxHistoryIndex.(*BaseImageInfo_MaxHistoryIndex); ok {
+			return x.MaxHistoryIndex
+		}
+	}
+	return 0
+}
+
+type isBaseImageInfo_SetMaxHistoryIndex interface {
+	isBaseImageInfo_SetMaxHistoryIndex()
+}
+
+type BaseImageInfo_MaxHistoryIndex struct {
+	MaxHistoryIndex int32 `protobuf:"varint,6,opt,name=max_history_index,json=maxHistoryIndex,proto3,oneof"`
+}
+
+func (*BaseImageInfo_MaxHistoryIndex) isBaseImageInfo_SetMaxHistoryIndex() {}
 
 type EmbeddedImageScanComponent_Executable struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -2268,13 +2304,15 @@ const file_storage_image_proto_rawDesc = "" +
 	"\vset_fixableJ\x04\b\t\x10\n" +
 	"\"\"\n" +
 	"\fWatchedImage\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xee\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xb5\x02\n" +
 	"\rBaseImageInfo\x12\"\n" +
 	"\rbase_image_id\x18\x01 \x01(\tR\vbaseImageId\x12/\n" +
 	"\x14base_image_full_name\x18\x02 \x01(\tR\x11baseImageFullName\x12*\n" +
 	"\x11base_image_digest\x18\x03 \x01(\tR\x0fbaseImageDigest\x124\n" +
 	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12&\n" +
-	"\x0fmax_layer_index\x18\x05 \x01(\x05R\rmaxLayerIndex*s\n" +
+	"\x0fmax_layer_index\x18\x05 \x01(\x05R\rmaxLayerIndex\x12,\n" +
+	"\x11max_history_index\x18\x06 \x01(\x05H\x00R\x0fmaxHistoryIndexB\x17\n" +
+	"\x15set_max_history_index*s\n" +
 	"\n" +
 	"SourceType\x12\x06\n" +
 	"\x02OS\x10\x00\x12\n" +
@@ -2400,6 +2438,9 @@ func file_storage_image_proto_init() {
 		(*ListImage_Components)(nil),
 		(*ListImage_Cves)(nil),
 		(*ListImage_FixableCves)(nil),
+	}
+	file_storage_image_proto_msgTypes[17].OneofWrappers = []any{
+		(*BaseImageInfo_MaxHistoryIndex)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

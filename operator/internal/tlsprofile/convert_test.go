@@ -89,6 +89,36 @@ func TestConvertCiphersToIANA(t *testing.T) {
 	}
 }
 
+func TestConvertGroups(t *testing.T) {
+	tests := map[string]struct {
+		input []configv1.TLSGroup
+		want  string
+	}{
+		"preserves order": {
+			input: []configv1.TLSGroup{configv1.TLSGroupX25519MLKEM768, configv1.TLSGroupX25519, configv1.TLSGroupSecP256r1},
+			want:  "X25519MLKEM768,X25519,secp256r1",
+		},
+		"drops unknown groups": {
+			input: []configv1.TLSGroup{configv1.TLSGroupSecP256r1, "bogus", configv1.TLSGroupSecP384r1},
+			want:  "secp256r1,secp384r1",
+		},
+		"all unknown yields empty": {
+			input: []configv1.TLSGroup{"bogus"},
+			want:  "",
+		},
+		"empty input": {
+			input: nil,
+			want:  "",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, convertGroups(tt.input))
+		})
+	}
+}
+
 func TestConvertCiphersToOpenSSL(t *testing.T) {
 	tests := map[string]struct {
 		input []string
