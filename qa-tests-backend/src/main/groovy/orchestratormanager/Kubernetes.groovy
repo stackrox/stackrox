@@ -2639,6 +2639,9 @@ class Kubernetes {
      * Note that createNamespace does not provision service account.
      */
     String createNamespace(String ns) {
+        // createOrReplace happily targets a namespace that is already
+        // terminating, and everything created in it goes away with it.
+        awaitTerminatingNamespaceDeletion(ns)
         return evaluateWithRetry(2, 3) {
             Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
