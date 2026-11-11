@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
@@ -28,18 +27,15 @@ type controller struct {
 	returnChansMutex sync.Mutex
 
 	injector common.MessageInjector
-
-	supportsCancellations bool
 }
 
 type telemetryCallback func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error
 
-func newController(capabilities set.Set[centralsensor.SensorCapability], injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
+func newController(injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
 	ctrl := &controller{
-		stopSig:               stopSig,
-		returnChans:           make(map[string]chan *central.TelemetryResponsePayload),
-		injector:              injector,
-		supportsCancellations: capabilities.Contains(centralsensor.PullTelemetryDataCap),
+		stopSig:     stopSig,
+		returnChans: make(map[string]chan *central.TelemetryResponsePayload),
+		injector:    injector,
 	}
 	go ctrl.pruneReturnChans()
 	return ctrl
@@ -92,8 +88,7 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 
 	hasEOS := false
 	defer func() {
-		// Check for c.supportsCancellations here as well, in order to avoid spawning a goroutine.
-		if hasEOS || !c.supportsCancellations {
+		if hasEOS {
 			return
 		}
 
@@ -132,10 +127,6 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 }
 
 func (c *controller) sendCancellation(requestID string) {
-	if !c.supportsCancellations {
-		return
-	}
-
 	cancelMsg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_CancelPullTelemetryDataRequest{
 			CancelPullTelemetryDataRequest: &central.CancelPullTelemetryDataRequest{
