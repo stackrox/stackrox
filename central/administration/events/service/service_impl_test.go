@@ -252,9 +252,6 @@ func TestWorkloadFilterMatches(t *testing.T) {
 			deployments := deploymentMocks.NewMockDataStore(ctrl)
 			deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).Return(tc.imageViews, nil)
 			ds := dsMocks.NewMockDataStore(ctrl)
-			if tc.matchesImage {
-				ds.EXPECT().ListEvents(gomock.Any(), gomock.Any()).Return(nil, nil)
-			}
 			svc := &serviceImpl{ds: ds, deployments: deployments}
 			query, err := svc.getQueryFromFilter(context.Background(), &v1.AdministrationEventsFilter{
 				ResourceType: tc.resourceTypes, WorkloadQuery: `Cluster:"prod"`,
@@ -289,23 +286,18 @@ func TestWorkloadFilterErrors(t *testing.T) {
 	for name, tc := range map[string]struct {
 		workloadQuery string
 		lookupError   error
-		legacyError   error
 	}{
-		"invalid query":       {workloadQuery: `INVALIDQUERY`},
-		"deployment lookup":   {workloadQuery: `Cluster:prod`, lookupError: errFake},
-		"legacy event lookup": {workloadQuery: `Cluster:prod`, legacyError: errFake},
+		"invalid query":     {workloadQuery: `INVALIDQUERY`},
+		"deployment lookup": {workloadQuery: `Cluster:prod`, lookupError: errFake},
 	} {
 		for _, rpc := range []string{"count", "list"} {
 			t.Run(name+"/"+rpc, func(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				deployments := deploymentMocks.NewMockDataStore(ctrl)
 				ds := dsMocks.NewMockDataStore(ctrl)
-				if tc.lookupError != nil || tc.legacyError != nil {
+				if tc.lookupError != nil {
 					deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).Return(
 						[]*views.ContainerImageView{{ImageIDV2: "image-id"}}, tc.lookupError)
-				}
-				if tc.legacyError != nil {
-					ds.EXPECT().ListEvents(gomock.Any(), gomock.Any()).Return(nil, tc.legacyError)
 				}
 				svc := newService(ds, deployments)
 				filter := &v1.AdministrationEventsFilter{WorkloadQuery: tc.workloadQuery}
@@ -315,7 +307,7 @@ func TestWorkloadFilterErrors(t *testing.T) {
 				} else {
 					_, err = svc.ListAdministrationEvents(context.Background(), &v1.ListAdministrationEventsRequest{Filter: filter})
 				}
-				if tc.lookupError != nil || tc.legacyError != nil {
+				if tc.lookupError != nil {
 					assert.ErrorIs(t, err, errFake)
 				} else {
 					assert.ErrorIs(t, err, errox.InvalidArgs)

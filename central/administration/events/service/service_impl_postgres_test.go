@@ -309,18 +309,16 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 		Filter: filter,
 	})
 	s.NoError(err)
-	s.Require().Len(resp.GetEvents(), 2)
-	for _, event := range resp.GetEvents() {
-		s.Equal(imgEvent.ResourceID, event.GetResource().GetId())
-	}
+	s.Require().Len(resp.GetEvents(), 1)
+	s.Equal(events.GenerateEventID(&newEvent), resp.GetEvents()[0].GetId())
 	count, err := s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: filter})
 	s.Require().NoError(err)
-	s.Equal(int32(2), count.GetCount())
+	s.Equal(int32(1), count.GetCount())
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: filter, Pagination: &v1.Pagination{Limit: 1, Offset: 1},
 	})
 	s.Require().NoError(err)
-	s.Len(resp.GetEvents(), 1)
+	s.Empty(resp.GetEvents())
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
@@ -334,6 +332,15 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 	})
 	s.Require().NoError(err)
 	s.Zero(count.GetCount())
+
+	// Events without a searchable resource ID are still visible without workload filters.
+	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{})
+	s.Require().NoError(err)
+	s.Require().Len(resp.GetEvents(), 4)
+	s.assertMatchEvents([]*events.AdministrationEvent{imgEvent, otherEvent, &newEvent, &nameOnlyEvent}, resp.GetEvents())
+	count, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{})
+	s.Require().NoError(err)
+	s.Equal(int32(4), count.GetCount())
 }
 
 func (s *servicePostgresTestSuite) addListEvents() []*events.AdministrationEvent {
