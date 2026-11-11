@@ -684,8 +684,17 @@ HANGSTUB
 # Budget propagation — caller-supplied remaining time caps crash check
 # =============================================================================
 
-@test "crash check with tight budget caps query and returns within budget" {
-    # Stub kubectl to block on pod query for 60s. Budget is 3s.
+@test "zero budget makes no kubectl calls and returns safe fallback" {
+    # Budget <= 0 must return 1 immediately without any kubectl call.
+    : > "${KUBECTL_CALL_LOG}"
+    run check_central_pod_error_state stackrox 0
+    assert_failure   # returns 1 = safe fallback
+    # No kubectl calls made.
+    run cat "${KUBECTL_CALL_LOG}"
+    assert_output ""
+}
+
+@test "blocked query capped by caller budget with call marker" {
     local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
     mkdir -p "${HANG_BIN}"
     cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
@@ -703,61 +712,87 @@ HANGSTUB
 
     local start_time end_time elapsed
     start_time="$(date +%s)"
-    # Pass budget of 3 seconds as $2.
     run check_central_pod_error_state stackrox 3
     end_time="$(date +%s)"
     elapsed=$(( end_time - start_time ))
 
-    # Query timed out within budget → safe fallback (no crash).
     assert_failure
     refute_output --partial "crash state detected"
     [[ "$elapsed" -ge 1 ]]
     [[ "$elapsed" -le 6 ]]
+    # Query call was actually attempted.
+    run grep "get pods" "${KUBECTL_CALL_LOG}"
+    assert_success
 }
 
-@test "crash detected with exhausted diagnostic budget skips diagnostics" {
-    # Stub: pod query succeeds instantly. Budget is 1s. After the query,
-    # the remaining budget is <=0 (due to integer-second rounding in date),
-    # so diagnostics are skipped. Crash is still detected.
-    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
-    KUBECTL_DIAG_FAIL="false"
-    export KUBECTL_DIAG_FAIL
-
-    # Override date to simulate elapsed time: first call returns start,
-    # second call (after query) returns start+2, exhausting a 1s budget.
-    local DATE_CALL_COUNT="${BATS_TEST_TMPDIR}/date-calls"
-    echo "0" > "${DATE_CALL_COUNT}"
-    local REAL_DATE_START
-    REAL_DATE_START="$(/usr/bin/date +%s)"
-
+@test "blocked logs exhausts shared budget preventing get-pod and second pod diagnostics" {
+    # Two-pod crashloop fixture: diagnostics for logs on pod1 blocks.
+    # The shared budget should prevent get-pod on pod1 and all of pod2.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-two-pods-second-crashing.json"
     local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
     mkdir -p "${HANG_BIN}"
-    # Create a date wrapper that advances time after the query
-    cat > "${HANG_BIN}/date" <<DATESTUB
+    cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
 #!/usr/bin/env bash
-if [[ "\$*" == *"+%s"* ]]; then
-    count=\$(cat "${DATE_CALL_COUNT}")
-    echo \$(( count + 1 )) > "${DATE_CALL_COUNT}"
-    if (( count == 0 )); then
-        echo "${REAL_DATE_START}"
-    else
-        # After first call, report 2s elapsed
-        echo $(( REAL_DATE_START + 2 ))
-    fi
-else
-    /usr/bin/date "\$@"
-fi
-DATESTUB
-    chmod +x "${HANG_BIN}/date"
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get pods"*) cat "${KUBECTL_POD_FIXTURE}" ;;
+    *"logs"*) /usr/bin/sleep 60 ;;
+    *"get pod"*"-o json"*) echo '{}' ;;
+    *) echo '{}' ;;
+esac
+HANGSTUB
+    chmod +x "${HANG_BIN}/kubectl"
     export PATH="${HANG_BIN}:${PATH}"
+    retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+    export -f retrying_kubectl
 
-    # Budget 1s: date simulation makes check_elapsed=2 > budget → diagnostics skipped.
-    run check_central_pod_error_state stackrox 1
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
+    # Budget 3s: query instant, logs on first pod blocks ~3s → exhausts budget.
+    run check_central_pod_error_state stackrox 3
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
 
-    # Crash STILL detected even though diagnostic budget exhausted.
+    # Crash STILL detected despite exhausted diagnostic budget.
     assert_success
     assert_output --partial "crash state detected"
     assert_output --partial "CrashLoopBackOff"
-    # Diagnostics skipped because budget exhausted.
     assert_output --partial "budget exhausted"
+    [[ "$elapsed" -ge 1 ]]
+    [[ "$elapsed" -le 8 ]]
+    # Logs was attempted (blocked call marker).
+    run grep "logs" "${KUBECTL_CALL_LOG}"
+    assert_success
+    # Single-pod diagnostic get should NOT have been attempted (budget exhausted).
+    # Use 'get pod -n' to distinguish from the initial 'get pods -l' query.
+    local getpod_diag_count
+    getpod_diag_count="$(grep -c 'get pod -n' "${KUBECTL_CALL_LOG}" || true)"
+    [[ "$getpod_diag_count" -eq 0 ]]
+}
+
+@test "wait_for_api with short test budget exits within budget on crash" {
+    KUBECTL_DEPLOY_READY="true"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+
+    # 15-second outer safety guard (distinct from intended exit).
+    run timeout 15 bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
+        export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        curl() { echo "curl: (7) Failed"; return 7; }
+        export -f curl
+        # Short 5s ping budget so crash check fires and loop deadline enforced.
+        CRASH_CHECK_API_PING_BUDGET=5 MAX_WAIT_SECONDS=300 wait_for_api stackrox
+    ' 2>&1
+
+    # Intended exit 1 from crash detection, NOT outer timeout 124.
+    assert_failure
+    [[ "$status" -eq 1 ]]
+    assert_output --partial "crash state"
 }

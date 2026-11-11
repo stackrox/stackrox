@@ -1622,15 +1622,21 @@ wait_for_ready_deployment() {
         # (let the timeout case below handle it) and is capped to the
         # remaining budget so it cannot extend past max_seconds.
         iteration=$(( iteration + 1 ))
-        if [[ "$deployment_name" == "central" ]] && (( iteration % 5 == 0 )) && (( elapsed_seconds < max_seconds )); then
-            local remaining_deploy=$(( max_seconds - elapsed_seconds ))
-            if check_central_pod_error_state "$namespace" "$remaining_deploy"; then
-                die "Central pod is in a crash state during deployment readiness wait."
-            fi
-            # Refresh elapsed after the (potentially long) crash check so
-            # the timeout decision below is not stale.
+        if [[ "$deployment_name" == "central" ]] && (( iteration % 5 == 0 )); then
+            # Refresh elapsed immediately before crash check (not stale
+            # from before the deployment query above).
             curr_time="$(date '+%s')"
             elapsed_seconds=$(( curr_time - start_time ))
+            if (( elapsed_seconds < max_seconds )); then
+                local remaining_deploy=$(( max_seconds - elapsed_seconds ))
+                if check_central_pod_error_state "$namespace" "$remaining_deploy"; then
+                    die "Central pod is in a crash state during deployment readiness wait."
+                fi
+                # Refresh elapsed after crash check so timeout decision
+                # below uses a fresh timestamp.
+                curr_time="$(date '+%s')"
+                elapsed_seconds=$(( curr_time - start_time ))
+            fi
         fi
 
         # Timeout case
@@ -1695,7 +1701,10 @@ wait_for_scanner_V4() {
 #   by CRASH_CHECK_QUERY_TIMEOUT (default 120s) via timeout(1).
 #   Diagnostic calls use CRASH_CHECK_DIAG_TIMEOUT (default 10s) as both
 #   the process deadline (timeout(1)) and HTTP deadline (--request-timeout).
-#   Diagnostic failures cannot suppress a detected crash exit.
+#   When a caller budget ($2) is provided, each call's deadline is
+#   recomputed from cumulative remaining time so multiple pods/calls
+#   share the budget. Diagnostics are skipped when budget is exhausted
+#   but the crash result (return 0) is still delivered.
 # Arguments:
 #   $1 - Kubernetes namespace (default: stackrox)
 #   $2 - Optional max seconds budget for this entire check. When provided,
@@ -1716,9 +1725,13 @@ check_central_pod_error_state() {
     # timeout(1) cannot directly execute shell functions; TEST_ROOT is exported
     # so the child process can locate retry-kubectl.sh.
     local query_timeout="${CRASH_CHECK_QUERY_TIMEOUT:-120}"
+    # If caller provided budget <= 0, skip entirely (safe fallback).
+    if [[ -n "$max_budget" ]] && (( max_budget <= 0 )); then
+        return 1
+    fi
     # Cap to remaining budget if provided (minimum 1; timeout 0 disables deadline).
     if [[ -n "$max_budget" ]] && (( max_budget < query_timeout )); then
-        query_timeout=$(( max_budget > 0 ? max_budget : 1 ))
+        query_timeout="$max_budget"
     fi
     local check_start
     check_start="$(date '+%s')"
@@ -1770,31 +1783,42 @@ check_central_pod_error_state() {
             info "  ${line}"
         done <<< "$crash_info"
 
-        # Show targeted diagnostics for each affected pod. Each kubectl call
-        # is bounded by both --request-timeout (HTTP deadline) and timeout(1)
-        # (process deadline). CRASH_CHECK_DIAG_TIMEOUT (default 10s) controls
-        # the process deadline; a stalled call cannot prevent the crash exit.
-        # When a caller budget is set, diagnostics are skipped if exhausted.
-        local diag_timeout="${CRASH_CHECK_DIAG_TIMEOUT:-10}"
-        if [[ -n "$max_budget" ]]; then
-            local check_elapsed=$(( $(date '+%s') - check_start ))
-            local remaining_budget=$(( max_budget - check_elapsed ))
-            if (( remaining_budget <= 0 )); then
-                info "Diagnostic budget exhausted; skipping diagnostics."
-                return 0
-            fi
-            if (( remaining_budget < diag_timeout )); then
-                diag_timeout=$(( remaining_budget > 0 ? remaining_budget : 1 ))
-            fi
-        fi
+        # Show targeted diagnostics for each affected pod. Each call's
+        # deadline is recomputed from the cumulative remaining budget so
+        # multiple pods/calls share the budget rather than multiplying it.
+        # When budget is exhausted, remaining diagnostics are skipped but
+        # the crash result (return 0) is still delivered.
+        local diag_default="${CRASH_CHECK_DIAG_TIMEOUT:-10}"
         local affected_pods
         affected_pods="$(echo "$crash_info" | cut -d'/' -f1 | sort -u)"
         while IFS= read -r pod_name; do
             [[ -z "$pod_name" ]] && continue
+            # Recompute remaining before each call.
+            if [[ -n "$max_budget" ]]; then
+                local remaining=$(( max_budget - ($(date '+%s') - check_start) ))
+                if (( remaining <= 0 )); then
+                    info "Diagnostic budget exhausted; skipping remaining diagnostics."
+                    return 0
+                fi
+            fi
+            local dt="${diag_default}"
+            if [[ -n "$max_budget" ]]; then
+                (( remaining < dt )) && dt="$remaining"
+            fi
             info "Last 30 lines of logs from pod ${pod_name}:"
-            timeout "${diag_timeout}" kubectl logs -n "$namespace" "$pod_name" --all-containers --tail=30 --request-timeout="${diag_timeout}s" 2>/dev/null || true
+            timeout "${dt}" kubectl logs -n "$namespace" "$pod_name" --all-containers --tail=30 --request-timeout="${dt}s" 2>/dev/null || true
+            # Recompute remaining before next call.
+            if [[ -n "$max_budget" ]]; then
+                remaining=$(( max_budget - ($(date '+%s') - check_start) ))
+                if (( remaining <= 0 )); then
+                    info "Diagnostic budget exhausted; skipping remaining diagnostics."
+                    return 0
+                fi
+                dt="${diag_default}"
+                (( remaining < dt )) && dt="$remaining"
+            fi
             info "Container state for pod ${pod_name}:"
-            timeout "${diag_timeout}" kubectl get pod -n "$namespace" "$pod_name" -o json --request-timeout="${diag_timeout}s" 2>/dev/null \
+            timeout "${dt}" kubectl get pod -n "$namespace" "$pod_name" -o json --request-timeout="${dt}s" 2>/dev/null \
                 | jq -r '.status.containerStatuses[]? |
                     "\(.name): state=\(.state | keys[0]) ready=\(.ready) restartCount=\(.restartCount)"' \
                 || true
@@ -1858,28 +1882,44 @@ wait_for_api() {
 
     info "Attempting to get ${SUCCESSES_NEEDED_IN_A_ROW} 'ok' responses in a row from ${PING_URL}"
 
-    # Upper envelope for the ping polling phase: 150 iterations × (10s max
-    # curl + 5s max sleep) = 2250s. Crash checks are capped to the remaining
-    # budget within this envelope so they cannot indefinitely extend the
-    # prior worst-case duration. Configurable for testing.
-    local api_ping_deadline="${CRASH_CHECK_API_PING_DEADLINE:-2250}"
+    # Absolute upper envelope for the ping polling phase. Default 2250s
+    # comes from existing 150 iterations × (10s curl + 5s sleep) worst-case.
+    # CRASH_CHECK_API_PING_BUDGET (seconds) is configurable for testing.
+    # The deadline is enforced at every iteration boundary and after each
+    # crash check, so added work cannot extend past this envelope.
+    local api_ping_budget="${CRASH_CHECK_API_PING_BUDGET:-2250}"
     local api_ping_start
     api_ping_start="$(date '+%s')"
 
     set +e
     # shellcheck disable=SC2034
     for i in $(seq 1 150); do
+        # Enforce absolute ping-phase deadline at iteration boundary.
+        local api_elapsed=$(( $(date '+%s') - api_ping_start ))
+        if (( api_elapsed >= api_ping_budget )); then
+            info "API ping phase deadline (${api_ping_budget}s) reached."
+            break
+        fi
         if (( i % 5 == 0 )); then
-            local api_ping_elapsed=$(( $(date '+%s') - api_ping_start ))
-            if (( api_ping_elapsed < api_ping_deadline )); then
-                local remaining_api=$(( api_ping_deadline - api_ping_elapsed ))
+            local remaining_api=$(( api_ping_budget - api_elapsed ))
+            if (( remaining_api > 0 )); then
                 if check_central_pod_error_state "$central_namespace" "$remaining_api"; then
                     info "Central pod is in a crash state — failing fast instead of waiting for timeout."
                     exit 1
                 fi
             fi
+            # Re-check deadline after crash check.
+            api_elapsed=$(( $(date '+%s') - api_ping_start ))
+            if (( api_elapsed >= api_ping_budget )); then
+                info "API ping phase deadline (${api_ping_budget}s) reached after crash check."
+                break
+            fi
         fi
-        pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
+        # Cap curl/sleep to remaining budget where applicable.
+        local api_remaining=$(( api_ping_budget - ($(date '+%s') - api_ping_start) ))
+        local curl_max=10
+        (( api_remaining < curl_max )) && curl_max=$(( api_remaining > 1 ? api_remaining : 1 ))
+        pong="$(curl -sk --connect-timeout 5 --max-time "${curl_max}" "${PING_URL}")"
         pong_exitstatus="$?"
         status="$(echo "$pong" | jq -r '.status')"
         if [[ "$pong_exitstatus" -eq "0" && "$status" == "ok" ]]; then
