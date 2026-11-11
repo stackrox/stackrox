@@ -99,20 +99,13 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ matrix.backend }}" = "cacheprog" ]; then
-            # Pre-built gocache-serve: committed to the repo alongside the
-            # source it was built from. Zero bootstrap — the binary is just
-            # there, versioned with the code. On source changes, the binary
-            # is rebuilt and committed (can be automated in CI).
-            # Near-inception: the cache server ships with the code it serves.
-            if [ -x tools/gocache-serve/bin/gocache-serve-linux-amd64 ]; then
-              cp tools/gocache-serve/bin/gocache-serve-linux-amd64 /usr/local/bin/gocache-serve
-              chmod +x /usr/local/bin/gocache-serve
-              echo "prebuilt: gocache-serve from repo (0s — no download, no auth)"
-            else
-              echo "=== building gocache-serve (no prebuilt binary) ==="
-              (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
-            fi
-            echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
+            # gocache-serve bootstrap: self-contained script that downloads
+            # the pre-built binary from blob store (zstd, ~1s) or builds
+            # from source (~30s) as fallback, then execs into the result.
+            # Callers just set GOCACHEPROG to the script — it IS gocache-serve.
+            # Near-inception: the cache server bootstraps from the store it serves.
+            # 4.5KB in the repo. No binary committed.
+            echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_MANIFEST=${{ matrix.workload }}" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
