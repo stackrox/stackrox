@@ -257,11 +257,28 @@ jobs:
           echo "GOCACHE=$GOCACHE"
           go env GOCACHE
 
-          # Deterministic builds: generate vendor/ and switch to -mod=vendor.
-          # Eliminates GOMODCACHE path sensitivity (585→10 ActionID changes).
+          # Deterministic builds via vendor mode with blob-store caching.
+          # The vendor/ directory (~405MB → ~100MB compressed) is keyed by
+          # a hash of go.sum: same dependencies = same vendor content.
+          # First run generates and caches; subsequent runs restore from
+          # the blob store (much faster than go mod vendor). Unused vendor
+          # caches age out via Azure lifecycle policies.
           if [ -n "$GOCACHE_VENDOR_MODE" ]; then
-            echo "vendormode: generating vendor/ directory..."
-            go mod vendor 2>&1 | tail -3
+            VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
+            if "$GOCACHEPROG" -fetch "$VENDOR_KEY" /tmp/vendor-cache.tar.gz 2>/dev/null && [ -s /tmp/vendor-cache.tar.gz ]; then
+              echo "vendormode: restoring cached vendor/ (key: $VENDOR_KEY, $(du -sh /tmp/vendor-cache.tar.gz | cut -f1))"
+              tar -xzf /tmp/vendor-cache.tar.gz
+              echo "vendormode: vendor/ restored from cache"
+            else
+              echo "vendormode: generating vendor/ (cache miss for $VENDOR_KEY)"
+              go mod vendor 2>&1 | tail -3
+              # Cache for future runs (same go.sum = same key = hit)
+              if [ -d vendor ]; then
+                tar -czf /tmp/vendor-cache.tar.gz vendor/
+                "$GOCACHEPROG" -store "$VENDOR_KEY" /tmp/vendor-cache.tar.gz 2>&1 | tail -1
+                echo "vendormode: vendor/ cached ($(du -sh /tmp/vendor-cache.tar.gz | cut -f1) compressed)"
+              fi
+            fi
             export GOFLAGS="$GOFLAGS -mod=vendor"
             echo "vendormode: GOFLAGS=$GOFLAGS"
           fi
