@@ -49,7 +49,8 @@ class NamespaceService extends BaseService {
      *
      * Central drops a namespace only after sensor reports its deletion, so the
      * namespace being gone from the orchestrator does not mean it is gone from
-     * Central's view.
+     * Central's view. A transient Central error is retried within the timeout
+     * rather than failing cleanup.
      *
      * @param name namespace name
      * @param timeoutSeconds how long to wait
@@ -60,9 +61,13 @@ class NamespaceService extends BaseService {
         int retries = (timeoutSeconds / intervalSeconds) as int
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
-            if (getNamespaces().every { it.metadata.name != name }) {
-                log.debug "SR no longer lists namespace ${name}"
-                return true
+            try {
+                if (getNamespaces().every { it.metadata.name != name }) {
+                    log.debug "SR no longer lists namespace ${name}"
+                    return true
+                }
+            } catch (Exception e) {
+                log.debug("Could not list namespaces while waiting for ${name} to be deleted", e)
             }
             log.debug "Retrying in ${intervalSeconds}..."
         }

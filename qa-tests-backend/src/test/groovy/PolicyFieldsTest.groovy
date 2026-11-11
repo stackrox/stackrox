@@ -866,10 +866,14 @@ class PolicyFieldsTest extends BaseSpecification {
         orchestrator.deleteDeployment(UNSCANNED)
 
         List<String> failures = []
+        // Deployments share namespaces, and a namespace whose deletion failed
+        // would pay the full delete wait again on every repeat.
+        Set<String> attemptedNamespaces = [] as Set
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
             // Delete namespace as well
-            if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE) {
+            if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE &&
+                    attemptedNamespaces.add(deployment.namespace)) {
                 failures.addAll(deleteNamespaceCatchingFailures(deployment.namespace))
             }
         }
@@ -879,7 +883,9 @@ class PolicyFieldsTest extends BaseSpecification {
         }
 
         [NAMESPACE_C, NAMESPACE_D].forEach { ns ->
-            failures.addAll(deleteNamespaceCatchingFailures(ns))
+            if (attemptedNamespaces.add(ns)) {
+                failures.addAll(deleteNamespaceCatchingFailures(ns))
+            }
         }
 
         // One failing namespace must not leave the rest behind.

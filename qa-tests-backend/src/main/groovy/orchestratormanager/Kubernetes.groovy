@@ -2903,7 +2903,15 @@ class Kubernetes {
         List<String> previous = null
         List<String> terminating = []
         while (t.IsValid()) {
-            def namespaces = client.namespaces().list()?.items ?: []
+            def namespaces
+            try {
+                namespaces = client.namespaces().list()?.items ?: []
+            } catch (KubernetesClientException kce) {
+                // The caller compares two views and has no retry of its own; a
+                // single transient list error must not fail the test.
+                log.debug("Could not list namespaces while waiting for the list to settle", kce)
+                continue
+            }
             List<String> current = namespaces*.metadata*.name.sort()
             terminating = namespaces.findAll { it.metadata?.deletionTimestamp != null }*.metadata*.name
             if (!terminating.isEmpty()) {
