@@ -182,6 +182,15 @@ jobs:
               echo "docker COPY --link layer composition test" ;; esac
             case "$COMMIT_MSG" in *testexec:*)
               echo "test execution workload (not just compile)" ;; esac
+            case "$COMMIT_MSG" in *vendormode:*)
+              # Deterministic builds: generate vendor/ on the runner and
+              # build with -mod=vendor. This eliminates GOMODCACHE path
+              # sensitivity (measured: 585 ActionID changes with different
+              # GOMODCACHE paths in module mode vs 10 in vendor mode).
+              # The vendor directory is 405MB, generated fresh per runner
+              # from the pinned go.sum — same content every time.
+              echo "GOCACHE_VENDOR_MODE=1" >> "$GITHUB_ENV"
+              echo "deterministic builds via go mod vendor" ;; esac
             case "$COMMIT_MSG" in *westpin*)
               echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
               echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
@@ -247,6 +256,16 @@ jobs:
           echo "=== workload=${{ matrix.workload }} backend=${{ matrix.backend }} started at $(date -u +%H:%M:%S) ==="
           echo "GOCACHE=$GOCACHE"
           go env GOCACHE
+
+          # Deterministic builds: generate vendor/ and switch to -mod=vendor.
+          # Eliminates GOMODCACHE path sensitivity (585→10 ActionID changes).
+          if [ -n "$GOCACHE_VENDOR_MODE" ]; then
+            echo "vendormode: generating vendor/ directory..."
+            go mod vendor 2>&1 | tail -3
+            export GOFLAGS="$GOFLAGS -mod=vendor"
+            echo "vendormode: GOFLAGS=$GOFLAGS"
+          fi
+
           case "${{ matrix.workload }}" in
             lint)
               make golangci-lint
