@@ -20,6 +20,7 @@ const (
 	OutputQueueConsumer
 	NetworkFlowManagerResourceSyncConsumer
 	SensorSoftRestartConsumer
+	ComplianceManagerConsumer
 )
 
 var (
@@ -41,6 +42,7 @@ var (
 		OutputQueueConsumer:                    "OutputQueue",
 		NetworkFlowManagerResourceSyncConsumer: "NetworkFlowManagerResourceSync",
 		SensorSoftRestartConsumer:              "SensorSoftRestart",
+		ComplianceManagerConsumer:              "ComplianceManager",
 	}
 )
 

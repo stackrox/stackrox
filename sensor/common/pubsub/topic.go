@@ -20,6 +20,7 @@ const (
 	ResourceSyncFinishedTopic
 	FakeFileActivityTopic
 	NodeRoleChangeTopic
+	ComplianceCentralRequestTopic
 )
 
 var (
@@ -41,6 +42,7 @@ var (
 		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
 		FakeFileActivityTopic:           "FakeFileActivity",
 		NodeRoleChangeTopic:             "NodeRoleChange",
+		ComplianceCentralRequestTopic:   "ComplianceScanConfig",
 	}
 )
 

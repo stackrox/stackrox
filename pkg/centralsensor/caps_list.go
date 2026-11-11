@@ -46,8 +46,11 @@ const (
 	// NetworkGraphDiscoveredExternalEntitiesSupported identifies the capability of Central to receive discovered external entities.
 	NetworkGraphDiscoveredExternalEntitiesSupported = "NetworkGraphDiscoveredExternalEntitiesSupported"
 
-	// ComplianceV2ScanConfigSync identifies the capability of sensor to support scan configuration sync when connecting to central.
-	ComplianceV2ScanConfigSync SensorCapability = "ComplianceV2ScanConfigSync"
+	// ComplianceV2ScanConfigSync identifies the capability to support scan
+	// configuration sync when connecting. Bilateral: Sensor advertises it to
+	// indicate it can handle the sync, Central advertises it to indicate it
+	// will send the SyncComplianceScanConfigRequest during the handshake.
+	ComplianceV2ScanConfigSync = "ComplianceV2ScanConfigSync"
 
 	// SecuredClusterCertificatesReissue identifies the capability of Central to reissue a new set of Secured Clusters certificates
 	SecuredClusterCertificatesReissue = "SecuredClusterCertificatesReissue"
