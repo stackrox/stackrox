@@ -151,6 +151,7 @@ function AdministrationEventsToolbar({
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[]}
                             config={workloadSearchFilterConfig}
+                            hasClearFilters={false}
                             onFilterChange={setSearchFilter}
                             searchFilter={searchFilter}
                         />
