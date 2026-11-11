@@ -42,6 +42,21 @@ func (m *MockClusterManager) EXPECT() *MockClusterManagerMockRecorder {
 	return m.recorder
 }
 
+// Exists mocks base method.
+func (m *MockClusterManager) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockClusterManagerMockRecorder) Exists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockClusterManager)(nil).Exists), ctx, id)
+}
+
 // GetCluster mocks base method.
 func (m *MockClusterManager) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
 	m.ctrl.T.Helper()

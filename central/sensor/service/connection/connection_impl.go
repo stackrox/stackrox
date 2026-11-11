@@ -652,7 +652,7 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 }
 
 func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*central.MsgToSensor, error) {
-	_, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
+	exists, err := c.clusterMgr.Exists(ctx, c.clusterID)
 	if err != nil {
 		return nil, err
 	}

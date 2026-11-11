@@ -5,6 +5,7 @@ on:
     - 'release-*'
     tags-ignore:
     - '*-nightly-*'
+    - '*.x'
 
 jobs:
   run-parameters:
