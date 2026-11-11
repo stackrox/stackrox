@@ -207,6 +207,54 @@ func manifestHash(entries []manifestEntry) string {
 	return fmt.Sprintf("%x", sum[:16])
 }
 
+// writeStub writes a minimal ELF64 file containing a single PT_NOTE
+// segment with a Go buildID note. cmd/internal/buildid reads only the
+// note (zeroing section headers, never hashing content), so this file
+// satisfies go's up-to-date check for the given buildID. Layout:
+// ELF header (64B) + one program header (56B) + note at offset 120.
+func writeStub(buildID, outfile string) error {
+	if len(buildID) == 0 {
+		return fmt.Errorf("empty buildID")
+	}
+	noteLen := 12 + 4 + len(buildID)
+	buf := make([]byte, 120+noteLen)
+	le := func(off int, n int, v uint64) {
+		for i := 0; i < n; i++ {
+			buf[off+i] = byte(v >> (8 * i))
+		}
+	}
+	// ELF64 header, LSB.
+	copy(buf[0:4], "\x7fELF")
+	buf[4] = 2    // ELFCLASS64
+	buf[5] = 1    // ELFDATA2LSB
+	buf[6] = 1    // EV_CURRENT
+	le(16, 2, 2)  // e_type = ET_EXEC
+	le(18, 2, 62) // e_machine = EM_X86_64
+	le(20, 4, 1)  // e_version
+	le(32, 8, 64) // e_phoff = 64
+	le(52, 2, 64) // e_ehsize
+	le(54, 2, 56) // e_phentsize
+	le(56, 2, 1)  // e_phnum
+	le(58, 2, 64) // e_shentsize (shnum=0: parser zeroes anyway)
+	// Program header: PT_NOTE at offset 64.
+	le(64+0, 4, 4)                // p_type = PT_NOTE
+	le(64+4, 4, 4)                // p_flags = PF_R
+	le(64+8, 8, 120)              // p_offset
+	le(64+16, 8, 120)             // p_vaddr
+	le(64+24, 8, 120)             // p_paddr
+	le(64+32, 8, uint64(noteLen)) // p_filesz
+	le(64+40, 8, uint64(noteLen)) // p_memsz
+	le(64+48, 8, 4)               // p_align
+	// Note: namesz=4, descsz=len(buildID), type=4 (go build ID),
+	// name "Go\0\0", value = buildID.
+	le(120, 4, 4)
+	le(124, 4, uint64(len(buildID)))
+	le(128, 4, 4)
+	copy(buf[132:136], "Go\x00\x00")
+	copy(buf[136:], buildID)
+	return os.WriteFile(outfile, buf, 0o755)
+}
+
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 	log.SetPrefix("gocache-serve: ")
@@ -217,6 +265,18 @@ func main() {
 	// binary); -fetch/-store move blobs (e.g. output binaries) through the
 	// same backend + auth as the protocol mode.
 	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-") {
+		// -stub needs no backend; the others do.
+		if os.Args[1] == "-stub" {
+			if len(os.Args) < 4 {
+				fmt.Fprintln(os.Stderr, "usage: -stub BUILDID OUTFILE")
+				os.Exit(2)
+			}
+			if err := writeStub(os.Args[2], os.Args[3]); err != nil {
+				fmt.Fprintf(os.Stderr, "stub: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		}
 		backend, err := newBackend()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "backend: %v\n", err)
@@ -266,6 +326,8 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Fprintf(os.Stderr, "stored %s (%d bytes)\n", os.Args[2], len(body))
+		case "-stub":
+			fmt.Fprintln(os.Stderr, "unreachable: -stub handled above")
 		default:
 			fmt.Fprintf(os.Stderr, "unknown subcommand %s\n", os.Args[1])
 			os.Exit(2)

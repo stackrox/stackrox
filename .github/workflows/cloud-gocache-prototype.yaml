@@ -171,6 +171,9 @@ jobs:
               # graceful high-swap, thrash (session-time explosion), or OOM.
               echo "GOCACHE_EXTREME=1" >> "$GITHUB_ENV"
               echo "extreme memory-pressure probe enabled" ;; esac
+            case "$COMMIT_MSG" in *stubmode:*)
+              echo "GOCACHE_OUTBIN_MODE=stub" >> "$GITHUB_ENV"
+              echo "link-output STUB mode (bytes-only transfer)" ;; esac
             case "$COMMIT_MSG" in *westpin*)
               echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
               echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
@@ -258,17 +261,33 @@ jobs:
               if [ -n "$GOCACHE_ALLPLAT" ]; then
                 make cli
               else
-                # Link-output cache, keyless: fetch the latest stored
-                # binary and let go's on-disk buildID check validate it —
-                # match skips the relink, mismatch relinks (one wasted
-                # fetch, never incorrectness). Measured: binaries are
-                # byte-identical across runners/SHAs with stable envs, so
-                # the hit case is the common one on unchanged trees.
+                # Link-output restore, two modes (GOCACHE_OUTBIN_MODE):
+                #   full (default) — fetch the real binary; the buildID
+                #     check validates it. Safe/verifiable: the output is
+                #     the true binary (paranoid mode, and needed when the
+                #     binary itself is consumed downstream).
+                #   stub — fetch only the META blob (buildID string, bytes)
+                #     and write a ~250-byte stub carrying it; go's check
+                #     reads the note and skips compile+link. The real
+                #     binary is fetched only by consumers that need it
+                #     (docker --from=cached makes that rare).
                 mkdir -p bin/linux_amd64
-                if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null; then
-                  echo "link-output restored (latest) — buildID check will skip or relink"
-                else
-                  rm -f bin/linux_amd64/roxctl
+                OBM="${GOCACHE_OUTBIN_MODE:-full}"
+                if [ "$OBM" = "stub" ]; then
+                  if "$GOCACHEPROG" -fetch "outbin-META-linux_amd64" /tmp/outbin-meta 2>/dev/null && [ -s /tmp/outbin-meta ]; then
+                    BID=$(cat /tmp/outbin-meta)
+                    if "$GOCACHEPROG" -stub "$BID" bin/linux_amd64/roxctl; then
+                      echo "link-output STUB in place (${BID:0:16}...) — buildID check should skip compile+link"
+                    fi
+                  else
+                    echo "no outbin META — building from scratch"
+                  fi
+                elif [ "$OBM" = "full" ]; then
+                  if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null; then
+                    echo "link-output restored (full binary) — buildID check will skip or relink"
+                  else
+                    rm -f bin/linux_amd64/roxctl
+                  fi
                 fi
                 make roxctl_linux-amd64
               fi
@@ -319,10 +338,13 @@ jobs:
             # links). The buildID check validates on fetch either way.
             if [ -f bin/linux_amd64/roxctl ] && [ "${{ matrix.workload }}" = "cli" ]; then
               "$GOCACHEPROG" -store "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
-              BID=$(go tool buildid bin/linux_amd64/roxctl 2>/dev/null | cut -d/ -f1 || true)
+              BID=$(go tool buildid bin/linux_amd64/roxctl 2>/dev/null || true)
               if [ -n "$BID" ]; then
-                "$GOCACHEPROG" -store "outbin-${BID}-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
-                echo "outbin exact key: ${BID:0:16}..."
+                printf '%s' "$BID" > /tmp/outbin-meta
+                "$GOCACHEPROG" -store "outbin-META-linux_amd64" /tmp/outbin-meta 2>&1 | tail -1 || true
+                ABID=$(printf '%s' "$BID" | cut -d/ -f1)
+                "$GOCACHEPROG" -store "outbin-${ABID}-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+                echo "outbin stored: META + exact key ${ABID:0:16}..."
               fi
             fi
             echo "=== sync finished at $(date -u +%H:%M:%S) ==="
