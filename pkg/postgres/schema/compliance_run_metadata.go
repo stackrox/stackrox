@@ -3,11 +3,9 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -31,8 +29,25 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceRunMetadata)(nil)), "compliance_run_metadata")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_METADATA, "compliancerunmetadata", (*storage.ComplianceRunMetadata)(nil)))
+		schema = &walker.Schema{
+			Table:    "compliance_run_metadata",
+			Type:     "*storage.ComplianceRunMetadata",
+			TypeName: "ComplianceRunMetadata",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "RunId", ProtoBufName: "run_id", ColumnName: "RunId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRunId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Compliance Run ID", Enabled: true}},
+			{Schema: schema, Name: "StandardId", ProtoBufName: "standard_id", ColumnName: "StandardId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetStandardId()", false), Search: walker.SearchField{FieldName: "Standard ID", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "FinishTimestamp", ProtoBufName: "finish_timestamp", ColumnName: "FinishTimestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetFinishTimestamp()", false), Search: walker.SearchField{FieldName: "Compliance Run Finished Timestamp", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_METADATA, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                        {FieldPath: "compliancerunmetadata.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_METADATA},
+			"Compliance Run Finished Timestamp": {FieldPath: "compliancerunmetadata.finish_timestamp.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_METADATA},
+			"Compliance Run ID":                 {FieldPath: "compliancerunmetadata.run_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_METADATA},
+			"Standard ID":                       {FieldPath: "compliancerunmetadata.standard_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_METADATA},
+		}))
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceRunMetadataStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_METADATA, schema)

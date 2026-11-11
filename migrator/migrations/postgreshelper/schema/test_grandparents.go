@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -32,8 +29,58 @@ var (
 
 	// TestGrandparentsSchema is the go schema for table `test_grandparents`.
 	TestGrandparentsSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestGrandparent)(nil)), "test_grandparents")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(61), "testgrandparent", (*storage.TestGrandparent)(nil)))
+		var schema *walker.Schema
+		schema = &walker.Schema{
+			Table:    "test_grandparents",
+			Type:     "*storage.TestGrandparent",
+			TypeName: "TestGrandparent",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "test_grandparents_embeddeds",
+			Type:         "*storage.TestGrandparent_Embedded",
+			TypeName:     "TestGrandparent_Embedded",
+			ObjectGetter: "GetEmbedded()",
+		}
+		child0_child0 := &walker.Schema{
+			Parent:       child0,
+			Table:        "test_grandparents_embeddeds_embedded2",
+			Type:         "*storage.TestGrandparent_Embedded_Embedded2",
+			TypeName:     "TestGrandparent_Embedded_Embedded2",
+			ObjectGetter: "GetEmbedded2()",
+		}
+		child0_child0.Fields = []walker.Field{
+			{Schema: child0_child0, Name: "testGrandparentID", ProtoBufName: "", ColumnName: "test_grandparents_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("testGrandparentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "testGrandparentEmbeddedIdx", ProtoBufName: "", ColumnName: "test_grandparents_embeddeds_idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("testGrandparentEmbeddedIdx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0_child0, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test Grandparent Embedded2", Enabled: true}},
+		}
+		child0_child0.Fields[0].SetParentReference(child0, "test_grandparents_Id")
+		child0_child0.Fields[1].SetParentReference(child0, "idx")
+		child0.Children = []*walker.Schema{child0_child0}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "testGrandparentID", ProtoBufName: "", ColumnName: "test_grandparents_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("testGrandparentID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test Grandparent Embedded", Enabled: true}},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Test Grandparent ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test grandparent count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test Grandparent Val", Enabled: true}},
+			{Schema: schema, Name: "Priority", ProtoBufName: "priority", ColumnName: "Priority", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetPriority()", false), Search: walker.SearchField{FieldName: "Test Grandparent Priority", Enabled: true}, Derived: true},
+			{Schema: schema, Name: "RiskScore", ProtoBufName: "risk_score", ColumnName: "RiskScore", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetRiskScore()", false), Search: walker.SearchField{FieldName: "Test Grandparent Risk Score", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test grandparent priority", DerivationType: search.SimpleReverseSortDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(61), map[search.FieldLabel]*search.Field{
+			"Test Grandparent Embedded":   {FieldPath: "testgrandparent.embedded.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(61)},
+			"Test Grandparent Embedded2":  {FieldPath: "testgrandparent.embedded.embedded2.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(61)},
+			"Test Grandparent ID":         {FieldPath: "testgrandparent.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(61)},
+			"Test Grandparent Priority":   {FieldPath: "testgrandparent.priority", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(61)},
+			"Test Grandparent Risk Score": {FieldPath: "testgrandparent.risk_score", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory(61)},
+			"Test Grandparent Val":        {FieldPath: "testgrandparent.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(61)},
+		}))
 		schema.ScopingResource = resources.Namespace
 		return schema
 	}()
