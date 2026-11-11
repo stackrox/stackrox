@@ -2,7 +2,9 @@
 
 This is a utility tool to trigger re-runs of Prow (postsubmit) jobs, because it is not possible through the Prow UI.
 
-## Usage:
+## Usage
+
+In this directory, perform the following steps:
 
 1. Login to app.ci (Prow/OSCI) cluster:
 
