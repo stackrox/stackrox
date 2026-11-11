@@ -465,8 +465,8 @@ STUB
     assert_output --partial "Error"
 }
 
-@test "terminal pod without any replacement still detected" {
-    # Single terminated OOMKilled pod (Running-phase), no replacement.
+@test "Running-phase OOMKilled pod without replacement still detected" {
+    # Single terminated OOMKilled pod with phase=Running, no replacement.
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-oomkilled.json"
     run check_central_pod_error_state stackrox
     assert_success   # returns 0 = crash detected
@@ -684,12 +684,16 @@ HANGSTUB
 # Budget propagation — caller-supplied remaining time caps crash check
 # =============================================================================
 
-@test "zero budget makes no kubectl calls and returns safe fallback" {
-    # Budget <= 0 must return 1 immediately without any kubectl call.
+@test "zero or negative budget makes no kubectl calls" {
     : > "${KUBECTL_CALL_LOG}"
     run check_central_pod_error_state stackrox 0
-    assert_failure   # returns 1 = safe fallback
-    # No kubectl calls made.
+    assert_failure
+    run cat "${KUBECTL_CALL_LOG}"
+    assert_output ""
+    # Negative budget also returns immediately.
+    : > "${KUBECTL_CALL_LOG}"
+    run check_central_pod_error_state stackrox -5
+    assert_failure
     run cat "${KUBECTL_CALL_LOG}"
     assert_output ""
 }
@@ -700,35 +704,37 @@ HANGSTUB
     cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
 #!/usr/bin/env bash
 echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
-case "$*" in
-    *"get pods"*) /usr/bin/sleep 60 ;;
-    *) echo '{}' ;;
-esac
+case "$*" in *"get pods"*) /usr/bin/sleep 60 ;; *) echo '{}' ;; esac
 HANGSTUB
     chmod +x "${HANG_BIN}/kubectl"
     export PATH="${HANG_BIN}:${PATH}"
     retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
     export -f retrying_kubectl
-
     local start_time end_time elapsed
     start_time="$(date +%s)"
     run check_central_pod_error_state stackrox 3
     end_time="$(date +%s)"
     elapsed=$(( end_time - start_time ))
-
     assert_failure
-    refute_output --partial "crash state detected"
-    [[ "$elapsed" -ge 1 ]]
-    [[ "$elapsed" -le 6 ]]
-    # Query call was actually attempted.
+    [[ "$elapsed" -ge 1 ]] && [[ "$elapsed" -le 6 ]]
     run grep "get pods" "${KUBECTL_CALL_LOG}"
     assert_success
 }
 
-@test "blocked logs exhausts shared budget preventing get-pod and second pod diagnostics" {
-    # Two-pod crashloop fixture: diagnostics for logs on pod1 blocks.
-    # The shared budget should prevent get-pod on pod1 and all of pod2.
-    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-two-pods-second-crashing.json"
+@test "blocked logs exhausts cumulative budget: no get-pod or second-pod diagnostics" {
+    # Generate a fixture with TWO crashing pods (both CrashLoopBackOff) so
+    # affected_pods has 2 entries. First pod's logs block → budget exhausted
+    # → get-pod on first pod skipped, all of second pod's diagnostics skipped.
+    local TWO_CRASH="${BATS_TEST_TMPDIR}/two-crash.json"
+    jq '.items[0].status.containerStatuses[0].state = {"waiting":{"reason":"CrashLoopBackOff"}} |
+        .items[0].status.containerStatuses[0].ready = false |
+        .items[0].status.containerStatuses[0].restartCount = 3 |
+        .items[0].status.conditions = [] |
+        .items[1].status.containerStatuses[0].state = {"waiting":{"reason":"CrashLoopBackOff"}} |
+        .items[1].status.containerStatuses[0].ready = false |
+        .items[1].status.containerStatuses[0].restartCount = 5' \
+      "${FIXTURE_DIR}/central-two-pods-second-crashing.json" > "${TWO_CRASH}"
+    KUBECTL_POD_FIXTURE="${TWO_CRASH}"
     local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
     mkdir -p "${HANG_BIN}"
     cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
@@ -745,41 +751,123 @@ HANGSTUB
     export PATH="${HANG_BIN}:${PATH}"
     retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
     export -f retrying_kubectl
-
     local start_time end_time elapsed
     start_time="$(date +%s)"
-    # Budget 3s: query instant, logs on first pod blocks ~3s → exhausts budget.
     run check_central_pod_error_state stackrox 3
     end_time="$(date +%s)"
     elapsed=$(( end_time - start_time ))
-
-    # Crash STILL detected despite exhausted diagnostic budget.
     assert_success
     assert_output --partial "crash state detected"
     assert_output --partial "CrashLoopBackOff"
     assert_output --partial "budget exhausted"
-    [[ "$elapsed" -ge 1 ]]
-    [[ "$elapsed" -le 8 ]]
-    # Logs was attempted (blocked call marker).
-    run grep "logs" "${KUBECTL_CALL_LOG}"
-    assert_success
-    # Single-pod diagnostic get should NOT have been attempted (budget exhausted).
-    # Use 'get pod -n' to distinguish from the initial 'get pods -l' query.
+    [[ "$elapsed" -ge 1 ]] && [[ "$elapsed" -le 8 ]]
+    # Only ONE logs call attempted (first pod, blocked).
+    local logs_count
+    logs_count="$(grep -c 'logs' "${KUBECTL_CALL_LOG}" || true)"
+    [[ "$logs_count" -eq 1 ]]
+    # No get-pod diagnostics at all.
     local getpod_diag_count
     getpod_diag_count="$(grep -c 'get pod -n' "${KUBECTL_CALL_LOG}" || true)"
     [[ "$getpod_diag_count" -eq 0 ]]
 }
 
-@test "wait_for_api with short test budget exits within budget on crash" {
-    KUBECTL_DEPLOY_READY="true"
+@test "wait_for_ready_deployment near-deadline passes remaining to helper and times out" {
+    # Deployment never ready. Stub kubectl: deployment query instant,
+    # crash-check pod query blocks 60s. max_seconds=3. The crash check
+    # should be capped to remaining ~3s, then deployment timeout fires.
+    KUBECTL_DEPLOY_READY="false"
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
-
-    # 15-second outer safety guard (distinct from intended exit).
+    local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
+    mkdir -p "${HANG_BIN}"
+    cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
+#!/usr/bin/env bash
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get deploy"*) echo '{"status":{"replicas":1,"readyReplicas":0}}' ;;
+    *"get pods"*) /usr/bin/sleep 60 ;;
+    *"get pod"*) echo '{}' ;;
+    *"logs"*) echo "log" ;;
+    *) echo '{}' ;;
+esac
+HANGSTUB
+    chmod +x "${HANG_BIN}/kubectl"
+    # 15s outer safety guard.
     run timeout 15 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
         export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
-        export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
+        export PATH='"'${HANG_BIN}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        wait_for_ready_deployment stackrox central 3
+    ' 2>&1
+    local start_time end_time elapsed
+    # Use status/output to verify.
+    assert_failure
+    [[ "$status" -eq 1 ]]
+    # Generic deployment timeout, NOT crash state (query timed out → no crash found).
+    assert_output --partial "wait_for_ready_deployment() timeout"
+    refute_output --partial "crash state detected"
+    # The blocked pod query was attempted (marker in log).
+    run grep "get pods" "${KUBECTL_CALL_LOG}"
+    assert_success
+}
+
+@test "wait_for_ready_deployment expired deadline skips helper entirely" {
+    # Use controlled clock: sleep is no-op so iterations are instant.
+    # After 5 iterations the crash check would fire, but max_seconds=0
+    # means deadline already expired → helper skipped.
+    KUBECTL_DEPLOY_READY="false"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+    run timeout 10 bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export KUBECTL_DEPLOY_READY="false"
         export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        wait_for_ready_deployment stackrox central 0
+    ' 2>&1
+    assert_failure
+    [[ "$status" -eq 1 ]]
+    assert_output --partial "wait_for_ready_deployment() timeout"
+    # No crash-check pod query made (helper skipped because deadline expired).
+    local pods_count
+    pods_count="$(grep -c 'get pods' "${KUBECTL_CALL_LOG}" || true)"
+    [[ "$pods_count" -eq 0 ]]
+}
+
+@test "wait_for_api budget stops loop on own deadline not after 149 more curls" {
+    # Deployment ready. Stub: pod query blocks 60s (will be capped by
+    # budget). Curl fails fast. Budget is 3s. After crash check times out
+    # at budget, API deadline check breaks loop — NOT 149 more curl calls.
+    KUBECTL_DEPLOY_READY="true"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+    local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
+    mkdir -p "${HANG_BIN}"
+    cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
+#!/usr/bin/env bash
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get deploy"*) echo '{"status":{"replicas":1,"readyReplicas":1}}' ;;
+    *"get pods"*) /usr/bin/sleep 60 ;;
+    *"logs"*) echo "log" ;;
+    *"get pod"*) echo '{}' ;;
+    *) echo '{}' ;;
+esac
+HANGSTUB
+    chmod +x "${HANG_BIN}/kubectl"
+    # 15s outer safety guard.
+    run timeout 15 bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export KUBECTL_DEPLOY_READY="true"
+        export PATH='"'${HANG_BIN}:${PATH}'"'
         source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
         retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
         export -f retrying_kubectl
@@ -787,12 +875,18 @@ HANGSTUB
         export -f sleep
         curl() { echo "curl: (7) Failed"; return 7; }
         export -f curl
-        # Short 5s ping budget so crash check fires and loop deadline enforced.
-        CRASH_CHECK_API_PING_BUDGET=5 MAX_WAIT_SECONDS=300 wait_for_api stackrox
+        CRASH_CHECK_API_PING_BUDGET=3 MAX_WAIT_SECONDS=300 wait_for_api stackrox
     ' 2>&1
-
-    # Intended exit 1 from crash detection, NOT outer timeout 124.
     assert_failure
     [[ "$status" -eq 1 ]]
-    assert_output --partial "crash state"
+    # Output should mention deadline reached, NOT crash state (query timed out).
+    assert_output --partial "deadline"
+    refute_output --partial "crash state detected"
+    # Pod query was attempted (blocked call marker).
+    run grep "get pods" "${KUBECTL_CALL_LOG}"
+    assert_success
+    # Should NOT have run 149 curl calls — budget stops the loop.
+    local curl_msg_count
+    curl_msg_count="$(grep -c 'Curl exited' "${KUBECTL_CALL_LOG}" || true)"
+    [[ "$curl_msg_count" -le 5 ]]
 }

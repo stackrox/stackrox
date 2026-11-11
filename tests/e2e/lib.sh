@@ -1915,10 +1915,14 @@ wait_for_api() {
                 break
             fi
         fi
-        # Cap curl/sleep to remaining budget where applicable.
+        # Cap curl and sleep to remaining budget; break when exhausted.
         local api_remaining=$(( api_ping_budget - ($(date '+%s') - api_ping_start) ))
+        if (( api_remaining <= 0 )); then
+            info "API ping phase budget exhausted before curl."
+            break
+        fi
         local curl_max=10
-        (( api_remaining < curl_max )) && curl_max=$(( api_remaining > 1 ? api_remaining : 1 ))
+        (( api_remaining < curl_max )) && curl_max="$api_remaining"
         pong="$(curl -sk --connect-timeout 5 --max-time "${curl_max}" "${PING_URL}")"
         pong_exitstatus="$?"
         status="$(echo "$pong" | jq -r '.status')"
@@ -1928,12 +1932,18 @@ wait_for_api() {
                 break
             fi
             info "Status is now: ${status}"
-            sleep 2
+            api_remaining=$(( api_ping_budget - ($(date '+%s') - api_ping_start) ))
+            if (( api_remaining <= 0 )); then break; fi
+            local sleep_ok=2; (( api_remaining < sleep_ok )) && sleep_ok="$api_remaining"
+            sleep "$sleep_ok"
             continue
         fi
         NUM_SUCCESSES_IN_A_ROW=0
         info "Curl exited with status ${pong_exitstatus} and returned '${pong}'."
-        sleep 5
+        api_remaining=$(( api_ping_budget - ($(date '+%s') - api_ping_start) ))
+        if (( api_remaining <= 0 )); then break; fi
+        local sleep_fail=5; (( api_remaining < sleep_fail )) && sleep_fail="$api_remaining"
+        sleep "$sleep_fail"
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
