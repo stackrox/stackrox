@@ -68,29 +68,29 @@ func (s *sweeperImpl) loop() {
 	defer s.stopper.Flow().ReportStopped()
 	defer s.ticker.Stop()
 
-	go s.sweep()
+	go s.sweep(time.Now())
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():
 			return
 		case <-s.ticker.C:
-			s.sweep()
+			s.sweep(time.Now())
 		}
 	}
 }
 
-// sweep marks STALE the check results of every scan configuration whose schedule expected a refresh
-// more than one grace window ago but that were not refreshed since.
-func (s *sweeperImpl) sweep() {
+// sweep marks STALE the check results of every scan configuration whose most recent scheduled scan
+// had its full grace window elapse without refreshing them.
+func (s *sweeperImpl) sweep(now time.Time) {
 	select {
 	case <-s.stopper.Flow().StopRequested():
 		return
 	default:
 	}
 
-	now := time.Now()
 	// grace is the combined budget the watchers allow for a scheduled scan to complete and have its
-	// results ingested. A result older than (expected refresh - grace) is past due, hence stale.
+	// results ingested. A result is stale only once a scheduled start has passed and its grace window
+	// has fully elapsed without new results, so we evaluate the schedule as of (now - grace).
 	grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
 
 	configs, err := s.scanConfigDS.GetScanConfigurations(sweeperCtx, search.EmptyQuery())
@@ -100,12 +100,13 @@ func (s *sweeperImpl) sweep() {
 	}
 
 	for _, cfg := range configs {
-		exp, ok := expectedRefresh(cfg.GetSchedule(), now)
+		// cutoff is the latest scheduled start that has already had its full grace period. Results
+		// that started before it were not refreshed in time and are stale.
+		cutoff, ok := previousScheduledStart(cfg.GetSchedule(), now.Add(-grace))
 		if !ok {
 			continue
 		}
-		olderThan := exp.Add(-grace)
-		n, err := s.checkResultDS.MarkScanChecksStaleByConfig(sweeperCtx, cfg.GetScanConfigName(), olderThan)
+		n, err := s.checkResultDS.MarkScanChecksStaleByConfig(sweeperCtx, cfg.GetScanConfigName(), cutoff)
 		if err != nil {
 			log.Errorf("compliance freshness sweeper: marking results stale for scan configuration %q: %v", cfg.GetScanConfigName(), err)
 			continue
@@ -116,11 +117,11 @@ func (s *sweeperImpl) sweep() {
 	}
 }
 
-// expectedRefresh returns the most recent time strictly before now at which sched expected a scan to
-// start, and true when that time could be computed. It returns false for a nil schedule, a schedule
-// that does not convert to a cron expression (e.g. an UNSET interval), or an unreachable previous
-// tick.
-func expectedRefresh(sched *storage.Schedule, now time.Time) (time.Time, bool) {
+// previousScheduledStart returns the most recent time strictly before ref at which sched expected a
+// scan to start, and true when that time could be computed. It returns false for a nil schedule, a
+// schedule that does not convert to a cron expression (e.g. an UNSET interval), or an unreachable
+// previous tick.
+func previousScheduledStart(sched *storage.Schedule, ref time.Time) (time.Time, bool) {
 	if sched == nil {
 		return time.Time{}, false
 	}
@@ -128,8 +129,8 @@ func expectedRefresh(sched *storage.Schedule, now time.Time) (time.Time, bool) {
 	if err != nil || cron == "" {
 		return time.Time{}, false
 	}
-	// inclRefTime=false: we want the previous tick strictly before now, not now itself.
-	prev, err := gronx.PrevTickBefore(cron, now, false)
+	// inclRefTime=false: we want the previous tick strictly before ref, not ref itself.
+	prev, err := gronx.PrevTickBefore(cron, ref, false)
 	if err != nil {
 		return time.Time{}, false
 	}
