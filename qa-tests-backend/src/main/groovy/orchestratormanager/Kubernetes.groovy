@@ -2643,10 +2643,17 @@ class Kubernetes {
         // terminating, and everything created in it goes away with it.
         awaitTerminatingNamespaceDeletion(ns)
         return evaluateWithRetry(2, 3) {
-            Namespace namespace = newNamespace(ns)
-            def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
+            Namespace created = client.namespaces().createOrReplace(newNamespace(ns))
+            if (created.metadata?.deletionTimestamp != null) {
+                // Deletion started between the check above and this call.
+                // Wait it out and let the retry create the namespace again,
+                // rather than returning a UID whose namespace is going away.
+                awaitTerminatingNamespaceDeletion(ns)
+                throw new OrchestratorManagerException(
+                        "Namespace ${ns} started terminating while it was being created")
+            }
             defaultPspForNamespace(ns)
-            return namespaceId
+            return created.metadata.getUid()
         }
     }
 
@@ -2673,7 +2680,16 @@ class Kubernetes {
         // terminating, and everything created in it goes away with it.
         awaitTerminatingNamespaceDeletion(namespaceName)
 
-        client.namespaces().createOrReplace(namespace)
+        evaluateWithRetry(2, 3) {
+            Namespace created = client.namespaces().createOrReplace(namespace)
+            if (created.metadata?.deletionTimestamp != null) {
+                // Deletion started between the check above and this call.
+                // Wait it out and let the retry create the namespace again.
+                awaitTerminatingNamespaceDeletion(namespaceName)
+                throw new OrchestratorManagerException(
+                        "Namespace ${namespaceName} started terminating while it was being created")
+            }
+        }
         log.info "Created namespace ${namespaceName} with labels: ${labels}"
     }
 
