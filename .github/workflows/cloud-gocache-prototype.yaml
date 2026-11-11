@@ -99,25 +99,18 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ matrix.backend }}" = "cacheprog" ]; then
-            # Pre-built gocache-serve: the tool loads from the very store
-            # it serves. Keyed by source hash — same code = same binary.
-            # ~10MB download vs 30-60s compile from source every run.
-            # Near-inception: the cache server is cached by itself.
-            # Uses az CLI for fetch (gocache-serve isn't built yet —
-            # the bootstrapping problem solved by direct blob access).
-            GCS_SRC_HASH="$(find tools/gocache-serve -name '*.go' -exec cat {} + 2>/dev/null | sha256sum | cut -c1-16)"
-            GCS_KEY="gocache-serve-${GCS_SRC_HASH}"
-            if az storage blob download --account-name cigocache --container-name ci-gocache \
-              --name "$GCS_KEY" --file /usr/local/bin/gocache-serve --auth-mode login --overwrite 2>/dev/null \
-              && [ -s /usr/local/bin/gocache-serve ]; then
+            # Pre-built gocache-serve: committed to the repo alongside the
+            # source it was built from. Zero bootstrap — the binary is just
+            # there, versioned with the code. On source changes, the binary
+            # is rebuilt and committed (can be automated in CI).
+            # Near-inception: the cache server ships with the code it serves.
+            if [ -x tools/gocache-serve/bin/gocache-serve-linux-amd64 ]; then
+              cp tools/gocache-serve/bin/gocache-serve-linux-amd64 /usr/local/bin/gocache-serve
               chmod +x /usr/local/bin/gocache-serve
-              echo "prebuilt: gocache-serve restored from cache ($GCS_KEY, ~2s)"
+              echo "prebuilt: gocache-serve from repo (0s — no download, no auth)"
             else
-              echo "=== building gocache-serve (cache miss: $GCS_KEY) ==="
+              echo "=== building gocache-serve (no prebuilt binary) ==="
               (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
-              az storage blob upload --account-name cigocache --container-name ci-gocache \
-                --name "$GCS_KEY" --file /usr/local/bin/gocache-serve --auth-mode login 2>/dev/null || true
-              echo "prebuilt: cached for future runs"
             fi
             echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
             echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
