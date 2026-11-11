@@ -20,6 +20,7 @@ const (
 	ResourceSyncFinishedLane
 	FakeFileActivityLane
 	NodeRoleChangeLane
+	ComplianceCentralRequestLane
 )
 
 var (
@@ -41,6 +42,7 @@ var (
 		ResourceSyncFinishedLane:       "ResourceSyncFinished",
 		FakeFileActivityLane:           "FakeFileActivity",
 		NodeRoleChangeLane:             "NodeRoleChange",
+		ComplianceCentralRequestLane:   "ComplianceCentralRequest",
 	}
 )
 
