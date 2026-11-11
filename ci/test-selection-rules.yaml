@@ -1,0 +1,13 @@
+# Example CI selection rules.
+#
+# This is a stupid-simple placeholder: it lists the CI targets the selector
+# knows about. The current engine (internal/ruleengine/alwaysrun) ignores
+# everything but this inventory and plans "run" for every target.
+#
+# A real engine will add path rules here (which changed paths let a target
+# be skipped) behind the same ruleengine.Engine seam.
+version: 1
+jobs:
+  - go
+  - go-postgres
+  - e2e-qa-tests-gke
