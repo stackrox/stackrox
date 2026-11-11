@@ -290,20 +290,37 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 	}
 	s.Require().NoError(s.datastore.AddEvent(s.ctx, imgEvent))
 	s.Require().NoError(s.datastore.AddEvent(s.ctx, otherEvent))
+	newEvent := *imgEvent
+	newEvent.Message = "another scan failure for image-abc"
+	s.Require().NoError(s.datastore.AddEvent(s.ctx, &newEvent))
 	nameOnlyEvent := *otherEvent
 	nameOnlyEvent.ResourceID = ""
 	nameOnlyEvent.ResourceName = "registry.example.com/image:latest"
 	s.Require().NoError(s.datastore.AddEvent(s.ctx, &nameOnlyEvent))
 	s.Require().NoError(s.datastore.Flush(s.ctx))
 
+	// Simulate events persisted before the searchable resource_id column existed.
+	_, err := s.pool.Exec(s.ctx, "UPDATE administration_events SET resource_id = NULL WHERE id = $1 OR id = $2",
+		events.GenerateEventID(imgEvent), events.GenerateEventID(otherEvent))
+	s.Require().NoError(err)
+
+	filter := &v1.AdministrationEventsFilter{WorkloadQuery: `Cluster:"test-cluster"`}
 	resp, err := s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
-		Filter: &v1.AdministrationEventsFilter{
-			WorkloadQuery: `Cluster:"test-cluster"`,
-		},
+		Filter: filter,
 	})
 	s.NoError(err)
-	s.Require().Len(resp.GetEvents(), 1)
-	s.Equal("image-abc", resp.GetEvents()[0].GetResource().GetId())
+	s.Require().Len(resp.GetEvents(), 2)
+	for _, event := range resp.GetEvents() {
+		s.Equal(imgEvent.ResourceID, event.GetResource().GetId())
+	}
+	count, err := s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: filter})
+	s.Require().NoError(err)
+	s.Equal(int32(2), count.GetCount())
+	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
+		Filter: filter, Pagination: &v1.Pagination{Limit: 1, Offset: 1},
+	})
+	s.Require().NoError(err)
+	s.Len(resp.GetEvents(), 1)
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
@@ -312,6 +329,11 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 	})
 	s.NoError(err)
 	s.Empty(resp.GetEvents())
+	count, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{
+		Filter: &v1.AdministrationEventsFilter{WorkloadQuery: `Cluster:"nonexistent"`},
+	})
+	s.Require().NoError(err)
+	s.Zero(count.GetCount())
 }
 
 func (s *servicePostgresTestSuite) addListEvents() []*events.AdministrationEvent {

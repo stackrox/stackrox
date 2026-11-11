@@ -151,11 +151,9 @@ func (s *serviceImpl) getQueryFromFilter(ctx context.Context, filter *v1.Adminis
 		return baseQuery.ProtoQuery(), nil
 	}
 
-	imageQuery := search.MatchNoneQuery()
-	if len(imageIDs) != 0 {
-		imageQuery = search.NewQueryBuilder().
-			AddExactMatches(search.ResourceType, "Image").
-			AddExactMatches(search.ResourceID, imageIDs...).ProtoQuery()
+	imageQuery, err := s.getImageEventQuery(ctx, baseQuery.ProtoQuery(), imageIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	otherTypes := sliceutils.Without(resourceTypes, []string{"Image"})
@@ -206,4 +204,34 @@ func (s *serviceImpl) resolveWorkloadImageIDs(ctx context.Context, filter *v1.Ad
 		return []string{}, nil
 	}
 	return imageIDSet.AsSlice(), nil
+}
+
+// getImageEventQuery includes events written before the resource_id column existed,
+// including events written by old Central pods during a rolling update. Their IDs
+// are read from the serialized proto until normal retention removes these rows.
+func (s *serviceImpl) getImageEventQuery(ctx context.Context, baseQuery *v1.Query, imageIDs []string) (*v1.Query, error) {
+	if len(imageIDs) == 0 {
+		return search.MatchNoneQuery(), nil
+	}
+	imageQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ResourceType, "Image").
+		AddExactMatches(search.ResourceID, imageIDs...).ProtoQuery()
+	legacyQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ResourceType, "Image").
+		AddNullField(search.ResourceID).ProtoQuery()
+	legacyEvents, err := s.ds.ListEvents(ctx, search.ConjunctionQuery(baseQuery, legacyQuery))
+	if err != nil {
+		return nil, errors.Wrap(err, "resolving legacy image events")
+	}
+	imageIDSet := set.NewStringSet(imageIDs...)
+	var eventIDs []string
+	for _, event := range legacyEvents {
+		if imageIDSet.Contains(event.GetResource().GetId()) {
+			eventIDs = append(eventIDs, event.GetId())
+		}
+	}
+	if len(eventIDs) == 0 {
+		return imageQuery, nil
+	}
+	return search.DisjunctionQuery(imageQuery, search.NewQueryBuilder().AddDocIDs(eventIDs...).ProtoQuery()), nil
 }
