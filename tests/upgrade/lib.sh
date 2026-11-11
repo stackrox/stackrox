@@ -5,10 +5,70 @@ set -euo pipefail
 
 # Test utility functions for upgrades
 
+# central_graphql_query posts a GraphQL payload to Central and prints the response.
+# The HTTP status is logged when it is not 200 so that a failed request is not
+# reported as an empty response. Requests are bounded by GRAPHQL_REQUEST_TIMEOUT so
+# a stalled connection cannot block the caller's own deadline indefinitely.
+central_graphql_query() {
+    local payload="$1"
+    local response
+    local status
+    response="$(curl -sSk --max-time "${GRAPHQL_REQUEST_TIMEOUT:-30}" \
+        --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
+        -d "$payload" -w '\n%{http_code}' "https://$API_ENDPOINT/api/graphql" || true)"
+    if [[ "$response" == *$'\n'* ]]; then
+        status="${response##*$'\n'}"
+        response="${response%$'\n'*}"
+    else
+        status="000"
+    fi
+    if [[ "$status" != "200" ]]; then
+        info "Central GraphQL request failed with HTTP ${status}: ${response}" >&2
+    fi
+    echo "$response"
+}
+
 central_deployment_count() {
-    curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST \
-        -d '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' \
-        "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r
+    central_graphql_query '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { clusterCount nodeCount violationCount deploymentCount imageCount secretCount }"}' |
+        jq '.data.deploymentCount' -r
+}
+
+# graphql_count parses a count out of a GraphQL response. Central returns no data
+# while it is still coming up or when a query fails, so report that response instead
+# of silently counting zero.
+graphql_count() {
+    local response="$1"
+    local expression="$2"
+    local count
+    local errors
+    errors="$(jq -r '(.errors // []) | length' <<<"$response" 2>/dev/null || true)"
+    count="$(jq "$expression" <<<"$response" 2>/dev/null || true)"
+    if [[ "$errors" != "0" || ! "$count" =~ ^[0-9]+$ ]]; then
+        info "Unexpected GraphQL response from Central: ${response}" >&2
+        count=0
+    fi
+    echo "$count"
+}
+
+# central_image_count prints the number of images Central serves.
+central_image_count() {
+    local response
+    response="$(central_graphql_query '{"operationName":"summary_counts","variables":{},"query":"query summary_counts { imageCount }"}')"
+    graphql_count "$response" '.data // {} | .imageCount // 0'
+}
+
+# central_cluster_image_count prints the number of images Central serves for a cluster.
+central_cluster_image_count() {
+    local cluster_id="$1"
+    local payload
+    local response
+    payload="$(jq -n --arg query "Cluster ID:${cluster_id}" '{
+        operationName: "getimages",
+        variables: {query: $query},
+        query: "query getimages($query: String!) { images(query: $query) { id } }"
+    }')"
+    response="$(central_graphql_query "$payload")"
+    graphql_count "$response" '.data // {} | .images // [] | length'
 }
 
 wait_for_central_reconciliation() {
@@ -79,6 +139,34 @@ wait_for_scored_image_scan() {
     die "Central could not scan ${image} with CVSS enrichment within ${max_seconds}s"
 }
 
+# wait_for_images_in_central waits until Central serves image data that the upgrade
+# tests assert on: a non-zero image count and at least one image scoped to the
+# upgraded cluster. Central populates that data asynchronously as sensors reconnect
+# and images are enriched, so it can be empty for a while after an upgrade.
+wait_for_images_in_central() {
+    local cluster_id="$1"
+    local max_seconds="${IMAGE_REPROCESSING_READINESS_TIMEOUT:-600}"
+    local deadline=$((SECONDS + max_seconds))
+    local image_count
+    local cluster_image_count
+
+    info "Waiting for Central to serve images (timeout: ${max_seconds}s)"
+    while (( SECONDS < deadline )); do
+        image_count="$(central_image_count || true)"
+        cluster_image_count="$(central_cluster_image_count "$cluster_id" || true)"
+        image_count="${image_count:-0}"
+        cluster_image_count="${cluster_image_count:-0}"
+        info "Images in Central: ${image_count}, images for cluster ${cluster_id}: ${cluster_image_count}"
+        if [[ "$image_count" =~ ^[0-9]+$ ]] && (( image_count > 0 )) &&
+            [[ "$cluster_image_count" =~ ^[0-9]+$ ]] && (( cluster_image_count > 0 )); then
+            info "Central serves images for cluster ${cluster_id}"
+            return 0
+        fi
+        sleep 10
+    done
+    die "Central did not serve images for cluster ${cluster_id} within ${max_seconds}s"
+}
+
 validate_upgrade() {
     if [[ "$#" -ne 3 ]]; then
         die "missing args. usage: validate_upgrade <stage name> <stage description> <upgrade_cluster_id>"
@@ -93,6 +181,8 @@ validate_upgrade() {
         info "Verifying API token generated can access the central"
         echo "${API_TOKEN}" | "${TEST_ROOT}/bin/${TEST_HOST_PLATFORM}/roxctl" --insecure-skip-tls-verify --insecure -e "${API_ENDPOINT}" --token-file /dev/stdin central whoami > /dev/null
     fi
+
+    wait_for_images_in_central "$upgrade_cluster_id"
 
     rm -f FAIL
     remove_qa_test_results
