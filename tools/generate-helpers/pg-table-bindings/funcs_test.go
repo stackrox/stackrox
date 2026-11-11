@@ -1,8 +1,10 @@
 package main
 
 import (
+	"reflect"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -14,13 +16,12 @@ func TestCollectIndexes(t *testing.T) {
 		obj      object
 		expected []IndexInfo
 	}{
-		"single field": {
+		"single non-primary-key field": {
 			schema: &walker.Schema{
 				Table: "test_table",
 				Fields: []walker.Field{
-					{ColumnName: "DeploymentId", Options: walker.PostgresOptions{
-						PrimaryKey: true,
-						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree"}},
+					{ColumnName: "DeploymentId", Search: walker.SearchField{Enabled: true}, Options: walker.PostgresOptions{
+						Index: []*walker.PostgresIndexOptions{{IndexType: "btree"}},
 					}},
 				},
 			},
@@ -177,7 +178,6 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "idx_a"},
 				{Name: "idx_b"},
 			},
 		},
@@ -185,15 +185,54 @@ func TestCollectIndexes(t *testing.T) {
 			schema: &walker.Schema{
 				Table: "test_table",
 				Fields: []walker.Field{
-					{ColumnName: "Col1", Options: walker.PostgresOptions{
-						PrimaryKey: true,
-						Index:      []*walker.PostgresIndexOptions{{IndexName: "my_idx"}},
+					{ColumnName: "Col1", Search: walker.SearchField{Enabled: true}, Options: walker.PostgresOptions{
+						Index: []*walker.PostgresIndexOptions{{IndexName: "my_idx"}},
 					}},
 				},
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
 				{Name: "my_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS my_idx ON test_table USING btree (col1)"},
+			},
+		},
+		"btree on sole primary key excluded": {
+			schema: &walker.Schema{
+				Table: "test_table",
+				Fields: []walker.Field{
+					{ColumnName: "Id", Options: walker.PostgresOptions{
+						PrimaryKey: true,
+						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree"}},
+					}},
+				},
+			},
+			obj: object{storageType: "storage.Policy"},
+		},
+		"default btree on sole primary key excluded": {
+			schema: &walker.Schema{
+				Table: "test_table",
+				Fields: []walker.Field{
+					{ColumnName: "Id", Options: walker.PostgresOptions{
+						PrimaryKey: true,
+						Index:      []*walker.PostgresIndexOptions{{IndexName: "my_idx"}},
+					}},
+				},
+			},
+			obj: object{storageType: "storage.Policy"},
+		},
+		"single column of composite primary key retained": {
+			schema: &walker.Schema{
+				Table: "test_table",
+				Fields: []walker.Field{
+					{ColumnName: "ParentId", Options: walker.PostgresOptions{PrimaryKey: true}},
+					{ColumnName: "Idx", Options: walker.PostgresOptions{
+						PrimaryKey: true,
+						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree"}},
+					}},
+				},
+			},
+			obj: object{storageType: "storage.Policy"},
+			expected: []IndexInfo{
+				{Name: "testtable_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testtable_idx ON test_table USING btree (idx)"},
 			},
 		},
 	}
@@ -219,4 +258,19 @@ func TestCollectIndexes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCollectIndexesPolicySnapshot(t *testing.T) {
+	policySchema := walker.Walk(reflect.TypeFor[*storage.Policy](), "policies")
+	policyIndexes := collectIndexes(policySchema, object{storageType: "storage.Policy"})
+	for _, index := range policyIndexes {
+		assert.NotEqual(t, "policies_id", index.Name)
+	}
+
+	alertSchema := walker.Walk(reflect.TypeFor[*storage.Alert](), "alerts")
+	alertIndexes := collectIndexes(alertSchema, object{storageType: "storage.Alert"})
+	assert.Contains(t, alertIndexes, IndexInfo{
+		Name:      "alerts_policy_id",
+		CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS alerts_policy_id ON alerts USING btree (policy_id)",
+	})
 }
