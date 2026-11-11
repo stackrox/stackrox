@@ -445,10 +445,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
-// withFreshnessCountSelectQuery appends current/stale check-count selects. It is
-// applied only to the result-stats queries whose output proto surfaces data
-// freshness (profile stats, profile results, per-cluster overall stats); the
-// cluster-scan stats have no freshness field, so they skip it.
+// withFreshnessCountSelectQuery appends current/stale check-count selects.
 func (d *datastoreImpl) withFreshnessCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
