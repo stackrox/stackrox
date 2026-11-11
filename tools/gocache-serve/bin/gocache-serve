@@ -52,10 +52,22 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
       fi
       
       if [ -s "$OUT" ] 2>/dev/null && [ "$(head -c4 "$OUT" | od -A n -t x1 | tr -d ' ')" = "7f454c46" ]; then
-        # Valid ELF binary — cache it for the blob store, then exec
         chmod +x "$OUT"
-        echo "bootstrap: gocache-serve from blob store (hash: $SRC_HASH, ~1s)" >&2
-        exec "$OUT" "$@"
+        # Pre-flight: verify the binary actually executes before handing off.
+        # Uses -stub (no backend needed, writes to /dev/null, exits 0).
+        # Catches wrong-arch, subtle corruption, and missing libs that pass
+        # the ELF magic check. Signal death (exit >= 128) = broken binary.
+        set +e
+        "$OUT" -stub "a/b/c/d" /dev/null 2>/dev/null
+        TEST_EXIT=$?
+        set -e
+        if [ $TEST_EXIT -lt 128 ]; then
+          echo "bootstrap: gocache-serve from blob store (hash: $SRC_HASH, ~1s)" >&2
+          exec "$OUT" "$@"
+        else
+          echo "bootstrap: downloaded binary crashed (signal $((TEST_EXIT - 128))), rebuilding" >&2
+          rm -f "$OUT"
+        fi
       fi
     fi
     
@@ -65,16 +77,26 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
       -o "$OUT" 2>/dev/null && [ -s "$OUT" ] 2>/dev/null; then
       if [ "$(head -c4 "$OUT" | od -A n -t x1 | tr -d ' ')" = "7f454c46" ]; then
         chmod +x "$OUT"
-        # Upload compressed version for future runs
-        if command -v zstd >/dev/null 2>&1; then
-          zstd -19 -q -c "$OUT" | curl -s --max-time 30 -X PUT \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "x-ms-blob-type: BlockBlob" \
-            "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.zst" \
-            --data-binary @- 2>/dev/null || true
+        # Same pre-flight execution test
+        set +e
+        "$OUT" -stub "a/b/c/d" /dev/null 2>/dev/null
+        TEST_EXIT=$?
+        set -e
+        if [ $TEST_EXIT -lt 128 ]; then
+          # Upload compressed version for future runs
+          if command -v zstd >/dev/null 2>&1; then
+            zstd -19 -q -c "$OUT" | curl -s --max-time 30 -X PUT \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "x-ms-blob-type: BlockBlob" \
+              "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.zst" \
+              --data-binary @- 2>/dev/null || true
+          fi
+          echo "bootstrap: gocache-serve from blob store (uncompressed, cached compressed)" >&2
+          exec "$OUT" "$@"
+        else
+          echo "bootstrap: downloaded binary crashed (signal $((TEST_EXIT - 128))), rebuilding" >&2
+          rm -f "$OUT"
         fi
-        echo "bootstrap: gocache-serve from blob store (uncompressed, cached compressed)" >&2
-        exec "$OUT" "$@"
       fi
     fi
   fi
@@ -99,4 +121,20 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
 fi
 
 echo "bootstrap: gocache-serve built from source (~30s)" >&2
+
+# Final pre-flight on the fresh build too — if this fails, something is
+# fundamentally broken (bad Go install, incompatible source). Warn loudly
+# and stop so the go build gets a clear error instead of a confusing hang.
+set +e
+"$OUT" -stub "a/b/c/d" /dev/null 2>/dev/null
+TEST_EXIT=$?
+set -e
+if [ $TEST_EXIT -ge 128 ]; then
+  echo "bootstrap: FATAL — freshly built gocache-serve crashed (signal $((TEST_EXIT - 128)))" >&2
+  echo "bootstrap: This indicates a broken Go installation or incompatible source." >&2
+  echo "bootstrap: The go build will fail with 'GOCACHEPROG exited' — check Go version." >&2
+  rm -f "$OUT"
+  exit 1
+fi
+
 exec "$OUT" "$@"
