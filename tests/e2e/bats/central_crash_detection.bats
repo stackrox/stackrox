@@ -906,13 +906,12 @@ HANGSTUB
     after_helper="$(sed -n '/helper-finished/,$ p' "${CALL_ORDER}" | grep -c 'poll-sleep' || true)"
     [[ "$after_helper" -eq 0 ]]
 
-    # Verify deploy queries stopped after helper (timeout diagnostics use
-    # "get pod" and "get deploy" but those are final timeout output, not
-    # readiness poll queries which use "get deploy/central").
-    local deploy_poll_after
-    deploy_poll_after="$(grep -c 'get deploy/central' "${KUBECTL_CALL_LOG}" || true)"
-    # First 5 iterations queried deploy/central. No more after helper.
-    [[ "$deploy_poll_after" -le 6 ]]
+    # Exactly 5 readiness poll queries (iterations 1-5, using "get deploy/central").
+    # Final timeout diagnostics use "get pod -o wide" / "get deploy -o wide"
+    # (different argument signature) and are not counted here.
+    local deploy_poll_count
+    deploy_poll_count="$(grep -c 'get deploy/central' "${KUBECTL_CALL_LOG}" || true)"
+    [[ "$deploy_poll_count" -eq 5 ]]
 }
 
 @test "exact deadline boundary: nonCentral >= exits without poll sleep" {
