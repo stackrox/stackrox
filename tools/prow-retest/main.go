@@ -87,6 +87,9 @@ func postRequest(requestBody []byte, token string) (int, string) {
 	}
 	bodyString := string(body)
 
+	log.Printf("Response body: %s", bodyString)
+	log.Printf("Response status: %s", resp.Status)
+
 	if resp.StatusCode != http.StatusOK {
 		log.Fatalf("Failed to post request: %v. Response body: %s", resp.Status, bodyString)
 	}
@@ -112,6 +115,10 @@ func main() {
 	if jobName == "" || baseRef == "" || baseSha == "" {
 		flag.PrintDefaults()
 		log.Fatalf("Missing required flags")
+	}
+
+	if len(baseSha) != 40 {
+		log.Fatalf("Base SHA must be 40 characters long")
 	}
 
 	log.Printf("Retrigging job: %s (%s/%s @ %s (%s))", jobName, org, repo, baseSha, baseRef)
