@@ -54,8 +54,23 @@ type CompatibilityError struct {
 
 func (e *CompatibilityError) Error() string { return e.Message }
 
-// CheckRollbackCompatibility retains sequence-based protection understood by old binaries.
+// CheckRollbackCompatibility enforces the release window and retains legacy sequence safety.
 func CheckRollbackCompatibility(source MigrationVersion, target string, targetSequence int) error {
+	// Compare streams independently of sequences: releases can share a schema.
+	destination, err := parseStream(target)
+	if err != nil {
+		return &CompatibilityError{Message: fmt.Sprintf("Central rollback blocked: invalid destination version %q: %v", target, err)}
+	}
+	if origin, err := parseStream(source.MainVersion); err == nil {
+		latest := destination
+		for range AllowedUpgradeSkew {
+			latest = productstreams.GetNextYStream(latest)
+		}
+		if origin.Compare(latest) > 0 {
+			return &CompatibilityError{Message: fmt.Sprintf("Central rollback blocked: cannot downgrade database from ACS %s to ACS %s; maximum supported database source for this destination is ACS %s.", origin, destination, latest)}
+		}
+	}
+
 	if source.MinimumSeqNum > targetSequence {
 		return &CompatibilityError{Message: fmt.Sprintf("Central rollback blocked: database ACS %q requires sequence %d, but ACS %s only supports sequence %d. Use a compatible Central version.", source.MainVersion, source.MinimumSeqNum, target, targetSequence)}
 	}

@@ -53,7 +53,7 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import useAnalytics from 'hooks/useAnalytics';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
-import { getTimeWithHourMinuteFromISO8601 } from './compliance.scanConfigs.utils';
+import { getLastScannedText } from './compliance.scanConfigs.utils';
 import ScanConfigActionsColumn from './ScanConfigActionsColumn';
 import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
@@ -212,7 +212,7 @@ function ScanConfigsTablePage({
 
     const renderTableContent = () => {
         return listData?.configurations?.map((scanSchedule) => {
-            const { id, scanName, scanConfig, lastExecutedTime, clusterStatus } = scanSchedule;
+            const { id, scanName, scanConfig, clusterStatus } = scanSchedule;
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
@@ -227,11 +227,7 @@ function ScanConfigsTablePage({
                         <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
                     <Td dataLabel="Schedule">{formatRecurringSchedule(scanConfig.scanSchedule)}</Td>
-                    <Td dataLabel="Last scanned">
-                        {lastExecutedTime
-                            ? getTimeWithHourMinuteFromISO8601(lastExecutedTime)
-                            : 'Scanning now'}
-                    </Td>
+                    <Td dataLabel="Last scanned">{getLastScannedText(scanSchedule)}</Td>
                     <Td dataLabel="Clusters">
                         {displayOnlyItemOrItemCount(
                             clusterStatus.map((cluster) => cluster.clusterName),

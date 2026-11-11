@@ -41,7 +41,7 @@ slack-api-client = { module = "com.slack.api:slack-api-client", version = "1.49.
 jaxb-api = { module = "javax.xml.bind:jaxb-api", version = "2.3.1" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version = "4.0.9" }
 javers-core = { module = "org.javers:javers-core", version = "7.11.9" }
-picocontainer = { module = "org.picocontainer:picocontainer", version = "2.15.2" }
+picocontainer = { module = "org.picocontainer:picocontainer", version = "2.16" }
 commons-codec = { module = "commons-codec:commons-codec", version = "1.22.0" }
 uuid-creator = { module = "com.github.f4b6a3:uuid-creator", version = "6.1.1" }
 

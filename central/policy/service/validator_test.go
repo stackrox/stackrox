@@ -584,7 +584,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id1",
 		},
 	}
-	s.nStorage.EXPECT().GetNotifier(s.requestContext, "id1").Return((*storage.Notifier)(nil), true, nil)
+	s.nStorage.EXPECT().Exists(s.requestContext, "id1").Return(true, nil)
 	err := s.validator.validateNotifiers(s.requestContext, policy)
 	s.NoError(err, "severity should pass when set")
 
@@ -593,7 +593,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id2",
 		},
 	}
-	s.nStorage.EXPECT().GetNotifier(s.requestContext, "id2").Return((*storage.Notifier)(nil), false, nil)
+	s.nStorage.EXPECT().Exists(s.requestContext, "id2").Return(false, nil)
 	err = s.validator.validateNotifiers(s.requestContext, policy)
 	s.Error(err, "should fail when it does not exist")
 
@@ -602,7 +602,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id3",
 		},
 	}
-	s.nStorage.EXPECT().GetNotifier(s.requestContext, "id3").Return((*storage.Notifier)(nil), true, errors.New("oh noes"))
+	s.nStorage.EXPECT().Exists(s.requestContext, "id3").Return(true, errors.New("oh noes"))
 	err = s.validator.validateNotifiers(s.requestContext, policy)
 	s.Error(err, "should fail when an error is thrown")
 }
