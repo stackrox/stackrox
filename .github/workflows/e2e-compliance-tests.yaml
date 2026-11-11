@@ -1,0 +1,287 @@
+name: e2e-compliance-tests
+
+on:
+  workflow_call:
+    inputs:
+      should-run:
+        description: "true if should really run the job. false - otherwise, i.e. the job should be skipped."
+        required: true
+        type: boolean
+      tag:
+        description: "Image tag to test."
+        required: true
+        type: string
+      ci-job-name:
+        description: "Unique job name, e.g. e2e-compliance-tests-<cluster flavor>. Used to configure the image prefetcher and name uploaded artifacts. Propagated to tests as CI_JOB_NAME for test dispatching."
+        required: true
+        type: string
+      cluster-name-prefix:
+        description: "Used as prefix in provisioned cluster names. Maximum 20 characters."
+        required: true
+        type: string
+      cluster-provisioning-method:
+        description: "Selects cluster provisioning method to use (supported: infra)."
+        type: string
+        default: "infra"
+      extra-env-vars:
+        description: "Environment variables for this flavor of compliance E2E tests, as multi-line KEY=VALUE pairs"
+        required: false
+        type: string
+      infra-flavor:
+        description: "Infra cluster flavor, e.g. openshift-4."
+        type: string
+        default: "openshift-4"
+      infra-args:
+        description: "Infra cluster args as multi-line KEY=VALUE pairs, one per line."
+        type: string
+        default: |
+          openshift-version=ocp/stable
+          master-node-type=e2-standard-4
+          master-node-count=3
+          worker-node-type=e2-standard-8
+          worker-node-count=3
+      infra-lifespan:
+        description: "Infra cluster lifespan (auto-deleted after expiry)."
+        type: string
+        default: "5h"
+      cluster-wait-timeout-minutes:
+        description: "Timeout for waiting on cluster provisioning (OCP needs longer)."
+        type: number
+        default: 60
+      job-timeout-minutes:
+        description: "Overall job timeout."
+        type: number
+        default: 361
+      test-timeout-minutes:
+        description: "Compliance test timeout."
+        type: number
+        default: 120
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  compliance-e2e-tests:
+    if: inputs.should-run
+    runs-on: ubuntu-24.04
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      ARTIFACT_DIR: ./junit-reports/
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      PYTHONUNBUFFERED: "1"
+      CLUSTER_NAME_PREFIX: "${{ inputs.cluster-name-prefix }}"
+      CLUSTER_NAME_PREFIX_MAX: "20"
+    timeout-minutes: ${{ inputs.job-timeout-minutes }}
+    steps:
+      - name: Validate workflow input
+        run: |
+          case "${{ inputs.cluster-provisioning-method }}" in
+            infra) ;;
+            *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method }}'. Supported: infra"; exit 1 ;;
+          esac
+
+          if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
+            echo "::error::Workflow input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
+            exit 1
+          fi
+
+      - name: Checkout repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Compute cluster name for infra-provisioned cluster
+        if: inputs.cluster-provisioning-method == 'infra'
+        # infractl enforces a 28-char limit for cluster names.
+        run: |
+          cluster_name_max=28
+
+          hash_length=$(( cluster_name_max - 1 - CLUSTER_NAME_PREFIX_MAX ))
+          hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+          hash="$(echo "$hash_input" | sha256sum)"
+          hash_truncated="${hash:0:$hash_length}"
+
+          cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
+          echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
+
+      - name: Prepare infra args
+        if: inputs.cluster-provisioning-method == 'infra'
+        id: prepare-infra-args
+        env:
+          INFRA_ARGS: ${{ inputs.infra-args }}
+        run: |
+          args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger cluster creation via infra
+        if: inputs.cluster-provisioning-method == 'infra'
+        uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: ${{ inputs.infra-flavor }}
+          name: ${{ env.CLUSTER_NAME }}
+          lifespan: ${{ inputs.infra-lifespan }}
+          args: ${{ steps.prepare-infra-args.outputs.args }}
+          wait: false
+
+      - name: Set up GCloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+        with:
+          install_components: "gke-gcloud-auth-plugin,beta"
+
+      - name: Install oc
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
+            | tar xz -C /usr/local/bin oc
+          oc version --client
+
+      - uses: stackrox/actions/infra/install-infractl@3b27674f0fa69f2d8c31ab26aa63c9f76401c64e # ratchet:stackrox/actions/infra/install-infractl@v1
+        if: inputs.cluster-provisioning-method == 'infra'
+
+      - name: Wait for infra cluster and get kubeconfig
+        if: inputs.cluster-provisioning-method == 'infra'
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
+        run: |
+          infractl wait "${CLUSTER_NAME}"
+          infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+          echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Wait for cluster to stabilize
+        timeout-minutes: 5
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Set additional env vars
+        if: inputs.extra-env-vars != ''
+        env:
+          EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
+        run: |
+          while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+              echo "$line" >> "$GITHUB_ENV"
+            fi
+          done <<< "$EXTRA_ENV_VARS"
+
+      - name: Create artifact directory
+        run: mkdir -p "$ARTIFACT_DIR"
+
+      - name: Retrieving roxie version from repository
+        id: roxie-version
+        run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Install roxie
+        uses: stackrox/actions/roxie/install-cli@43bb707aa4f32ead5bfb8d5ab11fb409f971ffc8 # ratchet:stackrox/actions@v1
+        with:
+          version: "v${{ steps.roxie-version.outputs.version }}"
+
+      - name: Build roxctl
+        run: |
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]] || [[ "${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-release-build') }}" == "true" ]]; then
+            export GOTAGS=release
+            echo "Building release roxctl (tag or ci-release-build)"
+          fi
+          make roxctl_linux-amd64
+          sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
+          echo "${HOME}/go/bin" >> "$GITHUB_PATH"
+
+      - name: Docker login to Quay.io
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+
+      - name: Run pre-test
+        shell: python
+        env:
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from pre_tests import PreSystemTests
+          PreSystemTests().run()
+
+      - name: Run compliance e2e tests
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        timeout-minutes: ${{ inputs.test-timeout-minutes }}
+        run: tests/e2e/run-compliance-e2e.sh
+
+      - name: Ensure central stability before post-test
+        if: always()
+        run: |
+          source tests/e2e/lib.sh
+          wait_for_api
+
+      - name: Run post-test
+        if: always() && env.KUBECONFIG != ''
+        shell: python
+        run: |
+          import os, sys
+          sys.path.append('.openshift-ci')
+          from post_tests import PostClusterTest
+          post = PostClusterTest(
+              check_stackrox_logs=True,
+          )
+          post.run([os.environ['ARTIFACT_DIR']])
+
+      - name: Run final-post
+        if: always()
+        shell: python
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from post_tests import FinalPost
+          FinalPost(store_qa_tests_data=False).run()
+
+      - name: Cleanup infra cluster
+        if: always() && inputs.cluster-provisioning-method == 'infra' && env.CLUSTER_NAME != ''
+        continue-on-error: true
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        run: |
+          infractl delete "${CLUSTER_NAME}" || echo "::warning::WARNING: Could not delete cluster ${CLUSTER_NAME}."
+
+      - name: Publish summary for failed tests
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+          show: "fail"
+
+      - name: Publish summary for passed and skipped tests
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+          show: "pass, skip"
+
+      - name: Report junit failures in jira
+        if: (!cancelled())
+        id: junit2jira
+        uses: ./.github/actions/junit2jira
+        with:
+          create-jiras: ${{ github.event_name == 'push' }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          directory: ${{ env.ARTIFACT_DIR }}
