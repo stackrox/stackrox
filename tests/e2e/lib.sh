@@ -1699,8 +1699,10 @@ check_central_pod_error_state() {
     # CRASH_CHECK_QUERY_TIMEOUT bounds the entire pod query including retries.
     # Default 120s accommodates retry-kubectl.sh's 6 attempts + backoff (~115s
     # worst-case with --request-timeout=10s per attempt). Uses bash -c because
-    # timeout(1) cannot directly execute shell functions.
+    # timeout(1) cannot directly execute shell functions; TEST_ROOT is exported
+    # so the child process can locate retry-kubectl.sh.
     local query_timeout="${CRASH_CHECK_QUERY_TIMEOUT:-120}"
+    export TEST_ROOT
     pod_json="$(timeout "${query_timeout}" bash -c 'retrying_kubectl </dev/null "$@"' _ -n "${namespace}" get pods -l "app=central" -o json --request-timeout=10s 2>/dev/null || true)"
     if [[ -z "$pod_json" ]]; then
         return 1
@@ -1712,15 +1714,16 @@ check_central_pod_error_state() {
     # flagged — the container just crashed on a live pod. Terminated
     # Error/OOMKilled on a genuinely terminal pod (phase Failed/Succeeded)
     # is only flagged when no distinct healthy replacement pod exists. A
-    # healthy replacement must be: phase Running, not being deleted, with
-    # the "central" application container running and ready.
+    # healthy replacement must be: phase Running, not being deleted, pod-level
+    # Ready condition True, and the "central" container running and ready.
     # Output format: "pod-name/container-name: state-type — reason"
     crash_info="$(echo "$pod_json" | jq -r '
-        # A healthy replacement pod: Running phase, not deleting, with
-        # the "central" container running + ready.
+        # A healthy replacement pod: Running phase, not deleting, pod Ready
+        # condition True, with the "central" container running + ready.
         ([.items[] | select(
             .status.phase == "Running" and
             (.metadata.deletionTimestamp | not) and
+            (any(.status.conditions[]?; .type == "Ready" and .status == "True")) and
             (.status.containerStatuses[]? |
                 select(.name == "central" and .state.running and .ready))
         )] | length > 0) as $has_healthy_replacement |

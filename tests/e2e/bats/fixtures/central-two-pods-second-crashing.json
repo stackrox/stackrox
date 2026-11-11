@@ -6,7 +6,9 @@
       "metadata": {
         "name": "central-old-abc12",
         "namespace": "stackrox",
-        "labels": { "app": "central" }
+        "labels": {
+          "app": "central"
+        }
       },
       "status": {
         "phase": "Running",
@@ -22,6 +24,12 @@
             },
             "lastState": {}
           }
+        ],
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
         ]
       }
     },
@@ -29,7 +37,9 @@
       "metadata": {
         "name": "central-new-xyz78",
         "namespace": "stackrox",
-        "labels": { "app": "central" }
+        "labels": {
+          "app": "central"
+        }
       },
       "status": {
         "phase": "Running",

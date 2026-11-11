@@ -6,7 +6,9 @@
       "metadata": {
         "name": "central-abc123-def45",
         "namespace": "stackrox",
-        "labels": { "app": "central" }
+        "labels": {
+          "app": "central"
+        }
       },
       "status": {
         "phase": "Running",
@@ -21,6 +23,12 @@
               }
             },
             "lastState": {}
+          }
+        ],
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
           }
         ]
       }

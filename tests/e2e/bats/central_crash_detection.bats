@@ -435,6 +435,25 @@ STUB
     assert_output --partial "OOMKilled"
 }
 
+@test "active Running pod with OOMKilled detected despite healthy peer" {
+    # Active (Running-phase) pod OOMKilled + healthy peer. Must detect.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-active-oomkilled-with-healthy-peer.json"
+    run check_central_pod_error_state stackrox
+    assert_success
+    assert_output --partial "crash state detected"
+    assert_output --partial "central-oom-abc12/central"
+    assert_output --partial "OOMKilled"
+}
+
+@test "nonReady replacement does not suppress terminal pod failure" {
+    # Terminal (Failed) pod + Running pod whose Ready condition is False.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-terminal-with-nonready-replacement.json"
+    run check_central_pod_error_state stackrox
+    assert_success   # returns 0 = crash detected
+    assert_output --partial "crash state detected"
+    assert_output --partial "Error"
+}
+
 @test "deleting replacement does not suppress terminal pod failure" {
     # Terminal (Failed) pod + Running pod that has deletionTimestamp set.
     # A deleting pod must not count as a healthy replacement.

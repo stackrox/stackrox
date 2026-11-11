@@ -6,7 +6,9 @@
       "metadata": {
         "name": "central-old-abc12",
         "namespace": "stackrox",
-        "labels": { "app": "central" }
+        "labels": {
+          "app": "central"
+        }
       },
       "status": {
         "phase": "Failed",
@@ -32,7 +34,9 @@
       "metadata": {
         "name": "central-deleting-xyz78",
         "namespace": "stackrox",
-        "labels": { "app": "central" },
+        "labels": {
+          "app": "central"
+        },
         "deletionTimestamp": "2026-01-01T00:02:00Z"
       },
       "status": {
@@ -48,6 +52,12 @@
               }
             },
             "lastState": {}
+          }
+        ],
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
           }
         ]
       }
