@@ -72,14 +72,9 @@ var log = logging.LoggerForModule()
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Info("Running sensor with Kubernetes re-sync disabled")
 
-	var internalMessageDispatcher common.PubSubDispatcher
-	if features.SensorInternalPubSub.Enabled() {
-		log.Info("Internal PubSub system enabled")
-		var err error
-		internalMessageDispatcher, err = buildPubSubDispatcher(cfg.eventPipelineQueueSize)
-		if err != nil {
-			return nil, err
-		}
+	internalMessageDispatcher, err := buildPubSubDispatcher(cfg.eventPipelineQueueSize)
+	if err != nil {
+		return nil, err
 	}
 
 	clusterID := cfg.clusterIDHandler
