@@ -593,6 +593,16 @@ func testPruneManyImpl(t *testing.T, ctx context.Context, store Store[storage.Te
 	assert.NoError(t, missingErrAfter)
 }
 
+func TestGetAllFromCache(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newStore(testDB)
+	require.NotNil(t, store)
+
+	assert.Panics(t, func() {
+		store.GetAllFromCacheForSAC()
+	})
+}
+
 // region Helper Functions
 
 type storeFactory func(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]
