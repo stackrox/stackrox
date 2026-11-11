@@ -190,9 +190,88 @@ func probeSyncLatency(dir string) (time.Duration, error) {
 	return times[len(times)/2], nil
 }
 
+// manifestHash returns the sha256 of a manifest's sorted entry ids —
+// order-independent so run-scoped write order doesn't change the key.
+// The stable identity of "what source+flags produced this working set",
+// used to key link-output caching.
+func manifestHash(entries []manifestEntry) string {
+	if len(entries) == 0 {
+		return ""
+	}
+	ids := make([]string, 0, len(entries))
+	for _, e := range entries {
+		ids = append(ids, e.id)
+	}
+	sort.Strings(ids)
+	sum := sha256.Sum256([]byte(strings.Join(ids, "\n")))
+	return fmt.Sprintf("%x", sum[:16])
+}
+
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 	log.SetPrefix("gocache-serve: ")
+
+	// Workflow-level CLI subcommands (link-output caching). These run
+	// outside the GOCACHEPROG protocol: -hash-manifest prints the sorted-
+	// entry sha of a stored manifest (the key predicting a build's output
+	// binary); -fetch/-store move blobs (e.g. output binaries) through the
+	// same backend + auth as the protocol mode.
+	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-") {
+		backend, err := newBackend()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "backend: %v\n", err)
+			os.Exit(1)
+		}
+		switch os.Args[1] {
+		case "-hash-manifest":
+			if len(os.Args) < 3 {
+				fmt.Fprintln(os.Stderr, "usage: -hash-manifest JOB")
+				os.Exit(2)
+			}
+			entries, _, err := DownloadManifest(backend, os.Args[2])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "download: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(manifestHash(entries))
+		case "-fetch":
+			if len(os.Args) < 4 {
+				fmt.Fprintln(os.Stderr, "usage: -fetch KEY OUTFILE")
+				os.Exit(2)
+			}
+			body, err := backend.Get(os.Args[2])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "get: %v\n", err)
+				os.Exit(1)
+			}
+			if body == nil {
+				os.Exit(1) // miss
+			}
+			if err := os.WriteFile(os.Args[3], body, 0o755); err != nil {
+				fmt.Fprintf(os.Stderr, "write: %v\n", err)
+				os.Exit(1)
+			}
+		case "-store":
+			if len(os.Args) < 4 {
+				fmt.Fprintln(os.Stderr, "usage: -store KEY FILE")
+				os.Exit(2)
+			}
+			body, err := os.ReadFile(os.Args[3])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "read: %v\n", err)
+				os.Exit(1)
+			}
+			if err := backend.Put(os.Args[2], body); err != nil {
+				fmt.Fprintf(os.Stderr, "put: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Fprintf(os.Stderr, "stored %s (%d bytes)\n", os.Args[2], len(body))
+		default:
+			fmt.Fprintf(os.Stderr, "unknown subcommand %s\n", os.Args[1])
+			os.Exit(2)
+		}
+		return
+	}
 
 	cacheDir := os.Getenv("GOCACHE_SERVE_DIR")
 	if cacheDir == "" {
@@ -299,6 +378,13 @@ func main() {
 		manifestEntries, _, err = DownloadManifest(rawBackend, jobName)
 		if err != nil {
 			log.Printf("manifest download failed: %v", err)
+		}
+		// Manifest content hash: the entry set is a deterministic function
+		// of source+flags, so manifest-hash + platform + flags predicts the
+		// output binary — the key for link-output caching (go's on-disk
+		// buildID check then skips the relink when the binary is restored).
+		if h := manifestHash(manifestEntries); h != "" {
+			log.Printf("gocache-serve: manifest sha256=%s (%d entries)", h, len(manifestEntries))
 		}
 		for _, e := range manifestEntries {
 			if raw, err := hex.DecodeString(e.meta); err == nil && len(raw) > 0 {
