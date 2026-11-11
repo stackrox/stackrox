@@ -25,6 +25,10 @@ if [[ "$arch" == "s390x" ]]; then
 else
   postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-${pg_rhel_major}-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
   dnf install --disablerepo='*' -y "${postgres_repo_url}"
+  # The PGDG repo file uses $releasever_major.$releasever_minor in its baseurl,
+  # but PGDG may not publish directories for every RHEL minor release immediately.
+  # Use the major-only directory (e.g. rhel-9-x86_64) which is always available.
+  sed -i 's|\$releasever_major\.\$releasever_minor|\$releasever_major|g' /etc/yum.repos.d/pgdg-redhat-all.repo
   postgres_minor=$(dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server."$arch" | tail -n 1 | awk '{print $2}')
   postgres_minor="$postgres_minor.$arch"
 
