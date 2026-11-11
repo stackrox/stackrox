@@ -2705,9 +2705,10 @@ class Kubernetes {
 
     // deleteManagedWorkloads removes the namespaced objects that can delay
     // namespace deletion: deployments, replica sets and pods (a terminating pod
-    // holds the namespace), services and routes (a LoadBalancer service holds it
-    // until the cloud controller finishes cleanup). A second delete with grace
-    // period 0 shortens a termination already in progress.
+    // holds the namespace) and services (a LoadBalancer service holds it until
+    // the cloud controller finishes cleanup). A second delete with grace period
+    // 0 shortens a termination already in progress. Distributions with their
+    // own objects extend this in an override.
     @CompileDynamic
     void deleteManagedWorkloads(String ns) {
         Timer t = new Timer(20, 1)
@@ -2720,7 +2721,6 @@ class Kubernetes {
             deleteCollectionQuietly { client.apps().replicaSets().inNamespace(ns).delete() }
             deleteCollectionQuietly { client.pods().inNamespace(ns).withGracePeriod(0L).delete() }
             deleteCollectionQuietly { client.services().inNamespace(ns).delete() }
-            deleteRoutesInNamespace(ns)
             if (listPodsQuietly(ns).isEmpty()) {
                 // A second empty read covers a replica set that creates one
                 // more pod after it is told to delete.
@@ -2736,14 +2736,6 @@ class Kubernetes {
             podDescription(it)
         }
         log.info "Workloads still present in ${ns} before namespace deletion: ${stuck}"
-    }
-
-    /**
-     * Deletes all routes in a namespace. Routes are an OpenShift concept, so
-     * the Kubernetes implementation has nothing to delete.
-     */
-    protected void deleteRoutesInNamespace(String ns) {
-        log.debug "Routes are not supported on Kubernetes; nothing to delete in ${ns}"
     }
 
     @CompileDynamic

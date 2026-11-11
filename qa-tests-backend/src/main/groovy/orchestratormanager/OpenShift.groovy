@@ -112,11 +112,13 @@ class OpenShift extends Kubernetes {
         }
     }
 
-    // A route keeps its router entry until the router observes the delete, and
-    // that holds a namespace past the deletion wait.
+    // Routes are OpenShift-specific, so the base class cannot delete them.
+    // Delete them after the parent's workload cleanup and before the namespace
+    // itself is deleted.
     @Override
     @CompileDynamic
-    protected void deleteRoutesInNamespace(String ns) {
+    void deleteManagedWorkloads(String ns) {
+        super.deleteManagedWorkloads(ns)
         try {
             oClient.routes().inNamespace(ns).delete()
         } catch (KubernetesClientException e) {
