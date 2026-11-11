@@ -132,6 +132,26 @@ jobs:
             case "$COMMIT_MSG" in *memsnap:*)
               echo "GOCACHE_MEMSNAP=1" >> "$GITHUB_ENV"
               echo "page-cache meminfo snapshots enabled" ;; esac
+            case "$COMMIT_MSG" in *zram:*)
+              # Compressed local cache: ext4 on a zram device. Entries
+              # compress ~2.5-3x, so 12G holds the full ~16G working set.
+              # Use-if-found: falls back to the normal ladder if the module
+              # is absent.
+              if sudo modprobe zram 2>/dev/null; then
+                echo lz4 | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || true
+                echo 12G | sudo tee /sys/block/zram0/disksize >/dev/null
+                if sudo mkfs.ext4 -q /dev/zram0 2>/dev/null; then
+                  sudo mkdir -p /mnt/zram-cache
+                  sudo mount /dev/zram0 /mnt/zram-cache
+                  sudo chmod 777 /mnt/zram-cache
+                  echo "GOCACHE_SERVE_DIR=/mnt/zram-cache/gocache-serve" >> "$GITHUB_ENV"
+                  echo "gocache-serve: local cache on zram-backed ext4 (12G, compressed)"
+                else
+                  echo "zram device create failed — using default ladder"
+                fi
+              else
+                echo "zram module unavailable — using default ladder"
+              fi ;; esac
             case "$COMMIT_MSG" in *westpin*)
               echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
               echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
@@ -221,7 +241,8 @@ jobs:
             echo "=== azure device symlinks (resource = local temp disk):"; ls -la /dev/disk/azure/ 2>/dev/null || echo "no /dev/disk/azure"
             echo "=== unformatted disks:"; sudo blkid 2>/dev/null || true
             echo "=== waagent resource-disk config:"; grep -i "^ResourceDisk" /etc/waagent.conf 2>/dev/null || echo "no waagent.conf"
-            echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill 2>/dev/null || true
+            echo "=== zram stats (orig_data compr_data mem_used = ratio):"; cat /sys/block/zram0/mm_stat 2>/dev/null || echo "no zram"
+            echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill /mnt/zram-cache/gocache-serve 2>/dev/null || true
           fi
 
       - name: Measure and sync new cache entries
