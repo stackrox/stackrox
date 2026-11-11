@@ -37,3 +37,12 @@ ordered aggregates and keeping IDs/names paired for arbitrary names. The tree is
 built directly from compact groups with namespace maps sized for the result.
 Duplicate recorded names retain the smallest matching ID without sorting SQL
 results. Debug scope strings are formatted only when tracing is enabled.
+
+Resource queries filter the computed scope through cluster IDs and namespace
+names. Exact-match lists for those fields use array parameters even below the
+generic search threshold, keeping each list to one parameter across many
+per-cluster filters.
+
+Applying scope selectors directly inside resource queries is a possible future
+improvement outside this series. It needs a separate design for request
+consistency and agreement between point checks and list/search results.
