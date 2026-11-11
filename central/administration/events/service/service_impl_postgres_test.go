@@ -290,6 +290,10 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 	}
 	s.Require().NoError(s.datastore.AddEvent(s.ctx, imgEvent))
 	s.Require().NoError(s.datastore.AddEvent(s.ctx, otherEvent))
+	nameOnlyEvent := *otherEvent
+	nameOnlyEvent.ResourceID = ""
+	nameOnlyEvent.ResourceName = "registry.example.com/image:latest"
+	s.Require().NoError(s.datastore.AddEvent(s.ctx, &nameOnlyEvent))
 	s.Require().NoError(s.datastore.Flush(s.ctx))
 
 	resp, err := s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{

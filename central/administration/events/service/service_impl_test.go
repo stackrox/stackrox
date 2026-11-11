@@ -7,12 +7,15 @@ import (
 
 	"github.com/pkg/errors"
 	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/deployment/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -211,4 +214,70 @@ func TestAdministrationEventsQueryBuilderNilFilter(t *testing.T) {
 	query, err := svc.getQueryFromFilter(context.Background(), nil)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
+}
+
+func TestWorkloadFilterMatches(t *testing.T) {
+	testCases := map[string]struct {
+		resourceTypes []string
+		imageViews    []*views.ContainerImageView
+		matchesImage  bool
+		matchesNode   bool
+	}{
+		"no matches with image type": {
+			resourceTypes: []string{"Image"},
+		},
+		"no matches with all types": {
+			matchesNode: true,
+		},
+		"matching image only": {
+			resourceTypes: []string{"Image"},
+			imageViews:    []*views.ContainerImageView{{ImageIDV2: "image-id"}, {ImageIDV2: "image-id"}, {}},
+			matchesImage:  true,
+		},
+		"matching image with all types": {
+			imageViews:   []*views.ContainerImageView{{ImageIDV2: "image-id"}},
+			matchesImage: true,
+			matchesNode:  true,
+		},
+		"matching image with multiple types": {
+			resourceTypes: []string{"Image", "Node"},
+			imageViews:    []*views.ContainerImageView{{ImageIDV2: "image-id"}},
+			matchesImage:  true,
+			matchesNode:   true,
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			deployments := deploymentMocks.NewMockDataStore(ctrl)
+			deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).Return(tc.imageViews, nil)
+			ds := dsMocks.NewMockDataStore(ctrl)
+			svc := &serviceImpl{ds: ds, deployments: deployments}
+			query, err := svc.getQueryFromFilter(context.Background(), &v1.AdministrationEventsFilter{
+				ResourceType: tc.resourceTypes, WorkloadQuery: `Cluster:"prod"`,
+			})
+			require.NoError(t, err)
+			// Predicates do not support SQL time ranges; evaluate the resource filter here.
+			require.Len(t, query.GetConjunction().GetQueries(), 2)
+			resourceQuery := query.GetConjunction().GetQueries()[1]
+			pred, err := predicate.NewFactory("administrationevent", &storage.AdministrationEvent{}).GeneratePredicate(resourceQuery)
+			require.NoError(t, err)
+			for eventName, eventCase := range map[string]struct {
+				resource *storage.AdministrationEvent_Resource
+				matches  bool
+			}{
+				"matching image": {resource: &storage.AdministrationEvent_Resource{Type: "Image", Id: "image-id"}, matches: tc.matchesImage},
+				"other image":    {resource: &storage.AdministrationEvent_Resource{Type: "Image", Id: "other-id"}},
+				"name only":      {resource: &storage.AdministrationEvent_Resource{Type: "Image", Name: "some-image"}},
+				"node":           {resource: &storage.AdministrationEvent_Resource{Type: "Node", Id: "node-id"}, matches: tc.matchesNode},
+			} {
+				t.Run(eventName, func(t *testing.T) {
+					event := &storage.AdministrationEvent{
+						Resource: eventCase.resource, CreatedAt: protoconv.ConvertTimeToTimestamp(time.Now()),
+					}
+					assert.Equal(t, eventCase.matches, pred.Matches(event))
+				})
+			}
+		})
+	}
 }

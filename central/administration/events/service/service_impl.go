@@ -150,9 +150,12 @@ func (s *serviceImpl) getQueryFromFilter(ctx context.Context, filter *v1.Adminis
 		return baseQuery.ProtoQuery(), nil
 	}
 
-	imageQuery := search.NewQueryBuilder().
-		AddExactMatches(search.ResourceType, "Image").
-		AddExactMatches(search.ResourceID, imageIDs...)
+	imageQuery := search.MatchNoneQuery()
+	if len(imageIDs) != 0 {
+		imageQuery = search.NewQueryBuilder().
+			AddExactMatches(search.ResourceType, "Image").
+			AddExactMatches(search.ResourceID, imageIDs...).ProtoQuery()
+	}
 
 	otherTypes := sliceutils.Without(resourceTypes, []string{"Image"})
 
@@ -162,12 +165,12 @@ func (s *serviceImpl) getQueryFromFilter(ctx context.Context, filter *v1.Adminis
 		notImageType := search.NewQueryBuilder().AddExactMatches(search.ResourceType, "Image").ProtoQuery()
 		otherQuery = search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{notImageType}})
 	case len(otherTypes) == 0:
-		return search.ConjunctionQuery(baseQuery.ProtoQuery(), imageQuery.ProtoQuery()), nil
+		return search.ConjunctionQuery(baseQuery.ProtoQuery(), imageQuery), nil
 	default:
 		otherQuery = search.NewQueryBuilder().AddExactMatches(search.ResourceType, otherTypes...).ProtoQuery()
 	}
 
-	resourceFilter := search.DisjunctionQuery(imageQuery.ProtoQuery(), otherQuery)
+	resourceFilter := search.DisjunctionQuery(imageQuery, otherQuery)
 	return search.ConjunctionQuery(baseQuery.ProtoQuery(), resourceFilter), nil
 }
 
@@ -201,7 +204,7 @@ func (s *serviceImpl) resolveWorkloadImageIDs(ctx context.Context, filter *v1.Ad
 		}
 	}
 	if imageIDSet.Cardinality() == 0 {
-		return []string{""}
+		return []string{}
 	}
 	return imageIDSet.AsSlice()
 }
