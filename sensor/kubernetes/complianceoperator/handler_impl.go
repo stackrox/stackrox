@@ -44,13 +44,11 @@ type handlerImpl struct {
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
 
-	disabled              concurrency.Signal
-	stopSignal            concurrency.Signal
-	started               *atomic.Bool
-	complianceIsReady     *concurrency.Signal
-	handlerMaxRetries     int
-	handlerAPICallTimeout time.Duration
-	handlerRetryTimeout   time.Duration
+	disabled          concurrency.Signal
+	stopSignal        concurrency.Signal
+	started           *atomic.Bool
+	complianceIsReady *concurrency.Signal
+	retrier           retrier
 }
 
 func (m *handlerImpl) Name() string {
@@ -74,13 +72,15 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
 
-		started:               &atomic.Bool{},
-		disabled:              concurrency.NewSignal(),
-		stopSignal:            concurrency.NewSignal(),
-		complianceIsReady:     coIsReady,
-		handlerMaxRetries:     defaultMaxRetries,
-		handlerAPICallTimeout: defaultAPICallTimeout,
-		handlerRetryTimeout:   defaultRetryTimeout,
+		started:           &atomic.Bool{},
+		disabled:          concurrency.NewSignal(),
+		stopSignal:        concurrency.NewSignal(),
+		complianceIsReady: coIsReady,
+		retrier: retrier{
+			maxRetries:     defaultMaxRetries,
+			apiCallTimeout: defaultAPICallTimeout,
+			retryTimeout:   defaultRetryTimeout,
+		},
 	}
 }
 
@@ -238,7 +238,7 @@ func (m *handlerImpl) createScanResources(requestID string, ns string, request *
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	err = m.callWithRetry(func(ctx context.Context) error {
+	err = m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Create(ctx, scanSetting, v1.CreateOptions{})
 		return errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
 	})
@@ -246,7 +246,7 @@ func (m *handlerImpl) createScanResources(requestID string, ns string, request *
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	err = m.callWithRetry(func(ctx context.Context) error {
+	err = m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(ctx, scanSettingBinding, v1.CreateOptions{})
 		return errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
 	})
@@ -266,7 +266,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	var ssObj *unstructured.Unstructured
-	err := m.callWithRetry(func(ctx context.Context) error {
+	err := m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 		var err error
 		ssObj, err = resSS.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
 		return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
@@ -277,7 +277,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	resSSB := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
 	var ssbObj *unstructured.Unstructured
-	err = m.callWithRetry(func(ctx context.Context) error {
+	err = m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 		var err error
 		ssbObj, err = resSSB.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
 		return errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
@@ -318,7 +318,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		}
 	}
 
-	err = m.callWithRetryWithOnConflictCallback(
+	err = m.retrier.callWithRetryWithOnConflictCallback(m.ctx(),
 		func(ctx context.Context) error {
 			if updatedScanSetting == nil {
 				return retry.MakeRetryable(errors.Errorf("updated ScanSetting %q is 'nil'", request.GetScanSettings().GetScanName()))
@@ -344,7 +344,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	// Process SSB as an update
 	if ssbObj != nil {
-		err = m.callWithRetryWithOnConflictCallback(
+		err = m.retrier.callWithRetryWithOnConflictCallback(m.ctx(),
 			func(ctx context.Context) error {
 				if updatedScanSettingBinding == nil {
 					return retry.MakeRetryable(errors.Errorf("updated ScanSettingBinding %q is 'nil'", request.GetScanSettings().GetScanName()))
@@ -367,7 +367,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	err = m.callWithRetry(func(ctx context.Context) error {
+	err = m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(ctx, updatedScanSettingBinding, v1.CreateOptions{})
 		return errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 	})
@@ -392,7 +392,7 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 	// configuration.
 	resI := m.client.Resource(complianceoperator.ComplianceSuite.GroupVersionResource()).Namespace(ns)
 	var obj *unstructured.Unstructured
-	err := m.callWithRetry(func(ctx context.Context) error {
+	err := m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 		var err error
 		obj, err = resI.Get(ctx, request.GetScanName(), v1.GetOptions{})
 		return errors.Wrapf(err, "namespaces/%s/compliancesuites/%s not found", ns, request.GetScanName())
@@ -422,7 +422,7 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 	resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
 	// Get the scan and apply annotation to indicate compliance scan be rerun.
 	complianceScan, scanObj, err := m.getScanForReRun(func() (*unstructured.Unstructured, error) {
-		err := m.callWithRetry(func(ctx context.Context) error {
+		err := m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 			var err error
 			obj, err = resI.Get(ctx, scan.Name, v1.GetOptions{})
 			return errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
@@ -432,7 +432,7 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 	if err != nil {
 		return err
 	}
-	return m.callWithRetryWithOnConflictCallback(
+	return m.retrier.callWithRetryWithOnConflictCallback(m.ctx(),
 		func(ctx context.Context) error {
 			log.Infof("Rerunning compliance scan %s", complianceScan)
 			if scanObj == nil {
@@ -489,7 +489,7 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 	obj, err := m.getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
 		resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 		var obj *unstructured.Unstructured
-		err := m.callWithRetry(func(ctx context.Context) error {
+		err := m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 			var err error
 			obj, err = resI.Get(ctx, config.ScanName, v1.GetOptions{})
 			return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
@@ -500,7 +500,7 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
-	err = m.callWithRetryWithOnConflictCallback(
+	err = m.retrier.callWithRetryWithOnConflictCallback(m.ctx(),
 		func(ctx context.Context) error {
 			if obj == nil {
 				return retry.MakeRetryable(errors.Errorf("ScanSetting %q is 'nil'", config.ScanName))
@@ -603,7 +603,7 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 		}
 		deletePolicy := v1.DeletePropagationForeground
 		scanSettingBindingResourceI := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
-		err := m.callWithRetry(func(ctx context.Context) error {
+		err := m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 			return scanSettingBindingResourceI.Delete(ctx, request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
 		})
 		if err != nil && !kubeAPIErr.IsNotFound(err) {
@@ -611,7 +611,7 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 		}
 
 		scanSettingResourceI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
-		err = m.callWithRetry(func(ctx context.Context) error {
+		err = m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 			return scanSettingResourceI.Delete(ctx, request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
 		})
 		if err != nil && !kubeAPIErr.IsNotFound(err) {
@@ -647,7 +647,7 @@ func generateScanIndex(namespace string, scanName string) string {
 func (m *handlerImpl) getResourcesInCluster(api k8sapi.APIResource) (map[string]unstructured.Unstructured, error) {
 	resourceInterface := m.client.Resource(api.GroupVersionResource())
 	var resourcesInCluster *unstructured.UnstructuredList
-	err := m.callWithRetry(func(ctx context.Context) error {
+	err := m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 		var err error
 		resourcesInCluster, err = resourceInterface.List(ctx, v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
 		return errors.Wrap(err, "listing resources in cluster")
@@ -680,7 +680,7 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		if err != nil {
 			return err
 		}
-		err = m.callWithRetryWithOnConflictCallback(
+		err = m.retrier.callWithRetryWithOnConflictCallback(m.ctx(),
 			func(ctx context.Context) error {
 				if updatedResource == nil {
 					return retry.MakeRetryable(errors.Errorf("updated %s %q is 'nil'", api.GroupVersionResource(), resource.GetName()))
@@ -709,7 +709,7 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		if err != nil {
 			return err
 		}
-		err = m.callWithRetry(func(ctx context.Context) error {
+		err = m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 			_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Create(ctx, resource, v1.CreateOptions{})
 			return errors.Wrapf(err, "Could not create namespaces/%s/%s/%s", namespace, api.Name, resource.GetName())
 		})
@@ -729,7 +729,7 @@ func (m *handlerImpl) reconcileDeleteResource(inCentral set.StringSet, inCluster
 			// The Resource is in the cluster but not in Central
 			log.Debugf("Delete %s %s", api.Kind, resource.GetName())
 			cli := m.client.Resource(api.GroupVersionResource()).Namespace(resource.GetNamespace())
-			err := m.callWithRetry(func(ctx context.Context) error {
+			err := m.retrier.callWithRetry(m.ctx(), func(ctx context.Context) error {
 				return cli.Delete(ctx, resource.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
 			})
 			if err != nil && !kubeAPIErr.IsNotFound(err) {
@@ -892,57 +892,4 @@ func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) bool {
 
 func (m *handlerImpl) ctx() context.Context {
 	return concurrency.AsContext(&m.stopSignal)
-}
-
-type retriableCall func(context.Context) error
-
-type onRetriableCallError func(context.Context, error) error
-
-type onConflictCall func(context.Context) error
-
-func onConflictErrorWrapper(fn onConflictCall) onRetriableCallError {
-	return func(ctx context.Context, parentErr error) error {
-		if !kubeAPIErr.IsConflict(parentErr) && !retry.IsRetryable(parentErr) {
-			return nil
-		}
-		if fn == nil {
-			return errors.New("onConflictCall is 'nil'")
-		}
-		return fn(ctx)
-	}
-}
-
-func (m *handlerImpl) callWithRetry(fn retriableCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
-	defer cancel()
-	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, nil)
-}
-
-func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onConflict onConflictCall) error {
-	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
-	defer cancel()
-	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, onConflictErrorWrapper(onConflict))
-}
-
-func (m *handlerImpl) callWithRetryWithOnErrorCallback(retryCtx context.Context, fn retriableCall, onErrFn onRetriableCallError) error {
-	if fn == nil {
-		return errors.New("retriableCall is 'nil'")
-	}
-	return retry.WithRetry(func() error {
-		callCtx, callCancel := context.WithTimeout(retryCtx, m.handlerAPICallTimeout)
-		defer callCancel()
-		err := fn(callCtx)
-		if err != nil && onErrFn != nil {
-			errCallCtx, errCallCancel := context.WithTimeout(retryCtx, m.handlerAPICallTimeout)
-			defer errCallCancel()
-			if onErr := onErrFn(errCallCtx, err); onErr != nil {
-				// propagate the onErrFn callback failure and keep the conflict as context
-				return errors.Wrapf(onErr, "callback error: %v", err)
-			}
-		}
-		return err
-	},
-		retry.WithContext(retryCtx),
-		retry.Tries(m.handlerMaxRetries),
-		retry.WithExponentialBackoff())
 }
