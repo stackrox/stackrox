@@ -567,6 +567,7 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	seenQueries := set.StringSet{}
 	seenSelectFields := set.StringSet{}
 	values := make([]any, 0, len(entries))
+	var forceArray bool
 	// skip for complex queries (having, groupby, multiple values and selects)
 	// here we support only simple cases of multiple exact match statements
 	// TODO(ROX-27944): add support for complex queries as well
@@ -582,6 +583,7 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 		}
 		seenQueries.Add(entry.Where.Query)
 		values = append(values, fmt.Sprintf("%s", entry.Where.Values[0]))
+		forceArray = forceArray || entry.ForceArrayForDisjunction
 	}
 
 	// if we've seen more than a single exact query this means we have multiple
@@ -595,11 +597,12 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	where = strings.TrimSuffix(where, exactQuerySuffix)
 
 	// For large value sets, use = ANY($$) with a single array parameter
-	// to avoid the 65535 parameter limit. For small sets, use IN ($1, $2, ...)
-	// for better plan quality since the planner can inspect individual values.
+	// to avoid the 65535 parameter limit. Scope fields force arrays even for
+	// small sets; other fields keep IN for better plan quality, since the planner
+	// can inspect individual values.
 	// pgx infers the array type from the element type ([]uuid.UUID → uuid[],
 	// []string → text[], etc.) so no explicit cast is needed.
-	if len(values) >= env.PostgresParameterThreshold.IntegerSetting() {
+	if forceArray || len(values) >= env.PostgresParameterThreshold.IntegerSetting() {
 		originalValues := make([]interface{}, len(entries))
 		for i, entry := range entries {
 			originalValues[i] = entry.Where.Values[0]
