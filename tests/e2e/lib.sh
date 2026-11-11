@@ -1639,8 +1639,9 @@ wait_for_ready_deployment() {
             fi
         fi
 
-        # Timeout case
-        if (( elapsed_seconds > max_seconds )); then
+        # Timeout case (>= so exact deadline expiry takes the timeout path
+        # immediately rather than allowing another poll sleep + query cycle).
+        if (( elapsed_seconds >= max_seconds )); then
             retrying_kubectl </dev/null -n "${namespace}" get pod -o wide
             retrying_kubectl </dev/null -n "${namespace}" get deploy -o wide
             die "wait_for_ready_deployment() timeout after $max_seconds seconds."

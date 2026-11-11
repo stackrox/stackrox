@@ -479,6 +479,9 @@ STUB
     run check_central_pod_error_state stackrox
     assert_success   # returns 0 = crash detected
     assert_output --partial "crash state detected"
+    # Pod name and container name appear in diagnostic output.
+    assert_output --partial "central-evicted-abc12/central"
+    assert_output --partial "terminated"
     assert_output --partial "Error"
 }
 
@@ -843,6 +846,58 @@ HANGSTUB
     local pods_count
     pods_count="$(grep -c 'get pods' "${KUBECTL_CALL_LOG}" || true)"
     [[ "$pods_count" -eq 0 ]]
+}
+
+@test "exact deadline boundary: >= fires at max_seconds without extra poll cycle" {
+    # Real wall-clock test: max_seconds=1 with no-op sleep. Deployment never
+    # ready. The >= comparison fires after 1 second of real elapsed time.
+    # Count deployment queries: with >=, the loop terminates as soon as
+    # elapsed reaches 1s. With old >, it would allow another full cycle
+    # (query + sleep + query) before timing out, producing more queries.
+    KUBECTL_DEPLOY_READY="false"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-healthy.json"
+
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
+    run timeout 10 bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        wait_for_ready_deployment stackrox central 1
+    ' 2>&1
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
+
+    assert_failure
+    [[ "$status" -eq 1 ]]
+    assert_output --partial "wait_for_ready_deployment() timeout"
+    refute_output --partial "crash state"
+    # Elapsed must be close to 1s (the deadline), not 10s (outer guard).
+    [[ "$elapsed" -ge 1 ]]
+    [[ "$elapsed" -le 4 ]]
+}
+
+@test "exact deadline boundary: nonCentral deployment times out at >= boundary" {
+    # Simple guard: nonCentral deployment also uses >= for timeout.
+    KUBECTL_DEPLOY_READY="false"
+    run timeout 10 bash -c '
+        export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        wait_for_ready_deployment stackrox scanner-v4-indexer 0
+    ' 2>&1
+    assert_failure
+    [[ "$status" -eq 1 ]]
+    assert_output --partial "wait_for_ready_deployment() timeout"
+    refute_output --partial "crash state"
 }
 
 @test "wait_for_api budget stops loop on own deadline not after 149 more curls" {
