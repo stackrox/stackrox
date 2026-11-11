@@ -207,7 +207,7 @@ class Kubernetes {
     @SuppressWarnings('BuilderMethodWithSideEffects')
     void createDeployment(Deployment deployment) {
         ensureNamespaceExists(deployment.namespace)
-        createDeploymentNoWait(deployment)
+        createDeploymentOrThrow(deployment)
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
@@ -278,7 +278,7 @@ class Kubernetes {
     void batchCreateDeployments(List<Deployment> deployments) {
         for (Deployment deployment : deployments) {
             ensureNamespaceExists(deployment.namespace)
-            createDeploymentNoWait(deployment)
+            createDeploymentOrThrow(deployment)
         }
         for (Deployment deployment : deployments) {
             waitForDeploymentAndPopulateInfo(deployment)
@@ -2159,6 +2159,27 @@ class Kubernetes {
 
     @CompileDynamic
     boolean createDeploymentNoWait(Deployment deployment, int maxNumRetries = 0) {
+        try {
+            createDeploymentOrThrow(deployment, maxNumRetries)
+            return true
+        } catch (Exception e) {
+            log.warn("Error creating k8s deployment: ", e)
+            return false
+        }
+    }
+
+    /**
+     * Creates a deployment and propagates API errors to the caller.
+     *
+     * Use this instead of createDeploymentNoWait when the deployment has to
+     * exist. A failed create cannot be recovered by waiting, and the original
+     * error (admission denial, request timeout) is more useful than the
+     * "deployment did not start" timeout that would follow. Callers that need
+     * to observe a rejection, such as admission control tests, must keep using
+     * createDeploymentNoWait.
+     */
+    @CompileDynamic
+    void createDeploymentOrThrow(Deployment deployment, int maxNumRetries = 0) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -2168,22 +2189,16 @@ class Kubernetes {
 
         K8sDeployment d = toK8sDeployment(deployment)
 
-        try {
-            withK8sClientRetry(maxNumRetries, 1) {
-                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name
-            }
-            if (deployment.exposeAsService && deployment.createLoadBalancer) {
-                waitForLoadBalancer(deployment)
-            }
-            if (deployment.createRoute) {
-                createRoute(deployment.name, deployment.namespace)
-                deployment.routeHost = waitForRouteHost(deployment.name, deployment.namespace)
-            }
-            return true
-        } catch (Exception e) {
-            log.warn("Error creating k8s deployment: ", e)
-            return false
+        withK8sClientRetry(maxNumRetries, 1) {
+            client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+            log.debug "Told the orchestrator to createOrReplace " + deployment.name
+        }
+        if (deployment.exposeAsService && deployment.createLoadBalancer) {
+            waitForLoadBalancer(deployment)
+        }
+        if (deployment.createRoute) {
+            createRoute(deployment.name, deployment.namespace)
+            deployment.routeHost = waitForRouteHost(deployment.name, deployment.namespace)
         }
     }
 
