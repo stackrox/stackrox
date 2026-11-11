@@ -30,8 +30,11 @@ setup() {
     # When set to "true", the kubectl stub's pod-query exits nonzero (simulates
     # API-server failure). Reset per test; default is normal (exit 0).
     KUBECTL_POD_QUERY_FAIL="false"
+    # When set to "true", diagnostic kubectl calls (logs, get pod -o json)
+    # exit nonzero, simulating stalled/failed diagnostic requests.
+    KUBECTL_DIAG_FAIL="false"
 
-    export KUBECTL_CALL_LOG KUBECTL_POD_FIXTURE KUBECTL_DEPLOY_READY KUBECTL_POD_QUERY_FAIL
+    export KUBECTL_CALL_LOG KUBECTL_POD_FIXTURE KUBECTL_DEPLOY_READY KUBECTL_POD_QUERY_FAIL KUBECTL_DIAG_FAIL
 
     # Stub envsubst (not available in all dev environments; the CI image has it).
     echo '#!/usr/bin/env bash' > "${BIN_DIR}/envsubst"
@@ -65,10 +68,16 @@ case "$*" in
         fi
         ;;
     *"logs"*)
+        if [[ "${KUBECTL_DIAG_FAIL}" == "true" ]]; then
+            echo "error: request timeout" >&2; exit 1
+        fi
         echo "FATAL: migration schema check failed"
         echo "panic: unable to initialize database"
         ;;
     *"get pod"*"-o json"*)
+        if [[ "${KUBECTL_DIAG_FAIL}" == "true" ]]; then
+            echo "error: request timeout" >&2; exit 1
+        fi
         # Single pod state query (diagnostics).
         pod_name=""
         for arg in $*; do
@@ -387,4 +396,80 @@ STUB
     assert_output --partial "CrashLoopBackOff"
     # Confirm the ping loop was entered (deployment readiness passed).
     assert_output --partial "Deployment central is ready"
+}
+
+# =============================================================================
+# Retained terminal pod — false-positive prevention
+#
+# A terminated (evicted/failed) Central pod can retain Error/OOMKilled state
+# while a healthy replacement is running. The crash check must NOT flag this
+# as an active failure.
+# =============================================================================
+
+@test "check_central_pod_error_state ignores terminated pod when healthy replacement exists" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-terminated-with-healthy-replacement.json"
+    run check_central_pod_error_state stackrox
+    assert_failure   # returns 1 = no active crash
+    refute_output --partial "crash state detected"
+}
+
+@test "check_central_pod_error_state detects terminated pod when no healthy replacement exists" {
+    # Single terminated OOMKilled pod, no healthy replacement.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-oomkilled.json"
+    run check_central_pod_error_state stackrox
+    assert_success   # returns 0 = crash detected
+    assert_output --partial "OOMKilled"
+}
+
+@test "wait_for_api succeeds when terminated pod coexists with healthy replacement" {
+    # Deployment is ready (healthy replacement counted), terminated old pod present.
+    KUBECTL_DEPLOY_READY="true"
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-terminated-with-healthy-replacement.json"
+
+    # 30-second timeout guard.
+    run timeout 30 bash -c '
+        export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
+        export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
+        export KUBECTL_DEPLOY_READY='"'${KUBECTL_DEPLOY_READY}'"'
+        export PATH='"'${BIN_DIR}:${PATH}'"'
+        source "'"${BATS_TEST_DIRNAME}"'/../lib.sh"
+        retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+        export -f retrying_kubectl
+        sleep() { :; }
+        export -f sleep
+        # curl succeeds (API responding via healthy replacement).
+        curl() { echo '"'"'{"status":"ok"}'"'"'; return 0; }
+        export -f curl
+        MAX_WAIT_SECONDS=300 wait_for_api stackrox
+    ' 2>&1
+
+    # Must succeed — terminated pod must not block readiness.
+    assert_success
+    refute_output --partial "crash state"
+}
+
+# =============================================================================
+# Request-timeout and diagnostic failure resilience
+# =============================================================================
+
+@test "check_central_pod_error_state passes request-timeout to kubectl calls" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+    run check_central_pod_error_state stackrox
+    assert_success
+    # Verify --request-timeout was passed in kubectl calls.
+    run grep -c "request-timeout" "${KUBECTL_CALL_LOG}"
+    assert_success
+    # At least the pod query + diagnostic calls should have the flag.
+    [[ "${output}" -ge 1 ]]
+}
+
+@test "check_central_pod_error_state detects crash despite diagnostic call failure" {
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+    KUBECTL_DIAG_FAIL="true"
+    export KUBECTL_DIAG_FAIL
+    run check_central_pod_error_state stackrox
+    # Crash still detected (return 0) even when diagnostic kubectl calls fail.
+    assert_success
+    assert_output --partial "crash state detected"
+    assert_output --partial "CrashLoopBackOff"
 }
