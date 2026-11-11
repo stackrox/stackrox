@@ -44,4 +44,30 @@ class NamespaceService extends BaseService {
         return false
     }
 
+    /**
+     * Waits until Central stops listing a namespace.
+     *
+     * Central drops a namespace only after sensor reports its deletion, so the
+     * namespace being gone from the orchestrator does not mean it is gone from
+     * Central's view.
+     *
+     * @param name namespace name
+     * @param timeoutSeconds how long to wait
+     * @return true when Central no longer lists the namespace
+     */
+    static boolean waitForNamespaceDeletion(String name, int timeoutSeconds = 30) {
+        int intervalSeconds = 1
+        int retries = (timeoutSeconds / intervalSeconds) as int
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            if (getNamespaces().every { it.metadata.name != name }) {
+                log.debug "SR no longer lists namespace ${name}"
+                return true
+            }
+            log.debug "Retrying in ${intervalSeconds}..."
+        }
+        log.warn "SR still lists the deleted namespace ${name}"
+        return false
+    }
+
 }

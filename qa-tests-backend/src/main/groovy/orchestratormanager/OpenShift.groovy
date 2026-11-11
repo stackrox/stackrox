@@ -2,6 +2,7 @@ package orchestratormanager
 
 import static util.Helpers.withRetry
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import io.stackrox.annotations.Retry
 import groovy.util.logging.Slf4j
@@ -39,14 +40,8 @@ class OpenShift extends Kubernetes {
                 .endMetadata()
                 .build()
 
-        try {
+        createNamespaceUnlessTerminating(ns) {
             oClient.projectrequests().create(projectRequest)
-            log.info "Created namespace ${ns}"
-        } catch (KubernetesClientException kce) {
-            if (kce.code != 409) {
-                throw kce
-            }
-            log.debug("Namespace ${ns} already exists")
         }
 
         provisionDefaultServiceAccount(ns)
@@ -114,6 +109,20 @@ class OpenShift extends Kubernetes {
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata().build()
             oClient.routes().inNamespace(namespace).delete(route)
+        }
+    }
+
+    // A route keeps its router entry until the router observes the delete, and
+    // that holds a namespace past the deletion wait.
+    @Override
+    @CompileDynamic
+    protected void deleteRoutesInNamespace(String ns) {
+        try {
+            oClient.routes().inNamespace(ns).delete()
+        } catch (KubernetesClientException e) {
+            if (e.code != 404) {
+                log.warn "Route delete during namespace cleanup failed: ${e.message}"
+            }
         }
     }
 

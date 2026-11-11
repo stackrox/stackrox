@@ -865,11 +865,12 @@ class PolicyFieldsTest extends BaseSpecification {
     def cleanupSpec() {
         orchestrator.deleteDeployment(UNSCANNED)
 
+        List<String> failures = []
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
             // Delete namespace as well
             if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE) {
-                orchestrator.deleteNamespace(deployment.namespace)
+                failures.addAll(deleteNamespaceCatchingFailures(deployment.namespace))
             }
         }
 
@@ -877,10 +878,21 @@ class PolicyFieldsTest extends BaseSpecification {
             PolicyService.deletePolicy(policyID)
         }
 
-        [NAMESPACE_C, NAMESPACE_D].forEach {
-            ns ->
-                orchestrator.deleteNamespace(ns)
-                orchestrator.waitForNamespaceDeletion(ns)
+        [NAMESPACE_C, NAMESPACE_D].forEach { ns ->
+            failures.addAll(deleteNamespaceCatchingFailures(ns))
+        }
+
+        // One failing namespace must not leave the rest behind.
+        assert failures.isEmpty() : "Failed to delete namespaces: ${failures}"
+    }
+
+    private List<String> deleteNamespaceCatchingFailures(String ns) {
+        try {
+            orchestrator.deleteNamespace(ns)
+            return []
+        } catch (Exception e) {
+            log.warn("Failed to delete namespace ${ns}", e)
+            return ["${ns}: ${e.message}"]
         }
     }
 

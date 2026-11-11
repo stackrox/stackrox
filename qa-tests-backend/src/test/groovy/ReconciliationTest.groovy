@@ -197,9 +197,9 @@ class ReconciliationTest extends BaseSpecification {
                 deleteNetworkPolicy(policy)
             }
         } finally {
+            // deleteNamespace waits for the namespace to be gone, which means
+            // every object in it has been deleted.
             orchestrator.deleteNamespace(ns)
-            // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
-            orchestrator.waitForNamespaceDeletion(ns)
         }
 
         Set<String> podsBeforeRestarting = podsInCluster
