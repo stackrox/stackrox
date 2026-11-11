@@ -1,0 +1,55 @@
+{
+  "apiVersion": "v1",
+  "kind": "PodList",
+  "items": [
+    {
+      "metadata": {
+        "name": "central-crashing-abc12",
+        "namespace": "stackrox",
+        "labels": { "app": "central" }
+      },
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [
+          {
+            "name": "central",
+            "ready": false,
+            "restartCount": 3,
+            "state": {
+              "terminated": {
+                "reason": "Error",
+                "exitCode": 1,
+                "startedAt": "2026-01-01T00:00:00Z",
+                "finishedAt": "2026-01-01T00:00:05Z"
+              }
+            },
+            "lastState": {}
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "central-healthy-xyz78",
+        "namespace": "stackrox",
+        "labels": { "app": "central" }
+      },
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [
+          {
+            "name": "central",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {
+                "startedAt": "2026-01-01T00:01:00Z"
+              }
+            },
+            "lastState": {}
+          }
+        ]
+      }
+    }
+  ]
+}

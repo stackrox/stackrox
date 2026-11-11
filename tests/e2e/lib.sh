@@ -1674,14 +1674,18 @@ wait_for_scanner_V4() {
 #   (CrashLoopBackOff, OOMKilled, Error). Inspects all pods matching the
 #   app=central selector. Uses current container state only
 #   (.state.waiting/.state.terminated), not .lastState, to avoid false
-#   positives from previous restarts. Ignores terminated Error/OOMKilled
-#   pods when a healthy (running + ready) replacement exists, preventing
-#   retained failed/evicted pods from blocking readiness. CrashLoopBackOff
-#   is always detected regardless of other pod states. All kubectl calls
-#   use --request-timeout=10s to bound stalled API requests; the
-#   retrying_kubectl pod query may take up to ~115s worst-case (6 retry
-#   attempts with exponential backoff). Diagnostic calls are bounded
-#   individually and cannot suppress a detected crash exit.
+#   positives from previous restarts.
+#   Detection rules:
+#   - CrashLoopBackOff: always detected regardless of other pod states.
+#   - Terminated Error/OOMKilled on an active (Running-phase) pod: always
+#     detected — the container just crashed on a live pod.
+#   - Terminated Error/OOMKilled on a terminal pod (phase Failed/Succeeded):
+#     only detected when no healthy replacement pod exists. A healthy
+#     replacement must be: phase Running, not being deleted, with the
+#     "central" container running and ready.
+#   All kubectl calls use --request-timeout=10s to bound stalled API
+#   requests. Diagnostic calls are individually bounded and cannot
+#   suppress a detected crash exit.
 # Arguments:
 #   $1 - Kubernetes namespace (default: stackrox)
 # Returns:
@@ -1692,27 +1696,48 @@ check_central_pod_error_state() {
     local pod_json
     local crash_info
 
-    pod_json="$(retrying_kubectl </dev/null -n "$namespace" get pods -l "app=central" -o json --request-timeout=10s 2>/dev/null || true)"
+    # CRASH_CHECK_QUERY_TIMEOUT bounds the entire pod query including retries.
+    # Default 120s accommodates retry-kubectl.sh's 6 attempts + backoff (~115s
+    # worst-case with --request-timeout=10s per attempt). Uses bash -c because
+    # timeout(1) cannot directly execute shell functions.
+    local query_timeout="${CRASH_CHECK_QUERY_TIMEOUT:-120}"
+    pod_json="$(timeout "${query_timeout}" bash -c 'retrying_kubectl </dev/null "$@"' _ -n "${namespace}" get pods -l "app=central" -o json --request-timeout=10s 2>/dev/null || true)"
     if [[ -z "$pod_json" ]]; then
         return 1
     fi
 
-    # Inspect all pods and all containers for current crash/error states.
-    # CrashLoopBackOff is always flagged (active crash). Terminated
-    # Error/OOMKilled is only flagged when no healthy (running + ready)
-    # Central container exists, so a retained failed/evicted pod does not
-    # block readiness when a healthy replacement is running.
+    # Inspect all pods and containers for current crash/error states.
+    # CrashLoopBackOff is always flagged (active crash on a live pod).
+    # Terminated Error/OOMKilled on an active (Running-phase) pod is always
+    # flagged — the container just crashed on a live pod. Terminated
+    # Error/OOMKilled on a genuinely terminal pod (phase Failed/Succeeded)
+    # is only flagged when no distinct healthy replacement pod exists. A
+    # healthy replacement must be: phase Running, not being deleted, with
+    # the "central" application container running and ready.
     # Output format: "pod-name/container-name: state-type — reason"
     crash_info="$(echo "$pod_json" | jq -r '
-        ([.items[].status.containerStatuses[]? |
-            select(.state.running and .ready)] | length > 0) as $has_healthy |
-        .items[] | .metadata.name as $pod | .status.containerStatuses[]? | (
+        # A healthy replacement pod: Running phase, not deleting, with
+        # the "central" container running + ready.
+        ([.items[] | select(
+            .status.phase == "Running" and
+            (.metadata.deletionTimestamp | not) and
+            (.status.containerStatuses[]? |
+                select(.name == "central" and .state.running and .ready))
+        )] | length > 0) as $has_healthy_replacement |
+        .items[] | . as $pod_obj | .metadata.name as $pod |
+        .status.containerStatuses[]? | (
             select(.state.waiting.reason == "CrashLoopBackOff") |
             "\($pod)/\(.name): waiting — \(.state.waiting.reason)"
         ), (
             select(.state.terminated.reason == "OOMKilled" or .state.terminated.reason == "Error") |
-            select($has_healthy | not) |
-            "\($pod)/\(.name): terminated — \(.state.terminated.reason)"
+            # On an active (Running-phase) pod, always flag — the container
+            # just crashed. Only skip on genuinely terminal pods
+            # (Failed/Succeeded) when a healthy replacement exists.
+            if ($pod_obj.status.phase == "Failed" or $pod_obj.status.phase == "Succeeded")
+                and $has_healthy_replacement
+            then empty
+            else "\($pod)/\(.name): terminated — \(.state.terminated.reason)"
+            end
         )
     ' 2>/dev/null || true)"
 
@@ -1723,16 +1748,18 @@ check_central_pod_error_state() {
         done <<< "$crash_info"
 
         # Show targeted diagnostics for each affected pod. Each kubectl call
-        # uses --request-timeout=10s so a stalled API server cannot prevent
-        # the crash exit below.
+        # is bounded by both --request-timeout (HTTP deadline) and timeout(1)
+        # (process deadline). CRASH_CHECK_DIAG_TIMEOUT (default 10s) controls
+        # the process deadline; a stalled call cannot prevent the crash exit.
+        local diag_timeout="${CRASH_CHECK_DIAG_TIMEOUT:-10}"
         local affected_pods
         affected_pods="$(echo "$crash_info" | cut -d'/' -f1 | sort -u)"
         while IFS= read -r pod_name; do
             [[ -z "$pod_name" ]] && continue
             info "Last 30 lines of logs from pod ${pod_name}:"
-            kubectl logs -n "$namespace" "$pod_name" --all-containers --tail=30 --request-timeout=10s 2>/dev/null || true
+            timeout "${diag_timeout}" kubectl logs -n "$namespace" "$pod_name" --all-containers --tail=30 --request-timeout="${diag_timeout}s" 2>/dev/null || true
             info "Container state for pod ${pod_name}:"
-            kubectl get pod -n "$namespace" "$pod_name" -o json --request-timeout=10s 2>/dev/null \
+            timeout "${diag_timeout}" kubectl get pod -n "$namespace" "$pod_name" -o json --request-timeout="${diag_timeout}s" 2>/dev/null \
                 | jq -r '.status.containerStatuses[]? |
                     "\(.name): state=\(.state | keys[0]) ready=\(.ready) restartCount=\(.restartCount)"' \
                 || true

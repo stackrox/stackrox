@@ -399,34 +399,65 @@ STUB
 }
 
 # =============================================================================
-# Retained terminal pod — false-positive prevention
+# Terminal pod suppression — precise scope
 #
-# A terminated (evicted/failed) Central pod can retain Error/OOMKilled state
-# while a healthy replacement is running. The crash check must NOT flag this
-# as an active failure.
+# Only genuinely terminal (phase=Failed/Succeeded) pods have their terminated
+# Error/OOMKilled suppressed, and only when a distinct healthy replacement pod
+# exists (Running, not deleting, "central" container running+ready).
+# Active (Running-phase) pods always detected. Sidecars don't count.
 # =============================================================================
 
-@test "check_central_pod_error_state ignores terminated pod when healthy replacement exists" {
+@test "retained terminal pod ignored when genuine healthy replacement exists" {
+    # Terminal (Failed-phase) pod + healthy Running replacement with central ready.
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-terminated-with-healthy-replacement.json"
     run check_central_pod_error_state stackrox
     assert_failure   # returns 1 = no active crash
     refute_output --partial "crash state detected"
 }
 
-@test "check_central_pod_error_state detects terminated pod when no healthy replacement exists" {
-    # Single terminated OOMKilled pod, no healthy replacement.
+@test "active Running pod with terminated Error detected despite healthy peer" {
+    # Pod is phase=Running (active, not retained terminal) with terminated
+    # central container. Healthy peer exists but must NOT suppress this.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-active-terminated-with-healthy-peer.json"
+    run check_central_pod_error_state stackrox
+    assert_success   # returns 0 = crash detected on active pod
+    assert_output --partial "crash state detected"
+    assert_output --partial "central-crashing-abc12/central"
+    assert_output --partial "Error"
+}
+
+@test "sidecar-ready does not hide failed central container" {
+    # Single pod: sidecar running+ready but central container OOMKilled.
+    # Sidecar is not named "central" so it must not count as healthy replacement.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-sidecar-healthy-central-failed.json"
+    run check_central_pod_error_state stackrox
+    assert_success   # returns 0 = crash detected
+    assert_output --partial "OOMKilled"
+}
+
+@test "deleting replacement does not suppress terminal pod failure" {
+    # Terminal (Failed) pod + Running pod that has deletionTimestamp set.
+    # A deleting pod must not count as a healthy replacement.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-terminal-with-deleting-replacement.json"
+    run check_central_pod_error_state stackrox
+    assert_success   # returns 0 = crash detected
+    assert_output --partial "crash state detected"
+    assert_output --partial "Error"
+}
+
+@test "terminal pod without any replacement still detected" {
+    # Single terminated OOMKilled pod, no replacement at all.
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-oomkilled.json"
     run check_central_pod_error_state stackrox
     assert_success   # returns 0 = crash detected
     assert_output --partial "OOMKilled"
 }
 
-@test "wait_for_api succeeds when terminated pod coexists with healthy replacement" {
-    # Deployment is ready (healthy replacement counted), terminated old pod present.
+@test "wait_for_api succeeds with retained terminal pod and genuine healthy replacement" {
+    # Deployment ready + terminal old pod + healthy new pod + API responding.
     KUBECTL_DEPLOY_READY="true"
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-terminated-with-healthy-replacement.json"
 
-    # 30-second timeout guard.
     run timeout 30 bash -c '
         export KUBECTL_CALL_LOG='"'${KUBECTL_CALL_LOG}'"'
         export KUBECTL_POD_FIXTURE='"'${KUBECTL_POD_FIXTURE}'"'
@@ -437,39 +468,172 @@ STUB
         export -f retrying_kubectl
         sleep() { :; }
         export -f sleep
-        # curl succeeds (API responding via healthy replacement).
         curl() { echo '"'"'{"status":"ok"}'"'"'; return 0; }
         export -f curl
         MAX_WAIT_SECONDS=300 wait_for_api stackrox
     ' 2>&1
 
-    # Must succeed — terminated pod must not block readiness.
     assert_success
     refute_output --partial "crash state"
 }
 
 # =============================================================================
-# Request-timeout and diagnostic failure resilience
+# Request-timeout flag and diagnostic failure resilience
 # =============================================================================
 
-@test "check_central_pod_error_state passes request-timeout to kubectl calls" {
+@test "check_central_pod_error_state passes request-timeout to kubectl" {
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
     run check_central_pod_error_state stackrox
     assert_success
-    # Verify --request-timeout was passed in kubectl calls.
     run grep -c "request-timeout" "${KUBECTL_CALL_LOG}"
     assert_success
-    # At least the pod query + diagnostic calls should have the flag.
     [[ "${output}" -ge 1 ]]
 }
 
-@test "check_central_pod_error_state detects crash despite diagnostic call failure" {
+@test "crash detected despite diagnostic call failure" {
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
     KUBECTL_DIAG_FAIL="true"
     export KUBECTL_DIAG_FAIL
     run check_central_pod_error_state stackrox
-    # Crash still detected (return 0) even when diagnostic kubectl calls fail.
     assert_success
     assert_output --partial "crash state detected"
     assert_output --partial "CrashLoopBackOff"
+}
+
+# =============================================================================
+# Genuine blocking-call deadline tests
+#
+# These tests use a kubectl stub that actually blocks (real sleep, NOT the
+# mocked no-op sleep) to prove that the production timeout mechanisms
+# (CRASH_CHECK_QUERY_TIMEOUT and CRASH_CHECK_DIAG_TIMEOUT via GNU timeout(1))
+# enforce finite deadlines. The test-scoped deadline is narrowed to 2s via
+# the configurable env vars so tests complete quickly.
+# =============================================================================
+
+@test "blocking pod query bounded by CRASH_CHECK_QUERY_TIMEOUT" {
+    # Create a kubectl stub that blocks on pod queries using real sleep.
+    # The test overrides retrying_kubectl to call this directly (no retry
+    # wrapper, so the timeout wraps the single blocking call).
+    local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
+    mkdir -p "${HANG_BIN}"
+    cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
+#!/usr/bin/env bash
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get pods"*)
+        # Block for 60s — longer than any test deadline.
+        /usr/bin/sleep 60
+        ;;
+    *) echo '{}' ;;
+esac
+HANGSTUB
+    chmod +x "${HANG_BIN}/kubectl"
+
+    # Use 2s query timeout for fast test. Source lib.sh for real function.
+    CRASH_CHECK_QUERY_TIMEOUT=2
+    export CRASH_CHECK_QUERY_TIMEOUT PATH="${HANG_BIN}:${PATH}"
+
+    # Override retrying_kubectl to call kubectl directly (skip retry wrapper
+    # which would multiply the hang). The timeout in check_central_pod_error_state
+    # wraps retrying_kubectl.
+    retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+    export -f retrying_kubectl
+
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
+    run check_central_pod_error_state stackrox
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
+
+    # Function must return (not hang), within the deadline + margin.
+    assert_failure   # returns 1 = no crash (query timed out, pod_json empty)
+    refute_output --partial "crash state detected"
+    # Elapsed must be bounded: at most ~4s (2s deadline + margin), not 60s.
+    [[ "$elapsed" -le 5 ]]
+}
+
+@test "blocking diagnostic log call bounded by CRASH_CHECK_DIAG_TIMEOUT" {
+    local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
+    mkdir -p "${HANG_BIN}"
+    cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
+#!/usr/bin/env bash
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get pods"*)
+        # Pod query succeeds (return crashloop fixture).
+        cat "${KUBECTL_POD_FIXTURE}"
+        ;;
+    *"logs"*)
+        # Block on logs — simulates stalled API.
+        /usr/bin/sleep 60
+        ;;
+    *"get pod"*"-o json"*)
+        echo '{}'
+        ;;
+    *) echo '{}' ;;
+esac
+HANGSTUB
+    chmod +x "${HANG_BIN}/kubectl"
+
+    CRASH_CHECK_DIAG_TIMEOUT=2
+    CRASH_CHECK_QUERY_TIMEOUT=5
+    export CRASH_CHECK_DIAG_TIMEOUT CRASH_CHECK_QUERY_TIMEOUT
+    export PATH="${HANG_BIN}:${PATH}"
+    retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+    export -f retrying_kubectl
+
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
+    run check_central_pod_error_state stackrox
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
+
+    # Crash STILL detected despite log call timing out.
+    assert_success   # returns 0 = crash detected
+    assert_output --partial "crash state detected"
+    assert_output --partial "CrashLoopBackOff"
+    # Must complete within deadline, not hang for 60s.
+    [[ "$elapsed" -le 5 ]]
+}
+
+@test "blocking diagnostic get-pod call bounded by CRASH_CHECK_DIAG_TIMEOUT" {
+    local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
+    mkdir -p "${HANG_BIN}"
+    cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
+#!/usr/bin/env bash
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get pods"*)
+        cat "${KUBECTL_POD_FIXTURE}"
+        ;;
+    *"logs"*)
+        echo "FATAL: migration failed"
+        ;;
+    *"get pod"*"-o json"*)
+        # Block on single-pod state query.
+        /usr/bin/sleep 60
+        ;;
+    *) echo '{}' ;;
+esac
+HANGSTUB
+    chmod +x "${HANG_BIN}/kubectl"
+
+    CRASH_CHECK_DIAG_TIMEOUT=2
+    CRASH_CHECK_QUERY_TIMEOUT=5
+    export CRASH_CHECK_DIAG_TIMEOUT CRASH_CHECK_QUERY_TIMEOUT
+    export PATH="${HANG_BIN}:${PATH}"
+    retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+    export -f retrying_kubectl
+
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
+    run check_central_pod_error_state stackrox
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
+
+    # Crash detected despite get-pod hanging.
+    assert_success
+    assert_output --partial "crash state detected"
+    assert_output --partial "CrashLoopBackOff"
+    [[ "$elapsed" -le 5 ]]
 }
