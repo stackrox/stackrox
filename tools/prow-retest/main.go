@@ -109,7 +109,7 @@ func main() {
 	flag.StringVar(&org, "org", "stackrox", "The org of the job to re-run")
 	flag.StringVar(&repo, "repo", "stackrox", "The repo of the job to re-run")
 	flag.StringVar(&baseRef, "base-ref", "", "The base ref of the job to re-run")
-	flag.StringVar(&baseSha, "base-sha", "", "The base sha of the job to re-run")
+	flag.StringVar(&baseSha, "base-sha", "", "The base sha of the job to re-run (40 characters long)")
 	flag.Parse()
 
 	if jobName == "" || baseRef == "" || baseSha == "" {
