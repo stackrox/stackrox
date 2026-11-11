@@ -311,11 +311,19 @@ jobs:
 
           if [ "${{ matrix.backend }}" = "cacheprog" ]; then
             echo "cacheprog mode: uploads handled by gocache-serve's async uploader during the build"
-            # Link-output cache store side: latest-pointer (keyless). The
-            # buildID check on the next run validates; content-addressed
-            # dupes are fine (overwrites keep one copy).
+            # Link-output cache store side: dual-keyed. (1) LATEST pointer
+            # for the fetch heuristic; (2) the exact actionID(binary),
+            # extracted from the binary's own buildID note via
+            # `go tool buildid` — free, version-proof, enables cross-job
+            # dedup (any job building the same tree fetches instead of
+            # links). The buildID check validates on fetch either way.
             if [ -f bin/linux_amd64/roxctl ] && [ "${{ matrix.workload }}" = "cli" ]; then
               "$GOCACHEPROG" -store "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+              BID=$(go tool buildid bin/linux_amd64/roxctl 2>/dev/null | cut -d/ -f1 || true)
+              if [ -n "$BID" ]; then
+                "$GOCACHEPROG" -store "outbin-${BID}-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+                echo "outbin exact key: ${BID:0:16}..."
+              fi
             fi
             echo "=== sync finished at $(date -u +%H:%M:%S) ==="
             exit 0
