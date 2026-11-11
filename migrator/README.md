@@ -18,7 +18,11 @@ See [GORM Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration).
 ## Upgrade compatibility
 
 Upgrades support the three preceding X.Y streams, ignoring patches and suffixes.
-Sequence-based rollback protection remains unchanged. Rejections are logged and
+Starting with destination binaries built from 5.1, rollbacks also enforce a maximum
+three-stream gap from the recorded database version, independently of migration
+sequence equality. Sequence-based database safety checks remain in place. Neither
+rollback check can be bypassed by the unsafe upgrade override. Already-released
+older binaries retain their original sequence-only checks. Rejections are logged and
 written to `/dev/termination-log`; migrator releases database resources, waits one
 minute, and exits without starting Central. Pod shutdown may force termination.
 

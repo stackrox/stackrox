@@ -59,6 +59,7 @@ spec:
         - "--health-probe-bind-address=:8081"
         - --leader-elect
         env:
+        # Note the RELATED_IMAGE entries are stripped in the `build-installer` target to omit them from the chart.
         - name: RELATED_IMAGE_MAIN ## tags: uses-main-tag,image-name=main
         - name: RELATED_IMAGE_COLLECTOR
         - name: RELATED_IMAGE_FACT

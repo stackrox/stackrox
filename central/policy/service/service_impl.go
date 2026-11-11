@@ -651,7 +651,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 	notifierSet := set.NewStringSet(policy.GetNotifiers()...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
 	for _, notifierID := range notifierIDs {
-		_, exists, err := s.notifiers.GetNotifier(ctx, notifierID)
+		exists, err := s.notifiers.Exists(ctx, notifierID)
 		if err != nil {
 			errorList.AddError(err)
 			continue
