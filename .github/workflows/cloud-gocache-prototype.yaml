@@ -161,6 +161,16 @@ jobs:
             case "$COMMIT_MSG" in *moldlink*)
               echo "GOCACHE_MOLD=1" >> "$GITHUB_ENV"
               echo "gocache-serve: mold external linker enabled" ;; esac
+            case "$COMMIT_MSG" in *allplat:*)
+              echo "GOCACHE_ALLPLAT=1" >> "$GITHUB_ENV"
+              echo "gocache-serve: all-platform make cli (release shape)" ;; esac
+            case "$COMMIT_MSG" in *extreme:*)
+              # Corner-case probe: 16GB working set on compressed tmpfs
+              # with a concurrent 8GB anonymous-memory hog (simulating a
+              # fat build / parallel links). Finds the failure boundary:
+              # graceful high-swap, thrash (session-time explosion), or OOM.
+              echo "GOCACHE_EXTREME=1" >> "$GITHUB_ENV"
+              echo "extreme memory-pressure probe enabled" ;; esac
             case "$COMMIT_MSG" in *westpin*)
               echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
               echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
@@ -238,8 +248,22 @@ jobs:
                 sudo apt-get install -y mold >/dev/null 2>&1 || echo "mold install failed — internal linker"
                 export ROX_LINKER=mold
               fi
-              make roxctl_linux-amd64
+              if [ -n "$GOCACHE_EXTREME" ]; then
+                # 8GB touched-anonymous hog (simulated fat build / parallel
+                # links) for the memory-pressure boundary probe.
+                python3 -c "b=bytearray(8*1024**3); [b.__setitem__(i,1) for i in range(0,len(b),4096)]; import time; print('memhog: 8GB touched, holding',flush=True); time.sleep(3600)" &
+                MEMHOG_PID=$!
+                echo "memhog PID $MEMHOG_PID (8GB anonymous, live)"
+              fi
+              if [ -n "$GOCACHE_ALLPLAT" ]; then
+                make cli
+              else
+                make roxctl_linux-amd64
+              fi
               echo "CLI binary size: $(du -sh bin/linux_amd64/roxctl 2>/dev/null | cut -f1), linker: ${ROX_LINKER:-internal}"
+              if [ -n "$GOCACHE_EXTREME" ]; then
+                kill $MEMHOG_PID 2>/dev/null || true
+              fi
               ;;
             unittests)
               # Compile-only: don't run tests, just build them
