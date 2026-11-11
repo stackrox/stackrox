@@ -1681,11 +1681,13 @@ wait_for_scanner_V4() {
 #     detected — the container just crashed on a live pod.
 #   - Terminated Error/OOMKilled on a terminal pod (phase Failed/Succeeded):
 #     only detected when no healthy replacement pod exists. A healthy
-#     replacement must be: phase Running, not being deleted, with the
-#     "central" container running and ready.
-#   All kubectl calls use --request-timeout=10s to bound stalled API
-#   requests. Diagnostic calls are individually bounded and cannot
-#   suppress a detected crash exit.
+#     replacement must be: phase Running, not being deleted, pod-level
+#     Ready condition True, and the "central" container running and ready.
+#   The pod query uses --request-timeout=10s per attempt and is wrapped
+#   by CRASH_CHECK_QUERY_TIMEOUT (default 120s) via timeout(1).
+#   Diagnostic calls use CRASH_CHECK_DIAG_TIMEOUT (default 10s) as both
+#   the process deadline (timeout(1)) and HTTP deadline (--request-timeout).
+#   Diagnostic failures cannot suppress a detected crash exit.
 # Arguments:
 #   $1 - Kubernetes namespace (default: stackrox)
 # Returns:

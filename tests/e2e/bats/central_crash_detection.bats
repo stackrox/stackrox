@@ -403,8 +403,9 @@ STUB
 #
 # Only genuinely terminal (phase=Failed/Succeeded) pods have their terminated
 # Error/OOMKilled suppressed, and only when a distinct healthy replacement pod
-# exists (Running, not deleting, "central" container running+ready).
-# Active (Running-phase) pods always detected. Sidecars don't count.
+# exists (Running, not deleting, pod Ready condition True, "central" container
+# running+ready). Active (Running-phase) pods always detected. Sidecars and
+# nonReady pods don't count as healthy replacements.
 # =============================================================================
 
 @test "retained terminal pod ignored when genuine healthy replacement exists" {
@@ -567,8 +568,12 @@ HANGSTUB
     # Function must return (not hang), within the deadline + margin.
     assert_failure   # returns 1 = no crash (query timed out, pod_json empty)
     refute_output --partial "crash state detected"
-    # Elapsed must be bounded: at most ~4s (2s deadline + margin), not 60s.
+    # Lower bound: deadline actually enforced (not instant skip). Upper bound: not 60s hang.
+    [[ "$elapsed" -ge 1 ]]
     [[ "$elapsed" -le 5 ]]
+    # The blocked pod-query call was actually attempted (logged before sleep).
+    run grep "get pods" "${KUBECTL_CALL_LOG}"
+    assert_success
 }
 
 @test "blocking diagnostic log call bounded by CRASH_CHECK_DIAG_TIMEOUT" {
@@ -611,8 +616,12 @@ HANGSTUB
     assert_success   # returns 0 = crash detected
     assert_output --partial "crash state detected"
     assert_output --partial "CrashLoopBackOff"
-    # Must complete within deadline, not hang for 60s.
+    # Lower bound: deadline actually enforced (not instant skip). Upper bound: not 60s hang.
+    [[ "$elapsed" -ge 1 ]]
     [[ "$elapsed" -le 5 ]]
+    # The blocked logs call was actually attempted.
+    run grep "logs" "${KUBECTL_CALL_LOG}"
+    assert_success
 }
 
 @test "blocking diagnostic get-pod call bounded by CRASH_CHECK_DIAG_TIMEOUT" {
@@ -654,5 +663,10 @@ HANGSTUB
     assert_success
     assert_output --partial "crash state detected"
     assert_output --partial "CrashLoopBackOff"
+    # Lower bound: deadline actually enforced. Upper bound: not 60s hang.
+    [[ "$elapsed" -ge 1 ]]
     [[ "$elapsed" -le 5 ]]
+    # The blocked get-pod call was actually attempted.
+    run grep "get pod" "${KUBECTL_CALL_LOG}"
+    assert_success
 }
