@@ -466,11 +466,20 @@ STUB
 }
 
 @test "terminal pod without any replacement still detected" {
-    # Single terminated OOMKilled pod, no replacement at all.
+    # Single terminated OOMKilled pod (Running-phase), no replacement.
     KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-oomkilled.json"
     run check_central_pod_error_state stackrox
     assert_success   # returns 0 = crash detected
     assert_output --partial "OOMKilled"
+}
+
+@test "genuine Failed-phase terminal pod without replacement detected" {
+    # Pod with phase=Failed (e.g., evicted), no replacement — strict terminal detection.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-terminal-failed-phase.json"
+    run check_central_pod_error_state stackrox
+    assert_success   # returns 0 = crash detected
+    assert_output --partial "crash state detected"
+    assert_output --partial "Error"
 }
 
 @test "wait_for_api succeeds with retained terminal pod and genuine healthy replacement" {
@@ -669,4 +678,86 @@ HANGSTUB
     # The blocked get-pod call was actually attempted.
     run grep "get pod" "${KUBECTL_CALL_LOG}"
     assert_success
+}
+
+# =============================================================================
+# Budget propagation — caller-supplied remaining time caps crash check
+# =============================================================================
+
+@test "crash check with tight budget caps query and returns within budget" {
+    # Stub kubectl to block on pod query for 60s. Budget is 3s.
+    local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
+    mkdir -p "${HANG_BIN}"
+    cat > "${HANG_BIN}/kubectl" <<'HANGSTUB'
+#!/usr/bin/env bash
+echo "kubectl $*" >> "${KUBECTL_CALL_LOG}"
+case "$*" in
+    *"get pods"*) /usr/bin/sleep 60 ;;
+    *) echo '{}' ;;
+esac
+HANGSTUB
+    chmod +x "${HANG_BIN}/kubectl"
+    export PATH="${HANG_BIN}:${PATH}"
+    retrying_kubectl() { cat > /dev/null; kubectl "$@"; }
+    export -f retrying_kubectl
+
+    local start_time end_time elapsed
+    start_time="$(date +%s)"
+    # Pass budget of 3 seconds as $2.
+    run check_central_pod_error_state stackrox 3
+    end_time="$(date +%s)"
+    elapsed=$(( end_time - start_time ))
+
+    # Query timed out within budget → safe fallback (no crash).
+    assert_failure
+    refute_output --partial "crash state detected"
+    [[ "$elapsed" -ge 1 ]]
+    [[ "$elapsed" -le 6 ]]
+}
+
+@test "crash detected with exhausted diagnostic budget skips diagnostics" {
+    # Stub: pod query succeeds instantly. Budget is 1s. After the query,
+    # the remaining budget is <=0 (due to integer-second rounding in date),
+    # so diagnostics are skipped. Crash is still detected.
+    KUBECTL_POD_FIXTURE="${FIXTURE_DIR}/central-crashloop.json"
+    KUBECTL_DIAG_FAIL="false"
+    export KUBECTL_DIAG_FAIL
+
+    # Override date to simulate elapsed time: first call returns start,
+    # second call (after query) returns start+2, exhausting a 1s budget.
+    local DATE_CALL_COUNT="${BATS_TEST_TMPDIR}/date-calls"
+    echo "0" > "${DATE_CALL_COUNT}"
+    local REAL_DATE_START
+    REAL_DATE_START="$(/usr/bin/date +%s)"
+
+    local HANG_BIN="${BATS_TEST_TMPDIR}/hang-bin"
+    mkdir -p "${HANG_BIN}"
+    # Create a date wrapper that advances time after the query
+    cat > "${HANG_BIN}/date" <<DATESTUB
+#!/usr/bin/env bash
+if [[ "\$*" == *"+%s"* ]]; then
+    count=\$(cat "${DATE_CALL_COUNT}")
+    echo \$(( count + 1 )) > "${DATE_CALL_COUNT}"
+    if (( count == 0 )); then
+        echo "${REAL_DATE_START}"
+    else
+        # After first call, report 2s elapsed
+        echo $(( REAL_DATE_START + 2 ))
+    fi
+else
+    /usr/bin/date "\$@"
+fi
+DATESTUB
+    chmod +x "${HANG_BIN}/date"
+    export PATH="${HANG_BIN}:${PATH}"
+
+    # Budget 1s: date simulation makes check_elapsed=2 > budget → diagnostics skipped.
+    run check_central_pod_error_state stackrox 1
+
+    # Crash STILL detected even though diagnostic budget exhausted.
+    assert_success
+    assert_output --partial "crash state detected"
+    assert_output --partial "CrashLoopBackOff"
+    # Diagnostics skipped because budget exhausted.
+    assert_output --partial "budget exhausted"
 }

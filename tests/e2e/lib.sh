@@ -1616,13 +1616,21 @@ wait_for_ready_deployment() {
         fi
 
         # Central-specific: check for pod crash states every 5th iteration
-        # (~25s) so we fail fast with diagnostics instead of waiting for the
-        # full deployment timeout. Other deployments are unaffected.
+        # so we fail fast with diagnostics instead of waiting for the full
+        # deployment timeout. Other deployments are unaffected. The crash
+        # check is skipped if the deployment deadline is already exceeded
+        # (let the timeout case below handle it) and is capped to the
+        # remaining budget so it cannot extend past max_seconds.
         iteration=$(( iteration + 1 ))
-        if [[ "$deployment_name" == "central" ]] && (( iteration % 5 == 0 )); then
-            if check_central_pod_error_state "$namespace"; then
+        if [[ "$deployment_name" == "central" ]] && (( iteration % 5 == 0 )) && (( elapsed_seconds < max_seconds )); then
+            local remaining_deploy=$(( max_seconds - elapsed_seconds ))
+            if check_central_pod_error_state "$namespace" "$remaining_deploy"; then
                 die "Central pod is in a crash state during deployment readiness wait."
             fi
+            # Refresh elapsed after the (potentially long) crash check so
+            # the timeout decision below is not stale.
+            curr_time="$(date '+%s')"
+            elapsed_seconds=$(( curr_time - start_time ))
         fi
 
         # Timeout case
@@ -1690,11 +1698,15 @@ wait_for_scanner_V4() {
 #   Diagnostic failures cannot suppress a detected crash exit.
 # Arguments:
 #   $1 - Kubernetes namespace (default: stackrox)
+#   $2 - Optional max seconds budget for this entire check. When provided,
+#        query and diagnostic timeouts are capped to the remaining budget.
+#        When omitted, standalone defaults apply (120s query, 10s diagnostics).
 # Returns:
 #   0 - crash state detected
 #   1 - no crash state (pods are healthy or not found)
 check_central_pod_error_state() {
     local namespace="${1:-stackrox}"
+    local max_budget="${2:-}"
     local pod_json
     local crash_info
 
@@ -1704,6 +1716,12 @@ check_central_pod_error_state() {
     # timeout(1) cannot directly execute shell functions; TEST_ROOT is exported
     # so the child process can locate retry-kubectl.sh.
     local query_timeout="${CRASH_CHECK_QUERY_TIMEOUT:-120}"
+    # Cap to remaining budget if provided (minimum 1; timeout 0 disables deadline).
+    if [[ -n "$max_budget" ]] && (( max_budget < query_timeout )); then
+        query_timeout=$(( max_budget > 0 ? max_budget : 1 ))
+    fi
+    local check_start
+    check_start="$(date '+%s')"
     export TEST_ROOT
     pod_json="$(timeout "${query_timeout}" bash -c 'retrying_kubectl </dev/null "$@"' _ -n "${namespace}" get pods -l "app=central" -o json --request-timeout=10s 2>/dev/null || true)"
     if [[ -z "$pod_json" ]]; then
@@ -1756,7 +1774,19 @@ check_central_pod_error_state() {
         # is bounded by both --request-timeout (HTTP deadline) and timeout(1)
         # (process deadline). CRASH_CHECK_DIAG_TIMEOUT (default 10s) controls
         # the process deadline; a stalled call cannot prevent the crash exit.
+        # When a caller budget is set, diagnostics are skipped if exhausted.
         local diag_timeout="${CRASH_CHECK_DIAG_TIMEOUT:-10}"
+        if [[ -n "$max_budget" ]]; then
+            local check_elapsed=$(( $(date '+%s') - check_start ))
+            local remaining_budget=$(( max_budget - check_elapsed ))
+            if (( remaining_budget <= 0 )); then
+                info "Diagnostic budget exhausted; skipping diagnostics."
+                return 0
+            fi
+            if (( remaining_budget < diag_timeout )); then
+                diag_timeout=$(( remaining_budget > 0 ? remaining_budget : 1 ))
+            fi
+        fi
         local affected_pods
         affected_pods="$(echo "$crash_info" | cut -d'/' -f1 | sort -u)"
         while IFS= read -r pod_name; do
@@ -1828,13 +1858,25 @@ wait_for_api() {
 
     info "Attempting to get ${SUCCESSES_NEEDED_IN_A_ROW} 'ok' responses in a row from ${PING_URL}"
 
+    # Upper envelope for the ping polling phase: 150 iterations × (10s max
+    # curl + 5s max sleep) = 2250s. Crash checks are capped to the remaining
+    # budget within this envelope so they cannot indefinitely extend the
+    # prior worst-case duration. Configurable for testing.
+    local api_ping_deadline="${CRASH_CHECK_API_PING_DEADLINE:-2250}"
+    local api_ping_start
+    api_ping_start="$(date '+%s')"
+
     set +e
     # shellcheck disable=SC2034
     for i in $(seq 1 150); do
         if (( i % 5 == 0 )); then
-            if check_central_pod_error_state "$central_namespace"; then
-                info "Central pod is in a crash state — failing fast instead of waiting for timeout."
-                exit 1
+            local api_ping_elapsed=$(( $(date '+%s') - api_ping_start ))
+            if (( api_ping_elapsed < api_ping_deadline )); then
+                local remaining_api=$(( api_ping_deadline - api_ping_elapsed ))
+                if check_central_pod_error_state "$central_namespace" "$remaining_api"; then
+                    info "Central pod is in a crash state — failing fast instead of waiting for timeout."
+                    exit 1
+                fi
             fi
         fi
         pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
