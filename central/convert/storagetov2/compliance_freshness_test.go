@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestConvertComplianceDataFreshness checks the storage->v2 per-check freshness enum mapping.
 func TestConvertComplianceDataFreshness(t *testing.T) {
 	cases := map[string]struct {
 		input    storage.ComplianceOperatorCheckResultV2_DataFreshness
@@ -34,6 +35,7 @@ func TestConvertComplianceDataFreshness(t *testing.T) {
 	}
 }
 
+// TestAggregateDataFreshness checks the current/stale count rollup into the v2 aggregate enum.
 func TestAggregateDataFreshness(t *testing.T) {
 	cases := map[string]struct {
 		currentCount int
@@ -64,6 +66,7 @@ func TestAggregateDataFreshness(t *testing.T) {
 	}
 }
 
+// TestCheckResultCarriesDataFreshness verifies the per-check converters copy DataFreshness.
 func TestCheckResultCarriesDataFreshness(t *testing.T) {
 	result := &storage.ComplianceOperatorCheckResultV2{
 		CheckId:       "check-1",
@@ -78,6 +81,7 @@ func TestCheckResultCarriesDataFreshness(t *testing.T) {
 		clusterStatus(result, nil).GetDataFreshness())
 }
 
+// TestProfileStatsCarriesStaleCounts verifies the profile stats converter copies the stale counts.
 func TestProfileStatsCarriesStaleCounts(t *testing.T) {
 	counts := []*datastore.ResourceResultCountByProfile{
 		{
