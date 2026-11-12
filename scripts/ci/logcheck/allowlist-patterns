@@ -31,7 +31,7 @@ Error: Error enriching image
 # an indication of a Sensor issue
 request.go:1116] Unexpected error when reading response body: context deadline exceeded
 # Collector downloading a probe while Sensor is Offline (http.StatusServiceUnavailable -- ROX-19018)
-Unexpected HTTP request failure (HTTP 503)
+Unexpected HTTP request failure \(HTTP 503\)
 # 502 errors should be ignored (this is especially happening in image enrichment
-http: non-successful response (status=502
+http: non-successful response \(status=502
 unexpected status code 502 Bad Gateway
