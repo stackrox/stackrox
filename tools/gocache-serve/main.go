@@ -307,6 +307,17 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Println(manifestHash(entries))
+		case "-metrics-report":
+			// Ad-hoc aggregation over metric blobs: a UTC date (20261112),
+			// a run-id prefix, or "" for everything.
+			if len(os.Args) < 3 {
+				fmt.Fprintln(os.Stderr, "usage: -metrics-report [DATE|RUN-ID-PREFIX]")
+				os.Exit(2)
+			}
+			if err := reportMetrics(os.Args[2]); err != nil {
+				fmt.Fprintf(os.Stderr, "metrics report: %v\n", err)
+				os.Exit(1)
+			}
 		case "-fetch":
 			if len(os.Args) < 4 {
 				fmt.Fprintln(os.Stderr, "usage: -fetch KEY OUTFILE")
@@ -777,6 +788,30 @@ func main() {
 				atomic.LoadInt64(&totalGets), atomic.LoadInt64(&totalHits),
 				float64(atomic.LoadInt64(&totalHits))/float64(atomic.LoadInt64(&totalGets)+1)*100,
 				atomic.LoadInt64(&totalPuts), elapsed.Round(time.Millisecond), netStats, concurrentStats)
+			// Metrics: one record per process, appended locally (free) and the
+			// job's file uploaded as one blob per job. Never breaks the build.
+			if gets, puts := atomic.LoadInt64(&totalGets), atomic.LoadInt64(&totalPuts); gets+puts > 0 {
+				region, account := "", ""
+				if ab, ok := rawBackend.(*AzureBackend); ok {
+					region, account = ab.region, ab.account
+				}
+				rec := MetricsRecord{
+					Ts:             time.Now().Unix(),
+					RunID:          manifest.runID,
+					Job:            jobName,
+					Region:         region,
+					Account:        account,
+					Gets:           gets,
+					Hits:           atomic.LoadInt64(&totalHits),
+					Puts:           puts,
+					GetBytes:       getBytes,
+					GetMs:          getNs / 1e6,
+					ElapsedMs:      elapsed.Milliseconds(),
+					ConcurrentHits: atomic.LoadInt64(&concurrentHits),
+				}
+				appendMetric(rec)
+				uploadJobMetrics(manifest.runID, rec)
+			}
 			// Send close response
 			writeMu.Lock()
 			enc.Encode(Response{ID: req.ID})

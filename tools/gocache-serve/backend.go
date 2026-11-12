@@ -148,6 +148,7 @@ type AzureBackend struct {
 	tenantID     string
 	clientID     string
 	clientSecret string
+	region       string // runner region (observability, metrics)
 	// baseURL overrides the real endpoint for tests (served by httptest);
 	// empty means https://<account>.blob.core.windows.net.
 	baseURL string
@@ -366,6 +367,7 @@ func newAzureBackend() (*AzureBackend, error) {
 	b := &AzureBackend{
 		account:      account,
 		container:    containerFromEnv(),
+		region:       region,
 		tenantID:     os.Getenv("AZURE_TENANT_ID"),
 		clientID:     os.Getenv("AZURE_CLIENT_ID"),
 		clientSecret: os.Getenv("AZURE_CLIENT_SECRET"),
