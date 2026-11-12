@@ -363,18 +363,19 @@ func (k *listenerImpl) handleAllEvents() {
 			}
 		}
 	}
-
-	if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osMachineConfigGroupVersion); err != nil {
-		log.Errorf("Checking API resources for group %q: %v", osMachineConfigGroupVersion, err)
-	} else if listenerUtils.ResourceExists(resourceList, osMachineConfigPoolsResourceName, osMachineConfigGroupVersion) {
-		log.Infof("Initializing %q informer", osMachineConfigPoolsResourceName)
-		machineConfigPoolGVR := schema.GroupVersionResource{
-			Group:    "machineconfiguration.openshift.io",
-			Version:  "v1",
-			Resource: "machineconfigpools",
+	if features.ComplianceCustomNodeRoles.Enabled() {
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osMachineConfigGroupVersion); err != nil {
+			log.Errorf("Checking API resources for group %q: %v", osMachineConfigGroupVersion, err)
+		} else if listenerUtils.ResourceExists(resourceList, osMachineConfigPoolsResourceName, osMachineConfigGroupVersion) {
+			log.Infof("Initializing %q informer", osMachineConfigPoolsResourceName)
+			machineConfigPoolGVR := schema.GroupVersionResource{
+				Group:    "machineconfiguration.openshift.io",
+				Version:  "v1",
+				Resource: "machineconfigpools",
+			}
+			mcpInformer := crdSharedInformerFactory.ForResource(machineConfigPoolGVR).Informer()
+			handle(k.context, informerMachineConfigPools, mcpInformer, dispatchers.ForMachineConfigPools(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 		}
-		mcpInformer := crdSharedInformerFactory.ForResource(machineConfigPoolGVR).Informer()
-		handle(k.context, informerMachineConfigPools, mcpInformer, dispatchers.ForMachineConfigPools(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	if coAvailable {
