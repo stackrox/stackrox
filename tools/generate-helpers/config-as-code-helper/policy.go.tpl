@@ -24,6 +24,15 @@ func convert{{.TypeName}}(p *storage.{{.TypeName}}) *{{.TypeName}} {
 	if p == nil {
 		return nil
 	}
+{{- range .Fields }}
+{{- if and .IsStringer (not .IsSlice) .OmitEmpty }}
+
+	var {{ .Name | lowerFirst }} string
+	if p.Get{{ .Name }}() != 0 {
+		{{ .Name | lowerFirst }} = p.Get{{ .Name }}().String()
+	}
+{{- end }}
+{{- end }}
 
 	return &{{.TypeName}}{
          {{- range .Fields }}
@@ -35,6 +44,8 @@ func convert{{.TypeName}}(p *storage.{{.TypeName}}) *{{.TypeName}} {
          {{- if .IsStringer -}}
              {{- if .IsSlice -}}
                  sliceutils.StringSlice({{ $fieldName }}...)
+             {{- else if .OmitEmpty -}}
+                 {{ .Name | lowerFirst }}
              {{- else -}}
                  {{ $fieldName }}.String()
              {{- end -}}

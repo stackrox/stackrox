@@ -19,6 +19,8 @@ export type ComplianceProfileScanStats = {
     profileName: string;
     title: string;
     version: string;
+    staleClusterCount: number;
+    staleCheckResultCount: number;
 };
 
 export type ListComplianceProfileScanStatsResponse = {

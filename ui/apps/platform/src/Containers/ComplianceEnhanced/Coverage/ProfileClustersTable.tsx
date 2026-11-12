@@ -3,6 +3,7 @@ import { Divider, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patt
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -12,7 +13,11 @@ import { getPercentage } from 'utils/mathUtils';
 
 import { CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
-import { getStatusCounts, getTimeDifferenceAsPhrase } from './compliance.coverage.utils';
+import {
+    getAggregateScanStatus,
+    getStatusCounts,
+    getTimeDifferenceAsPhrase,
+} from './compliance.coverage.utils';
 import ComplianceProgressBar from './components/ComplianceProgressBar';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
@@ -40,6 +45,10 @@ function ProfileClustersTable({
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { searchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = pagination;
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const colSpan = isScanStatusEnabled ? 8 : 7;
 
     function isComplianceStatusFiltered() {
         return CHECK_STATUS_QUERY in searchFilter;
@@ -80,6 +89,7 @@ function ProfileClustersTable({
                                 Cluster
                             </Th>
                             <Th modifier="fitContent">Last scanned</Th>
+                            {isScanStatusEnabled && <Th modifier="fitContent">Scan status</Th>}
                             <Th modifier="fitContent">Pass status</Th>
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
@@ -98,7 +108,7 @@ function ProfileClustersTable({
                     </Thead>
                     <TbodyUnified
                         tableState={tableState}
-                        colSpan={7}
+                        colSpan={colSpan}
                         errorProps={{
                             title: 'There was an error loading profile clusters',
                         }}
@@ -114,6 +124,7 @@ function ProfileClustersTable({
                                         cluster: { clusterId, clusterName },
                                         lastScanTime,
                                         checkStats,
+                                        dataFreshness,
                                     } = clusterInfo;
                                     const {
                                         passCount,
@@ -147,6 +158,11 @@ function ProfileClustersTable({
                                             <Td dataLabel="Last scanned" modifier="fitContent">
                                                 {lastScanTimeAsPhrase}
                                             </Td>
+                                            {isScanStatusEnabled && (
+                                                <Td dataLabel="Scan status">
+                                                    {getAggregateScanStatus(dataFreshness)}
+                                                </Td>
+                                            )}
                                             <Td dataLabel="Pass status" modifier="fitContent">
                                                 <StatusCountIcon
                                                     text="check"

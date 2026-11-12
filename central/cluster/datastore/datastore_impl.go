@@ -17,7 +17,6 @@ import (
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
-	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -114,32 +113,6 @@ type datastoreImpl struct {
 	lock sync.Mutex
 }
 
-func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
-	if err := checkWriteSac(ctx, id); err != nil {
-		return err
-	}
-
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
-
-	cluster, err := ds.getClusterOnly(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	if cluster.GetStatus() == nil {
-		cluster.Status = &storage.ClusterStatus{}
-	}
-
-	cluster.Status.UpgradeStatus = upgradeStatus
-
-	err = ds.clusterStorage.Upsert(ctx, cluster)
-	if err == nil {
-		refresh.RefreshTracker(metrics.Health)
-	}
-	return err
-}
-
 func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err
@@ -175,7 +148,6 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 		return err
 	}
 
-	status.UpgradeStatus = cluster.GetStatus().GetUpgradeStatus()
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
 	cluster.Status = status
 
@@ -369,8 +341,20 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
 }
 
-func (ds *datastoreImpl) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
-	return storagetoeffectiveaccessscope.Clusters(ds.clusterStorage.GetAllFromCacheForSAC()), nil
+func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, error) {
+	var clusters []effectiveaccessscope.Cluster
+	err := ds.clusterStorage.Walk(sac.WithAllAccess(ctx), func(cluster *storage.Cluster) error {
+		clusters = append(clusters, &storage.Cluster{
+			Id:     cluster.GetId(),
+			Name:   cluster.GetName(),
+			Labels: cluster.GetLabels(),
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return clusters, nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {

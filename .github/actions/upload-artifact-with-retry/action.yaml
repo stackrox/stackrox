@@ -20,6 +20,26 @@ inputs:
     description: 'Compression level: 0 (none) to 9 (max). Default is 6 (zstd default)'
     required: false
     default: '6'
+  retention-days:
+    description: 'Duration after which artifact will expire in days. 0 means using default retention.'
+    required: false
+    default: '0'
+  archive:
+    description: >
+      Whether to zip the artifact files before upload.
+      If 'false', only a single file can be uploaded.
+      The name of the file will be used as the artifact name (the 'name' parameter is ignored).
+      Optional. Default is 'true'.
+    required: false
+    default: 'true'
+outputs:
+  artifact-url:
+    description: >
+      URL to download an Artifact.
+      Can be used in many scenarios such as linking to artifacts in issues or pull requests.
+      Users must be logged-in in order for this URL to work.
+      This URL is valid as long as the artifact has not expired or the artifact, run or repository have not been deleted.
+    value: ${{ steps.upload-artifact-try1.outputs.artifact-url || steps.upload-artifact-try2.outputs.artifact-url || steps.upload-artifact-try3.outputs.artifact-url }}
 runs:
   using: composite
   steps:
@@ -30,6 +50,8 @@ runs:
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
         compression-level: ${{ inputs.compression-level }}
+        retention-days: ${{ inputs.retention-days }}
+        archive: ${{ inputs.archive }}
       continue-on-error: true
     - id: upload-artifact-try2
       if: steps.upload-artifact-try1.outcome == 'failure'
@@ -39,11 +61,16 @@ runs:
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
         compression-level: ${{ inputs.compression-level }}
+        retention-days: ${{ inputs.retention-days }}
+        archive: ${{ inputs.archive }}
       continue-on-error: true
-    - if: steps.upload-artifact-try2.outcome == 'failure'
+    - id: upload-artifact-try3
+      if: steps.upload-artifact-try2.outcome == 'failure'
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # ratchet:actions/upload-artifact@v7
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
         compression-level: ${{ inputs.compression-level }}
+        retention-days: ${{ inputs.retention-days }}
+        archive: ${{ inputs.archive }}

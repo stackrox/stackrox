@@ -186,7 +186,6 @@ function ClustersTable({
                                                 />
                                             </Td>
                                             <Td dataLabel="Credential expiration">
-                                                {/* TODO: needs update for upgrade */}
                                                 <CredentialExpiration
                                                     certExpiryStatus={
                                                         clusterInfo.status

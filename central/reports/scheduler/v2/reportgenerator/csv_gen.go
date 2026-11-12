@@ -27,6 +27,7 @@ var (
 		"CVE",
 		"Fixable",
 		"CVE Fixed In",
+		"Fix Date",
 		"Severity",
 		"CVSS",
 		"NVDCVSS",
@@ -37,6 +38,7 @@ var (
 		"Advisory Name",
 		"Advisory Link",
 		"CVE Origin",
+		"Vulnerability State",
 	}
 
 	// originDisplayNames maps VulnOrigin enum values to human-readable names for the
@@ -80,6 +82,7 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 		r.GetCVE(),
 		strconv.FormatBool(r.GetFixable()),
 		r.GetFixedByVersion(),
+		r.GetFixDate(),
 		strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
 		strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
 		strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
@@ -108,6 +111,7 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 		r.GetAdvisoryName(),
 		r.GetAdvisoryLink(),
 		originDisplayName(r.GetOrigin()),
+		r.GetVulnerabilityState(),
 	)
 
 	return csvRow
@@ -153,6 +157,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			r.GetCVE(),
 			strconv.FormatBool(r.GetFixable()),
 			r.GetFixedByVersion(),
+			r.GetFixDate(),
 			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
 			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
 			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
@@ -180,6 +185,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			r.GetAdvisoryName(),
 			r.GetAdvisoryLink(),
 			originDisplayName(r.GetOrigin()),
+			r.GetVulnerabilityState(),
 		)
 		csvWriter.AddValue(row)
 	}

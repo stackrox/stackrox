@@ -256,7 +256,7 @@ func (s *policyValidator) validateCategories(policy *storage.Policy) error {
 
 func (s *policyValidator) validateNotifiers(ctx context.Context, policy *storage.Policy) error {
 	for _, n := range policy.GetNotifiers() {
-		_, exists, err := s.notifierStorage.GetNotifier(ctx, n)
+		exists, err := s.notifierStorage.Exists(ctx, n)
 		if err != nil {
 			return fmt.Errorf("error checking if notifier %s is valid", n)
 		}
@@ -534,11 +534,17 @@ func (s *policyValidator) eventSourceError() error {
 }
 
 func (s *policyValidator) validateEvaluationFilter(policy *storage.Policy) error {
-	if len(policy.GetEvaluationFilter().GetSkipContainerTypes()) == 0 {
-		return nil
-	}
-	if !containerTypeFilterApplicable(policy) {
+	ef := policy.GetEvaluationFilter()
+	if len(ef.GetSkipContainerTypes()) > 0 && !containerTypeFilterApplicable(policy) {
 		return errors.New("container type filters apply only to deploy-time policies and runtime policies with a deployment event source")
+	}
+	if ef.GetSkipImageLayers() != storage.SkipImageLayers_SKIP_NONE {
+		if !features.ImageLayerFilter.Enabled() {
+			return fmt.Errorf("image layer filtering requires %s to be enabled", features.ImageLayerFilter.EnvVar())
+		}
+		if _, ok := storage.SkipImageLayers_name[int32(ef.GetSkipImageLayers())]; !ok {
+			return errors.Errorf("unknown image layer filter value: %d", ef.GetSkipImageLayers())
+		}
 	}
 	return nil
 }

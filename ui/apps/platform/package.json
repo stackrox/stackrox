@@ -194,7 +194,10 @@
             "react": "^18.0.0"
         },
         "react-dropzone": "14.3.2",
-        "js-yaml": "^4.3.2"
+        "js-yaml": "^4.3.2",
+        "@redocly/openapi-core": {
+            "minimatch": "^11.0.1"
+        }
     },
     "browserslist": [
         "Chrome >= 80"

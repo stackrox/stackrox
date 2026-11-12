@@ -257,6 +257,7 @@ func (m *EvaluationFilter) CloneVT() *EvaluationFilter {
 		return (*EvaluationFilter)(nil)
 	}
 	r := new(EvaluationFilter)
+	r.SkipImageLayers = m.SkipImageLayers
 	if rhs := m.SkipContainerTypes; rhs != nil {
 		tmpContainer := make([]ContainerType, len(rhs))
 		copy(tmpContainer, rhs)
@@ -819,6 +820,9 @@ func (this *EvaluationFilter) EqualVT(that *EvaluationFilter) bool {
 		if vx != vy {
 			return false
 		}
+	}
+	if this.SkipImageLayers != that.SkipImageLayers {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1765,6 +1769,11 @@ func (m *EvaluationFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.SkipImageLayers != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.SkipImageLayers))
+		i--
+		dAtA[i] = 0x10
+	}
 	if len(m.SkipContainerTypes) > 0 {
 		var pksize2 int
 		for _, num := range m.SkipContainerTypes {
@@ -2426,6 +2435,9 @@ func (m *EvaluationFilter) SizeVT() (n int) {
 			l += protohelpers.SizeOfVarint(uint64(e))
 		}
 		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
+	if m.SkipImageLayers != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.SkipImageLayers))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4507,6 +4519,25 @@ func (m *EvaluationFilter) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field SkipContainerTypes", wireType)
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SkipImageLayers", wireType)
+			}
+			m.SkipImageLayers = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SkipImageLayers |= SkipImageLayers(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
 			}
 		default:
 			iNdEx = preIndex
@@ -7281,6 +7312,25 @@ func (m *EvaluationFilter) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field SkipContainerTypes", wireType)
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SkipImageLayers", wireType)
+			}
+			m.SkipImageLayers = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SkipImageLayers |= SkipImageLayers(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
 			}
 		default:
 			iNdEx = preIndex

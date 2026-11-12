@@ -5,11 +5,15 @@ import type { DryRunAlert } from 'services/PoliciesService';
 
 type PreviewViolationsProps = {
     alertsFromDryRun: DryRunAlert[];
+    noViolationsMessage?: string;
 };
 
-function PreviewViolations({ alertsFromDryRun }: PreviewViolationsProps): ReactElement {
+function PreviewViolations({
+    alertsFromDryRun,
+    noViolationsMessage = 'No deployments have violations.',
+}: PreviewViolationsProps): ReactElement {
     if (alertsFromDryRun.length === 0) {
-        return <div>No deployments have violations.</div>;
+        return <div>{noViolationsMessage}</div>;
     }
 
     return (

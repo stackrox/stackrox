@@ -41,7 +41,6 @@ export const ContainerType: CompoundSearchFilterAttribute = {
             { value: 'INIT', label: 'Init' },
         ],
     },
-    featureFlagDependency: ['ROX_INIT_CONTAINER_SUPPORT'],
 };
 
 export const Inactive: CompoundSearchFilterAttribute = {

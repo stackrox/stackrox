@@ -7,9 +7,6 @@ const (
 	// PullTelemetryDataCap identifies the capability to pull telemetry data from sensor.
 	PullTelemetryDataCap SensorCapability = "PullTelemetryData"
 
-	// CancelTelemetryPullCap identifies the capability to cancel an ongoing telemetry data pull.
-	CancelTelemetryPullCap SensorCapability = "CancelTelemetryPull"
-
 	// SensorDetectionCap identifies the capability to run detection from sensor
 	SensorDetectionCap SensorCapability = "SensorDetection"
 
@@ -27,12 +24,6 @@ const (
 
 	// AuditLogEventsCap identifies the capability to handle audit log event detection.
 	AuditLogEventsCap SensorCapability = "AuditLogEvents"
-
-	// ScopedImageIntegrations identifies the capability to have image integrations with sources from image pull secrets
-	ScopedImageIntegrations SensorCapability = "ScopedImageIntegrations"
-
-	// ListeningEndpointsWithProcessesCap identifies the capability for sensor to process and send information about listening endpoints and their processes, AKA processes listening on ports
-	ListeningEndpointsWithProcessesCap SensorCapability = "ListeningEndpointsWithProcesses"
 
 	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries).
 	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"

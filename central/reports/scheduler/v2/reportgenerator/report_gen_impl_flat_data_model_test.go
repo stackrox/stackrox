@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type vulnReportDataNewDataModel struct {
@@ -121,6 +122,11 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	}
 
 	deployments, images := testDeploymentsWithImages(namespaces, 1)
+	// Include non-observed findings in both deployed and watched images to exercise report output.
+	images[0].Scan.Components[0].Vulns[1].State = storage.VulnerabilityState_DEFERRED
+	images[1].Scan.Components[0].Vulns[1].State = storage.VulnerabilityState_FALSE_POSITIVE
+	fixDate := timestamppb.New(time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC))
+	images[0].Scan.Components[0].Vulns[0].FixAvailableTimestamp = fixDate
 	// insert deployments in deployment table
 	for _, dep := range deployments {
 		err := resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
@@ -142,6 +148,9 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	// upsert watched images
 	watchedImages := testWatchedImages(2)
+	watchedImages[0].Scan.Components[0].Vulns[0].State = storage.VulnerabilityState_DEFERRED
+	watchedImages[1].Scan.Components[0].Vulns[0].State = storage.VulnerabilityState_FALSE_POSITIVE
+	watchedImages[0].Scan.Components[0].Vulns[0].FixAvailableTimestamp = fixDate
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	if features.FlattenImageData.Enabled() {
 		for _, image := range watchedImages {

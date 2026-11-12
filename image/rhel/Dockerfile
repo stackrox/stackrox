@@ -1,6 +1,6 @@
 ARG PG_VERSION=16
 
-FROM registry.access.redhat.com/ubi9:latest AS ubi-base
+FROM registry.access.redhat.com/ubi9:latest@sha256:87f66688da4e206d5a1877088626c542288a5ccd97898cf363b588d57817e6be AS ubi-base
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
 FROM ubi-base AS downloads
@@ -119,7 +119,6 @@ COPY bin/central            /stackrox/central
 COPY bin/migrator           /stackrox/bin/migrator
 COPY bin/compliance         /stackrox/bin/compliance
 COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
-COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
 COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
 COPY bin/central-worker     /stackrox/bin/central-worker

@@ -54,10 +54,8 @@ describe('MyLastJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Preparing');
-        const statusIconElement = screen.getByTitle('Report run is preparing');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should show "WAITING" when your last job status is waiting', async () => {
@@ -84,10 +82,8 @@ describe('MyLastJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Waiting');
-        const statusIconElement = screen.getByTitle('Report run is waiting');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should show "Ready for download" when your last job status successfully generates a download', async () => {
@@ -114,10 +110,8 @@ describe('MyLastJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Report ready for download');
-        const statusIconElement = screen.getByTitle('Report download was successfully prepared');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should show "Error" when your last job status fails to generate a download', async () => {
@@ -144,9 +138,7 @@ describe('MyLastJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Report failed to generate');
-        const statusIconElement = screen.getByRole('img', { name: 'Report run was unsuccessful' });
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 });

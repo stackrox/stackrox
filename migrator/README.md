@@ -18,7 +18,11 @@ See [GORM Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration).
 ## Upgrade compatibility
 
 Upgrades support the three preceding X.Y streams, ignoring patches and suffixes.
-Sequence-based rollback protection remains unchanged. Rejections are logged and
+Starting with destination binaries built from 5.1, rollbacks also enforce a maximum
+three-stream gap from the recorded database version, independently of migration
+sequence equality. Sequence-based database safety checks remain in place. Neither
+rollback check can be bypassed by the unsafe upgrade override. Already-released
+older binaries retain their original sequence-only checks. Rejections are logged and
 written to `/dev/termination-log`; migrator releases database resources, waits one
 minute, and exits without starting Central. Pod shutdown may force termination.
 
@@ -151,6 +155,18 @@ Central upgrade sequence:
 The rollout checker (step 9) ensures that no old-version Central pods are still running
 before background migrations begin. This prevents conflicts between old code writing data
 in the pre-migration format while the migration is transforming it.
+
+### Central Worker startup coordination
+
+Central Worker briefly acquires the startup migration lock to check the database
+version. If an upgrade is needed and Worker holds the lock, the migrator retries
+acquisition for up to 30 seconds. This limit does not apply to migration execution.
+
+Worker waits for the startup migration lock and a compatible database version
+until shutdown is requested. While waiting, its liveness endpoint succeeds and
+its readiness endpoint fails. Background migrations use a separate advisory lock
+and version sequence, so they do not block Worker startup. Worker must tolerate
+partially completed background backfills, like Central.
 
 ### Testing backwards compatibility
 

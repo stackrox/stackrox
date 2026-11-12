@@ -22,7 +22,6 @@ const (
 	ConfigController    = "Config Controller"
 	Roxctl              = "roxctl"
 	Sensor              = "Rox Sensor"
-	Upgrader            = "Rox Upgrader"
 )
 
 func init() {

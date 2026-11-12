@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -58,7 +57,6 @@ func (s *complianceServiceSuite) SetupTest() {
 	s.auditEventInput = make(chan *sensor.AuditEvents)
 	s.mockAuditLogC = make(chan *sensor.MsgFromCompliance)
 	s.srv = &serviceImpl{
-		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
 		complianceC:               s.complianceC,
 		orchestrator:              s.mockOrchestrator,
@@ -161,7 +159,6 @@ func TestConcurrentWrites(t *testing.T) {
 	auditEventInput := make(chan *sensor.AuditEvents)
 	mockAuditLogC := make(chan *sensor.MsgFromCompliance)
 	srv := &serviceImpl{
-		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
 		complianceC:               complianceC,
 		orchestrator:              mockOrchestrator,

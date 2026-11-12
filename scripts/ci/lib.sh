@@ -1156,7 +1156,8 @@ check_rhacs_eng_image_exists() {
             info "Warning: It is only supported for the following public image repositories: ${public_images[*]}"
         fi
     fi
-    check=$(curl --location -sS "${extra_args[@]}" "$url")
+    # Expand empty array safely: Bash < 4.4 treats "${arr[@]}" as unbound under set -u.
+    check=$(curl --location -sS ${extra_args[@]+"${extra_args[@]}"} "$url")
     echo "$check"
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
@@ -1213,23 +1214,17 @@ push_helm_charts() {
 
     local tag="$1"
 
-    echo "Publish Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
+    echo "Publish operator Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
 
-    local central_services_chart_dir
-    local secured_cluster_services_chart_dir
-    central_services_chart_dir="$(mktemp -d)"
-    secured_cluster_services_chart_dir="$(mktemp -d)"
+    local operator_chart_dir
     operator_chart_dir="$(mktemp -d)"
-    roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
-    roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
-    roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
-    roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
+
     ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/opensource"
     # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.
     ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/rhacs"
-    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
+    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${operator_chart_dir}"
 }
 
 gitbot() {
@@ -1718,7 +1713,7 @@ handle_nightly_binary_version_mismatch() {
     echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
 
     if ! [[ "$(roxctl version || true)" =~ nightly-$(date '+%Y%m%d') ]]; then
-        make cli_host-arch upgrader
+        make cli_host-arch
         make cli-install
         echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
     fi
@@ -1826,9 +1821,10 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
         base_link="$(get_base_link)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.27/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.30/junit2jira-linux-amd64 -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
+            --enable-auto-priority \
             -base-link "${base_link}" \
             -build-id "${BUILD_ID}" \
             -build-link "${prow_job_link}" \
@@ -1876,7 +1872,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.27/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.30/flakechecker-linux-amd64 -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 

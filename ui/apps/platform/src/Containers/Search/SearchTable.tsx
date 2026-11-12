@@ -97,18 +97,13 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                                     category !== 'CLUSTERS' &&
                                     typeof location === 'string' &&
                                     location.length !== 0 && (
-                                        <div
-                                            aria-label={getLocationLabelForCategory(category)}
-                                            className="pf-v6-u-color-200"
-                                        >
+                                        <div aria-label={getLocationLabelForCategory(category)}>
                                             {locationTextForCategory}
                                         </div>
                                     )}
                             </Td>
                             {hasLocationColumn && (
-                                <Td dataLabel={locationColumnHeading} className="pf-v6-u-color-200">
-                                    {locationTextForCategory}
-                                </Td>
+                                <Td dataLabel={locationColumnHeading}>{locationTextForCategory}</Td>
                             )}
                             {hasCategoryColumn && (
                                 <Td dataLabel="Category" modifier="nowrap">

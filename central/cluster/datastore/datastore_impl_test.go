@@ -1153,18 +1153,6 @@ func (s *clusterDataStoreTestSuite) TestMetricsRefreshOnClusterStatusUpdate() {
 		upsertErr     error
 		expectedCalls []string
 	}{
-		"UpdateClusterUpgradeStatus refreshes on success": {
-			update: func() error {
-				return s.datastore.UpdateClusterUpgradeStatus(ctx, clusterID, &storage.ClusterUpgradeStatus{})
-			},
-			expectedCalls: []string{metrics.Health},
-		},
-		"UpdateClusterUpgradeStatus skips refresh on error": {
-			update: func() error {
-				return s.datastore.UpdateClusterUpgradeStatus(ctx, clusterID, &storage.ClusterUpgradeStatus{})
-			},
-			upsertErr: errors.New("upsert failed"),
-		},
 		"UpdateClusterCertExpiryStatus refreshes on success": {
 			update: func() error {
 				return s.datastore.UpdateClusterCertExpiryStatus(ctx, clusterID, &storage.ClusterCertExpiryStatus{})
