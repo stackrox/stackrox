@@ -104,19 +104,26 @@ func TestGenerateCSV_LongConfigNameIsTruncated(t *testing.T) {
 }
 
 func TestGenerateCSV_ConfigNameProducesSafeZipEntry(t *testing.T) {
-	tests := map[string]string{
-		"traversal":     "../reports",
-		"backslashes":   `..\reports\report`,
-		"absolute-like": "/tmp/report",
-		"empty":         "",
-		"long":          strings.Repeat("a", 100),
-		"unicode":       "报告-🚀",
+	tests := map[string]struct {
+		configName string
+		expected   string
+	}{
+		"traversal":          {"../reports", "..-reports"},
+		"backslashes":        {`..\reports\report`, "..-reports-report"},
+		"absolute-like":      {"/tmp/report", "-tmp-report"},
+		"empty":              {"", ""},
+		"long":               {strings.Repeat("a", 100), strings.Repeat("a", 80) + "..."},
+		"unicode":            {"报告-🚀", "报告-🚀"},
+		"long unicode":       {strings.Repeat("报", 81), strings.Repeat("报", 80) + "..."},
+		"valid punctuation":  {"My_Report + R&D", "My_Report + R&D"},
+		"unsafe punctuation": {`Report:<>"|?*`, "Report-------"},
+		"control characters": {"Report\x00\n\r\t\x7f", "Report-----"},
 	}
 
 	const prefix = "RHACS_Node_Vulnerability_Report_"
-	for name, configName := range tests {
+	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			buf, err := generateCSV(nil, configName)
+			buf, err := generateCSV(nil, test.configName)
 			require.NoError(t, err)
 
 			reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
@@ -128,9 +135,8 @@ func TestGenerateCSV_ConfigNameProducesSafeZipEntry(t *testing.T) {
 			assert.True(t, strings.HasSuffix(entryName, ".csv"), entryName)
 			assert.NotContains(t, entryName, "/", entryName)
 			assert.NotContains(t, entryName, `\`, entryName)
-			if name == "long" {
-				assert.Contains(t, entryName, strings.Repeat("a", 80)+"...", entryName)
-			}
+			suffix := "_" + reader.File[0].Modified.Format("02_January_2006") + ".csv"
+			assert.Equal(t, prefix+test.expected+suffix, entryName)
 		})
 	}
 }
