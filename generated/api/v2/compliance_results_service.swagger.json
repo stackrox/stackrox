@@ -661,7 +661,7 @@
         "COMPLIANCE_CHECK_DATA_FRESHNESS_STALE"
       ],
       "default": "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
-      "description": "ComplianceCheckDataFreshness indicates whether a single compliance check\nresult is current relative to the scan configuration's schedule.\n\n - COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN: No freshness information available. Either the server could not evaluate\nfreshness (no schedule, unresolvable config, or no data) or the field was\nnot populated. This is the zero value.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT: Data reflects the most recent expected scan cycle.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_STALE: Data predates the most recent expected scan cycle."
+      "description": "ComplianceCheckDataFreshness indicates whether a single compliance check\nresult is current relative to the scan configuration's schedule.\n\n - COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN: No freshness information available. Either the server could not evaluate\nfreshness (no schedule, unresolvable config, or no data) or the field was\nnot populated. This is the zero value.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT: Data is current: the latest scheduled scan refreshed it.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_STALE: Data is stale: a scheduled scan should have refreshed it by now but did not."
     },
     "v2ComplianceCheckResult": {
       "type": "object",

@@ -104,9 +104,9 @@ enum ComplianceCheckDataFreshness {
   // freshness (no schedule, unresolvable config, or no data) or the field was
   // not populated. This is the zero value.
   COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN = 0;
-  // Data reflects the most recent expected scan cycle.
+  // Data is current: the latest scheduled scan refreshed it.
   COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT = 1;
-  // Data predates the most recent expected scan cycle.
+  // Data is stale: a scheduled scan should have refreshed it by now but did not.
   COMPLIANCE_CHECK_DATA_FRESHNESS_STALE = 2;
 }
 

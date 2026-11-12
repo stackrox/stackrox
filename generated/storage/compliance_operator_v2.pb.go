@@ -350,9 +350,9 @@ type ComplianceOperatorCheckResultV2_DataFreshness int32
 const (
 	// Cannot evaluate: no schedule, unresolvable config, or not yet swept.
 	ComplianceOperatorCheckResultV2_UNKNOWN ComplianceOperatorCheckResultV2_DataFreshness = 0
-	// Data reflects the most recent expected scan cycle.
+	// Data is current: the latest scheduled scan refreshed it.
 	ComplianceOperatorCheckResultV2_CURRENT ComplianceOperatorCheckResultV2_DataFreshness = 1
-	// Data predates the most recent expected scan cycle.
+	// Data is stale: a scheduled scan should have refreshed it by now but did not.
 	ComplianceOperatorCheckResultV2_STALE ComplianceOperatorCheckResultV2_DataFreshness = 2
 )
 

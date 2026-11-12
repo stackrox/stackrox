@@ -201,9 +201,9 @@ message ComplianceOperatorCheckResultV2 {
   enum DataFreshness {
     // Cannot evaluate: no schedule, unresolvable config, or not yet swept.
     UNKNOWN = 0;
-    // Data reflects the most recent expected scan cycle.
+    // Data is current: the latest scheduled scan refreshed it.
     CURRENT = 1;
-    // Data predates the most recent expected scan cycle.
+    // Data is stale: a scheduled scan should have refreshed it by now but did not.
     STALE = 2;
   }
   string id = 1; // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
