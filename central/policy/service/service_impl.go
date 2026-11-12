@@ -252,6 +252,13 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 			comparable.SORTName = existing.GetSORTName()
 			comparable.SORTLifecycleStage = existing.GetSORTLifecycleStage()
 			comparable.SORTEnforcement = existing.GetSORTEnforcement()
+			// Absent and empty filters both leave evaluation unfiltered.
+			emptyFilter := &storage.EvaluationFilter{}
+			if comparable.GetEvaluationFilter() == nil && emptyFilter.EqualVT(existing.GetEvaluationFilter()) {
+				comparable.EvaluationFilter = existing.GetEvaluationFilter()
+			} else if existing.GetEvaluationFilter() == nil && emptyFilter.EqualVT(comparable.GetEvaluationFilter()) {
+				comparable.EvaluationFilter = nil
+			}
 			if comparable.EqualVT(existing) {
 				if !s.pendingPolicyUpdates.Contains(request.GetId()) {
 					return existing, nil

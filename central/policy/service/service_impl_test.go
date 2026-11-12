@@ -179,6 +179,58 @@ func (s *PolicyServiceTestSuite) TestPutPolicySkipsEquivalentPolicy() {
 	}
 }
 
+func (s *PolicyServiceTestSuite) TestPutPolicyComparesEvaluationFilters() {
+	empty := &storage.EvaluationFilter{}
+	emptyList := &storage.EvaluationFilter{SkipContainerTypes: []storage.ContainerType{}}
+	skipInit := &storage.EvaluationFilter{SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT}}
+	skipRegular := &storage.EvaluationFilter{SkipContainerTypes: []storage.ContainerType{storage.ContainerType_REGULAR}}
+	for name, tc := range map[string]struct {
+		existing  *storage.EvaluationFilter
+		requested *storage.EvaluationFilter
+		changed   bool
+	}{
+		"nil to empty":           {requested: empty},
+		"empty to nil":           {existing: empty},
+		"nil to empty list":      {requested: emptyList},
+		"empty list to nil":      {existing: emptyList},
+		"same nonempty filter":   {existing: skipInit, requested: skipInit},
+		"nil to nonempty":        {requested: skipInit, changed: true},
+		"empty to nonempty":      {existing: empty, requested: skipInit, changed: true},
+		"nonempty to nil":        {existing: skipInit, changed: true},
+		"nonempty to empty":      {existing: skipInit, requested: empty, changed: true},
+		"different filter types": {existing: skipInit, requested: skipRegular, changed: true},
+	} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			existing.LifecycleStages = []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
+			existing.EvaluationFilter = tc.existing
+			existing.LastUpdated = &timestamppb.Timestamp{Seconds: 1}
+			original := existing.CloneVT()
+			request := existing.CloneVT()
+			request.EvaluationFilter = tc.requested
+			originalRequest := request.CloneVT()
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing, true, nil)
+			if tc.changed {
+				s.policies.EXPECT().UpdatePolicy(ctx, request).Return(nil)
+				s.mockLifecycleManager.EXPECT().UpsertPolicy(request).Return(nil)
+				s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{request}, nil)
+				s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{request})
+			}
+
+			resp, err := s.tested.PutPolicy(ctx, request)
+			s.Require().NoError(err)
+			s.NotNil(resp)
+			protoassert.Equal(s.T(), original, existing)
+			protoassert.Equal(s.T(), tc.requested, request.GetEvaluationFilter())
+			if !tc.changed {
+				protoassert.Equal(s.T(), originalRequest, request)
+			}
+		})
+	}
+}
+
 func (s *PolicyServiceTestSuite) TestPutPolicyUpdatesChangedPolicy() {
 	for name, modify := range map[string]func(*storage.Policy){
 		"description": func(p *storage.Policy) {
