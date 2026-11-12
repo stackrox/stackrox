@@ -146,6 +146,9 @@ type AzureBackend struct {
 	tenantID     string
 	clientID     string
 	clientSecret string
+	// baseURL overrides the real endpoint for tests (served by httptest);
+	// empty means https://<account>.blob.core.windows.net.
+	baseURL string
 
 	tokenMu  sync.Mutex
 	token    string
@@ -252,6 +255,9 @@ func newAzureBackend() (*AzureBackend, error) {
 }
 
 func (a *AzureBackend) containerURL() string {
+	if a.baseURL != "" {
+		return a.baseURL + "/" + a.container
+	}
 	return fmt.Sprintf("https://%s.blob.core.windows.net/%s", a.account, a.container)
 }
 
@@ -391,16 +397,22 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 		// fewer, bigger parts
 		nParts = rangeGetMaxParallel
 		partSize = int((total-1)/nParts + 1)
-		if int64(len(first)) >= int64(partSize) {
-			first = first[:partSize]
-		}
 	}
 	parts := make([][]byte, nParts)
-	parts[0] = first
+	startIdx := int64(0)
+	if int64(len(first)) == int64(partSize) {
+		parts[0] = first
+		startIdx = 1
+	} else {
+		// The initial discovery request only fetched rangeGetThreshold bytes;
+		// after resizing parts it no longer covers part 0's full range.
+		// Refetch part 0 like every other part below.
+		first = nil
+	}
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var firstErr error
-	for i := int64(1); i < nParts; i++ {
+	for i := startIdx; i < nParts; i++ {
 		wg.Add(1)
 		go func(i int64) {
 			defer wg.Done()
@@ -423,11 +435,27 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 				return
 			}
 			defer rr.Body.Close()
+			if rr.StatusCode != http.StatusPartialContent {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = fmt.Errorf("range part %d: HTTP %d", i, rr.StatusCode)
+				}
+				mu.Unlock()
+				return
+			}
 			b, err := io.ReadAll(rr.Body)
 			if err != nil {
 				mu.Lock()
 				if firstErr == nil {
 					firstErr = err
+				}
+				mu.Unlock()
+				return
+			}
+			if want := hi - lo + 1; int64(len(b)) != want {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = fmt.Errorf("range part %d: short read %d/%d bytes", i, len(b), want)
 				}
 				mu.Unlock()
 				return
