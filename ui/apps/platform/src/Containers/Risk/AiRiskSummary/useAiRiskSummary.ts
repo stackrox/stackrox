@@ -2,15 +2,10 @@ import { useState } from 'react';
 
 import useAnalytics, { RISK_SUMMARY_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
+import { fetchDeploymentRiskSummary } from 'services/DeploymentsService';
 import type { DeploymentRiskSummary } from 'services/DeploymentsService';
 
-import {
-    fetchCachedDeploymentRiskSummary,
-    peekCachedDeploymentRiskSummary,
-} from './riskSummaryCache';
-
 export type UseAiRiskSummaryReturn = {
-    isPresent: boolean;
     isExpanded: boolean;
     summary: DeploymentRiskSummary | undefined;
     isLoading: boolean;
@@ -22,30 +17,21 @@ export type UseAiRiskSummaryReturn = {
 export default function useAiRiskSummary(deploymentId: string): UseAiRiskSummaryReturn {
     const [isExpanded, setIsExpanded] = useState(false);
     const { analyticsTrack } = useAnalytics();
-    const { isLoading, error, mutate } = useRestMutation(fetchCachedDeploymentRiskSummary, {
+    const {
+        data: summary,
+        isLoading,
+        error,
+        mutate,
+    } = useRestMutation(fetchDeploymentRiskSummary, {
         onSuccess: () => analyticsTrack(RISK_SUMMARY_GENERATED),
     });
 
-    // Read the summary from the session cache if it exists
-    const summary = peekCachedDeploymentRiskSummary(deploymentId);
-
-    // The card is present (collapsed or expanded) whenever there is a cached result to
-    // surface, a request in flight, an error to report, or the user has expanded it this
-    // session. A cached result on a fresh mount renders the card collapsed, so navigating
-    // back to a deployment shows that recent results exist without re-spending tokens.
-    const isPresent = Boolean(summary) || isLoading || Boolean(error) || isExpanded;
-
     function investigate() {
         setIsExpanded(true);
-        // Already cached this session, or a request is in flight - nothing to fetch.
-        if (summary || isLoading) {
-            return;
-        }
         mutate(deploymentId);
     }
 
     return {
-        isPresent,
         isExpanded,
         summary,
         isLoading,
