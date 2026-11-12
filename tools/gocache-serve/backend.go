@@ -231,24 +231,36 @@ func learnedAccountPath(region string) string {
 	}, region))
 }
 
-// loadLearnedAccount returns the cached probe result if fresh (< 24h).
+// loadLearnedAccount returns the cached account choice if fresh (< 24h).
+// The disk cache is a per-machine memo of the shared registry entry —
+// it amortizes the registry GET across the ~20 go invocations of one job.
 func loadLearnedAccount(region string) string {
 	data, err := os.ReadFile(learnedAccountPath(region))
 	if err != nil {
 		return ""
 	}
-	fields := strings.Fields(string(data))
-	if len(fields) != 2 {
+	acct, ts, ok := parseLearnedEntry(data)
+	if !ok || time.Since(time.Unix(ts, 0)) > 24*time.Hour {
 		return ""
 	}
-	ts, err := strconv.ParseInt(fields[1], 10, 64)
-	if err != nil || time.Since(time.Unix(ts, 0)) > 24*time.Hour {
-		return ""
-	}
-	return fields[0]
+	return acct
 }
 
-// saveLearnedAccount records the probed choice for subsequent processes.
+// parseLearnedEntry decodes the shared entry format "<account> <unix-ts>",
+// used identically by the disk cache and the registry blob.
+func parseLearnedEntry(data []byte) (string, int64, bool) {
+	fields := strings.Fields(string(data))
+	if len(fields) != 2 {
+		return "", 0, false
+	}
+	ts, err := strconv.ParseInt(fields[1], 10, 64)
+	if err != nil {
+		return "", 0, false
+	}
+	return fields[0], ts, true
+}
+
+// saveLearnedAccount records the account choice for subsequent processes.
 func saveLearnedAccount(region, acct string) {
 	path := learnedAccountPath(region)
 	if f, err := os.Create(path); err == nil {
@@ -257,20 +269,11 @@ func saveLearnedAccount(region, acct string) {
 	}
 }
 
-// registerLearnedAccount persists a probe result that DISAGREES with the
-// static map to the blob-store registry (region-map/<region>), on the hub
-// account. Write-on-change only: no churn when the network is stable, and
-// the registry doubles as an audit trail of topology shifts. Best effort.
-//
-// Plain Put (last-write-wins), NOT PutIfNotExist: concurrent probes in a
-// transition race but write the same value (shared topology), and a
-// PutIfNotExist entry would freeze at first write, unable to record a
-// later topology reversal. The registry is not in the read path — the
-// live probe and 24h disk cache make runtime decisions — so last-write
-// races have no correctness impact, and container versioning keeps every
-// historical value as the audit trail.
-func registerLearnedAccount(region, acct string) {
-	hub := &AzureBackend{
+// hubBackend returns a minimal backend bound to the westus3 hub account,
+// used for registry reads/writes. Token scope is account-independent, so
+// this works before the region's account is selected (no chicken-and-egg).
+func hubBackend() *AzureBackend {
+	return &AzureBackend{
 		account:      "cigocache",
 		container:    containerFromEnv(),
 		tenantID:     os.Getenv("AZURE_TENANT_ID"),
@@ -278,7 +281,33 @@ func registerLearnedAccount(region, acct string) {
 		clientSecret: os.Getenv("AZURE_CLIENT_SECRET"),
 		client:       &http.Client{Timeout: 10 * time.Second},
 	}
-	if err := hub.Put("region-map/"+region, []byte(acct)); err != nil {
+}
+
+// fetchRegistryAccount reads the shared region→account entry from the
+// registry blob on the hub. Returns "" when absent, stale (> 24h), or
+// unreachable — callers fall through to a live probe. One tiny GET,
+// ~one RTT, once per machine per day.
+func fetchRegistryAccount(region string) string {
+	body, err := hubBackend().Get("region-map/" + region)
+	if err != nil || body == nil {
+		return ""
+	}
+	acct, ts, ok := parseLearnedEntry(body)
+	if !ok || time.Since(time.Unix(ts, 0)) > 24*time.Hour {
+		return ""
+	}
+	return acct
+}
+
+// writeRegistryAccount records the probed answer fleet-wide: the entry's
+// timestamp is the fleet TTL, so at most ~one probe per region per day
+// across ALL runners — every other machine just GETs this entry. Plain
+// Put (last-write-wins): concurrent cold-start probes race but converge
+// (shared topology ⇒ same winner), and container versioning keeps every
+// historical value as the audit trail of topology shifts.
+func writeRegistryAccount(region, acct string) {
+	entry := fmt.Sprintf("%s %d\n", acct, time.Now().Unix())
+	if err := hubBackend().Put("region-map/"+region, []byte(entry)); err != nil {
 		log.Printf("gocache-serve: region registry write failed: %v", err)
 		return
 	}
@@ -286,8 +315,8 @@ func registerLearnedAccount(region, acct string) {
 }
 
 // staticRegionMap is the offline fallback: seed knowledge from the 1900+
-// runner-region sample. Never consulted when the network is up — probes
-// are the live truth — but answers instantly when all probes fail.
+// runner-region sample. Consulted only when the registry is unreachable
+// and all probes fail — it answers instantly with zero network.
 func staticRegionMap(region string) string {
 	switch region {
 	case "eastus", "eastus2", "northcentralus", "CanadaEast",
@@ -304,26 +333,32 @@ func staticRegionMap(region string) string {
 }
 
 // storageAccountForRegion selects the storage account, self-adjusting to
-// network topology: the probe result is cached on disk for 24h (zero cost
-// for every later process on the machine) and re-verified once a day —
-// so a topology change (measured: 3m54s vs 72s on a bad guess) heals
-// within one process, with no monitoring loop. Registry writes happen
-// only when the probe disagrees with the static map.
+// network topology via a shared registry:
+//  1. disk memo (24h) — zero cost, amortizes the registry GET across
+//     the ~20 go invocations of one job
+//  2. registry entry (24h fleet TTL) — one tiny GET per machine per day;
+//     a shared answer keeps the whole fleet convergent on ONE account
+//     per region (independent per-machine probes could transiently
+//     disagree and split cache entries across accounts — fragmentation)
+//  3. probe — at most ~once per region per day fleet-wide; the winner is
+//     written to the registry (timestamp refreshes the fleet TTL) and disk
+//  4. static map / hub — offline fallback
+// A topology change (measured: 3m54s vs 72s on a bad guess) therefore
+// heals within one day, fleet-wide, with no monitoring loop.
 func storageAccountForRegion(region string) string {
-	// 1. Fresh learned entry: already verified today, zero cost.
 	if acct := loadLearnedAccount(region); acct != "" {
 		return acct
 	}
-	// 2. Probe (one concurrent RTT race, ~once per day per machine).
+	if acct := fetchRegistryAccount(region); acct != "" {
+		saveLearnedAccount(region, acct)
+		return acct
+	}
 	if acct, rtt := probeAccounts([]string{"cigocache", "cigocacheeast", "cigochachecentral"}); acct != "" {
-		if acct != staticRegionMap(region) {
-			registerLearnedAccount(region, acct)
-		}
+		writeRegistryAccount(region, acct)
 		saveLearnedAccount(region, acct)
 		log.Printf("gocache-serve: region=%s probe picked %s (%dms)", region, acct, rtt.Milliseconds())
 		return acct
 	}
-	// 3. Offline: static map, then hub.
 	if acct := staticRegionMap(region); acct != "" {
 		return acct
 	}
