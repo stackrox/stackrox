@@ -314,37 +314,16 @@ func writeRegistryAccount(region, acct string) {
 	log.Printf("gocache-serve: region=%s registry updated: %s", region, acct)
 }
 
-// staticRegionMap is the offline fallback: seed knowledge from the 1900+
-// runner-region sample. Consulted only when the registry is unreachable
-// and all probes fail — it answers instantly with zero network.
-func staticRegionMap(region string) string {
-	switch region {
-	case "eastus", "eastus2", "northcentralus", "CanadaEast",
-		"westeurope", "northeurope", "uk south", "francecentral":
-		return "cigocacheeast" // eastus replica
-	case "centralus", "southcentralus", "northcentralus2":
-		return "cigochachecentral" // centralus replica
-	case "westus3", "westus2", "westus", "northwestus",
-		"eastasia", "southeastasia", "japaneast", "japanwest",
-		"australiaeast", "australiasoutheast":
-		return "cigocache" // westus3 primary
-	}
-	return ""
-}
-
-// storageAccountForRegion selects the storage account, self-adjusting to
-// network topology via a shared registry:
-//  1. disk memo (24h) — zero cost, amortizes the registry GET across
-//     the ~20 go invocations of one job
-//  2. registry entry (24h fleet TTL) — one tiny GET per machine per day;
-//     a shared answer keeps the whole fleet convergent on ONE account
-//     per region (independent per-machine probes could transiently
-//     disagree and split cache entries across accounts — fragmentation)
-//  3. probe — at most ~once per region per day fleet-wide; the winner is
 //     written to the registry (timestamp refreshes the fleet TTL) and disk
-//  4. static map / hub — offline fallback
+//  4. hub constant — offline fallback: reached only when the registry is
+//     unreachable AND all probes failed, i.e. the blob store itself is
+//     unreachable, i.e. no cache can be served and the choice is moot.
+//     Returns a valid account so selection never hangs or error-paths.
 // A topology change (measured: 3m54s vs 72s on a bad guess) therefore
-// heals within one day, fleet-wide, with no monitoring loop.
+// heals within one day, fleet-wide, with no monitoring loop. There is
+// deliberately NO compiled-in region map: it could only ever answer when
+// the store is unreachable (choice moot), and maintaining it would be
+// exactly the monitoring loop this design eliminates.
 func storageAccountForRegion(region string) string {
 	if acct := loadLearnedAccount(region); acct != "" {
 		return acct
@@ -357,9 +336,6 @@ func storageAccountForRegion(region string) string {
 		writeRegistryAccount(region, acct)
 		saveLearnedAccount(region, acct)
 		log.Printf("gocache-serve: region=%s probe picked %s (%dms)", region, acct, rtt.Milliseconds())
-		return acct
-	}
-	if acct := staticRegionMap(region); acct != "" {
 		return acct
 	}
 	return "cigocache"
