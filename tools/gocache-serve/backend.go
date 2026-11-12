@@ -25,6 +25,7 @@ type Backend interface {
 	Put(actionID string, body []byte) error
 	PutIfNotExist(actionID string, body []byte) (bool, error) // atomic; false = exists
 	ListKeys() ([]string, error)                              // list all blob keys in the container
+	ListPrefix(prefix string) ([]string, error)               // server-side prefix-filtered listing
 	Close() error
 }
 
@@ -129,6 +130,22 @@ func (d *DirBackend) ListKeys() ([]string, error) {
 	return keys, nil
 }
 
+// ListPrefix filters client-side: keys are stored flat with sanitized
+// separators, so there is no server to push the prefix into.
+func (d *DirBackend) ListPrefix(prefix string) ([]string, error) {
+	all, err := d.ListKeys()
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, k := range all {
+		if strings.HasPrefix(k, prefix) || strings.HasPrefix(k, strings.ReplaceAll(prefix, "/", "_")) {
+			out = append(out, k)
+		}
+	}
+	return out, nil
+}
+
 func (d *DirBackend) Close() error { return nil }
 
 // NoopBackend does nothing (for protocol testing)
@@ -138,6 +155,7 @@ func (n *NoopBackend) Get(string) ([]byte, error)                 { return nil, 
 func (n *NoopBackend) Put(string, []byte) error                   { return nil }
 func (n *NoopBackend) PutIfNotExist(string, []byte) (bool, error) { return true, nil }
 func (n *NoopBackend) ListKeys() ([]string, error)                { return nil, nil }
+func (n *NoopBackend) ListPrefix(string) ([]string, error)        { return nil, nil }
 func (n *NoopBackend) Close() error                               { return nil }
 
 // AzureBackend talks directly to Azure Blob Storage via REST API.
@@ -701,6 +719,17 @@ func (a *AzureBackend) PutIfNotExist(actionID string, body []byte) (bool, error)
 
 // ListKeys returns all blob names in the container (paginated).
 func (a *AzureBackend) ListKeys() ([]string, error) {
+	return a.listBlobs("")
+}
+
+// ListPrefix returns blob names starting with prefix. The container can
+// hold tens of thousands of cache entries — prefix filtering happens
+// server-side so metrics queries never page through the whole namespace.
+func (a *AzureBackend) ListPrefix(prefix string) ([]string, error) {
+	return a.listBlobs(prefix)
+}
+
+func (a *AzureBackend) listBlobs(prefix string) ([]string, error) {
 	token, err := a.getToken()
 	if err != nil {
 		return nil, err
@@ -710,6 +739,9 @@ func (a *AzureBackend) ListKeys() ([]string, error) {
 	marker := ""
 	for {
 		url := a.containerURL() + "?restype=container&comp=list&maxresults=5000"
+		if prefix != "" {
+			url += "&prefix=" + prefix
+		}
 		if marker != "" {
 			url += "&marker=" + marker
 		}

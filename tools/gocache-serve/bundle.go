@@ -287,6 +287,10 @@ func (bb *BundledBackend) ListKeys() ([]string, error) {
 	return bb.inner.ListKeys()
 }
 
+func (bb *BundledBackend) ListPrefix(prefix string) ([]string, error) {
+	return bb.inner.ListPrefix(prefix)
+}
+
 func (bb *BundledBackend) Close() error {
 	// Flush any pending bundle
 	bb.uploadMu.Lock()

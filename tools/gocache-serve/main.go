@@ -318,6 +318,16 @@ func main() {
 				fmt.Fprintf(os.Stderr, "metrics report: %v\n", err)
 				os.Exit(1)
 			}
+		case "-metrics-push":
+			// Batch-ingest metric blobs into Log Analytics (scheduled).
+			if len(os.Args) < 3 {
+				fmt.Fprintln(os.Stderr, "usage: -metrics-push [DATE|RUN-ID-PREFIX]")
+				os.Exit(2)
+			}
+			if err := pushMetrics(os.Args[2]); err != nil {
+				fmt.Fprintf(os.Stderr, "metrics push: %v\n", err)
+				os.Exit(1)
+			}
 		case "-fetch":
 			if len(os.Args) < 4 {
 				fmt.Fprintln(os.Stderr, "usage: -fetch KEY OUTFILE")
