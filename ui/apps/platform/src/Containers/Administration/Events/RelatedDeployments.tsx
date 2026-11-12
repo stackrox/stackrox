@@ -17,6 +17,7 @@ const RELATED_DEPLOYMENTS_QUERY = gql`
             deployments(pagination: $pagination) {
                 id
                 name
+                clusterId
                 clusterName
                 namespace
                 created
@@ -32,6 +33,7 @@ type RelatedDeploymentsData = {
         deployments: {
             id: string;
             name: string;
+            clusterId: string;
             clusterName: string;
             namespace: string;
             created: string | null;
@@ -126,34 +128,36 @@ function RelatedDeployments({ imageId }: RelatedDeploymentsProps) {
                             </Tr>
                         </Thead>
                         <Tbody>
-                            {deployments.map(({ id, name, clusterName, namespace, created }) => (
-                                <Tr key={id}>
-                                    <Td dataLabel="Deployment">
-                                        <Link
-                                            to={`${vulnerabilitiesWorkloadCvesPath}/deployments/${id}`}
-                                        >
-                                            {name}
-                                        </Link>
-                                    </Td>
-                                    <Td dataLabel="Cluster">
-                                        <Link
-                                            to={`${vulnerabilitiesWorkloadCvesPath}?${getUrlQueryStringForSearchFilter({ Cluster: [clusterName] })}`}
-                                        >
-                                            {clusterName}
-                                        </Link>
-                                    </Td>
-                                    <Td dataLabel="Namespace">
-                                        <Link
-                                            to={`${vulnerabilitiesWorkloadCvesPath}?${getUrlQueryStringForSearchFilter({ Namespace: [namespace] })}`}
-                                        >
-                                            {namespace}
-                                        </Link>
-                                    </Td>
-                                    <Td dataLabel="Created">
-                                        <DateDistance date={created} />
-                                    </Td>
-                                </Tr>
-                            ))}
+                            {deployments.map(
+                                ({ id, name, clusterId, clusterName, namespace, created }) => (
+                                    <Tr key={id}>
+                                        <Td dataLabel="Deployment">
+                                            <Link
+                                                to={`${vulnerabilitiesWorkloadCvesPath}/deployments/${id}`}
+                                            >
+                                                {name}
+                                            </Link>
+                                        </Td>
+                                        <Td dataLabel="Cluster">
+                                            <Link
+                                                to={`${vulnerabilitiesWorkloadCvesPath}?${getUrlQueryStringForSearchFilter({ 'Cluster ID': [clusterId] })}`}
+                                            >
+                                                {clusterName}
+                                            </Link>
+                                        </Td>
+                                        <Td dataLabel="Namespace">
+                                            <Link
+                                                to={`${vulnerabilitiesWorkloadCvesPath}?${getUrlQueryStringForSearchFilter({ 'Cluster ID': [clusterId], Namespace: [`"${namespace}"`] })}`}
+                                            >
+                                                {namespace}
+                                            </Link>
+                                        </Td>
+                                        <Td dataLabel="Created">
+                                            <DateDistance date={created} />
+                                        </Td>
+                                    </Tr>
+                                )
+                            )}
                         </Tbody>
                     </Table>
                 </>

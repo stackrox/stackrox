@@ -1,13 +1,19 @@
+import qs from 'qs';
+
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import RelatedDeployments from './RelatedDeployments';
+
+const clusterA = '11111111-1111-4111-8111-111111111111';
+const clusterB = '22222222-2222-4222-8222-222222222222';
 
 function deployments() {
     return Array.from({ length: 21 }, (_, i) => ({
         __typename: 'Deployment',
         id: `deployment-${i}`,
         name: 'app',
+        clusterId: i % 2 === 0 ? clusterA : clusterB,
         clusterName: i % 2 === 0 ? 'cluster-a' : 'cluster-b',
         namespace: 'default',
         created: null,
@@ -64,5 +70,24 @@ describe(Cypress.spec.relative, () => {
             limit: 20,
         });
         cy.get('td[data-label="Deployment"] a').should('have.length', 20);
+    });
+
+    it('links to the exact cluster and namespace when names are shared', () => {
+        mountRelatedDeployments();
+        cy.get('td[data-label="Cluster"] a')
+            .first()
+            .then(($link) => {
+                expect(qs.parse($link[0].search.slice(1))).to.deep.equal({
+                    s: { 'Cluster ID': clusterA },
+                });
+            });
+        cy.get('td[data-label="Namespace"] a').then(($links) => {
+            expect(qs.parse($links[0].search.slice(1))).to.deep.equal({
+                s: { 'Cluster ID': clusterA, Namespace: '"default"' },
+            });
+            expect(qs.parse($links[1].search.slice(1))).to.deep.equal({
+                s: { 'Cluster ID': clusterB, Namespace: '"default"' },
+            });
+        });
     });
 });
