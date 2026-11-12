@@ -72,11 +72,9 @@ test_ui_e2e() {
 central:
   pauseReconciliation: true
   namespace: stackrox
-  resourceProfile: ci
 securedCluster:
   pauseReconciliation: true
   namespace: stackrox
-  resourceProfile: ci
 EOF
 
     merge_yaml "$roxie_config" < "$ROOT/deploy/roxie-config-resources.yaml"
