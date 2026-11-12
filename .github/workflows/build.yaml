@@ -349,11 +349,12 @@ jobs:
         run: |
           set -euo pipefail
           VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
-          if "${GOCACHEPROG}" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
+          if "${GOCACHEPROG}" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/tmp/vendor-fetch.err && [ -s /tmp/vendor.tar.gz ]; then
             tar -xzf /tmp/vendor.tar.gz
             echo "vendor: restored from blob store (${VENDOR_KEY})"
           else
             echo "vendor: generating (cache miss for ${VENDOR_KEY})"
+            echo "--- fetch error (if any) ---"; cat /tmp/vendor-fetch.err 2>/dev/null | head -5 || true
             # Disable GOCACHEPROG for go mod vendor: it doesn't use the build
             # cache, and gocache-serve's startup (blob store connection,
             # manifest download, prefetch) adds overhead to every go command.
