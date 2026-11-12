@@ -61,7 +61,7 @@ describe(Cypress.spec.relative, () => {
         cy.findByText('Unable to fetch administration events').should('not.exist');
     });
 
-    for (const statusCode of [200, 500]) {
+    [200, 500].forEach((statusCode) => {
         it(`ignores an older filter response with status ${statusCode}`, () => {
             let releaseOldResponse;
 
@@ -111,5 +111,5 @@ describe(Cypress.spec.relative, () => {
             cy.findByRole('link', { name: 'Old result' }).should('not.exist');
             cy.findByText('Unable to fetch administration events').should('not.exist');
         });
-    }
+    });
 });

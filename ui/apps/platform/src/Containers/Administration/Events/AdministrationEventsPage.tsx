@@ -43,7 +43,8 @@ function AdministrationEventsPage(): ReactElement {
      * 2. click events available button which has `onClick={updateEvents}` prop.
      */
     const updateEvents = useCallback(() => {
-        const requestId = ++requestIdRef.current;
+        requestIdRef.current += 1;
+        const requestId = requestIdRef.current;
         setIsLoading(true);
 
         const listArg = getListAdministrationEventsArg({ page, perPage, searchFilter, sortOption });

@@ -7,7 +7,7 @@ import { gql, useQuery } from '@apollo/client';
 import DateDistance from 'Components/DateDistance';
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import type { Pagination as PaginationParam } from 'services/types';
-import { getUrlQueryStringForSearchFilter, getPaginationParams } from 'utils/searchUtils';
+import { getPaginationParams, getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 
 const RELATED_DEPLOYMENTS_QUERY = gql`
     query getImageDeployments($id: ID!, $pagination: Pagination) {
