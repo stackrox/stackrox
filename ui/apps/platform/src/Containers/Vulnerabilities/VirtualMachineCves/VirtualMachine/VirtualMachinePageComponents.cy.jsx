@@ -7,7 +7,6 @@ const virtualMachineId = '11111111-1111-4111-8111-111111111111';
 describe(Cypress.spec.relative, () => {
     it('shows first-scan progress and fetches components when the scan completes', () => {
         let scanPending = true;
-        cy.clock();
         cy.intercept('GET', `/v2/virtualmachines/${virtualMachineId}/components?*`, (req) => {
             req.reply({
                 scanPending,
@@ -39,7 +38,7 @@ describe(Cypress.spec.relative, () => {
         cy.then(() => {
             scanPending = false;
         });
-        cy.tick(5000);
+
         cy.wait('@getComponents');
         cy.findByRole('cell', { name: 'curl' }).should('be.visible');
         cy.findByRole('heading', { name: 'Scan in progress' }).should('not.exist');
