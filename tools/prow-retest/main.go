@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -9,12 +10,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 )
 
 const (
-	prowUrl        = "https://gangway-ci.apps.ci.l2s4.p1.openshiftapps.com/v1/executions"
-	jobUrlTemplate = "https://prow.ci.openshift.org/job-history/gs/test-platform-results-public/logs/"
+	appCIServerHost = "ci.l2s4.p1.openshiftapps.com"
+	appCIServer     = "https://api." + appCIServerHost + ":6443"
+	prowUrl         = "https://gangway-ci.apps." + appCIServerHost + "/v1/executions"
+	jobUrlTemplate  = "https://prow.ci.openshift.org/job-history/gs/test-platform-results-public/logs"
 )
 
 type RerunProwPostsubmitRequest struct {
@@ -60,10 +65,45 @@ func buildRequestBody(jobName string, jobExecutionType JobExecutionType, org str
 	return data
 }
 
+func ocRun(args ...string) error {
+	cmd := exec.Command("oc", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func ocOutput(args ...string) (string, error) {
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command("oc", args...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("%w\nstdout: %s\nstderr: %s", err,
+			strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()))
+	}
+	return strings.TrimSpace(stdout.String()), nil
+}
+
+func login() {
+	fmt.Printf("This will run: oc login --server=%s --web\n", appCIServer)
+	fmt.Print("A browser will open for you to complete the login. Continue? [y/n] ")
+	reader := bufio.NewReader(os.Stdin)
+	answer, _ := reader.ReadString('\n')
+	answer = strings.TrimSpace(strings.ToLower(answer))
+	if answer != "" && answer != "y" && answer != "yes" {
+		log.Fatalf("Login cancelled by user")
+	}
+	if err := ocRun("login", "--server="+appCIServer, "--web"); err != nil {
+		log.Fatalf("Failed to login: %v", err)
+	}
+}
+
 func getToken() string {
-	token := os.Getenv("PROW_TOKEN")
-	if token == "" {
-		log.Fatalf("PROW_TOKEN is not set. Set it with `export PROW_TOKEN=\"$(oc whoami -t)\"`")
+	token, err := ocOutput("whoami", "-t")
+	if err != nil {
+		log.Fatalf("Failed to get token via `oc whoami -t`: %v", err)
 	}
 	return token
 }
@@ -97,8 +137,6 @@ func postRequest(requestBody []byte, token string) (int, string) {
 }
 
 func main() {
-	token := getToken()
-
 	var jobName string
 	var org string
 	var repo string
@@ -120,6 +158,9 @@ func main() {
 	if len(baseSha) != 40 {
 		log.Fatalf("Base SHA must be 40 characters long")
 	}
+
+	login()
+	token := getToken()
 
 	log.Printf("Retrigging job: %s (%s/%s @ %s (%s))", jobName, org, repo, baseSha, baseRef)
 

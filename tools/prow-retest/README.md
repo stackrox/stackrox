@@ -4,22 +4,13 @@ This is a utility tool to trigger re-runs of Prow (postsubmit) jobs, because it 
 
 ## Usage
 
-In this directory, perform the following steps:
-
-1. Login to app.ci (Prow/OSCI) cluster:
+In this directory, run the CLI:
 
 ```
-oc login --server=https://api.ci.l2s4.p1.openshiftapps.com:6443 --web
-````
-
-2. A browser will open with the login page of the app.ci cluster. Login with your RHSSO.
-
-3. Then run the CLI:
-
-```
-export PROW_TOKEN="$(oc whoami -t)"
 go run . \
 --job-name <job name> \
 --base-ref <branch name> \
 --base-sha <40-digit SHA>
 ```
+
+The tool will prompt you to login to the app.ci cluster. A browser will open for you to complete the login with your RHSSO. The auth token is then obtained automatically via `oc whoami -t`.
