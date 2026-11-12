@@ -438,6 +438,11 @@ jobs:
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
+          # Determinism tracking: per-binary hashes in the log for
+          # cross-run byte-identity comparison (binaries only — the
+          # enclosing tar carries nondeterministic mtimes).
+          echo "=== binary hashes (determinism tracking) ==="
+          sha256sum bin/linux_${{ matrix.arch }}/* | sort
           # Store roxctl for link-output caching (stub bypass on next run)
           if [ -f bin/linux_${{ matrix.arch }}/roxctl ]; then
             "${GOCACHEPROG}" -store "outbin-LATEST-linux_${{ matrix.arch }}" bin/linux_${{ matrix.arch }}/roxctl 2>&1 | tail -1 || true
