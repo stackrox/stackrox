@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -259,6 +260,20 @@ func (a *AzureBackend) blobURL(actionID string) string {
 }
 
 // getToken fetches an OAuth token via client credentials, cached until expiry.
+// redactSecrets scrubs credential material from error text before it
+// reaches logs. AAD/storage error bodies should never echo the secret,
+// but defense-in-depth: a leaked secret in CI logs would require
+// rotation of the very credential we just fixed.
+func (a *AzureBackend) redactSecrets(s string) string {
+	if a.clientSecret != "" {
+		s = strings.ReplaceAll(s, a.clientSecret, "***")
+	}
+	if a.token != "" {
+		s = strings.ReplaceAll(s, a.token, "***")
+	}
+	return s
+}
+
 func (a *AzureBackend) getToken() (string, error) {
 	a.tokenMu.Lock()
 	defer a.tokenMu.Unlock()
@@ -277,10 +292,15 @@ func (a *AzureBackend) getToken() (string, error) {
 	}
 
 	tokenURL := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", a.tenantID)
-	form := fmt.Sprintf(
-		"grant_type=client_credentials&client_id=%s&client_secret=%s&scope=https://storage.azure.com/.default",
-		a.clientID, a.clientSecret,
-	)
+	// url.Values.Encode, NOT raw Sprintf: client secrets routinely contain
+	// '+'/'&'/'%' — raw interpolation corrupts the form body ('+' decodes as
+	// space, '&' truncates the field) and AAD rejects the secret.
+	form := url.Values{
+		"grant_type":    {"client_credentials"},
+		"client_id":     {a.clientID},
+		"client_secret": {a.clientSecret},
+		"scope":         {"https://storage.azure.com/.default"},
+	}.Encode()
 	resp, err := a.client.Post(tokenURL, "application/x-www-form-urlencoded", strings.NewReader(form))
 	if err != nil {
 		return "", fmt.Errorf("token request: %w", err)
@@ -291,11 +311,14 @@ func (a *AzureBackend) getToken() (string, error) {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int    `json:"expires_in"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
-		return "", fmt.Errorf("token decode: %w", err)
+	body, _ := io.ReadAll(resp.Body)
+	if err := json.Unmarshal(body, &tr); err != nil {
+		return "", fmt.Errorf("token decode (AAD response: %s): %w", a.redactSecrets(string(body)), err)
 	}
 	if tr.AccessToken == "" {
-		return "", fmt.Errorf("empty token")
+		// Surface the AAD error (AADSTS...) instead of a bare "empty token" —
+		// expired/invalid secrets are indistinguishable without it.
+		return "", fmt.Errorf("empty token (AAD response: %s)", a.redactSecrets(string(body)))
 	}
 
 	a.token = tr.AccessToken

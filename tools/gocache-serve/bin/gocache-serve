@@ -43,12 +43,17 @@ CONTAINER="${GOCACHE_SERVE_CONTAINER:-ci-gocache}"
 
 # --- Try 1: Download the pre-built binary from blob store ---
 if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZURE_CLIENT_SECRET:-}" ]; then
+  # --data-urlencode per field: client secrets routinely contain '+'/'&'/'%'
+  # — raw -d interpolation corrupts the form body and AAD rejects the secret.
   TOKEN=$(curl -s --max-time 5 -X POST \
     "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
-    -d "grant_type=client_credentials&client_id=${AZURE_CLIENT_ID}&client_secret=${AZURE_CLIENT_SECRET}&scope=https://storage.azure.com/.default" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin).get("access_token",""))' 2>/dev/null) || TOKEN=""
+    --data-urlencode "grant_type=client_credentials" \
+    --data-urlencode "client_id=${AZURE_CLIENT_ID}" \
+    --data-urlencode "client_secret=${AZURE_CLIENT_SECRET}" \
+    --data-urlencode "scope=https://storage.azure.com/.default" \
+    | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("access_token") or "AAD-ERROR:"+d.get("error","?")+" "+d.get("error_description","")[:120])' 2>/dev/null) || TOKEN=""
 
-  if [ -n "$TOKEN" ]; then
+  if [ -n "$TOKEN" ] && [[ "$TOKEN" != AAD-ERROR:* ]]; then
     # Try zstd-compressed (smaller download)
     if curl -s --max-time 10 -H "Authorization: Bearer $TOKEN" \
       "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.zst" \
