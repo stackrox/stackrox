@@ -33,6 +33,7 @@ import (
 	pkgDetection "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -343,15 +344,25 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 
 	// Declarative policies can only be deleted by the config-controller via its finalizer.
 	if policy.GetSource() == storage.PolicySource_DECLARATIVE {
-		identity, err := authn.IdentityFromContext(ctx)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to determine caller identity")
-		}
 		isConfigController := false
-		for _, role := range identity.Roles() {
-			if role.GetRoleName() == accesscontrol.ConfigController {
-				isConfigController = true
-				break
+		if features.ACMAccessControlDelegation.Enabled() {
+			userRoles := permissions.ResolvedRolesFromContext(ctx)
+			for _, role := range userRoles {
+				if role.GetRoleName() == accesscontrol.ConfigController {
+					isConfigController = true
+					break
+				}
+			}
+		} else {
+			identity, err := authn.IdentityFromContext(ctx)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to determine caller identity")
+			}
+			for _, role := range identity.Roles() {
+				if role.GetRoleName() == accesscontrol.ConfigController {
+					isConfigController = true
+					break
+				}
 			}
 		}
 		if !isConfigController {

@@ -1,9 +1,13 @@
 package common
 
 import (
+	"context"
+
 	rolePkg "github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -12,8 +16,13 @@ import (
 
 // ExtractAccessScopeRules extracts simple access scope rules from the given authenticated user identity
 // For the purpose of vulnerability reporting, nil/empty list of rules would mean allow access to all clusters/namespaces.
-func ExtractAccessScopeRules(identity authn.Identity) []*storage.SimpleAccessScope_Rules {
-	roles := identity.Roles()
+func ExtractAccessScopeRules(ctx context.Context, identity authn.Identity) []*storage.SimpleAccessScope_Rules {
+	var roles []permissions.ResolvedRole
+	if features.ACMAccessControlDelegation.Enabled() {
+		roles = permissions.ResolvedRolesFromContext(ctx)
+	} else {
+		roles = identity.Roles()
+	}
 	accessScopeRulesList := make([]*storage.SimpleAccessScope_Rules, 0, len(roles))
 	for _, role := range roles {
 		// Note: This mirrors the scope resolution logic in `func (c *authorizerDataCache) computeEffectiveAccessScope(...)`

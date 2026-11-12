@@ -352,8 +352,9 @@ func (s *scheduler) queueForSnapshot(snap *storage.ReportSnapshot) *reportqueue.
 
 func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
 	return func() {
+		ctx := context.Background()
 		log.Infof("Submitting scheduled report request for '%s' at %v", reportConfig.GetName(), time.Now().Format(time.RFC850))
-		reportReq, err := s.validator.ValidateAndGenerateReportRequest(reportConfig.GetId(), storage.ReportStatus_EMAIL,
+		reportReq, err := s.validator.ValidateAndGenerateReportRequest(ctx, reportConfig.GetId(), storage.ReportStatus_EMAIL,
 			storage.ReportStatus_SCHEDULED, nil)
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
@@ -541,8 +542,9 @@ func (s *scheduler) recoverMissedSchedules() {
 		}
 
 		if shouldRecover {
+			ctx := context.Background()
 			log.Infof("Recovering missed scheduled report for config '%s' (name: '%s')", rc.GetId(), rc.GetName())
-			reportReq, err := s.validator.ValidateAndGenerateReportRequest(rc.GetId(), storage.ReportStatus_EMAIL,
+			reportReq, err := s.validator.ValidateAndGenerateReportRequest(ctx, rc.GetId(), storage.ReportStatus_EMAIL,
 				storage.ReportStatus_SCHEDULED, nil)
 			if err != nil {
 				log.Errorf("Error generating report request for missed schedule recovery, config '%s': %v", rc.GetId(), err)
