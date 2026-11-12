@@ -8,6 +8,7 @@ import io.stackrox.proto.api.v1.NamespaceServiceGrpc
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.GetNamespaceRequest
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
 
+import util.Helpers
 import util.Timer
 
 @Slf4j
@@ -61,20 +62,20 @@ class NamespaceService extends BaseService {
     static boolean waitForNamespaceDeletion(String name, int timeoutSeconds = 60) {
         int intervalSeconds = 1
         int retries = (timeoutSeconds / intervalSeconds) as int
-        Timer t = new Timer(retries, intervalSeconds)
-        while (t.IsValid()) {
+        boolean gone = Helpers.trueWithin(retries, intervalSeconds) {
             try {
-                if (getNamespaces().every { it.metadata.name != name }) {
-                    log.debug "SR no longer lists namespace ${name}"
-                    return true
-                }
+                return getNamespaces().every { it.metadata.name != name }
             } catch (Exception e) {
                 log.debug("Could not list namespaces while waiting for ${name} to be deleted", e)
+                return false
             }
-            log.debug "Retrying in ${intervalSeconds}..."
         }
-        log.warn "SR still lists the deleted namespace ${name}"
-        return false
+        if (gone) {
+            log.debug "SR no longer lists namespace ${name}"
+        } else {
+            log.warn "SR still lists the deleted namespace ${name}"
+        }
+        return gone
     }
 
 }
