@@ -18,13 +18,22 @@
 
 set -euo pipefail
 
+# Recursion guard: this script IS GOCACHEPROG. If a nested go build (the
+# fallback path below) inherits GOCACHEPROG pointing at this script, it
+# starts another bootstrap as its cache program, which builds again →
+# infinite recursion, each level waiting on a handshake that never comes.
+# No code below may see GOCACHEPROG.
+unset GOCACHEPROG || true
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUT="/tmp/gocache-serve-$$"
 
-# Compute source hash for the cache key
+# Compute source hash for the cache key. Arch is part of the key: a
+# wrong-arch ELF dies with exit 126 (<128), which the pre-flight below
+# would wrongly accept — amd64 and arm64 binaries must never share a key.
 SRC_HASH="$(find "$SCRIPT_DIR/.." -maxdepth 1 -name '*.go' -exec cat {} + 2>/dev/null | sha256sum | cut -c1-16)"
-KEY="gocache-serve-${SRC_HASH}"
+KEY="gocache-serve-$(uname -m)-${SRC_HASH}"
 ACCOUNT="${AZURE_STORAGE_ACCOUNT:-cigocache}"
 CONTAINER="${GOCACHE_SERVE_CONTAINER:-ci-gocache}"
 
