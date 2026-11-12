@@ -341,6 +341,42 @@ func (s *PolicyServiceTestSuite) TestPutPolicyRetriesIncompleteUpdates() {
 	}
 }
 
+func (s *PolicyServiceTestSuite) TestPutPolicyWriteErrorPreservesPendingState() {
+	for name, pending := range map[string]bool{"no prior failure": false, "prior propagation failure": true} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			if pending {
+				request := existing.CloneVT()
+				request.Description = "Persisted update"
+				failure := errors.New("propagation failed")
+				s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing.CloneVT(), true, nil)
+				s.policies.EXPECT().UpdatePolicy(ctx, request).Return(nil)
+				s.mockLifecycleManager.EXPECT().UpsertPolicy(request).Return(failure)
+				_, err := s.tested.PutPolicy(ctx, request)
+				s.Require().ErrorIs(err, failure)
+				existing = request.CloneVT()
+			}
+			request := existing.CloneVT()
+			request.Description = "Failed write"
+			writeErr := errors.New("policy write failed")
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing.CloneVT(), true, nil)
+			s.policies.EXPECT().UpdatePolicy(ctx, request).Return(writeErr)
+			_, err := s.tested.PutPolicy(ctx, request)
+			s.Require().ErrorIs(err, writeErr)
+
+			s.policies.EXPECT().GetPolicy(ctx, existing.GetId()).Return(existing.CloneVT(), true, nil)
+			if pending {
+				s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(nil)
+				s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{existing}, nil)
+				s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{existing})
+			}
+			_, err = s.tested.PutPolicy(ctx, existing.CloneVT())
+			s.NoError(err)
+		})
+	}
+}
+
 func (s *PolicyServiceTestSuite) TestPutPolicyDoesNotBlockOtherPolicies() {
 	for name, changed := range map[string]bool{"changed": true, "unchanged": false} {
 		s.Run(name, func() {
@@ -397,8 +433,16 @@ func (s *PolicyServiceTestSuite) TestPutPolicyDoesNotBlockOtherPolicies() {
 	}
 }
 
-func (s *PolicyServiceTestSuite) TestPolicyRetriesWaitForPropagation() {
-	for name, create := range map[string]bool{"existing policy": false, "new policy": true} {
+func (s *PolicyServiceTestSuite) TestPolicyRetriesDoNotWaitForPropagation() {
+	for name, tc := range map[string]struct {
+		create    bool
+		failFirst bool
+	}{
+		"existing policy, original fails": {failFirst: true},
+		"new policy, original fails":      {create: true, failFirst: true},
+		"existing policy, retry fails":    {},
+		"new policy, retry fails":         {create: true},
+	} {
 		s.Run(name, func() {
 			ctx := context.Background()
 			request := newUpsertTestPolicy()
@@ -416,10 +460,10 @@ func (s *PolicyServiceTestSuite) TestPolicyRetriesWaitForPropagation() {
 				defer storeMutex.Unlock()
 				return stored.CloneVT()
 			}
-			lookups := 3
-			if create {
+			lookups := 4
+			if tc.create {
 				request.Id = ""
-				lookups = 2
+				lookups = 3
 				s.policies.EXPECT().AddPolicy(ctx, request).DoAndReturn(func(ctx context.Context, p *storage.Policy) (string, error) {
 					if p.GetId() == "" {
 						p.Id = "created-policy-id"
@@ -443,18 +487,26 @@ func (s *PolicyServiceTestSuite) TestPolicyRetriesWaitForPropagation() {
 			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).DoAndReturn(func(*storage.Policy) error {
 				close(blocked)
 				<-release
-				return failure
+				if tc.failFirst {
+					return failure
+				}
+				return nil
 			})
+			var retryErr error
+			if !tc.failFirst {
+				retryErr = failure
+			}
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(retryErr)
 			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(nil)
 			s.policies.EXPECT().GetAllPolicies(gomock.Any()).DoAndReturn(func(context.Context) ([]*storage.Policy, error) {
 				return []*storage.Policy{getStored()}, nil
-			})
-			s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any())
+			}).Times(2)
+			s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any()).Times(2)
 
 			firstDone := make(chan error, 1)
 			go func() {
 				var err error
-				if create {
+				if tc.create {
 					_, err = s.tested.PostPolicy(ctx, &v1.PostPolicyRequest{Policy: request})
 				} else {
 					_, err = s.tested.PutPolicy(ctx, request)
@@ -474,20 +526,21 @@ func (s *PolicyServiceTestSuite) TestPolicyRetriesWaitForPropagation() {
 				_, err := s.tested.PutPolicy(ctx, retry)
 				retryDone <- err
 			}()
-			completedEarly := false
-			select {
-			case err := <-retryDone:
-				completedEarly = true
-				s.Failf("identical retry completed before the original propagation finished", "returned error: %v", err)
-			case <-time.After(100 * time.Millisecond):
+			if tc.failFirst {
+				s.NoError(waitForPolicyUpdate(retryDone), "identical retry must not wait for the original attempt")
+			} else {
+				s.ErrorIs(waitForPolicyUpdate(retryDone), failure)
 			}
 			unblock()
-			s.ErrorIs(waitForPolicyUpdate(firstDone), failure)
-			if !completedEarly {
-				s.NoError(waitForPolicyUpdate(retryDone))
+			if tc.failFirst {
+				s.ErrorIs(waitForPolicyUpdate(firstDone), failure)
+			} else {
+				s.NoError(waitForPolicyUpdate(firstDone))
 			}
 			protoassert.Equal(s.T(), original, getStored())
 			_, err := s.tested.PutPolicy(ctx, retry.CloneVT())
+			s.NoError(err)
+			_, err = s.tested.PutPolicy(ctx, retry.CloneVT())
 			s.NoError(err)
 		})
 	}

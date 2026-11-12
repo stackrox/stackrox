@@ -119,46 +119,12 @@ type serviceImpl struct {
 	processor         notifier.Processor
 	metadataCache     cache.ImageMetadata
 
-	policyUpdatesMutex sync.Mutex
-	// Guarded by policyUpdatesMutex; entries remain while referenced or awaiting propagation.
-	policyUpdates map[string]*policyUpdateState
+	// Maps policy IDs to attempt tokens while persistence or propagation is incomplete.
+	pendingPolicyUpdates sync.Map
 
 	validator *policyValidator
 
 	dryRunPolicyJobManager backgroundtasks.Manager
-}
-
-type policyUpdateState struct {
-	mutex   sync.Mutex
-	refs    int  // Holders and waiters, guarded by policyUpdatesMutex.
-	pending bool // Guarded by mutex.
-}
-
-func (s *serviceImpl) acquirePolicyUpdate(id string) *policyUpdateState {
-	state := concurrency.WithLock1(&s.policyUpdatesMutex, func() *policyUpdateState {
-		if s.policyUpdates == nil {
-			s.policyUpdates = make(map[string]*policyUpdateState)
-		}
-		state := s.policyUpdates[id]
-		if state == nil {
-			state = &policyUpdateState{}
-			s.policyUpdates[id] = state
-		}
-		state.refs++
-		return state
-	})
-	state.mutex.Lock()
-	return state
-}
-
-func (s *serviceImpl) releasePolicyUpdate(id string, state *policyUpdateState) {
-	defer state.mutex.Unlock()
-	s.policyUpdatesMutex.Lock()
-	defer s.policyUpdatesMutex.Unlock()
-	state.refs--
-	if state.refs == 0 && !state.pending {
-		delete(s.policyUpdates, id)
-	}
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -269,12 +235,10 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		return nil, err
 	}
 
-	// Assign the ID before persistence so retries of a newly created policy use the same lock.
+	// Assign the ID before persistence so concurrent retries can observe pending propagation.
 	if create {
 		request.Id = uuid.NewV4().String()
 	}
-	state := s.acquirePolicyUpdate(request.GetId())
-	defer s.releasePolicyUpdate(request.GetId(), state)
 
 	var unchanged bool
 	if !create && request.GetId() != "" {
@@ -297,7 +261,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 				comparable.EvaluationFilter = nil
 			}
 			if comparable.EqualVT(existing) {
-				if !state.pending {
+				if _, pending := s.pendingPolicyUpdates.Load(request.GetId()); !pending {
 					return existing, nil
 				}
 				request = existing
@@ -306,22 +270,31 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		}
 	}
 
+	// Each attempt owns its marker so completion cannot clear another attempt's failure.
+	attempt := new(byte)
+	previous, wasPending := s.pendingPolicyUpdates.Swap(request.GetId(), attempt)
 	if !unchanged {
 		request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
 		if err := updateFunc(ctx, request); err != nil {
+			if wasPending {
+				s.pendingPolicyUpdates.CompareAndSwap(request.GetId(), attempt, previous)
+			} else {
+				s.pendingPolicyUpdates.CompareAndDelete(request.GetId(), attempt)
+			}
 			return nil, err
 		}
 	}
 
-	state.pending = true
 	if err := s.addActivePolicy(request); err != nil {
+		s.pendingPolicyUpdates.Store(request.GetId(), attempt)
 		return nil, errors.Wrap(err, "Policy could not be edited due to")
 	}
 
 	if err := s.syncPoliciesWithSensors(); err != nil {
+		s.pendingPolicyUpdates.Store(request.GetId(), attempt)
 		return nil, err
 	}
-	state.pending = false
+	s.pendingPolicyUpdates.CompareAndDelete(request.GetId(), attempt)
 
 	return request, nil
 }
