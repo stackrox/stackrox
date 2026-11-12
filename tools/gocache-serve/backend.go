@@ -353,6 +353,7 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 	}
 	if resp.StatusCode == http.StatusNotFound {
 		resp.Body.Close()
+		log.Printf("GET %s: 404 (account=%s)", shortID(actionID), a.account)
 		return nil, nil
 	}
 	if resp.StatusCode == http.StatusRequestedRangeNotSatisfiable {
@@ -444,6 +445,7 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 	}
 	if int64(len(out)) != total {
 		// size mismatch (concurrent rewrite?) — treat as corrupt, caller misses
+		log.Printf("GET %s: range assembly size mismatch: got %d bytes, expected %d (account=%s)", shortID(actionID), len(out), total, a.account)
 		return nil, nil
 	}
 	return out, nil
