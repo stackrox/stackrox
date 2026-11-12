@@ -1,0 +1,30 @@
+# The ACS prefix keeps selection near the top of alphabetically sorted PR checks.
+name: ACS CI selection
+
+on:
+  workflow_call:
+    outputs:
+      decisions:
+        description: JSON map of applied target decisions (missing targets run)
+        value: ${{ jobs.plan.outputs.decisions }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      decisions: ${{ steps.selection.outputs.decisions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          # The planner only needs the tree for the rules file; it fetches the
+          # diff endpoints itself and deepens until the merge base resolves.
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Plan CI selection
+        id: selection
+        uses: ./.github/actions/ci-select
