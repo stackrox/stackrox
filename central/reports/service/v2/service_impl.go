@@ -122,7 +122,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
 	}
 
-	protoReportConfig := s.convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
+	protoReportConfig := s.convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(ctx, creatorID))
 
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
@@ -416,7 +416,7 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		notificationMethod = storage.ReportStatus_DOWNLOAD
 	}
 
-	reportReq, err := s.validator.ValidateAndGenerateReportRequest(req.GetReportConfigId(), notificationMethod,
+	reportReq, err := s.validator.ValidateAndGenerateReportRequest(ctx, req.GetReportConfigId(), notificationMethod,
 		storage.ReportStatus_ON_DEMAND, requesterID)
 	if err != nil {
 		return nil, err
@@ -548,7 +548,7 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 	}
 
 	// Validate the request and build the scheduler payload.
-	reportReq, err := s.validator.ValidateAndGenerateViewBasedReportRequest(req, requesterID)
+	reportReq, err := s.validator.ValidateAndGenerateViewBasedReportRequest(ctx, req, requesterID)
 	if err != nil {
 		return nil, err
 	}
