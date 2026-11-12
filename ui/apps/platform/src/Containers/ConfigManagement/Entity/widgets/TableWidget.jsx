@@ -19,7 +19,6 @@ const TableWidget = ({ header, entityType, ...rest }) => {
         noDataText,
         setTableRef,
         trClassName,
-        showThead,
         SubComponent,
         hasNestedTable,
         defaultSorted,
@@ -55,7 +54,6 @@ const TableWidget = ({ header, entityType, ...rest }) => {
                 noDataText={noDataText}
                 setTableRef={setTableRef}
                 trClassName={trClassName}
-                showThead={showThead}
                 SubComponent={SubComponent}
                 page={page}
                 defaultSorted={defaultSorted}

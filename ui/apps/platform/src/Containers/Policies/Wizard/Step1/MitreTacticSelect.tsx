@@ -53,10 +53,8 @@ function MitreTacticSelect({
                     <FlexItem className="pf-v6-u-text-truncate">
                         {selectedTactic.tactic.name}
                     </FlexItem>
-                    <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-sm">|</FlexItem>
-                    <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-sm">
-                        {selectedTactic.tactic.id}
-                    </FlexItem>
+                    <FlexItem className="pf-v6-u-font-size-sm">|</FlexItem>
+                    <FlexItem className="pf-v6-u-font-size-sm">{selectedTactic.tactic.id}</FlexItem>
                 </Flex>
             ) : (
                 tacticId

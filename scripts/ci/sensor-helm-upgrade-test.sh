@@ -63,9 +63,6 @@ for cluster_id in $(roxcurl /v1/clusters | jq '.clusters[] | .id' -r); do
   roxcurl "/v1/clusters/${cluster_id}" -XDELETE
 done
 
-echo "Disabling sensor auto-upgrade"
-roxcurl /v1/sensorupgrades/config -d'{"config":{"enableAutoUpgrades":false}}'
-
 echo "Generating an API token"
 api_token="$(
   roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "roles": ["Sensor Creator"]}' | jq -r '.token'

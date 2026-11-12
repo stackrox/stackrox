@@ -22,7 +22,6 @@ import (
 
 func TestImageCriteria(t *testing.T) {
 	t.Setenv(features.CVEFixTimestampCriteria.EnvVar(), "true")
-	t.Setenv(features.EvaluationFilter.EnvVar(), "true")
 	suite.Run(t, new(ImageCriteriaTestSuite))
 }
 

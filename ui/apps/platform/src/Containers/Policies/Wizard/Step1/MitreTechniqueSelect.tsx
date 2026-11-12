@@ -108,10 +108,8 @@ function MitreTechniqueSelect({
                     <FlexItem className="pf-v6-u-text-truncate">
                         {formatTechniqueDisplayName(selectedTechnique.name)}
                     </FlexItem>
-                    <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-sm">|</FlexItem>
-                    <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-sm">
-                        {selectedTechnique.id}
-                    </FlexItem>
+                    <FlexItem className="pf-v6-u-font-size-sm">|</FlexItem>
+                    <FlexItem className="pf-v6-u-font-size-sm">{selectedTechnique.id}</FlexItem>
                 </Flex>
             ) : (
                 techniqueId

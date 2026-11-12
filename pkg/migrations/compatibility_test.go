@@ -9,6 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// missingMetadataVersion is valid but requires intentionally absent release metadata.
+const missingMetadataVersion = "99.9.9"
+
 func TestMinimumSupportedForVersion(t *testing.T) {
 	for name, tc := range map[string]struct {
 		target, minimum string
@@ -34,11 +37,14 @@ func TestMinimumSupportedForVersionInvalidTarget(t *testing.T) {
 		"malformed version": "garbage",
 		"negative major":    "-1.2",
 		"negative minor":    "5.-1",
-		"missing metadata":  "5.5.0",
+		"missing metadata":  missingMetadataVersion,
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := MinimumSupportedForVersion(target)
 			require.Error(t, err)
+			if target == missingMetadataVersion {
+				require.ErrorContains(t, err, "missing initial database sequence")
+			}
 		})
 	}
 }
@@ -57,12 +63,15 @@ func TestMinimumGettersInvalidTarget(t *testing.T) {
 	for name, target := range map[string]string{
 		"missing version":  "",
 		"invalid version":  "garbage",
-		"missing metadata": "5.5.0",
+		"missing metadata": missingMetadataVersion,
 	} {
 		t.Run(name, func(t *testing.T) {
 			setMainVersion(t, target)
 			_, expectedErr := MinimumSupportedForVersion(target)
 			require.Error(t, expectedErr)
+			if target == missingMetadataVersion {
+				require.ErrorContains(t, expectedErr, "missing initial database sequence")
+			}
 			minimum, err := MinimumSupportedDBVersion()
 			require.EqualError(t, err, expectedErr.Error())
 			assert.Empty(t, minimum)
@@ -144,10 +153,13 @@ func TestReleaseSequenceMetadata(t *testing.T) {
 }
 
 func TestUnsafeOverrideCannotBypassInvalidTarget(t *testing.T) {
-	for name, target := range map[string]string{"missing version": "", "missing metadata": "5.5.0"} {
+	for name, target := range map[string]string{"missing version": "", "missing metadata": missingMetadataVersion} {
 		t.Run(name, func(t *testing.T) {
 			_, err := CheckUpgradeCompatibility(MigrationVersion{MainVersion: "4.9.0", SeqNum: 213}, target, 227, true)
 			require.Error(t, err)
+			if target == missingMetadataVersion {
+				require.ErrorContains(t, err, "missing initial database sequence")
+			}
 		})
 	}
 }
@@ -157,4 +169,52 @@ func setMainVersion(t *testing.T, target string) {
 	old := version.GetMainVersion()
 	t.Cleanup(func() { versiontest.SetMainVersion(t, old) })
 	versiontest.SetMainVersion(t, target)
+}
+
+func TestRollbackReleaseWindow(t *testing.T) {
+	for name, tc := range map[string]struct {
+		source, target string
+		blocked        bool
+	}{
+		"boundary":        {"5.4.0", "5.1.0", false},
+		"outside":         {"5.5.0", "5.1.0", true},
+		"future boundary": {"5.9.0", "5.6.0", false},
+		"future outside":  {"5.9.0", "5.5.0", true},
+		"major boundary":  {"5.1.0", "4.10.0", false},
+		"suffix":          {"5.5.x-12-gabcdef", "5.1.1", true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := CheckRollbackCompatibility(MigrationVersion{MainVersion: tc.source, SeqNum: 227, MinimumSeqNum: 227}, tc.target, 227)
+			if tc.blocked {
+				require.ErrorContains(t, err, "Central rollback blocked: cannot downgrade")
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestOverrideReleaseVersionsForTesting(t *testing.T) {
+	original := append([]ReleaseVersion(nil), releaseVersions...)
+	t.Run("override", func(t *testing.T) {
+		fixture := []ReleaseVersion{{Version: "99.1", Sequence: 220}}
+		OverrideReleaseVersionsForTesting(t, fixture)
+		fixture[0].Sequence = 999
+		minimum, err := MinimumSupportedForVersion("99.4.0")
+		require.NoError(t, err)
+		assert.Equal(t, ReleaseVersion{Version: "99.1", Sequence: 220}, minimum)
+		_, err = MinimumSupportedForVersion("5.1.0")
+		require.ErrorContains(t, err, "missing initial database sequence")
+
+		t.Run("nested", func(t *testing.T) {
+			OverrideReleaseVersionsForTesting(t, []ReleaseVersion{{Version: "99.2", Sequence: 225}})
+			minimum, err := MinimumSupportedForVersion("99.5.0")
+			require.NoError(t, err)
+			assert.Equal(t, ReleaseVersion{Version: "99.2", Sequence: 225}, minimum)
+		})
+		minimum, err = MinimumSupportedForVersion("99.4.0")
+		require.NoError(t, err)
+		assert.Equal(t, ReleaseVersion{Version: "99.1", Sequence: 220}, minimum)
+	})
+	assert.Equal(t, original, releaseVersions)
 }

@@ -160,7 +160,7 @@ function get_cluster_zip {
 
     echo "Getting zip file for cluster ${ID}"
     STATUS=$(curl_central_retry -X POST \
-        -d "{\"id\": \"$ID\", \"createUpgraderSA\": true}" \
+        -d "{\"id\": \"$ID\"}" \
         -o "$OUTPUT_DIR/sensor-deploy.zip" \
         -w "%{http_code}\n" \
         "https://$LOCAL_API_ENDPOINT/api/extensions/clusters/zip")

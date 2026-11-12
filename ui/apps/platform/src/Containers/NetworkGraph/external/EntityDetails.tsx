@@ -116,7 +116,7 @@ function EntityDetails({
                                 <EntityTitleText text={externalIPName} id={externalIPName} />
                             </BreadcrumbItem>
                         </Breadcrumb>
-                        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-color-200">
+                        <Content component="p" className="pf-v6-u-font-size-sm">
                             Connected entities outside your cluster
                         </Content>
                     </FlexItem>
@@ -200,7 +200,7 @@ function EntityDetails({
                                                         <div>
                                                             <Content
                                                                 component="small"
-                                                                className="pf-v6-u-color-200 pf-v6-u-text-truncate"
+                                                                className="pf-v6-u-text-truncate"
                                                             >
                                                                 in &quot;
                                                                 {deployment.namespace}

@@ -28,6 +28,7 @@ import (
 	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/ruby"
 	ccsbom "github.com/quay/claircore/sbom"
@@ -62,6 +63,7 @@ var (
 		(*python.Matcher)(nil).Name(),
 		rhcc.Matcher.Name(),
 		(*rhel.Matcher)(nil).Name(),
+		(*rheljava.RedHatMatcher)(nil).Name(),
 		(*ruby.Matcher)(nil).Name(),
 		(*suse.Matcher)(nil).Name(),
 		(*ubuntu.Matcher)(nil).Name(),

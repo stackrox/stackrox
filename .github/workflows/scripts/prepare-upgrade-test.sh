@@ -105,12 +105,19 @@ deploy_sensor() {
     "./sensor-${CLUSTER_NAME}/sensor.sh"
 }
 
+# Best-effort: disable the sensor auto-upgrader on the PREVIOUS release of Central (see
+# deploy_central) so it does not auto-upgrade the sensors during the upgrade test. The
+# auto-upgrader (and the /v1/sensorupgrades/config endpoint) was removed in newer Central
+# versions, so once PREVIOUS_RELEASE no longer has it this call is a harmless no-op; it must
+# never fail the test. --fail makes curl return non-zero on the 404 from newer Centrals, which
+# we explicitly swallow with `|| true`.
 disable_autoupgrader() {
     curl "https://${CENTRAL_IP}/v1/sensorupgrades/config" \
-        --insecure \
+        --insecure --fail \
         --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --retry 5 --retry-all-errors \
-        --data-raw '{"config":{"enableAutoUpgrades":false}}'
+        --data-raw '{"config":{"enableAutoUpgrades":false}}' \
+        || echo "Could not disable auto-upgrader (endpoint likely absent on this Central version); continuing."
 }
 
 deploy_violations() {

@@ -4,14 +4,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCompileEvaluationFilter_AllFiltersAreNonDefault(t *testing.T) {
-	t.Setenv(features.EvaluationFilter.EnvVar(), "true")
-
 	for _, proto := range []*storage.EvaluationFilter{
 		nil,
 		{},
@@ -23,13 +20,7 @@ func TestCompileEvaluationFilter_AllFiltersAreNonDefault(t *testing.T) {
 	}
 }
 
-func TestCompileEvaluationFilter_DisabledFeatureReturnsNil(t *testing.T) {
-	t.Setenv(features.EvaluationFilter.EnvVar(), "false")
-	assert.Nil(t, CompileEvaluationFilter(&storage.EvaluationFilter{}))
-}
-
 func TestCompileEvaluationFilter_NoSkipTypes_ReturnsNil(t *testing.T) {
-	t.Setenv(features.EvaluationFilter.EnvVar(), "true")
 	assert.Nil(t, CompileEvaluationFilter(nil))
 	assert.Nil(t, CompileEvaluationFilter(&storage.EvaluationFilter{}))
 }
@@ -85,8 +76,6 @@ func TestCompileEvaluationFilter_ContainerTypeFilter(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv(features.EvaluationFilter.EnvVar(), "true")
-
 			filters := CompileEvaluationFilter(&storage.EvaluationFilter{
 				SkipContainerTypes: tc.skipTypes,
 			})
