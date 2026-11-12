@@ -39,7 +39,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37385: Scanner V4 node scans now record the operating system (for example `rhcos:9.6`) for OpenShift 4.19 and later nodes. RHCOS switched to RHEL-based dotted versions such as `9.6.20250701-0` in OpenShift 4.19, and Central previously stored an empty operating system for these nodes.
 - ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
 - ROX-37861: Omitted `RELATED_IMAGE` entries in operator helm chart. Note that two consecutive upgrade runs are necessary to fix `manager.envOverrides` unless using server-side apply.
-- ROX-37916: Auth provider UI endpoints given without a port are stored without one again, as before 5.0.0. In 5.0.0 they were stored with `:443`, so OIDC and SAML logins sent redirect and ACS URLs with `:443`, which identity providers that match redirect URIs exactly rejected. Auth providers saved with 5.0.0 keep `:443` until they are saved again; declarative configuration is updated on its next reconciliation.
+- ROX-37916: Auth provider UI endpoints given without a port are stored without one again, as before 5.0.0. In 5.0.0 they were stored with `:443`, so OIDC and SAML logins sent redirect and ACS URLs with `:443`, which identity providers that match redirect URIs exactly rejected. Auth providers saved with 5.0.0 keep the stored `:443`, and saving one unchanged keeps it: remove `:443` from each affected UI endpoint, then save. Declarative configuration that gives the endpoint without a port is updated on its next reconciliation.
 
 ## [5.0.0]
 
