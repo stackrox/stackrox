@@ -68,20 +68,21 @@ func (s *sweeperImpl) loop() {
 	defer s.stopper.Flow().ReportStopped()
 	defer s.ticker.Stop()
 
-	s.sweep(time.Now())
+	s.sweep()
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():
 			return
 		case <-s.ticker.C:
-			s.sweep(time.Now())
+			s.sweep()
 		}
 	}
 }
 
 // sweep marks STALE the check results of every scan configuration whose most recent scheduled scan
 // had its full grace window elapse without refreshing them.
-func (s *sweeperImpl) sweep(now time.Time) {
+func (s *sweeperImpl) sweep() {
+	now := time.Now()
 	// grace is the combined budget the watchers allow for a scheduled scan to complete and have its
 	// results ingested. A result is stale only once a scheduled start has passed and its grace window
 	// has fully elapsed without new results, so we evaluate the schedule as of (now - grace).
