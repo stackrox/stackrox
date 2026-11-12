@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"sync/atomic"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,75 +12,48 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/utils/pointer"
-)
-
-const (
-	defaultMaxRetries     = 5
-	defaultAPICallTimeout = 5 * time.Second
-	defaultRetryTimeout   = 30 * time.Second
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 type handlerImpl struct {
-	complianceOperatorInfo StatusInfo
-
-	response chan *message.ExpiringMessage
-	request  chan *central.ComplianceRequest
-
-	disabled          concurrency.Signal
-	stopSignal        concurrency.Signal
-	started           *atomic.Bool
-	complianceIsReady *concurrency.Signal
-	retrier           *retrier
-	writer            *scanSettingWriter
+	response   chan *message.ExpiringMessage
+	disabled   concurrency.Signal
+	stopSignal concurrency.Signal
+	dispatcher common.PubSubDispatcher
+	manager    *Manager
 }
 
 func (m *handlerImpl) Name() string {
 	return "complianceoperator.handlerImpl"
 }
 
-type scanScheduleConfiguration struct {
-	Suspend  *bool
-	Schedule *string
-	ScanName string
-}
-
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, coIsReady *concurrency.Signal) common.SensorComponent {
-	r := &retrier{
-		maxRetries:     defaultMaxRetries,
-		apiCallTimeout: defaultAPICallTimeout,
-		retryTimeout:   defaultRetryTimeout,
-	}
-	w := &scanSettingWriter{
-		client:  client,
-		retrier: r,
-	}
+func NewRequestHandler(manager *Manager, dispatcher common.PubSubDispatcher) common.SensorComponent {
 	return &handlerImpl{
-		complianceOperatorInfo: complianceOperatorInfo,
-
-		request:  make(chan *central.ComplianceRequest),
-		response: make(chan *message.ExpiringMessage),
-
-		started:           &atomic.Bool{},
-		disabled:          concurrency.NewSignal(),
-		stopSignal:        concurrency.NewSignal(),
-		complianceIsReady: coIsReady,
-		retrier:           r,
-		writer:            w,
+		response:   make(chan *message.ExpiringMessage),
+		disabled:   concurrency.NewSignal(),
+		stopSignal: concurrency.NewSignal(),
+		dispatcher: dispatcher,
+		manager:    manager,
 	}
 }
 
 func (m *handlerImpl) Start() error {
-	defer m.started.Store(true)
-	// TODO: create default scan setting for ad-hoc scan
-	go m.run()
-	return nil
+	if err := m.dispatcher.RegisterConsumerToLane(
+		pubsub.ComplianceHandlerConsumer,
+		pubsub.ComplianceCentralResultTopic,
+		pubsub.ComplianceCentralResultLane,
+		m.onResult,
+	); err != nil {
+		return err
+	}
+	return m.manager.Start()
 }
 
 func (m *handlerImpl) Stop() {
+	m.manager.Stop()
 	m.stopSignal.Signal()
 }
 
@@ -99,224 +70,119 @@ func (m *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetComplianceRequest() != nil
 }
 
-func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
+func (m *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {
 		return nil
 	}
-	// Sync Scan Configs is done during the syncing process between Sensor and Central
-	if _, ok := req.GetRequest().(*central.ComplianceRequest_SyncScanConfigs); ok {
+
+	operationName := fmt.Sprintf("%T", req.GetRequest())
+	var err error
+
+	switch r := req.GetRequest().(type) {
+	case *central.ComplianceRequest_EnableCompliance:
+		m.disabled.Reset()
+		m.composeAndSendEnableComplianceResponse(r.EnableCompliance.GetId(), nil)
+	case *central.ComplianceRequest_DisableCompliance:
+		m.disabled.Signal()
+		m.composeAndSendDisableComplianceResponse(r.DisableCompliance.GetId(), nil)
+	case *central.ComplianceRequest_SyncScanConfigs:
 		log.Info("received scan config sync from central")
-		return m.handleSyncScanCfgRequest(req.GetSyncScanConfigs())
+		err = m.publishRequest(req)
+	case *central.ComplianceRequest_ApplyScanConfig:
+		err = m.processApplyScanCfgRequest(r.ApplyScanConfig, req)
+	case *central.ComplianceRequest_DeleteScanConfig:
+		err = m.processDeleteScanCfgRequest(r.DeleteScanConfig, req)
 	}
 
-	if !m.started.Load() {
-		return errors.Errorf("the compliance operator handler was not started ignoring message %v to avoid blocking", msg.GetComplianceRequest())
-	}
+	commandsFromCentral.With(prometheus.Labels{
+		"operation": operationName,
+		"processed": strconv.FormatBool(err == nil),
+	}).Inc()
 
-	select {
-	case <-ctx.Done():
-		// TODO(ROX-30333): Pass this context together with `req` to `m.request`
-		return errors.Wrapf(ctx.Err(), "message processing in component %s", m.Name())
-	case m.request <- req:
-		return nil
-	case <-m.stopSignal.Done():
-		return errors.Errorf("Could not process compliance request: %s", protoutils.NewWrapper(msg))
-	}
+	return err
 }
 
 func (m *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.response
 }
 
-func (m *handlerImpl) run() {
-	for !m.stopSignal.IsDone() {
-		select {
-		case req := <-m.request:
-			var requestProcessed bool
-			operationName := fmt.Sprintf("%T", req.GetRequest())
-			switch r := req.GetRequest().(type) {
-			case *central.ComplianceRequest_EnableCompliance:
-				requestProcessed = m.enableCompliance(r.EnableCompliance)
-			case *central.ComplianceRequest_DisableCompliance:
-				requestProcessed = m.disableCompliance(r.DisableCompliance)
-			case *central.ComplianceRequest_ApplyScanConfig:
-				requestProcessed = m.processApplyScanCfgRequest(r.ApplyScanConfig)
-			case *central.ComplianceRequest_DeleteScanConfig:
-				requestProcessed = m.processDeleteScanCfgRequest(r.DeleteScanConfig)
-			}
-			commandsFromCentral.With(prometheus.Labels{
-				"operation": operationName,
-				"processed": strconv.FormatBool(requestProcessed)},
-			).Inc()
-
-			if !requestProcessed {
-				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
-			}
-		case <-m.stopSignal.Done():
-			return
-		}
+func (m *handlerImpl) onResult(ev pubsub.Event) error {
+	result, ok := ev.(*events.ComplianceCentralResultEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", ev)
 	}
-}
-
-func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
-	m.disabled.Reset()
-	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
-}
-
-func (m *handlerImpl) disableCompliance(request *central.DisableComplianceRequest) bool {
-	// Disabling compliance should not disable compliance operator status monitoring. Users must be informed about
-	// the compliance operator health.
-
-	// TODO: Pause all scans. Currently, the only way a compliance scan can be disabled is by deleting the ScanSettingBinding.
-	// TODO: Drop all custom resource listener events.
-	m.disabled.Signal()
-	return m.composeAndSendDisableComplianceResponse(request.GetId(), nil)
-}
-
-func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianceScanConfigRequest) bool {
-	select {
-	case <-m.disabled.Done():
-		err := errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request))
-		return m.composeAndSendApplyScanConfigResponse(request.GetId(), err)
-	case <-m.stopSignal.Done():
-		return true
-	default:
-		if request.GetScanRequest() == nil {
-			applyScanConfigCommands.WithLabelValues("nil").Inc()
-			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Compliance scan request is empty"))
-		}
-
-		applyScanConfigCommands.WithLabelValues(fmt.Sprintf("%T", request.GetScanRequest())).Inc()
-		switch r := request.GetScanRequest().(type) {
-		case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
-			return m.processScheduledScanRequest(request.GetId(), r.ScheduledScan)
-		case *central.ApplyComplianceScanConfigRequest_SuspendScan:
-			return m.processSuspendScheduledScanRequest(request.GetId(), r.SuspendScan)
-		case *central.ApplyComplianceScanConfigRequest_ResumeScan:
-			return m.processResumeScheduledScanRequest(request.GetId(), r.ResumeScan)
-		case *central.ApplyComplianceScanConfigRequest_RerunScan:
-			return m.processRerunScheduledScanRequest(request.GetId(), r.RerunScan)
-		case *central.ApplyComplianceScanConfigRequest_UpdateScan:
-			return m.processUpdateScanRequest(request.GetId(), r.UpdateScan)
-		default:
-			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
-		}
+	switch result.Type {
+	case events.ApplyScanConfigResponse:
+		m.composeAndSendApplyScanConfigResponse(result.RequestID, result.Error)
+	case events.DeleteScanConfigResponse:
+		m.composeAndSendDeleteResponse(result.RequestID, result.Error)
 	}
-}
-
-func (m *handlerImpl) processScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) bool {
-	if err := validateApplyScheduledScanConfigRequest(request); err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
-	}
-	ns := m.complianceOperatorInfo.GetNamespace()
-	if ns == "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
-	}
-	err := m.writer.createScanResources(m.ctx(), ns, request.GetScanSettings(), request.GetCron())
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
-}
-
-func (m *handlerImpl) processUpdateScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) bool {
-	if err := validateUpdateScheduledScanConfigRequest(request); err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
-	}
-	ns := m.complianceOperatorInfo.GetNamespace()
-	if ns == "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
-	}
-	err := m.writer.updateScanConfig(m.ctx(), ns, request)
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
-}
-
-func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) bool {
-	if err := validateApplyRerunScheduledScanRequest(request); err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
-	}
-	ns := m.complianceOperatorInfo.GetNamespace()
-	if ns == "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
-	}
-	err := m.writer.rerunScan(m.ctx(), ns, request.GetScanName())
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
-}
-
-func (m *handlerImpl) processSuspendScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) bool {
-	if err := validateApplySuspendScheduledScanRequest(request); err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
-	}
-	ns := m.complianceOperatorInfo.GetNamespace()
-	if ns == "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
-	}
-	config := scanScheduleConfiguration{
-		Suspend:  pointer.Bool(true),
-		ScanName: request.GetScanName(),
-	}
-	err := m.writer.changeScanSchedule(m.ctx(), ns, config)
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
-}
-
-func (m *handlerImpl) processResumeScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) bool {
-	if err := validateApplyResumeScheduledScanRequest(request); err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
-	}
-	ns := m.complianceOperatorInfo.GetNamespace()
-	if ns == "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
-	}
-	config := scanScheduleConfiguration{
-		Suspend:  pointer.Bool(false),
-		ScanName: request.GetScanName(),
-	}
-	err := m.writer.changeScanSchedule(m.ctx(), ns, config)
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
-}
-
-func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplianceScanConfigRequest) bool {
-	select {
-	case <-m.disabled.Done():
-		err := errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request))
-		return m.composeAndSendDeleteResponse(request.GetId(), "", err)
-	case <-m.stopSignal.Done():
-		return true
-	default:
-		if request.GetName() == defaultScanSettingName {
-			return m.composeAndSendDeleteResponse(request.GetId(), "", errors.Errorf("Default compliance scan configuration %q cannot be deleted", defaultScanSettingName))
-		}
-		ns := m.complianceOperatorInfo.GetNamespace()
-		if ns == "" {
-			return m.composeAndSendDeleteResponse(request.GetId(), "", errors.New("Compliance operator not known"))
-		}
-		err := m.writer.deleteScanConfig(m.ctx(), ns, request.GetName())
-		return m.composeAndSendDeleteResponse(request.GetId(), "", err)
-	}
-}
-
-func (m *handlerImpl) handleSyncScanCfgRequest(request *central.SyncComplianceScanConfigRequest) error {
-	go func() {
-		select {
-		case <-m.disabled.Done():
-			log.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request))
-			return
-		case <-m.stopSignal.Done():
-			return
-		case <-m.complianceIsReady.Done():
-			ns := m.complianceOperatorInfo.GetNamespace()
-			if ns == "" {
-				log.Error("Compliance operator namespace not known")
-				return
-			}
-			log.Debugf("compliance is ready. Starting the reconciliation of %d scan configs", len(request.GetScanConfigs()))
-			if err := m.writer.syncScanConfigs(m.ctx(), ns, request); err != nil {
-				log.Error(err)
-			}
-		}
-	}()
 	return nil
 }
 
-func (m *handlerImpl) composeAndSendEnableComplianceResponse(requestID string, err error) bool {
+func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianceScanConfigRequest, fullReq *central.ComplianceRequest) error {
+	select {
+	case <-m.disabled.Done():
+		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request)))
+		return nil
+	default:
+	}
+
+	if request.GetScanRequest() == nil {
+		applyScanConfigCommands.WithLabelValues("nil").Inc()
+		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Compliance scan request is empty"))
+		return nil
+	}
+
+	applyScanConfigCommands.WithLabelValues(fmt.Sprintf("%T", request.GetScanRequest())).Inc()
+
+	var err error
+	switch r := request.GetScanRequest().(type) {
+	case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
+		err = validateApplyScheduledScanConfigRequest(r.ScheduledScan)
+	case *central.ApplyComplianceScanConfigRequest_UpdateScan:
+		err = validateUpdateScheduledScanConfigRequest(r.UpdateScan)
+	case *central.ApplyComplianceScanConfigRequest_RerunScan:
+		err = validateApplyRerunScheduledScanRequest(r.RerunScan)
+	case *central.ApplyComplianceScanConfigRequest_SuspendScan:
+		err = validateApplySuspendScheduledScanRequest(r.SuspendScan)
+	case *central.ApplyComplianceScanConfigRequest_ResumeScan:
+		err = validateApplyResumeScheduledScanRequest(r.ResumeScan)
+	default:
+		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
+		return nil
+	}
+
+	if err != nil {
+		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.Wrap(err, "validating compliance scan request"))
+		return nil
+	}
+
+	return m.publishRequest(fullReq)
+}
+
+func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplianceScanConfigRequest, fullReq *central.ComplianceRequest) error {
+	select {
+	case <-m.disabled.Done():
+		m.composeAndSendDeleteResponse(request.GetId(), errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request)))
+		return nil
+	default:
+	}
+
+	if request.GetName() == defaultScanSettingName {
+		m.composeAndSendDeleteResponse(request.GetId(), errors.Errorf("Default compliance scan configuration %q cannot be deleted", defaultScanSettingName))
+		return nil
+	}
+
+	return m.publishRequest(fullReq)
+}
+
+func (m *handlerImpl) publishRequest(req *central.ComplianceRequest) error {
+	return m.dispatcher.Publish(&events.ComplianceCentralRequestEvent{Request: req})
+}
+
+func (m *handlerImpl) composeAndSendEnableComplianceResponse(requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_EnableComplianceResponse_{
 			EnableComplianceResponse: &central.ComplianceResponse_EnableComplianceResponse{
@@ -332,10 +198,10 @@ func (m *handlerImpl) composeAndSendEnableComplianceResponse(requestID string, e
 			Error: err.Error(),
 		}
 	}
-	return m.sendResponse(msg)
+	m.sendResponse(msg)
 }
 
-func (m *handlerImpl) composeAndSendDisableComplianceResponse(requestID string, err error) bool {
+func (m *handlerImpl) composeAndSendDisableComplianceResponse(requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_DisableComplianceResponse_{
 			DisableComplianceResponse: &central.ComplianceResponse_DisableComplianceResponse{
@@ -344,17 +210,17 @@ func (m *handlerImpl) composeAndSendDisableComplianceResponse(requestID string, 
 		},
 	}
 	if err != nil {
-		err = errors.Wrap(err, "Could not enable compliance")
+		err = errors.Wrap(err, "Could not disable compliance")
 		log.Error(err)
 
 		msg.GetDisableComplianceResponse().Payload = &central.ComplianceResponse_DisableComplianceResponse_Error{
 			Error: err.Error(),
 		}
 	}
-	return m.sendResponse(msg)
+	m.sendResponse(msg)
 }
 
-func (m *handlerImpl) composeAndSendApplyScanConfigResponse(requestID string, err error) bool {
+func (m *handlerImpl) composeAndSendApplyScanConfigResponse(requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_ApplyComplianceScanConfigResponse_{
 			ApplyComplianceScanConfigResponse: &central.ComplianceResponse_ApplyComplianceScanConfigResponse{
@@ -370,10 +236,10 @@ func (m *handlerImpl) composeAndSendApplyScanConfigResponse(requestID string, er
 			Error: err.Error(),
 		}
 	}
-	return m.sendResponse(msg)
+	m.sendResponse(msg)
 }
 
-func (m *handlerImpl) composeAndSendDeleteResponse(requestID string, resource string, err error) bool {
+func (m *handlerImpl) composeAndSendDeleteResponse(requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_DeleteComplianceScanConfigResponse_{
 			DeleteComplianceScanConfigResponse: &central.ComplianceResponse_DeleteComplianceScanConfigResponse{
@@ -382,30 +248,21 @@ func (m *handlerImpl) composeAndSendDeleteResponse(requestID string, resource st
 		},
 	}
 	if err != nil {
-		if resource != "" {
-			err = errors.Wrapf(err, "Could not delete namespaces/%s/%s", m.complianceOperatorInfo.GetNamespace(), resource)
-		}
 		log.Error(err)
 		msg.GetDeleteComplianceScanConfigResponse().Payload = &central.ComplianceResponse_DeleteComplianceScanConfigResponse_Error{
 			Error: err.Error(),
 		}
 	}
-	return m.sendResponse(msg)
+	m.sendResponse(msg)
 }
 
-func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) bool {
+func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) {
 	select {
 	case m.response <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ComplianceResponse{
 			ComplianceResponse: response,
 		},
 	}):
-		return true
 	case <-m.stopSignal.Done():
-		return false
 	}
-}
-
-func (m *handlerImpl) ctx() context.Context {
-	return concurrency.AsContext(&m.stopSignal)
 }

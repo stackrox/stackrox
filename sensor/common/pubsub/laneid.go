@@ -21,6 +21,7 @@ const (
 	FakeFileActivityLane
 	NodeRoleChangeLane
 	ComplianceCentralRequestLane
+	ComplianceCentralResultLane
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 		FakeFileActivityLane:           "FakeFileActivity",
 		NodeRoleChangeLane:             "NodeRoleChange",
 		ComplianceCentralRequestLane:   "ComplianceCentralRequest",
+		ComplianceCentralResultLane:    "ComplianceCentralResult",
 	}
 )
 
