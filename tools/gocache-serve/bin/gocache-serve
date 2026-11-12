@@ -55,11 +55,19 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
 
   if [ -n "$TOKEN" ] && [[ "$TOKEN" != AAD-ERROR:* ]]; then
     # Try zstd-compressed (smaller download)
+    dl_start=$(date +%s%N 2>/dev/null || date +%s)
     if curl -s --max-time 10 -H "Authorization: Bearer $TOKEN" \
       -H "x-ms-version: 2021-08-06" \
       "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.zst" \
       -o "${OUT}.zst" 2>/dev/null && [ -s "${OUT}.zst" ]; then
-      
+      # Download timing = free region telemetry: same-region pulls run
+      # ~100+ MB/s, cross-region ~6 MB/s. Logged for region-map upkeep —
+      # repeated slow pulls from mapped regions mean the map is stale.
+      dl_end=$(date +%s%N 2>/dev/null || date +%s)
+      dl_ms=$(( (dl_end - dl_start) / 1000000 ))
+      dl_mb=$(( $(stat -c%s "${OUT}.zst" 2>/dev/null || stat -f%z "${OUT}.zst") / 1024 / 1024 ))
+      echo "bootstrap: download ${dl_mb}MB from ${ACCOUNT} in ${dl_ms}ms" >&2
+
       if command -v zstd >/dev/null 2>&1; then
         zstd -d -q -c "${OUT}.zst" > "$OUT" && rm -f "${OUT}.zst"
       else

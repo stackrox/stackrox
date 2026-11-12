@@ -183,39 +183,49 @@ func detectRegion() string {
 }
 
 // probeAccounts measures RTT to each storage account endpoint and returns
-// the fastest. Replaces region-name mapping: GitHub's runner pool keeps
-// growing new regions (e.g. chilecentral) that no static map covers, and a
-// wrong guess costs minutes of cross-region prefetch (measured: 3m54s
-// chilecentral→westus3 vs 72s same-region). Any HTTP response (even 400)
-// proves reachability and yields an RTT sample.
+// the fastest. All HEADs race concurrently, so wall cost is one RTT, not
+// the sum. Any HTTP response (even 400) proves reachability and yields an
+// RTT sample. Used only for regions the static map doesn't know: GitHub's
+// runner pool keeps growing (e.g. chilecentral) and a wrong guess costs
+// minutes of cross-region prefetch (measured: 3m54s vs 72s same-region).
 func probeAccounts(accounts []string) (string, time.Duration) {
+	type result struct {
+		acct string
+		rtt  time.Duration
+	}
 	client := &http.Client{Timeout: 3 * time.Second}
-	best, bestRTT := "", time.Duration(math.MaxInt64)
+	ch := make(chan result, len(accounts))
 	for _, acct := range accounts {
-		start := time.Now()
-		resp, err := client.Head(fmt.Sprintf("https://%s.blob.core.windows.net/", acct))
-		if err != nil {
-			continue // unreachable within timeout
-		}
-		resp.Body.Close()
-		rtt := time.Since(start)
-		if rtt < bestRTT {
-			best, bestRTT = acct, rtt
+		go func(a string) {
+			start := time.Now()
+			resp, err := client.Head(fmt.Sprintf("https://%s.blob.core.windows.net/", a))
+			if err != nil {
+				ch <- result{"", 0}
+				return
+			}
+			resp.Body.Close()
+			ch <- result{a, time.Since(start)}
+		}(acct)
+	}
+	best, bestRTT := "", time.Duration(math.MaxInt64)
+	for range accounts {
+		r := <-ch
+		if r.acct != "" && r.rtt < bestRTT {
+			best, bestRTT = r.acct, r.rtt
 		}
 	}
 	return best, bestRTT
 }
 
+
 // storageAccountForRegion selects the storage account for a runner.
-// Primary path: RTT probe of all replicas — ground truth regardless of
-// runner region (new GitHub pools like chilecentral break static maps;
-// a wrong guess cost 3m54s vs 72s same-region on a measured run).
-// The region map below survives only as fallback when probing fails.
+// Fast path: the static region map — zero cost, covers the ~94% of
+// runners in mapped regions. Unmapped region (new GitHub pools like
+// chilecentral): concurrent RTT probe (~one RTT) picks the nearest
+// replica — correctness never depends on the map, so stale entries
+// are merely slow, never wrong. Measured cost of a bad guess:
+// 3m54s vs 72s same-region.
 func storageAccountForRegion(region string) string {
-	if acct, rtt := probeAccounts([]string{"cigocache", "cigocacheeast", "cigochachecentral"}); acct != "" {
-		log.Printf("gocache-serve: account probe: %s (%dms)", acct, rtt.Milliseconds())
-		return acct
-	}
 	switch region {
 	case "eastus", "eastus2", "northcentralus", "CanadaEast",
 		"westeurope", "northeurope", "uk south", "francecentral":
@@ -227,7 +237,13 @@ func storageAccountForRegion(region string) string {
 		"australiaeast", "australiasoutheast":
 		return "cigocache" // westus3 primary
 	default:
-		return "cigocache" // fallback to primary
+		// Unmapped region: probe all replicas concurrently and take
+		// the fastest. ~One RTT, only on the <6% slow path.
+		if acct, rtt := probeAccounts([]string{"cigocache", "cigocacheeast", "cigochachecentral"}); acct != "" {
+			log.Printf("gocache-serve: region=%s unmapped, probe picked %s (%dms)", region, acct, rtt.Milliseconds())
+			return acct
+		}
+		return "cigocache" // all probes failed — primary fallback
 	}
 }
 
