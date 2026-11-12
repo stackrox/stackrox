@@ -25,9 +25,9 @@ ENV GOEXPERIMENT=strictfipsruntime
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:d3499a0896e2d6a1642f922615831bc5c2fd513bbb34f3446cabba530d9d54a2 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b59ac4f291d86027c2681f7a7b1cbf7448972fc55a6cb8e25cab5aa5eef5ce5f AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:87f66688da4e206d5a1877088626c542288a5ccd97898cf363b588d57817e6be AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8b212f75a0e5a156ac28b1c5c030d2e8a07715254e19d522286118279399af81 AS package_installer
 
 # Copy ubi-micro base to /out/ to preserve its rpmdb
 COPY --from=ubi-micro-base / /out/
