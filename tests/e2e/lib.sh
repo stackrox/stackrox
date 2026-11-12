@@ -567,6 +567,11 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     # Shorten compliance data-freshness timings for e2e tests (production defaults are
     # 40m/45m/5m) so the sweeper and scan-watcher-timeout paths finish within test timeouts.
+    # Blast radius: e2e-only, benign for every other test. A first scan has no prior results, so a
+    # short ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT is a no-op for it; no existing e2e test reads the
+    # freshness column or the stale-data banner (see tests/compliance_operator_v2_freshness_test.go
+    # for the only tests that do); and a shorter timeout only sets that column and skips
+    # DeleteOldResults, neither of which any other test observes.
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT'
     customize_envVars+=$'\n        value: "2m"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT'
