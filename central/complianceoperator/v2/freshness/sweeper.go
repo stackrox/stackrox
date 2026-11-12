@@ -26,7 +26,7 @@ var (
 
 // Sweeper periodically marks compliance check results STALE when their scan configuration's
 // schedule says they should have been refreshed by now but were not. It only ever transitions rows
-// to STALE; CURRENT is owned by the ingest path and nil-timestamp rows stay UNKNOWN.
+// to STALE; CURRENT is owned by the ingest path, and nil-timestamp rows stay UNKNOWN.
 type Sweeper interface {
 	Start()
 	Stop()
@@ -68,7 +68,7 @@ func (s *sweeperImpl) loop() {
 	defer s.stopper.Flow().ReportStopped()
 	defer s.ticker.Stop()
 
-	go s.sweep(time.Now())
+	s.sweep(time.Now())
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():
@@ -82,12 +82,6 @@ func (s *sweeperImpl) loop() {
 // sweep marks STALE the check results of every scan configuration whose most recent scheduled scan
 // had its full grace window elapse without refreshing them.
 func (s *sweeperImpl) sweep(now time.Time) {
-	select {
-	case <-s.stopper.Flow().StopRequested():
-		return
-	default:
-	}
-
 	// grace is the combined budget the watchers allow for a scheduled scan to complete and have its
 	// results ingested. A result is stale only once a scheduled start has passed and its grace window
 	// has fully elapsed without new results, so we evaluate the schedule as of (now - grace).
@@ -100,12 +94,19 @@ func (s *sweeperImpl) sweep(now time.Time) {
 	}
 
 	for _, cfg := range configs {
+		select {
+		case <-s.stopper.Flow().StopRequested():
+			return
+		default:
+		}
+
 		// cutoff is the latest scheduled start that has already had its full grace period. Results
 		// that started before it were not refreshed in time and are stale.
 		cutoff, ok := previousScheduledStart(cfg.GetSchedule(), now.Add(-grace))
 		if !ok {
 			continue
 		}
+
 		n, err := s.checkResultDS.MarkScanChecksStaleByConfig(sweeperCtx, cfg.GetScanConfigName(), cutoff)
 		if err != nil {
 			log.Errorf("compliance freshness sweeper: marking results stale for scan configuration %q: %v", cfg.GetScanConfigName(), err)
