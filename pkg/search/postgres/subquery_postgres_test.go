@@ -43,6 +43,8 @@ func TestSubQueryComposition(t *testing.T) {
 	distinct := inner.CloneVT()
 	distinct.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.TestKey).Distinct().Proto()}
 	distinct.Pagination = search.NewPagination().AddSortOption(search.NewSortOption(search.TestInt64)).Proto()
+	allRows := search.ConjunctionQuery(search.EmptyQuery(), search.EmptyQuery())
+	allRows.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.TestKey).Proto()}
 
 	for name, test := range map[string]struct {
 		query *v1.Query
@@ -56,6 +58,7 @@ func TestSubQueryComposition(t *testing.T) {
 		"negation": {query: search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{membership}}),
 			keys: []string{"first", "null-name"}},
 		"nested":                 {query: nested, keys: []string{"third"}},
+		"empty inner predicates": {query: search.MatchFieldSubQuery(search.TestKey, category, allRows), keys: []string{"first", "second", "third", "null-name"}},
 		"distinct with ordering": {query: search.MatchFieldSubQuery(search.TestKey, category, distinct), keys: []string{"second", "third"}},
 		"unsupported inner filter": {query: search.MatchFieldSubQuery(search.TestKey, category,
 			search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.TestKey)).

@@ -369,10 +369,17 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	if err != nil {
 		return nil, err
 	}
-	// As with ordinary searches, an unsupported filter must not become an
-	// unfiltered SELECT. This also keeps subquery membership from matching all rows.
-	if q.GetQuery() != nil && queryEntry == nil {
-		return nil, nil
+	if queryEntry == nil {
+		// Empty query wrappers are match-all, including conjunctions assembled
+		// from empty search and access scopes. Only actual unsupported predicates
+		// should produce no results.
+		var hasPredicate bool
+		searchPkg.ApplyFnToAllBaseQueries(q, func(base *v1.BaseQuery) {
+			hasPredicate = hasPredicate || base.GetQuery() != nil
+		})
+		if hasPredicate {
+			return nil, nil
+		}
 	}
 
 	if queryEntry != nil {
