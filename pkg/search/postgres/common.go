@@ -284,6 +284,8 @@ func (q *query) isDistinctAppliedToSelects() bool {
 }
 
 func (q *query) AsSQL() string {
+	// Performing this operation on full query is safe since table names and column names
+	// can only contain alphanumeric and underscore character.
 	queryString := replaceVars(q.sqlTemplate())
 	if env.PostgresQueryLogger.BooleanSetting() {
 		log.Info(queryString)
