@@ -396,6 +396,11 @@ function launch_central {
 
       # Shorten compliance data-freshness timings for e2e tests (production defaults are
       # 40m/45m/5m) so the sweeper and scan-watcher-timeout paths finish within test timeouts.
+      # Blast radius: e2e-only, benign for every other test. A first scan has no prior results, so
+      # a short ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT is a no-op for it; no existing e2e test reads
+      # the freshness column or the stale-data banner (see tests/compliance_operator_v2_freshness_test.go
+      # for the only tests that do); and a shorter timeout only sets that column and skips
+      # DeleteOldResults, neither of which any other test observes.
       helm_args+=(--set customize.central.envVars.ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT=2m)
       helm_args+=(--set customize.central.envVars.ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT=1m)
       helm_args+=(--set customize.central.envVars.ROX_COMPLIANCE_FRESHNESS_SWEEP_INTERVAL=20s)
@@ -551,6 +556,8 @@ function launch_central {
       # Shorten signing key watcher poll for e2e tests (production default is 4h).
       # Bake it into the manifest so Central starts with fast polling instead of
       # requiring a second rollout via a post-launch `set env`.
+      # The ROX_COMPLIANCE_* vars shorten data-freshness timings the same way; see the blast-radius
+      # note on the matching helm --set block above.
       central_deployment="${unzip_dir}/central/01-central-13-deployment.yaml"
       if [[ -f "${central_deployment}" ]]; then
         local central_env=(
