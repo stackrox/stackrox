@@ -56,6 +56,7 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
   if [ -n "$TOKEN" ] && [[ "$TOKEN" != AAD-ERROR:* ]]; then
     # Try zstd-compressed (smaller download)
     if curl -s --max-time 10 -H "Authorization: Bearer $TOKEN" \
+      -H "x-ms-version: 2021-08-06" \
       "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.zst" \
       -o "${OUT}.zst" 2>/dev/null && [ -s "${OUT}.zst" ]; then
       
@@ -65,6 +66,7 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
         # zstd not available — try gzip version
         rm -f "${OUT}.zst"
         curl -s --max-time 10 -H "Authorization: Bearer $TOKEN" \
+      -H "x-ms-version: 2021-08-06" \
           "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.gz" \
           | gunzip > "$OUT" 2>/dev/null || OUT=""
       fi
@@ -91,6 +93,7 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
     
     # Try uncompressed (fallback if compressed version doesn't exist)
     if curl -s --max-time 10 -H "Authorization: Bearer $TOKEN" \
+      -H "x-ms-version: 2021-08-06" \
       "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}" \
       -o "$OUT" 2>/dev/null && [ -s "$OUT" ] 2>/dev/null; then
       if [ "$(head -c4 "$OUT" | od -A n -t x1 | tr -d ' ')" = "7f454c46" ]; then
@@ -105,6 +108,7 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
           if command -v zstd >/dev/null 2>&1; then
             zstd -19 -q -c "$OUT" | curl -s --max-time 30 -X PUT \
               -H "Authorization: Bearer $TOKEN" \
+      -H "x-ms-version: 2021-08-06" \
               -H "x-ms-blob-type: BlockBlob" \
               "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.zst" \
               --data-binary @- 2>/dev/null || true
@@ -133,6 +137,7 @@ chmod +x "$OUT"
 if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZURE_CLIENT_SECRET:-}" ] && [ -n "$TOKEN" ]; then
   zstd -19 -q -c "$OUT" | curl -s --max-time 30 -X PUT \
     -H "Authorization: Bearer $TOKEN" \
+      -H "x-ms-version: 2021-08-06" \
     -H "x-ms-blob-type: BlockBlob" \
     "https://${ACCOUNT}.blob.core.windows.net/${CONTAINER}/${KEY}.zst" \
     --data-binary @- 2>/dev/null || true
