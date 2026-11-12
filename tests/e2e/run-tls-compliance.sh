@@ -2,8 +2,8 @@
 
 # TLS compliance E2E test.
 #
-# Verifies that all ACS TLS endpoints use the expected key exchange groups
-# and TLS versions after setting a strict OCP TLS profile.
+# Verifies that all ACS and RHACS operator TLS endpoints use the expected key
+# exchange groups and TLS versions after setting a strict OCP TLS profile.
 #
 # Prerequisites:
 #   - OCP 5.0+ cluster with KUBECONFIG set
@@ -21,6 +21,8 @@ source "${ROOT}/tests/e2e/lib.sh"
 TLS_SCANNER_DIR="${TLS_SCANNER_DIR:?Set TLS_SCANNER_DIR to the openshift/tls-scanner checkout}"
 SCAN_RESULTS=""
 ACS_NS="stackrox"
+# Namespace used by roxie when Central and SecuredCluster share the same version.
+OPERATOR_NS="rhacs-operator-system"
 FAILED=0
 
 # TODO(ROX-34978): Temporary ML-KEM exceptions. Remove once PG supports ssl_ecdh_curve groups.
@@ -168,7 +170,7 @@ run_tls_scanner() {
 
     export SCANNER_IMAGE="image-registry.openshift-image-registry.svc:5000/${ACS_NS}/tls-scanner:latest"
     export NAMESPACE="$ACS_NS"
-    export NAMESPACE_FILTER="$ACS_NS"
+    export NAMESPACE_FILTER="${ACS_NS},${OPERATOR_NS}"
     export ARTIFACT_WAIT="${ARTIFACT_WAIT:-300}"
 
     ./deploy.sh deploy
@@ -179,51 +181,59 @@ run_tls_scanner() {
 }
 
 check_pod_logs_for_tls_errors() {
+    local ns
+    for ns in "$ACS_NS" "$OPERATOR_NS"; do
+        check_pod_logs_for_tls_errors_in_ns "$ns"
+    done
+}
+
+check_pod_logs_for_tls_errors_in_ns() {
+    local ns="$1"
     local TLS_ERROR_PATTERN pod pod_errors tls_errors pod_list pods logs
     local log_retrieval_failed=0
 
     TLS_ERROR_PATTERN='TLS handshake error|tls: handshake failure|tls: protocol version|tls: no cipher suite|tls: client offered only unsupported|SSL_ERROR|SSL routines|Handshake failed'
-    info "Checking pod logs for TLS errors..."
+    info "Checking pod logs for TLS errors in ${ns}..."
     tls_errors=""
 
-    if ! pod_list=$(oc get pods -n "$ACS_NS" -o name); then
-        fail "Failed to list pods in namespace ${ACS_NS}"
+    if ! pod_list=$(oc get pods -n "$ns" -o name); then
+        fail "Failed to list pods in namespace ${ns}"
         return
     fi
 
     pods=$(printf '%s\n' "$pod_list" | grep -v tls-scanner || true)
     if [[ -z "$pods" ]]; then
-        fail "No ACS pods found in namespace ${ACS_NS} to check for TLS errors"
+        fail "No pods found in namespace ${ns} to check for TLS errors"
         return
     fi
 
     while IFS= read -r pod; do
         [[ -z "$pod" ]] && continue
-        if ! logs=$(oc logs "$pod" -n "$ACS_NS" --all-containers 2>&1); then
-            fail "Failed to get logs for $pod"
+        if ! logs=$(oc logs "$pod" -n "$ns" --all-containers 2>&1); then
+            fail "Failed to get logs for ${ns}/${pod}"
             info "$logs"
             log_retrieval_failed=1
             continue
         fi
         pod_errors=$(printf '%s\n' "$logs" | grep -iE "$TLS_ERROR_PATTERN" || true)
         if [[ -n "$pod_errors" ]]; then
-            info "TLS errors in $pod:"
+            info "TLS errors in ${ns}/${pod}:"
             echo "$pod_errors"
             tls_errors+="$pod_errors"$'\n'
         fi
     done <<< "$pods"
 
     if [[ -n "$tls_errors" ]]; then
-        fail "TLS errors found in pod logs"
+        fail "TLS errors found in pod logs in ${ns}"
     elif (( log_retrieval_failed )); then
-        info "Skipped TLS error summary because some pod logs could not be retrieved."
+        info "Skipped TLS error summary for ${ns} because some pod logs could not be retrieved."
     else
-        info "No TLS errors in pod logs."
+        info "No TLS errors in pod logs in ${ns}."
     fi
 }
 
 validate_scan_results() {
-    local central_db_status tls_version_failures mlkem_failures
+    local central_db_status operator_metrics_status tls_version_failures mlkem_failures
 
     if [[ ! -f "$SCAN_RESULTS" ]]; then
         fail "Scan results not found at $SCAN_RESULTS"
@@ -255,6 +265,21 @@ validate_scan_results() {
         fail "central-db:5432 status is '${central_db_status}', expected 'OK'"
     else
         info "central-db:5432 TLS OK."
+    fi
+
+    # The operator's only TLS endpoint is the metrics server; ensure it was actually scanned.
+    operator_metrics_status=$(jq -r --arg ns "$OPERATOR_NS" '
+        [.ip_results[]? |
+         select(.pod.Namespace == $ns) |
+         .port_results[]? |
+         select(.port == 8443) |
+         .status] | first // "MISSING"
+    ' "$SCAN_RESULTS")
+
+    if [[ "$operator_metrics_status" != "OK" ]]; then
+        fail "operator metrics ${OPERATOR_NS}:8443 status is '${operator_metrics_status}', expected 'OK'"
+    else
+        info "operator metrics ${OPERATOR_NS}:8443 TLS OK."
     fi
 
     # All OK endpoints must offer only TLS 1.3 (profile sets minTLSVersion: VersionTLS13).
