@@ -60,7 +60,14 @@ function RelatedDeployments({ imageId }: RelatedDeploymentsProps) {
     >(RELATED_DEPLOYMENTS_QUERY, {
         variables: {
             id: imageId,
-            pagination: getPaginationParams({ page, perPage }),
+            pagination: getPaginationParams({
+                page,
+                perPage,
+                sortOption: [
+                    { field: 'Deployment', reversed: false },
+                    { field: 'Deployment ID', reversed: false },
+                ],
+            }),
         },
     });
 
