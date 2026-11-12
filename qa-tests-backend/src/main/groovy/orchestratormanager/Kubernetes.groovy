@@ -2835,7 +2835,6 @@ class Kubernetes {
      *         when it exists and is usable as is. Throws when it stays
      *         Terminating past the deletion budget.
      */
-    @CompileDynamic
     protected boolean awaitTerminatingNamespaceDeletion(String ns) {
         def existing = getNamespaceQuietly(ns)
         if (existing == null) {
@@ -2864,7 +2863,6 @@ class Kubernetes {
      * @param create closure that performs the create and throws
      *        KubernetesClientException with code 409 when it already exists
      */
-    @CompileDynamic
     protected void provisionNamespaceUnlessTerminating(String ns, Closure create) {
         while (true) {
             try {
@@ -2884,7 +2882,6 @@ class Kubernetes {
         }
     }
 
-    @CompileDynamic
     private Namespace getNamespaceQuietly(String ns) {
         try {
             return client.namespaces().withName(ns).get()
@@ -2908,7 +2905,6 @@ class Kubernetes {
      * @return names of namespaces that were still Terminating when the list
      *         settled or the wait ran out
      */
-    @CompileDynamic
     List<String> waitForNamespaceListToSettle(int retries = 20, int intervalSeconds = 3) {
         Timer t = new Timer(retries, intervalSeconds)
         List<String> previous = null
