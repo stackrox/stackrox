@@ -1,4 +1,6 @@
 name: Create Central DB backup
+permissions:
+  contents: read
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +16,7 @@ on:
       dry-run:
         description: Dry-run
         required: false
-        default: false
+        default: true
         type: boolean
   pull_request: # Only for testing, remove before merge
 
@@ -31,7 +33,7 @@ jobs:
       assert-format: A.B.C
 
   create-backup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs:
     - variables
     env:
@@ -45,13 +47,14 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
+        persist-credentials: false
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Create k8s Kind Cluster
-      uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # ratchet:helm/kind-action@v1
+      uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # ratchet:helm/kind-action@v1.15.0
       with:
         kubeconfig: "${{ env.KUBECONFIG }}"
 
@@ -92,3 +95,11 @@ jobs:
       run: |
         backup="postgres_db_${RELEASE}.${PATCH}.sql.zip"
         gsutil cp "$backup" "gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/$backup"
+
+    - name: Preserve logs on failure
+      if: failure()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      with:
+        name: stackrox-logs
+        path: /tmp/stackrox-logs
+        if-no-files-found: ignore
