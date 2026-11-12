@@ -218,6 +218,66 @@ func (s *PolicyServiceTestSuite) TestPutPolicyUpdatesChangedPolicy() {
 	}
 }
 
+func (s *PolicyServiceTestSuite) TestPutPolicyRetriesIncompleteUpdates() {
+	for name, failActivePolicy := range map[string]bool{
+		"active policy update": true,
+		"sensor policy sync":   false,
+	} {
+		s.Run(name, func() {
+			ctx := context.Background()
+			existing := newUpsertTestPolicy()
+			existing.LastUpdated = &timestamppb.Timestamp{Seconds: 1}
+			request := existing.CloneVT()
+			request.Description = "Updated description"
+			request.LastUpdated = nil
+			failure := errors.New("downstream update failed")
+			var persisted *storage.Policy
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(existing, true, nil)
+			s.policies.EXPECT().UpdatePolicy(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, p *storage.Policy) error {
+				persisted = p.CloneVT()
+				return nil
+			})
+
+			for attempt := range 2 {
+				if attempt > 0 {
+					s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(persisted.CloneVT(), true, nil)
+				}
+				if failActivePolicy {
+					s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(failure)
+				} else {
+					s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).Return(nil)
+					s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, failure)
+				}
+
+				resp, err := s.tested.PutPolicy(ctx, request.CloneVT())
+				s.ErrorIs(err, failure)
+				s.Nil(resp)
+				s.Require().NotNil(persisted)
+			}
+
+			original := persisted.CloneVT()
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(persisted.CloneVT(), true, nil)
+			s.mockLifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).DoAndReturn(func(p *storage.Policy) error {
+				protoassert.Equal(s.T(), original, p)
+				return nil
+			})
+			s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{persisted}, nil)
+			s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast([]*storage.Policy{persisted})
+
+			resp, err := s.tested.PutPolicy(ctx, request.CloneVT())
+			s.Require().NoError(err)
+			s.NotNil(resp)
+			protoassert.Equal(s.T(), original, persisted)
+
+			s.policies.EXPECT().GetPolicy(ctx, request.GetId()).Return(persisted.CloneVT(), true, nil)
+			resp, err = s.tested.PutPolicy(ctx, request.CloneVT())
+			s.Require().NoError(err)
+			s.NotNil(resp)
+		})
+	}
+}
+
 func (s *PolicyServiceTestSuite) TestPutPolicyUpsertsMissingPolicy() {
 	ctx := context.Background()
 	request := newUpsertTestPolicy()

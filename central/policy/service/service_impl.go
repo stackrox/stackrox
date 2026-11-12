@@ -118,6 +118,10 @@ type serviceImpl struct {
 	processor         notifier.Processor
 	metadataCache     cache.ImageMetadata
 
+	policyUpdateMutex sync.Mutex
+	// Guarded by policyUpdateMutex; tracks persisted policies whose downstream updates have not completed.
+	pendingPolicyUpdates set.StringSet
+
 	validator *policyValidator
 
 	dryRunPolicyJobManager backgroundtasks.Manager
@@ -231,6 +235,11 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		return nil, err
 	}
 
+	// Keep writes and propagation ordered so concurrent retries cannot skip unfinished updates.
+	s.policyUpdateMutex.Lock()
+	defer s.policyUpdateMutex.Unlock()
+
+	var unchanged bool
 	if request.GetId() != "" {
 		existing, exists, err := s.policies.GetPolicy(ctx, request.GetId())
 		if err != nil {
@@ -244,16 +253,23 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 			comparable.SORTLifecycleStage = existing.GetSORTLifecycleStage()
 			comparable.SORTEnforcement = existing.GetSORTEnforcement()
 			if comparable.EqualVT(existing) {
-				return existing, nil
+				if !s.pendingPolicyUpdates.Contains(request.GetId()) {
+					return existing, nil
+				}
+				request = existing
+				unchanged = true
 			}
 		}
 	}
 
-	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
-	if err := updateFunc(ctx, request); err != nil {
-		return nil, err
+	if !unchanged {
+		request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
+		if err := updateFunc(ctx, request); err != nil {
+			return nil, err
+		}
 	}
 
+	s.pendingPolicyUpdates.Add(request.GetId())
 	if err := s.addActivePolicy(request); err != nil {
 		return nil, errors.Wrap(err, "Policy could not be edited due to")
 	}
@@ -261,6 +277,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 	if err := s.syncPoliciesWithSensors(); err != nil {
 		return nil, err
 	}
+	s.pendingPolicyUpdates.Remove(request.GetId())
 
 	return request, nil
 }
