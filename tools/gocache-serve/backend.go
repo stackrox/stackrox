@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -218,14 +219,71 @@ func probeAccounts(accounts []string) (string, time.Duration) {
 }
 
 
-// storageAccountForRegion selects the storage account for a runner.
-// Fast path: the static region map — zero cost, covers the ~94% of
-// runners in mapped regions. Unmapped region (new GitHub pools like
-// chilecentral): concurrent RTT probe (~one RTT) picks the nearest
-// replica — correctness never depends on the map, so stale entries
-// are merely slow, never wrong. Measured cost of a bad guess:
-// 3m54s vs 72s same-region.
-func storageAccountForRegion(region string) string {
+// learnedAccountPath is the per-region disk file caching the probed
+// account choice: "<account> <unix-ts>". gocache-serve processes are
+// per-command and short-lived; without this every process would re-probe.
+func learnedAccountPath(region string) string {
+	return filepath.Join(os.TempDir(), "gocache-serve-account-"+strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
+			return r
+		}
+		return '-'
+	}, region))
+}
+
+// loadLearnedAccount returns the cached probe result if fresh (< 24h).
+func loadLearnedAccount(region string) string {
+	data, err := os.ReadFile(learnedAccountPath(region))
+	if err != nil {
+		return ""
+	}
+	fields := strings.Fields(string(data))
+	if len(fields) != 2 {
+		return ""
+	}
+	ts, err := strconv.ParseInt(fields[1], 10, 64)
+	if err != nil || time.Since(time.Unix(ts, 0)) > 24*time.Hour {
+		return ""
+	}
+	return fields[0]
+}
+
+// saveLearnedAccount records the probed choice for subsequent processes.
+func saveLearnedAccount(region, acct string) {
+	path := learnedAccountPath(region)
+	if f, err := os.Create(path); err == nil {
+		fmt.Fprintf(f, "%s %d\n", acct, time.Now().Unix())
+		f.Close()
+	}
+}
+
+// registerLearnedAccount persists a probe result that DISAGREES with the
+// static map to the blob-store registry (region-map/<region>), on the hub
+// account. Write-on-change only: no churn when the network is stable, and
+// the registry doubles as an audit trail of topology shifts. Best effort.
+func registerLearnedAccount(region, acct string) {
+	hub := &AzureBackend{
+		account:      "cigocache",
+		container:    containerFromEnv(),
+		tenantID:     os.Getenv("AZURE_TENANT_ID"),
+		clientID:     os.Getenv("AZURE_CLIENT_ID"),
+		clientSecret: os.Getenv("AZURE_CLIENT_SECRET"),
+		client:       &http.Client{Timeout: 10 * time.Second},
+	}
+	created, err := hub.PutIfNotExist("region-map/"+region, []byte(acct))
+	if err != nil {
+		log.Printf("gocache-serve: region registry write failed: %v", err)
+		return
+	}
+	if created {
+		log.Printf("gocache-serve: region=%s registered to registry: %s", region, acct)
+	}
+}
+
+// staticRegionMap is the offline fallback: seed knowledge from the 1900+
+// runner-region sample. Never consulted when the network is up — probes
+// are the live truth — but answers instantly when all probes fail.
+func staticRegionMap(region string) string {
 	switch region {
 	case "eastus", "eastus2", "northcentralus", "CanadaEast",
 		"westeurope", "northeurope", "uk south", "francecentral":
@@ -236,15 +294,35 @@ func storageAccountForRegion(region string) string {
 		"eastasia", "southeastasia", "japaneast", "japanwest",
 		"australiaeast", "australiasoutheast":
 		return "cigocache" // westus3 primary
-	default:
-		// Unmapped region: probe all replicas concurrently and take
-		// the fastest. ~One RTT, only on the <6% slow path.
-		if acct, rtt := probeAccounts([]string{"cigocache", "cigocacheeast", "cigochachecentral"}); acct != "" {
-			log.Printf("gocache-serve: region=%s unmapped, probe picked %s (%dms)", region, acct, rtt.Milliseconds())
-			return acct
-		}
-		return "cigocache" // all probes failed — primary fallback
 	}
+	return ""
+}
+
+// storageAccountForRegion selects the storage account, self-adjusting to
+// network topology: the probe result is cached on disk for 24h (zero cost
+// for every later process on the machine) and re-verified once a day —
+// so a topology change (measured: 3m54s vs 72s on a bad guess) heals
+// within one process, with no monitoring loop. Registry writes happen
+// only when the probe disagrees with the static map.
+func storageAccountForRegion(region string) string {
+	// 1. Fresh learned entry: already verified today, zero cost.
+	if acct := loadLearnedAccount(region); acct != "" {
+		return acct
+	}
+	// 2. Probe (one concurrent RTT race, ~once per day per machine).
+	if acct, rtt := probeAccounts([]string{"cigocache", "cigocacheeast", "cigochachecentral"}); acct != "" {
+		if acct != staticRegionMap(region) {
+			registerLearnedAccount(region, acct)
+		}
+		saveLearnedAccount(region, acct)
+		log.Printf("gocache-serve: region=%s probe picked %s (%dms)", region, acct, rtt.Milliseconds())
+		return acct
+	}
+	// 3. Offline: static map, then hub.
+	if acct := staticRegionMap(region); acct != "" {
+		return acct
+	}
+	return "cigocache"
 }
 
 // containerFromEnv returns the blob container name, overridable for
