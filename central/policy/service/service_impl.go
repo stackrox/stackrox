@@ -53,6 +53,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -118,13 +119,46 @@ type serviceImpl struct {
 	processor         notifier.Processor
 	metadataCache     cache.ImageMetadata
 
-	policyUpdateMutex sync.Mutex
-	// Guarded by policyUpdateMutex; tracks persisted policies whose downstream updates have not completed.
-	pendingPolicyUpdates set.StringSet
+	policyUpdatesMutex sync.Mutex
+	// Guarded by policyUpdatesMutex; entries remain while referenced or awaiting propagation.
+	policyUpdates map[string]*policyUpdateState
 
 	validator *policyValidator
 
 	dryRunPolicyJobManager backgroundtasks.Manager
+}
+
+type policyUpdateState struct {
+	mutex   sync.Mutex
+	refs    int  // Holders and waiters, guarded by policyUpdatesMutex.
+	pending bool // Guarded by mutex.
+}
+
+func (s *serviceImpl) acquirePolicyUpdate(id string) *policyUpdateState {
+	state := concurrency.WithLock1(&s.policyUpdatesMutex, func() *policyUpdateState {
+		if s.policyUpdates == nil {
+			s.policyUpdates = make(map[string]*policyUpdateState)
+		}
+		state := s.policyUpdates[id]
+		if state == nil {
+			state = &policyUpdateState{}
+			s.policyUpdates[id] = state
+		}
+		state.refs++
+		return state
+	})
+	state.mutex.Lock()
+	return state
+}
+
+func (s *serviceImpl) releasePolicyUpdate(id string, state *policyUpdateState) {
+	defer state.mutex.Unlock()
+	s.policyUpdatesMutex.Lock()
+	defer s.policyUpdatesMutex.Unlock()
+	state.refs--
+	if state.refs == 0 && !state.pending {
+		delete(s.policyUpdates, id)
+	}
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -222,9 +256,9 @@ func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy,
 	return nil
 }
 
-func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Policy, extraValidateFunc func(*storage.Policy) error, updateFunc func(context.Context, *storage.Policy) error, options ...booleanpolicy.ValidateOption) (*storage.Policy, error) {
-	if extraValidateFunc != nil {
-		if err := extraValidateFunc(request); err != nil {
+func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Policy, create bool, updateFunc func(context.Context, *storage.Policy) error, options ...booleanpolicy.ValidateOption) (*storage.Policy, error) {
+	if create {
+		if err := ensureIDEmpty(request); err != nil {
 			return nil, err
 		}
 	}
@@ -235,12 +269,15 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		return nil, err
 	}
 
-	// Keep writes and propagation ordered so concurrent retries cannot skip unfinished updates.
-	s.policyUpdateMutex.Lock()
-	defer s.policyUpdateMutex.Unlock()
+	// Assign the ID before persistence so retries of a newly created policy use the same lock.
+	if create {
+		request.Id = uuid.NewV4().String()
+	}
+	state := s.acquirePolicyUpdate(request.GetId())
+	defer s.releasePolicyUpdate(request.GetId(), state)
 
 	var unchanged bool
-	if request.GetId() != "" {
+	if !create && request.GetId() != "" {
 		existing, exists, err := s.policies.GetPolicy(ctx, request.GetId())
 		if err != nil {
 			return nil, err
@@ -260,7 +297,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 				comparable.EvaluationFilter = nil
 			}
 			if comparable.EqualVT(existing) {
-				if !s.pendingPolicyUpdates.Contains(request.GetId()) {
+				if !state.pending {
 					return existing, nil
 				}
 				request = existing
@@ -276,7 +313,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		}
 	}
 
-	s.pendingPolicyUpdates.Add(request.GetId())
+	state.pending = true
 	if err := s.addActivePolicy(request); err != nil {
 		return nil, errors.Wrap(err, "Policy could not be edited due to")
 	}
@@ -284,7 +321,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 	if err := s.syncPoliciesWithSensors(); err != nil {
 		return nil, err
 	}
-	s.pendingPolicyUpdates.Remove(request.GetId())
+	state.pending = false
 
 	return request, nil
 }
@@ -335,12 +372,12 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 	if request.GetEnableStrictValidation() {
 		options = append(options, booleanpolicy.ValidateEnvVarSourceRestrictions())
 	}
-	return s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
+	return s.addOrUpdatePolicy(ctx, request.GetPolicy(), true, s.addPolicyToStoreAndSetID, options...)
 }
 
 // PutPolicy updates a current policy in the system.
 func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*v1.Empty, error) {
-	_, err := s.addOrUpdatePolicy(ctx, request, nil, s.policies.UpdatePolicy)
+	_, err := s.addOrUpdatePolicy(ctx, request, false, s.policies.UpdatePolicy)
 	if err != nil {
 		return nil, err
 	}
