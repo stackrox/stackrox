@@ -784,7 +784,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id str
 
 // Returns errox.AlreadyExists if there is a permission set with the same ID.
 func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(ctx context.Context, id string) error {
-	_, found, err := ds.permissionSetStorage.Get(ctx, id)
+	found, err := ds.permissionSetStorage.Exists(ctx, id)
 
 	if err != nil {
 		return err
@@ -820,7 +820,7 @@ func (ds *dataStoreImpl) verifyAccessScopeIDExists(ctx context.Context, id strin
 
 // Returns errox.AlreadyExists if there is an access scope with the same ID.
 func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(ctx context.Context, id string) error {
-	_, found, err := ds.accessScopeStorage.Get(ctx, id)
+	found, err := ds.accessScopeStorage.Exists(ctx, id)
 
 	if err != nil {
 		return err
@@ -833,7 +833,7 @@ func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(ctx context.Context, id
 
 // Returns errox.AlreadyExists if there is a role with the same name.
 func (ds *dataStoreImpl) verifyRoleNameDoesNotExist(ctx context.Context, name string) error {
-	_, found, err := ds.roleStorage.Get(ctx, name)
+	found, err := ds.roleStorage.Exists(ctx, name)
 
 	if err != nil {
 		return err
