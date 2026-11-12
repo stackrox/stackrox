@@ -284,6 +284,14 @@ func (q *query) isDistinctAppliedToSelects() bool {
 }
 
 func (q *query) AsSQL() string {
+	queryString := replaceVars(q.sqlTemplate())
+	if env.PostgresQueryLogger.BooleanSetting() {
+		log.Info(queryString)
+	}
+	return queryString
+}
+
+func (q *query) sqlTemplate() string {
 	if q == nil {
 		return ""
 	}
@@ -437,13 +445,7 @@ func (q *query) AsSQL() string {
 			querySB.WriteString(paginationSQL)
 		}
 	}
-	// Performing this operation on full query is safe since table names and column names
-	// can only contain alphanumeric and underscore character.
-	queryString := replaceVars(querySB.String())
-	if env.PostgresQueryLogger.BooleanSetting() {
-		log.Info(queryString)
-	}
-	return queryString
+	return querySB.String()
 }
 
 // hasAnyOrdering checks if there are any ORDER BY clauses present
@@ -497,7 +499,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	standardizeFieldNamesInQuery(q)
 	joins, dbFields := getJoinsAndFields(schema, q, nil)
 
-	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
+	queryEntry, err := compileQueryToPostgres(ctx, schema, q, dbFields, nowForQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +539,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 
 	// If selects are provided in a SEARCH query, process them to enable single-pass SearchResult construction (ROX-29943)
 	if len(q.GetSelects()) > 0 && queryType == SEARCH {
-		if err := populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, nil); err != nil {
+		if err := populateSelect(ctx, parsedQuery, schema, q, dbFields, nowForQuery, nil); err != nil {
 			return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 		}
 	}
@@ -705,6 +707,7 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 }
 
 func entriesFromQueries(
+	ctx context.Context,
 	table *walker.Schema,
 	queries []*v1.Query,
 	queryFields map[string]searchFieldMetadata,
@@ -712,7 +715,7 @@ func entriesFromQueries(
 ) ([]*pgsearch.QueryEntry, error) {
 	var entries []*pgsearch.QueryEntry
 	for _, q := range queries {
-		entry, err := compileQueryToPostgres(table, q, queryFields, nowForQuery)
+		entry, err := compileQueryToPostgres(ctx, table, q, queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -724,7 +727,7 @@ func entriesFromQueries(
 	return entries, nil
 }
 
-func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) (*pgsearch.QueryEntry, error) {
+func compileQueryToPostgres(ctx context.Context, schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) (*pgsearch.QueryEntry, error) {
 	if err := validateDerivedFieldDataType(queryFields); err != nil {
 		return nil, err
 	}
@@ -756,6 +759,8 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			return qe, nil
 		case *v1.BaseQuery_MatchNoneQuery:
 			return pgsearch.NewFalseQuery(), nil
+		case *v1.BaseQuery_MatchFieldSubQuery:
+			return compileSubQuery(ctx, subBQ.MatchFieldSubQuery, queryFields)
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			var entries []*pgsearch.QueryEntry
 			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
@@ -773,19 +778,19 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			panic("unsupported")
 		}
 	case *v1.Query_Conjunction:
-		entries, err := entriesFromQueries(schema, sub.Conjunction.GetQueries(), queryFields, nowForQuery)
+		entries, err := entriesFromQueries(ctx, schema, sub.Conjunction.GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
 		return combineQueryEntries(entries, " and "), nil
 	case *v1.Query_Disjunction:
-		entries, err := entriesFromQueries(schema, sub.Disjunction.GetQueries(), queryFields, nowForQuery)
+		entries, err := entriesFromQueries(ctx, schema, sub.Disjunction.GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
 		return combineDisjunction(entries), nil
 	case *v1.Query_BooleanQuery:
-		entries, err := entriesFromQueries(schema, sub.BooleanQuery.GetMust().GetQueries(), queryFields, nowForQuery)
+		entries, err := entriesFromQueries(ctx, schema, sub.BooleanQuery.GetMust().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -794,7 +799,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			cqe = pgsearch.NewTrueQuery()
 		}
 
-		entries, err = entriesFromQueries(schema, sub.BooleanQuery.GetMustNot().GetQueries(), queryFields, nowForQuery)
+		entries, err = entriesFromQueries(ctx, schema, sub.BooleanQuery.GetMustNot().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -840,6 +845,8 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 		switch bq := bq.GetQuery().(type) {
 		case *v1.BaseQuery_MatchFieldQuery:
 			bq.MatchFieldQuery.Field = strings.ToLower(bq.MatchFieldQuery.GetField())
+		case *v1.BaseQuery_MatchFieldSubQuery:
+			bq.MatchFieldSubQuery.Field = strings.ToLower(bq.MatchFieldSubQuery.GetField())
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			for _, q := range bq.MatchLinkedFieldsQuery.GetQuery() {
 				q.Field = strings.ToLower(q.GetField())

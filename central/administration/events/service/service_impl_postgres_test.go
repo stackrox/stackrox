@@ -4,11 +4,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/central/administration/events/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	"github.com/stackrox/rox/central/views/administrationevents"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
@@ -17,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -48,7 +52,7 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	var err error
 	s.deploymentDS, err = deploymentDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 	s.Require().NoError(err)
-	s.service = newService(s.datastore, s.deploymentDS)
+	s.service = newService(s.datastore, administrationevents.NewEventView(s.pool))
 }
 
 func (s *servicePostgresTestSuite) TestCount() {
@@ -341,6 +345,128 @@ func (s *servicePostgresTestSuite) TestFilterByCluster() {
 	count, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{})
 	s.Require().NoError(err)
 	s.Equal(int32(4), count.GetCount())
+}
+
+func (s *servicePostgresTestSuite) TestSQLWorkloadFilter() {
+	clusterID := uuid.NewV4().String()
+	namespaceDS, err := namespaceDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	for _, name := range []string{"team-a", "team-b"} {
+		namespace := &storage.NamespaceMetadata{
+			Id: uuid.NewV4().String(), Name: name, ClusterId: clusterID,
+			Labels: map[string]string{"team": name},
+		}
+		s.Require().NoError(namespaceDS.AddNamespace(sac.WithAllAccess(s.ctx), namespace))
+		dep := &storage.Deployment{
+			Id: uuid.NewV4().String(), Name: "app", ClusterId: clusterID, ClusterName: "test-cluster",
+			Namespace: name, NamespaceId: namespace.GetId(),
+			Containers: []*storage.Container{{Name: "main", Image: &storage.ContainerImage{IdV2: name}}},
+		}
+		s.Require().NoError(s.deploymentDS.UpsertDeployment(s.ctx, dep))
+		// Several matching deployments must not duplicate events or consume page slots.
+		dep.Id = uuid.NewV4().String()
+		s.Require().NoError(s.deploymentDS.UpsertDeployment(s.ctx, dep))
+	}
+	imageA := &events.AdministrationEvent{Domain: "Image Scanning", ResourceType: "Image", ResourceID: "team-a"}
+	imageB := &events.AdministrationEvent{Domain: "Image Scanning", ResourceType: "Image", ResourceID: "team-b"}
+	node := &events.AdministrationEvent{Domain: "General", ResourceType: "Node", ResourceID: "node"}
+	for _, event := range []*events.AdministrationEvent{imageA, imageB, node} {
+		event.Message = "operation failed"
+		event.Level = storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR
+		event.Type = storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE
+		s.Require().NoError(s.datastore.AddEvent(s.ctx, event))
+	}
+	s.Require().NoError(s.datastore.Flush(s.ctx))
+
+	adminOnly := sac.WithGlobalAccessScopeChecker(s.ctx, sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Administration)))
+	deploymentOnly := sac.WithGlobalAccessScopeChecker(s.ctx, sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Deployment)))
+	namespaceA := sac.WithGlobalAccessScopeChecker(s.ctx, sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Administration, resources.Deployment),
+		sac.ClusterScopeKeys(clusterID), sac.NamespaceScopeKeys("team-a")))
+
+	for name, test := range map[string]struct {
+		ctx           context.Context
+		workloadQuery string
+		resourceTypes []string
+		domains       []string
+		expected      []*events.AdministrationEvent
+	}{
+		"all resource types":      {expected: []*events.AdministrationEvent{imageA, imageB, node}},
+		"images only":             {resourceTypes: []string{"Image"}, expected: []*events.AdministrationEvent{imageA, imageB}},
+		"non-image only":          {resourceTypes: []string{"Node"}, expected: []*events.AdministrationEvent{node}},
+		"event predicate":         {domains: []string{"Image Scanning"}, expected: []*events.AdministrationEvent{imageA, imageB}},
+		"related table predicate": {workloadQuery: `Namespace Label:team=team-a`, expected: []*events.AdministrationEvent{imageA, node}},
+		"no matching deployment":  {workloadQuery: `Cluster:nonexistent`, expected: []*events.AdministrationEvent{node}},
+		"bound query value":       {workloadQuery: `Cluster:"test-cluster' OR true -- $$"`, expected: []*events.AdministrationEvent{node}},
+		"namespace access":        {ctx: namespaceA, expected: []*events.AdministrationEvent{imageA, node}},
+		"out of scope predicate":  {ctx: namespaceA, workloadQuery: `Namespace:team-b`, expected: []*events.AdministrationEvent{node}},
+		"no deployment access":    {ctx: adminOnly, expected: []*events.AdministrationEvent{node}},
+		"no image matches":        {ctx: adminOnly, resourceTypes: []string{"Image"}},
+		"no event access":         {ctx: deploymentOnly},
+	} {
+		s.Run(name, func() {
+			ctx := test.ctx
+			if ctx == nil {
+				ctx = s.ctx
+			}
+			workloadQuery := test.workloadQuery
+			if workloadQuery == "" {
+				workloadQuery = `Cluster:test-cluster`
+			}
+			filter := &v1.AdministrationEventsFilter{WorkloadQuery: workloadQuery, ResourceType: test.resourceTypes, Domain: test.domains}
+			count, err := s.service.CountAdministrationEvents(ctx, &v1.CountAdministrationEventsRequest{Filter: filter})
+			s.Require().NoError(err)
+			s.Equal(int32(len(test.expected)), count.GetCount())
+			var ids []string
+			for offset := 0; offset <= len(test.expected); offset++ {
+				resp, err := s.service.ListAdministrationEvents(ctx, &v1.ListAdministrationEventsRequest{
+					Filter: filter, Pagination: &v1.Pagination{
+						Limit: 1, Offset: int32(offset), SortOption: &v1.SortOption{Field: search.ResourceID.String()},
+					},
+				})
+				s.Require().NoError(err)
+				s.LessOrEqual(len(resp.GetEvents()), 1)
+				for _, event := range resp.GetEvents() {
+					ids = append(ids, event.GetId())
+				}
+			}
+			var expectedIDs []string
+			for _, event := range test.expected {
+				expectedIDs = append(expectedIDs, events.GenerateEventID(event))
+			}
+			s.ElementsMatch(expectedIDs, ids)
+		})
+	}
+}
+
+func (s *servicePostgresTestSuite) TestSQLWorkloadFilterBeyondOldLimit() {
+	dep := &storage.Deployment{Id: uuid.NewV4().String(), ClusterId: uuid.NewV4().String(), ClusterName: "large-cluster"}
+	for i := range 10_001 {
+		dep.Containers = append(dep.Containers, &storage.Container{
+			Name: fmt.Sprintf("container-%d", i), Image: &storage.ContainerImage{IdV2: fmt.Sprintf("image-%d", i)},
+		})
+	}
+	s.Require().NoError(s.deploymentDS.UpsertDeployment(s.ctx, dep))
+	event := &events.AdministrationEvent{
+		Domain: "Image Scanning", ResourceType: "Image", ResourceID: "image-10000", Message: "scan failed",
+		Level: storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Type:  storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
+	}
+	s.Require().NoError(s.datastore.AddEvent(s.ctx, event))
+	s.Require().NoError(s.datastore.Flush(s.ctx))
+	filter := &v1.AdministrationEventsFilter{WorkloadQuery: `Cluster:large-cluster`}
+	count, err := s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: filter})
+	s.Require().NoError(err)
+	s.Equal(int32(1), count.GetCount())
+	resp, err := s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
+		Filter: filter, Pagination: &v1.Pagination{Limit: 1},
+	})
+	s.Require().NoError(err)
+	s.Require().Len(resp.GetEvents(), 1)
+	s.Equal(events.GenerateEventID(event), resp.GetEvents()[0].GetId())
 }
 
 func (s *servicePostgresTestSuite) addListEvents() []*events.AdministrationEvent {

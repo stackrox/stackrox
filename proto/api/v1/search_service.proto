@@ -212,6 +212,7 @@ message BaseQuery {
     MatchLinkedFieldsQuery match_linked_fields_query = 3;
     DocIDQuery doc_id_query = 4;
     MatchNoneQuery match_none_query = 5;
+    MatchFieldSubQuery match_field_sub_query = 6;
   }
 }
 
@@ -262,6 +263,15 @@ message SearchOptionsResponse {
 
 message AutocompleteResponse {
   repeated string values = 1;
+}
+
+// MatchFieldSubQuery matches a field against the single selected column of a
+// query in another search category. The SQL search backend applies that
+// category's scope and access filters independently of the outer query.
+message MatchFieldSubQuery {
+  string field = 1;
+  SearchCategory category = 2;
+  Query query = 3;
 }
 
 service SearchService {

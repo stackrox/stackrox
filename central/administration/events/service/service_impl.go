@@ -8,7 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/administration/events/datastore"
-	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/views/administrationevents"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -19,14 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
 )
 
 const (
-	maxPaginationLimit    = 1000
-	maxWorkloadImageViews = 10000
+	maxPaginationLimit = 1000
 )
 
 var (
@@ -44,8 +42,8 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedAdministrationEventServiceServer
 
-	ds          datastore.DataStore
-	deployments deploymentDatastore.DataStore
+	ds   datastore.DataStore
+	view administrationevents.EventView
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -65,11 +63,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // CountAdministrationEvents returns the number of events matching the request query.
 func (s *serviceImpl) CountAdministrationEvents(ctx context.Context, request *v1.CountAdministrationEventsRequest) (*v1.CountAdministrationEventsResponse, error) {
-	query, err := s.getQueryFromFilter(ctx, request.GetFilter())
+	query, err := getQueryFromFilter(request.GetFilter())
 	if err != nil {
 		return nil, errors.Wrap(err, "building query from filter")
 	}
-	count, err := s.ds.CountEvents(ctx, query)
+	count, err := s.view.Count(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to count administration events")
 	}
@@ -88,7 +86,7 @@ func (s *serviceImpl) GetAdministrationEvent(ctx context.Context, resource *v1.R
 
 // ListAdministrationEvents returns all administration events matching the request query.
 func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.ListAdministrationEventsRequest) (*v1.ListAdministrationEventsResponse, error) {
-	query, err := s.getQueryFromFilter(ctx, request.GetFilter())
+	query, err := getQueryFromFilter(request.GetFilter())
 	if err != nil {
 		return nil, errors.Wrap(err, "building query from filter")
 	}
@@ -101,7 +99,7 @@ func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.
 		},
 	)
 
-	events, err := s.ds.ListEvents(ctx, query)
+	events, err := s.view.Get(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list administration events")
 	}
@@ -112,7 +110,7 @@ func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.
 	return &v1.ListAdministrationEventsResponse{Events: respEvents}, nil
 }
 
-func (s *serviceImpl) getQueryFromFilter(ctx context.Context, filter *v1.AdministrationEventsFilter) (*v1.Query, error) {
+func getQueryFromFilter(filter *v1.AdministrationEventsFilter) (*v1.Query, error) {
 	baseQuery := search.NewQueryBuilder()
 	if filter == nil {
 		return baseQuery.ProtoQuery(), nil
@@ -140,81 +138,15 @@ func (s *serviceImpl) getQueryFromFilter(ctx context.Context, filter *v1.Adminis
 	}
 
 	resourceTypes := sliceutils.Unique(filter.GetResourceType())
-	imageIDs, err := s.resolveWorkloadImageIDs(ctx, filter)
-	if err != nil {
-		return nil, err
+	if len(resourceTypes) != 0 {
+		baseQuery = baseQuery.AddExactMatches(search.ResourceType, resourceTypes...)
 	}
-
-	if imageIDs == nil {
-		if len(resourceTypes) != 0 {
-			baseQuery = baseQuery.AddExactMatches(search.ResourceType, resourceTypes...)
-		}
+	if filter.GetWorkloadQuery() == "" || (len(resourceTypes) != 0 && !slices.Contains(resourceTypes, "Image")) {
 		return baseQuery.ProtoQuery(), nil
 	}
-
-	// Intentionally use only the searchable resource_id column: older events
-	// without it remain visible unfiltered but are excluded by workload filters.
-	// Normal writes and retention resolve this temporary gap, avoiding an extra
-	// legacy query and deserialization on every filtered list/count request.
-	imageQuery := search.MatchNoneQuery()
-	if len(imageIDs) != 0 {
-		imageQuery = search.NewQueryBuilder().
-			AddExactMatches(search.ResourceType, "Image").
-			AddExactMatches(search.ResourceID, imageIDs...).ProtoQuery()
-	}
-
-	otherTypes := sliceutils.Without(resourceTypes, []string{"Image"})
-
-	var otherQuery *v1.Query
-	switch {
-	case len(resourceTypes) == 0:
-		notImageType := search.NewQueryBuilder().AddExactMatches(search.ResourceType, "Image").ProtoQuery()
-		otherQuery = search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{notImageType}})
-	case len(otherTypes) == 0:
-		return search.ConjunctionQuery(baseQuery.ProtoQuery(), imageQuery), nil
-	default:
-		otherQuery = search.NewQueryBuilder().AddExactMatches(search.ResourceType, otherTypes...).ProtoQuery()
-	}
-
-	resourceFilter := search.DisjunctionQuery(imageQuery, otherQuery)
-	return search.ConjunctionQuery(baseQuery.ProtoQuery(), resourceFilter), nil
-}
-
-// resolveWorkloadImageIDs returns image IDs for deployments matching the workload
-// query, or nil if the workload filter does not apply.
-func (s *serviceImpl) resolveWorkloadImageIDs(ctx context.Context, filter *v1.AdministrationEventsFilter) ([]string, error) {
-	rawQuery := filter.GetWorkloadQuery()
-	if rawQuery == "" {
-		return nil, nil
-	}
-	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 && !slices.Contains(resourceTypes, "Image") {
-		return nil, nil
-	}
-
-	parsedQuery, err := search.ParseQuery(rawQuery)
+	workloadQuery, err := search.ParseQuery(filter.GetWorkloadQuery())
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedByf("invalid workload query: %v", err)
 	}
-
-	// Bound both the projection and the resulting Resource ID filter. Fetch one
-	// extra result to detect overflow and fail rather than return partial events.
-	parsedQuery.Pagination = &v1.QueryPagination{Limit: maxWorkloadImageViews + 1}
-	imageViews, err := s.deployments.GetContainerImageViews(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Wrap(err, "resolving workload images")
-	}
-	if len(imageViews) > maxWorkloadImageViews {
-		return nil, errox.ResourceExhausted.Newf("workload query exceeds the limit of %d image results; narrow the cluster, namespace, or deployment filters", maxWorkloadImageViews)
-	}
-
-	imageIDSet := set.NewStringSet()
-	for _, view := range imageViews {
-		if id := view.GetImageID(); id != "" {
-			imageIDSet.Add(id)
-		}
-	}
-	if imageIDSet.Cardinality() == 0 {
-		return []string{}, nil
-	}
-	return imageIDSet.AsSlice(), nil
+	return administrationevents.WithWorkloadQuery(baseQuery.ProtoQuery(), workloadQuery)
 }

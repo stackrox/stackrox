@@ -2,21 +2,19 @@ package service
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/pkg/errors"
 	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
-	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	"github.com/stackrox/rox/central/deployment/views"
+	eventViewMocks "github.com/stackrox/rox/central/views/administrationevents/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/search/predicate"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -53,6 +51,7 @@ type baseTestSuite struct {
 
 	ctx           context.Context
 	datastoreMock *dsMocks.MockDataStore
+	viewMock      *eventViewMocks.MockEventView
 	service       Service
 }
 
@@ -60,7 +59,8 @@ func (s *baseTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = context.Background()
 	s.datastoreMock = dsMocks.NewMockDataStore(s.mockCtrl)
-	s.service = newService(s.datastoreMock, nil)
+	s.viewMock = eventViewMocks.NewMockEventView(s.mockCtrl)
+	s.service = newService(s.datastoreMock, s.viewMock)
 }
 
 // Test CountAdministrationEvents
@@ -80,7 +80,7 @@ func (s *countEventsTestSuite) SetupTest() {
 }
 
 func (s *countEventsTestSuite) TestCountAdministrationEvents_Success() {
-	s.datastoreMock.EXPECT().CountEvents(s.ctx, gomock.Any()).Return(1, nil)
+	s.viewMock.EXPECT().Count(s.ctx, gomock.Any()).Return(1, nil)
 	result, err := s.service.CountAdministrationEvents(s.ctx, s.fakeCountEventsRequest)
 
 	s.Require().NoError(err)
@@ -88,7 +88,7 @@ func (s *countEventsTestSuite) TestCountAdministrationEvents_Success() {
 }
 
 func (s *countEventsTestSuite) TestCountAdministrationEvents_Error() {
-	s.datastoreMock.EXPECT().CountEvents(s.ctx, gomock.Any()).Return(0, errFake)
+	s.viewMock.EXPECT().Count(s.ctx, gomock.Any()).Return(0, errFake)
 	result, err := s.service.CountAdministrationEvents(s.ctx, s.fakeCountEventsRequest)
 
 	s.ErrorIs(err, errFake)
@@ -158,7 +158,7 @@ func (s *listEventsTestSuite) SetupTest() {
 }
 
 func (s *listEventsTestSuite) TestListAdministrationEvents_Success() {
-	s.datastoreMock.EXPECT().ListEvents(s.ctx, gomock.Any()).Return(s.fakeStorageEventsList, nil)
+	s.viewMock.EXPECT().Get(s.ctx, gomock.Any()).Return(s.fakeStorageEventsList, nil)
 	result, err := s.service.ListAdministrationEvents(s.ctx, s.fakeListEventsRequest)
 
 	s.Require().NoError(err)
@@ -166,7 +166,7 @@ func (s *listEventsTestSuite) TestListAdministrationEvents_Success() {
 }
 
 func (s *listEventsTestSuite) TestListAdministrationEvents_Error() {
-	s.datastoreMock.EXPECT().ListEvents(s.ctx, gomock.Any()).Return(nil, errFake)
+	s.viewMock.EXPECT().Get(s.ctx, gomock.Any()).Return(nil, errFake)
 	result, err := s.service.ListAdministrationEvents(s.ctx, s.fakeListEventsRequest)
 
 	s.ErrorIs(err, errFake)
@@ -176,7 +176,6 @@ func (s *listEventsTestSuite) TestListAdministrationEvents_Error() {
 // Test query builder
 
 func TestAdministrationEventsQueryBuilder(t *testing.T) {
-	svc := &serviceImpl{}
 	filter := &v1.AdministrationEventsFilter{
 		From:         protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		Until:        protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
@@ -185,7 +184,7 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 		Type:         []v1.AdministrationEventType{v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC},
 		Level:        []v1.AdministrationEventLevel{v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR},
 	}
-	query, err := svc.getQueryFromFilter(context.Background(), filter)
+	query, err := getQueryFromFilter(filter)
 	require.NoError(t, err)
 
 	queryStr := query.String()
@@ -197,12 +196,11 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 }
 
 func TestWorkloadFilterSkippedForNonImageResourceType(t *testing.T) {
-	svc := &serviceImpl{}
 	filter := &v1.AdministrationEventsFilter{
 		ResourceType:  []string{"Node"},
 		WorkloadQuery: `Cluster:"prod"`,
 	}
-	query, err := svc.getQueryFromFilter(context.Background(), filter)
+	query, err := getQueryFromFilter(filter)
 	require.NoError(t, err)
 
 	queryStr := query.String()
@@ -211,142 +209,76 @@ func TestWorkloadFilterSkippedForNonImageResourceType(t *testing.T) {
 }
 
 func TestAdministrationEventsQueryBuilderNilFilter(t *testing.T) {
-	svc := &serviceImpl{}
-	query, err := svc.getQueryFromFilter(context.Background(), nil)
+	query, err := getQueryFromFilter(nil)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 }
 
-func TestWorkloadFilterMatches(t *testing.T) {
-	testCases := map[string]struct {
+func TestWorkloadQuery(t *testing.T) {
+	for name, tc := range map[string]struct {
 		resourceTypes []string
-		imageViews    []*views.ContainerImageView
-		matchesImage  bool
-		matchesNode   bool
+		workloadQuery string
+		applies       bool
 	}{
-		"no matches with image type": {
-			resourceTypes: []string{"Image"},
-		},
-		"no matches with all types": {
-			matchesNode: true,
-		},
-		"matching image only": {
-			resourceTypes: []string{"Image"},
-			imageViews:    []*views.ContainerImageView{{ImageIDV2: "image-id"}, {ImageIDV2: "image-id"}, {}},
-			matchesImage:  true,
-		},
-		"matching image with all types": {
-			imageViews:   []*views.ContainerImageView{{ImageIDV2: "image-id"}},
-			matchesImage: true,
-			matchesNode:  true,
-		},
-		"matching image with multiple types": {
-			resourceTypes: []string{"Image", "Node"},
-			imageViews:    []*views.ContainerImageView{{ImageIDV2: "image-id"}},
-			matchesImage:  true,
-			matchesNode:   true,
-		},
-	}
-	for name, tc := range testCases {
+		"all types":         {workloadQuery: `Cluster:"prod"`, applies: true},
+		"image only":        {resourceTypes: []string{"Image"}, workloadQuery: `Cluster:"prod"`, applies: true},
+		"mixed types":       {resourceTypes: []string{"Image", "Node"}, workloadQuery: `Cluster:"prod"`, applies: true},
+		"other types":       {resourceTypes: []string{"Node"}, workloadQuery: `Cluster:"prod"`},
+		"no workload query": {},
+	} {
 		t.Run(name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			deployments := deploymentMocks.NewMockDataStore(ctrl)
-			deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).Return(tc.imageViews, nil)
-			ds := dsMocks.NewMockDataStore(ctrl)
-			svc := &serviceImpl{ds: ds, deployments: deployments}
-			query, err := svc.getQueryFromFilter(context.Background(), &v1.AdministrationEventsFilter{
-				ResourceType: tc.resourceTypes, WorkloadQuery: `Cluster:"prod"`,
+			query, err := getQueryFromFilter(&v1.AdministrationEventsFilter{ResourceType: tc.resourceTypes, WorkloadQuery: tc.workloadQuery})
+			require.NoError(t, err)
+			var workload *v1.MatchFieldSubQuery
+			search.ApplyFnToAllBaseQueries(query, func(base *v1.BaseQuery) {
+				if sub := base.GetMatchFieldSubQuery(); sub != nil {
+					workload = sub
+				}
 			})
-			require.NoError(t, err)
-			// Predicates do not support SQL time ranges; evaluate the resource filter here.
-			require.Len(t, query.GetConjunction().GetQueries(), 2)
-			resourceQuery := query.GetConjunction().GetQueries()[1]
-			pred, err := predicate.NewFactory("administrationevent", &storage.AdministrationEvent{}).GeneratePredicate(resourceQuery)
-			require.NoError(t, err)
-			for eventName, eventCase := range map[string]struct {
-				resource *storage.AdministrationEvent_Resource
-				matches  bool
-			}{
-				"matching image": {resource: &storage.AdministrationEvent_Resource{Type: "Image", Id: "image-id"}, matches: tc.matchesImage},
-				"other image":    {resource: &storage.AdministrationEvent_Resource{Type: "Image", Id: "other-id"}},
-				"name only":      {resource: &storage.AdministrationEvent_Resource{Type: "Image", Name: "some-image"}},
-				"node":           {resource: &storage.AdministrationEvent_Resource{Type: "Node", Id: "node-id"}, matches: tc.matchesNode},
-			} {
-				t.Run(eventName, func(t *testing.T) {
-					event := &storage.AdministrationEvent{
-						Resource: eventCase.resource, CreatedAt: protoconv.ConvertTimeToTimestamp(time.Now()),
-					}
-					assert.Equal(t, eventCase.matches, pred.Matches(event))
-				})
+			if tc.applies {
+				expected, err := search.ParseQuery(tc.workloadQuery)
+				require.NoError(t, err)
+				expected.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.ImageID).Proto()}
+				require.NotNil(t, workload)
+				assert.Equal(t, search.ResourceID.String(), workload.GetField())
+				assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, workload.GetCategory())
+				protoassert.Equal(t, expected, workload.GetQuery())
+			} else {
+				assert.Nil(t, workload)
 			}
 		})
 	}
 }
 
-func TestWorkloadFilterErrors(t *testing.T) {
-	for name, tc := range map[string]struct {
-		workloadQuery string
-		lookupError   error
-		imageViews    []*views.ContainerImageView
-		expectedError error
-	}{
-		"invalid query":     {workloadQuery: `INVALIDQUERY`, expectedError: errox.InvalidArgs},
-		"deployment lookup": {workloadQuery: `Cluster:prod`, lookupError: errFake, expectedError: errFake},
-		"too many images": {
-			workloadQuery: `Cluster:prod`,
-			imageViews:    make([]*views.ContainerImageView, maxWorkloadImageViews+1),
-			expectedError: errox.ResourceExhausted,
-		},
+func TestWorkloadQueryErrors(t *testing.T) {
+	for name, rawQuery := range map[string]string{
+		"invalid query": "INVALIDQUERY",
+		"view error":    "Cluster:prod",
 	} {
 		for _, rpc := range []string{"count", "list"} {
 			t.Run(name+"/"+rpc, func(t *testing.T) {
 				ctrl := gomock.NewController(t)
-				deployments := deploymentMocks.NewMockDataStore(ctrl)
 				ds := dsMocks.NewMockDataStore(ctrl)
-				if tc.lookupError != nil || tc.imageViews != nil {
-					deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).Return(
-						tc.imageViews, tc.lookupError)
+				view := eventViewMocks.NewMockEventView(ctrl)
+				expectedError := error(errox.InvalidArgs)
+				if name == "view error" {
+					if rpc == "count" {
+						view.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, errFake)
+					} else {
+						view.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, errFake)
+					}
+					expectedError = errFake
 				}
-				svc := newService(ds, deployments)
-				filter := &v1.AdministrationEventsFilter{WorkloadQuery: tc.workloadQuery}
+				svc := newService(ds, view)
+				filter := &v1.AdministrationEventsFilter{WorkloadQuery: rawQuery}
 				var err error
 				if rpc == "count" {
 					_, err = svc.CountAdministrationEvents(context.Background(), &v1.CountAdministrationEventsRequest{Filter: filter})
 				} else {
 					_, err = svc.ListAdministrationEvents(context.Background(), &v1.ListAdministrationEventsRequest{Filter: filter})
 				}
-				assert.ErrorIs(t, err, tc.expectedError)
+				assert.ErrorIs(t, err, expectedError)
 			})
 		}
-	}
-}
-
-func TestWorkloadImageProjectionLimit(t *testing.T) {
-	for name, size := range map[string]int{
-		"at limit":   maxWorkloadImageViews,
-		"over limit": maxWorkloadImageViews + 1,
-	} {
-		t.Run(name, func(t *testing.T) {
-			imageViews := make([]*views.ContainerImageView, size)
-			for i := range imageViews {
-				imageViews[i] = &views.ContainerImageView{ImageIDV2: strconv.Itoa(i)}
-			}
-			deployments := deploymentMocks.NewMockDataStore(gomock.NewController(t))
-			deployments.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).DoAndReturn(
-				func(_ context.Context, query *v1.Query) ([]*views.ContainerImageView, error) {
-					assert.EqualValues(t, maxWorkloadImageViews+1, query.GetPagination().GetLimit())
-					return imageViews, nil
-				})
-			svc := &serviceImpl{deployments: deployments}
-			ids, err := svc.resolveWorkloadImageIDs(context.Background(), &v1.AdministrationEventsFilter{WorkloadQuery: `Cluster:prod`})
-			if size > maxWorkloadImageViews {
-				require.ErrorIs(t, err, errox.ResourceExhausted)
-				assert.ErrorContains(t, err, "narrow the cluster, namespace, or deployment filters")
-				assert.Nil(t, ids)
-			} else {
-				require.NoError(t, err)
-				assert.Len(t, ids, size)
-			}
-		})
 	}
 }

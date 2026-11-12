@@ -361,13 +361,18 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		Joins:     joins,
 	}
 
-	if err = populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, arrayFields); err != nil {
+	if err = populateSelect(ctx, parsedQuery, schema, q, dbFields, nowForQuery, arrayFields); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 	}
 
-	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
+	queryEntry, err := compileQueryToPostgres(ctx, schema, q, dbFields, nowForQuery)
 	if err != nil {
 		return nil, err
+	}
+	// As with ordinary searches, an unsupported filter must not become an
+	// unfiltered SELECT. This also keeps subquery membership from matching all rows.
+	if q.GetQuery() != nil && queryEntry == nil {
+		return nil, nil
 	}
 
 	if queryEntry != nil {
@@ -542,7 +547,7 @@ func retryableRunSelectDirectFn(ctx context.Context, db postgres.DB, q *query, c
 	return rows.Err()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
+func populateSelect(ctx context.Context, querySoFar *query, schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
 	querySelects := q.GetSelects()
 	if len(querySelects) == 0 {
 		return errors.New("select portion of the query cannot be empty")
@@ -581,7 +586,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 		}
 
 		filter := qs.GetFilter()
-		qe, err := compileQueryToPostgres(schema, filter.GetQuery(), queryFields, nowForQuery)
+		qe, err := compileQueryToPostgres(ctx, schema, filter.GetQuery(), queryFields, nowForQuery)
 		if err != nil {
 			return errors.New("failed to parse filter in select portion of query")
 		}
