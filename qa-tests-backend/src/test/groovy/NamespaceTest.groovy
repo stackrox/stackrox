@@ -20,6 +20,14 @@ class NamespaceTest extends BaseSpecification {
 
         given:
         "ACS and Orchestrator have the same namespaces"
+        // A namespace deleted by an earlier suite can still be listed while the
+        // namespace controller empties it, and Central only drops it after
+        // sensor reports the deletion. Wait for the orchestrator's list to stop
+        // changing so a diff reflects a real mismatch and not cleanup in flight.
+        List<String> terminating = orchestrator.waitForNamespaceListToSettle()
+        if (!terminating.isEmpty()) {
+            log.warn "Namespaces still terminating before the comparison: ${terminating}"
+        }
         List<String> orchestratorNamespaces = new ArrayList<>()
         Map<String, String> stackroxNamespaces
         withRetry(3, 5) {

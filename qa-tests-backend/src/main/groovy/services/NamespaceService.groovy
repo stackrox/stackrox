@@ -8,6 +8,7 @@ import io.stackrox.proto.api.v1.NamespaceServiceGrpc
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.GetNamespaceRequest
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
 
+import util.Helpers
 import util.Timer
 
 @Slf4j
@@ -42,6 +43,39 @@ class NamespaceService extends BaseService {
         }
         log.warn "SR did not detect the namespace ${id}"
         return false
+    }
+
+    /**
+     * Waits until Central stops listing a namespace.
+     *
+     * Central drops a namespace only after sensor reports its deletion, so the
+     * namespace being gone from the orchestrator does not mean it is gone from
+     * Central's view. A transient Central error is retried within the timeout
+     * rather than failing cleanup.
+     *
+     * @param name namespace name
+     * @param timeoutSeconds how long to wait for the sensor-to-Central
+     *        propagation, not for the cluster-side deletion; callers delete the
+     *        namespace first
+     * @return true when Central no longer lists the namespace
+     */
+    static boolean waitForNamespaceDeletion(String name, int timeoutSeconds = 60) {
+        int intervalSeconds = 1
+        int retries = (timeoutSeconds / intervalSeconds) as int
+        boolean gone = Helpers.trueWithin(retries, intervalSeconds) {
+            try {
+                return getNamespaces().every { it.metadata.name != name }
+            } catch (Exception e) {
+                log.debug("Could not list namespaces while waiting for ${name} to be deleted", e)
+                return false
+            }
+        }
+        if (gone) {
+            log.debug "SR no longer lists namespace ${name}"
+        } else {
+            log.warn "SR still lists the deleted namespace ${name}"
+        }
+        return gone
     }
 
 }
