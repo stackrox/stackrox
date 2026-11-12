@@ -12,15 +12,22 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/ci/select/internal/ruleengine"
-	"github.com/stackrox/rox/ci/select/internal/ruleengine/alwaysrun"
+	"github.com/stackrox/rox/ci/select/internal/ruleengine/jobcentric"
+	"github.com/stackrox/rox/ci/select/internal/validation"
 )
+
+// errLintReported marks a failure the validate command already printed as a
+// lint report; main exits nonzero without printing it a second time.
+var errLintReported = errors.New("lint findings were reported")
 
 //nolint:forbidigo // The entry point supplies standard streams to the injectable command runner.
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr, alwaysrun.New()); err != nil {
-		fmt.Fprintln(os.Stderr, "ci-select:", err)
+	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr, jobcentric.New()); err != nil {
+		if !errors.Is(err, errLintReported) {
+			fmt.Fprintln(os.Stderr, "ci-select:", err)
+		}
 		os.Exit(1)
 	}
 }
@@ -34,10 +41,10 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer, eng r
 		SilenceErrors:     true,
 		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return errors.New("a subcommand is required (plan)")
+			return errors.New("a subcommand is required (plan or validate)")
 		},
 	}
-	root.AddCommand(newPlanCommand(eng))
+	root.AddCommand(newPlanCommand(eng), newValidateCommand())
 	// A nil argument list would make Cobra read the process arguments.
 	if args == nil {
 		args = []string{}
@@ -82,6 +89,32 @@ func newPlanCommand(eng ruleengine.Engine) *cobra.Command {
 	command.Flags().StringVar(&rulesPath, "rules", "ci/test-selection-rules.yaml", "YAML rules file")
 	command.Flags().StringVar(&filesPath, "files-file", "", "Changed paths, one per line (e.g. from detect-changes)")
 	return command
+}
+
+func newValidateCommand() *cobra.Command {
+	var rulesPath string
+	command := &cobra.Command{
+		Use:   "validate",
+		Short: "Lint the rules file for structural problems",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if _, err := validation.ValidateFile(rulesPath); err != nil {
+				return writeLint(cmd.ErrOrStderr(), err)
+			}
+			_, err := fmt.Fprintln(cmd.OutOrStdout(), "Validation passed")
+			return errors.Wrap(err, "print validation")
+		},
+	}
+	command.Flags().StringVar(&rulesPath, "rules", "ci/test-selection-rules.yaml", "YAML rules file")
+	return command
+}
+
+// writeLint prints the finding lines and returns errLintReported.
+func writeLint(w io.Writer, err error) error {
+	for line := range strings.SplitSeq(err.Error(), "\n") {
+		fmt.Fprintln(w, line)
+	}
+	return errLintReported
 }
 
 // readChangedPaths loads the changed-paths list. An empty path means no
