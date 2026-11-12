@@ -59,6 +59,7 @@ func (s *HandlerTestSuite) SetupTest() {
 		[]pubsub.LaneConfig{
 			lane.NewBlockingLane(pubsub.ComplianceCentralRequestLane),
 			lane.NewBlockingLane(pubsub.ComplianceCentralResultLane),
+			lane.NewBlockingLane(pubsub.NodeRoleChangeLane),
 		},
 	))
 	s.Require().NoError(err)
@@ -66,7 +67,7 @@ func (s *HandlerTestSuite) SetupTest() {
 	readySignal := concurrency.NewSignal()
 	readySignal.Signal()
 
-	manager := NewManager(s.client, s.statusInfo, &readySignal, s.dispatcher)
+	manager := NewManager(s.client, s.statusInfo, nil, &readySignal, s.dispatcher)
 	manager.writer.retrier.apiCallTimeout = 500 * time.Millisecond
 	manager.writer.retrier.maxRetries = 2
 

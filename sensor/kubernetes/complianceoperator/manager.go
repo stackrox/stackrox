@@ -2,15 +2,18 @@ package complianceoperator
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/store"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/ptr"
 )
@@ -21,36 +24,62 @@ import (
 type Manager struct {
 	complianceIsReady      *concurrency.Signal
 	complianceOperatorInfo StatusInfo
+	mcpStore               *store.MachineConfigPoolStore
 	stopper                concurrency.Stopper
 	dispatcher             common.PubSubDispatcher
 	inner                  chan pubsub.Event
+	mcpNotify              chan struct{}
+	mcpDebounceInterval    time.Duration
 	writer                 *scanSettingWriter
 }
 
 // NewManager creates a new Manager.
-func NewManager(client dynamic.Interface, complianceOperatorInfo StatusInfo, complianceIsReady *concurrency.Signal, dispatcher common.PubSubDispatcher) *Manager {
+func NewManager(client dynamic.Interface, complianceOperatorInfo StatusInfo, mcpStore *store.MachineConfigPoolStore, complianceIsReady *concurrency.Signal, dispatcher common.PubSubDispatcher) *Manager {
 	r := &retrier{
 		maxRetries:     defaultMaxRetries,
 		apiCallTimeout: defaultAPICallTimeout,
 		retryTimeout:   defaultRetryTimeout,
 	}
-	return &Manager{
+	m := &Manager{
 		complianceIsReady:      complianceIsReady,
 		complianceOperatorInfo: complianceOperatorInfo,
+		mcpStore:               mcpStore,
 		stopper:                concurrency.NewStopper(),
 		dispatcher:             dispatcher,
 		inner:                  make(chan pubsub.Event),
+		mcpNotify:              make(chan struct{}, 1),
+		mcpDebounceInterval:    defaultMCPDebounceInterval,
 		writer:                 &scanSettingWriter{client: client, retrier: r},
 	}
+	m.writer.roleProvider = m.getRoles
+	return m
 }
 
-// Start registers the pubsub consumer and launches the run loop.
+func (m *Manager) getRoles() []string {
+	if features.ComplianceCustomNodeRoles.Enabled() && m.mcpStore != nil {
+		roles := m.mcpStore.GetRoles()
+		if len(roles) > 0 {
+			return roles
+		}
+	}
+	return []string{masterRole, workerRole}
+}
+
+// Start registers the pubsub consumers and launches the run loop.
 func (m *Manager) Start() error {
 	if err := m.dispatcher.RegisterConsumerToLane(
 		pubsub.ComplianceManagerConsumer,
 		pubsub.ComplianceCentralRequestTopic,
 		pubsub.ComplianceCentralRequestLane,
 		m.onCentralRequest,
+	); err != nil {
+		return err
+	}
+	if err := m.dispatcher.RegisterConsumerToLane(
+		pubsub.ComplianceManagerConsumer,
+		pubsub.NodeRoleChangeTopic,
+		pubsub.NodeRoleChangeLane,
+		m.onMCPEvent,
 	); err != nil {
 		return err
 	}
@@ -77,6 +106,14 @@ func (m *Manager) onCentralRequest(ev pubsub.Event) error {
 	}
 }
 
+func (m *Manager) onMCPEvent(_ pubsub.Event) error {
+	select {
+	case m.mcpNotify <- struct{}{}:
+	default:
+	}
+	return nil
+}
+
 func (m *Manager) run() {
 	defer m.stopper.Flow().ReportStopped()
 
@@ -90,11 +127,26 @@ func (m *Manager) run() {
 		m.waitAndProcessSync()
 	}
 
+	var mcpTimer *time.Timer
+	var mcpTimerC <-chan time.Time
+
 	for {
 		select {
 		case ev := <-m.inner:
 			m.process(ev)
+		case <-m.mcpNotify:
+			if mcpTimer != nil {
+				mcpTimer.Stop()
+			}
+			mcpTimer = time.NewTimer(m.mcpDebounceInterval)
+			mcpTimerC = mcpTimer.C
+		case <-mcpTimerC:
+			mcpTimerC = nil
+			m.reconcileMCPRoles()
 		case <-m.stopper.Flow().StopRequested():
+			if mcpTimer != nil {
+				mcpTimer.Stop()
+			}
 			return
 		}
 	}
@@ -185,6 +237,28 @@ func (m *Manager) processDeleteScanConfig(request *central.DeleteComplianceScanC
 	}
 	err := m.writer.deleteScanConfig(m.ctx(), ns, request.GetName())
 	m.publishResult(request.GetId(), events.DeleteScanConfigResponse, err)
+}
+
+func (m *Manager) reconcileMCPRoles() {
+	if !features.ComplianceCustomNodeRoles.Enabled() {
+		return
+	}
+	if m.mcpStore == nil {
+		return
+	}
+	ns := m.complianceOperatorInfo.GetNamespace()
+	if ns == "" {
+		log.Error("compliance operator namespace not known, skipping MCP role reconciliation")
+		return
+	}
+	roles := m.mcpStore.GetRoles()
+	if len(roles) == 0 {
+		log.Debug("no MCP roles found, skipping reconciliation")
+		return
+	}
+	if err := m.writer.updateAllScanSettingRoles(m.ctx(), ns, roles); err != nil {
+		log.Errorf("failed to reconcile MCP roles: %v", err)
+	}
 }
 
 func (m *Manager) publishResult(requestID string, responseType events.ResponseType, err error) {

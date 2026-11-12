@@ -43,8 +43,9 @@ func (s *ScanSettingWriterTestSuite) SetupTest() {
 		retryTimeout:   500 * time.Millisecond,
 	}
 	s.writer = &scanSettingWriter{
-		client:  s.client,
-		retrier: r,
+		client:       s.client,
+		retrier:      r,
+		roleProvider: func() []string { return []string{masterRole, workerRole} },
 	}
 }
 
