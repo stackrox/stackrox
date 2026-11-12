@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	masterRole            = "master"
-	workerRole            = "worker"
-	rescanAnnotation      = v1alpha1.ComplianceScanRescanAnnotation
-	defaultMaxRetries     = 5
-	defaultAPICallTimeout = 5 * time.Second
-	defaultRetryTimeout   = 30 * time.Second
+	masterRole                 = "master"
+	workerRole                 = "worker"
+	rescanAnnotation           = v1alpha1.ComplianceScanRescanAnnotation
+	defaultMaxRetries          = 5
+	defaultAPICallTimeout      = 5 * time.Second
+	defaultRetryTimeout        = 30 * time.Second
+	defaultMCPDebounceInterval = 5 * time.Second
 )
 
 type scanScheduleConfiguration struct {

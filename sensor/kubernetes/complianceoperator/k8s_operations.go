@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
@@ -22,17 +23,19 @@ import (
 )
 
 type scanSettingWriter struct {
-	client  dynamic.Interface
-	retrier *retrier
+	client       dynamic.Interface
+	retrier      *retrier
+	roleProvider func() []string
 }
 
 func (w *scanSettingWriter) createScanResources(ctx context.Context, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) error {
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
+	roles := w.roleProvider()
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron, roles))
 	if err != nil {
 		return err
 	}
 
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request, ""))
+	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request, "", nil))
 	if err != nil {
 		return err
 	}
@@ -82,19 +85,20 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 		return errors.New("scan setting binding exists without a corresponding scan setting")
 	}
 
-	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request)
+	roles := w.roleProvider()
+	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request, roles)
 	if err != nil {
 		return err
 	}
 
 	var updatedScanSettingBinding *unstructured.Unstructured
 	if ssbObj != nil {
-		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request)
+		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request, nil)
 		if err != nil {
 			return err
 		}
 	} else {
-		updatedScanSettingBinding, err = runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings(), ""))
+		updatedScanSettingBinding, err = runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings(), "", nil))
 		if err != nil {
 			return err
 		}
@@ -113,7 +117,7 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
-			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
+			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request, roles)
 			return err
 		})
 	if err != nil {
@@ -134,7 +138,7 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 				if err != nil {
 					return errors.Wrapf(err, "unable to get namespaces/%s/scansettingbindings/%s", ns, request.GetScanSettings().GetScanName())
 				}
-				updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request)
+				updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request, nil)
 				return err
 			})
 	}
@@ -381,7 +385,8 @@ func (w *scanSettingWriter) reconcileCreateOrUpdateResource(
 	if resource, isInCluster := inClusterResources[namespaceNameIndex]; isInCluster {
 		log.Debugf("Update %s %s", api.Kind, req.GetScanSettings().GetScanName())
 		delete(inClusterResources, namespaceNameIndex)
-		updatedResource, err := updateFn(&resource, req)
+		roles := w.roleProvider()
+		updatedResource, err := updateFn(&resource, req, roles)
 		if err != nil {
 			return err
 		}
@@ -398,13 +403,14 @@ func (w *scanSettingWriter) reconcileCreateOrUpdateResource(
 				if err != nil {
 					return errors.Wrapf(err, "unable to get namespaces/%s/scans/%s", namespace, resource.GetName())
 				}
-				updatedResource, err = updateFn(currentResource, req)
+				updatedResource, err = updateFn(currentResource, req, roles)
 				return err
 			})
 	}
 
 	log.Debugf("Create %s %s", api.Kind, req.GetScanSettings().GetScanName())
-	resource, err := runtimeObjToUnstructured(convertFn(namespace, req.GetScanSettings(), req.GetCron()))
+	roles := w.roleProvider()
+	resource, err := runtimeObjToUnstructured(convertFn(namespace, req.GetScanSettings(), req.GetCron(), roles))
 	if err != nil {
 		return err
 	}
@@ -430,6 +436,57 @@ func (w *scanSettingWriter) reconcileDeleteResource(ctx context.Context, inCentr
 		}
 	}
 	return errList.ToError()
+}
+
+func (w *scanSettingWriter) updateAllScanSettingRoles(ctx context.Context, ns string, roles []string) error {
+	scanSettings, err := w.getResourcesInCluster(ctx, complianceoperator.ScanSetting)
+	if err != nil {
+		return err
+	}
+	var errList errorhelpers.ErrorList
+	for _, ss := range scanSettings {
+		if err := w.updateScanSettingRoles(ctx, ns, &ss, roles); err != nil {
+			errList.AddError(errors.Wrapf(err, "updating roles for scan setting %s", ss.GetName()))
+		}
+	}
+	return errList.ToError()
+}
+
+func (w *scanSettingWriter) updateScanSettingRoles(ctx context.Context, ns string, obj *unstructured.Unstructured, roles []string) error {
+	var scanSetting v1alpha1.ScanSetting
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
+		return errors.Wrap(err, "converting unstructured to scan setting")
+	}
+
+	if slices.Equal(slices.Sorted(slices.Values(scanSetting.Roles)), slices.Sorted(slices.Values(roles))) {
+		return nil
+	}
+
+	scanSetting.Roles = roles
+	updated, err := runtimeObjToUnstructured(&scanSetting)
+	if err != nil {
+		return err
+	}
+
+	resI := w.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
+	return w.retrier.callWithRetryWithOnConflictCallback(ctx,
+		func(callCtx context.Context) error {
+			_, err := resI.Update(callCtx, updated, v1.UpdateOptions{})
+			return errors.Wrapf(err, "updating scan setting %s roles", obj.GetName())
+		},
+		func(callCtx context.Context) error {
+			current, err := resI.Get(callCtx, obj.GetName(), v1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			var currentSS v1alpha1.ScanSetting
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(current.Object, &currentSS); err != nil {
+				return err
+			}
+			currentSS.Roles = roles
+			updated, err = runtimeObjToUnstructured(&currentSS)
+			return err
+		})
 }
 
 func generateScanIndex(namespace string, scanName string) string {

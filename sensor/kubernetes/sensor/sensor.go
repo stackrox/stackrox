@@ -243,7 +243,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	coReadySignal := concurrency.NewSignal()
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
-	coManager := complianceoperator.NewManager(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal, internalMessageDispatcher)
+	coManager := complianceoperator.NewManager(cfg.k8sClient.Dynamic(), coInfoUpdater, storeProvider.MachineConfigPool(), &coReadySignal, internalMessageDispatcher)
 	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(coManager, internalMessageDispatcher))
 
 	sensorNamespace := pods.GetPodNamespace()
