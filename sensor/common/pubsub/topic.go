@@ -21,6 +21,7 @@ const (
 	FakeFileActivityTopic
 	NodeRoleChangeTopic
 	ComplianceCentralRequestTopic
+	ComplianceCentralResultTopic
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 		FakeFileActivityTopic:           "FakeFileActivity",
 		NodeRoleChangeTopic:             "NodeRoleChange",
 		ComplianceCentralRequestTopic:   "ComplianceScanConfig",
+		ComplianceCentralResultTopic:    "ComplianceCentralResult",
 	}
 )
 
