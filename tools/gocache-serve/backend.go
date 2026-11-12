@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -181,11 +182,40 @@ func detectRegion() string {
 	return strings.TrimSpace(string(body))
 }
 
-// storageAccountForRegion selects the nearest storage account for a runner region.
-// Three replicas, westus3 as the replication hub (west<->east bidirectional,
-// west->central one-way). Coverage of observed runner distribution (1900+
-// samples): eastus 33%, centralus 27%, westus2+westus+northwestus ~34%.
+// probeAccounts measures RTT to each storage account endpoint and returns
+// the fastest. Replaces region-name mapping: GitHub's runner pool keeps
+// growing new regions (e.g. chilecentral) that no static map covers, and a
+// wrong guess costs minutes of cross-region prefetch (measured: 3m54s
+// chilecentral→westus3 vs 72s same-region). Any HTTP response (even 400)
+// proves reachability and yields an RTT sample.
+func probeAccounts(accounts []string) (string, time.Duration) {
+	client := &http.Client{Timeout: 3 * time.Second}
+	best, bestRTT := "", time.Duration(math.MaxInt64)
+	for _, acct := range accounts {
+		start := time.Now()
+		resp, err := client.Head(fmt.Sprintf("https://%s.blob.core.windows.net/", acct))
+		if err != nil {
+			continue // unreachable within timeout
+		}
+		resp.Body.Close()
+		rtt := time.Since(start)
+		if rtt < bestRTT {
+			best, bestRTT = acct, rtt
+		}
+	}
+	return best, bestRTT
+}
+
+// storageAccountForRegion selects the storage account for a runner.
+// Primary path: RTT probe of all replicas — ground truth regardless of
+// runner region (new GitHub pools like chilecentral break static maps;
+// a wrong guess cost 3m54s vs 72s same-region on a measured run).
+// The region map below survives only as fallback when probing fails.
 func storageAccountForRegion(region string) string {
+	if acct, rtt := probeAccounts([]string{"cigocache", "cigocacheeast", "cigochachecentral"}); acct != "" {
+		log.Printf("gocache-serve: account probe: %s (%dms)", acct, rtt.Milliseconds())
+		return acct
+	}
 	switch region {
 	case "eastus", "eastus2", "northcentralus", "CanadaEast",
 		"westeurope", "northeurope", "uk south", "francecentral":
