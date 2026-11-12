@@ -461,6 +461,66 @@ EOT
     _end
 }
 
+@test "Scanner V4 DB reinitializes on version downgrade (ROX-36223)" {
+    local namespace="$CUSTOM_CENTRAL_NAMESPACE"
+
+    ######################
+    _begin "deploying-head-central"
+    info "Deploying central-services using HEAD chart"
+    # Deploy directly so the operator does not reconcile away the version override.
+    # shellcheck disable=SC2030,SC2031
+    export DEPLOY_STACKROX_VIA_OPERATOR="false"
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT="helm"
+    _deploy_central "$namespace"
+    wait_for_api "$namespace"
+
+    ######################
+    _begin "verifying-scanner-v4-db-deployed"
+    verify_scannerV4_deployed "$namespace"
+
+    ######################
+    _begin "verifying-version-file-created"
+    info "Checking that the init-db container created the version file"
+    run "${ORCH_CMD}" </dev/null -n "$namespace" exec deploy/scanner-v4-db -c db -- \
+        cat /var/lib/postgresql/data/pgdata/.scanner-db-version
+    assert_success
+    local original_version="$output"
+    echo "Version file content: '${original_version}'"
+    [[ "$original_version" =~ ^[0-9]+\.[0-9]+$ ]]
+
+    ######################
+    _begin "simulating-version-downgrade"
+    local fake_downgrade_version="3.0.0"
+    info "Patching scanner-v4-db init container: BUILD_TAG=${fake_downgrade_version}"
+    "${ORCH_CMD}" </dev/null -n "$namespace" patch deploy/scanner-v4-db --type=strategic \
+        -p "{\"spec\":{\"template\":{\"spec\":{\"initContainers\":[{\"name\":\"init-db\",\"env\":[{\"name\":\"BUILD_TAG\",\"value\":\"${fake_downgrade_version}\"}]}]}}}}"
+
+    ######################
+    _begin "waiting-for-rollout"
+    info "Waiting for scanner-v4-db rollout after version change"
+    "${ORCH_CMD}" </dev/null -n "$namespace" rollout status deploy/scanner-v4-db --timeout=600s
+    wait_for_ready_pods "$namespace" "scanner-v4-db" 600
+
+    ######################
+    _begin "verifying-downgrade-detected"
+    info "Checking init-db container logs for downgrade detection message"
+    run "${ORCH_CMD}" </dev/null -n "$namespace" logs deploy/scanner-v4-db -c init-db
+    assert_success
+    assert_output --partial "downgrade detected"
+    echo "Downgrade was correctly detected by the init container."
+
+    ######################
+    _begin "verifying-version-file-updated"
+    info "Checking that version file reflects the downgraded version"
+    run "${ORCH_CMD}" </dev/null -n "$namespace" exec deploy/scanner-v4-db -c db -- \
+        cat /var/lib/postgresql/data/pgdata/.scanner-db-version
+    assert_success
+    assert_equal "$output" "3.0"
+
+    _end
+}
+
 verify_deployment_deletion() {
     local deployment_names_file="$1"; shift
     local namespace="$1"; shift
