@@ -42,6 +42,10 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Name, "name", "", "Name of the permission set.")
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Description, "description", "",
 		"Description of the permission set.")
+	cmd.Flags().BoolVar(&permSetCmd.permissionSet.ReadAccessOnly, "read-access-only", false,
+		"Allow only read access to resources in the permission set.")
+	cmd.Flags().BoolVar(&permSetCmd.permissionSet.ScopedOnly, "scoped-only", false,
+		"Allow access only to scoped resources in the permission set.")
 	cmd.Flags().StringToStringVar(&permSetCmd.resourceWithAccess, "resource-with-access", map[string]string{},
 		`List of resources with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Administration=READ_WRITE_ACCESS
 Note: Capitalization matters!`)

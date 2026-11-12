@@ -1480,7 +1480,9 @@ declarative-config:
       LOCAL_FLAGS:
         - description
         - name
+        - read-access-only
         - resource-with-access
+        - scoped-only
       INHERITED_FLAGS:
         - ca
         - config-map

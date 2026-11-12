@@ -115,6 +115,50 @@ resources:
       access: READ_WRITE_ACCESS
 `,
 		},
+		"read access only": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--read-access-only",
+			},
+			expectedYAML: `name: some-name
+resources:
+    - resource: Cluster
+      access: READ_ACCESS
+readAccessOnly: true
+`,
+		},
+		"scoped only": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_WRITE_ACCESS",
+				"--scoped-only",
+			},
+			expectedYAML: `name: some-name
+resources:
+    - resource: Cluster
+      access: READ_WRITE_ACCESS
+scopedOnly: true
+`,
+		},
+		"both constraints": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--read-access-only",
+				"--scoped-only",
+			},
+			expectedYAML: `name: some-name
+resources:
+    - resource: Cluster
+      access: READ_ACCESS
+readAccessOnly: true
+scopedOnly: true
+`,
+		},
 	}
 
 	for name, c := range cases {
