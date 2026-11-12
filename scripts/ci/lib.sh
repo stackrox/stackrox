@@ -1156,7 +1156,8 @@ check_rhacs_eng_image_exists() {
             info "Warning: It is only supported for the following public image repositories: ${public_images[*]}"
         fi
     fi
-    check=$(curl --location -sS "${extra_args[@]}" "$url")
+    # Expand empty array safely: Bash < 4.4 treats "${arr[@]}" as unbound under set -u.
+    check=$(curl --location -sS ${extra_args[@]+"${extra_args[@]}"} "$url")
     echo "$check"
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
 }
