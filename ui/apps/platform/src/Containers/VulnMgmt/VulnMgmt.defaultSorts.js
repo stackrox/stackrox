@@ -16,7 +16,6 @@ const vulnMgmtDefaultSorts = {
     [entityTypes.CVE]: defaultCveSort,
     [entityTypes.IMAGE_CVE]: defaultCveSort,
     [entityTypes.NODE_CVE]: defaultCveSort,
-    [entityTypes.CLUSTER_CVE]: defaultCveSort,
     [entityTypes.DEPLOYMENT]: defaultDeploymentSort,
     [entityTypes.IMAGE]: defaultImageSort,
     [entityTypes.NAMESPACE]: defaultNamespaceSort,

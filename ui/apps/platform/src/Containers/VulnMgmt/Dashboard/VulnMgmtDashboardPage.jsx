@@ -1,15 +1,12 @@
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 
-import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
-import usePermissions from 'hooks/usePermissions';
 import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
 import DashboardLayout from 'Components/DashboardLayout';
 import PageTitle from 'Components/PageTitle';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
-import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
 import ImagesCountTile from '../Components/ImagesCountTile';
@@ -18,7 +15,6 @@ import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVuln
 import TopRiskiestEntities from '../widgets/TopRiskiestEntities';
 import RecentlyDetectedImageVulnerabilities from '../widgets/RecentlyDetectedImageVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
-import ClustersWithMostClusterVulnerabilities from '../widgets/ClustersWithMostClusterVulnerabilities';
 import CvesMenu from './CvesMenu';
 
 const entityMenuTypes = [
@@ -31,9 +27,6 @@ const entityMenuTypes = [
 
 const VulnMgmtDashboardPage = () => {
     const navigate = useNavigate();
-    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
-    const { hasReadAccess } = usePermissions();
-    const hasReadAccessForIntegration = hasReadAccess('Integration');
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
 
@@ -98,7 +91,6 @@ const VulnMgmtDashboardPage = () => {
     return (
         <>
             <DashboardLayout
-                banner={hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
                 headerText="Vulnerability Management"
                 headerComponents={headerComponents}
             >
@@ -120,11 +112,6 @@ const VulnMgmtDashboardPage = () => {
                 <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
                     <MostCommonVulnerabilities search={searchState} />
                 </div>
-                {isLegacyScannerEnabled && (
-                    <div className="s-2 xxxl:sx-2">
-                        <ClustersWithMostClusterVulnerabilities />
-                    </div>
-                )}
             </DashboardLayout>
         </>
     );

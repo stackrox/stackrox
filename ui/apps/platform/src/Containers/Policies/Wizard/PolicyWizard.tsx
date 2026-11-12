@@ -20,8 +20,6 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import type { ExtendedPageAction } from 'utils/queryStringUtils';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-
 import {
     POLICY_BEHAVIOR_ACTIONS_ID,
     POLICY_BEHAVIOR_FILTERS_ID,
@@ -52,7 +50,6 @@ type PolicyWizardProps = {
 
 function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const navigate = useNavigate();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [stepId, setStepId] = useState<number | string>(POLICY_DEFINITION_DETAILS_ID);
     const [isValidOnServer, setIsValidOnServer] = useState(false);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
@@ -236,19 +233,14 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 >
                                     <PolicyScopeForm />
                                 </WizardStep>,
-                                ...(isFeatureFlagEnabled('ROX_EVALUATION_FILTER') &&
-                                isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT')
-                                    ? [
-                                          <WizardStep
-                                              name="Filters"
-                                              id={POLICY_BEHAVIOR_FILTERS_ID}
-                                              key={POLICY_BEHAVIOR_FILTERS_ID}
-                                              body={{ hasNoPadding: true }}
-                                          >
-                                              <PolicyFiltersForm />
-                                          </WizardStep>,
-                                      ]
-                                    : []),
+                                <WizardStep
+                                    name="Filters"
+                                    id={POLICY_BEHAVIOR_FILTERS_ID}
+                                    key={POLICY_BEHAVIOR_FILTERS_ID}
+                                    body={{ hasNoPadding: true }}
+                                >
+                                    <PolicyFiltersForm />
+                                </WizardStep>,
                                 <WizardStep
                                     name="Actions"
                                     id={POLICY_BEHAVIOR_ACTIONS_ID}

@@ -164,8 +164,6 @@ function AuthProviderForm({
                         client_id: yup.string().required('A client ID is required.'),
                     }),
             })
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
             .when('type', {
                 is: (type) => type === 'oidc',
                 then: (configSchema) =>

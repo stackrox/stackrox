@@ -103,6 +103,9 @@
   use `/retest-times <number of retests> <job-to-retest>` in addition to the `auto-retest` label.
   Note that these options only work if GitHub checks are passing. To debug please look at
   [Auto `/retest` action](https://github.com/stackrox/stackrox/actions/workflows/retest_periodic.yml)
+- Use the `auto-rebase` label if you want CI to automatically rebase your PR branch onto its
+  base branch whenever it falls behind.
+  To debug please look at [Auto rebase action](https://github.com/stackrox/stackrox/actions/workflows/auto-rebase.yml)
 
 ## Merging a PR
 

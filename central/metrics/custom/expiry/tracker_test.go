@@ -41,7 +41,8 @@ func Test_track(t *testing.T) {
 	var s mockService
 
 	components := make([]string, 0, len(v1.GetCertExpiry_Component_name))
-	for f := range track(context.Background(), &s) {
+	for f, err := range track(context.Background(), &s) {
+		assert.NoError(t, err)
 		components = append(components, f.component)
 	}
 	assert.ElementsMatch(t, []string{"SCANNER", "CENTRAL_DB", "CENTRAL"}, components,

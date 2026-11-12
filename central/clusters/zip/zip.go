@@ -28,10 +28,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-const (
-	createUpgraderSADefault = false
-)
-
 // Handler returns a handler for the cluster zip method.
 func Handler(c datastore.DataStore, s siDataStore.DataStore) http.Handler {
 	return zipHandler{
@@ -116,17 +112,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ignore the param unless the feature flag is enabled.
-	var createUpgraderSA bool
-	if params.CreateUpgraderSA == nil {
-		createUpgraderSA = createUpgraderSADefault
-	} else {
-		createUpgraderSA = *params.CreateUpgraderSA
-	}
-
 	renderOpts := clusters.RenderOptions{
-		CreateUpgraderSA: createUpgraderSA,
-
 		DisablePodSecurityPolicies: params.DisablePodSecurityPolicies,
 	}
 

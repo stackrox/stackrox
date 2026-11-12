@@ -137,17 +137,14 @@ var (
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL", enabled)
 
-	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
-	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT", enabled)
-
 	// BackgroundMigration enables long-running background migrations in Central
 	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION", enabled)
 
-	// EvaluationFilter enables evaluation filtering in policy evaluation.
-	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
+	// ImageLayerFilter enables the image-layer evaluation filter (base vs application layers).
+	ImageLayerFilter = registerFeature("Enable image layer filtering in policy evaluation", "ROX_IMAGE_LAYER_FILTER")
 
 	// PolicyWorkloadKindExclusion enables excluding all workloads of selected Kubernetes kinds (Job, CronJob) from a policy.
-	PolicyWorkloadKindExclusion = registerFeature("Enable excluding all workloads of a given kind from a policy", "ROX_POLICY_WORKLOAD_KIND_EXCLUSION")
+	PolicyWorkloadKindExclusion = registerFeature("Enable excluding all workloads of a given kind from a policy", "ROX_POLICY_WORKLOAD_KIND_EXCLUSION", enabled)
 
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")

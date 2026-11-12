@@ -10,13 +10,13 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import type { ClusterRegistrationSecret, InitBundleAttribute } from 'services/ClustersService';
+import type { ClusterRegistrationSecret, UserAttribute } from 'services/ClustersService';
 
 export type ClusterRegistrationSecretDescriptionProps = {
     clusterRegistrationSecret: ClusterRegistrationSecret;
 };
 
-function groupAttributesByKey(attributes: InitBundleAttribute[]): Map<string, string[]> {
+function groupAttributesByKey(attributes: UserAttribute[]): Map<string, string[]> {
     const grouped = new Map<string, string[]>();
     attributes.forEach(({ key, value }) => {
         const existing = grouped.get(key) ?? [];

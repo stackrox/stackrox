@@ -37,14 +37,7 @@ func Singleton() *Runner {
 	return instance
 }
 
-const (
-	// bgMigrationAdvisoryLockID is a unique identifier for the background migration advisory lock.
-	// This value is arbitrary but must be consistent across all Central instances and must
-	// differ from the migrator advisory lock ID.
-	bgMigrationAdvisoryLockID int64 = 2_846_193_750_482_637_519
-
-	retryInterval = 60 * time.Second
-)
+const retryInterval = 60 * time.Second
 
 // Runner executes background migrations after Central is ready.
 type Runner struct {
@@ -140,7 +133,7 @@ func (r *Runner) runOnce(ctx context.Context) error {
 // acquireLock attempts to acquire the advisory lock once.
 // Returns (release, nil) on success, or an error if the lock could not be acquired.
 func (r *Runner) acquireLock(ctx context.Context) (func(), error) {
-	acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, r.db, bgMigrationAdvisoryLockID)
+	acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, r.db, dblock.BackgroundMigrationLockID)
 	if err != nil {
 		return nil, errors.Wrap(err, "acquiring advisory lock")
 	}

@@ -44,7 +44,7 @@ _Note: Similar instructions apply when using
    Note that Docker for Mac is no longer the most recommended k8s environment for development.
    Some recommended alternatives are `podman-desktop` or `colima`.
 
-1. **Deploy** - Run `npm run deploy-local` (wraps `../deploy/k8s/deploy-local.sh`)
+1. **Deploy** - Run `npm run deploy-local` (wraps `../deploy/deploy-local.sh`)
    to deploy the StackRox k8s app. Make sure that your git working directory is
    clean and that the branch that you're on has a corresponding tag from CI (see
    Roxbot comment for a PR branch). Alternatively, you can specify the image tag
@@ -62,12 +62,14 @@ repo, and repeat the steps above._
 
 #### Using a Remote StackRox Deployment
 
-To point your local dev server at a remote Central, set `UI_START_TARGET` to
+To point your local dev server at a remote Central, set `UI_START_TARGET` or `ROX_BASE_URL` to
 the remote endpoint and start the dev server:
 
 ```sh
 UI_START_TARGET=https://<central-ip>:443 npm run start
 ```
+
+Note that `roxie` sets `$ROX_BASE_URL` in the environment automatically.
 
 Prefer using a publicly accessible IP or load balancer for the remote Central.
 `kubectl port-forward` can be used as a last resort if no accessible IP is

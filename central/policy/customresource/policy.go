@@ -132,6 +132,7 @@ func convertPolicySection(p *storage.PolicySection) *PolicySection {
 // EvaluationFilter represents storage.EvaluationFilter in the Custom Resource.
 type EvaluationFilter struct {
 	SkipContainerTypes []string `yaml:"skipContainerTypes,omitempty"`
+	SkipImageLayers    string   `yaml:"skipImageLayers,omitempty"`
 }
 
 // convertEvaluationFilter Converts storage.EvaluationFilter to *EvaluationFilter
@@ -140,8 +141,14 @@ func convertEvaluationFilter(p *storage.EvaluationFilter) *EvaluationFilter {
 		return nil
 	}
 
+	var skipImageLayers string
+	if p.GetSkipImageLayers() != 0 {
+		skipImageLayers = p.GetSkipImageLayers().String()
+	}
+
 	return &EvaluationFilter{
 		SkipContainerTypes: sliceutils.StringSlice(p.GetSkipContainerTypes()...),
+		SkipImageLayers:    skipImageLayers,
 	}
 }
 

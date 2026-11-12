@@ -625,6 +625,14 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden,
 		imageEnrichmentRequired)
 
+	f.registerFieldMetadata(fieldnames.EPSS, querybuilders.ForEPSS(),
+		violationmessages.VulnContextFields,
+		validateEPSSPercent,
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden,
+		imageEnrichmentRequired)
+
 	f.registerFieldMetadataRegex(fieldnames.ExposedNodePort,
 		querybuilders.ForFieldLabel(search.ExposedNodePort),
 		nil,

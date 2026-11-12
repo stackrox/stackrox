@@ -132,11 +132,11 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 	// Delete process baseline results if this is the last process baseline with the given deploymentID
 	deploymentID := key.GetDeploymentId()
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
-	results, err := ds.Search(ctx, q)
+	remaining, err := ds.storage.Count(ctx, q)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for deployment %s during process baseline deletion", deploymentID)
 	}
-	if len(results) == 0 {
+	if remaining == 0 {
 		return ds.removeProcessBaselineResults(ctx, deploymentID)
 	}
 	return nil

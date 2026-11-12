@@ -462,6 +462,44 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			},
 			expectedAssessmentTime: "N/A",
 		},
+		"scan name with role suffix resolves node role": {
+			check: getCheckResultWithScanName(storage.ComplianceOperatorCheckResultV2_PASS, "ocp4-cis-infra"),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return profiles, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
+			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
+		},
+		"scan name without role suffix renders node role as N/A": {
+			check: getCheckResultWithScanName(storage.ComplianceOperatorCheckResultV2_PASS, "ocp4-cis"),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return profiles, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
+			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
+		},
 		"profile matching benchmark regex resolves controls": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
@@ -668,6 +706,62 @@ func getCheckResult(status storage.ComplianceOperatorCheckResultV2_CheckStatus) 
 	}
 }
 
+func TestGetNodeRole(t *testing.T) {
+	cases := map[string]struct {
+		scanName    string
+		profileName string
+		expected    string
+	}{
+		"role suffix is extracted": {
+			scanName:    "ocp4-cis-node-infra",
+			profileName: "ocp4-cis-node",
+			expected:    "infra",
+		},
+		"role suffix with hyphens is extracted in full": {
+			scanName:    "ocp4-cis-node-control-plane",
+			profileName: "ocp4-cis-node",
+			expected:    "control-plane",
+		},
+		"master role suffix is extracted": {
+			scanName:    "ocp4-cis-node-master",
+			profileName: "ocp4-cis-node",
+			expected:    "master",
+		},
+		"no suffix means no specific role (platform scan or Compliance Operator's @all selector)": {
+			scanName:    "ocp4-cis-node",
+			profileName: "ocp4-cis-node",
+			expected:    NODE_ROLE_NOT_APPLICABLE,
+		},
+		"scan name unrelated to profile name yields not applicable": {
+			scanName:    "some-other-scan",
+			profileName: "ocp4-cis-node",
+			expected:    NODE_ROLE_NOT_APPLICABLE,
+		},
+		"empty scan name yields not applicable": {
+			scanName:    "",
+			profileName: "ocp4-cis-node",
+			expected:    NODE_ROLE_NOT_APPLICABLE,
+		},
+		"unknown profile name yields data not available": {
+			scanName:    "ocp4-cis-node-infra",
+			profileName: "",
+			expected:    DATA_NOT_AVAILABLE,
+		},
+	}
+	for tname, tcase := range cases {
+		t.Run(tname, func(t *testing.T) {
+			check := &storage.ComplianceOperatorCheckResultV2{ScanName: tcase.scanName}
+			assert.Equal(t, tcase.expected, getNodeRole(check, tcase.profileName))
+		})
+	}
+}
+
+func getCheckResultWithScanName(status storage.ComplianceOperatorCheckResultV2_CheckStatus, scanName string) *storage.ComplianceOperatorCheckResultV2 {
+	check := getCheckResult(status)
+	check.ScanName = scanName
+	return check
+}
+
 func assertStatus(t *testing.T, expected storage.ComplianceOperatorCheckResultV2_CheckStatus, actual *checkStatus) {
 	switch expected {
 	case storage.ComplianceOperatorCheckResultV2_PASS:
@@ -695,6 +789,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	assert.Equal(t, tcase.expectedAssessmentTime, row.AssessmentTime)
 	if tcase.expectedProfiles != nil {
 		expProfiles, _ := tcase.expectedProfiles()
+		profileName := ""
 		if len(expProfiles) < 1 {
 			assert.Equal(t, DATA_NOT_AVAILABLE, row.Profile)
 			assert.Equal(t, DATA_NOT_AVAILABLE, row.ProfileType)
@@ -702,7 +797,9 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 			require.Len(t, expProfiles, 1)
 			assert.Equal(t, fmt.Sprintf("%s %s", expProfiles[0].GetName(), expProfiles[0].GetProfileVersion()), row.Profile)
 			assert.Equal(t, operatorKindToHumanReadable(expProfiles[0].GetOperatorKind()), row.ProfileType)
+			profileName = expProfiles[0].GetName()
 		}
+		assert.Equal(t, getNodeRole(tcase.check, profileName), row.NodeRole)
 	}
 	if tcase.expectedRemediations != nil {
 		expRemediations, _ := tcase.expectedRemediations()

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -24,8 +24,9 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/premain"
-	"github.com/stackrox/rox/pkg/retry"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -43,19 +44,25 @@ func main() {
 
 	log.Infof("Starting central-worker")
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	poolVal := workerPoolSize.IntegerSetting()
 	if poolVal < 1 || poolVal > math.MaxInt32 {
 		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be between 1 and %d, got %d", math.MaxInt32, poolVal)
 	}
+	var ready atomic.Bool
+	startHealthServer(&ready)
+
 	globaldb.InitializePostgresWithPoolSize(ctx, int32(poolVal))
+	defer globaldb.Close()
 	log.Infof("DB pool initialized with max_conns=%d", poolVal)
 
-	waitForMigrations(ctx)
-
-	startHealthServer()
+	if err := waitForMigrations(ctx, globaldb.GetPostgres(), 10*time.Second); err != nil {
+		log.Infof("Stopping migration wait: %v", err)
+		return
+	}
+	log.Infof("Migrations complete, proceeding with startup")
 
 	go startMetricsServer()
 
@@ -76,61 +83,60 @@ func main() {
 	rl.start(ctx)
 	log.Infof("Report LISTEN/NOTIFY listener started")
 
+	ready.Store(true)
 	log.Infof("central-worker is ready")
 
-	waitForTerminationSignal()
+	<-ctx.Done()
+	ready.Store(false)
 
 	log.Infof("central-worker shutting down")
 
 	scheduler.Stop()
-
-	globaldb.Close()
 }
 
-func waitForMigrations(ctx context.Context) {
-	versionStore := vStore.NewPostgres(globaldb.GetPostgres())
-	err := retry.WithRetry(func() error {
-		acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, globaldb.GetPostgres(), dblock.MigrationLockID)
-		if err != nil {
-			return retry.MakeRetryable(err)
+// waitForMigrations waits for startup migrations, regardless of their duration.
+// Background migrations use a separate lock and do not block Worker startup.
+func waitForMigrations(ctx context.Context, pool postgres.DB, interval time.Duration) error {
+	return wait.PollUntilContextCancel(ctx, interval, true, func(ctx context.Context) (bool, error) {
+		if err := checkMigrations(ctx, pool); err != nil {
+			log.Infof("Migrations not yet complete, waiting: %v", err)
+			return false, nil
 		}
-		if !acquired {
-			return retry.MakeRetryable(errMigratorRunning)
-		}
-		defer release()
+		return true, nil
+	})
+}
 
-		if err := version.Ensure(versionStore); err != nil {
-			return retry.MakeRetryable(err)
-		}
-		return nil
-	}, retry.Tries(30), retry.BetweenAttempts(func(attempt int) {
-		log.Infof("Migrations not yet complete, waiting (attempt %d)...", attempt+1)
-		time.Sleep(10 * time.Second)
-	}))
+func checkMigrations(ctx context.Context, pool postgres.DB) error {
+	acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, pool, dblock.MigrationLockID)
 	if err != nil {
-		log.Fatalf("Timed out waiting for migrations to complete: %v", err)
+		return err
 	}
-	log.Infof("Migrations complete, proceeding with startup")
+	if !acquired {
+		return errors.New("migrator is still running")
+	}
+	defer release()
+	return version.Ensure(vStore.NewPostgres(pool))
 }
 
-var errMigratorRunning = retryableError("migrator is still running")
-
-type retryableError string
-
-func (e retryableError) Error() string { return string(e) }
-
-func startHealthServer() {
+func newHealthHandler(ready *atomic.Bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+		if !ready.Load() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	})
+	return mux
+}
 
+func startHealthServer(ready *atomic.Bool) {
 	srv := &http.Server{
 		Addr:    healthAddr,
-		Handler: mux,
+		Handler: newHealthHandler(ready),
 	}
 
 	errCh := make(chan error, 1)
@@ -156,11 +162,4 @@ func startHealthServer() {
 func startMetricsServer() {
 	pkgMetrics.NewServer(pkgMetrics.CentralWorkerSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralWorkerSubsystem.String())
-}
-
-func waitForTerminationSignal() {
-	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-signalsC
-	log.Infof("Caught %s signal", sig)
 }

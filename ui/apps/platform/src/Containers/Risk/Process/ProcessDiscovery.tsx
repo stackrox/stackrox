@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Flex, FlexItem, Spinner, Title } from '@patternfly/react-core';
 import uniqBy from 'lodash/uniqBy';
 
 import usePermissions from 'hooks/usePermissions';
@@ -9,7 +9,7 @@ import type { ProcessNameAndContainerNameGroup } from 'services/ProcessService';
 import type { ProcessBaseline } from 'types/processBaseline.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import EventTimelineOverview from '../EventTimeline/EventTimelineOverview';
+import EventTimelineOverview from './EventTimelineOverview';
 import SpecificationBaselineList from './SpecificationBaselineList';
 import ProcessDiscoveryCards from './ProcessDiscoveryCards';
 import { getClusterIdAndNamespaceFromGroupedProcesses } from './process.utils';
@@ -86,14 +86,16 @@ function ProcessDiscovery({ deploymentId }: ProcessDiscoveryProps) {
     }
 
     return (
-        <div>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
             {hasReadAccessForAlert && (
-                <>
-                    <h3 className="border-b border-base-500 pb-2 mx-3 my-5">Event Timeline</h3>
-                    <div className="px-3">
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    <FlexItem>
+                        <Title headingLevel="h2">Event timeline</Title>
+                    </FlexItem>
+                    <FlexItem>
                         <EventTimelineOverview deploymentId={deploymentId} />
-                    </div>
-                </>
+                    </FlexItem>
+                </Flex>
             )}
             {errorMessage && (
                 <Alert variant="warning" isInline title="No processes discovered" component="p">
@@ -105,40 +107,44 @@ function ProcessDiscovery({ deploymentId }: ProcessDiscoveryProps) {
                     <p>It is recommended to check the logs for more information.</p>
                 </Alert>
             )}
-            <h3 className="border-b border-base-500 pb-2 mx-3 my-5">
-                History of Running Processes
-            </h3>
-            <ProcessDiscoveryCards
-                deploymentId={deploymentId}
-                processGroups={processGroups}
-                processEpoch={processEpoch}
-                setProcessEpoch={setProcessEpoch}
-            />
-            {errorMessageForBaselines && (
-                <div className="pt-2 mx-3">
-                    <Alert
-                        variant="warning"
-                        isInline
-                        title="Unable to fetch process baselines"
-                        component="p"
-                    >
-                        <p>{errorMessageForBaselines}</p>
-                    </Alert>
-                </div>
-            )}
-            {Array.isArray(processBaselines) && (
-                <>
-                    <h3 className="border-b border-base-500 pb-2 mx-3 my-5">
-                        Spec Container Baselines
-                    </h3>
-                    <SpecificationBaselineList
-                        processBaselines={processBaselines}
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                <FlexItem>
+                    <Title headingLevel="h2">History of running processes</Title>
+                </FlexItem>
+                <FlexItem>
+                    <ProcessDiscoveryCards
+                        deploymentId={deploymentId}
+                        processGroups={processGroups}
                         processEpoch={processEpoch}
                         setProcessEpoch={setProcessEpoch}
                     />
-                </>
+                </FlexItem>
+            </Flex>
+            {errorMessageForBaselines && (
+                <Alert
+                    variant="warning"
+                    isInline
+                    title="Unable to fetch process baselines"
+                    component="p"
+                >
+                    <p>{errorMessageForBaselines}</p>
+                </Alert>
             )}
-        </div>
+            {Array.isArray(processBaselines) && (
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    <FlexItem>
+                        <Title headingLevel="h2">Spec container baselines</Title>
+                    </FlexItem>
+                    <FlexItem>
+                        <SpecificationBaselineList
+                            processBaselines={processBaselines}
+                            processEpoch={processEpoch}
+                            setProcessEpoch={setProcessEpoch}
+                        />
+                    </FlexItem>
+                </Flex>
+            )}
+        </Flex>
     );
 }
 

@@ -257,7 +257,7 @@ func (cmd *centralDbRestoreCommand) tryRestoreV2(confirm func() error, file *os.
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return httputil.ResponseToError(resp)
+	return errors.Wrap(httputil.ResponseToError(resp), "attempting restore")
 }
 
 func (cmd *centralDbRestoreCommand) restoreV2(file *os.File, deadline time.Time) error {

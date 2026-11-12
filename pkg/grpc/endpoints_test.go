@@ -97,7 +97,8 @@ func (s *misdirectedRequestSuite) testWithEndpoint(name string, baseCfg Endpoint
 			_ = srvAndLis.listener.Close()
 		}
 		for range activeSrvAndLiss {
-			<-serverErrs
+			err := <-serverErrs
+			assert.Error(s.T(), err)
 		}
 	}()
 	for _, srvAndLis := range servers {

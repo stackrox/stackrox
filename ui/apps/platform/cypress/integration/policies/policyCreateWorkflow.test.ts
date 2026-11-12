@@ -1,13 +1,15 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { getInputByLabel } from '../../helpers/formHelpers';
-import { deletePolicyIfExists, visitPolicies } from './Policies.helpers';
+import { goToWizardStep } from '../../helpers/wizard';
+import { deletePolicyIfExists, doPolicyPageAction, visitPolicies } from './Policies.helpers';
 import { selectors } from './Policies.selectors';
 import {
     addExclusionWithDeployment,
     addInclusionWithNamespace,
     assertCriteriaCategories,
     assertStepHeading,
+    assertWorkloadKindExclusion,
     clickNext,
     clickSave,
     dragFieldIntoSection,
@@ -15,6 +17,7 @@ import {
     expandCriteriaCategory,
     selectCategory,
     startPolicyWizard,
+    toggleWorkloadKindExclusion,
     verifyPolicyDetails,
     verifyPolicyInTable,
 } from './policyWizard.helpers';
@@ -109,13 +112,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions
         assertStepHeading('Actions');
@@ -168,16 +166,19 @@ describe('Policy creation workflow', () => {
         assertStepHeading('Resources');
         addInclusionWithNamespace('test-namespace');
         addExclusionWithDeployment('system-admin');
+        const hasWorkloadKindExclusion = hasFeatureFlag('ROX_POLICY_WORKLOAD_KIND_EXCLUSION');
+        if (hasWorkloadKindExclusion) {
+            toggleWorkloadKindExclusion('CronJobs');
+            assertWorkloadKindExclusion('CronJobs', true);
+            assertWorkloadKindExclusion('Jobs', false);
+            cy.contains('Policy will exclude CronJobs.');
+        }
         clickNext();
 
         // Filters (container type filter enabled for Deploy lifecycle)
-        const hasFiltersStep =
-            hasFeatureFlag('ROX_EVALUATION_FILTER') && hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT');
-        if (hasFiltersStep) {
-            assertStepHeading('Filters');
-            cy.contains('label', 'Skip init containers').click();
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        cy.contains('label', 'Skip init containers').click();
+        clickNext();
 
         // Step 5 — Actions
         assertStepHeading('Actions');
@@ -196,9 +197,21 @@ describe('Policy creation workflow', () => {
             response: 'Enforce',
             enforcement: 'Deploy',
             criteria: ['Privileged'],
-            scope: ['test-namespace', 'system-admin'],
-            ...(hasFiltersStep ? { filters: { containerTypes: 'Skip init containers' } } : {}),
+            scope: [
+                'test-namespace',
+                'system-admin',
+                ...(hasWorkloadKindExclusion ? ['Workload kind', 'CronJobs'] : []),
+            ],
+            filters: { containerTypes: 'Skip init containers' },
         });
+
+        if (hasWorkloadKindExclusion) {
+            doPolicyPageAction('Edit policy');
+            goToWizardStep('Resources', 'Policy behavior');
+            assertWorkloadKindExclusion('CronJobs', true);
+            assertWorkloadKindExclusion('Jobs', false);
+            cy.get('[aria-label="Workload name"]').should('have.value', 'system-admin');
+        }
     });
 
     it('should create a Runtime policy with Process name criteria and inform-only response', () => {
@@ -234,13 +247,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions
         assertStepHeading('Actions');
@@ -302,13 +310,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions (enforcement disabled for audit log)
         assertStepHeading('Actions');
@@ -372,13 +375,8 @@ describe('Policy creation workflow', () => {
         clickNext();
 
         // Filters
-        if (
-            hasFeatureFlag('ROX_EVALUATION_FILTER') &&
-            hasFeatureFlag('ROX_INIT_CONTAINER_SUPPORT')
-        ) {
-            assertStepHeading('Filters');
-            clickNext();
-        }
+        assertStepHeading('Filters');
+        clickNext();
 
         // Step 5 — Actions (enforcement disabled for node events)
         assertStepHeading('Actions');

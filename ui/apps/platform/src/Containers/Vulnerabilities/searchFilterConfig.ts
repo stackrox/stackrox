@@ -42,7 +42,6 @@ import {
 import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
 import { nodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
 import { nodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
-import { platformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
 import {
     VirtualMachineCVECvss,
     VirtualMachineCVEDiscoveredTime,
@@ -118,12 +117,6 @@ export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
         clusterPlatformTypeAttribute,
         clusterTypeAttribute,
     ],
-};
-
-export const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {
-    displayName: 'CVE',
-    searchCategory: 'CLUSTER_VULNERABILITIES',
-    attributes: platformCVEAttributes,
 };
 
 export const virtualMachinesSearchFilterConfig: CompoundSearchFilterEntity = {

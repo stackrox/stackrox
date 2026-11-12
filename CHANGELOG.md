@@ -14,10 +14,14 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-30427: Added an EPSS policy criterion for image vulnerabilities. The Splunk TA vulnerability feed now includes `epssProbability` and `epssPercentile` on each CVE event, when available.
 - ROX-33524: New predefined User PKI auth provider, role, empty permission set and a Central cluster access scope for OpenShift Prometheus server access to custom metrics. Administrator action required: grant the permission set read access to the resources user by custom metrics you want to collect.
+- ROX-37597: The compliance CSV report now includes a "Node Role" column showing which node role (for example `master`, `worker`, or a custom MachineConfigPool-derived role) a check result applies to. The column reads "N/A" for results that don't target a specific node role (platform scans, or node scans using the Compliance Operator's `@all` role selector).
+- ROX-34293: Policies can exclude all workloads of kind CronJob and Job.
 
 ### Removed Features
 
+- The Sensor auto-upgrader has been removed. Central no longer automatically upgrades secured-cluster components, and the in-cluster `sensor-upgrader` binary and privileged `sensor-upgrader` service account are no longer built or deployed. The deprecated `SensorUpgradeService` (`/v1/sensorupgrades/*`) and its config/trigger/cert-rotation endpoints have been removed; use operator-based installation, which handles sensor upgrades and certificate rotation. Manual sensor certificate rotation via the upgrader is no longer available. The `Upgradability` label on the cluster custom Prometheus metric has been removed. The `roxctl sensor generate|get-bundle --create-upgrader-sa` flag is now a hidden, deprecated no-op kept for backward compatibility.
 - ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
 - ROX-36856: The Compliance 1.0 API has been removed. The `ComplianceService` and `ComplianceManagementService` gRPC services, their `/v1/compliance/*` REST equivalents, and the `/api/compliance/export/csv` export endpoint are no longer served. Use Compliance (v2), backed by the Compliance Operator, instead.
 - ROX-36856: The Splunk TA Compliance feed at `/api/splunk/ta/compliance` has been retired and now responds with HTTP 410 Gone rather than returning data, so that stale feed configurations fail loudly instead of silently reporting zero compliance findings. Remove the Compliance modular input from your Splunk TA configuration. **There is no Splunk replacement for this feed.** Note that this also affects Compliance Operator results: those were previously routed into Compliance 1.0 storage and surfaced through this feed, and they are no longer delivered to Splunk. Compliance Operator results remain available in the product through Compliance (v2).
@@ -35,6 +39,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37265: Feature flag `ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY` will now correctly filter non Red Hat vulnerabilities from RH image layers in newer Konflux built images where it previously had no affect. The flag must now be set on Central INSTEAD of Scanner V4 Matcher.
 - ROX-37385: Scanner V4 node scans now record the operating system (for example `rhcos:9.6`) for OpenShift 4.19 and later nodes. RHCOS switched to RHEL-based dotted versions such as `9.6.20250701-0` in OpenShift 4.19, and Central previously stored an empty operating system for these nodes.
 - ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
+- ROX-37861: Omitted `RELATED_IMAGE` entries in operator helm chart. Note that two consecutive upgrade runs are necessary to fix `manager.envOverrides` unless using server-side apply.
 
 ## [5.0.0]
 

@@ -58,6 +58,11 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
 
+    - name: Validate input tag
+      env:
+        TAG: ${{ inputs.tag }}
+      run: scripts/ci/lib.sh validate_image_tag "$TAG"
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -170,14 +175,12 @@ jobs:
       env:
         ROX_USERNAME: admin
       run: |
-        import os, sys
+        import sys
         sys.path.append('.openshift-ci')
         from post_tests import PostClusterTest
         post = PostClusterTest(
             collect_central_artifacts=False,
         )
-        if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
-            post.openshift_namespaces = []
         post.run(['/tmp/byodb-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post

@@ -4,20 +4,22 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 )
 
+var log = logging.LoggerForModule()
+
 //go:generate mockgen-wrapper
 
-// Service is an interface to receiving ComplianceReturns from launched daemons.
+// Service is an interface for receiving audit events and node scan results from the Compliance daemons.
 type Service interface {
 	grpc.APIService
 
@@ -26,9 +28,6 @@ type Service interface {
 	sensor.ComplianceServiceServer
 	common.SensorComponent
 
-	RunScrape(msg *sensor.MsgToCompliance) int
-
-	Output() chan *compliance.ComplianceReturn
 	AuditEvents() chan *sensor.AuditEvents
 	NodeInventories() <-chan *storage.NodeInventory
 	IndexReportWraps() <-chan *index.IndexReportWrap
@@ -40,7 +39,6 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 	return &serviceImpl{
-		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
 		indexReportWraps:          make(chan *index.IndexReportWrap),
 		complianceC:               complianceC,

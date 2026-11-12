@@ -121,6 +121,7 @@ func (m *ComplianceCheckResultStatusCount) CloneVT() *ComplianceCheckResultStatu
 	r.CheckName = m.CheckName
 	r.Rationale = m.Rationale
 	r.RuleName = m.RuleName
+	r.DataFreshness = m.DataFreshness
 	if rhs := m.CheckStats; rhs != nil {
 		tmpContainer := make([]*ComplianceCheckStatusCount, len(rhs))
 		for k, v := range rhs {
@@ -217,6 +218,7 @@ func (m *ComplianceClusterOverallStats) CloneVT() *ComplianceClusterOverallStats
 	r := new(ComplianceClusterOverallStats)
 	r.Cluster = m.Cluster.CloneVT()
 	r.LastScanTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastScanTime).CloneVT())
+	r.DataFreshness = m.DataFreshness
 	if rhs := m.CheckStats; rhs != nil {
 		tmpContainer := make([]*ComplianceCheckStatusCount, len(rhs))
 		for k, v := range rhs {
@@ -521,6 +523,9 @@ func (this *ComplianceCheckResultStatusCount) EqualVT(that *ComplianceCheckResul
 			}
 		}
 	}
+	if this.DataFreshness != that.DataFreshness {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -659,6 +664,9 @@ func (this *ComplianceClusterOverallStats) EqualVT(that *ComplianceClusterOveral
 		}
 	}
 	if !(*timestamppb1.Timestamp)(this.LastScanTime).EqualVT((*timestamppb1.Timestamp)(that.LastScanTime)) {
+		return false
+	}
+	if this.DataFreshness != that.DataFreshness {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1118,6 +1126,11 @@ func (m *ComplianceCheckResultStatusCount) MarshalToSizedBufferVT(dAtA []byte) (
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.DataFreshness != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DataFreshness))
+		i--
+		dAtA[i] = 0x30
+	}
 	if len(m.Controls) > 0 {
 		for iNdEx := len(m.Controls) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.Controls[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -1367,6 +1380,11 @@ func (m *ComplianceClusterOverallStats) MarshalToSizedBufferVT(dAtA []byte) (int
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.DataFreshness != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DataFreshness))
+		i--
+		dAtA[i] = 0x28
 	}
 	if m.LastScanTime != nil {
 		size, err := (*timestamppb1.Timestamp)(m.LastScanTime).MarshalToSizedBufferVT(dAtA[:i])
@@ -1812,6 +1830,9 @@ func (m *ComplianceCheckResultStatusCount) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
+	if m.DataFreshness != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DataFreshness))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1912,6 +1933,9 @@ func (m *ComplianceClusterOverallStats) SizeVT() (n int) {
 	if m.LastScanTime != nil {
 		l = (*timestamppb1.Timestamp)(m.LastScanTime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.DataFreshness != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DataFreshness))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3050,6 +3074,25 @@ func (m *ComplianceCheckResultStatusCount) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataFreshness", wireType)
+			}
+			m.DataFreshness = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3701,6 +3744,25 @@ func (m *ComplianceClusterOverallStats) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataFreshness", wireType)
+			}
+			m.DataFreshness = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -5492,6 +5554,25 @@ func (m *ComplianceCheckResultStatusCount) UnmarshalVTUnsafe(dAtA []byte) error 
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataFreshness", wireType)
+			}
+			m.DataFreshness = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6179,6 +6260,25 @@ func (m *ComplianceClusterOverallStats) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataFreshness", wireType)
+			}
+			m.DataFreshness = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DataFreshness |= ComplianceAggregateDataFreshness(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

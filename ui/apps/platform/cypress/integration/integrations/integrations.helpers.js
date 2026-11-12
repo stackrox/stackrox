@@ -195,7 +195,6 @@ const integrationTitleMap = {
         artifactregistry: 'Google Artifact Registry',
         azure: 'Microsoft ACR',
         clair: 'CoreOS Clair',
-        clairify: 'StackRox Scanner',
         docker: 'Generic Docker Registry',
         ecr: 'Amazon ECR',
         ghcr: 'GitHub Container Registry',

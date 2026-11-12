@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import ReportJobStatus from './ReportJobStatus';
@@ -34,10 +34,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Preparing');
-        const statusIconElement = screen.getByTitle('Report run is preparing');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should display the status text and icon when waiting', () => {
@@ -57,10 +55,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Waiting');
-        const statusIconElement = screen.getByTitle('Report run is waiting');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should display the status text and icon when failed', async () => {
@@ -80,20 +76,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Report failed to generate');
-        const statusIconElement = screen.getByRole('img', { name: 'Report run was unsuccessful' });
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
-
-        // trigger the hover action
-        fireEvent.mouseEnter(statusIconElement);
-
-        const tooltipElement = await screen.findByText('scan failed on Cluster "Prod-East"');
-
-        expect(tooltipElement).toBeInTheDocument();
-
-        // cleanup hover action
-        fireEvent.mouseLeave(statusIconElement);
     });
 
     test('should display the status text and icon when download is available but not accessible', async () => {
@@ -113,28 +97,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Report ready for download');
-        const statusIconElement = screen.getByRole('img', {
-            name: 'Report download was successfully prepared',
-        });
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
-
-        const helpIconElement = screen.getByRole('img', {
-            name: 'Permission limitations on download',
-        });
-
-        // trigger the hover action
-        fireEvent.mouseEnter(helpIconElement);
-
-        const tooltipElement = await screen.findByText(
-            'Only the requestor of the download has the authority to access or remove it.'
-        );
-
-        expect(tooltipElement).toBeInTheDocument();
-
-        // cleanup hover action
-        fireEvent.mouseLeave(helpIconElement);
     });
 
     test('should display the status text and icon when download is available and accessible', () => {
@@ -154,10 +118,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Report ready for download');
-        const statusIconElement = screen.getByTitle('Report download was successfully prepared');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should display the status text and icon when a partial report download is available and accessible', () => {
@@ -177,12 +139,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Partial report ready for download');
-        const statusIconElement = screen.getByTitle(
-            'Partial report download was successfully prepared'
-        );
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should display the status text and icon when download is deleted', async () => {
@@ -202,28 +160,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Report download deleted');
-        const statusIconElement = screen.getByRole('img', {
-            name: 'Report download was deleted',
-        });
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
-
-        const helpIconElement = screen.getByRole('img', {
-            name: 'Download deletion explanation',
-        });
-
-        // trigger the hover action
-        fireEvent.mouseEnter(helpIconElement);
-
-        const tooltipElement = await screen.findByText(
-            'The download was deleted. Please generate a new download if needed.'
-        );
-
-        expect(tooltipElement).toBeInTheDocument();
-
-        // cleanup hover action
-        fireEvent.mouseLeave(helpIconElement);
     });
 
     test('should display the status text and icon when email is sent', () => {
@@ -243,10 +181,8 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Report successfully sent');
-        const statusIconElement = screen.getByTitle('Report was successfully sent');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 
     test('should display the status text and icon when a partial report is sent via email', () => {
@@ -266,9 +202,7 @@ describe('ReportJobStatus', () => {
         );
 
         const statusTextElement = screen.getByText('Partial report successfully sent');
-        const statusIconElement = screen.getByTitle('Partial report was successfully sent');
 
         expect(statusTextElement).toBeInTheDocument();
-        expect(statusIconElement).toBeInTheDocument();
     });
 });

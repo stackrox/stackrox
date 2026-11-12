@@ -37,17 +37,6 @@ const NODE_CVES_QUERY = gql`
     }
 `;
 
-const CLUSTER_CVES_QUERY = gql`
-    query getClusterCvesByCVSS($query: String, $scopeQuery: String) {
-        results: clusterVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
-            cve
-            cvss
-            severity
-            summary
-        }
-    }
-`;
-
 const vulnerabilitySeverities = [
     'LOW_VULNERABILITY_SEVERITY',
     'MODERATE_VULNERABILITY_SEVERITY',
@@ -60,10 +49,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
     let queryToUse = IMAGE_CVES_QUERY;
     let linkTypeToUse = entityTypes.IMAGE_CVE;
 
-    if (entityContext[entityTypes.CLUSTER]) {
-        queryToUse = CLUSTER_CVES_QUERY;
-        linkTypeToUse = entityTypes.CLUSTER_CVE;
-    } else if (
+    if (
         entityContext[entityTypes.NODE] ||
         entityContext[entityTypes.NODE_COMPONENT] ||
         parentContext[entityTypes.NODE] ||

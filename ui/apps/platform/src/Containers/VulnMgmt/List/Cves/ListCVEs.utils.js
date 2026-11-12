@@ -17,18 +17,12 @@ export function getFilteredCVEColumns(columns, workflowState, _isFeatureFlagEnab
 
     const currentEntityType = workflowState.getCurrentEntityType();
 
-    const shouldKeepDiscoveredTime = currentEntityType !== entityTypes.CLUSTER_CVE;
+    const shouldKeepDiscoveredTime = true;
 
     // No need to show entities in the node component or cluster context.
     const shouldKeepEntitiesColumn =
         !workflowState.isPrecedingSingle(entityTypes.NODE_COMPONENT) ||
         !workflowState.getSingleAncestorOfType(entityTypes.NODE);
-    // special case CLUSTER CVE under CLUSTER
-    const clusterCveUnderCluster =
-        workflowState.getSingleAncestorOfType(entityTypes.CLUSTER) &&
-        currentEntityType === entityTypes.CLUSTER_CVE;
-
-    const shouldKeepCveType = currentEntityType === entityTypes.CLUSTER_CVE;
 
     const shouldKeepSeverity =
         currentEntityType === entityTypes.IMAGE_CVE || currentEntityType === entityTypes.NODE_CVE;
@@ -36,7 +30,7 @@ export function getFilteredCVEColumns(columns, workflowState, _isFeatureFlagEnab
     return columns.filter((col) => {
         switch (col.accessor) {
             case 'vulnerabilityTypes': {
-                return !!shouldKeepCveType;
+                return false;
             }
             case 'fixedByVersion': {
                 return shouldKeepFixedByColumn;
@@ -48,7 +42,7 @@ export function getFilteredCVEColumns(columns, workflowState, _isFeatureFlagEnab
                 return shouldKeepDiscoveredAtImageColumn;
             }
             case 'entities': {
-                return shouldKeepEntitiesColumn && !clusterCveUnderCluster;
+                return shouldKeepEntitiesColumn;
             }
             case 'severity': {
                 return shouldKeepSeverity || shouldKeepDiscoveredAtImageColumn;

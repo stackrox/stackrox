@@ -36,10 +36,16 @@ func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy 
 		sel = &k8sMetaV1.LabelSelector{}
 	}
 
+	// Policies that Sensor picks up from a cluster are stored with an empty API version
+	apiVersion := np.GetApiVersion()
+	if apiVersion == "" {
+		apiVersion = k8sV1.SchemeGroupVersion.String()
+	}
+
 	return &k8sV1.NetworkPolicy{
 		TypeMeta: k8sMetaV1.TypeMeta{
 			Kind:       "NetworkPolicy",
-			APIVersion: np.GetApiVersion(),
+			APIVersion: apiVersion,
 		},
 		ObjectMeta: k8sMetaV1.ObjectMeta{
 			Name:        np.GetName(),

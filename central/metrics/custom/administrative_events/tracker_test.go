@@ -42,7 +42,8 @@ func Test_track(t *testing.T) {
 		})
 
 	var findings []*finding
-	for f := range track(context.Background(), ds) {
+	for f, err := range track(context.Background(), ds) {
+		assert.NoError(t, err)
 		findings = append(findings, f)
 	}
 
@@ -62,7 +63,9 @@ func Test_track(t *testing.T) {
 
 func Test_track_nil_ds(t *testing.T) {
 	var count int
-	for range track(context.Background(), nil) {
+	for f, err := range track(context.Background(), nil) {
+		assert.NoError(t, err)
+		assert.NotNil(t, f)
 		count++
 	}
 	assert.Zero(t, count)

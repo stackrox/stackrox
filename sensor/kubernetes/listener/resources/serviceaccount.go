@@ -27,13 +27,19 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 	serviceAccount := obj.(*v1.ServiceAccount)
 
 	var serviceAccountSecrets []string
-	for _, secret := range serviceAccount.Secrets {
-		serviceAccountSecrets = append(serviceAccountSecrets, secret.Name)
+	if len(serviceAccount.Secrets) > 0 {
+		serviceAccountSecrets = make([]string, 0, len(serviceAccount.Secrets))
+		for _, secret := range serviceAccount.Secrets {
+			serviceAccountSecrets = append(serviceAccountSecrets, secret.Name)
+		}
 	}
 
 	var serviceAccountImagePullSecrets []string
-	for _, ipSecret := range serviceAccount.ImagePullSecrets {
-		serviceAccountImagePullSecrets = append(serviceAccountImagePullSecrets, ipSecret.Name)
+	if len(serviceAccount.ImagePullSecrets) > 0 {
+		serviceAccountImagePullSecrets = make([]string, 0, len(serviceAccount.ImagePullSecrets))
+		for _, ipSecret := range serviceAccount.ImagePullSecrets {
+			serviceAccountImagePullSecrets = append(serviceAccountImagePullSecrets, ipSecret.Name)
+		}
 	}
 
 	sa := &central.SensorEvent_ServiceAccount{

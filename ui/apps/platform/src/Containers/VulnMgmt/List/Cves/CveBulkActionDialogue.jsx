@@ -66,18 +66,6 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
             `;
             break;
         }
-        case entityTypes.CLUSTER_CVE: {
-            CVE_QUERY = gql`
-                query getClusterCves($query: String) {
-                    results: clusterVulnerabilities(query: $query) {
-                        id
-                        cve
-                        summary
-                    }
-                }
-            `;
-            break;
-        }
         case entityTypes.IMAGE_CVE:
         default: {
             CVE_QUERY = gql`

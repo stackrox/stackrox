@@ -3,9 +3,38 @@ import {
     serializeAbsoluteDateRange,
     serializeRelativeDateRange,
     serializeRelativeOlderThan,
+    updateSearchFilter,
 } from './utils';
 
 describe('utils', () => {
+    describe('updateSearchFilter', () => {
+        it('DELETE removes a stored key whose case differs from the payload category', () => {
+            // Chips render case-insensitively, so a legacy/bookmarked "deployment label" key must be
+            // deleted even though the config searchTerm (and thus the payload) is "Deployment Label".
+            expect(
+                updateSearchFilter({ 'deployment label': ['app=web'] }, [
+                    { action: 'DELETE', category: 'Deployment Label' },
+                ])
+            ).toEqual({});
+        });
+
+        it('REMOVE drops a value from a stored key whose case differs from the category', () => {
+            expect(
+                updateSearchFilter({ 'deployment label': ['app=web', 'app=api'] }, [
+                    { action: 'REMOVE', category: 'Deployment Label', value: 'app=web' },
+                ])
+            ).toEqual({ 'deployment label': ['app=api'] });
+        });
+
+        it('DELETE falls back to the payload category when no stored key matches', () => {
+            expect(
+                updateSearchFilter({ Cluster: 'production' }, [
+                    { action: 'DELETE', category: 'Namespace' },
+                ])
+            ).toEqual({ Cluster: 'production' });
+        });
+    });
+
     describe('convertFromInternalToExternalDatePicker', () => {
         it('formats "after" condition correctly', () => {
             expect(convertFromInternalToExternalDatePicker('>2024-01-01')).toEqual(

@@ -6,7 +6,6 @@ import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import type {
     AzureImageIntegration,
     BaseImageIntegration,
-    ClairifyImageIntegration,
     DockerImageIntegration,
     GoogleImageIntegration,
     QuayImageIntegration,
@@ -29,14 +28,8 @@ import type { SignatureIntegration } from 'types/signatureIntegration.proto';
 import { formatRecurringSchedule, getDateTime } from 'utils/dateUtils';
 import { getOriginLabel } from 'utils/traits.utils';
 
-import {
-    categoriesUtilsForClairifyScanner,
-    categoriesUtilsForRegistryScanner,
-    transformDurationLongForm,
-} from './integrationUtils';
+import { categoriesUtilsForRegistryScanner, transformDurationLongForm } from './integrationUtils';
 
-const { getCategoriesText: getCategoriesTextForClairifyScanner } =
-    categoriesUtilsForClairifyScanner;
 const { getCategoriesText: getCategoriesTextForRegistryScanner } =
     categoriesUtilsForRegistryScanner;
 
@@ -69,7 +62,6 @@ type IntegrationTableColumnDescriptorMap = {
         IntegrationTableColumnDescriptor<BaseImageIntegration>[]
     > & {
         azure: IntegrationTableColumnDescriptor<AzureImageIntegration | DockerImageIntegration>[];
-        clairify: IntegrationTableColumnDescriptor<ClairifyImageIntegration>[];
         google: IntegrationTableColumnDescriptor<GoogleImageIntegration>[];
         quay: IntegrationTableColumnDescriptor<QuayImageIntegration>[];
     };
@@ -263,15 +255,6 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         clairV4: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clairV4.endpoint', Header: 'Endpoint' },
-        ],
-        clairify: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'clairify.endpoint', Header: 'Endpoint' },
-            {
-                Header: 'Type',
-                accessor: (integration) =>
-                    getCategoriesTextForClairifyScanner(integration.categories),
-            },
         ],
         scannerv4: [
             { accessor: 'name', Header: 'Name' },

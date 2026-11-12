@@ -15,10 +15,10 @@ import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 
-import { categoriesUtilsForClairifyScanner } from '../../utils/integrationUtils';
+import { categoriesUtilsForScanner } from '../../utils/integrationUtils';
 
 const { categoriesAlternatives, getCategoriesText, matchCategoriesAlternative, validCategories } =
-    categoriesUtilsForClairifyScanner;
+    categoriesUtilsForScanner;
 
 export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('An integration name is required'),

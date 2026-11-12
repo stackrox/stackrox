@@ -634,6 +634,17 @@
       ],
       "default": "UNSET"
     },
+    "v2ComplianceAggregateDataFreshness": {
+      "type": "string",
+      "enum": [
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT"
+      ],
+      "default": "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+      "description": "ComplianceAggregateDataFreshness indicates the freshness of compliance data\naggregated over multiple checks (a cluster, a scan, or a cross-cluster rollup of\na single check). Unlike a single check, an aggregate can mix fresh and stale\nresults.\n\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN: No freshness information available. Either no contributing check could be\nresolved to current or stale, or the field was not populated. This is the\nzero value.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT: At least one contributing check is current and none are stale.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE: At least one contributing check is stale and none are current.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT: Contributing checks are a mix of stale and current data."
+    },
     "v2ComplianceBenchmark": {
       "type": "object",
       "properties": {
@@ -680,6 +691,10 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness",
+          "description": "Rolled up across all clusters reporting this check."
         }
       },
       "title": "Group the number of occurrences by status"
@@ -733,6 +748,9 @@
         "lastScanTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness"
         }
       },
       "title": "ComplianceClusterOverallStats provides overall stats for cluster"
@@ -785,6 +803,16 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "staleClusterCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of clusters with any stale check result for this profile, across all\nclusters (not limited to a page). Includes clusters that are partially\nstale (i.e. inconsistent). Non-zero signals the UI to show a stale-data\nbanner."
+        },
+        "staleCheckResultCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of stale check results (check x cluster units) for this profile,\nacross all clusters (not limited to a page)."
         }
       },
       "title": "ComplianceProfileScanStats provides scan stats overview based on profile"

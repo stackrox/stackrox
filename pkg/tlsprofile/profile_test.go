@@ -21,6 +21,8 @@ func TestProfileSuite(t *testing.T) {
 func (s *profileSuite) SetupSubTest() {
 	minVersionOnce = sync.Once{}
 	cipherSuitesOnce = sync.Once{}
+	curvePreferencesOnce = sync.Once{}
+	cachedCurvePreferences = nil
 }
 
 func (s *profileSuite) TestParseMinVersion() {
@@ -116,6 +118,79 @@ func (s *profileSuite) TestParseCipherSuites() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), tt.want, got)
 			}
+		})
+	}
+}
+
+func (s *profileSuite) TestParseGroups() {
+	tests := []struct {
+		name    string
+		input   string
+		want    []tls.CurveID
+		wantErr bool
+	}{
+		{
+			name:  "single group",
+			input: "X25519",
+			want:  []tls.CurveID{tls.X25519},
+		},
+		{
+			name:  "multiple groups preserve order",
+			input: "X25519MLKEM768,secp256r1",
+			want:  []tls.CurveID{tls.X25519MLKEM768, tls.CurveP256},
+		},
+		{
+			name:  "whitespace and trailing comma",
+			input: " secp384r1 , secp521r1 ,",
+			want:  []tls.CurveID{tls.CurveP384, tls.CurveP521},
+		},
+		{
+			name:  "unknown groups are skipped",
+			input: "secp256r1,bogus",
+			want:  []tls.CurveID{tls.CurveP256},
+		},
+		{
+			name:    "all unknown",
+			input:   "bogus",
+			wantErr: true,
+		},
+		{
+			name:    "empty",
+			input:   "",
+			wantErr: true,
+		},
+		{
+			name:    "only commas",
+			input:   ",,,",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			got, err := parseGroups(tt.input)
+			if tt.wantErr {
+				assert.Error(s.T(), err)
+			} else {
+				require.NoError(s.T(), err)
+				assert.Equal(s.T(), tt.want, got)
+			}
+		})
+	}
+}
+
+func (s *profileSuite) TestCurvePreferences() {
+	for _, tt := range []struct {
+		name string
+		env  string
+		want []tls.CurveID
+	}{
+		{"nil when unset", "", nil},
+		{"explicit groups", "X25519,secp256r1", []tls.CurveID{tls.X25519, tls.CurveP256}},
+		{"invalid falls back to nil", "bogus", nil},
+	} {
+		s.Run(tt.name, func() {
+			s.T().Setenv("ROX_TLS_GROUPS", tt.env)
+			s.Equal(tt.want, CurvePreferences())
 		})
 	}
 }

@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -23,7 +22,6 @@ type SensorConnection interface {
 	// be processed.
 	Stopped() concurrency.ReadOnlyErrorSignal
 
-	Scrapes() scrape.Controller
 	NetworkEntities() networkentities.Controller
 	NetworkPolicies() networkpolicies.Controller
 	Telemetry() telemetry.Controller
@@ -37,6 +35,4 @@ type SensorConnection interface {
 	// ObjectsDeletedByReconciliation returns the count of objects deleted by reconciliation,
 	// keyed by type name, as well as a bool returning whether reconciliation has finished.
 	ObjectsDeletedByReconciliation() (map[string]int, bool)
-
-	CheckAutoUpgradeSupport() error
 }

@@ -33,5 +33,5 @@ func (cmd *centralDbRestoreCommand) restoreV1(file *os.File, deadline time.Time)
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return httputil.ResponseToError(resp)
+	return errors.Wrap(httputil.ResponseToError(resp), "processing restore request")
 }

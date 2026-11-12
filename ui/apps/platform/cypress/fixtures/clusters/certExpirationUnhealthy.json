@@ -17,7 +17,6 @@
                 "sensorVersion": "",
                 "providerMetadata": null,
                 "orchestratorMetadata": null,
-                "upgradeStatus": null,
                 "certExpiryStatus": null
             },
             "dynamicConfig": {
@@ -72,10 +71,6 @@
                     "version": "v1.14.8",
                     "buildDate": "2019-10-15T12:02:12Z",
                     "apiVersions": []
-                },
-                "upgradeStatus": {
-                    "upgradability": "AUTO_UPGRADE_POSSIBLE",
-                    "mostRecentProcess": null
                 },
                 "certExpiryStatus": {
                     "sensorCertExpiry": "2020-09-07T13:00:00Z"
@@ -140,10 +135,6 @@
                     "version": "v1.14.8",
                     "buildDate": "2019-10-15T12:02:12Z",
                     "apiVersions": []
-                },
-                "upgradeStatus": {
-                    "upgradability": "AUTO_UPGRADE_POSSIBLE",
-                    "mostRecentProcess": null
                 },
                 "certExpiryStatus": {
                     "sensorCertExpiry": "2020-09-07T13:00:00Z"
@@ -279,11 +270,6 @@
                     "version": "v1.14.8",
                     "buildDate": "2019-10-15T12:02:12Z",
                     "apiVersions": []
-                },
-                "upgradeStatus": {
-                    "upgradability": "UP_TO_DATE",
-                    "upgradabilityStatusReason": "sensor is running the same version as Central",
-                    "mostRecentProcess": null
                 },
                 "certExpiryStatus": {
                     "sensorCertExpiry": "2020-09-07T13:00:00Z"

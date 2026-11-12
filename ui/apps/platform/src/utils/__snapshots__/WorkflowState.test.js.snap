@@ -2,7 +2,6 @@
 
 exports[`WorkflowState > nav list-item-list for > Vulnerability Management > CLUSTER > has trimmed stacks 1`] = `
 [
-  "CLUSTER CLUSTER-0 CLUSTER_CVE",
   "CLUSTER CLUSTER-0 DEPLOYMENT",
   "CLUSTER CLUSTER-0 DEPLOYMENT DEPLOYMENT-2 IMAGE",
   "CLUSTER CLUSTER-0 DEPLOYMENT DEPLOYMENT-2 IMAGE IMAGE-4 IMAGE_COMPONENT",
@@ -108,24 +107,9 @@ exports[`WorkflowState > nav list-item-list for > Vulnerability Management > CLU
 ]
 `;
 
-exports[`WorkflowState > nav list-item-list for > Vulnerability Management > CLUSTER_CVE > has trimmed stacks 1`] = `
-[
-  "CLUSTER_CVE CLUSTER_CVE-0 CLUSTER",
-  "CLUSTER-2 DEPLOYMENT",
-  "CLUSTER-2 IMAGE",
-  "CLUSTER-2 IMAGE_COMPONENT",
-  "CLUSTER-2 IMAGE_CVE",
-  "CLUSTER-2 NAMESPACE",
-  "CLUSTER-2 NODE",
-  "CLUSTER-2 NODE_COMPONENT",
-  "CLUSTER-2 NODE_CVE",
-]
-`;
-
 exports[`WorkflowState > nav list-item-list for > Vulnerability Management > DEPLOYMENT > has trimmed stacks 1`] = `
 [
   "DEPLOYMENT DEPLOYMENT-0 CLUSTER",
-  "CLUSTER-2 CLUSTER_CVE",
   "CLUSTER-2 IMAGE",
   "CLUSTER-2 IMAGE_COMPONENT",
   "CLUSTER-2 IMAGE_CVE",
@@ -208,7 +192,6 @@ exports[`WorkflowState > nav list-item-list for > Vulnerability Management > IMA
 exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NAMESPACE > has trimmed stacks 1`] = `
 [
   "NAMESPACE NAMESPACE-0 CLUSTER",
-  "CLUSTER-2 CLUSTER_CVE",
   "CLUSTER-2 DEPLOYMENT",
   "CLUSTER-2 IMAGE",
   "CLUSTER-2 IMAGE_COMPONENT",
@@ -218,7 +201,6 @@ exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NAM
   "CLUSTER-2 NODE_CVE",
   "NAMESPACE NAMESPACE-0 DEPLOYMENT",
   "NAMESPACE NAMESPACE-0 DEPLOYMENT DEPLOYMENT-2 CLUSTER",
-  "CLUSTER-4 CLUSTER_CVE",
   "CLUSTER-4 IMAGE",
   "CLUSTER-4 IMAGE_COMPONENT",
   "CLUSTER-4 IMAGE_CVE",
@@ -272,7 +254,6 @@ exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NAM
 exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NODE > has trimmed stacks 1`] = `
 [
   "NODE NODE-0 CLUSTER",
-  "CLUSTER-2 CLUSTER_CVE",
   "CLUSTER-2 DEPLOYMENT",
   "CLUSTER-2 IMAGE",
   "CLUSTER-2 IMAGE_COMPONENT",

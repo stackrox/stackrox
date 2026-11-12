@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import {
     Bullseye,
     Button,
@@ -54,8 +54,6 @@ function ListeningEndpointsPage() {
         page,
         perPage
     );
-
-    const [areAllRowsExpanded, setAllRowsExpanded] = useState(false);
 
     function onSearchFilterChange(searchFilter: SearchFilter) {
         setSearchFilter(searchFilter);
@@ -151,8 +149,6 @@ function ListeningEndpointsPage() {
                                 <ListeningEndpointsTable
                                     deployments={data}
                                     getSortParams={getSortParams}
-                                    areAllRowsExpanded={areAllRowsExpanded}
-                                    setAllRowsExpanded={setAllRowsExpanded}
                                 />
                             )}
                         </>

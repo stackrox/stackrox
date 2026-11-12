@@ -45,6 +45,10 @@ type splunkCVEEvent struct {
 	FixedBy     string    `json:"fixedBy"`
 	FirstSeen   time.Time `json:"firstSeen"`
 	Source      string    `json:"source"`
+	// Decimals in [0, 1], matching the vulnerability API. Null means no EPSS data;
+	// 0 is a real score. Not omitempty so Splunk extraction stays schema-stable.
+	EPSSProbability *float32 `json:"epssProbability"`
+	EPSSPercentile  *float32 `json:"epssPercentile"`
 }
 
 // imageFields is satisfied by both *storage.Image and *storage.ImageV2,
@@ -160,16 +164,19 @@ func writeImageEvents(w *jsonutil.JSONArrayWriter, digest string, img imageField
 
 	for _, c := range img.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
+			probability, percentile := epssFields(v)
 			err = w.WriteObject(&splunkCVEEvent{
-				Type:        "cve",
-				ImageDigest: digest,
-				Component:   c.GetName(),
-				Version:     c.GetVersion(),
-				CVE:         v.GetCve(),
-				CVSS:        v.GetCvss(),
-				FixedBy:     v.GetFixedBy(),
-				FirstSeen:   protoconv.ConvertTimestampToTimeOrNow(v.GetFirstImageOccurrence()),
-				Source:      c.GetSource().String(),
+				Type:            "cve",
+				ImageDigest:     digest,
+				Component:       c.GetName(),
+				Version:         c.GetVersion(),
+				CVE:             v.GetCve(),
+				CVSS:            v.GetCvss(),
+				FixedBy:         v.GetFixedBy(),
+				FirstSeen:       protoconv.ConvertTimestampToTimeOrNow(v.GetFirstImageOccurrence()),
+				Source:          c.GetSource().String(),
+				EPSSProbability: probability,
+				EPSSPercentile:  percentile,
 			})
 			if err != nil {
 				return err
@@ -177,6 +184,18 @@ func writeImageEvents(w *jsonutil.JSONArrayWriter, digest string, img imageField
 		}
 	}
 	return nil
+}
+
+// epssFields returns the CVE's EPSS probability and percentile. Both are nil
+// when the scan has no EPSS message, which JSON-encodes as null.
+func epssFields(v *storage.EmbeddedVulnerability) (probability, percentile *float32) {
+	epss := v.GetEpss()
+	if epss == nil {
+		return nil, nil
+	}
+	p := epss.GetEpssProbability()
+	pct := epss.GetEpssPercentile()
+	return &p, &pct
 }
 
 // containerImageID returns the appropriate image identifier for datastore lookups.

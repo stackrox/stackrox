@@ -2,9 +2,6 @@ import entityTypes from 'constants/entityTypes';
 import axios from './instance';
 
 function getBaseCveUrl(cveType) {
-    if (cveType === entityTypes.CLUSTER_CVE) {
-        return '/v1/clustercves';
-    }
     if (cveType === entityTypes.NODE_CVE) {
         return '/v1/nodecves';
     }

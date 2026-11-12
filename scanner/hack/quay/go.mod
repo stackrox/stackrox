@@ -1,3 +1,3 @@
 module github.com/stackrox/rox/scanner/hack/quay
 
-go 1.26.3
+go 1.26.10

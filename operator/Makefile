@@ -330,12 +330,12 @@ ensure-rox-main-image-exists:
 ##@ Build
 
 .PHONY: build-installer
-build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
+build-installer: manifests generate kustomize yq ## Generate a consolidated YAML with CRDs and deployment.
 	mkdir -p build/dist
 	echo 'resources: [ "../../config/flavors/$(ROX_IMAGE_FLAVOR)" ]' > build/dist/kustomization.yaml
 	cd build/dist && $(KUSTOMIZE) edit set image controller=${IMG}
 	mkdir -p dist
-	$(KUSTOMIZE) build build/dist > dist/install.yaml
+	$(KUSTOMIZE) build build/dist | $(YQ) 'del(.spec.template.spec.containers[].env[] | select(.name | test("^RELATED_IMAGE_")))' > dist/install.yaml
 
 .PHONY: chart
 chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
