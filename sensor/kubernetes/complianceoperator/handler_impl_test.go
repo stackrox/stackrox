@@ -12,6 +12,9 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -35,6 +38,7 @@ type HandlerTestSuite struct {
 	client         *fake.FakeDynamicClient
 	requestHandler common.SensorComponent
 	statusInfo     *mocks.MockStatusInfo
+	dispatcher     common.PubSubDispatcher
 }
 
 func (s *HandlerTestSuite) SetupSuite() {
@@ -49,17 +53,30 @@ func (s *HandlerTestSuite) SetupSuite() {
 func (s *HandlerTestSuite) SetupTest() {
 	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
+
+	var err error
+	s.dispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+		[]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.ComplianceCentralRequestLane),
+			lane.NewBlockingLane(pubsub.ComplianceCentralResultLane),
+		},
+	))
+	s.Require().NoError(err)
+
 	readySignal := concurrency.NewSignal()
-	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
-	handler, ok := s.requestHandler.(*handlerImpl)
-	s.Require().True(ok)
-	handler.retrier.apiCallTimeout = 500 * time.Millisecond
-	handler.retrier.maxRetries = 2
+	readySignal.Signal()
+
+	manager := NewManager(s.client, s.statusInfo, &readySignal, s.dispatcher)
+	manager.writer.retrier.apiCallTimeout = 500 * time.Millisecond
+	manager.writer.retrier.maxRetries = 2
+
+	s.requestHandler = NewRequestHandler(manager, s.dispatcher)
 	s.Require().NoError(s.requestHandler.Start())
 }
 
-func (s *HandlerTestSuite) TearDownSuite() {
+func (s *HandlerTestSuite) TearDownTest() {
 	s.requestHandler.Stop()
+	s.dispatcher.Stop()
 }
 
 func (s *HandlerTestSuite) TestProcessApplyOneTimeScanSuccess() {
@@ -478,13 +495,23 @@ func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *cen
 	var ret *central.ComplianceResponse
 
 	for range times {
-		s.NoError(s.requestHandler.ProcessMessage(s.T().Context(), msg))
+		errCh := make(chan error, 1)
+		go func() {
+			errCh <- s.requestHandler.ProcessMessage(s.T().Context(), msg)
+		}()
 
 		select {
 		case response := <-s.requestHandler.ResponsesC():
 			ret = response.Msg.(*central.MsgFromSensor_ComplianceResponse).ComplianceResponse
 		case <-timer.C:
-			s.Fail("Timed out while waiting")
+			s.Fail("Timed out while waiting for response")
+		}
+
+		select {
+		case err := <-errCh:
+			s.NoError(err)
+		case <-timer.C:
+			s.Fail("Timed out while waiting for ProcessMessage to return")
 		}
 	}
 	return ret
