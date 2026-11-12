@@ -231,6 +231,24 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		return nil, err
 	}
 
+	if request.GetId() != "" {
+		existing, exists, err := s.policies.GetPolicy(ctx, request.GetId())
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			// Ignore server-managed metadata when checking whether the policy changed.
+			comparable := request.CloneVT()
+			comparable.LastUpdated = existing.GetLastUpdated()
+			comparable.SORTName = existing.GetSORTName()
+			comparable.SORTLifecycleStage = existing.GetSORTLifecycleStage()
+			comparable.SORTEnforcement = existing.GetSORTEnforcement()
+			if comparable.EqualVT(existing) {
+				return existing, nil
+			}
+		}
+	}
+
 	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
 	if err := updateFunc(ctx, request); err != nil {
 		return nil, err
