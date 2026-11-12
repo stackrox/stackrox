@@ -20,7 +20,7 @@ jobs:
     needs: detect-changes
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       - name: Build ci-select
         run: make -C ci/select
       - name: Collect changed paths
