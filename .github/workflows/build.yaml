@@ -352,19 +352,24 @@ jobs:
           if "${GOCACHEPROG}" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
             tar -xzf /tmp/vendor.tar.gz
             echo "vendor: restored from blob store (${VENDOR_KEY})"
-            export GOFLAGS="${GOFLAGS} -mod=vendor"
-            echo "GOFLAGS=${GOFLAGS}" >> "$GITHUB_ENV"
           else
             echo "vendor: generating (cache miss for ${VENDOR_KEY})"
+            # Disable GOCACHEPROG for go mod vendor: it doesn't use the build
+            # cache, and gocache-serve's startup (blob store connection,
+            # manifest download, prefetch) adds overhead to every go command.
+            # Module downloads need the module cache, not the build cache.
+            GCP="$GOCACHEPROG"
+            unset GOCACHEPROG
             go mod vendor 2>&1 | tail -3
+            export GOCACHEPROG="$GCP"
             if [ -d vendor ]; then
               tar -czf /tmp/vendor.tar.gz vendor/
               "${GOCACHEPROG}" -store "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1 || true
               echo "vendor: cached for future runs"
             fi
-            export GOFLAGS="${GOFLAGS} -mod=vendor"
-            echo "GOFLAGS=${GOFLAGS}" >> "$GITHUB_ENV"
           fi
+          export GOFLAGS="${GOFLAGS} -mod=vendor"
+          echo "GOFLAGS=${GOFLAGS}" >> "$GITHUB_ENV"
 
       - name: Restore link-output cache (stub bypass)
         run: |
