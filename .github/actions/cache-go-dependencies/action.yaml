@@ -104,14 +104,16 @@ runs:
           echo "::error::cloud GOCACHE backend requires azure-tenant-id, azure-client-id and azure-client-secret inputs"
           exit 1
         fi
-        echo "=== building gocache-serve ==="
-        (cd tools/gocache-serve && go build -o /usr/local/bin/gocache-serve .)
+        # Self-contained bootstrap: downloads the pre-built binary from
+        # blob store (~1s) or builds from source (~30s) as fallback,
+        # then execs into the result. The cache server bootstraps from
+        # the very store it serves.
+        echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
         # Manifest name mirrors the GHA cache key structure: job + matrix
         # suffix + arch. Matrix legs and architectures have disjoint
         # ActionID working sets, so their manifests must not mix.
         manifest="$(echo "${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}" \
           | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed 's/-\+/-/g; s/^-//; s/-$//')"
-        echo "GOCACHEPROG=/usr/local/bin/gocache-serve" >> "$GITHUB_ENV"
         echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
         echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
         echo "GOCACHE_SERVE_MANIFEST=$manifest" >> "$GITHUB_ENV"
@@ -119,11 +121,21 @@ runs:
         echo "AZURE_TENANT_ID=$AZURE_TENANT_ID" >> "$GITHUB_ENV"
         echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" >> "$GITHUB_ENV"
         echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> "$GITHUB_ENV"
+        # Deterministic builds: stable version stamping eliminates the
+        # 172-entry compile cache churn from commit-SHA-dependent ldflags.
+        # Verified: byte-identical binaries and ~100% hit rates with these set.
+        echo "BUILD_TAG=0.0.0" >> "$GITHUB_ENV"
+        echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"
+        echo "GOFLAGS=-buildvcs=false" >> "$GITHUB_ENV"
+        # Vendor mode: eliminates GOMODCACHE path sensitivity that causes
+        # compile ActionID churn on fresh runners (measured: 585 entries
+        # churn with path change in module mode vs 10 in vendor mode).
+        # The vendor directory is cached in blob store keyed by go.sum hash.
+        echo "GOCACHE_VENDOR_MODE=1" >> "$GITHUB_ENV"
         # Manifests are written only on default-branch pushes (PR runs read
         # them for prefetch but don't overwrite the canonical working set
         # with PR-specific entries). manifest-write-override=1 forces PR
-        # writes for experiment branches (composite actions cannot read
-        # the vars context, hence the input).
+        # writes for experiment branches.
         if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ inputs.manifest-write-override }}" != "1" ]; then
           echo "GOCACHE_SERVE_MANIFEST_WRITE=0" >> "$GITHUB_ENV"
         fi

@@ -273,6 +273,31 @@ jobs:
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         run: make cli
 
+      - name: Store CLI binaries in blob store (link-output caching)
+        if: |
+          needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # Store roxctl for link-output caching (stub bypass on next run)
+          if [ -f bin/linux_amd64/roxctl ]; then
+            "${GOCACHEPROG}" -store "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+            BID=$(go tool buildid bin/linux_amd64/roxctl 2>/dev/null || true)
+            if [ -n "$BID" ]; then
+              printf '%s' "$BID" > /tmp/outbin-meta
+              "${GOCACHEPROG}" -store "outbin-META-linux_amd64" /tmp/outbin-meta 2>&1 | tail -1 || true
+              ABID=$(printf '%s' "$BID" | cut -d/ -f1)
+              "${GOCACHEPROG}" -store "outbin-${ABID}-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+              echo "stored outbin (META + exact key ${ABID:0:16}...)"
+            fi
+          fi
+
       - name: Bundle build to preserve permissions
         run: tar -cvf cli-build.tar bin
 
@@ -320,6 +345,38 @@ jobs:
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
           azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
+      - name: Restore vendor directory (deterministic builds)
+        run: |
+          set -euo pipefail
+          VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
+          if "${GOCACHEPROG}" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
+            tar -xzf /tmp/vendor.tar.gz
+            echo "vendor: restored from blob store (${VENDOR_KEY})"
+            export GOFLAGS="${GOFLAGS} -mod=vendor"
+            echo "GOFLAGS=${GOFLAGS}" >> "$GITHUB_ENV"
+          else
+            echo "vendor: generating (cache miss for ${VENDOR_KEY})"
+            go mod vendor 2>&1 | tail -3
+            if [ -d vendor ]; then
+              tar -czf /tmp/vendor.tar.gz vendor/
+              "${GOCACHEPROG}" -store "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1 || true
+              echo "vendor: cached for future runs"
+            fi
+            export GOFLAGS="${GOFLAGS} -mod=vendor"
+            echo "GOFLAGS=${GOFLAGS}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Restore link-output cache (stub bypass)
+        run: |
+          set -euo pipefail
+          mkdir -p bin/linux_${{ matrix.arch }}
+          if "${GOCACHEPROG}" -fetch "outbin-LATEST-linux_${{ matrix.arch }}" bin/linux_${{ matrix.arch }}/roxctl 2>/dev/null \
+            && [ "$(stat -c%s bin/linux_${{ matrix.arch }}/roxctl 2>/dev/null || echo 0)" -gt 1000000 ]; then
+            echo "link-output: roxctl restored from outbin cache"
+          else
+            rm -f bin/linux_${{ matrix.arch }}/roxctl
+          fi
+
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
@@ -366,8 +423,25 @@ jobs:
       - name: Build Go Binaries
         run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
 
-      - name: Bundle the build to preserve permissions
-        run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
+      - name: Store binaries in blob store (replaces artifact upload)
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # Store roxctl for link-output caching (stub bypass on next run)
+          if [ -f bin/linux_${{ matrix.arch }}/roxctl ]; then
+            "${GOCACHEPROG}" -store "outbin-LATEST-linux_${{ matrix.arch }}" bin/linux_${{ matrix.arch }}/roxctl 2>&1 | tail -1 || true
+            echo "stored outbin-LATEST-linux_${{ matrix.arch }} ($(stat -c%s bin/linux_${{ matrix.arch }}/roxctl) bytes)"
+          fi
+          # Store all binaries for the container build (blob store reference)
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-${{ matrix.name }}"
+          tar -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
+          "${GOCACHEPROG}" -store "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1 || true
+          echo "stored $BLOB_KEY ($(stat -c%s /tmp/go-binaries.tar) bytes)"
+          # Also upload as artifact for backward compatibility during transition
+          cp /tmp/go-binaries.tar go-binaries-build.tar
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -700,6 +774,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
 
+      - name: Set up cloud GOCACHE (for blob store binary fetch)
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
+          echo "AZURE_TENANT_ID=$AZURE_TENANT_ID" >> "$GITHUB_ENV"
+          echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" >> "$GITHUB_ENV"
+          echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> "$GITHUB_ENV"
+
       - name: Checkout submodules
         run: |
             git submodule update --init
@@ -717,11 +805,24 @@ jobs:
         run: |
           tar xvf cli-build.tar
 
+      - name: Fetch Go binaries from blob store (fast path)
+        run: |
+          set -euo pipefail
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-default"
+          if "${GOCACHEPROG}" -fetch "$BLOB_KEY" /tmp/go-binaries.tar 2>/dev/null && [ -s /tmp/go-binaries.tar ]; then
+            tar xvf /tmp/go-binaries.tar
+            echo "binaries: fetched from blob store (${BLOB_KEY}, ~2s)"
+          else
+            echo "binaries: blob store miss — will use artifact download"
+          fi
+
       - uses: ./.github/actions/download-artifact-with-retry
+        if: hashFiles('bin/linux_${{ matrix.arch }}/central') == ''
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
       - name: Unpack Go binaries build
+        if: hashFiles('bin/linux_${{ matrix.arch }}/central') == ''
         run: |
           tar xvf go-binaries-build.tar
 
