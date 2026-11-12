@@ -612,7 +612,6 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			DEPRECATEDLastContact: nil,
 			ProviderMetadata:      nil,
 			OrchestratorMetadata:  nil,
-			UpgradeStatus:         nil,
 			CertExpiryStatus:      oldCertExpiryStatus,
 		}
 	}
@@ -789,64 +788,6 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterStatus() {
 			s.Require().NoError(err)
 			s.Require().True(found)
 			s.Require().Equal(oldStatus.GetSensorVersion(), fetchedCluster.GetStatus().GetSensorVersion())
-		})
-	}
-}
-
-func (s *clusterDatastoreSACSuite) TestUpdateClusterUpgradeStatus() {
-	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
-	oldCluster := fixtures.GetCluster(testconsts.Cluster2)
-	oldUpgradeStatus := &storage.ClusterUpgradeStatus{
-		Upgradability:             storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED,
-		UpgradabilityStatusReason: "Manual upgrade required",
-	}
-	oldStatus := &storage.ClusterStatus{
-		SensorVersion: "3.71.x-88-g9798e675e5-dirty",
-		UpgradeStatus: oldUpgradeStatus,
-	}
-	oldCluster.Status = oldStatus
-	clusterID, err := s.datastore.AddCluster(globalReadWriteCtx, oldCluster)
-	defer s.deleteCluster(clusterID)
-	s.Require().NoError(err)
-	oldCluster.Id = clusterID
-	newUpgradeStatus := &storage.ClusterUpgradeStatus{
-		Upgradability:             storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE,
-		UpgradabilityStatusReason: "Automatic upgrade possible",
-	}
-
-	cases := testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), "update cluster upgrade status", clusterID, "not"+clusterID, resources.Cluster)
-
-	for name, c := range cases {
-		s.Run(name, func() {
-			ctx := c.Context
-			preUpdateCluster, preUpdateFound, preUpdateErr := s.datastore.GetCluster(globalReadWriteCtx, clusterID)
-			s.NoError(preUpdateErr)
-			s.True(preUpdateFound)
-			updateErr := s.datastore.UpdateClusterUpgradeStatus(ctx, clusterID, newUpgradeStatus)
-			postUpdateCluster, postUpdateFound, postUpdateErr := s.datastore.GetCluster(globalReadWriteCtx, clusterID)
-			s.NoError(postUpdateErr)
-			s.True(postUpdateFound)
-			if c.ExpectError {
-				s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradability(), preUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradability())
-				s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradabilityStatusReason(), preUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason())
-				s.ErrorIs(updateErr, c.ExpectedError)
-				s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradability(), postUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradability())
-				s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradabilityStatusReason(), postUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason())
-			} else {
-				s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradability(), preUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradability())
-				s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradabilityStatusReason(), preUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason())
-				s.NoError(updateErr)
-				s.Require().Equal(newUpgradeStatus.GetUpgradability(), postUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradability())
-				s.Require().Equal(newUpgradeStatus.GetUpgradabilityStatusReason(), postUpdateCluster.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason())
-			}
-			// Revert to pre-test state
-			err := s.datastore.UpdateClusterUpgradeStatus(globalReadWriteCtx, clusterID, oldUpgradeStatus)
-			s.Require().NoError(err)
-			fetchedCluster, found, err := s.datastore.GetCluster(globalReadWriteCtx, clusterID)
-			s.Require().NoError(err)
-			s.Require().True(found)
-			s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradability(), fetchedCluster.GetStatus().GetUpgradeStatus().GetUpgradability())
-			s.Require().Equal(oldStatus.GetUpgradeStatus().GetUpgradabilityStatusReason(), fetchedCluster.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason())
 		})
 	}
 }

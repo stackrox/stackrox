@@ -1905,15 +1905,6 @@ record_upgrade_test_progess() {
     # files listed below. This is essentially a check for the existence of state
     # tracking files that the upgrade test leaves in its wake as it progresses.
 
-    # tests/upgrade/postgres_sensor_run.sh
-    if [[ "$CI_JOB_NAME" == "gke-upgrade-tests-sensor" ]]; then
-        record_progress_step "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" "${STATE_DEPLOYED}" \
-            "postgres_sensor_run" "roxctl sensor bundle test"
-        record_progress_step "${UPGRADE_PROGRESS_UPGRADER}" "${UPGRADE_PROGRESS_SENSOR_BUNDLE}" \
-            "postgres_sensor_run" "bin/upgrader tests"
-        return
-    fi
-
     # tests/upgrade/postgres_run.sh and tests/upgrade/postgres_upgrade_run.sh
     record_progress_step "${UPGRADE_PROGRESS_POSTGRES_PREP}" "${STATE_DEPLOYED}" \
         "postgres_run" "Preparation for postgres testing"

@@ -1712,7 +1712,7 @@ handle_nightly_binary_version_mismatch() {
     echo "Current roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
 
     if ! [[ "$(roxctl version || true)" =~ nightly-$(date '+%Y%m%d') ]]; then
-        make cli_host-arch upgrader
+        make cli_host-arch
         make cli-install
         echo "Replacement roxctl is: $(command -v roxctl || true), version: $(roxctl version || true)"
     fi
