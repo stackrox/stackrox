@@ -305,6 +305,18 @@ _pg_want_help() {
 	return 1
 }
 
+### STACKROX MODIFIED - Default TLS groups for this environment.
+rox_ssl_groups() {
+	if [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)" = "1" ]; then
+		# ML-KEM is not yet approved for FIPS; keep the PG15/16 default.
+		echo 'prime256v1'
+	else
+		# X25519MLKEM768 enables post-quantum key exchange (hybrid ML-KEM),
+		# with prime256v1 as a fallback for older clients.
+		echo 'X25519MLKEM768:prime256v1'
+	fi
+}
+
 _main() {
 	# if first arg looks like a flag, assume we want to run postgres server
 	if [ "${1:0:1}" = '-' ]; then
@@ -369,7 +381,7 @@ _main() {
 	if [ -n "${ROX_OPENSSL_TLS_CIPHER_SUITES:-}" ]; then
 		set -- "$@" -c "ssl_ciphers=${ROX_OPENSSL_TLS_CIPHER_SUITES}"
 	fi
-	set -- "$@" -c "ssl_ecdh_curve=X25519MLKEM768:prime256v1"
+	set -- "$@" -c "ssl_ecdh_curve=$(rox_ssl_groups)"
 
 	flock /var/lib/postgresql/data/pglock "$@" &
 	child=$!
