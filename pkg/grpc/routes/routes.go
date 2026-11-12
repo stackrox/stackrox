@@ -6,6 +6,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -14,7 +15,11 @@ import (
 
 func authorizerHandler(h http.Handler, authorizer authz.Authorizer, postAuthInterceptor httputil.HTTPInterceptor, route string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if err := authorizer.Authorized(req.Context(), RPCNameForHTTP(route, req.Method)); err != nil {
+		ctx := req.Context()
+		if features.ACMAccessControlDelegation.Enabled() {
+			ctx = authorizer.EnrichContext(ctx, RPCNameForHTTP(route, req.Method))
+		}
+		if err := authorizer.Authorized(ctx, RPCNameForHTTP(route, req.Method)); err != nil {
 			writeHTTPStatus(w, err)
 			return
 		}
