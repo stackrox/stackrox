@@ -361,6 +361,33 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Fprintf(os.Stderr, "verified: %s\n", got)
+		case "-docker-push":
+			if len(os.Args) < 5 {
+				fmt.Fprintln(os.Stderr, "usage: -docker-push IMAGE TAG KEY_PREFIX")
+				os.Exit(2)
+			}
+			if err := dockerPush(backend, os.Args[2], os.Args[3], os.Args[4]); err != nil {
+				fmt.Fprintf(os.Stderr, "docker-push: %v\n", err)
+				os.Exit(1)
+			}
+		case "-docker-pull":
+			if len(os.Args) < 3 {
+				fmt.Fprintln(os.Stderr, "usage: -docker-pull KEY_PREFIX")
+				os.Exit(2)
+			}
+			if err := dockerPull(backend, os.Args[2]); err != nil {
+				fmt.Fprintf(os.Stderr, "docker-pull: %v\n", err)
+				os.Exit(1)
+			}
+		case "-docker-prefetch":
+			if len(os.Args) < 3 {
+				fmt.Fprintln(os.Stderr, "usage: -docker-prefetch KEY_PREFIX")
+				os.Exit(2)
+			}
+			if err := dockerPrefetch(backend, os.Args[2]); err != nil {
+				fmt.Fprintf(os.Stderr, "docker-prefetch: %v\n", err)
+				os.Exit(1)
+			}
 		default:
 			fmt.Fprintf(os.Stderr, "unknown subcommand %s\n", os.Args[1])
 			os.Exit(2)
