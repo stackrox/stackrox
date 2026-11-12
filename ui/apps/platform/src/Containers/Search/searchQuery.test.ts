@@ -1,63 +1,117 @@
-import { parseQueryString, stringifyQueryObject } from './searchQuery';
-
-const searchOptions = ['Cluster', 'Namespace'];
+import {
+    parseQueryString,
+    parseSearchFilter,
+    stringifyQueryObject,
+    stringifySearchFilter,
+} from './searchQuery';
 
 describe('parseQueryString', () => {
-    it('should parse search filter and leave navCategory unset without a category', () => {
-        const { searchFilter, navCategory, perPage } = parseQueryString(
-            '?s[Cluster]=remote',
-            searchOptions
-        );
-
-        expect(searchFilter).toEqual({ Cluster: 'remote' });
-        expect(navCategory).toBe('SEARCH_UNSET');
-        expect(perPage).toBeUndefined();
+    it('keeps a key that is in the dynamic search options', () => {
+        const { searchFilter } = parseQueryString('?s[CVE]=cve-1', ['CVE']);
+        expect(searchFilter).toEqual({ CVE: 'cve-1' });
     });
 
-    it('should preserve the perPage parameter', () => {
-        const { perPage } = parseQueryString('?s[Cluster]=remote&perPage=50', searchOptions);
+    it('keeps a curated config search term even when dynamic options are empty', () => {
+        // Preserves curated filtering if the search options request has not resolved or failed.
+        const { searchFilter } = parseQueryString('?s[Deployment]=nginx', []);
+        expect(searchFilter).toEqual({ Deployment: 'nginx' });
+    });
 
+    it('drops a key that is neither a search option nor a config term', () => {
+        const { searchFilter } = parseQueryString('?s[Bogus]=x', ['CVE']);
+        expect(searchFilter).toEqual({});
+    });
+
+    it('drops empty values', () => {
+        const { searchFilter } = parseQueryString('?s[Deployment]=', []);
+        expect(searchFilter).toEqual({});
+    });
+
+    it('preserves array values', () => {
+        const { searchFilter } = parseQueryString('?s[Cluster]=a&s[Cluster]=b', []);
+        expect(searchFilter).toEqual({ Cluster: ['a', 'b'] });
+    });
+
+    it('parses the nav category when a filter is present', () => {
+        const { navCategory } = parseQueryString('?s[Deployment]=nginx&category=Deployments', []);
+        expect(navCategory).toBe('DEPLOYMENTS');
+    });
+
+    it('returns SEARCH_UNSET when there is no filter', () => {
+        const { navCategory } = parseQueryString('?category=Deployments', []);
+        expect(navCategory).toBe('SEARCH_UNSET');
+    });
+
+    it('preserves the perPage parameter', () => {
+        const { perPage } = parseQueryString('?s[Cluster]=remote&perPage=50', ['Cluster']);
         expect(perPage).toBe('50');
     });
 
-    it('should not treat the page parameter as perPage', () => {
-        const { perPage } = parseQueryString('?s[Cluster]=remote&page=3', searchOptions);
-
+    it('leaves perPage undefined when absent and ignores the page parameter', () => {
+        const { perPage } = parseQueryString('?s[Cluster]=remote&page=3', ['Cluster']);
         expect(perPage).toBeUndefined();
     });
 });
 
 describe('stringifyQueryObject', () => {
-    it('should return an empty string for an empty search filter', () => {
+    it('returns an empty string for an empty filter', () => {
         expect(stringifyQueryObject({ searchFilter: {}, navCategory: 'SEARCH_UNSET' })).toBe('');
     });
 
-    it('should carry the page size forward while omitting the page', () => {
+    it('omits the category for SEARCH_UNSET', () => {
+        const queryString = stringifyQueryObject({
+            searchFilter: { Deployment: 'nginx' },
+            navCategory: 'SEARCH_UNSET',
+        });
+        expect(queryString).toContain('Deployment');
+        expect(queryString).not.toContain('category');
+    });
+
+    it('includes the category when it is set', () => {
+        const queryString = stringifyQueryObject({
+            searchFilter: { Deployment: 'nginx' },
+            navCategory: 'DEPLOYMENTS',
+        });
+        expect(queryString).toContain('category=Deployments');
+    });
+
+    it('round-trips with parseQueryString', () => {
+        const searchFilter = { Deployment: 'nginx', Cluster: ['a', 'b'] };
+        const queryString = stringifyQueryObject({ searchFilter, navCategory: 'DEPLOYMENTS' });
+        const parsed = parseQueryString(queryString, []);
+        expect(parsed.searchFilter).toEqual(searchFilter);
+        expect(parsed.navCategory).toBe('DEPLOYMENTS');
+    });
+
+    it('carries the page size forward while omitting the page', () => {
         const queryString = stringifyQueryObject({
             searchFilter: { Cluster: 'remote' },
             navCategory: 'SEARCH_UNSET',
             perPage: '50',
         });
-
         expect(queryString).toContain('perPage=50');
         expect(queryString).not.toContain('page=');
     });
 
-    it('should omit perPage when it is not provided', () => {
+    it('omits perPage when it is not provided', () => {
         const queryString = stringifyQueryObject({
             searchFilter: { Cluster: 'remote' },
             navCategory: 'SEARCH_UNSET',
         });
-
         expect(queryString).not.toContain('perPage');
     });
 
-    it('should round-trip the page size through parse and stringify', () => {
-        const parsed = parseQueryString('?s[Cluster]=remote&perPage=50&page=3', searchOptions);
+    it('round-trips the page size, resetting the page', () => {
+        const parsed = parseQueryString('?s[Cluster]=remote&perPage=50&page=3', ['Cluster']);
         const queryString = stringifyQueryObject(parsed);
-
-        // Page size survives, page resets (is dropped).
         expect(queryString).toContain('perPage=50');
         expect(queryString).not.toContain('page=3');
+    });
+});
+
+describe('stringifySearchFilter and parseSearchFilter', () => {
+    it('round-trips a search filter', () => {
+        const searchFilter = { Deployment: 'nginx', Cluster: ['a', 'b'] };
+        expect(parseSearchFilter(stringifySearchFilter(searchFilter))).toEqual(searchFilter);
     });
 });
