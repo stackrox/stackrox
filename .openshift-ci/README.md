@@ -85,7 +85,7 @@ This checks names, not readiness or per-snapshot counts. NotReady nodes with
 unchanged names, disappearance without replacement, and transient nodes between
 polls may go undetected. A replacement is not proof of Spot preemption.
 
-GHA invokes `python3 .openshift-ci/node_disruption.py run -- <command>`; Prow
+The CLI accepts `python3 .openshift-ci/node_disruption.py run -- <command>`; Prow
 imports `run()` directly. Monitoring writes only logs and JUnit, without GitHub
 step outputs or workflow annotations, and does not skip post-test steps. Both
 paths retain product exit codes, timeout handling, and process-group cleanup on
