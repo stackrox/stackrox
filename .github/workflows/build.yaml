@@ -1177,6 +1177,9 @@ jobs:
 
   push-operator-manifests:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
     needs:
     - define-job-matrix
     - build-and-push-operator
@@ -1198,6 +1201,21 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+    - name: Check RHACS ARM64 build
+      if: matrix.name == 'RHACS_BRANDING' && matrix.archs == 'amd64,arm64'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        conclusion=$(gh api --paginate \
+          "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?filter=all&per_page=100" |
+          jq -sr '[.[].jobs[]
+            | select(.name == "build-and-push-operator (RHACS_BRANDING, arm64)")]
+            | max_by(.run_attempt) | .conclusion')
+        if [[ "$conclusion" == failure ]]; then
+          echo "::error::RHACS ARM64 operator build failed; cannot publish manifests"
+          exit 1
+        fi
+
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
