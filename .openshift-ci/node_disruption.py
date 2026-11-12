@@ -122,24 +122,6 @@ def wait_for_test(test, sample, cancellation, timeout):
     return False
 
 
-def cleanup(test, previous):
-    try:
-        terminate(test)
-    finally:
-        for sig, handler in previous.items():
-            signal.signal(sig, handler)
-
-
-def finish(test, cancellation, timed_out, failed):
-    if cancellation.requested:
-        code = 128 + cancellation.signal
-    elif timed_out:
-        code = 124
-    else:
-        code = test.returncode if test else 1
-    return RunResult(code if code >= 0 else 128 - code, failed, timed_out)
-
-
 def prepare_monitor(directory, env, sample, errors):
     try:
         expected = expected_node_count(env)
@@ -196,8 +178,19 @@ def run(command, timeout=None, env=None):
                     failed = True
                     print(f'WARNING: Could not write node monitor report: {exc}', flush=True)
         finally:
-            cleanup(test, previous)
-    return finish(test, cancellation, timed_out, failed)
+            try:
+                terminate(test)
+            finally:
+                for sig, handler in previous.items():
+                    signal.signal(sig, handler)
+
+    if cancellation.requested:
+        code = 128 + cancellation.signal
+    elif timed_out:
+        code = 124
+    else:
+        code = test.returncode if test else 1
+    return RunResult(code if code >= 0 else 128 - code, failed, timed_out)
 
 
 def main():
