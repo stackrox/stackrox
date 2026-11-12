@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,6 +39,10 @@ func TestSubqueryBindings(t *testing.T) {
 func TestInvalidSubQuery(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	valid := search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.ImageID)).ProtoQuery()
+	unsupportedAggregate := search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count)).ProtoQuery()
+	unsupportedAggregate.Selects[0].Filter = &v1.QuerySelectFilter{
+		Query: search.NewQueryBuilder().AddExactMatches(search.ResourceID, "unsupported").ProtoQuery(),
+	}
 	for name, test := range map[string]struct {
 		field    search.FieldLabel
 		category v1.SearchCategory
@@ -53,6 +58,9 @@ func TestInvalidSubQuery(t *testing.T) {
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.ImageID), search.NewQuerySelect(search.ImageName)).ProtoQuery()},
 		"array select": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.AddCapabilities)).ProtoQuery()},
+		"empty compiled projection": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS, query: unsupportedAggregate},
+		"implicit JSON aggregate": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).AddGroupBy(search.Cluster).ProtoQuery()},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := standardizeQueryAndPopulatePath(ctx, search.MatchFieldSubQuery(test.field, test.category, test.query), schema.DeploymentsSchema, GET)

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -59,6 +60,12 @@ func TestSubQueryComposition(t *testing.T) {
 			keys: []string{"first", "null-name"}},
 		"nested":                 {query: nested, keys: []string{"third"}},
 		"empty inner predicates": {query: search.MatchFieldSubQuery(search.TestKey, category, allRows), keys: []string{"first", "second", "third", "null-name"}},
+		"grouped scalar": {query: search.MatchFieldSubQuery(search.TestKey, category,
+			search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.TestKey)).AddGroupBy(search.TestKey).ProtoQuery()),
+			keys: []string{"first", "second", "third", "null-name"}},
+		"aggregate scalar": {query: search.MatchFieldSubQuery(search.TestInt64, category,
+			search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.TestInt64).AggrFunc(aggregatefunc.Max)).ProtoQuery()),
+			keys: []string{"third"}},
 		"distinct with ordering": {query: search.MatchFieldSubQuery(search.TestKey, category, distinct), keys: []string{"second", "third"}},
 		"unsupported inner filter": {query: search.MatchFieldSubQuery(search.TestKey, category,
 			search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.TestKey)).

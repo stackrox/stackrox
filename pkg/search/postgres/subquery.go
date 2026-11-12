@@ -33,8 +33,15 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	if compiled == nil {
 		return pgsearch.NewFalseQuery(), nil
 	}
+	if len(compiled.SelectedFields) == 0 {
+		return nil, errox.InvalidArgs.New("subquery must compile to a selected scalar field")
+	}
+	// Resolve grouping metadata before checking the projection: SELECT rewrites
+	// ungrouped, non-aggregate fields to jsonb_agg when grouping by other fields.
+	compiled.ExtraSelectedFieldPaths()
 	selected := compiled.SelectedFields[0]
-	if !isSubQueryScalar(selected.FieldType) {
+	if !isSubQueryScalar(selected.FieldType) || selected.ChildTableAgg ||
+		(compiled.groupByNonPKFields() && !selected.FromGroupBy && !selected.DerivedField) {
 		return nil, errox.InvalidArgs.New("subquery must select a scalar field")
 	}
 	outer := selectQueryField(sub.GetField(), field.baseField, false, aggregatefunc.Unset, "")
