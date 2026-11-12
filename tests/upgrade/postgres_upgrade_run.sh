@@ -275,6 +275,12 @@ test_upgrade_path() {
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_CURRENT_PG"
 
+    # Central's startup reprocessing races the Scanner V4 matcher's initial
+    # vulnerability import and only runs again after ROX_REPROCESSING_INTERVAL
+    # (4h). Wait for the store, then let the bounce below trigger a fresh
+    # reprocessing pass so images_v2 is populated for the assertions.
+    wait_for_scanner_v4_readiness
+
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
     ########################################################################################
