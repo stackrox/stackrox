@@ -350,7 +350,9 @@ jobs:
           set -euo pipefail
           VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
           if "${GOCACHEPROG}" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/tmp/vendor-fetch.err && [ -s /tmp/vendor.tar.gz ]; then
-            tar -xzf /tmp/vendor.tar.gz
+            # -xf (not -xzf): gocache-serve's maybeGunzip transparently
+            # decompresses gzipped blobs, so the file may be a plain tar.
+            tar -xf /tmp/vendor.tar.gz
             echo "vendor: restored from blob store (${VENDOR_KEY})"
           else
             echo "vendor: generating (cache miss for ${VENDOR_KEY})"
