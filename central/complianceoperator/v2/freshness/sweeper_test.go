@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/adhocore/gronx"
@@ -73,48 +74,35 @@ func TestPreviousScheduledStart(t *testing.T) {
 // has passed AND its full grace window elapsed without new results. In particular, a fresh scheduled
 // scan must not flip the previous cycle's results to STALE while that scan is still within its grace
 // window (the bug yuumasato caught on PR #23851).
+//
+// It runs inside a synctest bubble so sweep's internal time.Now() calls see a fake, controllable
+// clock: time.Sleep advances the bubble's clock instantly instead of waiting on the wall clock, which
+// lets the test walk up to and across the grace boundary deterministically without sweep needing a
+// test-only "now" parameter.
 func TestSweepGraceWindow(t *testing.T) {
-	grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
-	require.Positive(t, grace)
-	require.Less(t, grace, 24*time.Hour, "test assumes grace is shorter than the daily interval")
+	synctest.Test(t, func(t *testing.T) {
+		grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
+		require.Positive(t, grace)
+		require.Less(t, grace, 24*time.Hour, "test assumes grace is shorter than the daily interval")
 
-	sched := dailySchedule(3, 0)
-	// start is a scheduled scan start; the previous cycle's results carry laststartedtime == prevCycle.
-	start := time.Date(2026, 1, 2, 3, 0, 0, 0, time.UTC)
-	prevCycle := start.Add(-24 * time.Hour)
+		// start is a scheduled scan start, anchored shortly after the bubble's fixed epoch so "now"
+		// begins strictly before it. The previous cycle's results carry LastStartedTime == prevCycle.
+		start := time.Now().Add(time.Minute)
+		sched := dailySchedule(int32(start.Hour()), int32(start.Minute()))
+		prevCycle := start.Add(-24 * time.Hour)
 
-	cases := map[string]struct {
-		now        time.Time
-		wantCutoff time.Time
-	}{
-		"within grace window keeps previous cycle current": {
-			// The scan at start is running; its grace has not elapsed. The cutoff must not pass the
-			// previous cycle's start, so markStale (strict <) leaves those results CURRENT.
-			now:        start.Add(time.Minute),
-			wantCutoff: prevCycle,
-		},
-		"at grace boundary still keeps previous cycle current": {
-			now:        start.Add(grace),
-			wantCutoff: prevCycle,
-		},
-		"after grace elapses marks the previous cycle stale": {
-			// start's grace fully elapsed with no new results, so the cutoff advances to start and the
-			// previous cycle (laststartedtime < start) becomes stale.
-			now:        start.Add(grace + time.Minute),
-			wantCutoff: start,
-		},
-	}
+		ctrl := gomock.NewController(t)
+		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
+		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+		sw := newTestSweeper(scanConfigMock, checkResultMock)
 
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-			checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-			sw := newTestSweeper(scanConfigMock, checkResultMock)
+		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgA", sched)}, nil).AnyTimes()
 
-			scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
-				Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgA", sched)}, nil)
-
+		// assertPrevCycleStale sweeps at the bubble's current fake time and checks whether the previous
+		// cycle's results would be marked stale, via the cutoff passed to MarkScanChecksStaleByConfig.
+		assertPrevCycleStale := func(wantStale bool) {
+			t.Helper()
 			var gotCutoff time.Time
 			checkResultMock.EXPECT().
 				MarkScanChecksStaleByConfig(gomock.Any(), "cfgA", gomock.Any()).
@@ -123,20 +111,26 @@ func TestSweepGraceWindow(t *testing.T) {
 					return 0, nil
 				})
 
-			sw.sweep(tc.now)
+			sw.sweep()
 
-			assert.True(t, gotCutoff.Equal(tc.wantCutoff), "cutoff = %s, want %s", gotCutoff, tc.wantCutoff)
-			// markStale uses a strict "<", so the previous cycle is stale iff its start predates the cutoff.
-			prevCycleStale := prevCycle.Before(gotCutoff)
-			wantStale := tc.wantCutoff.Equal(start)
-			assert.Equal(t, wantStale, prevCycleStale, "previous-cycle staleness mismatch for cutoff %s", gotCutoff)
-		})
-	}
+			// markStale uses a strict "<", so the previous cycle is stale iff its start predates cutoff.
+			assert.Equal(t, wantStale, prevCycle.Before(gotCutoff), "cutoff = %s", gotCutoff)
+		}
+
+		assertPrevCycleStale(false) // well before the scheduled start
+
+		time.Sleep(time.Until(start.Add(time.Minute)))
+		assertPrevCycleStale(false) // the new scan is running, within its grace window
+
+		time.Sleep(time.Until(start.Add(grace)))
+		assertPrevCycleStale(false) // exactly at the grace boundary: still current
+
+		time.Sleep(time.Until(start.Add(grace + time.Minute)))
+		assertPrevCycleStale(true) // grace fully elapsed with no new results
+	})
 }
 
 func TestSweep(t *testing.T) {
-	now := time.Now()
-
 	t.Run("config with nil schedule is skipped", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
@@ -147,7 +141,7 @@ func TestSweep(t *testing.T) {
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgNil", nil)}, nil)
 		// No MarkScanChecksStaleByConfig expectation: gomock fails if it is called.
 
-		sw.sweep(now)
+		sw.sweep()
 	})
 
 	t.Run("list error is tolerated and marks nothing", func(t *testing.T) {
@@ -160,7 +154,7 @@ func TestSweep(t *testing.T) {
 			Return(nil, errors.New("boom"))
 		// No MarkScanChecksStaleByConfig expectation.
 
-		sw.sweep(now)
+		sw.sweep()
 	})
 
 	t.Run("mark error on one config does not stop the next", func(t *testing.T) {
@@ -181,7 +175,7 @@ func TestSweep(t *testing.T) {
 		checkResultMock.EXPECT().MarkScanChecksStaleByConfig(gomock.Any(), "cfg2", gomock.Any()).
 			Return(int64(0), nil)
 
-		sw.sweep(now)
+		sw.sweep()
 	})
 }
 
