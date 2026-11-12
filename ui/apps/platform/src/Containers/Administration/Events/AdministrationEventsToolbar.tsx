@@ -139,8 +139,8 @@ function AdministrationEventsToolbar({
             <ToolbarContent>
                 <ToolbarItem>
                     <Content component="p">
-                        Optionally constrain image events by filtering for the workloads that run
-                        the image.
+                        Optionally, you can constrain image scanning events by filtering for the
+                        workloads that run the image.
                     </Content>
                 </ToolbarItem>
             </ToolbarContent>
