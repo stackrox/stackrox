@@ -124,8 +124,10 @@ runs:
         # Deterministic builds: stable version stamping eliminates the
         # 172-entry compile cache churn from commit-SHA-dependent ldflags.
         # Verified: byte-identical binaries and ~100% hit rates with these set.
-        echo "BUILD_TAG=0.0.0" >> "$GITHUB_ENV"
-        echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"
+        # Respect caller-provided values: version-aware tooling (e.g. the
+        # operator bundle's Y-Stream calculation) needs the real tag.
+        if [ -z "${BUILD_TAG:-}" ]; then echo "BUILD_TAG=0.0.0" >> "$GITHUB_ENV"; fi
+        if [ -z "${SHORTCOMMIT:-}" ]; then echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"; fi
         echo "GOFLAGS=-buildvcs=false" >> "$GITHUB_ENV"
         # Vendor mode: eliminates GOMODCACHE path sensitivity that causes
         # compile ActionID churn on fresh runners (measured: 585 entries
