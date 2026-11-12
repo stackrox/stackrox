@@ -24,6 +24,10 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	if len(sub.GetQuery().GetSelects()) != 1 {
 		return nil, errox.InvalidArgs.New("subquery must select exactly one field")
 	}
+	selection := sub.GetQuery().GetSelects()[0]
+	if selection.GetField().GetAggregateFunc() != "" || selection.GetFilter() != nil || len(sub.GetQuery().GetGroupBy().GetFields()) != 0 {
+		return nil, errox.InvalidArgs.New("subqueries do not support aggregates, select filters or grouping")
+	}
 	// Use the same SELECT compiler as views, including the inner category's SAC
 	// and scope filters. Keep placeholders unnumbered until the full query is built.
 	compiled, err := standardizeSelectQueryAndPopulatePath(ctx, sub.GetQuery().CloneVT(), schema, SELECT, nil)
@@ -33,20 +37,25 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	if compiled == nil {
 		return pgsearch.NewFalseQuery(), nil
 	}
+	// Derived filter and sort fields can introduce aggregation implicitly.
+	if len(compiled.GroupBys) != 0 || compiled.Having != "" {
+		return nil, errox.InvalidArgs.New("subqueries do not support aggregate filters or grouping")
+	}
+	for _, order := range compiled.Pagination.OrderBys {
+		if order.Field.DerivedField {
+			return nil, errox.InvalidArgs.New("subqueries do not support derived ordering")
+		}
+	}
 	if len(compiled.SelectedFields) == 0 {
 		return nil, errox.InvalidArgs.New("subquery must compile to a selected scalar field")
 	}
-	// Resolve grouping metadata before checking the projection: SELECT rewrites
-	// ungrouped, non-aggregate fields to jsonb_agg when grouping by other fields.
-	compiled.ExtraSelectedFieldPaths()
 	selected := compiled.SelectedFields[0]
-	if !isSubQueryScalar(selected.FieldType) || selected.ChildTableAgg ||
-		(compiled.groupByNonPKFields() && !selected.FromGroupBy && !selected.DerivedField) {
+	if !isSubQueryScalar(selected.FieldType) {
 		return nil, errox.InvalidArgs.New("subquery must select a scalar field")
 	}
 	outer := selectQueryField(sub.GetField(), field.baseField, false, aggregatefunc.Unset, "")
-	// The derived table isolates inner table names and any extra columns required
-	// for SELECT DISTINCT, grouping or ordering. EXISTS does not duplicate outer rows.
+	// The derived table isolates inner table names and extra columns required for
+	// DISTINCT or ordering. EXISTS does not duplicate outer rows.
 	return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
 		Query: fmt.Sprintf("EXISTS (SELECT 1 FROM (%s) AS subquery WHERE subquery.%s = %s)",
 			compiled.sqlTemplate(), selected.Alias, outer.SelectPath),

@@ -3,7 +3,8 @@ package search
 import v1 "github.com/stackrox/rox/generated/api/v1"
 
 // MatchFieldSubQuery matches field against the values selected by query in category.
-// The query must select exactly one scalar field using the usual query selects.
+// The query must select exactly one unaggregated scalar field. Grouping, select
+// filters, aggregate filters, and derived sort fields are unsupported.
 // Subqueries are supported by the SQL search backend, including its access checks.
 func MatchFieldSubQuery(field FieldLabel, category v1.SearchCategory, query *v1.Query) *v1.Query {
 	return queryFromBaseQuery(&v1.BaseQuery{

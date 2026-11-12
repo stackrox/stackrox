@@ -43,6 +43,14 @@ func TestInvalidSubQuery(t *testing.T) {
 	unsupportedAggregate.Selects[0].Filter = &v1.QuerySelectFilter{
 		Query: search.NewQueryBuilder().AddExactMatches(search.ResourceID, "unsupported").ProtoQuery(),
 	}
+	filteredSelection := valid.CloneVT()
+	filteredSelection.Selects[0].Filter = &v1.QuerySelectFilter{
+		Query: search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "app").ProtoQuery(),
+	}
+	aggregateOrdering := valid.CloneVT()
+	aggregateOrdering.Pagination = &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{
+		Field: search.DeploymentName.String(), AggregateBy: &v1.AggregateBy{AggrFunc: v1.Aggregation_COUNT},
+	}}}
 	for name, test := range map[string]struct {
 		field    search.FieldLabel
 		category v1.SearchCategory
@@ -58,9 +66,24 @@ func TestInvalidSubQuery(t *testing.T) {
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.ImageID), search.NewQuerySelect(search.ImageName)).ProtoQuery()},
 		"array select": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.AddCapabilities)).ProtoQuery()},
-		"empty compiled projection": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS, query: unsupportedAggregate},
-		"implicit JSON aggregate": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+		"filtered aggregate": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS, query: unsupportedAggregate},
+		"select filter":      {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS, query: filteredSelection},
+		"count selection": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count)).ProtoQuery()},
+		"max selection": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Max)).ProtoQuery()},
+		"grouped scalar": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).AddGroupBy(search.DeploymentName).ProtoQuery()},
+		"grouping another field": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).AddGroupBy(search.Cluster).ProtoQuery()},
+		"implicit filter grouping": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).AddStrings(search.DeploymentCount, ">1").ProtoQuery()},
+		"aggregate filter without grouping": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).AddStrings(search.CVSSMax, ">1").ProtoQuery()},
+		"implicit sort grouping": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.DeploymentCount))).ProtoQuery()},
+		"aggregate ordering": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS, query: aggregateOrdering},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := standardizeQueryAndPopulatePath(ctx, search.MatchFieldSubQuery(test.field, test.category, test.query), schema.DeploymentsSchema, GET)
