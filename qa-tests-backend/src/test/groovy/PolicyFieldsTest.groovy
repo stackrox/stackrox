@@ -873,14 +873,16 @@ class PolicyFieldsTest extends BaseSpecification {
         List<Closure> cleanupActions = [
                 { orchestrator.deleteDeployment(UNSCANNED) },
         ]
+        // The explicit return is required: a closure whose whole body is braces
+        // runs immediately and the collect stores its result, not the closure.
         cleanupActions.addAll(DEPLOYMENTS.collect { deployment ->
-            { orchestrator.deleteDeployment(deployment) }
+            return { orchestrator.deleteDeployment(deployment) }
         })
         cleanupActions.addAll(createdPolicyIds.collect { policyID ->
-            { PolicyService.deletePolicy(policyID) }
+            return { PolicyService.deletePolicy(policyID) }
         })
         cleanupActions.addAll(namespaces.collect { ns ->
-            { orchestrator.deleteNamespace(ns) }
+            return { orchestrator.deleteNamespace(ns) }
         })
 
         // One failing action must not leave the rest behind.
