@@ -786,6 +786,7 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.Namespace).Proto(),
 		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.DeploymentContainerName).Proto(),
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 		search.NewQuerySelect(search.CisaKev).Proto(),
 		search.NewQuerySelect(search.KnownRansomwareCampaign).Proto(),
