@@ -41,6 +41,36 @@ KEY="gocache-serve-$(uname -m)-${SRC_HASH}"
 ACCOUNT="${AZURE_STORAGE_ACCOUNT:-cigocache}"
 CONTAINER="${GOCACHE_SERVE_CONTAINER:-ci-gocache}"
 
+# --- Try 0: per-machine binary cache (content-addressed by KEY) ---
+# This script runs once per go invocation (~20/job); without this, every
+# process pays a token POST (~200-300ms) + download (~1s). With it, the
+# first process populates the cache and the rest exec in ~0ms — no token,
+# no network. The pre-flight exec test below guards against corruption;
+# concurrent cold-starts are safe because installs use atomic rename.
+BIN_CACHE="/tmp/gocache-serve-bin-${KEY}"
+verify_and_exec() {
+  # Execution test only (no ELF-magic check — this binary may be Mach-O on
+  # macOS runners/hosts): -stub is deterministic and exits 0 when healthy.
+  # rc==0 requirement catches corruption and wrong-arch (126, "cannot
+  # execute" — which a naive "<128" check would wrongly accept) as well as
+  # signal death (>=128).
+  [ -x "$1" ] || return 1
+  set +e; "$1" -stub "a/b/c/d" /dev/null 2>/dev/null; rc=$?; set -e
+  [ "$rc" -eq 0 ]
+}
+if verify_and_exec "$BIN_CACHE"; then
+  exec "$BIN_CACHE" "$@"
+fi
+
+install_bin_cache() {
+  # Atomic install: concurrent processes may both land here; rename makes
+  # the loser's overwrite harmless (same content, content-addressed key).
+  if [ -s "$OUT" ]; then
+    cp "$OUT" "${BIN_CACHE}.tmp.$$" && mv -f "${BIN_CACHE}.tmp.$$" "$BIN_CACHE" 2>/dev/null || true
+    chmod +x "$BIN_CACHE" 2>/dev/null || true
+  fi
+}
+
 # --- Try 1: Download the pre-built binary from blob store ---
 if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZURE_CLIENT_SECRET:-}" ]; then
   # --data-urlencode per field: client secrets routinely contain '+'/'&'/'%'
@@ -90,6 +120,7 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
         TEST_EXIT=$?
         set -e
         if [ $TEST_EXIT -lt 128 ]; then
+          install_bin_cache
           echo "bootstrap: gocache-serve from blob store (hash: $SRC_HASH, ~1s)" >&2
           exec "$OUT" "$@"
         else
@@ -122,6 +153,7 @@ if [ -n "${AZURE_TENANT_ID:-}" ] && [ -n "${AZURE_CLIENT_ID:-}" ] && [ -n "${AZU
               --data-binary @- 2>/dev/null || true
           fi
           echo "bootstrap: gocache-serve from blob store (uncompressed, cached compressed)" >&2
+          install_bin_cache
           exec "$OUT" "$@"
         else
           echo "bootstrap: downloaded binary crashed (signal $((TEST_EXIT - 128))), rebuilding" >&2
@@ -168,4 +200,5 @@ if [ $TEST_EXIT -ge 128 ]; then
   exit 1
 fi
 
+install_bin_cache
 exec "$OUT" "$@"
