@@ -40,6 +40,24 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 			},
 			err: errox.InvalidArgs,
 		},
+		"invalid access constraint": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--access-constraint=invalid",
+			},
+			err: errox.InvalidArgs,
+		},
+		"invalid scope constraint": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--scope-constraint=invalid",
+			},
+			err: errox.InvalidArgs,
+		},
 	}
 
 	for name, c := range cases {
@@ -115,32 +133,32 @@ resources:
       access: READ_WRITE_ACCESS
 `,
 		},
-		"read access only": {
+		"read access constraint": {
 			args: []string{
 				"permission-set",
 				"--name=some-name",
 				"--resource-with-access=Cluster=READ_ACCESS",
-				"--read-access-only",
+				"--access-constraint=ACCESS_CONSTRAINT_READ",
 			},
 			expectedYAML: `name: some-name
 resources:
     - resource: Cluster
       access: READ_ACCESS
-readAccessOnly: true
+accessConstraint: ACCESS_CONSTRAINT_READ
 `,
 		},
-		"scoped only": {
+		"scope constraint": {
 			args: []string{
 				"permission-set",
 				"--name=some-name",
 				"--resource-with-access=Cluster=READ_WRITE_ACCESS",
-				"--scoped-only",
+				"--scope-constraint=SCOPE_CONSTRAINT_CLUSTER_NAMESPACE",
 			},
 			expectedYAML: `name: some-name
 resources:
     - resource: Cluster
       access: READ_WRITE_ACCESS
-scopedOnly: true
+scopeConstraint: SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
 `,
 		},
 		"both constraints": {
@@ -148,15 +166,15 @@ scopedOnly: true
 				"permission-set",
 				"--name=some-name",
 				"--resource-with-access=Cluster=READ_ACCESS",
-				"--read-access-only",
-				"--scoped-only",
+				"--access-constraint=ACCESS_CONSTRAINT_READ",
+				"--scope-constraint=SCOPE_CONSTRAINT_CLUSTER_NAMESPACE",
 			},
 			expectedYAML: `name: some-name
 resources:
     - resource: Cluster
       access: READ_ACCESS
-readAccessOnly: true
-scopedOnly: true
+accessConstraint: ACCESS_CONSTRAINT_READ
+scopeConstraint: SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
 `,
 		},
 	}

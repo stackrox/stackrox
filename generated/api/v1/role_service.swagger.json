@@ -749,13 +749,13 @@
         "traits": {
           "$ref": "#/definitions/storageTraits"
         },
-        "readAccessOnly": {
-          "type": "boolean",
-          "description": "read_access_only restricts granted permissions to read access."
+        "accessConstraint": {
+          "$ref": "#/definitions/storageAccessConstraint",
+          "description": "UNSPECIFIED allows any access level; READ allows only read access."
         },
-        "scopedOnly": {
-          "type": "boolean",
-          "description": "scoped_only restricts granted permissions to cluster- or namespace-scoped resources."
+        "scopeConstraint": {
+          "$ref": "#/definitions/storageScopeConstraint",
+          "description": "UNSPECIFIED allows any resource; CLUSTER_NAMESPACE excludes global resources."
         }
       },
       "description": "This encodes a set of permissions for StackRox resources."
@@ -933,6 +933,15 @@
       ],
       "default": "NO_ACCESS"
     },
+    "storageAccessConstraint": {
+      "type": "string",
+      "enum": [
+        "ACCESS_CONSTRAINT_UNSPECIFIED",
+        "ACCESS_CONSTRAINT_READ"
+      ],
+      "default": "ACCESS_CONSTRAINT_UNSPECIFIED",
+      "description": "Constraints on access levels granted by a permission set."
+    },
     "storageEffectiveAccessScope": {
       "type": "object",
       "properties": {
@@ -999,13 +1008,13 @@
         "traits": {
           "$ref": "#/definitions/storageTraits"
         },
-        "readAccessOnly": {
-          "type": "boolean",
-          "description": "read_access_only restricts granted permissions to read access."
+        "accessConstraint": {
+          "$ref": "#/definitions/storageAccessConstraint",
+          "description": "UNSPECIFIED allows any access level; READ allows only read access."
         },
-        "scopedOnly": {
-          "type": "boolean",
-          "description": "scoped_only restricts granted permissions to cluster- or namespace-scoped resources."
+        "scopeConstraint": {
+          "$ref": "#/definitions/storageScopeConstraint",
+          "description": "UNSPECIFIED allows any resource; CLUSTER_NAMESPACE excludes global resources."
         }
       },
       "description": "This encodes a set of permissions for StackRox resources."
@@ -1043,6 +1052,15 @@
         }
       },
       "description": "A role specifies which actions are allowed for which subset of cluster\nobjects. Permissions be can either specified directly via setting\nresource_to_access together with global_access or by referencing a\npermission set by its id in permission_set_name."
+    },
+    "storageScopeConstraint": {
+      "type": "string",
+      "enum": [
+        "SCOPE_CONSTRAINT_UNSPECIFIED",
+        "SCOPE_CONSTRAINT_CLUSTER_NAMESPACE"
+      ],
+      "default": "SCOPE_CONSTRAINT_UNSPECIFIED",
+      "description": "Constraints on resource scopes granted by a permission set."
     },
     "storageSetBasedLabelSelector": {
       "type": "object",

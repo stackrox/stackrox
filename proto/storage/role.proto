@@ -41,8 +41,23 @@ enum Access {
   READ_WRITE_ACCESS = 2;
 }
 
+// Constraints on access levels granted by a permission set.
+enum AccessConstraint {
+  ACCESS_CONSTRAINT_UNSPECIFIED = 0;
+  ACCESS_CONSTRAINT_READ = 1;
+}
+
+// Constraints on resource scopes granted by a permission set.
+enum ScopeConstraint {
+  SCOPE_CONSTRAINT_UNSPECIFIED = 0;
+  SCOPE_CONSTRAINT_CLUSTER_NAMESPACE = 1;
+}
+
 // This encodes a set of permissions for StackRox resources.
 message PermissionSet {
+  reserved 6, 7;
+  reserved "read_access_only", "scoped_only";
+
   // id is generated and cannot be changed.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
 
@@ -54,10 +69,10 @@ message PermissionSet {
 
   Traits traits = 5;
 
-  // read_access_only restricts granted permissions to read access.
-  bool read_access_only = 6;
-  // scoped_only restricts granted permissions to cluster- or namespace-scoped resources.
-  bool scoped_only = 7;
+  // UNSPECIFIED allows any access level; READ allows only read access.
+  AccessConstraint access_constraint = 8;
+  // UNSPECIFIED allows any resource; CLUSTER_NAMESPACE excludes global resources.
+  ScopeConstraint scope_constraint = 9;
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.

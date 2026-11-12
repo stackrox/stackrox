@@ -15,7 +15,7 @@ const permissionSet: PermissionSet = {
 
 describe('setPermissionSetConstraint', () => {
     it('preserves reads when enabling read-access-only', () => {
-        const result = setPermissionSetConstraint(permissionSet, 'readAccessOnly', true, [
+        const result = setPermissionSetConstraint(permissionSet, 'accessConstraint', true, [
             'Administration',
         ]);
         expect(result.resourceToAccess).toEqual({
@@ -23,12 +23,12 @@ describe('setPermissionSetConstraint', () => {
             Deployment: 'READ_ACCESS',
             Node: 'READ_ACCESS',
         });
-        expect(result.readAccessOnly).toBe(true);
+        expect(result.accessConstraint).toBe('ACCESS_CONSTRAINT_READ');
         expect(permissionSet.resourceToAccess.Deployment).toBe('READ_WRITE_ACCESS');
     });
 
     it('removes access to global resources when enabling scoped-only', () => {
-        const result = setPermissionSetConstraint(permissionSet, 'scopedOnly', true, [
+        const result = setPermissionSetConstraint(permissionSet, 'scopeConstraint', true, [
             'Administration',
         ]);
         expect(result.resourceToAccess).toEqual({
@@ -36,25 +36,27 @@ describe('setPermissionSetConstraint', () => {
             Deployment: 'READ_WRITE_ACCESS',
             Node: 'READ_ACCESS',
         });
-        expect(result.scopedOnly).toBe(true);
+        expect(result.scopeConstraint).toBe('SCOPE_CONSTRAINT_CLUSTER_NAMESPACE');
     });
 
     it('does not restore removed grants when disabling either constraint', () => {
         const readAccessOnly = setPermissionSetConstraint(
             permissionSet,
-            'readAccessOnly',
+            'accessConstraint',
             true,
             []
         );
-        const result = setPermissionSetConstraint(readAccessOnly, 'readAccessOnly', false, []);
+        const result = setPermissionSetConstraint(readAccessOnly, 'accessConstraint', false, []);
         expect(result.resourceToAccess.Deployment).toBe('READ_ACCESS');
+        expect(result.accessConstraint).toBe('ACCESS_CONSTRAINT_UNSPECIFIED');
 
-        const scopedOnly = setPermissionSetConstraint(permissionSet, 'scopedOnly', true, [
+        const scopedOnly = setPermissionSetConstraint(permissionSet, 'scopeConstraint', true, [
             'Administration',
         ]);
-        const unscoped = setPermissionSetConstraint(scopedOnly, 'scopedOnly', false, [
+        const unscoped = setPermissionSetConstraint(scopedOnly, 'scopeConstraint', false, [
             'Administration',
         ]);
         expect(unscoped.resourceToAccess.Administration).toBe('NO_ACCESS');
+        expect(unscoped.scopeConstraint).toBe('SCOPE_CONSTRAINT_UNSPECIFIED');
     });
 });

@@ -17,33 +17,46 @@ export function getNewPermissionSet(resources: string[]): PermissionSet {
         name: '',
         description: '',
         resourceToAccess,
-        readAccessOnly: false,
-        scopedOnly: false,
+        accessConstraint: 'ACCESS_CONSTRAINT_UNSPECIFIED',
+        scopeConstraint: 'SCOPE_CONSTRAINT_UNSPECIFIED',
     };
 }
 
 export function setPermissionSetConstraint(
     permissionSet: PermissionSet,
-    constraint: 'readAccessOnly' | 'scopedOnly',
+    constraint: 'accessConstraint' | 'scopeConstraint',
     enabled: boolean,
     globalResources: readonly string[]
 ): PermissionSet {
     const resourceToAccess = { ...permissionSet.resourceToAccess };
-    if (enabled && constraint === 'readAccessOnly') {
+    if (enabled && constraint === 'accessConstraint') {
         Object.keys(resourceToAccess).forEach((resource) => {
             if (resourceToAccess[resource] === 'READ_WRITE_ACCESS') {
                 resourceToAccess[resource] = 'READ_ACCESS';
             }
         });
     }
-    if (enabled && constraint === 'scopedOnly') {
+    if (enabled && constraint === 'scopeConstraint') {
         globalResources.forEach((resource) => {
             if (resource in resourceToAccess) {
                 resourceToAccess[resource] = 'NO_ACCESS';
             }
         });
     }
-    return { ...permissionSet, [constraint]: enabled, resourceToAccess };
+    if (constraint === 'accessConstraint') {
+        return {
+            ...permissionSet,
+            accessConstraint: enabled ? 'ACCESS_CONSTRAINT_READ' : 'ACCESS_CONSTRAINT_UNSPECIFIED',
+            resourceToAccess,
+        };
+    }
+    return {
+        ...permissionSet,
+        scopeConstraint: enabled
+            ? 'SCOPE_CONSTRAINT_CLUSTER_NAMESPACE'
+            : 'SCOPE_CONSTRAINT_UNSPECIFIED',
+        resourceToAccess,
+    };
 }
 
 function getCompletePermissions(permissions: PermissionsMap, resources: string[]): PermissionsMap {

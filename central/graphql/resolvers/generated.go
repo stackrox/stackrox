@@ -31,6 +31,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"stsEnabled: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AccessConstraint(0)))
 	utils.Must(builder.AddType("AclEntry", []string{
 		"id: Int!",
 		"perm: Int!",
@@ -965,11 +966,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
 	utils.Must(builder.AddType("PermissionSet", []string{
+		"accessConstraint: AccessConstraint!",
 		"description: String!",
 		"id: ID!",
 		"name: String!",
-		"readAccessOnly: Boolean!",
-		"scopedOnly: Boolean!",
+		"scopeConstraint: ScopeConstraint!",
 		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("Pod", []string{
@@ -1171,6 +1172,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"namespaceLabel: Scope_Label",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ScopeConstraint(0)))
 	utils.Must(builder.AddType("Scope_Label", []string{
 		"key: String!",
 		"value: String!",
@@ -1634,6 +1636,24 @@ func toAccesses(values *[]string) []storage.Access {
 	output := make([]storage.Access, len(*values))
 	for i, v := range *values {
 		output[i] = toAccess(&v)
+	}
+	return output
+}
+
+func toAccessConstraint(value *string) storage.AccessConstraint {
+	if value != nil {
+		return storage.AccessConstraint(storage.AccessConstraint_value[*value])
+	}
+	return storage.AccessConstraint(0)
+}
+
+func toAccessConstraints(values *[]string) []storage.AccessConstraint {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.AccessConstraint, len(*values))
+	for i, v := range *values {
+		output[i] = toAccessConstraint(&v)
 	}
 	return output
 }
@@ -10707,6 +10727,11 @@ func (resolver *Resolver) wrapPermissionSetsWithContext(ctx context.Context, val
 	return output, nil
 }
 
+func (resolver *permissionSetResolver) AccessConstraint(ctx context.Context) string {
+	value := resolver.data.GetAccessConstraint()
+	return value.String()
+}
+
 func (resolver *permissionSetResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
 	return value
@@ -10722,14 +10747,9 @@ func (resolver *permissionSetResolver) Name(ctx context.Context) string {
 	return value
 }
 
-func (resolver *permissionSetResolver) ReadAccessOnly(ctx context.Context) bool {
-	value := resolver.data.GetReadAccessOnly()
-	return value
-}
-
-func (resolver *permissionSetResolver) ScopedOnly(ctx context.Context) bool {
-	value := resolver.data.GetScopedOnly()
-	return value
+func (resolver *permissionSetResolver) ScopeConstraint(ctx context.Context) string {
+	value := resolver.data.GetScopeConstraint()
+	return value.String()
 }
 
 func (resolver *permissionSetResolver) Traits(ctx context.Context) (*traitsResolver, error) {
@@ -12579,6 +12599,24 @@ func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 func (resolver *scopeResolver) NamespaceLabel(ctx context.Context) (*scope_LabelResolver, error) {
 	value := resolver.data.GetNamespaceLabel()
 	return resolver.root.wrapScope_Label(value, true, nil)
+}
+
+func toScopeConstraint(value *string) storage.ScopeConstraint {
+	if value != nil {
+		return storage.ScopeConstraint(storage.ScopeConstraint_value[*value])
+	}
+	return storage.ScopeConstraint(0)
+}
+
+func toScopeConstraints(values *[]string) []storage.ScopeConstraint {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ScopeConstraint, len(*values))
+	for i, v := range *values {
+		output[i] = toScopeConstraint(&v)
+	}
+	return output
 }
 
 type scope_LabelResolver struct {

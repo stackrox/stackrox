@@ -20,6 +20,8 @@ export function fetchResources(): Promise<PermissionSetResources> {
 const rolesUrl = '/v1/roles';
 
 export type AccessLevel = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
+export type AccessConstraint = 'ACCESS_CONSTRAINT_UNSPECIFIED' | 'ACCESS_CONSTRAINT_READ';
+export type ScopeConstraint = 'SCOPE_CONSTRAINT_UNSPECIFIED' | 'SCOPE_CONSTRAINT_CLUSTER_NAMESPACE';
 
 /*
  * A permission associates a resource with its access level.
@@ -93,8 +95,8 @@ export type PermissionSet = {
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
-    readAccessOnly?: boolean;
-    scopedOnly?: boolean;
+    accessConstraint?: AccessConstraint;
+    scopeConstraint?: ScopeConstraint;
     traits?: Traits;
 };
 

@@ -58,8 +58,8 @@ func (m *PermissionSet) CloneVT() *PermissionSet {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Traits = m.Traits.CloneVT()
-	r.ReadAccessOnly = m.ReadAccessOnly
-	r.ScopedOnly = m.ScopedOnly
+	r.AccessConstraint = m.AccessConstraint
+	r.ScopeConstraint = m.ScopeConstraint
 	if rhs := m.ResourceToAccess; rhs != nil {
 		tmpContainer := make(map[string]Access, len(rhs))
 		for k, v := range rhs {
@@ -323,10 +323,10 @@ func (this *PermissionSet) EqualVT(that *PermissionSet) bool {
 	if !this.Traits.EqualVT(that.Traits) {
 		return false
 	}
-	if this.ReadAccessOnly != that.ReadAccessOnly {
+	if this.AccessConstraint != that.AccessConstraint {
 		return false
 	}
-	if this.ScopedOnly != that.ScopedOnly {
+	if this.ScopeConstraint != that.ScopeConstraint {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -727,25 +727,15 @@ func (m *PermissionSet) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.ScopedOnly {
+	if m.ScopeConstraint != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ScopeConstraint))
 		i--
-		if m.ScopedOnly {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x38
+		dAtA[i] = 0x48
 	}
-	if m.ReadAccessOnly {
+	if m.AccessConstraint != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.AccessConstraint))
 		i--
-		if m.ReadAccessOnly {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x30
+		dAtA[i] = 0x40
 	}
 	if m.Traits != nil {
 		size, err := m.Traits.MarshalToSizedBufferVT(dAtA[:i])
@@ -1283,11 +1273,11 @@ func (m *PermissionSet) SizeVT() (n int) {
 		l = m.Traits.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.ReadAccessOnly {
-		n += 2
+	if m.AccessConstraint != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.AccessConstraint))
 	}
-	if m.ScopedOnly {
-		n += 2
+	if m.ScopeConstraint != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ScopeConstraint))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2086,11 +2076,11 @@ func (m *PermissionSet) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 8:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReadAccessOnly", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessConstraint", wireType)
 			}
-			var v int
+			m.AccessConstraint = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2100,17 +2090,16 @@ func (m *PermissionSet) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.AccessConstraint |= AccessConstraint(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ReadAccessOnly = bool(v != 0)
-		case 7:
+		case 9:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScopedOnly", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ScopeConstraint", wireType)
 			}
-			var v int
+			m.ScopeConstraint = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2120,12 +2109,11 @@ func (m *PermissionSet) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.ScopeConstraint |= ScopeConstraint(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ScopedOnly = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4029,11 +4017,11 @@ func (m *PermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 8:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ReadAccessOnly", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessConstraint", wireType)
 			}
-			var v int
+			m.AccessConstraint = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -4043,17 +4031,16 @@ func (m *PermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.AccessConstraint |= AccessConstraint(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ReadAccessOnly = bool(v != 0)
-		case 7:
+		case 9:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScopedOnly", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ScopeConstraint", wireType)
 			}
-			var v int
+			m.ScopeConstraint = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -4063,12 +4050,11 @@ func (m *PermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.ScopeConstraint |= ScopeConstraint(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ScopedOnly = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

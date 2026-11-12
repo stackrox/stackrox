@@ -12,11 +12,55 @@ import (
 
 // PermissionSet is representation of storage.PermissionSet that supports transformation from YAML.
 type PermissionSet struct {
-	Name           string               `yaml:"name,omitempty"`
-	Description    string               `yaml:"description,omitempty"`
-	Resources      []ResourceWithAccess `yaml:"resources,omitempty"`
-	ReadAccessOnly bool                 `yaml:"readAccessOnly,omitempty"`
-	ScopedOnly     bool                 `yaml:"scopedOnly,omitempty"`
+	Name             string               `yaml:"name,omitempty"`
+	Description      string               `yaml:"description,omitempty"`
+	Resources        []ResourceWithAccess `yaml:"resources,omitempty"`
+	AccessConstraint AccessConstraint     `yaml:"accessConstraint,omitempty"`
+	ScopeConstraint  ScopeConstraint      `yaml:"scopeConstraint,omitempty"`
+}
+
+// AccessConstraint is the YAML representation of storage.AccessConstraint.
+type AccessConstraint storage.AccessConstraint
+
+// MarshalYAML transforms AccessConstraint to its protobuf name.
+func (a AccessConstraint) MarshalYAML() (interface{}, error) {
+	return storage.AccessConstraint(a).String(), nil
+}
+
+// UnmarshalYAML parses an AccessConstraint from its protobuf name.
+func (a *AccessConstraint) UnmarshalYAML(value *yaml.Node) error {
+	var name string
+	if err := value.Decode(&name); err != nil {
+		return err
+	}
+	constraint, ok := storage.AccessConstraint_value[name]
+	if !ok {
+		return errox.InvalidArgs.Newf("access constraint %q is invalid", name)
+	}
+	*a = AccessConstraint(constraint)
+	return nil
+}
+
+// ScopeConstraint is the YAML representation of storage.ScopeConstraint.
+type ScopeConstraint storage.ScopeConstraint
+
+// MarshalYAML transforms ScopeConstraint to its protobuf name.
+func (s ScopeConstraint) MarshalYAML() (interface{}, error) {
+	return storage.ScopeConstraint(s).String(), nil
+}
+
+// UnmarshalYAML parses a ScopeConstraint from its protobuf name.
+func (s *ScopeConstraint) UnmarshalYAML(value *yaml.Node) error {
+	var name string
+	if err := value.Decode(&name); err != nil {
+		return err
+	}
+	constraint, ok := storage.ScopeConstraint_value[name]
+	if !ok {
+		return errox.InvalidArgs.Newf("scope constraint %q is invalid", name)
+	}
+	*s = ScopeConstraint(constraint)
+	return nil
 }
 
 // ConfigurationType returns the PermissionSetConfiguration type.

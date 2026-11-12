@@ -126,6 +126,8 @@ function PermissionSetForm({
 
     const nameErrorMessage = values.name.length !== 0 && errors.name ? errors.name : '';
     const nameValidatedState = nameErrorMessage ? 'error' : 'default';
+    const readAccessOnly = values.accessConstraint === 'ACCESS_CONSTRAINT_READ';
+    const scopedOnly = values.scopeConstraint === 'SCOPE_CONSTRAINT_CLUSTER_NAMESPACE';
 
     return (
         <Form id="permission-set-form">
@@ -196,13 +198,13 @@ function PermissionSetForm({
                         <Switch
                             id="read-access-only"
                             label="Read access only"
-                            isChecked={Boolean(values.readAccessOnly)}
+                            isChecked={readAccessOnly}
                             isDisabled={isViewing}
                             onChange={(_event, checked) =>
                                 setValues((current) =>
                                     setPermissionSetConstraint(
                                         current,
-                                        'readAccessOnly',
+                                        'accessConstraint',
                                         checked,
                                         globalResources
                                     )
@@ -214,13 +216,13 @@ function PermissionSetForm({
                         <Switch
                             id="scoped-only"
                             label="Scoped resources only"
-                            isChecked={Boolean(values.scopedOnly)}
+                            isChecked={scopedOnly}
                             isDisabled={isViewing}
                             onChange={(_event, checked) =>
                                 setValues((current) =>
                                     setPermissionSetConstraint(
                                         current,
-                                        'scopedOnly',
+                                        'scopeConstraint',
                                         checked,
                                         globalResources
                                     )
@@ -230,7 +232,7 @@ function PermissionSetForm({
                     </StackItem>
                 </Stack>
             </FormGroup>
-            {action === 'create' && !values.scopedOnly && (
+            {action === 'create' && !scopedOnly && (
                 <Alert
                     title="Recommended minimum set of read permissions"
                     component="p"
@@ -259,8 +261,8 @@ function PermissionSetForm({
                     resourceToAccess={values.resourceToAccess}
                     setResourceValue={setResourceValue}
                     isDisabled={isViewing}
-                    readAccessOnly={Boolean(values.readAccessOnly)}
-                    scopedOnly={Boolean(values.scopedOnly)}
+                    readAccessOnly={readAccessOnly}
+                    scopedOnly={scopedOnly}
                     globalResources={globalResources}
                 />
             </FormGroup>

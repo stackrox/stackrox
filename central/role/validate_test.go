@@ -109,54 +109,64 @@ func TestValidatePermissionSet(t *testing.T) {
 
 func TestValidatePermissionSetConstraints(t *testing.T) {
 	for name, tc := range map[string]struct {
-		readAccessOnly bool
-		scopedOnly     bool
-		access         map[string]storage.Access
-		wantError      string
+		accessConstraint storage.AccessConstraint
+		scopeConstraint  storage.ScopeConstraint
+		access           map[string]storage.Access
+		wantError        string
 	}{
 		"read-access-only scoped grant": {
-			readAccessOnly: true, scopedOnly: true,
-			access: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:           map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
 		},
 		"read-access-only with global read": {
-			readAccessOnly: true,
-			access:         map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			access:           map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
 		},
 		"scoped-only with scoped write": {
-			scopedOnly: true,
-			access:     map[string]storage.Access{"Deployment": storage.Access_READ_WRITE_ACCESS},
+			scopeConstraint: storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:          map[string]storage.Access{"Deployment": storage.Access_READ_WRITE_ACCESS},
 		},
 		"scoped-only with denied global resource": {
-			scopedOnly: true,
-			access:     map[string]storage.Access{"Administration": storage.Access_NO_ACCESS},
+			scopeConstraint: storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:          map[string]storage.Access{"Administration": storage.Access_NO_ACCESS},
 		},
 		"read-access-only rejects write": {
-			readAccessOnly: true,
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 			access: map[string]storage.Access{
 				"Deployment": storage.Access_READ_WRITE_ACCESS,
 			},
-			wantError: "read-access-only permission set",
+			wantError: "read-constrained permission set",
 		},
 		"read-access-only rejects unknown access": {
-			readAccessOnly: true,
-			access:         map[string]storage.Access{"Deployment": storage.Access(99)},
-			wantError:      "read-access-only permission set",
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			access:           map[string]storage.Access{"Deployment": storage.Access(99)},
+			wantError:        "read-constrained permission set",
 		},
 		"scoped-only rejects global read": {
-			scopedOnly: true,
-			access:     map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
-			wantError:  "scoped-only permission set",
+			scopeConstraint: storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:          map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+			wantError:       "cluster-namespace-constrained permission set",
 		},
 		"both reject global write": {
-			readAccessOnly: true, scopedOnly: true,
-			access:    map[string]storage.Access{"Administration": storage.Access_READ_WRITE_ACCESS},
-			wantError: "read-access-only permission set",
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:           map[string]storage.Access{"Administration": storage.Access_READ_WRITE_ACCESS},
+			wantError:        "read-constrained permission set",
+		},
+		"unknown access constraint rejects empty grants": {
+			accessConstraint: storage.AccessConstraint(99),
+			wantError:        "unknown access constraint",
+		},
+		"unknown scope constraint rejects empty grants": {
+			scopeConstraint: storage.ScopeConstraint(99),
+			wantError:       "unknown scope constraint",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			ps := &storage.PermissionSet{
 				Id: uuid.NewDummy().String(), Name: "test", ResourceToAccess: tc.access,
-				ReadAccessOnly: tc.readAccessOnly, ScopedOnly: tc.scopedOnly,
+				AccessConstraint: tc.accessConstraint, ScopeConstraint: tc.scopeConstraint,
 			}
 			err := ValidatePermissionSet(ps)
 			if tc.wantError == "" {
