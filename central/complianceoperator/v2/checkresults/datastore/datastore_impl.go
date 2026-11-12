@@ -515,6 +515,11 @@ func (d *datastoreImpl) MarkScanChecksStaleByConfig(ctx context.Context, scanCon
 		ProtoQuery()
 
 	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		// Guard against a config relabel between the read and the fenced re-read: only stale rows that
+		// still belong to this scan configuration, so we never apply the wrong config's cutoff.
+		if result.GetScanConfigName() != scanConfigName {
+			return false
+		}
 		started := result.GetLastStartedTime()
 		return started != nil && started.AsTime().Before(olderThan)
 	}, "marking stale compliance check results by scan configuration")
