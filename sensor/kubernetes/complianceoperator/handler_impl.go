@@ -70,7 +70,7 @@ func (m *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetComplianceRequest() != nil
 }
 
-func (m *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
+func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {
 		return nil
@@ -82,17 +82,17 @@ func (m *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor
 	switch r := req.GetRequest().(type) {
 	case *central.ComplianceRequest_EnableCompliance:
 		m.disabled.Reset()
-		m.composeAndSendEnableComplianceResponse(r.EnableCompliance.GetId(), nil)
+		m.composeAndSendEnableComplianceResponse(ctx, r.EnableCompliance.GetId(), nil)
 	case *central.ComplianceRequest_DisableCompliance:
 		m.disabled.Signal()
-		m.composeAndSendDisableComplianceResponse(r.DisableCompliance.GetId(), nil)
+		m.composeAndSendDisableComplianceResponse(ctx, r.DisableCompliance.GetId(), nil)
 	case *central.ComplianceRequest_SyncScanConfigs:
 		log.Info("received scan config sync from central")
-		err = m.publishRequest(req)
+		err = m.publishRequest(ctx, req)
 	case *central.ComplianceRequest_ApplyScanConfig:
-		err = m.processApplyScanCfgRequest(r.ApplyScanConfig, req)
+		err = m.processApplyScanCfgRequest(ctx, r.ApplyScanConfig, req)
 	case *central.ComplianceRequest_DeleteScanConfig:
-		err = m.processDeleteScanCfgRequest(r.DeleteScanConfig, req)
+		err = m.processDeleteScanCfgRequest(ctx, r.DeleteScanConfig, req)
 	}
 
 	commandsFromCentral.With(prometheus.Labels{
@@ -114,24 +114,24 @@ func (m *handlerImpl) onResult(ev pubsub.Event) error {
 	}
 	switch result.Type {
 	case events.ApplyScanConfigResponse:
-		m.composeAndSendApplyScanConfigResponse(result.RequestID, result.Error)
+		m.composeAndSendApplyScanConfigResponse(result.Context, result.RequestID, result.Error)
 	case events.DeleteScanConfigResponse:
-		m.composeAndSendDeleteResponse(result.RequestID, result.Error)
+		m.composeAndSendDeleteResponse(result.Context, result.RequestID, result.Error)
 	}
 	return nil
 }
 
-func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianceScanConfigRequest, fullReq *central.ComplianceRequest) error {
+func (m *handlerImpl) processApplyScanCfgRequest(ctx context.Context, request *central.ApplyComplianceScanConfigRequest, fullReq *central.ComplianceRequest) error {
 	select {
 	case <-m.disabled.Done():
-		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request)))
+		m.composeAndSendApplyScanConfigResponse(ctx, request.GetId(), errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request)))
 		return nil
 	default:
 	}
 
 	if request.GetScanRequest() == nil {
 		applyScanConfigCommands.WithLabelValues("nil").Inc()
-		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Compliance scan request is empty"))
+		m.composeAndSendApplyScanConfigResponse(ctx, request.GetId(), errors.New("Compliance scan request is empty"))
 		return nil
 	}
 
@@ -150,39 +150,39 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 	case *central.ApplyComplianceScanConfigRequest_ResumeScan:
 		err = validateApplyResumeScheduledScanRequest(r.ResumeScan)
 	default:
-		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
+		m.composeAndSendApplyScanConfigResponse(ctx, request.GetId(), errors.New("Cannot handle compliance scan request"))
 		return nil
 	}
 
 	if err != nil {
-		m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.Wrap(err, "validating compliance scan request"))
+		m.composeAndSendApplyScanConfigResponse(ctx, request.GetId(), errors.Wrap(err, "validating compliance scan request"))
 		return nil
 	}
 
-	return m.publishRequest(fullReq)
+	return m.publishRequest(ctx, fullReq)
 }
 
-func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplianceScanConfigRequest, fullReq *central.ComplianceRequest) error {
+func (m *handlerImpl) processDeleteScanCfgRequest(ctx context.Context, request *central.DeleteComplianceScanConfigRequest, fullReq *central.ComplianceRequest) error {
 	select {
 	case <-m.disabled.Done():
-		m.composeAndSendDeleteResponse(request.GetId(), errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request)))
+		m.composeAndSendDeleteResponse(ctx, request.GetId(), errors.Errorf("Compliance is disabled. Cannot process request: %s", protoutils.NewWrapper(request)))
 		return nil
 	default:
 	}
 
 	if request.GetName() == defaultScanSettingName {
-		m.composeAndSendDeleteResponse(request.GetId(), errors.Errorf("Default compliance scan configuration %q cannot be deleted", defaultScanSettingName))
+		m.composeAndSendDeleteResponse(ctx, request.GetId(), errors.Errorf("Default compliance scan configuration %q cannot be deleted", defaultScanSettingName))
 		return nil
 	}
 
-	return m.publishRequest(fullReq)
+	return m.publishRequest(ctx, fullReq)
 }
 
-func (m *handlerImpl) publishRequest(req *central.ComplianceRequest) error {
-	return m.dispatcher.Publish(&events.ComplianceCentralRequestEvent{Request: req})
+func (m *handlerImpl) publishRequest(ctx context.Context, req *central.ComplianceRequest) error {
+	return m.dispatcher.Publish(&events.ComplianceCentralRequestEvent{Context: ctx, Request: req})
 }
 
-func (m *handlerImpl) composeAndSendEnableComplianceResponse(requestID string, err error) {
+func (m *handlerImpl) composeAndSendEnableComplianceResponse(ctx context.Context, requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_EnableComplianceResponse_{
 			EnableComplianceResponse: &central.ComplianceResponse_EnableComplianceResponse{
@@ -198,10 +198,10 @@ func (m *handlerImpl) composeAndSendEnableComplianceResponse(requestID string, e
 			Error: err.Error(),
 		}
 	}
-	m.sendResponse(msg)
+	m.sendResponse(ctx, msg)
 }
 
-func (m *handlerImpl) composeAndSendDisableComplianceResponse(requestID string, err error) {
+func (m *handlerImpl) composeAndSendDisableComplianceResponse(ctx context.Context, requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_DisableComplianceResponse_{
 			DisableComplianceResponse: &central.ComplianceResponse_DisableComplianceResponse{
@@ -217,10 +217,10 @@ func (m *handlerImpl) composeAndSendDisableComplianceResponse(requestID string, 
 			Error: err.Error(),
 		}
 	}
-	m.sendResponse(msg)
+	m.sendResponse(ctx, msg)
 }
 
-func (m *handlerImpl) composeAndSendApplyScanConfigResponse(requestID string, err error) {
+func (m *handlerImpl) composeAndSendApplyScanConfigResponse(ctx context.Context, requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_ApplyComplianceScanConfigResponse_{
 			ApplyComplianceScanConfigResponse: &central.ComplianceResponse_ApplyComplianceScanConfigResponse{
@@ -236,10 +236,10 @@ func (m *handlerImpl) composeAndSendApplyScanConfigResponse(requestID string, er
 			Error: err.Error(),
 		}
 	}
-	m.sendResponse(msg)
+	m.sendResponse(ctx, msg)
 }
 
-func (m *handlerImpl) composeAndSendDeleteResponse(requestID string, err error) {
+func (m *handlerImpl) composeAndSendDeleteResponse(ctx context.Context, requestID string, err error) {
 	msg := &central.ComplianceResponse{
 		Response: &central.ComplianceResponse_DeleteComplianceScanConfigResponse_{
 			DeleteComplianceScanConfigResponse: &central.ComplianceResponse_DeleteComplianceScanConfigResponse{
@@ -253,10 +253,10 @@ func (m *handlerImpl) composeAndSendDeleteResponse(requestID string, err error) 
 			Error: err.Error(),
 		}
 	}
-	m.sendResponse(msg)
+	m.sendResponse(ctx, msg)
 }
 
-func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) {
+func (m *handlerImpl) sendResponse(ctx context.Context, response *central.ComplianceResponse) {
 	select {
 	case m.response <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ComplianceResponse{
@@ -264,5 +264,6 @@ func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) {
 		},
 	}):
 	case <-m.stopSignal.Done():
+	case <-ctx.Done():
 	}
 }

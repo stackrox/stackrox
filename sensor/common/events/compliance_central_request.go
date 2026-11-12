@@ -1,6 +1,8 @@
 package events
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 )
@@ -8,6 +10,7 @@ import (
 // ComplianceCentralRequestEvent carries a compliance request from Central
 // to the compliance manager for processing.
 type ComplianceCentralRequestEvent struct {
+	Context context.Context
 	Request *central.ComplianceRequest
 }
 

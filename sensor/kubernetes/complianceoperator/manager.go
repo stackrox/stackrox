@@ -6,11 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/store"
@@ -123,10 +122,6 @@ func (m *Manager) run() {
 		return
 	}
 
-	if centralcaps.Has(centralsensor.ComplianceV2ScanConfigSync) {
-		m.waitAndProcessSync()
-	}
-
 	var mcpTimer *time.Timer
 	var mcpTimerC <-chan time.Time
 
@@ -152,30 +147,16 @@ func (m *Manager) run() {
 	}
 }
 
-func (m *Manager) waitAndProcessSync() {
-	select {
-	case ev := <-m.inner:
-		if err := m.processSync(ev); err != nil {
-			log.Errorf("Failed to process scan config sync: %v", err)
-		}
-	case <-m.stopper.Flow().StopRequested():
-	}
-}
-
-func (m *Manager) processSync(ev pubsub.Event) error {
-	e, ok := ev.(*events.ComplianceCentralRequestEvent)
-	if !ok {
-		return errors.Errorf("unexpected event type: %T", ev)
-	}
-	syncReq := e.Request.GetSyncScanConfigs()
-	if syncReq == nil {
-		return errors.New("expected SyncScanConfigs request")
-	}
+func (m *Manager) processSync(ctx context.Context, request *central.SyncComplianceScanConfigRequest) error {
 	ns := m.complianceOperatorInfo.GetNamespace()
 	if ns == "" {
 		return errors.New("compliance operator namespace not known")
 	}
-	return m.writer.syncScanConfigs(m.ctx(), ns, syncReq)
+	mergedCtx, stopAfterFn := m.mergeContextWithStopper(ctx)
+	defer func() {
+		_ = stopAfterFn()
+	}()
+	return m.writer.syncScanConfigs(mergedCtx, ns, request)
 }
 
 func (m *Manager) process(ev pubsub.Event) {
@@ -184,59 +165,77 @@ func (m *Manager) process(ev pubsub.Event) {
 		log.Errorf("unexpected event type: %T", ev)
 		return
 	}
+	select {
+	case <-e.Context.Done():
+		return
+	default:
+	}
 	req := e.Request
 	switch r := req.GetRequest().(type) {
 	case *central.ComplianceRequest_ApplyScanConfig:
-		m.processApplyScanConfig(r.ApplyScanConfig)
+		m.processApplyScanConfig(e.Context, r.ApplyScanConfig)
 	case *central.ComplianceRequest_DeleteScanConfig:
-		m.processDeleteScanConfig(r.DeleteScanConfig)
+		m.processDeleteScanConfig(e.Context, r.DeleteScanConfig)
+	case *central.ComplianceRequest_SyncScanConfigs:
+		if err := m.processSync(e.Context, r.SyncScanConfigs); err != nil {
+			log.Errorf("Failed to process scan config sync: %v", err)
+		}
 	default:
 		log.Errorf("unexpected request type in manager: %T", req.GetRequest())
 	}
 }
 
-func (m *Manager) processApplyScanConfig(request *central.ApplyComplianceScanConfigRequest) {
+func (m *Manager) processApplyScanConfig(ctx context.Context, request *central.ApplyComplianceScanConfigRequest) {
 	ns := m.complianceOperatorInfo.GetNamespace()
 	if ns == "" {
-		m.publishResult(request.GetId(), events.ApplyScanConfigResponse, errors.New("compliance operator namespace not known"))
+		m.publishResult(ctx, request.GetId(), events.ApplyScanConfigResponse, errors.New("compliance operator namespace not known"))
 		return
 	}
+
+	mergedCtx, stopAfterFn := m.mergeContextWithStopper(ctx)
+	defer func() {
+		_ = stopAfterFn()
+	}()
 
 	var err error
 	switch r := request.GetScanRequest().(type) {
 	case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
-		err = m.writer.createScanResources(m.ctx(), ns, r.ScheduledScan.GetScanSettings(), r.ScheduledScan.GetCron())
+		err = m.writer.createScanResources(mergedCtx, ns, r.ScheduledScan.GetScanSettings(), r.ScheduledScan.GetCron())
 	case *central.ApplyComplianceScanConfigRequest_UpdateScan:
-		err = m.writer.updateScanConfig(m.ctx(), ns, r.UpdateScan)
+		err = m.writer.updateScanConfig(mergedCtx, ns, r.UpdateScan)
 	case *central.ApplyComplianceScanConfigRequest_RerunScan:
-		err = m.writer.rerunScan(m.ctx(), ns, r.RerunScan.GetScanName())
+		err = m.writer.rerunScan(mergedCtx, ns, r.RerunScan.GetScanName())
 	case *central.ApplyComplianceScanConfigRequest_SuspendScan:
 		config := scanScheduleConfiguration{
 			Suspend:  ptr.To(true),
 			ScanName: r.SuspendScan.GetScanName(),
 		}
-		err = m.writer.changeScanSchedule(m.ctx(), ns, config)
+		err = m.writer.changeScanSchedule(mergedCtx, ns, config)
 	case *central.ApplyComplianceScanConfigRequest_ResumeScan:
 		config := scanScheduleConfiguration{
 			Suspend:  ptr.To(false),
 			ScanName: r.ResumeScan.GetScanName(),
 		}
-		err = m.writer.changeScanSchedule(m.ctx(), ns, config)
+		err = m.writer.changeScanSchedule(mergedCtx, ns, config)
 	default:
 		err = errors.Errorf("unknown scan request type: %T", request.GetScanRequest())
 	}
 
-	m.publishResult(request.GetId(), events.ApplyScanConfigResponse, err)
+	m.publishResult(ctx, request.GetId(), events.ApplyScanConfigResponse, err)
 }
 
-func (m *Manager) processDeleteScanConfig(request *central.DeleteComplianceScanConfigRequest) {
+func (m *Manager) processDeleteScanConfig(ctx context.Context, request *central.DeleteComplianceScanConfigRequest) {
 	ns := m.complianceOperatorInfo.GetNamespace()
 	if ns == "" {
-		m.publishResult(request.GetId(), events.DeleteScanConfigResponse, errors.New("compliance operator namespace not known"))
+		m.publishResult(ctx, request.GetId(), events.DeleteScanConfigResponse, errors.New("compliance operator namespace not known"))
 		return
 	}
-	err := m.writer.deleteScanConfig(m.ctx(), ns, request.GetName())
-	m.publishResult(request.GetId(), events.DeleteScanConfigResponse, err)
+	mergedCtx, stopAfterFn := m.mergeContextWithStopper(ctx)
+	defer func() {
+		_ = stopAfterFn()
+	}()
+	err := m.writer.deleteScanConfig(mergedCtx, ns, request.GetName())
+	m.publishResult(ctx, request.GetId(), events.DeleteScanConfigResponse, err)
 }
 
 func (m *Manager) reconcileMCPRoles() {
@@ -256,13 +255,15 @@ func (m *Manager) reconcileMCPRoles() {
 		log.Debug("no MCP roles found, skipping reconciliation")
 		return
 	}
-	if err := m.writer.updateAllScanSettingRoles(m.ctx(), ns, roles); err != nil {
+
+	if err := m.writer.updateAllScanSettingRoles(m.stopperContext(), ns, roles); err != nil {
 		log.Errorf("failed to reconcile MCP roles: %v", err)
 	}
 }
 
-func (m *Manager) publishResult(requestID string, responseType events.ResponseType, err error) {
+func (m *Manager) publishResult(ctx context.Context, requestID string, responseType events.ResponseType, err error) {
 	if pubErr := m.dispatcher.Publish(&events.ComplianceCentralResultEvent{
+		Context:   ctx,
 		RequestID: requestID,
 		Error:     err,
 		Type:      responseType,
@@ -271,6 +272,10 @@ func (m *Manager) publishResult(requestID string, responseType events.ResponseTy
 	}
 }
 
-func (m *Manager) ctx() context.Context {
+func (m *Manager) stopperContext() context.Context {
 	return concurrency.AsContext(concurrency.WaitableChan(m.stopper.Flow().StopRequested()))
+}
+
+func (m *Manager) mergeContextWithStopper(ctx context.Context) (context.Context, func() bool) {
+	return contextutil.MergeContext(ctx, m.stopperContext())
 }
