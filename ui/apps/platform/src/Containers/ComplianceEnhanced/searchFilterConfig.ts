@@ -10,7 +10,10 @@ import type {
     SelectSearchFilterAttribute,
 } from 'Components/CompoundSearchFilter/types';
 
-import { CHECK_STATUS_QUERY } from './Coverage/compliance.coverage.constants';
+import {
+    CHECK_DATA_FRESHNESS_QUERY,
+    CHECK_STATUS_QUERY,
+} from './Coverage/compliance.coverage.constants';
 
 export const profileSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Profile',
@@ -28,6 +31,27 @@ export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
     attributes: [clusterIdAttribute, clusterLabelAttribute, clusterNameAttribute],
+};
+
+export const scanStatusSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Scan status',
+    searchCategory: 'COMPLIANCE',
+    attributes: [
+        {
+            displayName: 'Data freshness',
+            filterChipLabel: 'Scan status',
+            searchTerm: CHECK_DATA_FRESHNESS_QUERY,
+            inputType: 'select',
+            inputProps: {
+                options: [
+                    { label: 'Current', value: 'CURRENT' },
+                    { label: 'Stale', value: 'STALE' },
+                    { label: 'Unknown', value: 'UNKNOWN' },
+                ],
+            },
+            featureFlagDependency: ['ROX_COMPLIANCE_SURFACE_STALE_DATA'],
+        },
+    ],
 };
 
 export const attributeForComplianceCheckStatus: SelectSearchFilterAttribute = {
