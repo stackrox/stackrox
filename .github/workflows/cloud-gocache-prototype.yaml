@@ -381,12 +381,16 @@ jobs:
               # Uses the roxctl binary from the link-output cache.
               echo "=== Docker layer caching experiment ==="
 
-              # First: build roxctl (with outbin cache — fast on warm runs)
-              if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null; then
-                echo "docker: roxctl restored from outbin cache"
+              # Fetch roxctl from outbin cache — no compilation needed
+              # for the Docker layer experiment. If no cached binary,
+              # skip the experiment (don't cold-build for 44 minutes).
+              if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null && \
+                 [ "$(stat -c%s bin/linux_amd64/roxctl 2>/dev/null || echo 0)" -gt 1000000 ]; then
+                echo "docker: roxctl restored from outbin cache ($(stat -c%s bin/linux_amd64/roxctl) bytes)"
               else
-                rm -f bin/linux_amd64/roxctl
-                make roxctl_linux-amd64
+                echo "docker: ERROR — no cached roxctl binary (outbin store empty). Skipping Docker experiment." >&2
+                echo "docker: Run a cli workload first to populate the outbin store." >&2
+                exit 1
               fi
               ROXCTL_SIZE=$(stat -c%s bin/linux_amd64/roxctl 2>/dev/null || echo 0)
               echo "docker: roxctl size: $ROXCTL_SIZE bytes"
@@ -450,8 +454,69 @@ jobs:
 
               echo ""
               echo "--- Verify images have same content ---"
-              docker run --rm docker-test-cold ls -la /roxctl 2>/dev/null | awk '{print "cold:   ", $5, $9}'
-              docker run --rm docker-test-cached ls -la /roxctl 2>/dev/null | awk '{print "cached: ", $5, $9}'
+              # Note: scratch images have no 'ls' — use stat via docker inspect
+              docker image inspect docker-test-cold --format 'cold:   {{.Size}} bytes' 2>/dev/null
+              docker image inspect docker-test-cached --format 'cached: {{.Size}} bytes' 2>/dev/null
+
+              # Phase 5: BuildKit cache export → blob store → import (the production pattern)
+              echo ""
+              echo "--- Phase 5: BuildKit cache export/import via blob store ---"
+              mkdir -p /tmp/bk-cache
+
+              # Export the BuildKit cache (layer-level, content-addressed)
+              BKC_START=$(date +%s%N)
+              docker buildx build \
+                --cache-export type=local,dest=/tmp/bk-cache \
+                -t docker-test-bk \
+                -f /tmp/docker-test/Dockerfile.base /tmp/../ 2>&1 | tail -3
+              BKC_END=$(date +%s%N)
+              BKC_MS=$(( (BKC_END - BKC_START) / 1000000 ))
+              echo "BuildKit cache export: ${BKC_MS}ms"
+              echo "Cache size: $(du -sh /tmp/bk-cache 2>/dev/null | cut -f1)"
+
+              # Upload to blob store (our existing infrastructure)
+              if [ -d /tmp/bk-cache ] && [ -n "$(find /tmp/bk-cache -type f 2>/dev/null | head -1)" ]; then
+                tar -czf /tmp/bk-cache.tar.gz -C /tmp bk-cache
+                BKS_KEY="docker-bk-cache-$(sha256sum bin/linux_amd64/roxctl | cut -c1-16)"
+                "$GOCACHEPROG" -store "$BKS_KEY" /tmp/bk-cache.tar.gz 2>&1 | tail -1
+                echo "Cache uploaded to blob store (key: $BKS_KEY, $(stat -c%s /tmp/bk-cache.tar.gz) bytes)"
+              fi
+
+              # Clear Docker's local cache, then rebuild using only the blob store cache
+              echo ""
+              echo "--- Phase 6: Rebuild from blob-store cache (no Docker cache) ---"
+              docker builder prune --force 2>/dev/null
+              rm -rf /tmp/bk-cache
+              mkdir -p /tmp/bk-cache
+
+              # Fetch from blob store
+              BKI_START=$(date +%s%N)
+              "$GOCACHEPROG" -fetch "$BKS_KEY" /tmp/bk-cache.tar.gz 2>/dev/null && \
+                tar -xzf /tmp/bk-cache.tar.gz -C /tmp
+              BKI_END=$(date +%s%N)
+              BKI_MS=$(( (BKI_END - BKI_START) / 1000000 ))
+              echo "Cache fetch from blob store: ${BKI_MS}ms"
+
+              # Rebuild using the fetched cache
+              BKR_START=$(date +%s%N)
+              docker buildx build \
+                --cache-from type=local,src=/tmp/bk-cache \
+                -t docker-test-bk-warm \
+                -f /tmp/docker-test/Dockerfile.base /tmp/../ 2>&1 | tail -3
+              BKR_END=$(date +%s%N)
+              BKR_MS=$(( (BKR_END - BKR_START) / 1000000 ))
+              echo "Rebuild from cache: ${BKR_MS}ms"
+
+              echo ""
+              echo "=== COMPLETE RESULTS ==="
+              echo "Cold (no cache):            ${COLD_MS}ms"
+              echo "Warm (Docker cache):        ${WARM_MS}ms"
+              echo "COPY --link:                ${WARM_MS}ms"
+              echo "--from=cached:              ${CACHED_MS}ms"
+              [ -n "${BUILDX_MS:-}" ] && echo "buildx --from=cached:       ${BUILDX_MS}ms"
+              echo "BuildKit cache export:      ${BKC_MS}ms"
+              echo "Blob store fetch:           ${BKI_MS}ms"
+              echo "Rebuild from blob cache:    ${BKR_MS}ms"
 
               # Clean up test images
               docker rmi docker-test-cold docker-test-warm docker-test-cached docker-test-buildx 2>/dev/null || true
