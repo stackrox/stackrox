@@ -97,7 +97,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.Risk{}, resourceType: directlyScoped},
 		{typ: &storage.Role{}, resourceType: globallyScoped},
 		{typ: &storage.Secret{}, resourceType: directlyScoped},
-		{typ: &storage.SensorUpgradeConfig{}, resourceType: globallyScoped},
 		{typ: &storage.ServiceAccount{}, resourceType: directlyScoped},
 		{typ: &storage.ServiceIdentity{}, resourceType: globallyScoped},
 		{typ: &storage.SignatureIntegration{}, resourceType: globallyScoped},

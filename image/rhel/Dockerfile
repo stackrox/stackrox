@@ -125,7 +125,6 @@ COPY --link bin/central            /stackrox/central
 COPY --link bin/migrator           /stackrox/bin/migrator
 COPY --link bin/compliance         /stackrox/bin/compliance
 COPY --link bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
-COPY --link bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
 COPY --link bin/admission-control  /stackrox/bin/admission-control
 COPY --link bin/config-controller  /stackrox/bin/config-controller
 COPY --link bin/central-worker     /stackrox/bin/central-worker

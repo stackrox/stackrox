@@ -144,7 +144,7 @@ func newConnection(ctx context.Context,
 	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
-	conn.telemetryCtrl = telemetry.NewController(conn.capabilities, conn, &conn.stopSig)
+	conn.telemetryCtrl = telemetry.NewController(conn, &conn.stopSig)
 
 	return conn
 }
@@ -790,69 +790,61 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
 	}
 
-	if connectionCapabilities.Contains(centralsensor.SensorDetectionCap) {
-		msg, err = c.getPolicySyncMsg(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "unable to get policy sync msg for %q", c.clusterID)
-		}
-		if err := server.Send(msg); err != nil {
-			return errors.Wrapf(err, "unable to sync initial policies to cluster %q", c.clusterID)
-		}
-
-		msg, err = c.getBaselineSyncMsg(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "unable to get process baseline sync msg for %q", c.clusterID)
-		}
-		if err := server.Send(msg); err != nil {
-			return errors.Wrapf(err, "unable to sync initial process baselines to cluster %q", c.clusterID)
-		}
-
-		msg, err = c.getNetworkBaselineSyncMsg(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "unable to get network baseline sync msg for %q", c.clusterID)
-		}
-		if err := server.Send(msg); err != nil {
-			return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
-		}
-
+	msg, err = c.getPolicySyncMsg(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "unable to get policy sync msg for %q", c.clusterID)
+	}
+	if err := server.Send(msg); err != nil {
+		return errors.Wrapf(err, "unable to sync initial policies to cluster %q", c.clusterID)
 	}
 
-	if connectionCapabilities.Contains(centralsensor.SendDeduperStateOnReconnect) {
-		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
-		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
+	msg, err = c.getBaselineSyncMsg(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "unable to get process baseline sync msg for %q", c.clusterID)
+	}
+	if err := server.Send(msg); err != nil {
+		return errors.Wrapf(err, "unable to sync initial process baselines to cluster %q", c.clusterID)
+	}
 
-		// Send hashes to sensor
-		maxEntries := env.GetMaxDeduperEntriesPerMessage()
-		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
-		// If there are no hashes we send the empty map
-		if len(successfulHashes) == 0 {
-			if err := c.sendDeduperState(server, successfulHashes, 1, 1); err != nil {
-				return err
-			}
+	msg, err = c.getNetworkBaselineSyncMsg(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "unable to get network baseline sync msg for %q", c.clusterID)
+	}
+	if err := server.Send(msg); err != nil {
+		return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
+	}
+
+	log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
+
+	// Send hashes to sensor
+	maxEntries := env.GetMaxDeduperEntriesPerMessage()
+	successfulHashes := c.hashDeduper.GetSuccessfulHashes()
+	// If there are no hashes we send the empty map
+	if len(successfulHashes) == 0 {
+		if err := c.sendDeduperState(server, successfulHashes, 1, 1); err != nil {
+			return err
 		}
-		total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
-		log.Debugf("DeduperState total number of hashes %d chunk size %d number of chunks to send %d", len(successfulHashes), maxEntries, total)
-		var current int32 = 1
-		payload := make(map[string]uint64)
-		for k, v := range successfulHashes {
-			payload[k] = v
-			if len(payload) == int(maxEntries) {
-				if err := c.sendDeduperState(server, payload, current, total); err != nil {
-					return err
-				}
-				payload = make(map[string]uint64)
-				current++
-			}
-		}
-		if len(payload) > 0 {
+	}
+	total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
+	log.Debugf("DeduperState total number of hashes %d chunk size %d number of chunks to send %d", len(successfulHashes), maxEntries, total)
+	var current int32 = 1
+	payload := make(map[string]uint64)
+	for k, v := range successfulHashes {
+		payload[k] = v
+		if len(payload) == int(maxEntries) {
 			if err := c.sendDeduperState(server, payload, current, total); err != nil {
 				return err
 			}
+			payload = make(map[string]uint64)
+			current++
 		}
-		log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
-	} else {
-		log.Infof("Sensor (%s) cannot receive deduper state", c.clusterID)
 	}
+	if len(payload) > 0 {
+		if err := c.sendDeduperState(server, payload, current, total); err != nil {
+			return err
+		}
+	}
+	log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
 
 	// Any messages after this will be processed by Sensor components and can go in any order.
 	// Don't change the order of any messages above!
@@ -887,23 +879,18 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 	go c.runSend(server)
 
-	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the feature is enabled.
-	if connectionCapabilities.Contains(centralsensor.NetworkGraphExternalSrcsCap) {
-		if err := c.NetworkEntities().SyncNow(ctx); err != nil {
-			log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)
-		}
+	if err := c.NetworkEntities().SyncNow(ctx); err != nil {
+		log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)
 	}
 
-	if connectionCapabilities.Contains(centralsensor.AuditLogEventsCap) {
-		msg, err := c.getAuditLogSyncMsg(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "unable to get audit log file state sync msg for %q", c.clusterID)
-		}
+	msg, err = c.getAuditLogSyncMsg(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "unable to get audit log file state sync msg for %q", c.clusterID)
+	}
 
-		// Send the audit log state to sensor even if the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
-		if err := server.Send(msg); err != nil {
-			return errors.Wrapf(err, "unable to sync audit log file state to cluster %q", c.clusterID)
-		}
+	// Send the audit log state to sensor even if the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
+	if err := server.Send(msg); err != nil {
+		return errors.Wrapf(err, "unable to sync audit log file state to cluster %q", c.clusterID)
 	}
 
 	if features.ComplianceEnhancements.Enabled() && connectionCapabilities.Contains(centralsensor.ComplianceV2ScanConfigSync) {
@@ -934,18 +921,6 @@ func (c *sensorConnection) HasCapability(capability centralsensor.SensorCapabili
 
 func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, bool) {
 	return c.sensorEventHandler.reconciliationMap.DeletedElementsByType()
-}
-
-func (c *sensorConnection) CheckAutoUpgradeSupport() error {
-	if c.sensorHello.GetHelmManagedConfigInit() != nil {
-		switch c.sensorHello.GetHelmManagedConfigInit().GetManagedBy() {
-		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
-			return errors.New("Helm controls the secured cluster version.")
-		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
-			return errors.New("Operator controls the secured cluster version.")
-		}
-	}
-	return nil
 }
 
 func (c *sensorConnection) SensorVersion() string {

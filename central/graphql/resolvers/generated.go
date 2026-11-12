@@ -355,25 +355,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"providerMetadata: ProviderMetadata",
 		"sensorVersion: String!",
 		"sensorVersionCompatibility: SensorVersionCompatibility!",
-		"upgradeStatus: ClusterUpgradeStatus",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
-	utils.Must(builder.AddType("ClusterUpgradeStatus", []string{
-		"mostRecentProcess: ClusterUpgradeStatus_UpgradeProcessStatus",
-		"upgradability: ClusterUpgradeStatus_Upgradability!",
-		"upgradabilityStatusReason: String!",
-	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_Upgradability(0)))
-	utils.Must(builder.AddType("ClusterUpgradeStatus_UpgradeProcessStatus", []string{
-		"active: Boolean!",
-		"id: ID!",
-		"initiatedAt: Time",
-		"progress: UpgradeProgress",
-		"targetVersion: String!",
-		"type: ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType!",
-		"upgraderImage: String!",
-	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	utils.Must(builder.AddType("CollectorHealthInfo", []string{
 		"statusErrors: [String!]!",
@@ -1412,12 +1395,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_MutabilityMode(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_Origin(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_Visibility(0)))
-	utils.Must(builder.AddType("UpgradeProgress", []string{
-		"since: Time",
-		"upgradeState: UpgradeProgress_UpgradeState!",
-		"upgradeStatusDetail: String!",
-	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.UpgradeProgress_UpgradeState(0)))
 	utils.Must(builder.AddType("V1Metadata", []string{
 		"author: String!",
 		"command: [String!]!",
@@ -4723,11 +4700,6 @@ func (resolver *clusterStatusResolver) SensorVersionCompatibility(ctx context.Co
 	return value.String()
 }
 
-func (resolver *clusterStatusResolver) UpgradeStatus(ctx context.Context) (*clusterUpgradeStatusResolver, error) {
-	value := resolver.data.GetUpgradeStatus()
-	return resolver.root.wrapClusterUpgradeStatus(value, true, nil)
-}
-
 func toClusterType(value *string) storage.ClusterType {
 	if value != nil {
 		return storage.ClusterType(storage.ClusterType_value[*value])
@@ -4742,176 +4714,6 @@ func toClusterTypes(values *[]string) []storage.ClusterType {
 	output := make([]storage.ClusterType, len(*values))
 	for i, v := range *values {
 		output[i] = toClusterType(&v)
-	}
-	return output
-}
-
-type clusterUpgradeStatusResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ClusterUpgradeStatus
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatus(value *storage.ClusterUpgradeStatus, ok bool, err error) (*clusterUpgradeStatusResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &clusterUpgradeStatusResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatuses(values []*storage.ClusterUpgradeStatus, err error) ([]*clusterUpgradeStatusResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*clusterUpgradeStatusResolver, len(values))
-	for i, v := range values {
-		output[i] = &clusterUpgradeStatusResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatusWithContext(ctx context.Context, value *storage.ClusterUpgradeStatus, ok bool, err error) (*clusterUpgradeStatusResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &clusterUpgradeStatusResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatusesWithContext(ctx context.Context, values []*storage.ClusterUpgradeStatus, err error) ([]*clusterUpgradeStatusResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*clusterUpgradeStatusResolver, len(values))
-	for i, v := range values {
-		output[i] = &clusterUpgradeStatusResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *clusterUpgradeStatusResolver) MostRecentProcess(ctx context.Context) (*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
-	value := resolver.data.GetMostRecentProcess()
-	return resolver.root.wrapClusterUpgradeStatus_UpgradeProcessStatus(value, true, nil)
-}
-
-func (resolver *clusterUpgradeStatusResolver) Upgradability(ctx context.Context) string {
-	value := resolver.data.GetUpgradability()
-	return value.String()
-}
-
-func (resolver *clusterUpgradeStatusResolver) UpgradabilityStatusReason(ctx context.Context) string {
-	value := resolver.data.GetUpgradabilityStatusReason()
-	return value
-}
-
-func toClusterUpgradeStatus_Upgradability(value *string) storage.ClusterUpgradeStatus_Upgradability {
-	if value != nil {
-		return storage.ClusterUpgradeStatus_Upgradability(storage.ClusterUpgradeStatus_Upgradability_value[*value])
-	}
-	return storage.ClusterUpgradeStatus_Upgradability(0)
-}
-
-func toClusterUpgradeStatus_Upgradabilities(values *[]string) []storage.ClusterUpgradeStatus_Upgradability {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.ClusterUpgradeStatus_Upgradability, len(*values))
-	for i, v := range *values {
-		output[i] = toClusterUpgradeStatus_Upgradability(&v)
-	}
-	return output
-}
-
-type clusterUpgradeStatus_UpgradeProcessStatusResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ClusterUpgradeStatus_UpgradeProcessStatus
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatus(value *storage.ClusterUpgradeStatus_UpgradeProcessStatus, ok bool, err error) (*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &clusterUpgradeStatus_UpgradeProcessStatusResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatuses(values []*storage.ClusterUpgradeStatus_UpgradeProcessStatus, err error) ([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, len(values))
-	for i, v := range values {
-		output[i] = &clusterUpgradeStatus_UpgradeProcessStatusResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatusWithContext(ctx context.Context, value *storage.ClusterUpgradeStatus_UpgradeProcessStatus, ok bool, err error) (*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &clusterUpgradeStatus_UpgradeProcessStatusResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatusesWithContext(ctx context.Context, values []*storage.ClusterUpgradeStatus_UpgradeProcessStatus, err error) ([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, len(values))
-	for i, v := range values {
-		output[i] = &clusterUpgradeStatus_UpgradeProcessStatusResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Active(ctx context.Context) bool {
-	value := resolver.data.GetActive()
-	return value
-}
-
-func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Id(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
-}
-
-func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) InitiatedAt(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetInitiatedAt()
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
-}
-
-func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Progress(ctx context.Context) (*upgradeProgressResolver, error) {
-	value := resolver.data.GetProgress()
-	return resolver.root.wrapUpgradeProgress(value, true, nil)
-}
-
-func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) TargetVersion(ctx context.Context) string {
-	value := resolver.data.GetTargetVersion()
-	return value
-}
-
-func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Type(ctx context.Context) string {
-	value := resolver.data.GetType()
-	return value.String()
-}
-
-func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) UpgraderImage(ctx context.Context) string {
-	value := resolver.data.GetUpgraderImage()
-	return value
-}
-
-func toClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(value *string) storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType {
-	if value != nil {
-		return storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType_value[*value])
-	}
-	return storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(0)
-}
-
-func toClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessTypes(values *[]string) []storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType, len(*values))
-	for i, v := range *values {
-		output[i] = toClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(&v)
 	}
 	return output
 }
@@ -15095,81 +14897,6 @@ func toTraits_Visibilities(values *[]string) []storage.Traits_Visibility {
 	output := make([]storage.Traits_Visibility, len(*values))
 	for i, v := range *values {
 		output[i] = toTraits_Visibility(&v)
-	}
-	return output
-}
-
-type upgradeProgressResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.UpgradeProgress
-}
-
-func (resolver *Resolver) wrapUpgradeProgress(value *storage.UpgradeProgress, ok bool, err error) (*upgradeProgressResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &upgradeProgressResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapUpgradeProgresses(values []*storage.UpgradeProgress, err error) ([]*upgradeProgressResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*upgradeProgressResolver, len(values))
-	for i, v := range values {
-		output[i] = &upgradeProgressResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapUpgradeProgressWithContext(ctx context.Context, value *storage.UpgradeProgress, ok bool, err error) (*upgradeProgressResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &upgradeProgressResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapUpgradeProgressesWithContext(ctx context.Context, values []*storage.UpgradeProgress, err error) ([]*upgradeProgressResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*upgradeProgressResolver, len(values))
-	for i, v := range values {
-		output[i] = &upgradeProgressResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *upgradeProgressResolver) Since(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetSince()
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
-}
-
-func (resolver *upgradeProgressResolver) UpgradeState(ctx context.Context) string {
-	value := resolver.data.GetUpgradeState()
-	return value.String()
-}
-
-func (resolver *upgradeProgressResolver) UpgradeStatusDetail(ctx context.Context) string {
-	value := resolver.data.GetUpgradeStatusDetail()
-	return value
-}
-
-func toUpgradeProgress_UpgradeState(value *string) storage.UpgradeProgress_UpgradeState {
-	if value != nil {
-		return storage.UpgradeProgress_UpgradeState(storage.UpgradeProgress_UpgradeState_value[*value])
-	}
-	return storage.UpgradeProgress_UpgradeState(0)
-}
-
-func toUpgradeProgress_UpgradeStates(values *[]string) []storage.UpgradeProgress_UpgradeState {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.UpgradeProgress_UpgradeState, len(*values))
-	for i, v := range *values {
-		output[i] = toUpgradeProgress_UpgradeState(&v)
 	}
 	return output
 }

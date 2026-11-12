@@ -37,7 +37,6 @@ type MetaValues struct {
 	AdvertisedEndpoint               string
 	CollectionMethod                 string
 	TolerationsEnabled               bool
-	CreateUpgraderSA                 bool
 	EnvVars                          map[string]string
 	K8sCommand                       string
 	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
