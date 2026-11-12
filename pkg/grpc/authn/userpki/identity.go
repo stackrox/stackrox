@@ -64,6 +64,16 @@ func (i *identity) UID() string {
 	return userID(i.info)
 }
 
+func (i *identity) UserDescriptor() *permissions.UserDescriptor {
+	if i == nil {
+		return nil
+	}
+	return &permissions.UserDescriptor{
+		UserID:     i.UID(),
+		Attributes: i.attributes,
+	}
+}
+
 func userID(info mtls.CertInfo) string {
 	return "userpki:" + info.CertFingerprint
 }
