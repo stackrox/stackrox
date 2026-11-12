@@ -1,6 +1,8 @@
 package events
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
@@ -16,6 +18,7 @@ const (
 // ComplianceCentralResultEvent carries the outcome of a compliance
 // scan config operation from the manager back to the handler.
 type ComplianceCentralResultEvent struct {
+	Context   context.Context
 	RequestID string
 	Error     error
 	Type      ResponseType
