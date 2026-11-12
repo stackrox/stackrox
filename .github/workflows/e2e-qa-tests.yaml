@@ -36,7 +36,7 @@ on:
         type: string
         default: |
           nodes=3
-          machine-type=e2-standard-8
+          machine-type=n4d-standard-8
       infra-lifespan:
         description: "Infra cluster lifespan (auto-deleted after expiry)."
         type: string
@@ -161,7 +161,7 @@ jobs:
         if: inputs.cluster-provisioning-method == 'direct-gke'
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
-          MACHINE_TYPE: "e2-standard-16"
+          MACHINE_TYPE: "n4d-standard-16"
           NUM_NODES: "1"
           GKE_SPOT: "false"
         run: |
