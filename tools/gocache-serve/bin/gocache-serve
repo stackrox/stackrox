@@ -24,6 +24,10 @@ set -euo pipefail
 # infinite recursion, each level waiting on a handshake that never comes.
 # No code below may see GOCACHEPROG.
 unset GOCACHEPROG || true
+# Toolchain guard: a stale GOROOT pointing at a different Go install than
+# the `go` in PATH produces "compile: version X does not match go tool
+# version Y". Let go use its compiled-in GOROOT, which is self-consistent.
+unset GOROOT || true
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
