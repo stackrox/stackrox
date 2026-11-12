@@ -261,6 +261,14 @@ func saveLearnedAccount(region, acct string) {
 // static map to the blob-store registry (region-map/<region>), on the hub
 // account. Write-on-change only: no churn when the network is stable, and
 // the registry doubles as an audit trail of topology shifts. Best effort.
+//
+// Plain Put (last-write-wins), NOT PutIfNotExist: concurrent probes in a
+// transition race but write the same value (shared topology), and a
+// PutIfNotExist entry would freeze at first write, unable to record a
+// later topology reversal. The registry is not in the read path — the
+// live probe and 24h disk cache make runtime decisions — so last-write
+// races have no correctness impact, and container versioning keeps every
+// historical value as the audit trail.
 func registerLearnedAccount(region, acct string) {
 	hub := &AzureBackend{
 		account:      "cigocache",
@@ -270,14 +278,11 @@ func registerLearnedAccount(region, acct string) {
 		clientSecret: os.Getenv("AZURE_CLIENT_SECRET"),
 		client:       &http.Client{Timeout: 10 * time.Second},
 	}
-	created, err := hub.PutIfNotExist("region-map/"+region, []byte(acct))
-	if err != nil {
+	if err := hub.Put("region-map/"+region, []byte(acct)); err != nil {
 		log.Printf("gocache-serve: region registry write failed: %v", err)
 		return
 	}
-	if created {
-		log.Printf("gocache-serve: region=%s registered to registry: %s", region, acct)
-	}
+	log.Printf("gocache-serve: region=%s registry updated: %s", region, acct)
 }
 
 // staticRegionMap is the offline fallback: seed knowledge from the 1900+
