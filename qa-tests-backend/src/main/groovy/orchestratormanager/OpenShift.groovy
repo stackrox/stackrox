@@ -2,7 +2,6 @@ package orchestratormanager
 
 import static util.Helpers.withRetry
 
-import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import io.stackrox.annotations.Retry
 import groovy.util.logging.Slf4j
@@ -116,7 +115,6 @@ class OpenShift extends Kubernetes {
     // Delete them after the parent's workload cleanup and before the namespace
     // itself is deleted.
     @Override
-    @CompileDynamic
     void deleteManagedWorkloads(String ns) {
         super.deleteManagedWorkloads(ns)
         try {

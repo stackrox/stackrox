@@ -863,42 +863,40 @@ class PolicyFieldsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        orchestrator.deleteDeployment(UNSCANNED)
+        // Deployments share namespaces, so collect the unique set first and
+        // leave the orchestrator namespace alone.
+        Set<String> namespaces = DEPLOYMENTS*.namespace as Set
+        namespaces.addAll([NAMESPACE_C, NAMESPACE_D])
+        namespaces.remove(Constants.ORCHESTRATOR_NAMESPACE)
 
-        List<String> failures = []
-        // Deployments share namespaces, and a namespace whose deletion failed
-        // would pay the full delete wait again on every repeat.
-        Set<String> attemptedNamespaces = [] as Set
-        for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(deployment)
-            // Delete namespace as well
-            if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE &&
-                    attemptedNamespaces.add(deployment.namespace)) {
-                failures.addAll(deleteNamespaceCatchingFailures(deployment.namespace))
+        List<Exception> failures = []
+        List<Closure> cleanupActions = [
+                { orchestrator.deleteDeployment(UNSCANNED) },
+        ]
+        cleanupActions.addAll(DEPLOYMENTS.collect { deployment ->
+            { orchestrator.deleteDeployment(deployment) }
+        })
+        cleanupActions.addAll(createdPolicyIds.collect { policyID ->
+            { PolicyService.deletePolicy(policyID) }
+        })
+        cleanupActions.addAll(namespaces.collect { ns ->
+            { orchestrator.deleteNamespace(ns) }
+        })
+
+        // One failing action must not leave the rest behind.
+        cleanupActions.each { action ->
+            try {
+                action.call()
+            } catch (Exception e) {
+                log.warn("Cleanup step failed", e)
+                failures.add(e)
             }
         }
 
-        for (policyID in createdPolicyIds) {
-            PolicyService.deletePolicy(policyID)
-        }
-
-        [NAMESPACE_C, NAMESPACE_D].forEach { ns ->
-            if (attemptedNamespaces.add(ns)) {
-                failures.addAll(deleteNamespaceCatchingFailures(ns))
-            }
-        }
-
-        // One failing namespace must not leave the rest behind.
-        assert failures.isEmpty() : "Failed to delete namespaces: ${failures}"
-    }
-
-    private List<String> deleteNamespaceCatchingFailures(String ns) {
-        try {
-            orchestrator.deleteNamespace(ns)
-            return []
-        } catch (Exception e) {
-            log.warn("Failed to delete namespace ${ns}", e)
-            return ["${ns}: ${e.message}"]
+        if (!failures.isEmpty()) {
+            AssertionError failure = new AssertionError("Cleanup of PolicyFieldsTest resources failed")
+            failures.each { failure.addSuppressed(it) }
+            throw failure
         }
     }
 
