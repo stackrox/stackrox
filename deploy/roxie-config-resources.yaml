@@ -1,21 +1,17 @@
-# Shared QA/UI resource budget. Keep local Helm values and Operator test fixtures in sync.
+# Shared QA/UI/non-Groovy E2E overrides for Roxie's tiny profile.
 central:
+  resourceProfile: tiny
   spec:
     central:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 1Gi
-        limits:
-          memory: 1Gi
       db:
+        # Leave room for the default 2 GB shared buffers plus other PostgreSQL allocations.
         resources:
           requests:
-            cpu: 50m
             memory: 4Gi
           limits:
             memory: 4Gi
     centralWorker:
+      # Tiny does not override the worker's 500m CPU / 1 GiB request.
       resources:
         requests:
           cpu: 10m
@@ -24,39 +20,20 @@ central:
           memory: 128Mi
     scannerV4:
       db:
+        # Retain the database memory budget while adopting tiny's CPU request.
         resources:
           requests:
-            cpu: 50m
             memory: 4Gi
           limits:
             memory: 4Gi
-      indexer:
-        resources:
-          requests:
-            cpu: 10m
-            memory: 512Mi
-          limits:
-            memory: 512Mi
-      matcher:
-        resources:
-          requests:
-            cpu: 10m
-            memory: 256Mi
-          limits:
-            memory: 256Mi
 securedCluster:
+  resourceProfile: tiny
   spec:
+    # Tiny selects one admission replica but leaves these CPU requests at product defaults.
     admissionControl:
       resources:
         requests:
           cpu: 10m
-    sensor:
-      resources:
-        requests:
-          cpu: 50m
-          memory: 512Mi
-        limits:
-          memory: 512Mi
     perNode:
       collector:
         resources:

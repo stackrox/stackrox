@@ -255,14 +255,17 @@ reach out to the **ACS Install team**.
 
 ### Resource budgets
 
-QA, UI, and non-Groovy E2E share `deploy/roxie-config-resources.yaml`.
-Keep local Roxie/Helm overrides, local patches, and Operator test fixtures aligned
-with it. Central DB needs 4 GiB for its default 2 GB shared buffers plus query and
-maintenance allocations. Replica counts remain specific to each flow.
+QA, UI, and non-Groovy E2E use Roxie's `tiny` profile through
+`deploy/roxie-config-resources.yaml`. It selects one admission controller, one
+Scanner V4 indexer/matcher, and an 80m CPU request for Sensor's CRS init container.
+The shared overrides retain 4 GiB requests and limits for both databases, 10m CPU
+and 128 MiB for Central worker, and 10m CPU requests for admission control,
+Collector, compliance, and node inventory. Central DB needs room for its default
+2 GB shared buffers plus query and maintenance allocations. Other resources come
+from `tiny`; update the profile in Roxie when these exceptions can be shared.
 
 The single-node GKE QA, UI, non-Groovy, BYODB, and Operator E2E jobs use
-`e2-highmem-2` (2 vCPUs, 16 GiB RAM). CPU requests reserve 100m for Central,
-50m for each database and Sensor, and 10m for each Scanner V4 indexer/matcher,
-Central worker, admission controller, Collector, compliance, and node inventory
-container. Leave room for init containers (including Sensor's 400m certificate
-initialization), GKE system pods, and test workloads when sizing these clusters.
+`e2-highmem-2` (2 vCPUs, 16 GiB RAM). Leave room for init containers, GKE system
+pods, and test workloads when sizing these clusters. Local Helm overrides and
+Operator test fixtures configure resources separately because those deployment
+paths do not consume this shared Roxie configuration.
