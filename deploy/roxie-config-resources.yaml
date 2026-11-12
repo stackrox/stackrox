@@ -4,12 +4,26 @@ central:
   spec:
     central:
       db:
-        # Leave room for the default 2 GB shared buffers plus other PostgreSQL allocations.
+        # Reserve headroom above the 128 MiB shared buffers configured below.
         resources:
           requests:
-            memory: 4Gi
+            memory: 512Mi
           limits:
-            memory: 4Gi
+            memory: 512Mi
+    overlays:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: central-db
+        # BYODB jobs have no managed Central DB deployment.
+        optional: true
+        patches:
+          - path: spec.template.spec.containers[name:central-db].args
+            value: |
+              - postgres
+              - -c
+              - config_file=/etc/stackrox.d/config/postgresql.conf
+              - -c
+              - shared_buffers=128MB
     centralWorker:
       # Tiny does not override the worker's 500m CPU / 1 GiB request.
       resources:
