@@ -381,7 +381,7 @@ func startServices() {
 
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
-	if features.ComplianceSurfaceStaleData.Enabled() {
+	if features.ComplianceSurfaceStaleData.Enabled() && features.ComplianceEnhancements.Enabled() {
 		complianceFreshness.Singleton().Start()
 	}
 	pruning.Singleton().Start()
@@ -1085,7 +1085,7 @@ func waitForTerminationSignal() {
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
 	}
 
-	if features.ComplianceSurfaceStaleData.Enabled() {
+	if features.ComplianceSurfaceStaleData.Enabled() && features.ComplianceEnhancements.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceFreshness.Singleton(), "compliance freshness sweeper"})
 	}
