@@ -28,6 +28,61 @@ function selectLevel(level) {
 }
 
 describe(Cypress.spec.relative, () => {
+    ['apply', 'remove'].forEach((action) => {
+        it(`resets to the first page when workload filters ${action}`, () => {
+            cy.intercept('POST', graphqlUrl('autocomplete'), { data: { searchAutocomplete: [] } });
+            const isUpdated = (req) =>
+                Boolean(req.query['filter.workloadQuery']) === (action === 'apply');
+            cy.intercept('GET', '/v1/count/administration/events?*', (req) => {
+                req.reply({ count: isUpdated(req) ? 1 : 30 });
+            });
+            cy.intercept('GET', '/v1/administration/events?*', (req) => {
+                if (isUpdated(req)) {
+                    req.alias = 'filteredList';
+                    req.reply({
+                        events:
+                            Number(req.query['pagination.offset']) === 0
+                                ? [makeEvent('Matching event', errorLevel)]
+                                : [],
+                    });
+                } else {
+                    req.alias = 'initialList';
+                    req.reply({ events: [makeEvent('Initial event', errorLevel)] });
+                }
+            });
+            const query = getUrlQueryStringForSearchFilter({
+                'Event Domain': ['Image Scanning'],
+                ...(action === 'remove' ? { Cluster: ['prod'] } : {}),
+            });
+            window.history.pushState(
+                {},
+                document.title,
+                `/main/administration-events?page=3&${query}`
+            );
+            cy.mount(
+                <ComponentTestProvider>
+                    <AdministrationEventsPage />
+                </ComponentTestProvider>
+            );
+            cy.wait('@initialList');
+
+            if (action === 'apply') {
+                cy.findByRole('combobox', { name: 'Filter results by Cluster name' }).type('prod');
+                cy.findByRole('button', { name: 'Apply autocomplete input to search' }).click();
+            } else {
+                cy.findByRole('list', { name: 'Cluster name' })
+                    .findByRole('button', { name: 'Remove filter' })
+                    .click();
+            }
+
+            cy.wait('@filteredList').its('request.query').should('include', {
+                'pagination.offset': '0',
+                'filter.domain': 'Image Scanning',
+            });
+            cy.findByRole('link', { name: 'Matching event' }).should('exist');
+        });
+    });
+
     it('keeps filters available to narrow an oversized workload query', () => {
         cy.intercept('POST', graphqlUrl('autocomplete'), { data: { searchAutocomplete: [] } });
         const error = {

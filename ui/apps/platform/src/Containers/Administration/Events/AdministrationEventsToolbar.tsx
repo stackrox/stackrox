@@ -56,20 +56,25 @@ function AdministrationEventsToolbar({
     setSearchFilter,
     updateEvents,
 }: AdministrationEventsToolbarProps): ReactElement {
+    function onFilterChange(newFilter: SearchFilter) {
+        setSearchFilter(newFilter);
+        setPage(1);
+    }
+
     function setDomain(domain: string | undefined) {
-        setSearchFilter(replaceSearchFilterDomain(searchFilter, domain));
+        onFilterChange(replaceSearchFilterDomain(searchFilter, domain));
     }
 
     function setLevel(level: AdministrationEventLevel | undefined) {
-        setSearchFilter(replaceSearchFilterLevel(searchFilter, level));
+        onFilterChange(replaceSearchFilterLevel(searchFilter, level));
     }
 
     function setResourceType(resourceType: string | undefined) {
-        setSearchFilter(replaceSearchFilterResourceType(searchFilter, resourceType));
+        onFilterChange(replaceSearchFilterResourceType(searchFilter, resourceType));
     }
 
     function onWorkloadFilterApplied(payload: OnSearchPayload) {
-        setSearchFilter(updateSearchFilter(searchFilter, payload));
+        onFilterChange(updateSearchFilter(searchFilter, payload));
     }
 
     const { domain, level, resourceType } = getAdministrationEventsFilter(searchFilter);
@@ -152,7 +157,7 @@ function AdministrationEventsToolbar({
                             attributesSeparateFromConfig={[]}
                             config={workloadSearchFilterConfig}
                             hasClearFilters={false}
-                            onFilterChange={setSearchFilter}
+                            onFilterChange={onFilterChange}
                             searchFilter={searchFilter}
                         />
                     </ToolbarGroup>
