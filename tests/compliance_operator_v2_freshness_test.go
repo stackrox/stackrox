@@ -11,7 +11,9 @@ import (
 	complianceoperatorv1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -64,13 +66,16 @@ func scheduleAt(t time.Time) *v2.Schedule {
 }
 
 // waitForCheckResultsFreshness polls the per-check results of profile on clusterID until every
-// result's DataFreshness equals want, or fails the test after timeout.
+// result's DataFreshness equals want, or fails the test after timeout. It returns the last
+// successful response so callers can read authoritative server-side data (e.g. LastScanTime).
 func waitForCheckResultsFreshness(t *testing.T, ctx context.Context, client v2.ComplianceResultsServiceClient,
 	clusterID, profile string, want v2.ComplianceCheckDataFreshness, timeout, interval time.Duration,
-) {
+) *v2.ListComplianceCheckResultResponse {
 	t.Helper()
 	t.Logf("Waiting up to %s for check results of profile %s on cluster %s to reach freshness %s",
 		timeout, profile, clusterID, want)
+	var mu sync.Mutex
+	var last *v2.ListComplianceCheckResultResponse
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		resp, err := client.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
 			ProfileName: profile,
@@ -82,8 +87,10 @@ func waitForCheckResultsFreshness(t *testing.T, ctx context.Context, client v2.C
 			require.Equalf(c, want, r.GetDataFreshness(), "check %s freshness: got %s, want %s",
 				r.GetCheckName(), r.GetDataFreshness(), want)
 		}
+		concurrency.WithLock(&mu, func() { last = resp })
 	}, timeout, interval)
 	t.Logf("Check results of profile %s on cluster %s reached freshness %s", profile, clusterID, want)
+	return last
 }
 
 // getComplianceProfileStats returns the single stats banner entry for profile. A scan config's
@@ -188,7 +195,6 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	statsClient := v2.NewComplianceResultsStatsServiceClient(conn)
 	clusterID := getClusterID(t)
 
-	scanStart := time.Now()
 	testID := fmt.Sprintf("freshness-sweeper-%s", uuid.NewV4().String())
 	req := &v2.ComplianceScanConfiguration{
 		ScanName: testID,
@@ -210,22 +216,30 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	_, err = scanConfigService.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
 	require.NoErrorf(t, err, "failed to run scan config %s", testID)
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
-	waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile,
+	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile,
 		v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, waitForDoneTimeout, waitForDoneInterval)
 
 	// Nothing can refresh the results from this point on.
 	scaleSensorDownForTest(ctx, t, k8sClient, dynClient)
 
-	// A daily tick 1 minute after scanStart gives the sweeper an "expected refresh" scheduled
-	// after the results' LastStartedTime (~scanStart) without waiting a full day for the next
-	// occurrence; see previousScheduledStart in central/complianceoperator/v2/freshness/sweeper.go.
+	// A daily tick 2 minutes after the scan's completion (always >= every result's
+	// LastStartedTime, since a check result can't start after its scan finishes) gives the sweeper
+	// an "expected refresh" scheduled after the results' LastStartedTime without waiting a full day
+	// for the next occurrence; see previousScheduledStart in
+	// central/complianceoperator/v2/freshness/sweeper.go. Deriving the tick from Central's own
+	// LastScanTime (rather than a client-side guess of the scan's start time) avoids a tie: both the
+	// schedule (minute granularity) and LastStartedTime (second granularity, stamped by the
+	// Compliance Operator) truncate sub-minute precision, and CO can start a scan within a second of
+	// the request, so a 1-minute, start-time-based guess can land in the same minute as the actual
+	// LastStartedTime and never compare strictly less-than.
+	lastScanTime := currentResults.GetLastScanTime().AsTime()
 	updateReq := req.CloneVT()
 	updateReq.Id = resp.GetId()
-	updateReq.ScanConfig.ScanSchedule = scheduleAt(scanStart.Add(time.Minute))
+	updateReq.ScanConfig.ScanSchedule = scheduleAt(lastScanTime.Add(2 * time.Minute))
 	_, err = scanConfigService.UpdateComplianceScanConfiguration(ctx, updateReq)
 	require.NoErrorf(t, err, "failed to update scan config %s schedule", testID)
 
-	// The sweeper flips results to STALE once now > (scanStart+1m) + grace, where grace is
+	// The sweeper flips results to STALE once now > (lastScanTime+2m) + grace, where grace is
 	// ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT + ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT (shortened
 	// for e2e to 1m+2m=3m, see tests/e2e/lib.sh and deploy/common/k8sbased.sh).
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
@@ -243,7 +257,7 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 		stats := getComplianceProfileStats(c, ctx, statsClient, freshnessProfile)
 		require.EqualValues(c, 1, stats.GetStaleClusterCount())
 		require.Greater(c, stats.GetStaleCheckResultCount(), int32(0))
-	}, 6*time.Minute, 15*time.Second)
+	}, 8*time.Minute, 15*time.Second)
 
 	// Filtering on the freshness label reflects the same transition.
 	staleResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
