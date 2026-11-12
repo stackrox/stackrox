@@ -259,23 +259,35 @@ configure_scanner_v4_matcher() {
 wait_for_scanner_v4_readiness() {
     local namespace="${1:-stackrox}"
     local max_seconds="${SCANNER_V4_VULN_READINESS_TIMEOUT:-7200}"
+    local start=$SECONDS
+    local deadline=$((SECONDS + max_seconds))
     export SCANNER_V4_VULN_READINESS=true
     # Re-apply before waiting in case a reconcile reverted the deployment; the
     # kubectl patch is a no-op when the values already match.
     configure_scanner_v4_matcher "${namespace}"
-    # The readiness probe is gated on a vulnerability store load that outlasts the
-    # deployment's default 600s progress deadline, which would make rollout status
-    # fail early. Raising the deadline only changes the controller's monitoring
-    # window; the pod template is untouched, so the pods are not restarted again.
-    kubectl -n "${namespace}" patch deploy/scanner-v4-matcher --type=merge \
-        -p "{\"spec\":{\"progressDeadlineSeconds\":${max_seconds}}}"
     # wait_for_scanner_V4 only compares total and ready replicas, so the previous
-    # matcher pod satisfies it until the rollout replaces it. rollout status waits
-    # for the updated replicas, which become available only after the readiness
-    # probe passes.
-    kubectl -n "${namespace}" rollout status deploy/scanner-v4-matcher --timeout="${max_seconds}s"
-    info "Waiting for the Scanner V4 vulnerability store to load"
-    wait_for_scanner_V4 "${namespace}"
+    # matcher pod satisfies it until the rollout replaces it. Check the updated
+    # replicas directly. kubectl rollout status cannot be used: the deployment is
+    # already past its 600s progress deadline while the new pod's gated readiness
+    # probe waits for the store, and raising the deadline does not clear the
+    # TimedOut condition, so rollout status fails immediately.
+    info "Waiting for the Scanner V4 matcher to load its vulnerability store"
+    while (( SECONDS < deadline )); do
+        if kubectl -n "${namespace}" get deploy/scanner-v4-matcher -o json \
+            --request-timeout=30s 2>/dev/null |
+            jq -e '.metadata.generation as $g | .status as $s
+                | ($s.observedGeneration // 0) >= $g
+                    and ($s.updatedReplicas // 0) >= (.spec.replicas // 1)
+                    and ($s.replicas // 0) == $s.updatedReplicas
+                    and ($s.availableReplicas // 0) >= $s.updatedReplicas' >/dev/null 2>&1; then
+            info "Scanner V4 matcher is ready"
+            wait_for_scanner_V4 "${namespace}"
+            return 0
+        fi
+        info "Still waiting ($((SECONDS - start))s/${max_seconds}s)..."
+        sleep 5
+    done
+    die "Scanner V4 matcher did not become ready within ${max_seconds}s"
 }
 
 deploy_earlier_tag_central() {
