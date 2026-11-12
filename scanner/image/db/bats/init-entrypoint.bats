@@ -487,6 +487,8 @@ assert_upgrade() {
     }
 
     run set-acs-version "$PGDATA" "5.2"
+    # Do not let the mock affect Bats' own cleanup after this test.
+    unset -f rm
     assert_success
     assert_equal "$(cat "$PGDATA/.scanner-db-version")" "5.2"
 }
