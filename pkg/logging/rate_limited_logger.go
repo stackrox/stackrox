@@ -10,7 +10,6 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2/expirable"
 	pkgCacheLRU "github.com/stackrox/rox/pkg/cache/lru"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -211,7 +210,9 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 		// In case the log were evicted between cache lookup and count increase,
 		// check for existence in the cache after the increase, and log if the retrieved
 		// log is not in the cache anymore.
-		if checkLog, checkFound := rl.rateLimitedLogs.Get(key); !checkFound || throttledLog.getID() != checkLog.getID() {
+		// Compare object identity: a replacement can have the same payload. A UUID
+		// is unnecessary and would require cryptographic entropy just to log.
+		if checkLog, checkFound := rl.rateLimitedLogs.Get(key); !checkFound || throttledLog != checkLog {
 			throttledLog.log()
 		}
 	} else if found && throttledLog == nil {
@@ -238,7 +239,6 @@ const (
 
 type rateLimitedLog struct {
 	logger  Logger
-	id      string
 	level   zapcore.Level
 	limiter string
 	payload string
@@ -257,7 +257,6 @@ func newRateLimitedLog(
 ) *rateLimitedLog {
 	log := &rateLimitedLog{
 		logger:  logger,
-		id:      uuid.NewV4().String(),
 		level:   level,
 		limiter: limiter,
 		payload: payload,
@@ -266,13 +265,6 @@ func newRateLimitedLog(
 	}
 	log.count.Add(1)
 	return log
-}
-
-func (l *rateLimitedLog) getID() string {
-	if l == nil {
-		return ""
-	}
-	return l.id
 }
 
 func (l *rateLimitedLog) log() {
