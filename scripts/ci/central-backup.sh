@@ -164,7 +164,7 @@ wait_for_image_count_stable() {
 
 wait_for_image_reprocessing() {
     github_group 'Waiting for Scanner V4 to become ready...'
-    MAX_WAIT_SECONDS="1800" wait_for_scanner_V4 "$NAMESPACE"
+    MAX_WAIT_SECONDS="3600" wait_for_scanner_V4 "$NAMESPACE"
     restart_central_and_reconnect
     wait_for_image_count_stable
     github_endgroup
