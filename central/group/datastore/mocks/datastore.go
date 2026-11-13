@@ -55,6 +55,21 @@ func (mr *MockDataStoreMockRecorder) Add(ctx, group any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockDataStore)(nil).Add), ctx, group)
 }
 
+// Exists mocks base method.
+func (m *MockDataStore) Exists(ctx context.Context, props *storage.GroupProperties) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, props)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockDataStoreMockRecorder) Exists(ctx, props any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, props)
+}
+
 // ForEach mocks base method.
 func (m *MockDataStore) ForEach(ctx context.Context, fn func(*storage.Group) error) error {
 	m.ctrl.T.Helper()
