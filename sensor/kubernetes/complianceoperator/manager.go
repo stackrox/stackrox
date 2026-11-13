@@ -250,13 +250,8 @@ func (m *Manager) reconcileMCPRoles() {
 		log.Error("compliance operator namespace not known, skipping MCP role reconciliation")
 		return
 	}
-	roles := m.mcpStore.GetRoles()
-	if len(roles) == 0 {
-		log.Debug("no MCP roles found, skipping reconciliation")
-		return
-	}
 
-	if err := m.writer.updateAllScanSettingRoles(m.stopperContext(), ns, roles); err != nil {
+	if err := m.writer.updateAllScanSettingRoles(m.stopperContext(), ns, m.getRoles()); err != nil {
 		log.Errorf("failed to reconcile MCP roles: %v", err)
 	}
 }
