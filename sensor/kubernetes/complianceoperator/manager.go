@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/store"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/utils/ptr"
 )
 
 // Manager is the sole writer of ScanSetting and ScanSettingBinding
@@ -72,7 +71,7 @@ func (m *Manager) Start() error {
 		pubsub.ComplianceCentralRequestLane,
 		m.onCentralRequest,
 	); err != nil {
-		return err
+		return errors.Wrap(err, "registering central request consumer")
 	}
 	if err := m.dispatcher.RegisterConsumerToLane(
 		pubsub.ComplianceManagerConsumer,
@@ -80,7 +79,7 @@ func (m *Manager) Start() error {
 		pubsub.NodeRoleChangeLane,
 		m.onMCPEvent,
 	); err != nil {
-		return err
+		return errors.Wrap(err, "registering node role change consumer")
 	}
 	go m.run()
 	return nil
@@ -207,13 +206,13 @@ func (m *Manager) processApplyScanConfig(ctx context.Context, request *central.A
 		err = m.writer.rerunScan(mergedCtx, ns, r.RerunScan.GetScanName())
 	case *central.ApplyComplianceScanConfigRequest_SuspendScan:
 		config := scanScheduleConfiguration{
-			Suspend:  ptr.To(true),
+			Suspend:  new(true),
 			ScanName: r.SuspendScan.GetScanName(),
 		}
 		err = m.writer.changeScanSchedule(mergedCtx, ns, config)
 	case *central.ApplyComplianceScanConfigRequest_ResumeScan:
 		config := scanScheduleConfiguration{
-			Suspend:  ptr.To(false),
+			Suspend:  new(false),
 			ScanName: r.ResumeScan.GetScanName(),
 		}
 		err = m.writer.changeScanSchedule(mergedCtx, ns, config)
