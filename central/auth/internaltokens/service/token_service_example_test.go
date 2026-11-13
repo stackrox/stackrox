@@ -59,7 +59,10 @@ func (examplePermissionSetStore) GetPermissionSetsFiltered(
 	_ context.Context, filter func(*storage.PermissionSet) bool,
 ) ([]*storage.PermissionSet, error) {
 	set := &storage.PermissionSet{
-		Name: "Image Reader", ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS},
+		Name:             "Image Reader",
+		ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS},
+		AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 	}
 	if filter(set) {
 		return []*storage.PermissionSet{set}, nil

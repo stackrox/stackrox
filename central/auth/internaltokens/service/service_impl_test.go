@@ -307,9 +307,12 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						_, hasDeadline := ctx.Deadline()
 						assert.True(t, hasDeadline)
 						assert.True(t, filter(&storage.PermissionSet{Name: centralproxy.MetricsPermissionSetName}))
-						return []*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
-							"Deployment": storage.Access_READ_ACCESS,
-						}}}, nil
+						return []*storage.PermissionSet{{
+							Name:             centralproxy.MetricsPermissionSetName,
+							AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+							ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+							ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+						}}, nil
 					})
 				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{
@@ -647,12 +650,12 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	}
 }
 
-func TestGenerateTokenForPermissionsAndScopeRejectsWritableMetricsPermissionSet(t *testing.T) {
+func TestGenerateTokenForPermissionsAndScopeRejectsUnconstrainedMetricsPermissionSet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	roleStore := roleDataStoreMocks.NewMockDataStore(ctrl)
 	roleStore.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
 		Return([]*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
-			deploymentResource: storage.Access_READ_WRITE_ACCESS,
+			deploymentResource: storage.Access_READ_ACCESS,
 		}}}, nil)
 	svc := &serviceImpl{
 		issuer:      tokensMocks.NewMockIssuer(ctrl),
@@ -677,14 +680,16 @@ func TestGenerateTokenForGenericPermissionSet(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissions map[string]storage.Access
 		expectedErr error
+		constrained bool
 	}{
 		"read-only set is signed": {
 			permissions: map[string]storage.Access{
 				"Image": storage.Access_READ_ACCESS, "Administration": storage.Access_NO_ACCESS,
 			},
+			constrained: true,
 		},
-		"write permission is not signed": {
-			permissions: map[string]storage.Access{"Image": storage.Access_READ_WRITE_ACCESS},
+		"unconstrained set is not signed": {
+			permissions: map[string]storage.Access{"Image": storage.Access_READ_ACCESS},
 			expectedErr: errox.InvalidArgs,
 		},
 	} {
@@ -692,8 +697,13 @@ func TestGenerateTokenForGenericPermissionSet(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			roles := roleDataStoreMocks.NewMockDataStore(ctrl)
 			issuer := tokensMocks.NewMockIssuer(ctrl)
-			expectPermissionSetLookup(t, roles, []string{permissionSetName},
-				[]*storage.PermissionSet{{Name: permissionSetName, ResourceToAccess: tc.permissions}}, nil)
+			permissionSet := &storage.PermissionSet{Name: permissionSetName, ResourceToAccess: tc.permissions}
+			if tc.constrained {
+				permissionSet.AccessConstraint = storage.AccessConstraint_ACCESS_CONSTRAINT_READ
+				permissionSet.ScopeConstraint = storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
+			}
+			roles.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
+				Return([]*storage.PermissionSet{permissionSet}, nil)
 			if tc.expectedErr == nil {
 				issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{{

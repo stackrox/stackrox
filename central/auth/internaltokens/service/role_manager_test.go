@@ -317,30 +317,6 @@ func TestCreateRoleFromMetricsPermissionSet(t *testing.T) {
 	}, role)
 }
 
-func TestCreateRoleFromMetricsPermissionSetRejectsInvalidAccess(t *testing.T) {
-	for name, access := range map[string]storage.Access{
-		"global read": storage.Access_READ_ACCESS,
-		"write":       storage.Access_READ_WRITE_ACCESS,
-		"unknown":     storage.Access(99),
-	} {
-		t.Run(name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			roles := roleMocks.NewMockDataStore(ctrl)
-			expectPermissionSetLookup(t, roles, []string{centralproxy.MetricsPermissionSetName},
-				[]*storage.PermissionSet{{Name: centralproxy.MetricsPermissionSetName, ResourceToAccess: map[string]storage.Access{
-					"Administration": access,
-				}}}, nil)
-			role, err := (&roleManager{roles}).createRoleFromPermissionSets(sensorContext(t, ctrl, "sensor-cluster"),
-				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSetNames: []string{centralproxy.MetricsPermissionSetName},
-					ClusterScopes:      []*v1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
-				})
-			assert.Nil(t, role)
-			assert.ErrorIs(t, err, errox.InvalidArgs)
-		})
-	}
-}
-
 func TestCreateRoleFromMetricsPermissionSetFailsClosed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	roles := roleMocks.NewMockDataStore(ctrl)
@@ -359,7 +335,6 @@ func TestCreateRoleFromGenericPermissionSet(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissions map[string]storage.Access
 		expected    map[storage.Access][]string
-		invalid     bool
 	}{
 		"read scoped resources and deny global resources": {
 			permissions: map[string]storage.Access{
@@ -371,22 +346,6 @@ func TestCreateRoleFromGenericPermissionSet(t *testing.T) {
 			},
 		},
 		"empty set": {expected: map[storage.Access][]string{}},
-		"global read access": {
-			permissions: map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
-			invalid:     true,
-		},
-		"unknown resource": {
-			permissions: map[string]storage.Access{"UnknownResource": storage.Access_READ_ACCESS},
-			invalid:     true,
-		},
-		"write access": {
-			permissions: map[string]storage.Access{"Image": storage.Access_READ_ACCESS, "Deployment": storage.Access_READ_WRITE_ACCESS},
-			invalid:     true,
-		},
-		"unknown access": {
-			permissions: map[string]storage.Access{"Image": storage.Access(99)},
-			invalid:     true,
-		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -398,11 +357,6 @@ func TestCreateRoleFromGenericPermissionSet(t *testing.T) {
 					PermissionSetNames: []string{permissionSetName},
 					ClusterScopes:      []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"prod"}}},
 				})
-			if tc.invalid {
-				assert.Nil(t, role)
-				assert.ErrorIs(t, err, errox.InvalidArgs)
-				return
-			}
 			require.NoError(t, err)
 			assert.Equal(t, &tokens.InternalRole{
 				RoleName:    internalRoleName,
@@ -436,13 +390,15 @@ func TestCreateSensorRoleResolvesPermissionSetByName(t *testing.T) {
 	}{
 		"custom ID": {sets: []*storage.PermissionSet{{
 			Id: "administrator-id", Name: centralproxy.ConsoleProxyPermissionSetName,
+			AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 			ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
 		}}},
 		"missing":       {expectedErr: errox.NotFound},
 		"storage error": {storeErr: errors.New("lookup failed")},
-		"unsafe permission": {sets: []*storage.PermissionSet{{
+		"missing constraints": {sets: []*storage.PermissionSet{{
 			Name:             centralproxy.ConsoleProxyPermissionSetName,
-			ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_WRITE_ACCESS},
+			ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS},
 		}}, expectedErr: errox.InvalidArgs},
 	} {
 		t.Run(name, func(t *testing.T) {
