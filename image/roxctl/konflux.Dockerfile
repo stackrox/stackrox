@@ -16,15 +16,13 @@ ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
 ENV BUILD_TAG="$BUILD_TAG"
 
-ENV GOFLAGS=""
+ENV CI=1 GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 ENV GOTAGS="release,no_openssl"
-ENV CI=1
-ENV CGO_ENABLED=0
 ENV GOFIPS140=certified
 ENV GOLANG_FIPS=0
 
-RUN RACE=0 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
+RUN RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:dbd325b96bcd432dd42816d31412bdf1dc0fb973b79ed310344bc23c76c068db AS ubi-micro-base

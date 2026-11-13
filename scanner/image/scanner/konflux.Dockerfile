@@ -8,14 +8,13 @@ ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 ENV GOTAGS="release,no_openssl"
 ENV CI=1
-ENV CGO_ENABLED=0
 ENV GOFIPS140=certified
 ENV GOLANG_FIPS=0
 
 COPY . /src
 WORKDIR /src
 
-RUN make -C scanner NODEPS=1 image/scanner/bin/scanner copy-scripts
+RUN make -C scanner NODEPS=1 CGO_ENABLED=0 image/scanner/bin/scanner copy-scripts
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:dbd325b96bcd432dd42816d31412bdf1dc0fb973b79ed310344bc23c76c068db AS ubi-micro-base
 
