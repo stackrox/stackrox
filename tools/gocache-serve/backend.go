@@ -593,7 +593,14 @@ const rangeGetMaxParallel = 16
 func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) {
 	// First ranged GET also discovers the total size from Content-Range.
 	partSize := rangeGetThreshold
-	req, _ := http.NewRequest("GET", a.blobURL(actionID), nil)
+	req, err := http.NewRequest("GET", a.blobURL(actionID), nil)
+	if err != nil {
+		// Never discard this: a nil req panics on Header.Set (observed
+		// in CI via a malformed manifest entry producing an unparseable
+		// URL). A bad ID is a miss, not a crash.
+		log.Printf("GET %s: bad request: %v", shortID(actionID), err)
+		return nil, nil
+	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("x-ms-version", "2023-11-03")
 	req.Header.Set("x-ms-range", fmt.Sprintf("bytes=0-%d", partSize-1))
@@ -665,7 +672,15 @@ func (a *AzureBackend) getRanged(actionID string, token string) ([]byte, error) 
 			if hi >= total {
 				hi = total - 1
 			}
-			r, _ := http.NewRequest("GET", a.blobURL(actionID), nil)
+			r, rerr := http.NewRequest("GET", a.blobURL(actionID), nil)
+			if rerr != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = rerr
+				}
+				mu.Unlock()
+				return
+			}
 			r.Header.Set("Authorization", "Bearer "+token)
 			r.Header.Set("x-ms-version", "2023-11-03")
 			r.Header.Set("x-ms-range", fmt.Sprintf("bytes=%d-%d", lo, hi))

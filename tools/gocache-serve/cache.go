@@ -479,9 +479,31 @@ func DownloadManifest(backend Backend, jobName string) ([]manifestEntry, string,
 		if len(parts) >= 2 {
 			e.meta = parts[1]
 		}
+		// Sanitize: entry IDs are hex hashes (Go ActionIDs are 32-64 hex
+		// chars). A malformed line (corrupt merge, stray content, a line
+		// with no space until char 400+) must not enter the prefetch
+		// pipeline — it produced a 425-char "ID" whose URL failed to
+		// parse and panicked getRanged (which discarded the NewRequest
+		// error). Skip anything not plausibly an ID.
+		if !isHexID(e.id) {
+			continue
+		}
 		result = append(result, e)
 	}
 	return result, runID, nil
+}
+
+// isHexID reports whether s looks like a content hash: 32-128 hex chars.
+func isHexID(s string) bool {
+	if len(s) < 32 || len(s) > 128 {
+		return false
+	}
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return false
+		}
+	}
+	return true
 }
 
 // AsyncUploader queues puts and uploads to cloud in background.

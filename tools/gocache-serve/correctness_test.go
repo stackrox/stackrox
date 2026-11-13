@@ -47,7 +47,7 @@ func TestManifestUploadAbortsOnReadFailure(t *testing.T) {
 	// Seed a manifest with a large working set from run-A.
 	m1 := NewManifest("testjob")
 	for i := 0; i < 100; i++ {
-		m1.Record(fmt.Sprintf("entry%03d", i), "meta")
+		m1.Record(fmt.Sprintf("%064x", i), "meta")
 	}
 	if _, err := m1.Upload(b); err != nil {
 		t.Fatalf("seed upload: %v", err)
@@ -57,7 +57,7 @@ func TestManifestUploadAbortsOnReadFailure(t *testing.T) {
 	// but the manifest read fails (transient error).
 	failing := &failingGetBackend{inner: b, failPrefix: "manifest-", failErr: errors.New("transient GET failure")}
 	m2 := NewManifest("testjob")
-	m2.Record("only-entry", "meta")
+	m2.Record(fmt.Sprintf("%064x", 9999), "meta")
 	if _, err := m2.Upload(failing); err == nil {
 		t.Fatal("upload must fail when the manifest read fails — a success here means the clobber bug is back")
 	}
@@ -83,7 +83,7 @@ func TestManifestUploadCleanMissWritesFresh(t *testing.T) {
 	b := &DirBackend{root: store}
 
 	m := NewManifest("freshjob")
-	m.Record("e1", "meta")
+	m.Record(fmt.Sprintf("%064x", 1), "meta")
 	if _, err := m.Upload(b); err != nil {
 		t.Fatalf("fresh upload on absent manifest must succeed: %v", err)
 	}
@@ -161,13 +161,13 @@ func TestManifestWithinRunMergeGrows(t *testing.T) {
 
 	m1 := NewManifest("growjob")
 	for i := 0; i < 50; i++ {
-		m1.Record(fmt.Sprintf("a%02d", i), "")
+		m1.Record(fmt.Sprintf("%064x", 1000+i), "")
 	}
 	m1.Upload(b)
 
 	m2 := NewManifest("growjob")
 	for i := 0; i < 30; i++ {
-		m2.Record(fmt.Sprintf("b%02d", i), "")
+		m2.Record(fmt.Sprintf("%064x", 2000+i), "")
 	}
 	m2.Upload(b)
 
