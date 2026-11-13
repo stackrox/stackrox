@@ -45,7 +45,7 @@ func (w *scanSettingWriter) createScanResources(ctx context.Context, ns string, 
 		return errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating scan setting")
 	}
 
 	return w.retrier.callWithRetry(ctx, func(callCtx context.Context) error {
@@ -503,11 +503,11 @@ func (w *scanSettingWriter) updateScanSettingRoles(ctx context.Context, ns strin
 		func(callCtx context.Context) error {
 			current, err := resI.Get(callCtx, obj.GetName(), v1.GetOptions{})
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "getting scan setting %s", obj.GetName())
 			}
 			var currentSS v1alpha1.ScanSetting
 			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(current.Object, &currentSS); err != nil {
-				return err
+				return errors.Wrap(err, "converting unstructured to scan setting")
 			}
 			currentSS.Roles = roles
 			updated, err = runtimeObjToUnstructured(&currentSS)

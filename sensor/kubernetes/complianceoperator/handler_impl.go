@@ -51,7 +51,7 @@ func (m *handlerImpl) Start() error {
 		pubsub.ComplianceCentralResultLane,
 		m.onResult,
 	); err != nil {
-		return err
+		return errors.Wrap(err, "registering central result consumer")
 	}
 	return m.manager.Start()
 }
@@ -200,7 +200,7 @@ func (m *handlerImpl) processDeleteScanCfgRequest(ctx context.Context, request *
 }
 
 func (m *handlerImpl) publishRequest(ctx context.Context, req *central.ComplianceRequest) error {
-	return m.dispatcher.Publish(&events.ComplianceCentralRequestEvent{Context: ctx, Request: req})
+	return errors.Wrap(m.dispatcher.Publish(&events.ComplianceCentralRequestEvent{Context: ctx, Request: req}), "publishing compliance request")
 }
 
 func (m *handlerImpl) composeAndSendEnableComplianceResponse(ctx context.Context, requestID string, err error) {
