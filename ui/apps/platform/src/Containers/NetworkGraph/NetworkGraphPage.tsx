@@ -389,7 +389,7 @@ function NetworkGraphPageContent() {
                                             component="div"
                                             orientation={{ default: 'vertical' }}
                                         />
-                                        <ToolbarItem className="pf-v6-u-color-200">
+                                        <ToolbarItem>
                                             <NodeUpdateSection
                                                 isLoading={isLoading}
                                                 lastUpdatedTime={lastUpdatedTime}

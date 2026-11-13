@@ -14,7 +14,6 @@ import {
 import { useFormikContext } from 'formik';
 
 import type { ClientPolicy } from 'types/policy.proto';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { toggleItemInArray } from 'utils/arrayUtils';
 import { containerTypeFilterApplies } from '../../policies.utils';
 
@@ -23,11 +22,6 @@ const containerTypeFilterMessage =
 
 function PolicyFiltersForm() {
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
-    const showContainerFilters =
-        isFeatureFlagEnabled('ROX_EVALUATION_FILTER') &&
-        isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT');
 
     const skipContainerTypes = values.evaluationFilter?.skipContainerTypes ?? [];
 
@@ -67,46 +61,44 @@ function PolicyFiltersForm() {
             </FlexItem>
             <Divider component="div" />
 
-            {showContainerFilters && (
-                <FlexItem className="pf-v6-u-p-lg">
-                    <Stack hasGutter>
-                        <Title headingLevel="h3">Container types</Title>
-                        <Content component="p">
-                            Select which container types to skip when evaluating this policy.
-                        </Content>
-                        {containerFilterDisabled && (
-                            <Alert
-                                isInline
-                                variant="info"
-                                title={containerTypeFilterMessage}
-                                component="p"
-                            />
-                        )}
-                        <Form>
-                            <FormGroup fieldId="container-type-filter" role="group">
-                                <Stack hasGutter>
-                                    <Checkbox
-                                        label="Skip init containers"
-                                        id="skip-init-containers"
-                                        isChecked={skipInit}
-                                        isDisabled={containerFilterDisabled}
-                                        onChange={handleSkipInitChange}
+            <FlexItem className="pf-v6-u-p-lg">
+                <Stack hasGutter>
+                    <Title headingLevel="h3">Container types</Title>
+                    <Content component="p">
+                        Select which container types to skip when evaluating this policy.
+                    </Content>
+                    {containerFilterDisabled && (
+                        <Alert
+                            isInline
+                            variant="info"
+                            title={containerTypeFilterMessage}
+                            component="p"
+                        />
+                    )}
+                    <Form>
+                        <FormGroup fieldId="container-type-filter" role="group">
+                            <Stack hasGutter>
+                                <Checkbox
+                                    label="Skip init containers"
+                                    id="skip-init-containers"
+                                    isChecked={skipInit}
+                                    isDisabled={containerFilterDisabled}
+                                    onChange={handleSkipInitChange}
+                                />
+                                {!containerFilterDisabled && (
+                                    <Alert
+                                        isInline
+                                        isPlain
+                                        variant="info"
+                                        title={containerTypeDescription}
+                                        component="p"
                                     />
-                                    {!containerFilterDisabled && (
-                                        <Alert
-                                            isInline
-                                            isPlain
-                                            variant="info"
-                                            title={containerTypeDescription}
-                                            component="p"
-                                        />
-                                    )}
-                                </Stack>
-                            </FormGroup>
-                        </Form>
-                    </Stack>
-                </FlexItem>
-            )}
+                                )}
+                            </Stack>
+                        </FormGroup>
+                    </Form>
+                </Stack>
+            </FlexItem>
         </Flex>
     );
 }

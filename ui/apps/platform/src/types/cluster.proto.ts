@@ -170,79 +170,8 @@ export type ClusterStatus = {
     // DEPRECATED_last_contact
     providerMetadata: ClusterProviderMetadata;
     orchestratorMetadata: ClusterOrchestratorMetadata;
-    upgradeStatus: ClusterUpgradeStatus;
     certExpiryStatus: ClusterCertExpiryStatus;
     sensorVersionCompatibility: SensorVersionCompatibility;
-};
-
-export type ClusterUpgradability =
-    | 'UNSET'
-    | 'UP_TO_DATE'
-    | 'MANUAL_UPGRADE_REQUIRED'
-    | 'AUTO_UPGRADE_POSSIBLE'
-    | 'SENSOR_VERSION_HIGHER';
-// SENSOR_VERSION_HIGHER occurs when we detect that the sensor
-// is running a newer version than this Central. This is unexpected,
-// but can occur depending on the patches a customer does.
-// In this case, we will NOT automatically "upgrade" the sensor,
-// since that would be a downgrade, even if the autoupgrade setting is
-// on. The user will be allowed to manually trigger the upgrade, but they are
-// strongly discouraged from doing so without upgrading Central first, since this
-// is an unsupported configuration.
-
-export type ClusterUpgradeStatus = {
-    upgradability: ClusterUpgradability;
-    upgradabilityStatusReason: string;
-
-    // The progress of the current or most recent upgrade, if any,
-    // Note that we don't store any historical data -- the moment
-    // a new upgrade attempt is triggered, we overwrite
-    // information from the previous attempt.
-    mostRecentProcess: UpgradeProcessStatus;
-};
-
-export type ClusterUpgradeProcessType = 'UPGRADE' | 'CERT_ROTATION';
-// UPGRADE represents a sensor version upgrade.
-// CERT_ROTATION represents an upgrade process that only rotates the TLS certs
-// used by the cluster, without changing anything else.
-
-export type UpgradeProcessStatus = {
-    active: boolean;
-    id: string;
-    targetVersion: string; // only relevant if type == Upgrade
-    upgraderImage: string;
-    initiatedAt: string; // ISO 8601 date string
-    progress: ClusterUpgradeProgress;
-    type: ClusterUpgradeProcessType;
-};
-
-export type ClusterUpgradeState =
-    | 'UPGRADE_INITIALIZING'
-
-    // In-progress states.
-    | 'UPGRADER_LAUNCHING'
-    | 'UPGRADER_LAUNCHED'
-    | 'PRE_FLIGHT_CHECKS_COMPLETE'
-    | 'UPGRADE_OPERATIONS_DONE'
-
-    // The success state.
-    // PLEASE NUMBER ALL IN-PROGRESS STATES ABOVE THIS
-    // AND ALL ERROR STATES BELOW THIS.
-    | 'UPGRADE_COMPLETE'
-
-    // Error states.
-    | 'UPGRADE_INITIALIZATION_ERROR'
-    | 'PRE_FLIGHT_CHECKS_FAILED'
-    | 'UPGRADE_ERROR_ROLLING_BACK'
-    | 'UPGRADE_ERROR_ROLLED_BACK'
-    | 'UPGRADE_ERROR_ROLLBACK_FAILED'
-    | 'UPGRADE_ERROR_UNKNOWN'
-    | 'UPGRADE_TIMED_OUT';
-
-export type ClusterUpgradeProgress = {
-    upgradeState: ClusterUpgradeState;
-    upgradeStatusDetail: string;
-    since: string; // ISO 8601 date string
 };
 
 export type ClusterCVEEdge = {

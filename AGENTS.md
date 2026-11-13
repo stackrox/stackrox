@@ -82,7 +82,7 @@ When creating pull requests, you must follow these requirements:
 
 ### Code Generation Commands
 - `make proto-generated-srcs` - Generate Go code from protobuf definitions
-- `make go-generated-srcs` - Generate Go code (mockgen, stringer, easyjson)
+- `make go-generated-srcs` - Generate Go code (mockgen, stringer)
 - `make generated-srcs` - Generate all source code
 
 ### Adding Database Columns

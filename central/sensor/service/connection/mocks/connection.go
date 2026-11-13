@@ -45,20 +45,6 @@ func (m *MockSensorConnection) EXPECT() *MockSensorConnectionMockRecorder {
 	return m.recorder
 }
 
-// CheckAutoUpgradeSupport mocks base method.
-func (m *MockSensorConnection) CheckAutoUpgradeSupport() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckAutoUpgradeSupport")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckAutoUpgradeSupport indicates an expected call of CheckAutoUpgradeSupport.
-func (mr *MockSensorConnectionMockRecorder) CheckAutoUpgradeSupport() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAutoUpgradeSupport", reflect.TypeOf((*MockSensorConnection)(nil).CheckAutoUpgradeSupport))
-}
-
 // ClusterID mocks base method.
 func (m *MockSensorConnection) ClusterID() string {
 	m.ctrl.T.Helper()

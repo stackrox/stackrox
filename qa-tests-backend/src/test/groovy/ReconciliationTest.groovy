@@ -197,9 +197,15 @@ class ReconciliationTest extends BaseSpecification {
                 deleteNetworkPolicy(policy)
             }
         } finally {
-            orchestrator.deleteNamespace(ns)
-            // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
-            orchestrator.waitForNamespaceDeletion(ns)
+            try {
+                // deleteNamespace waits for the namespace to be gone, which means
+                // every object in it has been deleted.
+                orchestrator.deleteNamespace(ns)
+            } finally {
+                // Sensor is scaled down for this test; restore it even when
+                // cleanup fails so later suites are not left without sensor.
+                orchestrator.scaleDeployment(Constants.STACKROX_NAMESPACE, "sensor", 1)
+            }
         }
 
         Set<String> podsBeforeRestarting = podsInCluster
@@ -213,8 +219,7 @@ class ReconciliationTest extends BaseSpecification {
             log.info pod
         }
 
-        // Scale sensor up
-        orchestrator.scaleDeployment(Constants.STACKROX_NAMESPACE, "sensor", 1)
+        // Sensor is scaled up during cleanup above; wait for it to be back.
         Services.waitForDeployment(sensorDeployment)
 
         def maxWaitForSync = 200

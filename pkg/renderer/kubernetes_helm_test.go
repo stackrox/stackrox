@@ -62,8 +62,6 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 
 		TolerationsEnabled: false,
 
-		CreateUpgraderSA: true,
-
 		AdmissionController:              false,
 		AdmissionControlListenOnUpdates:  false,
 		AdmissionControlListenOnEvents:   true,

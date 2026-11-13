@@ -254,7 +254,7 @@ function NetworkPolicySimulatorSidePanel({
                                         }
                                     >
                                         <button
-                                            className="pf-v6-u-color-200 pf-v6-u-pr-md"
+                                            className="pf-v6-u-pr-md"
                                             type="button"
                                             aria-label="More info on comparing changes"
                                         >

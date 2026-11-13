@@ -3,6 +3,7 @@ package complianceoperatorresultsv2
 import (
 	"context"
 	"testing"
+	"time"
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -28,7 +30,20 @@ var (
 	createdTime = protocompat.TimestampNow()
 	id          = uuid.NewV4().String()
 	checkID     = uuid.NewV4().String()
+
+	// mockLastScannedTime simulates the compliance operator's last-scanned-timestamp annotation,
+	// which is what LastStartedTime is parsed from (see
+	// internaltov2storage.ComplianceOperatorCheckResult). Real check results always carry this once
+	// a check has actually run, so tests use a realistic non-nil value instead of the nil
+	// first-receipt case.
+	mockLastScannedTime, _ = protocompat.ParseRFC3339NanoTimestamp("2024-06-01T00:00:00.000000000Z")
 )
+
+func annotationsWithLastScanned(ts *timestamppb.Timestamp) map[string]string {
+	return map[string]string{
+		internaltov2storage.LastScannedAnnotationKey: ts.AsTime().Format(time.RFC3339Nano),
+	}
+}
 
 func TestPipeline(t *testing.T) {
 	suite.Run(t, new(PipelineTestSuite))
@@ -87,6 +102,56 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 						Instructions: "this is a test",
 						Labels:       nil,
 						Annotations:  nil,
+						CreatedTime:  createdTime,
+						ScanName:     mockScanName,
+						SuiteName:    mockSuiteName,
+						Rationale:    "test rationale",
+						ValuesUsed:   []string{"var1", "var2"},
+						Warnings:     []string{"warning1", "warning2"},
+					},
+				},
+			},
+		},
+	}
+
+	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	suite.NoError(err)
+}
+
+// TestRunCreatePopulatesLastStartedTime verifies the pipeline passes LastStartedTime (parsed from
+// the operator's last-scanned-timestamp annotation) through to the datastore. The data_freshness
+// derivation itself -- and its coverage for first-sighting, newer-than-stored, and stale-replay --
+// lives in the datastore now (see checkresults/datastore/datastore_freshness_test.go), because it
+// must run under the same KeyFence as the write to avoid a lost-update race with the timeout hook.
+func (suite *PipelineTestSuite) TestRunCreatePopulatesLastStartedTime() {
+	ctx := context.Background()
+
+	expected := getTestRec(fixtureconsts.Cluster1)
+	expected.Annotations = annotationsWithLastScanned(mockLastScannedTime)
+	expected.LastStartedTime = mockLastScannedTime
+
+	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+	suite.v2ResultDS.EXPECT().UpsertResult(ctx, expected).Return(nil).Times(1)
+	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Times(1)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     id,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+						Id:           id,
+						CheckId:      checkID,
+						CheckName:    mockCheckRuleName,
+						ClusterId:    fixtureconsts.Cluster1,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
+						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
+						Description:  "this is a test",
+						Instructions: "this is a test",
+						Labels:       nil,
+						Annotations:  annotationsWithLastScanned(mockLastScannedTime),
 						CreatedTime:  createdTime,
 						ScanName:     mockScanName,
 						SuiteName:    mockSuiteName,

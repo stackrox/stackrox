@@ -1416,6 +1416,32 @@
                 "id": 10,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "history",
+                "type": "BaseImageHistoryEntry",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "BaseImageHistoryEntry",
+            "fields": [
+              {
+                "id": 1,
+                "name": "instruction",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "value",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "empty",
+                "type": "bool"
               }
             ]
           },
@@ -1609,6 +1635,12 @@
                 "name": "layer_digests",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "history",
+                "type": "BaseImageHistoryEntry",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -1626,6 +1658,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/base_image.proto"
           },
           {
             "path": "storage/user.proto"
@@ -1973,98 +2008,6 @@
               {
                 "name": "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD",
                 "integer": 5
-              }
-            ]
-          },
-          {
-            "name": "ClusterUpgradeStatus.Upgradability",
-            "enum_fields": [
-              {
-                "name": "UNSET"
-              },
-              {
-                "name": "UP_TO_DATE",
-                "integer": 1
-              },
-              {
-                "name": "MANUAL_UPGRADE_REQUIRED",
-                "integer": 2
-              },
-              {
-                "name": "AUTO_UPGRADE_POSSIBLE",
-                "integer": 3
-              },
-              {
-                "name": "SENSOR_VERSION_HIGHER",
-                "integer": 4
-              }
-            ]
-          },
-          {
-            "name": "UpgradeProcessStatus.UpgradeProcessType",
-            "enum_fields": [
-              {
-                "name": "UPGRADE"
-              },
-              {
-                "name": "CERT_ROTATION",
-                "integer": 1
-              }
-            ]
-          },
-          {
-            "name": "UpgradeProgress.UpgradeState",
-            "enum_fields": [
-              {
-                "name": "UPGRADE_INITIALIZING"
-              },
-              {
-                "name": "UPGRADER_LAUNCHING",
-                "integer": 1
-              },
-              {
-                "name": "UPGRADER_LAUNCHED",
-                "integer": 2
-              },
-              {
-                "name": "PRE_FLIGHT_CHECKS_COMPLETE",
-                "integer": 3
-              },
-              {
-                "name": "UPGRADE_OPERATIONS_DONE",
-                "integer": 4
-              },
-              {
-                "name": "UPGRADE_COMPLETE",
-                "integer": 10
-              },
-              {
-                "name": "UPGRADE_INITIALIZATION_ERROR",
-                "integer": 11
-              },
-              {
-                "name": "PRE_FLIGHT_CHECKS_FAILED",
-                "integer": 12
-              },
-              {
-                "name": "UPGRADE_ERROR_ROLLING_BACK",
-                "integer": 13
-              },
-              {
-                "name": "UPGRADE_ERROR_ROLLED_BACK",
-                "integer": 14
-              },
-              {
-                "name": "UPGRADE_ERROR_ROLLBACK_FAILED",
-                "integer": 15
-              },
-              {
-                "name": "UPGRADE_ERROR_UNKNOWN",
-                "integer": 16
-              },
-              {
-                "name": "UPGRADE_TIMED_OUT",
-                "integer": 17
               }
             ]
           },
@@ -2657,11 +2600,6 @@
                 "type": "OrchestratorMetadata"
               },
               {
-                "id": 5,
-                "name": "upgrade_status",
-                "type": "ClusterUpgradeStatus"
-              },
-              {
                 "id": 6,
                 "name": "cert_expiry_status",
                 "type": "ClusterCertExpiryStatus"
@@ -2671,88 +2609,12 @@
                 "name": "sensor_version_compatibility",
                 "type": "SensorVersionCompatibility"
               }
-            ]
-          },
-          {
-            "name": "ClusterUpgradeStatus",
-            "fields": [
-              {
-                "id": 1,
-                "name": "upgradability",
-                "type": "Upgradability"
-              },
-              {
-                "id": 2,
-                "name": "upgradability_status_reason",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "most_recent_process",
-                "type": "UpgradeProcessStatus"
-              }
             ],
-            "messages": [
-              {
-                "name": "UpgradeProcessStatus",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "active",
-                    "type": "bool"
-                  },
-                  {
-                    "id": 2,
-                    "name": "id",
-                    "type": "string"
-                  },
-                  {
-                    "id": 3,
-                    "name": "target_version",
-                    "type": "string"
-                  },
-                  {
-                    "id": 4,
-                    "name": "upgrader_image",
-                    "type": "string"
-                  },
-                  {
-                    "id": 5,
-                    "name": "initiated_at",
-                    "type": "google.protobuf.Timestamp"
-                  },
-                  {
-                    "id": 6,
-                    "name": "progress",
-                    "type": "UpgradeProgress"
-                  },
-                  {
-                    "id": 7,
-                    "name": "type",
-                    "type": "UpgradeProcessType"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "name": "UpgradeProgress",
-            "fields": [
-              {
-                "id": 1,
-                "name": "upgrade_state",
-                "type": "UpgradeState"
-              },
-              {
-                "id": 2,
-                "name": "upgrade_status_detail",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "since",
-                "type": "google.protobuf.Timestamp"
-              }
+            "reserved_ids": [
+              5
+            ],
+            "reserved_names": [
+              "upgrade_status"
             ]
           },
           {
@@ -9975,6 +9837,12 @@
                 "id": 5,
                 "name": "max_layer_index",
                 "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "max_history_index",
+                "type": "int32",
+                "oneof_parent": "set_max_history_index"
               }
             ]
           }
@@ -17695,36 +17563,6 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
-          }
-        ],
-        "package": {
-          "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "./storage;storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
-      }
-    },
-    {
-      "protopath": "sensor_upgrade.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "SensorUpgradeConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "enable_auto_upgrade",
-                "type": "bool"
-              }
-            ]
           }
         ],
         "package": {

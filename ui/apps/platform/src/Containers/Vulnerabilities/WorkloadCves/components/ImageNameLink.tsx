@@ -45,7 +45,7 @@ function ImageNameLink({ name, id, digest }: ImageNameLinkProps) {
                 <Link to={urlBuilder.imageDetails(id, vulnerabilityState)}>
                     <Truncate position="middle" content={baseName} />
                 </Link>{' '}
-                <span className="pf-v6-u-color-200 pf-v6-u-font-size-sm">in {registry}</span>
+                <span className="pf-v6-u-font-size-sm">in {registry}</span>
             </Flex>
             <FlexItem>
                 <Tooltip

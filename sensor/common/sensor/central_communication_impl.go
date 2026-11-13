@@ -159,9 +159,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	if features.FlattenImageData.Enabled() {
 		capsSet.Add(centralsensor.FlattenImageData)
 	}
-	if features.InitContainerSupport.Enabled() {
-		capsSet.Add(centralsensor.InitContainerSupport)
-	}
+	capsSet.Add(centralsensor.InitContainerSupport)
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -259,14 +257,11 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 		allowedpaths.Reset()
 	}
 
-	// Sensor should only communicate deduper states if central is able to do so and it has requested it.
-	s.clientReconcile = s.clientReconcile &&
-		centralcaps.Has(centralsensor.SendDeduperStateOnReconnect) &&
-		centralHello.GetSendDeduperState()
+	// Sensor should only communicate deduper states if Central requested it.
+	s.clientReconcile = s.clientReconcile && centralHello.GetSendDeduperState()
 
-	log.Infof("Sensor client reconciliation state=%s (centralCapability=%s, centralHello.SendDeduperState=%s)",
+	log.Infof("Sensor client reconciliation state=%s (centralHello.SendDeduperState=%s)",
 		strconv.FormatBool(s.clientReconcile),
-		strconv.FormatBool(centralcaps.Has(centralsensor.SendDeduperStateOnReconnect)),
 		strconv.FormatBool(centralHello.GetSendDeduperState()))
 
 	if hello.GetHelmManagedConfigInit() != nil {

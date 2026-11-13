@@ -728,7 +728,6 @@ l4RLgOfB7JK26P2QEGpNzOKYHxWIV+oBSrrG1/2q1LS6WJYqhlM2+tLK9g==
                 { SignatureIntegrationService.deleteSignatureIntegration(it.value) }
 
         orchestrator.deleteNamespace(SIGNATURE_TESTING_NAMESPACE)
-        orchestrator.waitForNamespaceDeletion(SIGNATURE_TESTING_NAMESPACE)
     }
 
     @Unroll

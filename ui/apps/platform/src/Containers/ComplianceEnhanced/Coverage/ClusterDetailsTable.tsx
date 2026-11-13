@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Content,
-    ContentVariants,
     Pagination,
     Toolbar,
     ToolbarContent,
@@ -178,8 +177,8 @@ function ClusterDetailsTable({
                                                 */}
                                                 <div style={{ display: 'grid' }}>
                                                     <Content
-                                                        component={ContentVariants.small}
-                                                        className="pf-v6-u-color-200 pf-v6-u-text-truncate"
+                                                        component="small"
+                                                        className="pf-v6-u-text-truncate"
                                                     >
                                                         {rationale}
                                                     </Content>

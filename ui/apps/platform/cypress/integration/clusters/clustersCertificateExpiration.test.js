@@ -48,7 +48,6 @@ describe.skip('Clusters Certificate Expiration', () => {
                 );
                 cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
                 cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
-                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
                 cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
                 cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
             });
@@ -76,7 +75,6 @@ describe.skip('Clusters Certificate Expiration', () => {
             cy.get(selectors.clusterHealth.downloadToReissueCertificate)
                 .should('be.enabled')
                 .should('be.checked');
-            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('be.disabled');
             cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
             cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
         });
@@ -98,7 +96,6 @@ describe.skip('Clusters Certificate Expiration', () => {
                 );
                 cy.get(selectors.clusterHealth.reissueCertificatesLink);
                 cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
-                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
                 cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
                 cy.get(selectors.clusterHealth.manageTokensButton);
             });
@@ -119,7 +116,6 @@ describe.skip('Clusters Certificate Expiration', () => {
             );
             cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
             cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
-            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
             cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
             cy.get(selectors.clusterHealth.manageTokensButton).should('not.exist');
         });
@@ -144,9 +140,6 @@ describe.skip('Clusters Certificate Expiration', () => {
             );
             cy.get(selectors.clusterHealth.reissueCertificatesLink);
             cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('be.enabled');
-            cy.get(selectors.clusterHealth.upgradeToReissueCertificate)
-                .should('be.enabled')
-                .should('be.checked');
             cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
         });
 
@@ -157,15 +150,6 @@ describe.skip('Clusters Certificate Expiration', () => {
             cy.fixture(fixturePath).then(({ clusters }) => {
                 const n = clusters.findIndex((cluster) => cluster.name === clusterName);
                 const cluster = cloneDeep(clusters[n]);
-
-                // Mock the result of using an automatic upgrade to re-issue the certificate.
-                cluster.status.upgradeStatus.mostRecentProcess = {
-                    type: 'CERT_ROTATION',
-                    initiatedAt: currentDatetime,
-                    progress: {
-                        upgradeState: 'UPGRADE_COMPLETE',
-                    },
-                };
 
                 const staticResponseMap = {
                     [clusterAlias]: {
@@ -179,12 +163,7 @@ describe.skip('Clusters Certificate Expiration', () => {
                     expectedExpiration
                 );
                 cy.get(selectors.clusterHealth.reissueCertificatesLink);
-                cy.get(selectors.clusterHealth.upgradedToReissueCertificate).should(
-                    'have.text',
-                    'An automatic upgrade applied new credentials to the cluster 0 seconds ago.'
-                );
                 cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
-                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
                 cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
             });
         });
@@ -204,7 +183,6 @@ describe.skip('Clusters Certificate Expiration', () => {
                 );
                 cy.get(selectors.clusterHealth.reissueCertificatesLink);
                 cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
-                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
                 cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
                 cy.get(selectors.clusterHealth.manageTokensButton);
             });

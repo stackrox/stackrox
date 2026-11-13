@@ -174,7 +174,7 @@ message Cluster {
   string id = 1; // @gotags: search:"Cluster ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Cluster" sql:"unique"
   ClusterType type = 3; // @gotags: search:"Cluster Platform Type"
-  map<string, string> labels = 27; // @gotags: search:"Cluster Label"
+  map<string, string> labels = 27; // @gotags: search:"Cluster Label" sql:"index=gin"
   string main_image = 4;
   string collector_image = 16;
   string central_api_endpoint = 5;
@@ -247,86 +247,12 @@ message ClusterStatus {
   google.protobuf.Timestamp DEPRECATED_last_contact = 2;
   ProviderMetadata provider_metadata = 3;
   OrchestratorMetadata orchestrator_metadata = 4;
-  ClusterUpgradeStatus upgrade_status = 5;
+  // Field 5 formerly held ClusterUpgradeStatus upgrade_status, removed with the sensor auto-upgrader.
+  reserved 5;
+  reserved "upgrade_status";
   ClusterCertExpiryStatus cert_expiry_status = 6;
   // Computed at runtime, not persisted.
   SensorVersionCompatibility sensor_version_compatibility = 7; // @gotags: search:"Sensor Version Compatibility" sql:"-"
-}
-
-message ClusterUpgradeStatus {
-  enum Upgradability {
-    UNSET = 0;
-    UP_TO_DATE = 1;
-    MANUAL_UPGRADE_REQUIRED = 2;
-    AUTO_UPGRADE_POSSIBLE = 3;
-    // SENSOR_VERSION_HIGHER occurs when we detect that the sensor
-    // is running a newer version than this Central. This is unexpected,
-    // but can occur depending on the patches a customer does.
-    // In this case, we will NOT automatically "upgrade" the sensor,
-    // since that would be a downgrade, even if the autoupgrade setting is
-    // on. The user will be allowed to manually trigger the upgrade, but they are
-    // strongly discouraged from doing so without upgrading Central first, since this
-    // is an unsupported configuration.
-    SENSOR_VERSION_HIGHER = 4;
-  }
-
-  Upgradability upgradability = 1;
-  string upgradability_status_reason = 2;
-
-  message UpgradeProcessStatus {
-    enum UpgradeProcessType {
-      // UPGRADE represents a sensor version upgrade.
-      UPGRADE = 0;
-      // CERT_ROTATION represents an upgrade process that only rotates the TLS certs
-      // used by the cluster, without changing anything else.
-      CERT_ROTATION = 1;
-    }
-    bool active = 1;
-
-    string id = 2;
-    string target_version = 3; // only relevant if type == Upgrade
-    string upgrader_image = 4;
-    google.protobuf.Timestamp initiated_at = 5;
-    UpgradeProgress progress = 6;
-
-    UpgradeProcessType type = 7;
-  }
-
-  // The progress of the current or most recent upgrade, if any,
-  // Note that we don't store any historical data -- the moment
-  // a new upgrade attempt is triggered, we overwrite
-  // information from the previous attempt.
-  UpgradeProcessStatus most_recent_process = 3;
-}
-
-message UpgradeProgress {
-  enum UpgradeState {
-    UPGRADE_INITIALIZING = 0;
-
-    // In-progress states.
-    UPGRADER_LAUNCHING = 1;
-    UPGRADER_LAUNCHED = 2;
-    PRE_FLIGHT_CHECKS_COMPLETE = 3;
-    UPGRADE_OPERATIONS_DONE = 4;
-
-    // The success state.
-    // PLEASE NUMBER ALL IN-PROGRESS STATES ABOVE THIS
-    // AND ALL ERROR STATES BELOW THIS.
-    UPGRADE_COMPLETE = 10;
-
-    // Error states.
-    UPGRADE_INITIALIZATION_ERROR = 11;
-    PRE_FLIGHT_CHECKS_FAILED = 12;
-    UPGRADE_ERROR_ROLLING_BACK = 13;
-    UPGRADE_ERROR_ROLLED_BACK = 14;
-    UPGRADE_ERROR_ROLLBACK_FAILED = 15;
-    UPGRADE_ERROR_UNKNOWN = 16;
-    UPGRADE_TIMED_OUT = 17;
-  }
-
-  UpgradeState upgrade_state = 1;
-  string upgrade_status_detail = 2;
-  google.protobuf.Timestamp since = 3;
 }
 
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance

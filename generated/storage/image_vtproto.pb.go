@@ -655,6 +655,11 @@ func (m *BaseImageInfo) CloneVT() *BaseImageInfo {
 	r.BaseImageDigest = m.BaseImageDigest
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	r.MaxLayerIndex = m.MaxLayerIndex
+	if m.SetMaxHistoryIndex != nil {
+		r.SetMaxHistoryIndex = m.SetMaxHistoryIndex.(interface {
+			CloneVT() isBaseImageInfo_SetMaxHistoryIndex
+		}).CloneVT()
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -664,6 +669,15 @@ func (m *BaseImageInfo) CloneVT() *BaseImageInfo {
 
 func (m *BaseImageInfo) CloneMessageVT() proto.Message {
 	return m.CloneVT()
+}
+
+func (m *BaseImageInfo_MaxHistoryIndex) CloneVT() isBaseImageInfo_SetMaxHistoryIndex {
+	if m == nil {
+		return (*BaseImageInfo_MaxHistoryIndex)(nil)
+	}
+	r := new(BaseImageInfo_MaxHistoryIndex)
+	r.MaxHistoryIndex = m.MaxHistoryIndex
+	return r
 }
 
 func (this *Image) EqualVT(that *Image) bool {
@@ -1705,6 +1719,18 @@ func (this *BaseImageInfo) EqualVT(that *BaseImageInfo) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
+	if this.SetMaxHistoryIndex == nil && that.SetMaxHistoryIndex != nil {
+		return false
+	} else if this.SetMaxHistoryIndex != nil {
+		if that.SetMaxHistoryIndex == nil {
+			return false
+		}
+		if !this.SetMaxHistoryIndex.(interface {
+			EqualVT(isBaseImageInfo_SetMaxHistoryIndex) bool
+		}).EqualVT(that.SetMaxHistoryIndex) {
+			return false
+		}
+	}
 	if this.BaseImageId != that.BaseImageId {
 		return false
 	}
@@ -1730,6 +1756,23 @@ func (this *BaseImageInfo) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (this *BaseImageInfo_MaxHistoryIndex) EqualVT(thatIface isBaseImageInfo_SetMaxHistoryIndex) bool {
+	that, ok := thatIface.(*BaseImageInfo_MaxHistoryIndex)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.MaxHistoryIndex != that.MaxHistoryIndex {
+		return false
+	}
+	return true
+}
+
 func (m *Image) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -3340,6 +3383,15 @@ func (m *BaseImageInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if vtmsg, ok := m.SetMaxHistoryIndex.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
 	if m.MaxLayerIndex != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxLayerIndex))
 		i--
@@ -3379,6 +3431,18 @@ func (m *BaseImageInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *BaseImageInfo_MaxHistoryIndex) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *BaseImageInfo_MaxHistoryIndex) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxHistoryIndex))
+	i--
+	dAtA[i] = 0x30
+	return len(dAtA) - i, nil
+}
 func (m *Image) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4087,10 +4151,22 @@ func (m *BaseImageInfo) SizeVT() (n int) {
 	if m.MaxLayerIndex != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxLayerIndex))
 	}
+	if vtmsg, ok := m.SetMaxHistoryIndex.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
+	}
 	n += len(m.unknownFields)
 	return n
 }
 
+func (m *BaseImageInfo_MaxHistoryIndex) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxHistoryIndex))
+	return n
+}
 func (m *Image) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -8232,6 +8308,26 @@ func (m *BaseImageInfo) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxHistoryIndex", wireType)
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SetMaxHistoryIndex = &BaseImageInfo_MaxHistoryIndex{MaxHistoryIndex: v}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -12549,6 +12645,26 @@ func (m *BaseImageInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxHistoryIndex", wireType)
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.SetMaxHistoryIndex = &BaseImageInfo_MaxHistoryIndex{MaxHistoryIndex: v}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
