@@ -79,7 +79,8 @@ deploy_previous_central() {
         --set 'central.spec.customize.envVars[0].name=SCANNER_V4_MATCHER_READINESS,central.spec.customize.envVars[0].value=vulnerability' \
         --port-forwarding \
         --envrc "${ENVRC_FILE}" \
-        --central-wait 10m
+        --single-namespace \
+        --central-wait 30m
 
     github_endgroup
 }
@@ -189,7 +190,7 @@ grab_central_backup() {
 collect_logs() {
     info "Collecting stackrox logs to /tmp/stackrox-logs"
     "$SCRIPTS_ROOT/scripts/ci/collect-service-logs.sh" rhacs-operator-system /tmp/stackrox-logs
-    "$SCRIPTS_ROOT/scripts/ci/collect-service-logs.sh" acs-central /tmp/stackrox-logs
+    "$SCRIPTS_ROOT/scripts/ci/collect-service-logs.sh" stackrox /tmp/stackrox-logs
 }
 
 run() {
