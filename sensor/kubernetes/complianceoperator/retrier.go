@@ -57,6 +57,7 @@ func (r *retrier) callWithRetryWithOnErrorCallback(retryCtx context.Context, fn 
 			errCallCtx, errCallCancel := context.WithTimeout(retryCtx, r.apiCallTimeout)
 			defer errCallCancel()
 			if onErr := onErrFn(errCallCtx, err); onErr != nil {
+				// propagate the onErrFn callback failure and keep the conflict as context
 				return errors.Wrapf(onErr, "callback error: %v", err)
 			}
 		}

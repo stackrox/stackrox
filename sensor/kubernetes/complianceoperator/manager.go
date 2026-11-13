@@ -225,6 +225,9 @@ func (m *Manager) processApplyScanConfig(ctx context.Context, request *central.A
 }
 
 func (m *Manager) processDeleteScanConfig(ctx context.Context, request *central.DeleteComplianceScanConfigRequest) {
+	// Delete ScanSetting and ScanSettingBinding custom resource. Deleting ScanSettingBindings deletes all owned resources.
+	// Each ad-hoc scan creates a unique ScanSettingBinding that reuses default ACS ScanSetting CR.
+	// Each scheduled scan configuration has a uniquely identifiable ScanSetting and ScanSettingBinding.
 	ns := m.complianceOperatorInfo.GetNamespace()
 	if ns == "" {
 		m.publishResult(ctx, request.GetId(), events.DeleteScanConfigResponse, errors.New("compliance operator namespace not known"))
