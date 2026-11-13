@@ -85,7 +85,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	pruning.EnableDynamicRBACPruning()
 
 	// Validate request against policy and modify request if necessary.
-	req, err := s.policy.enforce(ctx, req)
+	req, httpScopes, err := s.policy.enforce(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -96,23 +96,33 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	var tokenRole *tokens.InternalRole
-	if len(req.GetPermissionSetNames()) > 0 {
+	var tokenRoles []*tokens.InternalRole
+	if len(req.GetScopedPermissionSets()) > 0 {
 		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
+		tokenRoles, err = s.roleManager.createScopedRoles(roleReadCtx, req)
+	} else if len(req.GetPermissionSetNames()) > 0 {
+		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
+		var tokenRole *tokens.InternalRole
 		tokenRole, err = s.roleManager.createSensorRole(roleReadCtx, req)
+		tokenRoles = []*tokens.InternalRole{tokenRole}
 	} else {
+		var tokenRole *tokens.InternalRole
 		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+		tokenRoles = []*tokens.InternalRole{tokenRole}
 	}
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
 		return nil, errors.Wrap(err, "building ephemeral role")
 	}
-	roleName := tokenRole.GetRoleName()
-	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
+	claimName := fmt.Sprintf(claimNameFormat, tokenRoles[0].GetRoleName(), expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{
-		InternalRoles: []*tokens.InternalRole{tokenRole},
-		Name:          claimName,
-		Requester:     req.GetRequester(),
+		InternalRoles:     tokenRoles,
+		Name:              claimName,
+		Requester:         req.GetRequester(),
+		HTTPRequestScopes: httpScopes,
+	}
+	if len(req.GetScopedPermissionSets()) > 0 {
+		roxClaims.Clusters = clusterScopesFromRequest(req.GetClusterScopes())
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {

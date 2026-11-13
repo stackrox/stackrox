@@ -45,11 +45,62 @@ func (rm *roleManager) createSensorRole(
 	if err != nil {
 		return nil, err
 	}
+	for _, permissionSet := range permissionSets {
+		if err := validateSensorProxyPermissionSet(permissionSet); err != nil {
+			return nil, err
+		}
+	}
 	return &tokens.InternalRole{
 		RoleName:    internalRoleName,
 		Clusters:    clusterScopesFromRequest(req.GetClusterScopes()),
 		Permissions: permissionsFromSets(permissionSets),
 	}, nil
+}
+
+func (rm *roleManager) createScopedRoles(
+	ctx context.Context, req *v1.GenerateTokenForPermissionsAndScopeRequest,
+) ([]*tokens.InternalRole, error) {
+	if rm.roleStore == nil {
+		return nil, errox.ServerError.New("Sensor proxy permission set store unavailable")
+	}
+	names := make([]string, 0, len(req.GetScopedPermissionSets()))
+	for _, grant := range req.GetScopedPermissionSets() {
+		names = append(names, grant.GetName())
+	}
+	sets, err := rm.getPermissionSetsByNames(ctx, names)
+	if err != nil {
+		return nil, err
+	}
+	byName := make(map[string]*storage.PermissionSet, len(sets))
+	for _, permissionSet := range sets {
+		if err := validateSensorProxyPermissionSet(permissionSet); err != nil {
+			return nil, err
+		}
+		byName[permissionSet.GetName()] = permissionSet
+	}
+	roles := make([]*tokens.InternalRole, 0, len(names))
+	for _, grant := range req.GetScopedPermissionSets() {
+		// The policy validated each scope before the permission sets were loaded.
+		scopes, err := tokens.HTTPRequestScopesFromProto(grant.GetHttpRequestScopes())
+		if err != nil {
+			return nil, errox.InvalidArgs.CausedBy(err)
+		}
+		roles = append(roles, &tokens.InternalRole{
+			RoleName:          internalRoleName,
+			Permissions:       permissionsFromSets([]*storage.PermissionSet{byName[grant.GetName()]}),
+			HTTPRequestScopes: scopes,
+		})
+	}
+	return roles, nil
+}
+
+func validateSensorProxyPermissionSet(permissionSet *storage.PermissionSet) error {
+	if permissionSet.GetAccessConstraint() != storage.AccessConstraint_ACCESS_CONSTRAINT_READ ||
+		permissionSet.GetScopeConstraint() != storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE {
+		return errox.InvalidArgs.Newf("Sensor proxy permission set %q must constrain access to read and resources to cluster/namespace",
+			permissionSet.GetName())
+	}
+	return nil
 }
 
 func (rm *roleManager) getPermissionSetsByNames(ctx context.Context, permissionSetNames []string) ([]*storage.PermissionSet, error) {
