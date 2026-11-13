@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
+	pubsub "github.com/stackrox/rox/sensor/common/pubsub"
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	gomock "go.uber.org/mock/gomock"
@@ -249,6 +250,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForJobs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForJobs", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForJobs))
 }
 
+// ForMachineConfigPools mocks base method.
+func (m *MockDispatcherRegistry) ForMachineConfigPools() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForMachineConfigPools")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForMachineConfigPools indicates an expected call of ForMachineConfigPools.
+func (mr *MockDispatcherRegistryMockRecorder) ForMachineConfigPools() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForMachineConfigPools", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForMachineConfigPools))
+}
+
 // ForNamespaces mocks base method.
 func (m *MockDispatcherRegistry) ForNamespaces() resources.Dispatcher {
 	m.ctrl.T.Helper()
@@ -401,4 +416,42 @@ func (m *MockDispatcherRegistry) ForVirtualMachines() resources.Dispatcher {
 func (mr *MockDispatcherRegistryMockRecorder) ForVirtualMachines() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForVirtualMachines", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForVirtualMachines))
+}
+
+// MockeventPublisher is a mock of eventPublisher interface.
+type MockeventPublisher struct {
+	ctrl     *gomock.Controller
+	recorder *MockeventPublisherMockRecorder
+	isgomock struct{}
+}
+
+// MockeventPublisherMockRecorder is the mock recorder for MockeventPublisher.
+type MockeventPublisherMockRecorder struct {
+	mock *MockeventPublisher
+}
+
+// NewMockeventPublisher creates a new mock instance.
+func NewMockeventPublisher(ctrl *gomock.Controller) *MockeventPublisher {
+	mock := &MockeventPublisher{ctrl: ctrl}
+	mock.recorder = &MockeventPublisherMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockeventPublisher) EXPECT() *MockeventPublisherMockRecorder {
+	return m.recorder
+}
+
+// Publish mocks base method.
+func (m *MockeventPublisher) Publish(arg0 pubsub.Event) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Publish", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Publish indicates an expected call of Publish.
+func (mr *MockeventPublisherMockRecorder) Publish(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockeventPublisher)(nil).Publish), arg0)
 }
