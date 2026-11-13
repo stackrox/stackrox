@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -11,6 +12,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, propsID string) (*storage.Group, bool, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	Walk(ctx context.Context, fn func(group *storage.Group) error) error
 	Upsert(ctx context.Context, group *storage.Group) error
 	UpsertMany(ctx context.Context, groups []*storage.Group) error

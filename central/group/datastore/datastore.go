@@ -17,6 +17,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error)
+	Exists(ctx context.Context, props *storage.GroupProperties) (bool, error)
 	ForEach(ctx context.Context, fn func(group *storage.Group) error) error
 	GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)
 

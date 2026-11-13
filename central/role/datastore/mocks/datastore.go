@@ -328,6 +328,21 @@ func (mr *MockDataStoreMockRecorder) GetRolesFiltered(ctx, filter any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRolesFiltered", reflect.TypeOf((*MockDataStore)(nil).GetRolesFiltered), ctx, filter)
 }
 
+// PermissionSetExists mocks base method.
+func (m *MockDataStore) PermissionSetExists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PermissionSetExists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PermissionSetExists indicates an expected call of PermissionSetExists.
+func (mr *MockDataStoreMockRecorder) PermissionSetExists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PermissionSetExists", reflect.TypeOf((*MockDataStore)(nil).PermissionSetExists), ctx, id)
+}
+
 // RemoveAccessScope mocks base method.
 func (m *MockDataStore) RemoveAccessScope(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
@@ -413,6 +428,21 @@ func (m *MockDataStore) RemoveRole(ctx context.Context, name string) error {
 func (mr *MockDataStoreMockRecorder) RemoveRole(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRole", reflect.TypeOf((*MockDataStore)(nil).RemoveRole), ctx, name)
+}
+
+// RoleExists mocks base method.
+func (m *MockDataStore) RoleExists(ctx context.Context, name string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RoleExists", ctx, name)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RoleExists indicates an expected call of RoleExists.
+func (mr *MockDataStoreMockRecorder) RoleExists(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RoleExists", reflect.TypeOf((*MockDataStore)(nil).RoleExists), ctx, name)
 }
 
 // UpdateAccessScope mocks base method.
