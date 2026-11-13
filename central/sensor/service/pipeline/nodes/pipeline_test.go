@@ -133,6 +133,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			if tt.setUp != nil {
 				tt.setUp(t, &tt.args, &tt.mocks)
 			}
+			tt.mocks.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).AnyTimes().Return("test cluster name", true, nil)
 			p := &pipelineImpl{
 				clusterStore:  tt.mocks.clusterStore,
 				nodeDatastore: tt.mocks.nodeDatastore,
