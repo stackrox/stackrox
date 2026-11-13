@@ -113,6 +113,7 @@ function RiskDetailsPage(): ReactElement {
                                     <Button
                                         variant="primary"
                                         icon={<AiExperienceIcon />}
+                                        isDisabled={aiRiskSummary.isLoading}
                                         onClick={aiRiskSummary.investigate}
                                     >
                                         Investigate with AI

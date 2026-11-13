@@ -27,6 +27,9 @@ export default function useAiRiskSummary(deploymentId: string): UseAiRiskSummary
     });
 
     function investigate() {
+        if (isLoading) {
+            return;
+        }
         setIsExpanded(true);
         mutate(deploymentId);
     }
