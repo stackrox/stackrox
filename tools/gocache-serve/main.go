@@ -439,7 +439,7 @@ func main() {
 	// (a wrong go version or CGO setting silently zeroes cache hits).
 	// Async — it shells out to `go env` and may do one blob GET; the
 	// warning can land any time during the build.
-	go maybeCheckFingerprint(rawBackend)
+	go maybeCheckFingerprint()
 	// Bundle backend: OPTIONAL opt-in (GOCACHE_SERVE_BUNDLES=1). The A/B
 	// data showed order-based bundles add index cost without measurable
 	// prefetch benefit at 64-way parallel individual fetch; the size-gated
@@ -452,6 +452,17 @@ func main() {
 			log.Fatalf("bundle backend init: %v", err)
 		}
 		backend = bundled
+	}
+	// Entry read-through: on a regional miss, try the hub before
+	// declaring miss (and backfill regionally). Entry stores are
+	// regionally partitioned by which runners populated them; without
+	// this, a runner in one region recompiles everything another
+	// region's runners already built (observed: operator-bundle +80s).
+	// Azure only — the dir test backend is single-store by construction.
+	if os.Getenv("GOCACHE_SERVE_BACKEND") != "dir" && os.Getenv("AZURE_CLIENT_ID") != "" &&
+		os.Getenv("AZURE_STORAGE_ACCOUNT") == "" {
+		// Not when explicitly pinned to one account (A/B experiments).
+		backend = &fallbackBackend{primary: backend, secondary: hubBackend()}
 	}
 	defer backend.Close() // flushes pending bundle + uploads index
 
@@ -530,7 +541,13 @@ func main() {
 	metaBy := make(map[string][]byte) // actionID -> raw decoded OutputID
 	if jobName != "" {
 		var err error
-		manifestEntries, _, err = DownloadManifest(rawBackend, jobName)
+		// Manifests are HUB-authoritative (control plane): a single
+		// convergent copy instead of per-region snapshots that diverged
+		// (observed: west 2429 entries, east 850, central 0 — regional
+		// runners each replaced their region's manifest with their own
+		// run's snapshot). Cross-region manifest reads cost ~100ms once
+		// per process; convergence is worth far more.
+		manifestEntries, _, err = DownloadManifest(controlBackend(), jobName)
 		if err != nil {
 			log.Printf("manifest download failed: %v", err)
 		}
@@ -763,7 +780,7 @@ func main() {
 		if req.Command == CmdClose {
 			wg.Wait()
 			uploader.Flush()
-			mergedEntries, err := manifest.Upload(rawBackend)
+			mergedEntries, err := manifest.Upload(controlBackend())
 			if err != nil {
 				log.Printf("manifest upload failed: %v", err)
 			}

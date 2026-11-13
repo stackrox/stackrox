@@ -417,8 +417,16 @@ func (m *Manifest) Upload(backend Backend) ([]manifestEntry, error) {
 
 	existing, existingRun, err := DownloadManifest(backend, m.jobName)
 	if err != nil {
-		// unreadable manifest: treat as absent, write fresh
-		existing = nil
+		// CORRECTNESS: a failed read must never degrade into a fresh-write.
+		// Treating "unreadable" as "absent" clobbers the accumulated
+		// working set with this session's partial entries (observed:
+		// 2429-entry manifest replaced by a single process's 812) —
+		// a transient GET error (timeout, auth blip) then silently
+		// destroys prefetch for every future run. Abort instead: the
+		// manifest stays as-is, this session's entries are lost from
+		// it (they remain in the entry store; only prefetch priority
+		// is affected), which is strictly better than shrinking it.
+		return nil, fmt.Errorf("manifest upload aborted, read failed: %w", err)
 	}
 	// Merge only within the same run. A different (older) run's entries are
 	// replaced: dead keys from changed source otherwise accumulate forever.

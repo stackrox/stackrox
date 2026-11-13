@@ -173,13 +173,17 @@ func compareFingerprints(local, remote BuildFingerprint) []string {
 // (GITHUB_ACTIONS=true) instead WRITE the fingerprint (they are the
 // source of truth). The check is memoized: healthy = once/day, mismatch
 // = every run (so fixes are noticed; the ~90ms GET only costs the
-// already-broken state).
-func maybeCheckFingerprint(b Backend) {
+// already-broken state). Uses the HUB (control plane): CI runners land
+// in different regions, and a regionally-written fingerprint would be
+// invisible to the hub-reading doctor — the same divergence that hit
+// the manifests.
+func maybeCheckFingerprint() {
 	inCI := os.Getenv("GITHUB_ACTIONS") == "true"
 	local := collectFingerprint()
 	if local.GoVersion == "" {
 		return // no go in PATH (odd context) — skip silently
 	}
+	b := controlBackend()
 	key := fingerprintKey(local)
 	if inCI {
 		// Memo-gate the write: every CI process would otherwise PUT the

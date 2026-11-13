@@ -301,6 +301,58 @@ func controlBackend() Backend {
 	return hubBackend()
 }
 
+// fallbackBackend reads through a secondary store on primary miss and
+// backfills the primary, so regionally-partitioned entry stores converge
+// on demand: an eastus runner serving an entry that only west has
+// fetches it from the hub instead of recompiling, and copies it east
+// for future runs. This is the read-through mirror pattern, applied to
+// the US replicas; backfills are bounded (semaphore) to avoid a PUT
+// stampede during mass cross-region prefetch.
+type fallbackBackend struct {
+	primary, secondary Backend
+}
+
+// backfillSem bounds concurrent backfill PUTs (mass prefetch on a
+// cold-for-this-region manifest could otherwise fire thousands).
+var backfillSem = make(chan struct{}, 8)
+
+func (f *fallbackBackend) Get(id string) ([]byte, error) {
+	b, err := f.primary.Get(id)
+	if err != nil {
+		return nil, err // primary error surfaces — don't mask auth issues
+	}
+	if b != nil {
+		return b, nil
+	}
+	b2, err2 := f.secondary.Get(id)
+	if err2 != nil {
+		return nil, err2
+	}
+	if b2 == nil {
+		return nil, nil // miss on both: genuine cold entry
+	}
+	// Backfill the primary so future reads of this entry are regional.
+	select {
+	case backfillSem <- struct{}{}:
+		go func() {
+			defer func() { <-backfillSem }()
+			f.primary.Put(id, b2)
+		}()
+	default:
+		// Backfill queue full: skip (entry stays hub-only; a future
+		// miss retries the fallback) — serving the read matters more.
+	}
+	return b2, nil
+}
+
+func (f *fallbackBackend) Put(id string, body []byte) error { return f.primary.Put(id, body) }
+func (f *fallbackBackend) PutIfNotExist(id string, body []byte) (bool, error) {
+	return f.primary.PutIfNotExist(id, body)
+}
+func (f *fallbackBackend) ListKeys() ([]string, error)        { return f.primary.ListKeys() }
+func (f *fallbackBackend) ListPrefix(p string) ([]string, error) { return f.primary.ListPrefix(p) }
+func (f *fallbackBackend) Close() error                       { return f.primary.Close() }
+
 // hubBackend returns a minimal backend bound to the westus3 hub account,
 // used for registry reads/writes. Token scope is account-independent, so
 // this works before the region's account is selected (no chicken-and-egg).
