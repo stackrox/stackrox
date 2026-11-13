@@ -81,7 +81,7 @@ type ProcessBaselineKey struct {
 	DeploymentId  string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"type(uuid),index"` // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index"
 	ContainerName string `protobuf:"bytes,2,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
 	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden"`                                    // @gotags: search:"Namespace,hidden"
+	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden"`                  // @gotags: search:"Namespace,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -427,9 +427,9 @@ func (x *ContainerNameAndBaselineStatus) GetAnomalousProcessesExecuted() bool {
 // `ProcessBaselineResults` represent cached results of process baseline evaluation.
 type ProcessBaselineResults struct {
 	state            protoimpl.MessageState            `protogen:"open.v1"`
-	DeploymentId     string                            `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"`                // @gotags: sql:"pk,type(uuid)"
-	ClusterId        string                            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
-	Namespace        string                            `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden"`                                    // @gotags: search:"Namespace,hidden"
+	DeploymentId     string                            `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	ClusterId        string                            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
+	Namespace        string                            `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden"`                           // @gotags: search:"Namespace,hidden"
 	BaselineStatuses []*ContainerNameAndBaselineStatus `protobuf:"bytes,2,rep,name=baseline_statuses,json=baselineStatuses,proto3" json:"baseline_statuses,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache

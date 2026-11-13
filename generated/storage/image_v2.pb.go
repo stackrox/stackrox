@@ -77,8 +77,8 @@ func (ImageV2_Note) EnumDescriptor() ([]byte, []int) {
 // Next tag: 28
 type ImageV2 struct {
 	state                     protoimpl.MessageState          `protogen:"open.v1"`
-	Id                        string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Image ID,hidden" sql:"pk"` // @gotags: search:"Image ID,hidden" sql:"pk"
-	Digest                    string                          `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty" search:"Image Sha"`        // @gotags: search:"Image Sha"
+	Id                        string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Image ID,hidden" sql:"pk"`         // @gotags: search:"Image ID,hidden" sql:"pk"
+	Digest                    string                          `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty" search:"Image Sha"` // @gotags: search:"Image Sha"
 	Name                      *ImageName                      `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	Metadata                  *ImageMetadata                  `protobuf:"bytes,4,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	Scan                      *ImageScan                      `protobuf:"bytes,5,opt,name=scan,proto3" json:"scan,omitempty" policy:"Image Scan"` // @gotags: policy:"Image Scan"
@@ -88,7 +88,7 @@ type ImageV2 struct {
 	LastUpdated               *timestamppb.Timestamp          `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
 	NotPullable               bool                            `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal            bool                            `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	Priority                  int64                           `protobuf:"varint,12,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                  // @gotags: search:"Image Risk Priority,hidden"
+	Priority                  int64                           `protobuf:"varint,12,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
 	RiskScore                 float32                         `protobuf:"fixed32,13,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
 	// Caching top cvss to avoid re-calculating it by joining on the cve table.
 	TopCvss       float32          `protobuf:"fixed32,14,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty" search:"Image Top CVSS"` // @gotags: search:"Image Top CVSS"

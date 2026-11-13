@@ -502,7 +502,7 @@ type Policy struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy" sql:"unique" crYaml:"policyName"` // @gotags: search:"Policy" sql:"unique" crYaml:"policyName"
 	// Free-form text description of this policy.
 	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty" search:"Description" crYaml:",omitempty"` // @gotags: search:"Description" crYaml:",omitempty"
-	Rationale   string `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty" crYaml:",omitempty"`                          // @gotags: crYaml:",omitempty"
+	Rationale   string `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty" crYaml:",omitempty"`     // @gotags: crYaml:",omitempty"
 	// Describes how to remediate a violation of this policy.
 	Remediation string `protobuf:"bytes,5,opt,name=remediation,proto3" json:"remediation,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
 	// Toggles whether or not this policy will be executing and actively firing alerts.
@@ -525,7 +525,7 @@ type Policy struct {
 	// Lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
 	EnforcementActions []EnforcementAction `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,proto3,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty" search:"Enforcement" crYaml:"enforcementActions,omitempty,stringer"` // @gotags: search:"Enforcement" crYaml:"enforcementActions,omitempty,stringer"
 	// List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
-	Notifiers   []string               `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty" crYaml:",omitempty"`                                            // @gotags: crYaml:",omitempty"
+	Notifiers   []string               `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty" crYaml:",omitempty"`                        // @gotags: crYaml:",omitempty"
 	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Policy Last Updated" crYaml:"-"` // @gotags: search:"Policy Last Updated" crYaml:"-"
 	// For internal use only.
 	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty" search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"
@@ -533,17 +533,17 @@ type Policy struct {
 	SORTLifecycleStage string `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage,proto3" json:"SORT_lifecycleStage,omitempty" search:"SORT_Lifecycle Stage,hidden" crYaml:"-"` // @gotags: search:"SORT_Lifecycle Stage,hidden" crYaml:"-"
 	// For internal use only.
 	SORTEnforcement bool   `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement,proto3" json:"SORT_enforcement,omitempty" search:"SORT_Enforcement,hidden" crYaml:"-"` // @gotags: search:"SORT_Enforcement,hidden" crYaml:"-"
-	PolicyVersion   string `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty" crYaml:"-"`                                         // @gotags: crYaml:"-"
+	PolicyVersion   string `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty" crYaml:"-"`        // @gotags: crYaml:"-"
 	// PolicySections define the violation criteria for this policy.
-	PolicySections     []*PolicySection             `protobuf:"bytes,20,rep,name=policy_sections,json=policySections,proto3" json:"policy_sections,omitempty" crYaml:"policySections,omitempty"`                   // @gotags: crYaml:"policySections,omitempty"
+	PolicySections     []*PolicySection             `protobuf:"bytes,20,rep,name=policy_sections,json=policySections,proto3" json:"policy_sections,omitempty" crYaml:"policySections,omitempty"`               // @gotags: crYaml:"policySections,omitempty"
 	MitreAttackVectors []*Policy_MitreAttackVectors `protobuf:"bytes,23,rep,name=mitre_attack_vectors,json=mitreAttackVectors,proto3" json:"mitre_attack_vectors,omitempty" crYaml:"mitreAttackVectors,omitempty"` // @gotags: crYaml:"mitreAttackVectors,omitempty"
 	// Read-only field. If true, the policy's criteria fields are rendered read-only.
 	CriteriaLocked bool `protobuf:"varint,24,opt,name=criteria_locked,json=criteriaLocked,proto3" json:"criteria_locked,omitempty" crYaml:"criteriaLocked"` // @gotags: crYaml:"criteriaLocked"
 	// Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
 	MitreVectorsLocked bool `protobuf:"varint,25,opt,name=mitre_vectors_locked,json=mitreVectorsLocked,proto3" json:"mitre_vectors_locked,omitempty" crYaml:"mitreVectorsLocked"` // @gotags: crYaml:"mitreVectorsLocked"
 	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-	IsDefault bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty" crYaml:"isDefault"` // @gotags: crYaml:"isDefault"
-	Source    PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"`      // @gotags: crYaml:"-"
+	IsDefault bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty" crYaml:"isDefault"`    // @gotags: crYaml:"isDefault"
+	Source    PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"` // @gotags: crYaml:"-"
 	// Pre-filters which entities the policy evaluates.
 	EvaluationFilter *EvaluationFilter `protobuf:"bytes,28,opt,name=evaluation_filter,json=evaluationFilter,proto3" json:"evaluation_filter,omitempty" crYaml:"evaluationFilter,omitempty"` // @gotags: crYaml:"evaluationFilter,omitempty"
 	unknownFields    protoimpl.UnknownFields
@@ -1111,7 +1111,7 @@ func (x *ListPolicy) GetEvaluationFilter() *EvaluationFilter {
 type EvaluationFilter struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	SkipContainerTypes []ContainerType        `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.ContainerType" json:"skip_container_types,omitempty" crYaml:"skipContainerTypes,omitempty,stringer"` // @gotags: crYaml:"skipContainerTypes,omitempty,stringer"
-	SkipImageLayers    SkipImageLayers        `protobuf:"varint,2,opt,name=skip_image_layers,json=skipImageLayers,proto3,enum=storage.SkipImageLayers" json:"skip_image_layers,omitempty" crYaml:"skipImageLayers,omitempty,stringer"`                  // @gotags: crYaml:"skipImageLayers,omitempty,stringer"
+	SkipImageLayers    SkipImageLayers        `protobuf:"varint,2,opt,name=skip_image_layers,json=skipImageLayers,proto3,enum=storage.SkipImageLayers" json:"skip_image_layers,omitempty" crYaml:"skipImageLayers,omitempty,stringer"`               // @gotags: crYaml:"skipImageLayers,omitempty,stringer"
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1162,8 +1162,8 @@ func (x *EvaluationFilter) GetSkipImageLayers() SkipImageLayers {
 
 type Exclusion struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
-	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" crYaml:",omitempty"`                       // @gotags: crYaml:",omitempty"
-	Image      *Exclusion_Image       `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty" crYaml:",omitempty"`                     // @gotags: crYaml:",omitempty"
+	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
+	Image      *Exclusion_Image       `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty" crYaml:",omitempty"`           // @gotags: crYaml:",omitempty"
 	Expiration *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration,proto3" json:"expiration,omitempty" crYaml:",timestamp,omitempty"` // @gotags: crYaml:",timestamp,omitempty"
 	// matcher is either a name/scope exclusion or an exclusion by Kubernetes kind.
 	// Image stays outside the oneof because existing payloads may set both image and deployment.

@@ -24,14 +24,14 @@ const (
 
 type BaseImage struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
-	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"`                                                               // @gotags: search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"
-	BaseImageRepositoryId string                 `protobuf:"bytes,2,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" sql:"fk(BaseImageRepository:id),allow-null"`    // @gotags: sql:"fk(BaseImageRepository:id),allow-null"
-	Repository            string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty" search:"Base Image Repository,store"`                                                                  // @gotags: search:"Base Image Repository,store"
-	Tag                   string                 `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden"`                                                                                      // @gotags: search:"Base Image Tag,hidden"
-	ManifestDigest        string                 `protobuf:"bytes,5,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty" search:"Base Image Manifest Digest,store"`                               // @gotags: search:"Base Image Manifest Digest,store"
-	DiscoveredAt          *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=discovered_at,json=discoveredAt,proto3" json:"discovered_at,omitempty" search:"Base Image Discovered At,hidden"`                                      // @gotags: search:"Base Image Discovered At,hidden"
-	Active                bool                   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty" search:"Base Image Active,hidden"`                                                                            // @gotags: search:"Base Image Active,hidden"
-	FirstLayerDigest      string                 `protobuf:"bytes,8,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"` // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
+	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"`                                                                        // @gotags: search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"
+	BaseImageRepositoryId string                 `protobuf:"bytes,2,opt,name=base_image_repository_id,json=baseImageRepositoryId,proto3" json:"base_image_repository_id,omitempty" sql:"fk(BaseImageRepository:id),allow-null"` // @gotags: sql:"fk(BaseImageRepository:id),allow-null"
+	Repository            string                 `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty" search:"Base Image Repository,store"`                                                        // @gotags: search:"Base Image Repository,store"
+	Tag                   string                 `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty" search:"Base Image Tag,hidden"`                                                                      // @gotags: search:"Base Image Tag,hidden"
+	ManifestDigest        string                 `protobuf:"bytes,5,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty" search:"Base Image Manifest Digest,store"`                          // @gotags: search:"Base Image Manifest Digest,store"
+	DiscoveredAt          *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=discovered_at,json=discoveredAt,proto3" json:"discovered_at,omitempty" search:"Base Image Discovered At,hidden"`                                // @gotags: search:"Base Image Discovered At,hidden"
+	Active                bool                   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty" search:"Base Image Active,hidden"`                                                               // @gotags: search:"Base Image Active,hidden"
+	FirstLayerDigest      string                 `protobuf:"bytes,8,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"`                  // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
 	Layers                []*BaseImageLayer      `protobuf:"bytes,9,rep,name=layers,proto3" json:"layers,omitempty"`
 	Created               *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created,proto3" json:"created,omitempty"`
 	// Config history in order, including empty lines.
@@ -213,10 +213,10 @@ func (x *BaseImageHistoryEntry) GetEmpty() bool {
 
 type BaseImageLayer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                                               // @gotags: sql:"pk,type(uuid)"
-	BaseImageId   string                 `protobuf:"bytes,2,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty" sql:"type(uuid),index=category:unique;name:base_image_id_layer"`                            // @gotags: sql:"type(uuid),index=category:unique;name:base_image_id_layer"
-	LayerDigest   string                 `protobuf:"bytes,3,opt,name=layer_digest,json=layerDigest,proto3" json:"layer_digest,omitempty" search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"` // @gotags: search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"
-	Index         int32                  `protobuf:"varint,4,opt,name=index,proto3" json:"index,omitempty" search:"Base Image Index,hidden"`                                                                                           // @gotags: search:"Base Image Index,hidden"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                        // @gotags: sql:"pk,type(uuid)"
+	BaseImageId   string                 `protobuf:"bytes,2,opt,name=base_image_id,json=baseImageId,proto3" json:"base_image_id,omitempty" sql:"type(uuid),index=category:unique;name:base_image_id_layer"` // @gotags: sql:"type(uuid),index=category:unique;name:base_image_id_layer"
+	LayerDigest   string                 `protobuf:"bytes,3,opt,name=layer_digest,json=layerDigest,proto3" json:"layer_digest,omitempty" search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"`   // @gotags: search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"
+	Index         int32                  `protobuf:"varint,4,opt,name=index,proto3" json:"index,omitempty" search:"Base Image Index,hidden"`                                 // @gotags: search:"Base Image Index,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

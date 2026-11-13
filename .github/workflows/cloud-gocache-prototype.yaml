@@ -20,8 +20,8 @@ on:
   workflow_dispatch:
     inputs:
       backends:
-        description: 'Comma-separated backends to run (default: all)'
-        default: 'azure,gcs,s3,prefetch,cacheprog'
+        description: 'Comma-separated backends (cacheprog only; FUSE backends retired — see git history)'
+        default: 'cacheprog'
         type: string
       container:
         description: 'Blob container for cacheprog backend (A/B experiments)'

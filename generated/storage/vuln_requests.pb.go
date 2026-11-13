@@ -377,8 +377,8 @@ func (*FalsePositiveRequest) Descriptor() ([]byte, []int) {
 
 type DeferralUpdate struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CVEs          []string               `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"Deferral Update CVEs"` // @gotags: search:"Deferral Update CVEs"
-	Expiry        *RequestExpiry         `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty" search:"-"`                // @gotags: search:"-"
+	CVEs          []string               `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"Deferral Update CVEs"`     // @gotags: search:"Deferral Update CVEs"
+	Expiry        *RequestExpiry         `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty" search:"-"` // @gotags: search:"-"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -473,7 +473,7 @@ func (x *FalsePositiveUpdate) GetCVEs() []string {
 
 type Requester struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Requester User ID"`       // @gotags: search:"Requester User ID"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Requester User ID"`     // @gotags: search:"Requester User ID"
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Requester User Name"` // @gotags: search:"Requester User Name"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -525,7 +525,7 @@ func (x *Requester) GetName() string {
 
 type Approver struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Approver User ID"`       // @gotags: search:"Approver User ID"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Approver User ID"`     // @gotags: search:"Approver User ID"
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Approver User Name"` // @gotags: search:"Approver User Name"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -579,7 +579,7 @@ func (x *Approver) GetName() string {
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 type VulnerabilityRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                // @gotags: sql:"pk"
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`      // @gotags: sql:"pk"
 	Name  string                 `protobuf:"bytes,26,opt,name=name,proto3" json:"name,omitempty" search:"Request Name" sql:"unique"` // @gotags: search:"Request Name" sql:"unique"
 	// Indicates the state the vulnerabilities will move to once the request is complete.
 	TargetState VulnerabilityState `protobuf:"varint,2,opt,name=target_state,json=targetState,proto3,enum=storage.VulnerabilityState" json:"target_state,omitempty" search:"Requested Vulnerability State"` // @gotags: search:"Requested Vulnerability State"
@@ -591,7 +591,7 @@ type VulnerabilityRequest struct {
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	Requestor *SlimUser `protobuf:"bytes,5,opt,name=requestor,proto3" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
-	Approvers   []*SlimUser                 `protobuf:"bytes,6,rep,name=approvers,proto3" json:"approvers,omitempty" sql:"ignore_labels(User ID)"`                 // @gotags: sql:"ignore_labels(User ID)"
+	Approvers   []*SlimUser                 `protobuf:"bytes,6,rep,name=approvers,proto3" json:"approvers,omitempty" sql:"ignore_labels(User ID)"`                        // @gotags: sql:"ignore_labels(User ID)"
 	CreatedAt   *timestamppb.Timestamp      `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"`       // @gotags: search:"Created Time"
 	LastUpdated *timestamppb.Timestamp      `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
 	Comments    []*RequestComment           `protobuf:"bytes,9,rep,name=comments,proto3" json:"comments,omitempty"`
@@ -1007,8 +1007,8 @@ func (*VulnerabilityRequest_Scope_GlobalScope) isVulnerabilityRequest_Scope_Info
 type VulnerabilityRequest_Scope_Image struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Registry      string                 `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty" search:"Image Registry Scope"` // @gotags: search:"Image Registry Scope"
-	Remote        string                 `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty" search:"Image Remote Scope"`       // @gotags: search:"Image Remote Scope"
-	Tag           string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Image Tag Scope"`                // @gotags: search:"Image Tag Scope"
+	Remote        string                 `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty" search:"Image Remote Scope"`     // @gotags: search:"Image Remote Scope"
+	Tag           string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Image Tag Scope"`           // @gotags: search:"Image Tag Scope"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

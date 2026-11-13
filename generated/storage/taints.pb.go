@@ -124,8 +124,8 @@ func (Toleration_Operator) EnumDescriptor() ([]byte, []int) {
 
 type Taint struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Taint Key"`                                                                 // @gotags: search:"Taint Key"
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Taint Value"`                                                           // @gotags: search:"Taint Value"
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Taint Key"`                                                              // @gotags: search:"Taint Key"
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Taint Value"`                                                          // @gotags: search:"Taint Value"
 	TaintEffect   TaintEffect            `protobuf:"varint,3,opt,name=taint_effect,json=taintEffect,proto3,enum=storage.TaintEffect" json:"taint_effect,omitempty" search:"Taint Effect"` // @gotags: search:"Taint Effect"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

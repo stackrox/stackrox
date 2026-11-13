@@ -29,7 +29,7 @@ type TokenMetadata struct {
 	Roles      []string               `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
 	IssuedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
 	Expiration *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration,proto3" json:"expiration,omitempty" search:"Expiration"` // @gotags: search:"Expiration"
-	Revoked    bool                   `protobuf:"varint,6,opt,name=revoked,proto3" json:"revoked,omitempty" search:"Revoked"`         // @gotags: search:"Revoked"
+	Revoked    bool                   `protobuf:"varint,6,opt,name=revoked,proto3" json:"revoked,omitempty" search:"Revoked"`      // @gotags: search:"Revoked"
 	// Deprecated: Marked as deprecated in storage/api_token.proto.
 	Role          string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields

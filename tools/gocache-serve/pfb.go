@@ -26,9 +26,13 @@ package main
 // = 500KB).
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -240,3 +244,94 @@ func (t *tokenDiskCache) Save(token string, exp time.Time) {
 	// best-effort: races between concurrent processes write identical content
 	os.WriteFile(t.path, b, 0o600)
 }
+// --- Bundle serialization (shared by pfb) ---
+// Extracted from the removed bundle.go: the order-based BundledBackend
+// wrapper was deleted (A/B data: no benefit), but pfb's size-gated
+// prefetch bundles use this wire format.
+
+
+// BundleEntry is a single cache entry within a bundle.
+type BundleEntry struct {
+	Key  string
+	Body []byte
+}
+
+// SerializeBundle encodes entries into a gzip-compressed binary blob.
+// Format: gzip([int32 count] then per entry: [int32 keyLen][key][int32 bodyLen][body])
+// Go build cache entries (export data, DWARF, object code) compress ~2-3x.
+// TODO: benchmark zstd (github.com/klauspost/compress/zstd) vs gzip —
+// zstd decompresses 3-4x faster (~1.5-2GB/s vs ~300-500MB/s). For 5MB
+// bundles: gzip=17ms, zstd=3ms. Only worth the dependency if the
+// instrumentation shows decompression time is a meaningful fraction of
+// total time (currently network-bound at 20-50ms per bundle).
+func SerializeBundle(entries []BundleEntry) []byte {
+	var raw bytes.Buffer
+	binary.Write(&raw, binary.LittleEndian, int32(len(entries)))
+	for _, e := range entries {
+		binary.Write(&raw, binary.LittleEndian, int32(len(e.Key)))
+		raw.WriteString(e.Key)
+		binary.Write(&raw, binary.LittleEndian, int32(len(e.Body)))
+		raw.Write(e.Body)
+	}
+
+	var compressed bytes.Buffer
+	zw := gzip.NewWriter(&compressed)
+	zw.Write(raw.Bytes())
+	zw.Close()
+	return compressed.Bytes()
+}
+
+// DeserializeBundle decodes a bundle blob back into entries. The payload
+// may arrive still gzip-wrapped (direct SerializeBundle output) or already
+// unwrapped (backends with compression-at-rest gunzip any gzip-magic blob
+// in Get) — both are handled.
+func DeserializeBundle(data []byte) ([]BundleEntry, error) {
+	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
+		zr, err := gzip.NewReader(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("gzip open: %w", err)
+		}
+		defer zr.Close()
+		raw, err := io.ReadAll(zr)
+		if err != nil {
+			return nil, fmt.Errorf("gzip read: %w", err)
+		}
+		data = raw
+	}
+
+	r := bytes.NewReader(data)
+	var count int32
+	if err := binary.Read(r, binary.LittleEndian, &count); err != nil {
+		return nil, fmt.Errorf("bundle count: %w", err)
+	}
+	entries := make([]BundleEntry, 0, count)
+	for i := int32(0); i < count; i++ {
+		var keyLen, bodyLen int32
+		if err := binary.Read(r, binary.LittleEndian, &keyLen); err != nil {
+			return nil, fmt.Errorf("key len %d: %w", i, err)
+		}
+		key := make([]byte, keyLen)
+		if _, err := io.ReadFull(r, key); err != nil {
+			return nil, fmt.Errorf("key %d: %w", i, err)
+		}
+		if err := binary.Read(r, binary.LittleEndian, &bodyLen); err != nil {
+			return nil, fmt.Errorf("body len %d: %w", i, err)
+		}
+		body := make([]byte, bodyLen)
+		if _, err := io.ReadFull(r, body); err != nil {
+			return nil, fmt.Errorf("body %d: %w", i, err)
+		}
+		entries = append(entries, BundleEntry{Key: string(key), Body: body})
+	}
+	return entries, nil
+}
+
+// BundledBackend wraps a raw cloud Backend with entry bundling:
+//   - PUT: small entries are collected into bundles (~50 entries or ~5MB);
+//     large entries go as individual blobs. One HTTP PUT per bundle instead
+//     of one per entry.
+//   - GET: checks individual blob first, then bundle index, then downloads
+//     the entire bundle (getting ~50 entries in one HTTP GET). Parsed
+//     bundles are cached in memory — subsequent requests for entries in the
+//     same bundle are served without any cloud request.
+//

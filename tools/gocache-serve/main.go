@@ -440,19 +440,11 @@ func main() {
 	// Async — it shells out to `go env` and may do one blob GET; the
 	// warning can land any time during the build.
 	go maybeCheckFingerprint()
-	// Bundle backend: OPTIONAL opt-in (GOCACHE_SERVE_BUNDLES=1). The A/B
-	// data showed order-based bundles add index cost without measurable
-	// prefetch benefit at 64-way parallel individual fetch; the size-gated
-	// per-job prefetch bundles (pfb.go) replace this concept.
-	if os.Getenv("GOCACHE_SERVE_BUNDLES") == "1" {
-		maxEntries := envInt("GOCACHE_SERVE_BUNDLE_MAX_ENTRIES", 50)
-		maxBytes := int64(envInt("GOCACHE_SERVE_BUNDLE_MAX_BYTES", 5<<20))
-		bundled, err := NewBundledBackend(backend, maxEntries, maxBytes)
-		if err != nil {
-			log.Fatalf("bundle backend init: %v", err)
-		}
-		backend = bundled
-	}
+	// Bundle backend (order-based BundledBackend) was REMOVED: the A/B
+	// data showed it added index cost without measurable prefetch
+	// benefit at 64-way parallel individual fetch; the size-gated
+	// per-job prefetch bundles (pfb.go) replaced the concept. See git
+	// history for the implementation and its measurements.
 	// Entry read-through: on a regional miss, try the hub before
 	// declaring miss (and backfill regionally). Entry stores are
 	// regionally partitioned by which runners populated them; without
@@ -579,7 +571,7 @@ func main() {
 		close(prefetchDone)
 	}
 
-	// Prefetch from manifest (see bundle.go for BundledBackend)
+	// Prefetch from manifest (pfb bundles unpack separately; see pfb.go)
 	if os.Getenv("GOCACHE_SERVE_PREFETCH") != "0" && jobName != "" {
 		go func() {
 			// Only the gated mode owns the channel's close; ungated closed

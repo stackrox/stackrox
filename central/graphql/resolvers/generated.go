@@ -590,7 +590,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"skipTLSVerify: Boolean!",
 		"username: String!",
 	}))
-	utils.Must(builder.AddType("GetPermissionsResponse", []string{}))
+	utils.Must(builder.AddType("GetPermissionsResponse", []string{
+	}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
 		"project: String!",
