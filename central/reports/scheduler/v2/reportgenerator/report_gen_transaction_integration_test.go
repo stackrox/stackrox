@@ -33,10 +33,11 @@ const (
 	colCVE         = 6
 	colFixable     = 7
 	colFixedBy     = 8
-	colSeverity    = 9
-	colCVSS        = 10
-	colNVDCVSS     = 11
-	colEPSS        = 12
+	colFixDate     = 9
+	colSeverity    = 10
+	colCVSS        = 11
+	colNVDCVSS     = 12
+	colEPSS        = 13
 )
 
 // colOf returns the index of the named column in the current CSV layout, which
@@ -205,7 +206,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_F
 // TestGenerateReportTransaction_DeployedAndWatched verifies that both deployed
 // and watched image queries are executed within the same transaction.
 //
-// Test data: 4 deployed CVEs + 4 watched CVEs (2 watched images × 2 CVEs) = 8 data rows.
+// Test data: 8 deployed CVEs + 4 watched CVEs (2 watched images × 2 CVEs) = 12 data rows.
 func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_DeployedAndWatched() {
 	rg, blobStore, configStore := s.setupTransactionDeps()
 	snap := s.prepareSnapshot(configStore, "col1",
@@ -225,6 +226,34 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 	rows := s.readBlobCSV(blobStore, snap.GetReportConfigurationId(), snap.GetReportId())
 	// 8 deployed (4 deps × 2 CVEs) + 4 watched (2 images × 2 CVEs) + 1 header = 13
 	s.Require().Len(rows, 13, "1 header + 8 deployed + 4 watched")
+	stateColumn := slices.Index(rows[0], "Vulnerability State")
+	s.Require().NotEqual(-1, stateColumn)
+	statesByCVE := map[string]string{
+		"CVE-nonFixable_low-c1_ns1_dep0_img_comp": "Deferred",
+		"CVE-nonFixable_low-c1_ns2_dep0_img_comp": "False Positive",
+		"CVE-fixable_critical-w0_img_comp":        "Deferred",
+		"CVE-fixable_critical-w1_img_comp":        "False Positive",
+	}
+	fixDateColumn := slices.Index(rows[0], "Fix Date")
+	s.Require().NotEqual(-1, fixDateColumn)
+	s.Require().Equal(colFixDate, fixDateColumn)
+	fixDatesByCVE := map[string]string{
+		"CVE-fixable_critical-c1_ns1_dep0_img_comp": "July 01, 2024",
+		"CVE-fixable_critical-w0_img_comp":          "July 01, 2024",
+	}
+	for _, row := range rows[1:] {
+		s.Require().Len(row, len(rows[0]))
+		state, ok := statesByCVE[row[colCVE]]
+		if !ok {
+			state = "Observed"
+		}
+		s.Equal(state, row[stateColumn], "CVE %s", row[colCVE])
+		fixDate, ok := fixDatesByCVE[row[colCVE]]
+		if !ok {
+			fixDate = "Not Available"
+		}
+		s.Equal(fixDate, row[fixDateColumn], "CVE %s", row[colCVE])
+	}
 }
 
 // TestGenerateReportTransaction_EmptyResult verifies that a query matching

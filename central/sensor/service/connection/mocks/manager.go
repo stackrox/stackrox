@@ -19,7 +19,6 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
-	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -153,35 +152,6 @@ func (mr *MockManagerMockRecorder) PreparePoliciesAndBroadcast(policies any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreparePoliciesAndBroadcast", reflect.TypeOf((*MockManager)(nil).PreparePoliciesAndBroadcast), policies)
 }
 
-// ProcessCheckInFromUpgrader mocks base method.
-func (m *MockManager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessCheckInFromUpgrader", ctx, clusterID, req)
-	ret0, _ := ret[0].(*central.UpgradeCheckInFromUpgraderResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ProcessCheckInFromUpgrader indicates an expected call of ProcessCheckInFromUpgrader.
-func (mr *MockManagerMockRecorder) ProcessCheckInFromUpgrader(ctx, clusterID, req any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessCheckInFromUpgrader", reflect.TypeOf((*MockManager)(nil).ProcessCheckInFromUpgrader), ctx, clusterID, req)
-}
-
-// ProcessUpgradeCheckInFromSensor mocks base method.
-func (m *MockManager) ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessUpgradeCheckInFromSensor", ctx, clusterID, req)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessUpgradeCheckInFromSensor indicates an expected call of ProcessUpgradeCheckInFromSensor.
-func (mr *MockManagerMockRecorder) ProcessUpgradeCheckInFromSensor(ctx, clusterID, req any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessUpgradeCheckInFromSensor", reflect.TypeOf((*MockManager)(nil).ProcessUpgradeCheckInFromSensor), ctx, clusterID, req)
-}
-
 // PushExternalNetworkEntitiesToAllSensors mocks base method.
 func (m *MockManager) PushExternalNetworkEntitiesToAllSensors(ctx context.Context) error {
 	m.ctrl.T.Helper()
@@ -225,43 +195,15 @@ func (mr *MockManagerMockRecorder) SendMessage(clusterID, msg any) *gomock.Call 
 }
 
 // Start mocks base method.
-func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager, imageIntegrationMgr common.ImageIntegrationManager, complianceOperatorMgr common.ComplianceOperatorManager, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager, imageIntegrationMgr common.ImageIntegrationManager, complianceOperatorMgr common.ComplianceOperatorManager) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, complianceOperatorMgr, autoTriggerUpgrades)
+	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, complianceOperatorMgr)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, complianceOperatorMgr, autoTriggerUpgrades any) *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, complianceOperatorMgr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, complianceOperatorMgr, autoTriggerUpgrades)
-}
-
-// TriggerCertRotation mocks base method.
-func (m *MockManager) TriggerCertRotation(ctx context.Context, clusterID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TriggerCertRotation", ctx, clusterID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// TriggerCertRotation indicates an expected call of TriggerCertRotation.
-func (mr *MockManagerMockRecorder) TriggerCertRotation(ctx, clusterID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerCertRotation", reflect.TypeOf((*MockManager)(nil).TriggerCertRotation), ctx, clusterID)
-}
-
-// TriggerUpgrade mocks base method.
-func (m *MockManager) TriggerUpgrade(ctx context.Context, clusterID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TriggerUpgrade", ctx, clusterID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// TriggerUpgrade indicates an expected call of TriggerUpgrade.
-func (mr *MockManagerMockRecorder) TriggerUpgrade(ctx, clusterID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerUpgrade", reflect.TypeOf((*MockManager)(nil).TriggerUpgrade), ctx, clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, complianceOperatorMgr)
 }

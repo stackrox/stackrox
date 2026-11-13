@@ -127,7 +127,6 @@ Here is the list of old and new configuration options:
 | `config.admissionControl.timeout` | `admissionControl.dynamic.timeout` |
 | `config.registryOverride` | `registryOverride` |
 | `config.disableTaintTolerations` | `collector.disableTaintTolerations` |
-| `config.createUpgraderServiceAccount` | `createUpgraderServiceAccount` |
 | `config.createSecrets` | `createSecrets` |
 | `config.offlineMode` | This option has no effect and will be removed. |
 | `config.sensorResources` | `sensor.resources` |

@@ -8,7 +8,6 @@ import "internalapi/virtualmachine/v1/index_report.proto";
 import "internalapi/virtualmachine/v1/virtual_machine.proto";
 import "storage/alert.proto";
 import "storage/cluster.proto";
-import "storage/compliance_operator.proto";
 import "storage/deployment.proto";
 import "storage/image_integration.proto";
 import "storage/namespace_metadata.proto";
@@ -92,12 +91,6 @@ message SensorEvent {
     ReprocessDeploymentRisk reprocess_deployment = 17;
     AlertResults alert_results = 18;
 
-    storage.ComplianceOperatorCheckResult compliance_operator_result = 20;
-    storage.ComplianceOperatorProfile compliance_operator_profile = 21;
-    storage.ComplianceOperatorRule compliance_operator_rule = 22;
-    storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23;
-    storage.ComplianceOperatorScan compliance_operator_scan = 24;
-
     virtualmachine.v1.IndexReportEvent virtual_machine_index_report = 35;
     virtualmachine.v1.VirtualMachine virtual_machine = 36;
 
@@ -110,6 +103,8 @@ message SensorEvent {
     ComplianceOperatorSuiteV2 compliance_operator_suite_v2 = 32;
     ComplianceOperatorRemediationV2 compliance_operator_remediation_v2 = 33;
   }
+
+  reserved 20, 21, 22, 23, 24; // Were V1 Compliance Operator types (removed from resource oneof)
 }
 
 // Central enforcement through sensor.

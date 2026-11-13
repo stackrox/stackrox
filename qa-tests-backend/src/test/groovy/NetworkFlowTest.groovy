@@ -253,7 +253,6 @@ class NetworkFlowTest extends BaseSpecification {
             }
         }
         orchestrator.deleteNamespace(OTHER_NAMESPACE)
-        orchestrator.waitForNamespaceDeletion(OTHER_NAMESPACE)
     }
 
     def cleanupSpec() {

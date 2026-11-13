@@ -80,7 +80,6 @@ class DeploymentCheck extends BaseSpecification {
         orchestrator.deleteServiceAccount(serviceAccount)
         orchestrator.deleteNetworkPolicy(netPol)
         orchestrator.deleteNamespace(DEPLOYMENT_CHECK)
-        orchestrator.waitForNamespaceDeletion(DEPLOYMENT_CHECK)
         if (policyCategoryID != "") {
             PolicyCategoryService.deletePolicyCategory(policyCategoryID)
         }
