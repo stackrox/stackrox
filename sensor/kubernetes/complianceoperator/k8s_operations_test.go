@@ -35,6 +35,7 @@ func (s *ScanSettingWriterTestSuite) SetupTest() {
 	gvrToListKind := map[schema.GroupVersionResource]string{
 		complianceoperator.ScanSetting.GroupVersionResource():        "ScanSettingList",
 		complianceoperator.ScanSettingBinding.GroupVersionResource(): "ScanSettingBindingList",
+		machineConfigPoolGVR: "MachineConfigPoolList",
 	}
 	s.client = fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), gvrToListKind)
 	r := &retrier{
@@ -45,7 +46,7 @@ func (s *ScanSettingWriterTestSuite) SetupTest() {
 	s.writer = &scanSettingWriter{
 		client:       s.client,
 		retrier:      r,
-		roleProvider: func() []string { return []string{masterRole, workerRole} },
+		roleProvider: func() ([]string, bool) { return []string{masterRole, workerRole}, true },
 	}
 }
 

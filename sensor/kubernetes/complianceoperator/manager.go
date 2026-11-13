@@ -47,20 +47,19 @@ func NewManager(client dynamic.Interface, complianceOperatorInfo StatusInfo, mcp
 		inner:                  make(chan pubsub.Event),
 		mcpNotify:              make(chan struct{}, 1),
 		mcpDebounceInterval:    defaultMCPDebounceInterval,
-		writer:                 &scanSettingWriter{client: client, retrier: r},
 	}
-	m.writer.roleProvider = m.getRoles
+	m.writer = newScanSettingWriter(client, r, m.getRoles)
 	return m
 }
 
-func (m *Manager) getRoles() []string {
+func (m *Manager) getRoles() ([]string, bool) {
 	if features.ComplianceCustomNodeRoles.Enabled() && m.mcpStore != nil {
 		roles := m.mcpStore.GetRoles()
 		if len(roles) > 0 {
-			return roles
+			return roles, true
 		}
 	}
-	return []string{masterRole, workerRole}
+	return []string{masterRole, workerRole}, !features.ComplianceCustomNodeRoles.Enabled()
 }
 
 // Start registers the pubsub consumers and launches the run loop.
@@ -253,7 +252,7 @@ func (m *Manager) reconcileMCPRoles() {
 		return
 	}
 
-	if err := m.writer.updateAllScanSettingRoles(m.stopperContext(), ns, m.getRoles()); err != nil {
+	if err := m.writer.updateAllScanSettingRoles(m.stopperContext(), ns); err != nil {
 		log.Errorf("failed to reconcile MCP roles: %v", err)
 	}
 }
