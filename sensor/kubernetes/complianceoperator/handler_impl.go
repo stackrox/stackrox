@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -18,6 +19,8 @@ import (
 )
 
 type handlerImpl struct {
+	ctxLock    sync.Mutex
+	streamCtx  context.Context
 	response   chan *message.ExpiringMessage
 	disabled   concurrency.Signal
 	stopSignal concurrency.Signal
@@ -32,6 +35,7 @@ func (m *handlerImpl) Name() string {
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
 func NewRequestHandler(manager *Manager, dispatcher common.PubSubDispatcher) common.SensorComponent {
 	return &handlerImpl{
+		streamCtx:  context.Background(),
 		response:   make(chan *message.ExpiringMessage),
 		disabled:   concurrency.NewSignal(),
 		stopSignal: concurrency.NewSignal(),
@@ -71,7 +75,7 @@ func (m *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetComplianceRequest() != nil
 }
 
-func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
+func (m *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {
 		return nil
@@ -79,6 +83,7 @@ func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSens
 
 	operationName := fmt.Sprintf("%T", req.GetRequest())
 	var err error
+	ctx := m.getCurrentContext()
 
 	switch r := req.GetRequest().(type) {
 	case *central.ComplianceRequest_EnableCompliance:
@@ -106,6 +111,21 @@ func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSens
 
 func (m *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.response
+}
+
+func (m *handlerImpl) SetContext(ctx context.Context) {
+	m.ctxLock.Lock()
+	defer m.ctxLock.Unlock()
+	m.streamCtx = ctx
+}
+
+func (m *handlerImpl) getCurrentContext() context.Context {
+	m.ctxLock.Lock()
+	defer m.ctxLock.Unlock()
+	if m.streamCtx == nil {
+		return context.Background()
+	}
+	return m.streamCtx
 }
 
 func (m *handlerImpl) onResult(ev pubsub.Event) error {
