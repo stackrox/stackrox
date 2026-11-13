@@ -204,10 +204,6 @@ jobs:
         # hit must still migrate content into the blob store, or the
         # fallback becomes a permanent dependency instead of a fallback.
         if: steps.cache-ui.outputs.blob-hit != 'true'
-        env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
@@ -220,14 +216,8 @@ jobs:
             TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
           fi
           tar -cf /tmp/ui-deps.tar "${TAR_ARGS[@]}"
-          # One-shot content blobs go to ALL replicas: regional selection
-          # with replication lag makes single-account stores miss for
-          # consumers in other regions (observed: producer stored to its
-          # region, every consumer elsewhere missed).
-          for ACCT in cigocache cigocacheeast cigochachecentral; do
-            AZURE_STORAGE_ACCOUNT=$ACCT "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$KEY" /tmp/ui-deps.tar || true
-          done
-          echo "ui deps: stored to all replicas (${KEY}, $(du -h /tmp/ui-deps.tar | cut -f1))"
+          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "$KEY" /tmp/ui-deps.tar
+          echo "ui deps: stored (${KEY}, $(du -h /tmp/ui-deps.tar | cut -f1))"
 
       - name: Skip UI deps on cache hit
         if: steps.cache-ui.outputs.cache-hit == 'true'
@@ -247,17 +237,11 @@ jobs:
         run: make -C ui build
 
       - name: Store built UI in blob store
-        env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           tar -cf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE" ui/build
-          for ACCT in cigocache cigocacheeast cigochachecentral; do
-            AZURE_STORAGE_ACCOUNT=$ACCT "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$UI_BUILD_BLOB_KEY" /tmp/ui-build.tar || true
-          done
-          echo "ui build: stored to all replicas (${UI_BUILD_BLOB_KEY}, $(du -h /tmp/ui-build.tar | cut -f1))"
+          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "$UI_BUILD_BLOB_KEY" /tmp/ui-build.tar
+          echo "ui build: stored (${UI_BUILD_BLOB_KEY}, $(du -h /tmp/ui-build.tar | cut -f1))"
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -339,10 +323,6 @@ jobs:
             || github.ref_name == 'master'
             || github.event_name == 'workflow_call'
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
-        env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           # Store roxctl for link-output caching (stub bypass on next run)
@@ -408,18 +388,11 @@ jobs:
           VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
           GCS="${GOCACHEPROG}"
           VENDOR_RESTORED=0
-          # Cross-account fallback: one-shot content blobs are only as
-          # available as the replica that holds them (observed: a
-          # northcentralus runner fetched a vendor blob central alone had,
-          # which was incomplete — see the post-build store guard below).
-          for ACCT in cigocache cigocacheeast cigochachecentral; do
-            if AZURE_STORAGE_ACCOUNT=$ACCT "$GCS" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
-              tar -xf /tmp/vendor.tar.gz
-              VENDOR_RESTORED=1
-              echo "vendor: restored from blob store (${VENDOR_KEY}, via ${ACCT})"
-              break
-            fi
-          done
+          if "$GCS" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz && [ -s /tmp/vendor.tar.gz ]; then
+            tar -xf /tmp/vendor.tar.gz
+            VENDOR_RESTORED=1
+            echo "vendor: restored from blob store (${VENDOR_KEY})"
+          fi
           if [ "$VENDOR_RESTORED" != "1" ]; then
             echo "vendor: generating (cache miss for ${VENDOR_KEY})"
             echo "--- fetch error (if any) ---"; cat /tmp/vendor-fetch.err 2>/dev/null | head -5 || true
@@ -507,23 +480,13 @@ jobs:
         # fetch of that key missed packages). Reaching this step at all
         # means this exact tree compiled the whole repo successfully.
         if: env.VENDOR_RESTORED == '0'
-        env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           tar -czf /tmp/vendor.tar.gz vendor/
-          for ACCT in cigocache cigocacheeast cigochachecentral; do
-            AZURE_STORAGE_ACCOUNT=$ACCT "${GOCACHEPROG}" -store "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1 || true
-          done
-          echo "vendor: stored post-build to all replicas (${VENDOR_KEY}, $(du -h /tmp/vendor.tar.gz | cut -f1))"
+          "${GOCACHEPROG}" -store-all "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1
+          echo "vendor: stored post-build (${VENDOR_KEY}, $(du -h /tmp/vendor.tar.gz | cut -f1))"
 
       - name: Store binaries in blob store (replaces artifact upload)
-        env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           # Determinism tracking: per-binary hashes in the log for
@@ -539,10 +502,8 @@ jobs:
           # Store all binaries for the container build (blob store reference)
           BLOB_KEY="go-binaries-${{ matrix.arch }}-${{ matrix.name }}"
           tar -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
-          for ACCT in cigocache cigocacheeast cigochachecentral; do
-            AZURE_STORAGE_ACCOUNT=$ACCT "${GOCACHEPROG}" -store "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1 || true
-          done
-          echo "stored $BLOB_KEY to all replicas ($(stat -c%s /tmp/go-binaries.tar) bytes)"
+          "${GOCACHEPROG}" -store-all "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1
+          echo "stored $BLOB_KEY ($(stat -c%s /tmp/go-binaries.tar) bytes)"
           # Also upload as artifact for backward compatibility during transition
           cp /tmp/go-binaries.tar go-binaries-build.tar
 
@@ -874,10 +835,6 @@ jobs:
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
 
       - name: Set up cloud GOCACHE (for blob store binary fetch)
-        env:
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
@@ -901,21 +858,11 @@ jobs:
           UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
           KEY="ui-build-${ROX_PRODUCT_BRANDING}-${UI_HASH}"
           GCS="${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve"
-          if "$GCS" -fetch "$KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
+          if "$GCS" -fetch-any "$KEY" /tmp/ui-build.tar && [ -s /tmp/ui-build.tar ]; then
             tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
             echo "ui build: fetched from blob store (${KEY}, ~2s)"
           else
-            # Log the key we looked for (miss diagnosis) and try the other
-            # replicas before falling back to the artifact download.
-            echo "ui build: blob miss on selected account for ${KEY}; trying all replicas"
-            for ACCT in cigocache cigocacheeast cigochachecentral; do
-              if AZURE_STORAGE_ACCOUNT=$ACCT "$GCS" -fetch "$KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
-                tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
-                echo "ui build: fetched from ${ACCT} (${KEY})"
-                break
-              fi
-            done
-            [ -s /tmp/ui-build.tar ] || echo "ui build: all replicas missed — using artifact download"
+            echo "ui build: all replicas missed for ${KEY} — using artifact download"
           fi
 
       - uses: ./.github/actions/download-artifact-with-retry

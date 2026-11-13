@@ -307,6 +307,30 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Println(manifestHash(entries))
+		case "-store-all":
+			// Store a one-shot content blob to ALL replicas: regional
+			// selection with replication lag makes single-account stores
+			// miss for consumers in other regions. ~3x write cost, trivial
+			// at blob pricing — the reliability is worth it.
+			if len(os.Args) < 4 {
+				fmt.Fprintln(os.Stderr, "usage: -store-all KEY FILE")
+				os.Exit(2)
+			}
+			if err := storeAll(os.Args[2], os.Args[3]); err != nil {
+				fmt.Fprintf(os.Stderr, "store-all: %v\n", err)
+				os.Exit(1)
+			}
+		case "-fetch-any":
+			// Fetch a one-shot content blob, trying the selected account
+			// first, then all replicas. Returns the first hit.
+			if len(os.Args) < 4 {
+				fmt.Fprintln(os.Stderr, "usage: -fetch-any KEY FILE")
+				os.Exit(2)
+			}
+			if err := fetchAny(os.Args[2], os.Args[3]); err != nil {
+				fmt.Fprintf(os.Stderr, "fetch-any: %v\n", err)
+				os.Exit(1)
+			}
 		case "-doctor":
 			// Compare local build environment against the CI-recorded
 			// fingerprint; exit 1 on mismatch (scriptable for onboarding).
