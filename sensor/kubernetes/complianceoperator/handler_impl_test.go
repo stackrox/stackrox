@@ -72,6 +72,7 @@ func (s *HandlerTestSuite) SetupTest() {
 	manager.writer.retrier.maxRetries = 2
 
 	s.requestHandler = NewRequestHandler(manager, s.dispatcher)
+	s.requestHandler.(common.StreamContextAwareComponent).SetContext(context.Background())
 	s.Require().NoError(s.requestHandler.Start())
 }
 
