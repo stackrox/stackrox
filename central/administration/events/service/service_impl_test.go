@@ -7,12 +7,14 @@ import (
 
 	"github.com/pkg/errors"
 	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
+	eventViewMocks "github.com/stackrox/rox/central/views/administrationevents/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -49,6 +51,7 @@ type baseTestSuite struct {
 
 	ctx           context.Context
 	datastoreMock *dsMocks.MockDataStore
+	viewMock      *eventViewMocks.MockEventView
 	service       Service
 }
 
@@ -56,7 +59,8 @@ func (s *baseTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = context.Background()
 	s.datastoreMock = dsMocks.NewMockDataStore(s.mockCtrl)
-	s.service = newService(s.datastoreMock)
+	s.viewMock = eventViewMocks.NewMockEventView(s.mockCtrl)
+	s.service = newService(s.datastoreMock, s.viewMock)
 }
 
 // Test CountAdministrationEvents
@@ -76,7 +80,7 @@ func (s *countEventsTestSuite) SetupTest() {
 }
 
 func (s *countEventsTestSuite) TestCountAdministrationEvents_Success() {
-	s.datastoreMock.EXPECT().CountEvents(s.ctx, gomock.Any()).Return(1, nil)
+	s.viewMock.EXPECT().Count(s.ctx, gomock.Any()).Return(1, nil)
 	result, err := s.service.CountAdministrationEvents(s.ctx, s.fakeCountEventsRequest)
 
 	s.Require().NoError(err)
@@ -84,7 +88,7 @@ func (s *countEventsTestSuite) TestCountAdministrationEvents_Success() {
 }
 
 func (s *countEventsTestSuite) TestCountAdministrationEvents_Error() {
-	s.datastoreMock.EXPECT().CountEvents(s.ctx, gomock.Any()).Return(0, errFake)
+	s.viewMock.EXPECT().Count(s.ctx, gomock.Any()).Return(0, errFake)
 	result, err := s.service.CountAdministrationEvents(s.ctx, s.fakeCountEventsRequest)
 
 	s.ErrorIs(err, errFake)
@@ -154,7 +158,7 @@ func (s *listEventsTestSuite) SetupTest() {
 }
 
 func (s *listEventsTestSuite) TestListAdministrationEvents_Success() {
-	s.datastoreMock.EXPECT().ListEvents(s.ctx, gomock.Any()).Return(s.fakeStorageEventsList, nil)
+	s.viewMock.EXPECT().Get(s.ctx, gomock.Any()).Return(s.fakeStorageEventsList, nil)
 	result, err := s.service.ListAdministrationEvents(s.ctx, s.fakeListEventsRequest)
 
 	s.Require().NoError(err)
@@ -162,7 +166,7 @@ func (s *listEventsTestSuite) TestListAdministrationEvents_Success() {
 }
 
 func (s *listEventsTestSuite) TestListAdministrationEvents_Error() {
-	s.datastoreMock.EXPECT().ListEvents(s.ctx, gomock.Any()).Return(nil, errFake)
+	s.viewMock.EXPECT().Get(s.ctx, gomock.Any()).Return(nil, errFake)
 	result, err := s.service.ListAdministrationEvents(s.ctx, s.fakeListEventsRequest)
 
 	s.ErrorIs(err, errFake)
@@ -180,23 +184,101 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 		Type:         []v1.AdministrationEventType{v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC},
 		Level:        []v1.AdministrationEventLevel{v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR},
 	}
-	queryBuilder := getQueryBuilderFromFilter(filter)
-
-	rawQuery, err := queryBuilder.RawQuery()
+	query, err := getQueryFromFilter(filter)
 	require.NoError(t, err)
 
-	assert.Contains(t, rawQuery, "Created Time:tr/1000000-10000000")
-	assert.Contains(t, rawQuery, `Event Domain:"domain"`)
-	assert.Contains(t, rawQuery, `Event Level:"ADMINISTRATION_EVENT_LEVEL_ERROR"`)
-	assert.Contains(t, rawQuery, `Event Type:"ADMINISTRATION_EVENT_TYPE_GENERIC"`)
-	assert.Contains(t, rawQuery, `Resource Type:"resourceType"`)
+	queryStr := query.String()
+	assert.Contains(t, queryStr, `Resource Type`)
+	assert.Contains(t, queryStr, `Event Domain`)
+	assert.Contains(t, queryStr, `Event Level`)
+	assert.Contains(t, queryStr, `Event Type`)
+	assert.Contains(t, queryStr, `Created Time`)
+}
+
+func TestWorkloadFilterSkippedForNonImageResourceType(t *testing.T) {
+	filter := &v1.AdministrationEventsFilter{
+		ResourceType:  []string{"Node"},
+		WorkloadQuery: `Cluster:"prod"`,
+	}
+	query, err := getQueryFromFilter(filter)
+	require.NoError(t, err)
+
+	queryStr := query.String()
+	assert.Contains(t, queryStr, "Node")
+	assert.NotContains(t, queryStr, "Resource ID")
 }
 
 func TestAdministrationEventsQueryBuilderNilFilter(t *testing.T) {
-	queryBuilder := getQueryBuilderFromFilter(nil)
-
-	rawQuery, err := queryBuilder.RawQuery()
+	query, err := getQueryFromFilter(nil)
 	require.NoError(t, err)
+	assert.NotNil(t, query)
+}
 
-	assert.Empty(t, rawQuery)
+func TestWorkloadQuery(t *testing.T) {
+	for name, tc := range map[string]struct {
+		resourceTypes []string
+		workloadQuery string
+		applies       bool
+	}{
+		"all types":         {workloadQuery: `Cluster:"prod"`, applies: true},
+		"image only":        {resourceTypes: []string{"Image"}, workloadQuery: `Cluster:"prod"`, applies: true},
+		"mixed types":       {resourceTypes: []string{"Image", "Node"}, workloadQuery: `Cluster:"prod"`, applies: true},
+		"other types":       {resourceTypes: []string{"Node"}, workloadQuery: `Cluster:"prod"`},
+		"no workload query": {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			query, err := getQueryFromFilter(&v1.AdministrationEventsFilter{ResourceType: tc.resourceTypes, WorkloadQuery: tc.workloadQuery})
+			require.NoError(t, err)
+			var workload *v1.MatchFieldSubQuery
+			search.ApplyFnToAllBaseQueries(query, func(base *v1.BaseQuery) {
+				if sub := base.GetMatchFieldSubQuery(); sub != nil {
+					workload = sub
+				}
+			})
+			if tc.applies {
+				expected, err := search.ParseQuery(tc.workloadQuery)
+				require.NoError(t, err)
+				expected.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.ImageID).Proto()}
+				require.NotNil(t, workload)
+				assert.Equal(t, search.ResourceID.String(), workload.GetField())
+				assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, workload.GetCategory())
+				protoassert.Equal(t, expected, workload.GetQuery())
+			} else {
+				assert.Nil(t, workload)
+			}
+		})
+	}
+}
+
+func TestWorkloadQueryErrors(t *testing.T) {
+	for name, rawQuery := range map[string]string{
+		"invalid query": "INVALIDQUERY",
+		"view error":    "Cluster:prod",
+	} {
+		for _, rpc := range []string{"count", "list"} {
+			t.Run(name+"/"+rpc, func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				ds := dsMocks.NewMockDataStore(ctrl)
+				view := eventViewMocks.NewMockEventView(ctrl)
+				expectedError := error(errox.InvalidArgs)
+				if name == "view error" {
+					if rpc == "count" {
+						view.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, errFake)
+					} else {
+						view.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, errFake)
+					}
+					expectedError = errFake
+				}
+				svc := newService(ds, view)
+				filter := &v1.AdministrationEventsFilter{WorkloadQuery: rawQuery}
+				var err error
+				if rpc == "count" {
+					_, err = svc.CountAdministrationEvents(context.Background(), &v1.CountAdministrationEventsRequest{Filter: filter})
+				} else {
+					_, err = svc.ListAdministrationEvents(context.Background(), &v1.ListAdministrationEventsRequest{Filter: filter})
+				}
+				assert.ErrorIs(t, err, expectedError)
+			})
+		}
+	}
 }

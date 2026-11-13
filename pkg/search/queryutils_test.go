@@ -74,6 +74,23 @@ func TestFilterQuery(t *testing.T) {
 	protoassert.Equal(t, q, newQuery)
 }
 
+func TestSubQueryFieldScope(t *testing.T) {
+	optionsMap := Walk(v1.SearchCategory_ADMINISTRATION_EVENTS, "event", &storage.AdministrationEvent{})
+	inner := NewQueryBuilder().AddExactMatches(DeploymentName, "app").AddSelectFields(NewQuerySelect(ImageID)).ProtoQuery()
+	query := MatchFieldSubQuery(ResourceID, v1.SearchCategory_DEPLOYMENTS, inner)
+	var baseQueries []*v1.BaseQuery
+	ApplyFnToAllBaseQueries(query, func(base *v1.BaseQuery) {
+		baseQueries = append(baseQueries, base)
+	})
+	assert.Len(t, baseQueries, 1, "the subquery body belongs to another search scope")
+	filtered, changed := FilterQueryWithMap(query, optionsMap)
+	assert.False(t, changed)
+	protoassert.Equal(t, query, filtered)
+	inverse, changed := InverseFilterQueryWithMap(query, optionsMap)
+	assert.False(t, changed)
+	assert.Nil(t, inverse)
+}
+
 func TestInverseFilterQuery(t *testing.T) {
 	optionsMap := Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{})
 

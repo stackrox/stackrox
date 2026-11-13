@@ -10,6 +10,7 @@ import (
 )
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.
+// Subquery bodies are separate search scopes and are not traversed.
 func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 	if q.GetQuery() == nil {
 		return
@@ -42,9 +43,9 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, bool) {
 	var areFieldsFiltered bool
 	filtered, _ := FilterQuery(q, func(bq *v1.BaseQuery) bool {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		field, ok := matchFieldName(bq)
 		if ok {
-			if _, isValid := optionsMap.Get(matchFieldQuery.MatchFieldQuery.GetField()); isValid {
+			if _, isValid := optionsMap.Get(field); isValid {
 				return true
 			}
 		}
@@ -58,9 +59,9 @@ func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, bool) {
 func InverseFilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, bool) {
 	var areFieldsFiltered bool
 	filtered, _ := FilterQuery(q, func(bq *v1.BaseQuery) bool {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		field, ok := matchFieldName(bq)
 		if ok {
-			if _, isValid := optionsMap.Get(matchFieldQuery.MatchFieldQuery.GetField()); !isValid {
+			if _, isValid := optionsMap.Get(field); !isValid {
 				areFieldsFiltered = true
 				return true
 			}
@@ -68,6 +69,17 @@ func InverseFilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, b
 		return false
 	})
 	return filtered, areFieldsFiltered
+}
+
+func matchFieldName(bq *v1.BaseQuery) (string, bool) {
+	switch sub := bq.GetQuery().(type) {
+	case *v1.BaseQuery_MatchFieldQuery:
+		return sub.MatchFieldQuery.GetField(), true
+	case *v1.BaseQuery_MatchFieldSubQuery:
+		return sub.MatchFieldSubQuery.GetField(), true
+	default:
+		return "", false
+	}
 }
 
 // AddAsConjunction adds the input toAdd query to the input addTo query at the top level, either by appending it to the

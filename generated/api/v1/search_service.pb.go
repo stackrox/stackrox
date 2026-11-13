@@ -1235,6 +1235,7 @@ type BaseQuery struct {
 	//	*BaseQuery_MatchLinkedFieldsQuery
 	//	*BaseQuery_DocIdQuery
 	//	*BaseQuery_MatchNoneQuery
+	//	*BaseQuery_MatchFieldSubQuery
 	Query         isBaseQuery_Query `protobuf_oneof:"query"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1313,6 +1314,15 @@ func (x *BaseQuery) GetMatchNoneQuery() *MatchNoneQuery {
 	return nil
 }
 
+func (x *BaseQuery) GetMatchFieldSubQuery() *MatchFieldSubQuery {
+	if x != nil {
+		if x, ok := x.Query.(*BaseQuery_MatchFieldSubQuery); ok {
+			return x.MatchFieldSubQuery
+		}
+	}
+	return nil
+}
+
 type isBaseQuery_Query interface {
 	isBaseQuery_Query()
 }
@@ -1333,6 +1343,10 @@ type BaseQuery_MatchNoneQuery struct {
 	MatchNoneQuery *MatchNoneQuery `protobuf:"bytes,5,opt,name=match_none_query,json=matchNoneQuery,proto3,oneof"`
 }
 
+type BaseQuery_MatchFieldSubQuery struct {
+	MatchFieldSubQuery *MatchFieldSubQuery `protobuf:"bytes,6,opt,name=match_field_sub_query,json=matchFieldSubQuery,proto3,oneof"`
+}
+
 func (*BaseQuery_MatchFieldQuery) isBaseQuery_Query() {}
 
 func (*BaseQuery_MatchLinkedFieldsQuery) isBaseQuery_Query() {}
@@ -1340,6 +1354,8 @@ func (*BaseQuery_MatchLinkedFieldsQuery) isBaseQuery_Query() {}
 func (*BaseQuery_DocIdQuery) isBaseQuery_Query() {}
 
 func (*BaseQuery_MatchNoneQuery) isBaseQuery_Query() {}
+
+func (*BaseQuery_MatchFieldSubQuery) isBaseQuery_Query() {}
 
 type ConjunctionQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1739,6 +1755,69 @@ func (x *AutocompleteResponse) GetValues() []string {
 	return nil
 }
 
+// MatchFieldSubQuery matches a field against the single selected column of a
+// query in another search category. The SQL search backend applies that
+// category's scope and access filters independently of the outer query.
+type MatchFieldSubQuery struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	Category      SearchCategory         `protobuf:"varint,2,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
+	Query         *Query                 `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MatchFieldSubQuery) Reset() {
+	*x = MatchFieldSubQuery{}
+	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchFieldSubQuery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchFieldSubQuery) ProtoMessage() {}
+
+func (x *MatchFieldSubQuery) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchFieldSubQuery.ProtoReflect.Descriptor instead.
+func (*MatchFieldSubQuery) Descriptor() ([]byte, []int) {
+	return file_api_v1_search_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *MatchFieldSubQuery) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+func (x *MatchFieldSubQuery) GetCategory() SearchCategory {
+	if x != nil {
+		return x.Category
+	}
+	return SearchCategory_SEARCH_UNSET
+}
+
+func (x *MatchFieldSubQuery) GetQuery() *Query {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
 type SearchResult_Matches struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
@@ -1748,7 +1827,7 @@ type SearchResult_Matches struct {
 
 func (x *SearchResult_Matches) Reset() {
 	*x = SearchResult_Matches{}
-	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	mi := &file_api_v1_search_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1760,7 +1839,7 @@ func (x *SearchResult_Matches) String() string {
 func (*SearchResult_Matches) ProtoMessage() {}
 
 func (x *SearchResult_Matches) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	mi := &file_api_v1_search_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1793,7 +1872,7 @@ type SearchResponse_Count struct {
 
 func (x *SearchResponse_Count) Reset() {
 	*x = SearchResponse_Count{}
-	mi := &file_api_v1_search_service_proto_msgTypes[25]
+	mi := &file_api_v1_search_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1805,7 +1884,7 @@ func (x *SearchResponse_Count) String() string {
 func (*SearchResponse_Count) ProtoMessage() {}
 
 func (x *SearchResponse_Count) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_search_service_proto_msgTypes[25]
+	mi := &file_api_v1_search_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1898,13 +1977,14 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x03(\v2\x13.v1.MatchFieldQueryR\x05query\"\x1e\n" +
 	"\n" +
 	"DocIDQuery\x12\x10\n" +
-	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xa4\x02\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xf1\x02\n" +
 	"\tBaseQuery\x12A\n" +
 	"\x11match_field_query\x18\x02 \x01(\v2\x13.v1.MatchFieldQueryH\x00R\x0fmatchFieldQuery\x12W\n" +
 	"\x19match_linked_fields_query\x18\x03 \x01(\v2\x1a.v1.MatchLinkedFieldsQueryH\x00R\x16matchLinkedFieldsQuery\x122\n" +
 	"\fdoc_id_query\x18\x04 \x01(\v2\x0e.v1.DocIDQueryH\x00R\n" +
 	"docIdQuery\x12>\n" +
-	"\x10match_none_query\x18\x05 \x01(\v2\x12.v1.MatchNoneQueryH\x00R\x0ematchNoneQueryB\a\n" +
+	"\x10match_none_query\x18\x05 \x01(\v2\x12.v1.MatchNoneQueryH\x00R\x0ematchNoneQuery\x12K\n" +
+	"\x15match_field_sub_query\x18\x06 \x01(\v2\x16.v1.MatchFieldSubQueryH\x00R\x12matchFieldSubQueryB\a\n" +
 	"\x05query\"7\n" +
 	"\x10ConjunctionQuery\x12#\n" +
 	"\aqueries\x18\x01 \x03(\v2\t.v1.QueryR\aqueries\"7\n" +
@@ -1936,7 +2016,11 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\xc6\x0e\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"{\n" +
+	"\x12MatchFieldSubQuery\x12\x14\n" +
+	"\x05field\x18\x01 \x01(\tR\x05field\x12.\n" +
+	"\bcategory\x18\x02 \x01(\x0e2\x12.v1.SearchCategoryR\bcategory\x12\x1f\n" +
+	"\x05query\x18\x03 \x01(\v2\t.v1.QueryR\x05query*\xc6\x0e\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -2052,7 +2136,7 @@ func file_api_v1_search_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_search_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_v1_search_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_api_v1_search_service_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_api_v1_search_service_proto_goTypes = []any{
 	(SearchCategory)(0),            // 0: v1.SearchCategory
 	(SearchDataType)(0),            // 1: v1.SearchDataType
@@ -2079,16 +2163,17 @@ var file_api_v1_search_service_proto_goTypes = []any{
 	(*SearchOptionsRequest)(nil),   // 22: v1.SearchOptionsRequest
 	(*SearchOptionsResponse)(nil),  // 23: v1.SearchOptionsResponse
 	(*AutocompleteResponse)(nil),   // 24: v1.AutocompleteResponse
-	(*SearchResult_Matches)(nil),   // 25: v1.SearchResult.Matches
-	nil,                            // 26: v1.SearchResult.FieldToMatchesEntry
-	(*SearchResponse_Count)(nil),   // 27: v1.SearchResponse.Count
-	(*Pagination)(nil),             // 28: v1.Pagination
-	(*AggregateBy)(nil),            // 29: v1.AggregateBy
+	(*MatchFieldSubQuery)(nil),     // 25: v1.MatchFieldSubQuery
+	(*SearchResult_Matches)(nil),   // 26: v1.SearchResult.Matches
+	nil,                            // 27: v1.SearchResult.FieldToMatchesEntry
+	(*SearchResponse_Count)(nil),   // 28: v1.SearchResponse.Count
+	(*Pagination)(nil),             // 29: v1.Pagination
+	(*AggregateBy)(nil),            // 30: v1.AggregateBy
 }
 var file_api_v1_search_service_proto_depIdxs = []int32{
-	28, // 0: v1.RawQuery.pagination:type_name -> v1.Pagination
+	29, // 0: v1.RawQuery.pagination:type_name -> v1.Pagination
 	0,  // 1: v1.RawSearchRequest.categories:type_name -> v1.SearchCategory
-	29, // 2: v1.QuerySortOption.aggregate_by:type_name -> v1.AggregateBy
+	30, // 2: v1.QuerySortOption.aggregate_by:type_name -> v1.AggregateBy
 	11, // 3: v1.QuerySelectFilter.query:type_name -> v1.Query
 	5,  // 4: v1.QuerySelect.field:type_name -> v1.QueryField
 	6,  // 5: v1.QuerySelect.filter:type_name -> v1.QuerySelectFilter
@@ -2107,26 +2192,29 @@ var file_api_v1_search_service_proto_depIdxs = []int32{
 	14, // 18: v1.BaseQuery.match_linked_fields_query:type_name -> v1.MatchLinkedFieldsQuery
 	15, // 19: v1.BaseQuery.doc_id_query:type_name -> v1.DocIDQuery
 	19, // 20: v1.BaseQuery.match_none_query:type_name -> v1.MatchNoneQuery
-	11, // 21: v1.ConjunctionQuery.queries:type_name -> v1.Query
-	11, // 22: v1.DisjunctionQuery.queries:type_name -> v1.Query
-	0,  // 23: v1.SearchResult.category:type_name -> v1.SearchCategory
-	26, // 24: v1.SearchResult.field_to_matches:type_name -> v1.SearchResult.FieldToMatchesEntry
-	20, // 25: v1.SearchResponse.results:type_name -> v1.SearchResult
-	27, // 26: v1.SearchResponse.counts:type_name -> v1.SearchResponse.Count
-	0,  // 27: v1.SearchOptionsRequest.categories:type_name -> v1.SearchCategory
-	25, // 28: v1.SearchResult.FieldToMatchesEntry.value:type_name -> v1.SearchResult.Matches
-	0,  // 29: v1.SearchResponse.Count.category:type_name -> v1.SearchCategory
-	3,  // 30: v1.SearchService.Search:input_type -> v1.RawSearchRequest
-	22, // 31: v1.SearchService.Options:input_type -> v1.SearchOptionsRequest
-	3,  // 32: v1.SearchService.Autocomplete:input_type -> v1.RawSearchRequest
-	21, // 33: v1.SearchService.Search:output_type -> v1.SearchResponse
-	23, // 34: v1.SearchService.Options:output_type -> v1.SearchOptionsResponse
-	24, // 35: v1.SearchService.Autocomplete:output_type -> v1.AutocompleteResponse
-	33, // [33:36] is the sub-list for method output_type
-	30, // [30:33] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	25, // 21: v1.BaseQuery.match_field_sub_query:type_name -> v1.MatchFieldSubQuery
+	11, // 22: v1.ConjunctionQuery.queries:type_name -> v1.Query
+	11, // 23: v1.DisjunctionQuery.queries:type_name -> v1.Query
+	0,  // 24: v1.SearchResult.category:type_name -> v1.SearchCategory
+	27, // 25: v1.SearchResult.field_to_matches:type_name -> v1.SearchResult.FieldToMatchesEntry
+	20, // 26: v1.SearchResponse.results:type_name -> v1.SearchResult
+	28, // 27: v1.SearchResponse.counts:type_name -> v1.SearchResponse.Count
+	0,  // 28: v1.SearchOptionsRequest.categories:type_name -> v1.SearchCategory
+	0,  // 29: v1.MatchFieldSubQuery.category:type_name -> v1.SearchCategory
+	11, // 30: v1.MatchFieldSubQuery.query:type_name -> v1.Query
+	26, // 31: v1.SearchResult.FieldToMatchesEntry.value:type_name -> v1.SearchResult.Matches
+	0,  // 32: v1.SearchResponse.Count.category:type_name -> v1.SearchCategory
+	3,  // 33: v1.SearchService.Search:input_type -> v1.RawSearchRequest
+	22, // 34: v1.SearchService.Options:input_type -> v1.SearchOptionsRequest
+	3,  // 35: v1.SearchService.Autocomplete:input_type -> v1.RawSearchRequest
+	21, // 36: v1.SearchService.Search:output_type -> v1.SearchResponse
+	23, // 37: v1.SearchService.Options:output_type -> v1.SearchOptionsResponse
+	24, // 38: v1.SearchService.Autocomplete:output_type -> v1.AutocompleteResponse
+	36, // [36:39] is the sub-list for method output_type
+	33, // [33:36] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_search_service_proto_init() }
@@ -2149,6 +2237,7 @@ func file_api_v1_search_service_proto_init() {
 		(*BaseQuery_MatchLinkedFieldsQuery)(nil),
 		(*BaseQuery_DocIdQuery)(nil),
 		(*BaseQuery_MatchNoneQuery)(nil),
+		(*BaseQuery_MatchFieldSubQuery)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2156,7 +2245,7 @@ func file_api_v1_search_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_search_service_proto_rawDesc), len(file_api_v1_search_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
