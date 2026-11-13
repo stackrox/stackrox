@@ -4,12 +4,12 @@ central:
   spec:
     central:
       db:
-        # Reserve headroom above the 128 MiB shared buffers configured below.
+        # Allow headroom for concurrent queries and maintenance beyond shared buffers.
         resources:
           requests:
-            memory: 512Mi
+            memory: 1Gi
           limits:
-            memory: 512Mi
+            memory: 1Gi
     overlays:
       - apiVersion: apps/v1
         kind: Deployment
@@ -24,6 +24,12 @@ central:
               - config_file=/etc/stackrox.d/config/postgresql.conf
               - -c
               - shared_buffers=128MB
+              - -c
+              - work_mem=4MB
+              - -c
+              - maintenance_work_mem=64MB
+              - -c
+              - autovacuum_work_mem=64MB
     centralWorker:
       # Tiny does not override the worker's 500m CPU / 1 GiB request.
       resources:
