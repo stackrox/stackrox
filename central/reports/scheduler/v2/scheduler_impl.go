@@ -45,11 +45,6 @@ type queueGeneratorBinding struct {
 	generator reportGen.ReportGenerator
 }
 
-type reportSemaphore interface {
-	Acquire(context.Context, int64) error
-	Release(int64)
-}
-
 type scheduler struct {
 	// Used to map reportConfigs to their cron jobs. This is only used for scheduled reports, On-demand reports are directly added to reportsQueue
 	reportConfigToEntryIDs map[string]cron.EntryID
@@ -90,7 +85,7 @@ type scheduler struct {
 	//      If you need to lock another mutex, you must free the locked one first.
 
 	cron                *cron.Cron
-	concurrencySema     reportSemaphore
+	concurrencySema     *semaphore.Weighted
 	advisoryLockRelease func()
 }
 
@@ -209,6 +204,7 @@ func (s *scheduler) runReports() {
 			return
 		case <-s.readyForReports.Done():
 			if err := s.concurrencySema.Acquire(s.stopCtx, 1); err != nil {
+				// Shutdown cancelled the context; retrying cannot acquire capacity.
 				return
 			}
 			select {
