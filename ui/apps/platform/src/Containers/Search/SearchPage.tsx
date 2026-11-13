@@ -30,7 +30,7 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { searchPath } from 'routePaths';
 
 import SearchNavAndTable from './SearchNavAndTable';
-import { searchFilterConfig } from './searchFilterConfig';
+import { getUnconfiguredChipAttributes, searchFilterConfig } from './searchFilterConfig';
 import {
     parseQueryString,
     parseSearchFilter,
@@ -212,7 +212,10 @@ function SearchPage(): ReactElement {
                             />
                             <ToolbarGroup className="pf-v6-u-w-100">
                                 <CompoundSearchFilterLabels
-                                    attributesSeparateFromConfig={[]}
+                                    attributesSeparateFromConfig={getUnconfiguredChipAttributes(
+                                        searchFilter,
+                                        config
+                                    )}
                                     config={config}
                                     onFilterChange={handleChangeSearchFilter}
                                     searchFilter={searchFilter}

@@ -17,7 +17,14 @@ describe('parseQueryString', () => {
         expect(searchFilter).toEqual({ Deployment: 'nginx' });
     });
 
-    it('drops a key that is neither a search option nor a config term', () => {
+    it('keeps an unresolved non-config term while search options are unavailable', () => {
+        // During loading, or after the options request fails, search options are empty; preserve
+        // bookmarked terms outside the curated config so they are applied, not silently dropped.
+        const { searchFilter } = parseQueryString('?s[CVE]=cve-1', []);
+        expect(searchFilter).toEqual({ CVE: 'cve-1' });
+    });
+
+    it('drops an unrecognized key once search options have loaded', () => {
         const { searchFilter } = parseQueryString('?s[Bogus]=x', ['CVE']);
         expect(searchFilter).toEqual({});
     });
