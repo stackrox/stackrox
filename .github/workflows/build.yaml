@@ -406,12 +406,21 @@ jobs:
         run: |
           set -euo pipefail
           VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
-          if "${GOCACHEPROG}" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/tmp/vendor-fetch.err && [ -s /tmp/vendor.tar.gz ]; then
-            # -xf (not -xzf): gocache-serve's maybeGunzip transparently
-            # decompresses gzipped blobs, so the file may be a plain tar.
-            tar -xf /tmp/vendor.tar.gz
-            echo "vendor: restored from blob store (${VENDOR_KEY})"
-          else
+          GCS="${GOCACHEPROG}"
+          VENDOR_RESTORED=0
+          # Cross-account fallback: one-shot content blobs are only as
+          # available as the replica that holds them (observed: a
+          # northcentralus runner fetched a vendor blob central alone had,
+          # which was incomplete — see the post-build store guard below).
+          for ACCT in cigocache cigocacheeast cigochachecentral; do
+            if AZURE_STORAGE_ACCOUNT=$ACCT "$GCS" -fetch "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
+              tar -xf /tmp/vendor.tar.gz
+              VENDOR_RESTORED=1
+              echo "vendor: restored from blob store (${VENDOR_KEY}, via ${ACCT})"
+              break
+            fi
+          done
+          if [ "$VENDOR_RESTORED" != "1" ]; then
             echo "vendor: generating (cache miss for ${VENDOR_KEY})"
             echo "--- fetch error (if any) ---"; cat /tmp/vendor-fetch.err 2>/dev/null | head -5 || true
             # Disable GOCACHEPROG for go mod vendor: it doesn't use the build
@@ -422,18 +431,17 @@ jobs:
             unset GOCACHEPROG
             go mod vendor 2>&1 | tail -3
             export GOCACHEPROG="$GCP"
-            if [ -d vendor ]; then
-              tar -czf /tmp/vendor.tar.gz vendor/
-              # All replicas: one-shot content blobs must be visible to
-              # consumers in any region without waiting for replication.
-              for ACCT in cigocache cigocacheeast cigochachecentral; do
-                AZURE_STORAGE_ACCOUNT=$ACCT "${GOCACHEPROG}" -store "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1 || true
-              done
-              echo "vendor: cached for future runs"
-            fi
+            # NOTE: no store here — the vendor tree is stored only AFTER
+            # the build succeeds (see the post-build step). Storing before
+            # the build poisoned a replica with an incomplete tree once
+            # (the generating run's build failed; every later fetch of
+            # that key missed packages). The key vouches for the go.sum
+            # input, never the content.
           fi
           export GOFLAGS="${GOFLAGS} -mod=vendor"
           echo "GOFLAGS=${GOFLAGS}" >> "$GITHUB_ENV"
+          echo "VENDOR_KEY=$VENDOR_KEY" >> "$GITHUB_ENV"
+          echo "VENDOR_RESTORED=$VENDOR_RESTORED" >> "$GITHUB_ENV"
 
       - name: Restore link-output cache (stub bypass)
         run: |
@@ -491,6 +499,25 @@ jobs:
 
       - name: Build Go Binaries
         run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
+
+      - name: Store vendor tree in blob store (post-build, proven good)
+        # Only after a successful build: an incomplete vendor tree must
+        # never enter the store (a pre-build store once poisoned a
+        # replica — the generating run's build failed, and every later
+        # fetch of that key missed packages). Reaching this step at all
+        # means this exact tree compiled the whole repo successfully.
+        if: env.VENDOR_RESTORED == '0'
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/vendor.tar.gz vendor/
+          for ACCT in cigocache cigocacheeast cigochachecentral; do
+            AZURE_STORAGE_ACCOUNT=$ACCT "${GOCACHEPROG}" -store "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1 || true
+          done
+          echo "vendor: stored post-build to all replicas (${VENDOR_KEY}, $(du -h /tmp/vendor.tar.gz | cut -f1))"
 
       - name: Store binaries in blob store (replaces artifact upload)
         env:
