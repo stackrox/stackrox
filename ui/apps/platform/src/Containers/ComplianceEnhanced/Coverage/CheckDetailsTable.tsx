@@ -30,13 +30,21 @@ import {
 } from './compliance.coverage.utils';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import {
     attributeForComplianceCheckStatus,
     clusterSearchFilterConfig,
-    scanStatusSearchFilterConfig,
+    profileCheckSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [clusterSearchFilterConfig, scanStatusSearchFilterConfig];
+const profileCheckSearchFilterConfigWithoutName = {
+    ...profileCheckSearchFilterConfig,
+    attributes: profileCheckSearchFilterConfig.attributes.filter(
+        // Check Name is redundant on this page, but scan status is still valid
+        ({ searchTerm }) => searchTerm !== CHECK_NAME_QUERY
+    ),
+};
+const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfigWithoutName];
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
