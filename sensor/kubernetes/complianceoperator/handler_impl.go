@@ -53,8 +53,9 @@ func (m *handlerImpl) Start() error {
 }
 
 func (m *handlerImpl) Stop() {
-	m.manager.Stop()
+	// stopSignal is called first to make sure sendResponse is unlocked
 	m.stopSignal.Signal()
+	m.manager.Stop()
 }
 
 func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
