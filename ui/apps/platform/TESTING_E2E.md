@@ -14,6 +14,19 @@ Both use the same Cypress framework, helpers, and assertion patterns. The main d
 - **Base URL**: defaults to `https://localhost:3000`
 - **Config**: `cypress.config.js`
 
+### Investigating stalled runs
+
+The Cypress wrapper preserves stderr, including browser errors. In CI it also
+logs Cypress process CPU and memory usage every minute. Set `DEBUG` and
+`CYPRESS_PROCESS_PROFILER_INTERVAL` to override those diagnostics.
+
+To isolate the Auth Providers suite against an existing deployment, run from
+`ui/apps/platform` with the usual authentication and `UI_BASE_URL` environment:
+
+```bash
+CI=true npm run cypress-spec -- accessControl/accessControlAuthProviders.test.js
+```
+
 ## Guiding Principles
 
 ### Behavior over implementation
