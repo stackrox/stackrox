@@ -89,7 +89,6 @@ class CollectionTest(unittest.TestCase):
                 if outcome == 'skipped':
                     self.assertIsNone(case.find('skipped').text)
 
-
     def test_names_only_verdict(self):
         cases = {
             'stable duplicates': ([reply('a', 'b'), reply('b', 'a')], 2, False),
@@ -142,14 +141,12 @@ class NodeMonitorTest(unittest.TestCase):
             report = ET.parse(Path(directory) / 'node-monitor.xml').getroot()
         return result, report, collect, launch, terminate
 
-
     def test_five_minute_cadence_and_final_sample(self):
         self.assertEqual(monitor.POLL_INTERVAL, 300)
         result, _, collect, _, _ = self.run_fake(
             [reply('a'), reply('a'), reply('b'), reply('b')], duration=601)
         self.assertEqual(collect.call_count, 4)  # Initial, 5m, 10m, final.
         self.assertTrue(result.monitor_failed)
-
 
     def test_startup_errors_are_advisory(self):
         cases = {'failed poll': ([reply(code=1), reply('a')], {'NUM_NODES': '1'}, 'exited 1'),
@@ -162,7 +159,6 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertIn(error, report.findtext('.//failure'))
                 self.assertEqual(result.exit_code, 0)
                 launch.assert_called_once()
-
 
     def test_timeout_and_cancellation(self):
         cases = {'product signal': (None, None, 143, '0', 2),
@@ -180,7 +176,6 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertEqual(collect.call_count, polls)
                 terminate.assert_called_once()
                 self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
-
 
     def test_missing_node_count_skips_all_monitoring(self):
         cases = {'unset success': ({}, 0), 'unset failure': ({}, 42),
@@ -211,7 +206,6 @@ class NodeMonitorTest(unittest.TestCase):
                 self.assertEqual(result.exit_code, 1)
                 report.assert_not_called()
                 log.assert_called_once_with('ERROR: Could not run test command: missing command', flush=True)
-
 
     def test_cleanup_survives_report_write_failure(self):
         previous = signal.getsignal(signal.SIGTERM)
@@ -329,7 +323,6 @@ class PollingTransportTest(unittest.TestCase):
         report = ET.parse(self.root / 'artifacts/node-monitor.xml').getroot()
         records = [path.read_text() for path in sorted((self.root / 'artifacts').glob('node-snapshot-*.json'))]
         return result, report, records
-
 
     def test_poll_subprocess_timeout_is_bounded(self):
         with patch.object(monitor, 'API_TIMEOUT', 0.5):
