@@ -210,7 +210,8 @@ func packageHasRepositoryKey(report *v4.VulnerabilityReport, pkgID, key string) 
 // packageSourceAndLocation identifies Red Hat Java SBOM packages using their
 // repository association before falling back to package DB prefix parsing.
 func packageSourceAndLocation(packageDB string, report *v4.VulnerabilityReport, pkgID string) (storage.SourceType, string) {
-	if path, ok := strings.CutPrefix(packageDB, "sbom:"); ok && packageHasRepositoryKey(report, pkgID, rheljava.RepositoryKey) {
+	path, ok := strings.CutPrefix(packageDB, "sbom:")
+	if ok && packageHasRepositoryKey(report, pkgID, rheljava.RepositoryKey) {
 		return storage.SourceType_JAVA, path
 	}
 	return ParsePackageDB(packageDB)
