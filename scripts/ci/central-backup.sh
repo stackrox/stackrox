@@ -79,7 +79,7 @@ deploy_previous_central() {
         --set 'central.spec.customize.envVars[0].name=SCANNER_V4_MATCHER_READINESS,central.spec.customize.envVars[0].value=vulnerability' \
         --port-forwarding \
         --envrc "${ENVRC_FILE}" \
-        --central-wait 5m
+        --central-wait 10m
 
     github_endgroup
 }
