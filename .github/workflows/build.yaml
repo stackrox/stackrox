@@ -184,17 +184,57 @@ jobs:
       - name: Cache UI dependencies
         id: cache-ui
         uses: ./.github/actions/cache-ui-dependencies
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Fetch UI deps
         if: steps.cache-ui.outputs.cache-hit != 'true'
         run: make -C ui deps
 
+      - name: Store UI deps in blob store
+        if: steps.cache-ui.outputs.cache-hit != 'true'
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
+          tar -cf /tmp/ui-deps.tar \
+            -C "$HOME/.cache" ./Cypress \
+            -C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules
+          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$KEY" /tmp/ui-deps.tar
+          echo "ui deps: stored (${KEY}, $(du -h /tmp/ui-deps.tar | cut -f1))"
+
       - name: Skip UI deps on cache hit
         if: steps.cache-ui.outputs.cache-hit == 'true'
         run: touch ui/deps
 
+      - name: Compute UI source hash
+        run: |
+          # Git-tracked ui/ content, computed BEFORE the build (build may
+          # generate files that would diverge the hash). Consumers
+          # (build-and-push-main) derive the identical key from their
+          # clean checkout: reuse across commits that don't touch ui/.
+          UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
+          echo "UI_BUILD_BLOB_KEY=ui-build-${{ matrix.branding }}-${UI_HASH}" >> "$GITHUB_ENV"
+          echo "ui source hash: ${UI_HASH}"
+
       - name: Build UI
         run: make -C ui build
+
+      - name: Store built UI in blob store
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          tar -cf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE" ui/build
+          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$UI_BUILD_BLOB_KEY" /tmp/ui-build.tar
+          echo "ui build: stored (${UI_BUILD_BLOB_KEY}, $(du -h /tmp/ui-build.tar | cut -f1))"
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -810,7 +850,24 @@ jobs:
         run: |
             git submodule update --init
 
+      - name: Fetch built UI from blob store (fast path)
+        run: |
+          set -euo pipefail
+          # Same git-based key derivation as pre-build-ui (computed on
+          # clean checkout there, pre-build). On hit, replaces the ~60s
+          # artifact download with a ~2s blob fetch; on miss the
+          # artifact path below runs.
+          UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
+          KEY="ui-build-${{ matrix.branding }}-${UI_HASH}"
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch "$KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
+            tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
+            echo "ui build: fetched from blob store (${KEY}, ~2s)"
+          else
+            echo "ui build: blob store miss — will use artifact download"
+          fi
+
       - uses: ./.github/actions/download-artifact-with-retry
+        if: hashFiles('ui/build/**') == ''
         with:
           name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
           path: ui

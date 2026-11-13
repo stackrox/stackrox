@@ -1,5 +1,5 @@
 name: Cache UI Dependencies
-description: Cache node_modules and Cypress binary for UI jobs
+description: Cache node_modules and Cypress binary for UI jobs (blob store, GHA-cache fallback)
 inputs:
   lockFile:
     description: Where the package lock is written
@@ -9,15 +9,62 @@ inputs:
     description: Directory containing the UI app
     required: false
     default: "ui/apps/platform"
+  azure-tenant-id:
+    description: Azure SPN tenant (enables blob-store backend)
+    required: false
+    default: ''
+  azure-client-id:
+    description: Azure SPN client ID
+    required: false
+    default: ''
+  azure-client-secret:
+    description: Azure SPN secret
+    required: false
+    default: ''
 outputs:
   cache-hit:
     description: Whether the cache was restored (exact match)
-    value: ${{ steps.cache.outputs.cache-hit }}
+    value: ${{ steps.blob.outputs.hit == 'true' || steps.gha.outputs.cache-hit == 'true' }}
 runs:
   using: composite
   steps:
-    - name: Cache UI Dependencies
-      id: cache
+    - name: Restore UI deps from blob store
+      id: blob
+      if: inputs.azure-client-id != ''
+      env:
+        AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
+        AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
+        AZURE_CLIENT_SECRET: ${{ inputs.azure-client-secret }}
+      run: |
+        set -euo pipefail
+        # Same pattern as the Go vendor cache: content-addressed by the
+        # lockfile hash, one tarball per dependency state, lifecycle
+        # expiry on the container handles pruning. Replaces the GHA
+        # cache (500GB quota shared with everything else) and its
+        # 40-70s all-or-nothing archive restore.
+        KEY="ui-deps-$(sha256sum ${{ inputs.lockFile }} | cut -c1-16)"
+        GCS="${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve"
+        if "$GCS" -fetch "$KEY" /tmp/ui-deps.tar 2>/tmp/ui-deps-fetch.err && [ -s /tmp/ui-deps.tar ]; then
+          # Two roots in one archive: node_modules relative to the
+          # workspace, Cypress relative to $HOME/.cache. Matching -C
+          # sequences on save and restore keep them straight.
+          # -xf (not -xzf): gocache-serve transparently gunzips.
+          mkdir -p ~/.cache/Cypress
+          tar -xf /tmp/ui-deps.tar \
+            -C "$HOME/.cache" ./Cypress \
+            -C "${{ github.workspace }}" ${{ inputs.working-directory }}/node_modules
+          echo "hit=true" >> "$GITHUB_OUTPUT"
+          echo "ui deps: restored from blob store (${KEY})"
+        else
+          echo "hit=false" >> "$GITHUB_OUTPUT"
+          echo "ui deps: cache miss (${KEY})"
+          cat /tmp/ui-deps-fetch.err 2>/dev/null | head -3 || true
+        fi
+      shell: bash
+
+    - name: Restore UI deps from GHA cache (fallback)
+      id: gha
+      if: inputs.azure-client-id == '' || steps.blob.outputs.hit != 'true'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
       with:
         path: |
