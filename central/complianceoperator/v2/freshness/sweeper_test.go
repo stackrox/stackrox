@@ -179,6 +179,32 @@ func TestSweep(t *testing.T) {
 	})
 }
 
+func TestClampSweepInterval(t *testing.T) {
+	cases := map[string]struct {
+		interval time.Duration
+		want     time.Duration
+	}{
+		"below the minimum is clamped up": {
+			interval: 10 * time.Second,
+			want:     minSweepInterval,
+		},
+		"exactly the minimum is unchanged": {
+			interval: minSweepInterval,
+			want:     minSweepInterval,
+		},
+		"above the minimum is unchanged": {
+			interval: 30 * time.Minute,
+			want:     30 * time.Minute,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, c.want, clampSweepInterval(c.interval))
+		})
+	}
+}
+
 func TestSweeperStartStop(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
