@@ -56,13 +56,12 @@ test_e2e() {
 central:
   namespace: stackrox
   pauseReconciliation: true
-  resourceProfile: ci
 securedCluster:
   namespace: stackrox
   pauseReconciliation: true
-  resourceProfile: ci
 EOF
 
+    merge_yaml "$roxie_config" < "$ROOT/deploy/roxie-config-resources.yaml"
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
 

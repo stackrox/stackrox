@@ -252,3 +252,23 @@ Another important roxie command is `roxie teardown <component>`, where component
 We're actively improving roxie and would love your feedback! If you run into
 issues, have feature requests, or just want to share your experience, please
 reach out to the **ACS Install team**.
+
+### Resource budgets
+
+QA, UI, and non-Groovy E2E use Roxie's `tiny` profile through
+`deploy/roxie-config-resources.yaml`. It selects one admission controller, one
+Scanner V4 indexer/matcher, and an 80m CPU request for Sensor's CRS init container.
+The shared overrides set Central DB's PostgreSQL shared buffers to 128 MiB and
+set both its memory request and limit to 512 MiB. A deployment
+overlay passes the buffer setting at startup while retaining the standard
+PostgreSQL configuration file; it is optional for BYODB jobs. Scanner V4 DB keeps
+its 4 GiB request and limit. Central worker requests 10m CPU and 128 MiB, and
+admission control, Collector, compliance, and node inventory request 10m CPU each.
+Other resources come from `tiny`; update the profile in Roxie when these
+exceptions can be shared.
+
+The single-node GKE QA, UI, non-Groovy, BYODB, and Operator E2E jobs use
+`e2-highmem-2` (2 vCPUs, 16 GiB RAM). Leave room for init containers, GKE system
+pods, and test workloads when sizing these clusters. Local Helm overrides and
+Operator test fixtures configure resources separately because those deployment
+paths do not consume this shared Roxie configuration.
