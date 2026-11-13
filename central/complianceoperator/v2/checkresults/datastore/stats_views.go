@@ -44,7 +44,6 @@ type ResourceResultCountByProfile struct {
 	ManualCount        int    `db:"compliance_manual_count"`
 	NotApplicableCount int    `db:"compliance_not_applicable_count"`
 	InconsistentCount  int    `db:"compliance_inconsistent_count"`
-	CurrentCount       int    `db:"compliance_current_count"`
 	StaleCount         int    `db:"compliance_stale_count"`
 	StaleClusterCount  int    `db:"compliance_stale_cluster_count"`
 	ProfileName        string `db:"compliance_profile_name"`

@@ -184,7 +184,7 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 		}
 	}
 
-	countQuery := d.withFreshnessCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName), search.ComplianceOperatorProfileName)
+	countQuery := d.withStaleCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName), search.ComplianceOperatorProfileName)
 	// Count distinct clusters with any stale result per profile for the stale-data banner.
 	countQuery.Selects = append(countQuery.Selects,
 		search.NewQuerySelect(search.ClusterID).
@@ -445,9 +445,28 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
-// withFreshnessCountSelectQuery appends current/stale check-count selects.
-func (d *datastoreImpl) withFreshnessCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+// withStaleCountSelectQuery appends the stale check-count select. The per-profile
+// banner needs only this count, not the current one.
+func (d *datastoreImpl) withStaleCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
 	cloned := q.CloneVT()
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceStaleCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceOperatorCheckDataFreshness,
+						storage.ComplianceOperatorCheckResultV2_STALE.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
+	return cloned
+}
+
+// withFreshnessCountSelectQuery appends current/stale check-count selects, for the
+// per-check and per-cluster rollups that need both counts.
+func (d *datastoreImpl) withFreshnessCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := d.withStaleCountSelectQuery(q, countOn)
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
@@ -456,15 +475,6 @@ func (d *datastoreImpl) withFreshnessCountSelectQuery(q *v1.Query, countOn searc
 					AddExactMatches(
 						search.ComplianceOperatorCheckDataFreshness,
 						storage.ComplianceOperatorCheckResultV2_CURRENT.String(),
-					).ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(countOn).
-			AggrFunc(aggregatefunc.Count).
-			Filter(search.ComplianceStaleCount.Alias(),
-				search.NewQueryBuilder().
-					AddExactMatches(
-						search.ComplianceOperatorCheckDataFreshness,
-						storage.ComplianceOperatorCheckResultV2_STALE.String(),
 					).ProtoQuery(),
 			).Proto(),
 	)
