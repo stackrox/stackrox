@@ -25,8 +25,8 @@ var (
 	// ComplianceFreshnessSweepInterval defines how often the compliance data freshness sweeper runs.
 	// It must stay well under the sweeper's grace window (ComplianceScanScheduleWatcherTimeout +
 	// ComplianceScanWatcherTimeout) so stale data is surfaced promptly after the grace elapses.
-	// The default is 5 mins.
-	ComplianceFreshnessSweepInterval = registerDurationSetting("ROX_COMPLIANCE_FRESHNESS_SWEEP_INTERVAL", 5*time.Minute)
+	// The default is 30 mins.
+	ComplianceFreshnessSweepInterval = registerDurationSetting("ROX_COMPLIANCE_FRESHNESS_SWEEP_INTERVAL", 30*time.Minute)
 
 	// ComplianceMaxNumberOfErrorsInReport defines the max number of errors that a report will store. This is done to avoid overwhelming the UI with many errors.
 	// The default is 4
