@@ -16,12 +16,12 @@ ENV BUILD_TAG="$BUILD_TAG"
 ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 ENV GOTAGS="release,no_openssl"
-# TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
 ENV CI=1
 ENV CGO_ENABLED=0
 ENV GOFIPS140=certified
 ENV GOLANG_FIPS=0
 
+# TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
 RUN make roxctl-build
 
 RUN make main-build-nodeps
@@ -140,7 +140,6 @@ LABEL \
 EXPOSE 8443
 
 ENV PATH="/stackrox:$PATH" \
-    GODEBUG="fips140=on" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
     ROX_IMAGE_FLAVOR="rhacs" \
     ROX_PRODUCT_BRANDING="RHACS_BRANDING"

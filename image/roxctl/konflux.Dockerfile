@@ -78,8 +78,7 @@ LABEL \
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
-ENV ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    GODEBUG="fips140=on"
+ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
 USER 65534:65534
 
