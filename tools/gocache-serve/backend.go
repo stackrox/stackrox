@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -310,7 +311,18 @@ func controlBackend() Backend {
 // stampede during mass cross-region prefetch.
 type fallbackBackend struct {
 	primary, secondary Backend
+	// Circuit breaker: consecutive secondary misses. When the secondary
+	// doesn't have what we're missing either (new source state — every
+	// entry is genuinely cold), each miss would pay a second, cross-region
+	// round trip for nothing (measured: operator-bundle +72s). After
+	// limit consecutive misses, stop consulting the secondary for the
+	// rest of the process; a single hit resets the count.
+	consecutiveMisses int32
 }
+
+// fallbackBreakerLimit: 20 misses ≈ 2s of wasted cross-region round
+// trips before the breaker opens — cheap to trip, quick to reset.
+const fallbackBreakerLimit = 20
 
 // backfillSem bounds concurrent backfill PUTs (mass prefetch on a
 // cold-for-this-region manifest could otherwise fire thousands).
@@ -324,13 +336,20 @@ func (f *fallbackBackend) Get(id string) ([]byte, error) {
 	if b != nil {
 		return b, nil
 	}
+	// Breaker open: the secondary has been missing everything too —
+	// this is a genuinely cold source state, not regional divergence.
+	if atomic.LoadInt32(&f.consecutiveMisses) >= fallbackBreakerLimit {
+		return nil, nil
+	}
 	b2, err2 := f.secondary.Get(id)
 	if err2 != nil {
 		return nil, err2
 	}
 	if b2 == nil {
+		atomic.AddInt32(&f.consecutiveMisses, 1)
 		return nil, nil // miss on both: genuine cold entry
 	}
+	atomic.StoreInt32(&f.consecutiveMisses, 0)
 	// Backfill the primary so future reads of this entry are regional.
 	select {
 	case backfillSem <- struct{}{}:
