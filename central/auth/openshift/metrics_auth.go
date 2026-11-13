@@ -62,8 +62,8 @@ var log = logging.LoggerForModule()
 // The auth provider and group also use DEFAULT origin: the group can't be repointed to a
 // different role or deleted, which in turn keeps the role permanently referenced so it
 // can't be deleted either. The role and shared permission set use IMPERATIVE origin so
-// operators can adjust the permissions for Central and secured-cluster metrics or change
-// the Central reader's access scope; they are only created if missing, never overwritten.
+// operators can adjust scoped read permissions for Central and secured-cluster metrics or
+// change the Central reader's access scope; they are only created if missing, never overwritten.
 // Internal scrape tokens will receive the authenticated Sensor's cluster scope.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
@@ -236,9 +236,11 @@ func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) st
 	}
 
 	ps := &storage.PermissionSet{
-		Id:          rolePkg.GeneratePermissionSetID(),
-		Name:        permissionSetName,
-		Description: "For OpenShift Prometheus: grant read access to resources used by custom metrics",
+		Id:               rolePkg.GeneratePermissionSetID(),
+		Name:             permissionSetName,
+		Description:      "For OpenShift Prometheus: grant read access to resources used by custom metrics",
+		AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 		// Let's give no permissions by default to avoid unexpected sensitive data exposure.
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(),
 	}

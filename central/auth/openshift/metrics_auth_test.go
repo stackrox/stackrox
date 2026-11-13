@@ -41,6 +41,8 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 		func(_ context.Context, ps *storage.PermissionSet) error {
 			createdID = ps.GetId()
 			assert.NotEmpty(t, createdID)
+			assert.Equal(t, storage.AccessConstraint_ACCESS_CONSTRAINT_READ, ps.GetAccessConstraint())
+			assert.Equal(t, storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE, ps.GetScopeConstraint())
 			return nil
 		})
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
