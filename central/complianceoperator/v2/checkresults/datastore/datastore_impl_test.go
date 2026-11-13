@@ -1103,51 +1103,56 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceFreshnessAggrega
 	ctx := s.testContexts[testutils.UnrestrictedReadCtx]
 	emptyQuery := search.NewQueryBuilder().ProtoQuery()
 
-	// Per-profile stats drive the stale-data banner: current across both clusters,
-	// three stale results (check-b on both clusters, check-a on cluster2), on both clusters.
-	profileStats, err := s.dataStore.ComplianceProfileResultStats(ctx, emptyQuery)
-	s.Require().NoError(err)
-	s.Require().Len(profileStats, 1)
-	s.Equal(1, profileStats[0].CurrentCount)
-	s.Equal(3, profileStats[0].StaleCount)
-	s.Equal(2, profileStats[0].StaleClusterCount)
+	s.Run("ComplianceProfileResultStats drives the stale-data banner", func() {
+		// Three stale results (check-b on both clusters, check-a on cluster2) across both clusters.
+		profileStats, err := s.dataStore.ComplianceProfileResultStats(ctx, emptyQuery)
+		s.Require().NoError(err)
+		s.Require().Len(profileStats, 1)
+		s.Equal(3, profileStats[0].StaleCount)
+		s.Equal(2, profileStats[0].StaleClusterCount)
+	})
 
-	// Per-check rollup: check-a is mixed (1 current, 1 stale), check-b is fully stale.
-	profileResults, err := s.dataStore.ComplianceProfileResults(ctx, emptyQuery)
-	s.Require().NoError(err)
-	byCheck := make(map[string]*ResourceResultsByProfile, len(profileResults))
-	for _, r := range profileResults {
-		byCheck[r.CheckName] = r
-	}
-	s.Require().Contains(byCheck, "check-a")
-	s.Require().Contains(byCheck, "check-b")
-	s.Equal(1, byCheck["check-a"].CurrentCount)
-	s.Equal(1, byCheck["check-a"].StaleCount)
-	s.Equal(0, byCheck["check-b"].CurrentCount)
-	s.Equal(2, byCheck["check-b"].StaleCount)
+	s.Run("ComplianceProfileResults rolls up freshness per check", func() {
+		// check-a is mixed (1 current, 1 stale), check-b is fully stale.
+		profileResults, err := s.dataStore.ComplianceProfileResults(ctx, emptyQuery)
+		s.Require().NoError(err)
+		byCheck := make(map[string]*ResourceResultsByProfile, len(profileResults))
+		for _, r := range profileResults {
+			byCheck[r.CheckName] = r
+		}
+		s.Require().Contains(byCheck, "check-a")
+		s.Require().Contains(byCheck, "check-b")
+		s.Equal(1, byCheck["check-a"].CurrentCount)
+		s.Equal(1, byCheck["check-a"].StaleCount)
+		s.Equal(0, byCheck["check-b"].CurrentCount)
+		s.Equal(2, byCheck["check-b"].StaleCount)
+	})
 
-	// Per-cluster rollup: cluster1 is mixed, cluster2 is fully stale.
-	clusterStats, err := s.dataStore.ComplianceClusterStats(ctx, emptyQuery)
-	s.Require().NoError(err)
-	byCluster := make(map[string]*ResultStatusCountByCluster, len(clusterStats))
-	for _, r := range clusterStats {
-		byCluster[r.ClusterID] = r
-	}
-	s.Require().Contains(byCluster, testconsts.Cluster1)
-	s.Require().Contains(byCluster, testconsts.Cluster2)
-	s.Equal(1, byCluster[testconsts.Cluster1].CurrentCount)
-	s.Equal(1, byCluster[testconsts.Cluster1].StaleCount)
-	s.Equal(0, byCluster[testconsts.Cluster2].CurrentCount)
-	s.Equal(2, byCluster[testconsts.Cluster2].StaleCount)
+	s.Run("ComplianceClusterStats rolls up freshness per cluster", func() {
+		// cluster1 is mixed, cluster2 is fully stale.
+		clusterStats, err := s.dataStore.ComplianceClusterStats(ctx, emptyQuery)
+		s.Require().NoError(err)
+		byCluster := make(map[string]*ResultStatusCountByCluster, len(clusterStats))
+		for _, r := range clusterStats {
+			byCluster[r.ClusterID] = r
+		}
+		s.Require().Contains(byCluster, testconsts.Cluster1)
+		s.Require().Contains(byCluster, testconsts.Cluster2)
+		s.Equal(1, byCluster[testconsts.Cluster1].CurrentCount)
+		s.Equal(1, byCluster[testconsts.Cluster1].StaleCount)
+		s.Equal(0, byCluster[testconsts.Cluster2].CurrentCount)
+		s.Equal(2, byCluster[testconsts.Cluster2].StaleCount)
+	})
 
-	// With only cluster-2 access the counts must shrink to cluster-2's rows: both
-	// of its checks are stale, cluster-1's current result is not visible.
-	scopedStats, err := s.dataStore.ComplianceProfileResultStats(s.testContexts[testutils.Cluster2ReadWriteCtx], emptyQuery)
-	s.Require().NoError(err)
-	s.Require().Len(scopedStats, 1)
-	s.Equal(0, scopedStats[0].CurrentCount)
-	s.Equal(2, scopedStats[0].StaleCount)
-	s.Equal(1, scopedStats[0].StaleClusterCount)
+	s.Run("ComplianceProfileResultStats respects SAC scope", func() {
+		// With only cluster-2 access the counts must shrink to cluster-2's rows: both
+		// of its checks are stale, cluster-1's current result is not visible.
+		scopedStats, err := s.dataStore.ComplianceProfileResultStats(s.testContexts[testutils.Cluster2ReadWriteCtx], emptyQuery)
+		s.Require().NoError(err)
+		s.Require().Len(scopedStats, 1)
+		s.Equal(2, scopedStats[0].StaleCount)
+		s.Equal(1, scopedStats[0].StaleClusterCount)
+	})
 }
 
 // setupFreshnessTestData seeds two clusters of one profile with mixed CURRENT/STALE
