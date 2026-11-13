@@ -194,7 +194,10 @@ jobs:
         run: make -C ui deps
 
       - name: Store UI deps in blob store
-        if: steps.cache-ui.outputs.cache-hit != 'true'
+        # Run on any non-blob restore (miss OR GHA-cache hit): a GHA-cache
+        # hit must still migrate content into the blob store, or the
+        # fallback becomes a permanent dependency instead of a fallback.
+        if: steps.cache-ui.outputs.blob-hit != 'true'
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -205,8 +208,14 @@ jobs:
           tar -cf /tmp/ui-deps.tar \
             -C "$HOME/.cache" ./Cypress \
             -C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules
-          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$KEY" /tmp/ui-deps.tar
-          echo "ui deps: stored (${KEY}, $(du -h /tmp/ui-deps.tar | cut -f1))"
+          # One-shot content blobs go to ALL replicas: regional selection
+          # with replication lag makes single-account stores miss for
+          # consumers in other regions (observed: producer stored to its
+          # region, every consumer elsewhere missed).
+          for ACCT in cigocache cigocacheeast cigochachecentral; do
+            AZURE_STORAGE_ACCOUNT=$ACCT "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$KEY" /tmp/ui-deps.tar || true
+          done
+          echo "ui deps: stored to all replicas (${KEY}, $(du -h /tmp/ui-deps.tar | cut -f1))"
 
       - name: Skip UI deps on cache hit
         if: steps.cache-ui.outputs.cache-hit == 'true'
@@ -233,8 +242,10 @@ jobs:
         run: |
           set -euo pipefail
           tar -cf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE" ui/build
-          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$UI_BUILD_BLOB_KEY" /tmp/ui-build.tar
-          echo "ui build: stored (${UI_BUILD_BLOB_KEY}, $(du -h /tmp/ui-build.tar | cut -f1))"
+          for ACCT in cigocache cigocacheeast cigochachecentral; do
+            AZURE_STORAGE_ACCOUNT=$ACCT "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store "$UI_BUILD_BLOB_KEY" /tmp/ui-build.tar || true
+          done
+          echo "ui build: stored to all replicas (${UI_BUILD_BLOB_KEY}, $(du -h /tmp/ui-build.tar | cut -f1))"
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -407,7 +418,11 @@ jobs:
             export GOCACHEPROG="$GCP"
             if [ -d vendor ]; then
               tar -czf /tmp/vendor.tar.gz vendor/
-              "${GOCACHEPROG}" -store "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1 || true
+              # All replicas: one-shot content blobs must be visible to
+              # consumers in any region without waiting for replication.
+              for ACCT in cigocache cigocacheeast cigochachecentral; do
+                AZURE_STORAGE_ACCOUNT=$ACCT "${GOCACHEPROG}" -store "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1 || true
+              done
               echo "vendor: cached for future runs"
             fi
           fi
@@ -491,8 +506,10 @@ jobs:
           # Store all binaries for the container build (blob store reference)
           BLOB_KEY="go-binaries-${{ matrix.arch }}-${{ matrix.name }}"
           tar -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
-          "${GOCACHEPROG}" -store "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1 || true
-          echo "stored $BLOB_KEY ($(stat -c%s /tmp/go-binaries.tar) bytes)"
+          for ACCT in cigocache cigocacheeast cigochachecentral; do
+            AZURE_STORAGE_ACCOUNT=$ACCT "${GOCACHEPROG}" -store "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1 || true
+          done
+          echo "stored $BLOB_KEY to all replicas ($(stat -c%s /tmp/go-binaries.tar) bytes)"
           # Also upload as artifact for backward compatibility during transition
           cp /tmp/go-binaries.tar go-binaries-build.tar
 
@@ -859,11 +876,22 @@ jobs:
           # artifact path below runs.
           UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
           KEY="ui-build-${ROX_PRODUCT_BRANDING}-${UI_HASH}"
-          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch "$KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
+          GCS="${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve"
+          if "$GCS" -fetch "$KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
             tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
             echo "ui build: fetched from blob store (${KEY}, ~2s)"
           else
-            echo "ui build: blob store miss — will use artifact download"
+            # Log the key we looked for (miss diagnosis) and try the other
+            # replicas before falling back to the artifact download.
+            echo "ui build: blob miss on selected account for ${KEY}; trying all replicas"
+            for ACCT in cigocache cigocacheeast cigochachecentral; do
+              if AZURE_STORAGE_ACCOUNT=$ACCT "$GCS" -fetch "$KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
+                tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
+                echo "ui build: fetched from ${ACCT} (${KEY})"
+                break
+              fi
+            done
+            [ -s /tmp/ui-build.tar ] || echo "ui build: all replicas missed — using artifact download"
           fi
 
       - uses: ./.github/actions/download-artifact-with-retry

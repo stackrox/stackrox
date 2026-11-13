@@ -25,6 +25,9 @@ outputs:
   cache-hit:
     description: Whether the cache was restored (exact match)
     value: ${{ steps.blob.outputs.hit == 'true' || steps.gha.outputs.cache-hit == 'true' }}
+  blob-hit:
+    description: Whether the blob store specifically restored the cache
+    value: ${{ steps.blob.outputs.hit == 'true' }}
 runs:
   using: composite
   steps:
