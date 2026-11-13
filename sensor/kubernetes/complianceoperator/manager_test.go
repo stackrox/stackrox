@@ -55,6 +55,7 @@ func (s *ManagerTestSuite) SetupTest() {
 	gvrToListKind := map[schema.GroupVersionResource]string{
 		complianceoperator.ScanSetting.GroupVersionResource():        "ScanSettingList",
 		complianceoperator.ScanSettingBinding.GroupVersionResource(): "ScanSettingBindingList",
+		machineConfigPoolGVR: "MachineConfigPoolList",
 	}
 	s.client = fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), gvrToListKind)
 	s.dispatcher = newTestManagerDispatcher(s.T())
@@ -78,7 +79,8 @@ func (f *fakeStatusInfo) GetNamespace() string {
 }
 
 func (s *ManagerTestSuite) TestGetRolesDefaultsToMasterWorker() {
-	roles := s.manager.getRoles()
+	roles, ok := s.manager.getRoles()
+	s.True(ok)
 	s.ElementsMatch([]string{masterRole, workerRole}, roles)
 }
 
@@ -91,7 +93,8 @@ func (s *ManagerTestSuite) TestGetRolesFromMCPStoreWhenFFEnabled() {
 	s.mcpStore.Add("infra")
 	s.mcpStore.Add("gpu")
 
-	roles := s.manager.getRoles()
+	roles, ok := s.manager.getRoles()
+	s.True(ok)
 	s.ElementsMatch([]string{"infra", "gpu"}, roles)
 }
 
@@ -101,7 +104,8 @@ func (s *ManagerTestSuite) TestGetRolesFallsBackWhenMCPStoreEmpty() {
 		s.T().Skipf("Skipping because %s=false", features.ComplianceCustomNodeRoles.EnvVar())
 	}
 
-	roles := s.manager.getRoles()
+	roles, ok := s.manager.getRoles()
+	s.False(ok)
 	s.ElementsMatch([]string{masterRole, workerRole}, roles)
 }
 
@@ -111,7 +115,8 @@ func (s *ManagerTestSuite) TestGetRolesIgnoresMCPStoreWhenFFDisabled() {
 	s.mcpStore.Add("infra")
 	s.mcpStore.Add("gpu")
 
-	roles := s.manager.getRoles()
+	roles, ok := s.manager.getRoles()
+	s.True(ok)
 	s.ElementsMatch([]string{masterRole, workerRole}, roles)
 }
 
@@ -122,7 +127,8 @@ func (s *ManagerTestSuite) TestGetRolesNilMCPStore() {
 	}
 
 	s.manager.mcpStore = nil
-	roles := s.manager.getRoles()
+	roles, ok := s.manager.getRoles()
+	s.False(ok)
 	s.ElementsMatch([]string{masterRole, workerRole}, roles)
 }
 
@@ -459,6 +465,7 @@ func TestOnMCPEventNonBlocking(t *testing.T) {
 	gvrToListKind := map[schema.GroupVersionResource]string{
 		complianceoperator.ScanSetting.GroupVersionResource():        "ScanSettingList",
 		complianceoperator.ScanSettingBinding.GroupVersionResource(): "ScanSettingBindingList",
+		machineConfigPoolGVR: "MachineConfigPoolList",
 	}
 	client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), gvrToListKind)
 

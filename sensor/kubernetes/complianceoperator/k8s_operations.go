@@ -19,17 +19,27 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
 
 type scanSettingWriter struct {
 	client       dynamic.Interface
 	retrier      *retrier
-	roleProvider func() []string
+	roleProvider func() ([]string, bool)
+}
+
+// newScanSettingWriter returns a new scanSettingWriter
+func newScanSettingWriter(client dynamic.Interface, retrier *retrier, roleProviderFn func() ([]string, bool)) *scanSettingWriter {
+	return &scanSettingWriter{
+		client:       client,
+		retrier:      retrier,
+		roleProvider: roleProviderFn,
+	}
 }
 
 func (w *scanSettingWriter) createScanResources(ctx context.Context, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) error {
-	roles := w.roleProvider()
+	roles := w.listMachineConfigPools(ctx)
 	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron, roles))
 	if err != nil {
 		return err
@@ -89,7 +99,7 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 		return errors.New("scan setting binding exists without a corresponding scan setting")
 	}
 
-	roles := w.roleProvider()
+	roles := w.listMachineConfigPools(ctx)
 	updatedScanSetting, err := updateScanSettingFromUpdateRequest(ssObj, request, roles)
 	if err != nil {
 		return err
@@ -408,7 +418,7 @@ func (w *scanSettingWriter) reconcileCreateOrUpdateResource(
 		// Update Resource
 		log.Debugf("Update %s %s", api.Kind, req.GetScanSettings().GetScanName())
 		delete(inClusterResources, namespaceNameIndex)
-		roles := w.roleProvider()
+		roles := w.listMachineConfigPools(ctx)
 		updatedResource, err := updateFn(&resource, req, roles)
 		if err != nil {
 			return err
@@ -433,7 +443,7 @@ func (w *scanSettingWriter) reconcileCreateOrUpdateResource(
 
 	// The Resource is in Central but not in the cluster
 	log.Debugf("Create %s %s", api.Kind, req.GetScanSettings().GetScanName())
-	roles := w.roleProvider()
+	roles := w.listMachineConfigPools(ctx)
 	resource, err := runtimeObjToUnstructured(convertFn(namespace, req.GetScanSettings(), req.GetCron(), roles))
 	if err != nil {
 		return err
@@ -464,11 +474,12 @@ func (w *scanSettingWriter) reconcileDeleteResource(ctx context.Context, inCentr
 	return errList.ToError()
 }
 
-func (w *scanSettingWriter) updateAllScanSettingRoles(ctx context.Context, ns string, roles []string) error {
+func (w *scanSettingWriter) updateAllScanSettingRoles(ctx context.Context, ns string) error {
 	scanSettings, err := w.getResourcesInCluster(ctx, complianceoperator.ScanSetting)
 	if err != nil {
 		return err
 	}
+	roles := w.listMachineConfigPools(ctx)
 	var errList errorhelpers.ErrorList
 	for _, ss := range scanSettings {
 		if err := w.updateScanSettingRoles(ctx, ns, &ss, roles); err != nil {
@@ -513,6 +524,42 @@ func (w *scanSettingWriter) updateScanSettingRoles(ctx context.Context, ns strin
 			updated, err = runtimeObjToUnstructured(&currentSS)
 			return err
 		})
+}
+
+var machineConfigPoolGVR = schema.GroupVersionResource{
+	Group:    "machineconfiguration.openshift.io",
+	Version:  "v1",
+	Resource: "machineconfigpools",
+}
+
+func (w *scanSettingWriter) listMachineConfigPools(ctx context.Context) []string {
+	roles, ok := w.roleProvider()
+	if ok {
+		return roles
+	}
+	var list *unstructured.UnstructuredList
+	err := w.retrier.callWithRetry(ctx, func(callCtx context.Context) error {
+		var err error
+		list, err = w.client.Resource(machineConfigPoolGVR).List(callCtx, v1.ListOptions{})
+		return errors.Wrap(err, "listing MachineConfigPools")
+	})
+	if err != nil {
+		log.Warnf("Failed to list MachineConfigPools, using default roles: %v", err)
+		return roles
+	}
+	if len(list.Items) == 0 {
+		return roles
+	}
+	mcpRoles := make([]string, 0, len(list.Items))
+	for _, item := range list.Items {
+		if name := item.GetName(); name != "" {
+			mcpRoles = append(mcpRoles, name)
+		}
+	}
+	if len(mcpRoles) == 0 {
+		return roles
+	}
+	return mcpRoles
 }
 
 func generateScanIndex(namespace string, scanName string) string {
