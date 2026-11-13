@@ -55,6 +55,7 @@ func (w *scanSettingWriter) createScanResources(ctx context.Context, ns string, 
 }
 
 func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) error {
+	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := w.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	var ssObj *unstructured.Unstructured
 	err := w.retrier.callWithRetry(ctx, func(callCtx context.Context) error {
@@ -78,9 +79,12 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 	}
 
 	if ssObj == nil && ssbObj == nil {
+		// This is an add instead
 		return w.createScanResources(ctx, ns, request.GetScanSettings(), request.GetCron())
 	}
 
+	// Invalid case because scan setting is created first, so we should not have a situation where
+	// we have a scan setting binding and not a scan setting.  This probably isn't even possible.
 	if ssObj == nil {
 		return errors.New("scan setting binding exists without a corresponding scan setting")
 	}
@@ -92,6 +96,7 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 	}
 
 	var updatedScanSettingBinding *unstructured.Unstructured
+	// It is possible that we successfully created the scan setting but had issues on the binding.
 	if ssbObj != nil {
 		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request, nil)
 		if err != nil {
@@ -124,6 +129,7 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 		return err
 	}
 
+	// Process SSB as an update
 	if ssbObj != nil {
 		return w.retrier.callWithRetryWithOnConflictCallback(ctx,
 			func(callCtx context.Context) error {
@@ -150,6 +156,11 @@ func (w *scanSettingWriter) updateScanConfig(ctx context.Context, ns string, req
 }
 
 func (w *scanSettingWriter) rerunScan(ctx context.Context, ns string, scanName string) error {
+	// Conventionally, compliance scan can be rerun by applying an
+	// annotation to ComplianceScan CR. The ComplianceScan CRs can be
+	// found from the ComplianceSuite CR. Note that the ComplianceSuite
+	// created from a scan configuration have the same name as scan
+	// configuration.
 	resI := w.client.Resource(complianceoperator.ComplianceSuite.GroupVersionResource()).Namespace(ns)
 	var obj *unstructured.Unstructured
 	err := w.retrier.callWithRetry(ctx, func(callCtx context.Context) error {
@@ -166,6 +177,7 @@ func (w *scanSettingWriter) rerunScan(ctx context.Context, ns string, scanName s
 		return errors.Wrap(err, "Could not convert unstructured to compliance suite")
 	}
 
+	// Apply annotation to indicate compliance scan be rerun.
 	for _, scan := range complianceSuite.Spec.Scans {
 		if err := w.reRunSingleScan(ctx, scan, ns); err != nil {
 			return err
@@ -177,6 +189,7 @@ func (w *scanSettingWriter) rerunScan(ctx context.Context, ns string, scanName s
 func (w *scanSettingWriter) reRunSingleScan(ctx context.Context, scan v1alpha1.ComplianceScanSpecWrapper, ns string) error {
 	var obj *unstructured.Unstructured
 	resI := w.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
+	// Get the scan and apply annotation to indicate compliance scan be rerun.
 	complianceScanName, scanObj, err := getScanForReRun(func() (*unstructured.Unstructured, error) {
 		err := w.retrier.callWithRetry(ctx, func(callCtx context.Context) error {
 			var err error
@@ -272,9 +285,11 @@ func getScanSettingForUpdate(getFunc func() (*unstructured.Unstructured, error),
 		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
 	}
 
+	// Check if scanSetting has the "Suspend" field
 	if _, ok := reflect.TypeFor[v1alpha1.ScanSetting]().FieldByName("Suspend"); ok {
 		scanSetting.Suspend = *config.Suspend
 	} else {
+		// Handle the case where the field doesn't exist (older CRD)
 		return nil, errors.New("suspending a scan is not supported on this version of the compliance operator")
 	}
 
@@ -306,15 +321,18 @@ func (w *scanSettingWriter) deleteScanConfig(ctx context.Context, ns string, nam
 }
 
 func (w *scanSettingWriter) syncScanConfigs(ctx context.Context, ns string, request *central.SyncComplianceScanConfigRequest) error {
+	// List all ScanSettings in the cluster with the `stackrox` label.
 	scanSettingsInCluster, err := w.getResourcesInCluster(ctx, complianceoperator.ScanSetting)
 	if err != nil {
 		return err
 	}
+	// List all ScanSettingBindings in the cluster with the `stackrox` label.
 	scanSettingBindingsInCluster, err := w.getResourcesInCluster(ctx, complianceoperator.ScanSettingBinding)
 	if err != nil {
 		return err
 	}
 
+	// Compare with the ScanConfig in the request.
 	var errList errorhelpers.ErrorList
 	inCentralSet := set.NewStringSet()
 	for _, scanCfg := range request.GetScanConfigs() {
@@ -323,6 +341,7 @@ func (w *scanSettingWriter) syncScanConfigs(ctx context.Context, ns string, requ
 			continue
 		}
 		inCentralSet.Add(generateScanIndex(ns, scanCfg.GetUpdateScan().GetScanSettings().GetScanName()))
+		// Reconcile ScanSetting
 		if err := w.reconcileCreateOrUpdateResource(
 			ctx, ns,
 			scanCfg.GetUpdateScan(),
@@ -333,6 +352,7 @@ func (w *scanSettingWriter) syncScanConfigs(ctx context.Context, ns string, requ
 		); err != nil {
 			errList.AddError(err)
 		}
+		// Reconcile ScanSettingBinding
 		if err := w.reconcileCreateOrUpdateResource(
 			ctx, ns,
 			scanCfg.GetUpdateScan(),
@@ -344,9 +364,11 @@ func (w *scanSettingWriter) syncScanConfigs(ctx context.Context, ns string, requ
 			errList.AddError(err)
 		}
 	}
+	// Delete ScanSettingBindings that are no longer in Central
 	if err := w.reconcileDeleteResource(ctx, inCentralSet, scanSettingBindingsInCluster, complianceoperator.ScanSettingBinding); err != nil {
 		errList.AddError(err)
 	}
+	// Delete ScanSettings that are no longer in Central
 	if err := w.reconcileDeleteResource(ctx, inCentralSet, scanSettingsInCluster, complianceoperator.ScanSetting); err != nil {
 		errList.AddError(err)
 	}
@@ -383,6 +405,7 @@ func (w *scanSettingWriter) reconcileCreateOrUpdateResource(
 ) error {
 	namespaceNameIndex := generateScanIndex(namespace, req.GetScanSettings().GetScanName())
 	if resource, isInCluster := inClusterResources[namespaceNameIndex]; isInCluster {
+		// Update Resource
 		log.Debugf("Update %s %s", api.Kind, req.GetScanSettings().GetScanName())
 		delete(inClusterResources, namespaceNameIndex)
 		roles := w.roleProvider()
@@ -408,6 +431,7 @@ func (w *scanSettingWriter) reconcileCreateOrUpdateResource(
 			})
 	}
 
+	// The Resource is in Central but not in the cluster
 	log.Debugf("Create %s %s", api.Kind, req.GetScanSettings().GetScanName())
 	roles := w.roleProvider()
 	resource, err := runtimeObjToUnstructured(convertFn(namespace, req.GetScanSettings(), req.GetCron(), roles))
@@ -423,8 +447,10 @@ func (w *scanSettingWriter) reconcileCreateOrUpdateResource(
 func (w *scanSettingWriter) reconcileDeleteResource(ctx context.Context, inCentral set.StringSet, inClusterResources map[string]unstructured.Unstructured, api k8sapi.APIResource) error {
 	var errList errorhelpers.ErrorList
 	deletePolicy := v1.DeletePropagationForeground
+	// Delete Resources that are no longer in Central
 	for index, resource := range inClusterResources {
 		if !inCentral.Contains(index) {
+			// The Resource is in the cluster but not in Central
 			log.Debugf("Delete %s %s", api.Kind, resource.GetName())
 			cli := w.client.Resource(api.GroupVersionResource()).Namespace(resource.GetNamespace())
 			err := w.retrier.callWithRetry(ctx, func(callCtx context.Context) error {
