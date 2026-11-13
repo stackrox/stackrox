@@ -34,10 +34,9 @@ import useScanConfigRouter from './hooks/useScanConfigRouter';
 import {
     attributeForComplianceCheckStatus,
     profileCheckSearchFilterConfig,
-    scanStatusSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [profileCheckSearchFilterConfig, scanStatusSearchFilterConfig];
+const searchFilterConfig = [profileCheckSearchFilterConfig];
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;

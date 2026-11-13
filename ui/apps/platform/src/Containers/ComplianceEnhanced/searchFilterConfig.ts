@@ -21,37 +21,31 @@ export const profileSearchFilterConfig: CompoundSearchFilterEntity = {
     attributes: [profileName, profileType],
 };
 
+const dataFreshnessSearchFilterAttribute: SelectSearchFilterAttribute = {
+    displayName: 'Scan status',
+    filterChipLabel: 'Scan status',
+    searchTerm: CHECK_DATA_FRESHNESS_QUERY,
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { label: 'Current', value: 'CURRENT' },
+            { label: 'Stale', value: 'STALE' },
+            { label: 'Unknown', value: 'UNKNOWN' },
+        ],
+    },
+    featureFlagDependency: ['ROX_COMPLIANCE_SURFACE_STALE_DATA'],
+};
+
 export const profileCheckSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Profile check',
     searchCategory: 'COMPLIANCE',
-    attributes: profileCheckAttributes,
+    attributes: [...profileCheckAttributes, dataFreshnessSearchFilterAttribute],
 };
 
 export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
     attributes: [clusterIdAttribute, clusterLabelAttribute, clusterNameAttribute],
-};
-
-export const scanStatusSearchFilterConfig: CompoundSearchFilterEntity = {
-    displayName: 'Scan status',
-    searchCategory: 'COMPLIANCE',
-    attributes: [
-        {
-            displayName: 'Data freshness',
-            filterChipLabel: 'Scan status',
-            searchTerm: CHECK_DATA_FRESHNESS_QUERY,
-            inputType: 'select',
-            inputProps: {
-                options: [
-                    { label: 'Current', value: 'CURRENT' },
-                    { label: 'Stale', value: 'STALE' },
-                    { label: 'Unknown', value: 'UNKNOWN' },
-                ],
-            },
-            featureFlagDependency: ['ROX_COMPLIANCE_SURFACE_STALE_DATA'],
-        },
-    ],
 };
 
 export const attributeForComplianceCheckStatus: SelectSearchFilterAttribute = {

@@ -49,14 +49,9 @@ import {
     attributeForComplianceCheckStatus,
     clusterSearchFilterConfig,
     profileCheckSearchFilterConfig,
-    scanStatusSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [
-    clusterSearchFilterConfig,
-    profileCheckSearchFilterConfig,
-    scanStatusSearchFilterConfig,
-];
+const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfig];
 
 type StaleScanAlertProps = {
     staleClusterCount: number;
