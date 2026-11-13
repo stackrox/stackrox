@@ -70,6 +70,100 @@ func (Access) EnumDescriptor() ([]byte, []int) {
 	return file_storage_role_proto_rawDescGZIP(), []int{0}
 }
 
+// Constraints on access levels granted by a permission set.
+type AccessConstraint int32
+
+const (
+	AccessConstraint_ACCESS_CONSTRAINT_UNSPECIFIED AccessConstraint = 0
+	AccessConstraint_ACCESS_CONSTRAINT_READ        AccessConstraint = 1
+)
+
+// Enum value maps for AccessConstraint.
+var (
+	AccessConstraint_name = map[int32]string{
+		0: "ACCESS_CONSTRAINT_UNSPECIFIED",
+		1: "ACCESS_CONSTRAINT_READ",
+	}
+	AccessConstraint_value = map[string]int32{
+		"ACCESS_CONSTRAINT_UNSPECIFIED": 0,
+		"ACCESS_CONSTRAINT_READ":        1,
+	}
+)
+
+func (x AccessConstraint) Enum() *AccessConstraint {
+	p := new(AccessConstraint)
+	*p = x
+	return p
+}
+
+func (x AccessConstraint) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AccessConstraint) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_role_proto_enumTypes[1].Descriptor()
+}
+
+func (AccessConstraint) Type() protoreflect.EnumType {
+	return &file_storage_role_proto_enumTypes[1]
+}
+
+func (x AccessConstraint) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AccessConstraint.Descriptor instead.
+func (AccessConstraint) EnumDescriptor() ([]byte, []int) {
+	return file_storage_role_proto_rawDescGZIP(), []int{1}
+}
+
+// Constraints on resource scopes granted by a permission set.
+type ScopeConstraint int32
+
+const (
+	ScopeConstraint_SCOPE_CONSTRAINT_UNSPECIFIED       ScopeConstraint = 0
+	ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE ScopeConstraint = 1
+)
+
+// Enum value maps for ScopeConstraint.
+var (
+	ScopeConstraint_name = map[int32]string{
+		0: "SCOPE_CONSTRAINT_UNSPECIFIED",
+		1: "SCOPE_CONSTRAINT_CLUSTER_NAMESPACE",
+	}
+	ScopeConstraint_value = map[string]int32{
+		"SCOPE_CONSTRAINT_UNSPECIFIED":       0,
+		"SCOPE_CONSTRAINT_CLUSTER_NAMESPACE": 1,
+	}
+)
+
+func (x ScopeConstraint) Enum() *ScopeConstraint {
+	p := new(ScopeConstraint)
+	*p = x
+	return p
+}
+
+func (x ScopeConstraint) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ScopeConstraint) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_role_proto_enumTypes[2].Descriptor()
+}
+
+func (ScopeConstraint) Type() protoreflect.EnumType {
+	return &file_storage_role_proto_enumTypes[2]
+}
+
+func (x ScopeConstraint) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ScopeConstraint.Descriptor instead.
+func (ScopeConstraint) EnumDescriptor() ([]byte, []int) {
+	return file_storage_role_proto_rawDescGZIP(), []int{2}
+}
+
 type EffectiveAccessScope_State int32
 
 const (
@@ -106,11 +200,11 @@ func (x EffectiveAccessScope_State) String() string {
 }
 
 func (EffectiveAccessScope_State) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_role_proto_enumTypes[1].Descriptor()
+	return file_storage_role_proto_enumTypes[3].Descriptor()
 }
 
 func (EffectiveAccessScope_State) Type() protoreflect.EnumType {
-	return &file_storage_role_proto_enumTypes[1]
+	return &file_storage_role_proto_enumTypes[3]
 }
 
 func (x EffectiveAccessScope_State) Number() protoreflect.EnumNumber {
@@ -241,8 +335,12 @@ type PermissionSet struct {
 	Description      string            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	ResourceToAccess map[string]Access `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
 	Traits           *Traits           `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// UNSPECIFIED allows any access level; READ allows only read access.
+	AccessConstraint AccessConstraint `protobuf:"varint,8,opt,name=access_constraint,json=accessConstraint,proto3,enum=storage.AccessConstraint" json:"access_constraint,omitempty"`
+	// UNSPECIFIED allows any resource; CLUSTER_NAMESPACE excludes global resources.
+	ScopeConstraint ScopeConstraint `protobuf:"varint,9,opt,name=scope_constraint,json=scopeConstraint,proto3,enum=storage.ScopeConstraint" json:"scope_constraint,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PermissionSet) Reset() {
@@ -308,6 +406,20 @@ func (x *PermissionSet) GetTraits() *Traits {
 		return x.Traits
 	}
 	return nil
+}
+
+func (x *PermissionSet) GetAccessConstraint() AccessConstraint {
+	if x != nil {
+		return x.AccessConstraint
+	}
+	return AccessConstraint_ACCESS_CONSTRAINT_UNSPECIFIED
+}
+
+func (x *PermissionSet) GetScopeConstraint() ScopeConstraint {
+	if x != nil {
+		return x.ScopeConstraint
+	}
+	return ScopeConstraint_SCOPE_CONSTRAINT_UNSPECIFIED
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.
@@ -744,16 +856,18 @@ const file_storage_role_proto_rawDesc = "" +
 	"\x06traits\x18\b \x01(\v2\x0f.storage.TraitsR\x06traits\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x04\x10\x05\"\xb0\x02\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x04\x10\x05\"\xe8\x03\n" +
 	"\rPermissionSet\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12Z\n" +
 	"\x12resource_to_access\x18\x04 \x03(\v2,.storage.PermissionSet.ResourceToAccessEntryR\x10resourceToAccess\x12'\n" +
-	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1aT\n" +
+	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x12F\n" +
+	"\x11access_constraint\x18\b \x01(\x0e2\x19.storage.AccessConstraintR\x10accessConstraint\x12C\n" +
+	"\x10scope_constraint\x18\t \x01(\x0e2\x18.storage.ScopeConstraintR\x0fscopeConstraint\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\"\xaa\x05\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x06\x10\aJ\x04\b\a\x10\bR\x10read_access_onlyR\vscoped_only\"\xaa\x05\n" +
 	"\x11SimpleAccessScope\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -800,7 +914,13 @@ const file_storage_role_proto_rawDesc = "" +
 	"\x06Access\x12\r\n" +
 	"\tNO_ACCESS\x10\x00\x12\x0f\n" +
 	"\vREAD_ACCESS\x10\x01\x12\x15\n" +
-	"\x11READ_WRITE_ACCESS\x10\x02B.\n" +
+	"\x11READ_WRITE_ACCESS\x10\x02*Q\n" +
+	"\x10AccessConstraint\x12!\n" +
+	"\x1dACCESS_CONSTRAINT_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16ACCESS_CONSTRAINT_READ\x10\x01*[\n" +
+	"\x0fScopeConstraint\x12 \n" +
+	"\x1cSCOPE_CONSTRAINT_UNSPECIFIED\x10\x00\x12&\n" +
+	"\"SCOPE_CONSTRAINT_CLUSTER_NAMESPACE\x10\x01B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -815,50 +935,54 @@ func file_storage_role_proto_rawDescGZIP() []byte {
 	return file_storage_role_proto_rawDescData
 }
 
-var file_storage_role_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_storage_role_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_storage_role_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_storage_role_proto_goTypes = []any{
 	(Access)(0),                     // 0: storage.Access
-	(EffectiveAccessScope_State)(0), // 1: storage.EffectiveAccessScope.State
-	(*Role)(nil),                    // 2: storage.Role
-	(*PermissionSet)(nil),           // 3: storage.PermissionSet
-	(*SimpleAccessScope)(nil),       // 4: storage.SimpleAccessScope
-	(*EffectiveAccessScope)(nil),    // 5: storage.EffectiveAccessScope
-	nil,                             // 6: storage.Role.ResourceToAccessEntry
-	nil,                             // 7: storage.PermissionSet.ResourceToAccessEntry
-	(*SimpleAccessScope_Rules)(nil), // 8: storage.SimpleAccessScope.Rules
-	(*SimpleAccessScope_Rules_Namespace)(nil), // 9: storage.SimpleAccessScope.Rules.Namespace
-	(*EffectiveAccessScope_Namespace)(nil),    // 10: storage.EffectiveAccessScope.Namespace
-	(*EffectiveAccessScope_Cluster)(nil),      // 11: storage.EffectiveAccessScope.Cluster
-	nil,                                       // 12: storage.EffectiveAccessScope.Namespace.LabelsEntry
-	nil,                                       // 13: storage.EffectiveAccessScope.Cluster.LabelsEntry
-	(*Traits)(nil),                            // 14: storage.Traits
-	(*SetBasedLabelSelector)(nil),             // 15: storage.SetBasedLabelSelector
+	(AccessConstraint)(0),           // 1: storage.AccessConstraint
+	(ScopeConstraint)(0),            // 2: storage.ScopeConstraint
+	(EffectiveAccessScope_State)(0), // 3: storage.EffectiveAccessScope.State
+	(*Role)(nil),                    // 4: storage.Role
+	(*PermissionSet)(nil),           // 5: storage.PermissionSet
+	(*SimpleAccessScope)(nil),       // 6: storage.SimpleAccessScope
+	(*EffectiveAccessScope)(nil),    // 7: storage.EffectiveAccessScope
+	nil,                             // 8: storage.Role.ResourceToAccessEntry
+	nil,                             // 9: storage.PermissionSet.ResourceToAccessEntry
+	(*SimpleAccessScope_Rules)(nil), // 10: storage.SimpleAccessScope.Rules
+	(*SimpleAccessScope_Rules_Namespace)(nil), // 11: storage.SimpleAccessScope.Rules.Namespace
+	(*EffectiveAccessScope_Namespace)(nil),    // 12: storage.EffectiveAccessScope.Namespace
+	(*EffectiveAccessScope_Cluster)(nil),      // 13: storage.EffectiveAccessScope.Cluster
+	nil,                                       // 14: storage.EffectiveAccessScope.Namespace.LabelsEntry
+	nil,                                       // 15: storage.EffectiveAccessScope.Cluster.LabelsEntry
+	(*Traits)(nil),                            // 16: storage.Traits
+	(*SetBasedLabelSelector)(nil),             // 17: storage.SetBasedLabelSelector
 }
 var file_storage_role_proto_depIdxs = []int32{
 	0,  // 0: storage.Role.global_access:type_name -> storage.Access
-	6,  // 1: storage.Role.resource_to_access:type_name -> storage.Role.ResourceToAccessEntry
-	14, // 2: storage.Role.traits:type_name -> storage.Traits
-	7,  // 3: storage.PermissionSet.resource_to_access:type_name -> storage.PermissionSet.ResourceToAccessEntry
-	14, // 4: storage.PermissionSet.traits:type_name -> storage.Traits
-	8,  // 5: storage.SimpleAccessScope.rules:type_name -> storage.SimpleAccessScope.Rules
-	14, // 6: storage.SimpleAccessScope.traits:type_name -> storage.Traits
-	11, // 7: storage.EffectiveAccessScope.clusters:type_name -> storage.EffectiveAccessScope.Cluster
-	0,  // 8: storage.Role.ResourceToAccessEntry.value:type_name -> storage.Access
-	0,  // 9: storage.PermissionSet.ResourceToAccessEntry.value:type_name -> storage.Access
-	9,  // 10: storage.SimpleAccessScope.Rules.included_namespaces:type_name -> storage.SimpleAccessScope.Rules.Namespace
-	15, // 11: storage.SimpleAccessScope.Rules.cluster_label_selectors:type_name -> storage.SetBasedLabelSelector
-	15, // 12: storage.SimpleAccessScope.Rules.namespace_label_selectors:type_name -> storage.SetBasedLabelSelector
-	1,  // 13: storage.EffectiveAccessScope.Namespace.state:type_name -> storage.EffectiveAccessScope.State
-	12, // 14: storage.EffectiveAccessScope.Namespace.labels:type_name -> storage.EffectiveAccessScope.Namespace.LabelsEntry
-	1,  // 15: storage.EffectiveAccessScope.Cluster.state:type_name -> storage.EffectiveAccessScope.State
-	13, // 16: storage.EffectiveAccessScope.Cluster.labels:type_name -> storage.EffectiveAccessScope.Cluster.LabelsEntry
-	10, // 17: storage.EffectiveAccessScope.Cluster.namespaces:type_name -> storage.EffectiveAccessScope.Namespace
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	8,  // 1: storage.Role.resource_to_access:type_name -> storage.Role.ResourceToAccessEntry
+	16, // 2: storage.Role.traits:type_name -> storage.Traits
+	9,  // 3: storage.PermissionSet.resource_to_access:type_name -> storage.PermissionSet.ResourceToAccessEntry
+	16, // 4: storage.PermissionSet.traits:type_name -> storage.Traits
+	1,  // 5: storage.PermissionSet.access_constraint:type_name -> storage.AccessConstraint
+	2,  // 6: storage.PermissionSet.scope_constraint:type_name -> storage.ScopeConstraint
+	10, // 7: storage.SimpleAccessScope.rules:type_name -> storage.SimpleAccessScope.Rules
+	16, // 8: storage.SimpleAccessScope.traits:type_name -> storage.Traits
+	13, // 9: storage.EffectiveAccessScope.clusters:type_name -> storage.EffectiveAccessScope.Cluster
+	0,  // 10: storage.Role.ResourceToAccessEntry.value:type_name -> storage.Access
+	0,  // 11: storage.PermissionSet.ResourceToAccessEntry.value:type_name -> storage.Access
+	11, // 12: storage.SimpleAccessScope.Rules.included_namespaces:type_name -> storage.SimpleAccessScope.Rules.Namespace
+	17, // 13: storage.SimpleAccessScope.Rules.cluster_label_selectors:type_name -> storage.SetBasedLabelSelector
+	17, // 14: storage.SimpleAccessScope.Rules.namespace_label_selectors:type_name -> storage.SetBasedLabelSelector
+	3,  // 15: storage.EffectiveAccessScope.Namespace.state:type_name -> storage.EffectiveAccessScope.State
+	14, // 16: storage.EffectiveAccessScope.Namespace.labels:type_name -> storage.EffectiveAccessScope.Namespace.LabelsEntry
+	3,  // 17: storage.EffectiveAccessScope.Cluster.state:type_name -> storage.EffectiveAccessScope.State
+	15, // 18: storage.EffectiveAccessScope.Cluster.labels:type_name -> storage.EffectiveAccessScope.Cluster.LabelsEntry
+	12, // 19: storage.EffectiveAccessScope.Cluster.namespaces:type_name -> storage.EffectiveAccessScope.Namespace
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_storage_role_proto_init() }
@@ -873,7 +997,7 @@ func file_storage_role_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_role_proto_rawDesc), len(file_storage_role_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      4,
 			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,

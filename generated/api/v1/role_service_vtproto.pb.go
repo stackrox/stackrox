@@ -99,6 +99,11 @@ func (m *GetResourcesResponse) CloneVT() *GetResourcesResponse {
 		copy(tmpContainer, rhs)
 		r.Resources = tmpContainer
 	}
+	if rhs := m.GlobalResources; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.GlobalResources = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -452,6 +457,15 @@ func (this *GetResourcesResponse) EqualVT(that *GetResourcesResponse) bool {
 	}
 	for i, vx := range this.Resources {
 		vy := that.Resources[i]
+		if vx != vy {
+			return false
+		}
+	}
+	if len(this.GlobalResources) != len(that.GlobalResources) {
+		return false
+	}
+	for i, vx := range this.GlobalResources {
+		vy := that.GlobalResources[i]
 		if vx != vy {
 			return false
 		}
@@ -976,6 +990,15 @@ func (m *GetResourcesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.GlobalResources) > 0 {
+		for iNdEx := len(m.GlobalResources) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.GlobalResources[iNdEx])
+			copy(dAtA[i:], m.GlobalResources[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.GlobalResources[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
 	}
 	if len(m.Resources) > 0 {
 		for iNdEx := len(m.Resources) - 1; iNdEx >= 0; iNdEx-- {
@@ -1593,6 +1616,12 @@ func (m *GetResourcesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Resources) > 0 {
 		for _, s := range m.Resources {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.GlobalResources) > 0 {
+		for _, s := range m.GlobalResources {
 			l = len(s)
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -2228,6 +2257,38 @@ func (m *GetResourcesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Resources = append(m.Resources, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GlobalResources", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GlobalResources = append(m.GlobalResources, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3728,6 +3789,42 @@ func (m *GetResourcesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Resources = append(m.Resources, stringValue)
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GlobalResources", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.GlobalResources = append(m.GlobalResources, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -5,15 +5,23 @@ import type { Empty } from './types';
 
 const resourcesUrl = '/v1/resources';
 
-export function fetchResources(): Promise<string[]> {
-    return axios
-        .get<{ resources: string[] }>(resourcesUrl)
-        .then((response) => response?.data?.resources ?? []);
+export type PermissionSetResources = {
+    resources: string[];
+    globalResources: string[];
+};
+
+export function fetchResources(): Promise<PermissionSetResources> {
+    return axios.get<PermissionSetResources>(resourcesUrl).then((response) => ({
+        resources: response?.data?.resources ?? [],
+        globalResources: response?.data?.globalResources ?? [],
+    }));
 }
 
 const rolesUrl = '/v1/roles';
 
 export type AccessLevel = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
+export type AccessConstraint = 'ACCESS_CONSTRAINT_UNSPECIFIED' | 'ACCESS_CONSTRAINT_READ';
+export type ScopeConstraint = 'SCOPE_CONSTRAINT_UNSPECIFIED' | 'SCOPE_CONSTRAINT_CLUSTER_NAMESPACE';
 
 /*
  * A permission associates a resource with its access level.
@@ -87,6 +95,8 @@ export type PermissionSet = {
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
+    accessConstraint?: AccessConstraint;
+    scopeConstraint?: ScopeConstraint;
     traits?: Traits;
 };
 
