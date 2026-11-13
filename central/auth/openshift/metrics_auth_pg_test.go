@@ -47,3 +47,28 @@ func TestSeedAccessScope(t *testing.T) {
 	require.True(t, found)
 	assert.Equal(t, accessScopeName, stored.GetName())
 }
+
+func TestSeedAccessScopePreservesExistingName(t *testing.T) {
+	pgTest := pgtest.ForT(t)
+	require.NotNil(t, pgTest)
+	defer pgTest.Close()
+	globaldb.SetPostgresTest(t, pgTest.DB)
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.Access)))
+	store := postgresSimpleAccessScopeStore.New(pgTest.DB)
+	custom := &storage.SimpleAccessScope{
+		Id: "a6b4f45c-3030-4e82-8bb5-e85397ef065d", Name: accessScopeName,
+	}
+	require.NoError(t, store.Upsert(ctx, custom))
+	seedAccessScope(ctx)
+	seedAccessScope(ctx)
+	stored, found, err := store.Get(ctx, accessScopeID)
+	require.NoError(t, err)
+	require.True(t, found)
+	assert.Equal(t, accessScopeName+" (built-in 1)", stored.GetName())
+	customAfter, found, err := store.Get(ctx, custom.GetId())
+	require.NoError(t, err)
+	require.True(t, found)
+	assert.Equal(t, accessScopeName, customAfter.GetName())
+}

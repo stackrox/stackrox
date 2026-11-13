@@ -12,31 +12,32 @@ import (
 )
 
 type permSetAttributes struct {
-	idSuffix           string
-	postgresID         string // postgresID should be populated with valid UUID values.
+	postgresID         string // postgresID should be populated with valid UUID values when specified.
 	description        string
 	resourceWithAccess []permissions.ResourceWithAccess
+	accessConstraint   storage.AccessConstraint
+	scopeConstraint    storage.ScopeConstraint
 }
 
 func (attributes *permSetAttributes) getID() string {
+	if attributes.postgresID == "" {
+		return rolePkg.GeneratePermissionSetID()
+	}
 	return attributes.postgresID
 }
 
 var defaultPermissionSets = map[string]permSetAttributes{
 	accesscontrol.Admin: {
-		idSuffix:           "admin",
 		postgresID:         accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin],
 		description:        "For users: use it to provide read and write access to all the resources",
 		resourceWithAccess: resources.AllResourcesModifyPermissions(),
 	},
 	accesscontrol.Analyst: {
-		idSuffix:           "analyst",
 		postgresID:         accesscontrol.DefaultPermissionSetIDs[accesscontrol.Analyst],
 		resourceWithAccess: rolePkg.GetAnalystPermissions(),
 		description:        "For users: use it to give read-only access to all the resources",
 	},
 	accesscontrol.ContinuousIntegration: {
-		idSuffix:    "continuousintegration",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ContinuousIntegration],
 		description: "For automation: it includes the permissions required to enforce deployment policies",
 		resourceWithAccess: []permissions.ResourceWithAccess{
@@ -45,7 +46,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.NetworkGraphViewer: {
-		idSuffix:    "networkgraphviewer",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.NetworkGraphViewer],
 		description: "For users: use it to give read-only access to the NetworkGraph pages",
 		resourceWithAccess: []permissions.ResourceWithAccess{
@@ -55,12 +55,10 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.None: {
-		idSuffix:    "none",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.None],
 		description: "For users: use it to provide no read and write access to any resource",
 	},
 	accesscontrol.SensorCreator: {
-		idSuffix:    "sensorcreator",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.SensorCreator],
 		description: "For automation: it consists of the permissions to create Sensors in secured clusters",
 		resourceWithAccess: []permissions.ResourceWithAccess{
@@ -70,7 +68,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.VulnMgmtApprover: {
-		idSuffix:    "vulnmgmtapprover",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnMgmtApprover],
 		description: "For users: use it to provide access to approve vulnerability deferrals or false positive requests",
 		resourceWithAccess: []permissions.ResourceWithAccess{
@@ -79,7 +76,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.VulnMgmtRequester: {
-		idSuffix:    "vulnmgmtrequester",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnMgmtRequester],
 		description: "For users: use it to provide access to request vulnerability deferrals or false positives",
 		resourceWithAccess: []permissions.ResourceWithAccess{
@@ -88,7 +84,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.VulnReporter: {
-		idSuffix:    "vulnreporter",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnReporter],
 		description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 		resourceWithAccess: func() []permissions.ResourceWithAccess {
@@ -100,7 +95,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		}(),
 	},
 	accesscontrol.VulnerabilityManagementConsumer: {
-		idSuffix:    "vulnmgmtconsumer",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnerabilityManagementConsumer],
 		description: "For users: use it to provide read-only access to analyze vulnerabilities and initiate risk acceptance process",
 		resourceWithAccess: []permissions.ResourceWithAccess{
@@ -113,7 +107,6 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.VulnerabilityManagementAdmin: {
-		idSuffix:    "vulnmgmtadmin",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.VulnerabilityManagementAdmin],
 		description: "For users: Use it to provide administrative access to analyze vulnerabilities, generate reports, and manage risk acceptance process",
 		resourceWithAccess: []permissions.ResourceWithAccess{
@@ -130,13 +123,21 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.ConfigController: {
-		idSuffix:    "configcontroller",
 		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConfigController],
 		description: "For automation: Used by config-controller and grants access to config objects managed by the controller",
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.Modify(resources.WorkflowAdministration),
 			permissions.View(resources.Integration),
 			permissions.View(resources.Cluster),
+		},
+	},
+	accesscontrol.ConsoleProxy: {
+		description:      "Access for Sensor-proxied OpenShift console requests",
+		accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image),
 		},
 	},
 }
@@ -181,6 +182,8 @@ func getDefaultPermissionSets() []*storage.PermissionSet {
 			Name:             name,
 			Description:      attributes.description,
 			ResourceToAccess: resourceToAccess,
+			AccessConstraint: attributes.accessConstraint,
+			ScopeConstraint:  attributes.scopeConstraint,
 			Traits: &storage.Traits{
 				Origin: storage.Traits_DEFAULT,
 			},
@@ -192,11 +195,6 @@ func getDefaultPermissionSets() []*storage.PermissionSet {
 }
 
 func getDefaultPermissionSet(name string) *storage.PermissionSet {
-	_, found := accesscontrol.DefaultPermissionSetIDs[name]
-	if !found {
-		return nil
-	}
-
 	attributes, found := defaultPermissionSets[name]
 	if !found {
 		return nil
@@ -207,6 +205,8 @@ func getDefaultPermissionSet(name string) *storage.PermissionSet {
 		Name:             name,
 		Description:      attributes.description,
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...),
+		AccessConstraint: attributes.accessConstraint,
+		ScopeConstraint:  attributes.scopeConstraint,
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DEFAULT,
 		},

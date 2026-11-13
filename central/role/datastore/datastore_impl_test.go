@@ -494,7 +494,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	badDeclarativePermissionSet.Traits = &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
-	updatedAdminPermissionSet := getValidPermissionSet(role.EnsureValidAccessScopeID("admin"), accesscontrol.Admin)
+	updatedAdminPermissionSet := getValidPermissionSet(accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin], accesscontrol.Admin)
 
 	err := s.dataStore.AddPermissionSet(s.hasWriteCtx, badPermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "invalid permission set for Add*() yields an error")
