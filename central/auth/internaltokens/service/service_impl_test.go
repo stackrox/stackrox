@@ -308,7 +308,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						assert.True(t, hasDeadline)
 						assert.True(t, filter(&storage.PermissionSet{Name: centralproxy.ConsoleProxyPermissionSetName}))
 						return []*storage.PermissionSet{{
-							Name: centralproxy.ConsoleProxyPermissionSetName,
+							Name:             centralproxy.ConsoleProxyPermissionSetName,
+							AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+							ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 							ResourceToAccess: map[string]storage.Access{
 								"Deployment": storage.Access_READ_ACCESS,
 								"Image":      storage.Access_READ_ACCESS,

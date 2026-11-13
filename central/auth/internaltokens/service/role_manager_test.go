@@ -19,6 +19,12 @@ import (
 
 func expectPermissionSetLookup(t *testing.T, roles *roleMocks.MockDataStore, names []string, matches []*storage.PermissionSet, lookupErr error) {
 	t.Helper()
+	for _, permissionSet := range matches {
+		if permissionSet != nil {
+			permissionSet.AccessConstraint = storage.AccessConstraint_ACCESS_CONSTRAINT_READ
+			permissionSet.ScopeConstraint = storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
+		}
+	}
 	roles.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
 			for _, name := range names {
@@ -96,6 +102,59 @@ func TestCreateScopedRolesKeepsPermissionsSeparate(t *testing.T) {
 	}, access)
 }
 
+func TestSensorProxyPermissionSetRequiresBothConstraints(t *testing.T) {
+	for name, tc := range map[string]struct {
+		access storage.AccessConstraint
+		scope  storage.ScopeConstraint
+		valid  bool
+	}{
+		"both": {
+			access: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			scope:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			valid:  true,
+		},
+		"neither": {},
+		"read only": {
+			access: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		},
+		"scoped only": {
+			scope: storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			for _, scoped := range []bool{false, true} {
+				roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+				roles.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return([]*storage.PermissionSet{{
+					Name:             "Reader",
+					ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+					AccessConstraint: tc.access,
+					ScopeConstraint:  tc.scope,
+				}}, nil)
+				manager := &roleManager{roles}
+				var err error
+				if scoped {
+					_, err = manager.createScopedRoles(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
+						ScopedPermissionSets: []*v1.ScopedPermissionSet{{
+							Name:              "Reader",
+							HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
+						}},
+					})
+				} else {
+					_, err = manager.createSensorRole(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
+						PermissionSetNames: []string{"Reader"},
+					})
+				}
+				if tc.valid {
+					require.NoError(t, err)
+				} else {
+					require.ErrorIs(t, err, errox.InvalidArgs)
+					assert.ErrorContains(t, err, "must constrain access to read and resources to cluster/namespace")
+				}
+			}
+		})
+	}
+}
+
 func TestCreateSensorRoleFailsClosed(t *testing.T) {
 	manager := &roleManager{}
 	_, err := manager.createSensorRole(t.Context(), nil)
@@ -133,23 +192,7 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissions map[string]storage.Access
 		expected    map[storage.Access][]string
-		denied      bool
 	}{
-		"global permission": {
-			permissions: map[string]storage.Access{
-				"Deployment": storage.Access_READ_ACCESS,
-				"Image":      storage.Access_READ_ACCESS,
-				"Access":     storage.Access_READ_ACCESS,
-			},
-			denied: true,
-		},
-		"write permission": {
-			permissions: map[string]storage.Access{
-				"Deployment": storage.Access_READ_ACCESS,
-				"Image":      storage.Access_READ_WRITE_ACCESS,
-			},
-			denied: true,
-		},
 		"missing permission": {
 			permissions: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
 			expected:    map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
@@ -166,11 +209,6 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
 					PermissionSetNames: []string{centralproxy.ConsoleProxyPermissionSetName}})
-			if tc.denied {
-				require.ErrorIs(t, err, errox.InvalidArgs)
-				assert.Nil(t, role)
-				return
-			}
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, role.Permissions)
 		})

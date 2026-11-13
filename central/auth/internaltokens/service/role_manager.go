@@ -7,7 +7,6 @@ import (
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
-	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 )
@@ -47,8 +46,8 @@ func (rm *roleManager) createSensorRole(
 		return nil, err
 	}
 	for _, permissionSet := range permissionSets {
-		if err := permissionsUtils.ValidateScopedReadOnlyPermissions(permissionSet.GetResourceToAccess()); err != nil {
-			return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q: %v", permissionSet.GetName(), err)
+		if err := validateSensorProxyPermissionSet(permissionSet); err != nil {
+			return nil, err
 		}
 	}
 	return &tokens.InternalRole{
@@ -74,8 +73,8 @@ func (rm *roleManager) createScopedRoles(
 	}
 	byName := make(map[string]*storage.PermissionSet, len(sets))
 	for _, permissionSet := range sets {
-		if err := permissionsUtils.ValidateScopedReadOnlyPermissions(permissionSet.GetResourceToAccess()); err != nil {
-			return nil, errox.InvalidArgs.Newf("Sensor proxy permission set %q: %v", permissionSet.GetName(), err)
+		if err := validateSensorProxyPermissionSet(permissionSet); err != nil {
+			return nil, err
 		}
 		byName[permissionSet.GetName()] = permissionSet
 	}
@@ -93,6 +92,15 @@ func (rm *roleManager) createScopedRoles(
 		})
 	}
 	return roles, nil
+}
+
+func validateSensorProxyPermissionSet(permissionSet *storage.PermissionSet) error {
+	if permissionSet.GetAccessConstraint() != storage.AccessConstraint_ACCESS_CONSTRAINT_READ ||
+		permissionSet.GetScopeConstraint() != storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE {
+		return errox.InvalidArgs.Newf("Sensor proxy permission set %q must constrain access to read and resources to cluster/namespace",
+			permissionSet.GetName())
+	}
+	return nil
 }
 
 func (rm *roleManager) getPermissionSetsByNames(ctx context.Context, permissionSetNames []string) ([]*storage.PermissionSet, error) {
