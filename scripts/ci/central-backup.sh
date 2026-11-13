@@ -22,7 +22,7 @@ source "$SCRIPTS_ROOT/tests/e2e/lib.sh"
 
 set -Eeuo pipefail
 
-NAMESPACE=acs-central
+NAMESPACE=stackrox
 ENVRC_FILE="${ENVRC_FILE:-/tmp/central.envrc}"
 
 load_envrc() {
@@ -163,7 +163,7 @@ wait_for_image_count_stable() {
 }
 
 wait_for_image_reprocessing() {
-    MAX_WAIT_SECONDS="600" wait_for_scanner_V4 "acs-central"
+    MAX_WAIT_SECONDS="600" wait_for_scanner_V4 "$NAMESPACE"
     restart_central_and_reconnect
     wait_for_image_count_stable
 }
@@ -177,7 +177,7 @@ strip_transient_cluster_auth_config() {
       | select(.type == "KUBE_SERVICE_ACCOUNT")
       | select(.mappings == [{
           "key": "sub",
-          "valueExpression": "system:serviceaccount:acs-central:config-controller",
+          "valueExpression": "system:serviceaccount:stackrox:config-controller",
           "role": "Configuration Controller"
         }])
       | .id
