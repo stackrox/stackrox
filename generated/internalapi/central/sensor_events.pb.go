@@ -332,6 +332,11 @@ type SensorEvent struct {
 	//	*SensorEvent_ImageIntegration
 	//	*SensorEvent_ReprocessDeployment
 	//	*SensorEvent_AlertResults
+	//	*SensorEvent_ComplianceOperatorResult
+	//	*SensorEvent_ComplianceOperatorProfile
+	//	*SensorEvent_ComplianceOperatorRule
+	//	*SensorEvent_ComplianceOperatorScanSettingBinding
+	//	*SensorEvent_ComplianceOperatorScan
 	//	*SensorEvent_VirtualMachineIndexReport
 	//	*SensorEvent_VirtualMachine
 	//	*SensorEvent_ComplianceOperatorResultV2
@@ -582,6 +587,51 @@ func (x *SensorEvent) GetAlertResults() *AlertResults {
 	return nil
 }
 
+func (x *SensorEvent) GetComplianceOperatorResult() *storage.ComplianceOperatorCheckResult {
+	if x != nil {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorResult); ok {
+			return x.ComplianceOperatorResult
+		}
+	}
+	return nil
+}
+
+func (x *SensorEvent) GetComplianceOperatorProfile() *storage.ComplianceOperatorProfile {
+	if x != nil {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorProfile); ok {
+			return x.ComplianceOperatorProfile
+		}
+	}
+	return nil
+}
+
+func (x *SensorEvent) GetComplianceOperatorRule() *storage.ComplianceOperatorRule {
+	if x != nil {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorRule); ok {
+			return x.ComplianceOperatorRule
+		}
+	}
+	return nil
+}
+
+func (x *SensorEvent) GetComplianceOperatorScanSettingBinding() *storage.ComplianceOperatorScanSettingBinding {
+	if x != nil {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding); ok {
+			return x.ComplianceOperatorScanSettingBinding
+		}
+	}
+	return nil
+}
+
+func (x *SensorEvent) GetComplianceOperatorScan() *storage.ComplianceOperatorScan {
+	if x != nil {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorScan); ok {
+			return x.ComplianceOperatorScan
+		}
+	}
+	return nil
+}
+
 func (x *SensorEvent) GetVirtualMachineIndexReport() *v1.IndexReportEvent {
 	if x != nil {
 		if x, ok := x.Resource.(*SensorEvent_VirtualMachineIndexReport); ok {
@@ -749,6 +799,26 @@ type SensorEvent_AlertResults struct {
 	AlertResults *AlertResults `protobuf:"bytes,18,opt,name=alert_results,json=alertResults,proto3,oneof"`
 }
 
+type SensorEvent_ComplianceOperatorResult struct {
+	ComplianceOperatorResult *storage.ComplianceOperatorCheckResult `protobuf:"bytes,20,opt,name=compliance_operator_result,json=complianceOperatorResult,proto3,oneof"`
+}
+
+type SensorEvent_ComplianceOperatorProfile struct {
+	ComplianceOperatorProfile *storage.ComplianceOperatorProfile `protobuf:"bytes,21,opt,name=compliance_operator_profile,json=complianceOperatorProfile,proto3,oneof"`
+}
+
+type SensorEvent_ComplianceOperatorRule struct {
+	ComplianceOperatorRule *storage.ComplianceOperatorRule `protobuf:"bytes,22,opt,name=compliance_operator_rule,json=complianceOperatorRule,proto3,oneof"`
+}
+
+type SensorEvent_ComplianceOperatorScanSettingBinding struct {
+	ComplianceOperatorScanSettingBinding *storage.ComplianceOperatorScanSettingBinding `protobuf:"bytes,23,opt,name=compliance_operator_scan_setting_binding,json=complianceOperatorScanSettingBinding,proto3,oneof"`
+}
+
+type SensorEvent_ComplianceOperatorScan struct {
+	ComplianceOperatorScan *storage.ComplianceOperatorScan `protobuf:"bytes,24,opt,name=compliance_operator_scan,json=complianceOperatorScan,proto3,oneof"`
+}
+
 type SensorEvent_VirtualMachineIndexReport struct {
 	VirtualMachineIndexReport *v1.IndexReportEvent `protobuf:"bytes,35,opt,name=virtual_machine_index_report,json=virtualMachineIndexReport,proto3,oneof"`
 }
@@ -821,6 +891,16 @@ func (*SensorEvent_ImageIntegration) isSensorEvent_Resource() {}
 func (*SensorEvent_ReprocessDeployment) isSensorEvent_Resource() {}
 
 func (*SensorEvent_AlertResults) isSensorEvent_Resource() {}
+
+func (*SensorEvent_ComplianceOperatorResult) isSensorEvent_Resource() {}
+
+func (*SensorEvent_ComplianceOperatorProfile) isSensorEvent_Resource() {}
+
+func (*SensorEvent_ComplianceOperatorRule) isSensorEvent_Resource() {}
+
+func (*SensorEvent_ComplianceOperatorScanSettingBinding) isSensorEvent_Resource() {}
+
+func (*SensorEvent_ComplianceOperatorScan) isSensorEvent_Resource() {}
 
 func (*SensorEvent_VirtualMachineIndexReport) isSensorEvent_Resource() {}
 
@@ -1514,7 +1594,7 @@ var File_internalapi_central_sensor_events_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
+	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
 	"\x17ReprocessDeploymentRisk\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\x81\x02\n" +
 	"\fAlertResults\x12#\n" +
@@ -1532,7 +1612,7 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"dispatcher\x18\x01 \x01(\tR\n" +
 	"dispatcher\x12\x1a\n" +
 	"\bresource\x18\x02 \x01(\tR\bresource\x12\x14\n" +
-	"\x05nanos\x18\x03 \x01(\x03R\x05nanos\"\xab\x12\n" +
+	"\x05nanos\x18\x03 \x01(\x03R\x05nanos\"\x9f\x16\n" +
 	"\vSensorEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x06action\x18\x02 \x01(\x0e2\x17.central.ResourceActionR\x06action\x12'\n" +
@@ -1560,6 +1640,11 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\x11image_integration\x18\r \x01(\v2\x19.storage.ImageIntegrationH\x01R\x10imageIntegration\x12U\n" +
 	"\x14reprocess_deployment\x18\x11 \x01(\v2 .central.ReprocessDeploymentRiskH\x01R\x13reprocessDeployment\x12<\n" +
 	"\ralert_results\x18\x12 \x01(\v2\x15.central.AlertResultsH\x01R\falertResults\x12f\n" +
+	"\x1acompliance_operator_result\x18\x14 \x01(\v2&.storage.ComplianceOperatorCheckResultH\x01R\x18complianceOperatorResult\x12d\n" +
+	"\x1bcompliance_operator_profile\x18\x15 \x01(\v2\".storage.ComplianceOperatorProfileH\x01R\x19complianceOperatorProfile\x12[\n" +
+	"\x18compliance_operator_rule\x18\x16 \x01(\v2\x1f.storage.ComplianceOperatorRuleH\x01R\x16complianceOperatorRule\x12\x87\x01\n" +
+	"(compliance_operator_scan_setting_binding\x18\x17 \x01(\v2-.storage.ComplianceOperatorScanSettingBindingH\x01R$complianceOperatorScanSettingBinding\x12[\n" +
+	"\x18compliance_operator_scan\x18\x18 \x01(\v2\x1f.storage.ComplianceOperatorScanH\x01R\x16complianceOperatorScan\x12f\n" +
 	"\x1cvirtual_machine_index_report\x18# \x01(\v2#.virtualmachine.v1.IndexReportEventH\x01R\x19virtualMachineIndexReport\x12L\n" +
 	"\x0fvirtual_machine\x18$ \x01(\v2!.virtualmachine.v1.VirtualMachineH\x01R\x0evirtualMachine\x12m\n" +
 	"\x1dcompliance_operator_result_v2\x18\x1b \x01(\v2(.central.ComplianceOperatorCheckResultV2H\x01R\x1acomplianceOperatorResultV2\x12k\n" +
@@ -1573,7 +1658,7 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\runchanged_ids\x18\x01 \x03(\tR\funchangedIdsB\x13\n" +
 	"\x11sensor_hash_oneofB\n" +
 	"\n" +
-	"\bresourceJ\x04\b\x14\x10\x15J\x04\b\x15\x10\x16J\x04\b\x16\x10\x17J\x04\b\x17\x10\x18J\x04\b\x18\x10\x19\"\xf7\x01\n" +
+	"\bresource\"\xf7\x01\n" +
 	"\x11SensorEnforcement\x12<\n" +
 	"\venforcement\x18\x01 \x01(\x0e2\x1a.storage.EnforcementActionR\venforcement\x12@\n" +
 	"\n" +
@@ -1636,51 +1721,56 @@ func file_internalapi_central_sensor_events_proto_rawDescGZIP() []byte {
 var file_internalapi_central_sensor_events_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_central_sensor_events_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_internalapi_central_sensor_events_proto_goTypes = []any{
-	(ResourceAction)(0),                            // 0: central.ResourceAction
-	(AlertResults_Source)(0),                       // 1: central.AlertResults.Source
-	(*ReprocessDeploymentRisk)(nil),                // 2: central.ReprocessDeploymentRisk
-	(*AlertResults)(nil),                           // 3: central.AlertResults
-	(*Timing)(nil),                                 // 4: central.Timing
-	(*SensorEvent)(nil),                            // 5: central.SensorEvent
-	(*SensorEnforcement)(nil),                      // 6: central.SensorEnforcement
-	(*DeploymentEnforcement)(nil),                  // 7: central.DeploymentEnforcement
-	(*ContainerInstanceEnforcement)(nil),           // 8: central.ContainerInstanceEnforcement
-	(*NetworkPoliciesCommand)(nil),                 // 9: central.NetworkPoliciesCommand
-	(*NetworkPoliciesResponse)(nil),                // 10: central.NetworkPoliciesResponse
-	(*SensorEvent_ResourcesSynced)(nil),            // 11: central.SensorEvent.ResourcesSynced
-	(*NetworkPoliciesCommand_Apply)(nil),           // 12: central.NetworkPoliciesCommand.Apply
-	(*NetworkPoliciesCommand_Payload)(nil),         // 13: central.NetworkPoliciesCommand.Payload
-	(*NetworkPoliciesResponse_Apply)(nil),          // 14: central.NetworkPoliciesResponse.Apply
-	(*NetworkPoliciesResponse_Error)(nil),          // 15: central.NetworkPoliciesResponse.Error
-	(*NetworkPoliciesResponse_Payload)(nil),        // 16: central.NetworkPoliciesResponse.Payload
-	(*storage.Alert)(nil),                          // 17: storage.Alert
-	(storage.LifecycleStage)(0),                    // 18: storage.LifecycleStage
-	(*storage.NetworkPolicy)(nil),                  // 19: storage.NetworkPolicy
-	(*storage.Deployment)(nil),                     // 20: storage.Deployment
-	(*storage.Pod)(nil),                            // 21: storage.Pod
-	(*storage.NamespaceMetadata)(nil),              // 22: storage.NamespaceMetadata
-	(*storage.Secret)(nil),                         // 23: storage.Secret
-	(*storage.Node)(nil),                           // 24: storage.Node
-	(*storage.NodeInventory)(nil),                  // 25: storage.NodeInventory
-	(*v4.IndexReport)(nil),                         // 26: scanner.v4.IndexReport
-	(*storage.ServiceAccount)(nil),                 // 27: storage.ServiceAccount
-	(*storage.K8SRole)(nil),                        // 28: storage.K8sRole
-	(*storage.K8SRoleBinding)(nil),                 // 29: storage.K8sRoleBinding
-	(*storage.ProcessIndicator)(nil),               // 30: storage.ProcessIndicator
-	(*storage.ProviderMetadata)(nil),               // 31: storage.ProviderMetadata
-	(*storage.OrchestratorMetadata)(nil),           // 32: storage.OrchestratorMetadata
-	(*storage.ImageIntegration)(nil),               // 33: storage.ImageIntegration
-	(*v1.IndexReportEvent)(nil),                    // 34: virtualmachine.v1.IndexReportEvent
-	(*v1.VirtualMachine)(nil),                      // 35: virtualmachine.v1.VirtualMachine
-	(*ComplianceOperatorCheckResultV2)(nil),        // 36: central.ComplianceOperatorCheckResultV2
-	(*ComplianceOperatorProfileV2)(nil),            // 37: central.ComplianceOperatorProfileV2
-	(*ComplianceOperatorRuleV2)(nil),               // 38: central.ComplianceOperatorRuleV2
-	(*ComplianceOperatorScanV2)(nil),               // 39: central.ComplianceOperatorScanV2
-	(*ComplianceOperatorScanSettingBindingV2)(nil), // 40: central.ComplianceOperatorScanSettingBindingV2
-	(*ComplianceOperatorSuiteV2)(nil),              // 41: central.ComplianceOperatorSuiteV2
-	(*ComplianceOperatorRemediationV2)(nil),        // 42: central.ComplianceOperatorRemediationV2
-	(storage.EnforcementAction)(0),                 // 43: storage.EnforcementAction
-	(*storage.NetworkPolicyModification)(nil),      // 44: storage.NetworkPolicyModification
+	(ResourceAction)(0),                                  // 0: central.ResourceAction
+	(AlertResults_Source)(0),                             // 1: central.AlertResults.Source
+	(*ReprocessDeploymentRisk)(nil),                      // 2: central.ReprocessDeploymentRisk
+	(*AlertResults)(nil),                                 // 3: central.AlertResults
+	(*Timing)(nil),                                       // 4: central.Timing
+	(*SensorEvent)(nil),                                  // 5: central.SensorEvent
+	(*SensorEnforcement)(nil),                            // 6: central.SensorEnforcement
+	(*DeploymentEnforcement)(nil),                        // 7: central.DeploymentEnforcement
+	(*ContainerInstanceEnforcement)(nil),                 // 8: central.ContainerInstanceEnforcement
+	(*NetworkPoliciesCommand)(nil),                       // 9: central.NetworkPoliciesCommand
+	(*NetworkPoliciesResponse)(nil),                      // 10: central.NetworkPoliciesResponse
+	(*SensorEvent_ResourcesSynced)(nil),                  // 11: central.SensorEvent.ResourcesSynced
+	(*NetworkPoliciesCommand_Apply)(nil),                 // 12: central.NetworkPoliciesCommand.Apply
+	(*NetworkPoliciesCommand_Payload)(nil),               // 13: central.NetworkPoliciesCommand.Payload
+	(*NetworkPoliciesResponse_Apply)(nil),                // 14: central.NetworkPoliciesResponse.Apply
+	(*NetworkPoliciesResponse_Error)(nil),                // 15: central.NetworkPoliciesResponse.Error
+	(*NetworkPoliciesResponse_Payload)(nil),              // 16: central.NetworkPoliciesResponse.Payload
+	(*storage.Alert)(nil),                                // 17: storage.Alert
+	(storage.LifecycleStage)(0),                          // 18: storage.LifecycleStage
+	(*storage.NetworkPolicy)(nil),                        // 19: storage.NetworkPolicy
+	(*storage.Deployment)(nil),                           // 20: storage.Deployment
+	(*storage.Pod)(nil),                                  // 21: storage.Pod
+	(*storage.NamespaceMetadata)(nil),                    // 22: storage.NamespaceMetadata
+	(*storage.Secret)(nil),                               // 23: storage.Secret
+	(*storage.Node)(nil),                                 // 24: storage.Node
+	(*storage.NodeInventory)(nil),                        // 25: storage.NodeInventory
+	(*v4.IndexReport)(nil),                               // 26: scanner.v4.IndexReport
+	(*storage.ServiceAccount)(nil),                       // 27: storage.ServiceAccount
+	(*storage.K8SRole)(nil),                              // 28: storage.K8sRole
+	(*storage.K8SRoleBinding)(nil),                       // 29: storage.K8sRoleBinding
+	(*storage.ProcessIndicator)(nil),                     // 30: storage.ProcessIndicator
+	(*storage.ProviderMetadata)(nil),                     // 31: storage.ProviderMetadata
+	(*storage.OrchestratorMetadata)(nil),                 // 32: storage.OrchestratorMetadata
+	(*storage.ImageIntegration)(nil),                     // 33: storage.ImageIntegration
+	(*storage.ComplianceOperatorCheckResult)(nil),        // 34: storage.ComplianceOperatorCheckResult
+	(*storage.ComplianceOperatorProfile)(nil),            // 35: storage.ComplianceOperatorProfile
+	(*storage.ComplianceOperatorRule)(nil),               // 36: storage.ComplianceOperatorRule
+	(*storage.ComplianceOperatorScanSettingBinding)(nil), // 37: storage.ComplianceOperatorScanSettingBinding
+	(*storage.ComplianceOperatorScan)(nil),               // 38: storage.ComplianceOperatorScan
+	(*v1.IndexReportEvent)(nil),                          // 39: virtualmachine.v1.IndexReportEvent
+	(*v1.VirtualMachine)(nil),                            // 40: virtualmachine.v1.VirtualMachine
+	(*ComplianceOperatorCheckResultV2)(nil),              // 41: central.ComplianceOperatorCheckResultV2
+	(*ComplianceOperatorProfileV2)(nil),                  // 42: central.ComplianceOperatorProfileV2
+	(*ComplianceOperatorRuleV2)(nil),                     // 43: central.ComplianceOperatorRuleV2
+	(*ComplianceOperatorScanV2)(nil),                     // 44: central.ComplianceOperatorScanV2
+	(*ComplianceOperatorScanSettingBindingV2)(nil),       // 45: central.ComplianceOperatorScanSettingBindingV2
+	(*ComplianceOperatorSuiteV2)(nil),                    // 46: central.ComplianceOperatorSuiteV2
+	(*ComplianceOperatorRemediationV2)(nil),              // 47: central.ComplianceOperatorRemediationV2
+	(storage.EnforcementAction)(0),                       // 48: storage.EnforcementAction
+	(*storage.NetworkPolicyModification)(nil),            // 49: storage.NetworkPolicyModification
 }
 var file_internalapi_central_sensor_events_proto_depIdxs = []int32{
 	17, // 0: central.AlertResults.alerts:type_name -> storage.Alert
@@ -1706,31 +1796,36 @@ var file_internalapi_central_sensor_events_proto_depIdxs = []int32{
 	33, // 20: central.SensorEvent.image_integration:type_name -> storage.ImageIntegration
 	2,  // 21: central.SensorEvent.reprocess_deployment:type_name -> central.ReprocessDeploymentRisk
 	3,  // 22: central.SensorEvent.alert_results:type_name -> central.AlertResults
-	34, // 23: central.SensorEvent.virtual_machine_index_report:type_name -> virtualmachine.v1.IndexReportEvent
-	35, // 24: central.SensorEvent.virtual_machine:type_name -> virtualmachine.v1.VirtualMachine
-	36, // 25: central.SensorEvent.compliance_operator_result_v2:type_name -> central.ComplianceOperatorCheckResultV2
-	37, // 26: central.SensorEvent.compliance_operator_profile_v2:type_name -> central.ComplianceOperatorProfileV2
-	38, // 27: central.SensorEvent.compliance_operator_rule_v2:type_name -> central.ComplianceOperatorRuleV2
-	39, // 28: central.SensorEvent.compliance_operator_scan_v2:type_name -> central.ComplianceOperatorScanV2
-	40, // 29: central.SensorEvent.compliance_operator_scan_setting_binding_v2:type_name -> central.ComplianceOperatorScanSettingBindingV2
-	41, // 30: central.SensorEvent.compliance_operator_suite_v2:type_name -> central.ComplianceOperatorSuiteV2
-	42, // 31: central.SensorEvent.compliance_operator_remediation_v2:type_name -> central.ComplianceOperatorRemediationV2
-	43, // 32: central.SensorEnforcement.enforcement:type_name -> storage.EnforcementAction
-	7,  // 33: central.SensorEnforcement.deployment:type_name -> central.DeploymentEnforcement
-	8,  // 34: central.SensorEnforcement.container_instance:type_name -> central.ContainerInstanceEnforcement
-	7,  // 35: central.ContainerInstanceEnforcement.deployment_enforcement:type_name -> central.DeploymentEnforcement
-	13, // 36: central.NetworkPoliciesCommand.payload:type_name -> central.NetworkPoliciesCommand.Payload
-	16, // 37: central.NetworkPoliciesResponse.payload:type_name -> central.NetworkPoliciesResponse.Payload
-	44, // 38: central.NetworkPoliciesCommand.Apply.modification:type_name -> storage.NetworkPolicyModification
-	12, // 39: central.NetworkPoliciesCommand.Payload.apply:type_name -> central.NetworkPoliciesCommand.Apply
-	44, // 40: central.NetworkPoliciesResponse.Apply.undo_modification:type_name -> storage.NetworkPolicyModification
-	15, // 41: central.NetworkPoliciesResponse.Payload.error:type_name -> central.NetworkPoliciesResponse.Error
-	14, // 42: central.NetworkPoliciesResponse.Payload.apply:type_name -> central.NetworkPoliciesResponse.Apply
-	43, // [43:43] is the sub-list for method output_type
-	43, // [43:43] is the sub-list for method input_type
-	43, // [43:43] is the sub-list for extension type_name
-	43, // [43:43] is the sub-list for extension extendee
-	0,  // [0:43] is the sub-list for field type_name
+	34, // 23: central.SensorEvent.compliance_operator_result:type_name -> storage.ComplianceOperatorCheckResult
+	35, // 24: central.SensorEvent.compliance_operator_profile:type_name -> storage.ComplianceOperatorProfile
+	36, // 25: central.SensorEvent.compliance_operator_rule:type_name -> storage.ComplianceOperatorRule
+	37, // 26: central.SensorEvent.compliance_operator_scan_setting_binding:type_name -> storage.ComplianceOperatorScanSettingBinding
+	38, // 27: central.SensorEvent.compliance_operator_scan:type_name -> storage.ComplianceOperatorScan
+	39, // 28: central.SensorEvent.virtual_machine_index_report:type_name -> virtualmachine.v1.IndexReportEvent
+	40, // 29: central.SensorEvent.virtual_machine:type_name -> virtualmachine.v1.VirtualMachine
+	41, // 30: central.SensorEvent.compliance_operator_result_v2:type_name -> central.ComplianceOperatorCheckResultV2
+	42, // 31: central.SensorEvent.compliance_operator_profile_v2:type_name -> central.ComplianceOperatorProfileV2
+	43, // 32: central.SensorEvent.compliance_operator_rule_v2:type_name -> central.ComplianceOperatorRuleV2
+	44, // 33: central.SensorEvent.compliance_operator_scan_v2:type_name -> central.ComplianceOperatorScanV2
+	45, // 34: central.SensorEvent.compliance_operator_scan_setting_binding_v2:type_name -> central.ComplianceOperatorScanSettingBindingV2
+	46, // 35: central.SensorEvent.compliance_operator_suite_v2:type_name -> central.ComplianceOperatorSuiteV2
+	47, // 36: central.SensorEvent.compliance_operator_remediation_v2:type_name -> central.ComplianceOperatorRemediationV2
+	48, // 37: central.SensorEnforcement.enforcement:type_name -> storage.EnforcementAction
+	7,  // 38: central.SensorEnforcement.deployment:type_name -> central.DeploymentEnforcement
+	8,  // 39: central.SensorEnforcement.container_instance:type_name -> central.ContainerInstanceEnforcement
+	7,  // 40: central.ContainerInstanceEnforcement.deployment_enforcement:type_name -> central.DeploymentEnforcement
+	13, // 41: central.NetworkPoliciesCommand.payload:type_name -> central.NetworkPoliciesCommand.Payload
+	16, // 42: central.NetworkPoliciesResponse.payload:type_name -> central.NetworkPoliciesResponse.Payload
+	49, // 43: central.NetworkPoliciesCommand.Apply.modification:type_name -> storage.NetworkPolicyModification
+	12, // 44: central.NetworkPoliciesCommand.Payload.apply:type_name -> central.NetworkPoliciesCommand.Apply
+	49, // 45: central.NetworkPoliciesResponse.Apply.undo_modification:type_name -> storage.NetworkPolicyModification
+	15, // 46: central.NetworkPoliciesResponse.Payload.error:type_name -> central.NetworkPoliciesResponse.Error
+	14, // 47: central.NetworkPoliciesResponse.Payload.apply:type_name -> central.NetworkPoliciesResponse.Apply
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_sensor_events_proto_init() }
@@ -1759,6 +1854,11 @@ func file_internalapi_central_sensor_events_proto_init() {
 		(*SensorEvent_ImageIntegration)(nil),
 		(*SensorEvent_ReprocessDeployment)(nil),
 		(*SensorEvent_AlertResults)(nil),
+		(*SensorEvent_ComplianceOperatorResult)(nil),
+		(*SensorEvent_ComplianceOperatorProfile)(nil),
+		(*SensorEvent_ComplianceOperatorRule)(nil),
+		(*SensorEvent_ComplianceOperatorScanSettingBinding)(nil),
+		(*SensorEvent_ComplianceOperatorScan)(nil),
 		(*SensorEvent_VirtualMachineIndexReport)(nil),
 		(*SensorEvent_VirtualMachine)(nil),
 		(*SensorEvent_ComplianceOperatorResultV2)(nil),

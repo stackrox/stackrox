@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -18,7 +17,7 @@ func New(ds policyDS.DataStore) *tracker.TrackerBase[*finding] {
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, ds)
 		},
-	).RequireView(resources.WorkflowAdministration)
+	)
 }
 
 func track(ctx context.Context, ds policyDS.DataStore) tracker.FindingErrorSequence[*finding] {

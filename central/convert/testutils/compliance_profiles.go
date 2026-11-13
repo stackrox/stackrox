@@ -32,6 +32,18 @@ var (
 		},
 	}
 
+	v1StorageRules = []*storage.ComplianceOperatorProfile_Rule{
+		{
+			Name: "rule-1",
+		},
+		{
+			Name: "rule-2",
+		},
+		{
+			Name: "rule-3",
+		},
+	}
+
 	v2StorageRules = []*storage.ComplianceOperatorProfileV2_Rule{
 		{
 			RuleName: "rule-1",
@@ -56,6 +68,20 @@ var (
 		},
 	}
 )
+
+// GetProfileV1SensorMsg -- returns a V1 storage object
+func GetProfileV1SensorMsg(_ *testing.T) *storage.ComplianceOperatorProfile {
+	return &storage.ComplianceOperatorProfile{
+		Id:          ProfileUID,
+		ProfileId:   profileID,
+		Name:        "ocp4-cis",
+		ClusterId:   fixtureconsts.Cluster1,
+		Description: "this is a test",
+		Labels:      nil,
+		Annotations: nil,
+		Rules:       v1StorageRules,
+	}
+}
 
 // GetProfileV2SensorMsg -- returns a V2 message from sensor
 func GetProfileV2SensorMsg(_ *testing.T) *central.ComplianceOperatorProfileV2 {

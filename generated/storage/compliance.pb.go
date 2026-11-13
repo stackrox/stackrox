@@ -445,9 +445,9 @@ func (x *ComplianceDomain) GetDeployments() map[string]*ComplianceDomain_Deploym
 // Next available tag: 5
 type ComplianceRunMetadata struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`              // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
-	StandardId      string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden"`              // @gotags: search:"Standard ID,hidden"
-	ClusterId       string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`                // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
+	StandardId      string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden"` // @gotags: search:"Standard ID,hidden"
+	ClusterId       string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	StartTimestamp  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
 	FinishTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty" search:"Compliance Run Finished Timestamp,hidden"` // @gotags: search:"Compliance Run Finished Timestamp,hidden"
 	Success         bool                   `protobuf:"varint,6,opt,name=success,proto3" json:"success,omitempty"`

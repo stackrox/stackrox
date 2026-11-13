@@ -3,11 +3,9 @@ package custom
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	dto "github.com/prometheus/client_model/go"
 	adminEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -30,7 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
-	pkgmetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
@@ -40,33 +37,6 @@ type trackerRunner []struct {
 	// getGroupConfig returns the storage configuration associated to the
 	// tracker.
 	getGroupConfig func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group
-}
-
-// prefixFilteringGatherer exposes only metric families whose names match a
-// caller's permitted prefixes without modifying the shared registry.
-type prefixFilteringGatherer struct {
-	registry prometheus.Gatherer
-	prefixes []string
-}
-
-func (g prefixFilteringGatherer) Gather() ([]*dto.MetricFamily, error) {
-	if len(g.prefixes) == 0 {
-		return nil, nil
-	}
-	families, err := g.registry.Gather()
-	if err != nil {
-		return nil, err
-	}
-	var permitted []*dto.MetricFamily
-	for _, family := range families {
-		for _, prefix := range g.prefixes {
-			if strings.HasPrefix(family.GetName(), prefix) {
-				permitted = append(permitted, family)
-				break
-			}
-		}
-	}
-	return permitted, nil
 }
 
 // RunnerConfiguration is a composition of tracker configurations.
@@ -209,9 +179,7 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		newCtx := authn.CopyContextIdentity(context.Background(), reqCtx)
 		newCtx = sac.CopyAccessScopeCheckerCore(newCtx, reqCtx)
 		for _, tracker := range tr {
-			if tracker.CanView(reqCtx) {
-				go tracker.Gather(newCtx)
-			}
+			go tracker.Gather(newCtx)
 		}
 	}
 
@@ -227,31 +195,16 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	globalGatherer := prefixFilteringGatherer{globalRegistry,
-		tr.getPermittedGlobalPrefixes(reqCtx)}
-
 	userRegistry.Lock()
 	defer userRegistry.Unlock()
 	globalRegistry.Lock()
 	defer globalRegistry.Unlock()
 
 	promhttp.HandlerFor(
-		prometheus.Gatherers{userRegistry, globalGatherer},
+		prometheus.Gatherers{userRegistry, globalRegistry},
 		promhttp.HandlerOpts{}).ServeHTTP(w, req)
 
 	go phonehome()
-}
-
-func (tr trackerRunner) getPermittedGlobalPrefixes(ctx context.Context) []string {
-	const commonPrefix = pkgmetrics.PrometheusNamespace + "_" + string(pkgmetrics.CentralSubsystem) + "_"
-
-	var prefixes []string
-	for _, tracker := range tr {
-		if tracker.IsGlobal() && tracker.CanView(ctx) {
-			prefixes = append(prefixes, commonPrefix+tracker.GetPrefix()+"_")
-		}
-	}
-	return prefixes
 }
 
 func phonehome() {

@@ -37,14 +37,18 @@ const (
 	SearchCategory_PODS                               SearchCategory = 25
 	SearchCategory_SECRETS                            SearchCategory = 5
 	SearchCategory_PROCESS_INDICATORS                 SearchCategory = 6
+	SearchCategory_COMPLIANCE                         SearchCategory = 7
 	SearchCategory_CLUSTERS                           SearchCategory = 8
 	SearchCategory_NAMESPACES                         SearchCategory = 9
 	SearchCategory_NODES                              SearchCategory = 10
-	SearchCategory_SERVICE_ACCOUNTS                   SearchCategory = 14
 	SearchCategory_NODE_COMPONENTS                    SearchCategory = 38
 	SearchCategory_NODE_VULN_EDGE                     SearchCategory = 28
 	SearchCategory_NODE_COMPONENT_EDGE                SearchCategory = 29
 	SearchCategory_NODE_COMPONENT_CVE_EDGE            SearchCategory = 33
+	SearchCategory_COMPLIANCE_STANDARD                SearchCategory = 11
+	SearchCategory_COMPLIANCE_CONTROL_GROUP           SearchCategory = 12
+	SearchCategory_COMPLIANCE_CONTROL                 SearchCategory = 13
+	SearchCategory_SERVICE_ACCOUNTS                   SearchCategory = 14
 	SearchCategory_ROLES                              SearchCategory = 15
 	SearchCategory_ROLEBINDINGS                       SearchCategory = 16
 	SearchCategory_REPORT_CONFIGURATIONS              SearchCategory = 37
@@ -62,6 +66,9 @@ const (
 	SearchCategory_NETWORK_BASELINE                   SearchCategory = 39
 	SearchCategory_NETWORK_POLICIES                   SearchCategory = 40
 	SearchCategory_PROCESS_BASELINE_RESULTS           SearchCategory = 41
+	SearchCategory_COMPLIANCE_METADATA                SearchCategory = 42
+	SearchCategory_COMPLIANCE_RESULTS                 SearchCategory = 43
+	SearchCategory_COMPLIANCE_DOMAIN                  SearchCategory = 44
 	SearchCategory_CLUSTER_HEALTH                     SearchCategory = 45
 	SearchCategory_POLICY_CATEGORIES                  SearchCategory = 46
 	SearchCategory_IMAGE_INTEGRATIONS                 SearchCategory = 47
@@ -116,14 +123,18 @@ var (
 		25: "PODS",
 		5:  "SECRETS",
 		6:  "PROCESS_INDICATORS",
+		7:  "COMPLIANCE",
 		8:  "CLUSTERS",
 		9:  "NAMESPACES",
 		10: "NODES",
-		14: "SERVICE_ACCOUNTS",
 		38: "NODE_COMPONENTS",
 		28: "NODE_VULN_EDGE",
 		29: "NODE_COMPONENT_EDGE",
 		33: "NODE_COMPONENT_CVE_EDGE",
+		11: "COMPLIANCE_STANDARD",
+		12: "COMPLIANCE_CONTROL_GROUP",
+		13: "COMPLIANCE_CONTROL",
+		14: "SERVICE_ACCOUNTS",
 		15: "ROLES",
 		16: "ROLEBINDINGS",
 		37: "REPORT_CONFIGURATIONS",
@@ -141,6 +152,9 @@ var (
 		39: "NETWORK_BASELINE",
 		40: "NETWORK_POLICIES",
 		41: "PROCESS_BASELINE_RESULTS",
+		42: "COMPLIANCE_METADATA",
+		43: "COMPLIANCE_RESULTS",
+		44: "COMPLIANCE_DOMAIN",
 		45: "CLUSTER_HEALTH",
 		46: "POLICY_CATEGORIES",
 		47: "IMAGE_INTEGRATIONS",
@@ -192,14 +206,18 @@ var (
 		"PODS":                               25,
 		"SECRETS":                            5,
 		"PROCESS_INDICATORS":                 6,
+		"COMPLIANCE":                         7,
 		"CLUSTERS":                           8,
 		"NAMESPACES":                         9,
 		"NODES":                              10,
-		"SERVICE_ACCOUNTS":                   14,
 		"NODE_COMPONENTS":                    38,
 		"NODE_VULN_EDGE":                     28,
 		"NODE_COMPONENT_EDGE":                29,
 		"NODE_COMPONENT_CVE_EDGE":            33,
+		"COMPLIANCE_STANDARD":                11,
+		"COMPLIANCE_CONTROL_GROUP":           12,
+		"COMPLIANCE_CONTROL":                 13,
+		"SERVICE_ACCOUNTS":                   14,
 		"ROLES":                              15,
 		"ROLEBINDINGS":                       16,
 		"REPORT_CONFIGURATIONS":              37,
@@ -217,6 +235,9 @@ var (
 		"NETWORK_BASELINE":                   39,
 		"NETWORK_POLICIES":                   40,
 		"PROCESS_BASELINE_RESULTS":           41,
+		"COMPLIANCE_METADATA":                42,
+		"COMPLIANCE_RESULTS":                 43,
+		"COMPLIANCE_DOMAIN":                  44,
 		"CLUSTER_HEALTH":                     45,
 		"POLICY_CATEGORIES":                  46,
 		"IMAGE_INTEGRATIONS":                 47,
@@ -1915,7 +1936,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\xc9\r\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values*\xc6\x0e\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -1929,17 +1950,22 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\vDEPLOYMENTS\x10\x04\x12\b\n" +
 	"\x04PODS\x10\x19\x12\v\n" +
 	"\aSECRETS\x10\x05\x12\x16\n" +
-	"\x12PROCESS_INDICATORS\x10\x06\x12\f\n" +
+	"\x12PROCESS_INDICATORS\x10\x06\x12\x0e\n" +
+	"\n" +
+	"COMPLIANCE\x10\a\x12\f\n" +
 	"\bCLUSTERS\x10\b\x12\x0e\n" +
 	"\n" +
 	"NAMESPACES\x10\t\x12\t\n" +
 	"\x05NODES\x10\n" +
-	"\x12\x14\n" +
-	"\x10SERVICE_ACCOUNTS\x10\x0e\x12\x13\n" +
+	"\x12\x13\n" +
 	"\x0fNODE_COMPONENTS\x10&\x12\x12\n" +
 	"\x0eNODE_VULN_EDGE\x10\x1c\x12\x17\n" +
 	"\x13NODE_COMPONENT_EDGE\x10\x1d\x12\x1b\n" +
-	"\x17NODE_COMPONENT_CVE_EDGE\x10!\x12\t\n" +
+	"\x17NODE_COMPONENT_CVE_EDGE\x10!\x12\x17\n" +
+	"\x13COMPLIANCE_STANDARD\x10\v\x12\x1c\n" +
+	"\x18COMPLIANCE_CONTROL_GROUP\x10\f\x12\x16\n" +
+	"\x12COMPLIANCE_CONTROL\x10\r\x12\x14\n" +
+	"\x10SERVICE_ACCOUNTS\x10\x0e\x12\t\n" +
 	"\x05ROLES\x10\x0f\x12\x10\n" +
 	"\fROLEBINDINGS\x10\x10\x12\x19\n" +
 	"\x15REPORT_CONFIGURATIONS\x10%\x12\x15\n" +
@@ -1956,7 +1982,10 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\fVULN_REQUEST\x10 \x12\x14\n" +
 	"\x10NETWORK_BASELINE\x10'\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10(\x12\x1c\n" +
-	"\x18PROCESS_BASELINE_RESULTS\x10)\x12\x12\n" +
+	"\x18PROCESS_BASELINE_RESULTS\x10)\x12\x17\n" +
+	"\x13COMPLIANCE_METADATA\x10*\x12\x16\n" +
+	"\x12COMPLIANCE_RESULTS\x10+\x12\x15\n" +
+	"\x11COMPLIANCE_DOMAIN\x10,\x12\x12\n" +
 	"\x0eCLUSTER_HEALTH\x10-\x12\x15\n" +
 	"\x11POLICY_CATEGORIES\x10.\x12\x16\n" +
 	"\x12IMAGE_INTEGRATIONS\x10/\x12\x0f\n" +
@@ -1994,7 +2023,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x18VIRTUAL_MACHINE_SCANS_V2\x10Q\x12!\n" +
 	"\x1dVIRTUAL_MACHINE_COMPONENTS_V2\x10R\x12&\n" +
 	"\"VIRTUAL_MACHINE_VULNERABILITIES_V2\x10S\x12\x13\n" +
-	"\x0fIMAGE_CVE_INFOS\x10T\"\x04\b\x1e\x10\x1e\"\x04\b\a\x10\a\"\x04\b\v\x10\v\"\x04\b\f\x10\f\"\x04\b\r\x10\r\"\x04\b*\x10*\"\x04\b+\x10+\"\x04\b,\x10,\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
+	"\x0fIMAGE_CVE_INFOS\x10T\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
 	"\x0eSearchDataType\x12\x0f\n" +
 	"\vSEARCH_BOOL\x10\x00\x12\x12\n" +
 	"\x0eSEARCH_NUMERIC\x10\x01\x12\x11\n" +

@@ -116,6 +116,18 @@ func (s *PipelineTestSuite) TestCapabilities() {
 }
 
 func (s *PipelineTestSuite) TestMatch() {
+	v1Msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     testutils.ScanUID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorScan{
+					ComplianceOperatorScan: testutils.GetScanV1Storage(s.T()),
+				},
+			},
+		},
+	}
+
 	v2Msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
@@ -140,6 +152,7 @@ func (s *PipelineTestSuite) TestMatch() {
 		},
 	}
 
+	s.Require().False(s.pipeline.Match(v1Msg))
 	s.Require().True(s.pipeline.Match(v2Msg))
 	s.Require().False(s.pipeline.Match(otherMsg))
 }

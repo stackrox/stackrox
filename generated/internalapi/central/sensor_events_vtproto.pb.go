@@ -412,6 +412,91 @@ func (m *SensorEvent_AlertResults) CloneVT() isSensorEvent_Resource {
 	return r
 }
 
+func (m *SensorEvent_ComplianceOperatorResult) CloneVT() isSensorEvent_Resource {
+	if m == nil {
+		return (*SensorEvent_ComplianceOperatorResult)(nil)
+	}
+	r := new(SensorEvent_ComplianceOperatorResult)
+	if rhs := m.ComplianceOperatorResult; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *storage.ComplianceOperatorCheckResult
+		}); ok {
+			r.ComplianceOperatorResult = vtpb.CloneVT()
+		} else {
+			r.ComplianceOperatorResult = proto.Clone(rhs).(*storage.ComplianceOperatorCheckResult)
+		}
+	}
+	return r
+}
+
+func (m *SensorEvent_ComplianceOperatorProfile) CloneVT() isSensorEvent_Resource {
+	if m == nil {
+		return (*SensorEvent_ComplianceOperatorProfile)(nil)
+	}
+	r := new(SensorEvent_ComplianceOperatorProfile)
+	if rhs := m.ComplianceOperatorProfile; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *storage.ComplianceOperatorProfile
+		}); ok {
+			r.ComplianceOperatorProfile = vtpb.CloneVT()
+		} else {
+			r.ComplianceOperatorProfile = proto.Clone(rhs).(*storage.ComplianceOperatorProfile)
+		}
+	}
+	return r
+}
+
+func (m *SensorEvent_ComplianceOperatorRule) CloneVT() isSensorEvent_Resource {
+	if m == nil {
+		return (*SensorEvent_ComplianceOperatorRule)(nil)
+	}
+	r := new(SensorEvent_ComplianceOperatorRule)
+	if rhs := m.ComplianceOperatorRule; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *storage.ComplianceOperatorRule
+		}); ok {
+			r.ComplianceOperatorRule = vtpb.CloneVT()
+		} else {
+			r.ComplianceOperatorRule = proto.Clone(rhs).(*storage.ComplianceOperatorRule)
+		}
+	}
+	return r
+}
+
+func (m *SensorEvent_ComplianceOperatorScanSettingBinding) CloneVT() isSensorEvent_Resource {
+	if m == nil {
+		return (*SensorEvent_ComplianceOperatorScanSettingBinding)(nil)
+	}
+	r := new(SensorEvent_ComplianceOperatorScanSettingBinding)
+	if rhs := m.ComplianceOperatorScanSettingBinding; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *storage.ComplianceOperatorScanSettingBinding
+		}); ok {
+			r.ComplianceOperatorScanSettingBinding = vtpb.CloneVT()
+		} else {
+			r.ComplianceOperatorScanSettingBinding = proto.Clone(rhs).(*storage.ComplianceOperatorScanSettingBinding)
+		}
+	}
+	return r
+}
+
+func (m *SensorEvent_ComplianceOperatorScan) CloneVT() isSensorEvent_Resource {
+	if m == nil {
+		return (*SensorEvent_ComplianceOperatorScan)(nil)
+	}
+	r := new(SensorEvent_ComplianceOperatorScan)
+	if rhs := m.ComplianceOperatorScan; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *storage.ComplianceOperatorScan
+		}); ok {
+			r.ComplianceOperatorScan = vtpb.CloneVT()
+		} else {
+			r.ComplianceOperatorScan = proto.Clone(rhs).(*storage.ComplianceOperatorScan)
+		}
+	}
+	return r
+}
+
 func (m *SensorEvent_VirtualMachineIndexReport) CloneVT() isSensorEvent_Resource {
 	if m == nil {
 		return (*SensorEvent_VirtualMachineIndexReport)(nil)
@@ -1383,6 +1468,161 @@ func (this *SensorEvent_Pod) EqualVT(thatIface isSensorEvent_Resource) bool {
 			q = &storage.Pod{}
 		}
 		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Pod) bool }); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *SensorEvent_ComplianceOperatorResult) EqualVT(thatIface isSensorEvent_Resource) bool {
+	that, ok := thatIface.(*SensorEvent_ComplianceOperatorResult)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ComplianceOperatorResult, that.ComplianceOperatorResult; p != q {
+		if p == nil {
+			p = &storage.ComplianceOperatorCheckResult{}
+		}
+		if q == nil {
+			q = &storage.ComplianceOperatorCheckResult{}
+		}
+		if equal, ok := interface{}(p).(interface {
+			EqualVT(*storage.ComplianceOperatorCheckResult) bool
+		}); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *SensorEvent_ComplianceOperatorProfile) EqualVT(thatIface isSensorEvent_Resource) bool {
+	that, ok := thatIface.(*SensorEvent_ComplianceOperatorProfile)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ComplianceOperatorProfile, that.ComplianceOperatorProfile; p != q {
+		if p == nil {
+			p = &storage.ComplianceOperatorProfile{}
+		}
+		if q == nil {
+			q = &storage.ComplianceOperatorProfile{}
+		}
+		if equal, ok := interface{}(p).(interface {
+			EqualVT(*storage.ComplianceOperatorProfile) bool
+		}); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *SensorEvent_ComplianceOperatorRule) EqualVT(thatIface isSensorEvent_Resource) bool {
+	that, ok := thatIface.(*SensorEvent_ComplianceOperatorRule)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ComplianceOperatorRule, that.ComplianceOperatorRule; p != q {
+		if p == nil {
+			p = &storage.ComplianceOperatorRule{}
+		}
+		if q == nil {
+			q = &storage.ComplianceOperatorRule{}
+		}
+		if equal, ok := interface{}(p).(interface {
+			EqualVT(*storage.ComplianceOperatorRule) bool
+		}); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *SensorEvent_ComplianceOperatorScanSettingBinding) EqualVT(thatIface isSensorEvent_Resource) bool {
+	that, ok := thatIface.(*SensorEvent_ComplianceOperatorScanSettingBinding)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ComplianceOperatorScanSettingBinding, that.ComplianceOperatorScanSettingBinding; p != q {
+		if p == nil {
+			p = &storage.ComplianceOperatorScanSettingBinding{}
+		}
+		if q == nil {
+			q = &storage.ComplianceOperatorScanSettingBinding{}
+		}
+		if equal, ok := interface{}(p).(interface {
+			EqualVT(*storage.ComplianceOperatorScanSettingBinding) bool
+		}); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *SensorEvent_ComplianceOperatorScan) EqualVT(thatIface isSensorEvent_Resource) bool {
+	that, ok := thatIface.(*SensorEvent_ComplianceOperatorScan)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ComplianceOperatorScan, that.ComplianceOperatorScan; p != q {
+		if p == nil {
+			p = &storage.ComplianceOperatorScan{}
+		}
+		if q == nil {
+			q = &storage.ComplianceOperatorScan{}
+		}
+		if equal, ok := interface{}(p).(interface {
+			EqualVT(*storage.ComplianceOperatorScan) bool
+		}); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -2913,6 +3153,201 @@ func (m *SensorEvent_Pod) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
+func (m *SensorEvent_ComplianceOperatorResult) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorEvent_ComplianceOperatorResult) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ComplianceOperatorResult != nil {
+		if vtmsg, ok := interface{}(m.ComplianceOperatorResult).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ComplianceOperatorResult)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *SensorEvent_ComplianceOperatorProfile) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorEvent_ComplianceOperatorProfile) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ComplianceOperatorProfile != nil {
+		if vtmsg, ok := interface{}(m.ComplianceOperatorProfile).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ComplianceOperatorProfile)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xaa
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xaa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *SensorEvent_ComplianceOperatorRule) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorEvent_ComplianceOperatorRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ComplianceOperatorRule != nil {
+		if vtmsg, ok := interface{}(m.ComplianceOperatorRule).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ComplianceOperatorRule)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb2
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb2
+	}
+	return len(dAtA) - i, nil
+}
+func (m *SensorEvent_ComplianceOperatorScanSettingBinding) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorEvent_ComplianceOperatorScanSettingBinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ComplianceOperatorScanSettingBinding != nil {
+		if vtmsg, ok := interface{}(m.ComplianceOperatorScanSettingBinding).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ComplianceOperatorScanSettingBinding)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xba
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xba
+	}
+	return len(dAtA) - i, nil
+}
+func (m *SensorEvent_ComplianceOperatorScan) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorEvent_ComplianceOperatorScan) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ComplianceOperatorScan != nil {
+		if vtmsg, ok := interface{}(m.ComplianceOperatorScan).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.ComplianceOperatorScan)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xc2
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xc2
+	}
+	return len(dAtA) - i, nil
+}
 func (m *SensorEvent_NodeInventory) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
@@ -4308,6 +4743,106 @@ func (m *SensorEvent_Pod) SizeVT() (n int) {
 			l = size.SizeVT()
 		} else {
 			l = proto.Size(m.Pod)
+		}
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *SensorEvent_ComplianceOperatorResult) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ComplianceOperatorResult != nil {
+		if size, ok := interface{}(m.ComplianceOperatorResult).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ComplianceOperatorResult)
+		}
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *SensorEvent_ComplianceOperatorProfile) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ComplianceOperatorProfile != nil {
+		if size, ok := interface{}(m.ComplianceOperatorProfile).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ComplianceOperatorProfile)
+		}
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *SensorEvent_ComplianceOperatorRule) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ComplianceOperatorRule != nil {
+		if size, ok := interface{}(m.ComplianceOperatorRule).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ComplianceOperatorRule)
+		}
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *SensorEvent_ComplianceOperatorScanSettingBinding) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ComplianceOperatorScanSettingBinding != nil {
+		if size, ok := interface{}(m.ComplianceOperatorScanSettingBinding).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ComplianceOperatorScanSettingBinding)
+		}
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *SensorEvent_ComplianceOperatorScan) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ComplianceOperatorScan != nil {
+		if size, ok := interface{}(m.ComplianceOperatorScan).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.ComplianceOperatorScan)
 		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
@@ -6203,6 +6738,291 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				m.Resource = &SensorEvent_Pod{Pod: v}
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorResult", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorResult); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorResult).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorResult); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorCheckResult{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorResult{ComplianceOperatorResult: v}
+			}
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorProfile", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorProfile); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorProfile).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorProfile); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorProfile{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorProfile{ComplianceOperatorProfile: v}
+			}
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorRule", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorRule); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorRule).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorRule); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorRule{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorRule{ComplianceOperatorRule: v}
+			}
+			iNdEx = postIndex
+		case 23:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorScanSettingBinding", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScanSettingBinding).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorScanSettingBinding); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorScanSettingBinding{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorScanSettingBinding{ComplianceOperatorScanSettingBinding: v}
+			}
+			iNdEx = postIndex
+		case 24:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorScan", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScan); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScan).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorScan); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorScan{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorScan{ComplianceOperatorScan: v}
 			}
 			iNdEx = postIndex
 		case 25:
@@ -9515,6 +10335,291 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 					}
 				}
 				m.Resource = &SensorEvent_Pod{Pod: v}
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorResult", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorResult); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorResult).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorResult); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorCheckResult{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorResult{ComplianceOperatorResult: v}
+			}
+			iNdEx = postIndex
+		case 21:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorProfile", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorProfile); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorProfile).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorProfile); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorProfile{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorProfile{ComplianceOperatorProfile: v}
+			}
+			iNdEx = postIndex
+		case 22:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorRule", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorRule); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorRule).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorRule); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorRule{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorRule{ComplianceOperatorRule: v}
+			}
+			iNdEx = postIndex
+		case 23:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorScanSettingBinding", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScanSettingBinding).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorScanSettingBinding); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorScanSettingBinding{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorScanSettingBinding{ComplianceOperatorScanSettingBinding: v}
+			}
+			iNdEx = postIndex
+		case 24:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorScan", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScan); ok {
+				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScan).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceOperatorScan); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &storage.ComplianceOperatorScan{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_ComplianceOperatorScan{ComplianceOperatorScan: v}
 			}
 			iNdEx = postIndex
 		case 25:

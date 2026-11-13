@@ -16,6 +16,15 @@ var (
 	TransitionTime = protocompat.TimestampNow()
 )
 
+// GetScanSettingBindingV1Storage -- returns V1 storage scan setting binding storage object
+func GetScanSettingBindingV1Storage(_ *testing.T, clusterID string) *storage.ComplianceOperatorScanSettingBinding {
+	return &storage.ComplianceOperatorScanSettingBinding{
+		Id:        ScanSettingUID,
+		Name:      "ocp-scan-setting-binding-name",
+		ClusterId: clusterID,
+	}
+}
+
 // GetScanSettingBindingV2Storage -- returns V2 storage scan setting binding storage object
 func GetScanSettingBindingV2Storage(_ *testing.T, clusterID string) *storage.ComplianceOperatorScanSettingBindingV2 {
 	return &storage.ComplianceOperatorScanSettingBindingV2{
