@@ -87,6 +87,33 @@ func (s *groupsWithPostgresTestSuite) TestAddGroups() {
 	s.NoError(err)
 }
 
+func (s *groupsWithPostgresTestSuite) TestExists() {
+	group := fixtures.GetGroup()
+	props := group.GetProps()
+	lookupProps := &storage.GroupProperties{
+		AuthProviderId: props.GetAuthProviderId(),
+		Key:            props.GetKey(),
+		Value:          props.GetValue(),
+	}
+
+	exists, err := s.groupsDatastore.Exists(s.ctx, lookupProps)
+	s.NoError(err)
+	s.False(exists)
+
+	s.validRoleAndAuthProvider(group.GetRoleName(), props.GetAuthProviderId(), 1)
+	group.Props.Id = ""
+	s.Require().NoError(s.groupsDatastore.Add(s.ctx, group))
+
+	exists, err = s.groupsDatastore.Exists(s.ctx, lookupProps)
+	s.NoError(err)
+	s.True(exists)
+
+	lookupProps.Value = "some-other-value"
+	exists, err = s.groupsDatastore.Exists(s.ctx, lookupProps)
+	s.NoError(err)
+	s.False(exists)
+}
+
 func (s *groupsWithPostgresTestSuite) TestUpdateGroups() {
 	group := fixtures.GetGroup()
 
