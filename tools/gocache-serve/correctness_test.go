@@ -3,8 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -181,3 +183,163 @@ func TestManifestWithinRunMergeGrows(t *testing.T) {
 }
 
 // Ensure unused-import style issues don't hide real usage.
+
+// countingBackend wraps a Backend and counts Get calls (test observability
+// for the circuit-breaker tests).
+type countingBackend struct {
+	inner Backend
+	gets  int32
+}
+
+func (c *countingBackend) Get(id string) ([]byte, error) {
+	atomic.AddInt32(&c.gets, 1)
+	return c.inner.Get(id)
+}
+func (c *countingBackend) Put(id string, body []byte) error { return c.inner.Put(id, body) }
+func (c *countingBackend) PutIfNotExist(id string, body []byte) (bool, error) {
+	return c.inner.PutIfNotExist(id, body)
+}
+func (c *countingBackend) ListKeys() ([]string, error)          { return c.inner.ListKeys() }
+func (c *countingBackend) ListPrefix(p string) ([]string, error) { return c.inner.ListPrefix(p) }
+func (c *countingBackend) Close() error                         { return c.inner.Close() }
+
+// TestFallbackCircuitBreakerOpens: when both stores miss (genuinely cold
+// source state), the secondary is consulted at most fallbackBreakerLimit
+// times — after that, each miss pays ONE round trip, not two (the unfused
+// fallback cost operator-bundle +72s in CI).
+func TestFallbackCircuitBreakerOpens(t *testing.T) {
+	primary := &DirBackend{root: t.TempDir()}
+	secondary := &countingBackend{inner: &DirBackend{root: t.TempDir()}}
+	fb := &fallbackBackend{primary: primary, secondary: secondary}
+
+	for i := 0; i < 50; i++ {
+		got, err := fb.Get(fmt.Sprintf("%064x", i))
+		if err != nil || got != nil {
+			t.Fatalf("get %d: expected clean miss, got=%v err=%v", i, got, err)
+		}
+	}
+	if n := atomic.LoadInt32(&secondary.gets); n != fallbackBreakerLimit {
+		t.Fatalf("breaker did not open: secondary queried %d times (want exactly %d)", n, fallbackBreakerLimit)
+	}
+}
+
+// TestFallbackCircuitBreakerResetsOnHit: a single secondary hit resets the
+// consecutive-miss count, so a mixed workload (some shared entries, some
+// cold) keeps the fallback active.
+func TestFallbackCircuitBreakerResetsOnHit(t *testing.T) {
+	primary := &DirBackend{root: t.TempDir()}
+	secStore := &DirBackend{root: t.TempDir()}
+	// One entry the secondary has: a hit that should reset the breaker.
+	hotID := fmt.Sprintf("%064x", 0xdead)
+	secStore.Put(hotID, []byte("shared"))
+	secondary := &countingBackend{inner: secStore}
+	fb := &fallbackBackend{primary: primary, secondary: secondary}
+
+	// 19 misses (below threshold).
+	for i := 1; i <= 19; i++ {
+		fb.Get(fmt.Sprintf("%064x", i))
+	}
+	// A hit: resets the consecutive-miss count.
+	if got, _ := fb.Get(hotID); got == nil {
+		t.Fatal("expected read-through hit")
+	}
+	// 15 more misses (kept under the threshold so the breaker itself
+	// doesn't open): with the reset, all 15 consult the secondary.
+	// Without the reset, the count would have continued at 19 and the
+	// breaker would open on the very next miss — querying only 1 more.
+	for i := 100; i < 115; i++ {
+		fb.Get(fmt.Sprintf("%064x", i))
+	}
+	want := int32(19 + 1 + 15)
+	if n := atomic.LoadInt32(&secondary.gets); n != want {
+		t.Fatalf("reset-on-hit broken: secondary queried %d times (want %d)", n, want)
+	}
+}
+
+// TestManifestParsingSanitizesIDs: malformed manifest lines (the CI panic
+// came from a 425-char "ID") must be filtered at parse time, valid lines
+// kept, meta preserved.
+func TestManifestParsingSanitizesIDs(t *testing.T) {
+	valid := fmt.Sprintf("%064x", 42)
+	validWithMeta := fmt.Sprintf("%064x", 43)
+	long := strings.Repeat("a", 425)          // the observed crash trigger
+	nonHex := "z" + strings.Repeat("0", 63)   // right length, wrong charset
+	short := "abcd"                           // too short
+	upper := strings.ToUpper(valid)           // uppercase not accepted
+	content := "#run:r1\n" +
+		valid + "\n" +
+		validWithMeta + " " + strings.Repeat("b", 64) + "\n" +
+		long + "\n" + nonHex + "\n" + short + "\n" + upper + "\n"
+	b := &DirBackend{root: t.TempDir()}
+	if err := b.Put("manifest-sanitize", []byte(content)); err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	entries, runID, err := DownloadManifest(b, "sanitize")
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if runID != "r1" {
+		t.Fatalf("runID: %q", runID)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("sanitizer kept garbage: %d entries (want 2)", len(entries))
+	}
+	if entries[0].id != valid || entries[1].id != validWithMeta {
+		t.Fatalf("wrong entries kept: %+v", entries)
+	}
+	if entries[1].meta != strings.Repeat("b", 64) {
+		t.Fatalf("meta lost: %q", entries[1].meta)
+	}
+}
+
+// TestIsHexID: boundary table for the manifest ID sanitizer.
+func TestIsHexID(t *testing.T) {
+	cases := []struct {
+		in   string
+		want bool
+	}{
+		{"", false},
+		{"abcd", false},                     // too short
+		{strings.Repeat("0", 31), false},    // just under
+		{strings.Repeat("0", 32), true},     // lower bound
+		{strings.Repeat("f", 64), true},     // typical ActionID
+		{strings.Repeat("f", 128), true},    // upper bound
+		{strings.Repeat("f", 129), false},   // just over
+		{"Z" + strings.Repeat("f", 63), false}, // non-hex
+		{strings.ToUpper(strings.Repeat("f", 64)), false},
+		{strings.Repeat("g", 64), false},
+	}
+	for _, c := range cases {
+		if got := isHexID(c.in); got != c.want {
+			t.Errorf("isHexID(%q...) = %v, want %v", c.in[:min(8, len(c.in))], got, c.want)
+		}
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// TestGetRangedMalformedURLIsMiss: a blob URL that fails to parse must
+// return a clean miss, not panic on a nil request (the CI crash was a
+// segfault in getRanged's discarded NewRequest error).
+func TestGetRangedMalformedURLIsMiss(t *testing.T) {
+	b := &AzureBackend{
+		account:   "test",
+		container: "c",
+		baseURL:   "http://bad url with spaces", // NewRequest must fail
+		client:    &http.Client{},
+	}
+	// Call getRanged directly (Get would need a real token first) —
+	// this is the exact frame that crashed in CI on a nil request.
+	got, err := b.getRanged("abcdef0123456789abcdef0123456789", "fake-token")
+	if err != nil {
+		t.Fatalf("malformed URL must be a miss, not an error: %v", err)
+	}
+	if got != nil {
+		t.Fatalf("expected nil (miss), got %d bytes", len(got))
+	}
+}
