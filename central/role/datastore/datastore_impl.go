@@ -147,11 +147,7 @@ func (ds *dataStoreImpl) RoleExists(ctx context.Context, name string) (bool, err
 	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return false, err
 	}
-	count, err := ds.roleStorage.Count(ctx, search.NewQueryBuilder().AddDocIDs(name).ProtoQuery())
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
+	return ds.roleStorage.Exists(ctx, name)
 }
 
 func (ds *dataStoreImpl) GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, []string, error) {
@@ -326,11 +322,7 @@ func (ds *dataStoreImpl) PermissionSetExists(ctx context.Context, id string) (bo
 	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return false, err
 	}
-	count, err := ds.permissionSetStorage.Count(ctx, search.NewQueryBuilder().AddDocIDs(id).ProtoQuery())
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
+	return ds.permissionSetStorage.Exists(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error) {
