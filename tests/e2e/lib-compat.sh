@@ -463,7 +463,9 @@ central:
         verbatim: |
 OVERLAY
         sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
-        merge_yaml "$config_file" < "$overlay_tmp"
+        # Preserve existing overlays, including the Central DB memory tuning.
+        OVERLAY_FILE="$overlay_tmp" patch_yaml "$config_file" \
+            '.central.spec.overlays += load(strenv(OVERLAY_FILE)).central.spec.overlays'
         rm -f "$overlay_tmp"
     fi
 }
