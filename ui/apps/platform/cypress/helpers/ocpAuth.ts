@@ -22,9 +22,9 @@ export function withOcpAuth() {
                     cy.get('button[type="submit"]').click();
                 }
 
-                // Wait for the page to load
-                cy.url().should('contain', '/dashboards');
-                cy.get('h1:contains("Overview")');
+                // Allow slow console loads on CI clusters.
+                cy.url({ timeout: 60000 }).should('contain', '/dashboards');
+                cy.get('h1:contains("Overview")', { timeout: 60000 });
 
                 // Pressing Escape closes the welcome modal if it exists, and silently does nothing if it doesn't
                 cy.get('body').type('{esc}');
