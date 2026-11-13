@@ -75,12 +75,22 @@ deploy_previous_central() {
     roxie deploy central \
         --tag "${PREVIOUS_VERSION}" \
         --resources ci \
+        --set central.spec.central.resources.requests.cpu=300m \
+        --set central.spec.central.resources.requests.memory=1Gi \
+        --set central.spec.central.db.resources.requests.cpu=300m \
+        --set central.spec.central.db.resources.requests.memory=1Gi \
+        --set central.spec.scannerV4.db.resources.requests.cpu=200m \
+        --set central.spec.scannerV4.db.resources.requests.memory=512Mi \
+        --set central.spec.scannerV4.indexer.resources.requests.cpu=150m \
+        --set central.spec.scannerV4.indexer.resources.requests.memory=512Mi \
+        --set central.spec.scannerV4.matcher.resources.requests.cpu=150m \
+        --set central.spec.scannerV4.matcher.resources.requests.memory=512Mi \
         --set 'central.spec.customize.envVars[0].name=SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST,central.spec.customize.envVars[0].value=alpine\,debian\,ubuntu\,stackrox-manual' \
         --set 'central.spec.customize.envVars[0].name=SCANNER_V4_MATCHER_READINESS,central.spec.customize.envVars[0].value=vulnerability' \
         --port-forwarding \
         --envrc "${ENVRC_FILE}" \
         --single-namespace \
-        --central-wait 30m
+        --central-wait 5m
 
     github_endgroup
 }
