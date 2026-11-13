@@ -20,7 +20,7 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 source "$SCRIPTS_ROOT/tests/upgrade/lib.sh"
 source "$SCRIPTS_ROOT/tests/e2e/lib.sh"
 
-set -Eeuo pipefail
+set -euo pipefail
 
 NAMESPACE=stackrox
 ENVRC_FILE="${ENVRC_FILE:-/tmp/central.envrc}"
@@ -206,7 +206,7 @@ collect_logs() {
 }
 
 run() {
-    trap collect_logs ERR
+    trap collect_logs EXIT
     deploy_previous_central
     load_envrc
     restore_postgres_backup
@@ -215,6 +215,7 @@ run() {
     wait_for_background_migrations
     strip_transient_cluster_auth_config
     grab_central_backup
+    trap - EXIT
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
