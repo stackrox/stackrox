@@ -166,7 +166,16 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddChild("customize", &customize)
 	v.AddChild("meta", getMetaValues(sc))
 
-	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
+	monitoring := translation.NewValuesBuilder()
+	openshiftMonitoring := translation.NewValuesBuilder()
+	openshiftMonitoring.SetBoolValue("enabled", !sc.Spec.Monitoring.IsOpenShiftMonitoringDisabled())
+	if sc.Spec.Monitoring.IsOpenShiftCustomMonitoringEnabled() {
+		custom := translation.NewValuesBuilder()
+		custom.SetBoolValue("enabled", true)
+		openshiftMonitoring.AddChild("custom", &custom)
+	}
+	monitoring.AddChild("openshift", &openshiftMonitoring)
+	v.AddChild("monitoring", &monitoring)
 
 	if sc.Spec.RegistryOverride != nil && *sc.Spec.RegistryOverride != "" {
 		v.SetStringValue("registryOverride", *sc.Spec.RegistryOverride)
