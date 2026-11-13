@@ -142,6 +142,18 @@ func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Rol
 	return ds.roleStorage.Get(ctx, name)
 }
 
+// RoleExists reports whether a role with the given name exists.
+func (ds *dataStoreImpl) RoleExists(ctx context.Context, name string) (bool, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return false, err
+	}
+	count, err := ds.roleStorage.Count(ctx, search.NewQueryBuilder().AddDocIDs(name).ProtoQuery())
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (ds *dataStoreImpl) GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, []string, error) {
 	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, names, err
@@ -307,6 +319,18 @@ func (ds *dataStoreImpl) GetPermissionSet(ctx context.Context, id string) (*stor
 		return nil, false, err
 	}
 	return ds.permissionSetStorage.Get(ctx, id)
+}
+
+// PermissionSetExists reports whether a permission set with the given ID exists.
+func (ds *dataStoreImpl) PermissionSetExists(ctx context.Context, id string) (bool, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return false, err
+	}
+	count, err := ds.permissionSetStorage.Count(ctx, search.NewQueryBuilder().AddDocIDs(id).ProtoQuery())
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error) {
