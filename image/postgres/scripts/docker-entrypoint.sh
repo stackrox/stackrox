@@ -310,6 +310,10 @@ rox_ssl_groups() {
 	if [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)" = "1" ]; then
 		# ML-KEM is not yet approved for FIPS; keep the PG15/16 default.
 		echo 'prime256v1'
+	elif [ "$(command -v postgres)" != "/usr/bin/postgres" ]; then
+		# Previous-major binaries (FORCE_OLD_BINARIES below): a pre-upgrade
+		# server may lack the ssl_ecdh_curve PQC backport.
+		echo 'prime256v1'
 	else
 		# X25519MLKEM768 enables post-quantum key exchange (hybrid ML-KEM),
 		# with prime256v1 as a fallback for older clients.
