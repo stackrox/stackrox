@@ -13,6 +13,20 @@ on:
     - reopened
     - synchronize
 env:
+  # Azure blob-store credentials for the shared CI cache (gocache-serve).
+  # Read once here by the cache actions from the environment.
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  # Azure blob-store credentials for the shared CI cache (gocache-serve).
+  # Set ONCE here; the cache-go-dependencies and cache-ui-dependencies
+  # actions read them from the environment — no per-call-site plumbing.
+  # Note: this exposes them to all jobs in this workflow; GitHub masks
+  # secret values in logs, and the SPN is scoped to blob access on the
+  # cache accounts only.
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
 concurrency:
@@ -134,9 +148,6 @@ jobs:
         with:
           gocache-backend: cloud
           manifest-write-override: '1'
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
@@ -187,9 +198,6 @@ jobs:
       with:
         gocache-backend: cloud
         manifest-write-override: '1'
-        azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status

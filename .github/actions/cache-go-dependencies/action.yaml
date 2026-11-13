@@ -95,13 +95,20 @@ runs:
     - name: Set up cloud GOCACHE (gocache-serve)
       if: inputs.gocache-backend == 'cloud'
       env:
-        AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
-        AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
-        AZURE_CLIENT_SECRET: ${{ inputs.azure-client-secret }}
+        INPUT_TENANT: ${{ inputs.azure-tenant-id }}
+        INPUT_CLIENT: ${{ inputs.azure-client-id }}
+        INPUT_SECRET: ${{ inputs.azure-client-secret }}
       run: |
         set -euo pipefail
+        # Credentials: action inputs take precedence, then workflow-level
+        # env (AZURE_*). Composite actions cannot read the secrets context,
+        # so callers either pass inputs or set workflow env once — the
+        # zero-plumbing path.
+        export AZURE_TENANT_ID="${INPUT_TENANT:-${AZURE_TENANT_ID:-}}"
+        export AZURE_CLIENT_ID="${INPUT_CLIENT:-${AZURE_CLIENT_ID:-}}"
+        export AZURE_CLIENT_SECRET="${INPUT_SECRET:-${AZURE_CLIENT_SECRET:-}}"
         if [ -z "$AZURE_TENANT_ID" ] || [ -z "$AZURE_CLIENT_ID" ] || [ -z "$AZURE_CLIENT_SECRET" ]; then
-          echo "::error::cloud GOCACHE backend requires azure-tenant-id, azure-client-id and azure-client-secret inputs"
+          echo "::error::cloud GOCACHE backend requires Azure credentials (action inputs or workflow-level AZURE_* env)"
           exit 1
         fi
         # Self-contained bootstrap: downloads the pre-built binary from

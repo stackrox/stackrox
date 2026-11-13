@@ -24,6 +24,17 @@ defaults:
     # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
     shell: bash
 
+env:
+  # Azure blob-store credentials for the shared CI cache (gocache-serve).
+  # Set ONCE here; the cache-go-dependencies and cache-ui-dependencies
+  # actions read them from the environment — no per-call-site plumbing.
+  # Note: this exposes them to all jobs in this workflow; GitHub masks
+  # secret values in logs, and the SPN is scoped to blob access on the
+  # cache accounts only.
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+
 jobs:
   define-job-matrix:
     outputs:
@@ -184,11 +195,6 @@ jobs:
       - name: Cache UI dependencies
         id: cache-ui
         uses: ./.github/actions/cache-ui-dependencies
-        with:
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-
       - name: Fetch UI deps
         if: steps.cache-ui.outputs.cache-hit != 'true'
         run: make -C ui deps
@@ -318,9 +324,6 @@ jobs:
         with:
           gocache-backend: cloud
           manifest-write-override: '1'
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Build CLI
         if: |
@@ -398,9 +401,6 @@ jobs:
           key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
           gocache-backend: cloud
           manifest-write-override: '1'
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Restore vendor directory (deterministic builds)
         run: |
@@ -571,9 +571,6 @@ jobs:
         with:
           gocache-backend: cloud
           manifest-write-override: '1'
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
@@ -614,9 +611,6 @@ jobs:
       with:
         gocache-backend: cloud
         manifest-write-override: '1'
-        azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
     - name: Cache UI dependencies
       id: cache-ui
@@ -774,9 +768,6 @@ jobs:
         with:
           gocache-backend: cloud
           manifest-write-override: '1'
-          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - uses: ./.github/actions/handle-tagged-build
 

@@ -33,13 +33,25 @@ runs:
   steps:
     - name: Restore UI deps from blob store
       id: blob
-      if: inputs.azure-client-id != ''
+      # Credentials come from EITHER action inputs OR the workflow-level
+      # env (AZURE_TENANT_ID/AZURE_CLIENT_ID/AZURE_CLIENT_SECRET set once
+      # per workflow). Composite actions cannot read the secrets context,
+      # so workflow env is the zero-plumbing path for callers.
       env:
-        AZURE_TENANT_ID: ${{ inputs.azure-tenant-id }}
-        AZURE_CLIENT_ID: ${{ inputs.azure-client-id }}
-        AZURE_CLIENT_SECRET: ${{ inputs.azure-client-secret }}
+        INPUT_TENANT: ${{ inputs.azure-tenant-id }}
+        INPUT_CLIENT: ${{ inputs.azure-client-id }}
+        INPUT_SECRET: ${{ inputs.azure-client-secret }}
       run: |
         set -euo pipefail
+        # Merge: inputs take precedence, then workflow env.
+        export AZURE_TENANT_ID="${INPUT_TENANT:-${AZURE_TENANT_ID:-}}"
+        export AZURE_CLIENT_ID="${INPUT_CLIENT:-${AZURE_CLIENT_ID:-}}"
+        export AZURE_CLIENT_SECRET="${INPUT_SECRET:-${AZURE_CLIENT_SECRET:-}}"
+        if [ -z "$AZURE_CLIENT_ID" ]; then
+          echo "hit=false" >> "$GITHUB_OUTPUT"
+          echo "ui deps: no blob credentials (inputs or workflow env) — GHA cache path"
+          exit 0
+        fi
         # Same pattern as the Go vendor cache: content-addressed by the
         # lockfile hash, one tarball per dependency state, lifecycle
         # expiry on the container handles pruning. Replaces the GHA
