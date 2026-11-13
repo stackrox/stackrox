@@ -307,6 +307,13 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Println(manifestHash(entries))
+		case "-doctor":
+			// Compare local build environment against the CI-recorded
+			// fingerprint; exit 1 on mismatch (scriptable for onboarding).
+			if err := doctorCommand(); err != nil {
+				fmt.Fprintf(os.Stderr, "doctor: %v\n", err)
+				os.Exit(1)
+			}
 		case "-metrics-report":
 			// Ad-hoc aggregation over metric blobs: a UTC date (20261112),
 			// a run-id prefix, or "" for everything.
@@ -428,6 +435,11 @@ func main() {
 	// Control plane (manifests, prefetch bundles, indexes) always uses the
 	// raw backend — bundling must never swallow these keys.
 	rawBackend := backend
+	// Environment fingerprint: CI records, devs get warned on mismatch
+	// (a wrong go version or CGO setting silently zeroes cache hits).
+	// Async — it shells out to `go env` and may do one blob GET; the
+	// warning can land any time during the build.
+	go maybeCheckFingerprint(rawBackend)
 	// Bundle backend: OPTIONAL opt-in (GOCACHE_SERVE_BUNDLES=1). The A/B
 	// data showed order-based bundles add index cost without measurable
 	// prefetch benefit at 64-way parallel individual fetch; the size-gated
@@ -821,6 +833,9 @@ func main() {
 				}
 				appendMetric(rec)
 				uploadJobMetrics(manifest.runID, rec)
+				// Backstop: cold-despite-warm-manifest means environment
+				// mismatch (fingerprints catch known causes; this catches the rest).
+				warnColdDespiteManifest(gets, atomic.LoadInt64(&totalHits), int64(len(mergedEntries)))
 			}
 			// Send close response
 			writeMu.Lock()

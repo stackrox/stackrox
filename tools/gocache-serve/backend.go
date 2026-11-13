@@ -288,6 +288,19 @@ func saveLearnedAccount(region, acct string) {
 	}
 }
 
+// controlBackend returns the backend for control-plane reads/writes
+// (fingerprints, metrics): the configured backend in test mode (dir),
+// the westus3 hub otherwise. Centralizes a selection that was
+// duplicated (and once forgotten) across call sites.
+func controlBackend() Backend {
+	if os.Getenv("GOCACHE_SERVE_BACKEND") == "dir" {
+		if b, err := newBackend(); err == nil {
+			return b
+		}
+	}
+	return hubBackend()
+}
+
 // hubBackend returns a minimal backend bound to the westus3 hub account,
 // used for registry reads/writes. Token scope is account-independent, so
 // this works before the region's account is selected (no chicken-and-egg).
