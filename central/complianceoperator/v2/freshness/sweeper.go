@@ -84,8 +84,7 @@ func (s *sweeperImpl) loop() {
 func (s *sweeperImpl) sweep() {
 	now := time.Now()
 	// grace is the combined budget the watchers allow for a scheduled scan to complete and have its
-	// results ingested. A result is stale only once a scheduled start has passed and its grace window
-	// has fully elapsed without new results, so we evaluate the schedule as of (now - grace).
+	// results ingested.
 	grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
 
 	configs, err := s.scanConfigDS.GetScanConfigurations(sweeperCtx, search.EmptyQuery())
@@ -101,8 +100,10 @@ func (s *sweeperImpl) sweep() {
 		default:
 		}
 
-		// cutoff is the latest scheduled start that has already had its full grace period. Results
-		// that started before it were not refreshed in time and are stale.
+		// cutoff is the latest scheduled scan that should have completed and been ingested by now (already had its full
+		// grace period). For example, if a scan runs daily at 01:00 and grace is 2 hours,
+		// shortly after 03:00 all results should have been refreshed (scheduled time + grace). If this function runs
+		// anytime after 03:00, it will mark stale all results with start time < 01:00.
 		cutoff, ok := previousScheduledStart(cfg.GetSchedule(), now.Add(-grace))
 		if !ok {
 			continue
