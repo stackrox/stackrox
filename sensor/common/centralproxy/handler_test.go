@@ -2,19 +2,28 @@ package centralproxy
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"testing"
 
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
+	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
@@ -22,10 +31,326 @@ import (
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
+
+func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {
+	client := fake.NewClientset()
+	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(context.Background()))
+	doc := defaultClientPolicy()
+	doc.Clients = append(doc.Clients, clientPolicyEntry{
+		AuthType: clientAuthKubernetesBearer, Subject: "test-user",
+		Access: []clientPolicyAccess{
+			{PermissionSetName: "custom-read-only-set", HTTPScopes: tokens.HTTPRequestScopes{"/v1/custom": {"GET"}}},
+			{PermissionSetName: "other-read-only-set", HTTPScopes: tokens.HTTPRequestScopes{"/v1/other": {"POST"}}},
+		},
+	})
+	data, err := json.Marshal(doc)
+	require.NoError(t, err)
+	cm, err := client.CoreV1().ConfigMaps(pods.GetPodNamespace()).Get(context.Background(), ClientPolicyConfigMapName, metav1.GetOptions{})
+	require.NoError(t, err)
+	cm.Data[ClientPolicyDataKey] = string(data)
+	_, err = client.CoreV1().ConfigMaps(cm.Namespace).Update(context.Background(), cm, metav1.UpdateOptions{})
+	require.NoError(t, err)
+	waitForClientPolicy(t, policy, doc)
+	client.PrependReactor("create", "tokenreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
+		return true, &authenticationv1.TokenReview{Status: authenticationv1.TokenReviewStatus{
+			Authenticated: true, User: authenticationv1.UserInfo{Username: "test-user"},
+		}}, nil
+	})
+	client.PrependReactor("create", "subjectaccessreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
+		return true, &authv1.SubjectAccessReview{Status: authv1.SubjectAccessReviewStatus{Allowed: true}}, nil
+	})
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
+	})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+	var forwarded bool
+	baseURL, err := url.Parse("https://central:443")
+	require.NoError(t, err)
+	var requester string
+	base := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		forwarded = true
+		assert.Equal(t, "Bearer sensor-token", req.Header.Get("Authorization"))
+		assert.Empty(t, req.Header.Get(stackroxNamespaceHeader))
+		return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+	})
+	var tokenCalls atomic.Int32
+	tokenClient := &fakeTokenServiceClient{
+		response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "sensor-token"}, callCount: &tokenCalls,
+	}
+	provider := newTokenProvider(&fakeClusterIDGetter{clusterID: "sensor-cluster"})
+	var serviceClient centralv1.TokenServiceClient = tokenClient
+	provider.client.Store(&serviceClient)
+	h := &Handler{
+		policy: policy, authorizer: newK8sAuthorizer(client), metricsEnabled: true,
+		proxy: newReverseProxyForTest(baseURL, &scopedTokenTransport{base: base, tokenProvider: provider}),
+	}
+	h.centralReachable.Store(true)
+	request := func(method, path string) *http.Request {
+		req := httptest.NewRequest(method, path, nil)
+		req.Header.Set("Authorization", "Bearer kube-token")
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+		return req
+	}
+	for name, tc := range map[string]struct {
+		method, path string
+		wantCode     int
+	}{
+		"permitted":            {http.MethodGet, "/v1/custom", http.StatusOK},
+		"other permission set": {http.MethodPost, "/v1/other", http.StatusOK},
+		"wrong method":         {http.MethodPost, "/v1/custom", http.StatusForbidden},
+		"unlisted route":       {http.MethodGet, "/v1/private", http.StatusForbidden},
+		"encoded route":        {http.MethodGet, "/v1/%63ustom", http.StatusForbidden},
+	} {
+		t.Run(name, func(t *testing.T) {
+			forwarded = false
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, request(tc.method, tc.path))
+			assert.Equal(t, tc.wantCode, w.Code)
+			assert.Equal(t, tc.wantCode == http.StatusOK, forwarded)
+			if forwarded {
+				requester = tokenClient.lastRequest.GetRequester()
+				assert.Empty(t, tokenClient.lastRequest.GetPermissionSetNames())
+				protoassert.SlicesEqual(t, clientPolicyAccessToProto(doc.Clients[2].Access),
+					tokenClient.lastRequest.GetScopedPermissionSets())
+				assert.Equal(t, "sensor-cluster", tokenClient.lastRequest.GetClusterScopes()[0].GetClusterId())
+				assert.Equal(t, []string{"test-namespace"}, tokenClient.lastRequest.GetClusterScopes()[0].GetNamespaces())
+			}
+		})
+	}
+	assert.Equal(t, "kubernetesBearer:test-user", requester)
+	assert.EqualValues(t, 1, tokenCalls.Load(), "both routes should reuse one token for the same client and namespace")
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported,
+	})
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, request(http.MethodGet, "/v1/custom"))
+	assert.Equal(t, http.StatusNotImplemented, w.Code)
+	assert.EqualValues(t, 1, tokenCalls.Load())
+}
+
+func TestLegacyProxyGrantAllowed(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPathFiltering})
+	allowedpaths.Set([]string{"/v1/metadata", "/metrics"})
+	t.Cleanup(func() { centralcaps.Set(nil); allowedpaths.Reset() })
+	for name, tc := range map[string]struct {
+		permissionSet string
+		path          string
+		method        string
+		allowed       bool
+	}{
+		"console default":                {centralproxy.ConsoleProxyPermissionSetName, "/v1/metadata", "GET", true},
+		"metrics requires scoped tokens": {centralproxy.MetricsPermissionSetName, "/metrics", "GET", false},
+		"generic set":                    {"custom-read-only-set", "/v1/metadata", "GET", false},
+		"extra method":                   {centralproxy.MetricsPermissionSetName, "/metrics", "POST", false},
+		"extra route":                    {centralproxy.ConsoleProxyPermissionSetName, "/v1/private", "GET", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			grant := &ClientPolicyGrant{PermissionSetName: tc.permissionSet,
+				HTTPRequestScopes:    []*apiV1.HTTPRequestScope{{Path: tc.path, Methods: []string{tc.method}}},
+				ScopedPermissionSets: []*centralv1.ScopedPermissionSet{{Name: tc.permissionSet}}}
+			assert.Equal(t, tc.allowed, legacyProxyGrantAllowed(grant, httptest.NewRequest(tc.method, tc.path, nil)))
+		})
+	}
+}
+
+func TestPolicyHandlerVerifiesDefaultMetricsClient(t *testing.T) {
+	t.Setenv("ROX_CENTRAL_PROXY_ENABLED", "true")
+	ca, caKey, caPEM := clientPolicyTestCA(t)
+	client := fake.NewClientset(&corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: env.SecureMetricsClientCANamespace.Setting(),
+			Name:      env.SecureMetricsClientCAConfigMap.Setting(),
+		},
+		Data: map[string]string{env.SecureMetricsClientCAKey.Setting(): caPEM},
+	})
+	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(context.Background()))
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
+	})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+	var forwarded bool
+	baseURL, err := url.Parse("https://central:443")
+	require.NoError(t, err)
+	base := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		forwarded = true
+		return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+	})
+	tokenClient := &fakeTokenServiceClient{
+		response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "metrics-token"},
+	}
+	provider := newTokenProvider(&fakeClusterIDGetter{clusterID: "sensor-cluster"})
+	var serviceClient centralv1.TokenServiceClient = tokenClient
+	provider.client.Store(&serviceClient)
+	h := &Handler{policy: policy, authorizer: newK8sAuthorizer(client),
+		proxy: newReverseProxyForTest(baseURL, &scopedTokenTransport{base: base, tokenProvider: provider})}
+	h.centralReachable.Store(true)
+	cert := signedTestCertificate(t, ca, caKey, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
+	leaf, err := x509.ParseCertificate(cert.Certificate[0])
+	require.NoError(t, err)
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{leaf}}
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.False(t, forwarded)
+
+	h.metricsEnabled = true
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, forwarded)
+	assert.Equal(t, "mtls:"+leaf.Subject.CommonName, tokenClient.lastRequest.GetRequester())
+	assert.Empty(t, tokenClient.lastRequest.GetPermissionSetNames())
+	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+		tokenClient.lastRequest.GetClusterScopes())
+	protoassert.SlicesEqual(t, []*centralv1.ScopedPermissionSet{{
+		Name:              centralproxy.MetricsPermissionSetName,
+		HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
+	}}, tokenClient.lastRequest.GetScopedPermissionSets())
+	assert.Empty(t, tokenClient.lastRequest.GetHttpRequestScopes())
+
+	otherCA, otherKey, _ := clientPolicyTestCA(t)
+	badCert := signedTestCertificate(t, otherCA, otherKey, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
+	badLeaf, err := x509.ParseCertificate(badCert.Certificate[0])
+	require.NoError(t, err)
+	forwarded = false
+	req.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{badLeaf}}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.False(t, forwarded)
+
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering,
+	})
+	req.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{leaf}}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotImplemented, w.Code)
+	assert.False(t, forwarded)
+}
+
+func TestPolicyHandlerDoesNotEnableConsoleWhenOnlyMetricsEnabled(t *testing.T) {
+	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
+	client := fake.NewClientset()
+	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(context.Background()))
+	client.PrependReactor("create", "tokenreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
+		return true, &authenticationv1.TokenReview{Status: authenticationv1.TokenReviewStatus{
+			Authenticated: true, User: authenticationv1.UserInfo{Username: "test-user"},
+		}}, nil
+	})
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
+	})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+	h := &Handler{policy: policy, authorizer: newK8sAuthorizer(client), metricsEnabled: true}
+	h.centralReachable.Store(true)
+	req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
+	req.Header.Set("Authorization", "Bearer kube-token")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+func TestPolicyHandlerAuthenticatesServiceAccountBearerWithoutCA(t *testing.T) {
+	t.Setenv("ROX_CENTRAL_PROXY_ENABLED", "true")
+	client := fake.NewClientset()
+	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(context.Background()))
+	doc := defaultClientPolicy()
+	doc.Clients = append(doc.Clients, clientPolicyEntry{
+		AuthType: clientAuthKubernetesBearer,
+		Subject:  "system:serviceaccount:observability:scraper",
+		Access: []clientPolicyAccess{{PermissionSetName: centralproxy.MetricsPermissionSetName,
+			HTTPScopes: tokens.HTTPRequestScopes{"/metrics": {"GET"}}}},
+	})
+	setClientPolicyConfigMap(t, context.Background(), client, doc)
+	waitForClientPolicy(t, policy, doc)
+	client.PrependReactor("create", "tokenreviews", func(k8sTesting.Action) (bool, runtime.Object, error) {
+		return true, &authenticationv1.TokenReview{Status: authenticationv1.TokenReviewStatus{
+			Authenticated: true,
+			User:          authenticationv1.UserInfo{Username: "system:serviceaccount:observability:scraper"},
+		}}, nil
+	})
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPerAccessTokens,
+	})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+	baseURL, err := url.Parse("https://central:443")
+	require.NoError(t, err)
+	tokenClient := &fakeTokenServiceClient{
+		response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "sensor-token"},
+	}
+	provider := newTokenProvider(&fakeClusterIDGetter{clusterID: "sensor-cluster"})
+	var serviceClient centralv1.TokenServiceClient = tokenClient
+	provider.client.Store(&serviceClient)
+	var forwarded bool
+	base := pkghttputil.RoundTripperFunc(func(*http.Request) (*http.Response, error) {
+		forwarded = true
+		return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
+	})
+	h := &Handler{policy: policy, authorizer: newK8sAuthorizer(client),
+		proxy: newReverseProxyForTest(baseURL, &scopedTokenTransport{base: base, tokenProvider: provider})}
+	h.centralReachable.Store(true)
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.Header.Set("Authorization", "Bearer kube-token")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.False(t, forwarded)
+
+	h.metricsEnabled = true
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, forwarded)
+	assert.Equal(t, "kubernetesBearer:system:serviceaccount:observability:scraper", tokenClient.lastRequest.GetRequester())
+	protoassert.SlicesEqual(t, []*centralv1.ClusterScope{{ClusterId: "sensor-cluster", FullClusterAccess: true}},
+		tokenClient.lastRequest.GetClusterScopes())
+}
+
+func TestPolicyHandlerPreservesBuiltInClientOnOlderCentral(t *testing.T) {
+	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "true")
+	client := fake.NewClientset()
+	policy := NewClientPolicy(client)
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(context.Background()))
+	f := newProxyTestFixture(t, newAllowingAuthorizer(t))
+	f.handler.policy = policy
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported, centralsensor.CentralProxyPathFiltering,
+	})
+	allowedpaths.Set([]string{"/v1/metadata"})
+	w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{"Authorization": "Bearer kube-token"})
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, f.proxyCalled)
+
+	doc := defaultClientPolicy()
+	doc.Clients = append(doc.Clients, clientPolicyEntry{
+		AuthType: clientAuthKubernetesBearer, Subject: "test-user",
+		Access: []clientPolicyAccess{{PermissionSetName: "custom-read-only-set",
+			HTTPScopes: tokens.HTTPRequestScopes{"/v1/custom": {"GET"}}}},
+	})
+	setClientPolicyConfigMap(t, context.Background(), client, doc)
+	waitForClientPolicy(t, policy, doc)
+	f.proxyCalled = false
+	w = f.serveHTTP(t, http.MethodGet, "/v1/custom", map[string]string{"Authorization": "Bearer kube-token"})
+	assert.Equal(t, http.StatusNotImplemented, w.Code)
+	assert.False(t, f.proxyCalled)
+}
 
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {

@@ -123,8 +123,8 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 	return identity.Service().GetId(), nil
 }
 
-// enforce validates the request and returns its HTTP scopes alongside the
-// request with a capped lifetime if necessary.
+// enforce validates the request and returns its HTTP scopes alongside
+// the request with a capped lifetime if necessary.
 func (p *tokenPolicy) enforce(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
@@ -188,27 +188,37 @@ func (p *tokenPolicy) enforce(
 	if err != nil {
 		return nil, nil, errox.InvalidArgs.CausedBy(err)
 	}
-	if len(req.GetPermissionSetNames()) > 0 {
-		if slices.Contains(req.GetPermissionSetNames(), centralproxy.MetricsPermissionSetName) {
-			if len(req.GetPermissionSetNames()) != 1 {
-				return nil, nil, errox.InvalidArgs.New("metrics permission set cannot be combined with other permission sets")
+	permissionSets := req.GetPermissionSetNames()
+	if len(permissionSets) > 0 {
+		if slices.Contains(permissionSets, centralproxy.MetricsPermissionSetName) && len(permissionSets) != 1 {
+			return nil, nil, errox.InvalidArgs.New("metrics permission set cannot be combined with other permission sets")
+		}
+		for _, permissionSet := range permissionSets {
+			switch permissionSet {
+			case centralproxy.MetricsPermissionSetName:
+				if len(req.GetClusterScopes()) != 1 ||
+					req.GetClusterScopes()[0].GetClusterId() != sensorClusterID ||
+					!req.GetClusterScopes()[0].GetFullClusterAccess() ||
+					len(req.GetClusterScopes()[0].GetNamespaces()) != 0 {
+					return nil, nil, errox.InvalidArgs.New("metrics permission set requests require full access to the Sensor's cluster")
+				}
+			case centralproxy.ConsoleProxyPermissionSetName:
+				if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+					return nil, nil, err
+				}
+			default:
+				if len(req.GetClusterScopes()) == 0 {
+					return nil, nil, errox.InvalidArgs.New("generic Sensor proxy tokens require a cluster scope")
+				}
+				if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+					return nil, nil, err
+				}
 			}
-			if len(req.GetClusterScopes()) != 1 ||
-				req.GetClusterScopes()[0].GetClusterId() != sensorClusterID ||
-				!req.GetClusterScopes()[0].GetFullClusterAccess() ||
-				len(req.GetClusterScopes()[0].GetNamespaces()) != 0 {
-				return nil, nil, errox.InvalidArgs.New("metrics permission set requests require full access to the Sensor's cluster")
-			}
+		}
+		if permissionSets[0] == centralproxy.MetricsPermissionSetName {
 			if len(scopes) != 1 || !slices.Equal(scopes["/metrics"], centralproxy.MetricsHTTPScopes["/metrics"]) {
 				return nil, nil, errox.InvalidArgs.New("metrics permission set tokens may only access GET /metrics")
 			}
-		}
-		if len(req.GetClusterScopes()) == 0 && (len(req.GetPermissionSetNames()) != 1 ||
-			req.GetPermissionSetNames()[0] != centralproxy.ConsoleProxyPermissionSetName) {
-			return nil, nil, errox.InvalidArgs.New("generic Sensor proxy tokens require a cluster scope")
-		}
-		if len(scopes) == 0 {
-			return nil, nil, errox.InvalidArgs.New("Sensor proxy tokens require HTTP method scopes")
 		}
 		hasMethod := false
 		for _, methods := range scopes {
@@ -224,9 +234,9 @@ func (p *tokenPolicy) enforce(
 		if err := p.validatePermissions(req.GetPermissions()); err != nil {
 			return nil, nil, err
 		}
-	}
-	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
-		return nil, nil, err
+		if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+			return nil, nil, err
+		}
 	}
 	req, err = p.enforceLifetimeLimit(req)
 	if err != nil {
