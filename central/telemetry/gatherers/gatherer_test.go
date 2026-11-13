@@ -9,8 +9,6 @@ import (
 
 	"github.com/stackrox/rox/central/grpc/metrics"
 	installationPostgres "github.com/stackrox/rox/central/installation/store/postgres"
-	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/mocks"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -30,17 +28,11 @@ type gathererTestSuite struct {
 
 	tp *pgtest.TestPostgres
 
-	gatherer                     *CentralGatherer
-	sensorUpgradeConfigDatastore *mocks.MockDataStore
+	gatherer *CentralGatherer
 }
 
 func (s *gathererTestSuite) SetupSuite() {
 	s.mockCtrl = gomock.NewController(s.T())
-
-	s.sensorUpgradeConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
-	s.sensorUpgradeConfigDatastore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Return(&storage.SensorUpgradeConfig{
-		EnableAutoUpgrade: true,
-	}, nil)
 
 	s.tp = pgtest.ForTCustomDB(s.T(), "postgres")
 	source := pgtest.GetConnectionString(s.T())
@@ -49,7 +41,7 @@ func (s *gathererTestSuite) SetupSuite() {
 
 	installationStore := installationPostgres.New(s.tp.DB)
 
-	s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(newPostgresGatherer(s.tp.DB, adminConfig)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
+	s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(newPostgresGatherer(s.tp.DB, adminConfig)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer())
 }
 
 func (s *gathererTestSuite) TestJSONSerialization() {

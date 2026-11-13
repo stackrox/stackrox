@@ -106,8 +106,6 @@ config:
   disableTaintTolerations: |
     collector:
       disableTaintTolerations: {{ .value }}
-  createUpgraderServiceAccount: |
-    createUpgraderServiceAccount: {{ .value }}
   createSecrets: |
     createSecrets: {{ .value }}
   offlineMode: null  # not used

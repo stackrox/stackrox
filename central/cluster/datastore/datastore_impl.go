@@ -113,32 +113,6 @@ type datastoreImpl struct {
 	lock sync.Mutex
 }
 
-func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
-	if err := checkWriteSac(ctx, id); err != nil {
-		return err
-	}
-
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
-
-	cluster, err := ds.getClusterOnly(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	if cluster.GetStatus() == nil {
-		cluster.Status = &storage.ClusterStatus{}
-	}
-
-	cluster.Status.UpgradeStatus = upgradeStatus
-
-	err = ds.clusterStorage.Upsert(ctx, cluster)
-	if err == nil {
-		refresh.RefreshTracker(metrics.Health)
-	}
-	return err
-}
-
 func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err
@@ -174,7 +148,6 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 		return err
 	}
 
-	status.UpgradeStatus = cluster.GetStatus().GetUpgradeStatus()
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
 	cluster.Status = status
 

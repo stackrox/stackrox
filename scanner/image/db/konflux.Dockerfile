@@ -1,5 +1,4 @@
-ARG PG_VERSION=16
-FROM registry.redhat.io/rhel9/postgresql-${PG_VERSION}:latest@sha256:106060b6e14c948aed9e33854b1a67d4089f35aa8a11e404da67156b1f8eb7e4
+FROM registry.redhat.io/rhel9/postgresql-16:latest@sha256:106060b6e14c948aed9e33854b1a67d4089f35aa8a11e404da67156b1f8eb7e4
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -22,6 +21,10 @@ LABEL \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
+
+# Bake the image version in so init-entrypoint.sh can detect downgrades without
+# relying on the version being parsed out of the image ref at deploy time.
+ENV BUILD_TAG="${BUILD_TAG}"
 
 USER root
 

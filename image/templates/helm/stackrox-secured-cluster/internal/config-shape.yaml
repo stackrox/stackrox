@@ -4,7 +4,6 @@ confirmNewClusterName: null # string
 centralEndpoint: null # string
 registryOverride: null # string
 exposeMonitoring: null # bool
-createUpgraderServiceAccount: null # string
 helmManaged: null
 createSecrets: null
 additionalCAs: null # [obj]

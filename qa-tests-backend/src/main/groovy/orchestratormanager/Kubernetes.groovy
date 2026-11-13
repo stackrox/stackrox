@@ -182,14 +182,8 @@ class Kubernetes {
     @Retry()
     void ensureNamespaceExists(String ns) {
         Namespace namespace = newNamespace(ns)
-        try {
+        provisionNamespaceUnlessTerminating(ns) {
             client.namespaces().create(namespace)
-            log.info "Created namespace ${ns}"
-        } catch (KubernetesClientException kce) {
-            if (kce.code != 409) {
-                throw kce
-            }
-            log.debug("Namespace ${ns} already exists")
         }
 
         defaultPspForNamespace(ns)
@@ -2645,11 +2639,21 @@ class Kubernetes {
      * Note that createNamespace does not provision service account.
      */
     String createNamespace(String ns) {
+        // createOrReplace happily targets a namespace that is already
+        // terminating, and everything created in it goes away with it.
+        awaitTerminatingNamespaceDeletion(ns)
         return evaluateWithRetry(2, 3) {
-            Namespace namespace = newNamespace(ns)
-            def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
+            Namespace created = client.namespaces().createOrReplace(newNamespace(ns))
+            if (created.metadata?.deletionTimestamp != null) {
+                // Deletion started between the check above and this call.
+                // Wait it out and let the retry create the namespace again,
+                // rather than returning a UID whose namespace is going away.
+                awaitTerminatingNamespaceDeletion(ns)
+                throw new OrchestratorManagerException(
+                        "Namespace ${ns} started terminating while it was being created")
+            }
             defaultPspForNamespace(ns)
-            return namespaceId
+            return created.metadata.getUid()
         }
     }
 
@@ -2672,11 +2676,39 @@ class Kubernetes {
                 .endMetadata()
                 .build()
 
-        client.namespaces().createOrReplace(namespace)
+        // createOrReplace happily targets a namespace that is already
+        // terminating, and everything created in it goes away with it.
+        awaitTerminatingNamespaceDeletion(namespaceName)
+
+        evaluateWithRetry(2, 3) {
+            Namespace created = client.namespaces().createOrReplace(namespace)
+            if (created.metadata?.deletionTimestamp != null) {
+                // Deletion started between the check above and this call.
+                // Wait it out and let the retry create the namespace again.
+                awaitTerminatingNamespaceDeletion(namespaceName)
+                throw new OrchestratorManagerException(
+                        "Namespace ${namespaceName} started terminating while it was being created")
+            }
+        }
         log.info "Created namespace ${namespaceName} with labels: ${labels}"
     }
 
+    /**
+     * Deletes a namespace and waits for it to disappear.
+     *
+     * Workloads, services and routes are removed first. The namespace
+     * controller deletes the namespace contents one object at a time, and a pod
+     * that is still terminating or a LoadBalancer service waiting on cloud
+     * cleanup can hold the namespace in Terminating well past a caller's
+     * budget. Deleting them first is not more destructive than the namespace
+     * delete that follows; it only removes what can delay it.
+     *
+     * @param ns the namespace to delete
+     * @param waitForDeletion when true, waits up to 300 seconds and throws
+     *        OrchestratorManagerException if the namespace is still present
+     */
     void deleteNamespace(String ns, Boolean waitForDeletion = true) {
+        deleteManagedWorkloads(ns)
         withRetry(2, 3) {
             client.namespaces().withName(ns).delete()
         }
@@ -2687,9 +2719,12 @@ class Kubernetes {
         }
     }
 
-    // deleteManagedWorkloads removes deployments, replica sets, and pods so
-    // namespace deletion is not held by a pod's termination. A second delete
-    // with grace period 0 shortens a termination already in progress.
+    // deleteManagedWorkloads removes the namespaced objects that can delay
+    // namespace deletion: deployments, replica sets and pods (a terminating pod
+    // holds the namespace) and services (a LoadBalancer service holds it until
+    // the cloud controller finishes cleanup). A second delete with grace period
+    // 0 shortens a termination already in progress. Distributions with their
+    // own objects extend this in an override.
     @CompileDynamic
     void deleteManagedWorkloads(String ns) {
         Timer t = new Timer(20, 1)
@@ -2701,6 +2736,7 @@ class Kubernetes {
             deleteCollectionQuietly { client.apps().deployments().inNamespace(ns).delete() }
             deleteCollectionQuietly { client.apps().replicaSets().inNamespace(ns).delete() }
             deleteCollectionQuietly { client.pods().inNamespace(ns).withGracePeriod(0L).delete() }
+            deleteCollectionQuietly { client.services().inNamespace(ns).delete() }
             if (listPodsQuietly(ns).isEmpty()) {
                 // A second empty read covers a replica set that creates one
                 // more pod after it is told to delete.
@@ -2713,7 +2749,7 @@ class Kubernetes {
             sawNoPods = false
         }
         def stuck = listPodsQuietly(ns).collect {
-            "${it.metadata?.name} phase=${it.status?.phase} finalizers=${it.metadata?.finalizers}"
+            podDescription(it)
         }
         log.info "Workloads still present in ${ns} before namespace deletion: ${stuck}"
     }
@@ -2758,17 +2794,26 @@ class Kubernetes {
                 return ""
             }
             def pods = listPodsQuietly(ns).collect {
-                "${it.metadata?.name}(phase=${it.status?.phase}, finalizers=${it.metadata?.finalizers})"
+                podDescription(it)
             }
+            // Namespace finalizers live in spec.finalizers; metadata.finalizers
+            // is never set on a namespace, and reporting it hid the holder.
             return " (phase=${remaining.status?.phase}," +
                     " deletionTimestamp=${remaining.metadata?.deletionTimestamp}," +
-                    " finalizers=${remaining.metadata?.finalizers}, pods=${pods})"
+                    " finalizers=${remaining.spec?.finalizers}, pods=${pods})"
         } catch (Exception e) {
             return " (failed to collect namespace diagnostics: ${e.message})"
         }
     }
 
-    boolean waitForNamespaceDeletion(String ns, int retries = 20, int intervalSeconds = 3) {
+    private static String podDescription(Pod pod) {
+        return "${pod.metadata?.name}(phase=${pod.status?.phase}," +
+                " deletionTimestamp=${pod.metadata?.deletionTimestamp}," +
+                " gracePeriod=${pod.metadata?.deletionGracePeriodSeconds}," +
+                " finalizers=${pod.metadata?.finalizers})"
+    }
+
+    boolean waitForNamespaceDeletion(String ns, int retries = 60, int intervalSeconds = 5) {
         log.debug "Waiting for namespace ${ns} to be deleted"
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
@@ -2780,5 +2825,110 @@ class Kubernetes {
         }
         log.info "K8s did not detect that namespace ${ns} was deleted"
         return false
+    }
+
+    /**
+     * Waits for an existing namespace to finish deleting when it is
+     * Terminating.
+     *
+     * @return true when the namespace is gone and can be created again, false
+     *         when it exists and is usable as is. Throws when it stays
+     *         Terminating past the deletion budget.
+     */
+    protected boolean awaitTerminatingNamespaceDeletion(String ns) {
+        def existing = getNamespaceQuietly(ns)
+        if (existing == null) {
+            return true
+        }
+        if (existing.metadata?.deletionTimestamp == null) {
+            return false
+        }
+        log.warn "Namespace ${ns} exists but is terminating; waiting for it to be deleted before reusing it"
+        if (!waitForNamespaceDeletion(ns)) {
+            throw new OrchestratorManagerException(
+                    "Namespace ${ns} is terminating and did not go away${namespaceDeletionDiagnostics(ns)}")
+        }
+        return true
+    }
+
+    /**
+     * Provisions a namespace through the given create, waiting out an existing
+     * namespace that is Terminating before trying again.
+     *
+     * A namespace that is still listed but has a deletionTimestamp is being
+     * emptied by the namespace controller. Creating objects in it succeeds and
+     * then loses them, so it has to go before the namespace is reused.
+     *
+     * @param ns namespace name, used for logging
+     * @param create closure that performs the create and throws
+     *        KubernetesClientException with code 409 when it already exists
+     */
+    protected void provisionNamespaceUnlessTerminating(String ns, Closure create) {
+        while (true) {
+            try {
+                create.call()
+                log.info "Created namespace ${ns}"
+                return
+            } catch (KubernetesClientException kce) {
+                if (kce.code != 409) {
+                    throw kce
+                }
+                if (!awaitTerminatingNamespaceDeletion(ns)) {
+                    log.debug("Namespace ${ns} already exists")
+                    return
+                }
+                // The terminating namespace finished deleting; create it again.
+            }
+        }
+    }
+
+    private Namespace getNamespaceQuietly(String ns) {
+        try {
+            return client.namespaces().withName(ns).get()
+        } catch (KubernetesClientException e) {
+            if (e.code == 404) {
+                return null
+            }
+            throw e
+        }
+    }
+
+    /**
+     * Waits until the orchestrator's namespace list stops changing.
+     *
+     * Namespace deletion is asynchronous: the namespace controller removes the
+     * contents before the namespace disappears, and Central drops the namespace
+     * only after sensor reports the deletion. Comparing the two views while the
+     * orchestrator is still settling produces diffs that say nothing about the
+     * product.
+     *
+     * @return names of namespaces that were still Terminating when the list
+     *         settled or the wait ran out
+     */
+    List<String> waitForNamespaceListToSettle(int retries = 20, int intervalSeconds = 3) {
+        Timer t = new Timer(retries, intervalSeconds)
+        List<String> previous = null
+        List<String> terminating = []
+        while (t.IsValid()) {
+            def namespaces
+            try {
+                namespaces = client.namespaces().list()?.items ?: []
+            } catch (KubernetesClientException kce) {
+                // The caller compares two views and has no retry of its own; a
+                // single transient list error must not fail the test.
+                log.debug("Could not list namespaces while waiting for the list to settle", kce)
+                continue
+            }
+            List<String> current = namespaces*.metadata*.name.sort()
+            terminating = namespaces.findAll { it.metadata?.deletionTimestamp != null }*.metadata*.name
+            if (!terminating.isEmpty()) {
+                log.info "Waiting for terminating namespaces: ${terminating}"
+            } else if (previous == current) {
+                return terminating
+            }
+            previous = current
+        }
+        log.warn "Namespace list did not settle; still terminating: ${terminating}"
+        return terminating
     }
 }

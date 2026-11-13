@@ -1,27 +1,19 @@
-import static util.Helpers.withRetry
-
 import java.nio.charset.Charset
 import java.security.cert.X509Certificate
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import io.fabric8.kubernetes.api.model.Secret
-import io.grpc.StatusRuntimeException
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.style.BCStyle
 import org.bouncycastle.asn1.x500.style.IETFUtils
 import org.yaml.snakeyaml.Yaml
 
-import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
-import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
-
 import services.ClusterService
 import services.DirectHTTPService
-import services.SensorUpgradeService
 import util.Cert
 import util.Env
 
-import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -175,84 +167,6 @@ class CertRotationTest extends BaseSpecification {
         }
 
         return true
-    }
-
-    // This test is skipped in Operator and Helm, upgrader only works in Manifest based installations
-    def "Test sensor cert rotation with upgrader succeeds for manifest based installed clusters"() {
-        when:
-        "Check that the cluster is manifest installed"
-        def cluster = ClusterService.getCluster()
-        assert cluster
-
-        Assume.assumeFalse(cluster.hasHelmConfig())
-
-        and:
-        "Fetch the current sensor-tls, collector-tls and admission-control-tls secrets, and trigger cert rotation"
-        def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox")
-        assert sensorTLSSecret
-        def collectorTLSSecret = orchestrator.getSecret("collector-tls", "stackrox")
-        assert collectorTLSSecret
-        def admissionControlTLSSecret = orchestrator.getSecret("admission-control-tls", "stackrox")
-        // Intentionally don't assert, admission control TLS secret may not be present.
-
-        def start = System.currentTimeSeconds()
-        SensorUpgradeService.triggerCertRotation(cluster.getId())
-
-        and:
-        "Wait for cert rotation to complete"
-        cluster = ClusterService.getCluster()
-        def mostRecentProcess = cluster.getStatus().getUpgradeStatus().getMostRecentProcess()
-        // Make sure the most recent process was just started. Subtract 60 seconds to allow for clock-skew
-        assert mostRecentProcess.initiatedAt.seconds > start - 60
-        assert mostRecentProcess.getType() == UpgradeProcessType.CERT_ROTATION
-        def processID = mostRecentProcess.getId()
-        withRetry(50, 5) {
-            cluster = ClusterService.getCluster()
-            mostRecentProcess = cluster.getStatus().getUpgradeStatus().getMostRecentProcess()
-            assert mostRecentProcess.getId() == processID
-            assert mostRecentProcess.getProgress().getUpgradeState() == UpgradeState.UPGRADE_COMPLETE
-        }
-
-        then:
-        checkCurrentValueOfSecretIdenticalExceptNewCerts("SENSOR_SERVICE: ${cluster.getId()}", sensorTLSSecret,
-                "sensor-tls")
-        checkCurrentValueOfSecretIdenticalExceptNewCerts("COLLECTOR_SERVICE: ${cluster.getId()}", collectorTLSSecret,
-                "collector-tls")
-        checkCurrentValueOfSecretIdenticalExceptNewCerts("ADMISSION_CONTROL_SERVICE: ${cluster.getId()}",
-                admissionControlTLSSecret, "admission-control-tls")
-
-        // Cleanup: revert secrets to what they were before this test was run.
-        cleanup:
-        orchestrator.updateSecret(sensorTLSSecret)
-        orchestrator.updateSecret(collectorTLSSecret)
-        if (admissionControlTLSSecret != null) {
-            orchestrator.updateSecret(admissionControlTLSSecret)
-        }
-    }
-
-    def "Test sensor cert rotation with upgrader fails for Helm clusters"() {
-        when:
-        "Check that the cluster is managed by external tools"
-        def cluster = ClusterService.getCluster()
-        assert cluster
-
-        Assume.assumeTrue(cluster.hasHelmConfig())
-
-        // The following can NOT be rephrased using `thrown()`, as that also catches the
-        // AssumptionViolatedException generated if the assumption fails.
-        then:
-        "Trigger certificate rotation should result in an exception"
-        def caughtException = false
-        try {
-            SensorUpgradeService.triggerCertRotation(cluster.getId())
-        } catch (StatusRuntimeException exc) {
-            caughtException = true
-            // Cluster in CI can be installed either by Helm or Operator. The two possibilities are:
-            // "Helm controls the secured cluster version"
-            // "Operator controls the secured cluster version"
-            assert exc.status.description.contains("controls the secured cluster version")
-        }
-        assert caughtException
     }
 
 }
