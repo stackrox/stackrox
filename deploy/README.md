@@ -258,10 +258,11 @@ reach out to the **ACS Install team**.
 QA, UI, and non-Groovy E2E use Roxie's `tiny` profile through
 `deploy/roxie-config-resources.yaml`. It selects one admission controller, one
 Scanner V4 indexer/matcher, and an 80m CPU request for Sensor's CRS init container.
-The shared overrides set Central DB's PostgreSQL shared buffers to 128 MiB and
-set both its memory request and limit to 512 MiB. A deployment
-overlay passes the buffer setting at startup while retaining the standard
-PostgreSQL configuration file; it is optional for BYODB jobs. Scanner V4 DB keeps
+The shared overrides set Central DB's memory request and limit to 1 GiB,
+with PostgreSQL `shared_buffers=128MB`, `work_mem=4MB`,
+`maintenance_work_mem=64MB`, and `autovacuum_work_mem=64MB`.
+A deployment overlay passes these settings at startup while retaining the
+standard PostgreSQL configuration file; it is optional for BYODB jobs. Scanner V4 DB keeps
 its 4 GiB request and limit. Central worker requests 10m CPU and 128 MiB, and
 admission control, Collector, compliance, and node inventory request 10m CPU each.
 Other resources come from `tiny`; update the profile in Roxie when these
