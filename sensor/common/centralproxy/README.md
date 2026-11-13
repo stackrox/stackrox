@@ -110,11 +110,14 @@ existing namespace SubjectAccessReview. Sensor checks the selected route locally
 and sends all of the client's access grants to Central, which signs separate
 HTTP-scoped roles with a shared cluster or namespace scope. Only the roles
 matching the request's most specific path and method are available to Central's
-authorization checks. Central checks that every permission set grants only read
-access to known cluster- or namespace-scoped resources. The built-in
-metrics token is restricted to `GET /metrics` and cannot be combined with other
-permission sets. Custom scrapers need their own permission set if their grants
-differ from the built-in Prometheus reader. At least one HTTP method is required.
+authorization checks. Central requires each referenced permission set to have
+both the read-access and cluster/namespace-scope constraints. Newly seeded
+console and Prometheus permission sets have both constraints; pre-existing
+administrator-managed sets must be configured with both before Sensor tokens can
+use them. The built-in metrics token is restricted to `GET /metrics` and cannot
+be combined with other permission sets. Custom scrapers need their own permission
+set if their grants differ from the built-in Prometheus reader. At least one HTTP
+method is required.
 A request naming a permission set must include explicit HTTP method/path scopes,
 including for the built-in console and metrics sets. Sensors using the
 pre-existing console proxy still send only resource permissions; Central accepts
