@@ -15,6 +15,8 @@ type permSetAttributes struct {
 	postgresID         string // postgresID should be populated with valid UUID values when specified.
 	description        string
 	resourceWithAccess []permissions.ResourceWithAccess
+	accessConstraint   storage.AccessConstraint
+	scopeConstraint    storage.ScopeConstraint
 }
 
 func (attributes *permSetAttributes) getID() string {
@@ -130,7 +132,9 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		},
 	},
 	accesscontrol.ConsoleProxy: {
-		description: "Access for Sensor-proxied OpenShift console requests",
+		description:      "Access for Sensor-proxied OpenShift console requests",
+		accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.View(resources.Deployment),
 			permissions.View(resources.Image),
@@ -178,6 +182,8 @@ func getDefaultPermissionSets() []*storage.PermissionSet {
 			Name:             name,
 			Description:      attributes.description,
 			ResourceToAccess: resourceToAccess,
+			AccessConstraint: attributes.accessConstraint,
+			ScopeConstraint:  attributes.scopeConstraint,
 			Traits: &storage.Traits{
 				Origin: storage.Traits_DEFAULT,
 			},
@@ -199,6 +205,8 @@ func getDefaultPermissionSet(name string) *storage.PermissionSet {
 		Name:             name,
 		Description:      attributes.description,
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...),
+		AccessConstraint: attributes.accessConstraint,
+		ScopeConstraint:  attributes.scopeConstraint,
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DEFAULT,
 		},
