@@ -49,13 +49,19 @@ runs:
         GCS="${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve"
         if "$GCS" -fetch "$KEY" /tmp/ui-deps.tar 2>/tmp/ui-deps-fetch.err && [ -s /tmp/ui-deps.tar ]; then
           # Two roots in one archive: node_modules relative to the
-          # workspace, Cypress relative to $HOME/.cache. Matching -C
-          # sequences on save and restore keep them straight.
-          # -xf (not -xzf): gocache-serve transparently gunzips.
+          # workspace, Cypress relative to $HOME/.cache. Cypress is an
+          # OPTIONAL member (stores skip it when absent), so consult the
+          # archive before extracting it — a missing member is a hard
+          # tar error otherwise. -xf (not -xzf): transparent gunzip.
           mkdir -p ~/.cache/Cypress
-          tar -xf /tmp/ui-deps.tar \
-            -C "$HOME/.cache" ./Cypress \
-            -C "${{ github.workspace }}" ${{ inputs.working-directory }}/node_modules
+          if tar -tf /tmp/ui-deps.tar | grep -q "^\./Cypress"; then
+            tar -xf /tmp/ui-deps.tar \
+              -C "$HOME/.cache" ./Cypress \
+              -C "${{ github.workspace }}" ${{ inputs.working-directory }}/node_modules
+          else
+            tar -xf /tmp/ui-deps.tar \
+              -C "${{ github.workspace }}" ${{ inputs.working-directory }}/node_modules
+          fi
           echo "hit=true" >> "$GITHUB_OUTPUT"
           echo "ui deps: restored from blob store (${KEY})"
         else
