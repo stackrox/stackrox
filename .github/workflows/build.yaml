@@ -205,9 +205,15 @@ jobs:
         run: |
           set -euo pipefail
           KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
-          tar -cf /tmp/ui-deps.tar \
-            -C "$HOME/.cache" ./Cypress \
-            -C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules
+          # Cypress is optional: GHA-cache migration paths may lack it
+          # (a GHA cache hit can restore node_modules without ~/.cache/Cypress
+          # ever having been populated), and pre-build-ui doesn't need it —
+          # only UI test jobs do. A hard -C on a missing dir fails the tar.
+          TAR_ARGS=(-C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules)
+          if [ -d "$HOME/.cache/Cypress" ]; then
+            TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
+          fi
+          tar -cf /tmp/ui-deps.tar "${TAR_ARGS[@]}"
           # One-shot content blobs go to ALL replicas: regional selection
           # with replication lag makes single-account stores miss for
           # consumers in other regions (observed: producer stored to its
