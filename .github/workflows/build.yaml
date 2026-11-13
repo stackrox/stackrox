@@ -858,7 +858,7 @@ jobs:
           # artifact download with a ~2s blob fetch; on miss the
           # artifact path below runs.
           UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
-          KEY="ui-build-${{ matrix.branding }}-${UI_HASH}"
+          KEY="ui-build-${ROX_PRODUCT_BRANDING}-${UI_HASH}"
           if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch "$KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
             tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
             echo "ui build: fetched from blob store (${KEY}, ~2s)"
