@@ -52,6 +52,7 @@ var (
 // matcher is essentially a driver.Matcher but it only exposes the functions necessary for the enricher.
 type matcher interface {
 	Name() string
+	Filter(record *claircore.IndexRecord) bool
 	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
 
@@ -240,10 +241,13 @@ func vulnerableInRepositories(ctx context.Context, m matcher, record *claircore.
 	}
 	for _, repoID := range repoIDs {
 		repo := repos[repoID]
-		if repo == nil || repo.Key != rheljava.RepositoryKey {
+		if repo == nil {
 			continue
 		}
 		record.Repository = repo
+		if !m.Filter(record) {
+			continue
+		}
 		vulnerable, err := m.Vulnerable(ctx, record, vuln)
 		if err != nil || vulnerable {
 			return vulnerable, err
