@@ -98,7 +98,7 @@ deploy_previous_central() {
 upgrade_operator() {
     require_environment "RELEASE"
     require_environment "PATCH"
-    github_group "Upgrading to ${RELEASE}/${PATCH}"
+    github_group "Upgrading to ${RELEASE}.${PATCH}"
 
     # Upgrade operator only, otherwise roxie tears down the entire ACS
     # deployment and recreates it, losing the cluster's historical data.
@@ -163,9 +163,11 @@ wait_for_image_count_stable() {
 }
 
 wait_for_image_reprocessing() {
-    MAX_WAIT_SECONDS="600" wait_for_scanner_V4 "$NAMESPACE"
+    github_group 'Waiting for Scanner V4 to become ready...'
+    MAX_WAIT_SECONDS="1800" wait_for_scanner_V4 "$NAMESPACE"
     restart_central_and_reconnect
     wait_for_image_count_stable
+    github_endgroup
 }
 
 strip_transient_cluster_auth_config() {
