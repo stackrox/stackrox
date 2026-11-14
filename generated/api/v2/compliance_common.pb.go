@@ -95,9 +95,9 @@ const (
 	// freshness (no schedule, unresolvable config, or no data) or the field was
 	// not populated. This is the zero value.
 	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN ComplianceCheckDataFreshness = 0
-	// Data reflects the most recent expected scan cycle.
+	// Data is current: the latest scheduled scan refreshed it.
 	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT ComplianceCheckDataFreshness = 1
-	// Data predates the most recent expected scan cycle.
+	// Data is stale: a scheduled scan should have refreshed it by now but did not.
 	ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE ComplianceCheckDataFreshness = 2
 )
 

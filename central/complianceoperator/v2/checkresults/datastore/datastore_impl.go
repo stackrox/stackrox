@@ -539,6 +539,41 @@ func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID strin
 	}, "marking prior compliance check results stale")
 }
 
+// MarkScanChecksStaleByConfig marks STALE the check results (of the scan configuration specified
+// via scanConfigName) whose LastStartedTime predates olderThan. It mirrors MarkScanChecksStale but
+// is keyed by the scan configuration name, which the time-driven freshness sweeper derives from the
+// configuration's schedule.
+func (d *datastoreImpl) MarkScanChecksStaleByConfig(ctx context.Context, scanConfigName string, olderThan time.Time) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanConfigName == "" {
+		return 0, nil
+	}
+
+	// Narrow at the DB as MarkScanChecksStale does: skip rows that are already STALE, and rows whose
+	// LastStartedTime is not older than olderThan (with the same second-granularity rounding).
+	upperBound := olderThan.Truncate(time.Second).Add(time.Second)
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).
+		AddStrings(search.ComplianceOperatorCheckDataFreshness,
+			search.NegateQueryString(search.ExactMatchString(storage.ComplianceOperatorCheckResultV2_STALE.String()))).
+		AddTimeRangeField(search.ComplianceOperatorCheckLastStartedTime, time.Unix(0, 0), upperBound).
+		ProtoQuery()
+
+	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		// Guard against a config relabel between the read and the fenced re-read: only stale rows that
+		// still belong to this scan configuration, so we never apply the wrong config's cutoff.
+		if result.GetScanConfigName() != scanConfigName {
+			return false
+		}
+		started := result.GetLastStartedTime()
+		return started != nil && started.AsTime().Before(olderThan)
+	}, "marking stale compliance check results by scan configuration")
+}
+
 // markStale performs a read-modify-upsert that flips to STALE every result matched by query for
 // which shouldStale reports true. Results for which shouldStale is false are left untouched.
 func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldStale func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {

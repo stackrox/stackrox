@@ -67,6 +67,11 @@ type DataStore interface {
 	// MarkScanChecksStale marks STALE the check results of the given scan (identified
 	// by its scan ref ID) that predate olderThan, leaving the rest unchanged.
 	MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error)
+
+	// MarkScanChecksStaleByConfig marks STALE the check results of the given scan configuration
+	// (identified by its name) that predate olderThan, leaving the rest unchanged. It is the
+	// time-driven counterpart of MarkScanChecksStale, used by the freshness sweeper.
+	MarkScanChecksStaleByConfig(ctx context.Context, scanConfigName string, olderThan time.Time) (int64, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results
