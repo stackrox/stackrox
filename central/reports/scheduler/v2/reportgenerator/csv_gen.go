@@ -39,6 +39,7 @@ var (
 		"Advisory Link",
 		"CVE Origin",
 		"Vulnerability State",
+		"Container Name",
 	}
 
 	// originDisplayNames maps VulnOrigin enum values to human-readable names for the
@@ -112,6 +113,7 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 		r.GetAdvisoryLink(),
 		originDisplayName(r.GetOrigin()),
 		r.GetVulnerabilityState(),
+		r.GetContainerName(),
 	)
 
 	return csvRow
@@ -186,6 +188,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			r.GetAdvisoryLink(),
 			originDisplayName(r.GetOrigin()),
 			r.GetVulnerabilityState(),
+			r.GetContainerName(),
 		)
 		csvWriter.AddValue(row)
 	}

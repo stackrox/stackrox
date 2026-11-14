@@ -782,6 +782,19 @@ func TestSelectQueries(t *testing.T) {
 	}
 }
 
+func TestImageCVESelectDeploymentContainerName(t *testing.T) {
+	q := search.NewQueryBuilder().AddSelectFields(
+		search.NewQuerySelect(search.CVE),
+		search.NewQuerySelect(search.DeploymentContainerName),
+	).ProtoQuery()
+	built, err := standardizeSelectQueryAndPopulatePath(sac.WithAllAccess(t.Context()), q, imageCVEV2Schema, SELECT, nil)
+	require.NoError(t, err)
+
+	sql := built.AsSQL()
+	assert.Contains(t, sql, "deployments_containers.Name as deployment_container_name")
+	assert.Contains(t, sql, "join deployments_containers")
+}
+
 func TestDeleteQueries(t *testing.T) {
 
 	for _, c := range []struct {

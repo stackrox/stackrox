@@ -84,7 +84,7 @@ message Container {
   Resources resources = 8;
 
   reserved 9; // previously instances
-  string name = 10; // @gotags: policy:"Container Name"
+  string name = 10; // @gotags: search:"Deployment Container Name,hidden" policy:"Container Name"
 
   LivenessProbe liveness_probe = 11;
   ReadinessProbe readiness_probe = 12;
