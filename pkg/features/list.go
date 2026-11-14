@@ -146,6 +146,9 @@ var (
 	// PolicyWorkloadKindExclusion enables excluding all workloads of selected Kubernetes kinds (Job, CronJob) from a policy.
 	PolicyWorkloadKindExclusion = registerFeature("Enable excluding all workloads of a given kind from a policy", "ROX_POLICY_WORKLOAD_KIND_EXCLUSION", enabled)
 
+	// PolicyReports enables ingestion of wgpolicyk8s.io PolicyReport CRDs from external policy engines.
+	PolicyReports = registerFeature("Enables PolicyReport CRD ingestion from external policy engines", "ROX_POLICY_REPORTS")
+
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
