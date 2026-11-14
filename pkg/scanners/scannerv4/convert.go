@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rhel/rhcc"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -97,7 +98,7 @@ func componentsWithLayerMap(metadata *storage.ImageMetadata, report *v4.Vulnerab
 		)
 		env := environment(report, id)
 		if env != nil {
-			source, location = ParsePackageDB(env.GetPackageDb())
+			source, location = packageSourceAndLocation(env.GetPackageDb(), report, id)
 			layerIdx = layerIndex(layerSHAToIndex, env)
 		}
 
@@ -204,6 +205,16 @@ func packageHasRepositoryKey(report *v4.VulnerabilityReport, pkgID, key string) 
 		}
 	}
 	return false
+}
+
+// packageSourceAndLocation identifies Red Hat Java SBOM packages using their
+// repository association before falling back to package DB prefix parsing.
+func packageSourceAndLocation(packageDB string, report *v4.VulnerabilityReport, pkgID string) (storage.SourceType, string) {
+	path, ok := strings.CutPrefix(packageDB, "sbom:")
+	if ok && packageHasRepositoryKey(report, pkgID, rheljava.RepositoryKey) {
+		return storage.SourceType_JAVA, path
+	}
+	return ParsePackageDB(packageDB)
 }
 
 // ParsePackageDB parses the given packageDB into its source type + filepath.
