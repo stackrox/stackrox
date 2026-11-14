@@ -1,0 +1,33 @@
+{
+  "apiVersion": "v1",
+  "kind": "PodList",
+  "items": [
+    {
+      "metadata": {
+        "name": "central-evicted-abc12",
+        "namespace": "stackrox",
+        "labels": { "app": "central" }
+      },
+      "status": {
+        "phase": "Failed",
+        "reason": "Evicted",
+        "containerStatuses": [
+          {
+            "name": "central",
+            "ready": false,
+            "restartCount": 0,
+            "state": {
+              "terminated": {
+                "reason": "Error",
+                "exitCode": 137,
+                "startedAt": "2026-01-01T00:00:00Z",
+                "finishedAt": "2026-01-01T00:00:30Z"
+              }
+            },
+            "lastState": {}
+          }
+        ]
+      }
+    }
+  ]
+}

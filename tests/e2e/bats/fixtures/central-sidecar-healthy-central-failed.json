@@ -1,0 +1,43 @@
+{
+  "apiVersion": "v1",
+  "kind": "PodList",
+  "items": [
+    {
+      "metadata": {
+        "name": "central-abc123-def45",
+        "namespace": "stackrox",
+        "labels": { "app": "central" }
+      },
+      "status": {
+        "phase": "Running",
+        "containerStatuses": [
+          {
+            "name": "central",
+            "ready": false,
+            "restartCount": 2,
+            "state": {
+              "terminated": {
+                "reason": "OOMKilled",
+                "exitCode": 137,
+                "startedAt": "2026-01-01T00:00:00Z",
+                "finishedAt": "2026-01-01T00:00:10Z"
+              }
+            },
+            "lastState": {}
+          },
+          {
+            "name": "monitoring-sidecar",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {
+                "startedAt": "2026-01-01T00:00:00Z"
+              }
+            },
+            "lastState": {}
+          }
+        ]
+      }
+    }
+  ]
+}
