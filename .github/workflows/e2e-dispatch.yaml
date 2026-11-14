@@ -103,7 +103,7 @@ jobs:
         echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
 
     - name: Wait for images
-      uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
+      uses: stackrox/actions/release/wait-for-image@8ab35c7ed3dd26290a5dba680c83bec32c67de3e # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         limit: 1800 # Seconds, corresponding to 30m.
@@ -146,7 +146,7 @@ jobs:
       run: *image-references
 
     - name: Wait for Konflux images
-      uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
+      uses: stackrox/actions/release/wait-for-image@8ab35c7ed3dd26290a5dba680c83bec32c67de3e # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: *stackrox-required-images
