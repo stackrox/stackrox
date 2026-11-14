@@ -60,6 +60,10 @@
       // Instruct Renovate not try to update Dockerfiles other than konflux.Dockerfile (or konflux.anything.Dockerfile)
       // to have less PR noise.
       "**/*konflux*.Dockerfile",
+      // Dockerfile for upstream `main` is included because we pin image digests there. This solves the problem
+      // described in https://redhat-internal.slack.com/archives/CELUQKESC/p1794381009754529
+      // TODO: remove once we switch upstream Dockerfiles to UBI10 and install Postgres 16 from Red Hat repos.
+      "image/rhel/Dockerfile",
     ],
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
