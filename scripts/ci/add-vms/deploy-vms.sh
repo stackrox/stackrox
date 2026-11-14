@@ -286,7 +286,7 @@ ssh_probe_with_key() {
         --local-ssh-opts="-o BatchMode=yes" \
         --local-ssh-opts="-o ConnectTimeout=10" \
         --command "echo SSH_PROBE_OK" \
-        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null | grep -q "SSH_PROBE_OK"
+        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null | grep "SSH_PROBE_OK" >/dev/null
 }
 
 # Extracts the VM password from the infractl artifacts directory.
@@ -335,7 +335,7 @@ adopt_vm_with_password() {
         --local-ssh-opts="-o ConnectTimeout=10" \
         --local-ssh-opts="-o PubkeyAuthentication=no" \
         --command "mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo ${auto_pub_b64} | base64 -d >> ~/.ssh/authorized_keys && sort -u -o ~/.ssh/authorized_keys ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && echo ADOPT_OK" \
-        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null | grep -q "ADOPT_OK"; then
+        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null | grep "ADOPT_OK" >/dev/null; then
         echo "  Adopted $vm_name — automation key injected."
         return 0
     fi
