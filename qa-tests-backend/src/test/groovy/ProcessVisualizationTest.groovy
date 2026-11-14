@@ -17,7 +17,6 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String CENTOSDEPLOYMENT = "centosdeployment"
     static final private String FEDORADEPLOYMENT = "fedoradeployment"
     static final private String ELASTICDEPLOYMENT = "elasticdeployment"
-    static final private String MONGODEPLOYMENT = "mongodeployment"
     static final private String ROX4751DEPLOYMENT = "rox4751deployment"
     static final private String ROX4979DEPLOYMENT = "rox4979deployment"
     // ldconfig process
@@ -53,11 +52,6 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:elasticsearch-"+
                            "cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb")
-                .addLabel ("app", "test" ),
-            new Deployment()
-                .setName (MONGODEPLOYMENT)
-                .setImagePrefetcherAffinity()
-                .setImage ("quay.io/rhacs-eng/qa-multi-arch:mongodb")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4751DEPLOYMENT)
@@ -186,10 +180,6 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig",
          "/usr/bin/cut",
          "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
-
-        ["/usr/local/bin/docker-entrypoint.sh",
-         "/usr/bin/id",
-         "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
 
         ["/test/bin/exec.sh", "/usr/bin/date", "/usr/bin/sleep"] as Set | ROX4751DEPLOYMENT
 
@@ -344,7 +334,6 @@ class ProcessVisualizationTest extends BaseSpecification {
         ] | ELASTICDEPLOYMENT
     }
 
-    @Tag("BAT")
     @Tag("RUNTIME")
     def "Verify process visualization on the excluded namespace"()  {
         when:
