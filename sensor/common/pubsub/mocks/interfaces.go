@@ -69,6 +69,70 @@ func (mr *MockEventMockRecorder) Topic() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Topic", reflect.TypeOf((*MockEvent)(nil).Topic))
 }
 
+// MockMergeable is a mock of Mergeable interface.
+type MockMergeable[K comparable] struct {
+	ctrl     *gomock.Controller
+	recorder *MockMergeableMockRecorder[K]
+	isgomock struct{}
+}
+
+// MockMergeableMockRecorder is the mock recorder for MockMergeable.
+type MockMergeableMockRecorder[K comparable] struct {
+	mock *MockMergeable[K]
+}
+
+// NewMockMergeable creates a new mock instance.
+func NewMockMergeable[K comparable](ctrl *gomock.Controller) *MockMergeable[K] {
+	mock := &MockMergeable[K]{ctrl: ctrl}
+	mock.recorder = &MockMergeableMockRecorder[K]{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMergeable[K]) EXPECT() *MockMergeableMockRecorder[K] {
+	return m.recorder
+}
+
+// Lane mocks base method.
+func (m *MockMergeable[K]) Lane() pubsub.LaneID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Lane")
+	ret0, _ := ret[0].(pubsub.LaneID)
+	return ret0
+}
+
+// Lane indicates an expected call of Lane.
+func (mr *MockMergeableMockRecorder[K]) Lane() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lane", reflect.TypeOf((*MockMergeable[K])(nil).Lane))
+}
+
+// MergeFrom mocks base method.
+func (m *MockMergeable[K]) MergeFrom(old pubsub.Event) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "MergeFrom", old)
+}
+
+// MergeFrom indicates an expected call of MergeFrom.
+func (mr *MockMergeableMockRecorder[K]) MergeFrom(old any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeFrom", reflect.TypeOf((*MockMergeable[K])(nil).MergeFrom), old)
+}
+
+// Topic mocks base method.
+func (m *MockMergeable[K]) Topic() pubsub.Topic {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Topic")
+	ret0, _ := ret[0].(pubsub.Topic)
+	return ret0
+}
+
+// Topic indicates an expected call of Topic.
+func (mr *MockMergeableMockRecorder[K]) Topic() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Topic", reflect.TypeOf((*MockMergeable[K])(nil).Topic))
+}
+
 // MockLaneConfig is a mock of LaneConfig interface.
 type MockLaneConfig struct {
 	ctrl     *gomock.Controller
