@@ -39,4 +39,8 @@ var (
 	// Java packages. The ROX_SCANNER_V4_MAVEN_SEARCH feature flag must be enabled to have any effect.
 	// Default: https://search.maven.org/solrsearch/select
 	ScannerV4MavenSearchURL = RegisterSetting("ROX_SCANNER_V4_MAVEN_SEARCH_URL", WithDefault("https://search.maven.org/solrsearch/select"))
+
+	// ScannerV4VulnerabilityBundleBaseURL specifies the base URL Central uses to download Scanner V4 vulnerability bundles.
+	// Default: https://definitions.stackrox.io/v4/vulnerability-bundles
+	ScannerV4VulnerabilityBundleBaseURL = RegisterSetting("ROX_SCANNER_V4_VULNERABILITY_BUNDLE_BASE_URL", WithDefault("https://definitions.stackrox.io/v4/vulnerability-bundles"))
 )
