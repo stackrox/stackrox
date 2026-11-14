@@ -399,7 +399,7 @@ func (resolver *imageCVEV2Resolver) EnvImpact(ctx context.Context) (float64, err
 		return 0, err
 	}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   resolver.flatData.GetCVEIDs(),
+		IDs:   resolver.cveIDs(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 	scopedCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
@@ -423,7 +423,7 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.cveIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
 		return "", err
@@ -431,12 +431,18 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 	return cves[0].GetFixedBy(), nil
 }
 
-// IsFixable returns if the CVE is fixable in the given context or not
+// IsFixable returns if the CVE is fixable in the given context or not.
+// A resolver without flat data represents a single CVE occurrence, which was already loaded in the
+// request context, so its own fixability is returned without another lookup.
 func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context, _ RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
 
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
+	}
+
+	if resolver.flatData == nil {
+		return resolver.data.GetIsFixable(), nil
 	}
 
 	query := search.NewQueryBuilder().
@@ -670,7 +676,7 @@ func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (*advisoryReso
 		return nil, nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.cveIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
 		return nil, err
@@ -702,17 +708,20 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 		resolver.ctx = ctx
 	}
 
-	if resolver.flatData != nil {
-		return scoped.Context(resolver.ctx, scoped.Scope{
-			IDs:   resolver.flatData.GetCVEIDs(),
-			Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
-		})
-	}
-
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		IDs:   []string{resolver.data.GetId()},
+		IDs:   resolver.cveIDs(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
+}
+
+// cveIDs returns the IDs of the image CVE occurrences this resolver represents. A resolver built
+// from flat CVE data represents all grouped occurrences of the CVE. A resolver without flat data,
+// such as a distro tuple or a top vulnerability, represents only its own occurrence.
+func (resolver *imageCVEV2Resolver) cveIDs() []string {
+	if resolver.flatData != nil {
+		return resolver.flatData.GetCVEIDs()
+	}
+	return []string{resolver.data.GetId()}
 }
 
 func convertTimeToGraphQLTime(t *time.Time) *graphql.Time {
