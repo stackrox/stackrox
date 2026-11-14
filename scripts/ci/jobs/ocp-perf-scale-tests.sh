@@ -8,16 +8,30 @@ ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck source=../lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 
-info "Waiting for PR images for performance/scale testing"
+# === PERF/SCALE VERSION BISECTION OVERRIDE ===
+# To test a specific, already-published ACS version instead of this branch's
+# images, set this to a published image tag. Any merged master commit has
+# images at quay.io/stackrox-io/main:<tag> where <tag> is that commit's
+# `make tag` value (format: X.Y.x-N-gSHA); nightly tags (X.Y.x-nightly-YYYYMMDD)
+# work too. roxie just pulls this tag, so no rebuild or code revert is needed.
+# Leave empty for normal behavior (poll for this branch's freshly built images).
+ACS_IMAGE_TAG_OVERRIDE="${ACS_IMAGE_TAG_OVERRIDE:-5.1.x-520-gab1a9015f0}"
 
-MAIN_IMAGE_TAG="$(make tag)"
-info "Target image tag: ${MAIN_IMAGE_TAG}"
+if [[ -n "${ACS_IMAGE_TAG_OVERRIDE}" ]]; then
+  MAIN_IMAGE_TAG="${ACS_IMAGE_TAG_OVERRIDE}"
+  info "ACS_IMAGE_TAG_OVERRIDE set: deploying ${MAIN_IMAGE_TAG} (skipping PR image build/poll)"
+else
+  info "Waiting for PR images for performance/scale testing"
 
-image_list="$(mktemp)"
-populate_stackrox_image_list "${image_list}"
-info "Will poll for: $(awk '{print $1}' "${image_list}")"
+  MAIN_IMAGE_TAG="$(make tag)"
+  info "Target image tag: ${MAIN_IMAGE_TAG}"
 
-poll_for_system_test_images 3600
+  image_list="$(mktemp)"
+  populate_stackrox_image_list "${image_list}"
+  info "Will poll for: $(awk '{print $1}' "${image_list}")"
+
+  poll_for_system_test_images 3600
+fi
 
 # Export the tag for stackrox-install-roxie to use
 if [[ -n "${SHARED_DIR:-}" ]]; then
