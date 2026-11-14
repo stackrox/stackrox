@@ -169,6 +169,11 @@ create_cluster() {
         ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
         status=0
+        # Control plane logs and metrics are disabled by default on GKE. E2E
+        # flakes such as a namespace stuck in Terminating, or a create that
+        # dies at the 32s client request timeout, cannot be attributed to the
+        # control plane without apiserver and kube-controller-manager activity.
+        # These clusters are short lived, so the extra ingestion is bounded.
         # shellcheck disable=SC2153
         timeout 830 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
@@ -182,6 +187,8 @@ create_cluster() {
             --enable-network-policy \
             --no-enable-autorepair \
             "${VERSION_ARGS[@]}" \
+            --logging=SYSTEM,WORKLOAD,API_SERVER,SCHEDULER,CONTROLLER_MANAGER \
+            --monitoring=SYSTEM,API_SERVER,SCHEDULER,CONTROLLER_MANAGER \
             --image-type "${GCP_IMAGE_TYPE}" \
             --tags="${tags}" \
             --labels="${labels}" \
@@ -354,6 +361,34 @@ teardown_gke_cluster() {
     create_log_explorer_links
 }
 
+# write_log_explorer_links appends one Cloud Logging link per authUser for the
+# given resource type. The query is spread over several lines for readability;
+# the newlines are stripped so the href stays a single line.
+write_log_explorer_links() {
+    local resource_type="$1"
+    local extra_filter="$2"
+    local label="$3"
+    local authUser
+
+    for authUser in {0..2}; do
+    cat << LINK | tr -d '\n' >> "$artifact_file"
+      <li>
+        <a target="_blank" href="https://console.cloud.google.com/logs/query
+;query=
+resource.type%3D%22${resource_type}%22%0A
+resource.labels.cluster_name%3D%22${CLUSTER_NAME}%22%0A
+${extra_filter}
+;timeRange=${start_ts}%2F${end_ts}
+;cursorTimestamp=${start_ts}
+?authuser=${authUser}
+&amp;project=${project}
+&amp;orgonly=true
+&amp;supportedpurview=organizationId">${label} (authUser ${authUser})</a>
+      </li>
+LINK
+    done
+}
+
 create_log_explorer_links() {
     if [[ -z "${ARTIFACT_DIR:-}" ]]; then
         info "No place for artifacts, skipping generation of links to logs explorer"
@@ -389,24 +424,12 @@ HEAD
     local project
     project="$(gcloud config get project --quiet)"
 
-    for authUser in {0..2}; do
-    cat << LINK |
-      <li>
-        <a target="_blank" href="https://console.cloud.google.com/logs/query
-;query=
-resource.type%3D%22k8s_container%22%0A
-resource.labels.cluster_name%3D%22${CLUSTER_NAME}%22%0A
-resource.labels.namespace_name%3D%22stackrox%22%0A
-;timeRange=${start_ts}%2F${end_ts}
-;cursorTimestamp=${start_ts}
-?authuser=${authUser}
-&amp;project=${project}
-&amp;orgonly=true
-&amp;supportedpurview=organizationId">authUser $authUser</a>
-      </li>
-LINK
-tr -d '\n' >> "$artifact_file"
-    done
+    write_log_explorer_links "k8s_container" \
+        "resource.labels.namespace_name%3D%22stackrox%22%0A" \
+        "StackRox pods"
+    write_log_explorer_links "k8s_control_plane_component" \
+        "" \
+        "GKE control plane"
 
     cat >> "$artifact_file" <<- FOOT
     </ul>
