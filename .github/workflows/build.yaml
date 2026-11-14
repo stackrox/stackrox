@@ -180,7 +180,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          fetch-depth: 0
+          # Shallow: the UI job reads git-tracked file CONTENT for the
+          # source hash but never runs git describe (no version stamping
+          # in JS builds). Full clone was 21s; shallow is ~2s.
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -233,7 +236,27 @@ jobs:
           echo "UI_BUILD_BLOB_KEY=ui-build-${{ matrix.branding }}-${UI_HASH}" >> "$GITHUB_ENV"
           echo "ui source hash: ${UI_HASH}"
 
+      - name: Fetch built UI from blob store (skip build on hit)
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # Same content-addressed key as the store step: a warm run
+          # (unchanged ui/ source) fetches the ~12MB build output in
+          # ~2s instead of running the 95s webpack build.
+          if "${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" -fetch-any "$UI_BUILD_BLOB_KEY" /tmp/ui-prebuilt.tar && [ -s /tmp/ui-prebuilt.tar ]; then
+            tar -xf /tmp/ui-prebuilt.tar -C "$GITHUB_WORKSPACE"
+            echo "UI_SKIPPED=true" >> "$GITHUB_ENV"
+            echo "ui build: SKIPPED (restored from blob store, ~2s vs ~95s webpack)"
+          else
+            echo "UI_SKIPPED=false" >> "$GITHUB_ENV"
+            echo "ui build: cache miss — will build"
+          fi
+
       - name: Build UI
+        if: env.UI_SKIPPED != 'true'
         run: make -C ui build
 
       - name: Store built UI in blob store
@@ -511,15 +534,10 @@ jobs:
           tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
           "${GOCACHEPROG}" -store-all "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1
           echo "stored $BLOB_KEY ($(stat -c%s /tmp/go-binaries.tar) bytes)"
-          # Also upload as artifact for backward compatibility during transition
-          cp /tmp/go-binaries.tar go-binaries-build.tar
-
-      - uses: ./.github/actions/upload-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: go-binaries-build.tar
-          compression-level: 1
-          retention-days: '1'
+          # Artifact upload removed: the blob store fully replaces it
+          # (verified markers + all-replica stores + read-through fallback;
+          # the ~22s/leg artifact upload was pure overhead after the
+          # 2s blob fetch proved reliable).
 
   pre-build-docs:
     runs-on: ubuntu-24.04
@@ -897,15 +915,8 @@ jobs:
             echo "binaries: blob store miss — will use artifact download"
           fi
 
-      - uses: ./.github/actions/download-artifact-with-retry
-        if: hashFiles('bin/linux_${{ matrix.arch }}/central') == ''
-        with:
-          name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
-
-      - name: Unpack Go binaries build
-        if: hashFiles('bin/linux_${{ matrix.arch }}/central') == ''
-        run: |
-          tar xvf go-binaries-build.tar
+      # Artifact download removed: blob store fetch above is the only path
+      # (markers + all-replica + read-through = reliable).
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -926,8 +937,36 @@ jobs:
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
       - name: Build main images
+        env:
+          # Layer cache from the previous run's pushed image: with
+          # COPY --link + deterministic binaries, unchanged content
+          # produces identical layers → full cache hit → fast build,
+          # push dedups to zero layers. The cache tag is updated after
+          # each successful push (see the update step below).
+          DOCKER_CACHE_FROM: ${{ matrix.name == 'RHACS_BRANDING' && 'quay.io/rhacs-eng/main' || 'quay.io/stackrox-io/main' }}:cache-${{ matrix.arch }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
+
+      - name: Update layer cache tag
+        # Point the cache tag at the just-pushed image so the next run
+        # can --cache-from it. A metadata-only operation (imagetools
+        # create = re-tag, no layer transfer). Runs after the push step.
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          # The registry matches make/env.mk: RHACS_BRANDING → rhacs-eng,
+          # everything else → stackrox-io. TAG is the build-tag (stable
+          # across warm runs since define-job-matrix derives it from git
+          # describe of the same source state).
+          if [ "${{ matrix.name }}" = "RHACS_BRANDING" ]; then
+            REG="quay.io/rhacs-eng"
+          else
+            REG="quay.io/stackrox-io"
+          fi
+          TAG="${{ needs.define-job-matrix.outputs.build-tag }}"
+          CACHE_TAG="cache-${{ matrix.arch }}"
+          docker buildx imagetools create -t "${REG}/main:${CACHE_TAG}" "${REG}/main:${TAG}" 2>&1 | tail -1
+          echo "layer cache tag updated: ${REG}/main:${CACHE_TAG} -> ${REG}/main:${TAG}"
 
       - name: Check debugger presence in the main image
         if: github.event_name != 'pull_request'
