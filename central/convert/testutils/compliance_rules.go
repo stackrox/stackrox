@@ -45,21 +45,6 @@ func GetRuleV2SensorMsg(_ *testing.T) *central.ComplianceOperatorRuleV2 {
 	}
 }
 
-// GetRuleV1Storage -- returns V1 storage scan object
-func GetRuleV1Storage(_ *testing.T) *storage.ComplianceOperatorRule {
-	return &storage.ComplianceOperatorRule{
-		Id:          RuleUID,
-		RuleId:      ruleID,
-		Name:        "ocp-cis",
-		ClusterId:   fixtureconsts.Cluster1,
-		Labels:      map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
-		Annotations: getAnnotations(),
-		Title:       "test rule",
-		Description: "test description",
-		Rationale:   "test rationale",
-	}
-}
-
 // GetRuleV2Storage -- returns V2 storage rule
 func GetRuleV2Storage(_ *testing.T) *storage.ComplianceOperatorRuleV2 {
 	fixes := []*storage.ComplianceOperatorRuleV2_Fix{
