@@ -1,0 +1,41 @@
+# StackRox policy override to the Fullsend v0.47.1 scaffold.
+# Keep review/fix explicitly requested when regenerating. Fullsend performs
+# repository-permission checks inside the pinned reusable dispatcher.
+name: fullsend
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  dispatch:
+    if: >-
+      github.event_name == 'issue_comment'
+      && github.event.issue.pull_request
+      && github.event.comment.user.type == 'User'
+      && (github.event.comment.body == '/fs-review'
+          || github.event.comment.body == '/fs-fix')
+    cache-mode: read
+    # Retain the upstream reusable workflow's permission contract. Role selection
+    # narrows dispatch, not every credential's authority.
+    permissions:
+      actions: write
+      id-token: write
+      contents: write
+      issues: write
+      packages: read
+      pull-requests: write
+    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@c68903c0373e2216af03f5412642d4aa4019057f # v0.47.1
+    with:
+      event_action: ${{ github.event.action }}
+      mint_url: ${{ vars.FULLSEND_MINT_URL }}
+      gcp_region: ${{ vars.FULLSEND_GCP_REGION }}
+      project_number: ${{ vars.FULLSEND_PROJECT_NUMBER }}
+      runner_image: ubuntu-24.04
+    secrets:
+      FULLSEND_GCP_WIF_PROVIDER: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
+      FULLSEND_GCP_PROJECT_ID: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+      OTEL_EXPORTER_OTLP_TRACES_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_TRACES_HEADERS }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}

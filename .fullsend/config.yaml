@@ -1,0 +1,30 @@
+# Initial StackRox Fullsend configuration. See README.md for usage.
+version: "1"
+roles:
+  - review
+  - coder
+agents:
+  - name: code
+    enabled: false
+  - name: triage
+    enabled: false
+  - name: prioritize
+    enabled: false
+  - name: retro
+    enabled: false
+allowed_remote_resources:
+  - https://raw.githubusercontent.com/fullsend-ai/fullsend/
+  - https://raw.githubusercontent.com/fullsend-ai/agents/
+# This denies additional cross-repo issue targets. The source repository is
+# implicitly allowed by Fullsend, so this does not prohibit every issue write.
+create_issues:
+  allow_targets:
+    orgs: []
+    repos: []
+status_notifications:
+  comment:
+    start: disabled
+    completion: disabled
+  reaction:
+    start: disabled
+    completion: disabled
