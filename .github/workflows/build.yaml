@@ -979,10 +979,15 @@ jobs:
           name: docs-build
           path: image/rhel/docs
 
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: oss-notice
-          path: image/rhel/THIRD_PARTY_NOTICES
+      - name: Fetch oss-notice from blob store
+        run: |
+          set -euo pipefail
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "oss-notice-LATEST" image/rhel/THIRD_PARTY_NOTICES && [ -s image/rhel/THIRD_PARTY_NOTICES ]; then
+            echo "oss-notice: fetched from blob store"
+          else
+            echo "::error::oss-notice not found in blob store"
+            exit 1
+          fi
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
