@@ -1658,3 +1658,41 @@ func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter)
 		emptyImageGetterV2,
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }
+
+func TestEnrichImageWithScannerV2_ForceReindex(t *testing.T) {
+	imageV2 := &storage.ImageV2{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
+	image := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
+	e := &enricherV2Impl{metrics: newMetrics(pkgMetrics.CentralSubsystem)}
+
+	t.Run("force reindex with ForceReindexer scanner calls GetScanForceReindex", func(t *testing.T) {
+		scanner := &fakeForceReindexScanner{}
+		imageScanner := &fakeImageScannerWithDataSource{scanner: scanner}
+
+		result, err := e.enrichImageWithScanner(context.Background(), imageV2, image, imageScanner, true)
+		require.NoError(t, err)
+		assert.Equal(t, ScanSucceeded, result)
+		assert.True(t, scanner.requestedForceReindex)
+		assert.False(t, scanner.fakeScanner.requestedScan)
+	})
+
+	t.Run("force reindex with plain scanner falls back to GetScan", func(t *testing.T) {
+		scanner := &fakeScanner{}
+		imageScanner := &fakeImageScannerWithDataSource{scanner: scanner}
+
+		result, err := e.enrichImageWithScanner(context.Background(), imageV2, image, imageScanner, true)
+		require.NoError(t, err)
+		assert.Equal(t, ScanSucceeded, result)
+		assert.True(t, scanner.requestedScan)
+	})
+
+	t.Run("no force reindex uses GetScan even if scanner implements ForceReindexer", func(t *testing.T) {
+		scanner := &fakeForceReindexScanner{}
+		imageScanner := &fakeImageScannerWithDataSource{scanner: scanner}
+
+		result, err := e.enrichImageWithScanner(context.Background(), imageV2, image, imageScanner, false)
+		require.NoError(t, err)
+		assert.Equal(t, ScanSucceeded, result)
+		assert.False(t, scanner.requestedForceReindex)
+		assert.True(t, scanner.fakeScanner.requestedScan)
+	})
+}

@@ -429,6 +429,12 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 	}
 
 	o := makeOptions(opts...)
+	if o.force && (!features.ScannerV4ReIndex.Enabled() || i.metadataStore == nil) {
+		// Fail fast, before any registry I/O below: without this, a caller explicitly
+		// requesting a forced reindex would silently get back whatever ClairCore already
+		// has cached, with no indication that the force request was ignored.
+		return nil, errors.New("forced reindex requires ROX_SCANNER_V4_REINDEX to be enabled")
+	}
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing image URL %q: %w", imageURL, err)
@@ -467,6 +473,12 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 			URI:     layerReq.URL.String(),
 			Headers: layerReq.Header,
 		})
+	}
+
+	if o.force {
+		if err := i.metadataStore.DeleteManifest(ctx, manifestDigest.String()); err != nil {
+			return nil, fmt.Errorf("discarding previous index for forced reindex: %w", err)
+		}
 	}
 
 	ir, err := i.libIndex.Index(ctx, manifest)
