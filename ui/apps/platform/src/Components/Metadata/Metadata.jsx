@@ -46,27 +46,18 @@ const Metadata = ({
                     <ul>
                         {labels && (
                             <li className="m-4">
-                                <ResourceCountPopper
-                                    data={labels}
-                                    reactOutsideClassName="ignore-react-onclickoutside"
-                                    label="Label"
-                                />
+                                <ResourceCountPopper data={labels} label="Label" />
                             </li>
                         )}
                         {annotations && (
                             <li className="m-4">
-                                <ResourceCountPopper
-                                    data={annotations}
-                                    reactOutsideClassName="ignore-react-onclickoutside"
-                                    label="Annotation"
-                                />
+                                <ResourceCountPopper data={annotations} label="Annotation" />
                             </li>
                         )}
                         {exclusions && (
                             <li className="m-4">
                                 <ResourceCountPopper
                                     data={exclusions}
-                                    reactOutsideClassName="ignore-react-onclickoutside"
                                     label="Excluded Scopes"
                                     renderContent={renderName}
                                 />
@@ -76,7 +67,6 @@ const Metadata = ({
                             <li className="m-4">
                                 <ResourceCountPopper
                                     data={secrets}
-                                    reactOutsideClassName="ignore-react-onclickoutside"
                                     label="Image Pull Secret"
                                     renderContent={renderName}
                                 />
