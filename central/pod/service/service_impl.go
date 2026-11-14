@@ -81,6 +81,15 @@ func (s *serviceImpl) ExportPods(req *v1.ExportPodRequest, srv v1.PodService_Exp
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	minAgeDays := req.GetMinAgeDays()
+	if minAgeDays < 0 {
+		return errors.Wrap(errox.InvalidArgs, "min_age_days must be non-negative")
+	}
+	var cutoff time.Time
+	if minAgeDays > 0 {
+		cutoff = time.Now().UTC().AddDate(0, 0, -int(minAgeDays))
+	}
+
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {
 		var cancel context.CancelFunc
@@ -89,9 +98,9 @@ func (s *serviceImpl) ExportPods(req *v1.ExportPodRequest, srv v1.PodService_Exp
 	}
 
 	return s.datastore.WalkByQuery(ctx, parsedQuery, func(p *storage.Pod) error {
-		if err := srv.Send(&v1.ExportPodResponse{Pod: p}); err != nil {
-			return err
+		if minAgeDays > 0 && (p.GetStarted() == nil || p.GetStarted().AsTime().After(cutoff)) {
+			return nil
 		}
-		return nil
+		return srv.Send(&v1.ExportPodResponse{Pod: p})
 	})
 }
