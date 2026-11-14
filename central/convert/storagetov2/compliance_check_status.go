@@ -28,3 +28,34 @@ func convertComplianceCheckStatus(status storage.ComplianceOperatorCheckResultV2
 		return v2.ComplianceCheckStatus_MANUAL
 	}
 }
+
+// convertComplianceDataFreshness maps the stored per-check freshness enum to its v2 API equivalent.
+func convertComplianceDataFreshness(freshness storage.ComplianceOperatorCheckResultV2_DataFreshness) v2.ComplianceCheckDataFreshness {
+	switch freshness {
+	case storage.ComplianceOperatorCheckResultV2_UNKNOWN:
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
+	case storage.ComplianceOperatorCheckResultV2_CURRENT:
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT
+	case storage.ComplianceOperatorCheckResultV2_STALE:
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_STALE
+	default:
+		utils.Should(errors.Errorf("unhandled data freshness encountered %s", freshness))
+		return v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN
+	}
+}
+
+// aggregateDataFreshness rolls up per-check freshness counts into the v2 aggregate
+// enum: any stale with any current is inconsistent, otherwise it reflects whichever
+// of stale/current is present, else unknown.
+func aggregateDataFreshness(currentCount, staleCount int) v2.ComplianceAggregateDataFreshness {
+	switch {
+	case staleCount > 0 && currentCount > 0:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT
+	case staleCount > 0:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE
+	case currentCount > 0:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT
+	default:
+		return v2.ComplianceAggregateDataFreshness_COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN
+	}
+}

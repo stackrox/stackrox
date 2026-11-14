@@ -44,18 +44,6 @@ func GetScanV2SensorMsg(_ *testing.T) *central.ComplianceOperatorScanV2 {
 	}
 }
 
-// GetScanV1Storage -- returns V1 storage scan object
-func GetScanV1Storage(_ *testing.T) *storage.ComplianceOperatorScan {
-	return &storage.ComplianceOperatorScan{
-		Id:          ScanUID,
-		Name:        "ocp-cis",
-		ClusterId:   fixtureconsts.Cluster1,
-		ProfileId:   profileID,
-		Labels:      map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
-		Annotations: nil,
-	}
-}
-
 // GetScanV2Storage -- returns V2 storage scan object
 func GetScanV2Storage(_ *testing.T) *storage.ComplianceOperatorScanV2 {
 	return &storage.ComplianceOperatorScanV2{

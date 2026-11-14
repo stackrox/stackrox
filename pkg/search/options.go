@@ -385,6 +385,9 @@ var (
 	ComplianceManualCount        = newDerivedFieldLabelWithType("Compliance Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Compliance Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Compliance Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceCurrentCount       = newDerivedFieldLabelWithType("Compliance Current Count", ComplianceOperatorCheckDataFreshness, CustomFieldType, postgres.Integer)
+	ComplianceStaleCount         = newDerivedFieldLabelWithType("Compliance Stale Count", ComplianceOperatorCheckDataFreshness, CustomFieldType, postgres.Integer)
+	ComplianceStaleClusterCount  = newDerivedFieldLabelWithType("Compliance Stale Cluster Count", ComplianceOperatorCheckDataFreshness, CustomFieldType, postgres.Integer)
 
 	// VM custom fields for sorting severity counts
 	CriticalSeverityCount         = newDerivedFieldLabelWithType("Critical Severity Count", Severity, CustomFieldType, postgres.Integer)
@@ -449,10 +452,6 @@ var (
 	ApproverUserName            = newFieldLabel("Approver User Name")
 	DeferralUpdateCVEs          = newFieldLabel("Deferral Update CVEs")
 	FalsePositiveUpdateCVEs     = newFieldLabel("False Positive Update CVEs")
-
-	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
-	ComplianceRunID                = newFieldLabel("Compliance Run ID")
-	ComplianceRunFinishedTimestamp = newFieldLabel("Compliance Run Finished Timestamp")
 
 	// Resource Collection fields
 	CollectionID         = newFieldLabel("Collection ID")

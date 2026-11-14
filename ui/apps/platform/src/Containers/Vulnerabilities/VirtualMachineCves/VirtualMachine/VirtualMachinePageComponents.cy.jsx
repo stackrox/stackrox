@@ -8,6 +8,7 @@ describe(Cypress.spec.relative, () => {
     it('shows first-scan progress and fetches components when the scan completes', () => {
         let scanPending = true;
         cy.clock();
+        cy.window().then((win) => cy.spy(win, 'setInterval').as('setInterval'));
         cy.intercept('GET', `/v2/virtualmachines/${virtualMachineId}/components?*`, (req) => {
             req.reply({
                 scanPending,
@@ -36,10 +37,14 @@ describe(Cypress.spec.relative, () => {
         cy.findByRole('heading', { name: 'Scan in progress' }).should('be.visible');
         cy.findByText('No components were detected for this virtual machine').should('not.exist');
 
+        // The polling interval is armed by an effect after the first response is
+        // committed. Advance the clock only once that interval exists, otherwise
+        // the tick fires before the timer is scheduled and the refetch never runs.
+        cy.get('@setInterval').should('have.been.calledOnce');
         cy.then(() => {
             scanPending = false;
         });
-        cy.tick(5000);
+        cy.get('@setInterval').then(({ lastCall }) => cy.tick(lastCall.args[1]));
         cy.wait('@getComponents');
         cy.findByRole('cell', { name: 'curl' }).should('be.visible');
         cy.findByRole('heading', { name: 'Scan in progress' }).should('not.exist');

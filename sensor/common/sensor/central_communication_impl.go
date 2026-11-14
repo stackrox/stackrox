@@ -137,11 +137,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	// Start the stream client.
 	///////////////////////////
 
-	// Prepare the `SensorHello` message. This message informs Central about who is talking to it, and announces
-	// the capabilities/features supported by this sensor.
-	// While the message is only sent after the stream is established, it is also used to populate the legacy,
-	// header metadata-based self-identification protocol, which needs to happen prior to making the streaming RPC
-	// call. That's why we create it here and not in the `initialSync` method below.
+	// Prepare the SensorHello message. Central requires it as the first message on the stream.
 	sensorHello := &central.SensorHello{
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
@@ -176,15 +172,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		sensorHello.HelmManagedConfigInit = helmManagedCfg
 	}
 
-	// Prepare outgoing context
 	ctx := metadata.AppendToOutgoingContext(trace.Background(s.clusterID), centralsensor.SensorHelloMetadataKey, "true")
-	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
-	if err != nil {
-		s.stopper.Flow().StopWithError(err)
-		return
-	}
 
-	stream, err = CommunicateWithAutoSensedEncoding(ctx, client)
+	stream, err := CommunicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
 		return

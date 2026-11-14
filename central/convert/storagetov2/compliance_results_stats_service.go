@@ -72,6 +72,7 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 				ClusterName: resultCount.ClusterName,
 			},
 			ClusterErrors: clusterErrors[resultCount.ClusterID],
+			DataFreshness: aggregateDataFreshness(resultCount.CurrentCount, resultCount.StaleCount),
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
@@ -114,10 +115,12 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 
 	for _, resultCount := range resultCounts {
 		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
-			ProfileName: resultCount.ProfileName,
-			Title:       profileMap[resultCount.ProfileName].GetTitle(),
-			Version:     profileMap[resultCount.ProfileName].GetProfileVersion(),
-			Benchmarks:  convertBenchmarks(profileBenchmarkMap[resultCount.ProfileName]),
+			ProfileName:           resultCount.ProfileName,
+			Title:                 profileMap[resultCount.ProfileName].GetTitle(),
+			Version:               profileMap[resultCount.ProfileName].GetProfileVersion(),
+			Benchmarks:            convertBenchmarks(profileBenchmarkMap[resultCount.ProfileName]),
+			StaleClusterCount:     int32(resultCount.StaleClusterCount),
+			StaleCheckResultCount: int32(resultCount.StaleCount),
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
