@@ -3,6 +3,7 @@ package debughandler
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/devbuild"
@@ -20,7 +21,12 @@ func StartServer(port string) error {
 	}
 
 	addr := fmt.Sprintf("127.0.0.1:%s", port)
-	return http.ListenAndServe(addr, Handler(""))
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           Handler(""),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	return server.ListenAndServe()
 }
 
 // MustStartServerAsync starts a debug handler server in a goroutine. If the server exits, the program panics.
