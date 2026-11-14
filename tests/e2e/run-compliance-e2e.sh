@@ -33,7 +33,7 @@ test_compliance_e2e() {
 
     # Compliance v2 requires the Compliance Operator to be installed.
     install_the_compliance_operator
-    deploy_stackrox
+    deploy_stackrox_with_roxie_compat
 
     run_compliance_e2e_tests
 }
