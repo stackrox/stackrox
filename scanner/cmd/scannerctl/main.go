@@ -110,6 +110,7 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(scaleCmd(ctx))
 	cmd.AddCommand(sbomCmd(ctx))
 	cmd.AddCommand(scanVM(ctx))
+	cmd.AddCommand(ccVulnReportCmd(ctx))
 	return &cmd
 }
 
