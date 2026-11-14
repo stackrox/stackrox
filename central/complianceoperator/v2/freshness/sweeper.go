@@ -82,7 +82,10 @@ func (s *sweeperImpl) loop() {
 // sweep marks STALE the check results of every scan configuration whose most recent scheduled scan
 // had its full grace window elapse without refreshing them.
 func (s *sweeperImpl) sweep() {
-	now := time.Now()
+	// Compliance schedules encode their hour/minute in UTC, so evaluate them against UTC "now".
+	// Otherwise, a Central running with a non-UTC TZ would shift the cutoff by its offset and
+	// falsely mark fresh results stale.
+	now := time.Now().UTC()
 	// grace is the combined budget the watchers allow for a scheduled scan to complete and have its
 	// results ingested. A result is stale only once a scheduled start has passed and its grace window
 	// has fully elapsed without new results, so we evaluate the schedule as of (now - grace).
@@ -131,8 +134,9 @@ func previousScheduledStart(sched *storage.Schedule, ref time.Time) (time.Time, 
 	if err != nil || cron == "" {
 		return time.Time{}, false
 	}
+	// gronx evaluates the cron in ref.Location(); schedule hour/minute are UTC, so pin ref to UTC.
 	// inclRefTime=false: we want the previous tick strictly before ref, not ref itself.
-	prev, err := gronx.PrevTickBefore(cron, ref, false)
+	prev, err := gronx.PrevTickBefore(cron, ref.UTC(), false)
 	if err != nil {
 		return time.Time{}, false
 	}
