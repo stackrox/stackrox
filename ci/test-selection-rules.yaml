@@ -1,0 +1,338 @@
+# Job-Centric Grammar - FINAL
+# Evaluation: Run if ANY file matches 'when' AND does NOT match 'when_not'
+# Only 2 concepts: when (positive) and when_not (negative)
+
+version: 1
+
+# Global run-all triggers
+run_all_tests:
+  when:
+    - label: ci-run-all-tests
+    - files:
+        - '^go\.mod$'
+        - '^go\.sum$'
+        - '^proto/'
+        - '^generated/'
+        - '\.proto$'
+
+# Job definitions
+jobs:
+  # Always-run infrastructure
+  style-check:
+    when:
+      - always: true
+
+  wait-for-images:
+    when:
+      - always: true
+
+  should-dispatch:
+    when:
+      - always: true
+
+  # Simple file-based tests
+  shell-unit-tests:
+    when:
+      - files:
+          - '\.sh$'
+          - '^scripts/'
+          - '^tests/.*\.sh$'
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  github-actions-lint:
+    when:
+      - files: ['^\.github/workflows/']
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  openshift-ci-lint:
+    when:
+      - files: ['^\.openshift-ci/']
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  check-generated-files:
+    when:
+      - files:
+          - '^proto/'
+          - '^generated/'
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  # Backend tests
+  go:
+    when:
+      - files: ['\.go$']
+    when_not:
+      - files:
+          - '^ui/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  golangci-lint:
+    when:
+      - files:
+          - '\.go$'
+          - '^\.golangci\.yml$'
+    when_not:
+      - files:
+          - '^ui/'
+          - '^docs/'
+          - '\.md$'
+          - '^CHANGELOG'
+          - '^README'
+          - '^\.github/'
+          - '^\.openshift-ci/'
+          - '^scripts/ci/'
+
+  # Complex subsystem tests - when_not includes both subsystem exclusions AND docs
+  go-postgres:
+    when:
+      - label: area/central
+      - files:
+          # Central-only domains
+          - '^central/(sac|search|auth|authprovider|apitoken|user|group|role|rbac|jwt|serviceidentities)/'
+          - '^central/(postgres|globaldb|globalindex|graphdb|dackbox|blob|views)/'
+          - '^central/(notifier|notifiers|reports|reportconfigurations)/'
+          - '^central/(externalbackups|declarativeconfig|config|installation)/'
+          - '^central/(ui|graphql|grpc|endpoints)/'
+          - '^central/(featureflags|development|audit|logimbue|trace)/'
+          - '^central/(helmcharts|ping|version|systeminfo|docs|internal)/'
+          - '^pkg/(sac|search|postgres|notifiers|migrations|renderer|backup)/'
+          # Central-Sensor shared (communication domains)
+          - '^central/(cluster|deployment|image|baseimage|node|pod|namespace|secret|serviceaccount|virtualmachine)/'
+          - '^central/(alert|detection|policy|policycat)/'
+          - '^central/(networkbaseline|networkgraph|networkpolicies)/'
+          - '^central/(complianceoperator|processindicator)/'
+          - '^central/(imageintegration|delegatedregistryconfig|enrichment|reprocessor)/'
+          - '^central/(sensor|sensorupgrade|clusterinit|securedclustercertgen)/'
+          - '^central/(metrics|telemetry|debug|scrape|vulnmgmt|hash)/'
+          # Shared packages
+          - '^pkg/(grpc|sync|concurrency|features|logging|utils|set|retry|env|errorhelpers|testutils|mtls|x509utils|buildinfo|version|cryptoutils|urlfmt|stringutils|timestamps|cloudproviders|cloudsources|roxctl)/'
+          - '^pkg/(centralsensor|kubernetes|detection|networkgraph|protoconv|sensor|alerts|images|metrics|telemetry)/'
+    when_not:
+      - files:
+          # Subsystem exclusions
+          - '^ui/'
+          - '^scanner/'
+          # Docs exclusions (critical for central/README.md case!)
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  sensor-integration-tests:
+    when:
+      - label: area/sensor
+      - files:
+          # Sensor-only domains
+          - '^sensor/(admission-control|upgrader|debugger|testutils|tests)/'
+          - '^sensor/kubernetes/(fake|client|enforcer)/'
+          - '^pkg/(admissioncontrol|docker|enforcers|complianceoperator|k8sintrospect|protocompat|compliance/checks|binenc)/'
+          # Sensor-Central communication
+          - '^sensor/common/(admissioncontroller|centralclient|centralproxy|compliance|config|detector|enforcer|networkflow|sensor|image|scannerclient|virtualmachine)/'
+          - '^sensor/kubernetes/(eventpipeline|listener|complianceoperator|networkpolicies|telemetry|upgrade|clusterhealth|clustermetrics|clusterstatus|certrefresh)/'
+          # Shared packages
+          - '^pkg/(grpc|sync|concurrency|features|logging|utils|set|retry|env|errorhelpers|testutils|mtls|x509utils|buildinfo|version|cryptoutils|urlfmt|stringutils|timestamps|cloudproviders|cloudsources|roxctl)/'
+          - '^pkg/(centralsensor|kubernetes|detection|networkgraph|protoconv|sensor|alerts|images|metrics|telemetry)/'
+    when_not:
+      - files:
+          # Subsystem exclusions
+          - '^ui/'
+          - '^scanner/'
+          # Docs exclusions
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  # Frontend tests
+  ui:
+    when:
+      - label: area/ui
+      - files: ['^ui/']
+    when_not:
+      - files:
+          - '^central/'
+          - '^sensor/'
+          - '^scanner/'
+          - '^operator/'
+          - '^roxctl/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  ui-component:
+    when:
+      - label: area/ui
+      - files: ['^ui/']
+    when_not:
+      - files:
+          - '^central/'
+          - '^sensor/'
+          - '^scanner/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  gke-ui-e2e-tests:
+    when:
+      - label: area/ui
+      - files: ['^ui/']
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  # Component-specific tests
+  db-integration-tests:
+    when:
+      - label: area/scanner
+      - files: ['^scanner/']
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  check-crd-compatibility:
+    when:
+      - label: area/operator
+      - files:
+          - '^operator/'
+          - '\.crd\.yaml$'
+          - '^config-controller/'
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  local-roxctl-tests:
+    when:
+      - label: area/roxctl
+      - files: ['^roxctl/']
+    when_not:
+      - files:
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  # E2E tests
+  e2e-nongroovy-tests:
+    when:
+      - files:
+          - '^roxctl/'
+          - '^central/'
+          - '^sensor/'
+    when_not:
+      - files:
+          - '^ui/'
+          - '^operator/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  gke-nongroovy-e2e-tests:
+    when:
+      - files:
+          - '^roxctl/'
+          - '^central/'
+          - '^sensor/'
+    when_not:
+      - files:
+          - '^ui/'
+          - '^operator/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  e2e-byodb-tests:
+    when:
+      - files:
+          - '^central/'
+          - '^scanner/'
+    when_not:
+      - files:
+          - '^ui/'
+          - '^roxctl/'
+          - '^operator/'
+          - '^sensor/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  e2e-db-backup-restore-tests:
+    when:
+      - files: ['^central/']
+    when_not:
+      - files:
+          - '^ui/'
+          - '^roxctl/'
+          - '^operator/'
+          - '^sensor/'
+          - '^scanner/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  e2e-gke-upgrade-tests:
+    when:
+      - files:
+          - '^central/'
+          - '^sensor/'
+          - '^scanner/'
+          - '^operator/'
+    when_not:
+      - files:
+          - '^ui/'
+          - '\.md$'
+          - '^docs/'
+          - '^CHANGELOG'
+          - '^README'
+
+  # E2E tests - global-only (opt-in via label or high-impact files)
+  e2e-qa-tests-gke:
+    when: []
+
+  e2e-qa-tests-gke-konflux:
+    when: []
+
+  e2e-qa-tests-ocp-4-22:
+    when: []
+
+  gke-qa-e2e-tests:
+    when: []
+
+  ocp-vm-scanning-e2e-tests:
+    when: []
