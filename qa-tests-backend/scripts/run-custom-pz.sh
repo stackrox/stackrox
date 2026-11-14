@@ -35,8 +35,8 @@ config_custom() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-
+    # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
+    DEPLOY_DIR="deploy"
     export_test_environment
 
     setup_gcp
@@ -58,8 +58,8 @@ config_custom() {
 reuse_config_part_1() {
     info "Reusing config from a prior part 1 e2e test"
 
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-
+    # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
+    DEPLOY_DIR="deploy"
     export_test_environment
     setup_deployment_env false false
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
