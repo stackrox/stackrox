@@ -53,6 +53,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -117,6 +118,9 @@ type serviceImpl struct {
 	lifecycleManager  lifecycle.Manager
 	processor         notifier.Processor
 	metadataCache     cache.ImageMetadata
+
+	// Maps policy IDs to attempt tokens while persistence or propagation is incomplete.
+	pendingPolicyUpdates sync.Map
 
 	validator *policyValidator
 
@@ -218,9 +222,9 @@ func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy,
 	return nil
 }
 
-func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Policy, extraValidateFunc func(*storage.Policy) error, updateFunc func(context.Context, *storage.Policy) error, options ...booleanpolicy.ValidateOption) (*storage.Policy, error) {
-	if extraValidateFunc != nil {
-		if err := extraValidateFunc(request); err != nil {
+func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Policy, create bool, updateFunc func(context.Context, *storage.Policy) error, options ...booleanpolicy.ValidateOption) (*storage.Policy, error) {
+	if create {
+		if err := ensureIDEmpty(request); err != nil {
 			return nil, err
 		}
 	}
@@ -231,18 +235,66 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		return nil, err
 	}
 
-	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
-	if err := updateFunc(ctx, request); err != nil {
-		return nil, err
+	// Assign the ID before persistence so concurrent retries can observe pending propagation.
+	if create {
+		request.Id = uuid.NewV4().String()
+	}
+
+	var unchanged bool
+	if !create && request.GetId() != "" {
+		existing, exists, err := s.policies.GetPolicy(ctx, request.GetId())
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			// Ignore server-managed metadata when checking whether the policy changed.
+			comparable := request.CloneVT()
+			comparable.LastUpdated = existing.GetLastUpdated()
+			comparable.SORTName = existing.GetSORTName()
+			comparable.SORTLifecycleStage = existing.GetSORTLifecycleStage()
+			comparable.SORTEnforcement = existing.GetSORTEnforcement()
+			// Absent and empty filters both leave evaluation unfiltered.
+			emptyFilter := &storage.EvaluationFilter{}
+			if comparable.GetEvaluationFilter() == nil && emptyFilter.EqualVT(existing.GetEvaluationFilter()) {
+				comparable.EvaluationFilter = existing.GetEvaluationFilter()
+			} else if existing.GetEvaluationFilter() == nil && emptyFilter.EqualVT(comparable.GetEvaluationFilter()) {
+				comparable.EvaluationFilter = nil
+			}
+			if comparable.EqualVT(existing) {
+				if _, pending := s.pendingPolicyUpdates.Load(request.GetId()); !pending {
+					return existing, nil
+				}
+				request = existing
+				unchanged = true
+			}
+		}
+	}
+
+	// Each attempt owns its marker so completion cannot clear another attempt's failure.
+	attempt := new(byte)
+	previous, wasPending := s.pendingPolicyUpdates.Swap(request.GetId(), attempt)
+	if !unchanged {
+		request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
+		if err := updateFunc(ctx, request); err != nil {
+			if wasPending {
+				s.pendingPolicyUpdates.CompareAndSwap(request.GetId(), attempt, previous)
+			} else {
+				s.pendingPolicyUpdates.CompareAndDelete(request.GetId(), attempt)
+			}
+			return nil, err
+		}
 	}
 
 	if err := s.addActivePolicy(request); err != nil {
+		s.pendingPolicyUpdates.Store(request.GetId(), attempt)
 		return nil, errors.Wrap(err, "Policy could not be edited due to")
 	}
 
 	if err := s.syncPoliciesWithSensors(); err != nil {
+		s.pendingPolicyUpdates.Store(request.GetId(), attempt)
 		return nil, err
 	}
+	s.pendingPolicyUpdates.CompareAndDelete(request.GetId(), attempt)
 
 	return request, nil
 }
@@ -293,12 +345,12 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequ
 	if request.GetEnableStrictValidation() {
 		options = append(options, booleanpolicy.ValidateEnvVarSourceRestrictions())
 	}
-	return s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
+	return s.addOrUpdatePolicy(ctx, request.GetPolicy(), true, s.addPolicyToStoreAndSetID, options...)
 }
 
 // PutPolicy updates a current policy in the system.
 func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*v1.Empty, error) {
-	_, err := s.addOrUpdatePolicy(ctx, request, nil, s.policies.UpdatePolicy)
+	_, err := s.addOrUpdatePolicy(ctx, request, false, s.policies.UpdatePolicy)
 	if err != nil {
 		return nil, err
 	}
