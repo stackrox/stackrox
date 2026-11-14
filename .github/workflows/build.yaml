@@ -501,7 +501,12 @@ jobs:
           fi
           # Store all binaries for the container build (blob store reference)
           BLOB_KEY="go-binaries-${{ matrix.arch }}-${{ matrix.name }}"
-          tar -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
+          # Reproducible tar: zeroed mtimes + sorted names make the tar
+          # byte-identical when the payload is — so store-all's marker
+          # check skips the upload entirely on warm runs (freshly-built
+          # binaries carry new mtimes otherwise; the tar hash then differs
+          # every run and 4GB re-uploads for nothing).
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
           "${GOCACHEPROG}" -store-all "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1
           echo "stored $BLOB_KEY ($(stat -c%s /tmp/go-binaries.tar) bytes)"
           # Also upload as artifact for backward compatibility during transition
