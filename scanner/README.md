@@ -54,6 +54,10 @@ export SCANNER_V4_INDEXER_ENABLE=false
 export SCANNER_V4_INDEXER_DATABASE_CONN_STRING="host=localhost port=5432"
 ```
 
+With `matcher.readiness: vulnerability`, startup readiness requires fetching the
+bundle archive to discover the required bundles and completing their first import.
+Complete data remains usable during background refreshes, including failed refreshes.
+
 ### Running standalone in Kubernetes
 
 Scanner contains a testing helm chart to deploy it standalone.  This is used for E2E testing or development.
