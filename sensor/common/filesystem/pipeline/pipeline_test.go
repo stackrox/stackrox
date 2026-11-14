@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"testing"
+	"testing/cryptotest"
 	"testing/synctest"
 	"time"
 
@@ -67,6 +68,9 @@ type testPipeline struct {
 
 func newTestPipeline(t *testing.T) *testPipeline {
 	t.Helper()
+	// These tests exercise indicator handling, not randomness. Avoid Go 1.26's
+	// FIPS entropy sampling inside synctest; see the Go coding style guide.
+	cryptotest.SetGlobalRandom(t, 0)
 	mockCtrl := gomock.NewController(t)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 	clusterStore := clusterentities.NewStore(0, nil, false)

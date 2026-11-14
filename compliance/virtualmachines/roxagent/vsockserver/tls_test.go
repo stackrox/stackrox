@@ -139,9 +139,15 @@ func TestCARefresher_HandshakeFailsWhenCAServiceUnavailable(t *testing.T) {
 // connection) to exercise the defensive path when multiple connections are
 // established in parallel.
 func TestCARefresher_ConcurrentHandshakesEachGetValidPool(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		caPEM, caCert, caKey := testCA(t)
+	// Generate real cryptographic fixtures outside synctest: Go 1.26's FIPS
+	// entropy source cannot sample jitter from the bubble's fake clock.
+	caPEM, caCert, caKey := testCA(t)
+	leaf := testLeafCert(t, caCert, caKey)
+	leafCert, err := x509.ParseCertificate(leaf.Certificate[0])
+	require.NoError(t, err)
+	verifyTime := time.Now()
 
+	synctest.Test(t, func(t *testing.T) {
 		var fetchCount atomic.Int32
 		fetchesMayProceed := concurrency.NewSignal()
 		r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
@@ -166,17 +172,14 @@ func TestCARefresher_ConcurrentHandshakesEachGetValidPool(t *testing.T) {
 		synctest.Wait()
 		fetchesMayProceed.Signal()
 
-		leaf := testLeafCert(t, caCert, caKey)
-		leafCert, err := x509.ParseCertificate(leaf.Certificate[0])
-		require.NoError(t, err)
-
 		for range callers {
 			res := <-results
 			require.NoError(t, res.err)
 			require.NotNil(t, res.pool, "every caller must get back a valid pool")
 			_, verifyErr := leafCert.Verify(x509.VerifyOptions{
-				Roots:     res.pool,
-				KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+				Roots:       res.pool,
+				KeyUsages:   []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+				CurrentTime: verifyTime,
 			})
 			require.NoError(t, verifyErr, "pool returned to caller must be able to verify a cert signed by the fetched CA")
 		}
