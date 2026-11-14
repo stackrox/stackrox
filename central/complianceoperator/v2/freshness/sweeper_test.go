@@ -7,13 +7,11 @@ import (
 	"testing/synctest"
 	"time"
 
-	"github.com/adhocore/gronx"
 	checkResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -42,32 +40,96 @@ func newTestSweeper(scanCfg *scanConfigMocks.MockDataStore, checkRes *checkResul
 	}
 }
 
+func weeklySchedule(day, hour, minute int32) *storage.Schedule {
+	return &storage.Schedule{
+		IntervalType: storage.Schedule_WEEKLY,
+		Hour:         hour,
+		Minute:       minute,
+		Interval:     &storage.Schedule_Weekly{Weekly: &storage.Schedule_WeeklyInterval{Day: day}},
+	}
+}
+
+func monthlySchedule(hour, minute int32, days ...int32) *storage.Schedule {
+	return &storage.Schedule{
+		IntervalType: storage.Schedule_MONTHLY,
+		Hour:         hour,
+		Minute:       minute,
+		Interval:     &storage.Schedule_DaysOfMonth_{DaysOfMonth: &storage.Schedule_DaysOfMonth{Days: days}},
+	}
+}
+
+// TestPreviousScheduledStart pins the cutoff computation against fixed references with hand-computed
+// expected values (no gronx call in the test, so it cannot be circular). Schedules encode their
+// hour/minute in UTC; the non-UTC-ref case guards against evaluating them in Central's local zone,
+// which would shift the cutoff (the H1 timezone bug).
 func TestPreviousScheduledStart(t *testing.T) {
-	ref := time.Now()
+	utc := func(y int, m time.Month, d, h, min int) time.Time {
+		return time.Date(y, m, d, h, min, 0, 0, time.UTC)
+	}
+	newYork, err := time.LoadLocation("America/New_York")
+	require.NoError(t, err)
 
-	t.Run("nil schedule returns false", func(t *testing.T) {
-		_, ok := previousScheduledStart(nil, ref)
-		assert.False(t, ok)
-	})
+	cases := map[string]struct {
+		sched *storage.Schedule
+		ref   time.Time
+		want  time.Time // zero value means ok==false is expected
+	}{
+		"nil schedule returns false": {
+			sched: nil,
+			ref:   utc(2026, time.January, 15, 10, 0),
+		},
+		"unconvertible schedule returns false": {
+			// An UNSET interval does not convert to a cron expression.
+			sched: &storage.Schedule{IntervalType: storage.Schedule_UNSET},
+			ref:   utc(2026, time.January, 15, 10, 0),
+		},
+		"daily: previous tick is today": {
+			sched: dailySchedule(3, 30),
+			ref:   utc(2026, time.January, 15, 10, 0),
+			want:  utc(2026, time.January, 15, 3, 30),
+		},
+		"daily: ref before today's tick crosses to yesterday": {
+			sched: dailySchedule(3, 30),
+			ref:   utc(2026, time.January, 15, 2, 0),
+			want:  utc(2026, time.January, 14, 3, 30),
+		},
+		"daily: ref exactly on a tick returns the strictly-earlier tick": {
+			sched: dailySchedule(3, 30),
+			ref:   utc(2026, time.January, 15, 3, 30),
+			want:  utc(2026, time.January, 14, 3, 30),
+		},
+		"daily: non-UTC ref is evaluated in UTC": {
+			// 2026-01-15 05:00 New York == 2026-01-15 10:00 UTC, so the cutoff must match the UTC
+			// mid-morning case. Evaluating the cron in the New York zone would instead yield
+			// 2026-01-15 03:30 New York (08:30 UTC).
+			sched: dailySchedule(3, 30),
+			ref:   time.Date(2026, time.January, 15, 5, 0, 0, 0, newYork),
+			want:  utc(2026, time.January, 15, 3, 30),
+		},
+		"weekly: previous tick is the scheduled weekday": {
+			// 2026-01-15 is a Thursday (weekday 4); 03:30 precedes the 10:00 ref.
+			sched: weeklySchedule(4, 3, 30),
+			ref:   utc(2026, time.January, 15, 10, 0),
+			want:  utc(2026, time.January, 15, 3, 30),
+		},
+		"monthly: previous tick is the scheduled day of month": {
+			sched: monthlySchedule(3, 30, 10),
+			ref:   utc(2026, time.January, 15, 10, 0),
+			want:  utc(2026, time.January, 10, 3, 30),
+		},
+	}
 
-	t.Run("valid daily schedule returns previous daily tick", func(t *testing.T) {
-		sched := dailySchedule(3, 30)
-		cron, err := schedule.ConvertToCronTab(sched)
-		require.NoError(t, err)
-		want, err := gronx.PrevTickBefore(cron, ref, false)
-		require.NoError(t, err)
-
-		got, ok := previousScheduledStart(sched, ref)
-		require.True(t, ok)
-		assert.True(t, got.Equal(want), "got %s, want %s", got, want)
-		assert.True(t, got.Before(ref))
-	})
-
-	t.Run("unconvertible schedule returns false", func(t *testing.T) {
-		// An UNSET interval does not convert to a cron expression.
-		_, ok := previousScheduledStart(&storage.Schedule{IntervalType: storage.Schedule_UNSET}, ref)
-		assert.False(t, ok)
-	})
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, ok := previousScheduledStart(c.sched, c.ref)
+			if c.want.IsZero() {
+				assert.False(t, ok)
+				return
+			}
+			require.True(t, ok)
+			assert.Truef(t, got.Equal(c.want), "got %s, want %s", got, c.want)
+		})
+	}
 }
 
 // TestSweepGraceWindow pins the core staleness rule: a result is stale only once a scheduled start
@@ -85,9 +147,11 @@ func TestSweepGraceWindow(t *testing.T) {
 		require.Positive(t, grace)
 		require.Less(t, grace, 24*time.Hour, "test assumes grace is shorter than the daily interval")
 
-		// start is a scheduled scan start, anchored shortly after the bubble's fixed epoch so "now"
-		// begins strictly before it. The previous cycle's results carry LastStartedTime == prevCycle.
-		start := time.Now().Add(time.Minute)
+		// start is a scheduled scan start on a whole-minute boundary (so it coincides with a cron
+		// tick) just after the bubble's fixed epoch, so "now" begins strictly before it. It is built
+		// in UTC to match how the sweeper evaluates schedules; the previous cycle's results carry
+		// LastStartedTime == prevCycle.
+		start := time.Now().UTC().Truncate(time.Minute).Add(time.Minute)
 		sched := dailySchedule(int32(start.Hour()), int32(start.Minute()))
 		prevCycle := start.Add(-24 * time.Hour)
 
@@ -99,9 +163,10 @@ func TestSweepGraceWindow(t *testing.T) {
 		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgA", sched)}, nil).AnyTimes()
 
-		// assertPrevCycleStale sweeps at the bubble's current fake time and checks whether the previous
-		// cycle's results would be marked stale, via the cutoff passed to MarkScanChecksStaleByConfig.
-		assertPrevCycleStale := func(wantStale bool) {
+		// assertCutoff sweeps at the bubble's current fake time and asserts the exact cutoff passed to
+		// MarkScanChecksStaleByConfig. markStale uses a strict "<", so the previous cycle is marked
+		// stale iff prevCycle predates the cutoff: prevCycle keeps it CURRENT, start flips it STALE.
+		assertCutoff := func(wantCutoff time.Time) {
 			t.Helper()
 			var gotCutoff time.Time
 			checkResultMock.EXPECT().
@@ -113,20 +178,19 @@ func TestSweepGraceWindow(t *testing.T) {
 
 			sw.sweep()
 
-			// markStale uses a strict "<", so the previous cycle is stale iff its start predates cutoff.
-			assert.Equal(t, wantStale, prevCycle.Before(gotCutoff), "cutoff = %s", gotCutoff)
+			assert.Truef(t, wantCutoff.Equal(gotCutoff), "cutoff = %s, want %s", gotCutoff, wantCutoff)
 		}
 
-		assertPrevCycleStale(false) // well before the scheduled start
+		assertCutoff(prevCycle) // well before the scheduled start: previous cycle still current
 
 		time.Sleep(time.Until(start.Add(time.Minute)))
-		assertPrevCycleStale(false) // the new scan is running, within its grace window
+		assertCutoff(prevCycle) // the new scan is running, within its grace window
 
 		time.Sleep(time.Until(start.Add(grace)))
-		assertPrevCycleStale(false) // exactly at the grace boundary: still current
+		assertCutoff(prevCycle) // exactly at the grace boundary: still current
 
 		time.Sleep(time.Until(start.Add(grace + time.Minute)))
-		assertPrevCycleStale(true) // grace fully elapsed with no new results
+		assertCutoff(start) // grace fully elapsed with no new results: previous cycle now stale
 	})
 }
 
