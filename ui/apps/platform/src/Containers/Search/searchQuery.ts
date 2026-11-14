@@ -8,15 +8,19 @@ import type { SearchNavCategory } from './searchCategories';
 export type SearchQueryObject = {
     searchFilter: SearchFilter;
     navCategory: SearchNavCategory;
+    // Page size selected in the results table. Preserved across filter and category
+    // changes so that those changes reset to page 1 without resetting the page size.
+    perPage?: string;
 };
 
 type SearchQueryParse = {
     s: SearchFilter;
     category?: string;
+    perPage?: string;
 };
 
 export function parseQueryString(search: string, searchOptions: string[]): SearchQueryObject {
-    const { category, s } = qs.parse(search, { ignoreQueryPrefix: true });
+    const { category, perPage, s } = qs.parse(search, { ignoreQueryPrefix: true });
 
     const searchFilter = {};
     if (typeof s === 'object') {
@@ -41,10 +45,15 @@ export function parseQueryString(search: string, searchOptions: string[]): Searc
         }
     }
 
-    return { searchFilter, navCategory };
+    const result: SearchQueryObject = { searchFilter, navCategory };
+    if (typeof perPage === 'string') {
+        result.perPage = perPage;
+    }
+
+    return result;
 }
 
-export function stringifyQueryObject({ searchFilter, navCategory }: SearchQueryObject) {
+export function stringifyQueryObject({ searchFilter, navCategory, perPage }: SearchQueryObject) {
     if (Object.keys(searchFilter).length === 0) {
         return '';
     }
@@ -53,6 +62,12 @@ export function stringifyQueryObject({ searchFilter, navCategory }: SearchQueryO
 
     if (navCategory !== 'SEARCH_UNSET') {
         queryObject.category = searchNavMap[navCategory];
+    }
+
+    // Carry the page size forward. The page parameter is intentionally omitted so that
+    // changing the filter or category resets to page 1 while keeping the page size.
+    if (typeof perPage === 'string') {
+        queryObject.perPage = perPage;
     }
 
     return qs.stringify(queryObject, {
