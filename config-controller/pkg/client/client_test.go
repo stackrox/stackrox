@@ -225,6 +225,28 @@ func TestCachedClientDelete(t *testing.T) {
 	assert.Error(t, err, "Did not receive expected error while deleting non declarative/externally managed policy")
 }
 
+// TestCachedClientDeleteAlreadyGone validates that deleting a policy that no longer
+// exists in the cache (i.e. already deleted from Central) is a no-op success rather
+// than an error. This covers the case where two SecurityPolicy CRs share the same
+// policyName/policyId: once the first CR's deletion removes the policy, the second CR
+// must still be able to clear its finalizer instead of getting stuck in Terminating.
+func TestCachedClientDeleteAlreadyGone(t *testing.T) {
+	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].GetId()).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].GetId()).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
+		mockClient.EXPECT().ListClusters(gomock.Any()).Return(listClusters(), nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
+	})
+	defer clientTest.controller.Finish()
+
+	// No DeletePolicy call is expected on the underlying Central client because the
+	// policy is not in the cache. gomock would fail the test on any unexpected call.
+	err := clientTest.client.DeletePolicy(clientTest.ctx, "id-that-does-not-exist")
+	assert.NoError(t, err, "Deleting an already-gone policy should be a no-op success")
+}
+
 // TestCachedClientCreate validates that the cached client creates policies as expected
 func TestCachedClientCreate(t *testing.T) {
 	newPolicy := storage.Policy{
