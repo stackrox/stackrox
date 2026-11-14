@@ -25,7 +25,6 @@ metadata:
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
     appstudio.openshift.io/application: acs
-    pipelines.appstudio.openshift.io/type: build
   name: operator-index-on-push
   namespace: rh-acs-tenant
 
