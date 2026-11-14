@@ -67,7 +67,7 @@ function SearchPage(): ReactElement {
         return cancel;
     }, []);
 
-    const { searchFilter, navCategory } = parseQueryString(search, searchOptions);
+    const { searchFilter, navCategory, perPage } = parseQueryString(search, searchOptions);
     const stringifiedSearchFilter = stringifySearchFilter(searchFilter);
 
     useEffect(() => {
@@ -102,6 +102,7 @@ function SearchPage(): ReactElement {
             const queryString = stringifyQueryObject({
                 searchFilter: searchFilterNext,
                 navCategory,
+                perPage,
             });
             const searchPathWithQueryString = `${searchPath}${queryString}`;
 
@@ -153,6 +154,7 @@ function SearchPage(): ReactElement {
                     activeNavCategory={navCategory}
                     searchFilter={searchFilter}
                     searchResponse={searchResponse}
+                    perPage={perPage}
                 />
             );
         }

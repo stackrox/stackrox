@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { Pagination } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -91,6 +91,15 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
     const lastPage = Math.max(1, Math.ceil(itemCount / perPage));
     const currentPage = Math.min(page, lastPage);
     const startIndex = (currentPage - 1) * perPage;
+
+    // Keep the URL page parameter in sync with the clamped page, e.g. when a bookmarked
+    // or refreshed URL points beyond the result range after results shrink. Replace
+    // history so the out-of-range value does not become a back-button target.
+    useEffect(() => {
+        if (page > lastPage) {
+            setPage(lastPage, 'replace');
+        }
+    }, [page, lastPage, setPage]);
     const searchResultsForPage = searchResultsFilteredAndSorted.slice(
         startIndex,
         startIndex + perPage

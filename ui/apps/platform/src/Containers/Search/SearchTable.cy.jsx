@@ -25,9 +25,9 @@ function makeResults(count, { category = 'DEPLOYMENTS', prefix = 'dep' } = {}) {
     });
 }
 
-function setup(props) {
+function setup(props, url = '/main/search') {
     // Reset the URL so pagination parameters start unset for each test.
-    window.history.pushState({}, '', '/main/search');
+    window.history.pushState({}, '', url);
     cy.mount(
         <ComponentTestProvider>
             <MockFeatureFlagsProvider>
@@ -81,6 +81,19 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[role="menuitem"]').contains('50 per page').click();
 
         cy.get('tbody tr').should('have.length', 45);
+    });
+
+    it('clamps an out-of-range page from the URL and corrects the URL', () => {
+        // 45 results at 20 per page => 3 pages; a bookmarked page=5 is out of range.
+        setup({ searchResults: makeResults(45) }, '/main/search?page=5');
+
+        // The table shows the last page (rows 41 - 45) instead of an empty page.
+        cy.get('tbody tr').should('have.length', 5);
+        cy.contains('button', '41 - 45 of 45').should('exist');
+
+        // The URL is corrected to the last page rather than left pointing beyond the range.
+        cy.location('search').should('contain', 'page=3');
+        cy.location('search').should('not.contain', 'page=5');
     });
 
     it('limits results to the active category before paginating', () => {
