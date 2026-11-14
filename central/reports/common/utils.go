@@ -4,6 +4,7 @@ import (
 	rolePkg "github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -13,7 +14,24 @@ import (
 // ExtractAccessScopeRules extracts simple access scope rules from the given authenticated user identity
 // For the purpose of vulnerability reporting, nil/empty list of rules would mean allow access to all clusters/namespaces.
 func ExtractAccessScopeRules(identity authn.Identity) []*storage.SimpleAccessScope_Rules {
+	return extractAccessScopeRules(identity.Roles())
+}
+
+// ExtractAccessScopeRulesForResource extracts access scope rules from roles
+// that can read the given resource. This matches SAC's resource-level role
+// filtering so an unrelated role cannot broaden a report's captured scope.
+func ExtractAccessScopeRulesForResource(identity authn.Identity, resource permissions.ResourceMetadata) []*storage.SimpleAccessScope_Rules {
 	roles := identity.Roles()
+	relevantRoles := make([]permissions.ResolvedRole, 0, len(roles))
+	for _, role := range roles {
+		if resource.IsPermittedBy(role.GetPermissions(), storage.Access_READ_ACCESS) {
+			relevantRoles = append(relevantRoles, role)
+		}
+	}
+	return extractAccessScopeRules(relevantRoles)
+}
+
+func extractAccessScopeRules(roles []permissions.ResolvedRole) []*storage.SimpleAccessScope_Rules {
 	accessScopeRulesList := make([]*storage.SimpleAccessScope_Rules, 0, len(roles))
 	for _, role := range roles {
 		// Note: This mirrors the scope resolution logic in `func (c *authorizerDataCache) computeEffectiveAccessScope(...)`
