@@ -15,6 +15,7 @@ type PermissionSetStore interface {
 	Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.PermissionSet) error
 	UpsertMany(ctx context.Context, obj []*storage.PermissionSet) error
 	Delete(ctx context.Context, id string) error
@@ -43,6 +44,7 @@ type RoleStore interface {
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.Role, []int, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.Role) error
 	UpsertMany(ctx context.Context, obj []*storage.Role) error
 	Delete(ctx context.Context, id string) error
