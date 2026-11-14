@@ -159,7 +159,11 @@ const entityForImage: CompoundSearchFilterEntity = {
         dt('Scan time', 'Image scan time', 'Image Scan Time'),
         num('CVE count', 'Image CVE count', 'Image CVE Count'),
         num('Top CVSS', 'Image top CVSS', 'Image Top CVSS'),
-        ac('Dockerfile keyword', 'Dockerfile instruction keyword', 'Dockerfile Instruction Keyword'),
+        ac(
+            'Dockerfile keyword',
+            'Dockerfile instruction keyword',
+            'Dockerfile Instruction Keyword'
+        ),
         ac('Dockerfile value', 'Dockerfile instruction value', 'Dockerfile Instruction Value'),
         ac('CVE', 'CVE', 'CVE'),
         ac('Component', 'Component', 'Component'),
@@ -251,7 +255,11 @@ const entityForSecret: CompoundSearchFilterEntity = {
         ac('Type', 'Secret type', 'Secret Type'),
         ac('Path', 'Secret path', 'Secret Path'),
         dt('Certificate expiration', 'Certificate expiration', 'Cert Expiration'),
-        ac('Image pull secret registry', 'Image pull secret registry', 'Image Pull Secret Registry'),
+        ac(
+            'Image pull secret registry',
+            'Image pull secret registry',
+            'Image Pull Secret Registry'
+        ),
     ],
 };
 
@@ -260,7 +268,11 @@ const entityForServiceAccount: CompoundSearchFilterEntity = {
     searchCategory: 'SERVICE_ACCOUNTS',
     attributes: [
         ...serviceAccountAttributes,
-        ac('Permission level', 'Service account permission level', 'Service Account Permission Level'),
+        ac(
+            'Permission level',
+            'Service account permission level',
+            'Service Account Permission Level'
+        ),
         ac('Label', 'Service account label', 'Service Account Label'),
         ac('Annotation', 'Service account annotation', 'Service Account Annotation'),
     ],
