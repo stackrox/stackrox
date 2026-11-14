@@ -996,7 +996,7 @@ jobs:
           if [ "${{ matrix.name }}" = "RHACS_BRANDING" ]; then REG="quay.io/rhacs-eng"; else REG="quay.io/stackrox-io"; fi
           TAG="${{ needs.define-job-matrix.outputs.build-tag }}"
           CACHE_TAG="cache-${{ matrix.arch }}"
-          docker buildx imagetools create -t "${REG}/main:${CACHE_TAG}" "${REG}/main:${TAG}" 2>&1 | tail -1
+          docker buildx imagetools create -t "${REG}/main:${CACHE_TAG}" "${REG}/main:${TAG}-${{ matrix.arch }}" 2>&1 | tail -1
           echo "layer cache tag updated"
 
   push-matching-collector-scanner:
