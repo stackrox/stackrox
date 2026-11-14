@@ -626,7 +626,8 @@ jobs:
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       run: |
         set -euo pipefail
-        "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "oss-notice-LATEST" image/rhel/THIRD_PARTY_NOTICES
+        tar -cf /tmp/oss-notice.tar -C image/rhel THIRD_PARTY_NOTICES
+        "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "oss-notice-LATEST" /tmp/oss-notice.tar
 
   build-and-push-db:
     runs-on: ubuntu-24.04
@@ -991,7 +992,8 @@ jobs:
       - name: Fetch oss-notice from blob store
         run: |
           set -euo pipefail
-          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "oss-notice-LATEST" image/rhel/THIRD_PARTY_NOTICES && [ -s image/rhel/THIRD_PARTY_NOTICES ]; then
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "oss-notice-LATEST" /tmp/oss-notice.tar && [ -s /tmp/oss-notice.tar ]; then
+            tar -xf /tmp/oss-notice.tar -C image/rhel
             echo "oss-notice: fetched from blob store"
           else
             echo "::error::oss-notice not found in blob store"
