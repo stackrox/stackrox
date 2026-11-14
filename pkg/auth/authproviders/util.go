@@ -24,9 +24,10 @@ const (
 // missingPortErr is the error string returned by net.SplitHostPort when no port is present.
 const missingPortErr = "missing port in address"
 
-// NormalizeUIEndpoint validates and converts a UI endpoint to canonical host:port format.
-// It strips URL schemes, defaults to port 443 when no port is given,
-// and removes paths and trailing slashes.
+// NormalizeUIEndpoint validates and converts a UI endpoint to canonical host[:port] format.
+// It strips URL schemes, paths and trailing slashes. An endpoint without a port is kept
+// without one: browsers leave the default port out of the Host header, and login callbacks
+// only use a stored endpoint that matches the request's host exactly.
 func NormalizeUIEndpoint(endpoint string) (string, error) {
 	endpoint = strings.TrimSpace(endpoint)
 	if endpoint == "" {
@@ -43,15 +44,18 @@ func NormalizeUIEndpoint(endpoint string) (string, error) {
 	host, port, err := net.SplitHostPort(hostPort)
 	switch {
 	case err == nil && port == "":
-		// Trailing colon with no port (e.g. "example.com:").
-		return host + ":443", nil
+		// Trailing colon with no port (e.g. "example.com:"): keep the host only.
+		if strings.Contains(host, ":") {
+			return "[" + host + "]", nil
+		}
+		return host, nil
 	case err == nil:
 		return hostPort, nil
 	default:
 		// "missing port in address" is the only expected error here — malformed
 		// inputs like unbracketed IPv6 are already rejected by GetServerFromURL.
 		if addrErr, converted := errors.AsType[*net.AddrError](err); converted && addrErr.Err == missingPortErr {
-			return hostPort + ":443", nil
+			return hostPort, nil
 		}
 		return "", errox.InvalidArgs.Newf("UI endpoint %q is not a valid host[:port]: %v", endpoint, err)
 	}

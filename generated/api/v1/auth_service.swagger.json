@@ -360,7 +360,7 @@
         },
         "uiEndpoint": {
           "type": "string",
-          "description": "The UI endpoint of the Central instance, e.g. \"central.example.com:443\".\nURLs with scheme (e.g. \"https://central.example.com\") are accepted and\nnormalized to host:port format. If no port is given, 443 is assumed."
+          "description": "The UI endpoint of the Central instance, e.g. \"central.example.com\" or \"central.example.com:8443\".\nURLs with scheme (e.g. \"https://central.example.com\") are accepted and\nnormalized to host[:port] format. An endpoint without a port is kept without one."
         },
         "enabled": {
           "type": "boolean"
