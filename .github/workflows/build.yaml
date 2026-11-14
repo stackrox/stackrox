@@ -255,10 +255,10 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-24.04
     env:
+    env:
       # BUILD_TAG/SHORTCOMMIT deliberately NOT set here: the cache action's
       # stable defaults (0.0.0/0000000) apply, making binaries deterministic
-      # across commits (the version-string variance was the second 19-byte
-      # difference after the buildid). Release workflows set real values.
+      # across commits. Release workflows set real values.
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -360,8 +360,8 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-24.04
     env:
+    env:
       # BUILD_TAG/SHORTCOMMIT deliberately NOT set here: the cache action's
       # stable defaults (0.0.0/0000000) apply, making binaries deterministic
-      # across commits (the version-string variance was the second 19-byte
-      # difference after the buildid). Release workflows set real values.
+      # across commits. Release workflows set real values.
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
