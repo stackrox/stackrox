@@ -8,6 +8,7 @@ const (
 	AppArmorProfileKey              = "appArmorProfile"
 	AutomountServiceAccountTokenKey = "automountServiceAccountToken"
 	ComponentKey                    = "component"
+	ContainerAgeKey                 = "containerAge"
 	ContainerNameKey                = "containerName"
 	CveKey                          = "cve"
 	DisallowedAnnotationKey         = "disallowedAnnotation"
@@ -54,6 +55,7 @@ func init() {
 	registerFunc(AppArmorProfileKey, appArmorProfilePrinter)
 	registerFunc(AutomountServiceAccountTokenKey, automountServiceAccountTokenPrinter)
 	registerFunc(ComponentKey, componentPrinter)
+	registerFunc(ContainerAgeKey, containerAgePrinter)
 	registerFunc(ContainerNameKey, containerNamePrinter)
 	registerFunc(CveKey, cvePrinter)
 	registerFunc(DisallowedAnnotationKey, disallowedAnnotationPrinter)
