@@ -895,6 +895,7 @@ jobs:
           REQUIRED=(
             "go-binaries-${{ matrix.arch }}-default"
             "ui-build-${BRAND}-${UI_HASH}"
+            "oss-notice-LATEST"
           )
           echo "Waiting for: ${REQUIRED[@]}"
           TOKEN=$(curl -s --max-time 5 -X POST \
