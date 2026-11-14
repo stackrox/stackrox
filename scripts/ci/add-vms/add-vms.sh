@@ -8,6 +8,8 @@
 #   --cluster NAME       Infra cluster name (calls infractl for kubeconfig)
 #   --num-vms N          Number of VMs (default: 1)
 #   --os OS              VM OS: rhel8|rhel9|rhel10 (default: rhel9)
+#   --agent TYPE         Agent type: quadlet|native (default: native)
+#   --image-tag TAG      ACS image tag for quadlet (auto-detected if omitted)
 #   --ssh-key PATH       Path to user SSH public key to add to target VMs
 #   --namespace NS       Target namespace (default: openshift-cnv)
 #   --vm-prefix PREFIX   VM name prefix (default: same as OS)
@@ -27,12 +29,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLUSTER_NAME=""
 NUM_VMS=1
 VM_OS="rhel9"
+AGENT_TYPE="native"
+IMAGE_TAG=""
 USER_SSH_KEY_PATH=""
 NAMESPACE="openshift-cnv"
 VM_PREFIX=""
 ARTIFACTS_DIR=""
 NATIVE_AGENT_READY_VMS=()
 NATIVE_AGENT_FAILED_VMS=()
+QUADLET_AGENT_READY_VMS=()
+QUADLET_AGENT_FAILED_VMS=()
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -48,6 +54,8 @@ parse_args() {
             --cluster)      CLUSTER_NAME="$2"; shift 2 ;;
             --num-vms)      NUM_VMS="$2"; shift 2 ;;
             --os)           VM_OS="$2"; shift 2 ;;
+            --agent)        AGENT_TYPE="$2"; shift 2 ;;
+            --image-tag)    IMAGE_TAG="$2"; shift 2 ;;
             --ssh-key)      USER_SSH_KEY_PATH="$2"; shift 2 ;;
             --namespace)    NAMESPACE="$2"; shift 2 ;;
             --vm-prefix)    VM_PREFIX="$2"; shift 2 ;;
@@ -65,6 +73,7 @@ parse_args() {
         die "--num-vms must be a positive integer"
     fi
     [[ "$VM_OS" =~ ^rhel(8|9|10)$ ]] || die "--os must be rhel8, rhel9, or rhel10"
+    [[ "$AGENT_TYPE" =~ ^(quadlet|native)$ ]] || die "--agent must be quadlet or native"
 }
 
 # Sets KUBECONFIG: either fetches it from infractl for the given cluster
@@ -95,6 +104,14 @@ resolve_user_ssh_key() {
     fi
 }
 
+agent_install_incomplete() {
+    if [[ "$AGENT_TYPE" == "native" ]]; then
+        [[ ${#NATIVE_AGENT_FAILED_VMS[@]} -gt 0 ]]
+        return
+    fi
+    [[ ${#QUADLET_AGENT_FAILED_VMS[@]} -gt 0 ]]
+}
+
 print_summary() {
     echo ""
     echo "==========================================="
@@ -104,7 +121,7 @@ print_summary() {
     echo "Namespace:    $NAMESPACE"
     echo "VM OS:        $VM_OS"
     echo "VM prefix:    $VM_PREFIX"
-    echo "Agent type:   native"
+    echo "Agent type:   $AGENT_TYPE"
     echo "Num VMs:      $NUM_VMS"
     echo ""
 
@@ -177,7 +194,7 @@ write_github_summary() {
         echo "- Namespace: \`$NAMESPACE\`"
         echo "- VM OS: \`$VM_OS\`"
         echo "- VM prefix: \`$VM_PREFIX\`"
-        echo "- Agent type: \`native\`"
+        echo "- Agent type: \`$AGENT_TYPE\`"
         echo "- Requested VMs: \`$NUM_VMS\`"
         echo ""
     } >> "$GITHUB_STEP_SUMMARY"
@@ -186,12 +203,21 @@ write_github_summary() {
     append_summary_list "### Adopted VMs (password fallback, key now injected)" "${ADOPTED_VMS[@]}"
     append_summary_list "### Skipped VMs (inaccessible)" "${SKIPPED_VMS[@]}"
 
-    {
-        echo "### Native agent service verification (\`roxagent-serve.service\`)"
-        echo ""
-    } >> "$GITHUB_STEP_SUMMARY"
-    append_summary_list "Successfully started on:" "${NATIVE_AGENT_READY_VMS[@]}"
-    append_summary_list "Needs attention:" "${NATIVE_AGENT_FAILED_VMS[@]}"
+    if [[ "$AGENT_TYPE" == "native" ]]; then
+        {
+            echo "### Native agent service verification (\`roxagent-serve.service\`)"
+            echo ""
+        } >> "$GITHUB_STEP_SUMMARY"
+        append_summary_list "Successfully started on:" "${NATIVE_AGENT_READY_VMS[@]}"
+        append_summary_list "Needs attention:" "${NATIVE_AGENT_FAILED_VMS[@]}"
+    else
+        {
+            echo "### Quadlet agent service verification (\`roxagent.service\`)"
+            echo ""
+        } >> "$GITHUB_STEP_SUMMARY"
+        append_summary_list "Successfully started on:" "${QUADLET_AGENT_READY_VMS[@]}"
+        append_summary_list "Needs attention:" "${QUADLET_AGENT_FAILED_VMS[@]}"
+    fi
 
     {
         echo "### SSH access"
@@ -218,15 +244,20 @@ write_github_summary() {
         echo ""
     } >> "$GITHUB_STEP_SUMMARY"
 
-    if [[ ${#SKIPPED_VMS[@]} -gt 0 || ${#NATIVE_AGENT_FAILED_VMS[@]} -gt 0 ]]; then
-        echo "::error title=Add VMs incomplete::Skipped: ${SKIPPED_VMS[*]}; agent failed: ${NATIVE_AGENT_FAILED_VMS[*]}. See the job summary."
+    if [[ ${#SKIPPED_VMS[@]} -gt 0 ]] || agent_install_incomplete; then
+        if [[ "$AGENT_TYPE" == "native" ]]; then
+            echo "::error title=Add VMs incomplete::Skipped: ${SKIPPED_VMS[*]}; agent failed: ${NATIVE_AGENT_FAILED_VMS[*]}. See the job summary."
+        else
+            echo "::error title=Add VMs incomplete::Skipped: ${SKIPPED_VMS[*]}; agent failed: ${QUADLET_AGENT_FAILED_VMS[*]}. See the job summary."
+        fi
     else
-        echo "::notice title=VM action summary::See the job summary for VM access, key download, and native service verification."
+        echo "::notice title=VM action summary::See the job summary for VM access, key download, and agent service verification."
     fi
 }
 
 cleanup() {
     rm -f "${AUTOMATION_SSH_PRIVKEY:-}" "${AUTOMATION_SSH_PUBKEY:-}"
+    rm -rf "${RENDERED_QUADLET_DIR:-}"
 }
 trap cleanup EXIT
 
@@ -244,11 +275,12 @@ main() {
     echo "  VM OS:       $VM_OS"
     echo "  VM prefix:   $VM_PREFIX"
     echo "  Num VMs:     $NUM_VMS"
-    echo "  Agent type:  native"
+    echo "  Agent type:  $AGENT_TYPE"
+    [[ -n "$IMAGE_TAG" ]] && echo "  Image tag:   $IMAGE_TAG"
     echo ""
 
     # Export variables for sourced scripts
-    export NAMESPACE VM_OS VM_PREFIX NUM_VMS ARTIFACTS_DIR
+    export NAMESPACE VM_OS VM_PREFIX NUM_VMS IMAGE_TAG ARTIFACTS_DIR AGENT_TYPE
     export CONTAINER_IMAGE="quay.io/rhacs-eng/vm-images:${VM_OS}-dnf-primed-latest"
 
     # Step 1: Install virt operator (skippable when action handles this separately)
@@ -277,15 +309,27 @@ main() {
         die "No accessible VMs — cannot install agent. All VMs failed SSH readiness."
     else
         export AUTOMATION_SSH_PRIVKEY
-        # shellcheck source=install-agent-native.sh
-        source "$SCRIPT_DIR/install-agent-native.sh"
-        install_agent_native "${accessible_vms[@]}"
+        case "$AGENT_TYPE" in
+            quadlet)
+                # shellcheck source=install-agent-quadlet.sh
+                source "$SCRIPT_DIR/install-agent-quadlet.sh"
+                install_agent_quadlet "${accessible_vms[@]}"
+                ;;
+            native)
+                # shellcheck source=install-agent-native.sh
+                source "$SCRIPT_DIR/install-agent-native.sh"
+                install_agent_native "${accessible_vms[@]}"
+                ;;
+        esac
     fi
 
     # Step 4: Summary
     print_summary
-    if [[ ${#SKIPPED_VMS[@]} -gt 0 || ${#NATIVE_AGENT_FAILED_VMS[@]} -gt 0 ]]; then
-        die "Some VMs were skipped or the native agent failed to start"
+    if [[ ${#SKIPPED_VMS[@]} -gt 0 ]] || agent_install_incomplete; then
+        if [[ "$AGENT_TYPE" == "native" ]]; then
+            die "Some VMs were skipped or the native agent failed to start"
+        fi
+        die "Some VMs were skipped or the quadlet agent failed to start"
     fi
 }
 
