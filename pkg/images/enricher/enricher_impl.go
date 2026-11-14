@@ -167,24 +167,9 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 		return shouldDelegate, err
 	}
 
-	// Check if image exists in database (will include metadata, sigs, etc.).
-	// Ignores in-mem metadata cache because that is not populated via
-	// enrichment requests from secured clusters. fetchFromDatabase will check
-	// if FetchOpt forces refetch. Assumes signatures in DB are OK, reprocessing
-	// or forcing re-scan will trigger updates as necessary.
-	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
-	if exists && cachedImageIsValid(existingImg) {
-		updated := e.updateImageWithExistingImage(image, existingImg, enrichCtx.FetchOpt)
-		if updated {
-			// Image is cached, but we force base image detection in case base images tags were updated.
-			e.enrichWithBaseImage(ctx, image)
-			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
-			// Errors for signature verification will be logged, so we can safely ignore them for the time being.
-			_, _ = e.enrichWithSignatureVerificationData(ctx, enrichCtx, image)
-
-			log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
-			return true, nil
-		}
+	// Check if image exists in database and can be reused.
+	if e.reuseImageFromDatabase(ctx, enrichCtx, image) {
+		return true, nil
 	}
 
 	// Send image to secured cluster for enrichment.
@@ -207,6 +192,33 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 	return true, nil
+}
+
+// reuseImageFromDatabase populates the given image with the values (metadata, scan,
+// signatures, etc.) of an existing, valid image in Central's database, returning true
+// if a cached image was found and used.
+// It ignores the in-mem metadata cache because that is not populated via enrichment
+// requests from secured clusters. fetchFromDatabase will check if FetchOpt forces
+// refetch. Assumes signatures in DB are OK, reprocessing or forcing re-scan will
+// trigger updates as necessary.
+func (e *enricherImpl) reuseImageFromDatabase(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) bool {
+	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
+	if !exists || !cachedImageIsValid(existingImg) {
+		return false
+	}
+
+	if !e.updateImageWithExistingImage(image, existingImg, enrichCtx.FetchOpt) {
+		return false
+	}
+
+	// Image is cached, but we force base image detection in case base images tags were updated.
+	e.enrichWithBaseImage(ctx, image)
+	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+	// Errors for signature verification will be logged, so we can safely ignore them for the time being.
+	_, _ = e.enrichWithSignatureVerificationData(ctx, enrichCtx, image)
+
+	log.Debugf("Enrichment returning cached image for %q", image.GetName().GetFullName())
+	return true
 }
 
 func cachedImageIsValid(cachedImage *storage.Image) bool {
@@ -304,6 +316,15 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		}
 	} else if err != nil {
 		log.Warnf("Error attempting to delegate: %v", err)
+	}
+
+	// This mirrors the cache check logic in delegateEnrichImage and allows
+	// requests for images in registries Central cannot reach
+	// (e.g. OpenShift internal registries of secured clusters) to succeed when
+	// the data was previously scanned.
+	if enrichContext.FetchOpt == UseCachesIfPossible && image.GetMetadata() == nil &&
+		e.reuseImageFromDatabase(ctx, enrichContext, image) {
+		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanReused}, nil
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")

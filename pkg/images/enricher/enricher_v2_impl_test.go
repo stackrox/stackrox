@@ -80,11 +80,11 @@ func TestEnricherV2Flow(t *testing.T) {
 		shortCircuitScanner    bool
 		image                  *storage.ImageV2
 		imageGetter            ImageGetterV2
-		fsr                    *fakeRegistryScanner
 		result                 EnrichmentResult
 		errorExpected          bool
 		expectedBaseImageCalls int // track Base Image logic
-		expectScanCall         *bool
+		expectScanCall         bool
+		expectMetadataCall     bool
 	}{
 		{
 			name: "nothing in the cache",
@@ -100,10 +100,8 @@ func TestEnricherV2Flow(t *testing.T) {
 					LayerShas: []string{"SHA1"},
 				},
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: true,
-				requestedScan:     true,
-			}),
+			expectScanCall:     true,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -131,10 +129,8 @@ func TestEnricherV2Flow(t *testing.T) {
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
 				Scan:   &storage.ImageScan{}}),
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     false,
-			}),
+			expectScanCall:     false,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: false,
 				ScanResult:   ScanReused,
@@ -155,10 +151,8 @@ func TestEnricherV2Flow(t *testing.T) {
 					LayerShas: []string{"SHA1"},
 				},
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: true,
-				requestedScan:     true,
-			}),
+			expectScanCall:     true,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -184,16 +178,13 @@ func TestEnricherV2Flow(t *testing.T) {
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
 				Scan:   &storage.ImageScan{}}),
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: true,
-				requestedScan:     false,
-			}),
 			result: EnrichmentResult{
 				ImageUpdated: false,
 				ScanResult:   ScanReused,
 			},
 			expectedBaseImageCalls: 1,
-			expectScanCall:         new(bool),
+			expectScanCall:         false,
+			expectMetadataCall:     false,
 		},
 		{
 			name: " data in both caches but force refetch use names",
@@ -209,10 +200,8 @@ func TestEnricherV2Flow(t *testing.T) {
 					LayerShas: []string{"SHA1"},
 				},
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: true,
-				requestedScan:     true,
-			}),
+			expectScanCall:     true,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -233,10 +222,8 @@ func TestEnricherV2Flow(t *testing.T) {
 					LayerShas: []string{"SHA1"},
 				},
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     true,
-			}),
+			expectScanCall:     true,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -257,10 +244,8 @@ func TestEnricherV2Flow(t *testing.T) {
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
 				// no need to pass metadata
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     false,
-			}),
+			expectScanCall:     false,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanNotDone,
@@ -282,10 +267,8 @@ func TestEnricherV2Flow(t *testing.T) {
 					LayerShas: []string{"SHA1"},
 				},
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     true,
-			}),
+			expectScanCall:     true,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -305,10 +288,8 @@ func TestEnricherV2Flow(t *testing.T) {
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     false,
-			}),
+			expectScanCall:     false,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: false,
 				ScanResult:   ScanNotDone,
@@ -330,10 +311,8 @@ func TestEnricherV2Flow(t *testing.T) {
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg", FullName: "reg"},
 			},
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     false,
-			}),
+			expectScanCall:     false,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: false,
 				ScanResult:   ScanNotDone,
@@ -355,11 +334,9 @@ func TestEnricherV2Flow(t *testing.T) {
 					LayerShas: []string{"SHA1"},
 				},
 			},
-			imageGetter: imageGetterV2PanicOnCall,
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: true,
-				requestedScan:     true,
-			}),
+			imageGetter:        imageGetterV2PanicOnCall,
+			expectScanCall:     true,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
@@ -381,16 +358,147 @@ func TestEnricherV2Flow(t *testing.T) {
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg", FullName: "reg"},
 			},
-			imageGetter: imageGetterV2PanicOnCall,
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     true,
-			}),
+			imageGetter:        imageGetterV2PanicOnCall,
+			expectScanCall:     true,
+			expectMetadataCall: false,
 			result: EnrichmentResult{
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
 			},
 			expectedBaseImageCalls: 1,
+		},
+		{
+			name: "fresh image reuses valid cached image from database",
+			ctx: EnrichmentContext{
+				FetchOpt: UseCachesIfPossible,
+			},
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+			},
+			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+				Scan: &storage.ImageScan{},
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanReused,
+			},
+			expectedBaseImageCalls: 1,
+			expectMetadataCall:     false,
+			expectScanCall:         false,
+		},
+		{
+			name: "cached image without scan is not reused",
+			ctx: EnrichmentContext{
+				FetchOpt: UseCachesIfPossible,
+			},
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+			},
+			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+			expectedBaseImageCalls: 0,
+			expectMetadataCall:     true,
+			expectScanCall:         true,
+		},
+		{
+			name: "cached image with out-of-date metadata is not reused",
+			ctx: EnrichmentContext{
+				FetchOpt: UseCachesIfPossible,
+			},
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+			},
+			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					Version:   12345,
+					LayerShas: []string{"SHA1"},
+				},
+				Scan: &storage.ImageScan{},
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanReused,
+			},
+			expectedBaseImageCalls: 0,
+			expectMetadataCall:     true,
+			expectScanCall:         false,
+		},
+		{
+			name: "tag-only fresh image bypasses database cache",
+			ctx: EnrichmentContext{
+				FetchOpt: UseCachesIfPossible,
+			},
+			image: &storage.ImageV2{
+				Name: &storage.ImageName{Registry: "reg", FullName: "reg"},
+			},
+			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+				Scan: &storage.ImageScan{},
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+			expectedBaseImageCalls: 0,
+			expectMetadataCall:     true,
+			expectScanCall:         true,
+		},
+		{
+			name: "fresh image with force refetch of cached values bypasses database cache",
+			ctx: EnrichmentContext{
+				FetchOpt: UseImageNamesRefetchCachedValues,
+			},
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+			},
+			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+				Scan: &storage.ImageScan{},
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+			expectedBaseImageCalls: 0,
+			expectMetadataCall:     true,
+			expectScanCall:         true,
 		},
 	}
 
@@ -456,9 +564,8 @@ func TestEnricherV2Flow(t *testing.T) {
 
 			assert.Equal(t, c.result, result)
 			assert.Equal(t, c.expectedBaseImageCalls, mockBaseGetter.callCount, "Mismatch in: %s", c.name)
-			if c.expectScanCall != nil {
-				assert.Equal(t, *c.expectScanCall, fsr.scanner.requestedScan, "scan call mismatch in: %s", c.name)
-			}
+			assert.Equal(t, c.expectScanCall, fsr.scanner.requestedScan, "scan call mismatch in: %s", c.name)
+			assert.Equal(t, c.expectMetadataCall, fsr.requestedMetadata, "metadata call mismatch in: %s", c.name)
 		})
 	}
 }
