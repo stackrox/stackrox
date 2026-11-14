@@ -857,7 +857,6 @@ export default [
             'src/Components/TileContent/**', // deprecated
             'src/Components/TileLink/**', // deprecated
             'src/Components/ToggleSwitch/**', // deprecated
-            'src/Components/TooltipFieldValue/**', // deprecated
             'src/Components/TopCvssLabel/**', // deprecated
             'src/Components/Widget/**', // deprecated
             'src/Components/animations/**', // deprecated
