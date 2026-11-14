@@ -11,6 +11,10 @@ var LazyLabels = tracker.LazyLabelGetters[*finding]{
 	"Status": func(f *finding) string {
 		return f.GetHealthStatus().GetOverallHealthStatus().String()
 	},
+	"SensorVersion": func(f *finding) string { return f.GetStatus().GetSensorVersion() },
+	"CollectorVersion": func(f *finding) string {
+		return f.GetHealthStatus().GetCollectorHealthInfo().GetVersion()
+	},
 }
 
 type finding = storage.Cluster
