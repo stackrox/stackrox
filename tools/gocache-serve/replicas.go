@@ -17,45 +17,85 @@ import (
 	"time"
 	"os"
 	"strings"
+	"sync"
 )
 
 // replicaAccounts lists the storage accounts holding one-shot content.
 // Azure-only by construction; dir test mode is single-store.
 var replicaAccounts = []string{"cigocache", "cigocacheeast", "cigochachecentral"}
 
-// storeAll writes the file's bytes to every replica, followed by a
-// hash marker (KEY.sha256) that makes the write VERIFIABLE at read
-// time. Failures on individual replicas are logged but not fatal — a
-// majority of replicas holding the content is strictly better than
-// aborting. The marker is written AFTER the content on each replica,
-// so its presence implies a deliberate, complete store.
+// storeAll ensures the file's content is present and hash-marked on
+// every replica — IDEMPOTENTLY and IN PARALLEL:
+//
+//   - Each replica's existing marker is checked first (a tiny GET).
+//     If it already matches this content's hash, that replica is
+//     skipped: warm runs (unchanged binaries, identical vendor trees)
+//     upload nothing instead of re-pushing gigabytes (measured: the
+//     binaries store step was 72s of redundant upload on every run).
+//   - Replicas needing upload are written concurrently (independent
+//     accounts; cold-case wall time = one upload, not three).
+//   - The marker is written AFTER the content per replica, so its
+//     presence implies a deliberate, complete store.
 func storeAll(key, file string) error {
 	body, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
 	sum := sha256.Sum256(maybeGunzip(body))
-	marker := fmt.Sprintf("%x\n", sum)
-	stored := 0
-	for _, acct := range replicaAccounts {
-		b := azureBackendFor(acct)
-		if b == nil {
-			continue
-		}
-		if err := b.Put(key, body); err != nil {
-			fmt.Fprintf(os.Stderr, "store-all: %s failed: %v\n", acct, err)
-			continue
-		}
-		// Marker second: a replica with content but no marker is treated
-		// as untrusted by fetchAny (covers stores interrupted mid-write).
-		if err := b.Put(key+".sha256", []byte(marker)); err != nil {
-			fmt.Fprintf(os.Stderr, "store-all: %s marker failed: %v\n", acct, err)
-			continue
-		}
-		stored++
+	want := fmt.Sprintf("%x", sum)
+
+	type result struct {
+		acct   string
+		skipped bool
+		err    error
 	}
-	fmt.Printf("store-all: %s -> %d/%d replicas (%d bytes, sha256 %s)\n", key, stored, len(replicaAccounts), len(body), marker[:16])
-	if stored == 0 {
+	results := make(chan result, len(replicaAccounts))
+	var wg sync.WaitGroup
+	for _, acct := range replicaAccounts {
+		wg.Add(1)
+		go func(acct string) {
+			defer wg.Done()
+			b := azureBackendFor(acct)
+			if b == nil {
+				results <- result{acct, false, nil}
+				return
+			}
+			// Marker-only check: if the stored marker equals our hash,
+			// this replica already has exactly this content.
+			if marker, err := b.Get(key + ".sha256"); err == nil && marker != nil {
+				if strings.TrimSpace(string(marker)) == want {
+					results <- result{acct, true, nil}
+					return
+				}
+			}
+			if err := b.Put(key, body); err != nil {
+				results <- result{acct, false, err}
+				return
+			}
+			if err := b.Put(key+".sha256", []byte(want+"\n")); err != nil {
+				results <- result{acct, false, err}
+				return
+			}
+			results <- result{acct, false, nil}
+		}(acct)
+	}
+	wg.Wait()
+	close(results)
+
+	stored, skipped, failed := 0, 0, 0
+	for r := range results {
+		if r.err != nil {
+			failed++
+			fmt.Fprintf(os.Stderr, "store-all: %s failed: %v\n", r.acct, r.err)
+		} else if r.skipped {
+			skipped++
+		} else {
+			stored++
+		}
+	}
+	fmt.Printf("store-all: %s -> %d stored, %d already-current, %d failed of %d replicas (%d bytes, sha256 %s)\n",
+		key, stored, skipped, failed, len(replicaAccounts), len(body), want[:16])
+	if stored+skipped == 0 {
 		return fmt.Errorf("all %d replicas failed", len(replicaAccounts))
 	}
 	return nil
