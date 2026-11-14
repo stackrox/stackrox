@@ -1,0 +1,27 @@
+{
+  "name": "Berserker Idle File Activity Policy",
+  "description": "Runtime file-activity policy watching /tmp/quiet/** - a directory with NO berserker activity, to isolate the cost of an active monitoring policy from the cost of processing events",
+  "rationale": "Matches file activity to measure performance impact",
+  "remediation": "This is a test policy for performance testing with berserker",
+  "categories": ["Anomalous Activity"],
+  "lifecycleStages": ["RUNTIME"],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "disabled": false,
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "File Path",
+          "values": [
+            {
+              "value": "/tmp/quiet/**"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [],
+  "isDefault": false
+}

@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"fmt"
 	"math/rand"
 	"path/filepath"
 
@@ -453,9 +454,21 @@ var (
 	}
 )
 
-func getBadProcess(containerID string) *storage.ProcessSignal {
+func getBadProcess(containerID string, numArgs, numExecPaths int) *storage.ProcessSignal {
 	name := badProcessNames[rand.Int()%len(badProcessNames)]
-	return getProcess("/bin", name, containerID)
+	if numExecPaths > 0 {
+		// Vary the exec path so each process is a distinct indicator/violation. The
+		// sensor process filter caps unique exec paths per container (maxUniqueProcesses),
+		// a far larger budget than the per-path arg fan-out.
+		name = fmt.Sprintf("badproc-%d", rand.Intn(numExecPaths))
+	}
+	process := getProcess("/bin", name, containerID)
+	if numArgs > 0 {
+		// Vary Args so each process is a distinct indicator/violation (Args is part of
+		// the process indicator identity) instead of deduping on a constant string.
+		process.Args = fmt.Sprintf("arg-%d", rand.Intn(numArgs))
+	}
+	return process
 }
 
 func getGoodProcess(containerID string) *storage.ProcessSignal {
