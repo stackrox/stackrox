@@ -44,7 +44,20 @@ test_vm_scanning_e2e() {
         fi
     fi
 
-    deploy_stackrox
+    if [[ "${DEPLOY_VIA_ROXIE:-false}" == "true" ]]; then
+        local roxie_config
+        roxie_config="$(mktemp)"
+        merge_yaml "$roxie_config" <<'EOF'
+central:
+  resourceProfile: ci
+securedCluster:
+  resourceProfile: ci
+EOF
+        deploy_stackrox_with_roxie_compat "$roxie_config"
+        rm -f "$roxie_config"
+    else
+        deploy_stackrox
+    fi
 
     cd "$ROOT"
     ensure_vm_scan_ssh_identity

@@ -326,7 +326,7 @@ func (s *VMScanningSuite) resolveVMAPI() {
 	t.Helper()
 
 	flag := features.VirtualMachinesEnhancedDataModel
-	s.enhancedVMModel = s.centralFeatureEnabled(flag)
+	s.enhancedVMModel = s.containerFeatureEnabled(s.ctx, "deployment", "central", "central", namespaces.StackRox, flag)
 	s.logf("VM scanning setup: Central %s=%v", flag.EnvVar(), s.enhancedVMModel)
 
 	if s.enhancedVMModel {
@@ -338,16 +338,29 @@ func (s *VMScanningSuite) resolveVMAPI() {
 	require.NoError(t, err, "VirtualMachineService must be registered when %s is disabled", flag.EnvVar())
 }
 
-// centralFeatureEnabled reports whether flag is on in the Central deployment,
-// matching features.Enabled: explicit true/false, otherwise the flag default.
-func (s *VMScanningSuite) centralFeatureEnabled(flag features.FeatureFlag) bool {
+// containerFeatureEnabled reports whether flag is effectively on for the named container
+// in a Deployment or DaemonSet, matching features.Enabled: explicit true/false env var,
+// otherwise the flag default.
+func (s *VMScanningSuite) containerFeatureEnabled(ctx context.Context, kind, name, containerName, ns string, flag features.FeatureFlag) bool {
 	t := s.T()
 	t.Helper()
 
-	obj, err := s.k8sClient.AppsV1().Deployments(namespaces.StackRox).Get(s.ctx, "central", metaV1.GetOptions{})
-	require.NoError(t, err, "get Deployment %s/central", namespaces.StackRox)
-	for _, c := range obj.Spec.Template.Spec.Containers {
-		if c.Name != "central" {
+	var containers []coreV1.Container
+	switch kind {
+	case "deployment":
+		obj, err := s.k8sClient.AppsV1().Deployments(ns).Get(ctx, name, metaV1.GetOptions{})
+		require.NoError(t, err, "get Deployment %s/%s", ns, name)
+		containers = obj.Spec.Template.Spec.Containers
+	case "daemonset":
+		obj, err := s.k8sClient.AppsV1().DaemonSets(ns).Get(ctx, name, metaV1.GetOptions{})
+		require.NoError(t, err, "get DaemonSet %s/%s", ns, name)
+		containers = obj.Spec.Template.Spec.Containers
+	default:
+		require.Failf(t, "unsupported kind", "%q", kind)
+	}
+
+	for _, c := range containers {
+		if c.Name != containerName {
 			continue
 		}
 		for _, e := range c.Env {
@@ -365,21 +378,25 @@ func (s *VMScanningSuite) centralFeatureEnabled(flag features.FeatureFlag) bool 
 		}
 		return flag.Default()
 	}
-	require.FailNowf(t, "container central not found in Deployment stackrox/central",
-		"available containers: %s", formatContainerNames(obj.Spec.Template.Spec.Containers))
+	require.Failf(t, fmt.Sprintf("container %q not found in %s %s/%s", containerName, kind, ns, name),
+		"available containers: %s", formatContainerNames(containers))
 	return false
 }
 
 func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
+	t := s.T()
+	t.Helper()
+
 	ctx, cancel := context.WithTimeout(s.ctx, featureGateVerifyTimeout)
 	defer cancel()
 
-	wantEnv := features.VirtualMachines.EnvVar()
+	flag := features.VirtualMachines
 	ns := namespaces.StackRox
 
-	// Verify the feature flag env var is set on all components that need it.
-	s.mustVerifyContainerEnvVar(ctx, "deployment", "central", "central", ns, wantEnv)
-	s.mustVerifyContainerEnvVar(ctx, "deployment", sensorDeployment, sensorContainer, ns, wantEnv)
+	require.True(t, s.containerFeatureEnabled(ctx, "deployment", "central", "central", ns, flag),
+		"%s must be enabled on Central for pull-mode VM scanning", flag.EnvVar())
+	require.True(t, s.containerFeatureEnabled(ctx, "deployment", sensorDeployment, sensorContainer, ns, flag),
+		"%s must be enabled on Sensor for pull-mode VM scanning", flag.EnvVar())
 	s.mustVerifySensorVSOCKRBAC(ctx)
 }
 
@@ -405,57 +422,6 @@ func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
 		}
 	}
 	require.True(t, foundSensorSA, "ClusterRoleBinding stackrox:vsock-access-binding must bind stackrox/sensor")
-}
-
-// mustVerifyContainerEnvVar asserts that the named container within a Deployment or DaemonSet
-// has the given environment variable set to a truthy value ("true", "1", etc.).
-// This catches deployment misconfigurations where a feature flag reaches one component
-// but not another that also needs it.
-func (s *VMScanningSuite) mustVerifyContainerEnvVar(ctx context.Context, kind, name, containerName, ns, envName string) {
-	t := s.T()
-	t.Helper()
-
-	var containers []coreV1.Container
-	switch kind {
-	case "deployment":
-		obj, err := s.k8sClient.AppsV1().Deployments(ns).Get(ctx, name, metaV1.GetOptions{})
-		require.NoError(t, err, "get Deployment %s/%s", ns, name)
-		containers = obj.Spec.Template.Spec.Containers
-	case "daemonset":
-		obj, err := s.k8sClient.AppsV1().DaemonSets(ns).Get(ctx, name, metaV1.GetOptions{})
-		require.NoError(t, err, "get DaemonSet %s/%s", ns, name)
-		containers = obj.Spec.Template.Spec.Containers
-	default:
-		require.Failf(t, "unsupported kind", "%q", kind)
-	}
-
-	for _, c := range containers {
-		if c.Name != containerName {
-			continue
-		}
-		for _, e := range c.Env {
-			if e.Name == envName {
-				val := strings.ToLower(strings.TrimSpace(e.Value))
-				require.Truef(t, val == "true" || val == "1",
-					"%s %s/%s container %q has %s=%q which is not truthy",
-					kind, ns, name, containerName, envName, e.Value)
-				return
-			}
-		}
-		require.Failf(t, fmt.Sprintf("%s %s/%s container %q is missing env var %s", kind, ns, name, containerName, envName),
-			"the feature flag must be set on Central and Sensor for pull-mode VM scanning; "+
-				"present env vars: %s", formatContainerEnvNames(c.Env))
-	}
-	require.Failf(t, fmt.Sprintf("container %q not found in %s %s/%s", containerName, kind, ns, name),
-		"available containers: %s", formatContainerNames(containers))
-}
-
-func formatContainerEnvNames(envs []coreV1.EnvVar) string {
-	names := make([]string, len(envs))
-	for i, e := range envs {
-		names[i] = e.Name
-	}
-	return strings.Join(names, ", ")
 }
 
 func formatContainerNames(containers []coreV1.Container) string {
