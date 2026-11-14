@@ -12,6 +12,12 @@ var (
 	// ComplianceStrictNodeScan defines if scans can proceed if the scan should fail if any node cannot be scanned
 	ComplianceStrictNodeScan = RegisterBooleanSetting("ROX_COMPLIANCE_STRICT_NODE_SCAN", true)
 
+	// ComplianceAutodiscoverNodeRoles controls how Sensor picks the node roles for the ScanSettings it creates.
+	// When true (default), the roles are auto-discovered from the cluster's MachineConfigPools so that custom
+	// pools (e.g. "infra") are covered. When false, the hardcoded "master" and "worker" roles are used.
+	// Kill-switch: discovery only exists on OpenShift and always falls back to master+worker on any error.
+	ComplianceAutodiscoverNodeRoles = RegisterBooleanSetting("ROX_COMPLIANCE_AUTODISCOVER_NODE_ROLES", true)
+
 	// ComplianceScanWatcherTimeout defines the timeout for a compliance scan watcher.
 	// If the scan results have not been received by then, it will be aborted.
 	// The default is 40 mins.
