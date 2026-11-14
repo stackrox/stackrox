@@ -1,0 +1,33 @@
+name: CI selection plan (preview)
+
+# Builds ci-select and prints the run/skip plan for the example rules file,
+# fed by the changed paths from the existing detect-changes workflow. This
+# is a preview only: it gates nothing yet. Wiring the plan into the test
+# workflows happens once a real rule engine replaces the placeholder.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
+  plan:
+    needs: detect-changes
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      - name: Build ci-select
+        run: make -C ci/select
+      - name: Collect changed paths
+        env:
+          # detect-changes emits anchored ^path$ lines (empty on push,
+          # API failure, or 3000+ files).
+          FILES: ${{ needs.detect-changes.outputs.files }}
+        run: sed -e 's/^\^//' -e 's/\$$//' <<<"$FILES" > changed.txt
+      - name: Print CI selection plan
+        run: ci/select/bin/ci-select plan --rules ci/test-selection-rules.yaml --files-file changed.txt
