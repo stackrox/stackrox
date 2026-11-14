@@ -350,6 +350,28 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStaleByConfi
 			s.Require().NoError(err)
 			s.Require().Zero(updated)
 		},
+		"sub-second boundary: before pivot in the same second is STALE, after is CURRENT": func() {
+			const cfg = "cfg-subsecond"
+			base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+			subPivot := base.Add(700 * time.Millisecond)    // 12:00:00.700
+			beforePivot := base.Add(300 * time.Millisecond) // 12:00:00.300, same second, before pivot
+			afterPivot := base.Add(900 * time.Millisecond)  // 12:00:00.900, same second, after pivot
+
+			beforeRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-subsecond-before")
+			beforeRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&beforePivot)
+			beforeRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+			afterRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-subsecond-after")
+			afterRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&afterPivot)
+			afterRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+			s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, beforeRec))
+			s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, afterRec))
+
+			updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, subPivot)
+			s.Require().NoError(err)
+			s.Require().Equal(int64(1), updated)
+			s.assertFreshness(beforeRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+			s.assertFreshness(afterRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+		},
 	}
 
 	for name, run := range tests {
