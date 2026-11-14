@@ -91,6 +91,31 @@ if [[ -n "$ROX_LINKER" ]]; then
   ldflags+=(-linkmode=external "-extldflags=-fuse-ld=${ROX_LINKER}")
 fi
 
+# Deterministic build IDs: go's default buildid embeds the toolchain
+# build's hash, which varies across runner environments (setup-go vs
+# GOTOOLCHAIN-download produce different tool IDs for the same go
+# version) — measured as the only 80-byte difference between otherwise
+# byte-identical CI binaries. Override with a value derived from the
+# dependency state:
+#   - go.mod's language version (intentional compatibility changes)
+#   - go.sum hash (changes exactly when dependencies change)
+# Source changes do NOT need to change the buildid: binary content
+# changes with source, so content-addressed consumers (tars, outbin
+# validation via compile ActionIDs) already distinguish them — while a
+# ui/- or docs/-only commit keeps identical Go binaries sharing one
+# buildid, so cross-commit reuse works (no 4GB re-upload on unrelated
+# changes). Correctness is preserved because compile ActionIDs still
+# key on the exact toolchain: a patch bump forces recompile+relink
+# regardless of this buildid. (Verified: source changes rebuild
+# despite a constant buildid.)
+if [[ -n "${ROX_DETERMINISTIC_BUILDID:-1}" ]]; then
+  _gomod_go="$(awk '/^go /{print $2; exit}' go.mod)"
+  _gosum="$(sha256sum go.sum 2>/dev/null | cut -c1-16)"
+  if [[ -n "$_gomod_go" && -n "$_gosum" ]]; then
+    ldflags+=("-buildid=${_gomod_go}-${_gosum}")
+  fi
+fi
+
 function invoke_go() {
   local tool="${1:?"invoke_go tool argument required"}"
   shift
