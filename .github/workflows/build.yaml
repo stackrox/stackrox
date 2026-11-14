@@ -1185,13 +1185,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
 
-      - name: Download prebuilt operator binaries
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-default
-
-      - name: Extract prebuilt binaries
-        run: tar xf go-binaries-build.tar
+      - name: Fetch operator binaries from blob store
+        run: |
+          set -euo pipefail
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-default"
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "$BLOB_KEY" /tmp/op-binaries.tar && [ -s /tmp/op-binaries.tar ]; then
+            tar -xf /tmp/op-binaries.tar
+            echo "operator binaries: fetched from blob store (${BLOB_KEY})"
+          else
+            echo "::error::operator binaries not found in blob store (${BLOB_KEY})"
+            exit 1
+          fi
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1315,12 +1319,17 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-
-      - name: Unpack Go binaries
-        run: tar xvf go-binaries-build.tar
+      - name: Fetch Go binaries from blob store
+        run: |
+          set -euo pipefail
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-${{ matrix.name }}"
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "$BLOB_KEY" /tmp/sc-binaries.tar && [ -s /tmp/sc-binaries.tar ]; then
+            tar -xf /tmp/sc-binaries.tar
+            echo "binaries: fetched from blob store (${BLOB_KEY})"
+          else
+            echo "::error::binaries not found in blob store (${BLOB_KEY})"
+            exit 1
+          fi
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
