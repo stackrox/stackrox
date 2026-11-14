@@ -181,17 +181,17 @@ export type ImageCVE = {
         low: { total: number };
         unknown: { total: number };
     };
-    topCVSS: number;
+    topCVSS: number | string;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
     publishedOn: string | null;
-    topNvdCVSS: number;
+    topNvdCVSS: number | null;
     distroTuples: {
         summary: string;
         operatingSystem: string;
         cvss: number;
         scoreVersion: string;
-        nvdCvss: number;
+        nvdCvss: number | null;
         nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
         cveBaseInfo: CveBaseInfo;
     }[];
@@ -440,7 +440,7 @@ function WorkloadCVEOverviewTable({
                                             dataLabel="Top NVD CVSS"
                                         >
                                             <CvssFormatted
-                                                cvss={topNvdCVSS ?? 0}
+                                                cvss={topNvdCVSS}
                                                 scoreVersion={nvdScoreVersions.join('/')}
                                             />
                                         </Td>

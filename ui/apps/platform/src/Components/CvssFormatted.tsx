@@ -1,13 +1,12 @@
 import type { ReactElement } from 'react';
 
 export type CvssFormattedProps = {
-    cvss: number;
+    cvss: number | string | null | undefined;
     scoreVersion?: string;
 };
 
 function CvssFormatted({ cvss, scoreVersion }: CvssFormattedProps): ReactElement {
-    if (scoreVersion === 'UNKNOWN_VERSION') {
-        // For NVD CVSS.
+    if (typeof cvss !== 'number' || !Number.isFinite(cvss) || scoreVersion === 'UNKNOWN_VERSION') {
         return <>Not available</>;
     }
 
