@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -57,5 +58,30 @@ func TestFetchAnyRejectsHashMismatch(t *testing.T) {
 	dst := filepath.Join(t.TempDir(), "out")
 	if err := fetchAny("tampered-key", dst); err == nil {
 		t.Fatal("hash-mismatched content must be a miss")
+	}
+}
+
+// The vendor-blob scenario: GZIPPED input files. The backend gzips at
+// rest and Get returns DECOMPRESSED bytes — the marker must hash the
+// LOGICAL content (post-decompression) on both sides, or every gzipped
+// input mismatches its own marker (observed in CI: spurious vendor
+// regeneration on every run).
+func TestStoreAllFetchAnyGzipInput(t *testing.T) {
+	t.Setenv("GOCACHE_SERVE_BACKEND", "dir")
+	t.Setenv("GOCACHE_SERVE_DIR_STORE", t.TempDir())
+	// A gzipped tar, exactly like the vendor step produces.
+	src := filepath.Join(t.TempDir(), "vendor.tar.gz")
+	cmd := exec.Command("tar", "-czf", src, "-C", t.TempDir(), ".")
+	// create a file to tar
+	os.WriteFile(filepath.Join(t.TempDir(), "somefile"), []byte("vendored content"), 0o644)
+	if err := cmd.Run(); err != nil {
+		t.Skipf("tar unavailable: %v", err)
+	}
+	if err := storeAll("gz-key", src); err != nil {
+		t.Fatalf("storeAll: %v", err)
+	}
+	dst := filepath.Join(t.TempDir(), "out")
+	if err := fetchAny("gz-key", dst); err != nil {
+		t.Fatalf("gzipped input must verify (marker hashes logical content): %v", err)
 	}
 }

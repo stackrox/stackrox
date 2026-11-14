@@ -34,7 +34,7 @@ func storeAll(key, file string) error {
 	if err != nil {
 		return err
 	}
-	sum := sha256.Sum256(body)
+	sum := sha256.Sum256(maybeGunzip(body))
 	marker := fmt.Sprintf("%x\n", sum)
 	stored := 0
 	for _, acct := range replicaAccounts {
