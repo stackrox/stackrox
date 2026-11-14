@@ -17,8 +17,11 @@ import (
 	"golang.org/x/sync/errgroup"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -64,6 +67,68 @@ func (r k8sResource) String() string {
 	return fmt.Sprintf("%s.%s", r.Resource, r.Group)
 }
 
+// groupVersion returns the API group version string used by the Discovery API.
+// Core resources (empty group) map to "v1", all others to "group/v1".
+func (r k8sResource) groupVersion() string {
+	if r.Group == "" {
+		return "v1"
+	}
+	return r.Group + "/v1"
+}
+
+// filterAvailableResources queries the Discovery API to determine which resources
+// actually exist in the cluster and returns only those. Resources whose API group
+// is not found are excluded. On transient Discovery errors, resources are kept
+// to avoid silently skipping authorization checks (fail-open).
+func filterAvailableResources(disc discovery.DiscoveryInterface, resources []k8sResource) []k8sResource {
+	type groupResult struct {
+		resources []string
+		available bool
+	}
+	discovered := make(map[string]groupResult)
+
+	for _, r := range resources {
+		gv := r.groupVersion()
+		if _, checked := discovered[gv]; checked {
+			continue
+		}
+
+		resourceList, err := disc.ServerResourcesForGroupVersion(gv)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				log.Infof("API group %q not available in cluster, skipping authorization checks for its resources", gv)
+				discovered[gv] = groupResult{available: false}
+				continue
+			}
+			log.Warnf("Failed to discover resources for API group %q, keeping authorization checks (fail-open): %v", gv, err)
+			discovered[gv] = groupResult{available: true}
+			continue
+		}
+
+		names := make([]string, 0, len(resourceList.APIResources))
+		for _, apiRes := range resourceList.APIResources {
+			names = append(names, apiRes.Name)
+		}
+		discovered[gv] = groupResult{resources: names, available: true}
+	}
+
+	var filtered []k8sResource
+	for _, r := range resources {
+		gv := r.groupVersion()
+		result := discovered[gv]
+		if !result.available {
+			log.Infof("Skipping authorization check for %s (API group %q not available)", r, gv)
+			continue
+		}
+		if result.resources != nil && !slices.Contains(result.resources, r.Resource) {
+			log.Infof("Skipping authorization check for %s (resource not found in API group %q)", r, gv)
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	return filtered
+}
+
 // k8sAuthorizer verifies that a bearer token has the required Kubernetes permissions.
 // It validates tokens using TokenReview and checks permissions using SubjectAccessReview.
 // The user is authorized if they have get and list permissions to all deployment-like
@@ -80,9 +145,52 @@ type k8sAuthorizer struct {
 	authzGroup *coalescer.Coalescer[authzResult]
 }
 
-// newK8sAuthorizer creates a new Kubernetes-based authorizer with TokenReview and
-// SubjectAccessReview caching.
-func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
+// allResourcesToCheck is the full list of deployment-like resources that the authorizer
+// checks permissions for. At construction time, this list is filtered to only include
+// resources that actually exist in the cluster.
+var allResourcesToCheck = []k8sResource{
+	{Resource: "pods", Group: ""},
+	{Resource: "replicationcontrollers", Group: ""},
+	{Resource: "daemonsets", Group: "apps"},
+	{Resource: "deployments", Group: "apps"},
+	{Resource: "replicasets", Group: "apps"},
+	{Resource: "statefulsets", Group: "apps"},
+	{Resource: "cronjobs", Group: "batch"},
+	{Resource: "jobs", Group: "batch"},
+	{Resource: "deploymentconfigs", Group: "apps.openshift.io"},
+}
+
+// newDiscoveryClient creates a discovery client with a bounded timeout.
+// Unlike TokenReview and SubjectAccessReview calls, which accept a context for
+// deadline control, the Discovery API (ServerResourcesForGroupVersion) does
+// not, so we enforce a timeout via the HTTP client instead.
+func newDiscoveryClient(restConfig *rest.Config) (discovery.DiscoveryInterface, error) {
+	cfg := rest.CopyConfig(restConfig)
+	cfg.Timeout = k8sAPITimeout
+	return discovery.NewDiscoveryClientForConfig(cfg)
+}
+
+// newK8sAuthorizer creates a new Kubernetes-based authorizer from a rest config.
+// It creates both a main client (for TokenReview/SAR) and a timeout-scoped
+// discovery client for resource filtering.
+func newK8sAuthorizer(restConfig *rest.Config) (*k8sAuthorizer, error) {
+	client, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating kubernetes client")
+	}
+	disc, err := newDiscoveryClient(restConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating discovery client")
+	}
+	return newK8sAuthorizerFromClient(client, disc), nil
+}
+
+// newK8sAuthorizerFromClient creates an authorizer from pre-built clients.
+// Used in tests where a fake client replaces real Kubernetes API calls.
+func newK8sAuthorizerFromClient(client kubernetes.Interface, disc discovery.DiscoveryInterface) *k8sAuthorizer {
+	available := filterAvailableResources(disc, allResourcesToCheck)
+	log.Infof("Authorizer will check permissions for %d resources: %v", len(available), available)
+
 	return &k8sAuthorizer{
 		client:           client,
 		tokenCache:       expiringcache.NewExpiringCache[string, *authenticationv1.UserInfo](defaultCacheTTL),
@@ -90,17 +198,7 @@ func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 		verbsToCheck:     []string{"get", "list"},
 		tokenReviewGroup: coalescer.New[*authenticationv1.UserInfo](),
 		authzGroup:       coalescer.New[authzResult](),
-		resourcesToCheck: []k8sResource{
-			{Resource: "pods", Group: ""},
-			{Resource: "replicationcontrollers", Group: ""},
-			{Resource: "daemonsets", Group: "apps"},
-			{Resource: "deployments", Group: "apps"},
-			{Resource: "replicasets", Group: "apps"},
-			{Resource: "statefulsets", Group: "apps"},
-			{Resource: "cronjobs", Group: "batch"},
-			{Resource: "jobs", Group: "batch"},
-			{Resource: "deploymentconfigs", Group: "apps.openshift.io"},
-		},
+		resourcesToCheck: available,
 	}
 }
 
