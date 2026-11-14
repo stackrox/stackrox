@@ -50,3 +50,41 @@ Path in artifacts:
 ```
 download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artifacts/howto-locate-other-artifacts-summary.html
 ```
+
+## Nongroovy node-name monitoring
+
+Prow's `NonGroovyE2e` monitors nodes when `NUM_NODES` is a positive integer
+(exported by `GKECluster`). Unset or empty disables monitoring. It is independent
+of `GKE_SPOT`; the nongroovy GHA workflow does not enable it.
+
+Node names are collected before tests, every five minutes, and after tests unless
+cancelled, with a ten-second limit per kubectl call. The unique-name count must
+match `NUM_NODES`. Polling errors, invalid configuration, and an empty initial
+sample also produce diagnostic failures; later empty samples are ignored.
+Monitoring and artifact errors are advisory: they never change the product exit
+code or prevent tests from starting.
+
+Artifacts under `ARTIFACT_DIR` (default `junit-reports`):
+- `node-names.txt`: sampled names, including repetitions.
+- `node-snapshot-<timestamp>.json`: raw kubectl output, possibly partial.
+- `node-monitor.log`: collection attempts and kubectl stderr.
+- `node-monitor.xml`: one `ci.gke.node / NoNodeDisruption` success/failure/skipped
+  testcase. Cancellation is skipped unless an error was recorded. Failure details
+  go into JUnit; counts, names, and errors also appear in job logs.
+
+This checks names, not readiness or per-snapshot counts. Disappearance without
+replacement and transient nodes may go undetected. Replacement does not prove
+Spot preemption.
+
+Optional CLI: `python3 .openshift-ci/node_disruption.py run -- <command>`.
+Prow calls `run(timeout=...)`; the CLI has no timeout option. Both preserve product
+exit codes and clean up process groups on cancellation.
+
+Cluster-free tests live in `tests/test_node_disruption.py`. From the repo root:
+
+```sh
+PYTHONPATH=.openshift-ci python3 -m unittest discover -s .openshift-ci/tests -p test_node_disruption.py
+```
+
+CI runs `make -C .openshift-ci test` in Unit Tests / `openshift-ci-unit-tests`,
+except for UI-only changes.
