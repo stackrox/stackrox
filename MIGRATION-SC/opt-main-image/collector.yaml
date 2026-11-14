@@ -1,0 +1,525 @@
+
+
+
+
+
+
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.11.x-642-g9ef4d6250d
+    helm.sh/chart: sensor-400.11.0-642-g9ef4d6250d
+    service: collector
+    app: collector
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+  name: collector
+  namespace: stackrox
+spec:
+  selector:
+    matchLabels:
+      service: collector
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        service: collector
+        app: collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/instance: stackrox-secured-cluster-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-secured-cluster-services
+        app.kubernetes.io/version: 4.11.x-642-g9ef4d6250d
+        helm.sh/chart: sensor-400.11.0-642-g9ef4d6250d
+      annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-secured-cluster-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    spec:
+      tolerations:
+      - operator: Exists
+      serviceAccountName: collector
+      containers:
+      - name: collector
+        image: "example.com/collector:3.24.0-83-gcb7ff40e2b"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: COLLECTOR_CONFIG
+          value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
+        - name: COLLECTION_METHOD
+          value: CORE_BPF
+        - name: GRPC_SERVER
+          value: sensor.stackrox.svc:443
+        - name: SNI_HOSTNAME
+          value: "sensor.stackrox.svc"
+        
+        - name: "ROX_ADMISSION_CONTROLLER_CONFIG"
+          value: "true"
+        
+        - name: "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION"
+          value: "false"
+        
+        - name: "ROX_ATTEMPT_MANIFEST_DIGEST"
+          value: "true"
+        
+        - name: "ROX_AUTO_LOCK_PROCESS_BASELINES"
+          value: "true"
+        
+        - name: "ROX_BASE_IMAGE_DETECTION"
+          value: "true"
+        
+        - name: "ROX_CISA_KEV"
+          value: "false"
+        
+        - name: "ROX_CLUSTERS_PAGE_MIGRATION_UI"
+          value: "true"
+        
+        - name: "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK"
+          value: "true"
+        
+        - name: "ROX_CLUSTER_REGISTRATION_SECRETS"
+          value: "true"
+        
+        - name: "ROX_COMPLIANCE_ENHANCEMENTS"
+          value: "true"
+        
+        - name: "ROX_COMPLIANCE_REMEDIATION"
+          value: "true"
+        
+        - name: "ROX_COMPLIANCE_REPORTING"
+          value: "true"
+        
+        - name: "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS"
+          value: "true"
+        
+        - name: "ROX_CVE_FIX_TIMESTAMP"
+          value: "true"
+        
+        - name: "ROX_DELEGATED_BASE_IMAGE_SCANNING"
+          value: "false"
+        
+        - name: "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING"
+          value: "true"
+        
+        - name: "ROX_DEPLOYMENT_BUILD_OPTIMIZATION"
+          value: "true"
+        
+        - name: "ROX_EXTERNAL_IPS"
+          value: "true"
+        
+        - name: "ROX_FLATTEN_IMAGE_DATA"
+          value: "false"
+        
+        - name: "ROX_LABEL_BASED_POLICY_SCOPING"
+          value: "false"
+        
+        - name: "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS"
+          value: "false"
+        
+        - name: "ROX_NETWORK_GRAPH_EXTERNAL_IPS"
+          value: "true"
+        
+        - name: "ROX_NODE_INDEX_ENABLED"
+          value: "true"
+        
+        - name: "ROX_NODE_VULNERABILITY_REPORTS"
+          value: "false"
+        
+        - name: "ROX_OCP_CONSOLE_INTEGRATION"
+          value: "true"
+        
+        - name: "ROX_OPTIMIZED_BASELINE_MEMORY"
+          value: "false"
+        
+        - name: "ROX_PLATFORM_COMPONENTS"
+          value: "true"
+        
+        - name: "ROX_POLICY_CRITERIA_MODAL"
+          value: "false"
+        
+        - name: "ROX_SBOM_SCANNING"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_MAVEN_SEARCH"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_RED_HAT_CSAF"
+          value: "true"
+        
+        - name: "ROX_SCANNER_V4_RED_HAT_CVES"
+          value: "true"
+        
+        - name: "ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_REINDEX"
+          value: "true"
+        
+        - name: "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS"
+          value: "true"
+        
+        - name: "ROX_SCAN_SCHEDULE_REPORT_JOBS"
+          value: "true"
+        
+        - name: "ROX_SENSITIVE_FILE_ACTIVITY"
+          value: "true"
+        
+        - name: "ROX_SENSOR_INFORMER_WATCHDOG"
+          value: "true"
+        
+        - name: "ROX_SENSOR_PUBSUB"
+          value: "true"
+        
+        - name: "ROX_SENSOR_PULL_SECRETS_BY_NAME"
+          value: "true"
+        
+        - name: "ROX_SENSOR_SINGLE_SCAN"
+          value: "true"
+        
+        - name: "ROX_SOURCED_AUTOGENERATED_INTEGRATIONS"
+          value: "false"
+        
+        - name: "ROX_STORE_EVENT_HASHES"
+          value: "true"
+        
+        - name: "ROX_TAILORED_PROFILES"
+          value: "false"
+        
+        - name: "ROX_UNQUALIFIED_SEARCH_REGISTRIES"
+          value: "false"
+        
+        - name: "ROX_VIRTUAL_MACHINES"
+          value: "false"
+        
+        - name: "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL"
+          value: "false"
+        
+        - name: "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING"
+          value: "false"
+        
+        - name: "ROX_VULNERABILITY_VIEW_BASED_REPORTS"
+          value: "true"
+        
+        - name: "ROX_VULN_MGMT_LEGACY_SNOOZE"
+          value: "false"
+        
+        resources:
+          limits:
+            cpu: 750m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 320Mi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /host/proc
+          name: proc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/etc
+          name: etc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/usr/lib
+          name: usr-lib-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/sys
+          name: sys-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/dev
+          name: dev-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+        - mountPath: "/etc/stackrox"
+          name: collector-config
+          readOnly: true
+        - mountPath: /var/profiles
+          name: collector-profiles
+
+      - command:
+        - stackrox/compliance
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ROX_CALL_NODE_INVENTORY_ENABLED
+          value: "false"
+        - name: ROX_METRICS_PORT
+          value: "disabled"
+        - name: ROX_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: ROX_ADVERTISED_ENDPOINT
+          value: "sensor.stackrox.svc:443"
+        - name: ROX_NODE_SCANNING_ENDPOINT
+          value: "127.0.0.1:8444"
+        
+        - name: "ROX_ADMISSION_CONTROLLER_CONFIG"
+          value: "true"
+        
+        - name: "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION"
+          value: "false"
+        
+        - name: "ROX_ATTEMPT_MANIFEST_DIGEST"
+          value: "true"
+        
+        - name: "ROX_AUTO_LOCK_PROCESS_BASELINES"
+          value: "true"
+        
+        - name: "ROX_BASE_IMAGE_DETECTION"
+          value: "true"
+        
+        - name: "ROX_CISA_KEV"
+          value: "false"
+        
+        - name: "ROX_CLUSTERS_PAGE_MIGRATION_UI"
+          value: "true"
+        
+        - name: "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK"
+          value: "true"
+        
+        - name: "ROX_CLUSTER_REGISTRATION_SECRETS"
+          value: "true"
+        
+        - name: "ROX_COMPLIANCE_ENHANCEMENTS"
+          value: "true"
+        
+        - name: "ROX_COMPLIANCE_REMEDIATION"
+          value: "true"
+        
+        - name: "ROX_COMPLIANCE_REPORTING"
+          value: "true"
+        
+        - name: "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS"
+          value: "true"
+        
+        - name: "ROX_CVE_FIX_TIMESTAMP"
+          value: "true"
+        
+        - name: "ROX_DELEGATED_BASE_IMAGE_SCANNING"
+          value: "false"
+        
+        - name: "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING"
+          value: "true"
+        
+        - name: "ROX_DEPLOYMENT_BUILD_OPTIMIZATION"
+          value: "true"
+        
+        - name: "ROX_EXTERNAL_IPS"
+          value: "true"
+        
+        - name: "ROX_FLATTEN_IMAGE_DATA"
+          value: "false"
+        
+        - name: "ROX_LABEL_BASED_POLICY_SCOPING"
+          value: "false"
+        
+        - name: "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS"
+          value: "false"
+        
+        - name: "ROX_NETWORK_GRAPH_EXTERNAL_IPS"
+          value: "true"
+        
+        - name: "ROX_NODE_INDEX_ENABLED"
+          value: "true"
+        
+        - name: "ROX_NODE_VULNERABILITY_REPORTS"
+          value: "false"
+        
+        - name: "ROX_OCP_CONSOLE_INTEGRATION"
+          value: "true"
+        
+        - name: "ROX_OPTIMIZED_BASELINE_MEMORY"
+          value: "false"
+        
+        - name: "ROX_PLATFORM_COMPONENTS"
+          value: "true"
+        
+        - name: "ROX_POLICY_CRITERIA_MODAL"
+          value: "false"
+        
+        - name: "ROX_SBOM_SCANNING"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_MAVEN_SEARCH"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_PARTIAL_NODE_JS_SUPPORT"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_RED_HAT_CSAF"
+          value: "true"
+        
+        - name: "ROX_SCANNER_V4_RED_HAT_CVES"
+          value: "true"
+        
+        - name: "ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY"
+          value: "false"
+        
+        - name: "ROX_SCANNER_V4_REINDEX"
+          value: "true"
+        
+        - name: "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS"
+          value: "true"
+        
+        - name: "ROX_SCAN_SCHEDULE_REPORT_JOBS"
+          value: "true"
+        
+        - name: "ROX_SENSITIVE_FILE_ACTIVITY"
+          value: "true"
+        
+        - name: "ROX_SENSOR_INFORMER_WATCHDOG"
+          value: "true"
+        
+        - name: "ROX_SENSOR_PUBSUB"
+          value: "true"
+        
+        - name: "ROX_SENSOR_PULL_SECRETS_BY_NAME"
+          value: "true"
+        
+        - name: "ROX_SENSOR_SINGLE_SCAN"
+          value: "true"
+        
+        - name: "ROX_SOURCED_AUTOGENERATED_INTEGRATIONS"
+          value: "false"
+        
+        - name: "ROX_STORE_EVENT_HASHES"
+          value: "true"
+        
+        - name: "ROX_TAILORED_PROFILES"
+          value: "false"
+        
+        - name: "ROX_UNQUALIFIED_SEARCH_REGISTRIES"
+          value: "false"
+        
+        - name: "ROX_VIRTUAL_MACHINES"
+          value: "false"
+        
+        - name: "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL"
+          value: "false"
+        
+        - name: "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING"
+          value: "false"
+        
+        - name: "ROX_VULNERABILITY_VIEW_BASED_REPORTS"
+          value: "true"
+        
+        - name: "ROX_VULN_MGMT_LEGACY_SNOOZE"
+          value: "false"
+        
+        image: "example.com/main:4.11.x-642-g9ef4d6250d"
+        imagePullPolicy: IfNotPresent
+        name: compliance
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext:
+          runAsUser: 0
+          readOnlyRootFilesystem: true
+          
+          seLinuxOptions:
+            type: "container_runtime_t"
+          
+        volumeMounts:
+        - mountPath: /etc/ssl/
+          name: etc-ssl
+        - mountPath: /etc/pki/ca-trust/
+          name: etc-pki-volume
+        - mountPath: /host
+          name: host-root-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+      volumes:
+      - hostPath:
+          path: /proc
+        name: proc-ro
+      - hostPath:
+          path: /etc
+        name: etc-ro
+      - hostPath:
+          path: /usr/lib
+        name: usr-lib-ro
+      - hostPath:
+          path: /sys/
+        name: sys-ro
+      - hostPath:
+          path: /dev
+        name: dev-ro
+      - name: certs
+        secret:
+          secretName: collector-tls
+          optional: true
+          items:
+          - key: collector-cert.pem
+            path: cert.pem
+          - key: collector-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      - hostPath:
+          path: /
+        name: host-root-ro
+      - name: etc-ssl
+        emptyDir: {}
+      - name: etc-pki-volume
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+      - name: collector-profiles
+        emptyDir: {}
+      - name: cache-volume
+        emptyDir:
+          sizeLimit: 200Mi
+
+      - name: collector-config
+        configMap:
+          name: collector-config
+          optional: true
