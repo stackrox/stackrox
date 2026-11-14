@@ -42,16 +42,16 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	cmd.SetContext(ctx)
 	flags := cmd.PersistentFlags()
 
-	cmd.PersistentFlags().String("indexer-address", "", "Address of the indexer service")
-	cmd.PersistentFlags().String("matcher-address", "", "Address of the matcher service")
+	cmd.PersistentFlags().String("indexer-address", "127.0.0.1:8443", "Address of the indexer service")
+	cmd.PersistentFlags().String("matcher-address", "127.0.0.1:8443", "Address of the matcher service")
 
 	indexerServerName := flags.String(
 		"indexer-server-name",
-		"",
+		"localhost",
 		"Server name of the indexer service, primarily used for TLS verification.")
 	matcherServerName := flags.String(
 		"matcher-server-name",
-		"",
+		"localhost",
 		"Server name of the matcher service, primarily used for TLS verification.")
 	skipTLSVerify := flags.Bool(
 		"insecure-skip-tls-verify",
@@ -110,6 +110,7 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(scaleCmd(ctx))
 	cmd.AddCommand(sbomCmd(ctx))
 	cmd.AddCommand(scanVM(ctx))
+	cmd.AddCommand(metadataCmd(ctx))
 	return &cmd
 }
 
