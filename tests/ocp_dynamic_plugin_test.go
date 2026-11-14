@@ -18,6 +18,7 @@ import (
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	routeclient "github.com/openshift/client-go/route/clientset/versioned"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -165,9 +166,54 @@ func (s *OCPPluginSuite) SetupSuite() {
 	routeHost := waitForRouteHost(s.T(), s.ctx, rc, "acs-ocp-e2e-proxy-route")
 	s.proxyBaseURL = fmt.Sprintf("https://%s/proxy/central", routeHost)
 
+	// Earlier tests (e.g. delegated scanning) restart Sensor, and the route
+	// keeps answering 503 until the proxy on the new pod serves again.
+	waitForDeploymentReadyInK8s(s.T(), "sensor", "stackrox")
+	waitUntilCentralSensorConnectionIs(s.T(), s.ctx, storage.ClusterHealthStatus_HEALTHY)
+
 	s.noScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-noscope-sa")
 	s.nsScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-ns-sa")
 	s.clusterScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-cluster-sa")
+
+	s.waitForProxyReady()
+}
+
+// waitForProxyReady polls an allowed, forwarded endpoint through the proxy
+// route until it keeps answering for a sustained period. Route traffic can
+// flap for minutes after a Sensor restart even once the deployment is ready,
+// which the per-test retry budget does not absorb.
+func (s *OCPPluginSuite) waitForProxyReady() {
+	const (
+		stableWindow    = time.Minute
+		requestInterval = 5 * time.Second
+	)
+	ctx, cancel := context.WithTimeout(s.ctx, 8*time.Minute)
+	defer cancel()
+
+	var stableFor time.Duration
+	mustEventually(s.T(), ctx, func() error {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.proxyBaseURL+"/v1/metadata", nil)
+		if err != nil {
+			stableFor = 0
+			return err
+		}
+		req.Header.Set("Authorization", "Bearer "+s.noScopeToken)
+		resp, err := s.client.Do(req)
+		if err != nil {
+			stableFor = 0
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			stableFor = 0
+			return fmt.Errorf("proxy returned status %d", resp.StatusCode)
+		}
+		stableFor += requestInterval
+		if stableFor < stableWindow {
+			return fmt.Errorf("proxy stable for %s so far, need %s", stableFor, stableWindow)
+		}
+		return nil
+	}, requestInterval, "proxy route not ready")
 }
 
 // TestProxyPathEnforcement verifies the Sensor proxy's allowlist enforcement:
