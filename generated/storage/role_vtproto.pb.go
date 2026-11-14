@@ -58,6 +58,8 @@ func (m *PermissionSet) CloneVT() *PermissionSet {
 	r.Name = m.Name
 	r.Description = m.Description
 	r.Traits = m.Traits.CloneVT()
+	r.AccessConstraint = m.AccessConstraint
+	r.ScopeConstraint = m.ScopeConstraint
 	if rhs := m.ResourceToAccess; rhs != nil {
 		tmpContainer := make(map[string]Access, len(rhs))
 		for k, v := range rhs {
@@ -319,6 +321,12 @@ func (this *PermissionSet) EqualVT(that *PermissionSet) bool {
 		}
 	}
 	if !this.Traits.EqualVT(that.Traits) {
+		return false
+	}
+	if this.AccessConstraint != that.AccessConstraint {
+		return false
+	}
+	if this.ScopeConstraint != that.ScopeConstraint {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -718,6 +726,16 @@ func (m *PermissionSet) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ScopeConstraint != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ScopeConstraint))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.AccessConstraint != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.AccessConstraint))
+		i--
+		dAtA[i] = 0x40
 	}
 	if m.Traits != nil {
 		size, err := m.Traits.MarshalToSizedBufferVT(dAtA[:i])
@@ -1254,6 +1272,12 @@ func (m *PermissionSet) SizeVT() (n int) {
 	if m.Traits != nil {
 		l = m.Traits.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AccessConstraint != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.AccessConstraint))
+	}
+	if m.ScopeConstraint != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ScopeConstraint))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2052,6 +2076,44 @@ func (m *PermissionSet) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessConstraint", wireType)
+			}
+			m.AccessConstraint = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AccessConstraint |= AccessConstraint(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScopeConstraint", wireType)
+			}
+			m.ScopeConstraint = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ScopeConstraint |= ScopeConstraint(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3955,6 +4017,44 @@ func (m *PermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessConstraint", wireType)
+			}
+			m.AccessConstraint = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AccessConstraint |= AccessConstraint(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScopeConstraint", wireType)
+			}
+			m.ScopeConstraint = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ScopeConstraint |= ScopeConstraint(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

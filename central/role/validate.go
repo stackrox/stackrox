@@ -92,10 +92,28 @@ func ValidatePermissionSet(ps *storage.PermissionSet) error {
 	if ps.GetName() == "" {
 		multiErr = multierror.Append(multiErr, errors.New("name field must be set"))
 	}
-	for resource := range ps.GetResourceToAccess() {
-		if _, ok := resources.MetadataForResource(permissions.Resource(resource)); !ok {
+	if _, ok := storage.AccessConstraint_name[int32(ps.GetAccessConstraint())]; !ok {
+		multiErr = multierror.Append(multiErr, errors.Errorf("unknown access constraint %d", ps.GetAccessConstraint()))
+	}
+	if _, ok := storage.ScopeConstraint_name[int32(ps.GetScopeConstraint())]; !ok {
+		multiErr = multierror.Append(multiErr, errors.Errorf("unknown scope constraint %d", ps.GetScopeConstraint()))
+	}
+	for resource, access := range ps.GetResourceToAccess() {
+		metadata, ok := resources.MetadataForResource(permissions.Resource(resource))
+		if !ok {
 			multiErr = multierror.Append(multiErr, errors.Errorf(
 				"resource %q does not exist", resource))
+			continue
+		}
+		if ps.GetAccessConstraint() == storage.AccessConstraint_ACCESS_CONSTRAINT_READ &&
+			access != storage.Access_NO_ACCESS && access != storage.Access_READ_ACCESS {
+			multiErr = multierror.Append(multiErr, errors.Errorf(
+				"read-constrained permission set cannot grant %s access to resource %q", access, resource))
+		}
+		if ps.GetScopeConstraint() == storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE && access != storage.Access_NO_ACCESS &&
+			metadata.GetScope() == permissions.GlobalScope {
+			multiErr = multierror.Append(multiErr, errors.Errorf(
+				"cluster-namespace-constrained permission set cannot grant access to global resource %q", resource))
 		}
 	}
 

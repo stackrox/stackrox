@@ -15723,6 +15723,30 @@
             ]
           },
           {
+            "name": "AccessConstraint",
+            "enum_fields": [
+              {
+                "name": "ACCESS_CONSTRAINT_UNSPECIFIED"
+              },
+              {
+                "name": "ACCESS_CONSTRAINT_READ",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "ScopeConstraint",
+            "enum_fields": [
+              {
+                "name": "SCOPE_CONSTRAINT_UNSPECIFIED"
+              },
+              {
+                "name": "SCOPE_CONSTRAINT_CLUSTER_NAMESPACE",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "EffectiveAccessScope.State",
             "enum_fields": [
               {
@@ -15826,6 +15850,16 @@
                 "id": 5,
                 "name": "traits",
                 "type": "Traits"
+              },
+              {
+                "id": 8,
+                "name": "access_constraint",
+                "type": "AccessConstraint"
+              },
+              {
+                "id": 9,
+                "name": "scope_constraint",
+                "type": "ScopeConstraint"
               }
             ],
             "maps": [
@@ -15837,6 +15871,14 @@
                   "type": "Access"
                 }
               }
+            ],
+            "reserved_ids": [
+              6,
+              7
+            ],
+            "reserved_names": [
+              "read_access_only",
+              "scoped_only"
             ]
           },
           {

@@ -32,6 +32,8 @@ message GetPermissionsResponse {
 
 message GetResourcesResponse {
   repeated string resources = 1;
+  // Resources whose permissions are not restricted by a cluster or namespace scope.
+  repeated string global_resources = 2;
 }
 
 message ListPermissionSetsResponse {

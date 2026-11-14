@@ -35,3 +35,29 @@ resources:
 	assert.NoError(t, err)
 	assert.Equal(t, string(data), string(bytes))
 }
+
+func TestPermissionSetConstraintYAML(t *testing.T) {
+	data := []byte(`name: scoped-reader
+accessConstraint: ACCESS_CONSTRAINT_READ
+scopeConstraint: SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
+`)
+	var ps PermissionSet
+	assert.NoError(t, yaml.Unmarshal(data, &ps))
+	assert.Equal(t, storage.AccessConstraint_ACCESS_CONSTRAINT_READ, storage.AccessConstraint(ps.AccessConstraint))
+	assert.Equal(t, storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE, storage.ScopeConstraint(ps.ScopeConstraint))
+	encoded, err := yaml.Marshal(&ps)
+	assert.NoError(t, err)
+	assert.Equal(t, string(data), string(encoded))
+}
+
+func TestPermissionSetInvalidConstraintYAML(t *testing.T) {
+	for name, data := range map[string]string{
+		"access": "accessConstraint: invalid",
+		"scope":  "scopeConstraint: invalid",
+	} {
+		t.Run(name, func(t *testing.T) {
+			var ps PermissionSet
+			assert.Error(t, yaml.Unmarshal([]byte(data), &ps))
+		})
+	}
+}
