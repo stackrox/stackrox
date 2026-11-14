@@ -775,15 +775,14 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     needs:
       - define-job-matrix
-      - pre-build-cli
-      - pre-build-docs
-      - pre-build-go-binaries
-      - pre-build-oss-notice
-      - pre-build-ui
-    # This step will run even if required pre-* steps failed. By following this
-    # approach as much of the build matrix as possible is completed despite
-    # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
-    # require some part of the build matrix can still proceed.
+    # DE-COUPLED from pre-build jobs: the blob store replaces GitHub
+    # artifacts as the inter-job transport, so the hard `needs` gating
+    # is unnecessary. This job starts immediately (setup, docker login,
+    # buildx config all overlap with the pre-build phase) and polls the
+    # blob store for build outputs instead of waiting for job completion.
+    # Saves setup time per image leg by overlapping it with the slowest
+    # pre-build (go-binaries at ~2.5m). The `if` still allows building
+    # as much of the matrix as possible despite transient failures.
     if: ${{ !cancelled() }}
     strategy:
       # Supports four image builds (see Setup build env):
@@ -873,6 +872,43 @@ jobs:
         run: |
             git submodule update --init
 
+      - name: Wait for build outputs in blob store
+        # Poll until all required build outputs are stored and verified.
+        # Uses the fetch-any marker check (tiny GETs). The blob store's
+        # hash-marker system means a verified blob is complete and correct.
+        # Timeout: 15 minutes (generous; pre-builds complete in ~3m).
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          GCS="${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve"
+          UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
+          REQUIRED=(
+            "go-binaries-${{ matrix.arch }}-default"
+            "ui-build-${{ matrix.branding }}-${UI_HASH}"
+          )
+          echo "Waiting for: ${REQUIRED[@]}"
+          deadline=$((SECONDS + 900))
+          while [ $SECONDS -lt $deadline ]; do
+            all_ready=true
+            for key in "${REQUIRED[@]}"; do
+              if ! "$GCS" -fetch-any "$key" /dev/null 2>/dev/null; then
+                all_ready=false
+                break
+              fi
+            done
+            if $all_ready; then
+              echo "All build outputs ready after ${SECONDS}s"
+              exit 0
+            fi
+            echo "  waiting... (${SECONDS}s elapsed)"
+            sleep 15
+          done
+          echo "::error::Timed out waiting for build outputs after 15m"
+          exit 1
+
       - name: Fetch built UI from blob store (fast path)
         run: |
           set -euo pipefail
@@ -936,6 +972,15 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
+      - name: Docker login
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
       - name: Build main images
         env:
           # Layer cache from the previous run's pushed image: with
@@ -960,15 +1005,6 @@ jobs:
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
       - name: Push images
         # Skip for external contributions.
