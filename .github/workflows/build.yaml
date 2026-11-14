@@ -24,6 +24,17 @@ defaults:
     # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
     shell: bash
 
+env:
+  # Azure blob-store credentials for the shared CI cache (gocache-serve).
+  # Set ONCE here; the cache-go-dependencies and cache-ui-dependencies
+  # actions read them from the environment — no per-call-site plumbing.
+  # Note: this exposes them to all jobs in this workflow; GitHub masks
+  # secret values in logs, and the SPN is scoped to blob access on the
+  # cache accounts only.
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+
 jobs:
   define-job-matrix:
     outputs:
@@ -169,7 +180,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          fetch-depth: 0
+          # Shallow: the UI job reads git-tracked file CONTENT for the
+          # source hash but never runs git describe (no version stamping
+          # in JS builds). Full clone was 21s; shallow is ~2s.
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -184,17 +198,73 @@ jobs:
       - name: Cache UI dependencies
         id: cache-ui
         uses: ./.github/actions/cache-ui-dependencies
-
       - name: Fetch UI deps
         if: steps.cache-ui.outputs.cache-hit != 'true'
         run: make -C ui deps
+
+      - name: Store UI deps in blob store
+        # Run on any non-blob restore (miss OR GHA-cache hit): a GHA-cache
+        # hit must still migrate content into the blob store, or the
+        # fallback becomes a permanent dependency instead of a fallback.
+        if: steps.cache-ui.outputs.blob-hit != 'true'
+        run: |
+          set -euo pipefail
+          KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
+          # Cypress is optional: GHA-cache migration paths may lack it
+          # (a GHA cache hit can restore node_modules without ~/.cache/Cypress
+          # ever having been populated), and pre-build-ui doesn't need it —
+          # only UI test jobs do. A hard -C on a missing dir fails the tar.
+          TAR_ARGS=(-C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules)
+          if [ -d "$HOME/.cache/Cypress" ]; then
+            TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
+          fi
+          tar -cf /tmp/ui-deps.tar "${TAR_ARGS[@]}"
+          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "$KEY" /tmp/ui-deps.tar
+          echo "ui deps: stored (${KEY}, $(du -h /tmp/ui-deps.tar | cut -f1))"
 
       - name: Skip UI deps on cache hit
         if: steps.cache-ui.outputs.cache-hit == 'true'
         run: touch ui/deps
 
+      - name: Compute UI source hash
+        run: |
+          # Git-tracked ui/ content, computed BEFORE the build (build may
+          # generate files that would diverge the hash). Consumers
+          # (build-and-push-main) derive the identical key from their
+          # clean checkout: reuse across commits that don't touch ui/.
+          UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
+          echo "UI_BUILD_BLOB_KEY=ui-build-${{ matrix.branding }}-${UI_HASH}" >> "$GITHUB_ENV"
+          echo "ui source hash: ${UI_HASH}"
+
+      - name: Fetch built UI from blob store (skip build on hit)
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # Same content-addressed key as the store step: a warm run
+          # (unchanged ui/ source) fetches the ~12MB build output in
+          # ~2s instead of running the 95s webpack build.
+          if "${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" -fetch-any "$UI_BUILD_BLOB_KEY" /tmp/ui-prebuilt.tar && [ -s /tmp/ui-prebuilt.tar ]; then
+            tar -xf /tmp/ui-prebuilt.tar -C "$GITHUB_WORKSPACE"
+            echo "UI_SKIPPED=true" >> "$GITHUB_ENV"
+            echo "ui build: SKIPPED (restored from blob store, ~2s vs ~95s webpack)"
+          else
+            echo "UI_SKIPPED=false" >> "$GITHUB_ENV"
+            echo "ui build: cache miss — will build"
+          fi
+
       - name: Build UI
+        if: env.UI_SKIPPED != 'true'
         run: make -C ui build
+
+      - name: Store built UI in blob store
+        run: |
+          set -euo pipefail
+          tar -cf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE" ui/build
+          "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "$UI_BUILD_BLOB_KEY" /tmp/ui-build.tar
+          echo "ui build: stored (${UI_BUILD_BLOB_KEY}, $(du -h /tmp/ui-build.tar | cut -f1))"
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -208,8 +278,9 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-24.04
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # BUILD_TAG/SHORTCOMMIT deliberately not set: the cache action's stable
+      # defaults (0.0.0/0000000) make binaries deterministic across commits.
+      # Release workflows set real values; operator-bundle keeps its own.
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -258,6 +329,9 @@ jobs:
             || github.event_name == 'workflow_call'
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          gocache-backend: cloud
+          manifest-write-override: '1'
 
       - name: Build CLI
         if: |
@@ -266,6 +340,27 @@ jobs:
             || github.event_name == 'workflow_call'
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         run: make cli
+
+      - name: Store CLI binaries in blob store (link-output caching)
+        if: |
+          needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
+        run: |
+          set -euo pipefail
+          # Store roxctl for link-output caching (stub bypass on next run)
+          if [ -f bin/linux_amd64/roxctl ]; then
+            "${GOCACHEPROG}" -store "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+            BID=$(go tool buildid bin/linux_amd64/roxctl 2>/dev/null || true)
+            if [ -n "$BID" ]; then
+              printf '%s' "$BID" > /tmp/outbin-meta
+              "${GOCACHEPROG}" -store "outbin-META-linux_amd64" /tmp/outbin-meta 2>&1 | tail -1 || true
+              ABID=$(printf '%s' "$BID" | cut -d/ -f1)
+              "${GOCACHEPROG}" -store "outbin-${ABID}-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+              echo "stored outbin (META + exact key ${ABID:0:16}...)"
+            fi
+          fi
 
       - name: Bundle build to preserve permissions
         run: tar -cvf cli-build.tar bin
@@ -287,8 +382,9 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-24.04
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      # BUILD_TAG/SHORTCOMMIT deliberately not set: the cache action's stable
+      # defaults (0.0.0/0000000) make binaries deterministic across commits.
+      # Release workflows set real values; operator-bundle keeps its own.
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
@@ -308,6 +404,53 @@ jobs:
           # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
           # Default and prerelease share 93% of entries and should use the same cache.
           key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
+          gocache-backend: cloud
+          manifest-write-override: '1'
+
+      - name: Restore vendor directory (deterministic builds)
+        run: |
+          set -euo pipefail
+          VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
+          GCS="${GOCACHEPROG}"
+          VENDOR_RESTORED=0
+          if "$GCS" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz && [ -s /tmp/vendor.tar.gz ]; then
+            tar -xf /tmp/vendor.tar.gz
+            VENDOR_RESTORED=1
+            echo "vendor: restored from blob store (${VENDOR_KEY})"
+          fi
+          if [ "$VENDOR_RESTORED" != "1" ]; then
+            echo "vendor: generating (cache miss for ${VENDOR_KEY})"
+            echo "--- fetch error (if any) ---"; cat /tmp/vendor-fetch.err 2>/dev/null | head -5 || true
+            # Disable GOCACHEPROG for go mod vendor: it doesn't use the build
+            # cache, and gocache-serve's startup (blob store connection,
+            # manifest download, prefetch) adds overhead to every go command.
+            # Module downloads need the module cache, not the build cache.
+            GCP="$GOCACHEPROG"
+            unset GOCACHEPROG
+            go mod vendor 2>&1 | tail -3
+            export GOCACHEPROG="$GCP"
+            # NOTE: no store here — the vendor tree is stored only AFTER
+            # the build succeeds (see the post-build step). Storing before
+            # the build poisoned a replica with an incomplete tree once
+            # (the generating run's build failed; every later fetch of
+            # that key missed packages). The key vouches for the go.sum
+            # input, never the content.
+          fi
+          export GOFLAGS="${GOFLAGS} -mod=vendor"
+          echo "GOFLAGS=${GOFLAGS}" >> "$GITHUB_ENV"
+          echo "VENDOR_KEY=$VENDOR_KEY" >> "$GITHUB_ENV"
+          echo "VENDOR_RESTORED=$VENDOR_RESTORED" >> "$GITHUB_ENV"
+
+      - name: Restore link-output cache (stub bypass)
+        run: |
+          set -euo pipefail
+          mkdir -p bin/linux_${{ matrix.arch }}
+          if "${GOCACHEPROG}" -fetch "outbin-LATEST-linux_${{ matrix.arch }}" bin/linux_${{ matrix.arch }}/roxctl 2>/dev/null \
+            && [ "$(stat -c%s bin/linux_${{ matrix.arch }}/roxctl 2>/dev/null || echo 0)" -gt 1000000 ]; then
+            echo "link-output: roxctl restored from outbin cache"
+          else
+            rm -f bin/linux_${{ matrix.arch }}/roxctl
+          fi
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
@@ -355,15 +498,46 @@ jobs:
       - name: Build Go Binaries
         run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
 
-      - name: Bundle the build to preserve permissions
-        run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
+      - name: Store vendor tree in blob store (post-build, proven good)
+        # Only after a successful build: an incomplete vendor tree must
+        # never enter the store (a pre-build store once poisoned a
+        # replica — the generating run's build failed, and every later
+        # fetch of that key missed packages). Reaching this step at all
+        # means this exact tree compiled the whole repo successfully.
+        if: env.VENDOR_RESTORED == '0'
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/vendor.tar.gz vendor/
+          "${GOCACHEPROG}" -store-all "$VENDOR_KEY" /tmp/vendor.tar.gz 2>&1 | tail -1
+          echo "vendor: stored post-build (${VENDOR_KEY}, $(du -h /tmp/vendor.tar.gz | cut -f1))"
 
-      - uses: ./.github/actions/upload-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: go-binaries-build.tar
-          compression-level: 1
-          retention-days: '1'
+      - name: Store binaries in blob store (replaces artifact upload)
+        run: |
+          set -euo pipefail
+          # Determinism tracking: per-binary hashes in the log for
+          # cross-run byte-identity comparison (binaries only — the
+          # enclosing tar carries nondeterministic mtimes).
+          echo "=== binary hashes (determinism tracking) ==="
+          sha256sum bin/linux_${{ matrix.arch }}/* | sort
+          # Store roxctl for link-output caching (stub bypass on next run)
+          if [ -f bin/linux_${{ matrix.arch }}/roxctl ]; then
+            "${GOCACHEPROG}" -store "outbin-LATEST-linux_${{ matrix.arch }}" bin/linux_${{ matrix.arch }}/roxctl 2>&1 | tail -1 || true
+            echo "stored outbin-LATEST-linux_${{ matrix.arch }} ($(stat -c%s bin/linux_${{ matrix.arch }}/roxctl) bytes)"
+          fi
+          # Store all binaries for the container build (blob store reference)
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-${{ matrix.name }}"
+          # Reproducible tar: zeroed mtimes + sorted names make the tar
+          # byte-identical when the payload is — so store-all's marker
+          # check skips the upload entirely on warm runs (freshly-built
+          # binaries carry new mtimes otherwise; the tar hash then differs
+          # every run and 4GB re-uploads for nothing).
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
+          "${GOCACHEPROG}" -store-all "$BLOB_KEY" /tmp/go-binaries.tar 2>&1 | tail -1
+          echo "stored $BLOB_KEY ($(stat -c%s /tmp/go-binaries.tar) bytes)"
+          # Artifact upload removed: the blob store fully replaces it
+          # (verified markers + all-replica stores + read-through fallback;
+          # the ~22s/leg artifact upload was pure overhead after the
+          # 2s blob fetch proved reliable).
 
   pre-build-docs:
     runs-on: ubuntu-24.04
@@ -380,6 +554,9 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          gocache-backend: cloud
+          manifest-write-override: '1'
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
@@ -417,6 +594,9 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        gocache-backend: cloud
+        manifest-write-override: '1'
 
     - name: Cache UI dependencies
       id: cache-ui
@@ -438,6 +618,16 @@ jobs:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
         retention-days: '1'
+
+    - name: Store oss-notice in blob store
+      env:
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      run: |
+        set -euo pipefail
+        tar -cf /tmp/oss-notice.tar -C image/rhel THIRD_PARTY_NOTICES
+        "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "oss-notice-LATEST" /tmp/oss-notice.tar
 
   build-and-push-db:
     runs-on: ubuntu-24.04
@@ -547,12 +737,17 @@ jobs:
 
   build-operator-bundle:
     runs-on: ubuntu-24.04
+    needs: define-job-matrix
     env:
       QUAY_ORG: rhacs-eng
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
       ROX_PRODUCT_BRANDING: RHACS_BRANDING
+      # Real version: the bundle's Y-Stream tooling parses it. The cache
+      # action respects this and skips its deterministic 0.0.0 stamp.
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -566,6 +761,9 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          gocache-backend: cloud
+          manifest-write-override: '1'
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -587,15 +785,14 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     needs:
       - define-job-matrix
-      - pre-build-cli
-      - pre-build-docs
-      - pre-build-go-binaries
-      - pre-build-oss-notice
-      - pre-build-ui
-    # This step will run even if required pre-* steps failed. By following this
-    # approach as much of the build matrix as possible is completed despite
-    # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
-    # require some part of the build matrix can still proceed.
+    # DE-COUPLED from pre-build jobs: the blob store replaces GitHub
+    # artifacts as the inter-job transport, so the hard `needs` gating
+    # is unnecessary. This job starts immediately (setup, docker login,
+    # buildx config all overlap with the pre-build phase) and polls the
+    # blob store for build outputs instead of waiting for job completion.
+    # Saves setup time per image leg by overlapping it with the slowest
+    # pre-build (go-binaries at ~2.5m). The `if` still allows building
+    # as much of the matrix as possible despite transient failures.
     if: ${{ !cancelled() }}
     strategy:
       # Supports four image builds (see Setup build env):
@@ -671,11 +868,96 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
 
+      - name: Set up cloud GOCACHE (for blob store binary fetch)
+        run: |
+          set -euo pipefail
+          echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
+          echo "AZURE_TENANT_ID=$AZURE_TENANT_ID" >> "$GITHUB_ENV"
+          echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" >> "$GITHUB_ENV"
+          echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> "$GITHUB_ENV"
+
       - name: Checkout submodules
         run: |
             git submodule update --init
 
+      - name: Wait for build outputs in blob store
+        # Poll until all required build outputs are stored and verified.
+        # MARKER-ONLY checks (tiny GETs on KEY.sha256) — never downloads
+        # the content. The blob store's hash-marker system means a
+        # marker's presence implies complete, verified content.
+        # Note: branding comes from matrix.name here (not matrix.branding
+        # which is pre-build-ui's variable) — mapped the same way the
+        # Setup build env step does.
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          # Derive branding the same way Setup build env does
+          case "${{ matrix.name }}" in
+            RHACS_BRANDING) BRAND="RHACS_BRANDING" ;;
+            *) BRAND="STACKROX_BRANDING" ;;
+          esac
+          UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
+          REQUIRED=(
+            "go-binaries-${{ matrix.arch }}-default"
+            "ui-build-${BRAND}-${UI_HASH}"
+            "oss-notice-LATEST"
+          )
+          echo "Waiting for: ${REQUIRED[@]}"
+          TOKEN=$(curl -s --max-time 5 -X POST \
+            "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
+            --data-urlencode "grant_type=client_credentials" \
+            --data-urlencode "client_id=${AZURE_CLIENT_ID}" \
+            --data-urlencode "client_secret=${AZURE_CLIENT_SECRET}" \
+            --data-urlencode "scope=https://storage.azure.com/.default" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("access_token",""))')
+          if [ -z "$TOKEN" ]; then echo "::error::cannot get Azure token for polling"; exit 1; fi
+          deadline=$((SECONDS + 900))
+          while [ $SECONDS -lt $deadline ]; do
+            all_ready=true
+            for key in "${REQUIRED[@]}"; do
+              # marker-only GET: tiny, no content download
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+                -H "Authorization: Bearer $TOKEN" -H "x-ms-version: 2021-08-06" \
+                "https://cigocache.blob.core.windows.net/ci-gocache/${key}.sha256")
+              if [ "$code" != "200" ]; then
+                all_ready=false
+                break
+              fi
+            done
+            if $all_ready; then
+              echo "All build outputs ready after ${SECONDS}s"
+              exit 0
+            fi
+            echo "  waiting... (${SECONDS}s elapsed, last check: $code)"
+            sleep 15
+          done
+          echo "::error::Timed out waiting for build outputs after 15m"
+          exit 1
+
+      - name: Fetch built UI from blob store (fast path)
+        run: |
+          set -euo pipefail
+          # Same git-based key derivation as pre-build-ui (computed on
+          # clean checkout there, pre-build). On hit, replaces the ~60s
+          # artifact download with a ~2s blob fetch; on miss the
+          # artifact path below runs.
+          UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
+          KEY="ui-build-${ROX_PRODUCT_BRANDING}-${UI_HASH}"
+          GCS="${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve"
+          if "$GCS" -fetch-any "$KEY" /tmp/ui-build.tar && [ -s /tmp/ui-build.tar ]; then
+            tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
+            echo "ui build: fetched from blob store (${KEY}, ~2s)"
+          else
+            echo "ui build: all replicas missed for ${KEY} — using artifact download"
+          fi
+
       - uses: ./.github/actions/download-artifact-with-retry
+        if: hashFiles('ui/build/**') == ''
         with:
           name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
           path: ui
@@ -688,23 +970,35 @@ jobs:
         run: |
           tar xvf cli-build.tar
 
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
-
-      - name: Unpack Go binaries build
+      - name: Fetch Go binaries from blob store (fast path)
         run: |
-          tar xvf go-binaries-build.tar
+          set -euo pipefail
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-default"
+          if "${GOCACHEPROG}" -fetch "$BLOB_KEY" /tmp/go-binaries.tar 2>/dev/null && [ -s /tmp/go-binaries.tar ]; then
+            tar xvf /tmp/go-binaries.tar
+            echo "binaries: fetched from blob store (${BLOB_KEY}, ~2s)"
+          else
+            echo "binaries: blob store miss — will use artifact download"
+          fi
+
+      # Artifact download removed: blob store fetch above is the only path
+      # (markers + all-replica + read-through = reliable).
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: docs-build
           path: image/rhel/docs
 
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: oss-notice
-          path: image/rhel/THIRD_PARTY_NOTICES
+      - name: Fetch oss-notice from blob store
+        run: |
+          set -euo pipefail
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "oss-notice-LATEST" /tmp/oss-notice.tar && [ -s /tmp/oss-notice.tar ]; then
+            tar -xf /tmp/oss-notice.tar -C image/rhel
+            echo "oss-notice: fetched from blob store"
+          else
+            echo "::error::oss-notice not found in blob store"
+            exit 1
+          fi
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
@@ -714,7 +1008,23 @@ jobs:
         if: matrix.name == 'race-condition-debug'
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
+      - name: Docker login
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
       - name: Build main images
+        env:
+          # Layer cache from the previous run's pushed image: with
+          # COPY --link + deterministic binaries, unchanged content
+          # produces identical layers → full cache hit → fast build,
+          # push dedups to zero layers. The cache tag is updated after
+          # each successful push (see the update step below).
+          DOCKER_CACHE_FROM: ${{ matrix.name == 'RHACS_BRANDING' && 'quay.io/rhacs-eng/main' || 'quay.io/stackrox-io/main' }}:cache-${{ matrix.arch }}
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
@@ -731,15 +1041,6 @@ jobs:
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
       - name: Push images
         # Skip for external contributions.
@@ -758,6 +1059,17 @@ jobs:
               push_context="merge-to-master"
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+      - name: Update layer cache tag
+        # Point the cache tag at the just-pushed image for the next run's --cache-from.
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          if [ "${{ matrix.name }}" = "RHACS_BRANDING" ]; then REG="quay.io/rhacs-eng"; else REG="quay.io/stackrox-io"; fi
+          TAG="${{ needs.define-job-matrix.outputs.build-tag }}"
+          CACHE_TAG="cache-${{ matrix.arch }}"
+          docker buildx imagetools create -t "${REG}/main:${CACHE_TAG}" "${REG}/main:${TAG}-${{ matrix.arch }}" 2>&1 | tail -1
+          echo "layer cache tag updated"
 
   push-matching-collector-scanner:
     runs-on: ubuntu-24.04
@@ -945,13 +1257,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
 
-      - name: Download prebuilt operator binaries
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-default
-
-      - name: Extract prebuilt binaries
-        run: tar xf go-binaries-build.tar
+      - name: Fetch operator binaries from blob store
+        run: |
+          set -euo pipefail
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-default"
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "$BLOB_KEY" /tmp/op-binaries.tar && [ -s /tmp/op-binaries.tar ]; then
+            tar -xf /tmp/op-binaries.tar
+            echo "operator binaries: fetched from blob store (${BLOB_KEY})"
+          else
+            echo "::error::operator binaries not found in blob store (${BLOB_KEY})"
+            exit 1
+          fi
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1075,12 +1391,17 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-
-      - name: Unpack Go binaries
-        run: tar xvf go-binaries-build.tar
+      - name: Fetch Go binaries from blob store
+        run: |
+          set -euo pipefail
+          BLOB_KEY="go-binaries-${{ matrix.arch }}-${{ matrix.name }}"
+          if "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -fetch-any "$BLOB_KEY" /tmp/sc-binaries.tar && [ -s /tmp/sc-binaries.tar ]; then
+            tar -xf /tmp/sc-binaries.tar
+            echo "binaries: fetched from blob store (${BLOB_KEY})"
+          else
+            echo "::error::binaries not found in blob store (${BLOB_KEY})"
+            exit 1
+          fi
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:

@@ -94,8 +94,14 @@ ENV PATH="/stackrox:$PATH" \
     ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
     ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
-COPY static-bin /stackrox/
-COPY --from=downloads /output/go/ /go/
+# All COPY --link instructions create independently cacheable layers.
+# When a binary changes, only that binary's layer is rebuilt and pushed;
+# the other layers are referenced from the previous build (BuildKit
+# content-addresses each --link layer independently). This makes
+# incremental container builds possible: a PR that changes central does
+# not invalidate the sensor, roxctl, UI, or static-data layers.
+COPY --link static-bin /stackrox/
+COPY --link --from=downloads /output/go/ /go/
 
 RUN \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
@@ -108,23 +114,23 @@ RUN \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
 
-COPY --from=stackrox_data /stackrox-data /stackrox/static-data
-COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
-COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
-COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
+COPY --link --from=stackrox_data /stackrox-data /stackrox/static-data
+COPY --link ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
+COPY --link ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
+COPY --link THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
-COPY ui /ui
+COPY --link ui /ui
 
-COPY bin/central            /stackrox/central
-COPY bin/migrator           /stackrox/bin/migrator
-COPY bin/compliance         /stackrox/bin/compliance
-COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
-COPY bin/admission-control  /stackrox/bin/admission-control
-COPY bin/config-controller  /stackrox/bin/config-controller
-COPY bin/central-worker     /stackrox/bin/central-worker
-COPY bin/roxagent           /stackrox/bin/roxagent
-COPY --from=cli-tarballs /tmp/roxctl/roxctl-*.tar.gz /assets/downloads/cli/
-COPY --from=cli-tarballs /tmp/roxctl/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
+COPY --link bin/central            /stackrox/central
+COPY --link bin/migrator           /stackrox/bin/migrator
+COPY --link bin/compliance         /stackrox/bin/compliance
+COPY --link bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY --link bin/admission-control  /stackrox/bin/admission-control
+COPY --link bin/config-controller  /stackrox/bin/config-controller
+COPY --link bin/central-worker     /stackrox/bin/central-worker
+COPY --link bin/roxagent           /stackrox/bin/roxagent
+COPY --link --from=cli-tarballs /tmp/roxctl/roxctl-*.tar.gz /assets/downloads/cli/
+COPY --link --from=cli-tarballs /tmp/roxctl/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 

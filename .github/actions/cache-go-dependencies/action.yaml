@@ -9,6 +9,26 @@ inputs:
     description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
     required: false
     default: ''
+  gocache-backend:
+    description: "GOCACHE backend: 'gha' (GitHub Actions cache) or 'cloud' (gocache-serve GOCACHEPROG, Azure Blob)"
+    required: false
+    default: 'gha'
+  manifest-write-override:
+    description: "Force manifest writes on PR runs ('1' = write; default '' = master-only). Composite actions cannot read the vars context, so the workflow-level testing override must come in as an input."
+    required: false
+    default: ''
+  azure-tenant-id:
+    description: Azure SPN tenant ID (cloud backend)
+    required: false
+    default: ''
+  azure-client-id:
+    description: Azure SPN client ID (cloud backend)
+    required: false
+    default: ''
+  azure-client-secret:
+    description: Azure SPN client secret (cloud backend)
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -45,7 +65,7 @@ runs:
       shell: bash
 
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: inputs.gocache-backend != 'cloud' && inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -55,7 +75,7 @@ runs:
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: inputs.gocache-backend != 'cloud' && ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -64,7 +84,75 @@ runs:
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
+    # Cloud backend: replace the GHA GOCACHE archive with gocache-serve
+    # (GOCACHEPROG). Entries are content-addressed in Azure Blob Storage:
+    # selective lazy fetches instead of an all-or-nothing archive restore,
+    # async uploads during the build, and advisory compile leases between
+    # concurrent runners. The GHA save/restore/backdate/trim steps above
+    # are skipped (content addressing makes mtime-based stale detection
+    # unnecessary); the mtime-stabilization step below still applies (it
+    # protects the module index and test cache, which are not GOCACHEPROG).
+    - name: Set up cloud GOCACHE (gocache-serve)
+      if: inputs.gocache-backend == 'cloud'
+      env:
+        INPUT_TENANT: ${{ inputs.azure-tenant-id }}
+        INPUT_CLIENT: ${{ inputs.azure-client-id }}
+        INPUT_SECRET: ${{ inputs.azure-client-secret }}
+      run: |
+        set -euo pipefail
+        # Credentials: action inputs take precedence, then workflow-level
+        # env (AZURE_*). Composite actions cannot read the secrets context,
+        # so callers either pass inputs or set workflow env once — the
+        # zero-plumbing path.
+        export AZURE_TENANT_ID="${INPUT_TENANT:-${AZURE_TENANT_ID:-}}"
+        export AZURE_CLIENT_ID="${INPUT_CLIENT:-${AZURE_CLIENT_ID:-}}"
+        export AZURE_CLIENT_SECRET="${INPUT_SECRET:-${AZURE_CLIENT_SECRET:-}}"
+        if [ -z "$AZURE_TENANT_ID" ] || [ -z "$AZURE_CLIENT_ID" ] || [ -z "$AZURE_CLIENT_SECRET" ]; then
+          echo "::error::cloud GOCACHE backend requires Azure credentials (action inputs or workflow-level AZURE_* env)"
+          exit 1
+        fi
+        # Self-contained bootstrap: downloads the pre-built binary from
+        # blob store (~1s) or builds from source (~30s) as fallback,
+        # then execs into the result. The cache server bootstraps from
+        # the very store it serves.
+        echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+        # Manifest name mirrors the GHA cache key structure: job + matrix
+        # suffix + arch. Matrix legs and architectures have disjoint
+        # ActionID working sets, so their manifests must not mix.
+        manifest="$(echo "${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}" \
+          | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed 's/-\+/-/g; s/^-//; s/-$//')"
+        echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+        echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
+        echo "GOCACHE_SERVE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+        echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+        echo "AZURE_TENANT_ID=$AZURE_TENANT_ID" >> "$GITHUB_ENV"
+        echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID" >> "$GITHUB_ENV"
+        echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> "$GITHUB_ENV"
+        # Deterministic builds: stable version stamping eliminates the
+        # 172-entry compile cache churn from commit-SHA-dependent ldflags.
+        # Verified: byte-identical binaries and ~100% hit rates with these set.
+        # Respect caller-provided values: version-aware tooling (e.g. the
+        # operator bundle's Y-Stream calculation) needs the real tag.
+        if [ -z "${BUILD_TAG:-}" ]; then echo "BUILD_TAG=0.0.0" >> "$GITHUB_ENV"; fi
+        if [ -z "${SHORTCOMMIT:-}" ]; then echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"; fi
+        echo "GOFLAGS=-buildvcs=false" >> "$GITHUB_ENV"
+        # Vendor mode: eliminates GOMODCACHE path sensitivity that causes
+        # compile ActionID churn on fresh runners (measured: 585 entries
+        # churn with path change in module mode vs 10 in vendor mode).
+        # The vendor directory is cached in blob store keyed by go.sum hash.
+        echo "GOCACHE_VENDOR_MODE=1" >> "$GITHUB_ENV"
+        # Manifests are written only on default-branch pushes (PR runs read
+        # them for prefetch but don't overwrite the canonical working set
+        # with PR-specific entries). manifest-write-override=1 forces PR
+        # writes for experiment branches.
+        if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ inputs.manifest-write-override }}" != "1" ]; then
+          echo "GOCACHE_SERVE_MANIFEST_WRITE=0" >> "$GITHUB_ENV"
+        fi
+        echo "gocache-serve ready: manifest=$manifest (write=$([ "${{ github.event_name }}" = "push" ] && echo yes || echo $([ "${{ inputs.manifest-write-override }}" = "1" ] && echo yes || echo no)))"
+      shell: bash
+
     - name: Mark GOCACHE entries for stale detection
+      if: inputs.gocache-backend != 'cloud'
       run: |
         gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
         if [[ -d "$gocache" ]]; then
@@ -84,6 +172,7 @@ runs:
     # Registered AFTER cache steps so the post-step runs BEFORE cache save
     # (GHA runs post-steps in reverse registration order).
     - name: Trim stale GOCACHE entries (post-step)
+      if: inputs.gocache-backend != 'cloud'
       uses: gacts/run-and-post-run@fc6503862aba998e2f2123225ad63c09a92ed46e # v1.4.0
       with:
         post: >
