@@ -7,6 +7,10 @@ on:
         description: "Updater name (e.g. alpine, nvd, osv)"
         required: true
         type: string
+      stream:
+        description: "Vulnerability bundle stream whose updater configuration applies"
+        required: true
+        type: string
       ref:
         description: "Git reference to build the updater from"
         required: true
@@ -104,7 +108,6 @@ jobs:
       ROX_GIT_REF: ${{ inputs.ref }}
       GCS_OBJECT: ${{ inputs.object }}
       STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
-      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
     steps:
     - name: Checkout repository (master for local actions)
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -119,6 +122,19 @@ jobs:
 
     - name: Preserve source validator
       run: cp .github/workflows/scripts/scanner-updater-validate-source.sh "$RUNNER_TEMP/scanner-updater-validate-source.sh"
+
+    - name: Configure stream-specific updater environment
+      env:
+        STREAM: ${{ inputs.stream }}
+        SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+      run: |
+        set -euo pipefail
+        UPDATER_ENV_JSON=$(./.github/workflows/scripts/scanner-updater-config.sh env-json "$STREAM")
+        jq -e '
+          type == "object" and
+          all(to_entries[]; (.key | test("^[A-Za-z_][A-Za-z0-9_]*$")) and (.value | type == "string"))
+        ' <<< "$UPDATER_ENV_JSON" > /dev/null
+        jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$UPDATER_ENV_JSON" >> "$GITHUB_ENV"
 
     - name: Checkout updater ref
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0

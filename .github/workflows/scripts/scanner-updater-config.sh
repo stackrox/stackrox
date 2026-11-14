@@ -8,6 +8,7 @@
 #   bucket                      Storage bucket name.
 #   prefix                      Storage prefix path.
 #   sources <stream>            List updater sources for a stream, one per line.
+#   env-json <stream>           Emit a stream's updater environment as JSON.
 #   source-object <stream> <source>  GCS object path for a source.
 #   bundle-object <stream>      GCS object path for a bundle.
 #   interval-secs <source>      Updater refresh interval in seconds.
@@ -60,7 +61,11 @@ case "$command" in
         ;;
     sources)
         stream="${1:?missing required argument 'stream'}"; shift
-        yq eval ".bundles.\"${stream}\"[]" "$config"
+        yq eval ".bundles.\"${stream}\".sources[]" "$config"
+        ;;
+    env-json)
+        stream="${1:?missing required argument 'stream'}"; shift
+        yq eval -o=json -I=0 ".bundles.\"${stream}\".env // {}" "$config"
         ;;
     source-object)
         stream="${1:?missing required argument 'stream'}"; shift

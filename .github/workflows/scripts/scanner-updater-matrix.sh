@@ -67,9 +67,10 @@ schedule_hour=$(( schedule_epoch / 3600 ))
           fi
           jq -n \
               --arg source "$updater" \
+              --arg stream "$stream" \
               --arg ref "$ref" \
               --arg object "$object" \
-              '{source: $source, ref: $ref, object: $object}'
+              '{source: $source, stream: $stream, ref: $ref, object: $object}'
       done \
     | jq -s '{
           has_due:    (map(select(.source)) | length > 0 | tostring),

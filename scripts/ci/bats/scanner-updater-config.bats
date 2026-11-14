@@ -9,6 +9,30 @@ function setup() {
     export SOURCE_CONFIG="${BATS_TEST_TMPDIR}/source-config.yaml"
 }
 
+@test "stream sources and environment are read independently" {
+    cat > "$SOURCE_CONFIG" <<'YAML'
+bundles:
+  dev:
+    sources: [rhel-vex]
+  v4:
+    sources: [rhel-vex]
+    env:
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
+YAML
+
+    run "$config_script" sources dev
+    assert_success
+    assert_output "rhel-vex"
+
+    run "$config_script" env-json dev
+    assert_success
+    assert_output "{}"
+
+    run "$config_script" env-json v4
+    assert_success
+    assert_output '{"STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES":"true"}'
+}
+
 @test "Oracle inherits default freshness without an attempt cadence" {
     run env SOURCE_CONFIG="${repo_root}/scanner/updater/ci/source-config.yaml" \
         "$config_script" interval-secs oracle
