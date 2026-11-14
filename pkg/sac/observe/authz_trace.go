@@ -42,18 +42,25 @@ func (t *AuthzTrace) RecordKnownClustersAndNamespaces(
 	if t == nil {
 		return
 	}
+	// Compute clusterID -> clusterName for human-friendly traces.
+	clusterNames := make(map[string]string, len(clusters))
+	for _, cluster := range clusters {
+		clusterNames[cluster.GetId()] = cluster.GetName()
+	}
+	t.RecordKnownClusterNames(clusterNames, int32(len(namespaces)))
+}
 
+// RecordKnownClusterNames records inventory counts and cluster names without
+// requiring namespace objects. clusterNames must not be modified after this call.
+func (t *AuthzTrace) RecordKnownClusterNames(clusterNames map[string]string, namespaceCount int32) {
+	if t == nil {
+		return
+	}
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
-
-	t.numClusters = int32(len(clusters))
-	t.numNamespaces = int32(len(namespaces))
-
-	// Compute clusterID -> clusterName for human-friendly traces.
-	t.clusterNameByID = make(map[string]string, len(clusters))
-	for _, cluster := range clusters {
-		t.clusterNameByID[cluster.GetId()] = cluster.GetName()
-	}
+	t.numClusters = int32(len(clusterNames))
+	t.numNamespaces = namespaceCount
+	t.clusterNameByID = clusterNames
 }
 
 // RecordAllowOnResourceLevel writes an "allow resource" authorizer decision iff

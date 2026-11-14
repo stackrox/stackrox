@@ -73,6 +73,10 @@ type QueryEntry struct {
 	SelectedFields []SelectQueryField
 	GroupBy        []string
 
+	// ForceArrayForDisjunction binds exact-match lists as one array parameter,
+	// even when their length is below the configured parameter threshold.
+	ForceArrayForDisjunction bool
+
 	// This is populated only in the case of enums, so that callers know how to
 	// convert the returned enum value to a string.
 	// This is a bit ugly, but enums are such a special-case that it seems
@@ -153,6 +157,9 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 	if err != nil {
 		return nil, err
 	}
+	// Scope filters can accumulate many small lists across different clusters.
+	qe.ForceArrayForDisjunction = dbField.Search.FieldName == search.ClusterID.String() ||
+		dbField.Search.FieldName == search.Namespace.String()
 	return qe, nil
 }
 
