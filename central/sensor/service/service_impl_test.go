@@ -93,7 +93,6 @@ func TestIsCARotationSupported(t *testing.T) {
 	}{
 		"should return true when CA rotation capability is present": {
 			capabilities: []string{
-				string(centralsensor.ComplianceInNodesCap),
 				string(centralsensor.SensorCARotationSupported),
 				string(centralsensor.ScannerV4Supported),
 			},
@@ -101,7 +100,6 @@ func TestIsCARotationSupported(t *testing.T) {
 		},
 		"should return false when CA rotation capability is missing": {
 			capabilities: []string{
-				string(centralsensor.ComplianceInNodesCap),
 				string(centralsensor.ScannerV4Supported),
 			},
 			expected: false,

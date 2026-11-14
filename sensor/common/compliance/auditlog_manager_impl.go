@@ -76,7 +76,7 @@ func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
+	return nil
 }
 
 func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *message.ExpiringMessage {
