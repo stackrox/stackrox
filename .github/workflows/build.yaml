@@ -988,6 +988,17 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
+      - name: Update layer cache tag
+        # Point the cache tag at the just-pushed image for the next run's --cache-from.
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          if [ "${{ matrix.name }}" = "RHACS_BRANDING" ]; then REG="quay.io/rhacs-eng"; else REG="quay.io/stackrox-io"; fi
+          TAG="${{ needs.define-job-matrix.outputs.build-tag }}"
+          CACHE_TAG="cache-${{ matrix.arch }}"
+          docker buildx imagetools create -t "${REG}/main:${CACHE_TAG}" "${REG}/main:${TAG}" 2>&1 | tail -1
+          echo "layer cache tag updated"
+
   push-matching-collector-scanner:
     runs-on: ubuntu-24.04
     needs:
@@ -1001,27 +1012,6 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
     steps:
-      - name: Update layer cache tag
-        # Point the cache tag at the just-pushed image so the next run
-        # can --cache-from it. A metadata-only operation (imagetools
-        # create = re-tag, no layer transfer). Runs after the push step.
-        if: github.event_name == 'pull_request'
-        run: |
-          set -euo pipefail
-          # The registry matches make/env.mk: RHACS_BRANDING → rhacs-eng,
-          # everything else → stackrox-io. TAG is the build-tag (stable
-          # across warm runs since define-job-matrix derives it from git
-          # describe of the same source state).
-          if [ "${{ matrix.name }}" = "RHACS_BRANDING" ]; then
-            REG="quay.io/rhacs-eng"
-          else
-            REG="quay.io/stackrox-io"
-          fi
-          TAG="${{ needs.define-job-matrix.outputs.build-tag }}"
-          CACHE_TAG="cache-${{ matrix.arch }}"
-          docker buildx imagetools create -t "${REG}/main:${CACHE_TAG}" "${REG}/main:${TAG}" 2>&1 | tail -1
-          echo "layer cache tag updated: ${REG}/main:${CACHE_TAG} -> ${REG}/main:${TAG}"
-
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
