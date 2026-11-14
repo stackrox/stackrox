@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import {
     Alert,
+    AlertActionCloseButton,
+    AlertGroup,
     Button,
     Content,
     Divider,
@@ -19,6 +21,8 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal/ConfirmationModal';
@@ -38,6 +42,7 @@ function BaseImagesPage() {
     const [baseImageToEdit, setBaseImageToEdit] = useState<BaseImageReference | null>(null);
     const [baseImageToDelete, setBaseImageToDelete] = useState<BaseImageReference | null>(null);
     const { analyticsTrack } = useAnalytics();
+    const { toasts, addToast, removeToast } = useToasts();
 
     // Fetch base images on component mount
     const baseImagesRequest = useRestQuery(getBaseImages);
@@ -72,8 +77,9 @@ function BaseImagesPage() {
         setBaseImageToEdit(null);
     };
 
-    const handleModalSuccess = () => {
+    const handleModalSuccess = (successMessage: string) => {
         handleModalClose();
+        addToast(successMessage, 'success');
         baseImagesRequest.refetch();
     };
 
@@ -155,6 +161,27 @@ function BaseImagesPage() {
                     </Flex>
                 </ConfirmationModal>
             )}
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        component="p"
+                        timeout
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
         </>
     );
 }

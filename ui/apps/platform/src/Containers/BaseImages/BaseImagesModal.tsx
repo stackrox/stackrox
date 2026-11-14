@@ -52,7 +52,8 @@ function categorizeErrorType(error: unknown): string {
 export type BaseImagesModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    /** Called after a successful save with a message for the parent to report, e.g. as a toast. */
+    onSuccess: (successMessage: string) => void;
     baseImageToEdit?: BaseImageReference | null;
 };
 
@@ -169,7 +170,10 @@ function BaseImagesModal({
                     onSuccess: () => {
                         analyticsTrack(BASE_IMAGE_REFERENCE_ADD_SUCCESS);
                         formik.resetForm();
-                        onSuccess();
+                        // handleModalClose does not run when the parent closes the modal after
+                        // a save, so reset the request here too for the next open to start clean.
+                        addMutation.reset();
+                        onSuccess('Base image successfully added');
                     },
                     onError: (error) => {
                         analyticsTrack({
@@ -200,7 +204,8 @@ function BaseImagesModal({
                 {
                     onSuccess: () => {
                         editFormik.resetForm();
-                        onSuccess();
+                        updateMutation.reset();
+                        onSuccess('Base image tag pattern successfully updated');
                     },
                     onSettled: () => setSubmitting(false),
                 }
@@ -220,9 +225,6 @@ function BaseImagesModal({
     };
 
     const modalTitle = isEditMode ? 'Edit base image tag pattern' : 'Add base image path';
-    const successMessage = isEditMode
-        ? 'Base image tag pattern successfully updated'
-        : 'Base image successfully added';
     const errorTitle = isEditMode ? 'Error updating base image' : 'Error adding base image';
 
     return (
@@ -239,9 +241,6 @@ function BaseImagesModal({
             </ModalHeader>
             <ModalBody>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
-                    {activeMutation.isSuccess && (
-                        <Alert variant="success" isInline title={successMessage} component="p" />
-                    )}
                     {activeMutation.isError && (
                         <Alert variant="danger" isInline title={errorTitle} component="p">
                             {getAxiosErrorMessage(activeMutation.error)}

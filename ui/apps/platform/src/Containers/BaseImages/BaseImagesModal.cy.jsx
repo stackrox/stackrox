@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { Button } from '@patternfly/react-core';
+
 import { PublicConfigContext } from 'hooks/usePublicConfig';
 import BaseImagesModal from './BaseImagesModal';
 
@@ -8,11 +11,39 @@ const mockPublicConfigValue = {
     refetchPublicConfig: () => {},
 };
 
+const baseImage = {
+    id: 'base-image-id',
+    baseImageRepoPath: 'docker.io/library/ubuntu',
+    baseImageTagPattern: '22.04',
+    user: { id: 'user-id', name: 'admin' },
+};
+
 function TestWrapper({ children }) {
     return (
         <PublicConfigContext.Provider value={mockPublicConfigValue}>
             {children}
         </PublicConfigContext.Provider>
+    );
+}
+
+// Drives the modal like BaseImagesPage does: the modal stays mounted while it is closed, and the
+// parent closes it from onSuccess without going through the modal's own close handler.
+function BaseImagesModalHost({ baseImageToEdit = null, onSuccess }) {
+    const [isOpen, setIsOpen] = useState(true);
+
+    return (
+        <TestWrapper>
+            <Button onClick={() => setIsOpen(true)}>Open modal</Button>
+            <BaseImagesModal
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+                onSuccess={(successMessage) => {
+                    onSuccess(successMessage);
+                    setIsOpen(false);
+                }}
+                baseImageToEdit={baseImageToEdit}
+            />
+        </TestWrapper>
     );
 }
 
@@ -121,9 +152,9 @@ describe('BaseImagesModal', () => {
     });
 
     describe('alert rendering', () => {
-        it('should show success alert after successful submission', () => {
+        it('should report success to the parent without an inline success alert', () => {
             const onClose = cy.stub();
-            const onSuccess = cy.stub();
+            const onSuccess = cy.stub().as('onSuccess');
 
             cy.mount(
                 <TestWrapper>
@@ -135,7 +166,11 @@ describe('BaseImagesModal', () => {
             cy.findByRole('button', { name: 'Save' }).click();
 
             cy.wait('@addBaseImage');
-            cy.contains('Base image successfully added').should('be.visible');
+            cy.get('@onSuccess').should(
+                'have.been.calledOnceWithExactly',
+                'Base image successfully added'
+            );
+            cy.contains('Base image successfully added').should('not.exist');
         });
 
         it('should show error alert when submission fails', () => {
@@ -158,6 +193,50 @@ describe('BaseImagesModal', () => {
 
             cy.wait('@addBaseImageError');
             cy.contains('Error adding base image').should('be.visible');
+        });
+    });
+
+    describe('reopening after a successful save', () => {
+        it('should open the add form without a success alert', () => {
+            const onSuccess = cy.stub().as('onSuccess');
+
+            cy.mount(<BaseImagesModalHost onSuccess={onSuccess} />);
+
+            cy.get('input#baseImagePath').type('ubuntu:22.04');
+            cy.findByRole('button', { name: 'Save' }).click();
+
+            cy.wait('@addBaseImage');
+            cy.get('@onSuccess').should('have.been.calledOnce');
+            cy.findByRole('dialog').should('not.exist');
+
+            cy.findByRole('button', { name: 'Open modal' }).click();
+            cy.findByRole('dialog').should('be.visible');
+            cy.get('input#baseImagePath').should('have.value', '');
+            cy.contains('Base image successfully added').should('not.exist');
+        });
+
+        it('should open the edit form without a success alert', () => {
+            cy.intercept('PUT', '/v2/baseimages/*', { statusCode: 200, body: {} }).as(
+                'updateBaseImage'
+            );
+            const onSuccess = cy.stub().as('onSuccess');
+
+            cy.mount(<BaseImagesModalHost baseImageToEdit={baseImage} onSuccess={onSuccess} />);
+
+            cy.get('input#baseImageTagPattern').clear();
+            cy.get('input#baseImageTagPattern').type('24.*');
+            cy.findByRole('button', { name: 'Save' }).click();
+
+            cy.wait('@updateBaseImage');
+            cy.get('@onSuccess').should(
+                'have.been.calledOnceWithExactly',
+                'Base image tag pattern successfully updated'
+            );
+            cy.findByRole('dialog').should('not.exist');
+
+            cy.findByRole('button', { name: 'Open modal' }).click();
+            cy.findByRole('dialog').should('be.visible');
+            cy.contains('Base image tag pattern successfully updated').should('not.exist');
         });
     });
 });
