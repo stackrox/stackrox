@@ -94,8 +94,7 @@ func (h ForResourceHelper) FilterAccessibleNamespaces(
 			filtered = append(filtered, ns)
 			continue
 		}
-		namespaceSubTree := clusterSubTree.Namespaces[ns.GetName()]
-		if namespaceSubTree == nil || namespaceSubTree.State == effectiveaccessscope.Excluded {
+		if !clusterSubTree.NamespaceAllowed(ns.GetName()) {
 			continue
 		}
 		filtered = append(filtered, ns)
