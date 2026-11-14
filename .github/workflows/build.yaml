@@ -874,27 +874,46 @@ jobs:
 
       - name: Wait for build outputs in blob store
         # Poll until all required build outputs are stored and verified.
-        # Uses the fetch-any marker check (tiny GETs). The blob store's
-        # hash-marker system means a verified blob is complete and correct.
-        # Timeout: 15 minutes (generous; pre-builds complete in ~3m).
+        # MARKER-ONLY checks (tiny GETs on KEY.sha256) — never downloads
+        # the content. The blob store's hash-marker system means a
+        # marker's presence implies complete, verified content.
+        # Note: branding comes from matrix.name here (not matrix.branding
+        # which is pre-build-ui's variable) — mapped the same way the
+        # Setup build env step does.
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          GCS="${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve"
+          # Derive branding the same way Setup build env does
+          case "${{ matrix.name }}" in
+            RHACS_BRANDING) BRAND="RHACS_BRANDING" ;;
+            *) BRAND="STACKROX_BRANDING" ;;
+          esac
           UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
           REQUIRED=(
             "go-binaries-${{ matrix.arch }}-default"
-            "ui-build-${{ matrix.branding }}-${UI_HASH}"
+            "ui-build-${BRAND}-${UI_HASH}"
           )
           echo "Waiting for: ${REQUIRED[@]}"
+          TOKEN=$(curl -s --max-time 5 -X POST \
+            "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
+            --data-urlencode "grant_type=client_credentials" \
+            --data-urlencode "client_id=${AZURE_CLIENT_ID}" \
+            --data-urlencode "client_secret=${AZURE_CLIENT_SECRET}" \
+            --data-urlencode "scope=https://storage.azure.com/.default" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("access_token",""))')
+          if [ -z "$TOKEN" ]; then echo "::error::cannot get Azure token for polling"; exit 1; fi
           deadline=$((SECONDS + 900))
           while [ $SECONDS -lt $deadline ]; do
             all_ready=true
             for key in "${REQUIRED[@]}"; do
-              if ! "$GCS" -fetch-any "$key" /dev/null 2>/dev/null; then
+              # marker-only GET: tiny, no content download
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+                -H "Authorization: Bearer $TOKEN" -H "x-ms-version: 2021-08-06" \
+                "https://cigocache.blob.core.windows.net/ci-gocache/${key}.sha256")
+              if [ "$code" != "200" ]; then
                 all_ready=false
                 break
               fi
@@ -903,7 +922,7 @@ jobs:
               echo "All build outputs ready after ${SECONDS}s"
               exit 0
             fi
-            echo "  waiting... (${SECONDS}s elapsed)"
+            echo "  waiting... (${SECONDS}s elapsed, last check: $code)"
             sleep 15
           done
           echo "::error::Timed out waiting for build outputs after 15m"
