@@ -619,6 +619,15 @@ jobs:
         path: image/rhel/THIRD_PARTY_NOTICES
         retention-days: '1'
 
+    - name: Store oss-notice in blob store
+      env:
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      run: |
+        set -euo pipefail
+        "${GITHUB_WORKSPACE}/tools/gocache-serve/bin/gocache-serve" -store-all "oss-notice-LATEST" image/rhel/THIRD_PARTY_NOTICES
+
   build-and-push-db:
     runs-on: ubuntu-24.04
     needs:
