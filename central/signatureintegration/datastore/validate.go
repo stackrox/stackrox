@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/signatures"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -69,6 +70,10 @@ func validateCosignKeyVerification(config *storage.CosignPublicKeyVerification) 
 			err := errors.Errorf("failed to decode PEM block containing public key %q", publicKey.GetName())
 			multiErr = multierror.Append(multiErr, err)
 		}
+
+		if err := validateTrustRoot(publicKey.GetTrustRoot()); err != nil {
+			multiErr = multierror.Append(multiErr, errors.Wrap(err, "validating trust root for public key"))
+		}
 	}
 
 	return multiErr
@@ -108,6 +113,10 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 			if !signatures.IsValidPublicKeyPEMBlock(ctlogKeyBlock, rest) {
 				multiErr = multierror.Append(multiErr, errors.New("failed to decode PEM block containing ctlog key"))
 			}
+		}
+
+		if err := validateTrustRoot(config.GetTrustRoot()); err != nil {
+			multiErr = multierror.Append(multiErr, errors.Wrap(err, "validating trust root for certificate"))
 		}
 	}
 
@@ -169,4 +178,33 @@ func validateTraits(integration *storage.SignatureIntegration) error {
 	}
 
 	return errox.InvalidArgs.New("user-provided traits are not supported")
+}
+
+func validateTrustRoot(tr *storage.TrustRoot) error {
+	if tr == nil {
+		return nil
+	}
+	u := tr.GetTufRepositoryUrl()
+	if u == "" {
+		return errors.New("trust root TUF URL must be set")
+	}
+	formatted := urlfmt.FormatURL(u, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	parsed, err := url.Parse(formatted)
+	if err != nil {
+		return errors.Wrap(err, "parsing trust root TUF URL")
+	}
+	if parsed.Hostname() == "" {
+		return errors.New("trust root TUF URL must have a valid host")
+	}
+	if rootURL := tr.GetTufRootUrl(); rootURL != "" {
+		rootFormatted := urlfmt.FormatURL(rootURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+		rootParsed, err := url.Parse(rootFormatted)
+		if err != nil {
+			return errors.Wrap(err, "parsing trust root TUF root URL")
+		}
+		if rootParsed.Hostname() == "" {
+			return errors.New("trust root TUF root URL must have a valid host")
+		}
+	}
+	return nil
 }
