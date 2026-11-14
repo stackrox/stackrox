@@ -1,0 +1,178 @@
+name: e2e-tls-compliance-ocp-konflux
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Konflux image tag to test.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job.
+        type: boolean
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Konflux image tag to test.
+        type: string
+        required: true
+
+concurrency:
+  group: e2e-tls-compliance-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  MAIN_IMAGE_TAG: ${{ inputs.tag }}
+  ARTIFACT_DIR: ./junit-reports/
+  ORCHESTRATOR_FLAVOR: openshift
+  LOAD_BALANCER: lb
+  CLUSTER_NAME_PREFIX: "e2e-tls-compl"
+  CLUSTER_NAME_PREFIX_MAX: "20"
+  TLS_SCANNER_REF: "df6f8d462cd22d4a515946602936a4ac117e4c74"
+  # Pin OCP to 5.0 while TLSGroupPreferences / TLSAdherence are feature-gated.
+  # After feature flag GA: switch to ocp/stable and drop the feature-gate setup in the e2e test.
+  OPENSHIFT_VERSION: "ocp/stable-5.0"
+
+jobs:
+  ocp-tls-compliance-e2e-tests:
+    if: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Validate input tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: scripts/ci/lib.sh validate_image_tag "$TAG"
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Compute cluster name
+        run: |
+          hash_length=$(( 28 - 1 - CLUSTER_NAME_PREFIX_MAX ))
+          hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+          hash="$(echo "$hash_input" | sha256sum)"
+          hash_truncated="${hash:0:$hash_length}"
+          echo "CLUSTER_NAME=${CLUSTER_NAME_PREFIX}-${hash_truncated}" >> "$GITHUB_ENV"
+
+      - name: Trigger cluster creation
+        uses: stackrox/actions/infra/create-cluster@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: openshift-4
+          name: ${{ env.CLUSTER_NAME }}
+          lifespan: 5h
+          args: openshift-version=${{ env.OPENSHIFT_VERSION }},master-node-type=e2-standard-4,master-node-count=3,worker-node-type=e2-standard-8,worker-node-count=3,ssd-storage-class=true
+          wait: false
+
+      - name: Set up GCloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+        with:
+          install_components: "gke-gcloud-auth-plugin,beta"
+
+      - name: Docker login to Quay.io
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+
+      - name: Retrieve roxie version
+        id: roxie-version
+        run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Install roxie
+        uses: stackrox/actions/roxie/install-cli@bcda9b2d6d2b644c267e699479656973e84ef7fa # ratchet:stackrox/actions@v1
+        with:
+          version: "v${{ steps.roxie-version.outputs.version }}"
+          gh-token: ${{ github.token }}
+
+      - name: Install oc
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
+            | tar xz -C /usr/local/bin oc
+          oc version --client
+
+      - uses: stackrox/actions/infra/install-infractl@f3893761af7aff7477e3dde7a4d9656b173fc687 # ratchet:stackrox/actions/infra/install-infractl@v1
+
+      - name: Wait for cluster and get kubeconfig
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        timeout-minutes: 60
+        run: |
+          infractl wait "${CLUSTER_NAME}"
+          infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+          echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Wait for cluster to stabilize
+        timeout-minutes: 5
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Create artifact directory
+        run: mkdir -p "$ARTIFACT_DIR"
+
+      - name: Checkout tls-scanner
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          repository: openshift/tls-scanner
+          ref: ${{ env.TLS_SCANNER_REF }}
+          path: tls-scanner
+          persist-credentials: false
+
+      - name: Run TLS compliance tests
+        env:
+          USE_ROXIE_DEPLOY: "true"
+          TLS_SCANNER_DIR: ${{ github.workspace }}/tls-scanner
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        timeout-minutes: 120
+        run: tests/e2e/run-tls-compliance.sh
+
+      - name: Run post-test
+        if: always() && env.KUBECONFIG != ''
+        continue-on-error: true
+        run: |
+          # Collect via kubectl only. CheckStackroxLogs doesn't work because the
+          # runner cannot handshake when the cluster TLS profile allows only ML-KEM.
+          dest=/tmp/stackrox-logs
+          scripts/ci/collect-service-logs.sh stackrox "$dest"
+          scripts/ci/collect-service-logs.sh rhacs-operator-system "$dest"
+          tests/e2e/lib.sh check_for_errors_in_stackrox_logs "$dest" || true
+          scripts/ci/store-artifacts.sh store_artifacts "$dest" tls-compliance/stackrox-logs
+          scripts/ci/store-artifacts.sh store_artifacts "${ARTIFACT_DIR}" tls-compliance/junit-reports
+
+      - name: Publish test summary
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+          show: "fail, pass, skip"
+
+      - name: Report junit failures in jira
+        if: (!cancelled())
+        uses: ./.github/actions/junit2jira
+        with:
+          create-jiras: ${{ github.event_name == 'push' }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          directory: ${{ env.ARTIFACT_DIR }}
+
+      - name: Delete cluster
+        if: always()
+        continue-on-error: true
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        run: infractl delete "${CLUSTER_NAME}"
