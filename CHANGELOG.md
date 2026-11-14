@@ -41,7 +41,27 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37385: Scanner V4 node scans now record the operating system (for example `rhcos:9.6`) for OpenShift 4.19 and later nodes. RHCOS switched to RHEL-based dotted versions such as `9.6.20250701-0` in OpenShift 4.19, and Central previously stored an empty operating system for these nodes.
 - ROX-37149: `roxctl` now honors the `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` environment variables when connecting to Central over HTTP, so it works where direct egress to Central is blocked but a proxy is available.
 - ROX-37383: Scanner V4 DB now runs PostgreSQL 16, upgraded from 15. The data directory is upgraded in place the first time the new image starts, and the vulnerability store is preserved, so no re-download is needed. If the upgrade cannot be completed, Scanner V4 DB keeps serving with PostgreSQL 15 and retries on the next restart.
-- ROX-37861: Omitted `RELATED_IMAGE` entries in operator helm chart. Note that two consecutive upgrade runs are necessary to fix `manager.envOverrides` unless using server-side apply.
+- ROX-37861: Fixed duplicate related-image environment variables in the operator Helm chart.
+
+  Older charts can render duplicate `RELATED_IMAGE_*` entries when using
+  `manager.envOverrides`. During the first client-side upgrade, Helm's three-way
+  patch can delete both entries by name, temporarily removing the override.
+
+  - **Helm 4:** use `helm upgrade --server-side=true` with the updated chart to
+    preserve the override on the first upgrade. Helm 4's default `auto` mode keeps
+    client-side updates for releases originally installed with Helm 3.
+  - **Helm 3 or client-side Helm 4:** run the same `helm upgrade` command twice
+    with the updated chart and values. The first upgrade can remove the override;
+    the second restores it. Verify the live Deployment after the second upgrade.
+  - **Argo CD:** sync the updated chart, delete the operator Deployment, then sync
+    again to recreate it from the updated manifest. Deletion temporarily
+    interrupts the operator.
+
+  Supply a complete values file on each upgrade, including your image overrides
+  and unrelated custom settings. Avoid `--reuse-values`, which can retain the old
+  chart's `manager.env` defaults and reintroduce duplicates. If you explicitly set
+  `manager.env`, remove its empty related-image placeholders too. After upgrading,
+  check that each configured `RELATED_IMAGE_*` appears once with the intended value.
 
 ## [5.0.0]
 
