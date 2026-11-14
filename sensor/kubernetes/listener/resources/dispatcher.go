@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	mcpDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/dispatcher"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -59,6 +61,12 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorTailoredProfiles(profileLister cache.GenericLister) Dispatcher
 	ForComplianceOperatorRemediations() Dispatcher
 	ForComplianceOperatorCustomRules() Dispatcher
+
+	ForMachineConfigPools() Dispatcher
+}
+
+type eventPublisher interface {
+	Publish(pubsub.Event) error
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -71,6 +79,7 @@ func NewDispatcherRegistry(
 	traceWriter io.Writer,
 	storeProvider *StoreProvider,
 	k8sAPI kubernetes.Interface,
+	publisher eventPublisher,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
@@ -112,6 +121,8 @@ func NewDispatcherRegistry(
 
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
+
+		machineConfigPoolDispatcher: mcpDispatcher.NewMachineConfigPoolDispatcher(storeProvider.MachineConfigPool(), publisher),
 	}
 }
 
@@ -142,6 +153,8 @@ type registryImpl struct {
 
 	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
 	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
+
+	machineConfigPoolDispatcher *mcpDispatcher.MachineConfigPoolDispatcher
 }
 
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
@@ -346,4 +359,8 @@ func (d *registryImpl) ForVirtualMachines() Dispatcher {
 
 func (d *registryImpl) ForVirtualMachineInstances() Dispatcher {
 	return wrapDispatcher(d.virtualMachineInstanceDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForMachineConfigPools() Dispatcher {
+	return wrapDispatcher(d.machineConfigPoolDispatcher, d.traceWriter)
 }

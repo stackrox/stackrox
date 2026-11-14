@@ -52,6 +52,11 @@ func (c ComponentQueue) Push(msg *central.MsgToSensor) {
 }
 
 func (c ComponentQueue) Start(ctx context.Context) {
+	// TODO: consider forcing all components to implement SetContext and add an
+	// unimplemented struct for the components that do not care
+	if streamAwareC, ok := c.component.(common.StreamContextAwareComponent); ok {
+		streamAwareC.SetContext(ctx)
+	}
 	go c.start(ctx)
 }
 

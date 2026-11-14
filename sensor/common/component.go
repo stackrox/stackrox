@@ -118,3 +118,8 @@ type PubSubDispatcher interface {
 	Publish(pubsub.Event) error
 	Stop()
 }
+
+// StreamContextAwareComponent define a SensorComponent that is aware of the gRPC stream context
+type StreamContextAwareComponent interface {
+	SetContext(context.Context)
+}

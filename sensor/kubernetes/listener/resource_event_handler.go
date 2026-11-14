@@ -31,6 +31,7 @@ import (
 	virtualMachineAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
@@ -290,6 +291,7 @@ func (k *listenerImpl) handleAllEvents() {
 		k.traceWriter,
 		k.storeProvider,
 		k.client.Kubernetes(),
+		k.pubSubDispatcher,
 	)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
@@ -359,6 +361,20 @@ func (k *listenerImpl) handleAllEvents() {
 				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
 				handle(k.context, informerImageContentSourcePolicies, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
+		}
+	}
+	if features.ComplianceCustomNodeRoles.Enabled() {
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osMachineConfigGroupVersion); err != nil {
+			log.Errorf("Checking API resources for group %q: %v", osMachineConfigGroupVersion, err)
+		} else if listenerUtils.ResourceExists(resourceList, osMachineConfigPoolsResourceName, osMachineConfigGroupVersion) {
+			log.Infof("Initializing %q informer", osMachineConfigPoolsResourceName)
+			machineConfigPoolGVR := schema.GroupVersionResource{
+				Group:    "machineconfiguration.openshift.io",
+				Version:  "v1",
+				Resource: "machineconfigpools",
+			}
+			mcpInformer := crdSharedInformerFactory.ForResource(machineConfigPoolGVR).Informer()
+			handle(k.context, informerMachineConfigPools, mcpInformer, dispatchers.ForMachineConfigPools(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 		}
 	}
 
