@@ -19,6 +19,7 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
@@ -29,12 +30,21 @@ import {
 } from './compliance.coverage.utils';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import {
     attributeForComplianceCheckStatus,
     clusterSearchFilterConfig,
+    profileCheckSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [clusterSearchFilterConfig];
+const profileCheckSearchFilterConfigWithoutName = {
+    ...profileCheckSearchFilterConfig,
+    attributes: profileCheckSearchFilterConfig.attributes.filter(
+        // Check Name is redundant on this page, but scan status is still valid
+        ({ searchTerm }) => searchTerm !== CHECK_NAME_QUERY
+    ),
+};
+const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfigWithoutName];
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -68,6 +78,10 @@ function CheckDetailsTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const searchFilterConfigWithFeatureFlags = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfig
+    ).filter(({ attributes }) => attributes.length !== 0);
     const colSpan = isScanStatusEnabled ? 4 : 3;
 
     return (
@@ -75,7 +89,7 @@ function CheckDetailsTable({
             <Toolbar>
                 <ToolbarContent>
                     <CompoundSearchFilter
-                        config={searchFilterConfig}
+                        config={searchFilterConfigWithFeatureFlags}
                         searchFilter={searchFilter}
                         onSearch={onSearch}
                     />
@@ -88,7 +102,7 @@ function CheckDetailsTable({
                     <ToolbarGroup className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
-                            config={searchFilterConfig}
+                            config={searchFilterConfigWithFeatureFlags}
                             onFilterChange={onFilterChange}
                             searchFilter={searchFilter}
                         />

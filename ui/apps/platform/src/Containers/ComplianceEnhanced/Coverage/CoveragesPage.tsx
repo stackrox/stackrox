@@ -20,7 +20,10 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
-import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
@@ -87,6 +90,10 @@ function CoveragesPage() {
     >(undefined);
 
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const searchFilterConfigWithFeatureFlags = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfig
+    ).filter(({ attributes }) => attributes.length !== 0);
 
     const fetchProfilesStats = useCallback(async () => {
         setSelectedProfileStats(undefined);
@@ -200,7 +207,7 @@ function CoveragesPage() {
                     <Toolbar>
                         <ToolbarContent>
                             <CompoundSearchFilter
-                                config={searchFilterConfig}
+                                config={searchFilterConfigWithFeatureFlags}
                                 defaultEntity="Profile check"
                                 searchFilter={searchFilter}
                                 onSearch={onSearch}
@@ -216,7 +223,7 @@ function CoveragesPage() {
                                     attributesSeparateFromConfig={[
                                         attributeForComplianceCheckStatus,
                                     ]}
-                                    config={searchFilterConfig}
+                                    config={searchFilterConfigWithFeatureFlags}
                                     onFilterChange={setSearchFilter}
                                     searchFilter={searchFilter}
                                 />
