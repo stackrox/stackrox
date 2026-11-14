@@ -7,6 +7,7 @@ on:
     - opened
     - reopened
     - synchronize
+    - labeled
 
 jobs:
   scanner-ft-images:
