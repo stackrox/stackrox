@@ -4,8 +4,10 @@ import (
 	"context"
 	"math"
 	"slices"
+	"strconv"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
@@ -19,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -38,6 +41,10 @@ import (
 const (
 	maxDeploymentsReturned = 1000
 	lowRiskThreshold       = 5.0
+	// aiSummaryCacheTTL is how long a cached LLM risk summary remains valid.
+	// Entries are also content-addressed by a hash of the sanitized risk context,
+	// so they are also invalidated when risk score, alerts, or vulnerabilities change.
+	aiSummaryCacheTTL = 15 * time.Minute
 )
 
 var log = logging.LoggerForModule()
@@ -69,6 +76,8 @@ type serviceImpl struct {
 	risks                  riskDataStore.DataStore
 	manager                manager.Manager
 	lightspeedClient       olsClient.Client
+	// aiSummaryCache stores LLM risk summaries keyed by deployment ID + risk context hash.
+	aiSummaryCache expiringcache.Cache[string, string]
 }
 
 func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
@@ -323,6 +332,13 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 		return nil, errors.Wrap(err, "building risk context for AI summary")
 	}
 
+	cacheKey := getAiSummaryCacheKey(request.GetId(), contextJSON)
+	if summary, ok := s.aiSummaryCache.Get(cacheKey); ok {
+		return &v1.DeploymentRiskAISummaryResponse{
+			Summary: summary,
+		}, nil
+	}
+
 	query := aiSummaryPrompt + "\n\nDEPLOYMENT AND RISK DATA:\n" + contextJSON
 	olsResp, err := s.lightspeedClient.Query(ctx, &olsClient.QueryRequest{
 		Query: query,
@@ -332,7 +348,16 @@ func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v
 		return nil, status.Error(codes.Unavailable, "AI service unavailable")
 	}
 
+	s.aiSummaryCache.Add(cacheKey, olsResp.Response)
+
 	return &v1.DeploymentRiskAISummaryResponse{
 		Summary: olsResp.Response,
 	}, nil
+}
+
+// getAiSummaryCacheKey builds a cache key from the deployment ID and a hash of the
+// sanitized risk context. When risk score, alerts, or image vulnerabilities change,
+// the context hash changes and the previous cache entry is no longer used.
+func getAiSummaryCacheKey(deploymentID, contextJSON string) string {
+	return deploymentID + ":" + strconv.FormatUint(xxhash.Sum64String(contextJSON), 16)
 }

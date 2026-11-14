@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync/atomic"
 	"testing"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -13,6 +14,7 @@ import (
 	deployment "github.com/stackrox/rox/central/risk/multipliers/deployment"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -25,15 +27,21 @@ type mockOLSClient struct {
 	response *olsClient.QueryResponse
 	err      error
 	captured *olsClient.QueryRequest
+	calls    atomic.Int32
 }
 
 func (m *mockOLSClient) Query(_ context.Context, req *olsClient.QueryRequest) (*olsClient.QueryResponse, error) {
+	m.calls.Add(1)
 	m.captured = req
 	return m.response, m.err
 }
 
 func (m *mockOLSClient) TestConnectivity() error {
 	return m.err
+}
+
+func newAISummaryCache() expiringcache.Cache[string, string] {
+	return expiringcache.NewExpiringCache[string, string](aiSummaryCacheTTL)
 }
 
 func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
@@ -125,6 +133,7 @@ func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
 		datastore:        mockDS,
 		risks:            mockRisks,
 		lightspeedClient: olsMock,
+		aiSummaryCache:   newAISummaryCache(),
 	}
 
 	resp, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-1"})
@@ -206,6 +215,7 @@ func TestGetDeploymentRiskAISummary_SensitiveFieldsStripped(t *testing.T) {
 		datastore:        mockDS,
 		risks:            mockRisks,
 		lightspeedClient: olsMock,
+		aiSummaryCache:   newAISummaryCache(),
 	}
 
 	_, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-2"})
@@ -283,6 +293,7 @@ func TestGetDeploymentRiskAISummary_OLSError(t *testing.T) {
 		datastore:        mockDS,
 		risks:            mockRisks,
 		lightspeedClient: olsMock,
+		aiSummaryCache:   newAISummaryCache(),
 	}
 
 	resp, err := svc.GetDeploymentRiskAISummary(context.Background(), &v1.ResourceByID{Id: "dep-3"})
@@ -293,6 +304,135 @@ func TestGetDeploymentRiskAISummary_OLSError(t *testing.T) {
 	require.True(t, ok, "expected a gRPC status error")
 	assert.Equal(t, codes.Unavailable, st.Code())
 	assert.Equal(t, "AI service unavailable", st.Message())
+}
+
+func TestGetDeploymentRiskAISummary_CacheHit(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockDS := deploymentMocks.NewMockDataStore(ctrl)
+	mockRisks := riskMocks.NewMockDataStore(ctrl)
+
+	deployment := &storage.Deployment{
+		Id:          "dep-cache",
+		Name:        "cached-app",
+		Namespace:   "default",
+		ClusterName: "test-cluster",
+		Type:        "Deployment",
+	}
+	risk := &storage.Risk{
+		Score: 7.0,
+		Results: []*storage.Risk_Result{
+			{
+				Name:  "Image Vulnerabilities",
+				Score: 2.0,
+				Factors: []*storage.Risk_Result_Factor{
+					{Message: "Image has 10 CVEs"},
+				},
+			},
+		},
+	}
+
+	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-cache").Return(deployment, true, nil).Times(2)
+	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(risk, true, nil).Times(2)
+
+	olsMock := &mockOLSClient{
+		response: &olsClient.QueryResponse{Response: "Cached summary content."},
+	}
+
+	svc := &serviceImpl{
+		datastore:        mockDS,
+		risks:            mockRisks,
+		lightspeedClient: olsMock,
+		aiSummaryCache:   newAISummaryCache(),
+	}
+
+	req := &v1.ResourceByID{Id: "dep-cache"}
+	resp1, err := svc.GetDeploymentRiskAISummary(context.Background(), req)
+	require.NoError(t, err)
+	assert.Equal(t, "Cached summary content.", resp1.GetSummary())
+	assert.Equal(t, int32(1), olsMock.calls.Load())
+
+	// Second request with identical risk data should serve from cache.
+	resp2, err := svc.GetDeploymentRiskAISummary(context.Background(), req)
+	require.NoError(t, err)
+	assert.Equal(t, "Cached summary content.", resp2.GetSummary())
+	assert.Equal(t, int32(1), olsMock.calls.Load(), "LLM should not be called again on cache hit")
+}
+
+func TestGetDeploymentRiskAISummary_CacheMissOnRiskChange(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockDS := deploymentMocks.NewMockDataStore(ctrl)
+	mockRisks := riskMocks.NewMockDataStore(ctrl)
+
+	deployment := &storage.Deployment{
+		Id:          "dep-cache-change",
+		Name:        "changing-app",
+		Namespace:   "default",
+		ClusterName: "test-cluster",
+		Type:        "Deployment",
+	}
+	riskV1 := &storage.Risk{
+		Score: 6.0,
+		Results: []*storage.Risk_Result{
+			{
+				Name:  "Image Vulnerabilities",
+				Score: 1.5,
+				Factors: []*storage.Risk_Result_Factor{
+					{Message: "Image has 5 CVEs"},
+				},
+			},
+		},
+	}
+	riskV2 := &storage.Risk{
+		Score: 9.0,
+		Results: []*storage.Risk_Result{
+			{
+				Name:  "Image Vulnerabilities",
+				Score: 3.0,
+				Factors: []*storage.Risk_Result_Factor{
+					{Message: "Image has 50 CVEs"},
+				},
+			},
+		},
+	}
+
+	mockDS.EXPECT().GetDeployment(gomock.Any(), "dep-cache-change").Return(deployment, true, nil).Times(2)
+	gomock.InOrder(
+		mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(riskV1, true, nil),
+		mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(riskV2, true, nil),
+	)
+
+	olsMock := &mockOLSClient{
+		response: &olsClient.QueryResponse{Response: "Updated summary after risk change."},
+	}
+
+	svc := &serviceImpl{
+		datastore:        mockDS,
+		risks:            mockRisks,
+		lightspeedClient: olsMock,
+		aiSummaryCache:   newAISummaryCache(),
+	}
+
+	req := &v1.ResourceByID{Id: "dep-cache-change"}
+	_, err := svc.GetDeploymentRiskAISummary(context.Background(), req)
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), olsMock.calls.Load())
+
+	// Changed risk data produces a different context hash → cache miss → new LLM call.
+	_, err = svc.GetDeploymentRiskAISummary(context.Background(), req)
+	require.NoError(t, err)
+	assert.Equal(t, int32(2), olsMock.calls.Load(), "LLM should be called again when risk data changes")
+}
+
+func TestAISummaryCacheKey(t *testing.T) {
+	key1 := getAiSummaryCacheKey("dep-1", `{"risk":{"score":8}}`)
+	key2 := getAiSummaryCacheKey("dep-1", `{"risk":{"score":8}}`)
+	key3 := getAiSummaryCacheKey("dep-1", `{"risk":{"score":9}}`)
+	key4 := getAiSummaryCacheKey("dep-2", `{"risk":{"score":8}}`)
+
+	assert.Equal(t, key1, key2)
+	assert.NotEqual(t, key1, key3)
+	assert.NotEqual(t, key1, key4)
+	assert.Contains(t, key1, "dep-1:")
 }
 
 func TestGetDeploymentRiskAISummary_NilRisk(t *testing.T) {
