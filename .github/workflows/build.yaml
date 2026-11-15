@@ -26,6 +26,10 @@ env:
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
   GOFLAGS: -buildvcs=false
+  # Bump when the build RECIPE changes (step logic, flags, transform).
+  # Receipts cover source state AND recipe; without this, a recipe fix
+  # would silently keep serving images built by the old recipe.
+  WORKFLOW_RECIPE: v4
 
 jobs:
   main-image:
@@ -97,9 +101,17 @@ jobs:
           DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 'docs/api/' 2>/dev/null \
             | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
           BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
-          echo "component hashes: go=${GO_HASH} ui=${UI_HASH} docker=${DOCKER_HASH}"
+          # Recipe hash: the transform script, the recipe version, and
+          # the base image digest. Base image is rebuilt weekly; a new
+          # base must invalidate receipts, not serve stale-layer images.
+          BASE_DIGEST=$(docker buildx imagetools inspect \
+            "quay.io/stackrox-io/main:base-${{ matrix.arch }}" 2>/dev/null \
+            | grep Digest: | awk '{print $2}' | cut -c8-19)
+          RECIPE_HASH=$((cat tools/ca/gen-dockerfile 2>/dev/null; \
+            echo "${{ env.WORKFLOW_RECIPE }}${BASE_DIGEST}") | sha256sum | cut -c1-16)
+          echo "component hashes: go=${GO_HASH} ui=${UI_HASH} docker=${DOCKER_HASH} recipe=${RECIPE_HASH}"
           
-          RECEIPT_KEY="build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${BUILD_HASH}"
+          RECEIPT_KEY="build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${RECIPE_HASH}-${BUILD_HASH}"
 
           if "${GOCACHEPROG}" -fetch-any "$RECEIPT_KEY" /tmp/receipt.json 2>/dev/null && [ -s /tmp/receipt.json ]; then
             DIGEST=$(jq -r '.digest // empty' /tmp/receipt.json)
@@ -379,11 +391,16 @@ jobs:
               | grep -Ev 'node_modules|test|spec' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
             DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 'docs/api/' 2>/dev/null \
               | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+            BASE_DIGEST=$(docker buildx imagetools inspect \
+              "quay.io/stackrox-io/main:base-${{ matrix.arch }}" 2>/dev/null \
+              | grep Digest: | awk '{print $2}' | cut -c8-19)
+            RECIPE_HASH=$((cat tools/ca/gen-dockerfile 2>/dev/null; \
+              echo "${{ env.WORKFLOW_RECIPE }}${BASE_DIGEST}") | sha256sum | cut -c1-16)
             BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
             cat > /tmp/build-receipt.json <<EOF
           {"go_hash":"${GO_HASH}","ui_hash":"${UI_HASH}","docker_hash":"${DOCKER_HASH}","branding":"${{ matrix.branding }}","arch":"${{ matrix.arch }}","registry":"${{ matrix.registry }}","tag":"${{ env.IMAGE_TAG }}","digest":"${DIGEST}","built_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
           EOF
-            "${GOCACHEPROG}" -store-all "build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${BUILD_HASH}" /tmp/build-receipt.json
+            "${GOCACHEPROG}" -store-all "build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${RECIPE_HASH}-${BUILD_HASH}" /tmp/build-receipt.json
             echo "receipt stored: ${DIGEST:0:20}... (go=${GO_HASH:0:8} ui=${UI_HASH:0:8})"
           fi
 
