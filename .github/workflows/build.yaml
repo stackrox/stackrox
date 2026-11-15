@@ -247,6 +247,11 @@ jobs:
 
       - name: OSS notices — fetch or generate
         if: steps.fastpath.outputs.skip != 'true'
+        env:
+          # Tool installs (go install) must not inherit -mod=vendor:
+          # build tools aren't vendored, and vendor/'s mere presence
+          # auto-enables vendor mode on go >= 1.14.
+          GOFLAGS: -buildvcs=false -mod=mod
         run: |
           set -euo pipefail
           # THIRD_PARTY_NOTICES is generated from the dependency tree —
@@ -275,6 +280,9 @@ jobs:
 
       - name: Static data — external networks + swagger
         if: steps.fastpath.outputs.skip != 'true'
+        env:
+          # See notices step: build tools need module mode.
+          GOFLAGS: -buildvcs=false -mod=mod
         run: |
           set -euo pipefail
           # swagger.json is GENERATED from API protos (make swagger-docs);
