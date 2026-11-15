@@ -15,7 +15,7 @@ source "$ROOT/scripts/ci/lib.sh"
 # `make tag` value (format: X.Y.x-N-gSHA); nightly tags (X.Y.x-nightly-YYYYMMDD)
 # work too. roxie just pulls this tag, so no rebuild or code revert is needed.
 # Leave empty for normal behavior (poll for this branch's freshly built images).
-ACS_IMAGE_TAG_OVERRIDE="${ACS_IMAGE_TAG_OVERRIDE:-5.1.x-520-gab1a9015f0}"
+ACS_IMAGE_TAG_OVERRIDE="${ACS_IMAGE_TAG_OVERRIDE:-5.1.x-519-g0385009f5c}"
 
 if [[ -n "${ACS_IMAGE_TAG_OVERRIDE}" ]]; then
   MAIN_IMAGE_TAG="${ACS_IMAGE_TAG_OVERRIDE}"
