@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -203,6 +204,23 @@ func TestSweep(t *testing.T) {
 
 		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgNil", nil)}, nil)
+		// No MarkScanChecksStaleByConfig expectation: gomock fails if it is called.
+
+		sw.sweep()
+	})
+
+	t.Run("config updated after its previous tick is skipped", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
+		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+		sw := newTestSweeper(scanConfigMock, checkResultMock)
+
+		// A config just updated: its previous scheduled tick predates LastUpdatedTime, so the current
+		// schedule was not in effect then and the config must be skipped this sweep.
+		cfg := scanConfig("cfgRecentlyUpdated", dailySchedule(3, 30))
+		cfg.LastUpdatedTime = protocompat.TimestampNow()
+		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+			Return([]*storage.ComplianceOperatorScanConfigurationV2{cfg}, nil)
 		// No MarkScanChecksStaleByConfig expectation: gomock fails if it is called.
 
 		sw.sweep()
