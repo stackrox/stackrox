@@ -297,7 +297,7 @@ jobs:
           # the Makefile writes it to image/rhel/docs/ (GENERATED_DOC_PATH),
           # which is where the checkout's Dockerfile COPYs it from.
           # Keyed by the proto inputs + merge script.
-          SWAGGER_KEY="ca-swagger-$(git ls-files 'proto/' 'central/docs/' 'scripts/mergeswag.sh' 'make/protogen.mk' 2>/dev/null \
+          SWAGGER_KEY="ca-swagger-v2-$(git ls-files 'proto/' 'central/docs/' 'scripts/mergeswag.sh' 'make/protogen.mk' 2>/dev/null \
             | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)"
           if "${GOCACHEPROG}" -fetch-any "$SWAGGER_KEY" /tmp/swagger.tar 2>/dev/null && [ -s /tmp/swagger.tar ]; then
             tar -xf /tmp/swagger.tar
