@@ -281,14 +281,30 @@ jobs:
         if: steps.fastpath.outputs.skip != 'true'
         run: |
           set -euo pipefail
+          mkdir -p static-data/docs/api/v1 static-data/docs/api/v2
+
+          # swagger.json is GENERATED from API protos (make swagger-docs),
+          # keyed by the proto inputs + merge script.
+          SWAGGER_KEY="ca-swagger-$(git ls-files 'proto/' 'central/docs/' 'scripts/mergeswag.sh' 'make/protogen.mk' 2>/dev/null \
+            | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)"
+          if "${GOCACHEPROG}" -fetch-any "$SWAGGER_KEY" /tmp/swagger.tar 2>/dev/null && [ -s /tmp/swagger.tar ]; then
+            tar -xf /tmp/swagger.tar -C static-data/
+            echo "swagger: FETCHED from blob store"
+          else
+            echo "swagger: GENERATING (blob miss)"
+            go mod download github.com/stackrox/scanner
+            make swagger-docs
+            cp image/rhel/docs/api/v1/swagger.json static-data/docs/api/v1/
+            cp image/rhel/docs/api/v2/swagger.json static-data/docs/api/v2/
+            tar -cf /tmp/swagger.tar -C static-data docs
+            "${GOCACHEPROG}" -store-all "$SWAGGER_KEY" /tmp/swagger.tar || true
+          fi
+
           # external-networks.zip is fetched from definitions.stackrox.io
           # (drifts independently of the source tree, like master's build,
           # which also fetches it fresh every time).
-          mkdir -p static-data/docs/api/v1 static-data/docs/api/v2
           bash image/rhel/fetch-stackrox-data.sh static-data
-          cp docs/api/v1/swagger.json static-data/docs/api/v1/
-          cp docs/api/v2/swagger.json static-data/docs/api/v2/
-          echo "static-data: fetched"
+          echo "static-data: ready"
 
       - name: Docker build + push
         if: steps.fastpath.outputs.skip != 'true'
