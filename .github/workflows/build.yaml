@@ -253,14 +253,25 @@ jobs:
         if: steps.fastpath.outputs.skip != 'true'
         run: |
           set -euo pipefail
-          # THIRD_PARTY_NOTICES is generated from the dependency tree,
-          # so it is keyed by go.sum (same deps → same notices).
-          NOTICE_KEY="ca-notices-$(sha256sum go.sum | cut -c1-16)"
+          # THIRD_PARTY_NOTICES is generated from the dependency tree —
+          # both Go deps (go.sum) and UI deps (package-lock.json).
+          NOTICE_KEY="ca-notices-$(sha256sum go.sum ui/apps/platform/package-lock.json | sha256sum | cut -c1-16)"
           if "${GOCACHEPROG}" -fetch-any "$NOTICE_KEY" /tmp/notices.tar 2>/dev/null && [ -s /tmp/notices.tar ]; then
             tar -xf /tmp/notices.tar -C image/rhel/
             echo "notices: FETCHED from blob store"
           else
             echo "notices: GENERATING (blob miss)"
+            # ossls audits the UI dependency tree too, so node_modules
+            # must be present even when the UI build was blob-fetched.
+            if [ ! -d ui/apps/platform/node_modules ]; then
+              DEPS_KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
+              if "${GOCACHEPROG}" -fetch-any "$DEPS_KEY" /tmp/ui-deps.tar 2>/dev/null && [ -s /tmp/ui-deps.tar ]; then
+                tar -xf /tmp/ui-deps.tar -C "$GITHUB_WORKSPACE" 2>/dev/null || true
+                touch ui/deps
+              else
+                make -C ui deps
+              fi
+            fi
             make ossls-notice
             tar -cf /tmp/notices.tar -C image/rhel THIRD_PARTY_NOTICES
             "${GOCACHEPROG}" -store-all "$NOTICE_KEY" /tmp/notices.tar || true
