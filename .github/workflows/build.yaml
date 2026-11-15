@@ -48,14 +48,16 @@ jobs:
           fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: Ensure build tools present
-        # When building a SHA that doesn't contain our tools (e.g., a
-        # master commit for validation), fetch them from this branch.
+      - name: Ensure CA build infrastructure present
+        # When building a tree that doesn't contain our infrastructure
+        # (e.g., a master commit for validation), fetch it from this
+        # branch. The source under test is the checkout; the build
+        # machinery (tools, Dockerfiles) always comes from here.
         run: |
-          if [ ! -f tools/gocache-serve/bin/gocache-serve ]; then
-            echo 'tools not in checkout, fetching from CA branch...'
+          if [ ! -f tools/gocache-serve/bin/gocache-serve ] || [ ! -f image/minimal/Dockerfile ]; then
+            echo 'CA infrastructure not in checkout, fetching from branch...'
             git fetch origin davdhacs/content-addressed-build --depth=1
-            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/
+            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/ image/minimal/ image/base/
           fi
 
       - name: Setup
