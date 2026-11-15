@@ -63,6 +63,8 @@ jobs:
           fi
 
       - name: Setup
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # Buildx (docker-container driver for full cache support)
@@ -79,9 +81,27 @@ jobs:
           echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
-          # Image tag
-          TAG=$(git describe --tags --always 2>/dev/null || echo "dev")
-          echo "IMAGE_TAG=${TAG}" >> "$GITHUB_ENV"
+          # Image tag + version stamps, computed once for all steps.
+          # BUILD_TAG feeds both go-build.sh x_def stamps AND the UI's
+          # getProductVersion() (make tag → git describe, which is empty
+          # on a shallow checkout → invalid semver → webpack fails).
+          # Computed shallow-friendly: base tag via ls-remote (remote
+          # query), commit count via the GitHub compare API.
+          SHA="$(git rev-parse HEAD)"
+          SHORTSHA="$(git rev-parse --short HEAD)"
+          LATEST_TAG="$(git ls-remote --tags --refs origin \
+            | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
+          if [ -n "$LATEST_TAG" ]; then
+            COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
+              --jq .ahead_by 2>/dev/null || echo 0)"
+            BUILD_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
+          else
+            BUILD_TAG_VAL="0.0.0-g${SHORTSHA}"
+          fi
+          echo "BUILD_TAG=${BUILD_TAG_VAL}" >> "$GITHUB_ENV"
+          echo "SHORTCOMMIT=${SHORTSHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=${SHORTSHA}" >> "$GITHUB_ENV"
+          echo "stamps: BUILD_TAG=${BUILD_TAG_VAL}"
 
       # =================================================================
       # FAST PATH — does the output already exist for this source state?
@@ -141,23 +161,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Version stamps, mirroring master's CI. env.mk honors
-          # BUILD_TAG as the override (its define-job-matrix mechanism),
-          # so we compute the describe-equivalent WITHOUT local tag
-          # history: base tag from ls-remote (remote query, works on
-          # shallow), commit count from the GitHub compare API.
-          SHA="$(git rev-parse HEAD)"
-          SHORTSHA="$(git rev-parse --short HEAD)"
-          LATEST_TAG="$(git ls-remote --tags --refs origin \
-            | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
-          if [ -n "$LATEST_TAG" ]; then
-            COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
-              --jq .ahead_by 2>/dev/null || echo 0)"
-            export BUILD_TAG="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
-          else
-            export BUILD_TAG="0.0.0-g${SHORTSHA}"
-          fi
-          export SHORTCOMMIT="$SHORTSHA"
+          # Stamps come from the Setup step (BUILD_TAG/SHORTCOMMIT in env)
           echo "stamps: BUILD_TAG=$BUILD_TAG SHORTCOMMIT=$SHORTCOMMIT go=$(go version)"
 
           GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
