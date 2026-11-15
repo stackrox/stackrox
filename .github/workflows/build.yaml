@@ -25,8 +25,6 @@ env:
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-  BUILD_TAG: 0.0.0
-  SHORTCOMMIT: "0000000"
   GOFLAGS: -buildvcs=false
 
 jobs:
@@ -130,7 +128,24 @@ jobs:
           GOOS: linux
         run: |
           set -euo pipefail
-          BIN_KEY="go-binaries-${{ matrix.arch }}-default"
+          # Version stamps, mirroring master's CI (define-job-matrix
+          # outputs). Shallow checkouts have no tags, so git describe
+          # falls back to the short SHA — deterministic per commit.
+          export BUILD_TAG="$(git describe --tags --always 2>/dev/null || echo 0.0.0)"
+          export SHORTCOMMIT="$(git rev-parse --short HEAD)"
+          echo "stamps: BUILD_TAG=$BUILD_TAG SHORTCOMMIT=$SHORTCOMMIT go=$(go version)"
+
+          GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+            | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          # The key includes BUILD_TAG: version stamps are baked into the
+          # binaries (x_defs), so a README-only change (same GO_HASH,
+          # different tag) must not reuse the old archive. The compile
+          # cache still dedupes the actual compilation; only the link
+          # re-runs.
+          BIN_KEY="ca-binaries-${{ matrix.arch }}-${GO_HASH}-${BUILD_TAG}"
+          # All-platform roxctl set: identical content in every arch's
+          # image (the CLI download tarballs), so one shared key.
+          ROXCTL_KEY="ca-roxctl-all-${GO_HASH}-${BUILD_TAG}"
 
           if "${GOCACHEPROG}" -fetch-any "$BIN_KEY" /tmp/go-binaries.tar 2>/dev/null && [ -s /tmp/go-binaries.tar ]; then
             tar -xf /tmp/go-binaries.tar
@@ -149,17 +164,47 @@ jobs:
             fi
             export GOFLAGS="${GOFLAGS} -mod=vendor"
 
-            # Compile (gocache-serve handles the compile cache)
-            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/central ./central
-            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/config-controller ./central/config-controller
-            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/worker ./central/worker
-            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/roxctl ./roxctl
+            # Compile via go-build.sh — identical to master: -s -w
+            # stripping, x_def version stamps, deterministic build IDs.
+            # Output names are the package dir names; the image
+            # Dockerfile applies the two renames master's Makefile does
+            # (worker→central-worker, kubernetes→kubernetes-sensor).
+            scripts/go-build.sh \
+              central \
+              central/worker \
+              compliance/cmd/compliance \
+              config-controller \
+              migrator \
+              sensor/admission-control \
+              sensor/kubernetes \
+              compliance/virtualmachines/roxagent
+            scripts/go-build.sh roxctl
 
-            # Store for other jobs
+            # Store for other jobs/legs
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
               -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
             "${GOCACHEPROG}" -store-all "$BIN_KEY" /tmp/go-binaries.tar || true
             echo "binaries: compiled and stored"
+          fi
+
+          # roxctl for every platform (served as CLI downloads from
+          # /assets/downloads/cli/, plus the matching-arch binary in
+          # /stackrox/roxctl). Shared across arch legs.
+          if "${GOCACHEPROG}" -fetch-any "$ROXCTL_KEY" /tmp/roxctl-all.tar 2>/dev/null && [ -s /tmp/roxctl-all.tar ]; then
+            tar -xf /tmp/roxctl-all.tar
+            echo "roxctl (all platforms): FETCHED from blob store"
+          else
+            echo "roxctl (all platforms): COMPILING (blob miss)"
+            for plat in linux-amd64 linux-arm64 linux-ppc64le linux-s390x darwin-amd64 darwin-arm64 windows-amd64; do
+              GOOS="${plat%-*}" GOARCH="${plat#*-}" scripts/go-build.sh roxctl
+            done
+            tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+              -cvf /tmp/roxctl-all.tar \
+              bin/darwin_amd64 bin/darwin_arm64 \
+              bin/linux_amd64 bin/linux_arm64 bin/linux_ppc64le bin/linux_s390x \
+              bin/windows_amd64
+            "${GOCACHEPROG}" -store-all "$ROXCTL_KEY" /tmp/roxctl-all.tar || true
+            echo "roxctl (all platforms): compiled and stored"
           fi
 
       - name: UI — fetch from blob or build
@@ -204,6 +249,36 @@ jobs:
             echo "UI: built and stored"
           fi
 
+      - name: OSS notices — fetch or generate
+        if: steps.fastpath.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          # THIRD_PARTY_NOTICES is generated from the dependency tree,
+          # so it is keyed by go.sum (same deps → same notices).
+          NOTICE_KEY="ca-notices-$(sha256sum go.sum | cut -c1-16)"
+          if "${GOCACHEPROG}" -fetch-any "$NOTICE_KEY" /tmp/notices.tar 2>/dev/null && [ -s /tmp/notices.tar ]; then
+            tar -xf /tmp/notices.tar -C image/rhel/
+            echo "notices: FETCHED from blob store"
+          else
+            echo "notices: GENERATING (blob miss)"
+            make ossls-notice
+            tar -cf /tmp/notices.tar -C image/rhel THIRD_PARTY_NOTICES
+            "${GOCACHEPROG}" -store-all "$NOTICE_KEY" /tmp/notices.tar || true
+          fi
+
+      - name: Static data — external networks + swagger
+        if: steps.fastpath.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          # external-networks.zip is fetched from definitions.stackrox.io
+          # (drifts independently of the source tree, like master's build,
+          # which also fetches it fresh every time).
+          mkdir -p static-data/docs/api/v1 static-data/docs/api/v2
+          bash image/rhel/fetch-stackrox-data.sh static-data
+          cp docs/api/v1/swagger.json static-data/docs/api/v1/
+          cp docs/api/v2/swagger.json static-data/docs/api/v2/
+          echo "static-data: fetched"
+
       - name: Docker build + push
         if: steps.fastpath.outputs.skip != 'true'
         env:
@@ -211,19 +286,46 @@ jobs:
         run: |
           set -euo pipefail
           # Stage a clean build context (the repo root's .dockerignore
-          # excludes /bin/ which is where our extracted binaries live)
+          # excludes /bin/, and the checkout may be a master tree without
+          # our layout). Mirrors master's copy-go-binaries-to-image-dir.
           CTX=/tmp/docker-context
-          rm -rf "$CTX" && mkdir -p "$CTX/bin" "$CTX/ui"
-          cp -r bin/linux_${{ matrix.arch }} "$CTX/bin/"
-          cp -r ui/build/ "$CTX/ui/"
-          
+          rm -rf "$CTX"
+          mkdir -p "$CTX/bin/linux_${{ matrix.arch }}" "$CTX/cli" "$CTX/ui" \
+            "$CTX/static-data" "$CTX/THIRD_PARTY_NOTICES"
+
+          # Go binaries (worker→central-worker and kubernetes→kubernetes-sensor
+          # renames happen in the Dockerfile COPY dests, like master's Makefile)
+          cp bin/linux_${{ matrix.arch }}/* "$CTX/bin/linux_${{ matrix.arch }}/"
+
+          # roxctl for every platform: raw binaries get tarred (what
+          # /assets/downloads/cli/ serves), plus the arch-matching binary
+          for plat in linux-amd64 linux-arm64 linux-ppc64le linux-s390x darwin-amd64 darwin-arm64; do
+            cp "bin/${plat//-/_}/roxctl" "$CTX/cli/roxctl-${plat}"
+            (cd "$CTX/cli" && tar -czf "roxctl-${plat}.tar.gz" "roxctl-${plat}")
+          done
+          cp bin/windows_amd64/roxctl.exe "$CTX/cli/roxctl-windows-amd64.exe"
+          (cd "$CTX/cli" && tar -czf "roxctl-windows-amd64.tar.gz" "roxctl-windows-amd64.exe")
+
+          # Wrapper scripts (start-central.sh, entrypoint-wrapper.sh, ...)
+          cp -r image/rhel/static-bin "$CTX/static-bin"
+          # swagger docs + external networks data
+          cp -r static-data/. "$CTX/static-data/"
+          # Third-party notices
+          cp -r image/rhel/THIRD_PARTY_NOTICES/. "$CTX/THIRD_PARTY_NOTICES/"
+          # UI build output
+          cp -r ui/build/. "$CTX/ui/"
+
           # Build using the minimal Dockerfile (pre-built base + COPY --link)
           docker buildx build \
             --platform "linux/${{ matrix.arch }}" \
             --load \
+            --cache-from "type=registry,ref=${{ matrix.registry }}/main:cache-${{ matrix.arch }}" \
             --cache-to type=inline \
             -t "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" \
             --build-arg "TARGET_ARCH=${{ matrix.arch }}" \
+            --build-arg "LABEL_VERSION=${{ env.IMAGE_TAG }}" \
+            --build-arg "LABEL_RELEASE=ci" \
+            --build-arg "ROX_IMAGE_FLAVOR=development" \
             --build-arg "ROX_PRODUCT_BRANDING=${{ matrix.branding }}" \
             --file image/minimal/Dockerfile \
             "$CTX" 2>&1 | tail -5
