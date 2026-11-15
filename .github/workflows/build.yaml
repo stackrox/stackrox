@@ -128,7 +128,7 @@ jobs:
             # Compile (gocache-serve handles the compile cache)
             CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/central ./central
             CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/config-controller ./central/config-controller
-            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/central-worker ./central/worker
+            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/worker ./central/worker
             CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/roxctl ./roxctl
 
             # Store for other jobs
