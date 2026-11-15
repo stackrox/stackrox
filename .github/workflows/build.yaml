@@ -455,12 +455,20 @@ jobs:
           set -euo pipefail
           TAG="${{ needs.main-image.outputs.image_tag }}"
           echo "assembling multi-arch manifests for tag: ${TAG}"
+          # docker holds one quay.io credential at a time — re-login
+          # between registries.
           echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login quay.io \
             -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin
-          for repo in rhacs-eng stackrox-io; do
-            docker buildx imagetools create \
-              -t "quay.io/${repo}/main:${TAG}" \
-              "quay.io/${repo}/main:${TAG}-amd64" \
-              "quay.io/${repo}/main:${TAG}-arm64"
-            echo "created quay.io/${repo}/main:${TAG} (amd64+arm64)"
-          done
+          docker buildx imagetools create \
+            -t "quay.io/rhacs-eng/main:${TAG}" \
+            "quay.io/rhacs-eng/main:${TAG}-amd64" \
+            "quay.io/rhacs-eng/main:${TAG}-arm64"
+          echo "created quay.io/rhacs-eng/main:${TAG} (amd64+arm64)"
+          docker logout quay.io
+          echo "${QUAY_STACKROX_IO_RW_PASSWORD}" | docker login quay.io \
+            -u "${QUAY_STACKROX_IO_RW_USERNAME}" --password-stdin
+          docker buildx imagetools create \
+            -t "quay.io/stackrox-io/main:${TAG}" \
+            "quay.io/stackrox-io/main:${TAG}-amd64" \
+            "quay.io/stackrox-io/main:${TAG}-arm64"
+          echo "created quay.io/stackrox-io/main:${TAG} (amd64+arm64)"
