@@ -52,10 +52,10 @@ jobs:
         # branch. The source under test is the checkout; the build
         # machinery (tools, Dockerfiles) always comes from here.
         run: |
-          if [ ! -f tools/gocache-serve/bin/gocache-serve ] || [ ! -f image/minimal/Dockerfile ]; then
+          if [ ! -f tools/gocache-serve/bin/gocache-serve ] || [ ! -f tools/ca/gen-dockerfile ]; then
             echo 'CA infrastructure not in checkout, fetching from branch...'
             git fetch origin davdhacs/content-addressed-build --depth=1
-            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/ image/minimal/ image/base/
+            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/ tools/ca/ image/base/
           fi
 
       - name: Setup
@@ -152,6 +152,11 @@ jobs:
             echo "binaries: FETCHED from blob store"
           else
             echo "binaries: COMPILING (blob miss)"
+            # Deepen the shallow checkout so `git describe` (used by
+            # status.sh for version stamps) can reach the nearest tag.
+            # Only on the build path — the fast path stays shallow/fast.
+            git fetch --tags --deepen=1000 origin 2>/dev/null \
+              || git fetch --tags origin 2>/dev/null || true
             # Vendor restore
             VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
             if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
@@ -164,21 +169,13 @@ jobs:
             fi
             export GOFLAGS="${GOFLAGS} -mod=vendor"
 
-            # Compile via go-build.sh — identical to master: -s -w
-            # stripping, x_def version stamps, deterministic build IDs.
-            # Output names are the package dir names; the image
-            # Dockerfile applies the two renames master's Makefile does
-            # (worker→central-worker, kubernetes→kubernetes-sensor).
-            scripts/go-build.sh \
-              central \
-              central/worker \
-              compliance/cmd/compliance \
-              config-controller \
-              migrator \
-              sensor/admission-control \
-              sensor/kubernetes \
-              compliance/virtualmachines/roxagent
-            scripts/go-build.sh roxctl
+            # Compile via the CHECKOUT's own Makefile targets — the
+            # binary set is the tree's source of truth (drift-proof:
+            # a tree that adds/removes a binary, e.g. sensor-upgrader,
+            # builds correctly without workflow changes). go-build.sh
+            # (invoked by make) applies -s -w, x_def stamps, and — on
+            # CA-branch trees — deterministic build IDs.
+            make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
 
             # Store for other jobs/legs
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
@@ -188,16 +185,15 @@ jobs:
           fi
 
           # roxctl for every platform (served as CLI downloads from
-          # /assets/downloads/cli/, plus the matching-arch binary in
-          # /stackrox/roxctl). Shared across arch legs.
+          # /assets/downloads/cli/). Built by the checkout's `make cli`,
+          # shared across arch legs. (Master stubs these on plain PR
+          # builds; master-branch and release builds compile them.)
           if "${GOCACHEPROG}" -fetch-any "$ROXCTL_KEY" /tmp/roxctl-all.tar 2>/dev/null && [ -s /tmp/roxctl-all.tar ]; then
             tar -xf /tmp/roxctl-all.tar
             echo "roxctl (all platforms): FETCHED from blob store"
           else
             echo "roxctl (all platforms): COMPILING (blob miss)"
-            for plat in linux-amd64 linux-arm64 linux-ppc64le linux-s390x darwin-amd64 darwin-arm64 windows-amd64; do
-              GOOS="${plat%-*}" GOARCH="${plat#*-}" scripts/go-build.sh roxctl
-            done
+            make cli
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
               -cvf /tmp/roxctl-all.tar \
               bin/darwin_amd64 bin/darwin_arm64 \
@@ -281,68 +277,55 @@ jobs:
         if: steps.fastpath.outputs.skip != 'true'
         run: |
           set -euo pipefail
-          mkdir -p static-data/docs/api/v1 static-data/docs/api/v2
-
-          # swagger.json is GENERATED from API protos (make swagger-docs),
-          # keyed by the proto inputs + merge script.
+          # swagger.json is GENERATED from API protos (make swagger-docs);
+          # the Makefile writes it to image/rhel/docs/ (GENERATED_DOC_PATH),
+          # which is where the checkout's Dockerfile COPYs it from.
+          # Keyed by the proto inputs + merge script.
           SWAGGER_KEY="ca-swagger-$(git ls-files 'proto/' 'central/docs/' 'scripts/mergeswag.sh' 'make/protogen.mk' 2>/dev/null \
             | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)"
           if "${GOCACHEPROG}" -fetch-any "$SWAGGER_KEY" /tmp/swagger.tar 2>/dev/null && [ -s /tmp/swagger.tar ]; then
-            tar -xf /tmp/swagger.tar -C static-data/
+            tar -xf /tmp/swagger.tar
             echo "swagger: FETCHED from blob store"
           else
             echo "swagger: GENERATING (blob miss)"
             go mod download github.com/stackrox/scanner
             make swagger-docs
-            cp image/rhel/docs/api/v1/swagger.json static-data/docs/api/v1/
-            cp image/rhel/docs/api/v2/swagger.json static-data/docs/api/v2/
-            tar -cf /tmp/swagger.tar -C static-data docs
+            tar -cf /tmp/swagger.tar image/rhel/docs
             "${GOCACHEPROG}" -store-all "$SWAGGER_KEY" /tmp/swagger.tar || true
           fi
 
           # external-networks.zip is fetched from definitions.stackrox.io
           # (drifts independently of the source tree, like master's build,
           # which also fetches it fresh every time).
-          bash image/rhel/fetch-stackrox-data.sh static-data
+          bash image/rhel/fetch-stackrox-data.sh image/rhel/static-data
           echo "static-data: ready"
 
       - name: Docker build + push
         if: steps.fastpath.outputs.skip != 'true'
         env:
-          GOARCH: ${{ matrix.arch }}
+          CI: "1"
         run: |
           set -euo pipefail
-          # Stage a clean build context (the repo root's .dockerignore
-          # excludes /bin/, and the checkout may be a master tree without
-          # our layout). Mirrors master's copy-go-binaries-to-image-dir.
-          CTX=/tmp/docker-context
-          rm -rf "$CTX"
-          mkdir -p "$CTX/bin/linux_${{ matrix.arch }}" "$CTX/cli" "$CTX/ui" \
-            "$CTX/static-data" "$CTX/THIRD_PARTY_NOTICES"
+          # Stage the image context exactly the way the checkout's own
+          # Makefile does (image/rhel/): binaries with the tree's renames
+          # (worker→central-worker, kubernetes→kubernetes-sensor, ...),
+          # UI build output. Drift-proof by construction.
+          make copy-binaries-to-image-dir
 
-          # Go binaries (worker→central-worker and kubernetes→kubernetes-sensor
-          # renames happen in the Dockerfile COPY dests, like master's Makefile)
-          cp bin/linux_${{ matrix.arch }}/* "$CTX/bin/linux_${{ matrix.arch }}/"
+          # roxctl tarballs (what /assets/downloads/cli/ serves), like
+          # the checkout's cli-tarballs Docker stage.
+          (cd image/rhel/bin && \
+            for f in roxctl-*; do
+              [[ -f "$f" && -x "$f" ]] || continue
+              tar -czf "${f%.exe}.tar.gz" "$f"
+            done)
 
-          # roxctl for every platform: raw binaries get tarred (what
-          # /assets/downloads/cli/ serves), plus the arch-matching binary
-          for plat in linux-amd64 linux-arm64 linux-ppc64le linux-s390x darwin-amd64 darwin-arm64; do
-            cp "bin/${plat//-/_}/roxctl" "$CTX/cli/roxctl-${plat}"
-            (cd "$CTX/cli" && tar -czf "roxctl-${plat}.tar.gz" "roxctl-${plat}")
-          done
-          cp bin/windows_amd64/roxctl.exe "$CTX/cli/roxctl-windows-amd64.exe"
-          (cd "$CTX/cli" && tar -czf "roxctl-windows-amd64.tar.gz" "roxctl-windows-amd64.exe")
+          # Generate the Dockerfile from the checkout's own
+          # image/rhel/Dockerfile (final stage verbatim, base swapped
+          # for the pre-built content-addressed base).
+          tools/ca/gen-dockerfile image/rhel/Dockerfile \
+            "${{ matrix.registry }}/main" /tmp/generated.Dockerfile
 
-          # Wrapper scripts (start-central.sh, entrypoint-wrapper.sh, ...)
-          cp -r image/rhel/static-bin "$CTX/static-bin"
-          # swagger docs + external networks data
-          cp -r static-data/. "$CTX/static-data/"
-          # Third-party notices
-          cp -r image/rhel/THIRD_PARTY_NOTICES/. "$CTX/THIRD_PARTY_NOTICES/"
-          # UI build output
-          cp -r ui/build/. "$CTX/ui/"
-
-          # Build using the minimal Dockerfile (pre-built base + COPY --link)
           docker buildx build \
             --platform "linux/${{ matrix.arch }}" \
             --load \
@@ -354,8 +337,8 @@ jobs:
             --build-arg "LABEL_RELEASE=ci" \
             --build-arg "ROX_IMAGE_FLAVOR=development" \
             --build-arg "ROX_PRODUCT_BRANDING=${{ matrix.branding }}" \
-            --file image/minimal/Dockerfile \
-            "$CTX" 2>&1 | tail -5
+            --file /tmp/generated.Dockerfile \
+            image/rhel 2>&1 | tail -5
 
           # Push
           docker push "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}"
