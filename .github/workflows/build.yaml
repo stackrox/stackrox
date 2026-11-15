@@ -1,20 +1,12 @@
-name: Build (Content-Addressed)
-# PROTOTYPE: content-addressed build system.
+name: Build
+# Content-addressed build system.
+# Each job is a self-contained pipeline: trace backward from the output,
+# check what exists, build only the delta. No `needs` chains. The blob
+# store IS the coordination mechanism.
 #
-# Architecture: each matrix leg is a SELF-CONTAINED pipeline that traces
-# backward from its output ("the image I need"). No `needs` chains, no
-# inter-job coordination. The blob store IS the synchronization mechanism:
-# whichever job reaches a shared node first (binaries, UI) stores it;
-# the others find it there. Near-duplicate parallel work is accepted —
-# wall-clock time is the only metric that matters.
-#
-# Fast path (warm run, no source change): ~30s
-#   checkout → hash → receipt found → re-tag → done
-#
-# Build path (source changed): ~2-5m
-#   checkout → hash → no receipt → fetch-or-build inputs → docker → push → receipt
-#
-# Jobs disabled during prototyping: unit-tests, style (noise).
+# Warm run target: ~30s (re-tag only)
+# 1-binary-change target: ~2 min
+# Full rebuild target: ~5 min
 
 on:
   pull_request:
@@ -28,24 +20,16 @@ on:
 
 permissions:
   contents: read
-  actions: read
 
 env:
-  # Azure blob-store credentials — set once, read by gocache-serve
-  # and the shared cache actions from the environment.
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-  # Stable version stamping for deterministic binaries.
   BUILD_TAG: 0.0.0
   SHORTCOMMIT: "0000000"
   GOFLAGS: -buildvcs=false
 
 jobs:
-  # ===================================================================
-  # MAIN IMAGES — the critical path for e2e tests.
-  # Each leg: check receipt → (skip | fetch-or-build → docker → push → receipt)
-  # ===================================================================
   main-image:
     strategy:
       fail-fast: false
@@ -58,40 +42,64 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 20
     steps:
-      - name: Checkout (shallow — no git history needed for content addressing)
+      - name: Checkout (shallow)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: Setup (buildx + registry auth + blob store)
+      - name: Setup
         run: |
           set -euo pipefail
-          # Buildx with docker-container driver (full --cache-from/to support)
+          # Buildx (docker-container driver for full cache support)
           docker buildx create --name builder --driver docker-container --use 2>/dev/null || true
-          # Registry authentication (before build, so layer cache can pull)
+          # Registry auth (before build, so layer cache can pull)
           if [ "${{ matrix.branding }}" = "RHACS_BRANDING" ]; then
-            echo "${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}" | docker login quay.io -u "${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}" --password-stdin
+            echo "${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}" | docker login quay.io \
+              -u "${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}" --password-stdin
           else
-            echo "${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}" | docker login quay.io -u "${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}" --password-stdin
+            echo "${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}" | docker login quay.io \
+              -u "${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}" --password-stdin
           fi
-          # gocache-serve: the blob store client (self-contained bootstrap)
+          # Blob store client
           echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
-          # Build tag (for the image tag, not the ldflags)
-          TAG=$(git describe --tags --always 2>/dev/null || echo "0.0.0-dev")
+          # Image tag
+          TAG=$(git describe --tags --always 2>/dev/null || echo "dev")
           echo "IMAGE_TAG=${TAG}" >> "$GITHUB_ENV"
 
-      - name: Fast path — does the output already exist?
+      # =================================================================
+      # FAST PATH — does the output already exist for this source state?
+      # =================================================================
+      - name: Fast path (receipt check → re-tag)
         id: fastpath
         run: |
-          chmod +x scripts/ci/fast-path.sh
-          scripts/ci/fast-path.sh "${{ matrix.branding }}" "${{ matrix.arch }}" "${{ env.IMAGE_TAG }}"
+          set -euo pipefail
+          TREE_HASH=$(git rev-parse HEAD^{tree} | cut -c1-16)
+          RECEIPT_KEY="build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${TREE_HASH}"
 
-      # ==================== BUILD PATH (only if fast path missed) ====================
+          if "${GOCACHEPROG}" -fetch-any "$RECEIPT_KEY" /tmp/receipt.json 2>/dev/null && [ -s /tmp/receipt.json ]; then
+            DIGEST=$(jq -r '.digest // empty' /tmp/receipt.json)
+            REG=$(jq -r '.registry // empty' /tmp/receipt.json)
+            if [ -n "$DIGEST" ] && [ -n "$REG" ]; then
+              if docker buildx imagetools create \
+                -t "${REG}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" \
+                "${REG}/main@${DIGEST}" 2>/dev/null; then
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                echo "FAST PATH: re-tagged from receipt (tree ${TREE_HASH})"
+                exit 0
+              fi
+            fi
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "BUILD PATH: no receipt for tree ${TREE_HASH}"
 
-      - name: Fetch or compile binaries
+      # =================================================================
+      # BUILD PATH — fetch or compile inputs → docker → push → receipt
+      # =================================================================
+
+      - name: Binaries — fetch from blob or compile
         if: steps.fastpath.outputs.skip != 'true'
         env:
           GOARCH: ${{ matrix.arch }}
@@ -99,41 +107,31 @@ jobs:
         run: |
           set -euo pipefail
           BIN_KEY="go-binaries-${{ matrix.arch }}-default"
+
           if "${GOCACHEPROG}" -fetch-any "$BIN_KEY" /tmp/go-binaries.tar 2>/dev/null && [ -s /tmp/go-binaries.tar ]; then
             tar -xf /tmp/go-binaries.tar
-            echo "binaries: fetched from blob store (~2s)"
+            echo "binaries: FETCHED from blob store"
           else
-            echo "binaries: compiling (blob miss)"
-            # Setup Go
-            GOMODCACHE="/tmp/go-mod-cache"
-            mkdir -p "$GOMODCACHE"
-            export GOMODCACHE
-            # Vendor restore (content-addressed by go.sum)
+            echo "binaries: COMPILING (blob miss)"
+            # Vendor restore
             VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
             if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
               tar -xf /tmp/vendor.tar.gz
-              echo "vendor: restored (~5s)"
+              echo "vendor: restored"
             else
-              echo "vendor: generating"
               unset GOCACHEPROG; go mod vendor; export GOCACHEPROG="${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve"
               tar -czf /tmp/vendor.tar.gz vendor/
               "${GOCACHEPROG}" -store-all "$VENDOR_KEY" /tmp/vendor.tar.gz || true
             fi
             export GOFLAGS="${GOFLAGS} -mod=vendor"
-            # Compile (gocache-serve handles the compile cache).
-            # NOTE: CI= is unset to skip the Makefile's multi-arch roxctl
-            # copy (copy-go-binaries-to-image-dir copies roxctl for ALL
-            # platforms under ifdef CI — we only have the current arch).
-            # The docker build step handles the image directory setup.
-            unset CI
-            GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
-              go build -o bin/linux_${{ matrix.arch }}/central ./central
-            GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
-              go build -o bin/linux_${{ matrix.arch }}/roxctl ./roxctl
-            GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
-              go build -o bin/linux_${{ matrix.arch }}/config-controller ./central/config-controller
-            GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
-              go build -o bin/linux_${{ matrix.arch }}/worker ./central/workerp
+
+            # Compile (gocache-serve handles the compile cache)
+            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/central ./central
+            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/config-controller ./central/config-controller
+            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/worker ./central/workerp 2>/dev/null || \
+              CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/worker ./central/worker
+            CGO_ENABLED=0 go build -o bin/linux_${{ matrix.arch }}/roxctl ./roxctl
+
             # Store for other jobs
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
               -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
@@ -141,93 +139,63 @@ jobs:
             echo "binaries: compiled and stored"
           fi
 
-      - name: Fetch or build UI
+      - name: UI — fetch from blob or build
         if: steps.fastpath.outputs.skip != 'true'
         run: |
           set -euo pipefail
           UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
           UI_KEY="ui-build-${{ matrix.branding }}-${UI_HASH}"
+
           if "${GOCACHEPROG}" -fetch-any "$UI_KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
             tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
-            echo "UI: fetched from blob store (~2s)"
+            echo "UI: FETCHED from blob store"
           else
-            echo "UI: building (blob miss)"
-            # Node setup
-            NODE_VER=$(jq -r '.engines.node' ui/package.json 2>/dev/null | grep -o '[0-9]*' | head -1 || echo "22")
-            setup-node() {
-              curl -fsSL "https://deb.nodesource.com/setup_${NODE_VER}.x" | sudo -E bash - >/dev/null 2>&1
-              sudo apt-get install -y nodejs >/dev/null 2>&1
-            }
-            setup-node || echo "node setup: using system node"
-            # Deps (content-addressed by package-lock)
+            echo "UI: BUILDING (blob miss)"
+            # Node.js setup
+            NODE_VER=$(jq -r '.engines.node // "22"' ui/package.json | grep -o '[0-9]*' | head -1 || echo "22")
+            curl -fsSL "https://deb.nodesource.com/setup_${NODE_VER}.x" | sudo -E bash - >/dev/null 2>&1 || true
+            sudo apt-get install -y nodejs >/dev/null 2>&1 || true
+
+            # Deps (content-addressed)
             DEPS_KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
             if "${GOCACHEPROG}" -fetch-any "$DEPS_KEY" /tmp/ui-deps.tar 2>/dev/null && [ -s /tmp/ui-deps.tar ]; then
-              tar -xf /tmp/ui-deps.tar -C "$HOME/.cache" ./Cypress 2>/dev/null || true
-              tar -xf /tmp/ui-deps.tar -C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules 2>/dev/null || true
+              TAR_ARGS=(-C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules)
+              [ -d "$HOME/.cache/Cypress" ] && TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
+              tar -xf /tmp/ui-deps.tar "${TAR_ARGS[@]}" 2>/dev/null || true
               touch ui/deps
-              echo "UI deps: fetched from blob store"
+              echo "UI deps: fetched"
             else
               ROX_PRODUCT_BRANDING=${{ matrix.branding }} make -C ui deps
-              # Store deps for other jobs
               TAR_ARGS=(-C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules)
               [ -d "$HOME/.cache/Cypress" ] && TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
               tar -cf /tmp/ui-deps.tar "${TAR_ARGS[@]}"
               "${GOCACHEPROG}" -store-all "$DEPS_KEY" /tmp/ui-deps.tar || true
             fi
+
             # Build UI
             ROX_PRODUCT_BRANDING=${{ matrix.branding }} make -C ui build
-            # Store UI output
+
+            # Store output
             tar -cf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE" ui/build
             "${GOCACHEPROG}" -store-all "$UI_KEY" /tmp/ui-build.tar || true
             echo "UI: built and stored"
           fi
 
-      - name: Fetch misc (oss-notice, docs)
-        if: steps.fastpath.outputs.skip != 'true'
-        run: |
-          set -euo pipefail
-          if "${GOCACHEPROG}" -fetch-any "oss-notice-LATEST" /tmp/oss-notice.tar 2>/dev/null && [ -s /tmp/oss-notice.tar ]; then
-            tar -xf /tmp/oss-notice.tar -C image/rhel
-            echo "oss-notice: fetched from blob store"
-          else
-            echo "oss-notice: not found (non-fatal, placeholder)"
-            mkdir -p image/rhel/THIRD_PARTY_NOTICES
-            echo "placeholder" > image/rhel/THIRD_PARTY_NOTICES/NOTICE
-          fi
-
-      - name: Pre-populate multi-arch roxctl paths
-        # The Makefile's copy-go-binaries-to-image-dir (ifdef CI) copies
-        # roxctl for ALL platforms into the image. We only have the
-        # current arch — create placeholders for the others (the image
-        # includes roxctl binaries for download; only the current arch
-        # is functional in this prototype).
-        if: steps.fastpath.outputs.skip != 'true'
-        run: |
-          set -euo pipefail
-          for a in amd64 arm64 ppc64le s390x darwin_amd64 darwin_arm64; do
-            if [ ! -f "bin/linux_\${a}/roxctl" ] && [ ! -f "bin/\${a}/roxctl" ]; then
-              mkdir -p "bin/linux_\${a}" 2>/dev/null || mkdir -p "bin/\${a}" 2>/dev/null || true
-              # Use the current arch's roxctl as placeholder
-              if [ -f "bin/linux_\${GOARCH:-amd64}/roxctl" ]; then
-                cp "bin/linux_\${GOARCH:-amd64}/roxctl" "bin/linux_\${a}/roxctl" 2>/dev/null ||                   cp "bin/linux_\${GOARCH:-amd64}/roxctl" "bin/\${a}/roxctl" 2>/dev/null || true
-              fi
-            fi
-          done
-          echo "multi-arch roxctl paths populated"
-
       - name: Docker build + push
         if: steps.fastpath.outputs.skip != 'true'
         env:
           GOARCH: ${{ matrix.arch }}
-          GOOS: linux
-          DOCKER_CACHE_FROM: ${{ matrix.registry }}/main:cache-${{ matrix.arch }}
         run: |
           set -euo pipefail
-          # Build with layer cache (COPY --link + inline cache)
-          ROX_PRODUCT_BRANDING=${{ matrix.branding }} \
-          GOARCH=${{ matrix.arch }} \
-          TAG="${{ env.IMAGE_TAG }}" \
-            make docker-build-main-image
+          # Build using the minimal Dockerfile (pre-built base + COPY --link)
+          docker buildx build \
+            --platform "linux/${{ matrix.arch }}" \
+            --load \
+            --cache-to type=inline \
+            -t "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" \
+            --build-arg "ROX_PRODUCT_BRANDING=${{ matrix.branding }}" \
+            --file image/minimal/Dockerfile \
+            . 2>&1 | tail -5
 
           # Push
           docker push "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}"
@@ -235,33 +203,31 @@ jobs:
           # Update layer cache tag
           docker buildx imagetools create \
             -t "${{ matrix.registry }}/main:cache-${{ matrix.arch }}" \
-            "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" 2>&1 | tail -1
+            "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" 2>&1 | tail -1 || true
 
-          # Get the digest for the receipt
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
+          # Get digest for receipt
+          DIGEST=$(docker buildx imagetools inspect \
             "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" 2>/dev/null | \
-            sed 's/.*@//') || DIGEST=""
-          if [ -z "$DIGEST" ]; then
-            # Fallback: get from registry
-            DIGEST=$(docker buildx imagetools inspect \
-              "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" 2>/dev/null | \
-              grep "Digest:" | awk '{print $2}') || DIGEST=""
-          fi
+            grep "Digest:" | awk '{print $2}') || DIGEST=""
 
-          # Store the build receipt for the fast path
+          # Store build receipt (enables the fast path for next run)
           if [ -n "$DIGEST" ]; then
-            chmod +x scripts/ci/store-receipt.sh
-            scripts/ci/store-receipt.sh \
-              "${{ matrix.branding }}" "${{ matrix.arch }}" \
-              "${{ matrix.registry }}" "${{ env.IMAGE_TAG }}" "$DIGEST"
-          else
-            echo "WARNING: could not determine digest — receipt not stored"
+            TREE_HASH=$(git rev-parse HEAD^{tree} | cut -c1-16)
+            cat > /tmp/build-receipt.json <<EOF
+          {"tree_hash":"${TREE_HASH}","branding":"${{ matrix.branding }}","arch":"${{ matrix.arch }}","registry":"${{ matrix.registry }}","tag":"${{ env.IMAGE_TAG }}","digest":"${DIGEST}","built_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+          EOF
+            "${GOCACHEPROG}" -store-all "build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${TREE_HASH}" /tmp/build-receipt.json
+            echo "receipt stored: ${DIGEST:0:20}..."
           fi
 
       - name: Result
         run: |
           if [ "${{ steps.fastpath.outputs.skip }}" = "true" ]; then
-            echo "=== FAST PATH: image re-tagged (no build) ==="
+            echo "╔══════════════════════════════════════╗"
+            echo "║  FAST PATH: image re-tagged (~30s)   ║"
+            echo "╚══════════════════════════════════════╝"
           else
-            echo "=== BUILD PATH: image built and pushed ==="
+            echo "╔══════════════════════════════════════╗"
+            echo "║  BUILD PATH: image built and pushed   ║"
+            echo "╚══════════════════════════════════════╝"
           fi
