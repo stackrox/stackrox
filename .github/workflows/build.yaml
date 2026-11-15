@@ -94,7 +94,7 @@ jobs:
             | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
           UI_HASH=$(git ls-files 'ui/' 2>/dev/null \
             | grep -Ev 'node_modules|test|spec' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
-          DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 2>/dev/null \
+          DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 'docs/api/' 2>/dev/null \
             | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
           BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
           echo "component hashes: go=${GO_HASH} ui=${UI_HASH} docker=${DOCKER_HASH}"
@@ -349,7 +349,7 @@ jobs:
               | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
             UI_HASH=$(git ls-files 'ui/' 2>/dev/null \
               | grep -Ev 'node_modules|test|spec' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
-            DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 2>/dev/null \
+            DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 'docs/api/' 2>/dev/null \
               | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
             BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
             cat > /tmp/build-receipt.json <<EOF
