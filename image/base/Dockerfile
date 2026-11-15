@@ -13,6 +13,7 @@ FROM registry.access.redhat.com/ubi9:latest@sha256:87f66688da4e206d5a1877088626c
 
 COPY image/rhel/signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 COPY image/rhel/download.sh /download.sh
+ENV DEBUG_BUILD=no
 RUN /download.sh && rm -f /download.sh /tmp/RPM-GPG-KEY-CentOS-Official
 
 # Scratch dirs that central expects at runtime
