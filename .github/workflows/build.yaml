@@ -120,9 +120,20 @@ jobs:
               "${GOCACHEPROG}" -store-all "$VENDOR_KEY" /tmp/vendor.tar.gz || true
             fi
             export GOFLAGS="${GOFLAGS} -mod=vendor"
-            # Compile (gocache-serve handles the compile cache)
+            # Compile (gocache-serve handles the compile cache).
+            # NOTE: CI= is unset to skip the Makefile's multi-arch roxctl
+            # copy (copy-go-binaries-to-image-dir copies roxctl for ALL
+            # platforms under ifdef CI — we only have the current arch).
+            # The docker build step handles the image directory setup.
+            unset CI
             GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
-              make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
+              go build -o bin/linux_${{ matrix.arch }}/central ./central
+            GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
+              go build -o bin/linux_${{ matrix.arch }}/roxctl ./roxctl
+            GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
+              go build -o bin/linux_${{ matrix.arch }}/config-controller ./central/config-controller
+            GOCACHEPROG="${GOCACHEPROG}" GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
+              go build -o bin/linux_${{ matrix.arch }}/worker ./central/workerp
             # Store for other jobs
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
               -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
