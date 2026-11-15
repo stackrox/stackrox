@@ -3,7 +3,7 @@
 # No dnf. No RPM installs. No multi-arch roxctl copies. No ifdef CI.
 # Pure layer assembly from cached content.
 
-FROM quay.io/stackrox-io/ubi-base:latest
+FROM quay.io/stackrox-io/main:base-amd64
 
 COPY --link bin/central /stackrox/central
 COPY --link bin/config-controller /stackrox/bin/config-controller

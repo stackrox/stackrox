@@ -42,10 +42,10 @@ jobs:
           DATE_TAG=$(date -u +%Y-%m-%d)
           docker build \
             --platform linux/${{ matrix.arch }} \
-            -t "quay.io/stackrox-io/ubi-base:${DATE_TAG}${{ matrix.suffix }}" \
-            -t "quay.io/stackrox-io/ubi-base:latest${{ matrix.suffix }}" \
+            -t "quay.io/stackrox-io/main:base-${DATE_TAG}${{ matrix.arch }}" \
+            -t "quay.io/stackrox-io/main:base-${{ matrix.arch }}" \
             -f image/base/Dockerfile \
             .
-          docker push "quay.io/stackrox-io/ubi-base:${DATE_TAG}${{ matrix.suffix }}"
-          docker push "quay.io/stackrox-io/ubi-base:latest${{ matrix.suffix }}"
-          echo "pushed: quay.io/stackrox-io/ubi-base:${DATE_TAG}${{ matrix.suffix }}"
+          docker push "quay.io/stackrox-io/main:base-${DATE_TAG}${{ matrix.arch }}"
+          docker push "quay.io/stackrox-io/main:base-${{ matrix.arch }}"
+          echo "pushed: quay.io/stackrox-io/main:base-${DATE_TAG}${{ matrix.arch }}"
