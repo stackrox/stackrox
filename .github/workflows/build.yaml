@@ -193,6 +193,7 @@ jobs:
             --load \
             --cache-to type=inline \
             -t "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" \
+            --build-arg "TARGET_ARCH=${{ matrix.arch }}" \
             --build-arg "ROX_PRODUCT_BRANDING=${{ matrix.branding }}" \
             --file image/minimal/Dockerfile \
             . 2>&1 | tail -5

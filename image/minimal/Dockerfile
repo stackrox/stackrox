@@ -3,7 +3,8 @@
 # No dnf. No RPM installs. No multi-arch roxctl copies. No ifdef CI.
 # Pure layer assembly from cached content.
 
-FROM quay.io/stackrox-io/main:base-amd64
+ARG TARGET_ARCH=amd64
+FROM quay.io/stackrox-io/main:base-${TARGET_ARCH}
 
 COPY --link bin/central /stackrox/central
 COPY --link bin/config-controller /stackrox/bin/config-controller
