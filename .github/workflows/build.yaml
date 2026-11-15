@@ -137,7 +137,7 @@ jobs:
           SHA="$(git rev-parse HEAD)"
           SHORTSHA="$(git rev-parse --short HEAD)"
           LATEST_TAG="$(git ls-remote --tags --refs origin \
-            | awk -F/ '{print $NF}' | grep -v nightly | sort -V | tail -1)"
+            | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
           if [ -n "$LATEST_TAG" ]; then
             COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
               --jq .ahead_by 2>/dev/null || echo 0)"
@@ -155,7 +155,7 @@ jobs:
           # different tag) must not reuse the old archive. The compile
           # cache still dedupes the actual compilation; only the link
           # re-runs.
-          BIN_KEY="ca-binaries-v2-${{ matrix.arch }}-${GO_HASH}-${BUILD_TAG}"
+          BIN_KEY="ca-binaries-v3-${{ matrix.arch }}-${GO_HASH}-${BUILD_TAG}"
           # All-platform roxctl set: identical content in every arch's
           # image (the CLI download tarballs), so one shared key.
           ROXCTL_KEY="ca-roxctl-all-v2-${GO_HASH}-${BUILD_TAG}"
@@ -183,7 +183,7 @@ jobs:
             # builds correctly without workflow changes). go-build.sh
             # (invoked by make) applies -s -w, x_def stamps, and — on
             # CA-branch trees — deterministic build IDs.
-            make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
+            CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
 
             # Store for other jobs/legs
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
