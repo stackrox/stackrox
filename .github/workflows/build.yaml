@@ -93,6 +93,9 @@ jobs:
 
       - name: Fetch or compile binaries
         if: steps.fastpath.outputs.skip != 'true'
+        env:
+          GOARCH: ${{ matrix.arch }}
+          GOOS: linux
         run: |
           set -euo pipefail
           BIN_KEY="go-binaries-${{ matrix.arch }}-default"
@@ -184,6 +187,8 @@ jobs:
       - name: Docker build + push
         if: steps.fastpath.outputs.skip != 'true'
         env:
+          GOARCH: ${{ matrix.arch }}
+          GOOS: linux
           DOCKER_CACHE_FROM: ${{ matrix.registry }}/main:cache-${{ matrix.arch }}
         run: |
           set -euo pipefail
