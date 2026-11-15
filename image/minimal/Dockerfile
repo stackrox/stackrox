@@ -1,10 +1,6 @@
-# Minimal product image — the content-addressed build target.
-# FROM pre-built base (pinned, weekly) + COPY product artifacts.
-# No dnf. No RPM installs. No multi-arch roxctl copies. No ifdef CI.
-# Pure layer assembly from cached content.
-
 ARG TARGET_ARCH=amd64
 FROM quay.io/stackrox-io/main:base-${TARGET_ARCH}
+ARG TARGET_ARCH
 
 COPY --link bin/linux/${TARGET_ARCH}/central /stackrox/central
 COPY --link bin/linux/${TARGET_ARCH}/config-controller /stackrox/bin/config-controller
