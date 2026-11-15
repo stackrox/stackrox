@@ -72,12 +72,24 @@ jobs:
       # =================================================================
       # FAST PATH — does the output already exist for this source state?
       # =================================================================
-      - name: Fast path (receipt check → re-tag)
+      - name: Fast path (component-scoped receipt check → re-tag)
         id: fastpath
         run: |
           set -euo pipefail
-          TREE_HASH=$(git rev-parse HEAD^{tree} | cut -c1-16)
-          RECEIPT_KEY="build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${TREE_HASH}"
+          # Component-scoped hashing: hash only files that affect each
+          # build component. A README or docs change doesn't invalidate
+          # the Go binaries or the image. This enables partial fast
+          # paths: "Go changed, UI didn't → fetch UI, rebuild binaries."
+          GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+            | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          UI_HASH=$(git ls-files 'ui/' 2>/dev/null \
+            | grep -Ev 'node_modules|test|spec' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 2>/dev/null \
+            | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
+          echo "component hashes: go=${GO_HASH} ui=${UI_HASH} docker=${DOCKER_HASH}"
+          
+          RECEIPT_KEY="build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${BUILD_HASH}"
 
           if "${GOCACHEPROG}" -fetch-any "$RECEIPT_KEY" /tmp/receipt.json 2>/dev/null && [ -s /tmp/receipt.json ]; then
             DIGEST=$(jq -r '.digest // empty' /tmp/receipt.json)
@@ -87,13 +99,13 @@ jobs:
                 -t "${REG}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" \
                 "${REG}/main@${DIGEST}" 2>/dev/null; then
                 echo "skip=true" >> "$GITHUB_OUTPUT"
-                echo "FAST PATH: re-tagged from receipt (tree ${TREE_HASH})"
+                echo "FAST PATH: re-tagged from receipt (go=${GO_HASH:0:8} ui=${UI_HASH:0:8})"
                 exit 0
               fi
             fi
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
-          echo "BUILD PATH: no receipt for tree ${TREE_HASH}"
+          echo "BUILD PATH: no receipt for go=${GO_HASH:0:8} ui=${UI_HASH:0:8} docker=${DOCKER_HASH:0:8}"
 
       # =================================================================
       # BUILD PATH — fetch or compile inputs → docker → push → receipt
@@ -217,14 +229,20 @@ jobs:
             "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" 2>/dev/null | \
             grep "Digest:" | awk '{print $2}') || DIGEST=""
 
-          # Store build receipt (enables the fast path for next run)
+          # Store build receipt with component hashes (enables partial fast paths)
           if [ -n "$DIGEST" ]; then
-            TREE_HASH=$(git rev-parse HEAD^{tree} | cut -c1-16)
+            GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+              | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+            UI_HASH=$(git ls-files 'ui/' 2>/dev/null \
+              | grep -Ev 'node_modules|test|spec' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+            DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 2>/dev/null \
+              | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+            BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
             cat > /tmp/build-receipt.json <<EOF
-          {"tree_hash":"${TREE_HASH}","branding":"${{ matrix.branding }}","arch":"${{ matrix.arch }}","registry":"${{ matrix.registry }}","tag":"${{ env.IMAGE_TAG }}","digest":"${DIGEST}","built_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+          {"go_hash":"${GO_HASH}","ui_hash":"${UI_HASH}","docker_hash":"${DOCKER_HASH}","branding":"${{ matrix.branding }}","arch":"${{ matrix.arch }}","registry":"${{ matrix.registry }}","tag":"${{ env.IMAGE_TAG }}","digest":"${DIGEST}","built_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
           EOF
-            "${GOCACHEPROG}" -store-all "build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${TREE_HASH}" /tmp/build-receipt.json
-            echo "receipt stored: ${DIGEST:0:20}..."
+            "${GOCACHEPROG}" -store-all "build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${BUILD_HASH}" /tmp/build-receipt.json
+            echo "receipt stored: ${DIGEST:0:20}... (go=${GO_HASH:0:8} ui=${UI_HASH:0:8})"
           fi
 
       - name: Result
