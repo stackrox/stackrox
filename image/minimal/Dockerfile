@@ -6,9 +6,9 @@
 ARG TARGET_ARCH=amd64
 FROM quay.io/stackrox-io/main:base-${TARGET_ARCH}
 
-COPY --link bin/central /stackrox/central
-COPY --link bin/config-controller /stackrox/bin/config-controller
-COPY --link bin/central-worker /stackrox/bin/central-worker
+COPY --link bin/linux/${TARGET_ARCH}/central /stackrox/central
+COPY --link bin/linux/${TARGET_ARCH}/config-controller /stackrox/bin/config-controller
+COPY --link bin/linux/${TARGET_ARCH}/central-worker /stackrox/bin/central-worker
 COPY --link ui/build/ /ui/
 
 EXPOSE 8443
