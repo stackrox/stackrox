@@ -195,6 +195,26 @@ jobs:
             echo "placeholder" > image/rhel/THIRD_PARTY_NOTICES/NOTICE
           fi
 
+      - name: Pre-populate multi-arch roxctl paths
+        # The Makefile's copy-go-binaries-to-image-dir (ifdef CI) copies
+        # roxctl for ALL platforms into the image. We only have the
+        # current arch — create placeholders for the others (the image
+        # includes roxctl binaries for download; only the current arch
+        # is functional in this prototype).
+        if: steps.fastpath.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          for a in amd64 arm64 ppc64le s390x darwin_amd64 darwin_arm64; do
+            if [ ! -f "bin/linux_\${a}/roxctl" ] && [ ! -f "bin/\${a}/roxctl" ]; then
+              mkdir -p "bin/linux_\${a}" 2>/dev/null || mkdir -p "bin/\${a}" 2>/dev/null || true
+              # Use the current arch's roxctl as placeholder
+              if [ -f "bin/linux_\${GOARCH:-amd64}/roxctl" ]; then
+                cp "bin/linux_\${GOARCH:-amd64}/roxctl" "bin/linux_\${a}/roxctl" 2>/dev/null ||                   cp "bin/linux_\${GOARCH:-amd64}/roxctl" "bin/\${a}/roxctl" 2>/dev/null || true
+              fi
+            fi
+          done
+          echo "multi-arch roxctl paths populated"
+
       - name: Docker build + push
         if: steps.fastpath.outputs.skip != 'true'
         env:
