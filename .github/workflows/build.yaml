@@ -48,6 +48,16 @@ jobs:
           fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - name: Ensure build tools present
+        # When building a SHA that doesn't contain our tools (e.g., a
+        # master commit for validation), fetch them from this branch.
+        run: |
+          if [ ! -f tools/gocache-serve/bin/gocache-serve ]; then
+            echo 'tools not in checkout, fetching from CA branch...'
+            git fetch origin davdhacs/content-addressed-build --depth=1
+            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/
+          fi
+
       - name: Setup
         run: |
           set -euo pipefail
