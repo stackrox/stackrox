@@ -186,6 +186,13 @@ jobs:
           GOARCH: ${{ matrix.arch }}
         run: |
           set -euo pipefail
+          # Stage a clean build context (the repo root's .dockerignore
+          # excludes /bin/ which is where our extracted binaries live)
+          CTX=/tmp/docker-context
+          rm -rf "$CTX" && mkdir -p "$CTX/bin" "$CTX/ui"
+          cp -r bin/linux_${{ matrix.arch }} "$CTX/bin/"
+          cp -r ui/build/ "$CTX/ui/"
+          
           # Build using the minimal Dockerfile (pre-built base + COPY --link)
           docker buildx build \
             --platform "linux/${{ matrix.arch }}" \
@@ -195,7 +202,7 @@ jobs:
             --build-arg "TARGET_ARCH=${{ matrix.arch }}" \
             --build-arg "ROX_PRODUCT_BRANDING=${{ matrix.branding }}" \
             --file image/minimal/Dockerfile \
-            . 2>&1 | tail -5
+            "$CTX" 2>&1 | tail -5
 
           # Push
           docker push "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}"
