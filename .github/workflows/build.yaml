@@ -126,13 +126,26 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
           GOOS: linux
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Version stamps, mirroring master's CI (define-job-matrix
-          # outputs). Shallow checkouts have no tags, so git describe
-          # falls back to the short SHA — deterministic per commit.
-          export BUILD_TAG="$(git describe --tags --always 2>/dev/null || echo 0.0.0)"
-          export SHORTCOMMIT="$(git rev-parse --short HEAD)"
+          # Version stamps, mirroring master's CI. env.mk honors
+          # BUILD_TAG as the override (its define-job-matrix mechanism),
+          # so we compute the describe-equivalent WITHOUT local tag
+          # history: base tag from ls-remote (remote query, works on
+          # shallow), commit count from the GitHub compare API.
+          SHA="$(git rev-parse HEAD)"
+          SHORTSHA="$(git rev-parse --short HEAD)"
+          LATEST_TAG="$(git ls-remote --tags --refs origin \
+            | awk -F/ '{print $NF}' | grep -v nightly | sort -V | tail -1)"
+          if [ -n "$LATEST_TAG" ]; then
+            COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
+              --jq .ahead_by 2>/dev/null || echo 0)"
+            export BUILD_TAG="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
+          else
+            export BUILD_TAG="0.0.0-g${SHORTSHA}"
+          fi
+          export SHORTCOMMIT="$SHORTSHA"
           echo "stamps: BUILD_TAG=$BUILD_TAG SHORTCOMMIT=$SHORTCOMMIT go=$(go version)"
 
           GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
@@ -152,11 +165,6 @@ jobs:
             echo "binaries: FETCHED from blob store"
           else
             echo "binaries: COMPILING (blob miss)"
-            # Deepen the shallow checkout so `git describe` (used by
-            # status.sh for version stamps) can reach the nearest tag.
-            # Only on the build path — the fast path stays shallow/fast.
-            git fetch --tags --deepen=1000 origin 2>/dev/null \
-              || git fetch --tags origin 2>/dev/null || true
             # Vendor restore
             VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
             if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then

@@ -21,7 +21,7 @@ src="${1:?usage: gen-dockerfile <path/to/image/rhel/Dockerfile> <base-image-pref
 base="${2:?base image prefix, e.g. quay.io/stackrox-io/main}"
 out="${3:-/tmp/generated.Dockerfile}"
 
-final="$(awk '/^FROM runtime-base/{last=NR} {lines[NR]=$0} END{if(last){for(i=last;i<=NR;i++) print lines[i]}}' "$src")"
+final="$(awk '/^FROM runtime-base/{last=NR} {lines[NR]=$0} END{if(last){for(i=last+1;i<=NR;i++) print lines[i]}}' "$src")"
 if [ -z "$final" ]; then
   echo "ERROR: no 'FROM runtime-base' stage found in $src" >&2
   exit 1
