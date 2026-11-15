@@ -111,6 +111,15 @@ func (s *sweeperImpl) sweep() {
 			continue
 		}
 
+		// Do not apply the current schedule to ticks that predate it. A schedule edit bumps
+		// LastUpdatedTime; if cutoff falls before that, the current cadence was not in effect at that
+		// tick, so marking against it would falsely flip results from the old cadence stale. Skip
+		// until a tick under the new schedule has fully elapsed. (LastUpdatedTime changes only on
+		// config create/update and cluster removal, not on scan runs, so steady state is unaffected.)
+		if lu := cfg.GetLastUpdatedTime(); lu != nil && cutoff.Before(lu.AsTime()) {
+			continue
+		}
+
 		n, err := s.checkResultDS.MarkScanChecksStaleByConfig(sweeperCtx, cfg.GetScanConfigName(), cutoff)
 		if err != nil {
 			log.Errorf("compliance freshness sweeper: marking results stale for scan configuration %q: %v", cfg.GetScanConfigName(), err)
