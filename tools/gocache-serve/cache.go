@@ -1,0 +1,654 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"syscall"
+	"time"
+)
+
+// Local disk cache manager. Supports a spill tier: when the primary dir
+// is space-limited (e.g. tmpfs /dev/shm), writes that hit ENOSPC fall
+// back to the spill dir on real disk; reads resolve to whichever tier
+// holds the entry. Entries never move between tiers (no stale-path
+// hazard: we hand Go a fresh DiskPath per get).
+type LocalCache struct {
+	dir   string
+	spill string // optional fallback dir for ENOSPC on the primary
+	mu    sync.RWMutex
+}
+
+func NewLocalCache(dir string) (*LocalCache, error) {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return nil, fmt.Errorf("create cache dir: %w", err)
+	}
+	return &LocalCache{dir: dir}, nil
+}
+
+// SetSpill enables the fallback tier (created lazily on first use).
+func (lc *LocalCache) SetSpill(dir string) {
+	lc.mu.Lock()
+	lc.spill = dir
+	lc.mu.Unlock()
+}
+
+func (lc *LocalCache) path(actionID string) string {
+	if len(actionID) < 2 {
+		return filepath.Join(lc.dir, actionID)
+	}
+	return filepath.Join(lc.dir, actionID[:2], actionID[2:])
+}
+
+func (lc *LocalCache) spillPath(actionID string) string {
+	if len(actionID) < 2 {
+		return filepath.Join(lc.spill, actionID)
+	}
+	return filepath.Join(lc.spill, actionID[:2], actionID[2:])
+}
+
+// resolve returns the path where the entry actually resides — primary
+// first, then the spill tier. Callers serving a DiskPath must use this,
+// not path(), when a spill tier is configured.
+func (lc *LocalCache) resolve(actionID string) string {
+	p := lc.path(actionID)
+	if _, err := os.Stat(p); err == nil {
+		return p
+	}
+	if lc.spill != "" {
+		sp := lc.spillPath(actionID)
+		if _, err := os.Stat(sp); err == nil {
+			return sp
+		}
+	}
+	return p
+}
+
+func (lc *LocalCache) metaPath(actionID string) string {
+	return lc.path(actionID) + ".meta"
+}
+
+func (lc *LocalCache) Has(actionID string) bool {
+	_, err := os.Stat(lc.path(actionID))
+	if err == nil {
+		return true
+	}
+	if lc.spill != "" {
+		_, err = os.Stat(lc.spillPath(actionID))
+	}
+	return err == nil
+}
+
+// GetMeta returns just the entry's sidecar and size without reading the
+// body — the GOCACHEPROG get response only carries the DiskPath; Go reads
+// the file itself, so reading the body here would be a redundant full copy
+// of every entry on every local hit.
+func (lc *LocalCache) GetMeta(actionID string) (meta []byte, size int64, ok bool) {
+	p := lc.resolve(actionID)
+	st, err := os.Stat(p)
+	if err != nil {
+		return nil, 0, false
+	}
+	meta, _ = os.ReadFile(p + ".meta")
+	return meta, st.Size(), true
+}
+
+func (lc *LocalCache) Get(actionID string) ([]byte, []byte, error) {
+	lc.mu.RLock()
+	defer lc.mu.RUnlock()
+	body, err := os.ReadFile(lc.resolve(actionID))
+	if os.IsNotExist(err) {
+		return nil, nil, nil
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	outputID, _ := os.ReadFile(lc.metaPath(actionID))
+	return body, outputID, nil
+}
+
+func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error) {
+	lc.mu.Lock()
+	defer lc.mu.Unlock()
+	p := lc.path(actionID)
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return "", err
+	}
+	if err := writeFileAtomic(p, body); err != nil {
+		// Primary full (ENOSPC on tmpfs): spill to the disk tier.
+		if lc.spill == "" || !os.IsPermission(err) && !errors.Is(err, syscall.ENOSPC) && !isNoSpace(err) {
+			return "", err
+		}
+		sp := lc.spillPath(actionID)
+		if err := os.MkdirAll(filepath.Dir(sp), 0o755); err != nil {
+			return "", err
+		}
+		if err := writeFileAtomic(sp, body); err != nil {
+			return "", err
+		}
+		if len(outputID) > 0 {
+			if err := writeFileAtomic(sp+".meta", outputID); err != nil {
+				return "", err
+			}
+		}
+		return sp, nil
+	}
+	if len(outputID) > 0 {
+		if err := writeFileAtomic(lc.metaPath(actionID), outputID); err != nil {
+			return "", err
+		}
+	}
+	return p, nil
+}
+
+// isNoSpace matches ENOSPC wrapped by CreateTemp/Write errors.
+func isNoSpace(err error) bool {
+	var pe *os.PathError
+	if errors.As(err, &pe) {
+		return errors.Is(pe.Err, syscall.ENOSPC)
+	}
+	return errors.Is(err, syscall.ENOSPC)
+}
+
+// writeFileAtomic writes via temp file + rename so a concurrent reader
+// (go mmaps export data from this tree) never observes a truncated file —
+// the in-place truncate of os.WriteFile was the SIGBUS mechanism when
+// prefetch overlapped compilation (go/internal/list.collectDeps faulting
+// on a mapped page mid-write). Rename preserves the old inode for any
+// concurrent mmap reader; a fresh complete file appears atomically.
+func writeFileAtomic(path string, body []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".tmp-*")
+	if err != nil {
+		return err
+	}
+	name := tmp.Name()
+	if _, err := tmp.Write(body); err != nil {
+		tmp.Close()
+		os.Remove(name)
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(name)
+		return err
+	}
+	if err := os.Chmod(name, 0o644); err != nil {
+		os.Remove(name)
+		return err
+	}
+	return os.Rename(name, path)
+}
+
+// inflightMap coordinates concurrent downloads of the same entry between
+// the prefetch loop and the get path, and measures "conversions": moments
+// when the compiler's get arrives for an entry whose prefetch hasn't
+// finished — the prefetch fell behind need (each conversion = a blocked
+// compile worker waiting on cloud latency). Waiters don't trust the
+// outcome: after the channel closes they re-check local and fall through
+// to their own fetch if the download failed.
+type inflightMap struct {
+	mu sync.Mutex
+	m  map[string]*inflightEntry
+}
+
+type inflightEntry struct {
+	done    chan struct{}
+	started time.Time
+	src     string // "prefetch" or "get"
+	waiters int    // gets that joined this download
+}
+
+func newInflightMap() *inflightMap {
+	return &inflightMap{m: make(map[string]*inflightEntry)}
+}
+
+// start registers a download if none is in flight; returns nil if another
+// path already owns it (caller should skip or wait).
+func (im *inflightMap) start(id, src string) *inflightEntry {
+	im.mu.Lock()
+	defer im.mu.Unlock()
+	if _, ok := im.m[id]; ok {
+		return nil
+	}
+	e := &inflightEntry{done: make(chan struct{}), started: time.Now(), src: src}
+	im.m[id] = e
+	return e
+}
+
+// join attaches to an in-flight download (a get arriving before prefetch
+// finished = a conversion). Returns the entry to wait on, or nil if no
+// download is in flight.
+func (im *inflightMap) join(id string) *inflightEntry {
+	im.mu.Lock()
+	defer im.mu.Unlock()
+	e, ok := im.m[id]
+	if !ok {
+		return nil
+	}
+	e.waiters++
+	return e
+}
+
+// finish closes the entry's channel and removes it.
+func (im *inflightMap) finish(id string) {
+	im.mu.Lock()
+	e, ok := im.m[id]
+	if ok {
+		delete(im.m, id)
+	}
+	im.mu.Unlock()
+	if ok {
+		close(e.done)
+	}
+}
+
+// negativeCache remembers entries confirmed absent from the cloud store.
+// Go issues speculative gets for entries it never puts (~42% of gets on
+// warm cli builds); without this, every session in a job re-checks the
+// same phantoms at pure RTT cost — measured 11-13s per session, ~2.5 min
+// per multi-platform job. Scoped to the job's local dir (fresh per
+// runner), so staleness across jobs is not a concern.
+type negativeCache struct {
+	mu   sync.Mutex
+	seen map[string]bool
+	path string
+}
+
+// metaDir returns a guaranteed-writable location for small metadata files
+// (served-sets, negative cache): the spill tier when configured (the tmpfs
+// primary can be 100% full of cache entries — measured: served-set writes
+// failed ENOSPC on /dev/shm while the cache worked fine via spill), else
+// the cache dir itself.
+func metaDir(cacheDir, spill string) string {
+	if spill != "" {
+		os.MkdirAll(spill, 0o755)
+		return spill
+	}
+	return cacheDir
+}
+
+func newNegativeCache(cacheDir, spill string) *negativeCache {
+	dir := metaDir(cacheDir, spill)
+	nc := &negativeCache{seen: make(map[string]bool), path: filepath.Join(dir, "negative.txt")}
+	if b, err := os.ReadFile(nc.path); err == nil {
+		for _, id := range strings.Fields(string(b)) {
+			nc.seen[id] = true
+		}
+	}
+	return nc
+}
+
+func (nc *negativeCache) Has(id string) bool {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+	return nc.seen[id]
+}
+
+func (nc *negativeCache) Add(id string) {
+	nc.mu.Lock()
+	nc.seen[id] = true
+	nc.mu.Unlock()
+}
+
+// Persist appends newly-confirmed negatives (bounded; the set is a hint,
+// losing entries only costs the old cloud-check behavior).
+func (nc *negativeCache) Persist() {
+	nc.mu.Lock()
+	defer nc.mu.Unlock()
+	if len(nc.seen) == 0 {
+		return
+	}
+	ids := make([]string, 0, len(nc.seen))
+	for id := range nc.seen {
+		ids = append(ids, id)
+	}
+	if len(ids) > 50000 {
+		ids = ids[:50000]
+	}
+	os.MkdirAll(filepath.Dir(nc.path), 0o755)
+	os.WriteFile(nc.path, []byte(strings.Join(ids, "\n")), 0o644)
+}
+
+// Manifest tracks which cache entries a job uses, in request order, along
+// with each entry's stored meta (the OutputID sidecar) so prefetch can
+// write complete local entries.
+//
+// Run-scoped semantics: sessions within one CI run MERGE (a run's manifest
+// is the union of its go invocations), but a new run REPLACES the stored
+// manifest with its own working set. This avoids dead-entry accumulation
+// (content-addressed keys for changed source never expire on their own —
+// measured as 5x prefetch over-fetch on cli) and matches the production
+// model where only default-branch runs save manifests: each save is a
+// fresh canonical snapshot of that run's working set, like a GHA cache
+// save, but without the archive.
+type Manifest struct {
+	mu      sync.Mutex
+	entries []manifestEntry
+	jobName string
+	runID   string // GOCACHE_SERVE_RUN_ID; empty = legacy merge-always
+	// readOnly: if true, Upload() is a no-op. PR runs set this so they
+	// benefit from the master manifest's prefetch without overwriting
+	// the canonical working set with PR-specific entries (which produce
+	// different ActionIDs due to different source content).
+	readOnly bool
+}
+
+type manifestEntry struct {
+	id   string
+	meta string // hex of the stored .meta (OutputID); may be empty for legacy lines
+}
+
+// manifestRunKey is the first line of a stored manifest: "#run:{runID}".
+func manifestRunKey(id string) string { return "#run:" + id }
+
+func NewManifest(jobName string) *Manifest {
+	return &Manifest{jobName: jobName, runID: os.Getenv("GOCACHE_SERVE_RUN_ID")}
+}
+
+func (m *Manifest) Record(actionID, meta string) {
+	if m == nil || m.jobName == "" {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.entries = append(m.entries, manifestEntry{id: actionID, meta: meta})
+}
+
+// LocalIDs returns this session's recorded entry ids (gets served + puts)
+// — the served set, for local persistence (hot-core measurement + future
+// page-cache rewarm at session start).
+func (m *Manifest) LocalIDs() []string {
+	if m == nil {
+		return nil
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ids := make([]string, 0, len(m.entries))
+	for _, e := range m.entries {
+		ids = append(ids, e.id)
+	}
+	return ids
+}
+
+// Upload merges this session's entries into the stored manifest. Merge (not
+// last-writer-wins) is essential: every `go` invocation spawns a separate
+// gocache-serve process, and a trivial trailing command (`go version`-class)
+// would otherwise clobber the real workload's working set with 2-41 entries,
+// leaving prefetch nothing to bulk-download on warm runs. This session's
+// entries come first (most recent working set = prefetch priority), then any
+// older entries not seen this session. Capped to bound growth across
+// branches whose ActionIDs diverge.
+// maxManifestEntries bounds manifest size (merge growth cap). Multi-platform
+// jobs (make cli: 7 platforms x outputs+aux) measure ~37k entries; the old
+// 20k cap truncated a third of the working set out of the manifest, freezing
+// those entries as permanent prefetch misses.
+const maxManifestEntries = 100000
+
+// Upload writes the run's manifest and returns the final entry set (used
+// by the prefetch-bundle packer). Within a run, sessions merge; a new run
+// replaces the stored manifest with its own working set.
+func (m *Manifest) Upload(backend Backend) ([]manifestEntry, error) {
+	if m == nil || m.jobName == "" || m.readOnly {
+		return nil, nil
+	}
+	m.mu.Lock()
+	entries := make([]manifestEntry, len(m.entries))
+	copy(entries, m.entries)
+	m.mu.Unlock()
+	if len(entries) == 0 {
+		return nil, nil // never clobber with an empty session
+	}
+
+	var merged []manifestEntry
+	seen := make(map[string]bool, len(entries))
+	addAll := func(list []manifestEntry) {
+		for _, e := range list {
+			if !seen[e.id] {
+				seen[e.id] = true
+				merged = append(merged, e)
+			}
+		}
+	}
+	addAll(entries) // this session first: prefetch priority = use order
+
+	existing, existingRun, err := DownloadManifest(backend, m.jobName)
+	if err != nil {
+		// CORRECTNESS: a failed read must never degrade into a fresh-write.
+		// Treating "unreadable" as "absent" clobbers the accumulated
+		// working set with this session's partial entries (observed:
+		// 2429-entry manifest replaced by a single process's 812) —
+		// a transient GET error (timeout, auth blip) then silently
+		// destroys prefetch for every future run. Abort instead: the
+		// manifest stays as-is, this session's entries are lost from
+		// it (they remain in the entry store; only prefetch priority
+		// is affected), which is strictly better than shrinking it.
+		return nil, fmt.Errorf("manifest upload aborted, read failed: %w", err)
+	}
+	// Merge only within the same run. A different (older) run's entries are
+	// replaced: dead keys from changed source otherwise accumulate forever.
+	if m.runID == "" || existingRun == m.runID {
+		addAll(existing)
+	}
+	if len(merged) > maxManifestEntries {
+		merged = merged[:maxManifestEntries]
+	}
+	var buf strings.Builder
+	if m.runID != "" {
+		buf.WriteString(manifestRunKey(m.runID) + "\n")
+	}
+	for _, e := range merged {
+		buf.WriteString(e.id)
+		if e.meta != "" {
+			buf.WriteString(" " + e.meta)
+		}
+		buf.WriteString("\n")
+	}
+	return merged, backend.Put("manifest-"+m.jobName, []byte(buf.String()))
+}
+
+// DownloadManifest fetches and parses a stored manifest, returning its
+// entries and the run ID that wrote it ("" for legacy/no header). Lines
+// are "actionID [meta]"; "#run:..." headers are stripped.
+func DownloadManifest(backend Backend, jobName string) ([]manifestEntry, string, error) {
+	if jobName == "" {
+		return nil, "", nil
+	}
+	data, err := backend.Get("manifest-" + jobName)
+	if err != nil {
+		return nil, "", err
+	}
+	if data == nil {
+		return nil, "", nil
+	}
+	var result []manifestEntry
+	runID := ""
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "#run:") {
+			runID = strings.TrimPrefix(line, "#run:")
+			continue
+		}
+		parts := strings.SplitN(line, " ", 2)
+		e := manifestEntry{id: parts[0]}
+		if len(parts) >= 2 {
+			e.meta = parts[1]
+		}
+		// Sanitize: entry IDs are hex hashes (Go ActionIDs are 32-64 hex
+		// chars). A malformed line (corrupt merge, stray content, a line
+		// with no space until char 400+) must not enter the prefetch
+		// pipeline — it produced a 425-char "ID" whose URL failed to
+		// parse and panicked getRanged (which discarded the NewRequest
+		// error). Skip anything not plausibly an ID.
+		if !isHexID(e.id) {
+			continue
+		}
+		result = append(result, e)
+	}
+	return result, runID, nil
+}
+
+// isHexID reports whether s looks like a content hash: 32-128 hex chars.
+func isHexID(s string) bool {
+	if len(s) < 32 || len(s) > 128 {
+		return false
+	}
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return false
+		}
+	}
+	return true
+}
+
+// AsyncUploader queues puts and uploads to cloud in background.
+// Upload latency matters: entries under an active lease unblock followers
+// on other runners, so lease-held entries are prioritized and drops are
+// counted loudly (a dropped lease-held upload stalls followers).
+type AsyncUploader struct {
+	backend   Backend
+	ch        chan uploadJob
+	pri       chan uploadJob // lease-held entries: served before ch
+	wg        sync.WaitGroup
+	done      chan struct{}
+	flushOnce sync.Once
+	stats     UploadStats
+
+	// onUploaded, if set, is invoked after each successful cloud Put
+	// (used to release advisory compilation leases).
+	onUploaded func(actionID string)
+
+	dropped    int64 // jobs dropped because both queues were full
+	droppedPri int64 // ...of which were lease-held (stalls followers)
+}
+
+type uploadJob struct {
+	actionID string
+	body     []byte
+}
+
+type UploadStats struct {
+	mu        sync.Mutex
+	uploaded  int64
+	failed    int64
+	bytesSent int64
+}
+
+func NewAsyncUploader(backend Backend, workers int) *AsyncUploader {
+	if workers <= 0 {
+		workers = 4
+	}
+	au := &AsyncUploader{
+		backend: backend,
+		ch:      make(chan uploadJob, 8192),
+		pri:     make(chan uploadJob, 8192),
+		done:    make(chan struct{}),
+	}
+	for i := 0; i < workers; i++ {
+		au.wg.Add(1)
+		go au.worker()
+	}
+	return au
+}
+
+func (au *AsyncUploader) worker() {
+	defer au.wg.Done()
+	for {
+		// Lease-held (priority) uploads are served first: followers on
+		// other runners are actively waiting on these entries, so their
+		// latency converts directly into cross-runner hit rate.
+		var job uploadJob
+		var ok bool
+		select {
+		case job = <-au.pri:
+			ok = true
+		default:
+			select {
+			case job = <-au.pri:
+				ok = true
+			case job = <-au.ch:
+				ok = true
+			case <-au.done:
+				return
+			}
+		}
+		if !ok {
+			continue
+		}
+		if err := au.backend.Put(job.actionID, job.body); err != nil {
+			au.stats.mu.Lock()
+			au.stats.failed++
+			au.stats.mu.Unlock()
+		} else {
+			au.stats.mu.Lock()
+			au.stats.uploaded++
+			au.stats.bytesSent += int64(len(job.body))
+			au.stats.mu.Unlock()
+			if au.onUploaded != nil {
+				au.onUploaded(job.actionID) // release lease, best-effort
+			}
+		}
+	}
+}
+
+// QueuePri enqueues a lease-held upload on the priority lane, falling back
+// to the normal lane if full. Drops are data loss for the shared cache
+// (the entry exists only on this runner's disk), so the last resort blocks
+// briefly — the local disk write already satisfied Go, so the put response
+// is not on the compile critical path.
+func (au *AsyncUploader) QueuePri(actionID string, body []byte) {
+	select {
+	case au.pri <- uploadJob{actionID, body}:
+		return
+	default:
+	}
+	select {
+	case au.ch <- uploadJob{actionID, body}:
+		return
+	default:
+	}
+	atomic.AddInt64(&au.droppedPri, 1)
+	log.Printf("gocache-serve: WARNING both upload queues full, blocking on %s", shortID(actionID))
+	au.ch <- uploadJob{actionID, body} // block rather than lose the entry
+}
+
+// QueueDepth reports pending upload jobs (both lanes).
+func (au *AsyncUploader) QueueDepth() int {
+	return len(au.ch) + len(au.pri)
+}
+
+// Stats returns current upload counters.
+func (au *AsyncUploader) Stats() (uploaded, failed, dropped int64) {
+	au.stats.mu.Lock()
+	defer au.stats.mu.Unlock()
+	return au.stats.uploaded, au.stats.failed, atomic.LoadInt64(&au.dropped)
+}
+
+func (au *AsyncUploader) Queue(actionID string, body []byte) {
+	select {
+	case au.ch <- uploadJob{actionID, body}:
+	default:
+		// Never drop: the entry exists only on this runner's disk, and a
+		// lost upload permanently caps the cache's hit rate. Block instead
+		// (the local disk write already satisfied Go; the queue drains at
+		// ~4 workers x 50ms = 80/s).
+		atomic.AddInt64(&au.dropped, 1)
+		au.ch <- uploadJob{actionID, body}
+	}
+}
+
+func (au *AsyncUploader) Flush() {
+	au.flushOnce.Do(func() {
+		close(au.done)
+		au.wg.Wait()
+		au.stats.mu.Lock()
+		defer au.stats.mu.Unlock()
+		log.Printf("gocache-serve: uploads: %d ok, %d failed, %d bytes",
+			au.stats.uploaded, au.stats.failed, au.stats.bytesSent)
+	})
+}
