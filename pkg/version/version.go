@@ -287,3 +287,4 @@ func parseVersion(version string) (parsedMainVersion, error) {
 
 	return parsedMainVersion{MarketingMajor: x, EngRelease: y}, nil
 }
+// fast-path-test
