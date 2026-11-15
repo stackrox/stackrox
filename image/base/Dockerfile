@@ -11,7 +11,7 @@
 
 FROM registry.access.redhat.com/ubi9:latest@sha256:87f66688da4e206d5a1877088626c542288a5ccd97898cf363b588d57817e6be
 
-COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
+COPY image/rhel/signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 COPY image/rhel/download.sh /download.sh
 RUN /download.sh && rm -f /download.sh /tmp/RPM-GPG-KEY-CentOS-Official
 
