@@ -241,7 +241,7 @@ jobs:
             sudo apt-get install -y nodejs >/dev/null 2>&1 || true
 
             # Deps (content-addressed)
-            DEPS_KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
+            DEPS_KEY="ui-deps-${{ matrix.arch }}-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
             if "${GOCACHEPROG}" -fetch-any "$DEPS_KEY" /tmp/ui-deps.tar 2>/dev/null && [ -s /tmp/ui-deps.tar ]; then
               TAR_ARGS=(-C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules)
               [ -d "$HOME/.cache/Cypress" ] && TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
@@ -285,7 +285,7 @@ jobs:
             # ossls audits the UI dependency tree too, so node_modules
             # must be present even when the UI build was blob-fetched.
             if [ ! -d ui/apps/platform/node_modules ]; then
-              DEPS_KEY="ui-deps-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
+              DEPS_KEY="ui-deps-${{ matrix.arch }}-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
               if "${GOCACHEPROG}" -fetch-any "$DEPS_KEY" /tmp/ui-deps.tar 2>/dev/null && [ -s /tmp/ui-deps.tar ]; then
                 tar -xf /tmp/ui-deps.tar -C "$GITHUB_WORKSPACE" 2>/dev/null || true
                 touch ui/deps
