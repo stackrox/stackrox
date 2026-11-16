@@ -61,27 +61,6 @@ jobs:
             print(message, flush=True)
             return None
 
-        identity = get("myself")
-        if identity is None:
-            raise SystemExit("Cannot authenticate the CI Jira bot")
-        print("Authenticated account:", identity.get("displayName"), identity.get("accountId"))
-
-        required = ["BROWSE_PROJECTS", "CREATE_ISSUES", "ADD_COMMENTS"]
-        permissions = get("mypermissions", projectKey="ROX", permissions=",".join(required))
-        if permissions is not None:
-            for key in required:
-                allowed = permissions.get("permissions", {}).get(key, {}).get("havePermission")
-                print(f"ROX {key}: {allowed}")
-                if allowed is not True:
-                    failures.append(f"Missing project permission: {key}")
-
-        # Known existing tickets distinguish visibility failures from empty searches.
-        for key in ["ROX-39424", "ROX-39665"]:
-            issue = get(f"issue/{key}", fields="security")
-            if issue is not None:
-                security = issue.get("fields", {}).get("security") or {}
-                print(f"Visible issue: {key}; security: {security.get('name', 'none')}")
-
         summary = "IntegrationsTest / Verify GitHub Container Registry integration - default config FAILED"
         jql = ('project = ROX AND issuetype = Bug AND status != Closed '
                'AND labels = CI_Failure AND summary ~ ' + json.dumps(summary) +
@@ -95,6 +74,26 @@ jobs:
             print("Additional search page:", bool(search.get("nextPageToken")))
             if not matches:
                 failures.append("junit2jira lookup found no exact match among known existing open tickets")
+
+        # Known existing tickets distinguish visibility failures from empty searches.
+        for key in ["ROX-39424", "ROX-39665"]:
+            issue = get(f"issue/{key}", fields="security")
+            if issue is not None:
+                security = issue.get("fields", {}).get("security") or {}
+                print(f"Visible issue: {key}; security: {security.get('name', 'none')}")
+
+        identity = get("myself")
+        if identity is not None:
+            print("Authenticated account:", identity.get("displayName"), identity.get("accountId"))
+
+        required = ["BROWSE_PROJECTS", "CREATE_ISSUES", "ADD_COMMENTS"]
+        permissions = get("mypermissions", projectKey="ROX", permissions=",".join(required))
+        if permissions is not None:
+            for key in required:
+                allowed = permissions.get("permissions", {}).get(key, {}).get("havePermission")
+                print(f"ROX {key}: {allowed}")
+                if allowed is not True:
+                    failures.append(f"Missing project permission: {key}")
 
         if failures:
             raise SystemExit("Jira diagnostics failed:\n" + "\n".join(failures))
