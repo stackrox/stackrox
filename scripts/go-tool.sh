@@ -29,11 +29,19 @@ if [[ -n "$BUILD_TAG" && -n "$SHORTCOMMIT" ]]; then
       go_file="${BASH_REMATCH[1]}"
       go_var="${BASH_REMATCH[4]}"
       status_var="${BASH_REMATCH[5]}"
-      # Only MainVersion and GitShortSha are overridden by env vars
+      # All status vars get values: MainVersion/GitShortSha from the
+      # CI env overrides; the component versions from their version
+      # files (the same sources status.sh reads — they are plain file
+      # contents, no make needed). Skipping any of these leaves the
+      # Go var EMPTY at runtime (e.g. FactImageTag missing in the
+      # sensor chart → central certgen 500s).
       case "$status_var" in
         STABLE_MAIN_VERSION) val="$BUILD_TAG" ;;
         STABLE_GIT_SHORT_SHA) val="$SHORTCOMMIT" ;;
-        *) continue ;; # non-overridden vars: skip (they don't affect compile)
+        STABLE_COLLECTOR_VERSION) val="$(cat "${SCRIPT_DIR}/../COLLECTOR_VERSION" 2>/dev/null || echo "")" ;;
+        STABLE_FACT_VERSION) val="$(cat "${SCRIPT_DIR}/../FACT_VERSION" 2>/dev/null || echo "")" ;;
+        STABLE_SCANNER_V4_VULNERABILITY_VERSION) val="$(cat "${SCRIPT_DIR}/../scanner/VULNERABILITY_VERSION" 2>/dev/null || echo "")" ;;
+        *) continue ;;
       esac
       go_package="$(cd "${SCRIPT_DIR}/.."; go list -e "./$(dirname "$go_file")")"
       x_defs+=(-X "\"${go_package}.${go_var}=${val}\"")
