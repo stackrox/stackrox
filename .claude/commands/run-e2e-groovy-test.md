@@ -73,12 +73,11 @@ curl -u admin:$PASSWORD -k https://localhost:8000/v1/metadata
 # Should return JSON with version info
 ```
 
-If authentication fails or `ROX_ADMIN_PASSWORD` is not defined, find the password:
+If authentication fails or `ROX_ADMIN_PASSWORD` is not defined:
 
-**User is typically `admin`. Password locations:**
-- **Roxie deployments**: `ROX_ADMIN_PASSWORD` environment variable (set by roxie's subshell, or use `--envrc <file>` flag)
-- **Operator/Helm**: Kubernetes secret `stackrox/central-htpasswd`
-- **Common fallbacks**: `admin/admin`, `admin/stackrox`, `stackrox/stackrox`
+User is expected to be `admin`, the password is contained in the roxie environment (either loaded into roxie's subshell or persisted in an envrc-style file).
+
+If roxie is not being used, try common fallbacks: `admin/admin`, `admin/stackrox`, `stackrox/stackrox`.
 
 Check whether these are valid using the above curl command. Once found, update `ROX_ADMIN_PASSWORD` in `qa-test-settings.properties`. If nothing works, ask the user.
 
