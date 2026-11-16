@@ -117,8 +117,11 @@ fi
 # regardless of this buildid. (Verified: source changes rebuild
 # despite a constant buildid.)
 if [[ -n "${ROX_DETERMINISTIC_BUILDID:-1}" ]]; then
-  _gomod_go="$(awk '/^go /{print $2; exit}' go.mod)"
-  _gosum="$(sha256sum go.sum 2>/dev/null | cut -c1-16)"
+  # Paths must be SCRIPT_DIR-relative: this script is also invoked as
+  # go-test.sh from subdirectories (tests/, ui/) where ./go.mod does not
+  # exist — a relative path killed the e2e test run (awk fatal).
+  _gomod_go="$(awk '/^go /{print $2; exit}' "${SCRIPT_DIR}/../go.mod" 2>/dev/null)"
+  _gosum="$(sha256sum "${SCRIPT_DIR}/../go.sum" 2>/dev/null | cut -c1-16)"
   if [[ -n "$_gomod_go" && -n "$_gosum" ]]; then
     ldflags+=("-buildid=${_gomod_go}-${_gosum}")
   fi
