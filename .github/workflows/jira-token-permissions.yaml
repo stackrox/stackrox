@@ -1,0 +1,101 @@
+name: Jira token permissions
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/jira-token-permissions.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # Fork pull requests do not receive the CI Jira secrets.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - name: Check CI Jira authentication, permissions, and issue visibility
+      env:
+        JIRA_USER: ${{ secrets.JIRA_USER }}
+        JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      shell: python
+      run: |
+        import base64
+        import json
+        import os
+        import urllib.error
+        import urllib.parse
+        import urllib.request
+
+        user = os.environ.get("JIRA_USER", "")
+        token = os.environ.get("JIRA_TOKEN", "")
+        if not user or not token:
+            raise SystemExit("JIRA_USER and JIRA_TOKEN must both be available")
+
+        authorization = base64.b64encode(f"{user}:{token}".encode()).decode()
+        failures = []
+
+        def get(path, **params):
+            query = urllib.parse.urlencode(params)
+            url = f"https://redhat.atlassian.net/rest/api/3/{path}"
+            if query:
+                url += "?" + query
+            request = urllib.request.Request(url, headers={
+                "Authorization": "Basic " + authorization,
+                "Accept": "application/json",
+            })
+            try:
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    result = json.load(response)
+                    print(f"GET {path}: HTTP {response.status}", flush=True)
+                    return result
+            except urllib.error.HTTPError as error:
+                message = f"GET {path}: HTTP {error.code}"
+                if error.code == 404:
+                    message += " (missing or inaccessible to the CI bot)"
+            except urllib.error.URLError:
+                message = f"GET {path}: connection failed"
+            failures.append(message)
+            print(message, flush=True)
+            return None
+
+        identity = get("myself")
+        if identity is None:
+            raise SystemExit("Cannot authenticate the CI Jira bot")
+        print("Authenticated account:", identity.get("displayName"), identity.get("accountId"))
+
+        required = ["BROWSE_PROJECTS", "CREATE_ISSUES", "ADD_COMMENTS"]
+        permissions = get("mypermissions", projectKey="ROX", permissions=",".join(required))
+        if permissions is not None:
+            for key in required:
+                allowed = permissions.get("permissions", {}).get(key, {}).get("havePermission")
+                print(f"ROX {key}: {allowed}")
+                if allowed is not True:
+                    failures.append(f"Missing project permission: {key}")
+
+        # Known existing tickets distinguish visibility failures from empty searches.
+        for key in ["ROX-39424", "ROX-39665"]:
+            issue = get(f"issue/{key}", fields="security")
+            if issue is not None:
+                security = issue.get("fields", {}).get("security") or {}
+                print(f"Visible issue: {key}; security: {security.get('name', 'none')}")
+
+        summary = "IntegrationsTest / Verify GitHub Container Registry integration - default config FAILED"
+        jql = ('project = ROX AND issuetype = Bug AND status != Closed '
+               'AND labels = CI_Failure AND summary ~ ' + json.dumps(summary) +
+               ' ORDER BY created DESC')
+        search = get("search/jql", jql=jql, fields="summary", maxResults=50)
+        if search is not None:
+            issues = search.get("issues", [])
+            matches = [issue["key"] for issue in issues
+                       if issue.get("fields", {}).get("summary") == summary]
+            print(f"junit2jira lookup: {len(issues)} results; exact matches: {matches}")
+            print("Additional search page:", bool(search.get("nextPageToken")))
+            if not matches:
+                failures.append("junit2jira lookup found no exact match among known existing open tickets")
+
+        if failures:
+            raise SystemExit("Jira diagnostics failed:\n" + "\n".join(failures))
+        print("All Jira permission and visibility checks passed")
