@@ -38,7 +38,7 @@ _run_compatibility_tests() {
     local sensor_version="$2"
     local short_central_tag="$3"
     local short_sensor_tag="$4"
-    local compatibility_dir="compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
+    local compatibility_dir="compatibility-test-central-v${central_version}-sensor-v${sensor_version}"
 
     info "Starting test (go compatibility test Central v${short_central_tag}, Sensor v${short_sensor_tag})"
 
