@@ -24,6 +24,7 @@ import (
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/suse"
@@ -51,6 +52,7 @@ var (
 // matcher is essentially a driver.Matcher but it only exposes the functions necessary for the enricher.
 type matcher interface {
 	Name() string
+	Filter(record *claircore.IndexRecord) bool
 	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
 
@@ -80,7 +82,8 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 
 		// Copy pkg so we can overwrite the version.
 		p := *pkg
-		fixedBy.Package = &p
+		// Reset before processing, since an early continue can skip the end of the loop.
+		*fixedBy = claircore.IndexRecord{Package: &p}
 
 		// Set the Distribution.
 		// If we cannot identify the distribution, then use a dummy one,
@@ -169,7 +172,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 				// fixedBy.Package.Version.
 				// If so, then we replace the current fixedBy.Package.Version
 				// with v.FixedInVersion.
-				vulnerable, err := matcher.Vulnerable(ctx, fixedBy, v)
+				vulnerable, err := vulnerableInRepositories(ctx, matcher, fixedBy, v, env.RepositoryIDs, vr.Repositories)
 				if err != nil {
 					slog.WarnContext(ctx, "skipping", "reason", err, "package", pkg.Name, "vulnerability_id", v.ID, "vulnerability", v.Name, "fixed_in_version", v.FixedInVersion)
 					continue
@@ -211,10 +214,6 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 			m[pkgID] = fixedBy.Package.Version
 		}
 
-		// Reset fixedBy.
-		fixedBy.Package = nil
-		fixedBy.Distribution = nil
-		fixedBy.Repository = nil
 	}
 
 	if len(m) == 0 {
@@ -227,6 +226,34 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 	}
 
 	return fixedby.Type, []json.RawMessage{b}, nil
+}
+
+// vulnerableInRepositories checks every Red Hat Java product repository when
+// calculating a package's fixed-by version. Enrich selects the first repository
+// to choose a matcher, but a Java SBOM package can belong to multiple products.
+// For example, a 2.6.9 package associated with EAP and Quarkus may have an EAP
+// fix in 2.6.10 and a Quarkus fix in 2.6.12. Checking only EAP misses the
+// Quarkus fix because its CPE does not match EAP, yielding 2.6.10 instead of
+// 2.6.12 as the package's fixed-by version.
+func vulnerableInRepositories(ctx context.Context, m matcher, record *claircore.IndexRecord, vuln *claircore.Vulnerability, repoIDs []string, repos map[string]*claircore.Repository) (bool, error) {
+	if _, ok := m.(*rheljava.RedHatMatcher); !ok {
+		return m.Vulnerable(ctx, record, vuln)
+	}
+	for _, repoID := range repoIDs {
+		repo := repos[repoID]
+		if repo == nil {
+			continue
+		}
+		record.Repository = repo
+		if !m.Filter(record) {
+			continue
+		}
+		vulnerable, err := m.Vulnerable(ctx, record, vuln)
+		if err != nil || vulnerable {
+			return vulnerable, err
+		}
+	}
+	return false, nil
 }
 
 func parseURLEncoding(v string) string {
@@ -258,6 +285,8 @@ func findMatcher(ctx context.Context, record *claircore.IndexRecord) (matcher, v
 		return &gobin.Matcher{}, goSemverVersionType
 	case (*java.Matcher)(nil).Filter(record):
 		return &java.Matcher{}, urlEncodedVersionType
+	case (*rheljava.RedHatMatcher)(nil).Filter(record):
+		return &rheljava.RedHatMatcher{}, normalVersionType
 	case (*nodejs.Matcher)(nil).Filter(record):
 		return &nodejs.Matcher{}, semverVersionType
 	case (*python.Matcher)(nil).Filter(record):
