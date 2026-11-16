@@ -10,7 +10,7 @@ import (
 )
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.
-// Subquery bodies are separate search scopes and are not traversed.
+// The query inside MatchFieldSubQuery is handled separately because it searches its own category.
 func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 	if q.GetQuery() == nil {
 		return

@@ -123,7 +123,7 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 				nullableFields.Add(subBQ.MatchFieldQuery.GetField())
 			}
 		case *v1.BaseQuery_MatchFieldSubQuery:
-			// The inner query resolves fields in its own category, not this join graph.
+			// The inner query builds its own joins for the category it searches.
 			collectedFields.Add(subBQ.MatchFieldSubQuery.GetField())
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {

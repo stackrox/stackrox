@@ -15,8 +15,8 @@ import (
 
 func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map[string]searchFieldMetadata) (*pgsearch.QueryEntry, error) {
 	field := fields[sub.GetField()]
-	if field.baseField == nil || field.derivedMetadata != nil || !isSubQueryScalar(field.baseField.DataType) {
-		return nil, errox.InvalidArgs.Newf("subquery requires a scalar field, got %q", sub.GetField())
+	if field.baseField == nil || field.derivedMetadata != nil || !isSingleValueFieldType(field.baseField.DataType) {
+		return nil, errox.InvalidArgs.Newf("subquery requires a stored field with one value per record, got %q", sub.GetField())
 	}
 	schema := mapping.GetTableFromCategory(sub.GetCategory())
 	if schema == nil {
@@ -30,8 +30,8 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 		selection.GetFilter() != nil || len(sub.GetQuery().GetGroupBy().GetFields()) != 0 {
 		return nil, errox.InvalidArgs.New("subqueries do not support derived selections, aggregates, select filters or grouping")
 	}
-	// Use the same SELECT compiler as views, including the inner category's SAC
-	// and scope filters. Keep placeholders unnumbered until the full query is built.
+	// The view SELECT compiler applies the inner query's access and scope filters.
+	// Assign parameter numbers after combining both queries so their values stay in order.
 	compiled, err := standardizeSelectQueryAndPopulatePath(ctx, sub.GetQuery().CloneVT(), schema, SELECT, nil)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	if compiled == nil {
 		return pgsearch.NewFalseQuery(), nil
 	}
-	// Derived filter and sort fields can introduce aggregation implicitly.
+	// Fields such as deployment counts can add aggregation during compilation.
 	if len(compiled.GroupBys) != 0 || compiled.Having != "" {
 		return nil, errox.InvalidArgs.New("subqueries do not support aggregate filters or grouping")
 	}
@@ -49,15 +49,16 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 		}
 	}
 	if len(compiled.SelectedFields) == 0 {
-		return nil, errox.InvalidArgs.New("subquery must compile to a selected scalar field")
+		return nil, errox.InvalidArgs.New("subquery did not produce a selected field")
 	}
 	selected := compiled.SelectedFields[0]
-	if !isSubQueryScalar(selected.FieldType) {
-		return nil, errox.InvalidArgs.New("subquery must select a scalar field")
+	if !isSingleValueFieldType(selected.FieldType) {
+		return nil, errox.InvalidArgs.New("subquery cannot select an array or map field")
 	}
 	outer := selectQueryField(sub.GetField(), field.baseField, false, aggregatefunc.Unset, "")
-	// The derived table isolates inner table names and extra columns required for
-	// DISTINCT or ordering. EXISTS does not duplicate outer rows.
+	// Wrap the inner query to keep its table names and any extra sorting columns
+	// separate from the outer query. EXISTS checks for a matching value without
+	// duplicating outer records when several inner records contain that value.
 	return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
 		Query: fmt.Sprintf("EXISTS (SELECT 1 FROM (%s) AS subquery WHERE subquery.%s = %s)",
 			compiled.sqlTemplate(), selected.Alias, outer.SelectPath),
@@ -65,7 +66,7 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	}}, nil
 }
 
-func isSubQueryScalar(dataType postgres.DataType) bool {
+func isSingleValueFieldType(dataType postgres.DataType) bool {
 	switch dataType {
 	case postgres.Map, postgres.StringArray, postgres.EnumArray, postgres.IntArray:
 		return false

@@ -261,9 +261,10 @@ message AutocompleteResponse {
   repeated string values = 1;
 }
 
-// MatchFieldSubQuery matches a field against the single selected column of a
-// query in another search category. The SQL search backend applies that
-// category's scope and access filters independently of the outer query.
+// MatchFieldSubQuery filters records whose field value matches a value returned
+// by another query. For example, it can filter images by selecting image IDs
+// from deployments in a particular namespace. The SQL search backend applies
+// the inner query's access and scope filters separately.
 message MatchFieldSubQuery {
   string field = 1;
   SearchCategory category = 2;

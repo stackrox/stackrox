@@ -33,11 +33,11 @@ func TestSubQueryComposition(t *testing.T) {
 	category := v1.SearchCategory(100)
 	inner := search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.TestKey)).
 		AddStrings(search.TestInt64, ">1").ProtoQuery()
-	membership := search.MatchFieldSubQuery(search.TestKey, category, inner)
-	nestedQuery := search.ConjunctionQuery(membership, search.NewQueryBuilder().AddStrings(search.TestInt64, ">2").ProtoQuery())
+	matchingKeys := search.MatchFieldSubQuery(search.TestKey, category, inner)
+	nestedQuery := search.ConjunctionQuery(matchingKeys, search.NewQueryBuilder().AddStrings(search.TestInt64, ">2").ProtoQuery())
 	nestedQuery.Selects = inner.GetSelects()
 	nested := search.MatchFieldSubQuery(search.TestKey, category, nestedQuery)
-	nullMembership := search.MatchFieldSubQuery(search.TestName, category,
+	matchingNullName := search.MatchFieldSubQuery(search.TestName, category,
 		search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.TestName)).
 			AddExactMatches(search.TestKey, "null-name").ProtoQuery())
 	distinct := inner.CloneVT()
@@ -52,12 +52,12 @@ func TestSubQueryComposition(t *testing.T) {
 		query *v1.Query
 		keys  []string
 	}{
-		"same category": {query: membership, keys: []string{"second", "third"}},
-		"conjunction": {query: search.ConjunctionQuery(membership,
+		"same category": {query: matchingKeys, keys: []string{"second", "third"}},
+		"conjunction": {query: search.ConjunctionQuery(matchingKeys,
 			search.NewQueryBuilder().AddStrings(search.TestInt64, "<3").ProtoQuery()), keys: []string{"second"}},
-		"disjunction": {query: search.DisjunctionQuery(membership,
+		"disjunction": {query: search.DisjunctionQuery(matchingKeys,
 			search.NewQueryBuilder().AddExactMatches(search.TestKey, "first").ProtoQuery()), keys: []string{"first", "second", "third"}},
-		"negation": {query: search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{membership}}),
+		"negation": {query: search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{matchingKeys}}),
 			keys: []string{"first", "null-name"}},
 		"nested":                 {query: nested, keys: []string{"third"}},
 		"empty inner predicates": {query: search.MatchFieldSubQuery(search.TestKey, category, allRows), keys: []string{"first", "second", "third", "null-name"}},
@@ -66,8 +66,8 @@ func TestSubQueryComposition(t *testing.T) {
 		"unsupported inner filter": {query: search.MatchFieldSubQuery(search.TestKey, category,
 			search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.TestKey)).
 				AddExactMatches(search.DeploymentName, "unsupported").ProtoQuery())},
-		"null selected value": {query: nullMembership},
-		"negated null membership": {query: search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{nullMembership}}),
+		"null selected value": {query: matchingNullName},
+		"negated null name match": {query: search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{matchingNullName}}),
 			keys: []string{"first", "second", "third", "null-name"}},
 	} {
 		t.Run(name, func(t *testing.T) {

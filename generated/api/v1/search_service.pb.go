@@ -1734,9 +1734,10 @@ func (x *AutocompleteResponse) GetValues() []string {
 	return nil
 }
 
-// MatchFieldSubQuery matches a field against the single selected column of a
-// query in another search category. The SQL search backend applies that
-// category's scope and access filters independently of the outer query.
+// MatchFieldSubQuery filters records whose field value matches a value returned
+// by another query. For example, it can filter images by selecting image IDs
+// from deployments in a particular namespace. The SQL search backend applies
+// the inner query's access and scope filters separately.
 type MatchFieldSubQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`

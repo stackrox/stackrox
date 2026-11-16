@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSubqueryBindings(t *testing.T) {
+func TestSubQueryParameters(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	inner := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "inner $$ ' value").
 		AddSelectFields(search.NewQuerySelect(search.ImageID)).ProtoQuery()
@@ -76,7 +76,7 @@ func TestInvalidSubQuery(t *testing.T) {
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count)).ProtoQuery()},
 		"max selection": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Max)).ProtoQuery()},
-		"grouped scalar": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
+		"grouped selection": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).AddGroupBy(search.DeploymentName).ProtoQuery()},
 		"grouping another field": {field: search.DeploymentName, category: v1.SearchCategory_DEPLOYMENTS,
 			query: search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.DeploymentName)).AddGroupBy(search.Cluster).ProtoQuery()},
