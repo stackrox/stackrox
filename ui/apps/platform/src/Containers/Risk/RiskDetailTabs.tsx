@@ -5,7 +5,12 @@ import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import type { Deployment } from 'types/deployment.proto';
 import type { Risk } from 'services/DeploymentsService';
-import type { RiskPriorityClassification } from 'types/risk.proto';
+import type {
+    RiskActivityClassification,
+    RiskExposureClassification,
+    RiskPostureClassification,
+    RiskPriorityClassification,
+} from 'types/risk.proto';
 
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDiscovery from './Process/ProcessDiscovery';
@@ -36,6 +41,29 @@ const riskClassColors: Record<RiskPriorityClassification, LabelProps> = {
     RISK_PRIORITY_REMEDIATE_NOW: { color: 'orangered' },
     RISK_PRIORITY_REMEDIATE: { color: 'orange' },
     RISK_PRIORITY_IMPROVE_POSTURE: { color: 'blue' },
+};
+
+const activityLabels: Record<RiskActivityClassification, string> = {
+    RISK_ACTIVITY_UNKNOWN: 'Unknown',
+    RISK_ACTIVITY_RESPOND_NOW: 'Respond now',
+    RISK_ACTIVITY_INVESTIGATE_NOW: 'Investigate now',
+    RISK_ACTIVITY_NONE_OBSERVED: 'None observed',
+};
+
+const exposureLabels: Record<RiskExposureClassification, string> = {
+    RISK_EXPOSURE_UNKNOWN: 'Unknown',
+    RISK_EXPOSURE_REMEDIATE_NOW: 'Remediate now',
+    RISK_EXPOSURE_REMEDIATE: 'Remediate',
+    RISK_EXPOSURE_NONE_DETECTED: 'None detected',
+};
+
+const postureLabels: Record<RiskPostureClassification, string> = {
+    RISK_POSTURE_UNKNOWN: 'Unknown',
+    RISK_POSTURE_CRITICAL: 'Critical',
+    RISK_POSTURE_HIGH: 'High',
+    RISK_POSTURE_MEDIUM: 'Medium',
+    RISK_POSTURE_LOW: 'Low',
+    RISK_POSTURE_NONE_DETECTED: 'None detected',
 };
 
 const riskClassDescriptions: Record<RiskPriorityClassification, string> = {
@@ -179,6 +207,35 @@ function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
                                     }
                                 >
                                     <p>{riskClassDescriptions[risk.priorityClassification]}</p>
+                                    <dl>
+                                        <dt>Activity</dt>
+                                        <dd>
+                                            {
+                                                activityLabels[
+                                                    risk.activityClassification ??
+                                                        'RISK_ACTIVITY_UNKNOWN'
+                                                ]
+                                            }
+                                        </dd>
+                                        <dt>Exposure</dt>
+                                        <dd>
+                                            {
+                                                exposureLabels[
+                                                    risk.exposureClassification ??
+                                                        'RISK_EXPOSURE_UNKNOWN'
+                                                ]
+                                            }
+                                        </dd>
+                                        <dt>Posture</dt>
+                                        <dd>
+                                            {
+                                                postureLabels[
+                                                    risk.postureClassification ??
+                                                        'RISK_POSTURE_UNKNOWN'
+                                                ]
+                                            }
+                                        </dd>
+                                    </dl>
                                     {getRiskClassReasons(deployment, risk).length !== 0 && (
                                         <>
                                             <p>Classification evidence:</p>

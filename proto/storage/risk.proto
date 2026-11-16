@@ -15,6 +15,9 @@ message Risk {
   RiskPriorityClassification priority_classification = 5;
   RiskVulnerabilitySummary vulnerability_summary = 6;
   float proposed_score = 7;
+  RiskActivityClassification activity_classification = 8;
+  RiskExposureClassification exposure_classification = 9;
+  RiskPostureClassification posture_classification = 10;
 
   message Result {
     message Factor {
@@ -57,6 +60,32 @@ enum RiskPriorityClassification {
   RISK_PRIORITY_REMEDIATE_NOW = 3;
   RISK_PRIORITY_REMEDIATE = 4;
   RISK_PRIORITY_IMPROVE_POSTURE = 5;
+}
+
+// Next tag: 4
+enum RiskActivityClassification {
+  RISK_ACTIVITY_UNKNOWN = 0;
+  RISK_ACTIVITY_RESPOND_NOW = 1;
+  RISK_ACTIVITY_INVESTIGATE_NOW = 2;
+  RISK_ACTIVITY_NONE_OBSERVED = 3;
+}
+
+// Next tag: 4
+enum RiskExposureClassification {
+  RISK_EXPOSURE_UNKNOWN = 0;
+  RISK_EXPOSURE_REMEDIATE_NOW = 1;
+  RISK_EXPOSURE_REMEDIATE = 2;
+  RISK_EXPOSURE_NONE_DETECTED = 3;
+}
+
+// Next tag: 7
+enum RiskPostureClassification {
+  RISK_POSTURE_UNKNOWN = 0;
+  RISK_POSTURE_CRITICAL = 1;
+  RISK_POSTURE_HIGH = 2;
+  RISK_POSTURE_MEDIUM = 3;
+  RISK_POSTURE_LOW = 4;
+  RISK_POSTURE_NONE_DETECTED = 5;
 }
 
 // Next tag: 9

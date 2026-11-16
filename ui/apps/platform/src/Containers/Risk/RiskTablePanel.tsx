@@ -11,7 +11,12 @@ import {
     getHiddenColumnCount,
     useManagedColumns,
 } from 'hooks/useManagedColumns';
-import type { RiskPriorityClassification } from 'types/risk.proto';
+import type {
+    RiskActivityClassification,
+    RiskExposureClassification,
+    RiskPostureClassification,
+    RiskPriorityClassification,
+} from 'types/risk.proto';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getDateTime } from 'utils/dateUtils';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -26,6 +31,9 @@ export const sortFields = [
     'Cluster',
     'Namespace',
     'Risk Priority Classification',
+    'Risk Activity Classification',
+    'Risk Exposure Classification',
+    'Risk Posture Classification',
     'Deployment Risk Score',
     'Proposed Deployment Risk Score',
     'Deployment Risk Priority',
@@ -71,6 +79,18 @@ export const defaultColumns = {
         title: 'Risk class',
         isShownByDefault: true,
     },
+    activity: {
+        title: 'Activity',
+        isShownByDefault: false,
+    },
+    exposure: {
+        title: 'Exposure',
+        isShownByDefault: false,
+    },
+    posture: {
+        title: 'Posture',
+        isShownByDefault: false,
+    },
 } as const;
 
 const riskClassLabels: Record<RiskPriorityClassification, string> = {
@@ -89,6 +109,52 @@ const riskClassLabelProps: Record<RiskPriorityClassification, LabelProps> = {
     RISK_PRIORITY_REMEDIATE: { color: 'orange' },
     RISK_PRIORITY_IMPROVE_POSTURE: { color: 'blue' },
     RISK_PRIORITY_UNKNOWN: { color: 'grey' },
+};
+
+const activityLabels: Record<RiskActivityClassification, string> = {
+    RISK_ACTIVITY_UNKNOWN: 'Unknown',
+    RISK_ACTIVITY_RESPOND_NOW: 'Respond now',
+    RISK_ACTIVITY_INVESTIGATE_NOW: 'Investigate now',
+    RISK_ACTIVITY_NONE_OBSERVED: 'None observed',
+};
+
+const activityLabelProps: Record<RiskActivityClassification, LabelProps> = {
+    RISK_ACTIVITY_RESPOND_NOW: { status: 'danger' },
+    RISK_ACTIVITY_INVESTIGATE_NOW: { status: 'warning' },
+    RISK_ACTIVITY_NONE_OBSERVED: { color: 'grey' },
+    RISK_ACTIVITY_UNKNOWN: { color: 'grey' },
+};
+
+const exposureLabels: Record<RiskExposureClassification, string> = {
+    RISK_EXPOSURE_UNKNOWN: 'Unknown',
+    RISK_EXPOSURE_REMEDIATE_NOW: 'Remediate now',
+    RISK_EXPOSURE_REMEDIATE: 'Remediate',
+    RISK_EXPOSURE_NONE_DETECTED: 'None detected',
+};
+
+const exposureLabelProps: Record<RiskExposureClassification, LabelProps> = {
+    RISK_EXPOSURE_REMEDIATE_NOW: { color: 'orangered' },
+    RISK_EXPOSURE_REMEDIATE: { color: 'orange' },
+    RISK_EXPOSURE_NONE_DETECTED: { color: 'grey' },
+    RISK_EXPOSURE_UNKNOWN: { color: 'grey' },
+};
+
+const postureLabels: Record<RiskPostureClassification, string> = {
+    RISK_POSTURE_UNKNOWN: 'Unknown',
+    RISK_POSTURE_CRITICAL: 'Critical',
+    RISK_POSTURE_HIGH: 'High',
+    RISK_POSTURE_MEDIUM: 'Medium',
+    RISK_POSTURE_LOW: 'Low',
+    RISK_POSTURE_NONE_DETECTED: 'None detected',
+};
+
+const postureLabelProps: Record<RiskPostureClassification, LabelProps> = {
+    RISK_POSTURE_CRITICAL: { status: 'danger' },
+    RISK_POSTURE_HIGH: { color: 'orangered' },
+    RISK_POSTURE_MEDIUM: { color: 'orange' },
+    RISK_POSTURE_LOW: { color: 'blue' },
+    RISK_POSTURE_NONE_DETECTED: { color: 'grey' },
+    RISK_POSTURE_UNKNOWN: { color: 'grey' },
 };
 
 type RiskTablePanelProps = {
@@ -203,6 +269,27 @@ function RiskTablePanel({
                         >
                             Risk class
                         </Th>
+                        <Th
+                            className={getVisibilityClass('activity')}
+                            width={10}
+                            sort={getSortParams('Risk Activity Classification')}
+                        >
+                            Activity
+                        </Th>
+                        <Th
+                            className={getVisibilityClass('exposure')}
+                            width={10}
+                            sort={getSortParams('Risk Exposure Classification')}
+                        >
+                            Exposure
+                        </Th>
+                        <Th
+                            className={getVisibilityClass('posture')}
+                            width={10}
+                            sort={getSortParams('Risk Posture Classification')}
+                        >
+                            Posture
+                        </Th>
                     </Tr>
                 </Thead>
                 <TbodyUnified
@@ -216,6 +303,12 @@ function RiskTablePanel({
 
                             const riskClass =
                                 deployment.riskPriorityClassification ?? 'RISK_PRIORITY_UNKNOWN';
+                            const activity =
+                                deployment.riskActivityClassification ?? 'RISK_ACTIVITY_UNKNOWN';
+                            const exposure =
+                                deployment.riskExposureClassification ?? 'RISK_EXPOSURE_UNKNOWN';
+                            const posture =
+                                deployment.riskPostureClassification ?? 'RISK_POSTURE_UNKNOWN';
                             const priorityAsInt = parseInt(deployment.priority, 10);
                             const priorityDisplay =
                                 Number.isNaN(priorityAsInt) || priorityAsInt < 1
@@ -272,6 +365,30 @@ function RiskTablePanel({
                                         >
                                             <Label {...riskClassLabelProps[riskClass]}>
                                                 {riskClassLabels[riskClass]}
+                                            </Label>
+                                        </Td>
+                                        <Td
+                                            className={getVisibilityClass('activity')}
+                                            dataLabel="Activity"
+                                        >
+                                            <Label {...activityLabelProps[activity]}>
+                                                {activityLabels[activity]}
+                                            </Label>
+                                        </Td>
+                                        <Td
+                                            className={getVisibilityClass('exposure')}
+                                            dataLabel="Exposure"
+                                        >
+                                            <Label {...exposureLabelProps[exposure]}>
+                                                {exposureLabels[exposure]}
+                                            </Label>
+                                        </Td>
+                                        <Td
+                                            className={getVisibilityClass('posture')}
+                                            dataLabel="Posture"
+                                        >
+                                            <Label {...postureLabelProps[posture]}>
+                                                {postureLabels[posture]}
                                             </Label>
                                         </Td>
                                     </Tr>
