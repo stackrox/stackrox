@@ -4,6 +4,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -29,13 +30,18 @@ type migrationDir struct {
 }
 
 func main() {
-	if err := run(); err != nil {
+	var dryRun bool
+	flag.BoolVar(&dryRun, "dry-run", false, "print what would be removed without making changes")
+	flag.BoolVar(&dryRun, "n", false, "alias for --dry-run")
+	flag.Parse()
+
+	if err := run(dryRun); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(dryRun bool) error {
 	repoRoot, err := getRepoRoot()
 	if err != nil {
 		return err
@@ -45,20 +51,20 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	return runWithOldestSeqNum(repoRoot, seqnum)
+	return runWithOldestSeqNum(repoRoot, seqnum, dryRun)
 }
 
 func migrationsDirectory(repoRoot string) string {
 	return filepath.Join(repoRoot, "migrator", "migrations")
 }
 
-func runWithOldestSeqNum(repoRoot string, seqnum uint64) error {
+func runWithOldestSeqNum(repoRoot string, seqnum uint64, dryRun bool) error {
 	migs, err := listUnsupportedMigrations(repoRoot, seqnum)
 	if err != nil {
 		return err
 	}
 
-	return cleanupUnsupportedMigrations(repoRoot, migs)
+	return cleanupUnsupportedMigrations(repoRoot, migs, dryRun)
 }
 
 func getRepoRoot() (string, error) {
@@ -172,9 +178,13 @@ func listUnsupportedMigrations(repoRoot string, oldestSupportedSeqNum uint64) ([
 	return filterUnsupportedMigrations(migrationDirs, oldestSupportedSeqNum), nil
 }
 
-func cleanupMigrationDirectories(repoRoot string, migs []migrationDir) error {
+func cleanupMigrationDirectories(repoRoot string, migs []migrationDir, dryRun bool) error {
 	for _, mig := range migs {
 		d := filepath.Join(migrationsDirectory(repoRoot), mig.dir)
+		if dryRun {
+			fmt.Printf("Would remove %q\n", d)
+			continue
+		}
 		fmt.Printf("Removing %q\n", d)
 		err := os.RemoveAll(d)
 		if err != nil {
@@ -224,7 +234,7 @@ func renderCleanRunnerAll(newFileLines []string, writeFile io.Writer) error {
 	return nil
 }
 
-func cleanupMigratorRunnerAll(repoRoot string, migs []migrationDir) error {
+func cleanupMigratorRunnerAll(repoRoot string, migs []migrationDir, dryRun bool) error {
 	migratorRunnerAllPath := filepath.Join(repoRoot, "migrator", "runner", "all.go")
 	readFile, err := os.Open(migratorRunnerAllPath)
 	if err != nil {
@@ -237,6 +247,13 @@ func cleanupMigratorRunnerAll(repoRoot string, migs []migrationDir) error {
 		return err
 	}
 
+	if dryRun {
+		if len(migs) > 0 {
+			fmt.Printf("Would remove unsupported imports from %q\n", migratorRunnerAllPath)
+		}
+		return nil
+	}
+
 	writeFile, err := os.OpenFile(migratorRunnerAllPath, os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
@@ -245,10 +262,10 @@ func cleanupMigratorRunnerAll(repoRoot string, migs []migrationDir) error {
 	return renderCleanRunnerAll(newFileLines, writeFile)
 }
 
-func cleanupUnsupportedMigrations(repoRoot string, migs []migrationDir) error {
-	err := cleanupMigratorRunnerAll(repoRoot, migs)
+func cleanupUnsupportedMigrations(repoRoot string, migs []migrationDir, dryRun bool) error {
+	err := cleanupMigratorRunnerAll(repoRoot, migs, dryRun)
 	if err != nil {
 		return err
 	}
-	return cleanupMigrationDirectories(repoRoot, migs)
+	return cleanupMigrationDirectories(repoRoot, migs, dryRun)
 }

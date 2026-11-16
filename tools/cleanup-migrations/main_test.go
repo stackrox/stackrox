@@ -372,12 +372,30 @@ func TestCleanupMigrationDirectories(t *testing.T) {
 	kept := filepath.Join(migrationsDir, "m_220_to_m_221_c")
 	require.NoError(t, os.MkdirAll(kept, 0o755))
 
-	require.NoError(t, cleanupMigrationDirectories(root, migs))
+	require.NoError(t, cleanupMigrationDirectories(root, migs, false))
 
 	for _, mig := range migs {
 		require.NoDirExists(t, filepath.Join(migrationsDir, mig.dir), mig.dir)
 	}
 	require.DirExists(t, kept)
+}
+
+func TestCleanupMigrationDirectoriesDryRun(t *testing.T) {
+	root := t.TempDir()
+	migrationsDir := migrationsDirectory(root)
+	migs := []migrationDir{
+		{dir: "m_209_to_m_210_a", seqNum: 209},
+		{dir: "m_213_to_m_214_b", seqNum: 213},
+	}
+	for _, mig := range migs {
+		require.NoError(t, os.MkdirAll(filepath.Join(migrationsDir, mig.dir), 0o755))
+	}
+
+	require.NoError(t, cleanupMigrationDirectories(root, migs, true))
+
+	for _, mig := range migs {
+		require.DirExists(t, filepath.Join(migrationsDir, mig.dir), mig.dir)
+	}
 }
 
 func TestCleanupMigratorRunnerAll(t *testing.T) {
@@ -391,15 +409,34 @@ func TestCleanupMigratorRunnerAll(t *testing.T) {
 		[]string{"m_210_to_m_211_c"},
 	))
 
-	require.NoError(t, cleanupMigratorRunnerAll(root, unsupported))
+	require.NoError(t, cleanupMigratorRunnerAll(root, unsupported, false))
 
 	got, err := os.ReadFile(runnerPath)
 	require.NoError(t, err)
 	assert.Equal(t, runnerAllContent(nil, []string{"m_210_to_m_211_c"}), string(got))
 }
 
+func TestCleanupMigratorRunnerAllDryRun(t *testing.T) {
+	root := t.TempDir()
+	unsupported := []migrationDir{
+		{dir: "m_209_to_m_210_a", seqNum: 209},
+		{dir: "m_213_to_m_214_b", seqNum: 213},
+	}
+	content := runnerAllContent(
+		[]string{"m_209_to_m_210_a", "m_213_to_m_214_b"},
+		[]string{"m_210_to_m_211_c"},
+	)
+	runnerPath := writeRunnerAll(t, root, content)
+
+	require.NoError(t, cleanupMigratorRunnerAll(root, unsupported, true))
+
+	got, err := os.ReadFile(runnerPath)
+	require.NoError(t, err)
+	assert.Equal(t, content, string(got))
+}
+
 func TestCleanupMigratorRunnerAllMissingFile(t *testing.T) {
-	err := cleanupMigratorRunnerAll(t.TempDir(), nil)
+	err := cleanupMigratorRunnerAll(t.TempDir(), nil, false)
 	require.Error(t, err)
 }
 
@@ -423,7 +460,7 @@ func TestRunWithOldestSeqNum(t *testing.T) {
 	}
 	runnerPath := writeRunnerAll(t, root, runnerAllContent(unsupported, supported))
 
-	require.NoError(t, runWithOldestSeqNum(root, 220))
+	require.NoError(t, runWithOldestSeqNum(root, 220, false))
 
 	for _, dir := range unsupported {
 		require.NoDirExists(t, filepath.Join(migrationsDir, dir), dir)
@@ -436,19 +473,45 @@ func TestRunWithOldestSeqNum(t *testing.T) {
 	assert.Equal(t, runnerAllContent(nil, supported), string(got))
 }
 
+func TestRunWithOldestSeqNumDryRun(t *testing.T) {
+	root := t.TempDir()
+	migrationsDir := migrationsDirectory(root)
+	unsupported := []string{
+		"m_209_to_m_210_a",
+		"m_213_to_m_214_b",
+	}
+	supported := []string{
+		"m_220_to_m_221_d",
+	}
+	for _, dir := range append(unsupported, supported...) {
+		require.NoError(t, os.MkdirAll(filepath.Join(migrationsDir, dir), 0o755))
+	}
+	content := runnerAllContent(unsupported, supported)
+	runnerPath := writeRunnerAll(t, root, content)
+
+	require.NoError(t, runWithOldestSeqNum(root, 220, true))
+
+	for _, dir := range append(unsupported, supported...) {
+		require.DirExists(t, filepath.Join(migrationsDir, dir), dir)
+	}
+	got, err := os.ReadFile(runnerPath)
+	require.NoError(t, err)
+	assert.Equal(t, content, string(got))
+}
+
 func TestRunWithOldestSeqNumMissingRunnerFile(t *testing.T) {
 	root := t.TempDir()
 	unsupported := filepath.Join(migrationsDirectory(root), "m_209_to_m_210_a")
 	require.NoError(t, os.MkdirAll(unsupported, 0o755))
 
-	err := runWithOldestSeqNum(root, 220)
+	err := runWithOldestSeqNum(root, 220, false)
 	require.Error(t, err)
 
 	require.DirExists(t, unsupported, "directories must not be removed when runner cleanup fails")
 }
 
 func TestRunWithOldestSeqNumMissingMigrationsDirectory(t *testing.T) {
-	require.Error(t, runWithOldestSeqNum(t.TempDir(), 220))
+	require.Error(t, runWithOldestSeqNum(t.TempDir(), 220, false))
 }
 
 func writeRunnerAll(t *testing.T, repoRoot, content string) string {
