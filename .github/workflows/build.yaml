@@ -561,8 +561,13 @@ jobs:
           echo "operator image tag: ${OPERATOR_TARGET}"
           for arch in amd64 arm64; do
             GOARCH=$arch make -C operator docker-build-prebuilt
-            docker run --rm --platform linux/${arch} \
-              "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" --help >/dev/null
+            # Runnability check only on the native arch (the runner is
+            # amd64; running the arm64 binary needs QEMU, which the
+            # COPY-only Dockerfile build does not).
+            if [ "$arch" = amd64 ]; then
+              docker run --rm --platform linux/amd64 \
+                "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" --help >/dev/null
+            fi
             docker tag "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" \
               "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-${arch}"
             docker push "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-${arch}"
