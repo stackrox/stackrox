@@ -521,7 +521,11 @@ jobs:
             mv bin/linux_${arch}/cmd bin/linux_${arch}/stackrox-operator
           done
           # THIRD_PARTY_NOTICES is required by prebuilt.Dockerfile.
-          make ossls-notice >/dev/null 2>&1 || make ossls-notice
+          # Extract from our main image — generated from the same tree
+          # by the main-image legs (avoids the ossls node_modules dance).
+          _cid=$(docker create "quay.io/rhacs-eng/main:${TARGET_TAG}")
+          docker cp "$_cid:/THIRD_PARTY_NOTICES" ./THIRD_PARTY_NOTICES
+          docker rm -f "$_cid" >/dev/null
           echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login quay.io \
             -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin
           for repo in central-db collector fact roxctl scanner-v4 scanner-v4-db; do
