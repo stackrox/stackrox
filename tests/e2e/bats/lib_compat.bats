@@ -19,15 +19,15 @@ setup() {
     export LOAD_BALANCER=lb ROX_SCANNER_V4=true SFA_AGENT=false
     test_file="${BATS_TEST_TMPDIR}/config.yaml"
     cp "${TEST_ROOT}/deploy/roxie-config-resources.yaml" "$test_file"
-    db_overlay=$(yq -o=json -I=0 '.central.spec.overlays[] | select(.name == "central-db")' "$test_file")
-    db_resources=$(yq -o=json -I=0 '.central.spec.central.db.resources' "$test_file")
+    db_overlay=$(yq eval -o=json -I=0 '.central.spec.overlays[] | select(.name == "central-db")' "$test_file")
+    db_resources=$(yq eval -o=json -I=0 '.central.spec.central.db.resources' "$test_file")
 }
 
 assert_db_config_preserved() {
-    run yq -o=json -I=0 '.central.spec.overlays[] | select(.name == "central-db")' "$test_file"
+    run yq eval -o=json -I=0 '.central.spec.overlays[] | select(.name == "central-db")' "$test_file"
     assert_success
     assert_output "$db_overlay"
-    run yq -o=json -I=0 '.central.spec.central.db.resources' "$test_file"
+    run yq eval -o=json -I=0 '.central.spec.central.db.resources' "$test_file"
     assert_success
     assert_output "$db_resources"
 }
@@ -45,10 +45,10 @@ EOF
     roxie_config_from_environment_compat "$test_file" stackrox
 
     assert_db_config_preserved
-    run yq '.central.spec.overlays[] | select(.name == "central-endpoints") | .patches[0].verbatim' "$test_file"
+    run yq eval '.central.spec.overlays[] | select(.name == "central-endpoints") | .patches[0].verbatim' "$test_file"
     assert_success
     assert_output "$(cat "$ROXDEPLOY_CONFIG_FILE_MAP")"
-    run yq '.central.spec.customize.envVars[] | select(.name == "ROX_PLAINTEXT_ENDPOINTS") | .value' "$test_file"
+    run yq eval '.central.spec.customize.envVars[] | select(.name == "ROX_PLAINTEXT_ENDPOINTS") | .value' "$test_file"
     assert_success
     assert_output "8080,8081"
 }
@@ -57,7 +57,7 @@ EOF
     roxie_config_from_environment_compat "$test_file" stackrox
 
     assert_db_config_preserved
-    run yq '.central.spec.overlays | length' "$test_file"
+    run yq eval '.central.spec.overlays | length' "$test_file"
     assert_success
     assert_output "1"
 }
@@ -70,10 +70,10 @@ EOF
     roxie_config_from_environment_compat "$test_file" stackrox
 
     assert_db_config_preserved
-    run yq '.central.spec.overlays[] | select(.name == "central-db") | .optional' "$test_file"
+    run yq eval '.central.spec.overlays[] | select(.name == "central-db") | .optional' "$test_file"
     assert_success
     assert_output "true"
-    run yq '.central.spec.central.db.connectionString' "$test_file"
+    run yq eval '.central.spec.central.db.connectionString' "$test_file"
     assert_success
     assert_output --partial "host=postgres.example"
 }
