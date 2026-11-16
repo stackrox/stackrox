@@ -13,16 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	// sweeperCtx is elevated because the sweeper is a background loop with no user identity: it must
-	// read every scan configuration and mark results stale across all clusters.
-	sweeperCtx = sac.WithAllAccess(context.Background())
-)
+var log = logging.LoggerForModule()
 
 // Sweeper periodically marks compliance check results STALE when their scan configuration's
 // schedule says they should have been refreshed by now but were not. It only ever transitions rows
@@ -42,10 +37,14 @@ type sweeperImpl struct {
 	stopper concurrency.Stopper
 }
 
-// New returns a Sweeper that ticks at the given interval.
+// New returns a Sweeper that ticks at the given interval, floored to minSweepInterval.
+//
+// interval only bounds detection latency: a result becomes stale at tick+grace but is marked at the
+// next sweep, so lag <= interval. It does not affect correctness, since the cutoff is computed from
+// absolute schedule time.
 func New(scanConfigDS scanConfigDS.DataStore, checkResultDS checkResultDS.DataStore, interval time.Duration) Sweeper {
 	return &sweeperImpl{
-		interval:      interval,
+		interval:      clampSweepInterval(interval),
 		scanConfigDS:  scanConfigDS,
 		checkResultDS: checkResultDS,
 		stopper:       concurrency.NewStopper(),
@@ -68,20 +67,35 @@ func (s *sweeperImpl) loop() {
 	defer s.stopper.Flow().ReportStopped()
 	defer s.ticker.Stop()
 
-	s.sweep()
+	// The sweeper is a background loop with no user identity: it must read every scan configuration
+	// and mark results stale across all clusters, so grant only Compliance read/read-write rather than
+	// all access. The context is cancelled once shutdown is requested, so in-flight DB calls do not
+	// outlive Stop().
+	ctx := sac.WithGlobalAccessScopeChecker(
+		concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal()),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Compliance),
+		),
+	)
+
+	s.sweep(ctx)
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():
 			return
 		case <-s.ticker.C:
-			s.sweep()
+			s.sweep(ctx)
 		}
 	}
 }
 
 // sweep marks STALE the check results of every scan configuration whose most recent scheduled scan
 // had its full grace window elapse without refreshing them.
-func (s *sweeperImpl) sweep() {
+func (s *sweeperImpl) sweep(ctx context.Context) {
+	start := time.Now()
+	defer func() { sweepDuration.Observe(time.Since(start).Seconds()) }()
+
 	// Compliance schedules encode their hour/minute in UTC, so evaluate them against UTC "now".
 	// Otherwise, a Central running with a non-UTC TZ would shift the cutoff by its offset and
 	// falsely mark fresh results stale.
@@ -91,8 +105,9 @@ func (s *sweeperImpl) sweep() {
 	// has fully elapsed without new results, so we evaluate the schedule as of (now - grace).
 	grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
 
-	configs, err := s.scanConfigDS.GetScanConfigurations(sweeperCtx, search.EmptyQuery())
+	configs, err := s.scanConfigDS.GetScanConfigurations(ctx, search.EmptyQuery())
 	if err != nil {
+		sweepErrors.WithLabelValues("list_configs").Inc()
 		log.Errorf("compliance freshness sweeper: listing scan configurations: %v", err)
 		return
 	}
@@ -108,6 +123,7 @@ func (s *sweeperImpl) sweep() {
 		// that started before it were not refreshed in time and are stale.
 		cutoff, ok := previousScheduledStart(cfg.GetSchedule(), now.Add(-grace))
 		if !ok {
+			log.Debugf("compliance freshness sweeper: skipping scan configuration %q: no evaluable schedule", cfg.GetScanConfigName())
 			continue
 		}
 
@@ -120,12 +136,14 @@ func (s *sweeperImpl) sweep() {
 			continue
 		}
 
-		n, err := s.checkResultDS.MarkScanChecksStaleByConfig(sweeperCtx, cfg.GetScanConfigName(), cutoff)
+		n, err := s.checkResultDS.MarkScanChecksStaleByConfig(ctx, cfg.GetScanConfigName(), cutoff)
 		if err != nil {
+			sweepErrors.WithLabelValues("mark_stale").Inc()
 			log.Errorf("compliance freshness sweeper: marking results stale for scan configuration %q: %v", cfg.GetScanConfigName(), err)
 			continue
 		}
 		if n > 0 {
+			resultsMarkedStale.Add(float64(n))
 			log.Infof("compliance freshness sweeper: marked %d check result(s) stale for scan configuration %q", n, cfg.GetScanConfigName())
 		}
 	}
