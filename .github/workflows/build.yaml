@@ -526,3 +526,17 @@ jobs:
           ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
           make -C operator docker-push-bundle | cat
           echo "built and pushed operator-bundle"
+
+          # The operator IMAGE itself is also in the e2e set. Master's
+          # CI tags expire, so discover the newest live one via the
+          # public quay API and retag it (the image is arch-independent
+          # of our main build; the bundle carries the version pins).
+          OPERATOR_TARGET="$(BUILD_TAG="${TARGET_TAG}" make -C operator --quiet --no-print-directory tag)"
+          OPERATOR_IMG_SOURCE="$(curl -fsSL \
+            "https://quay.io/api/v1/repository/rhacs-eng/stackrox-operator/tag/?limit=100&onlyActiveTags=true" \
+            | jq -r '[.tags[].name | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+-g[0-9a-f]+$"))] | sort -V | .[-1]')"
+          echo "operator image: ${OPERATOR_IMG_SOURCE} -> ${OPERATOR_TARGET}"
+          docker buildx imagetools create \
+            -t "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" \
+            "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_IMG_SOURCE}"
+          echo "retagged operator image"
