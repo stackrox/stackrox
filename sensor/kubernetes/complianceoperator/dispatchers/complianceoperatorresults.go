@@ -3,7 +3,6 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -18,27 +17,6 @@ type ResultDispatcher struct{}
 // NewResultDispatcher creates and returns a new compliance check result dispatcher.
 func NewResultDispatcher() *ResultDispatcher {
 	return &ResultDispatcher{}
-}
-
-func statusToProtoStatus(status v1alpha1.ComplianceCheckStatus) storage.ComplianceOperatorCheckResult_CheckStatus {
-	switch status {
-	case v1alpha1.CheckResultPass:
-		return storage.ComplianceOperatorCheckResult_PASS
-	case v1alpha1.CheckResultFail:
-		return storage.ComplianceOperatorCheckResult_FAIL
-	case v1alpha1.CheckResultInfo:
-		return storage.ComplianceOperatorCheckResult_INFO
-	case v1alpha1.CheckResultManual:
-		return storage.ComplianceOperatorCheckResult_MANUAL
-	case v1alpha1.CheckResultError:
-		return storage.ComplianceOperatorCheckResult_ERROR
-	case v1alpha1.CheckResultNotApplicable:
-		return storage.ComplianceOperatorCheckResult_NOT_APPLICABLE
-	case v1alpha1.CheckResultInconsistent:
-		return storage.ComplianceOperatorCheckResult_INCONSISTENT
-	default:
-		return storage.ComplianceOperatorCheckResult_UNSET
-	}
 }
 
 func statusToV2Status(status v1alpha1.ComplianceCheckStatus) central.ComplianceOperatorCheckResultV2_CheckStatus {
@@ -80,6 +58,10 @@ func getSuiteName(labels map[string]string) string {
 
 // ProcessEvent processes a compliance operator check result
 func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		return nil
+	}
+
 	var complianceCheckResult v1alpha1.ComplianceCheckResult
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
@@ -94,50 +76,29 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 	}
 
 	id := string(complianceCheckResult.UID)
-	events := []*central.SensorEvent{
-		{
-			Id:     id,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorResult{
-				ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{
-					Id:           id,
-					CheckId:      complianceCheckResult.ID,
-					CheckName:    complianceCheckResult.Name,
-					Status:       statusToProtoStatus(complianceCheckResult.Status),
-					Description:  complianceCheckResult.Description,
-					Instructions: complianceCheckResult.Instructions,
-					Labels:       complianceCheckResult.Labels,
-					Annotations:  complianceCheckResult.Annotations,
-				},
+	event := &central.SensorEvent{
+		Id:     id,
+		Action: action,
+		Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+			ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+				Id:           id,
+				CheckId:      complianceCheckResult.ID,
+				CheckName:    complianceCheckResult.GetName(),
+				Status:       statusToV2Status(complianceCheckResult.Status),
+				Severity:     severityToV2Severity(complianceCheckResult.Severity),
+				Description:  complianceCheckResult.Description,
+				Instructions: complianceCheckResult.Instructions,
+				Labels:       complianceCheckResult.GetLabels(),
+				Annotations:  complianceCheckResult.GetAnnotations(),
+				CreatedTime:  protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time),
+				ScanName:     getScanName(complianceCheckResult.GetLabels()),
+				SuiteName:    getSuiteName(complianceCheckResult.GetLabels()),
+				Rationale:    complianceCheckResult.Rationale,
+				ValuesUsed:   complianceCheckResult.ValuesUsed,
+				Warnings:     complianceCheckResult.Warnings,
 			},
 		},
 	}
 
-	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		events = append(events, &central.SensorEvent{
-			Id:     id,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorResultV2{
-				ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
-					Id:           id,
-					CheckId:      complianceCheckResult.ID,
-					CheckName:    complianceCheckResult.GetName(),
-					Status:       statusToV2Status(complianceCheckResult.Status),
-					Severity:     severityToV2Severity(complianceCheckResult.Severity),
-					Description:  complianceCheckResult.Description,
-					Instructions: complianceCheckResult.Instructions,
-					Labels:       complianceCheckResult.GetLabels(),
-					Annotations:  complianceCheckResult.GetAnnotations(),
-					CreatedTime:  protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time),
-					ScanName:     getScanName(complianceCheckResult.GetLabels()),
-					SuiteName:    getSuiteName(complianceCheckResult.GetLabels()),
-					Rationale:    complianceCheckResult.Rationale,
-					ValuesUsed:   complianceCheckResult.ValuesUsed,
-					Warnings:     complianceCheckResult.Warnings,
-				},
-			},
-		})
-	}
-
-	return component.NewEvent(events...)
+	return component.NewEvent(event)
 }

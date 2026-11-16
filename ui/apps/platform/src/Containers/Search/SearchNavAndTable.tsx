@@ -15,12 +15,14 @@ type SearchNavAndTableProps = {
     activeNavCategory: SearchNavCategory;
     searchFilter: SearchFilter;
     searchResponse: SearchResponse;
+    perPage?: string;
 };
 
 function SearchNavAndTable({
     activeNavCategory,
     searchFilter,
     searchResponse,
+    perPage,
 }: SearchNavAndTableProps): ReactElement {
     const { counts, results } = searchResponse;
 
@@ -41,6 +43,7 @@ function SearchNavAndTable({
                                     to={`${searchPath}${stringifyQueryObject({
                                         searchFilter,
                                         navCategory: navCategory as SearchNavCategory,
+                                        perPage,
                                     })}`}
                                     replace
                                 >
