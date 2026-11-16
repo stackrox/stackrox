@@ -57,7 +57,6 @@ test_ui_e2e() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    # ROX-37649: Use deploy/ directly since deploy/k8s and deploy/openshift were removed
     export DEPLOY_DIR="deploy"
 
     export_test_environment

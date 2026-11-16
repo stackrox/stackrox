@@ -471,8 +471,6 @@ deploy_central() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_central_via_operator "${central_namespace}"
     else
-        # ROX-37649: Legacy deployment scripts (deploy/k8s/central.sh, deploy/openshift/central.sh) were removed
-        # Use operator deployment or roxie instead
         die "Legacy deployment scripts have been removed. Set DEPLOY_STACKROX_VIA_OPERATOR=true to use operator deployment, or use deploy_stackrox_with_roxie() instead."
     fi
 }
@@ -661,8 +659,6 @@ deploy_sensor() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else
-        # ROX-37649: Legacy deployment scripts (deploy/k8s/sensor.sh, deploy/openshift/sensor.sh) were removed
-        # Use operator deployment or roxie instead
         die "Legacy deployment scripts have been removed. Set DEPLOY_STACKROX_VIA_OPERATOR=true to use operator deployment, or use deploy_stackrox_with_roxie() instead."
     fi
 }
