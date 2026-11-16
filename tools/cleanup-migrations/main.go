@@ -17,7 +17,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version/productstreams"
 )
 
 var (
@@ -70,35 +69,25 @@ func getRepoRoot() string {
 	return strings.TrimSpace(string(rootB))
 }
 
-func currentVersion() (productstreams.XYVersion, error) {
+func currentVersion() (string, error) {
 	cmd := exec.Command("make", "--quiet", "--no-print-directory", "tag")
 	cmd.Dir = repoRoot
 	versionBytes, err := cmd.Output()
 	if err != nil {
-		return productstreams.XYVersion{}, err
+		return "", err
 	}
-	version := strings.TrimSpace(string(versionBytes))
-	return productstreams.ParseXYFromVersionString(version)
+	return strings.TrimSpace(string(versionBytes)), nil
 }
 
-func oldestSupportedSeqNum(current productstreams.XYVersion) (uint64, error) {
-	oldest := current
-	for range 3 {
-		var err error
-		oldest, err = productstreams.GetPreviousYStream(oldest)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	seq, err := migrations.SeqNumForVersion(oldest)
+func oldestSupportedSeqNum(current string) (uint64, error) {
+	oldest, err := migrations.MinimumSupportedForVersion(current)
 	if err != nil {
 		return 0, err
 	}
-	if seq < 0 {
-		return 0, fmt.Errorf("unexpected negative sequence number: %d", seq)
+	if oldest.Sequence < 0 {
+		return 0, fmt.Errorf("unexpected negative sequence number: %d", oldest.Sequence)
 	}
-	return uint64(seq), nil
+	return uint64(oldest.Sequence), nil
 }
 
 func getOldestSupportedSeqNum() (uint64, error) {
