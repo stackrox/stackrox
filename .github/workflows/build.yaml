@@ -517,7 +517,7 @@ jobs:
           # normally renames operator/cmd -> stackrox-operator; here we
           # build it directly and rename the same way).
           for arch in amd64 arm64; do
-            GOARCH=$arch scripts/go-build.sh operator/cmd
+            GOOS=linux GOARCH=$arch scripts/go-build.sh operator/cmd
             mv bin/linux_${arch}/cmd bin/linux_${arch}/stackrox-operator
           done
           # THIRD_PARTY_NOTICES is required by prebuilt.Dockerfile.
