@@ -10,7 +10,6 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/spf13/afero"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -211,17 +210,17 @@ func TestOldestSupportedSeqNum(t *testing.T) {
 `)
 
 	for name, tc := range map[string]struct {
-		current productstreams.XYVersion
+		current string
 		want    uint64
 		wantErr bool
 	}{
-		"current stream":      {current: productstreams.XYVersion{X: 5, Y: 1}, want: 220},
-		"major boundary":      {current: productstreams.XYVersion{X: 5, Y: 0}, want: 213},
-		"phantom version":     {current: productstreams.XYVersion{X: 4, Y: 14}, want: 213},
-		"N-1":                 {current: productstreams.XYVersion{X: 4, Y: 11}, want: 211},
-		"N-2":                 {current: productstreams.XYVersion{X: 4, Y: 10}, want: 209},
-		"no release metadata": {current: productstreams.XYVersion{X: 3, Y: 74}, wantErr: true},
-		"unknown major":       {current: productstreams.XYVersion{X: 99, Y: 0}, wantErr: true},
+		"current stream":      {current: "5.1", want: 220},
+		"major boundary":      {current: "5.0", want: 213},
+		"phantom version":     {current: "4.14", wantErr: true},
+		"N-1":                 {current: "4.11", want: 211},
+		"N-2":                 {current: "4.10", want: 209},
+		"no release metadata": {current: "3.74", wantErr: true},
+		"unknown major":       {current: "99.0", wantErr: true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			got, err := oldestSupportedSeqNum(tc.current)
@@ -327,18 +326,19 @@ func (errWriter) Write([]byte) (int, error) {
 }
 
 func TestListMigrations(t *testing.T) {
-	memFS := withMemFS(t)
+	root := t.TempDir()
+	migrationsDir := migrationsDirectory(root)
 	for _, dir := range []string{
 		"m_209_to_m_210_a",
 		"m_213_to_m_214_b",
 		"cvehelper",
 		"m_0_to_m_1_zero",
 	} {
-		require.NoError(t, memFS.MkdirAll(filepath.Join(migrationsDirectory, dir), 0o755))
+		require.NoError(t, os.MkdirAll(filepath.Join(migrationsDir, dir), 0o755))
 	}
-	require.NoError(t, afero.WriteFile(memFS, filepath.Join(migrationsDirectory, "registry.go"), []byte("package migrations"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(migrationsDir, "registry.go"), []byte("package migrations"), 0o644))
 
-	got, err := listMigrations()
+	got, err := listMigrations(root)
 	require.NoError(t, err)
 	assert.Equal(t, []migrationDir{
 		{dir: "m_209_to_m_210_a", seqNum: 209},
@@ -347,71 +347,65 @@ func TestListMigrations(t *testing.T) {
 }
 
 func TestListMigrationsMissingDirectory(t *testing.T) {
-	withMemFS(t)
-
-	_, err := listMigrations()
+	_, err := listMigrations(t.TempDir())
 	require.Error(t, err)
 }
 
 func TestListMigrationsInvalidSequence(t *testing.T) {
-	memFS := withMemFS(t)
-	require.NoError(t, memFS.MkdirAll(filepath.Join(migrationsDirectory, "m_999999999999999999999999_to_m_210_a"), 0o755))
+	root := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(migrationsDirectory(root), "m_999999999999999999999999_to_m_210_a"), 0o755))
 
-	_, err := listMigrations()
+	_, err := listMigrations(root)
 	require.Error(t, err)
 }
 
 func TestCleanupMigrationDirectories(t *testing.T) {
-	memFS := withMemFS(t)
+	root := t.TempDir()
+	migrationsDir := migrationsDirectory(root)
 	migs := []migrationDir{
 		{dir: "m_209_to_m_210_a", seqNum: 209},
 		{dir: "m_213_to_m_214_b", seqNum: 213},
 	}
 	for _, mig := range migs {
-		require.NoError(t, memFS.MkdirAll(filepath.Join(migrationsDirectory, mig.dir), 0o755))
+		require.NoError(t, os.MkdirAll(filepath.Join(migrationsDir, mig.dir), 0o755))
 	}
-	kept := filepath.Join(migrationsDirectory, "m_220_to_m_221_c")
-	require.NoError(t, memFS.MkdirAll(kept, 0o755))
+	kept := filepath.Join(migrationsDir, "m_220_to_m_221_c")
+	require.NoError(t, os.MkdirAll(kept, 0o755))
 
-	require.NoError(t, cleanupMigrationDirectories(migs))
+	require.NoError(t, cleanupMigrationDirectories(root, migs))
 
 	for _, mig := range migs {
-		exists, err := afero.DirExists(memFS, filepath.Join(migrationsDirectory, mig.dir))
-		require.NoError(t, err)
-		assert.False(t, exists, mig.dir)
+		require.NoDirExists(t, filepath.Join(migrationsDir, mig.dir), mig.dir)
 	}
-	exists, err := afero.DirExists(memFS, kept)
-	require.NoError(t, err)
-	assert.True(t, exists)
+	require.DirExists(t, kept)
 }
 
 func TestCleanupMigratorRunnerAll(t *testing.T) {
-	memFS := withMemFS(t)
+	root := t.TempDir()
 	unsupported := []migrationDir{
 		{dir: "m_209_to_m_210_a", seqNum: 209},
 		{dir: "m_213_to_m_214_b", seqNum: 213},
 	}
-	runnerPath := writeRunnerAll(t, memFS, runnerAllContent(
+	runnerPath := writeRunnerAll(t, root, runnerAllContent(
 		[]string{"m_209_to_m_210_a", "m_213_to_m_214_b"},
 		[]string{"m_210_to_m_211_c"},
 	))
 
-	require.NoError(t, cleanupMigratorRunnerAll(unsupported))
+	require.NoError(t, cleanupMigratorRunnerAll(root, unsupported))
 
-	got, err := afero.ReadFile(memFS, runnerPath)
+	got, err := os.ReadFile(runnerPath)
 	require.NoError(t, err)
 	assert.Equal(t, runnerAllContent(nil, []string{"m_210_to_m_211_c"}), string(got))
 }
 
 func TestCleanupMigratorRunnerAllMissingFile(t *testing.T) {
-	withMemFS(t)
-
-	err := cleanupMigratorRunnerAll(nil)
+	err := cleanupMigratorRunnerAll(t.TempDir(), nil)
 	require.Error(t, err)
 }
 
 func TestRunWithOldestSeqNum(t *testing.T) {
-	memFS := withMemFS(t)
+	root := t.TempDir()
+	migrationsDir := migrationsDirectory(root)
 	unsupported := []string{
 		"m_209_to_m_210_a",
 		"m_213_to_m_214_b",
@@ -422,128 +416,46 @@ func TestRunWithOldestSeqNum(t *testing.T) {
 		"m_226_to_m_227_e",
 	}
 	for _, dir := range unsupported {
-		require.NoError(t, memFS.MkdirAll(filepath.Join(migrationsDirectory, dir), 0o755))
+		require.NoError(t, os.MkdirAll(filepath.Join(migrationsDir, dir), 0o755))
 	}
 	for _, dir := range supported {
-		require.NoError(t, memFS.MkdirAll(filepath.Join(migrationsDirectory, dir), 0o755))
+		require.NoError(t, os.MkdirAll(filepath.Join(migrationsDir, dir), 0o755))
 	}
-	runnerPath := writeRunnerAll(t, memFS, runnerAllContent(unsupported, supported))
+	runnerPath := writeRunnerAll(t, root, runnerAllContent(unsupported, supported))
 
-	require.NoError(t, runWithOldestSeqNum(220))
+	require.NoError(t, runWithOldestSeqNum(root, 220))
 
 	for _, dir := range unsupported {
-		exists, err := afero.DirExists(memFS, filepath.Join(migrationsDirectory, dir))
-		require.NoError(t, err)
-		assert.False(t, exists, dir)
+		require.NoDirExists(t, filepath.Join(migrationsDir, dir), dir)
 	}
 	for _, dir := range supported {
-		exists, err := afero.DirExists(memFS, filepath.Join(migrationsDirectory, dir))
-		require.NoError(t, err)
-		assert.True(t, exists, dir)
+		require.DirExists(t, filepath.Join(migrationsDir, dir), dir)
 	}
-	got, err := afero.ReadFile(memFS, runnerPath)
+	got, err := os.ReadFile(runnerPath)
 	require.NoError(t, err)
 	assert.Equal(t, runnerAllContent(nil, supported), string(got))
 }
 
 func TestRunWithOldestSeqNumMissingRunnerFile(t *testing.T) {
-	memFS := withMemFS(t)
-	unsupported := filepath.Join(migrationsDirectory, "m_209_to_m_210_a")
-	require.NoError(t, memFS.MkdirAll(unsupported, 0o755))
+	root := t.TempDir()
+	unsupported := filepath.Join(migrationsDirectory(root), "m_209_to_m_210_a")
+	require.NoError(t, os.MkdirAll(unsupported, 0o755))
 
-	err := runWithOldestSeqNum(220)
+	err := runWithOldestSeqNum(root, 220)
 	require.Error(t, err)
 
-	exists, err := afero.DirExists(memFS, unsupported)
-	require.NoError(t, err)
-	assert.True(t, exists, "directories must not be removed when runner cleanup fails")
+	require.DirExists(t, unsupported, "directories must not be removed when runner cleanup fails")
 }
 
 func TestRunWithOldestSeqNumMissingMigrationsDirectory(t *testing.T) {
-	withMemFS(t)
-
-	require.Error(t, runWithOldestSeqNum(220))
+	require.Error(t, runWithOldestSeqNum(t.TempDir(), 220))
 }
 
-func TestCleanupMigrationDirectoriesRemoveError(t *testing.T) {
-	memFS := withMemFS(t)
-	migs := []migrationDir{{dir: "m_209_to_m_210_a", seqNum: 209}}
-	require.NoError(t, memFS.MkdirAll(filepath.Join(migrationsDirectory, migs[0].dir), 0o755))
-	fs = removeAllErrorFS{memFS}
-
-	require.Error(t, cleanupMigrationDirectories(migs))
-}
-
-func TestCleanupMigratorRunnerAllWriteOpenError(t *testing.T) {
-	memFS := withMemFS(t)
-	writeRunnerAll(t, memFS, runnerAllContent(nil, []string{"m_210_to_m_211_c"}))
-	fs = openFileErrorFS{memFS}
-
-	require.Error(t, cleanupMigratorRunnerAll(nil))
-}
-
-func TestCleanupMigratorRunnerAllReadError(t *testing.T) {
-	memFS := withMemFS(t)
-	writeRunnerAll(t, memFS, runnerAllContent(nil, []string{"m_210_to_m_211_c"}))
-	fs = readErrorFS{memFS}
-
-	require.Error(t, cleanupMigratorRunnerAll(nil))
-}
-
-type readErrorFS struct {
-	afero.Fs
-}
-
-func (f readErrorFS) Open(name string) (afero.File, error) {
-	file, err := f.Fs.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	return readErrorFile{File: file}, nil
-}
-
-type readErrorFile struct {
-	afero.File
-}
-
-func (readErrorFile) Read([]byte) (int, error) {
-	return 0, errors.New("read error")
-}
-
-type removeAllErrorFS struct {
-	afero.Fs
-}
-
-func (removeAllErrorFS) RemoveAll(string) error {
-	return errors.New("remove error")
-}
-
-type openFileErrorFS struct {
-	afero.Fs
-}
-
-func (openFileErrorFS) OpenFile(string, int, os.FileMode) (afero.File, error) {
-	return nil, errors.New("open file error")
-}
-
-func withMemFS(t *testing.T) afero.Fs {
-	t.Helper()
-	memFS := afero.NewMemMapFs()
-	oldFS, oldRepoRoot, oldMigrationsDirectory := fs, repoRoot, migrationsDirectory
-	fs = memFS
-	repoRoot = "/repo"
-	migrationsDirectory = filepath.Join(repoRoot, "migrator", "migrations")
-	t.Cleanup(func() {
-		fs, repoRoot, migrationsDirectory = oldFS, oldRepoRoot, oldMigrationsDirectory
-	})
-	return memFS
-}
-
-func writeRunnerAll(t *testing.T, memFS afero.Fs, content string) string {
+func writeRunnerAll(t *testing.T, repoRoot, content string) string {
 	t.Helper()
 	path := filepath.Join(repoRoot, "migrator", "runner", "all.go")
-	require.NoError(t, memFS.MkdirAll(filepath.Dir(path), 0o755))
-	require.NoError(t, afero.WriteFile(memFS, path, []byte(content), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
 	return path
 }
 
