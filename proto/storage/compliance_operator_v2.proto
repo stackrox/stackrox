@@ -199,11 +199,11 @@ message ComplianceOperatorCheckResultV2 {
   // DataFreshness indicates whether a stored check result is current relative to its scan
   // configuration's schedule.
   enum DataFreshness {
-    // Cannot evaluate: no schedule, unresolvable config, or not yet swept.
+    // Freshness could not be determined.
     UNKNOWN = 0;
-    // Data reflects the most recent expected scan cycle.
+    // Data is current: the latest scan refreshed it.
     CURRENT = 1;
-    // Data predates the most recent expected scan cycle.
+    // Data is stale: a scheduled scan should have refreshed it by now but did not.
     STALE = 2;
   }
   string id = 1; // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
