@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 )
 
@@ -239,7 +240,7 @@ func cleanupMigratorRunnerAll(migs []migrationDir) error {
 	if err != nil {
 		return err
 	}
-	defer readFile.Close()
+	defer utils.IgnoreError(readFile.Close)
 
 	newFileLines, err := filterUnsupportedImports(migs, readFile)
 	if err != nil {
@@ -250,7 +251,7 @@ func cleanupMigratorRunnerAll(migs []migrationDir) error {
 	if err != nil {
 		return err
 	}
-	defer writeFile.Close()
+	defer utils.IgnoreError(writeFile.Close)
 	return renderCleanRunnerAll(newFileLines, writeFile)
 }
 

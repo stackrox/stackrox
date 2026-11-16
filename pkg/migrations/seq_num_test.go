@@ -9,12 +9,15 @@ import (
 )
 
 func TestSeqNumForVersion(t *testing.T) {
+	currentStream, err := productstreams.ParseXYFromVersionString(releaseVersions[len(releaseVersions)-1].Version)
+	require.NoError(t, err)
+
 	for name, tc := range map[string]struct {
 		target   productstreams.XYVersion
 		sequence int
 		wantErr  string
 	}{
-		"current stream":        {target: productstreams.XYVersion{X: 5, Y: 1}, sequence: 227},
+		"current stream":        {target: currentStream, sequence: CurrentDBVersionSeqNum()},
 		"major boundary":        {target: productstreams.XYVersion{X: 5, Y: 0}, sequence: 227},
 		"previous Y-stream":     {target: productstreams.XYVersion{X: 4, Y: 11}, sequence: 225},
 		"N-2":                   {target: productstreams.XYVersion{X: 4, Y: 10}, sequence: 220},
