@@ -8,6 +8,9 @@ type rankedObject struct {
 	score                  float32
 	proposedScore          float32
 	priorityClassification int32
+	activityClassification int32
+	exposureClassification int32
+	postureClassification  int32
 }
 
 // Ranker ranks an object based on its score
@@ -40,6 +43,30 @@ func (s *Ranker) GetPriorityClassificationForID(id string) int32 {
 	defer s.scoreSorterMutex.RUnlock()
 
 	return s.idToRankedObject[id].priorityClassification
+}
+
+// GetActivityClassificationForID returns the observed runtime activity classification for the given id.
+func (s *Ranker) GetActivityClassificationForID(id string) int32 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.idToRankedObject[id].activityClassification
+}
+
+// GetExposureClassificationForID returns the exposure/blast-radius classification for the given id.
+func (s *Ranker) GetExposureClassificationForID(id string) int32 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.idToRankedObject[id].exposureClassification
+}
+
+// GetPostureClassificationForID returns the posture classification for the given id.
+func (s *Ranker) GetPostureClassificationForID(id string) int32 {
+	s.scoreSorterMutex.RLock()
+	defer s.scoreSorterMutex.RUnlock()
+
+	return s.idToRankedObject[id].postureClassification
 }
 
 // GetProposedScoreForID returns the POC score for the given id.
@@ -87,6 +114,11 @@ func (s *Ranker) AddWithPriorityClassification(id string, score float32, priorit
 
 // AddWithPriorityClassificationAndProposedScore upserts an id with legacy score, POC score, and a non-ranking priority classification.
 func (s *Ranker) AddWithPriorityClassificationAndProposedScore(id string, score, proposedScore float32, priorityClassification int32) {
+	s.AddWithRiskMetadata(id, score, proposedScore, priorityClassification, 0, 0, 0)
+}
+
+// AddWithRiskMetadata upserts an id with score and non-ranking risk metadata fields.
+func (s *Ranker) AddWithRiskMetadata(id string, score, proposedScore float32, priorityClassification, activityClassification, exposureClassification, postureClassification int32) {
 	s.scoreSorterMutex.Lock()
 	defer s.scoreSorterMutex.Unlock()
 
@@ -98,6 +130,9 @@ func (s *Ranker) AddWithPriorityClassificationAndProposedScore(id string, score,
 		score:                  score,
 		proposedScore:          proposedScore,
 		priorityClassification: priorityClassification,
+		activityClassification: activityClassification,
+		exposureClassification: exposureClassification,
+		postureClassification:  postureClassification,
 	}
 }
 

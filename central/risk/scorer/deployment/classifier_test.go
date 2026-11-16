@@ -18,13 +18,16 @@ func TestClassifyCuratedRiskWorkloads(t *testing.T) {
 	ctx := context.Background()
 
 	workloads := []struct {
-		name           string
-		deployment     *storage.Deployment
-		imageRisk      *storage.Risk
-		alerts         []*storage.ListAlert
-		processes      []*views.ProcessIndicatorRiskView
-		expected       storage.RiskPriorityClassification
-		expectedReason string
+		name             string
+		deployment       *storage.Deployment
+		imageRisk        *storage.Risk
+		alerts           []*storage.ListAlert
+		processes        []*views.ProcessIndicatorRiskView
+		expected         storage.RiskPriorityClassification
+		expectedActivity storage.RiskActivityClassification
+		expectedExposure storage.RiskExposureClassification
+		expectedPosture  storage.RiskPostureClassification
+		expectedReason   string
 	}{
 		{
 			name: "benign-noisy-backlog",
@@ -151,6 +154,90 @@ func TestClassifyCuratedRiskWorkloads(t *testing.T) {
 			risk := scorer.Score(ctx, workload.deployment, imageRisks)
 			require.NotNil(t, risk)
 			assert.Equal(t, workload.expected, risk.GetPriorityClassification(), workload.expectedReason)
+		})
+	}
+}
+
+func TestClassifyDimensionsAndDerivedPriority(t *testing.T) {
+	ctx := context.Background()
+	workloads := []struct {
+		name             string
+		deployment       *storage.Deployment
+		imageRisk        *storage.Risk
+		alerts           []*storage.ListAlert
+		processes        []*views.ProcessIndicatorRiskView
+		expectedPriority storage.RiskPriorityClassification
+		expectedActivity storage.RiskActivityClassification
+		expectedExposure storage.RiskExposureClassification
+		expectedPosture  storage.RiskPostureClassification
+	}{
+		{
+			name:             "respond-runtime-threat-with-low-static-risk",
+			deployment:       deploymentWithExposures("respond-runtime-threat-with-low-static-risk", storage.PortConfig_INTERNAL),
+			alerts:           []*storage.ListAlert{activePolicyAlertForClassification("Cryptocurrency Mining Process Execution", storage.Severity_CRITICAL_SEVERITY)},
+			expectedPriority: storage.RiskPriorityClassification_RISK_PRIORITY_RESPOND_NOW,
+			expectedActivity: storage.RiskActivityClassification_RISK_ACTIVITY_RESPOND_NOW,
+			expectedExposure: storage.RiskExposureClassification_RISK_EXPOSURE_NONE_DETECTED,
+			expectedPosture:  storage.RiskPostureClassification_RISK_POSTURE_LOW,
+		},
+		{
+			name:             "investigate-runtime-suspicion-with-low-static-risk",
+			deployment:       deploymentWithExposures("investigate-runtime-suspicion-with-low-static-risk", storage.PortConfig_INTERNAL),
+			processes:        suspiciousProcessesForClassification("nmap"),
+			expectedPriority: storage.RiskPriorityClassification_RISK_PRIORITY_INVESTIGATE_NOW,
+			expectedActivity: storage.RiskActivityClassification_RISK_ACTIVITY_INVESTIGATE_NOW,
+			expectedExposure: storage.RiskExposureClassification_RISK_EXPOSURE_NONE_DETECTED,
+			expectedPosture:  storage.RiskPostureClassification_RISK_POSTURE_LOW,
+		},
+		{
+			name:       "external-critical-vulnerability-without-runtime-activity",
+			deployment: deploymentWithExposures("external-critical-vulnerability-without-runtime-activity", storage.PortConfig_EXTERNAL),
+			imageRisk: imageRiskWithSummaryAndResults(
+				"external-critical-vulnerability-without-runtime-activity-image",
+				&storage.RiskVulnerabilitySummary{CriticalCount: 1, MaxSeverity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY},
+				fixedRiskResult(imageMultiplier.VulnerabilitiesHeading, 1.75),
+			),
+			expectedPriority: storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE_NOW,
+			expectedActivity: storage.RiskActivityClassification_RISK_ACTIVITY_NONE_OBSERVED,
+			expectedExposure: storage.RiskExposureClassification_RISK_EXPOSURE_REMEDIATE_NOW,
+			expectedPosture:  storage.RiskPostureClassification_RISK_POSTURE_LOW,
+		},
+		{
+			name:             "cluster-wide-identity-without-runtime-activity",
+			deployment:       clusterAdminDeploymentForClassification(deploymentWithExposures("cluster-wide-identity-without-runtime-activity", storage.PortConfig_INTERNAL)),
+			expectedPriority: storage.RiskPriorityClassification_RISK_PRIORITY_REMEDIATE,
+			expectedActivity: storage.RiskActivityClassification_RISK_ACTIVITY_NONE_OBSERVED,
+			expectedExposure: storage.RiskExposureClassification_RISK_EXPOSURE_REMEDIATE,
+			expectedPosture:  storage.RiskPostureClassification_RISK_POSTURE_LOW,
+		},
+		{
+			name:       "internal-vulnerability-backlog",
+			deployment: deploymentWithExposures("internal-vulnerability-backlog", storage.PortConfig_INTERNAL),
+			imageRisk: imageRiskWithSummaryAndResults(
+				"internal-vulnerability-backlog-image",
+				&storage.RiskVulnerabilitySummary{ImportantCount: 12, ModerateCount: 200, LowCount: 100, MaxSeverity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY},
+				fixedRiskResult(imageMultiplier.VulnerabilitiesHeading, 4.0),
+				fixedRiskResult(imageMultiplier.ImageAgeHeading, 1.5),
+			),
+			expectedPriority: storage.RiskPriorityClassification_RISK_PRIORITY_IMPROVE_POSTURE,
+			expectedActivity: storage.RiskActivityClassification_RISK_ACTIVITY_NONE_OBSERVED,
+			expectedExposure: storage.RiskExposureClassification_RISK_EXPOSURE_NONE_DETECTED,
+			expectedPosture:  storage.RiskPostureClassification_RISK_POSTURE_MEDIUM,
+		},
+	}
+	for _, workload := range workloads {
+		t.Run(workload.name, func(t *testing.T) {
+			scorer := NewDeploymentScorer(getters.MockAlertsSearcher{Alerts: workload.alerts}, fakeProcessBaselineEvaluatorForClassification{processes: workload.processes})
+			var imageRisks []*storage.Risk
+			if workload.imageRisk != nil {
+				imageRisks = append(imageRisks, workload.imageRisk)
+			}
+			risk := scorer.Score(ctx, workload.deployment, imageRisks)
+			require.NotNil(t, risk)
+			assert.Equal(t, workload.expectedPriority, risk.GetPriorityClassification())
+			assert.Equal(t, workload.expectedActivity, risk.GetActivityClassification())
+			assert.Equal(t, workload.expectedExposure, risk.GetExposureClassification())
+			assert.Equal(t, workload.expectedPosture, risk.GetPostureClassification())
 		})
 	}
 }

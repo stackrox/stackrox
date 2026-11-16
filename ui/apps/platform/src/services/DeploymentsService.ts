@@ -2,7 +2,12 @@ import queryString from 'qs';
 
 import type { Deployment, ListDeployment } from 'types/deployment.proto';
 import type { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
-import type { RiskPriorityClassification } from 'types/risk.proto';
+import type {
+    RiskActivityClassification,
+    RiskExposureClassification,
+    RiskPostureClassification,
+    RiskPriorityClassification,
+} from 'types/risk.proto';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { makeCancellableAxiosRequest } from './cancellationUtils';
@@ -21,6 +26,9 @@ export type Risk = {
     score: number; // float
     proposedScore: number; // float
     priorityClassification?: RiskPriorityClassification;
+    activityClassification?: RiskActivityClassification;
+    exposureClassification?: RiskExposureClassification;
+    postureClassification?: RiskPostureClassification;
     results: RiskResult[];
 };
 

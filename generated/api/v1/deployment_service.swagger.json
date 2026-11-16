@@ -869,6 +869,27 @@
           "type": "integer",
           "format": "int32"
         },
+        "riskActivityClassification": {
+          "$ref": "#/definitions/storageRiskActivityClassification"
+        },
+        "riskActivitySortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "riskExposureClassification": {
+          "$ref": "#/definitions/storageRiskExposureClassification"
+        },
+        "riskExposureSortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "riskPostureClassification": {
+          "$ref": "#/definitions/storageRiskPostureClassification"
+        },
+        "riskPostureSortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
         "inactive": {
           "type": "boolean"
         },
@@ -930,7 +951,7 @@
           "type": "boolean"
         }
       },
-      "title": "Next available tag: 39"
+      "title": "Next available tag: 45"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -1032,9 +1053,30 @@
         "proposedRiskScore": {
           "type": "number",
           "format": "float"
+        },
+        "riskActivityClassification": {
+          "$ref": "#/definitions/storageRiskActivityClassification"
+        },
+        "riskActivitySortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "riskExposureClassification": {
+          "$ref": "#/definitions/storageRiskExposureClassification"
+        },
+        "riskExposureSortOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "riskPostureClassification": {
+          "$ref": "#/definitions/storageRiskPostureClassification"
+        },
+        "riskPostureSortOrder": {
+          "type": "integer",
+          "format": "int32"
         }
       },
-      "title": "Next available tag: 12"
+      "title": "Next available tag: 18"
     },
     "storageLivenessProbe": {
       "type": "object",
@@ -1140,6 +1182,15 @@
           "type": "number",
           "format": "float"
         },
+        "activityClassification": {
+          "$ref": "#/definitions/storageRiskActivityClassification"
+        },
+        "exposureClassification": {
+          "$ref": "#/definitions/storageRiskExposureClassification"
+        },
+        "postureClassification": {
+          "$ref": "#/definitions/storageRiskPostureClassification"
+        },
         "results": {
           "type": "array",
           "items": {
@@ -1148,6 +1199,41 @@
           }
         }
       }
+    },
+    "storageRiskActivityClassification": {
+      "type": "string",
+      "enum": [
+        "RISK_ACTIVITY_UNKNOWN",
+        "RISK_ACTIVITY_RESPOND_NOW",
+        "RISK_ACTIVITY_INVESTIGATE_NOW",
+        "RISK_ACTIVITY_NONE_OBSERVED"
+      ],
+      "default": "RISK_ACTIVITY_UNKNOWN",
+      "description": "Next tag: 4"
+    },
+    "storageRiskExposureClassification": {
+      "type": "string",
+      "enum": [
+        "RISK_EXPOSURE_UNKNOWN",
+        "RISK_EXPOSURE_REMEDIATE_NOW",
+        "RISK_EXPOSURE_REMEDIATE",
+        "RISK_EXPOSURE_NONE_DETECTED"
+      ],
+      "default": "RISK_EXPOSURE_UNKNOWN",
+      "description": "Next tag: 4"
+    },
+    "storageRiskPostureClassification": {
+      "type": "string",
+      "enum": [
+        "RISK_POSTURE_UNKNOWN",
+        "RISK_POSTURE_CRITICAL",
+        "RISK_POSTURE_HIGH",
+        "RISK_POSTURE_MEDIUM",
+        "RISK_POSTURE_LOW",
+        "RISK_POSTURE_NONE_DETECTED"
+      ],
+      "default": "RISK_POSTURE_UNKNOWN",
+      "description": "Next tag: 7"
     },
     "storageRiskPriorityClassification": {
       "type": "string",

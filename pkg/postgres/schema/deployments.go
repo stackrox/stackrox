@@ -131,6 +131,12 @@ type Deployments struct {
 	Priority                      int64                              `gorm:"column:priority;type:bigint"`
 	RiskPriorityClassification    storage.RiskPriorityClassification `gorm:"column:riskpriorityclassification;type:integer"`
 	RiskPrioritySortOrder         int32                              `gorm:"column:riskprioritysortorder;type:integer;default:99"`
+	RiskActivityClassification    storage.RiskActivityClassification `gorm:"column:riskactivityclassification;type:integer"`
+	RiskActivitySortOrder         int32                              `gorm:"column:riskactivitysortorder;type:integer;default:99"`
+	RiskExposureClassification    storage.RiskExposureClassification `gorm:"column:riskexposureclassification;type:integer"`
+	RiskExposureSortOrder         int32                              `gorm:"column:riskexposuresortorder;type:integer;default:99"`
+	RiskPostureClassification     storage.RiskPostureClassification  `gorm:"column:riskpostureclassification;type:integer"`
+	RiskPostureSortOrder          int32                              `gorm:"column:riskposturesortorder;type:integer;default:99"`
 	ImagePullSecrets              *pq.StringArray                    `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                             `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel            `gorm:"column:serviceaccountpermissionlevel;type:integer"`

@@ -77,6 +77,9 @@ func (m *Risk) CloneVT() *Risk {
 	r.PriorityClassification = m.PriorityClassification
 	r.VulnerabilitySummary = m.VulnerabilitySummary.CloneVT()
 	r.ProposedScore = m.ProposedScore
+	r.ActivityClassification = m.ActivityClassification
+	r.ExposureClassification = m.ExposureClassification
+	r.PostureClassification = m.PostureClassification
 	if rhs := m.Results; rhs != nil {
 		tmpContainer := make([]*Risk_Result, len(rhs))
 		for k, v := range rhs {
@@ -243,6 +246,15 @@ func (this *Risk) EqualVT(that *Risk) bool {
 		return false
 	}
 	if this.ProposedScore != that.ProposedScore {
+		return false
+	}
+	if this.ActivityClassification != that.ActivityClassification {
+		return false
+	}
+	if this.ExposureClassification != that.ExposureClassification {
+		return false
+	}
+	if this.PostureClassification != that.PostureClassification {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -466,6 +478,21 @@ func (m *Risk) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.PostureClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.PostureClassification))
+		i--
+		dAtA[i] = 0x50
+	}
+	if m.ExposureClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ExposureClassification))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.ActivityClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ActivityClassification))
+		i--
+		dAtA[i] = 0x40
 	}
 	if m.ProposedScore != 0 {
 		i -= 4
@@ -755,6 +782,15 @@ func (m *Risk) SizeVT() (n int) {
 	}
 	if m.ProposedScore != 0 {
 		n += 5
+	}
+	if m.ActivityClassification != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ActivityClassification))
+	}
+	if m.ExposureClassification != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ExposureClassification))
+	}
+	if m.PostureClassification != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.PostureClassification))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1284,6 +1320,63 @@ func (m *Risk) UnmarshalVT(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.ProposedScore = float32(math.Float32frombits(v))
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivityClassification", wireType)
+			}
+			m.ActivityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivityClassification |= RiskActivityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExposureClassification", wireType)
+			}
+			m.ExposureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExposureClassification |= RiskExposureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PostureClassification", wireType)
+			}
+			m.PostureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PostureClassification |= RiskPostureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2167,6 +2260,63 @@ func (m *Risk) UnmarshalVTUnsafe(dAtA []byte) error {
 			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
 			iNdEx += 4
 			m.ProposedScore = float32(math.Float32frombits(v))
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivityClassification", wireType)
+			}
+			m.ActivityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActivityClassification |= RiskActivityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExposureClassification", wireType)
+			}
+			m.ExposureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ExposureClassification |= RiskExposureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PostureClassification", wireType)
+			}
+			m.PostureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PostureClassification |= RiskPostureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

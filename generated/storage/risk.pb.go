@@ -80,6 +80,171 @@ func (RiskPriorityClassification) EnumDescriptor() ([]byte, []int) {
 	return file_storage_risk_proto_rawDescGZIP(), []int{0}
 }
 
+// Next tag: 4
+type RiskActivityClassification int32
+
+const (
+	RiskActivityClassification_RISK_ACTIVITY_UNKNOWN         RiskActivityClassification = 0
+	RiskActivityClassification_RISK_ACTIVITY_RESPOND_NOW     RiskActivityClassification = 1
+	RiskActivityClassification_RISK_ACTIVITY_INVESTIGATE_NOW RiskActivityClassification = 2
+	RiskActivityClassification_RISK_ACTIVITY_NONE_OBSERVED   RiskActivityClassification = 3
+)
+
+// Enum value maps for RiskActivityClassification.
+var (
+	RiskActivityClassification_name = map[int32]string{
+		0: "RISK_ACTIVITY_UNKNOWN",
+		1: "RISK_ACTIVITY_RESPOND_NOW",
+		2: "RISK_ACTIVITY_INVESTIGATE_NOW",
+		3: "RISK_ACTIVITY_NONE_OBSERVED",
+	}
+	RiskActivityClassification_value = map[string]int32{
+		"RISK_ACTIVITY_UNKNOWN":         0,
+		"RISK_ACTIVITY_RESPOND_NOW":     1,
+		"RISK_ACTIVITY_INVESTIGATE_NOW": 2,
+		"RISK_ACTIVITY_NONE_OBSERVED":   3,
+	}
+)
+
+func (x RiskActivityClassification) Enum() *RiskActivityClassification {
+	p := new(RiskActivityClassification)
+	*p = x
+	return p
+}
+
+func (x RiskActivityClassification) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RiskActivityClassification) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_risk_proto_enumTypes[1].Descriptor()
+}
+
+func (RiskActivityClassification) Type() protoreflect.EnumType {
+	return &file_storage_risk_proto_enumTypes[1]
+}
+
+func (x RiskActivityClassification) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RiskActivityClassification.Descriptor instead.
+func (RiskActivityClassification) EnumDescriptor() ([]byte, []int) {
+	return file_storage_risk_proto_rawDescGZIP(), []int{1}
+}
+
+// Next tag: 4
+type RiskExposureClassification int32
+
+const (
+	RiskExposureClassification_RISK_EXPOSURE_UNKNOWN       RiskExposureClassification = 0
+	RiskExposureClassification_RISK_EXPOSURE_REMEDIATE_NOW RiskExposureClassification = 1
+	RiskExposureClassification_RISK_EXPOSURE_REMEDIATE     RiskExposureClassification = 2
+	RiskExposureClassification_RISK_EXPOSURE_NONE_DETECTED RiskExposureClassification = 3
+)
+
+// Enum value maps for RiskExposureClassification.
+var (
+	RiskExposureClassification_name = map[int32]string{
+		0: "RISK_EXPOSURE_UNKNOWN",
+		1: "RISK_EXPOSURE_REMEDIATE_NOW",
+		2: "RISK_EXPOSURE_REMEDIATE",
+		3: "RISK_EXPOSURE_NONE_DETECTED",
+	}
+	RiskExposureClassification_value = map[string]int32{
+		"RISK_EXPOSURE_UNKNOWN":       0,
+		"RISK_EXPOSURE_REMEDIATE_NOW": 1,
+		"RISK_EXPOSURE_REMEDIATE":     2,
+		"RISK_EXPOSURE_NONE_DETECTED": 3,
+	}
+)
+
+func (x RiskExposureClassification) Enum() *RiskExposureClassification {
+	p := new(RiskExposureClassification)
+	*p = x
+	return p
+}
+
+func (x RiskExposureClassification) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RiskExposureClassification) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_risk_proto_enumTypes[2].Descriptor()
+}
+
+func (RiskExposureClassification) Type() protoreflect.EnumType {
+	return &file_storage_risk_proto_enumTypes[2]
+}
+
+func (x RiskExposureClassification) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RiskExposureClassification.Descriptor instead.
+func (RiskExposureClassification) EnumDescriptor() ([]byte, []int) {
+	return file_storage_risk_proto_rawDescGZIP(), []int{2}
+}
+
+// Next tag: 7
+type RiskPostureClassification int32
+
+const (
+	RiskPostureClassification_RISK_POSTURE_UNKNOWN       RiskPostureClassification = 0
+	RiskPostureClassification_RISK_POSTURE_CRITICAL      RiskPostureClassification = 1
+	RiskPostureClassification_RISK_POSTURE_HIGH          RiskPostureClassification = 2
+	RiskPostureClassification_RISK_POSTURE_MEDIUM        RiskPostureClassification = 3
+	RiskPostureClassification_RISK_POSTURE_LOW           RiskPostureClassification = 4
+	RiskPostureClassification_RISK_POSTURE_NONE_DETECTED RiskPostureClassification = 5
+)
+
+// Enum value maps for RiskPostureClassification.
+var (
+	RiskPostureClassification_name = map[int32]string{
+		0: "RISK_POSTURE_UNKNOWN",
+		1: "RISK_POSTURE_CRITICAL",
+		2: "RISK_POSTURE_HIGH",
+		3: "RISK_POSTURE_MEDIUM",
+		4: "RISK_POSTURE_LOW",
+		5: "RISK_POSTURE_NONE_DETECTED",
+	}
+	RiskPostureClassification_value = map[string]int32{
+		"RISK_POSTURE_UNKNOWN":       0,
+		"RISK_POSTURE_CRITICAL":      1,
+		"RISK_POSTURE_HIGH":          2,
+		"RISK_POSTURE_MEDIUM":        3,
+		"RISK_POSTURE_LOW":           4,
+		"RISK_POSTURE_NONE_DETECTED": 5,
+	}
+)
+
+func (x RiskPostureClassification) Enum() *RiskPostureClassification {
+	p := new(RiskPostureClassification)
+	*p = x
+	return p
+}
+
+func (x RiskPostureClassification) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RiskPostureClassification) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_risk_proto_enumTypes[3].Descriptor()
+}
+
+func (RiskPostureClassification) Type() protoreflect.EnumType {
+	return &file_storage_risk_proto_enumTypes[3]
+}
+
+func (x RiskPostureClassification) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RiskPostureClassification.Descriptor instead.
+func (RiskPostureClassification) EnumDescriptor() ([]byte, []int) {
+	return file_storage_risk_proto_rawDescGZIP(), []int{3}
+}
+
 // Next tag: 9
 type RiskSubjectType int32
 
@@ -132,11 +297,11 @@ func (x RiskSubjectType) String() string {
 }
 
 func (RiskSubjectType) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_risk_proto_enumTypes[1].Descriptor()
+	return file_storage_risk_proto_enumTypes[4].Descriptor()
 }
 
 func (RiskSubjectType) Type() protoreflect.EnumType {
-	return &file_storage_risk_proto_enumTypes[1]
+	return &file_storage_risk_proto_enumTypes[4]
 }
 
 func (x RiskSubjectType) Number() protoreflect.EnumNumber {
@@ -145,7 +310,7 @@ func (x RiskSubjectType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RiskSubjectType.Descriptor instead.
 func (RiskSubjectType) EnumDescriptor() ([]byte, []int) {
-	return file_storage_risk_proto_rawDescGZIP(), []int{1}
+	return file_storage_risk_proto_rawDescGZIP(), []int{4}
 }
 
 type Risk struct {
@@ -157,6 +322,9 @@ type Risk struct {
 	PriorityClassification RiskPriorityClassification `protobuf:"varint,5,opt,name=priority_classification,json=priorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"priority_classification,omitempty"`
 	VulnerabilitySummary   *RiskVulnerabilitySummary  `protobuf:"bytes,6,opt,name=vulnerability_summary,json=vulnerabilitySummary,proto3" json:"vulnerability_summary,omitempty"`
 	ProposedScore          float32                    `protobuf:"fixed32,7,opt,name=proposed_score,json=proposedScore,proto3" json:"proposed_score,omitempty"`
+	ActivityClassification RiskActivityClassification `protobuf:"varint,8,opt,name=activity_classification,json=activityClassification,proto3,enum=storage.RiskActivityClassification" json:"activity_classification,omitempty"`
+	ExposureClassification RiskExposureClassification `protobuf:"varint,9,opt,name=exposure_classification,json=exposureClassification,proto3,enum=storage.RiskExposureClassification" json:"exposure_classification,omitempty"`
+	PostureClassification  RiskPostureClassification  `protobuf:"varint,10,opt,name=posture_classification,json=postureClassification,proto3,enum=storage.RiskPostureClassification" json:"posture_classification,omitempty"`
 	Results                []*Risk_Result             `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -232,6 +400,27 @@ func (x *Risk) GetProposedScore() float32 {
 		return x.ProposedScore
 	}
 	return 0
+}
+
+func (x *Risk) GetActivityClassification() RiskActivityClassification {
+	if x != nil {
+		return x.ActivityClassification
+	}
+	return RiskActivityClassification_RISK_ACTIVITY_UNKNOWN
+}
+
+func (x *Risk) GetExposureClassification() RiskExposureClassification {
+	if x != nil {
+		return x.ExposureClassification
+	}
+	return RiskExposureClassification_RISK_EXPOSURE_UNKNOWN
+}
+
+func (x *Risk) GetPostureClassification() RiskPostureClassification {
+	if x != nil {
+		return x.PostureClassification
+	}
+	return RiskPostureClassification_RISK_POSTURE_UNKNOWN
 }
 
 func (x *Risk) GetResults() []*Risk_Result {
@@ -542,14 +731,18 @@ var File_storage_risk_proto protoreflect.FileDescriptor
 
 const file_storage_risk_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/risk.proto\x12\astorage\x1a\x11storage/cve.proto\"\xae\x04\n" +
+	"\x12storage/risk.proto\x12\astorage\x1a\x11storage/cve.proto\"\xc5\x06\n" +
 	"\x04Risk\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
 	"\asubject\x18\x02 \x01(\v2\x14.storage.RiskSubjectR\asubject\x12\x14\n" +
 	"\x05score\x18\x03 \x01(\x02R\x05score\x12\\\n" +
 	"\x17priority_classification\x18\x05 \x01(\x0e2#.storage.RiskPriorityClassificationR\x16priorityClassification\x12V\n" +
 	"\x15vulnerability_summary\x18\x06 \x01(\v2!.storage.RiskVulnerabilitySummaryR\x14vulnerabilitySummary\x12%\n" +
-	"\x0eproposed_score\x18\a \x01(\x02R\rproposedScore\x12.\n" +
+	"\x0eproposed_score\x18\a \x01(\x02R\rproposedScore\x12\\\n" +
+	"\x17activity_classification\x18\b \x01(\x0e2#.storage.RiskActivityClassificationR\x16activityClassification\x12\\\n" +
+	"\x17exposure_classification\x18\t \x01(\x0e2#.storage.RiskExposureClassificationR\x16exposureClassification\x12Y\n" +
+	"\x16posture_classification\x18\n" +
+	" \x01(\x0e2\".storage.RiskPostureClassificationR\x15postureClassification\x12.\n" +
 	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultR\aresults\x1a\xc2\x01\n" +
 	"\x06Result\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
@@ -581,7 +774,24 @@ const file_storage_risk_proto_rawDesc = "" +
 	"\x1dRISK_PRIORITY_INVESTIGATE_NOW\x10\x02\x12\x1f\n" +
 	"\x1bRISK_PRIORITY_REMEDIATE_NOW\x10\x03\x12\x1b\n" +
 	"\x17RISK_PRIORITY_REMEDIATE\x10\x04\x12!\n" +
-	"\x1dRISK_PRIORITY_IMPROVE_POSTURE\x10\x05*\x9c\x01\n" +
+	"\x1dRISK_PRIORITY_IMPROVE_POSTURE\x10\x05*\x9a\x01\n" +
+	"\x1aRiskActivityClassification\x12\x19\n" +
+	"\x15RISK_ACTIVITY_UNKNOWN\x10\x00\x12\x1d\n" +
+	"\x19RISK_ACTIVITY_RESPOND_NOW\x10\x01\x12!\n" +
+	"\x1dRISK_ACTIVITY_INVESTIGATE_NOW\x10\x02\x12\x1f\n" +
+	"\x1bRISK_ACTIVITY_NONE_OBSERVED\x10\x03*\x96\x01\n" +
+	"\x1aRiskExposureClassification\x12\x19\n" +
+	"\x15RISK_EXPOSURE_UNKNOWN\x10\x00\x12\x1f\n" +
+	"\x1bRISK_EXPOSURE_REMEDIATE_NOW\x10\x01\x12\x1b\n" +
+	"\x17RISK_EXPOSURE_REMEDIATE\x10\x02\x12\x1f\n" +
+	"\x1bRISK_EXPOSURE_NONE_DETECTED\x10\x03*\xb6\x01\n" +
+	"\x19RiskPostureClassification\x12\x18\n" +
+	"\x14RISK_POSTURE_UNKNOWN\x10\x00\x12\x19\n" +
+	"\x15RISK_POSTURE_CRITICAL\x10\x01\x12\x15\n" +
+	"\x11RISK_POSTURE_HIGH\x10\x02\x12\x17\n" +
+	"\x13RISK_POSTURE_MEDIUM\x10\x03\x12\x14\n" +
+	"\x10RISK_POSTURE_LOW\x10\x04\x12\x1e\n" +
+	"\x1aRISK_POSTURE_NONE_DETECTED\x10\x05*\x9c\x01\n" +
 	"\x0fRiskSubjectType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -607,31 +817,37 @@ func file_storage_risk_proto_rawDescGZIP() []byte {
 	return file_storage_risk_proto_rawDescData
 }
 
-var file_storage_risk_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_storage_risk_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_storage_risk_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_storage_risk_proto_goTypes = []any{
 	(RiskPriorityClassification)(0),  // 0: storage.RiskPriorityClassification
-	(RiskSubjectType)(0),             // 1: storage.RiskSubjectType
-	(*Risk)(nil),                     // 2: storage.Risk
-	(*RiskVulnerabilitySummary)(nil), // 3: storage.RiskVulnerabilitySummary
-	(*RiskSubject)(nil),              // 4: storage.RiskSubject
-	(*Risk_Result)(nil),              // 5: storage.Risk.Result
-	(*Risk_Result_Factor)(nil),       // 6: storage.Risk.Result.Factor
-	(VulnerabilitySeverity)(0),       // 7: storage.VulnerabilitySeverity
+	(RiskActivityClassification)(0),  // 1: storage.RiskActivityClassification
+	(RiskExposureClassification)(0),  // 2: storage.RiskExposureClassification
+	(RiskPostureClassification)(0),   // 3: storage.RiskPostureClassification
+	(RiskSubjectType)(0),             // 4: storage.RiskSubjectType
+	(*Risk)(nil),                     // 5: storage.Risk
+	(*RiskVulnerabilitySummary)(nil), // 6: storage.RiskVulnerabilitySummary
+	(*RiskSubject)(nil),              // 7: storage.RiskSubject
+	(*Risk_Result)(nil),              // 8: storage.Risk.Result
+	(*Risk_Result_Factor)(nil),       // 9: storage.Risk.Result.Factor
+	(VulnerabilitySeverity)(0),       // 10: storage.VulnerabilitySeverity
 }
 var file_storage_risk_proto_depIdxs = []int32{
-	4, // 0: storage.Risk.subject:type_name -> storage.RiskSubject
-	0, // 1: storage.Risk.priority_classification:type_name -> storage.RiskPriorityClassification
-	3, // 2: storage.Risk.vulnerability_summary:type_name -> storage.RiskVulnerabilitySummary
-	5, // 3: storage.Risk.results:type_name -> storage.Risk.Result
-	7, // 4: storage.RiskVulnerabilitySummary.max_severity:type_name -> storage.VulnerabilitySeverity
-	1, // 5: storage.RiskSubject.type:type_name -> storage.RiskSubjectType
-	6, // 6: storage.Risk.Result.factors:type_name -> storage.Risk.Result.Factor
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	7,  // 0: storage.Risk.subject:type_name -> storage.RiskSubject
+	0,  // 1: storage.Risk.priority_classification:type_name -> storage.RiskPriorityClassification
+	6,  // 2: storage.Risk.vulnerability_summary:type_name -> storage.RiskVulnerabilitySummary
+	1,  // 3: storage.Risk.activity_classification:type_name -> storage.RiskActivityClassification
+	2,  // 4: storage.Risk.exposure_classification:type_name -> storage.RiskExposureClassification
+	3,  // 5: storage.Risk.posture_classification:type_name -> storage.RiskPostureClassification
+	8,  // 6: storage.Risk.results:type_name -> storage.Risk.Result
+	10, // 7: storage.RiskVulnerabilitySummary.max_severity:type_name -> storage.VulnerabilitySeverity
+	4,  // 8: storage.RiskSubject.type:type_name -> storage.RiskSubjectType
+	9,  // 9: storage.Risk.Result.factors:type_name -> storage.Risk.Result.Factor
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_storage_risk_proto_init() }
@@ -645,7 +861,7 @@ func file_storage_risk_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_risk_proto_rawDesc), len(file_storage_risk_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      5,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,

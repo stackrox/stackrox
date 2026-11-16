@@ -286,7 +286,7 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1, 0}
 }
 
-// Next available tag: 39
+// Next available tag: 45
 type Deployment struct {
 	state                         protoimpl.MessageState     `protogen:"open.v1"`
 	Id                            string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
@@ -308,6 +308,12 @@ type Deployment struct {
 	Priority                      int64                      `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                                                 // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
 	RiskPriorityClassification    RiskPriorityClassification `protobuf:"varint,36,opt,name=risk_priority_classification,json=riskPriorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"risk_priority_classification,omitempty" search:"Risk Priority Classification,hidden" hash:"ignore"` // @gotags: search:"Risk Priority Classification,hidden" hash:"ignore"
 	RiskPrioritySortOrder         int32                      `protobuf:"varint,37,opt,name=risk_priority_sort_order,json=riskPrioritySortOrder,proto3" json:"risk_priority_sort_order,omitempty" search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"`                                                      // @gotags: search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"
+	RiskActivityClassification    RiskActivityClassification `protobuf:"varint,39,opt,name=risk_activity_classification,json=riskActivityClassification,proto3,enum=storage.RiskActivityClassification" json:"risk_activity_classification,omitempty" search:"Risk Activity Classification,hidden" hash:"ignore"` // @gotags: search:"Risk Activity Classification,hidden" hash:"ignore"
+	RiskActivitySortOrder         int32                      `protobuf:"varint,40,opt,name=risk_activity_sort_order,json=riskActivitySortOrder,proto3" json:"risk_activity_sort_order,omitempty" search:"Risk Activity Sort Order,hidden" hash:"ignore" sql:"index=btree"`                                                      // @gotags: search:"Risk Activity Sort Order,hidden" hash:"ignore" sql:"index=btree"
+	RiskExposureClassification    RiskExposureClassification `protobuf:"varint,41,opt,name=risk_exposure_classification,json=riskExposureClassification,proto3,enum=storage.RiskExposureClassification" json:"risk_exposure_classification,omitempty" search:"Risk Exposure Classification,hidden" hash:"ignore"` // @gotags: search:"Risk Exposure Classification,hidden" hash:"ignore"
+	RiskExposureSortOrder         int32                      `protobuf:"varint,42,opt,name=risk_exposure_sort_order,json=riskExposureSortOrder,proto3" json:"risk_exposure_sort_order,omitempty" search:"Risk Exposure Sort Order,hidden" hash:"ignore" sql:"index=btree"`                                                      // @gotags: search:"Risk Exposure Sort Order,hidden" hash:"ignore" sql:"index=btree"
+	RiskPostureClassification     RiskPostureClassification  `protobuf:"varint,43,opt,name=risk_posture_classification,json=riskPostureClassification,proto3,enum=storage.RiskPostureClassification" json:"risk_posture_classification,omitempty" search:"Risk Posture Classification,hidden" hash:"ignore"`     // @gotags: search:"Risk Posture Classification,hidden" hash:"ignore"
+	RiskPostureSortOrder          int32                      `protobuf:"varint,44,opt,name=risk_posture_sort_order,json=riskPostureSortOrder,proto3" json:"risk_posture_sort_order,omitempty" search:"Risk Posture Sort Order,hidden" hash:"ignore" sql:"index=btree"`                                                         // @gotags: search:"Risk Posture Sort Order,hidden" hash:"ignore" sql:"index=btree"
 	Inactive                      bool                       `protobuf:"varint,16,opt,name=inactive,proto3" json:"inactive,omitempty"`
 	ImagePullSecrets              []string                   `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                        // @gotags: search:"Image Pull Secret"
 	ServiceAccount                string                     `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" search:"Service Account"`                                                                                // @gotags: search:"Service Account"
@@ -486,6 +492,48 @@ func (x *Deployment) GetRiskPriorityClassification() RiskPriorityClassification 
 func (x *Deployment) GetRiskPrioritySortOrder() int32 {
 	if x != nil {
 		return x.RiskPrioritySortOrder
+	}
+	return 0
+}
+
+func (x *Deployment) GetRiskActivityClassification() RiskActivityClassification {
+	if x != nil {
+		return x.RiskActivityClassification
+	}
+	return RiskActivityClassification_RISK_ACTIVITY_UNKNOWN
+}
+
+func (x *Deployment) GetRiskActivitySortOrder() int32 {
+	if x != nil {
+		return x.RiskActivitySortOrder
+	}
+	return 0
+}
+
+func (x *Deployment) GetRiskExposureClassification() RiskExposureClassification {
+	if x != nil {
+		return x.RiskExposureClassification
+	}
+	return RiskExposureClassification_RISK_EXPOSURE_UNKNOWN
+}
+
+func (x *Deployment) GetRiskExposureSortOrder() int32 {
+	if x != nil {
+		return x.RiskExposureSortOrder
+	}
+	return 0
+}
+
+func (x *Deployment) GetRiskPostureClassification() RiskPostureClassification {
+	if x != nil {
+		return x.RiskPostureClassification
+	}
+	return RiskPostureClassification_RISK_POSTURE_UNKNOWN
+}
+
+func (x *Deployment) GetRiskPostureSortOrder() int32 {
+	if x != nil {
+		return x.RiskPostureSortOrder
 	}
 	return 0
 }
@@ -1655,7 +1703,7 @@ func (x *SecurityContext) GetAllowPrivilegeEscalation() bool {
 	return false
 }
 
-// Next available tag: 12
+// Next available tag: 18
 type ListDeployment struct {
 	state                      protoimpl.MessageState     `protogen:"open.v1"`
 	Id                         string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1669,6 +1717,12 @@ type ListDeployment struct {
 	RiskPriorityClassification RiskPriorityClassification `protobuf:"varint,9,opt,name=risk_priority_classification,json=riskPriorityClassification,proto3,enum=storage.RiskPriorityClassification" json:"risk_priority_classification,omitempty"`
 	RiskScore                  float32                    `protobuf:"fixed32,10,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
 	ProposedRiskScore          float32                    `protobuf:"fixed32,11,opt,name=proposed_risk_score,json=proposedRiskScore,proto3" json:"proposed_risk_score,omitempty"`
+	RiskActivityClassification RiskActivityClassification `protobuf:"varint,12,opt,name=risk_activity_classification,json=riskActivityClassification,proto3,enum=storage.RiskActivityClassification" json:"risk_activity_classification,omitempty"`
+	RiskActivitySortOrder      int32                      `protobuf:"varint,13,opt,name=risk_activity_sort_order,json=riskActivitySortOrder,proto3" json:"risk_activity_sort_order,omitempty"`
+	RiskExposureClassification RiskExposureClassification `protobuf:"varint,14,opt,name=risk_exposure_classification,json=riskExposureClassification,proto3,enum=storage.RiskExposureClassification" json:"risk_exposure_classification,omitempty"`
+	RiskExposureSortOrder      int32                      `protobuf:"varint,15,opt,name=risk_exposure_sort_order,json=riskExposureSortOrder,proto3" json:"risk_exposure_sort_order,omitempty"`
+	RiskPostureClassification  RiskPostureClassification  `protobuf:"varint,16,opt,name=risk_posture_classification,json=riskPostureClassification,proto3,enum=storage.RiskPostureClassification" json:"risk_posture_classification,omitempty"`
+	RiskPostureSortOrder       int32                      `protobuf:"varint,17,opt,name=risk_posture_sort_order,json=riskPostureSortOrder,proto3" json:"risk_posture_sort_order,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -1776,6 +1830,48 @@ func (x *ListDeployment) GetRiskScore() float32 {
 func (x *ListDeployment) GetProposedRiskScore() float32 {
 	if x != nil {
 		return x.ProposedRiskScore
+	}
+	return 0
+}
+
+func (x *ListDeployment) GetRiskActivityClassification() RiskActivityClassification {
+	if x != nil {
+		return x.RiskActivityClassification
+	}
+	return RiskActivityClassification_RISK_ACTIVITY_UNKNOWN
+}
+
+func (x *ListDeployment) GetRiskActivitySortOrder() int32 {
+	if x != nil {
+		return x.RiskActivitySortOrder
+	}
+	return 0
+}
+
+func (x *ListDeployment) GetRiskExposureClassification() RiskExposureClassification {
+	if x != nil {
+		return x.RiskExposureClassification
+	}
+	return RiskExposureClassification_RISK_EXPOSURE_UNKNOWN
+}
+
+func (x *ListDeployment) GetRiskExposureSortOrder() int32 {
+	if x != nil {
+		return x.RiskExposureSortOrder
+	}
+	return 0
+}
+
+func (x *ListDeployment) GetRiskPostureClassification() RiskPostureClassification {
+	if x != nil {
+		return x.RiskPostureClassification
+	}
+	return RiskPostureClassification_RISK_POSTURE_UNKNOWN
+}
+
+func (x *ListDeployment) GetRiskPostureSortOrder() int32 {
+	if x != nil {
+		return x.RiskPostureSortOrder
 	}
 	return 0
 }
@@ -2112,7 +2208,7 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x12storage/risk.proto\x1a\x14storage/taints.proto\"\xc6\r\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x12storage/risk.proto\x1a\x14storage/taints.proto\"\xa1\x11\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2138,7 +2234,13 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\vannotations\x18\x0e \x03(\v2$.storage.Deployment.AnnotationsEntryR\vannotations\x12\x1a\n" +
 	"\bpriority\x18\x0f \x01(\x03R\bpriority\x12e\n" +
 	"\x1crisk_priority_classification\x18$ \x01(\x0e2#.storage.RiskPriorityClassificationR\x1ariskPriorityClassification\x127\n" +
-	"\x18risk_priority_sort_order\x18% \x01(\x05R\x15riskPrioritySortOrder\x12\x1a\n" +
+	"\x18risk_priority_sort_order\x18% \x01(\x05R\x15riskPrioritySortOrder\x12e\n" +
+	"\x1crisk_activity_classification\x18' \x01(\x0e2#.storage.RiskActivityClassificationR\x1ariskActivityClassification\x127\n" +
+	"\x18risk_activity_sort_order\x18( \x01(\x05R\x15riskActivitySortOrder\x12e\n" +
+	"\x1crisk_exposure_classification\x18) \x01(\x0e2#.storage.RiskExposureClassificationR\x1ariskExposureClassification\x127\n" +
+	"\x18risk_exposure_sort_order\x18* \x01(\x05R\x15riskExposureSortOrder\x12b\n" +
+	"\x1brisk_posture_classification\x18+ \x01(\x0e2\".storage.RiskPostureClassificationR\x19riskPostureClassification\x125\n" +
+	"\x17risk_posture_sort_order\x18, \x01(\x05R\x14riskPostureSortOrder\x12\x1a\n" +
 	"\binactive\x18\x10 \x01(\bR\binactive\x12,\n" +
 	"\x12image_pull_secrets\x18\x11 \x03(\tR\x10imagePullSecrets\x12'\n" +
 	"\x0fservice_account\x18\x12 \x01(\tR\x0eserviceAccount\x12a\n" +
@@ -2305,7 +2407,7 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
 	"UNCONFINED\x10\x00\x12\x13\n" +
 	"\x0fRUNTIME_DEFAULT\x10\x01\x12\r\n" +
-	"\tLOCALHOST\x10\x02\"\xa7\x03\n" +
+	"\tLOCALHOST\x10\x02\"\x82\a\n" +
 	"\x0eListDeployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04hash\x18\b \x01(\x04R\x04hash\x12\x12\n" +
@@ -2320,7 +2422,13 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
 	"risk_score\x18\n" +
 	" \x01(\x02R\triskScore\x12.\n" +
-	"\x13proposed_risk_score\x18\v \x01(\x02R\x11proposedRiskScore*&\n" +
+	"\x13proposed_risk_score\x18\v \x01(\x02R\x11proposedRiskScore\x12e\n" +
+	"\x1crisk_activity_classification\x18\f \x01(\x0e2#.storage.RiskActivityClassificationR\x1ariskActivityClassification\x127\n" +
+	"\x18risk_activity_sort_order\x18\r \x01(\x05R\x15riskActivitySortOrder\x12e\n" +
+	"\x1crisk_exposure_classification\x18\x0e \x01(\x0e2#.storage.RiskExposureClassificationR\x1ariskExposureClassification\x127\n" +
+	"\x18risk_exposure_sort_order\x18\x0f \x01(\x05R\x15riskExposureSortOrder\x12b\n" +
+	"\x1brisk_posture_classification\x18\x10 \x01(\x0e2\".storage.RiskPostureClassificationR\x19riskPostureClassification\x125\n" +
+	"\x17risk_posture_sort_order\x18\x11 \x01(\x05R\x14riskPostureSortOrder*&\n" +
 	"\rContainerType\x12\v\n" +
 	"\aREGULAR\x10\x00\x12\b\n" +
 	"\x04INIT\x10\x01B.\n" +
@@ -2372,10 +2480,13 @@ var file_storage_deployment_proto_goTypes = []any{
 	(*LabelSelector)(nil),                               // 28: storage.LabelSelector
 	(*timestamppb.Timestamp)(nil),                       // 29: google.protobuf.Timestamp
 	(RiskPriorityClassification)(0),                     // 30: storage.RiskPriorityClassification
-	(PermissionLevel)(0),                                // 31: storage.PermissionLevel
-	(*Toleration)(nil),                                  // 32: storage.Toleration
-	(*ImageName)(nil),                                   // 33: storage.ImageName
-	(ContainerRuntime)(0),                               // 34: storage.ContainerRuntime
+	(RiskActivityClassification)(0),                     // 31: storage.RiskActivityClassification
+	(RiskExposureClassification)(0),                     // 32: storage.RiskExposureClassification
+	(RiskPostureClassification)(0),                      // 33: storage.RiskPostureClassification
+	(PermissionLevel)(0),                                // 34: storage.PermissionLevel
+	(*Toleration)(nil),                                  // 35: storage.Toleration
+	(*ImageName)(nil),                                   // 36: storage.ImageName
+	(ContainerRuntime)(0),                               // 37: storage.ContainerRuntime
 }
 var file_storage_deployment_proto_depIdxs = []int32{
 	20, // 0: storage.Deployment.labels:type_name -> storage.Deployment.LabelsEntry
@@ -2385,44 +2496,50 @@ var file_storage_deployment_proto_depIdxs = []int32{
 	7,  // 4: storage.Deployment.containers:type_name -> storage.Container
 	22, // 5: storage.Deployment.annotations:type_name -> storage.Deployment.AnnotationsEntry
 	30, // 6: storage.Deployment.risk_priority_classification:type_name -> storage.RiskPriorityClassification
-	31, // 7: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
-	32, // 8: storage.Deployment.tolerations:type_name -> storage.Toleration
-	16, // 9: storage.Deployment.ports:type_name -> storage.PortConfig
-	33, // 10: storage.ContainerImage.name:type_name -> storage.ImageName
-	17, // 11: storage.Container.config:type_name -> storage.ContainerConfig
-	6,  // 12: storage.Container.image:type_name -> storage.ContainerImage
-	18, // 13: storage.Container.security_context:type_name -> storage.SecurityContext
-	9,  // 14: storage.Container.volumes:type_name -> storage.Volume
-	16, // 15: storage.Container.ports:type_name -> storage.PortConfig
-	15, // 16: storage.Container.secrets:type_name -> storage.EmbeddedSecret
-	8,  // 17: storage.Container.resources:type_name -> storage.Resources
-	10, // 18: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
-	11, // 19: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
-	0,  // 20: storage.Container.type:type_name -> storage.ContainerType
-	1,  // 21: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
-	13, // 22: storage.Pod.live_instances:type_name -> storage.ContainerInstance
-	23, // 23: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
-	29, // 24: storage.Pod.started:type_name -> google.protobuf.Timestamp
-	14, // 25: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
-	29, // 26: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
-	29, // 27: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
-	34, // 28: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
-	2,  // 29: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
-	24, // 30: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
-	25, // 31: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
-	26, // 32: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
-	27, // 33: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
-	29, // 34: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
-	30, // 35: storage.ListDeployment.risk_priority_classification:type_name -> storage.RiskPriorityClassification
-	13, // 36: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
-	2,  // 37: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
-	3,  // 38: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
-	4,  // 39: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
-	40, // [40:40] is the sub-list for method output_type
-	40, // [40:40] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	31, // 7: storage.Deployment.risk_activity_classification:type_name -> storage.RiskActivityClassification
+	32, // 8: storage.Deployment.risk_exposure_classification:type_name -> storage.RiskExposureClassification
+	33, // 9: storage.Deployment.risk_posture_classification:type_name -> storage.RiskPostureClassification
+	34, // 10: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
+	35, // 11: storage.Deployment.tolerations:type_name -> storage.Toleration
+	16, // 12: storage.Deployment.ports:type_name -> storage.PortConfig
+	36, // 13: storage.ContainerImage.name:type_name -> storage.ImageName
+	17, // 14: storage.Container.config:type_name -> storage.ContainerConfig
+	6,  // 15: storage.Container.image:type_name -> storage.ContainerImage
+	18, // 16: storage.Container.security_context:type_name -> storage.SecurityContext
+	9,  // 17: storage.Container.volumes:type_name -> storage.Volume
+	16, // 18: storage.Container.ports:type_name -> storage.PortConfig
+	15, // 19: storage.Container.secrets:type_name -> storage.EmbeddedSecret
+	8,  // 20: storage.Container.resources:type_name -> storage.Resources
+	10, // 21: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
+	11, // 22: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
+	0,  // 23: storage.Container.type:type_name -> storage.ContainerType
+	1,  // 24: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
+	13, // 25: storage.Pod.live_instances:type_name -> storage.ContainerInstance
+	23, // 26: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
+	29, // 27: storage.Pod.started:type_name -> google.protobuf.Timestamp
+	14, // 28: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
+	29, // 29: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
+	29, // 30: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
+	37, // 31: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
+	2,  // 32: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
+	24, // 33: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
+	25, // 34: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
+	26, // 35: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
+	27, // 36: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
+	29, // 37: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
+	30, // 38: storage.ListDeployment.risk_priority_classification:type_name -> storage.RiskPriorityClassification
+	31, // 39: storage.ListDeployment.risk_activity_classification:type_name -> storage.RiskActivityClassification
+	32, // 40: storage.ListDeployment.risk_exposure_classification:type_name -> storage.RiskExposureClassification
+	33, // 41: storage.ListDeployment.risk_posture_classification:type_name -> storage.RiskPostureClassification
+	13, // 42: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
+	2,  // 43: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
+	3,  // 44: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
+	4,  // 45: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
+	46, // [46:46] is the sub-list for method output_type
+	46, // [46:46] is the sub-list for method input_type
+	46, // [46:46] is the sub-list for extension type_name
+	46, // [46:46] is the sub-list for extension extendee
+	0,  // [0:46] is the sub-list for field type_name
 }
 
 func init() { file_storage_deployment_proto_init() }

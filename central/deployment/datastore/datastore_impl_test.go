@@ -263,6 +263,9 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Id:                    "id",
 		Namespace:             "my-namespace",
 		RiskPrioritySortOrder: 99,
+		RiskActivitySortOrder: 99,
+		RiskExposureSortOrder: 99,
+		RiskPostureSortOrder:  99,
 		PlatformComponent:     false,
 	}
 
@@ -280,6 +283,9 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		Id:                    "id",
 		Namespace:             "kube-123",
 		RiskPrioritySortOrder: 99,
+		RiskActivitySortOrder: 99,
+		RiskExposureSortOrder: 99,
+		RiskPostureSortOrder:  99,
 		PlatformComponent:     true,
 	}
 

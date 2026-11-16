@@ -13,7 +13,7 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 39
+// Next available tag: 45
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -36,6 +36,12 @@ message Deployment {
   int64 priority = 15; // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
   RiskPriorityClassification risk_priority_classification = 36; // @gotags: search:"Risk Priority Classification,hidden" hash:"ignore"
   int32 risk_priority_sort_order = 37; // @gotags: search:"Risk Priority Sort Order,hidden" hash:"ignore" sql:"index=btree"
+  RiskActivityClassification risk_activity_classification = 39; // @gotags: search:"Risk Activity Classification,hidden" hash:"ignore"
+  int32 risk_activity_sort_order = 40; // @gotags: search:"Risk Activity Sort Order,hidden" hash:"ignore" sql:"index=btree"
+  RiskExposureClassification risk_exposure_classification = 41; // @gotags: search:"Risk Exposure Classification,hidden" hash:"ignore"
+  int32 risk_exposure_sort_order = 42; // @gotags: search:"Risk Exposure Sort Order,hidden" hash:"ignore" sql:"index=btree"
+  RiskPostureClassification risk_posture_classification = 43; // @gotags: search:"Risk Posture Classification,hidden" hash:"ignore"
+  int32 risk_posture_sort_order = 44; // @gotags: search:"Risk Posture Sort Order,hidden" hash:"ignore" sql:"index=btree"
   bool inactive = 16;
   repeated string image_pull_secrets = 17; // @gotags: search:"Image Pull Secret"
   string service_account = 18; // @gotags: search:"Service Account"
@@ -280,7 +286,7 @@ message SecurityContext {
   bool allow_privilege_escalation = 7; // @gotags: policy:"Allow Privilege Escalation"
 }
 
-// Next available tag: 12
+// Next available tag: 18
 message ListDeployment {
   string id = 1;
   uint64 hash = 8;
@@ -293,4 +299,10 @@ message ListDeployment {
   RiskPriorityClassification risk_priority_classification = 9;
   float risk_score = 10;
   float proposed_risk_score = 11;
+  RiskActivityClassification risk_activity_classification = 12;
+  int32 risk_activity_sort_order = 13;
+  RiskExposureClassification risk_exposure_classification = 14;
+  int32 risk_exposure_sort_order = 15;
+  RiskPostureClassification risk_posture_classification = 16;
+  int32 risk_posture_sort_order = 17;
 }

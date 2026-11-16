@@ -48,6 +48,27 @@ func normalizeRiskPrioritySortOrder(classification storage.RiskPriorityClassific
 	return riskPkg.PriorityClassificationSortOrder(classification)
 }
 
+func normalizeRiskActivitySortOrder(classification storage.RiskActivityClassification, sortOrder int32) int32 {
+	if sortOrder != 0 {
+		return sortOrder
+	}
+	return riskPkg.ActivityClassificationSortOrder(classification)
+}
+
+func normalizeRiskExposureSortOrder(classification storage.RiskExposureClassification, sortOrder int32) int32 {
+	if sortOrder != 0 {
+		return sortOrder
+	}
+	return riskPkg.ExposureClassificationSortOrder(classification)
+}
+
+func normalizeRiskPostureSortOrder(classification storage.RiskPostureClassification, sortOrder int32) int32 {
+	if sortOrder != 0 {
+		return sortOrder
+	}
+	return riskPkg.PostureClassificationSortOrder(classification)
+}
+
 // Store is the interface to interact with the storage for storage.Deployment
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
@@ -155,6 +176,12 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 		obj.GetPriority(),
 		obj.GetRiskPriorityClassification(),
 		normalizeRiskPrioritySortOrder(obj.GetRiskPriorityClassification(), obj.GetRiskPrioritySortOrder()),
+		obj.GetRiskActivityClassification(),
+		normalizeRiskActivitySortOrder(obj.GetRiskActivityClassification(), obj.GetRiskActivitySortOrder()),
+		obj.GetRiskExposureClassification(),
+		normalizeRiskExposureSortOrder(obj.GetRiskExposureClassification(), obj.GetRiskExposureSortOrder()),
+		obj.GetRiskPostureClassification(),
+		normalizeRiskPostureSortOrder(obj.GetRiskPostureClassification(), obj.GetRiskPostureSortOrder()),
 		obj.GetImagePullSecrets(),
 		obj.GetServiceAccount(),
 		obj.GetServiceAccountPermissionLevel(),
@@ -164,7 +191,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO deployments (Id, Name, Hash, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, RiskPriorityClassification, RiskPrioritySortOrder, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProposedRiskScore, PlatformComponent, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Hash = EXCLUDED.Hash, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, RiskPriorityClassification = EXCLUDED.RiskPriorityClassification, RiskPrioritySortOrder = EXCLUDED.RiskPrioritySortOrder, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProposedRiskScore = EXCLUDED.ProposedRiskScore, PlatformComponent = EXCLUDED.PlatformComponent, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO deployments (Id, Name, Hash, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, RiskPriorityClassification, RiskPrioritySortOrder, RiskActivityClassification, RiskActivitySortOrder, RiskExposureClassification, RiskExposureSortOrder, RiskPostureClassification, RiskPostureSortOrder, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, ProposedRiskScore, PlatformComponent, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Hash = EXCLUDED.Hash, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, RiskPriorityClassification = EXCLUDED.RiskPriorityClassification, RiskPrioritySortOrder = EXCLUDED.RiskPrioritySortOrder, RiskActivityClassification = EXCLUDED.RiskActivityClassification, RiskActivitySortOrder = EXCLUDED.RiskActivitySortOrder, RiskExposureClassification = EXCLUDED.RiskExposureClassification, RiskExposureSortOrder = EXCLUDED.RiskExposureSortOrder, RiskPostureClassification = EXCLUDED.RiskPostureClassification, RiskPostureSortOrder = EXCLUDED.RiskPostureSortOrder, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, ProposedRiskScore = EXCLUDED.ProposedRiskScore, PlatformComponent = EXCLUDED.PlatformComponent, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -364,6 +391,12 @@ var copyColsDeployments = []string{
 	"priority",
 	"riskpriorityclassification",
 	"riskprioritysortorder",
+	"riskactivityclassification",
+	"riskactivitysortorder",
+	"riskexposureclassification",
+	"riskexposuresortorder",
+	"riskpostureclassification",
+	"riskposturesortorder",
 	"imagepullsecrets",
 	"serviceaccount",
 	"serviceaccountpermissionlevel",
@@ -420,6 +453,12 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetPriority(),
 			obj.GetRiskPriorityClassification(),
 			normalizeRiskPrioritySortOrder(obj.GetRiskPriorityClassification(), obj.GetRiskPrioritySortOrder()),
+			obj.GetRiskActivityClassification(),
+			normalizeRiskActivitySortOrder(obj.GetRiskActivityClassification(), obj.GetRiskActivitySortOrder()),
+			obj.GetRiskExposureClassification(),
+			normalizeRiskExposureSortOrder(obj.GetRiskExposureClassification(), obj.GetRiskExposureSortOrder()),
+			obj.GetRiskPostureClassification(),
+			normalizeRiskPostureSortOrder(obj.GetRiskPostureClassification(), obj.GetRiskPostureSortOrder()),
 			obj.GetImagePullSecrets(),
 			obj.GetServiceAccount(),
 			obj.GetServiceAccountPermissionLevel(),

@@ -73,16 +73,21 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 		return nil
 	}
 
+	classification := classifyRisk(classificationInputs{
+		deployment:       deployment,
+		riskResults:      riskResults,
+		imageSummaries:   imageVulnerabilitySummaries,
+		imageRiskResults: imageRiskResults,
+	})
+
 	risk := &storage.Risk{
-		Score:         legacyScore,
-		ProposedScore: proposedScore,
-		Results:       riskResults,
-		PriorityClassification: classifyRisk(classificationInputs{
-			deployment:       deployment,
-			riskResults:      riskResults,
-			imageSummaries:   imageVulnerabilitySummaries,
-			imageRiskResults: imageRiskResults,
-		}),
+		Score:                  legacyScore,
+		ProposedScore:          proposedScore,
+		Results:                riskResults,
+		PriorityClassification: classification.priority,
+		ActivityClassification: classification.activity,
+		ExposureClassification: classification.exposure,
+		PostureClassification:  classification.posture,
 		Subject: &storage.RiskSubject{
 			Id:        deployment.GetId(),
 			Type:      storage.RiskSubjectType_DEPLOYMENT,

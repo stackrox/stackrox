@@ -170,6 +170,12 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	deployment.ProposedRiskScore = risk.GetProposedScore()
 	deployment.RiskPriorityClassification = risk.GetPriorityClassification()
 	deployment.RiskPrioritySortOrder = riskPkg.PriorityClassificationSortOrder(risk.GetPriorityClassification())
+	deployment.RiskActivityClassification = risk.GetActivityClassification()
+	deployment.RiskActivitySortOrder = riskPkg.ActivityClassificationSortOrder(risk.GetActivityClassification())
+	deployment.RiskExposureClassification = risk.GetExposureClassification()
+	deployment.RiskExposureSortOrder = riskPkg.ExposureClassificationSortOrder(risk.GetExposureClassification())
+	deployment.RiskPostureClassification = risk.GetPostureClassification()
+	deployment.RiskPostureSortOrder = riskPkg.PostureClassificationSortOrder(risk.GetPostureClassification())
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
 	}
