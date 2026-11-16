@@ -534,7 +534,7 @@ jobs:
           OPERATOR_TARGET="$(BUILD_TAG="${TARGET_TAG}" make -C operator --quiet --no-print-directory tag)"
           OPERATOR_IMG_SOURCE="$(curl -fsSL \
             "https://quay.io/api/v1/repository/rhacs-eng/stackrox-operator/tag/?limit=100&onlyActiveTags=true" \
-            | jq -r '.tags[].name' | grep -E '^[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+-g[0-9a-f]+$' | sort -V | tail -1)"
+            | jq -r '.tags[].name' | { grep -E '^[0-9]+[.][0-9]+[.][0-9]+-[0-9]+-g[0-9a-f]+$' || true; } | sort -V | tail -1)"
           echo "operator image: ${OPERATOR_IMG_SOURCE} -> ${OPERATOR_TARGET}"
           docker buildx imagetools create \
             -t "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" \
