@@ -13,21 +13,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/spf13/afero"
-
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
-	repoRoot            = getRepoRoot()
-	migrationsDirectory = filepath.Join(repoRoot, "migrator", "migrations")
-
 	migrationPattern       = `m_(\d+)_to_m_\d+_.*`
 	migrationRegex         = regexp.MustCompile(migrationPattern)
 	migrationRegexAnchored = regexp.MustCompile(fmt.Sprintf(`^%s$`, migrationPattern))
-
-	fs = afero.NewOsFs()
 )
 
 type migrationDir struct {
@@ -43,33 +36,41 @@ func main() {
 }
 
 func run() error {
-	seqnum, err := getOldestSupportedSeqNum()
-	if err != nil {
-		return err
-	}
-	return runWithOldestSeqNum(seqnum)
-}
-
-func runWithOldestSeqNum(seqnum uint64) error {
-	migs, err := listUnsupportedMigrations(seqnum)
+	repoRoot, err := getRepoRoot()
 	if err != nil {
 		return err
 	}
 
-	return cleanupUnsupportedMigrations(migs)
+	seqnum, err := getOldestSupportedSeqNum(repoRoot)
+	if err != nil {
+		return err
+	}
+	return runWithOldestSeqNum(repoRoot, seqnum)
 }
 
-func getRepoRoot() string {
+func migrationsDirectory(repoRoot string) string {
+	return filepath.Join(repoRoot, "migrator", "migrations")
+}
+
+func runWithOldestSeqNum(repoRoot string, seqnum uint64) error {
+	migs, err := listUnsupportedMigrations(repoRoot, seqnum)
+	if err != nil {
+		return err
+	}
+
+	return cleanupUnsupportedMigrations(repoRoot, migs)
+}
+
+func getRepoRoot() (string, error) {
 	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
 	rootB, err := cmd.Output()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return "", err
 	}
-	return strings.TrimSpace(string(rootB))
+	return strings.TrimSpace(string(rootB)), nil
 }
 
-func currentVersion() (string, error) {
+func currentVersion(repoRoot string) (string, error) {
 	cmd := exec.Command("make", "--quiet", "--no-print-directory", "tag")
 	cmd.Dir = repoRoot
 	versionBytes, err := cmd.Output()
@@ -90,8 +91,8 @@ func oldestSupportedSeqNum(current string) (uint64, error) {
 	return uint64(oldest.Sequence), nil
 }
 
-func getOldestSupportedSeqNum() (uint64, error) {
-	version, err := currentVersion()
+func getOldestSupportedSeqNum(repoRoot string) (uint64, error) {
+	version, err := currentVersion(repoRoot)
 	if err != nil {
 		return 0, err
 	}
@@ -99,8 +100,8 @@ func getOldestSupportedSeqNum() (uint64, error) {
 	return oldestSupportedSeqNum(version)
 }
 
-func listMigrations() ([]migrationDir, error) {
-	entries, err := afero.ReadDir(fs, migrationsDirectory)
+func listMigrations(repoRoot string) ([]migrationDir, error) {
+	entries, err := os.ReadDir(migrationsDirectory(repoRoot))
 	if err != nil {
 		return nil, err
 	}
@@ -163,19 +164,19 @@ func filterUnsupportedMigrations(migs []migrationDir, oldestSupportedSeqNum uint
 	return res
 }
 
-func listUnsupportedMigrations(oldestSupportedSeqNum uint64) ([]migrationDir, error) {
-	migrationDirs, err := listMigrations()
+func listUnsupportedMigrations(repoRoot string, oldestSupportedSeqNum uint64) ([]migrationDir, error) {
+	migrationDirs, err := listMigrations(repoRoot)
 	if err != nil {
 		return nil, err
 	}
 	return filterUnsupportedMigrations(migrationDirs, oldestSupportedSeqNum), nil
 }
 
-func cleanupMigrationDirectories(migs []migrationDir) error {
+func cleanupMigrationDirectories(repoRoot string, migs []migrationDir) error {
 	for _, mig := range migs {
-		d := filepath.Join(migrationsDirectory, mig.dir)
+		d := filepath.Join(migrationsDirectory(repoRoot), mig.dir)
 		fmt.Printf("Removing %q\n", d)
-		err := fs.RemoveAll(d)
+		err := os.RemoveAll(d)
 		if err != nil {
 			return err
 		}
@@ -223,9 +224,9 @@ func renderCleanRunnerAll(newFileLines []string, writeFile io.Writer) error {
 	return nil
 }
 
-func cleanupMigratorRunnerAll(migs []migrationDir) error {
+func cleanupMigratorRunnerAll(repoRoot string, migs []migrationDir) error {
 	migratorRunnerAllPath := filepath.Join(repoRoot, "migrator", "runner", "all.go")
-	readFile, err := fs.Open(migratorRunnerAllPath)
+	readFile, err := os.Open(migratorRunnerAllPath)
 	if err != nil {
 		return err
 	}
@@ -236,7 +237,7 @@ func cleanupMigratorRunnerAll(migs []migrationDir) error {
 		return err
 	}
 
-	writeFile, err := fs.OpenFile(migratorRunnerAllPath, os.O_RDWR|os.O_TRUNC, 0644)
+	writeFile, err := os.OpenFile(migratorRunnerAllPath, os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -244,10 +245,10 @@ func cleanupMigratorRunnerAll(migs []migrationDir) error {
 	return renderCleanRunnerAll(newFileLines, writeFile)
 }
 
-func cleanupUnsupportedMigrations(migs []migrationDir) error {
-	err := cleanupMigratorRunnerAll(migs)
+func cleanupUnsupportedMigrations(repoRoot string, migs []migrationDir) error {
+	err := cleanupMigratorRunnerAll(repoRoot, migs)
 	if err != nil {
 		return err
 	}
-	return cleanupMigrationDirectories(migs)
+	return cleanupMigrationDirectories(repoRoot, migs)
 }
