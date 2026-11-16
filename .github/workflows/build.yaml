@@ -34,7 +34,7 @@ env:
   # Bump when the build RECIPE changes (step logic, flags, transform).
   # Receipts cover source state AND recipe; without this, a recipe fix
   # would silently keep serving images built by the old recipe.
-  WORKFLOW_RECIPE: v4
+  WORKFLOW_RECIPE: v5
 
 jobs:
   main-image:
@@ -392,7 +392,7 @@ jobs:
             --build-arg "TARGET_ARCH=${{ matrix.arch }}" \
             --build-arg "LABEL_VERSION=${{ env.IMAGE_TAG }}" \
             --build-arg "LABEL_RELEASE=ci" \
-            --build-arg "ROX_IMAGE_FLAVOR=development" \
+            --build-arg "ROX_IMAGE_FLAVOR=${{ matrix.branding == 'STACKROX_BRANDING' && 'opensource' || 'development_build' }}" \
             --build-arg "ROX_PRODUCT_BRANDING=${{ matrix.branding }}" \
             --file /tmp/generated.Dockerfile \
             image/rhel 2>&1 | tail -5
