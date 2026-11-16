@@ -496,7 +496,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit }}
 
-      - name: Build and push operator bundle, retag sidecar images
+      - name: Build operator bundle + image, retag sidecar images
         env:
           QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -504,11 +504,24 @@ jobs:
           # RHACS branding selects the rhacs-eng registry (env.mk) —
           # the e2e image set lives there.
           ROX_PRODUCT_BRANDING: RHACS_BRANDING
+          # Tool installs and the operator binary build must not
+          # inherit vendor mode (see notices step note).
+          GOFLAGS: -buildvcs=false -mod=mod
         run: |
           set -euo pipefail
           TARGET_TAG="$(make --quiet --no-print-directory tag)"
           SOURCE="${{ inputs.retag_source }}"
           echo "retagging ${SOURCE} -> ${TARGET_TAG}"
+
+          # Build the operator binary for both arches (main-build-nodeps
+          # normally renames operator/cmd -> stackrox-operator; here we
+          # build it directly and rename the same way).
+          for arch in amd64 arm64; do
+            GOARCH=$arch scripts/go-build.sh operator/cmd
+            mv bin/linux_${arch}/cmd bin/linux_${arch}/stackrox-operator
+          done
+          # THIRD_PARTY_NOTICES is required by prebuilt.Dockerfile.
+          make ossls-notice >/dev/null 2>&1 || make ossls-notice
           echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login quay.io \
             -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin
           for repo in central-db collector fact roxctl scanner-v4 scanner-v4-db; do
@@ -527,16 +540,24 @@ jobs:
           make -C operator docker-push-bundle | cat
           echo "built and pushed operator-bundle"
 
-          # The operator IMAGE itself is also in the e2e set. Master's
-          # CI tags expire, so discover the newest live one via the
-          # public quay API and retag it (the image is arch-independent
-          # of our main build; the bundle carries the version pins).
+          # Build the operator IMAGE from this tree (master's recipe:
+          # docker-build-prebuilt) for both arches, verify runnability
+          # like master does, push arch tags, assemble the manifest
+          # list. A retagged foreign-lineage operator image crashed in
+          # e2e; building from the tree keeps image/CRD/bundle
+          # consistent.
           OPERATOR_TARGET="$(BUILD_TAG="${TARGET_TAG}" make -C operator --quiet --no-print-directory tag)"
-          OPERATOR_IMG_SOURCE="$(curl -fsSL \
-            "https://quay.io/api/v1/repository/rhacs-eng/stackrox-operator/tag/?limit=100&onlyActiveTags=true" \
-            | jq -r '.tags[].name' | { grep -E '^[0-9]+[.][0-9]+[.][0-9]+-[0-9]+-g[0-9a-f]+$' || true; } | sort -V | tail -1)"
-          echo "operator image: ${OPERATOR_IMG_SOURCE} -> ${OPERATOR_TARGET}"
+          echo "operator image tag: ${OPERATOR_TARGET}"
+          for arch in amd64 arm64; do
+            GOARCH=$arch make -C operator docker-build-prebuilt
+            docker run --rm --platform linux/${arch} \
+              "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" --help >/dev/null
+            docker tag "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" \
+              "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-${arch}"
+            docker push "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-${arch}"
+          done
           docker buildx imagetools create \
             -t "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" \
-            "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_IMG_SOURCE}"
-          echo "retagged operator image"
+            "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-amd64" \
+            "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-arm64"
+          echo "built and pushed operator image (amd64+arm64)"
