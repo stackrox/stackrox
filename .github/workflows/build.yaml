@@ -488,7 +488,7 @@ jobs:
   retag-sidecars:
     if: inputs.retag_source != ''
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 40
     steps:
       - name: Checkout (full, for make tag)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
