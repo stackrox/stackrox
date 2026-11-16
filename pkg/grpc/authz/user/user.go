@@ -34,6 +34,25 @@ type permissionChecker struct {
 
 // EnrichContext returns the input context unchanged.
 func (p *permissionChecker) EnrichContext(ctx context.Context, _ string) context.Context {
+	if features.ACMAccessControlDelegation.Enabled() {
+		id, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			return ctx
+		}
+		authProvider := id.ExternalAuthProvider()
+		roleMapper := authProvider.RoleMapper()
+		resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, id.UserDescriptor())
+		if err != nil {
+			return ctx
+		}
+		filteredRoles := make([]permissions.ResolvedRole, 0, len(resolvedRoles))
+		for _, role := range resolvedRoles {
+			if p.checkPermissions(role.GetPermissions()) == nil {
+				filteredRoles = append(filteredRoles, role)
+			}
+		}
+		return permissions.ContextWithResolvedRoles(ctx, filteredRoles)
+	}
 	return ctx
 }
 
