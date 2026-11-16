@@ -17,6 +17,11 @@ on:
         description: 'Commit SHA to build'
         required: true
         type: string
+      retag_source:
+        description: 'Master build tag to copy e2e sidecar images from (empty = skip)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -472,3 +477,42 @@ jobs:
             "quay.io/stackrox-io/main:${TAG}-amd64" \
             "quay.io/stackrox-io/main:${TAG}-arm64"
           echo "created quay.io/stackrox-io/main:${TAG} (amd64+arm64)"
+
+  # Validation aid: e2e-dispatch waits for the FULL image set at the PR
+  # tag; the CA system builds only main. This job copies the sidecar
+  # images (central-db, collector, fact, roxctl, scanner-v4,
+  # scanner-v4-db, operator-bundle) from a known-good master build.
+  retag-sidecars:
+    if: inputs.retag_source != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (full, for make tag)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit }}
+
+      - name: Retag sidecar images
+        env:
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        run: |
+          set -euo pipefail
+          TARGET_TAG="$(make --quiet --no-print-directory tag)"
+          OPERATOR_TARGET="$(BUILD_TAG="${TARGET_TAG}" make -C operator --quiet --no-print-directory tag)"
+          SOURCE="${{ inputs.retag_source }}"
+          OPERATOR_SOURCE="$(BUILD_TAG="${SOURCE}" make -C operator --quiet --no-print-directory tag)"
+          echo "retagging ${SOURCE} -> ${TARGET_TAG}"
+          echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login quay.io \
+            -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin
+          for repo in central-db collector fact roxctl scanner-v4 scanner-v4-db; do
+            docker buildx imagetools create \
+              -t "quay.io/rhacs-eng/${repo}:${TARGET_TAG}" \
+              "quay.io/rhacs-eng/${repo}:${SOURCE}"
+            echo "retagged ${repo}"
+          done
+          docker buildx imagetools create \
+            -t "quay.io/rhacs-eng/operator-bundle:v${OPERATOR_TARGET}" \
+            "quay.io/rhacs-eng/operator-bundle:v${OPERATOR_SOURCE}"
+          echo "retagged operator-bundle"
