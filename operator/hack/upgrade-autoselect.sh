@@ -11,7 +11,9 @@ source "${ROOT_DIR}/scripts/ci/lib.sh"
 case $OPERATOR_CLUSTER_TYPE in
 openshift*)
   # On OpenShift, decide between OLMv0 and OLMv1 based on OCP version
-  olm_version=$(get_olm_version)
+  if ! olm_version=$(get_olm_version); then
+    die "Failed to determine OLM version"
+  fi
   target="upgrade-via-olm${olm_version}"
   ;;
 *)

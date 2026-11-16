@@ -288,9 +288,12 @@ function verify_operator_deployment() {
   local -r operator_ns="$1"
   local -r deployment_name="${2:-rhacs-operator-controller-manager}"
 
-  log "Verifying operator deployment is available..."
-  if ! retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps "${deployment_name}" --for condition=available --timeout 60s; then
-    log "Operator deployment failed to become available"
+  log "Verifying operator deployment rollout is complete..."
+  # Use rollout status instead of wait --for condition=available to ensure
+  # we wait for the rolling update started by inject_test_env_vars to complete.
+  # wait --for condition=available can return immediately with old pods still running.
+  if ! retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" rollout status "deployment/${deployment_name}" --timeout 60s; then
+    log "Operator deployment rollout failed"
     gather_olmv1_resources "${operator_ns}" "rhacs-operator-${operator_ns}"
     return 1
   fi

@@ -13,7 +13,9 @@ source "$ROOT/scripts/ci/lib.sh"
 # Determine which OLM deployment target to use based on OCP version
 get_olm_deploy_target() {
     local olm_version
-    olm_version=$(get_olm_version)
+    if ! olm_version=$(get_olm_version); then
+        die "Failed to determine OLM version"
+    fi
     echo "deploy-previous-via-olm${olm_version}"
 }
 

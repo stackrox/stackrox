@@ -299,7 +299,9 @@ On OpenShift, the operator e2e tests automatically detect which OLM version to u
 Non-OpenShift clusters do not use OLM at all — the tests deploy the operator from its Helm chart
 (`deploy-previous-via-chart`), so the OLM targets below do not apply there.
 
-OLMv1 provides improved CRD upgrade safety through preflight checks that catch breaking changes early.
+**Note on OLMv1 CRD safety:** OLMv1 provides CRD upgrade safety preflight checks, but these tests
+set `enforcement: None` (see `hack/clusterextension.envsubst.yaml`) because CI jumps across many
+versions. CRD compatibility is verified separately by `.github/workflows/check-crd-compatibility.yaml`.
 
 #### Available Makefile Targets
 
