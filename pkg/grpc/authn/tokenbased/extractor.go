@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/sac"
@@ -93,12 +94,27 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		return identityWithExternalUser, nil
 	}
 
+	// Token with internal roles only (no role names and no external user).
 	if len(token.InternalRoles) > 0 {
 		resolvedRoles := make([]permissions.ResolvedRole, 0, len(token.InternalRoles))
 		for _, role := range token.InternalRoles {
 			resolvedRoles = append(resolvedRoles, role)
 		}
-		return withResolvedRoles(resolvedRoles, token, authProviderSrc), nil
+		// Internal roles are ephemeral and cannot be resolved from the role store.
+		// When access control delegation is enabled, their serialized form is exposed
+		// as a user attribute to allow resolving the roles from the user descriptor.
+		var serializedInternalRoles []string
+		if features.ACMAccessControlDelegation.Enabled() {
+			serializedInternalRoles = make([]string, 0, len(token.InternalRoles))
+			for _, role := range token.InternalRoles {
+				serializedRole, err := role.MarshalJSON()
+				if err != nil {
+					return nil, getExtractorError("failed to serialize internal roles", err)
+				}
+				serializedInternalRoles = append(serializedInternalRoles, string(serializedRole))
+			}
+		}
+		return withResolvedRoles(resolvedRoles, token, authProviderSrc, serializedInternalRoles), nil
 	}
 
 	return nil, getExtractorError("could not determine token type", nil)
@@ -111,13 +127,14 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	}
 	// Ensure there are no invalid roles listed in the token.
 	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
-	return withResolvedRoles(filteredRoles, token, authProvider), nil
+	return withResolvedRoles(filteredRoles, token, authProvider, nil), nil
 }
 
 func withResolvedRoles(
 	roles []permissions.ResolvedRole,
 	token *tokens.TokenInfo,
 	authProvider authproviders.Provider,
+	serializedInternalRoles []string,
 ) authn.Identity {
 	roleNames := permissionsUtils.RoleNames(roles)
 	var email string
@@ -126,6 +143,9 @@ func withResolvedRoles(
 	}
 
 	attributes := map[string][]string{"role": roleNames, "name": {token.Name}}
+	if len(serializedInternalRoles) > 0 {
+		attributes["internalRoles"] = serializedInternalRoles
+	}
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("auth-token:%s", token.ID),
 		username:      email,
