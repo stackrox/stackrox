@@ -496,14 +496,14 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit }}
 
-      - name: Retag sidecar images
+      - name: Build and push operator bundle, retag sidecar images
         env:
           QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: "true"
         run: |
           set -euo pipefail
           TARGET_TAG="$(make --quiet --no-print-directory tag)"
-          OPERATOR_TARGET="$(BUILD_TAG="${TARGET_TAG}" make -C operator --quiet --no-print-directory tag)"
           SOURCE="${{ inputs.retag_source }}"
           echo "retagging ${SOURCE} -> ${TARGET_TAG}"
           echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login quay.io \
@@ -514,18 +514,12 @@ jobs:
               "quay.io/rhacs-eng/${repo}:${SOURCE}"
             echo "retagged ${repo}"
           done
-          # CI tags expire on quay; discover a live operator-bundle tag
-          # via the read bearer token rather than assuming one exists.
-          OPERATOR_SOURCE="$(curl -fsSL \
-            -H "Authorization: Bearer ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}" \
-            "https://quay.io/v2/rhacs-eng/operator-bundle/tags/list" \
-            | jq -r '[.tags[] | select(startswith("v"))] | sort | .[-1]')"
-          if [ -n "$OPERATOR_SOURCE" ] && [ "$OPERATOR_SOURCE" != "null" ]; then
-            echo "operator-bundle source: ${OPERATOR_SOURCE}"
-            docker buildx imagetools create \
-              -t "quay.io/rhacs-eng/operator-bundle:v${OPERATOR_TARGET}" \
-              "quay.io/rhacs-eng/operator-bundle:${OPERATOR_SOURCE}"
-            echo "retagged operator-bundle"
-          else
-            echo "WARNING: no live operator-bundle tag found" >&2
-          fi
+          # Build the operator bundle from this tree (like master's
+          # build-operator-bundle job): a retagged old bundle would pin
+          # old image tags in RELATED_IMAGES; building produces a bundle
+          # referencing OUR tag.
+          export BUILD_TAG="${TARGET_TAG}"
+          make -C operator bundle bundle-build
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
+          make -C operator docker-push-bundle | cat
+          echo "built and pushed operator-bundle"
