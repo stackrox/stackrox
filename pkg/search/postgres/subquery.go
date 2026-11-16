@@ -55,6 +55,9 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	if !isSingleValueFieldType(selected.FieldType) {
 		return nil, errox.InvalidArgs.New("subquery cannot select an array or map field")
 	}
+	// Highlights can add columns with the same name as the selected field.
+	// Keep only the explicit selection so the outer reference is unambiguous.
+	compiled.SelectedFields = compiled.SelectedFields[:1]
 	outer := selectQueryField(sub.GetField(), field.baseField, false, aggregatefunc.Unset, "")
 	// Wrap the inner query to keep its table names and any extra sorting columns
 	// separate from the outer query. EXISTS checks for a matching value without

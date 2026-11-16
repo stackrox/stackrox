@@ -12,9 +12,26 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestSubQueryHighlightedSelection(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	db := pgtest.ForT(t)
+	for _, namespace := range []string{"payments", "other"} {
+		_, err := db.Exec(ctx, "INSERT INTO deployments (id, namespace) VALUES ($1, $2)", uuid.NewV4().String(), namespace)
+		require.NoError(t, err)
+	}
+	inner := search.NewQueryBuilder().AddStringsHighlighted(search.Namespace, "payments").
+		AddSelectFields(search.NewQuerySelect(search.Namespace)).ProtoQuery()
+	query := search.MatchFieldSubQuery(search.Namespace, v1.SearchCategory_DEPLOYMENTS, inner)
+
+	count, err := RunCountRequestForSchema(ctx, schema.DeploymentsSchema, query, db)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count)
+}
 
 func TestSubQueryComposition(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
