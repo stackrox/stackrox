@@ -523,6 +523,13 @@ jobs:
           # THIRD_PARTY_NOTICES is required by prebuilt.Dockerfile.
           # Extract from our main image — generated from the same tree
           # by the main-image legs (avoids the ossls node_modules dance).
+          # The main-image Build may still be pushing when this job
+          # starts; wait for the tag (the login below also fixes pulls).
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
+          for i in $(seq 1 40); do
+            docker buildx imagetools inspect "quay.io/rhacs-eng/main:${TARGET_TAG}" >/dev/null 2>&1 && break
+            echo "waiting for main:${TARGET_TAG} ..."; sleep 30
+          done
           _cid=$(docker create "quay.io/rhacs-eng/main:${TARGET_TAG}")
           docker cp "$_cid:/THIRD_PARTY_NOTICES" ./THIRD_PARTY_NOTICES
           docker rm -f "$_cid" >/dev/null
