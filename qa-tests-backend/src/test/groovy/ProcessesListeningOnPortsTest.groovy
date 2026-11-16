@@ -103,7 +103,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
     def destroyNamespace() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
-        orchestrator.waitForNamespaceDeletion(TEST_NAMESPACE)
     }
 
     def "Verify networking endpoints with processes appear in API at the deployment level"() {

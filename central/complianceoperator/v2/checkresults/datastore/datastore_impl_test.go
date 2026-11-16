@@ -1096,6 +1096,110 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultSta
 	}
 }
 
+// TestComplianceFreshnessAggregation verifies the current/stale counts and the
+// per-check, per-cluster, and per-profile freshness rollups, including SAC scoping.
+func (s *complianceCheckResultDataStoreTestSuite) TestComplianceFreshnessAggregation() {
+	s.setupFreshnessTestData()
+	ctx := s.testContexts[testutils.UnrestrictedReadCtx]
+	emptyQuery := search.NewQueryBuilder().ProtoQuery()
+
+	s.Run("ComplianceProfileResultStats drives the stale-data banner", func() {
+		// Three stale results (check-b on both clusters, check-a on cluster2) across both clusters.
+		profileStats, err := s.dataStore.ComplianceProfileResultStats(ctx, emptyQuery)
+		s.Require().NoError(err)
+		s.Require().Len(profileStats, 1)
+		s.Equal(3, profileStats[0].StaleCount)
+		s.Equal(2, profileStats[0].StaleClusterCount)
+	})
+
+	s.Run("ComplianceProfileResults rolls up freshness per check", func() {
+		// check-a is mixed (1 current, 1 stale), check-b is fully stale.
+		profileResults, err := s.dataStore.ComplianceProfileResults(ctx, emptyQuery)
+		s.Require().NoError(err)
+		byCheck := make(map[string]*ResourceResultsByProfile, len(profileResults))
+		for _, r := range profileResults {
+			byCheck[r.CheckName] = r
+		}
+		s.Require().Contains(byCheck, "check-a")
+		s.Require().Contains(byCheck, "check-b")
+		s.Equal(1, byCheck["check-a"].CurrentCount)
+		s.Equal(1, byCheck["check-a"].StaleCount)
+		s.Equal(0, byCheck["check-b"].CurrentCount)
+		s.Equal(2, byCheck["check-b"].StaleCount)
+	})
+
+	s.Run("ComplianceClusterStats rolls up freshness per cluster", func() {
+		// cluster1 is mixed, cluster2 is fully stale.
+		clusterStats, err := s.dataStore.ComplianceClusterStats(ctx, emptyQuery)
+		s.Require().NoError(err)
+		byCluster := make(map[string]*ResultStatusCountByCluster, len(clusterStats))
+		for _, r := range clusterStats {
+			byCluster[r.ClusterID] = r
+		}
+		s.Require().Contains(byCluster, testconsts.Cluster1)
+		s.Require().Contains(byCluster, testconsts.Cluster2)
+		s.Equal(1, byCluster[testconsts.Cluster1].CurrentCount)
+		s.Equal(1, byCluster[testconsts.Cluster1].StaleCount)
+		s.Equal(0, byCluster[testconsts.Cluster2].CurrentCount)
+		s.Equal(2, byCluster[testconsts.Cluster2].StaleCount)
+	})
+
+	s.Run("ComplianceProfileResultStats respects SAC scope", func() {
+		// With only cluster-2 access the counts must shrink to cluster-2's rows: both
+		// of its checks are stale, cluster-1's current result is not visible.
+		scopedStats, err := s.dataStore.ComplianceProfileResultStats(s.testContexts[testutils.Cluster2ReadWriteCtx], emptyQuery)
+		s.Require().NoError(err)
+		s.Require().Len(scopedStats, 1)
+		s.Equal(2, scopedStats[0].StaleCount)
+		s.Equal(1, scopedStats[0].StaleClusterCount)
+	})
+}
+
+// setupFreshnessTestData seeds two clusters of one profile with mixed CURRENT/STALE
+// check results so the freshness aggregation can be exercised end to end.
+func (s *complianceCheckResultDataStoreTestSuite) setupFreshnessTestData() {
+	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(checkResultIDs)
+
+	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID1, "scanConfig1")
+	s.Require().NoError(err)
+	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name) values ($1, $2)", testconsts.Cluster1, "cluster1")
+	s.Require().NoError(err)
+	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name) values ($1, $2)", testconsts.Cluster2, "cluster2")
+	s.Require().NoError(err)
+
+	freshRec := func(cluster, checkName string, freshness storage.ComplianceOperatorCheckResultV2_DataFreshness) *storage.ComplianceOperatorCheckResultV2 {
+		rec := getTestRec(cluster)
+		rec.CheckName = checkName
+		rec.DataFreshness = freshness
+		return rec
+	}
+	recs := []*storage.ComplianceOperatorCheckResultV2{
+		freshRec(testconsts.Cluster1, "check-a", storage.ComplianceOperatorCheckResultV2_CURRENT),
+		freshRec(testconsts.Cluster1, "check-b", storage.ComplianceOperatorCheckResultV2_STALE),
+		freshRec(testconsts.Cluster2, "check-a", storage.ComplianceOperatorCheckResultV2_STALE),
+		freshRec(testconsts.Cluster2, "check-b", storage.ComplianceOperatorCheckResultV2_STALE),
+	}
+
+	profileCluster := map[string]string{
+		testconsts.Cluster1: internaltov2storage.BuildProfileRefID(testconsts.Cluster1, "ocp4-cis-node", "node"),
+		testconsts.Cluster2: internaltov2storage.BuildProfileRefID(testconsts.Cluster2, "ocp4-cis-node", "node"),
+	}
+	for k, v := range profileCluster {
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", k, v)
+		s.Require().NoError(err)
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_rule_v2 (id, name, clusterid, rulerefid) values ($1, $2, $3, $4)", uuid.NewV4().String(), "test-rule", k, internaltov2storage.BuildNameRefID(k, "test-rule"))
+		s.Require().NoError(err)
+	}
+
+	for _, rec := range recs {
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profilerefid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), rec.GetScanConfigName(), rec.GetScanName(), profileCluster[rec.GetClusterId()], rec.GetClusterId(), rec.GetScanRefId())
+		s.Require().NoError(err)
+	}
+}
+
 func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResults() {
 	s.setupTestData()
 	testCases := []struct {

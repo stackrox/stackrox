@@ -1,4 +1,4 @@
-ARG PG_VERSION=15
+ARG PG_VERSION=16
 FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest
 
 USER root
@@ -28,6 +28,10 @@ COPY --link scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
 ARG QUAY_TAG_EXPIRATION
+
+# Bake the image version in so init-entrypoint.sh can detect downgrades without
+# relying on the version being parsed out of the image ref at deploy time.
+ENV BUILD_TAG="${LABEL_VERSION}"
 
 LABEL name="scanner-v4-db" \
       vendor="StackRox" \

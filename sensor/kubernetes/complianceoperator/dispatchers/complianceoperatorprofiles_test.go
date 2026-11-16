@@ -23,6 +23,9 @@ func profileToUnstructured(t *testing.T, p *v1alpha1.Profile) *unstructured.Unst
 // TestProfileDispatcher_OpenSCAPProfileID verifies that OpenSCAP profiles use the XCCDF content ID
 // (complianceProfile.ID) as ProfileId, so that BuildProfileRefID matches the scan side.
 func TestProfileDispatcher_OpenSCAPProfileID(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
 	profile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "ocp4-cis",
@@ -41,14 +44,17 @@ func TestProfileDispatcher_OpenSCAPProfileID(t *testing.T) {
 
 	require.NotNil(t, event)
 	require.NotEmpty(t, event.ForwardMessages)
-	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	assert.Equal(t, "xccdf_org.ssgproject.content_profile_cis", v1Profile.GetProfileId())
+	v2Profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
+	assert.Equal(t, "xccdf_org.ssgproject.content_profile_cis", v2Profile.GetProfileId())
 }
 
 // TestProfileDispatcher_CELProfileID verifies that CEL profiles use the k8s object name as
 // ProfileId, mirroring what ComplianceScan.Spec.Profile is set to by the compliance operator,
 // so that BuildProfileRefID produces matching UUIDs on both the profile and the scan sides.
 func TestProfileDispatcher_CELProfileID(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
 	profile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
 			// K8s name: what CO puts in ComplianceScan.Spec.Profile for CEL profiles
@@ -69,9 +75,9 @@ func TestProfileDispatcher_CELProfileID(t *testing.T) {
 
 	require.NotNil(t, event)
 	require.NotEmpty(t, event.ForwardMessages)
-	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	v2Profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
 	// Must match what the scan dispatcher reads from ComplianceScan.Spec.Profile
-	assert.Equal(t, "ocp4virt-cis-vm-extension", v1Profile.GetProfileId())
+	assert.Equal(t, "ocp4virt-cis-vm-extension", v2Profile.GetProfileId())
 }
 
 // TestProfileDispatcher_FallbackCases verifies the fallback ProfileId paths added for
@@ -106,6 +112,9 @@ func TestProfileDispatcher_FallbackCases(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+			t.Cleanup(func() { centralcaps.Set(nil) })
+
 			profile := &v1alpha1.Profile{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: tc.name,
@@ -124,27 +133,47 @@ func TestProfileDispatcher_FallbackCases(t *testing.T) {
 
 			require.NotNil(t, event)
 			require.NotEmpty(t, event.ForwardMessages)
-			v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-			assert.Equal(t, tc.wantProfileID, v1Profile.GetProfileId())
+			v2Profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
+			assert.Equal(t, tc.wantProfileID, v2Profile.GetProfileId())
 		})
 	}
 }
 
-// TestProfileDispatcher_CELProfileID_V2 verifies the V2 event also carries the k8s name as ProfileId.
-func TestProfileDispatcher_CELProfileID_V2(t *testing.T) {
+// TestProfileDispatcher_WithoutV2Capability verifies that when ComplianceV2Integrations
+// capability is absent, the dispatcher returns nil.
+func TestProfileDispatcher_WithoutV2Capability(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{}) // No capabilities
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	profile := &v1alpha1.Profile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "ocp4-cis",
+			UID:  "some-uid",
+		},
+		ProfilePayload: v1alpha1.ProfilePayload{
+			ID: "xccdf_org.ssgproject.content_profile_cis",
+		},
+	}
+
+	dispatcher := NewProfileDispatcher()
+	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	assert.Nil(t, event, "dispatcher should return nil when ComplianceV2Integrations capability is absent")
+}
+
+// TestProfileDispatcher_WithV2Capability verifies that when ComplianceV2Integrations
+// capability is present, the dispatcher returns a V2 event.
+func TestProfileDispatcher_WithV2Capability(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 
 	profile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "ocp4virt-cis-vm-extension",
-			UID:  "cel-uid",
-			Annotations: map[string]string{
-				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeCEL),
-			},
+			Name: "ocp4-cis",
+			UID:  "some-uid",
 		},
 		ProfilePayload: v1alpha1.ProfilePayload{
-			ID: "cis-vm-extension",
+			ID: "xccdf_org.ssgproject.content_profile_cis",
 		},
 	}
 
@@ -152,10 +181,8 @@ func TestProfileDispatcher_CELProfileID_V2(t *testing.T) {
 	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
-	require.Len(t, event.ForwardMessages, 2)
-
-	v2Profile := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
+	require.Len(t, event.ForwardMessages, 1)
+	v2Profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
 	require.NotNil(t, v2Profile)
-	assert.Equal(t, "ocp4virt-cis-vm-extension", v2Profile.GetProfileId())
-	assert.Equal(t, central.ComplianceOperatorProfileV2_PROFILE, v2Profile.GetOperatorKind())
+	assert.Equal(t, "xccdf_org.ssgproject.content_profile_cis", v2Profile.GetProfileId())
 }

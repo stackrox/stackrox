@@ -8,6 +8,10 @@
 # with matching binaries and the upgrade is retried on restart. A failed file
 # system operation returns non-zero instead, because a volume that cannot be
 # written to cannot host a running server either.
+#
+# On version downgrade (major.minor decrease), it wipes and reinitializes the
+# database so that the older scanner binary does not encounter incompatible
+# forward-migrated schema.
 
 set -Eeo pipefail
 
@@ -16,6 +20,86 @@ INIT_READY_FILE=".init-ready"
 
 # File flag that marks a statistics refresh is needed.
 STATS_PENDING_FILE=".stats-pending"
+
+# File that records the ACS major.minor version of the database.
+ACS_VERSION_FILE=".scanner-db-version"
+
+# extract-major-minor strips a version string down to its major.minor
+# components. Accepts formats like "4.8.1", "5.1.0-rc.2", or
+# "5.2.x-23-gabcdef".  Returns "" for unparseable input.
+extract-major-minor() {
+    local ver=${1:-}
+    if [[ "$ver" =~ ^([0-9]+\.[0-9]+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+    fi
+}
+
+# is-downgrade returns 0 (true) when $current is strictly older than $stored,
+# comparing only major.minor.  Returns 1 when versions are equal, current is
+# newer, or either value is empty / unparseable.
+is-downgrade() {
+    local stored=${1:-}
+    local current=${2:-}
+
+    [ -z "$stored" ] || [ -z "$current" ] && return 1
+    [ "$stored" = "$current" ] && return 1
+
+    local oldest
+    oldest=$(printf '%s\n%s\n' "$stored" "$current" | sort -V | head -1)
+    [ "$oldest" = "$current" ] && return 0
+    return 1
+}
+
+# reset-on-downgrade invalidates initialization when the stored version is unsafe.
+reset-on-downgrade() {
+    local current_mm=$1
+    local init_check="$PGDATA/$INIT_READY_FILE"
+    local version_file="$PGDATA/$ACS_VERSION_FILE"
+
+    # Skip version checks when the current version or stored state is unknown.
+    [ -n "$current_mm" ] || return 0
+    [ -e "$init_check" ] || return 0
+    [ -f "$version_file" ] || return 0
+
+    local stored_mm
+    stored_mm=$(cat "$version_file")
+    if [[ ! "$stored_mm" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        echo >&2 "WARNING: malformed version in $version_file: '$stored_mm'. Reinitializing database."
+        rm -f "$init_check"
+        return
+    fi
+
+    is-downgrade "$stored_mm" "$current_mm" || return 0
+    echo "Scanner V4 DB downgrade detected ($stored_mm -> $current_mm). Reinitializing database."
+    rm -f "$init_check"
+}
+
+# set-acs-version atomically updates the ACS version marker when its value
+# changes, leaving the existing marker intact if the write is interrupted.
+set-acs-version() {
+    local datadir=${1:?missing first required argument: datadir}
+    local current_acs_version=${2:-}
+    local version_file="$datadir/$ACS_VERSION_FILE"
+
+    # Remove temporary markers left by an interrupted earlier write.
+    rm -f "$datadir/$ACS_VERSION_FILE".?????? 2>/dev/null || true
+
+    [ -n "$current_acs_version" ] || return 0
+    if [ -f "$version_file" ] && [ "$(cat "$version_file")" = "$current_acs_version" ]; then
+        return 0
+    fi
+
+    local tmp_version_file
+    tmp_version_file=$(mktemp "$datadir/$ACS_VERSION_FILE.XXXXXX") ||
+        { echo "Could not create a temporary ACS version marker in $datadir, aborting."; return 1; }
+    if ! printf '%s\n' "$current_acs_version" > "$tmp_version_file"; then
+        rm -f "$tmp_version_file"
+        echo "Could not write the ACS version marker in $datadir, aborting."
+        return 1
+    fi
+    mv "$tmp_version_file" "$version_file" ||
+        { rm -f "$tmp_version_file"; echo "Could not update the ACS version marker in $datadir, aborting."; return 1; }
+}
 
 # load-init-bundle calls pg_restore on the database init bundle.
 load-init-bundle() {
@@ -163,6 +247,7 @@ recover-interrupted-upgrade() {
 maybe-upgrade() {
     # The base image ships the previous major under old_binaries_path.
     local old_binaries_path=${1:-/usr/lib64/pgsql}
+    local current_acs_version=${2:-}
     local old_datadir="${PGDATA}-old"
     local major_regex='^[0-9]+$'
     local binary_version data_version mode
@@ -248,6 +333,17 @@ maybe-upgrade() {
         return 0
     fi
 
+    # pg_upgrade does not transfer our ACS version marker. Prefer the current
+    # image version, falling back to the old marker if it is unavailable. Write
+    # it in the new directory before marking it ready, so an interrupted write
+    # cannot corrupt the marker in the existing cluster.
+    if [ -n "$current_acs_version" ]; then
+        set-acs-version "$NEW_DATADIR" "$current_acs_version" || return 1
+    elif [ -f "$PGDATA/$ACS_VERSION_FILE" ]; then
+        cp "$PGDATA/$ACS_VERSION_FILE" "$NEW_DATADIR/$ACS_VERSION_FILE" ||
+            echo "Could not preserve the ACS version in $NEW_DATADIR; continuing without the marker."
+    fi
+
     # The sentinel is written before the swap so that an interruption leaves a
     # state recover-interrupted-upgrade can undo.
     touch "$NEW_DATADIR/$INIT_READY_FILE" ||
@@ -271,12 +367,16 @@ _is_sourced() {
 _main() {
     local init_check="$PGDATA/$INIT_READY_FILE"
     local init_bundle="/db-init.dump.zst"
+    local current_acs_version
+    current_acs_version=$(extract-major-minor "${BUILD_TAG:-}")
 
     recover-interrupted-upgrade
+    reset-on-downgrade "$current_acs_version"
 
     if [ -e "$init_check" ]; then
-        maybe-upgrade /usr/lib64/pgsql
+        maybe-upgrade /usr/lib64/pgsql "$current_acs_version"
         maybe-refresh-statistics
+        set-acs-version "$PGDATA" "$current_acs_version"
         return
     fi
 
@@ -293,6 +393,7 @@ _main() {
             load-init-bundle postgres "$init_bundle"
     fi
 
+    set-acs-version "$PGDATA" "$current_acs_version"
     touch "$init_check"
 }
 
