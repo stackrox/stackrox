@@ -264,6 +264,65 @@ func TestGetClusterData(t *testing.T) {
 		assert.NoError(tt, err)
 		assertClusterData(tt, expectedClusterData, clusterData)
 	})
+	t.Run("with running scan", func(tt *testing.T) {
+		scan1Time := timestamppb.New(time.Date(2025, 5, 7, 10, 0, 0, 0, time.UTC))
+		scan2Time := timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC))
+		gomock.InOrder(
+			scanStore.EXPECT().
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
+					Status: &storage.ScanStatus{
+						Phase: "DONE",
+					},
+				},
+				{
+					ScanName:        "scan-2",
+					LastStartedTime: scan2Time,
+					Status: &storage.ScanStatus{
+						Phase: "RUNNING",
+					},
+				},
+			}, nil),
+			scanStore.EXPECT().
+				SearchScans(gomock.Any(), gomock.Any()).
+				Times(1).Return([]*storage.ComplianceOperatorScanV2{
+				{
+					ScanName:        "scan-1",
+					LastStartedTime: scan1Time,
+					Status: &storage.ScanStatus{
+						Phase: "DONE",
+					},
+				},
+			}, nil),
+		)
+		expectedClusterData := map[string]*report.ClusterData{
+			"cluster-1": {
+				ClusterId:   "cluster-1",
+				ClusterName: "cluster-1",
+				ScanNames:   []string{"scan-1", "scan-2"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+					"scan-2": scan2Time,
+				},
+				HasRunningScan: true,
+			},
+			"cluster-2": {
+				ClusterId:   "cluster-2",
+				ClusterName: "cluster-2",
+				ScanNames:   []string{"scan-1"},
+				ScanStartTimes: map[string]*timestamppb.Timestamp{
+					"scan-1": scan1Time,
+				},
+				HasRunningScan: false,
+			},
+		}
+		clusterData, err := GetClusterData(ctx, reportData, nil, scanStore)
+		assert.NoError(tt, err)
+		assertClusterData(tt, expectedClusterData, clusterData)
+	})
 }
 
 func assertClusterData(t *testing.T, expected map[string]*report.ClusterData, actual map[string]*report.ClusterData) {
@@ -286,6 +345,8 @@ func assertClusterData(t *testing.T, expected map[string]*report.ClusterData, ac
 		} else {
 			assert.Empty(t, actualCluster.ScanStartTimes)
 		}
+		assert.Equal(t, expectedCluster.HasRunningScan, actualCluster.HasRunningScan,
+			"HasRunningScan mismatch for cluster %s", clusterID)
 		if expectedCluster.FailedInfo != nil {
 			require.NotNil(t, actualCluster.FailedInfo)
 			assert.Equal(t, expectedCluster.FailedInfo.ClusterId, actualCluster.FailedInfo.ClusterId)

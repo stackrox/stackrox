@@ -79,6 +79,9 @@ func populateScanNames(ctx context.Context, data *report.ClusterData, reportData
 		if t := scan.GetLastStartedTime(); t != nil {
 			data.ScanStartTimes[scan.GetScanName()] = t
 		}
+		if phase := scan.GetStatus().GetPhase(); phase != "" && phase != "DONE" {
+			data.HasRunningScan = true
+		}
 	}
 	return data, nil
 }

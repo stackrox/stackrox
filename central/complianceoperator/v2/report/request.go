@@ -28,6 +28,7 @@ type ClusterData struct {
 	ScanNames      []string
 	FailedInfo     *FailedCluster
 	ScanStartTimes map[string]*timestamppb.Timestamp
+	HasRunningScan bool
 }
 
 // FailedCluster holds the information of a failed cluster
