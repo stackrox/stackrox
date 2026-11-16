@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
@@ -25,8 +26,9 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 		return nil, errox.InvalidArgs.New("subquery must select exactly one field")
 	}
 	selection := sub.GetQuery().GetSelects()[0]
-	if selection.GetField().GetAggregateFunc() != "" || selection.GetFilter() != nil || len(sub.GetQuery().GetGroupBy().GetFields()) != 0 {
-		return nil, errox.InvalidArgs.New("subqueries do not support aggregates, select filters or grouping")
+	if search.IsDerivedField(selection.GetField().GetName()) || selection.GetField().GetAggregateFunc() != "" ||
+		selection.GetFilter() != nil || len(sub.GetQuery().GetGroupBy().GetFields()) != 0 {
+		return nil, errox.InvalidArgs.New("subqueries do not support derived selections, aggregates, select filters or grouping")
 	}
 	// Use the same SELECT compiler as views, including the inner category's SAC
 	// and scope filters. Keep placeholders unnumbered until the full query is built.
