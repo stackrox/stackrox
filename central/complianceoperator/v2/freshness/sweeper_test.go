@@ -9,6 +9,7 @@ import (
 
 	checkResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -177,7 +178,7 @@ func TestSweepGraceWindow(t *testing.T) {
 					return 0, nil
 				})
 
-			sw.sweep()
+			sw.sweep(context.Background())
 
 			assert.Truef(t, wantCutoff.Equal(gotCutoff), "cutoff = %s, want %s", gotCutoff, wantCutoff)
 		}
@@ -206,7 +207,7 @@ func TestSweep(t *testing.T) {
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgNil", nil)}, nil)
 		// No MarkScanChecksStaleByConfig expectation: gomock fails if it is called.
 
-		sw.sweep()
+		sw.sweep(context.Background())
 	})
 
 	t.Run("config updated after its previous tick is skipped", func(t *testing.T) {
@@ -223,7 +224,7 @@ func TestSweep(t *testing.T) {
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{cfg}, nil)
 		// No MarkScanChecksStaleByConfig expectation: gomock fails if it is called.
 
-		sw.sweep()
+		sw.sweep(context.Background())
 	})
 
 	t.Run("list error is tolerated and marks nothing", func(t *testing.T) {
@@ -236,7 +237,7 @@ func TestSweep(t *testing.T) {
 			Return(nil, errors.New("boom"))
 		// No MarkScanChecksStaleByConfig expectation.
 
-		sw.sweep()
+		sw.sweep(context.Background())
 	})
 
 	t.Run("mark error on one config does not stop the next", func(t *testing.T) {
@@ -257,7 +258,31 @@ func TestSweep(t *testing.T) {
 		checkResultMock.EXPECT().MarkScanChecksStaleByConfig(gomock.Any(), "cfg2", gomock.Any()).
 			Return(int64(0), nil)
 
-		sw.sweep()
+		sw.sweep(context.Background())
+	})
+
+	t.Run("stop requested between configs ends the loop early", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
+		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+		sw := newTestSweeper(scanConfigMock, checkResultMock)
+
+		sched := dailySchedule(3, 30)
+		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+			Return([]*storage.ComplianceOperatorScanConfigurationV2{
+				scanConfig("cfg1", sched),
+				scanConfig("cfg2", sched),
+			}, nil)
+
+		// Requesting a stop while processing cfg1 must make the loop skip cfg2: gomock fails the test
+		// if MarkScanChecksStaleByConfig is called for cfg2, since no expectation is set for it.
+		checkResultMock.EXPECT().MarkScanChecksStaleByConfig(gomock.Any(), "cfg1", gomock.Any()).
+			DoAndReturn(func(context.Context, string, time.Time) (int64, error) {
+				sw.stopper.Client().Stop()
+				return 0, nil
+			})
+
+		sw.sweep(context.Background())
 	})
 }
 
@@ -299,4 +324,33 @@ func TestSweeperStartStop(t *testing.T) {
 	s := New(scanConfigMock, checkResultMock, 10*time.Millisecond)
 	s.Start()
 	s.Stop()
+}
+
+// TestSweeperRunsInitialSweepBeforeFirstTick asserts loop() sweeps once immediately on Start(),
+// rather than waiting for the first ticker fire. The interval is long enough that only the initial
+// sweep could plausibly complete within the test's timeout.
+func TestSweeperRunsInitialSweepBeforeFirstTick(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
+	checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+
+	called := make(chan struct{}, 1)
+	scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, *v1.Query) ([]*storage.ComplianceOperatorScanConfigurationV2, error) {
+			select {
+			case called <- struct{}{}:
+			default:
+			}
+			return nil, nil
+		}).AnyTimes()
+
+	s := New(scanConfigMock, checkResultMock, time.Hour)
+	s.Start()
+	defer s.Stop()
+
+	select {
+	case <-called:
+	case <-time.After(5 * time.Second):
+		t.Fatal("expected loop to run an initial sweep before the first tick")
+	}
 }

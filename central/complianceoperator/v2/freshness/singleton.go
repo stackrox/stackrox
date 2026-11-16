@@ -24,7 +24,7 @@ func Singleton() Sweeper {
 		singleton = New(
 			scanConfigDS.Singleton(),
 			checkResultDS.Singleton(),
-			clampSweepInterval(env.ComplianceFreshnessSweepInterval.DurationSetting()),
+			env.ComplianceFreshnessSweepInterval.DurationSetting(),
 		)
 	})
 	return singleton
