@@ -134,8 +134,10 @@ func (CollectionMethod) EnumDescriptor() ([]byte, []int) {
 type ManagerType int32
 
 const (
-	ManagerType_MANAGER_TYPE_UNKNOWN             ManagerType = 0
-	ManagerType_MANAGER_TYPE_MANUAL              ManagerType = 1
+	ManagerType_MANAGER_TYPE_UNKNOWN ManagerType = 0
+	// Deprecated: Marked as deprecated in storage/cluster.proto.
+	ManagerType_MANAGER_TYPE_MANUAL ManagerType = 1
+	// Deprecated: Marked as deprecated in storage/cluster.proto.
 	ManagerType_MANAGER_TYPE_HELM_CHART          ManagerType = 2
 	ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR ManagerType = 3
 )
@@ -925,7 +927,8 @@ func (x *TolerationsConfig) GetDisabled() bool {
 	return false
 }
 
-// The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
+// The difference between Static and Dynamic cluster config is that Static values
+// are not sent over the Central to Sensor gRPC connection. They are *not* dynamically reloaded.
 type StaticClusterConfig struct {
 	state                          protoimpl.MessageState `protogen:"open.v1"`
 	Type                           ClusterType            `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
@@ -2598,11 +2601,11 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\rNO_COLLECTION\x10\x01\x12\x15\n" +
 	"\rKERNEL_MODULE\x10\x02\x1a\x02\b\x01\x12\f\n" +
 	"\x04EBPF\x10\x03\x1a\x02\b\x01\x12\f\n" +
-	"\bCORE_BPF\x10\x04*\x83\x01\n" +
+	"\bCORE_BPF\x10\x04*\x8b\x01\n" +
 	"\vManagerType\x12\x18\n" +
-	"\x14MANAGER_TYPE_UNKNOWN\x10\x00\x12\x17\n" +
-	"\x13MANAGER_TYPE_MANUAL\x10\x01\x12\x1b\n" +
-	"\x17MANAGER_TYPE_HELM_CHART\x10\x02\x12$\n" +
+	"\x14MANAGER_TYPE_UNKNOWN\x10\x00\x12\x1b\n" +
+	"\x13MANAGER_TYPE_MANUAL\x10\x01\x1a\x02\b\x01\x12\x1f\n" +
+	"\x17MANAGER_TYPE_HELM_CHART\x10\x02\x1a\x02\b\x01\x12$\n" +
 	" MANAGER_TYPE_KUBERNETES_OPERATOR\x10\x03*\xc2\x02\n" +
 	"\x1aSensorVersionCompatibility\x12(\n" +
 	"$SENSOR_VERSION_COMPATIBILITY_UNKNOWN\x10\x00\x12(\n" +

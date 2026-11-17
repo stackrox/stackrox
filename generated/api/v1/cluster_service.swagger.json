@@ -18,6 +18,7 @@
   "paths": {
     "/v1/cluster-defaults": {
       "get": {
+        "summary": "GetClusterDefaultValues is deprecated. Use operator-based installation with CRS instead.",
         "operationId": "ClustersService_GetClusterDefaultValues",
         "responses": {
           "200": {
@@ -61,37 +62,6 @@
             "in": "query",
             "required": false,
             "type": "string"
-          }
-        ],
-        "tags": [
-          "ClustersService"
-        ]
-      },
-      "post": {
-        "summary": "PostCluster is deprecated. Use operator-based installation with CRS instead.",
-        "operationId": "ClustersService_PostCluster",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ClusterResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googleRpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/storageCluster"
-            }
           }
         ],
         "tags": [
@@ -178,43 +148,6 @@
         "tags": [
           "ClustersService"
         ]
-      },
-      "put": {
-        "summary": "PutCluster is deprecated. Use operator-based installation with CRS instead.",
-        "operationId": "ClustersService_PutCluster",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ClusterResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googleRpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/ClustersServicePutClusterBody"
-            }
-          }
-        ],
-        "tags": [
-          "ClustersService"
-        ]
       }
     }
   },
@@ -230,97 +163,6 @@
       ],
       "default": "UNINITIALIZED",
       "description": "- UNAVAILABLE: Only collector can have unavailable status"
-    },
-    "ClustersServicePutClusterBody": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/storageClusterType"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "mainImage": {
-          "type": "string"
-        },
-        "collectorImage": {
-          "type": "string"
-        },
-        "centralApiEndpoint": {
-          "type": "string"
-        },
-        "runtimeSupport": {
-          "type": "boolean"
-        },
-        "collectionMethod": {
-          "$ref": "#/definitions/storageCollectionMethod"
-        },
-        "admissionController": {
-          "type": "boolean"
-        },
-        "admissionControllerUpdates": {
-          "type": "boolean"
-        },
-        "admissionControllerEvents": {
-          "type": "boolean"
-        },
-        "status": {
-          "$ref": "#/definitions/storageClusterStatus"
-        },
-        "dynamicConfig": {
-          "$ref": "#/definitions/storageDynamicClusterConfig"
-        },
-        "tolerationsConfig": {
-          "$ref": "#/definitions/storageTolerationsConfig"
-        },
-        "priority": {
-          "type": "string",
-          "format": "int64"
-        },
-        "healthStatus": {
-          "$ref": "#/definitions/storageClusterHealthStatus"
-        },
-        "slimCollector": {
-          "type": "boolean"
-        },
-        "helmConfig": {
-          "$ref": "#/definitions/storageCompleteClusterConfig",
-          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
-        },
-        "mostRecentSensorId": {
-          "$ref": "#/definitions/storageSensorDeploymentIdentification",
-          "description": "most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any)."
-        },
-        "auditLogState": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/storageAuditLogFileState"
-          },
-          "description": "For internal use only."
-        },
-        "initBundleId": {
-          "type": "string"
-        },
-        "managedBy": {
-          "$ref": "#/definitions/storageManagerType"
-        },
-        "sensorCapabilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "admissionControllerFailOnError": {
-          "type": "boolean"
-        }
-      },
-      "title": "Next tag: 33"
     },
     "DynamicClusterConfigProcessIndicatorsConfig": {
       "type": "object",
@@ -924,7 +766,7 @@
           "type": "boolean"
         }
       },
-      "description": "The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded."
+      "description": "The difference between Static and Dynamic cluster config is that Static values\nare not sent over the Central to Sensor gRPC connection. They are *not* dynamically reloaded."
     },
     "storageTolerationsConfig": {
       "type": "object",
