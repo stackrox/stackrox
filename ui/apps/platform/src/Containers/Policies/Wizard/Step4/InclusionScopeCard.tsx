@@ -18,6 +18,7 @@ type InclusionScopeCardProps = {
     handleChange: (event: FormEvent<HTMLInputElement>, value: string) => void;
     setFieldValue: (field: string, value: unknown, shouldValidate?: boolean) => void;
     onDelete: () => void;
+    hasAuditLogEventSource: boolean;
 };
 
 function InclusionScopeCard({
@@ -27,6 +28,7 @@ function InclusionScopeCard({
     handleChange,
     setFieldValue,
     onDelete,
+    hasAuditLogEventSource,
 }: InclusionScopeCardProps): ReactElement {
     const scopePath = `scope[${index}]`;
     const [clusterMode, setClusterMode] = useState<Mode>(scope.clusterLabel ? 'label' : 'name');
@@ -171,6 +173,7 @@ function InclusionScopeCard({
                             placeholder="Label key"
                             type="text"
                             value={scope.label?.key ?? ''}
+                            isDisabled={hasAuditLogEventSource}
                         />
                         <TextInput
                             aria-label="Workload label value"
@@ -179,6 +182,7 @@ function InclusionScopeCard({
                             placeholder="Label value"
                             type="text"
                             value={scope.label?.value ?? ''}
+                            isDisabled={hasAuditLogEventSource}
                         />
                     </Flex>
                 </FormGroup>
