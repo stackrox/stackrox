@@ -18,11 +18,6 @@ const (
 	defaultMCPDebounceInterval = 5 * time.Second
 )
 
-type scanScheduleConfiguration struct {
-	Suspend  *bool
-	ScanName string
-}
-
 var (
 	defaultScanSettingName = "default-" + branding.GetProductNameShort()
 )

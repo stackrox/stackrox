@@ -252,17 +252,17 @@ func getScanForReRun(getFunc func() (*unstructured.Unstructured, error), scanNam
 	return complianceScan.Name, obj, nil
 }
 
-func (w *scanSettingWriter) changeScanSchedule(ctx context.Context, ns string, config scanScheduleConfiguration) error {
+func (w *scanSettingWriter) changeScanSchedule(ctx context.Context, ns string, scanName string, suspend bool) error {
 	obj, err := getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
 		resI := w.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 		var obj *unstructured.Unstructured
 		err := w.retrier.callWithRetry(ctx, func(callCtx context.Context) error {
 			var err error
-			obj, err = resI.Get(callCtx, config.ScanName, v1.GetOptions{})
-			return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
+			obj, err = resI.Get(callCtx, scanName, v1.GetOptions{})
+			return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, scanName)
 		})
 		return obj, err
-	}, config)
+	}, suspend)
 	if err != nil {
 		return err
 	}
@@ -270,23 +270,23 @@ func (w *scanSettingWriter) changeScanSchedule(ctx context.Context, ns string, c
 	return w.retrier.callWithRetryWithOnConflictCallback(ctx,
 		func(callCtx context.Context) error {
 			if obj == nil {
-				return retry.MakeRetryable(errors.Errorf("ScanSetting %q is 'nil'", config.ScanName))
+				return retry.MakeRetryable(errors.Errorf("ScanSetting %q is 'nil'", scanName))
 			}
 			_, err := resI.Update(callCtx, obj, v1.UpdateOptions{})
-			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
+			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, scanName)
 		},
 		func(callCtx context.Context) error {
 			obj, err = getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
-				return resI.Get(callCtx, config.ScanName, v1.GetOptions{})
-			}, config)
+				return resI.Get(callCtx, scanName, v1.GetOptions{})
+			}, suspend)
 			if err != nil {
-				return errors.Wrapf(err, "unable to retrieve ScanSetting %s", config.ScanName)
+				return errors.Wrapf(err, "unable to retrieve ScanSetting %s", scanName)
 			}
 			return nil
 		})
 }
 
-func getScanSettingForUpdate(getFunc func() (*unstructured.Unstructured, error), config scanScheduleConfiguration) (*unstructured.Unstructured, error) {
+func getScanSettingForUpdate(getFunc func() (*unstructured.Unstructured, error), suspend bool) (*unstructured.Unstructured, error) {
 	obj, err := getFunc()
 	if err != nil || obj == nil {
 		return nil, err
@@ -299,7 +299,7 @@ func getScanSettingForUpdate(getFunc func() (*unstructured.Unstructured, error),
 
 	// Check if scanSetting has the "Suspend" field
 	if _, ok := reflect.TypeFor[v1alpha1.ScanSetting]().FieldByName("Suspend"); ok {
-		scanSetting.Suspend = *config.Suspend
+		scanSetting.Suspend = suspend
 	} else {
 		// Handle the case where the field doesn't exist (older CRD)
 		return nil, errors.New("suspending a scan is not supported on this version of the compliance operator")

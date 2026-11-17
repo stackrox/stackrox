@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
-	"k8s.io/utils/pointer"
 )
 
 const testNS = "openshift-compliance"
@@ -190,14 +189,9 @@ func TestGetScanSettingForUpdate(t *testing.T) {
 	obj, err := runtimeObjToUnstructured(scanSetting)
 	require.NoError(t, err)
 
-	config := scanScheduleConfiguration{
-		Suspend:  pointer.Bool(true),
-		ScanName: "my-setting",
-	}
-
 	result, err := getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
 		return obj, nil
-	}, config)
+	}, true)
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
@@ -208,13 +202,9 @@ func TestGetScanSettingForUpdate(t *testing.T) {
 }
 
 func TestGetScanSettingForUpdateNotFound(t *testing.T) {
-	config := scanScheduleConfiguration{
-		Suspend:  pointer.Bool(true),
-		ScanName: "missing",
-	}
 	result, err := getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
 		return nil, nil
-	}, config)
+	}, true)
 	require.NoError(t, err)
 	assert.Nil(t, result)
 }

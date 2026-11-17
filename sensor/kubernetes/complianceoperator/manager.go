@@ -204,17 +204,9 @@ func (m *Manager) processApplyScanConfig(ctx context.Context, request *central.A
 	case *central.ApplyComplianceScanConfigRequest_RerunScan:
 		err = m.writer.rerunScan(mergedCtx, ns, r.RerunScan.GetScanName())
 	case *central.ApplyComplianceScanConfigRequest_SuspendScan:
-		config := scanScheduleConfiguration{
-			Suspend:  new(true),
-			ScanName: r.SuspendScan.GetScanName(),
-		}
-		err = m.writer.changeScanSchedule(mergedCtx, ns, config)
+		err = m.writer.changeScanSchedule(mergedCtx, ns, r.SuspendScan.GetScanName(), true)
 	case *central.ApplyComplianceScanConfigRequest_ResumeScan:
-		config := scanScheduleConfiguration{
-			Suspend:  new(false),
-			ScanName: r.ResumeScan.GetScanName(),
-		}
-		err = m.writer.changeScanSchedule(mergedCtx, ns, config)
+		err = m.writer.changeScanSchedule(mergedCtx, ns, r.ResumeScan.GetScanName(), false)
 	default:
 		err = errors.Errorf("unknown scan request type: %T", request.GetScanRequest())
 	}
