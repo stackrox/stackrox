@@ -16,6 +16,16 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+// Retry policy for the scan-setting writer and timing of the run loop's
+// MCP event handling.
+const (
+	defaultMaxRetries          = 5
+	defaultAPICallTimeout      = 5 * time.Second
+	defaultRetryTimeout        = 30 * time.Second
+	defaultMCPDebounceInterval = 5 * time.Second
+	defaultMCPRetryMaxInterval = 5 * time.Minute
+)
+
 // Manager is the sole writer of ScanSetting and ScanSettingBinding
 // resources to the Kubernetes API. It multiplexes Central requests
 // and MCP change events into a single goroutine to avoid races.

@@ -1,22 +1,15 @@
 package complianceoperator
 
 import (
-	"time"
-
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/sensor/common"
 )
 
 const (
-	masterRole                 = "master"
-	workerRole                 = "worker"
-	rescanAnnotation           = v1alpha1.ComplianceScanRescanAnnotation
-	defaultMaxRetries          = 5
-	defaultAPICallTimeout      = 5 * time.Second
-	defaultRetryTimeout        = 30 * time.Second
-	defaultMCPDebounceInterval = 5 * time.Second
-	defaultMCPRetryMaxInterval = 5 * time.Minute
+	masterRole       = "master"
+	workerRole       = "worker"
+	rescanAnnotation = v1alpha1.ComplianceScanRescanAnnotation
 )
 
 var (
