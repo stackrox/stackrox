@@ -32,10 +32,11 @@ import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import {
     attributeForComplianceCheckStatus,
+    complianceDataSearchFilterConfig,
     profileCheckSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [profileCheckSearchFilterConfig];
+const searchFilterConfig = [profileCheckSearchFilterConfig, complianceDataSearchFilterConfig];
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -128,7 +129,7 @@ function ClusterDetailsTable({
                         </Th>
                         {isScanStatusEnabled && (
                             <Th modifier="fitContent" width={10}>
-                                Scan status
+                                Data freshness
                             </Th>
                         )}
                         <Th modifier="fitContent" width={10}>
@@ -212,7 +213,10 @@ function ClusterDetailsTable({
                                                 )}
                                             </Td>
                                             {isScanStatusEnabled && (
-                                                <Td dataLabel="Scan status" modifier="fitContent">
+                                                <Td
+                                                    dataLabel="Data freshness"
+                                                    modifier="fitContent"
+                                                >
                                                     {getCheckScanStatus(dataFreshness)}
                                                 </Td>
                                             )}

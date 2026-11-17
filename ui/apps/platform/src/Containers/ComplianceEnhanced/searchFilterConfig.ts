@@ -22,8 +22,8 @@ export const profileSearchFilterConfig: CompoundSearchFilterEntity = {
 };
 
 const dataFreshnessSearchFilterAttribute: SelectSearchFilterAttribute = {
-    displayName: 'Scan status',
-    filterChipLabel: 'Scan status',
+    displayName: 'Data freshness',
+    filterChipLabel: 'Data freshness',
     searchTerm: CHECK_DATA_FRESHNESS_QUERY,
     inputType: 'select',
     inputProps: {
@@ -39,7 +39,13 @@ const dataFreshnessSearchFilterAttribute: SelectSearchFilterAttribute = {
 export const profileCheckSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Profile check',
     searchCategory: 'COMPLIANCE',
-    attributes: [...profileCheckAttributes, dataFreshnessSearchFilterAttribute],
+    attributes: profileCheckAttributes,
+};
+
+export const complianceDataSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Compliance data',
+    searchCategory: 'COMPLIANCE',
+    attributes: [dataFreshnessSearchFilterAttribute],
 };
 
 export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {

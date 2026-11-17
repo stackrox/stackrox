@@ -30,21 +30,13 @@ import {
 } from './compliance.coverage.utils';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import {
     attributeForComplianceCheckStatus,
     clusterSearchFilterConfig,
-    profileCheckSearchFilterConfig,
+    complianceDataSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const profileCheckSearchFilterConfigWithoutName = {
-    ...profileCheckSearchFilterConfig,
-    attributes: profileCheckSearchFilterConfig.attributes.filter(
-        // Check Name is redundant on this page, but scan status is still valid
-        ({ searchTerm }) => searchTerm !== CHECK_NAME_QUERY
-    ),
-};
-const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfigWithoutName];
+const searchFilterConfig = [clusterSearchFilterConfig, complianceDataSearchFilterConfig];
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -125,7 +117,7 @@ function CheckDetailsTable({
                     <Tr>
                         <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th>Last scanned</Th>
-                        {isScanStatusEnabled && <Th modifier="fitContent">Scan status</Th>}
+                        {isScanStatusEnabled && <Th modifier="fitContent">Data freshness</Th>}
                         <Th>Compliance status</Th>
                     </Tr>
                 </Thead>
@@ -172,7 +164,7 @@ function CheckDetailsTable({
                                         </Td>
                                         <Td dataLabel="Last scanned">{lastScanTimeAsPhrase}</Td>
                                         {isScanStatusEnabled && (
-                                            <Td dataLabel="Scan status">
+                                            <Td dataLabel="Data freshness">
                                                 {getCheckScanStatus(dataFreshness)}
                                             </Td>
                                         )}
