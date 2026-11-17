@@ -75,6 +75,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # Free disk (like master's job-preamble): the LATEST incremental
+          # base + build outputs + docker layers need the headroom.
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/swift \
+            /usr/share/swift /opt/az /usr/local/share/boost || true
           # Buildx (docker-container driver for full cache support)
           docker buildx create --name builder --driver docker-container --use 2>/dev/null || true
           # Registry auth (before build, so layer cache can pull)
@@ -225,6 +230,7 @@ jobs:
             LATEST_KEY="ca-binaries-latest-${{ matrix.arch }}"
             if "${GOCACHEPROG}" -fetch-any "$LATEST_KEY" /tmp/latest.tar 2>/dev/null && [ -s /tmp/latest.tar ]; then
               tar -xf /tmp/latest.tar
+              rm -f /tmp/latest.tar
               # arm the operator skip too: main-build-nodeps builds the
               # un-renamed name and mv's it; pre-place both names
               [ -f bin/linux_${{ matrix.arch }}/stackrox-operator ] && \
@@ -258,18 +264,19 @@ jobs:
           # binaries ever becomes the bottleneck, master's PR-stub policy
           # (placeholder files unless labeled/master/release) is the
           # fallback — see pre-build-cli in master's build.yaml.
-          # Incremental base for per-binary skip (same rationale as
-          # the main binaries): roxctl links skip when unchanged.
-          if "${GOCACHEPROG}" -fetch-any "ca-roxctl-all-latest" /tmp/roxctl-latest.tar 2>/dev/null && [ -s /tmp/roxctl-latest.tar ]; then
-            tar -xf /tmp/roxctl-latest.tar
-            echo "roxctl incremental base: restored"
-          fi
           if "${GOCACHEPROG}" -fetch-any "$ROXCTL_KEY" /tmp/roxctl-all.tar 2>/dev/null && [ -s /tmp/roxctl-all.tar ]; then
             tar -xf /tmp/roxctl-all.tar
             "${GOCACHEPROG}" -store-all "ca-roxctl-all-latest" /tmp/roxctl-all.tar || true
             echo "roxctl (all platforms): FETCHED from blob store"
           else
             echo "roxctl (all platforms): COMPILING (blob miss)"
+            # Incremental base for per-binary skip (same rationale as
+            # the main binaries): roxctl links skip when unchanged.
+            if "${GOCACHEPROG}" -fetch-any "ca-roxctl-all-latest" /tmp/roxctl-latest.tar 2>/dev/null && [ -s /tmp/roxctl-latest.tar ]; then
+              tar -xf /tmp/roxctl-latest.tar
+              rm -f /tmp/roxctl-latest.tar
+              echo "roxctl incremental base: restored"
+            fi
             make cli
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
               -cvf /tmp/roxctl-all.tar \
