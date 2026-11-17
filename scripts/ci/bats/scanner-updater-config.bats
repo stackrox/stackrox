@@ -14,10 +14,12 @@ function setup() {
 bundles:
   dev:
     sources: [rhel-vex]
-  v4:
+  v5:
     sources: [rhel-vex]
     env:
       STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
+  v6:
+    sources: [rhel-vex]
 YAML
 
     run "$config_script" sources dev
@@ -28,9 +30,13 @@ YAML
     assert_success
     assert_output "{}"
 
-    run "$config_script" env-json v4
+    run "$config_script" env-json v5
     assert_success
     assert_output '{"STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES":"true"}'
+
+    run "$config_script" env-json v6
+    assert_success
+    assert_output "{}"
 }
 
 @test "Oracle inherits default freshness without an attempt cadence" {

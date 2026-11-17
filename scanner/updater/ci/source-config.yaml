@@ -110,6 +110,24 @@ bundles:
       - stackrox-rhel-csaf
       - suse
       - ubuntu
+    env:
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
+  v6:
+    sources:
+      - alpine
+      - aws
+      - cisa-kev
+      - debian
+      - epss
+      - manual
+      - nvd
+      - oracle
+      - osv
+      - photon
+      - rhel-vex
+      - stackrox-rhel-csaf
+      - suse
+      - ubuntu
 
 updaters:
   default:
