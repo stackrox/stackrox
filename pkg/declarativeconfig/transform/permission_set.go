@@ -32,6 +32,8 @@ func (p *permissionSetTransform) Transform(configuration declarativeconfig.Confi
 		Name:             permissionSetConfig.Name,
 		Description:      permissionSetConfig.Description,
 		ResourceToAccess: getResources(permissionSetConfig),
+		AccessConstraint: storage.AccessConstraint(permissionSetConfig.AccessConstraint),
+		ScopeConstraint:  storage.ScopeConstraint(permissionSetConfig.ScopeConstraint),
 		Traits:           &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}
 
