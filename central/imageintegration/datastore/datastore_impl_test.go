@@ -208,6 +208,28 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGet() {
 	suite.True(exists)
 }
 
+func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesImageIntegrationExists() {
+	exists, err := suite.datastore.ImageIntegrationExists(suite.hasNoneCtx, "Some ID")
+	suite.NoError(err, "expected no error, should return false without access")
+	suite.False(exists)
+}
+
+func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsImageIntegrationExists() {
+	integration := suite.storeIntegration("Some Integration")
+
+	exists, err := suite.datastore.ImageIntegrationExists(suite.hasReadCtx, integration.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+
+	exists, err = suite.datastore.ImageIntegrationExists(suite.hasWriteCtx, integration.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+
+	exists, err = suite.datastore.ImageIntegrationExists(suite.hasReadCtx, "non-existing-id")
+	suite.NoError(err)
+	suite.False(exists)
+}
+
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesGetBatch() {
 	integrations, err := suite.datastore.GetImageIntegrations(suite.hasNoneCtx, &v1.GetImageIntegrationsRequest{})
 	suite.NoError(err, "expected no error, should return nil without access")
