@@ -2,6 +2,7 @@ package complianceoperator
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"sync/atomic"
 	"testing"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
+	ktesting "k8s.io/client-go/testing"
 )
 
 func TestManagerSuite(t *testing.T) {
@@ -455,6 +457,103 @@ func (s *ManagerTestSuite) TestMCPEventTriggersReconciliation() {
 	roles, err = getScanSettingRoles(s.client, "mcp-event-scan")
 	s.Require().NoError(err)
 	s.ElementsMatch([]string{"infra", "gpu"}, roles)
+}
+
+func (s *ManagerTestSuite) TestMCPRetryInterval() {
+	cases := map[string]struct {
+		debounce     time.Duration
+		maxInterval  time.Duration
+		attempts     int
+		expectedWait time.Duration
+	}{
+		"first retry waits the debounce interval": {
+			debounce:     5 * time.Second,
+			maxInterval:  5 * time.Minute,
+			attempts:     1,
+			expectedWait: 5 * time.Second,
+		},
+		"wait doubles with every failed attempt": {
+			debounce:     5 * time.Second,
+			maxInterval:  5 * time.Minute,
+			attempts:     3,
+			expectedWait: 20 * time.Second,
+		},
+		"wait is capped at the maximum interval": {
+			debounce:     5 * time.Second,
+			maxInterval:  5 * time.Minute,
+			attempts:     10,
+			expectedWait: 5 * time.Minute,
+		},
+		"wait does not overflow with many failed attempts": {
+			debounce:     5 * time.Second,
+			maxInterval:  5 * time.Minute,
+			attempts:     1000,
+			expectedWait: 5 * time.Minute,
+		},
+		"debounce above the maximum is capped": {
+			debounce:     10 * time.Minute,
+			maxInterval:  5 * time.Minute,
+			attempts:     1,
+			expectedWait: 5 * time.Minute,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			s.manager.mcpDebounceInterval = tc.debounce
+			s.manager.mcpRetryMaxInterval = tc.maxInterval
+			s.manager.mcpRetryAttempts = tc.attempts
+			s.Equal(tc.expectedWait, s.manager.mcpRetryInterval())
+		})
+	}
+}
+
+func (s *ManagerTestSuite) TestMCPRoleReconciliationRetriesOnFailure() {
+	s.T().Setenv(features.ComplianceCustomNodeRoles.EnvVar(), "true")
+	if !features.ComplianceCustomNodeRoles.Enabled() {
+		s.T().Skipf("Skipping because %s=false", features.ComplianceCustomNodeRoles.EnvVar())
+	}
+
+	request := &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+		ScanName:       "retry-scan",
+		StrictNodeScan: true,
+		Profiles:       []string{"ocp4-cis"},
+	}
+	err := s.manager.writer.createScanResources(context.Background(), testNS, request, "0 0 * * *")
+	s.Require().NoError(err)
+
+	// One API call per reconciliation attempt, so that failing the first two
+	// lists maps deterministically to two failed attempts.
+	s.manager.writer.retrier.maxRetries = 1
+
+	var listCalls atomic.Int32
+	s.client.PrependReactor("list", "scansettings", func(_ ktesting.Action) (bool, runtime.Object, error) {
+		if listCalls.Add(1) <= 2 {
+			return true, nil, errors.New("listing ScanSettings failed")
+		}
+		return false, nil, nil
+	})
+
+	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
+
+	err = s.manager.Start()
+	s.Require().NoError(err)
+	defer s.manager.Stop()
+
+	err = s.dispatcher.Publish(&events.NodeRoleChangeEvent{})
+	s.Require().NoError(err)
+
+	s.Require().Eventually(func() bool {
+		roles, err := getScanSettingRoles(s.client, "retry-scan")
+		if err != nil {
+			return false
+		}
+		return slices.Contains(roles, "infra")
+	}, 5*time.Second, 10*time.Millisecond, "expected reconciliation to be retried until the list succeeds")
+
+	// Two failed attempts plus the successful one: the roles only converge
+	// because the run loop retried after the failures.
+	s.Equal(int32(3), listCalls.Load())
 }
 
 func TestOnMCPEventNonBlocking(t *testing.T) {

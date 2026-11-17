@@ -16,6 +16,7 @@ const (
 	defaultAPICallTimeout      = 5 * time.Second
 	defaultRetryTimeout        = 30 * time.Second
 	defaultMCPDebounceInterval = 5 * time.Second
+	defaultMCPRetryMaxInterval = 5 * time.Minute
 )
 
 var (

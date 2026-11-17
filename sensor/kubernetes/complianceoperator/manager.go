@@ -28,6 +28,8 @@ type Manager struct {
 	inner                  chan pubsub.Event
 	mcpNotify              chan struct{}
 	mcpDebounceInterval    time.Duration
+	mcpRetryAttempts       int
+	mcpRetryMaxInterval    time.Duration
 	writer                 *scanSettingWriter
 }
 
@@ -47,6 +49,7 @@ func NewManager(client dynamic.Interface, complianceOperatorInfo StatusInfo, mcp
 		inner:                  make(chan pubsub.Event),
 		mcpNotify:              make(chan struct{}, 1),
 		mcpDebounceInterval:    defaultMCPDebounceInterval,
+		mcpRetryMaxInterval:    defaultMCPRetryMaxInterval,
 	}
 	m.writer = newScanSettingWriter(client, r, m.getRoles)
 	return m
@@ -131,11 +134,26 @@ func (m *Manager) run() {
 			if mcpTimer != nil {
 				mcpTimer.Stop()
 			}
+			// A new MCP change starts a fresh reconciliation cycle: drop any
+			// backoff accumulated by previously failed attempts.
+			m.mcpRetryAttempts = 0
 			mcpTimer = time.NewTimer(m.mcpDebounceInterval)
 			mcpTimerC = mcpTimer.C
 		case <-mcpTimerC:
 			mcpTimerC = nil
-			m.reconcileMCPRoles()
+			if err := m.reconcileMCPRoles(); err != nil {
+				m.mcpRetryAttempts++
+				// Reconcile again after a backoff that grows with every
+				// failure, so a transiently failing API is not hammered and
+				// the roles still converge once it recovers.
+				interval := m.mcpRetryInterval()
+				log.Errorf("failed to reconcile MCP roles (attempt %d), retrying in %s: %v",
+					m.mcpRetryAttempts, interval, err)
+				mcpTimer = time.NewTimer(interval)
+				mcpTimerC = mcpTimer.C
+			} else {
+				m.mcpRetryAttempts = 0
+			}
 		case <-m.stopper.Flow().StopRequested():
 			if mcpTimer != nil {
 				mcpTimer.Stop()
@@ -231,22 +249,41 @@ func (m *Manager) processDeleteScanConfig(ctx context.Context, request *central.
 	m.publishResult(ctx, request.GetId(), events.DeleteScanConfigResponse, err)
 }
 
-func (m *Manager) reconcileMCPRoles() {
+// reconcileMCPRoles updates the node roles of all scan settings managed by
+// Sensor to match the roles tracked by the MachineConfigPool store. It
+// returns an error when the reconciliation could not be completed; the run
+// loop then retries with backoff. A disabled feature flag or a nil store is
+// not an error, as there is nothing to reconcile.
+func (m *Manager) reconcileMCPRoles() error {
 	if !features.ComplianceCustomNodeRoles.Enabled() {
-		return
+		return nil
 	}
 	if m.mcpStore == nil {
-		return
+		return nil
 	}
 	ns := m.complianceOperatorInfo.GetNamespace()
 	if ns == "" {
-		log.Error("compliance operator namespace not known, skipping MCP role reconciliation")
-		return
+		return errors.New("compliance operator namespace not known")
 	}
+	return m.writer.updateAllScanSettingRoles(m.stopperContext(), ns)
+}
 
-	if err := m.writer.updateAllScanSettingRoles(m.stopperContext(), ns); err != nil {
-		log.Errorf("failed to reconcile MCP roles: %v", err)
+// mcpRetryInterval returns how long to wait before the next reconciliation
+// attempt after m.mcpRetryAttempts consecutive failures. It starts at the
+// debounce interval, doubles with every failed attempt, and is capped at
+// mcpRetryMaxInterval.
+func (m *Manager) mcpRetryInterval() time.Duration {
+	d := m.mcpDebounceInterval
+	for range m.mcpRetryAttempts - 1 {
+		d *= 2
+		if d >= m.mcpRetryMaxInterval {
+			return m.mcpRetryMaxInterval
+		}
 	}
+	if d > m.mcpRetryMaxInterval {
+		return m.mcpRetryMaxInterval
+	}
+	return d
 }
 
 func (m *Manager) publishResult(ctx context.Context, requestID string, responseType events.ResponseType, err error) {
