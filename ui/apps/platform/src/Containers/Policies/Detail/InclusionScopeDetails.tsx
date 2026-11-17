@@ -34,7 +34,7 @@ function InclusionScopeDetails({ clusters, scope }: InclusionScopeDetailsProps):
                 />
             )}
             {label && (
-                <DescriptionListItem term="Deployment label" desc={`${label.key}=${label.value}`} />
+                <DescriptionListItem term="Workload label" desc={`${label.key}=${label.value}`} />
             )}
         </DescriptionList>
     );

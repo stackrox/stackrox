@@ -48,8 +48,9 @@ func (s *HTTPServer) RunForever() {
 		Addr:    s.Address,
 		Handler: s.mux,
 		TLSConfig: &tls.Config{
-			MinVersion:   tlsprofile.MinVersion(),
-			CipherSuites: tlsprofile.CipherSuites(),
+			MinVersion:       tlsprofile.MinVersion(),
+			CipherSuites:     tlsprofile.CipherSuites(),
+			CurvePreferences: tlsprofile.CurvePreferences(),
 		},
 	}
 	go runForever(httpServer)

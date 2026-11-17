@@ -8,7 +8,6 @@ import {
     entityGroupMap,
 } from 'utils/entityRelationships';
 import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
-import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import workflowStateContext from '../../workflowStateContext';
 import { entityNounSentenceCasePlural } from '../entitiesForVulnerabilityManagement';
 
@@ -19,7 +18,6 @@ export type EntityTabsProps = {
 
 function EntityTabs({ entityType, activeTab }: EntityTabsProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
-    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
 
     function getTab(tabType) {
         return {
@@ -33,7 +31,7 @@ function EntityTabs({ entityType, activeTab }: EntityTabsProps): ReactElement {
     const relationships = [
         ...getVulnerabilityManagementEntityTypesByRelationship(entityType, 'MATCHES'),
         ...getVulnerabilityManagementEntityTypesByRelationship(entityType, 'CONTAINS'),
-    ].filter((rel) => isLegacyScannerEnabled || rel !== 'CLUSTER_CVE');
+    ];
 
     const entityTabs = relationships.map((entityTypeByRelationship) =>
         getTab(entityTypeByRelationship)

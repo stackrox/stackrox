@@ -48,7 +48,7 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                                 }}
                             />
                         </CardHeader>
-                        <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
+                        <CardTitle style={{ whiteSpace: 'nowrap' }}>
                             <Flex
                                 alignItems={{ default: 'alignItemsBaseline' }}
                                 gap={{ default: 'gapSm' }}
@@ -57,7 +57,7 @@ function ApiClientIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
                                 <ExternalLinkAltIcon />
                             </Flex>
                         </CardTitle>
-                        <CardFooter className="pf-v6-u-color-200">
+                        <CardFooter>
                             Pull RHACS vulnerability data into ServiceNow Vulnerability Response.
                         </CardFooter>
                     </Card>

@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -259,6 +260,60 @@ func TestTrackerBase_error(t *testing.T) {
 	}
 	assert.ErrorIs(t, testGatherer.updateMetrics(tracker.generator(context.Background(), tracker.config.metrics)),
 		errox.InvariantViolation)
+}
+
+func TestTrackerBase_ClearsScopedMetricsOnAuthorizationError(t *testing.T) {
+	for name, tc := range map[string]struct {
+		gatherErr error
+		cleared   bool
+	}{
+		"authorization denied":         {gatherErr: errox.NotAuthorized.New("access revoked"), cleared: true},
+		"wrapped authorization denied": {gatherErr: fmt.Errorf("reading metrics: %w", errox.NotAuthorized.New("access revoked")), cleared: true},
+		"transient gather failure":     {gatherErr: errox.InvariantViolation.New("temporary failure")},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var gatherErr error
+			tracker := MakeTrackerBase("test", "Test", testLabelGetters,
+				func(ctx context.Context, md MetricDescriptors) FindingErrorSequence[testFinding] {
+					if gatherErr != nil {
+						return func(yield func(testFinding, error) bool) { yield(0, gatherErr) }
+					}
+					return makeTestGatherFunc(testData)(ctx, md)
+				})
+			md := makeTestMetricDescriptors(t)
+			tracker.Reconfigure(&Configuration{metrics: md, toAdd: slices.Collect(maps.Keys(md)), period: time.Hour})
+			ctx := makeAdminContext(t)
+			identity, err := authn.IdentityFromContext(ctx)
+			require.NoError(t, err)
+			registry, err := metrics.GetCustomRegistry(identity.UID())
+			require.NoError(t, err)
+			t.Cleanup(func() { metrics.DeleteCustomRegistry(identity.UID()) })
+
+			tracker.Gather(ctx)
+			initial := readMetrics(registry)
+			require.NotEmpty(t, initial)
+			otherCtx := basic.ContextWithNoAccessIdentity(t, nil)
+			otherIdentity, err := authn.IdentityFromContext(otherCtx)
+			require.NoError(t, err)
+			tracker.Gather(otherCtx)
+			tracker.cleanupWG.Wait()
+			otherRegistry, err := metrics.GetCustomRegistry(otherIdentity.UID())
+			require.NoError(t, err)
+			t.Cleanup(func() { metrics.DeleteCustomRegistry(otherIdentity.UID()) })
+			otherInitial := readMetrics(otherRegistry)
+			require.NotEmpty(t, otherInitial)
+
+			gatherErr = tc.gatherErr
+			tracker.Refresh()
+			tracker.Gather(ctx)
+			if tc.cleared {
+				assert.Empty(t, readMetrics(registry))
+			} else {
+				assert.Equal(t, initial, readMetrics(registry))
+			}
+			assert.Equal(t, otherInitial, readMetrics(otherRegistry))
+		})
+	}
 }
 
 func TestTrackerBase_Gather(t *testing.T) {

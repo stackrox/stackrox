@@ -63,48 +63,6 @@ export const clusterTypeOptions = [
 ];
 
 export const clusterTablePollingInterval = 5000; // milliseconds
-export const clusterDetailPollingInterval = 3000; // milliseconds
-
-const defaultNewClusterType = 'KUBERNETES_CLUSTER';
-const defaultCollectionMethod = 'CORE_BPF';
-
-export const newClusterDefault = {
-    // TODO Add Cluster type and add missing properties?
-    id: undefined, // TODO empty string?
-    name: '',
-    type: defaultNewClusterType,
-    mainImage: 'stackrox/main',
-    collectorImage: 'stackrox/collector',
-    centralApiEndpoint: 'central.stackrox:443',
-    runtimeSupport: false,
-    collectionMethod: defaultCollectionMethod,
-    admissionControllerEvents: true,
-    admissionController: true, // default changed in 4.9
-    admissionControllerUpdates: true, // default changed in 4.9
-    admissionControllerFailOnError: false, // property added in 4.9 false means Fail open
-    status: null,
-    tolerationsConfig: {
-        disabled: false,
-    },
-    dynamicConfig: {
-        admissionControllerConfig: {
-            enabled: true, // default changed in 4.9
-            enforceOnUpdates: true, // default changed in 4.9
-            timeoutSeconds: 0, // default changed in 4.9
-            scanInline: true, // default changed in 4.9
-            disableBypass: false,
-        },
-        registryOverride: '',
-        disableAuditLogs: false,
-        autoLockProcessBaselinesConfig: null,
-    },
-    healthStatus: undefined,
-    slimCollector: false,
-};
-
-export const centralEnvDefault = {
-    kernelSupportAvailable: false,
-};
 
 const styleUninitializedLegacy = {
     Icon: MinusCircleIcon,
@@ -350,11 +308,3 @@ export function shouldShowSensorVersionRangeChart(
         compatibleVersions.length > 0
     );
 }
-
-export default {
-    runtimeOptions,
-    clusterTypeOptions,
-    clusterTablePollingInterval,
-    clusterDetailPollingInterval,
-    newClusterDefault,
-};

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/lock"
@@ -33,16 +34,19 @@ func upgrade(dbClone string) error {
 	// Close when needed
 	defer postgreshelper.Close()
 
-	return upgradeAcquireLock(pgPool, gormDB, dbClone)
+	return upgradeAcquireLock(context.Background(), pgPool, gormDB, dbClone)
 }
 
 // upgradeAcquireLock runs the logic to acquire the migration lock
 // and run the upgrade if successfully locked
-func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) error {
-	ctx := sac.WithAllAccess(context.Background())
+func upgradeAcquireLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, dbClone string) error {
+	ctx = sac.WithAllAccess(ctx)
 	ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
 	if err != nil {
 		return errors.Wrap(err, "failed to get version from the database")
+	}
+	if err := migVer.CheckCompatibility(ver); err != nil {
+		return errors.Wrap(err, "checking database compatibility before migration")
 	}
 
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
@@ -66,9 +70,17 @@ func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) err
 
 	switch {
 	case currSeqNum > ver.SeqNum:
-		// This is a new version pod trying to upgrade the DB.
-		// Fail fast, to restart the container and try acquiring lock again.
-		return errors.Errorf("failed to upgrade DB from %d to %d, could not acquire migration lock.", ver.SeqNum, currSeqNum)
+		// Worker briefly takes this lock to check the DB version. Retry that
+		// contention without restarting Central. Only acquisition is bounded;
+		// migrations run with the original context, even if they take hours.
+		lockCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		release, err := lock.AcquireMigrationLock(lockCtx, pgPool)
+		if err != nil {
+			return errors.Wrapf(err, "failed to upgrade DB from %d to %d, could not acquire migration lock", ver.SeqNum, currSeqNum)
+		}
+		defer release()
+		return upgradeWithLock(ctx, pgPool, gormDB, dbClone)
 	case currSeqNum < ver.SeqNum:
 		// This is the old pod during a rolling upgrade. It is backward compatible,
 		// so it can proceed without running migrations.
@@ -83,22 +95,33 @@ func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) err
 // upgradeWithLock runs migrations and schema application while holding the
 // advisory lock.
 func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, dbClone string) error {
+	return upgradeWithLockAndSchema(ctx, pgPool, gormDB, dbClone, pkgSchema.ApplyAllSchemas)
+}
+
+func upgradeWithLockAndSchema(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, dbClone string, applySchemas func(context.Context, *gorm.DB)) error {
 	// Re-read the version after acquiring the lock. Another instance may have
 	// completed migrations between the first read and the acquisition of the lock.
 	ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
 	if err != nil {
 		return errors.Wrap(err, "failed to re-read version from the database after acquiring lock")
 	}
+	if err := migVer.CheckCompatibility(ver); err != nil {
+		return errors.Wrap(err, "checking database compatibility before migration")
+	}
 
-	// If Postgres has no version, then we have no populated databases at all and thus don't
-	// need to migrate
+	// Missing version metadata is treated as a fresh installation, even if data exists.
 	if ver.SeqNum == 0 && ver.MainVersion == "0" {
-		log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
-		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-		migVer.SetCurrentVersion(ctx, gormDB)
-		return nil
+		log.WriteToStderr("No version metadata; treating database as a fresh installation and skipping migrations.")
+		// Initialize schema and version metadata atomically.
+		err := gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			applySchemas(ctx, tx)
+			return migVer.SetCurrentVersion(ctx, tx)
+		})
+		return errors.Wrap(err, "initializing fresh database schema and version")
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)
+	// Metadata schema initialization is allowed only after compatibility approval.
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, pkgSchema.VersionsSchema.Table)
 
 	databases := &types.Databases{
 		GormDB:     gormDB,
@@ -109,6 +132,6 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 		return errors.Wrap(err, "migrations failed")
 	}
 
-	pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-	return nil
+	applySchemas(ctx, gormDB)
+	return errors.Wrap(runner.UpdateToCurrentVersion(databases), "publishing completed migration version")
 }

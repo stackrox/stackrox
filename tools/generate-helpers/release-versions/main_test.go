@@ -189,6 +189,8 @@ func TestPendingStreamLifecycle(t *testing.T) {
 
 func TestGenerationCommand(t *testing.T) {
 	dir, git, write := repository(t)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "tests/upgrade"), 0755))
+	write(213, "4.9.0")
 	write(220, "4.10.0")
 	write(225, "4.11.0")
 	write(226, "5.0.0")
@@ -228,6 +230,8 @@ func versionMakefile(t *testing.T, dir string) {
 
 func TestReleaseBranchLifecycle(t *testing.T) {
 	dir, git, write := repository(t)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "tests/upgrade"), 0755))
+	write(213, "4.9.0")
 	versionMakefile(t, dir)
 	t.Chdir(dir)
 	t.Setenv("BUILD_TAG", "")
@@ -320,6 +324,8 @@ func TestMultipleReleaseBranchesWithRCs(t *testing.T) {
 
 func TestNightlyVersionDiscovery(t *testing.T) {
 	dir, git, write := repository(t)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "tests/upgrade"), 0755))
+	write(213, "4.9.0")
 	versionMakefile(t, dir)
 	t.Chdir(dir)
 	t.Setenv("BUILD_TAG", "")
@@ -619,4 +625,26 @@ var releaseVersions = []ReleaseVersion{
 func TestInitialReleaseOrdinalOverflow(t *testing.T) {
 	_, err := selectReleaseTags("5.1.0-rc.1 5.1.0-rc.999999999999999999999999999999", productstreams.XYVersion{X: 5, Y: 1})
 	require.ErrorContains(t, err, "parse RC ordinal")
+}
+
+func TestDowngradeFixtures(t *testing.T) {
+	for name, tc := range map[string]struct{ target, supported, rejected string }{
+		"major boundary": {"5.1.x", "4.10.0", "4.9.0"},
+		"future":         {"5.9.0", "5.6.0", "5.5.0"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir, _, write := repository(t)
+			write(227, tc.supported)
+			_, err := generateDowngradeVersions(dir, tc.target)
+			require.ErrorContains(t, err, tc.rejected)
+			write(227, tc.rejected)
+			data, err := generateDowngradeVersions(dir, tc.target)
+			require.NoError(t, err)
+			require.Contains(t, string(data), fmt.Sprintf("DOWNGRADE_SUPPORTED_TAG=%q", tc.supported))
+			require.Contains(t, string(data), fmt.Sprintf("DOWNGRADE_REJECTED_TAG=%q", tc.rejected))
+			again, err := generateDowngradeVersions(dir, tc.target)
+			require.NoError(t, err)
+			require.Equal(t, data, again)
+		})
+	}
 }

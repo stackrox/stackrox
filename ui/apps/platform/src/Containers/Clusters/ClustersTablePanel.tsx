@@ -22,11 +22,7 @@ import {
     updateSearchFilter,
 } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
-import useAnalytics, {
-    LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
-    SECURE_A_CLUSTER_LINK_CLICKED,
-    CRS_SECURE_A_CLUSTER_LINK_CLICKED,
-} from 'hooks/useAnalytics';
+import useAnalytics, { CRS_SECURE_A_CLUSTER_LINK_CLICKED } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
@@ -43,13 +39,10 @@ import {
     getHasSearchApplied,
 } from 'utils/searchUtils';
 import {
-    clustersBasePath,
     clustersClusterRegistrationSecretsPath,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
-    clustersInitBundlesPath,
     clustersSecureClusterCrsPath,
-    clustersSecureClusterPath,
 } from 'routePaths';
 
 import ClustersTable from './ClustersTable';
@@ -239,11 +232,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         )}
                         {hasAdminRole && (
                             <FlexItem>
-                                <Link to={clustersInitBundlesPath}>Init bundles</Link>
-                            </FlexItem>
-                        )}
-                        {hasAdminRole && (
-                            <FlexItem>
                                 <Link to={clustersClusterRegistrationSecretsPath}>
                                     Cluster registration secrets
                                 </Link>
@@ -271,34 +259,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                         }}
                                     >
                                         Cluster registration secret installation methods
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        key="init-bundle"
-                                        onClick={() => {
-                                            analyticsTrack({
-                                                event: SECURE_A_CLUSTER_LINK_CLICKED,
-                                                properties: {
-                                                    source: 'Secure a Cluster Dropdown',
-                                                },
-                                            });
-                                            navigate(clustersSecureClusterPath);
-                                        }}
-                                    >
-                                        Init bundle installation methods
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        key="legacy"
-                                        onClick={() => {
-                                            analyticsTrack({
-                                                event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
-                                                properties: {
-                                                    source: 'Secure a Cluster Dropdown',
-                                                },
-                                            });
-                                            navigate(`${clustersBasePath}/new`);
-                                        }}
-                                    >
-                                        Legacy installation method
                                     </DropdownItem>
                                 </MenuDropdown>
                             </FlexItem>

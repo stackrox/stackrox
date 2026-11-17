@@ -7,8 +7,6 @@ export STATE_DEPLOYED="${SHARED_DIR:-/tmp}/stackrox_ci_state_deployed"
 
 # For the upgrade test
 upgrade_progress_state_prefix="${SHARED_DIR:-/tmp}/stackrox_ci_state_upgrade_progress"
-export UPGRADE_PROGRESS_SENSOR_BUNDLE="${upgrade_progress_state_prefix}_sensor_bundle"
-export UPGRADE_PROGRESS_UPGRADER="${upgrade_progress_state_prefix}_upgrader"
 export UPGRADE_PROGRESS_POSTGRES_PREP="${upgrade_progress_state_prefix}_postgres_prep"
 export UPGRADE_PROGRESS_POSTGRES_EARLIER_CENTRAL="${upgrade_progress_state_prefix}_postgres_earlier_central"
 export UPGRADE_PROGRESS_POSTGRES_CENTRAL_BOUNCE="${upgrade_progress_state_prefix}_postgres_central_bounce"

@@ -113,8 +113,9 @@ func (ps *PodStore) GetAll() []*storage.Pod {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
-	var ret []*storage.Pod
-	for _, pod := range ps.getAllNoLock() {
+	psAll := ps.getAllNoLock()
+	ret := make([]*storage.Pod, 0, len(psAll))
+	for _, pod := range psAll {
 		ret = append(ret, pod.CloneVT())
 	}
 	return ret

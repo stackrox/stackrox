@@ -113,6 +113,28 @@ func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
 	return nil, nil
 }
 
+type noopNetworkEntitiesCtrl struct{}
+
+func (noopNetworkEntitiesCtrl) SyncNow(context.Context) error { return nil }
+
+func stubAlwaysOnInitialSync(ctrl *gomock.Controller, conn *sensorConnection) {
+	policyMgr := clusterMgrMock.NewMockPolicyManager(ctrl)
+	policyMgr.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil).AnyTimes()
+	baselineMgr := clusterMgrMock.NewMockProcessBaselineManager(ctrl)
+	baselineMgr.EXPECT().WalkAll(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	networkBaselineMgr := clusterMgrMock.NewMockNetworkBaselineManager(ctrl)
+	networkBaselineMgr.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	conn.policyMgr = policyMgr
+	conn.baselineMgr = baselineMgr
+	conn.networkBaselineMgr = networkBaselineMgr
+	conn.networkEntitiesCtrl = noopNetworkEntitiesCtrl{}
+	if conn.hashDeduper == nil {
+		deduper := mocks.NewMockDeduper(ctrl)
+		deduper.EXPECT().GetSuccessfulHashes().Return(nil).AnyTimes()
+		conn.hashDeduper = deduper
+	}
+}
+
 func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 	// ROX_COMPLIANCE_ENHANCEMENTS is set to 'true' by default but just in case
 	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
@@ -140,8 +162,13 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		sendC:              make(chan *central.MsgToSensor),
 	}
 
+	// Cluster config and the always-on audit-log sync both load the cluster.
+	// Scan-config sync checks existence separately.
 	mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).Times(2)
+	mgrMock.EXPECT().Exists(ctx, gomock.Any()).Return(true, nil).Times(1)
 	s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
+	deduper.EXPECT().GetSuccessfulHashes().Return(nil).AnyTimes()
+	stubAlwaysOnInitialSync(ctrl, sensorMockConn)
 
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
@@ -182,6 +209,68 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 	}
 }
 
+func (s *testSuite) TestGetScanConfigurationMsgChecksClusterExistence() {
+	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
+
+	ctx := sac.WithAllAccess(context.Background())
+	clusterID := "cluster-id"
+	existsErr := errors.New("datastore unavailable")
+
+	testCases := map[string]struct {
+		exists         bool
+		existsErr      error
+		expectConfigs  bool
+		expectedErrMsg string
+	}{
+		"cluster exists": {
+			exists:        true,
+			expectConfigs: true,
+		},
+		"cluster missing": {
+			exists:         false,
+			expectedErrMsg: "does not exist",
+		},
+		"cluster not visible to caller": {
+			// The cluster datastore reports access-denied clusters as absent.
+			exists:         false,
+			expectedErrMsg: "does not exist",
+		},
+		"existence check fails": {
+			existsErr:      existsErr,
+			expectedErrMsg: existsErr.Error(),
+		},
+	}
+
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			ctrl := gomock.NewController(s.T())
+			mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+			conn := &sensorConnection{
+				clusterMgr:    mgrMock,
+				clusterID:     clusterID,
+				scanSettingDS: s.scanConfigDS,
+			}
+
+			mgrMock.EXPECT().Exists(ctx, clusterID).Return(tc.exists, tc.existsErr)
+			if tc.expectConfigs {
+				s.scanConfigDS.EXPECT().GetScanConfigurations(ctx, gomock.Any()).Return(scanConfigs, nil).Times(1)
+			}
+
+			msg, err := conn.getScanConfigurationMsg(ctx)
+			if tc.expectedErrMsg != "" {
+				s.Require().Error(err)
+				s.ErrorContains(err, tc.expectedErrMsg)
+				s.Nil(msg)
+				return
+			}
+
+			s.Require().NoError(err)
+			s.Require().NotNil(msg)
+			s.NotEmpty(msg.GetComplianceRequest().GetSyncScanConfigs().GetScanConfigs())
+		})
+	}
+}
+
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {
 	sensorMockConn := &sensorConnection{
 		sensorHello: &central.SensorHello{
@@ -201,69 +290,40 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumV
 func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 	s.T().Setenv(env.MaxDeduperEntriesPerMessage.EnvVar(), "2")
 	cases := map[string]struct {
-		givenSensorCapabilities     []centralsensor.SensorCapability
 		givenSensorState            central.SensorHello_SensorState
 		givenSendError              error
 		expectError                 bool
-		expectDeduperStateSent      bool
 		expectNumberOfDeduperStates int
 		expectDeduperStateContents  map[string]uint64
 	}{
-		"Sensor reconciles: sensor has capability and status is reconnect": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
+		"Sensor reconciles: status is reconnect": {
 			givenSensorState:            central.SensorHello_RECONNECT,
-			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 			expectDeduperStateContents:  map[string]uint64{"deployment:1": 0},
 		},
-		"Sensor reconciles: sensor has capability and status is startup": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
+		"Sensor reconciles: status is startup": {
 			givenSensorState:            central.SensorHello_STARTUP,
-			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 			expectDeduperStateContents:  map[string]uint64{"deployment:1": 0},
 		},
-		"Sensor reconciles: sensor has capability and status is unknown": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
+		"Sensor reconciles: status is unknown": {
 			givenSensorState:            central.SensorHello_UNKNOWN,
-			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 			expectDeduperStateContents:  map[string]uint64{"deployment:1": 0},
 		},
 		"Sensor reconciles: state is sent even if there is no deduper state": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_RECONNECT,
-			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 			expectDeduperStateContents:  nil,
 		},
-		"Central reconciles: sensor doesn't have capability status is reconnect": {
-			givenSensorCapabilities: []centralsensor.SensorCapability{},
-			givenSensorState:        central.SensorHello_RECONNECT,
-			expectDeduperStateSent:  false,
-		},
-		"Central reconciles: sensor doesn't have capability status is startup": {
-			givenSensorCapabilities: []centralsensor.SensorCapability{},
-			givenSensorState:        central.SensorHello_STARTUP,
-			expectDeduperStateSent:  false,
-		},
-		"Central reconciles: sensor doesn't have capability status is unknown": {
-			givenSensorCapabilities: []centralsensor.SensorCapability{},
-			givenSensorState:        central.SensorHello_UNKNOWN,
-			expectDeduperStateSent:  false,
-		},
-		"Central reconciles: failed to send message": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
+		"failed to send message": {
 			givenSensorState:            central.SensorHello_RECONNECT,
 			givenSendError:              errors.New("gRPC error"),
 			expectError:                 true,
-			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 		},
 		"Sensor reconciles: multiple chunks are sent": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_RECONNECT,
-			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 2,
 			expectDeduperStateContents:  map[string]uint64{"deployment:1": 0, "deployment:2": 1, "deployment:3": 2},
 		},
@@ -292,22 +352,17 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				sensorHello:        hello,
 				hashDeduper:        deduper,
 			}
+			stubAlwaysOnInitialSync(ctrl, sensorMockConn)
 
 			server := &mockServer{
 				sentList:          make([]*central.MsgToSensor, 0),
 				errOnDeduperState: tc.givenSendError,
 			}
 
-			caps := set.NewSet[centralsensor.SensorCapability](tc.givenSensorCapabilities...)
-
 			mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
-			if tc.expectDeduperStateSent {
-				deduper.EXPECT().GetSuccessfulHashes().Return(tc.expectDeduperStateContents).Times(1)
-			} else {
-				deduper.EXPECT().GetSuccessfulHashes().Times(0)
-			}
+			deduper.EXPECT().GetSuccessfulHashes().Return(tc.expectDeduperStateContents).Times(1)
 
-			err := sensorMockConn.Run(ctx, server, caps)
+			err := sensorMockConn.Run(ctx, server, set.NewSet[centralsensor.SensorCapability]())
 			if tc.expectError {
 				s.Error(err)
 			} else {
@@ -321,29 +376,24 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				}
 			}
 
-			if tc.expectDeduperStateSent {
-				s.NotNil(deduperStates)
-				s.Assert().Len(deduperStates, tc.expectNumberOfDeduperStates)
-				currentSet := set.NewIntSet()
-				for i := 1; i <= tc.expectNumberOfDeduperStates; i++ {
-					currentSet.Add(i)
-				}
-				deduperStateSent := make(map[string]uint64)
-				for _, state := range deduperStates {
-					maps.Copy(deduperStateSent, state.GetResourceHashes())
-					s.Equal(tc.expectNumberOfDeduperStates, int(state.GetTotal()))
-					s.True(currentSet.Contains(int(state.GetCurrent())))
-					currentSet.Remove(int(state.GetCurrent()))
-				}
-				if tc.expectDeduperStateContents != nil {
-					s.Equal(tc.expectDeduperStateContents, deduperStateSent)
-				} else {
-					s.Assert().Len(deduperStateSent, 0)
-				}
-			} else {
-				s.Nil(deduperStates)
+			s.NotNil(deduperStates)
+			s.Assert().Len(deduperStates, tc.expectNumberOfDeduperStates)
+			currentSet := set.NewIntSet()
+			for i := 1; i <= tc.expectNumberOfDeduperStates; i++ {
+				currentSet.Add(i)
 			}
-
+			deduperStateSent := make(map[string]uint64)
+			for _, state := range deduperStates {
+				maps.Copy(deduperStateSent, state.GetResourceHashes())
+				s.Equal(tc.expectNumberOfDeduperStates, int(state.GetTotal()))
+				s.True(currentSet.Contains(int(state.GetCurrent())))
+				currentSet.Remove(int(state.GetCurrent()))
+			}
+			if tc.expectDeduperStateContents != nil {
+				s.Equal(tc.expectDeduperStateContents, deduperStateSent)
+			} else {
+				s.Assert().Len(deduperStateSent, 0)
+			}
 		})
 	}
 
@@ -483,14 +533,14 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 		clusterID:  clusterID,
 		clusterMgr: mgrMock,
 	}
+	stubAlwaysOnInitialSync(ctrl, sensorMockConn)
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
 	}
-	caps := set.NewSet(centralsensor.AuditLogEventsCap)
 
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 
-	s.NoError(sensorMockConn.Run(ctx, server, caps))
+	s.NoError(sensorMockConn.Run(ctx, server, set.NewSet[centralsensor.SensorCapability]()))
 
 	for _, msg := range server.sentList {
 		if syncMsg := msg.GetAuditLogSync(); syncMsg != nil {
@@ -679,6 +729,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 		delegatedRegistryConfigMgr: deleRegMgr,
 		imageIntegrationMgr:        iiMgr,
 	}
+	stubAlwaysOnInitialSync(ctrl, sensorMockConn)
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 	iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -769,6 +820,7 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 		delegatedRegistryConfigMgr: deleRegMgr,
 		imageIntegrationMgr:        iiMgr,
 	}
+	stubAlwaysOnInitialSync(ctrl, sensorMockConn)
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 	deleRegMgr.EXPECT().GetConfig(ctx).AnyTimes()
 

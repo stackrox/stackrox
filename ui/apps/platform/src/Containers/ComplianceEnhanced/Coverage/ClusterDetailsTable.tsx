@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Content,
-    ContentVariants,
     Pagination,
     Toolbar,
     ToolbarContent,
@@ -16,6 +15,7 @@ import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/componen
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { ComplianceCheckResult } from 'services/ComplianceResultsService';
@@ -25,7 +25,7 @@ import type { SearchFilter } from 'types/search';
 import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
-import { getClusterResultsStatusObject } from './compliance.coverage.utils';
+import { getCheckScanStatus, getClusterResultsStatusObject } from './compliance.coverage.utils';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -62,6 +62,10 @@ function ClusterDetailsTable({
     const { page, perPage, setPage, setPerPage } = pagination;
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const colSpan = isScanStatusEnabled ? 4 : 3;
 
     function toggleRow(selectedRowIndex: number) {
         const newExpandedRows = expandedRows.includes(selectedRowIndex)
@@ -117,6 +121,11 @@ function ClusterDetailsTable({
                         <Th modifier="fitContent" width={10}>
                             Controls
                         </Th>
+                        {isScanStatusEnabled && (
+                            <Th modifier="fitContent" width={10}>
+                                Scan status
+                            </Th>
+                        )}
                         <Th modifier="fitContent" width={10}>
                             Compliance status
                         </Th>
@@ -124,7 +133,7 @@ function ClusterDetailsTable({
                 </Thead>
                 <TbodyUnified
                     tableState={tableState}
-                    colSpan={3}
+                    colSpan={colSpan}
                     errorProps={{
                         title: 'There was an error loading results for this cluster',
                     }}
@@ -136,7 +145,8 @@ function ClusterDetailsTable({
                     renderer={({ data }) => (
                         <>
                             {data.map((checkResult, rowIndex) => {
-                                const { checkName, rationale, status, controls } = checkResult;
+                                const { checkName, rationale, status, controls, dataFreshness } =
+                                    checkResult;
                                 const clusterStatusObject = getClusterResultsStatusObject(status);
                                 const isRowExpanded = expandedRows.includes(rowIndex);
 
@@ -167,8 +177,8 @@ function ClusterDetailsTable({
                                                 */}
                                                 <div style={{ display: 'grid' }}>
                                                     <Content
-                                                        component={ContentVariants.small}
-                                                        className="pf-v6-u-color-200 pf-v6-u-text-truncate"
+                                                        component="small"
+                                                        className="pf-v6-u-text-truncate"
                                                     >
                                                         {rationale}
                                                     </Content>
@@ -196,6 +206,11 @@ function ClusterDetailsTable({
                                                     '-'
                                                 )}
                                             </Td>
+                                            {isScanStatusEnabled && (
+                                                <Td dataLabel="Scan status" modifier="fitContent">
+                                                    {getCheckScanStatus(dataFreshness)}
+                                                </Td>
+                                            )}
                                             <Td dataLabel="Compliance status" modifier="fitContent">
                                                 <StatusIcon
                                                     clusterStatusObject={clusterStatusObject}
@@ -204,7 +219,7 @@ function ClusterDetailsTable({
                                         </Tr>
                                         {isRowExpanded && (
                                             <Tr isExpanded={isRowExpanded}>
-                                                <Td colSpan={6}>
+                                                <Td colSpan={colSpan}>
                                                     <ExpandableRowContent>
                                                         <ControlLabels controls={controls} />
                                                     </ExpandableRowContent>

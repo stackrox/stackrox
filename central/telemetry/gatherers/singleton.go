@@ -10,7 +10,6 @@ import (
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
-	sensorUpgradeConfigDatastore "github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
@@ -38,7 +37,6 @@ func Singleton() *RoxGatherer {
 				dbGatherer,
 				newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()),
 				gatherers.NewComponentInfoGatherer(),
-				sensorUpgradeConfigDatastore.Singleton(),
 			),
 			newClusterGatherer(
 				clusterDatastore.Singleton(),

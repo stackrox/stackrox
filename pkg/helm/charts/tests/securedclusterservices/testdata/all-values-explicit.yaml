@@ -55,7 +55,6 @@ config:
     disableBypass: true
     timeout: 4
   disableTaintTolerations: true
-  createUpgraderServiceAccount: true
   createSecrets: true
   offlineMode: true
   slimCollector: true

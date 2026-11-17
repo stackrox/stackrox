@@ -14,7 +14,6 @@ export const defaultCountKeyMap = {
     IMAGE_COMPONENT: 'imageComponentCount',
 
     CVE: 'vulnCount',
-    CLUSTER_CVE: 'clusterVulnerabilityCount',
     IMAGE_CVE: 'imageVulnerabilityCount',
     K8S_CVE: 'vulnCount: k8sVulnCount', // was broken, is it used?
     NODE_CVE: 'nodeVulnerabilityCount',

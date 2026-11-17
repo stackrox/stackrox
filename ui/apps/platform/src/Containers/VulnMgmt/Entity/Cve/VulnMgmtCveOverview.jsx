@@ -43,9 +43,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         publishedOn,
         lastModified,
         scoreVersion,
-        vulnerabilityTypes,
         imageComponentCount,
-        nodeComponentCount,
     } = safeData;
     const operatingSystem = safeData?.operatingSystem;
 
@@ -97,19 +95,12 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         },
     ];
 
-    const splitCveType =
-        imageComponentCount > 0
-            ? entityTypes.IMAGE_CVE
-            : nodeComponentCount > 0
-              ? entityTypes.NODE_CVE
-              : entityTypes.CLUSTER_CVE;
+    const splitCveType = imageComponentCount > 0 ? entityTypes.IMAGE_CVE : entityTypes.NODE_CVE;
     const newEntityContext = { ...entityContext, [splitCveType]: cve };
 
     const cveType = Object.keys(newEntityContext).shift();
     let legacyTypeList = [];
-    if (cveType === entityTypes.CLUSTER && splitCveType === entityTypes.CLUSTER_CVE) {
-        legacyTypeList = vulnerabilityTypes;
-    } else if (splitCveType === entityTypes.IMAGE_CVE || splitCveType === entityTypes.NODE_CVE) {
+    if (splitCveType === entityTypes.IMAGE_CVE || splitCveType === entityTypes.NODE_CVE) {
         legacyTypeList = [splitCveType];
     } else {
         legacyTypeList = [cveType];

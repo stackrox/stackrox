@@ -11,7 +11,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
-import { gql, useApolloClient } from '@apollo/client';
+import { useApolloClient } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
@@ -70,14 +70,6 @@ import { imageListQuery } from '../Tables/ImageOverviewTable';
 import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import VulnerabilitiesOverview from './VulnerabilitiesOverview';
-
-export const entityTypeCountsQuery = gql`
-    query getEntityTypeCounts($query: String) {
-        imageCount(query: $query)
-        deploymentCount(query: $query)
-        imageCVECount(query: $query)
-    }
-`;
 
 // Merge the default filters with the local filters.
 // - Default filters that were removed are removed from the local filters.
@@ -255,20 +247,20 @@ function WorkloadCvesOverviewPage() {
     // deep link that carries a sortOption or page (e.g. the Aging Images dashboard
     // widget linking with `Image Created Time` sort) would have it overwritten by the
     // entity default before the table renders.
-    /* eslint-disable react-hooks/exhaustive-deps */
+    /* eslint-disable @eslint-react/exhaustive-deps */
     useEffect(() => {
         trackEntityTabViewed(activeEntityTabKey);
     }, []);
     // activeEntityTabKey
     // trackEntityTabViewed
-    /* eslint-enable react-hooks/exhaustive-deps */
+    /* eslint-enable @eslint-react/exhaustive-deps */
 
     // When the page is initially visited and no local filters are applied, apply the default filters.
     //
     // Note that this _does not_ take into account a direct navigation via the left navigation when the user
     // is already on the page. This is because we do not distinguish between navigation via the
     // sidebar and e.g. clearing the page filters.
-    /* eslint-disable react-hooks/exhaustive-deps */
+    /* eslint-disable @eslint-react/exhaustive-deps */
     useEffect(() => {
         if (shouldSyncDefaultFilters) {
             applyDefaultFilters();
@@ -276,7 +268,7 @@ function WorkloadCvesOverviewPage() {
     }, []);
     // applyDefaultFilters
     // shouldSyncDefaultFilters
-    /* eslint-enable react-hooks/exhaustive-deps */
+    /* eslint-enable @eslint-react/exhaustive-deps */
 
     const [defaultWatchedImageName, setDefaultWatchedImageName] = useState('');
     const watchedImagesModalToggle = useSelectToggle();

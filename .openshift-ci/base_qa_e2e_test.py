@@ -14,14 +14,14 @@ from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner, TestSet
 
 
-def make_qa_e2e_test_runner(cluster):
+def make_qa_e2e_test_runner(cluster, roxie_config=""):
     return ClusterTestSetsRunner(
         cluster=cluster,
         initial_pre_test=PreSystemTests(),
         sets=[
             TestSet(
                 "QA tests part I",
-                test=QaE2eTestPart1(),
+                test=QaE2eTestPart1(roxie_config=roxie_config),
                 post=PostClusterTest(
                     check_stackrox_logs=True,
                     artifact_destination_prefix="part-1",

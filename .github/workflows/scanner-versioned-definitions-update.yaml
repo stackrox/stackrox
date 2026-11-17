@@ -181,6 +181,7 @@ jobs:
         name: nvd
         path: nvd.zip
         if-no-files-found: error
+        retention-days: '1'
 
   build-and-run:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -328,6 +329,7 @@ jobs:
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
+        retention-days: '1'
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository

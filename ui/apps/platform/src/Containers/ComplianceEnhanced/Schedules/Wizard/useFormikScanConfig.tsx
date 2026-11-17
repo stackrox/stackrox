@@ -2,11 +2,6 @@ import { useFormik } from 'formik';
 import type { FormikProps } from 'formik';
 import * as yup from 'yup';
 
-import {
-    customBodyValidation,
-    customSubjectValidation,
-} from 'Components/EmailTemplate/EmailTemplate.utils';
-
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
@@ -43,6 +38,22 @@ function timeValidator(value: string) {
     const minute = parseInt(minuteString);
     return hour >= 0 && hour < 24 && minute >= 0 && minute < 60;
 }
+
+const maxCustomSubjectLength = 256;
+const maxCustomBodyLength = 1500;
+
+const customSubjectValidation = yup
+    .string()
+    .default('')
+    .max(
+        maxCustomSubjectLength,
+        `Limit your input to ${maxCustomSubjectLength} characters or fewer.`
+    );
+
+const customBodyValidation = yup
+    .string()
+    .default('')
+    .max(maxCustomBodyLength, `Limit your input to ${maxCustomBodyLength} characters or fewer.`);
 
 const validationSchema = yup.object().shape({
     parameters: yup.object().shape({

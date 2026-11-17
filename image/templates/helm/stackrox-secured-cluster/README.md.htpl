@@ -287,7 +287,6 @@ chart and their default values:
 |`admissionControl.failurePolicy`| This setting controls the failure policy for the ValidatingWebhookConfiguration. Can be "Ignore" or "Fail". |"Ignore" |
 |`admissionControl.dynamic.disableBypass`|Set it to `true` to disable [bypassing the admission controller](https://help.stackrox.com/docs/manage-security-policies/use-admission-controller-enforcement/). |`false` |
 |`registryOverride`|Use this parameter to override the default `docker.io` registry. Specify the name of your registry if you are using some other registry.| |
-|`createUpgraderServiceAccount`| Specify `true` to create the `sensor-upgrader` account. By default, the StackRox Kubernetes Security Platform creates a service account called `sensor-upgrader` in each secured cluster. This account is highly privileged but is only used during upgrades. If you don’t create this account, you will have to complete future upgrades manually if the Sensor doesn’t have enough permissions. See [Enable automatic upgrades for secured clusters](https://help.stackrox.com/docs/configure-stackrox/enable-automatic-upgrades/) for more information.|`false` |
 |`createSecrets`| Specify `false` to skip the orchestrator secret creation for the sensor, collector, and admission controller. | `true` |
 |`customize`|Modern interface for specifying custom metadata for resources, including labels, annotations and environment variables. See below for more information.|`{}`|
 [</*

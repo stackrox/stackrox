@@ -10,10 +10,6 @@ import type {
  * Validation for simple access scopes.
  */
 
-export function getIsKeyExistsOperator(op: LabelSelectorOperator): boolean {
-    return op === 'EXISTS' || op === 'NOT_EXISTS';
-}
-
 export function getIsKeyInSetOperator(op: LabelSelectorOperator): boolean {
     return op === 'IN' || op === 'NOT_IN';
 }
@@ -21,7 +17,7 @@ export function getIsKeyInSetOperator(op: LabelSelectorOperator): boolean {
 /*
  * A valid "key in set" requirement has at least one value.
  */
-export function getIsValidRequirement({ op, values }: LabelSelectorRequirement): boolean {
+function getIsValidRequirement({ op, values }: LabelSelectorRequirement): boolean {
     return !getIsKeyInSetOperator(op) || values.length !== 0;
 }
 
@@ -32,7 +28,7 @@ export function getIsValidRequirements(requirements: LabelSelectorRequirement[])
     return requirements.length !== 0 && requirements.every(getIsValidRequirement);
 }
 
-export function getIsValidLabelSelectors(labelSelectors: LabelSelector[]): boolean {
+function getIsValidLabelSelectors(labelSelectors: LabelSelector[]): boolean {
     return labelSelectors.every(({ requirements }) => getIsValidRequirements(requirements));
 }
 
@@ -154,29 +150,4 @@ export function getOpText(op: LabelSelectorOperator, values: string[]): string {
 
 export function getValueText(value: string): string {
     return value || '""';
-}
-
-export function getIsOverlappingRequirement(
-    key: string,
-    op: LabelSelectorOperator,
-    requirements: LabelSelectorRequirement[]
-): boolean {
-    return requirements.some((requirement) => {
-        if (key === requirement.key) {
-            if (op === requirement.op) {
-                // Prevent same key and op because:
-                // redundant for exists
-                // confusing for set, because effective requirement is intersection of values
-                // however, "key in (...)" and "key not in (...)" are possible
-                return true;
-            }
-
-            if (getIsKeyExistsOperator(op) && getIsKeyExistsOperator(requirement.op)) {
-                // Prevent "key exists" and "key not exists" because they contradict each other.
-                return true;
-            }
-        }
-
-        return false;
-    });
 }

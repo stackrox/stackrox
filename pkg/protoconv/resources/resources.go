@@ -8,7 +8,6 @@ import (
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -270,22 +269,17 @@ func (w *DeploymentWrap) populateTolerations(podSpec v1.PodSpec) {
 }
 
 func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
-	containerCount := len(podSpec.Containers)
-	if features.InitContainerSupport.Enabled() {
-		containerCount += len(podSpec.InitContainers)
-	}
+	containerCount := len(podSpec.Containers) + len(podSpec.InitContainers)
 	allK8sContainers := make([]v1.Container, 0, containerCount)
 	w.Deployment.Containers = make([]*storage.Container, 0, containerCount)
 
-	if features.InitContainerSupport.Enabled() {
-		for _, c := range podSpec.InitContainers {
-			w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
-				Id:   fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name),
-				Name: c.Name,
-				Type: storage.ContainerType_INIT,
-			})
-			allK8sContainers = append(allK8sContainers, c)
-		}
+	for _, c := range podSpec.InitContainers {
+		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
+			Id:   fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name),
+			Name: c.Name,
+			Type: storage.ContainerType_INIT,
+		})
+		allK8sContainers = append(allK8sContainers, c)
 	}
 
 	for _, c := range podSpec.Containers {

@@ -250,6 +250,8 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Tag("RUNTIME")
     // K8s event detection is currently not supported on OpenShift.
     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
+    // Iterations share violation counts; skip the remaining steps after a failure.
+    @Stepwise
     def "Verify attempted alerts on kubernetes events: #desc"() {
         given:
         "Admission Controller exec/pf is enabled"

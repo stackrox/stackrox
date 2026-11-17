@@ -128,7 +128,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                         })}
                 </Split>
             </SplitItem>
-            <div className="pf-v6-u-color-200 pf-v6-u-font-size-sm pf-v6-u-mr-md pf-v6-u-mr-lg-on-lg">
+            <div className="pf-v6-u-font-size-sm pf-v6-u-mr-md pf-v6-u-mr-lg-on-lg">
                 {`Last updated ${getDateTime(lastUpdate)}`}
             </div>
         </Split>

@@ -282,8 +282,8 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 			}
 			return nil
 		})
-	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, id1).Return(existingPolicy1, true, nil).Times(2)
-	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy2.GetId()).Return(existingPolicy1, true, nil).Times(2)
+	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, id1).Return(existingPolicy1, true, nil)
+	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy2.GetId()).Return(existingPolicy1, true, nil)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, id1).Return(nil)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, policy2.GetId()).Return(nil)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy2.GetId()).Return(nil)
@@ -335,7 +335,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	}
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
-	s.notifierDatastore.EXPECT().GetNotifier(s.hasReadWriteWorkflowAdministrationAccess, notifierName).Return(nil, false, nil)
+	s.notifierDatastore.EXPECT().Exists(s.hasReadWriteWorkflowAdministrationAccess, notifierName).Return(false, nil)
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().Walk(s.hasReadWriteWorkflowAdministrationAccess, gomock.Any()).Return(nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy).Return(nil)
@@ -385,7 +385,7 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 		},
 	}
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(mockClusters, nil)
-	s.notifierDatastore.EXPECT().GetNotifier(s.hasReadWriteWorkflowAdministrationAccess, notifierName).Return(nil, true, nil)
+	s.notifierDatastore.EXPECT().Exists(s.hasReadWriteWorkflowAdministrationAccess, notifierName).Return(true, nil)
 	s.store.EXPECT().Walk(s.hasReadWriteWorkflowAdministrationAccess, gomock.Any()).Return(nil)
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, eq(policy)).Return(nil)

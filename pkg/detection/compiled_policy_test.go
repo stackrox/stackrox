@@ -373,8 +373,6 @@ func initAndRegularDeployment() (*storage.Deployment, []*storage.Image) {
 }
 
 func TestEvaluationFilterSkipsContainers(t *testing.T) {
-	t.Setenv(features.EvaluationFilter.EnvVar(), "true")
-
 	dep, images := initAndRegularDeployment()
 	ed := booleanpolicy.EnhancedDeployment{Deployment: dep, Images: images}
 

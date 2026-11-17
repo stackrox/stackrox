@@ -4,11 +4,9 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/clone/metadata"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/config"
@@ -136,6 +134,38 @@ func (s *PostgresExternalManagerSuite) TestScanIncompatibleExternal() {
 	migVer.SetVersionPostgres(s.ctx, externalDB, futureVersion)
 
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum(), migrations.MinimumSupportedDBVersion())
-	s.EqualError(dbm.Scan(), errorMessage)
+	err := dbm.Scan()
+	s.Require().ErrorContains(err, "Central rollback blocked")
+	s.Require().ErrorContains(err, futureVersion.GetVersion())
+}
+
+func (s *PostgresExternalManagerSuite) TestUpgradeCompatibility() {
+	migVer.SetVersionPostgres(s.ctx, externalDB, &storage.Version{Version: "4.9.0", SeqNum: 227})
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "4.9")
+	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
+	s.Require().NoError(New("", s.config, s.sourceMap).Scan())
+}
+
+func (s *PostgresExternalManagerSuite) TestOverrideCannotBypassRollbackMinimum() {
+	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
+	// The DB comes from a newer release whose rollback floor (MinSeqNum) is above the
+	// current binary's sequence, so rolling back is blocked even with the override.
+	// Express relative to the current sequence so the test survives sequence bumps.
+	migVer.SetVersionPostgres(s.ctx, externalDB, &storage.Version{
+		Version:   "5.2.0",
+		SeqNum:    int32(migrations.CurrentDBVersionSeqNum() + 2),
+		MinSeqNum: int32(migrations.CurrentDBVersionSeqNum() + 1),
+	})
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "Central rollback blocked")
+}
+
+func (s *PostgresExternalManagerSuite) TestRollbackReleaseWindowEqualSequence() {
+	s.T().Setenv("ROX_UNSAFE_ALLOW_UNSUPPORTED_UPGRADE", "true")
+	migVer.SetVersionPostgres(s.ctx, externalDB, &storage.Version{Version: "5.5.0", SeqNum: 227, MinSeqNum: 220})
+	before, err := migVer.ReadVersionPostgres(s.ctx, externalDB)
+	s.Require().NoError(err)
+	s.Require().ErrorContains(New("", s.config, s.sourceMap).Scan(), "Central rollback blocked: cannot downgrade")
+	after, err := migVer.ReadVersionPostgres(s.ctx, externalDB)
+	s.Require().NoError(err)
+	s.Equal(before, after)
 }

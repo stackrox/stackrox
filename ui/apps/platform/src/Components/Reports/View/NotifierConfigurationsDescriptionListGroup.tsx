@@ -21,7 +21,7 @@ export type NotifierConfigurationsDescriptionListGroupProps = {
 function NotifierConfigurationsDescriptionListGroup({
     notifiers,
 }: NotifierConfigurationsDescriptionListGroupProps): ReactElement {
-    /* eslint-disable react/no-array-index-key */
+    /* eslint-disable @eslint-react/no-array-index-key */
     return (
         <DescriptionListGroup>
             <DescriptionListTerm>Destinations</DescriptionListTerm>
@@ -41,7 +41,7 @@ function NotifierConfigurationsDescriptionListGroup({
             </DescriptionListDescription>
         </DescriptionListGroup>
     );
-    /* eslint-enable react/no-array-index-key */
+    /* eslint-enable @eslint-react/no-array-index-key */
 }
 
 export default NotifierConfigurationsDescriptionListGroup;

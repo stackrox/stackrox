@@ -47,16 +47,6 @@
 ##       -----END CERTIFICATE-----
 #additionalCAs: null
 #
-# Specify `true` to create the `sensor-upgrader` account. By default, the StackRox Kubernetes
-# Security Platform creates a service account called `sensor-upgrader` in each secured cluster.
-# This account is highly privileged but is only used during upgrades. If you don’t create this
-# account, you will have to complete future upgrades manually if the Sensor doesn’t have enough
-# permissions. See
-# [Enable automatic upgrades for secured clusters](https://help.stackrox.com/docs/configure-stackrox/enable-automatic-upgrades/)
-# for more information.
-# Note that auto-upgrades for Helm-managed clusters are disabled.
-#createUpgraderServiceAccount: false
-#
 ## Configuration for image pull secrets.
 ## These should usually be set via the command line when running `helm install`, e.g.,
 ## helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,

@@ -40,7 +40,6 @@ import {
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesViewPath,
@@ -79,7 +78,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     vulnerabilitiesInactiveImagesPath,
                     vulnerabilitiesImagesWithoutCvesPath,
                     vulnerabilitiesViewPath,
-                    vulnerabilitiesPlatformCvesPath,
                     vulnerabilitiesVirtualMachineCvesPath,
                 ];
 

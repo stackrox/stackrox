@@ -172,9 +172,7 @@ class LoginPage extends Component {
         let { authProviders } = this.props;
         if (
             !authorizeRoxctlMode &&
-            (authStatus === AUTH_STATUS.LOADING ||
-                authStatus === AUTH_STATUS.LOGGED_IN ||
-                authStatus === AUTH_STATUS.ANONYMOUS_ACCESS)
+            (authStatus === AUTH_STATUS.LOADING || authStatus === AUTH_STATUS.LOGGED_IN)
         ) {
             return null;
         }
@@ -239,10 +237,7 @@ class LoginPage extends Component {
                 </div>
             );
         }
-        if (
-            !authorizeRoxctlMode &&
-            (authStatus === AUTH_STATUS.LOGGED_IN || authStatus === AUTH_STATUS.ANONYMOUS_ACCESS)
-        ) {
+        if (!authorizeRoxctlMode && authStatus === AUTH_STATUS.LOGGED_IN) {
             return (
                 <div className="p-8 w-full text-center">
                     <Link

@@ -50,9 +50,9 @@ func TestRuleProcessEvent_V2HasOperatorKindRule(t *testing.T) {
 	event := dispatcher.ProcessEvent(ruleToUnstructured(t, rule), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
-	require.Len(t, event.ForwardMessages, 2, "expected V1 + V2 events")
+	require.Len(t, event.ForwardMessages, 1, "expected V2 event only")
 
-	v2Rule := event.ForwardMessages[1].GetComplianceOperatorRuleV2()
+	v2Rule := event.ForwardMessages[0].GetComplianceOperatorRuleV2()
 	require.NotNil(t, v2Rule)
 	assert.Equal(t, string(rule.GetUID()), v2Rule.GetId())
 	assert.Equal(t, rule.GetName(), v2Rule.GetName())
@@ -64,22 +64,15 @@ func TestRuleProcessEvent_V2HasOperatorKindRule(t *testing.T) {
 	assert.Equal(t, central.ComplianceOperatorRuleV2_RULE, v2Rule.GetOperatorKind())
 }
 
+// TestRuleProcessEvent_WithoutV2Capability verifies that when ComplianceV2Integrations
+// capability is absent, the dispatcher returns nil.
 func TestRuleProcessEvent_WithoutV2Capability(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{})
+	centralcaps.Set([]centralsensor.CentralCapability{}) // No capabilities
 	t.Cleanup(func() { centralcaps.Set(nil) })
 
 	rule := testRule()
 	dispatcher := NewRulesDispatcher()
 	event := dispatcher.ProcessEvent(ruleToUnstructured(t, rule), nil, central.ResourceAction_CREATE_RESOURCE)
 
-	require.NotNil(t, event)
-	require.Len(t, event.ForwardMessages, 1, "expected V1 event only")
-	assert.IsType(t, &central.SensorEvent_ComplianceOperatorRule{}, event.ForwardMessages[0].GetResource())
-
-	v1Rule := event.ForwardMessages[0].GetComplianceOperatorRule()
-	require.NotNil(t, v1Rule)
-	assert.Equal(t, string(rule.GetUID()), v1Rule.GetId())
-	assert.Equal(t, rule.ID, v1Rule.GetRuleId())
-	assert.Equal(t, rule.GetName(), v1Rule.GetName())
-	assert.Equal(t, rule.Title, v1Rule.GetTitle())
+	assert.Nil(t, event, "dispatcher should return nil when ComplianceV2Integrations capability is absent")
 }

@@ -21,7 +21,7 @@ export type EntityScopeDescriptionListGroupsProps = {
 function EntityScopeDescriptionListGroups({
     entityScope,
 }: EntityScopeDescriptionListGroupsProps): ReactElement {
-    /* eslint-disable react/no-array-index-key */
+    /* eslint-disable @eslint-react/no-array-index-key */
     return (
         <>
             {entityScope.rules.map((rule, indexOfRule) => {
@@ -42,7 +42,7 @@ function EntityScopeDescriptionListGroups({
             })}
         </>
     );
-    /* eslint-enable react/no-array-index-key */
+    /* eslint-enable @eslint-react/no-array-index-key */
 }
 
 export default EntityScopeDescriptionListGroups;

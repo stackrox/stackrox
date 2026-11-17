@@ -30,11 +30,11 @@
 {{ if not (contains "/" $component) }}
   {{ $_ = set $labels "app.kubernetes.io/component" $component }}
   {{/*
-    The sensor auto-upgrader manages all three components (sensor, collector, admission-control)
-    as a single upgrade bundle and uses the auto-upgrade.stackrox.io/component label to discover
-    the resources it owns. For manifest-based installs (non-Helm, non-Operator), the upgrader
-    validates this label on all bundle objects before applying them. Missing it will cause the
-    auto-upgrade to fail. See also: sensor/upgrader/bundle/instantiator.go
+    The auto-upgrade.stackrox.io/component label marks the sensor, collector and
+    admission-control resources as belonging to a single secured-cluster bundle.
+    It is used as the selector by the manifest bundle's delete-sensor.sh to find and
+    remove all bundle resources on uninstall. (It was originally introduced for the
+    now-removed sensor auto-upgrader.)
 
     Only set on resource metadata, not pod labels.
   */}}

@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -40,7 +39,6 @@ func TestGetK8sDiagnostics(t *testing.T) {
 	clusters := clusterMocks.NewMockDataStore(ctrl)
 
 	conn.EXPECT().ClusterID().Return("123")
-	conn.EXPECT().HasCapability(centralsensor.PullTelemetryDataCap).Return(true)
 	telemetryCtrl := &telemetryController{
 		payload: &central.TelemetryResponsePayload_KubernetesInfo{
 			Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
@@ -93,7 +91,6 @@ func TestPullSensorMetrics(t *testing.T) {
 	clusters := clusterMocks.NewMockDataStore(ctrl)
 
 	conn.EXPECT().ClusterID().Return("123")
-	conn.EXPECT().HasCapability(centralsensor.PullMetricsCap).Return(true)
 	telemetryCtrl := &telemetryController{
 		payload: &central.TelemetryResponsePayload_KubernetesInfo{
 			Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{

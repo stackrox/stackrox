@@ -40,7 +40,6 @@ var (
 		"sensor/kubernetes",
 		"sensor/tests",
 		"sensor/testutils",
-		"sensor/upgrader",
 		"sensor/utils",
 		"tools",
 		"webhookserver",

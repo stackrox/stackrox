@@ -67,7 +67,7 @@ function ExternalIpsContainer({ scopeHierarchy, onExternalIPSelect }: ExternalIp
                 properties: { isEmptyTable, isFilteredTable },
             });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line @eslint-react/exhaustive-deps
     }, [analyticsTrack, externalIpsFlowsMetadata, isLoading]);
 
     return (

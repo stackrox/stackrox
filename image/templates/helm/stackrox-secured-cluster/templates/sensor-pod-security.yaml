@@ -36,9 +36,6 @@ subjects:
   - kind: ServiceAccount
     name: sensor
     namespace: {{ ._rox._namespace }}
-  - kind: ServiceAccount
-    name: sensor-upgrader
-    namespace: {{ ._rox._namespace }}
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy

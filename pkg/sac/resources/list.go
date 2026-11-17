@@ -35,7 +35,7 @@ var (
 	// related to authentication and authorization. It aims to cover platform
 	// configuration. For instance, it has replaced: AllComments, Config,
 	// DebugLogs, NetworkGraphConfig, ProbeUpload, ScannerBundle,
-	// ScannerDefinitions, SensorUpgradeConfig, ServiceIdentity.
+	// ScannerDefinitions, ServiceIdentity.
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
 
 	Alert      = newResourceMetadata("Alert", permissions.NamespaceScope)

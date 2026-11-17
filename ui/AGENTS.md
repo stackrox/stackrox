@@ -63,7 +63,7 @@ npm run cypress-open                          # Interactive test runner
 
 ```bash
 npm run lint:fast-dev      # Quick ESLint check (skips slow rules)
-npm run lint:fast-dev:fix  # Quick ESLint with auto-fix
+npm run lint:fast-dev-fix  # Quick ESLint with auto-fix
 npm run lint:fix           # Full ESLint with auto-fix
 npm run tsc                # TypeScript type checking
 ```

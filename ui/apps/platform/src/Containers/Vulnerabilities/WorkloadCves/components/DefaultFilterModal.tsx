@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Button, Checkbox, Form, FormGroup } from '@patternfly/react-core';
 import { Modal } from '@patternfly/react-core/deprecated';
+import { GlobeIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 import { FormikProvider, useFormik } from 'formik';
-import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
 
 import useAnalytics, { WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED } from 'hooks/useAnalytics';
 import type { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from '../../types';
@@ -80,7 +80,8 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         <>
             <Button
                 variant="secondary"
-                className="pf-v6-u-display-inline-flex pf-v6-u-align-items-center"
+                icon={<GlobeIcon />}
+                iconPosition="start"
                 onClick={handleModalToggle}
                 countOptions={{
                     isRead: true,
@@ -88,8 +89,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                     className: 'custom-badge-unread',
                 }}
             >
-                <Globe height="20px" width="20px" className="pf-v6-u-mr-sm" />
-                <span>Default filters</span>
+                Default filters
             </Button>
             <Modal
                 title="Default filters"

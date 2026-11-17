@@ -1,6 +1,5 @@
 import { Card, CardBody, DescriptionList, Stack, Title } from '@patternfly/react-core';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { EvaluationFilter, LifecycleStage, PolicyEventSource } from 'types/policy.proto';
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { containerTypeFilterApplies } from '../policies.utils';
@@ -32,13 +31,11 @@ function PolicyFiltersSection({
     lifecycleStages,
     eventSource,
 }: PolicyFiltersSectionProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
-    const containerTypeLabel =
-        isFeatureFlagEnabled('ROX_EVALUATION_FILTER') &&
-        isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT')
-            ? getContainerTypeLabel(evaluationFilter, lifecycleStages, eventSource)
-            : null;
+    const containerTypeLabel = getContainerTypeLabel(
+        evaluationFilter,
+        lifecycleStages,
+        eventSource
+    );
 
     if (!containerTypeLabel) {
         return null;

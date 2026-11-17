@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// A Sensor service that allows Compliance to report node scrapes results, audit events, and node scans v2.
+// A Sensor service that allows Compliance to report audit events and node scans.
 type ComplianceServiceClient interface {
 	Communicate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MsgFromCompliance, MsgToCompliance], error)
 }
@@ -56,7 +56,7 @@ type ComplianceService_CommunicateClient = grpc.BidiStreamingClient[MsgFromCompl
 // All implementations should embed UnimplementedComplianceServiceServer
 // for forward compatibility.
 //
-// A Sensor service that allows Compliance to report node scrapes results, audit events, and node scans v2.
+// A Sensor service that allows Compliance to report audit events and node scans.
 type ComplianceServiceServer interface {
 	Communicate(grpc.BidiStreamingServer[MsgFromCompliance, MsgToCompliance]) error
 }

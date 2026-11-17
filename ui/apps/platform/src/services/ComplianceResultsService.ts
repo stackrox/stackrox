@@ -4,6 +4,7 @@ import type { SearchQueryOptions } from 'types/search';
 import { buildNestedRawQueryParams } from 'utils/searchUtils';
 import { complianceV2Url } from './ComplianceCommon';
 import type {
+    ComplianceCheckDataFreshness,
     ComplianceCheckStatus,
     ComplianceControl,
     ComplianceScanCluster,
@@ -18,6 +19,7 @@ export type ClusterCheckStatus = {
     createdTime: string; // ISO 8601 date string
     checkUid: string;
     lastScanTime: string; // ISO 8601 date string
+    dataFreshness: ComplianceCheckDataFreshness;
 };
 
 export type ComplianceCheckResult = {
@@ -34,6 +36,7 @@ export type ComplianceCheckResult = {
     ruleName: string;
     labels: { [key: string]: string };
     annotations: { [key: string]: string };
+    dataFreshness: ComplianceCheckDataFreshness;
 };
 
 export type ComplianceClusterCheckStatus = {

@@ -27,11 +27,6 @@ function makeCluster(name, sensorVersionCompatibility, sensorVersion = '5.0.0') 
         status: {
             sensorVersion,
             sensorVersionCompatibility,
-            upgradeStatus: {
-                upgradability: 'UP_TO_DATE',
-                upgradabilityStatusReason: '',
-                mostRecentProcess: null,
-            },
             certExpiryStatus: { sensorCertExpiry: '2027-01-01T00:00:00Z' },
         },
         dynamicConfig: {

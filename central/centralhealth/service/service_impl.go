@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -37,12 +38,16 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetUpgradeStatus returns the upgrade status for Central.
 func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetUpgradeStatusResponse, error) {
+	minimum, err := migrations.MinimumSupportedDBVersion()
+	if err != nil {
+		return nil, errors.Wrap(err, "determining minimum supported Central version")
+	}
 	upgradeStatus := &v1.CentralUpgradeStatus{
 		Version: version.GetMainVersion(),
 		// Due to backwards compatibility going forward we can assume
 		// we can rollback after an upgrade
 		CanRollbackAfterUpgrade: true,
-		ForceRollbackTo:         migrations.MinimumSupportedDBVersion(),
+		ForceRollbackTo:         minimum,
 	}
 
 	return &v1.GetUpgradeStatusResponse{

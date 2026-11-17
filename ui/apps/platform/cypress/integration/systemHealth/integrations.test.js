@@ -2,10 +2,6 @@ import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import { visitSystemHealth } from '../../helpers/systemHealth';
 
-function getCardBodyDescendantSelector(cardTitle, descendant) {
-    return `.pf-v6-c-card:has('h2:contains("${cardTitle}")') .pf-v6-c-card__body ${descendant}`;
-}
-
 function getCardHeaderDescendantSelector(cardTitle, descendant) {
     return `.pf-v6-c-card__header:has('h2:contains("${cardTitle}")') ${descendant}`;
 }
@@ -35,11 +31,6 @@ describe('System Health Integrations fixtures', () => {
                 type: 'docker',
                 // omit irrelevant properties
             },
-            {
-                id: '169b0d3f-8277-4900-bbce-1127077defae',
-                type: 'clairify',
-                // omit irrelevant properties
-            },
         ];
         const integrationHealth = [
             {
@@ -57,14 +48,6 @@ describe('System Health Integrations fixtures', () => {
                 status: 'HEALTHY',
                 errorMessage: '',
                 lastTimestamp: '2020-12-09T15:15:19.318789700Z',
-            },
-            {
-                id: '169b0d3f-8277-4900-bbce-1127077defae',
-                name: 'Stackrox Scanner',
-                type: 'IMAGE_INTEGRATION',
-                status: 'HEALTHY',
-                errorMessage: '',
-                lastTimestamp: '2020-12-09T15:15:38.327627700Z',
             },
         ];
         visitSystemHealth({
@@ -101,40 +84,6 @@ describe('System Health Integrations fixtures', () => {
         cy.get(
             getCardHeaderDescendantSelector('Notifier Integrations', 'div:contains("no errors")')
         );
-    });
-
-    it('should have a list with 1 Unhealthy image integration', () => {
-        const integrations = [
-            {
-                id: '169b0d3f-8277-4900-bbce-1127077defae',
-                name: 'StackRox Scanner',
-                type: 'clairify',
-            },
-        ];
-        const integrationHealth = [
-            {
-                id: '169b0d3f-8277-4900-bbce-1127077defae',
-                name: 'StackRox Scanner',
-                type: 'IMAGE_INTEGRATION',
-                status: 'UNHEALTHY',
-                errorMessage:
-                    'Error scanning "docker.io/library/nginx:latest" with scanner "Stackrox Scanner": dial tcp 10.0.1.229:5432: connect: connection refused',
-                lastTimestamp: '2020-12-04T00:38:17.906318735Z',
-            },
-        ];
-        visitSystemHealth({
-            imageintegrations: { body: { integrations } },
-            'integrationhealth/imageintegrations': { body: { integrationHealth } },
-        });
-
-        cy.get(getCardHeaderDescendantSelector('Image Integrations', 'div:contains("1 error")'));
-
-        const name = 'StackRox Scanner';
-        const errorMessage =
-            'Error scanning "docker.io/library/nginx:latest" with scanner "Stackrox Scanner": dial tcp 10.0.1.229:5432: connect: connection refused';
-        const itemSelector = getCardBodyDescendantSelector('Image Integrations', 'tbody tr:first');
-        cy.get(`${itemSelector} td[data-label="Name"]`).should('have.text', name);
-        cy.get(`${itemSelector} td[data-label="Error message"]`).should('have.text', errorMessage);
     });
 
     it('should have a list with 1 declarative configuration error', () => {

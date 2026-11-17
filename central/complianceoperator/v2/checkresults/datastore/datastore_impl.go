@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -18,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -33,11 +36,14 @@ const (
 type datastoreImpl struct {
 	store store.Store
 	db    postgres.DB
+
+	// keyFence prevents UpsertResult from racing MarkScanChecksStale.
+	keyFence concurrency.KeyFence
 }
 
-// UpsertResult adds the result to the database  If enabling the use of this
-// method from a service, the creation of the `ScanRefID` must be accounted for.  In reality this
-// method should only be used by the pipeline as this is a compliance operator object we are storing.
+// UpsertResult stores a result received from sensor. If enabling the use of this method from a
+// service, the creation of the `ScanRefID` must be accounted for. In reality this method should only
+// be used by the pipeline as this is a compliance operator object we are storing.
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -48,7 +54,41 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 	// TODO (ROX-20573): populate the standard and control from the rule so that lookup only happens
 	// one time on insert and not everytime we pull the results.
 
-	return d.store.Upsert(ctx, result)
+	return d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(result.GetId())), func() error {
+		if !features.ComplianceSurfaceStaleData.Enabled() {
+			return d.store.Upsert(ctx, result)
+		}
+
+		existing, _, err := d.store.Get(ctx, result.GetId())
+		if err != nil {
+			return errors.Wrap(err, "looking up existing compliance check result to evaluate freshness")
+		}
+
+		// If this is the first time we've seen a check result, it's CURRENT as long as its timestamp is set
+		if existing == nil {
+			if result.GetLastStartedTime() != nil {
+				result.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+			}
+			return d.store.Upsert(ctx, result)
+		}
+
+		// Ignore if we have already stored a newer version of the incoming result (out-of-order delivery)
+		isOlder := existing.GetLastStartedTime().AsTime().After(result.GetLastStartedTime().AsTime())
+		if isOlder {
+			return nil
+		}
+
+		// Set freshness to either CURRENT if the received result is newer than the stored one,
+		// otherwise keep the previous value.
+		isNewer := existing.GetLastStartedTime().AsTime().Before(result.GetLastStartedTime().AsTime())
+		if isNewer {
+			result.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		} else {
+			result.DataFreshness = existing.GetDataFreshness()
+		}
+
+		return d.store.Upsert(ctx, result)
+	})
 }
 
 // DeleteResult removes a result from the database
@@ -144,7 +184,20 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 		}
 	}
 
-	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countQuery := d.withStaleCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName), search.ComplianceOperatorProfileName)
+	// Count distinct clusters with any stale result per profile for the stale-data banner.
+	countQuery.Selects = append(countQuery.Selects,
+		search.NewQuerySelect(search.ClusterID).
+			AggrFunc(aggregatefunc.Count).
+			Distinct().
+			Filter(search.ComplianceStaleClusterCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceOperatorCheckDataFreshness,
+						storage.ComplianceOperatorCheckResultV2_STALE.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
 	var countResults []*ResourceResultCountByProfile
 	err := pgSearch.RunSelectRequestForSchemaFn[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultCountByProfile) error {
 		countResults = append(countResults, r)
@@ -197,7 +250,7 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		}
 	}
 
-	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countQuery := d.withFreshnessCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName), search.ComplianceOperatorProfileName)
 	var results []*ResourceResultsByProfile
 	err := pgSearch.RunSelectRequestForSchemaFn[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultsByProfile) error {
 		results = append(results, r)
@@ -242,7 +295,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 		}
 	}
 
-	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
+	countQuery := d.withFreshnessCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ClusterID), search.ClusterID)
 	var countResults []*ResultStatusCountByCluster
 	err := pgSearch.RunSelectRequestForSchemaFn[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResultStatusCountByCluster) error {
 		countResults = append(countResults, r)
@@ -392,6 +445,42 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
+// withStaleCountSelectQuery appends the stale check-count select. The per-profile
+// banner needs only this count, not the current one.
+func (d *datastoreImpl) withStaleCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceStaleCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceOperatorCheckDataFreshness,
+						storage.ComplianceOperatorCheckResultV2_STALE.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
+	return cloned
+}
+
+// withFreshnessCountSelectQuery appends current/stale check-count selects, for the
+// per-check and per-cluster rollups that need both counts.
+func (d *datastoreImpl) withFreshnessCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := d.withStaleCountSelectQuery(q, countOn)
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceCurrentCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceOperatorCheckDataFreshness,
+						storage.ComplianceOperatorCheckResultV2_CURRENT.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
+	return cloned
+}
+
 func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
 	if scanRefID == "" || lastStartedTimestamp == nil {
 		return nil
@@ -411,4 +500,96 @@ func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimesta
 	)
 	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
 	return err
+}
+
+// freshnessUpdateBatchSize bounds how many changed results are re-serialized and upserted per
+// UpsertMany call, so a large update does not issue one oversized write.
+const freshnessUpdateBatchSize = 1000
+
+// MarkScanChecksStale marks STALE the check results (from the scan specified via scanRefID) whose
+// LastStartedTime predates olderThan.
+func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	if scanRefID == "" {
+		return 0, nil
+	}
+
+	// Narrow the candidate scan at the DB so it does not read and deserialize results that shouldStale would reject
+	// anyway: skip rows that are already STALE, and rows whose LastStartedTime is not older than olderThan.
+	//
+	// The search DSL formats timestamps with second granularity (see sqlTimeStampFormat), so pushing olderThan down
+	// verbatim could drop a row whose sub-second LastStartedTime is still before olderThan (under-selection). We round
+	// the upper bound up to the next whole second to guarantee the DB returns a superset, then shouldStale re-checks
+	// every candidate in Go with full precision.
+	upperBound := olderThan.Truncate(time.Second).Add(time.Second)
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		AddStrings(search.ComplianceOperatorCheckDataFreshness,
+			search.NegateQueryString(search.ExactMatchString(storage.ComplianceOperatorCheckResultV2_STALE.String()))).
+		AddTimeRangeField(search.ComplianceOperatorCheckLastStartedTime, time.Unix(0, 0), upperBound).
+		ProtoQuery()
+
+	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		started := result.GetLastStartedTime()
+		return started != nil && started.AsTime().Before(olderThan)
+	}, "marking prior compliance check results stale")
+}
+
+// markStale performs a read-modify-upsert that flips to STALE every result matched by query for
+// which shouldStale reports true. Results for which shouldStale is false are left untouched.
+func (d *datastoreImpl) markStale(ctx context.Context, query *v1.Query, shouldStale func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
+	// Collect IDs during the read, upsert after it completes (upserting inside the callback would
+	// need a second connection, risking a deadlock)
+	var candidateIDs []string
+	err := d.store.GetByQueryFn(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) error {
+		if shouldStale(result) {
+			candidateIDs = append(candidateIDs, result.GetId())
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrap(err, errMsg)
+	}
+
+	var updated int64
+	for start := 0; start < len(candidateIDs); start += freshnessUpdateBatchSize {
+		end := min(start+freshnessUpdateBatchSize, len(candidateIDs))
+		batchIDs := candidateIDs[start:end]
+
+		keys := sliceutils.Map(batchIDs, func(id string) []byte { return []byte(id) })
+
+		// Re-read and upsert under the key fence: freshness lives in the serialized proto, so the
+		// whole row is rewritten. Ingest takes the same fence, so the re-read sees any concurrent
+		// write and we never revert a newer result to an older snapshot.
+		err := d.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
+			results, _, err := d.store.GetMany(ctx, batchIDs)
+			if err != nil {
+				return err
+			}
+			changed := results[:0]
+			for _, result := range results {
+				if !shouldStale(result) {
+					continue
+				}
+				result.DataFreshness = storage.ComplianceOperatorCheckResultV2_STALE
+				changed = append(changed, result)
+			}
+			if len(changed) == 0 {
+				return nil
+			}
+			if err := d.store.UpsertMany(ctx, changed); err != nil {
+				return err
+			}
+			updated += int64(len(changed))
+			return nil
+		})
+		if err != nil {
+			return updated, errors.Wrap(err, errMsg)
+		}
+	}
+	return updated, nil
 }

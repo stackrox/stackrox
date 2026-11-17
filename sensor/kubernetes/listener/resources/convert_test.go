@@ -482,7 +482,6 @@ func TestPopulateImageMetadataWithInitContainers(t *testing.T) {
 }
 
 func TestPopulateImageMetadataWithInitContainerStatuses(t *testing.T) {
-	t.Setenv(features.InitContainerSupport.EnvVar(), "true")
 	// Verifies that init container image digests are populated from
 	// pod.Status.InitContainerStatuses.
 	wrap := deploymentWrap{
@@ -1481,7 +1480,6 @@ func TestToEventInitContainerCompatibility(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv(features.InitContainerSupport.EnvVar(), "true")
 			centralcaps.Set(tc.caps)
 			t.Cleanup(func() { centralcaps.Set(nil) })
 

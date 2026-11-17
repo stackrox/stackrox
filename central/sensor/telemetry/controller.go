@@ -5,9 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 // KubernetesInfoChunkCallback is a callback function that handles a single chunk of Kubernetes info returned from the sensor.
@@ -28,6 +26,6 @@ type Controller interface {
 }
 
 // NewController creates and returns a new controller for telemetry data.
-func NewController(capabilities set.Set[centralsensor.SensorCapability], injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) Controller {
-	return newController(capabilities, injector, stopSig)
+func NewController(injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) Controller {
+	return newController(injector, stopSig)
 }

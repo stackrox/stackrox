@@ -42,6 +42,10 @@ type TLSProfile struct {
 	// OpenSSLCiphers is a colon-separated OpenSSL cipher string
 	// for ROX_OPENSSL_TLS_CIPHER_SUITES.
 	OpenSSLCiphers string
+	// Groups is a comma-separated list of TLS named groups (OpenShift API
+	// spelling, e.g. "X25519,secp256r1") for ROX_TLS_GROUPS. Empty keeps
+	// components on their defaults.
+	Groups string
 }
 
 // FetchProfile reads the cluster TLS profile from the APIServer resource.
@@ -97,5 +101,6 @@ func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfil
 		MinVersion:     minVersion,
 		CipherSuites:   convertCiphersToIANA(clusterTLS.ProfileSpec.Ciphers),
 		OpenSSLCiphers: convertCiphersToOpenSSL(clusterTLS.ProfileSpec.Ciphers),
+		Groups:         convertGroups(clusterTLS.ProfileSpec.Groups),
 	}
 }

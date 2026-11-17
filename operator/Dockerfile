@@ -1,5 +1,5 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
-ARG roxpath=/workspace/src/github.com/stackrox/rox
+ARG roxpath=/tmp/workspace/src/github.com/stackrox/rox
 ARG TARGET_ARCH=amd64
 
 FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:1.26 AS builder
@@ -9,7 +9,9 @@ ARG TARGET_ARCH
 ARG roxpath
 
 WORKDIR ${roxpath}/
-ENV GOPATH=/workspace
+RUN mkdir -p ${roxpath}
+ENV GOPATH=/tmp/workspace
+RUN mkdir -p ${GOPATH}
 
 # Copy the Go Modules manifests
 COPY go.mod go.mod

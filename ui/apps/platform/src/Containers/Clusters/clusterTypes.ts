@@ -38,19 +38,6 @@ export type ClusterHealthStatus = {
 
 export type ClusterHealthItem = 'collector' | 'sensor' | 'admissionControl' | 'scanner';
 
-export type SensorUpgradeStatus = {
-    upgradability: string;
-    upgradabilityStatusReason: string;
-    mostRecentProcess: {
-        active: boolean;
-        progress: {
-            upgradeState: string;
-            upgradeStatusDetail: string;
-        };
-        type: string;
-    };
-};
-
 export type DynamicConfig = {
     registryOverride: string;
     admissionControllerConfig: {
@@ -81,6 +68,5 @@ export type ClusterStatus = {
         version: string;
         buildDate: string;
     };
-    upgradeStatus: SensorUpgradeStatus;
     certExpiryStatus: CertExpiryStatus;
 };

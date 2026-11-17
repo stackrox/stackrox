@@ -130,7 +130,6 @@ include make/gotools.mk
 
 $(call go-tool, BUF_BIN, github.com/bufbuild/buf/cmd/buf, tools/proto)
 $(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/v2/cmd/golangci-lint, tools/linters)
-$(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
 $(call go-tool, OSSLS_BIN, github.com/stackrox/ossls, tools/build)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
@@ -338,19 +337,8 @@ PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_VT_SRCS) $(GENERATED_COM
 
 include make/protogen.mk
 
-.PHONY: go-easyjson-srcs
-go-easyjson-srcs: $(EASYJSON_BIN)
-	@echo "+ $@"
-	@# Files are ordered such that repeated runs of `make go-easyjson-srcs` don't create diffs.
-	$(SILENT)$(EASYJSON_BIN) pkg/compliance/compress/compress.go
-
-.PHONY: clean-easyjson-srcs
-clean-easyjson-srcs:
-	@echo "+ $@"
-	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
-
 .PHONY: go-generated-srcs
-go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN)
+go-generated-srcs: deps $(MOCKGEN_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x $(GENERATE_PATH)
 
@@ -471,11 +459,6 @@ cli: cli-build cli-install
 .PHONY: cli_host-arch
 cli_host-arch: roxctl_$(HOST_OS)-$(GOARCH) roxagent_$(HOST_OS)-$(GOARCH)
 
-upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
-
-bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep
-	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/upgrader
-
 bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/admission-control
 
@@ -502,7 +485,6 @@ sensor-kubernetes-build-dockerized: build-volumes
 .PHONY: sensor-build
 sensor-build:
 	$(GOBUILD) sensor/kubernetes sensor/admission-control
-	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 
 .PHONY: sensor-kubernetes-build
 sensor-kubernetes-build:
@@ -525,7 +507,6 @@ main-build-nodeps:
 		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
-		sensor/upgrader \
 		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 ifndef CI
@@ -627,7 +608,8 @@ shell-unit-tests:
 		scanner/image/db/bats \
 		image/postgres/scripts \
 		scripts \
-		tests/e2e/bats
+		tests/e2e/bats \
+		tests/upgrade
 
 .PHONY: ui-build
 ui-build:
@@ -731,7 +713,6 @@ endif
 endif
 	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
 	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
 	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
 	cp bin/linux_$(GOARCH)/compliance        image/rhel/bin/compliance
 	cp bin/linux_$(GOARCH)/roxagent          image/rhel/bin/roxagent

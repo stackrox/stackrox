@@ -56,6 +56,8 @@ func (m *ComplianceProfileScanStats) CloneVT() *ComplianceProfileScanStats {
 	r.ProfileName = m.ProfileName
 	r.Title = m.Title
 	r.Version = m.Version
+	r.StaleClusterCount = m.StaleClusterCount
+	r.StaleCheckResultCount = m.StaleCheckResultCount
 	if rhs := m.CheckStats; rhs != nil {
 		tmpContainer := make([]*ComplianceCheckStatusCount, len(rhs))
 		for k, v := range rhs {
@@ -281,6 +283,12 @@ func (this *ComplianceProfileScanStats) EqualVT(that *ComplianceProfileScanStats
 				return false
 			}
 		}
+	}
+	if this.StaleClusterCount != that.StaleClusterCount {
+		return false
+	}
+	if this.StaleCheckResultCount != that.StaleCheckResultCount {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -548,6 +556,16 @@ func (m *ComplianceProfileScanStats) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.StaleCheckResultCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.StaleCheckResultCount))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.StaleClusterCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.StaleClusterCount))
+		i--
+		dAtA[i] = 0x30
 	}
 	if len(m.Benchmarks) > 0 {
 		for iNdEx := len(m.Benchmarks) - 1; iNdEx >= 0; iNdEx-- {
@@ -921,6 +939,12 @@ func (m *ComplianceProfileScanStats) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.StaleClusterCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.StaleClusterCount))
+	}
+	if m.StaleCheckResultCount != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.StaleCheckResultCount))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1405,6 +1429,44 @@ func (m *ComplianceProfileScanStats) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleClusterCount", wireType)
+			}
+			m.StaleClusterCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StaleClusterCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleCheckResultCount", wireType)
+			}
+			m.StaleCheckResultCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StaleCheckResultCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2443,6 +2505,44 @@ func (m *ComplianceProfileScanStats) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleClusterCount", wireType)
+			}
+			m.StaleClusterCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StaleClusterCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StaleCheckResultCount", wireType)
+			}
+			m.StaleCheckResultCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StaleCheckResultCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

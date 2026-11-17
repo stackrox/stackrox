@@ -9,7 +9,7 @@ set -euo pipefail
 make_test_bin() {
     info "Making test-bin"
 
-    make cli_host-arch upgrader
+    make cli_host-arch
     make cli-install
     (cd ./tools/check-workflow-run && go install .)
 }

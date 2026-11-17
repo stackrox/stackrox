@@ -4,6 +4,7 @@ on:
     tags:
     - '*'
     - '!*-nightly-*'
+    - '!*.x'
 
 jobs:
   slack-tagged-notice:

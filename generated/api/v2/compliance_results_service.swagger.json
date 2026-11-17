@@ -621,9 +621,23 @@
         "lastScanTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceCheckDataFreshness"
         }
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"
+    },
+    "v2ComplianceAggregateDataFreshness": {
+      "type": "string",
+      "enum": [
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE",
+        "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT"
+      ],
+      "default": "COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN",
+      "description": "ComplianceAggregateDataFreshness indicates the freshness of compliance data\naggregated over multiple checks (a cluster, a scan, or a cross-cluster rollup of\na single check). Unlike a single check, an aggregate can mix fresh and stale\nresults.\n\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_UNKNOWN: No freshness information available. Either no contributing check could be\nresolved to current or stale, or the field was not populated. This is the\nzero value.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_CURRENT: At least one contributing check is current and none are stale.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_STALE: At least one contributing check is stale and none are current.\n - COMPLIANCE_AGGREGATE_DATA_FRESHNESS_INCONSISTENT: Contributing checks are a mix of stale and current data."
     },
     "v2ComplianceCheckData": {
       "type": "object",
@@ -638,6 +652,16 @@
           "$ref": "#/definitions/v2ComplianceCheckResult"
         }
       }
+    },
+    "v2ComplianceCheckDataFreshness": {
+      "type": "string",
+      "enum": [
+        "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
+        "COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT",
+        "COMPLIANCE_CHECK_DATA_FRESHNESS_STALE"
+      ],
+      "default": "COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN",
+      "description": "ComplianceCheckDataFreshness indicates whether a single compliance check\nresult is current relative to the scan configuration's schedule.\n\n - COMPLIANCE_CHECK_DATA_FRESHNESS_UNKNOWN: No freshness information available. Either the server could not evaluate\nfreshness (no schedule, unresolvable config, or no data) or the field was\nnot populated. This is the zero value.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT: Data reflects the most recent expected scan cycle.\n - COMPLIANCE_CHECK_DATA_FRESHNESS_STALE: Data predates the most recent expected scan cycle."
     },
     "v2ComplianceCheckResult": {
       "type": "object",
@@ -696,6 +720,9 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceCheckDataFreshness"
         }
       },
       "title": "ComplianceCheckResult details of an instance of a compliance check result"
@@ -725,6 +752,10 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
           }
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness",
+          "description": "Rolled up across all clusters reporting this check."
         }
       },
       "title": "Group the number of occurrences by status"
@@ -890,6 +921,10 @@
         "lastScanTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "dataFreshness": {
+          "$ref": "#/definitions/v2ComplianceAggregateDataFreshness",
+          "description": "Rolled up across all check results for this cluster and profile, not just\nthe current page."
         }
       }
     },

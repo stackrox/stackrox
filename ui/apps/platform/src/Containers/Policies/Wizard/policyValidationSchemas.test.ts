@@ -443,6 +443,38 @@ describe('Step 4', () => {
             }).toThrow();
         });
     });
+
+    describe('excludedWorkloadKinds', () => {
+        it('passes if kinds are empty or known workload kinds', () => {
+            const empty: WizardPolicyStep4 = {
+                scope: [],
+                excludedDeploymentScopes: [],
+                excludedImageNames: [],
+                excludedWorkloadKinds: [],
+            };
+            expect(validationSchemaStep4.validateSync(empty)).toEqual(empty);
+
+            const value: WizardPolicyStep4 = {
+                scope: [],
+                excludedDeploymentScopes: [],
+                excludedImageNames: [],
+                excludedWorkloadKinds: ['CRON_JOB', 'JOB'],
+            };
+            expect(validationSchemaStep4.validateSync(value)).toEqual(value);
+        });
+
+        it('throws if a kind is not a supported workload kind', () => {
+            const value = {
+                scope: [],
+                excludedDeploymentScopes: [],
+                excludedImageNames: [],
+                excludedWorkloadKinds: ['DAEMON_SET'],
+            };
+            expect(() => {
+                validationSchemaStep4.validateSync(value);
+            }).toThrow();
+        });
+    });
 });
 
 describe('Step 5 (Actions) - enforcement validation', () => {

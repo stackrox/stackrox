@@ -8,6 +8,7 @@ central/cluster/datastore/datastore_impl_postgres_test.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
+central/complianceoperator/v2/checkresults/datastore/datastore_impl_test.go
 central/cve/converter/utils/testdata/*
 central/cve/fetcher/testdata/cve-list.json
 central/detection/alertmanager/alert_manager_impl_test.go
@@ -85,7 +86,7 @@ tests/e2e/run-scanner-v4-install.bats
 tests/performance/load/package-lock.json
 tests/performance/scale/config/metrics-acs.yml
 tests/performance/scale/config/metrics-full.yml
-ui/apps/platform/eslint.config.js
+ui/apps/platform/eslint.config.mjs
 ui/apps/platform/package-lock.json
 ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureIntegrationForm.tsx
 ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx

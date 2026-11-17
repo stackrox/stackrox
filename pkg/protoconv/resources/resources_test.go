@@ -7,10 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsV1 "k8s.io/api/apps/v1"
@@ -405,25 +403,10 @@ func TestPopulateContainersInitContainerExtraction(t *testing.T) {
 		imageSubstr   string
 	}
 
-	cases := map[string]struct {
-		flagEnabled bool
-		expected    []expectedContainer
-	}{
-		"flag enabled extracts init and regular containers": {
-			flagEnabled: true,
-			expected: []expectedContainer{
-				{name: "init-setup", containerType: storage.ContainerType_INIT, imageSubstr: "busybox"},
-				{name: "nginx", containerType: storage.ContainerType_REGULAR, imageSubstr: "nginx"},
-				{name: "redis", containerType: storage.ContainerType_REGULAR, imageSubstr: "redis"},
-			},
-		},
-		"flag disabled ignores init containers": {
-			flagEnabled: false,
-			expected: []expectedContainer{
-				{name: "nginx", containerType: storage.ContainerType_REGULAR, imageSubstr: "nginx"},
-				{name: "redis", containerType: storage.ContainerType_REGULAR, imageSubstr: "redis"},
-			},
-		},
+	expected := []expectedContainer{
+		{name: "init-setup", containerType: storage.ContainerType_INIT, imageSubstr: "busybox"},
+		{name: "nginx", containerType: storage.ContainerType_REGULAR, imageSubstr: "nginx"},
+		{name: "redis", containerType: storage.ContainerType_REGULAR, imageSubstr: "redis"},
 	}
 
 	podSpec := v1.PodSpec{
@@ -436,28 +419,20 @@ func TestPopulateContainersInitContainerExtraction(t *testing.T) {
 		},
 	}
 
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			testutils.MustUpdateFeature(t, features.InitContainerSupport, tc.flagEnabled)
+	wrap := &DeploymentWrap{
+		Deployment: &storage.Deployment{Id: "test-deploy"},
+	}
+	wrap.populateContainers(podSpec)
 
-			wrap := &DeploymentWrap{
-				Deployment: &storage.Deployment{Id: "test-deploy"},
-			}
-			wrap.populateContainers(podSpec)
-
-			require.Len(t, wrap.GetContainers(), len(tc.expected))
-			for i, exp := range tc.expected {
-				assert.Equal(t, exp.name, wrap.GetContainers()[i].GetName())
-				assert.Equal(t, exp.containerType, wrap.GetContainers()[i].GetType())
-				assert.Contains(t, wrap.GetContainers()[i].GetImage().GetName().GetFullName(), exp.imageSubstr)
-			}
-		})
+	require.Len(t, wrap.GetContainers(), len(expected))
+	for i, exp := range expected {
+		assert.Equal(t, exp.name, wrap.GetContainers()[i].GetName())
+		assert.Equal(t, exp.containerType, wrap.GetContainers()[i].GetType())
+		assert.Contains(t, wrap.GetContainers()[i].GetImage().GetName().GetFullName(), exp.imageSubstr)
 	}
 }
 
 func TestPopulateContainersInitContainerFieldsPopulated(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.InitContainerSupport, true)
-
 	wrap := &DeploymentWrap{
 		Deployment: &storage.Deployment{Id: "test-deploy"},
 	}

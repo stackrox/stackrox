@@ -102,33 +102,22 @@ gh_download_release() {
     local repo=${2:-}
     local version=${3:-}
     local asset_name=${4:-}
-    local asset_id
-
-    if [[ $version != 'latest' ]]; then
-        version="tags/${version}"
+    local release_path="download/${version}"
+    if [[ "$version" == latest ]]; then
+        release_path="latest/download"
     fi
 
     local auth_headers=()
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
         auth_headers+=(-H "Authorization: token ${GITHUB_TOKEN}")
-    else
-        # shellcheck disable=SC2016
-        echo >&2 'Note: $GITHUB_TOKEN not found, querying GitHub without an Authorization header may result in throttling.'
     fi
 
-    asset_id="$(curl -fsS --retry 3 --retry-delay 5 --retry-connrefused "${auth_headers[@]}" \
-        -H "Accept: application/vnd.github+json" \
-        -H "X-GitHub-Api-Version: 2026-03-10" \
-        "https://api.github.com/repos/${repo}/releases/${version}" \
-        | jq -r --arg asset_name "${asset_name}" '.assets[]|select(.name==$asset_name)|.id')"
-    if [[ -z "$asset_id" ]]; then
-        echo >&2 "Error: No asset ID found for asset name ${asset_name} for release tag ${version} in repo ${repo}"
+    # The caller runs in a conditional, so explicitly stop before it can install a failed download.
+    if ! curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "${auth_headers[@]+"${auth_headers[@]}"}" \
+        -o "$target" "https://github.com/${repo}/releases/${release_path}/${asset_name}"; then
+        rm -f "$target"
         exit 1
     fi
-    curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "${auth_headers[@]}" \
-        -H 'Accept: application/octet-stream' \
-        -o "$target" \
-        "https://api.github.com/repos/${repo}/releases/assets/${asset_id}"
 }
 
 main "$@"

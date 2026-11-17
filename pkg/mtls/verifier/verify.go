@@ -141,6 +141,7 @@ func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *t
 		MinVersion:               tlsprofile.MinVersion(),
 		PreferServerCipherSuites: true,
 		CipherSuites:             tlsprofile.CipherSuites(),
+		CurvePreferences:         tlsprofile.CurvePreferences(),
 		ClientAuth:               tls.VerifyClientCertIfGiven,
 		ClientCAs:                certPool,
 		Certificates:             certs,

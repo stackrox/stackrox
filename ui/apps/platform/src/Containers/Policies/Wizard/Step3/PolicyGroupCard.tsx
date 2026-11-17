@@ -16,7 +16,11 @@ import {
 import { PlusIcon, TrashIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useMetadata from 'hooks/useMetadata';
 import type { Policy } from 'types/policy.proto';
+import { getVersionedDocs } from 'utils/versioning';
+
 import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldValue from './PolicyCriteriaFieldValue';
 import AndOrOperatorField from './AndOrOperatorField';
@@ -35,6 +39,7 @@ function PolicyGroupCard({
     sectionIndex,
     readOnly = false,
 }: PolicyGroupCardProps) {
+    const { version } = useMetadata();
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { policyGroups } = values.policySections[sectionIndex];
     const group = policyGroups[groupIndex];
@@ -147,7 +152,19 @@ function PolicyGroupCard({
                             title={descriptor.infoText}
                             component="p"
                             className="pf-v6-u-mb-md"
-                        />
+                        >
+                            {descriptor.infoDocsPath && (
+                                <ExternalLink>
+                                    <a
+                                        href={getVersionedDocs(version, descriptor.infoDocsPath)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Learn more about vulnerability management
+                                    </a>
+                                </ExternalLink>
+                            )}
+                        </Alert>
                     )}
                     {group.values.map((_, valueIndex) => {
                         const name = `policySections[${sectionIndex}].policyGroups[${groupIndex}].values[${valueIndex}]`;

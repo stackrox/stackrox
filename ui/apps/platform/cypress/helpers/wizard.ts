@@ -1,14 +1,32 @@
 import pf6 from '../selectors/pf6';
 
+function exactStepText(step: string) {
+    const escaped = step.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^\\s*${escaped}\\s*$`);
+}
+
 export function getWizardNavStep(step: number | string) {
     if (typeof step === 'number') {
         return cy.get(pf6.wizardNavItem).eq(step - 1);
     }
 
-    return cy.contains(pf6.wizardNavItem, step);
+    // PatternFly puts the WizardNavItem OUIA attribute on the step button.
+    return cy.contains(pf6.wizardNavItem, exactStepText(step));
 }
 
-export function goToWizardStep(step: number | string) {
+export function expandWizardNavStep(step: string) {
+    getWizardNavStep(step).then(($step) => {
+        if ($step.attr('aria-expanded') === 'false') {
+            cy.wrap($step).click();
+        }
+    });
+}
+
+export function goToWizardStep(step: number | string, parentStep?: string) {
+    if (parentStep) {
+        expandWizardNavStep(parentStep);
+    }
+
     return getWizardNavStep(step).click();
 }
 

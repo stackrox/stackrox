@@ -14,3 +14,13 @@ tests:
      - name: your-pull-secret-name
   expect: |
     .deployments["rhacs-operator-controller-manager"].spec.template.spec.imagePullSecrets[0] | assertThat(.name == "your-pull-secret-name")
+- name: manager environment names are unique with a related image override
+  set:
+    manager.envOverrides.RELATED_IMAGE_MAIN: registry.example.com/main:override
+  expect: |
+    .deployments["rhacs-operator-controller-manager"].spec.template.spec.containers
+      | map(select(.name == "manager"))
+      | assertThat(length == 1),
+        (.[0].env | assertThat((map(.name) | length) == (map(.name) | unique | length))),
+        (.[0].env | map(select(.name == "RELATED_IMAGE_MAIN"))
+          | assertThat(. == [{"name": "RELATED_IMAGE_MAIN", "value": "registry.example.com/main:override"}]))

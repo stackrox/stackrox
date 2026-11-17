@@ -43,7 +43,7 @@ function CIDRForm({ removeEntity }) {
                             {values?.entities?.map(({ entity }, idx) => (
                                 <CIDRFormRow
                                     idx={idx}
-                                    // eslint-disable-next-line react/no-array-index-key
+                                    // eslint-disable-next-line @eslint-react/no-array-index-key
                                     key={idx}
                                     onRemoveRow={() => {
                                         helpers.remove(idx); // from formik state

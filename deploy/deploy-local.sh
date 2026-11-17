@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
-# shellcheck source=./detect.sh
-source "${DIR}/detect.sh"
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
 
-if is_openshift; then
-    "${DIR}/openshift/deploy-local.sh"
-else
-    "${DIR}/k8s/deploy-local.sh"
-fi
+exec "${ROOT}/scripts/roxie.sh" deploy \
+    --config "${ROOT}/deploy/roxie-config-local-dev.yaml" \
+    --pause-reconciliation \
+    "$@"

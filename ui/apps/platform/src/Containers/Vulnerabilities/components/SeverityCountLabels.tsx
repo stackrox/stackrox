@@ -2,7 +2,7 @@ import { Flex, Label, Tooltip, capitalize } from '@patternfly/react-core';
 import { EllipsisHIcon } from '@patternfly/react-icons';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
-import { noViolationsClassName, noViolationsColor } from 'constants/severityColors';
+import { noViolationsColor } from 'constants/severityColors';
 
 import type { VulnerabilitySeverityLabel } from '../types';
 
@@ -26,11 +26,6 @@ function getTooltipContent(severity: string, severityCount?: number, entity?: st
         return `${severityCount} ${severity} severity CVE count across this ${entity}`;
     }
     return `Image count with ${severity} severity`;
-}
-
-function getClassNameForCount(count?: number) {
-    // Render non-zero count in normal black versus zero (or undefined) count in gray.
-    return count ? '' : noViolationsClassName;
 }
 
 function SeverityCountLabels({
@@ -72,9 +67,7 @@ function SeverityCountLabels({
                     variant="outline"
                     icon={<CriticalIcon color={critical ? undefined : noViolationsColor} />}
                 >
-                    <span className={getClassNameForCount(critical)}>
-                        {!critical && critical !== 0 ? <EllipsisHIcon /> : critical}
-                    </span>
+                    {!critical && critical !== 0 ? <EllipsisHIcon /> : critical}
                 </Label>
             </Tooltip>
             <Tooltip content={getTooltipContent('important', important, entity)}>
@@ -83,9 +76,7 @@ function SeverityCountLabels({
                     variant="outline"
                     icon={<ImportantIcon color={important ? undefined : noViolationsColor} />}
                 >
-                    <span className={getClassNameForCount(important)}>
-                        {!important && important !== 0 ? <EllipsisHIcon /> : important}
-                    </span>
+                    {!important && important !== 0 ? <EllipsisHIcon /> : important}
                 </Label>
             </Tooltip>
             <Tooltip content={getTooltipContent('moderate', moderate, entity)}>
@@ -94,9 +85,7 @@ function SeverityCountLabels({
                     variant="outline"
                     icon={<ModerateIcon color={moderate ? undefined : noViolationsColor} />}
                 >
-                    <span className={getClassNameForCount(moderate)}>
-                        {!moderate && moderate !== 0 ? <EllipsisHIcon /> : moderate}
-                    </span>
+                    {!moderate && moderate !== 0 ? <EllipsisHIcon /> : moderate}
                 </Label>
             </Tooltip>
             <Tooltip content={getTooltipContent('low', low, entity)}>
@@ -105,9 +94,7 @@ function SeverityCountLabels({
                     variant="outline"
                     icon={<LowIcon color={low ? undefined : noViolationsColor} />}
                 >
-                    <span className={getClassNameForCount(low)}>
-                        {!low && low !== 0 ? <EllipsisHIcon /> : low}
-                    </span>
+                    {!low && low !== 0 ? <EllipsisHIcon /> : low}
                 </Label>
             </Tooltip>
             <Tooltip content={getTooltipContent('unknown', unknown, entity)}>
@@ -116,9 +103,7 @@ function SeverityCountLabels({
                     variant="outline"
                     icon={<UnknownIcon color={unknown ? undefined : noViolationsColor} />}
                 >
-                    <span className={getClassNameForCount(unknown)}>
-                        {!unknown && unknown !== 0 ? <EllipsisHIcon /> : unknown}
-                    </span>
+                    {!unknown && unknown !== 0 ? <EllipsisHIcon /> : unknown}
                 </Label>
             </Tooltip>
         </Flex>

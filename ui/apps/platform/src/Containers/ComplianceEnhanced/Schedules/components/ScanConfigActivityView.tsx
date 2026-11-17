@@ -10,7 +10,10 @@ import {
 
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
-import { getTimeWithHourMinuteFromISO8601 } from '../compliance.scanConfigs.utils';
+import {
+    getLastScannedText,
+    getTimeWithHourMinuteFromISO8601,
+} from '../compliance.scanConfigs.utils';
 
 type ScanConfigActivityViewProps = {
     headingLevel: 'h2' | 'h3';
@@ -28,9 +31,7 @@ function ScanConfigActivityView({
                 <DescriptionListGroup>
                     <DescriptionListTerm>Last scanned</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {scanConfig.lastExecutedTime
-                            ? getTimeWithHourMinuteFromISO8601(scanConfig.lastExecutedTime)
-                            : 'Scan is in progress'}
+                        {getLastScannedText(scanConfig)}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>

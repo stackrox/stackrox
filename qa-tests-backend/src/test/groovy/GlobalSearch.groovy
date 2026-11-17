@@ -22,7 +22,7 @@ class GlobalSearch extends BaseSpecification {
             .addLabel("app", "test")
             .setCommand(["sleep", "600"])
 
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 90
 
     def setupSpec() {
         EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,

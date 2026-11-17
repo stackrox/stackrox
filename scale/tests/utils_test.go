@@ -1,9 +1,7 @@
 package tests
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/pkg/errors"
@@ -54,16 +52,6 @@ func asyncWithWaitGroup(function func() error, wg *concurrency.WaitGroup) {
 			log.Fatal(err)
 		}
 	}()
-}
-
-func getHTTPClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
 }
 
 func getEnvVars() *testEnvVars {

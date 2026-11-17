@@ -231,46 +231,6 @@
       "default": "UNINITIALIZED",
       "description": "- UNAVAILABLE: Only collector can have unavailable status"
     },
-    "ClusterUpgradeStatusUpgradability": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "UP_TO_DATE",
-        "MANUAL_UPGRADE_REQUIRED",
-        "AUTO_UPGRADE_POSSIBLE",
-        "SENSOR_VERSION_HIGHER"
-      ],
-      "default": "UNSET",
-      "description": " - SENSOR_VERSION_HIGHER: SENSOR_VERSION_HIGHER occurs when we detect that the sensor\nis running a newer version than this Central. This is unexpected,\nbut can occur depending on the patches a customer does.\nIn this case, we will NOT automatically \"upgrade\" the sensor,\nsince that would be a downgrade, even if the autoupgrade setting is\non. The user will be allowed to manually trigger the upgrade, but they are\nstrongly discouraged from doing so without upgrading Central first, since this\nis an unsupported configuration."
-    },
-    "ClusterUpgradeStatusUpgradeProcessStatus": {
-      "type": "object",
-      "properties": {
-        "active": {
-          "type": "boolean"
-        },
-        "id": {
-          "type": "string"
-        },
-        "targetVersion": {
-          "type": "string",
-          "title": "only relevant if type == Upgrade"
-        },
-        "upgraderImage": {
-          "type": "string"
-        },
-        "initiatedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "progress": {
-          "$ref": "#/definitions/storageUpgradeProgress"
-        },
-        "type": {
-          "$ref": "#/definitions/UpgradeProcessStatusUpgradeProcessType"
-        }
-      }
-    },
     "ClustersServicePutClusterBody": {
       "type": "object",
       "properties": {
@@ -379,35 +339,6 @@
         }
       },
       "title": "Configure per-namespace persistence for ProcessIndicators"
-    },
-    "UpgradeProcessStatusUpgradeProcessType": {
-      "type": "string",
-      "enum": [
-        "UPGRADE",
-        "CERT_ROTATION"
-      ],
-      "default": "UPGRADE",
-      "description": " - UPGRADE: UPGRADE represents a sensor version upgrade.\n - CERT_ROTATION: CERT_ROTATION represents an upgrade process that only rotates the TLS certs\nused by the cluster, without changing anything else."
-    },
-    "UpgradeProgressUpgradeState": {
-      "type": "string",
-      "enum": [
-        "UPGRADE_INITIALIZING",
-        "UPGRADER_LAUNCHING",
-        "UPGRADER_LAUNCHED",
-        "PRE_FLIGHT_CHECKS_COMPLETE",
-        "UPGRADE_OPERATIONS_DONE",
-        "UPGRADE_COMPLETE",
-        "UPGRADE_INITIALIZATION_ERROR",
-        "PRE_FLIGHT_CHECKS_FAILED",
-        "UPGRADE_ERROR_ROLLING_BACK",
-        "UPGRADE_ERROR_ROLLED_BACK",
-        "UPGRADE_ERROR_ROLLBACK_FAILED",
-        "UPGRADE_ERROR_UNKNOWN",
-        "UPGRADE_TIMED_OUT"
-      ],
-      "default": "UPGRADE_INITIALIZING",
-      "description": " - UPGRADER_LAUNCHING: In-progress states.\n - UPGRADE_COMPLETE: The success state.\nPLEASE NUMBER ALL IN-PROGRESS STATES ABOVE THIS\nAND ALL ERROR STATES BELOW THIS.\n - UPGRADE_INITIALIZATION_ERROR: Error states."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -720,9 +651,6 @@
         "orchestratorMetadata": {
           "$ref": "#/definitions/storageOrchestratorMetadata"
         },
-        "upgradeStatus": {
-          "$ref": "#/definitions/storageClusterUpgradeStatus"
-        },
         "certExpiryStatus": {
           "$ref": "#/definitions/storageClusterCertExpiryStatus"
         },
@@ -741,21 +669,6 @@
         "OPENSHIFT4_CLUSTER"
       ],
       "default": "GENERIC_CLUSTER"
-    },
-    "storageClusterUpgradeStatus": {
-      "type": "object",
-      "properties": {
-        "upgradability": {
-          "$ref": "#/definitions/ClusterUpgradeStatusUpgradability"
-        },
-        "upgradabilityStatusReason": {
-          "type": "string"
-        },
-        "mostRecentProcess": {
-          "$ref": "#/definitions/ClusterUpgradeStatusUpgradeProcessStatus",
-          "description": "The progress of the current or most recent upgrade, if any,\nNote that we don't store any historical data -- the moment\na new upgrade attempt is triggered, we overwrite\ninformation from the previous attempt."
-        }
-      }
     },
     "storageCollectionMethod": {
       "type": "string",
@@ -1018,21 +931,6 @@
       "properties": {
         "disabled": {
           "type": "boolean"
-        }
-      }
-    },
-    "storageUpgradeProgress": {
-      "type": "object",
-      "properties": {
-        "upgradeState": {
-          "$ref": "#/definitions/UpgradeProgressUpgradeState"
-        },
-        "upgradeStatusDetail": {
-          "type": "string"
-        },
-        "since": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },

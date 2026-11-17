@@ -18,8 +18,6 @@ import (
 
 // RenderOptions are options that control the rendering.
 type RenderOptions struct {
-	CreateUpgraderSA bool
-
 	DisablePodSecurityPolicies bool
 }
 
@@ -130,7 +128,6 @@ func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, ch
 		ChartRepo: chartRepo,
 
 		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
-		CreateUpgraderSA:   opts.CreateUpgraderSA,
 
 		EnvVars: getFeatureFlagsAsManifestBundleEnv(),
 

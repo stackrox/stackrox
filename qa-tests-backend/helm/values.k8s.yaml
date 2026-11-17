@@ -27,7 +27,6 @@ config:
     timeout: 3
   registryOverride:
   disableTaintTolerations: false
-  createUpgraderServiceAccount: true
   createSecrets: true
   offlineMode: false
 

@@ -28,6 +28,10 @@ const (
 	// fails due to errors or data-integrity issues.
 	CONTROL_NOT_APPLICABLE = "N/A"
 	NO_REMEDIATION         = "No Remediation Available"
+	// NODE_ROLE_NOT_APPLICABLE is used when a check result's scan does not target a specific node
+	// role (e.g. a platform scan, or a node scan whose ScanSetting uses the Compliance Operator's
+	// "@all" role selector, see https://github.com/ComplianceAsCode/compliance-operator/blob/v1.8.2/pkg/apis/compliance/v1alpha1/scansetting_types.go#L27-L31).
+	NODE_ROLE_NOT_APPLICABLE = "N/A"
 )
 
 var (
@@ -143,6 +147,7 @@ func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clu
 		}
 		row.Profile = profileInfo
 		row.ProfileType = profileType
+		row.NodeRole = getNodeRole(checkResult, profileName)
 		remediationInfo, err := g.getRemediationInfo(ctx, checkResult, clusterID)
 		if err != nil {
 			return err
@@ -185,6 +190,21 @@ func operatorKindToHumanReadable(kind storage.ComplianceOperatorProfileV2_Operat
 	default:
 		return DATA_NOT_AVAILABLE
 	}
+}
+
+// getNodeRole derives the node role a check's scan targeted from the scan's name. The Compliance
+// Operator names a profile's per-role scan "<profileName>-<role>" (one scan per ScanSetting role)
+// and leaves the scan name as just "<profileName>" when no specific role is targeted (platform
+// scans, or node scans whose ScanSetting uses the Compliance Operator's "@all" role selector).
+func getNodeRole(checkResult *storage.ComplianceOperatorCheckResultV2, profileName string) string {
+	if profileName == "" {
+		return DATA_NOT_AVAILABLE
+	}
+	role, ok := strings.CutPrefix(checkResult.GetScanName(), profileName+"-")
+	if !ok || role == "" {
+		return NODE_ROLE_NOT_APPLICABLE
+	}
+	return role
 }
 
 func (g *Aggregator) getRemediationInfo(ctx context.Context, checkResult *storage.ComplianceOperatorCheckResultV2, clusterID string) (string, error) {

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	productversion "github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gopkg.in/yaml.v3"
@@ -89,12 +90,27 @@ func checkMigrationVersion(_ common.RestoreFileContext, fileReader io.Reader, si
 		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	if version.SeqNum < migrations.MinimumSupportedDBVersionSeqNum() {
+	minimum, err := migrations.MinimumSupportedForVersion(productversion.GetMainVersion())
+	if err != nil {
+		return errors.Wrap(err, "determining minimum supported database version for restore")
+	}
+	if version.SeqNum < minimum.Sequence {
 		// Use FailedPrecondition status to indicate this is a permanent validation failure,
 		// not a transient error that should be retried.
-		errMsg := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d matching software version %s", version.MainVersion, version.SeqNum, migrations.MinimumSupportedDBVersion())
+		errMsg := errors.Errorf("Restoring from this version %q is no longer supported, sequence number %d matching software version %s", version.MainVersion, version.SeqNum, minimum.Version)
 		log.Error(errMsg)
 		return status.Error(codes.FailedPrecondition, errMsg.Error())
+	}
+
+	if version.SeqNum > migrations.CurrentDBVersionSeqNum() || productversion.CompareVersions(version.MainVersion, productversion.GetMainVersion()) > 0 {
+		return status.Errorf(codes.FailedPrecondition, "Restoring from version %q (sequence number %d) is not supported: backup is newer than the current version %q (sequence number %d)",
+			version.MainVersion, version.SeqNum, productversion.GetMainVersion(), migrations.CurrentDBVersionSeqNum())
+	}
+
+	// Releases can share migration sequences. Reject backups that would fail
+	// the product-version compatibility check after Central restarts.
+	if _, err := migrations.CheckUpgradeCompatibility(version, productversion.GetMainVersion(), migrations.CurrentDBVersionSeqNum(), false); err != nil {
+		return status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	return nil

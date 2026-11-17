@@ -17,6 +17,8 @@ import (
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/scannerv4/mappers"
+	"github.com/stackrox/rox/pkg/scannerv4/rhcos"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -360,10 +362,13 @@ func (s *nodeIndexerSuite) TestExtractHostname() {
 
 func (s *nodeIndexerSuite) TestIndexerE2E() {
 	server := s.createTestServer(true)
+	osReleasePath := s.T().TempDir()
+	writeNodeFile(s.T(), osReleasePath, "etc/os-release", "VARIANT_ID=server\n")
 
 	s.Run("override Repo2CPEMappingURL", func() {
 		cfg := DefaultNodeIndexerConfig()
 		cfg.HostPath = "testdata"
+		cfg.OSReleasePath = osReleasePath
 		cfg.Repo2CPEMappingURL = server.URL
 		cfg.PackageDBFilter = rhcosPackageDBs
 
@@ -384,6 +389,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 		s.Equal(buildMappingURL(), cfg.Repo2CPEMappingURL)
 		s.Nil(cfg.Client)
 		cfg.HostPath = "testdata"
+		cfg.OSReleasePath = osReleasePath
 		cfg.PackageDBFilter = rhcosPackageDBs
 
 		report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
@@ -412,8 +418,8 @@ func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
 
 	s.NotNil(report)
 	s.True(report.GetSuccess())
-	// 106 RPM packages + 2 rhcos packages (binary + source)
-	s.Len(report.GetContents().GetPackages(), 108, "Expected 106 RPM + 2 rhcos packages")
+	// 106 RPM packages + canonical and legacy image binary/source pairs.
+	s.Len(report.GetContents().GetPackages(), 110)
 	// 2 RPM repositories + 1 rhcos repository
 	s.Len(report.GetContents().GetRepositories(), 3, "Expected 2 RPM + 1 rhcos repositories")
 
@@ -426,6 +432,7 @@ func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
 		}
 	}
 	s.True(hasRHCOS, "Expected rhcos package in report")
+	s.Equal("openshift/ose-rhel-coreos-9", report.GetContents().GetPackages()[rhcos.PackageID].GetName())
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
@@ -457,6 +464,60 @@ func (s *nodeIndexerSuite) TestParseOSRelease() {
 func (s *nodeIndexerSuite) TestParseOSReleaseNotFound() {
 	_, err := parseOSRelease(context.Background(), s.T().TempDir())
 	s.ErrorContains(err, "os-release not found")
+	s.ErrorIs(err, errNotRHCOS)
+}
+
+func (s *nodeIndexerSuite) TestParseOSReleaseDoesNotHideReadErrors() {
+	root := s.T().TempDir()
+	// Opening the directory succeeds, but reading it as os-release must fail
+	// rather than falling back to the valid file at the alternative path.
+	s.Require().NoError(os.MkdirAll(filepath.Join(root, "etc/os-release"), 0755))
+	writeNodeFile(s.T(), root, "usr/lib/os-release", "VARIANT_ID=coreos\nVERSION=9.6\n")
+	_, err := parseOSRelease(s.T().Context(), root)
+	s.Require().Error(err)
+	s.NotErrorIs(err, errNotRHCOS)
+}
+
+func (s *nodeIndexerSuite) TestIndexerOSReleaseErrorClassification() {
+	server := s.createTestServer(false)
+	for name, tc := range map[string]struct {
+		contents string
+		failed   bool
+	}{
+		"missing file":          {},
+		"missing variant":       {contents: "ID=rhel\nVERSION=9.6\n"},
+		"empty variant":         {contents: "VARIANT_ID=\nVERSION=9.6\n"},
+		"malformed file":        {contents: "not-an-assignment\n", failed: true},
+		"invalid RHCOS version": {contents: "VARIANT_ID=coreos\nVERSION=invalid\n", failed: true},
+	} {
+		s.Run(name, func() {
+			root := s.T().TempDir()
+			if tc.contents != "" {
+				writeNodeFile(s.T(), root, "etc/os-release", tc.contents)
+			}
+			_, releaseErr := osRelease(s.T().Context(), root)
+			cfg := DefaultNodeIndexerConfig()
+			cfg.HostPath = "testdata"
+			cfg.OSReleasePath = root
+			cfg.Repo2CPEMappingURL = server.URL
+			cfg.Client = server.Client()
+			report, err := NewNodeIndexer(cfg).IndexNode(s.T().Context())
+			s.Require().NoError(err)
+			s.Require().NotNil(report)
+			s.True(report.GetSuccess())
+			s.Equal("IndexFinished", report.GetState())
+			s.Empty(report.GetErr())
+			if tc.failed {
+				s.Require().Error(releaseErr)
+				s.NotErrorIs(releaseErr, errNotRHCOS)
+			} else {
+				s.ErrorIs(releaseErr, errNotRHCOS)
+			}
+			s.Len(report.GetContents().GetPackages(), 106)
+			s.NotContains(report.GetContents().GetPackages(), rhcos.PackageID)
+			s.NotContains(report.GetContents().GetPackages(), rhcos.LegacyPackageID)
+		})
+	}
 }
 
 func (s *nodeIndexerSuite) TestOSReleaseInvalidVersion() {
@@ -475,9 +536,39 @@ OPENSHIFT_VERSION=4.21
 	s.ErrorContains(err, "failed to parse RHCOS version")
 }
 
+func (s *nodeIndexerSuite) TestIndexerInvalidRHCOSOSRelease() {
+	server := s.createTestServer(false)
+	tmpDir := s.T().TempDir()
+	writeNodeFile(s.T(), tmpDir, "etc/os-release", `VARIANT_ID=coreos
+VERSION=invalid-version-format
+VERSION_ID=9.6
+OPENSHIFT_VERSION=4.21
+`)
+	writeNodeFile(s.T(), tmpDir, "usr/share/buildinfo/labels.json", `{"name":"openshift/ose-rhel-coreos-9","cpe":"cpe:/a:redhat:openshift:4.21::el9","architecture":"amd64","org.opencontainers.image.created":"2026-07-15T17:00:53Z"}`)
+	cfg := DefaultNodeIndexerConfig()
+	cfg.HostPath = "testdata"
+	cfg.OSReleasePath = tmpDir
+	cfg.Repo2CPEMappingURL = server.URL
+	cfg.Client = server.Client()
+
+	report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
+	s.Require().NoError(err)
+	s.Require().NotNil(report)
+	s.True(report.GetSuccess())
+	s.Equal("IndexFinished", report.GetState())
+	s.Empty(report.GetErr())
+	s.Len(report.GetContents().GetPackages(), 106, "successfully scanned RPM packages should remain available")
+	s.NotContains(report.GetContents().GetPackages(), rhcos.PackageID)
+	s.NotContains(report.GetContents().GetPackages(), rhcos.LegacyPackageID)
+}
+
 func (s *nodeIndexerSuite) TestAddRHCOSPackageToReport() {
 	rel, err := osRelease(context.Background(), "testdata-rhcos")
 	s.Require().NoError(err)
+	identity, err := rhcosIdentityFromOSRelease(rel.osRel)
+	s.Require().NoError(err)
+	rel.imageName = identity.name
+	rel.repoCPE = *identity.repoCPE
 
 	report := &claircore.IndexReport{
 		Packages:     make(map[string]*claircore.Package),
@@ -487,9 +578,18 @@ func (s *nodeIndexerSuite) TestAddRHCOSPackageToReport() {
 
 	addRHCOS(rel, "x86_64", report)
 
-	s.Len(report.Packages, 2)
+	s.Len(report.Packages, 4)
 	s.Len(report.Repositories, 1)
-	s.Len(report.Environments, 1)
+	s.Len(report.Environments, 2)
+	canonical := report.Packages[rhcos.PackageID]
+	s.Require().NotNil(canonical)
+	s.Equal("openshift/ose-rhel-coreos-9", canonical.Name)
+	s.Same(report.Packages[rhcos.SourceID], canonical.Source)
+	s.Equal(canonical.Name, canonical.Source.Name)
+	s.Equal(rel.version, canonical.Version)
+	s.Equal(rel.normVersion, canonical.NormalizedVersion)
+	s.Equal(rel.normVersion, canonical.Source.NormalizedVersion)
+	s.Equal(report.Environments[rhcos.LegacyPackageID], report.Environments[rhcos.PackageID])
 
 	var binPkg *claircore.Package
 	for _, p := range report.Packages {
@@ -514,6 +614,33 @@ func (s *nodeIndexerSuite) TestAddRHCOSPackageToReport() {
 	s.Contains(repo.Name, "cpe:")
 	s.Contains(repo.Name, "openshift")
 	s.Contains(repo.Name, "4.21")
+
+	serialized, err := mappers.ToProtoV4IndexReport(report)
+	s.Require().NoError(err)
+	restored, err := mappers.ToClairCoreIndexReport(serialized.GetContents())
+	s.Require().NoError(err)
+	for _, id := range []string{rhcos.PackageID, rhcos.LegacyPackageID} {
+		original := report.Packages[id]
+		pkg := restored.Packages[id]
+		s.Require().NotNil(pkg)
+		s.Equal(original.Name, pkg.Name)
+		s.Equal(original.Kind, pkg.Kind)
+		s.Equal(original.Version, pkg.Version)
+		s.Require().NotNil(pkg.Source)
+		s.Equal(original.Source.Name, pkg.Source.Name)
+		s.Equal(original.Source.Kind, pkg.Source.Kind)
+		s.Equal(original.Source.ID, pkg.Source.ID)
+		s.Equal(report.Environments[id], restored.Environments[id])
+	}
+	s.Require().Len(restored.Repositories, len(report.Repositories))
+	for id, original := range report.Repositories {
+		restoredRepo := restored.Repositories[id]
+		s.Require().NotNil(restoredRepo)
+		s.Equal(original.ID, restoredRepo.ID)
+		s.Equal(original.Name, restoredRepo.Name)
+		s.Equal(original.Key, restoredRepo.Key)
+		s.Equal(original.CPE.String(), restoredRepo.CPE.String())
+	}
 }
 
 func (s *nodeIndexerSuite) TestValidateOSRelease() {
@@ -539,21 +666,21 @@ func (s *nodeIndexerSuite) TestValidateOSRelease() {
 			},
 			expectError: "VERSION not found",
 		},
-		"missing OPENSHIFT_VERSION": {
+		"missing OPENSHIFT_VERSION is valid before selecting labels or os-release identity": {
 			osRel: map[string]string{
 				"VARIANT_ID": "coreos",
 				"VERSION":    "9.6.20260324-0",
 				"VERSION_ID": "9.6",
 			},
-			expectError: "OPENSHIFT_VERSION not found",
+			expectNoError: true,
 		},
-		"missing VERSION_ID": {
+		"missing VERSION_ID is valid before selecting labels or os-release identity": {
 			osRel: map[string]string{
 				"VARIANT_ID":        "coreos",
 				"VERSION":           "9.6.20260324-0",
 				"OPENSHIFT_VERSION": "4.21",
 			},
-			expectError: "VERSION_ID not found",
+			expectNoError: true,
 		},
 		"not RHCOS": {
 			osRel: map[string]string{

@@ -377,7 +377,6 @@ package postgres
 | `--read-only-store` | Generate a read-only store (no write methods) | `false` | no |
 | `--singleton` | Single-record store (no PK required) | `false` | no |
 | `--cached-store` | Mirror store in memory cache. **Low-cardinality only.** | `false` | no |
-| `--for-sac` | SAC-optimized methods. Only with `--cached-store`. | `false` | no |
 | `--no-copy-from` | Disable Postgres COPY FROM optimization | `false` | no |
 | `--get-all-func` | Generate GetAll() function | `false` | no |
 | `--default-sort` | Default sort field (e.g., `search.DeploymentPriority.String()`) | | no |
@@ -410,9 +409,9 @@ package postgres
 //go:generate pg-table-bindings-wrapper --type=storage.Config --singleton
 ```
 
-**Cached store with SAC:**
+**Cluster store without COPY FROM:**
 ```go
-//go:generate pg-table-bindings-wrapper --type=storage.Cluster --cached-store --for-sac --search-category CLUSTERS --no-copy-from --default-sort search.Cluster.String()
+//go:generate pg-table-bindings-wrapper --type=storage.Cluster --search-category CLUSTERS --no-copy-from --default-sort search.Cluster.String()
 ```
 
 **No-serialized store (all fields as columns):**

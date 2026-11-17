@@ -1,4 +1,4 @@
-name: "Test auto-upgrade labels required by the sensor auto-upgrader"
+name: "Test auto-upgrade.stackrox.io/component bundle-selector labels (used by delete-sensor.sh)"
 defs: |
   def autoUpgradeLabel:
     .metadata.labels["auto-upgrade.stackrox.io/component"];

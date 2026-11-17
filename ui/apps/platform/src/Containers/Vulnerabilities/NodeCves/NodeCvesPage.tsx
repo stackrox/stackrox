@@ -3,19 +3,13 @@ import { PageSection } from '@patternfly/react-core';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
-import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
-import usePermissions from 'hooks/usePermissions';
 import NodeCvesOverviewPage from './Overview/NodeCvesOverviewPage';
 import NodeCvePage from './NodeCve/NodeCvePage';
 import NodePage from './Node/NodePage';
 
 function NodeCvesPage() {
-    const { hasReadAccess } = usePermissions();
-    const hasReadAccessForIntegration = hasReadAccess('Integration');
-
     return (
         <>
-            {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<NodeCvesOverviewPage />} />
                 <Route path="cves/:cveId" element={<NodeCvePage />} />

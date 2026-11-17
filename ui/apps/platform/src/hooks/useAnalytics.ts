@@ -15,9 +15,6 @@ import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
 
-// clusters
-export const CLUSTER_CREATED = 'Cluster Created';
-
 // invite users
 export const INVITE_USERS_MODAL_OPENED = 'Invite Users Modal Opened';
 export const INVITE_USERS_SUBMITTED = 'Invite Users Submitted';
@@ -62,6 +59,9 @@ export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context V
 // dashboard widgets
 export const AGING_IMAGES_WIDGET_CLICKED = 'Aging Images Widget Link Clicked';
 
+// risk
+export const RISK_SUMMARY_GENERATED = 'Risk Summary Generated';
+
 // vulnerability reports
 
 export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
@@ -69,18 +69,8 @@ export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
 export const NODE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
     'Node Vulnerability Reports Wizard Save Clicked';
 
-// cluster-init-bundles
-export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
-export const VIEW_INIT_BUNDLES_CLICKED = 'View Init Bundles Clicked';
-export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
-export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
-export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
-export const DOWNLOAD_INIT_BUNDLE = 'Download Init Bundle';
-export const REVOKE_INIT_BUNDLE = 'Revoke Init Bundle';
-export const LEGACY_CLUSTER_DOWNLOAD_YAML = 'Legacy Cluster Download YAML';
-export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm Values';
-
 // cluster-registration-secrets
+export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
 export const CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED =
     'Create Cluster Registration Secret Clicked';
 export const DOWNLOAD_CLUSTER_REGISTRATION_SECRET = 'Download Cluster Registration Secret';
@@ -156,7 +146,6 @@ export type SearchCategoryWithFilter = UnionFrom<typeof searchCategoriesWithFilt
  * or an object with an event name and additional properties.
  */
 export type AnalyticsEvent =
-    | typeof CLUSTER_CREATED
     | typeof INVITE_USERS_MODAL_OPENED
     | typeof INVITE_USERS_SUBMITTED
     /** Tracks each time a cluster level simulator is opened on Network Graph */
@@ -223,6 +212,7 @@ export type AnalyticsEvent =
               page: 'Overview' | 'CVE Detail';
           };
       }
+    | typeof RISK_SUMMARY_GENERATED
     | {
           event: typeof AGING_IMAGES_WIDGET_CLICKED;
           properties: { clickType: 'bucket'; bucket: string } | { clickType: 'view-all' };
@@ -399,41 +389,12 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the user clicks the "Create Bundle" button
-     * source: 'No Clusters' is superseded by the following event in 4.10
-     */
-    | {
-          event: typeof CREATE_INIT_BUNDLE_CLICKED;
-          properties: {
-              source: 'No Clusters' | 'Cluster Init Bundles';
-          };
-      }
-    /**
-     * Tracks each time the user clicks the "Init bundles installation method" link
-     * superseded the preceding event in 4.10
-     */
-    | {
-          event: typeof VIEW_INIT_BUNDLES_CLICKED;
-          properties: {
-              source: 'No Clusters';
-          };
-      }
-    /**
      * Tracks each time the user clicks the "Create Cluster Registration Secrets" button
      */
     | {
           event: typeof CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED;
           properties: {
               source: 'No Clusters' | 'Cluster Registration Secrets';
-          };
-      }
-    /**
-     * Tracks each time the user clicks a link to visit the "Secure a Cluster" page
-     */
-    | {
-          event: typeof SECURE_A_CLUSTER_LINK_CLICKED;
-          properties: {
-              source: 'No Clusters' | 'Secure a Cluster Dropdown';
           };
       }
     /**
@@ -446,38 +407,13 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the user clicks a link to visit the legacy installation method page
-     */
-    | {
-          event: typeof LEGACY_SECURE_A_CLUSTER_LINK_CLICKED;
-          properties: {
-              source: 'No Clusters' | 'Secure a Cluster Dropdown';
-          };
-      }
-    /**
-     * Tracks each time the user downloads an init bundle
-     */
-    | typeof DOWNLOAD_INIT_BUNDLE
-    /**
      * Tracks each time the user downloads a cluster registration secret
      */
     | typeof DOWNLOAD_CLUSTER_REGISTRATION_SECRET
     /**
-     * Tracks each time the user revokes an init bundle
-     */
-    | typeof REVOKE_INIT_BUNDLE
-    /**
      * Tracks each time the user revokes cluster registration secret
      */
     | typeof REVOKE_CLUSTER_REGISTRATION_SECRET
-    /**
-     * Tracks each time the user downloads a cluster's YAML file and keys
-     */
-    | typeof LEGACY_CLUSTER_DOWNLOAD_YAML
-    /**
-     * Tracks each time the user downloads a cluster's Helm values
-     */
-    | typeof LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES
     /**
      * Tracks each time the user selects a filtered workflow view
      */

@@ -47,10 +47,10 @@ describe('Auth Sagas', () => {
             });
     });
 
-    it('should log out the anonymous user if auth provider was added', () =>
+    it('should log out the user if there is no token', () =>
         expectSaga(saga)
             .provide([
-                ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.ANONYMOUS_ACCESS),
+                ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
                 [call(authServiceFetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(authServiceGetAccessToken), null],
                 [call(authServiceLogout), null],

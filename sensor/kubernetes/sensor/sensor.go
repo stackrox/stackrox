@@ -63,7 +63,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
-	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
 	"github.com/stackrox/rox/sensor/kubernetes/virtualmachine/vsockdialer"
 )
 
@@ -156,8 +155,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
-	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
-
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline, err := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
@@ -224,7 +221,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
 		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes(), vmStats),
-		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
 		externalsrcs.Singleton(),
@@ -253,14 +249,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	coReadySignal := concurrency.NewSignal()
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
 	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
-
-	if !cfg.localSensor {
-		upgradeCmdHandler, err := upgrade.NewCommandHandler(clusterID, configHandler)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating upgrade command handler")
-		}
-		components = append(components, upgradeCmdHandler)
-	}
 
 	sensorNamespace := pods.GetPodNamespace()
 

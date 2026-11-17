@@ -74,7 +74,7 @@ function ExternalGroupSideBar({
                         <Title headingLevel="h2" id={labelledById}>
                             {externalGroupNode?.label}
                         </Title>
-                        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-color-200">
+                        <Content component="p" className="pf-v6-u-font-size-sm">
                             Connected entities outside your cluster
                         </Content>
                     </FlexItem>

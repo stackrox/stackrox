@@ -15,8 +15,13 @@ import { gql, useQuery } from '@apollo/client';
 
 import { getDateTime } from 'utils/dateUtils';
 
+import DeploymentContainersCard from 'Components/DeploymentContainersCard';
+import type { DeploymentContainerView } from 'Components/DeploymentContainerConfig';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import KeyValueListModal from 'Components/KeyValueListModal';
+
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export type DeploymentPageDetailsProps = {
     deploymentId: string;
@@ -42,6 +47,7 @@ type DeploymentDetails = {
         key: string;
         value: string;
     }[];
+    containers: DeploymentContainerView[];
 };
 
 const deploymentDetailsQuery = gql`
@@ -66,6 +72,61 @@ const deploymentDetailsQuery = gql`
                 key
                 value
             }
+            containers {
+                id
+                name
+                type
+                image {
+                    id
+                    idV2
+                    notPullable
+                    name {
+                        registry
+                        remote
+                        tag
+                        fullName
+                    }
+                }
+                resources {
+                    cpuCoresRequest
+                    cpuCoresLimit
+                    memoryMbRequest
+                    memoryMbLimit
+                }
+                volumes {
+                    name
+                    source
+                    destination
+                    readOnly
+                    type
+                    mountPropagation
+                }
+                secrets {
+                    name
+                    path
+                }
+                config {
+                    args
+                    command
+                }
+                securityContext {
+                    privileged
+                    selinux {
+                        user
+                        role
+                        type
+                        level
+                    }
+                    dropCapabilities
+                    addCapabilities
+                    readOnlyRootFilesystem
+                    seccompProfile {
+                        type
+                        localhostProfile
+                    }
+                    allowPrivilegeEscalation
+                }
+            }
         }
     }
 `;
@@ -73,6 +134,8 @@ const deploymentDetailsQuery = gql`
 // TODO: We want to potentially create reusable Deployment Details components to be shared between Vuln Management, Violations, and Compliance in the future
 // Reference: https://redhat-internal.slack.com/archives/C02MN2N2UG4/p1710184053971889
 function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
+    const { urlBuilder } = useWorkloadCveViewContext();
+    const vulnerabilityState = useVulnerabilityState();
     const { data, previousData, loading, error } = useQuery<{ deployment: DeploymentDetails }>(
         deploymentDetailsQuery,
         {
@@ -178,6 +241,15 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                                     </DescriptionListDescription>
                                 </DescriptionListGroup>
                             </DescriptionList>
+                        </FlexItem>
+                        <FlexItem>
+                            <DeploymentContainersCard
+                                containers={deploymentDetailsData.containers}
+                                title="Container configuration"
+                                getImageUrl={(imageId) =>
+                                    urlBuilder.imageDetails(imageId, vulnerabilityState)
+                                }
+                            />
                         </FlexItem>
                     </Flex>
                 )}

@@ -3,6 +3,7 @@
 set -e
 
 CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
+GOARCH="${GOARCH:-$(go env GOARCH)}"
 
 echo "Building with platform linux/${GOARCH}"
 

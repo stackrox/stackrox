@@ -684,11 +684,11 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 }
 
 func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetUndoModificationForDeploymentResponse, error) {
-	// Try getting the deployment first
-	_, found, err := s.deployments.GetDeployment(ctx, request.GetId())
+	// Verify the deployment exists and is readable before looking up its undo record.
+	exists, err := s.deployments.DeploymentExists(ctx, request.GetId())
 	if err != nil {
 		return nil, err
-	} else if !found {
+	} else if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "deployment with ID %q not found", request.GetId())
 	}
 

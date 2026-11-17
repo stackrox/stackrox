@@ -79,7 +79,7 @@ func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetP
 	if req.GetDeploymentId() == "" {
 		return nil, errors.New("Deployment ID must be specified when retrieving processes")
 	}
-	_, exists, err := s.deployments.GetDeployment(ctx, req.GetDeploymentId())
+	exists, err := s.deployments.DeploymentExists(ctx, req.GetDeploymentId())
 	if err != nil {
 		return nil, err
 	}

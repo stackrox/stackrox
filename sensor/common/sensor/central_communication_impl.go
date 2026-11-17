@@ -137,11 +137,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	// Start the stream client.
 	///////////////////////////
 
-	// Prepare the `SensorHello` message. This message informs Central about who is talking to it, and announces
-	// the capabilities/features supported by this sensor.
-	// While the message is only sent after the stream is established, it is also used to populate the legacy,
-	// header metadata-based self-identification protocol, which needs to happen prior to making the streaming RPC
-	// call. That's why we create it here and not in the `initialSync` method below.
+	// Prepare the SensorHello message. Central requires it as the first message on the stream.
 	sensorHello := &central.SensorHello{
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
@@ -159,9 +155,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	if features.FlattenImageData.Enabled() {
 		capsSet.Add(centralsensor.FlattenImageData)
 	}
-	if features.InitContainerSupport.Enabled() {
-		capsSet.Add(centralsensor.InitContainerSupport)
-	}
+	capsSet.Add(centralsensor.InitContainerSupport)
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -178,15 +172,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		sensorHello.HelmManagedConfigInit = helmManagedCfg
 	}
 
-	// Prepare outgoing context
 	ctx := metadata.AppendToOutgoingContext(trace.Background(s.clusterID), centralsensor.SensorHelloMetadataKey, "true")
-	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
-	if err != nil {
-		s.stopper.Flow().StopWithError(err)
-		return
-	}
 
-	stream, err = CommunicateWithAutoSensedEncoding(ctx, client)
+	stream, err := CommunicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
 		return
@@ -259,14 +247,11 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 		allowedpaths.Reset()
 	}
 
-	// Sensor should only communicate deduper states if central is able to do so and it has requested it.
-	s.clientReconcile = s.clientReconcile &&
-		centralcaps.Has(centralsensor.SendDeduperStateOnReconnect) &&
-		centralHello.GetSendDeduperState()
+	// Sensor should only communicate deduper states if Central requested it.
+	s.clientReconcile = s.clientReconcile && centralHello.GetSendDeduperState()
 
-	log.Infof("Sensor client reconciliation state=%s (centralCapability=%s, centralHello.SendDeduperState=%s)",
+	log.Infof("Sensor client reconciliation state=%s (centralHello.SendDeduperState=%s)",
 		strconv.FormatBool(s.clientReconcile),
-		strconv.FormatBool(centralcaps.Has(centralsensor.SendDeduperStateOnReconnect)),
 		strconv.FormatBool(centralHello.GetSendDeduperState()))
 
 	if hello.GetHelmManagedConfigInit() != nil {

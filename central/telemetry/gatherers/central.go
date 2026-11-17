@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/central/installation/store"
-	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
@@ -15,19 +14,17 @@ import (
 type CentralGatherer struct {
 	installationInfoStore store.Store
 
-	databaseGatherer             *databaseGatherer
-	apiGatherer                  *apiGatherer
-	componentInfoGatherer        *gatherers.ComponentInfoGatherer
-	sensorUpgradeConfigDatastore datastore.DataStore
+	databaseGatherer      *databaseGatherer
+	apiGatherer           *apiGatherer
+	componentInfoGatherer *gatherers.ComponentInfoGatherer
 }
 
-func newCentralGatherer(installationInfoStore store.Store, databaseGatherer *databaseGatherer, apiGatherer *apiGatherer, componentInfoGatherer *gatherers.ComponentInfoGatherer, sensorUpgradeConfigDatastore datastore.DataStore) *CentralGatherer {
+func newCentralGatherer(installationInfoStore store.Store, databaseGatherer *databaseGatherer, apiGatherer *apiGatherer, componentInfoGatherer *gatherers.ComponentInfoGatherer) *CentralGatherer {
 	return &CentralGatherer{
-		installationInfoStore:        installationInfoStore,
-		databaseGatherer:             databaseGatherer,
-		apiGatherer:                  apiGatherer,
-		componentInfoGatherer:        componentInfoGatherer,
-		sensorUpgradeConfigDatastore: sensorUpgradeConfigDatastore,
+		installationInfoStore: installationInfoStore,
+		databaseGatherer:      databaseGatherer,
+		apiGatherer:           apiGatherer,
+		componentInfoGatherer: componentInfoGatherer,
 	}
 }
 
@@ -39,20 +36,14 @@ func (c *CentralGatherer) Gather(ctx context.Context) *data.CentralInfo {
 		errList = append(errList, fmt.Sprintf("Installation info error: %v", err.Error()))
 	}
 
-	autoUpgradeEnabled, err := c.sensorUpgradeConfigDatastore.GetSensorUpgradeConfig(ctx)
-	if err != nil {
-		errList = append(errList, fmt.Sprintf("Sensor upgrade config error: %v", err.Error()))
-	}
-
 	centralComponent := &data.CentralInfo{
 		RoxComponentInfo: c.componentInfoGatherer.Gather(),
 		// Despite GoLand's warning it's okay for installationInfo to be nil, GetID() will return ""
-		ID:                 installationInfo.GetId(),
-		InstallationTime:   protocompat.NilOrTime(installationInfo.GetCreated()),
-		Storage:            c.databaseGatherer.Gather(ctx),
-		APIStats:           c.apiGatherer.Gather(),
-		Errors:             errList,
-		AutoUpgradeEnabled: autoUpgradeEnabled.GetEnableAutoUpgrade(),
+		ID:               installationInfo.GetId(),
+		InstallationTime: protocompat.NilOrTime(installationInfo.GetCreated()),
+		Storage:          c.databaseGatherer.Gather(ctx),
+		APIStats:         c.apiGatherer.Gather(),
+		Errors:           errList,
 	}
 	return centralComponent
 }

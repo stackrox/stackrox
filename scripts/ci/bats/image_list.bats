@@ -25,6 +25,19 @@ function setup() {
   assert_output --partial "central-db ${tag}"
 }
 
+@test "get Konflux images for DB backup and restore test" {
+  local tag
+  tag="$(make --quiet --no-print-directory tag)-fast"
+  local image_list
+  image_list="$(mktemp)"
+  USE_KONFLUX_IMAGES=true MAIN_IMAGE_TAG="$tag" CI_JOB_NAME="gke-db-backup-restore-tests-konflux" populate_stackrox_image_list "$image_list"
+  run cat "${image_list}"
+  assert_success
+  assert_output --partial "release-main ${tag}"
+  assert_output --partial "release-central-db ${tag}"
+  assert_output --partial "release-roxctl ${tag}"
+}
+
 @test "get images for rcd test" {
   local tag
   tag="$(make --quiet --no-print-directory tag)"

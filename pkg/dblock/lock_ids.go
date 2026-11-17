@@ -3,7 +3,8 @@ package dblock
 // Advisory lock IDs are random int64 values generated via crypto/rand.
 // New IDs must not collide with existing ones.
 const (
-	MigrationLockID       int64 = 7_517_845_236_103_920_641
-	PruningGCLockID       int64 = 7_293_581_046_138_294_017
-	ReportSchedulerLockID int64 = 4_618_739_250_183_647_293
+	MigrationLockID           int64 = 7_517_845_236_103_920_641
+	BackgroundMigrationLockID int64 = 2_846_193_750_482_637_519
+	PruningGCLockID           int64 = 7_293_581_046_138_294_017
+	ReportSchedulerLockID     int64 = 4_618_739_250_183_647_293
 )

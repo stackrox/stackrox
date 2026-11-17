@@ -14,7 +14,7 @@ on:
         default: 3h10m
         type: string
   push:
-    tags: ['*']
+    tags: ['*', '!*.x']
 
 run-name: ${{ format('Scan images for vulnerabilities ({0})', inputs.version || github.ref_name) }}
 

@@ -22,8 +22,6 @@ export type StaticConfigurationFormProps = {
     dynamicConfig: DynamicClusterConfig;
     helmConfig: CompleteClusterConfig | null;
     isManagerTypeNonConfigurable: boolean;
-    handleChange: (path: string, value: boolean | string) => void;
-    handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
 };
 
 function StaticConfigurationForm({
@@ -31,8 +29,6 @@ function StaticConfigurationForm({
     dynamicConfig,
     helmConfig,
     isManagerTypeNonConfigurable,
-    handleChange,
-    handleChangeAdmissionControllerEnforcementBehavior,
 }: StaticConfigurationFormProps) {
     const { version } = useMetadata();
 
@@ -63,8 +59,7 @@ function StaticConfigurationForm({
                     id="name"
                     type="text"
                     value={selectedCluster.name}
-                    onChange={(_event, value) => handleChange('name', value)}
-                    isDisabled={Boolean(selectedCluster.id)}
+                    isDisabled
                     isRequired
                 />
             </FormGroup>
@@ -72,8 +67,8 @@ function StaticConfigurationForm({
                 <SelectSingle
                     id="type"
                     value={selectedCluster.type}
-                    handleSelect={handleChange}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     {filteredClusterTypeOptions.map(({ label, value }) => (
@@ -92,8 +87,7 @@ function StaticConfigurationForm({
                     id="mainImage"
                     type="text"
                     value={selectedCluster.mainImage}
-                    onChange={(_event, value) => handleChange('mainImage', value)}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    isDisabled
                     isRequired
                 />
                 <HelmValueWarning
@@ -110,8 +104,7 @@ function StaticConfigurationForm({
                     id="centralApiEndpoint"
                     type="text"
                     value={selectedCluster.centralApiEndpoint}
-                    onChange={(_event, value) => handleChange('centralApiEndpoint', value)}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    isDisabled
                     isRequired
                 />
                 <HelmValueWarning
@@ -123,8 +116,8 @@ function StaticConfigurationForm({
                 <SelectSingle
                     id="collectionMethod"
                     value={selectedCluster.collectionMethod}
-                    handleSelect={handleChange}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     {filteredRuntimeOptions.map(({ label, value }) => (
@@ -146,8 +139,8 @@ function StaticConfigurationForm({
                     id="collectorImage"
                     type="text"
                     value={selectedCluster.collectorImage}
-                    onChange={(_event, value) => handleChange('collectorImage', value)}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    onChange={() => {}}
+                    isDisabled
                 />
                 <HelmValueWarning
                     currentValue={selectedCluster.collectorImage}
@@ -163,10 +156,8 @@ function StaticConfigurationForm({
                             ? 'enabled'
                             : 'disabled'
                     }
-                    handleSelect={(id, value) =>
-                        handleChangeAdmissionControllerEnforcementBehavior(value === 'enabled')
-                    }
-                    isDisabled={isManagerTypeNonConfigurable}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enforce policies</SelectOption>
@@ -213,8 +204,8 @@ function StaticConfigurationForm({
                     value={
                         selectedCluster.admissionControllerFailOnError ? 'failClosed' : 'failOpen'
                     }
-                    handleSelect={(id, value) => handleChange(id, value === 'failClosed')}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     <SelectOption value="failOpen">Fail open</SelectOption>
@@ -254,8 +245,8 @@ function StaticConfigurationForm({
                 <SelectSingle
                     id="tolerationsConfig.disabled"
                     value={selectedCluster.tolerationsConfig?.disabled ? 'disabled' : 'enabled'}
-                    handleSelect={(id, value) => handleChange(id, value === 'disabled')}
-                    isDisabled={isManagerTypeNonConfigurable}
+                    handleSelect={() => {}}
+                    isDisabled
                     isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>

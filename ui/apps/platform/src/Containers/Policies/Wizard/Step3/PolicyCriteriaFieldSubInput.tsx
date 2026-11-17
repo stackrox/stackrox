@@ -40,6 +40,8 @@ function PolicyCriteriaFieldSubInput({
                 </FormGroup>
             );
         case 'number':
+            // Group number fields share "(ex. 5)". A descriptor placeholder that is
+            // itself an example, such as "(ex. 75)", replaces it.
             return (
                 <TextInput
                     value={value}
@@ -47,7 +49,11 @@ function PolicyCriteriaFieldSubInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={(_event, v) => setValue(v)}
-                    placeholder="(ex. 5)"
+                    placeholder={
+                        subComponent.placeholder?.startsWith('(ex.')
+                            ? subComponent.placeholder
+                            : '(ex. 5)'
+                    }
                     className="pf-v6-u-w-25"
                     data-testid="policy-criteria-value-number-input"
                 />

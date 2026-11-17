@@ -32,7 +32,6 @@
         "ScannerBundle": "READ_WRITE_ACCESS",
         "ScannerDefinitions": "READ_WRITE_ACCESS",
         "Secret": "READ_WRITE_ACCESS",
-        "SensorUpgradeConfig": "READ_WRITE_ACCESS",
         "ServiceAccount": "READ_WRITE_ACCESS",
         "ServiceIdentity": "READ_WRITE_ACCESS",
         "VulnerabilityManagementApprovals": "READ_WRITE_ACCESS",

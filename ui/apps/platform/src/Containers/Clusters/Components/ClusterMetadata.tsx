@@ -22,6 +22,14 @@ function ClusterMetadata({ status }: ClusterMetadataProps) {
                     {formatKubernetesVersion(status?.orchestratorMetadata)}
                 </DescriptionListDescription>
             </DescriptionListGroup>
+            {status?.orchestratorMetadata?.openshiftVersion && (
+                <DescriptionListGroup>
+                    <DescriptionListTerm>OpenShift version</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        {status.orchestratorMetadata.openshiftVersion}
+                    </DescriptionListDescription>
+                </DescriptionListGroup>
+            )}
             <DescriptionListGroup>
                 <DescriptionListTerm>Build date</DescriptionListTerm>
                 <DescriptionListDescription>

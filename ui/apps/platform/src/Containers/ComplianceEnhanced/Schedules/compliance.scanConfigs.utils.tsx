@@ -1,5 +1,6 @@
 import type { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import type {
+    ClusterScanStatus,
     ComplianceScanConfiguration,
     ComplianceScanConfigurationStatus,
 } from 'services/ComplianceScanConfigurationService';
@@ -42,6 +43,35 @@ export function getTimeWithHourMinuteFromISO8601(timeISO8601: string) {
     // for example, 2024-02-29T17:13:28.710959319Z
     // Return yyyy-mm-dd hh:mm UTC
     return `${timeISO8601.slice(0, 10)} ${timeISO8601.slice(11, 16)} UTC`;
+}
+
+export function getClusterScanErrors(clusterStatus: ClusterScanStatus): string[] {
+    const errors = clusterStatus.errors.filter((error) => error !== '');
+    const suiteErrorMessage = clusterStatus.suiteStatus?.errorMessage;
+
+    return suiteErrorMessage ? [...errors, suiteErrorMessage] : errors;
+}
+
+export function hasScanConfigErrors(scanConfig: ComplianceScanConfigurationStatus): boolean {
+    return scanConfig.clusterStatus.some(
+        (clusterStatus) => getClusterScanErrors(clusterStatus).length > 0
+    );
+}
+
+export function getLastScannedText(scanConfig: ComplianceScanConfigurationStatus): string {
+    if (scanConfig.lastExecutedTime) {
+        return getTimeWithHourMinuteFromISO8601(scanConfig.lastExecutedTime);
+    }
+
+    if (scanConfig.clusterStatus.length === 0) {
+        return 'No scan status available';
+    }
+
+    if (hasScanConfigErrors(scanConfig)) {
+        return 'Scan error';
+    }
+
+    return 'Scanning now';
 }
 
 function getScheduleBaseFromHourMinuteString(time: string): ScheduleBase {

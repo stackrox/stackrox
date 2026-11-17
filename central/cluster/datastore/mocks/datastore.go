@@ -185,18 +185,18 @@ func (mr *MockDataStoreMockRecorder) GetClusters(ctx any) *gomock.Call {
 }
 
 // GetClustersForSAC mocks base method.
-func (m *MockDataStore) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
+func (m *MockDataStore) GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetClustersForSAC")
+	ret := m.ctrl.Call(m, "GetClustersForSAC", ctx)
 	ret0, _ := ret[0].([]effectiveaccessscope.Cluster)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetClustersForSAC indicates an expected call of GetClustersForSAC.
-func (mr *MockDataStoreMockRecorder) GetClustersForSAC() *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetClustersForSAC(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersForSAC", reflect.TypeOf((*MockDataStore)(nil).GetClustersForSAC))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersForSAC", reflect.TypeOf((*MockDataStore)(nil).GetClustersForSAC), ctx)
 }
 
 // LookupOrCreateClusterFromConfig mocks base method.
@@ -356,20 +356,6 @@ func (m *MockDataStore) UpdateClusterStatus(ctx context.Context, id string, stat
 func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(ctx, id, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), ctx, id, status)
-}
-
-// UpdateClusterUpgradeStatus mocks base method.
-func (m *MockDataStore) UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateClusterUpgradeStatus", ctx, id, clusterUpgradeStatus)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateClusterUpgradeStatus indicates an expected call of UpdateClusterUpgradeStatus.
-func (mr *MockDataStoreMockRecorder) UpdateClusterUpgradeStatus(ctx, id, clusterUpgradeStatus any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterUpgradeStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterUpgradeStatus), ctx, id, clusterUpgradeStatus)
 }
 
 // UpdateSensorDeploymentIdentification mocks base method.

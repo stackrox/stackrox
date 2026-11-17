@@ -78,6 +78,7 @@ securedCluster:
   namespace: stackrox
   resourceProfile: ci
 EOF
+
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
 
@@ -118,7 +119,7 @@ run_ui_e2e_tests() {
         store_test_results "ui/test-results/reports/cypress/integration-ocp/." "cy-reps/consolePlugin"
     fi
 
-    if is_OPENSHIFT_CI; then
+    if is_CI && [[ -d "ui/test-results/artifacts" ]]; then
         cp -a ui/test-results/artifacts/* "${ARTIFACT_DIR}/" || true
     fi
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import useAnalytics, { RISK_SUMMARY_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import type { DeploymentRiskSummary } from 'services/DeploymentsService';
 
@@ -20,7 +21,10 @@ export type UseAiRiskSummaryReturn = {
 
 export default function useAiRiskSummary(deploymentId: string): UseAiRiskSummaryReturn {
     const [isExpanded, setIsExpanded] = useState(false);
-    const { isLoading, error, mutate } = useRestMutation(fetchCachedDeploymentRiskSummary);
+    const { analyticsTrack } = useAnalytics();
+    const { isLoading, error, mutate } = useRestMutation(fetchCachedDeploymentRiskSummary, {
+        onSuccess: () => analyticsTrack(RISK_SUMMARY_GENERATED),
+    });
 
     // Read the summary from the session cache if it exists
     const summary = peekCachedDeploymentRiskSummary(deploymentId);

@@ -32,7 +32,6 @@ class Table extends Component {
         setTableRef: PropTypes.func,
         page: PropTypes.number,
         trClassName: PropTypes.string,
-        showThead: PropTypes.bool,
         defaultSorted: PropTypes.arrayOf(PropTypes.object),
         pageSize: PropTypes.number,
         noHorizontalPadding: PropTypes.bool,
@@ -47,20 +46,9 @@ class Table extends Component {
         setTableRef: null,
         page: 0,
         trClassName: '',
-        showThead: true,
         defaultSorted: [],
         pageSize: DEFAULT_PAGE_SIZE,
         noHorizontalPadding: false,
-    };
-
-    getTheadProps = () => {
-        if (!this.props.showThead) {
-            return {
-                style: { display: 'none' },
-            };
-        }
-        // returns an object, if there are no styles to override
-        return {};
     };
 
     getTrGroupProps = (state, rowInfo) => ({
@@ -130,7 +118,6 @@ class Table extends Component {
                 columns={columns}
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
-                getTheadProps={this.getTheadProps}
                 getTheadTrProps={this.getTheadTrProps}
                 getTbodyProps={this.getTbodyProps}
                 defaultPageSize={pageSize}

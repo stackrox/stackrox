@@ -319,6 +319,113 @@ func TestScanWatcherTimeout(t *testing.T) {
 	assert.Error(t, result.Error)
 }
 
+// TestScanWatcherTimeoutResultFirstRecordsScope covers a watcher created from a check result that
+// times out before any Scan update arrives. The result that did arrive must leave the run's scope
+// (scan ref and start time) on ScanWatcherResults so the manager can still mark prior results stale.
+func TestScanWatcherTimeoutResultFirstRecordsScope(t *testing.T) {
+	timeNow := protocompat.TimestampNow()
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
+	ctx, cancel := context.WithCancel(context.Background())
+	finishedSignal := concurrency.NewSignal()
+	timeoutC := make(chan time.Time)
+	defer close(timeoutC)
+	timeout := &testTimer{
+		ch: timeoutC,
+	}
+	scanWatcher := &scanWatcherImpl{
+		ctx:        ctx,
+		sensorCtx:  ctx,
+		cancel:     cancel,
+		timeout:    timeout,
+		scanC:      make(chan *storage.ComplianceOperatorScanV2),
+		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2),
+		stopped:    &finishedSignal,
+		readyQueue: readyTestQueue,
+		scanResults: &ScanWatcherResults{
+			SensorCtx:    ctx,
+			WatcherID:    "id",
+			CheckResults: set.NewStringSet(),
+		},
+	}
+	go scanWatcher.run()
+	// No scan is ever pushed: only a check result carrying the run's scope.
+	err := scanWatcher.PushCheckResult(&storage.ComplianceOperatorCheckResultV2{
+		CheckId:   "check-1",
+		ScanRefId: "ref-1",
+		Annotations: map[string]string{
+			LastScannedAnnotationKey: timeNow.AsTime().Format(time.RFC3339Nano),
+		},
+	})
+	require.NoError(t, err)
+	timeoutC <- time.Now()
+	select {
+	case <-scanWatcher.Finished().Done():
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for the watcher to stop")
+	}
+	require.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanTimeout)
+	assert.Nil(t, result.Scan)
+	assert.Equal(t, "ref-1", result.Scope.ScanRefID)
+	require.NotNil(t, result.Scope.LastStartedTime)
+	assert.Equal(t, timeNow.AsTime(), result.Scope.LastStartedTime.AsTime())
+}
+
+// TestScanWatcherNewerResultAfterScanUpdatesScope covers M1: after a Scan is recorded, a result for
+// a newer run resets the watcher. The recorded scope must advance to the newer run's start time, so
+// the manager does not mark stale against the superseded Scan's older start time.
+func TestScanWatcherNewerResultAfterScanUpdatesScope(t *testing.T) {
+	scanStart := protocompat.TimestampNow()
+	newerStart := protocompat.TimestampNow().AsTime().Add(time.Minute)
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
+	ctx, cancel := context.WithCancel(context.Background())
+	finishedSignal := concurrency.NewSignal()
+	timeoutC := make(chan time.Time)
+	defer close(timeoutC)
+	timeout := &testTimer{ch: timeoutC}
+	scanWatcher := &scanWatcherImpl{
+		ctx:        ctx,
+		sensorCtx:  ctx,
+		cancel:     cancel,
+		timeout:    timeout,
+		scanC:      make(chan *storage.ComplianceOperatorScanV2),
+		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2),
+		stopped:    &finishedSignal,
+		readyQueue: readyTestQueue,
+		scanResults: &ScanWatcherResults{
+			SensorCtx:    ctx,
+			WatcherID:    "id",
+			CheckResults: set.NewStringSet(),
+		},
+	}
+	go scanWatcher.run()
+	// Scan for the current run, then a result for a newer run that resets the watcher.
+	handleScanWithAnnotation("scan-1", "5", scanStart)(t, scanWatcher)
+	err := scanWatcher.PushCheckResult(&storage.ComplianceOperatorCheckResultV2{
+		CheckId:   "check-1",
+		ScanRefId: "ref-1",
+		Annotations: map[string]string{
+			LastScannedAnnotationKey: newerStart.Format(time.RFC3339Nano),
+		},
+	})
+	require.NoError(t, err)
+	timeoutC <- time.Now()
+	select {
+	case <-scanWatcher.Finished().Done():
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for the watcher to stop")
+	}
+	require.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanTimeout)
+	// Recorded scope advanced to the newer run, not the Scan's older start time.
+	assert.Equal(t, "ref-1", result.Scope.ScanRefID)
+	require.NotNil(t, result.Scope.LastStartedTime)
+	assert.Equal(t, newerStart, result.Scope.LastStartedTime.AsTime())
+	assert.True(t, result.Scope.LastStartedTime.AsTime().After(scanStart.AsTime()))
+}
+
 func TestGetIDFromScan(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
@@ -545,54 +652,54 @@ func TestDeleteOldResults(t *testing.T) {
 	})
 	t.Run("results with error should also delete current CheckResults", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 			Error: errors.New("some error"),
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(true)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("results with no error should not delete current CheckResults", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(false)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("DataStore error should return an error", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(false)).Times(1).Return(errors.New("some error"))
 		assert.Error(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("DataStore success should not return error", func(tt *testing.T) {
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
+			Scope: ScanScope{
+				ScanRefID:       "ref-id",
 				LastStartedTime: timeNow,
 			},
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
-			gomock.Eq(results.Scan.GetLastStartedTime()),
-			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(results.Scope.LastStartedTime),
+			gomock.Eq(results.Scope.ScanRefID),
 			gomock.Eq(false)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})

@@ -330,7 +330,11 @@ export function convertToExactMatch(item): unknown {
     if (typeof item !== 'string') {
         return item;
     }
-    return `r/^${item}$`;
+    return convertSearchValueToExactMatch(item);
+}
+
+export function convertSearchValueToExactMatch(value: string) {
+    return `r/^${value}$`;
 }
 
 /**

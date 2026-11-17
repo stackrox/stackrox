@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
@@ -29,6 +30,7 @@ var (
 		search.CVE:                           newMapper(fieldnames.CVE, directMap),
 		search.CVSS:                          newMapper(fieldnames.CVSS, criteriaMap),
 		search.NVDCVSS:                       newMapper(fieldnames.NvdCvss, criteriaMap),
+		search.EPSSProbablity:                newMapper(fieldnames.EPSS, epssProbabilityMap),
 		search.CPUCoresLimit:                 newMapper(fieldnames.ContainerCPULimit, criteriaMap),
 		search.CPUCoresRequest:               newMapper(fieldnames.ContainerCPURequest, criteriaMap),
 		search.MemoryLimit:                   newMapper(fieldnames.ContainerMemLimit, criteriaMap),
@@ -200,6 +202,20 @@ func criteriaMap(searchTerms []string) ([]string, bool) {
 		policyTerms = append(policyTerms, prefix+content)
 	}
 	return policyTerms, false
+}
+
+func epssProbabilityMap(searchTerms []string) ([]string, bool) {
+	policyTerms := make([]string, 0, len(searchTerms))
+	dropped := false
+	for _, term := range searchTerms {
+		policyValue, ok := querybuilders.ScaleEPSSProbabilityToPercent(term)
+		if !ok {
+			dropped = true
+			continue
+		}
+		policyTerms = append(policyTerms, policyValue)
+	}
+	return policyTerms, dropped
 }
 
 // GetPolicyGroupFromSearchTerms accepts a field label and a list of search terms, and turns them into a policy group

@@ -128,7 +128,8 @@ export function visitViolationWithFixture(fixturePath) {
  */
 export function interactAndWaitForViolationsResponses(interactionCallback) {
     interactAndWaitForResponses(interactionCallback, routeMatcherMapForViolations);
-    cy.get('table tbody[aria-busy="false"]');
+    cy.get('table tbody').should('exist');
+    cy.get('table [aria-label="Loading table data"]').should('not.exist');
 }
 
 /*

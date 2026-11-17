@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
 
-if [[ "${USE_ROXIE_DEPLOY:-true}" == "true" ]]; then
-    ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
-    if [[ "${SKIP_ROXIE_DEPLOY_BANNER:-false}" != "true" ]]; then
-        cat <<EOF
+echo "Using roxie to deploy StackRox. 🎉"
+echo
+
+if [[ "${SKIP_ROXIE_DEPLOY_BANNER:-false}" != "true" ]]; then
+    cat <<EOF
 ----------------------------------------------------------------------------------------
-Using roxie to deploy StackRox. 🎉
-If this is not intended, please set USE_ROXIE_DEPLOY=false and re-run the deployment script.
-
 This is a limited shell wrapper leveraging roxie under the hood.
 In particular, you won't be able to configure feature flags by setting environment
 variables. Instead, you can pass roxie command line arguments to this script,
@@ -30,7 +28,7 @@ For tearing down the deployment, invoke:
 
 You can find quick start instructions for roxie in:
 
-    ${DIR}/README.md.
+    ${ROOT}/deploy/README.md.
 
 If you do not want to see this banner again, set
 
@@ -38,32 +36,10 @@ If you do not want to see this banner again, set
 
 ----------------------------------------------------------------------------------------
 EOF
-    fi
-    if [[ "${1:-}" == "shell" ]]; then
-        "${ROOT}/scripts/roxie.sh" shell
-    else
-        "${ROOT}/scripts/roxie.sh" --config "${ROOT}/deploy/roxie-config.yaml" deploy "$@"
-    fi
-    exit $?
 fi
 
-cat <<EOF
--------------------------------------------------------------------------------------
-Using legacy flow to deploy StackRox (USE_ROXIE_DEPLOY=false).
-The legacy flow is deprecated and WILL BE REMOVED SOON. Please use the roxie-based deployment
-by unsetting USE_ROXIE_DEPLOY or setting it to true.
-
-You can find quick start instructions for roxie in:
-
-    ${DIR}/README.md.
--------------------------------------------------------------------------------------
-EOF
-
-# shellcheck source=./detect.sh
-source "${DIR}/detect.sh"
-
-if is_openshift; then
-    source "${DIR}/openshift/deploy.sh"
+if [[ "${1:-}" == "shell" ]]; then
+    "${ROOT}/scripts/roxie.sh" shell
 else
-    source "${DIR}/k8s/deploy.sh"
+    "${ROOT}/scripts/roxie.sh" --config "${ROOT}/deploy/roxie-config.yaml" deploy "$@"
 fi
