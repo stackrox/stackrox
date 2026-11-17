@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -24,21 +25,6 @@ func dailySchedule(hour, minute int32) *storage.Schedule {
 		IntervalType: storage.Schedule_DAILY,
 		Hour:         hour,
 		Minute:       minute,
-	}
-}
-
-func scanConfig(name string, sched *storage.Schedule) *storage.ComplianceOperatorScanConfigurationV2 {
-	return &storage.ComplianceOperatorScanConfigurationV2{
-		ScanConfigName: name,
-		Schedule:       sched,
-	}
-}
-
-func newTestSweeper(scanCfg *scanConfigMocks.MockDataStore, checkRes *checkResultMocks.MockDataStore) *sweeperImpl {
-	return &sweeperImpl{
-		scanConfigDS:  scanCfg,
-		checkResultDS: checkRes,
-		stopper:       concurrency.NewStopper(),
 	}
 }
 
@@ -58,6 +44,26 @@ func monthlySchedule(hour, minute int32, days ...int32) *storage.Schedule {
 		Minute:       minute,
 		Interval:     &storage.Schedule_DaysOfMonth_{DaysOfMonth: &storage.Schedule_DaysOfMonth{Days: days}},
 	}
+}
+
+func scanConfig(name string, sched *storage.Schedule) *storage.ComplianceOperatorScanConfigurationV2 {
+	return &storage.ComplianceOperatorScanConfigurationV2{
+		ScanConfigName: name,
+		Schedule:       sched,
+	}
+}
+
+// newTestSweeper returns a sweeper wired to fresh gomock datastores. The gomock controller is bound
+// to t, so expectations are verified when the (sub)test ends.
+func newTestSweeper(t *testing.T) (*sweeperImpl, *scanConfigMocks.MockDataStore, *checkResultMocks.MockDataStore) {
+	ctrl := gomock.NewController(t)
+	scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
+	checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+	return &sweeperImpl{
+		scanConfigDS:  scanConfigMock,
+		checkResultDS: checkResultMock,
+		stopper:       concurrency.NewStopper(),
+	}, scanConfigMock, checkResultMock
 }
 
 // TestPreviousScheduledStart pins the cutoff computation against fixed references with hand-computed
@@ -129,7 +135,7 @@ func TestPreviousScheduledStart(t *testing.T) {
 				return
 			}
 			require.True(t, ok)
-			assert.Truef(t, got.Equal(c.want), "got %s, want %s", got, c.want)
+			assert.Equal(t, c.want, got)
 		})
 	}
 }
@@ -157,10 +163,7 @@ func TestSweepGraceWindow(t *testing.T) {
 		sched := dailySchedule(int32(start.Hour()), int32(start.Minute()))
 		prevCycle := start.Add(-24 * time.Hour)
 
-		ctrl := gomock.NewController(t)
-		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-		sw := newTestSweeper(scanConfigMock, checkResultMock)
+		sw, scanConfigMock, checkResultMock := newTestSweeper(t)
 
 		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgA", sched)}, nil).AnyTimes()
@@ -180,7 +183,7 @@ func TestSweepGraceWindow(t *testing.T) {
 
 			sw.sweep(context.Background())
 
-			assert.Truef(t, wantCutoff.Equal(gotCutoff), "cutoff = %s, want %s", gotCutoff, wantCutoff)
+			assert.Equal(t, wantCutoff, gotCutoff)
 		}
 
 		assertCutoff(prevCycle) // well before the scheduled start: previous cycle still current
@@ -198,10 +201,7 @@ func TestSweepGraceWindow(t *testing.T) {
 
 func TestSweep(t *testing.T) {
 	t.Run("config with nil schedule is skipped", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-		sw := newTestSweeper(scanConfigMock, checkResultMock)
+		sw, scanConfigMock, _ := newTestSweeper(t)
 
 		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfgNil", nil)}, nil)
@@ -211,10 +211,7 @@ func TestSweep(t *testing.T) {
 	})
 
 	t.Run("config updated after its previous tick is skipped", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-		sw := newTestSweeper(scanConfigMock, checkResultMock)
+		sw, scanConfigMock, _ := newTestSweeper(t)
 
 		// A config just updated: its previous scheduled tick predates LastUpdatedTime, so the current
 		// schedule was not in effect then and the config must be skipped this sweep.
@@ -228,10 +225,7 @@ func TestSweep(t *testing.T) {
 	})
 
 	t.Run("list error is tolerated and marks nothing", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-		sw := newTestSweeper(scanConfigMock, checkResultMock)
+		sw, scanConfigMock, _ := newTestSweeper(t)
 
 		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return(nil, errors.New("boom"))
@@ -241,10 +235,7 @@ func TestSweep(t *testing.T) {
 	})
 
 	t.Run("mark error on one config does not stop the next", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-		sw := newTestSweeper(scanConfigMock, checkResultMock)
+		sw, scanConfigMock, checkResultMock := newTestSweeper(t)
 
 		sched := dailySchedule(3, 30)
 		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
@@ -262,10 +253,7 @@ func TestSweep(t *testing.T) {
 	})
 
 	t.Run("stop requested between configs ends the loop early", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-		checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
-		sw := newTestSweeper(scanConfigMock, checkResultMock)
+		sw, scanConfigMock, checkResultMock := newTestSweeper(t)
 
 		sched := dailySchedule(3, 30)
 		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
@@ -313,12 +301,11 @@ func TestClampSweepInterval(t *testing.T) {
 }
 
 func TestSweeperStartStop(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-	checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	// The loop runs sweep immediately and then every tick; tolerate any number of list calls, and
 	// no stale marking since there are no configurations.
+	_, scanConfigMock, checkResultMock := newTestSweeper(t)
 	scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	s := New(scanConfigMock, checkResultMock, 10*time.Millisecond)
@@ -330,9 +317,7 @@ func TestSweeperStartStop(t *testing.T) {
 // rather than waiting for the first ticker fire. The interval is long enough that only the initial
 // sweep could plausibly complete within the test's timeout.
 func TestSweeperRunsInitialSweepBeforeFirstTick(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-	checkResultMock := checkResultMocks.NewMockDataStore(ctrl)
+	_, scanConfigMock, checkResultMock := newTestSweeper(t)
 
 	called := make(chan struct{}, 1)
 	scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).

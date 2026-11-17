@@ -292,91 +292,89 @@ func (s *complianceCheckResultDataStoreTestSuite) TestMarkScanChecksStaleByConfi
 	oldTime := now.Add(-10 * time.Hour)
 	recentTime := now.Add(-5 * time.Minute)
 
-	tests := map[string]func(){
-		"write context required": func() {
-			_, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasReadCtx, "cfgA", cutoff)
-			s.Require().Error(err)
-		},
-		"empty config name is a no-op": func() {
-			updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, "", cutoff)
-			s.Require().NoError(err)
-			s.Require().Zero(updated)
-		},
-		"marks only matching old rows stale, keeps recent, nil, and other config untouched": func() {
-			const cfgA = "cfgA"
-			const cfgB = "cfgB"
+	s.Run("write context required", func() {
+		_, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasReadCtx, "cfgA", cutoff)
+		s.Require().Error(err)
+	})
 
-			// cfgA spans two clusters with mixed LastStartedTime: old (should go STALE), recent (newer
-			// than the cutoff, must stay), and nil (freshness cannot be evaluated, must stay).
-			oldA1 := getTestRecForScan(cfgA, testconsts.Cluster1, "scan-a-old")
-			oldA1.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
-			oldA2 := getTestRecForScan(cfgA, testconsts.Cluster2, "scan-a-old")
-			oldA2.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
-			recentA := getTestRecForScan(cfgA, testconsts.Cluster1, "scan-a-recent")
-			recentA.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&recentTime)
-			nilA := getTestRecForScan(cfgA, testconsts.Cluster2, "scan-a-nil")
-			nilA.LastStartedTime = nil
+	s.Run("empty config name is a no-op", func() {
+		updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, "", cutoff)
+		s.Require().NoError(err)
+		s.Require().Zero(updated)
+	})
 
-			// cfgB predates the cutoff too, but a different scan configuration must never be touched.
-			oldB := getTestRecForScan(cfgB, testconsts.Cluster1, "scan-b-old")
-			oldB.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+	s.Run("marks only matching old rows stale, keeps recent, nil, and other config untouched", func() {
+		const cfgA = "cfgA"
+		const cfgB = "cfgB"
 
-			for _, rec := range []*storage.ComplianceOperatorCheckResultV2{oldA1, oldA2, recentA, nilA, oldB} {
-				s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
-			}
+		// cfgA spans two clusters with mixed LastStartedTime: old (should go STALE), recent (newer
+		// than the cutoff, must stay), and nil (freshness cannot be evaluated, must stay).
+		oldA1 := getTestRecForScan(cfgA, testconsts.Cluster1, "scan-a-old")
+		oldA1.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		oldA2 := getTestRecForScan(cfgA, testconsts.Cluster2, "scan-a-old")
+		oldA2.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		recentA := getTestRecForScan(cfgA, testconsts.Cluster1, "scan-a-recent")
+		recentA.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&recentTime)
+		nilA := getTestRecForScan(cfgA, testconsts.Cluster2, "scan-a-nil")
+		nilA.LastStartedTime = nil
 
-			updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfgA, cutoff)
-			s.Require().NoError(err)
-			s.Require().Equal(int64(2), updated)
-			s.assertFreshness(oldA1.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
-			s.assertFreshness(oldA2.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
-			// Recent row (newer than cutoff) and nil-timestamp row keep their initial UNKNOWN.
-			s.assertFreshness(recentA.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
-			s.assertFreshness(nilA.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
-			// The other scan configuration is untouched even though its row predates the cutoff.
-			s.assertFreshness(oldB.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
-		},
-		"second call is idempotent": func() {
-			const cfg = "cfg-idem"
-			oldRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-idem-old")
-			oldRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
-			s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, oldRec))
+		// cfgB predates the cutoff too, but a different scan configuration must never be touched.
+		oldB := getTestRecForScan(cfgB, testconsts.Cluster1, "scan-b-old")
+		oldB.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
 
-			updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, cutoff)
-			s.Require().NoError(err)
-			s.Require().Equal(int64(1), updated)
+		for _, rec := range []*storage.ComplianceOperatorCheckResultV2{oldA1, oldA2, recentA, nilA, oldB} {
+			s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
+		}
 
-			updated, err = s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, cutoff)
-			s.Require().NoError(err)
-			s.Require().Zero(updated)
-		},
-		"sub-second boundary: before pivot in the same second is STALE, after is CURRENT": func() {
-			const cfg = "cfg-subsecond"
-			base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
-			subPivot := base.Add(700 * time.Millisecond)    // 12:00:00.700
-			beforePivot := base.Add(300 * time.Millisecond) // 12:00:00.300, same second, before pivot
-			afterPivot := base.Add(900 * time.Millisecond)  // 12:00:00.900, same second, after pivot
+		updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfgA, cutoff)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(2), updated)
+		s.assertFreshness(oldA1.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+		s.assertFreshness(oldA2.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+		// Recent row (newer than cutoff) and nil-timestamp row keep their initial UNKNOWN.
+		s.assertFreshness(recentA.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+		s.assertFreshness(nilA.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+		// The other scan configuration is untouched even though its row predates the cutoff.
+		s.assertFreshness(oldB.GetId(), storage.ComplianceOperatorCheckResultV2_UNKNOWN)
+	})
 
-			beforeRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-subsecond-before")
-			beforeRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&beforePivot)
-			beforeRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-			afterRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-subsecond-after")
-			afterRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&afterPivot)
-			afterRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
-			s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, beforeRec))
-			s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, afterRec))
+	s.Run("second call is idempotent", func() {
+		const cfg = "cfg-idem"
+		oldRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-idem-old")
+		oldRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&oldTime)
+		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, oldRec))
 
-			updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, subPivot)
-			s.Require().NoError(err)
-			s.Require().Equal(int64(1), updated)
-			s.assertFreshness(beforeRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
-			s.assertFreshness(afterRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
-		},
-	}
+		updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, cutoff)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(1), updated)
 
-	for name, run := range tests {
-		s.Run(name, run)
-	}
+		updated, err = s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, cutoff)
+		s.Require().NoError(err)
+		s.Require().Zero(updated)
+	})
+
+	s.Run("sub-second boundary: before pivot in the same second is STALE, after is CURRENT", func() {
+		const cfg = "cfg-subsecond"
+		base := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+		subPivot := base.Add(700 * time.Millisecond)    // 12:00:00.700
+		beforePivot := base.Add(300 * time.Millisecond) // 12:00:00.300, same second, before pivot
+		afterPivot := base.Add(900 * time.Millisecond)  // 12:00:00.900, same second, after pivot
+
+		beforeRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-subsecond-before")
+		beforeRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&beforePivot)
+		beforeRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		afterRec := getTestRecForScan(cfg, testconsts.Cluster1, "scan-subsecond-after")
+		afterRec.LastStartedTime = protocompat.ConvertTimeToTimestampOrNil(&afterPivot)
+		afterRec.DataFreshness = storage.ComplianceOperatorCheckResultV2_CURRENT
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, beforeRec))
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, afterRec))
+
+		updated, err := s.dataStore.MarkScanChecksStaleByConfig(s.hasWriteCtx, cfg, subPivot)
+		s.Require().NoError(err)
+		s.Require().Equal(int64(1), updated)
+		s.assertFreshness(beforeRec.GetId(), storage.ComplianceOperatorCheckResultV2_STALE)
+		s.assertFreshness(afterRec.GetId(), storage.ComplianceOperatorCheckResultV2_CURRENT)
+	})
 }
 
 // TestMarkScanChecksStaleByConfigAgreesWithWriteHooks verifies the time-driven sweeper never
