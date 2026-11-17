@@ -52,6 +52,7 @@ function BaseImagesPage() {
         onSuccess: () => {
             analyticsTrack(BASE_IMAGE_REFERENCE_DELETED);
             setBaseImageToDelete(null);
+            addToast('Base image successfully deleted', 'success');
             baseImagesRequest.refetch();
         },
     });
