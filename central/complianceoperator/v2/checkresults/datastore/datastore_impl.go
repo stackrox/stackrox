@@ -528,17 +528,17 @@ func (d *datastoreImpl) MarkScanChecksStaleByConfig(ctx context.Context, scanCon
 		"marking stale compliance check results by scan configuration")
 }
 
-// markStaleOlderThan marks STALE the non-stale check results matched by (field == value) whose
+// markStaleOlderThan marks STALE the non-stale check results matched by (queryField == targetValue) whose
 // LastStartedTime predates olderThan. belongs, when non-nil, is an extra membership guard applied to
 // every candidate (both at the initial read and under the fenced re-read); pass nil when the keyed
 // field cannot change for a row.
-func (d *datastoreImpl) markStaleOlderThan(ctx context.Context, field search.FieldLabel, value string, olderThan time.Time, belongs func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
+func (d *datastoreImpl) markStaleOlderThan(ctx context.Context, queryField search.FieldLabel, targetValue string, olderThan time.Time, belongs func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
 		return 0, sac.ErrResourceAccessDenied
 	}
-	if value == "" {
+	if targetValue == "" {
 		return 0, nil
 	}
 
@@ -552,7 +552,7 @@ func (d *datastoreImpl) markStaleOlderThan(ctx context.Context, field search.Fie
 	// every candidate in Go with full precision.
 	upperBound := olderThan.Truncate(time.Second).Add(time.Second)
 	query := search.NewQueryBuilder().
-		AddExactMatches(field, value).
+		AddExactMatches(queryField, targetValue).
 		AddStrings(search.ComplianceOperatorCheckDataFreshness,
 			search.NegateQueryString(search.ExactMatchString(storage.ComplianceOperatorCheckResultV2_STALE.String()))).
 		AddTimeRangeField(search.ComplianceOperatorCheckLastStartedTime, time.Unix(0, 0), upperBound).
