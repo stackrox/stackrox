@@ -69,15 +69,6 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters/{id}"};
   }
 
-  // PutCluster is deprecated. Use operator-based installation with CRS instead.
-  rpc PutCluster(storage.Cluster) returns (ClusterResponse) {
-    option deprecated = true;
-    option (google.api.http) = {
-      put: "/v1/clusters/{id}"
-      body: "*"
-    };
-  }
-
   rpc DeleteCluster(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/clusters/{id}"};
   }
