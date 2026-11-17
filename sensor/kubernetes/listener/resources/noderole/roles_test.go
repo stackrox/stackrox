@@ -16,8 +16,8 @@ func mcpWithSpec(selector *mcpv1.MachineConfigPoolSpec) *mcpv1.MachineConfigPool
 
 func TestRolesFromMachineConfigPool(t *testing.T) {
 	tests := map[string]struct {
-		mcp   *mcpv1.MachineConfigPool
-		want  []string
+		mcp  *mcpv1.MachineConfigPool
+		want []string
 	}{
 		"nil MachineConfigPool": {
 			mcp:  nil,
