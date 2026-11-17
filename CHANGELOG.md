@@ -43,6 +43,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37383: Scanner V4 DB now runs PostgreSQL 16, upgraded from 15. The data directory is upgraded in place the first time the new image starts, and the vulnerability store is preserved, so no re-download is needed. If the upgrade cannot be completed, Scanner V4 DB keeps serving with PostgreSQL 15 and retries on the next restart.
 - ROX-37861: Omitted `RELATED_IMAGE` entries in operator helm chart. Note that two consecutive upgrade runs are necessary to fix `manager.envOverrides` unless using server-side apply.
 - ROX-39442: Declarative configuration no longer rejects auth providers without a `uiEndpoint`. In 5.0.0, config validation required `uiEndpoint` for every auth provider type, breaking OpenShift, user PKI, and IAP providers that do not use a UI endpoint (these worked without one before 5.0). OIDC and SAML auth providers still require a UI endpoint.
+- ROX-39737: Changes the ECR Registry Timeout from the AWS default of 30s to 10s to allow for faster authentication failures. This is tunable through the `ROX_REGISTRY_ECR_TOKEN_REFRESH_TIMEOUT` env var for high-latency environments.
 
 ## [5.0.0]
 
@@ -102,7 +103,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-33673: A new default policy has been added to detect missing egress NetworkPolicy associated with deployments. The policy is disabled by default.
 - ROX-33336: The Operator now reads the cluster-wide TLS profile from `apiserver.config.openshift.io/cluster` on OpenShift and propagates it to all managed ACS components via environment variables. The Operator's own metrics server always honors the cluster TLS profile when running on OpenShift.
 - ROX-26033: Compliance now tracks tailored profiles and custom rules from the Compliance Operator. Tailored profiles can be included in scan configurations, and their check results are shown in the Coverage page and CSV reports.
-- ROX-34407: Deprecated fields to select optional columns NVD CVSS, EPSS Probability and Advisory from Vulnerability Reporting. These columns will be included by default next to similar columns. This change also affects column order in reports. 
+- ROX-34407: Deprecated fields to select optional columns NVD CVSS, EPSS Probability and Advisory from Vulnerability Reporting. These columns will be included by default next to similar columns. This change also affects column order in reports.
 - ROX-33108: Added Component Version Column in Vulnerability Reporting.
 - ROX-32865: Images are now uniquely identified by the combination of name and digest, rather
   than by digest alone. This new data model resolves several long-standing issues when multiple
