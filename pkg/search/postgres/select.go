@@ -335,6 +335,10 @@ func getSelectCursorSession(ctx context.Context, db postgres.DB, builtQuery *que
 }
 
 func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool) (*query, error) {
+	return compileSelectQuery(ctx, q, schema, queryType, arrayFields, false)
+}
+
+func compileSelectQuery(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool, rejectUnsupportedPredicates bool) (*query, error) {
 	nowForQuery := time.Now()
 
 	var err error
@@ -369,10 +373,9 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	if err != nil {
 		return nil, err
 	}
-	if queryEntry == nil {
-		// Empty query wrappers are match-all, including conjunctions assembled
-		// from empty search and access scopes. Only actual unsupported predicates
-		// should produce no results.
+	if rejectUnsupportedPredicates && queryEntry == nil {
+		// Membership subqueries must not turn unsupported filters into match-all.
+		// Empty wrappers, including combined search and access scopes, still match all.
 		var hasPredicate bool
 		searchPkg.ApplyFnToAllBaseQueries(q, func(base *v1.BaseQuery) {
 			hasPredicate = hasPredicate || base.GetQuery() != nil

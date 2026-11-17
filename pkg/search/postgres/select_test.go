@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +26,24 @@ func TestSelectEmptyPredicates(t *testing.T) {
 			compiled, err := standardizeSelectQueryAndPopulatePath(sac.WithAllAccess(context.Background()), q, schema.DeploymentsSchema, SELECT, nil)
 			require.NoError(t, err)
 			require.NotNil(t, compiled, "empty filters must not suppress SELECT results")
+		})
+	}
+}
+
+func TestSelectUnsupportedPredicates(t *testing.T) {
+	unsupported := search.NewQueryBuilder().AddExactMatches(search.FieldLabel("unsupported"), "value").ProtoQuery()
+	for name, q := range map[string]*v1.Query{
+		"base query":  unsupported,
+		"conjunction": search.ConjunctionQuery(unsupported, search.EmptyQuery()),
+		"disjunction": search.DisjunctionQuery(unsupported, search.EmptyQuery()),
+	} {
+		t.Run(name, func(t *testing.T) {
+			q = q.CloneVT()
+			q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+			compiled, err := standardizeSelectQueryAndPopulatePath(sac.WithAllAccess(context.Background()), q, schema.DeploymentsSchema, SELECT, nil)
+			require.NoError(t, err)
+			require.NotNil(t, compiled)
+			assert.Equal(t, "select deployments.Name as deployment from deployments", compiled.AsSQL())
 		})
 	}
 }

@@ -32,7 +32,7 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	}
 	// The view SELECT compiler applies the inner query's access and scope filters.
 	// Assign parameter numbers after combining both queries so their values stay in order.
-	compiled, err := standardizeSelectQueryAndPopulatePath(ctx, sub.GetQuery().CloneVT(), schema, SELECT, nil)
+	compiled, err := compileSelectQuery(ctx, sub.GetQuery().CloneVT(), schema, SELECT, nil, true)
 	if err != nil {
 		return nil, err
 	}

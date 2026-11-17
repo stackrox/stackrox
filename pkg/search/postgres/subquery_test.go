@@ -36,6 +36,39 @@ func TestSubQueryParameters(t *testing.T) {
 	assert.Contains(t, compiled.AsSQL(), "count(deployments.Id) > $3")
 }
 
+func TestSubQueryPredicates(t *testing.T) {
+	unsupported := search.NewQueryBuilder().AddExactMatches(search.FieldLabel("unsupported"), "value").ProtoQuery()
+	for name, test := range map[string]struct {
+		query     *v1.Query
+		matchNone bool
+	}{
+		"empty query":            {query: search.EmptyQuery()},
+		"empty conjunction":      {query: search.ConjunctionQuery(search.EmptyQuery(), search.EmptyQuery())},
+		"empty disjunction":      {query: search.DisjunctionQuery(search.EmptyQuery(), search.EmptyQuery())},
+		"unsupported base query": {query: unsupported, matchNone: true},
+		"unsupported conjunction": {
+			query: search.ConjunctionQuery(unsupported, search.EmptyQuery()), matchNone: true,
+		},
+		"unsupported disjunction": {
+			query: search.DisjunctionQuery(unsupported, search.EmptyQuery()), matchNone: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			inner := test.query.CloneVT()
+			inner.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+			q := search.MatchFieldSubQuery(search.DeploymentName, v1.SearchCategory_DEPLOYMENTS, inner)
+			compiled, err := standardizeQueryAndPopulatePath(sac.WithAllAccess(context.Background()), q, schema.DeploymentsSchema, COUNT)
+			require.NoError(t, err)
+			require.NotNil(t, compiled)
+			if test.matchNone {
+				assert.Equal(t, "false", compiled.Where)
+			} else {
+				assert.Contains(t, compiled.Where, "EXISTS (SELECT 1 FROM (")
+			}
+		})
+	}
+}
+
 func TestInvalidSubQuery(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	valid := search.NewQueryBuilder().AddSelectFields(search.NewQuerySelect(search.ImageID)).ProtoQuery()
