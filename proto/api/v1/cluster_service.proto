@@ -97,7 +97,9 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters-env/kernel-support-available"};
   }
 
+  // GetClusterDefaultValues is deprecated. Use operator-based installation with CRS instead.
   rpc GetClusterDefaultValues(Empty) returns (ClusterDefaultsResponse) {
+    option deprecated = true;
     option (google.api.http) = {get: "/v1/cluster-defaults"};
   }
 }
