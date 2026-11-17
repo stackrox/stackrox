@@ -8,7 +8,6 @@ package v1
 
 import (
 	context "context"
-	storage "github.com/stackrox/rox/generated/storage"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -22,8 +21,6 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ClustersService_GetClusters_FullMethodName               = "/v1.ClustersService/GetClusters"
 	ClustersService_GetCluster_FullMethodName                = "/v1.ClustersService/GetCluster"
-	ClustersService_PostCluster_FullMethodName               = "/v1.ClustersService/PostCluster"
-	ClustersService_PutCluster_FullMethodName                = "/v1.ClustersService/PutCluster"
 	ClustersService_DeleteCluster_FullMethodName             = "/v1.ClustersService/DeleteCluster"
 	ClustersService_GetKernelSupportAvailable_FullMethodName = "/v1.ClustersService/GetKernelSupportAvailable"
 	ClustersService_GetClusterDefaultValues_FullMethodName   = "/v1.ClustersService/GetClusterDefaultValues"
@@ -35,16 +32,12 @@ const (
 type ClustersServiceClient interface {
 	GetClusters(ctx context.Context, in *GetClustersRequest, opts ...grpc.CallOption) (*ClustersList, error)
 	GetCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ClusterResponse, error)
-	// Deprecated: Do not use.
-	// PostCluster is deprecated. Use operator-based installation with CRS instead.
-	PostCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
-	// Deprecated: Do not use.
-	// PutCluster is deprecated. Use operator-based installation with CRS instead.
-	PutCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
 	DeleteCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// Deprecated: Do not use.
 	// GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
 	GetKernelSupportAvailable(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*KernelSupportAvailableResponse, error)
+	// Deprecated: Do not use.
+	// GetClusterDefaultValues is deprecated. Use operator-based installation with CRS instead.
 	GetClusterDefaultValues(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClusterDefaultsResponse, error)
 }
 
@@ -76,28 +69,6 @@ func (c *clustersServiceClient) GetCluster(ctx context.Context, in *ResourceByID
 	return out, nil
 }
 
-// Deprecated: Do not use.
-func (c *clustersServiceClient) PostCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ClusterResponse)
-	err := c.cc.Invoke(ctx, ClustersService_PostCluster_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Deprecated: Do not use.
-func (c *clustersServiceClient) PutCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ClusterResponse)
-	err := c.cc.Invoke(ctx, ClustersService_PutCluster_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *clustersServiceClient) DeleteCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
@@ -119,6 +90,7 @@ func (c *clustersServiceClient) GetKernelSupportAvailable(ctx context.Context, i
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *clustersServiceClient) GetClusterDefaultValues(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClusterDefaultsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ClusterDefaultsResponse)
@@ -135,16 +107,12 @@ func (c *clustersServiceClient) GetClusterDefaultValues(ctx context.Context, in 
 type ClustersServiceServer interface {
 	GetClusters(context.Context, *GetClustersRequest) (*ClustersList, error)
 	GetCluster(context.Context, *ResourceByID) (*ClusterResponse, error)
-	// Deprecated: Do not use.
-	// PostCluster is deprecated. Use operator-based installation with CRS instead.
-	PostCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
-	// Deprecated: Do not use.
-	// PutCluster is deprecated. Use operator-based installation with CRS instead.
-	PutCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
 	DeleteCluster(context.Context, *ResourceByID) (*Empty, error)
 	// Deprecated: Do not use.
 	// GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
 	GetKernelSupportAvailable(context.Context, *Empty) (*KernelSupportAvailableResponse, error)
+	// Deprecated: Do not use.
+	// GetClusterDefaultValues is deprecated. Use operator-based installation with CRS instead.
 	GetClusterDefaultValues(context.Context, *Empty) (*ClusterDefaultsResponse, error)
 }
 
@@ -160,12 +128,6 @@ func (UnimplementedClustersServiceServer) GetClusters(context.Context, *GetClust
 }
 func (UnimplementedClustersServiceServer) GetCluster(context.Context, *ResourceByID) (*ClusterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCluster not implemented")
-}
-func (UnimplementedClustersServiceServer) PostCluster(context.Context, *storage.Cluster) (*ClusterResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method PostCluster not implemented")
-}
-func (UnimplementedClustersServiceServer) PutCluster(context.Context, *storage.Cluster) (*ClusterResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method PutCluster not implemented")
 }
 func (UnimplementedClustersServiceServer) DeleteCluster(context.Context, *ResourceByID) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteCluster not implemented")
@@ -228,42 +190,6 @@ func _ClustersService_GetCluster_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).GetCluster(ctx, req.(*ResourceByID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ClustersService_PostCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(storage.Cluster)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ClustersServiceServer).PostCluster(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ClustersService_PostCluster_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClustersServiceServer).PostCluster(ctx, req.(*storage.Cluster))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ClustersService_PutCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(storage.Cluster)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ClustersServiceServer).PutCluster(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ClustersService_PutCluster_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ClustersServiceServer).PutCluster(ctx, req.(*storage.Cluster))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -336,14 +262,6 @@ var ClustersService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCluster",
 			Handler:    _ClustersService_GetCluster_Handler,
-		},
-		{
-			MethodName: "PostCluster",
-			Handler:    _ClustersService_PostCluster_Handler,
-		},
-		{
-			MethodName: "PutCluster",
-			Handler:    _ClustersService_PutCluster_Handler,
 		},
 		{
 			MethodName: "DeleteCluster",

@@ -486,12 +486,12 @@ func file_internalapi_sensor_admission_control_proto_rawDescGZIP() []byte {
 
 var file_internalapi_sensor_admission_control_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_internalapi_sensor_admission_control_proto_goTypes = []any{
-	(*AdmissionControlSettings)(nil),      // 0: sensor.AdmissionControlSettings
-	(*ClusterLabels)(nil),                 // 1: sensor.ClusterLabels
-	(*AdmissionControlAlerts)(nil),        // 2: sensor.AdmissionControlAlerts
-	(*AdmCtrlUpdateResourceRequest)(nil),  // 3: sensor.AdmCtrlUpdateResourceRequest
-	(*AdmCtrlImageCacheInvalidation)(nil), // 4: sensor.AdmCtrlImageCacheInvalidation
-	nil,                                   // 5: sensor.ClusterLabels.LabelsEntry
+	(*AdmissionControlSettings)(nil),                     // 0: sensor.AdmissionControlSettings
+	(*ClusterLabels)(nil),                                // 1: sensor.ClusterLabels
+	(*AdmissionControlAlerts)(nil),                       // 2: sensor.AdmissionControlAlerts
+	(*AdmCtrlUpdateResourceRequest)(nil),                 // 3: sensor.AdmCtrlUpdateResourceRequest
+	(*AdmCtrlImageCacheInvalidation)(nil),                // 4: sensor.AdmCtrlImageCacheInvalidation
+	nil,                                                  // 5: sensor.ClusterLabels.LabelsEntry
 	(*AdmCtrlUpdateResourceRequest_ResourcesSynced)(nil), // 6: sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
 	(*storage.DynamicClusterConfig)(nil),                 // 7: storage.DynamicClusterConfig
 	(*storage.PolicyList)(nil),                           // 8: storage.PolicyList
