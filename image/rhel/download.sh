@@ -46,7 +46,6 @@ else
   download_dir=$(mktemp -d)
   trap 'rm -rf "$download_dir"' EXIT
 
-  # Resolve package locations through PGDG metadata, including RHEL minor versions.
   dnf install -y --downloadonly --downloaddir="$download_dir" \
     "postgresql${postgres_major}.${arch}" "postgresql${postgres_major}-libs.${arch}"
 
