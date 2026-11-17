@@ -5,43 +5,65 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// MachineConfigPoolStore tracks the set of MachineConfigPool names present in the cluster.
+// MachineConfigPoolStore tracks the node roles targeted by the
+// MachineConfigPools present in the cluster, keyed by pool name. Roles are
+// stored per pool so that a role contributed by several pools remains tracked
+// as long as one of those pools exists.
 type MachineConfigPoolStore struct {
-	lock     sync.RWMutex
-	mcpNames set.StringSet
+	lock  sync.RWMutex
+	pools map[string]set.StringSet
 }
 
 // NewMachineConfigPoolStore returns a new MachineConfigPoolStore.
 func NewMachineConfigPoolStore() *MachineConfigPoolStore {
 	return &MachineConfigPoolStore{
-		mcpNames: set.NewStringSet(),
+		pools: make(map[string]set.StringSet),
 	}
 }
 
-// Add inserts an MCP name. Returns true if it was not already present.
-func (s *MachineConfigPoolStore) Add(name string) bool {
+// Upsert records the roles targeted by the named MachineConfigPool, replacing
+// any roles previously recorded for that pool. It returns true if the overall
+// set of roles changed.
+func (s *MachineConfigPoolStore) Upsert(name string, roles set.StringSet) bool {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	return s.mcpNames.Add(name)
+	before := s.rolesNoLock()
+	s.pools[name] = roles
+	return !before.Equal(s.rolesNoLock())
 }
 
-// Remove deletes an MCP name. Returns true if it was present.
+// Remove deletes the entry of the named MachineConfigPool. It returns true if
+// the overall set of roles changed.
 func (s *MachineConfigPoolStore) Remove(name string) bool {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	return s.mcpNames.Remove(name)
+	before := s.rolesNoLock()
+	delete(s.pools, name)
+	return !before.Equal(s.rolesNoLock())
 }
 
-// GetRoles returns a snapshot of all MCP names currently tracked.
+// GetRoles returns a snapshot of all node roles currently tracked.
 func (s *MachineConfigPoolStore) GetRoles() []string {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return s.mcpNames.AsSlice()
+	return s.rolesNoLock().AsSlice()
 }
 
 // Cleanup deletes all entries from the store.
 func (s *MachineConfigPoolStore) Cleanup() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.mcpNames = set.NewStringSet()
+	s.pools = make(map[string]set.StringSet)
+}
+
+// rolesNoLock returns the union of the roles of all tracked pools. The caller
+// must hold the lock.
+func (s *MachineConfigPoolStore) rolesNoLock() set.StringSet {
+	roles := set.NewStringSet()
+	for _, poolRoles := range s.pools {
+		for role := range poolRoles {
+			roles.Add(role)
+		}
+	}
+	return roles
 }

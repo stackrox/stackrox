@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -90,8 +91,8 @@ func (s *ManagerTestSuite) TestGetRolesFromMCPStoreWhenFFEnabled() {
 		s.T().Skipf("Skipping because %s=false", features.ComplianceCustomNodeRoles.EnvVar())
 	}
 
-	s.mcpStore.Add("infra")
-	s.mcpStore.Add("gpu")
+	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
+	s.mcpStore.Upsert("gpu", set.NewStringSet("gpu"))
 
 	roles, ok := s.manager.getRoles()
 	s.True(ok)
@@ -112,8 +113,8 @@ func (s *ManagerTestSuite) TestGetRolesFallsBackWhenMCPStoreEmpty() {
 func (s *ManagerTestSuite) TestGetRolesIgnoresMCPStoreWhenFFDisabled() {
 	s.T().Setenv(features.ComplianceCustomNodeRoles.EnvVar(), "false")
 
-	s.mcpStore.Add("infra")
-	s.mcpStore.Add("gpu")
+	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
+	s.mcpStore.Upsert("gpu", set.NewStringSet("gpu"))
 
 	roles, ok := s.manager.getRoles()
 	s.True(ok)
@@ -338,8 +339,8 @@ func (s *ManagerTestSuite) TestReconcileMCPRolesUpdatesExistingScanSettings() {
 	err := s.manager.writer.createScanResources(context.Background(), testNS, request, "0 0 * * *")
 	s.Require().NoError(err)
 
-	s.mcpStore.Add("infra")
-	s.mcpStore.Add("gpu")
+	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
+	s.mcpStore.Upsert("gpu", set.NewStringSet("gpu"))
 
 	s.manager.reconcileMCPRoles()
 
@@ -364,7 +365,7 @@ func (s *ManagerTestSuite) TestReconcileMCPRolesNoOpWhenFFDisabled() {
 	err := s.manager.writer.createScanResources(context.Background(), testNS, request, "0 0 * * *")
 	s.Require().NoError(err)
 
-	s.mcpStore.Add("custom-role")
+	s.mcpStore.Upsert("custom-role", set.NewStringSet("custom-role"))
 
 	s.manager.reconcileMCPRoles()
 
@@ -385,7 +386,7 @@ func (s *ManagerTestSuite) TestReconcileMCPRolesNoOpWithEmptyNamespace() {
 	}
 
 	s.manager.complianceOperatorInfo = &fakeStatusInfo{namespace: ""}
-	s.mcpStore.Add("infra")
+	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
 
 	s.manager.reconcileMCPRoles()
 }
@@ -437,8 +438,8 @@ func (s *ManagerTestSuite) TestMCPEventTriggersReconciliation() {
 	s.Require().NoError(err)
 	defer s.manager.Stop()
 
-	s.mcpStore.Add("infra")
-	s.mcpStore.Add("gpu")
+	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
+	s.mcpStore.Upsert("gpu", set.NewStringSet("gpu"))
 
 	err = s.dispatcher.Publish(&events.NodeRoleChangeEvent{})
 	s.Require().NoError(err)

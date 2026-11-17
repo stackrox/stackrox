@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	mcfgv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -532,6 +534,11 @@ var machineConfigPoolGVR = schema.GroupVersionResource{
 	Resource: "machineconfigpools",
 }
 
+// listMachineConfigPools returns the node roles to write into scan settings.
+// It prefers the roles tracked by the MachineConfigPool store and falls back to
+// listing the MachineConfigPools directly (e.g. when the informer backing the
+// store has not performed its initial sync yet), deriving the roles from the
+// pool selectors.
 func (w *scanSettingWriter) listMachineConfigPools(ctx context.Context) []string {
 	roles, ok := w.roleProvider()
 	if ok {
@@ -550,16 +557,21 @@ func (w *scanSettingWriter) listMachineConfigPools(ctx context.Context) []string
 	if len(list.Items) == 0 {
 		return roles
 	}
-	mcpRoles := make([]string, 0, len(list.Items))
+	mcpRoles := set.NewStringSet()
 	for _, item := range list.Items {
-		if name := item.GetName(); name != "" {
-			mcpRoles = append(mcpRoles, name)
+		mcp := &mcfgv1.MachineConfigPool{}
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, mcp); err != nil {
+			log.Warnf("Failed to convert MachineConfigPool %q, skipping it: %v", item.GetName(), err)
+			continue
+		}
+		for role := range noderole.RolesFromMachineConfigPool(mcp) {
+			mcpRoles.Add(role)
 		}
 	}
-	if len(mcpRoles) == 0 {
+	if mcpRoles.Cardinality() == 0 {
 		return roles
 	}
-	return mcpRoles
+	return mcpRoles.AsSlice()
 }
 
 func generateScanIndex(namespace string, scanName string) string {

@@ -44,7 +44,8 @@ var (
 
 // Test_NodeRoleConfiguration verifies that MachineConfigPool resources drive
 // the roles written into compliance ScanSetting objects. It covers:
-//  1. Scan settings created via SyncScanConfigs use MCP names as roles.
+//  1. Scan settings created via SyncScanConfigs use the node roles parsed
+//     from the MachineConfigPool selectors.
 //  2. Adding a new MCP triggers debounced reconciliation that updates
 //     existing scan settings.
 func Test_NodeRoleConfiguration(t *testing.T) {
@@ -94,8 +95,18 @@ func Test_NodeRoleConfiguration(t *testing.T) {
 
 		t.Log("Creating MachineConfigPool resources")
 		dynClient := tc.GetKubernetesClient().Dynamic()
-		createMCP(t, ctx, dynClient, "infra")
-		createMCP(t, ctx, dynClient, "storage")
+		// The pool name differs from the node role to ensure the roles are
+		// parsed from the selectors and not from the pool name.
+		createMCP(t, ctx, dynClient, "infra-pool", "infra")
+		// A pool whose nodeSelector references no node role label, so its
+		// role is derived from the machineConfigSelector.
+		createMCPWithSpec(t, ctx, dynClient, "storage", map[string]interface{}{
+			"machineConfigSelector": map[string]interface{}{
+				"matchLabels": map[string]interface{}{
+					"machineconfiguration.openshift.io/role": "storage",
+				},
+			},
+		})
 
 		t.Log("Creating Compliance Operator CRDs")
 		deleteCRDsFn, err := tc.ApplyWithManifestDir(ctx, "../../../tests/complianceoperator/crds", "*")
@@ -122,16 +133,29 @@ func Test_NodeRoleConfiguration(t *testing.T) {
 			[]string{"infra", "storage"})
 
 		t.Log("Adding a new MachineConfigPool to trigger role reconciliation")
-		createMCP(t, ctx, dynClient, "custom-pool")
+		createMCP(t, ctx, dynClient, "custom-pool", "custom-role")
 
 		t.Log("Asserting ScanSetting roles were reconciled after MCP change")
 		assertScanSettingHasRoles(t, tc,
 			testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(),
-			[]string{"custom-pool", "infra", "storage"})
+			[]string{"custom-role", "infra", "storage"})
 	}))
 }
 
-func createMCP(t *testing.T, ctx context.Context, dynClient dynamic.Interface, name string) {
+// createMCP creates a MachineConfigPool with the given name that selects the
+// nodes of the given node role via its nodeSelector.
+func createMCP(t *testing.T, ctx context.Context, dynClient dynamic.Interface, name, role string) {
+	t.Helper()
+	createMCPWithSpec(t, ctx, dynClient, name, map[string]interface{}{
+		"nodeSelector": map[string]interface{}{
+			"matchLabels": map[string]interface{}{
+				"node-role.kubernetes.io/" + role: "",
+			},
+		},
+	})
+}
+
+func createMCPWithSpec(t *testing.T, ctx context.Context, dynClient dynamic.Interface, name string, spec map[string]interface{}) {
 	t.Helper()
 	obj := &unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -140,6 +164,7 @@ func createMCP(t *testing.T, ctx context.Context, dynClient dynamic.Interface, n
 			"metadata": map[string]interface{}{
 				"name": name,
 			},
+			"spec": spec,
 		},
 	}
 	_, err := dynClient.Resource(machineConfigPoolGVR).Create(ctx, obj, metav1.CreateOptions{})

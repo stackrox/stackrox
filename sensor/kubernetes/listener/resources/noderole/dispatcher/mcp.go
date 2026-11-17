@@ -1,13 +1,15 @@
 package dispatcher
 
 import (
+	mcpv1 "github.com/openshift/api/machineconfiguration/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/noderole/store"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/stackrox/rox/sensor/kubernetes/utils"
 )
 
 var (
@@ -31,15 +33,17 @@ func NewMachineConfigPoolDispatcher(store *store.MachineConfigPoolStore, publish
 
 // ProcessEvent processes a MachineConfigPool event.
 func (d *MachineConfigPoolDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	u, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		log.Errorf("Expected *unstructured.Unstructured but got %T", obj)
+	// MachineConfigPools are watched through a dynamic informer, which hands
+	// out unstructured objects.
+	mcp := &mcpv1.MachineConfigPool{}
+	if err := utils.FromUnstructuredToSpecificTypePointer(obj, mcp); err != nil {
+		log.Errorf("Failed to convert object to MachineConfigPool: %v", err)
 		return nil
 	}
 
-	name := u.GetName()
+	name := mcp.GetName()
 	if name == "" {
-		log.Errorf("MachineConfigPool has no name: %v", u.Object)
+		log.Errorf("MachineConfigPool has no name: %v", mcp)
 		return nil
 	}
 
@@ -47,7 +51,7 @@ func (d *MachineConfigPoolDispatcher) ProcessEvent(obj, _ interface{}, action ce
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		changed = d.store.Remove(name)
 	} else {
-		changed = d.store.Add(name)
+		changed = d.store.Upsert(name, noderole.RolesFromMachineConfigPool(mcp))
 	}
 
 	if changed && d.publisher != nil {
