@@ -38,8 +38,6 @@ var (
 			v1.ClustersService_GetClusterDefaultValues_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
-			v1.ClustersService_PostCluster_FullMethodName,
-			v1.ClustersService_PutCluster_FullMethodName,
 			v1.ClustersService_DeleteCluster_FullMethodName,
 		},
 	}))
@@ -80,31 +78,6 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
-}
-
-// PostCluster creates a new cluster.
-func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
-	if request.GetId() != "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be empty when posting a new cluster")
-	}
-	id, err := s.datastore.AddCluster(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	request.Id = id
-	return s.getCluster(ctx, request.GetId())
-}
-
-// PutCluster updates an existing cluster.
-func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
-	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Id must be provided")
-	}
-	err := s.datastore.UpdateCluster(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	return s.getCluster(ctx, request.GetId())
 }
 
 // GetCluster returns the specified cluster.
