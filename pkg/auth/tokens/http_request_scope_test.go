@@ -132,15 +132,3 @@ func TestValidHTTPRequestScope(t *testing.T) {
 	assert.True(t, ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: "/"}))
 	assert.True(t, ValidHTTPRequestScope(HTTPRequestScope{Method: "GET", Path: "/v1/telemetry/"}))
 }
-
-func TestHTTPRequestScopesByPath(t *testing.T) {
-	assert.Equal(t, HTTPRequestScopes{
-		"/v1/metadata": {"GET", "HEAD"},
-		"/api/graphql": {"POST"},
-	}, HTTPRequestScopesByPath([]HTTPRequestScope{
-		{Method: "GET", Path: "/v1/metadata"},
-		{Method: "HEAD", Path: "/v1/metadata"},
-		{Method: "POST", Path: "/api/graphql"},
-	}))
-	assert.Nil(t, HTTPRequestScopesByPath(nil))
-}

@@ -6,7 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -37,8 +37,8 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 }
 
 // defaultTokenPolicy validates explicit permission requests from Sensors that do
-// not select a Central-managed permission set. Console requests use the managed
-// permission set instead when selected.
+// not select a Central-managed permission set. Permission-set requests use
+// Central-managed permissions instead.
 // This policy caps lifetime to 1 hour and should remain compatible with the
 // OCP console plugin.
 func defaultTokenPolicy() *tokenPolicy {
@@ -121,32 +121,107 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 	return identity.Service().GetId(), nil
 }
 
-// enforce validates the request against all policy checks and returns the
+func (p *tokenPolicy) validatePerAccessGrants(
+	req *v1.GenerateTokenForPermissionsAndScopeRequest, sensorClusterID string,
+) error {
+	if len(req.GetPermissionSetNames()) != 0 || len(req.GetPermissionSetIds()) != 0 ||
+		len(req.GetPermissions()) != 0 || len(req.GetHttpRequestScopes()) != 0 {
+		return errox.InvalidArgs.New("per-access grants cannot be combined with legacy token permissions or HTTP scopes")
+	}
+	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+		return err
+	}
+	claims := tokens.RoxClaims{Clusters: clusterScopesFromRequest(req.GetClusterScopes())}
+	seen := make(map[string]struct{})
+	for _, grant := range req.GetScopedPermissionSets() {
+		if grant == nil || (grant.GetName() == "") == (grant.GetId() == "") {
+			return errox.InvalidArgs.New("per-access grant requires exactly one permission set name or ID")
+		}
+		selector := "name:" + grant.GetName()
+		if grant.GetId() != "" {
+			selector = "id:" + grant.GetId()
+		}
+		if _, exists := seen[selector]; exists {
+			return errox.InvalidArgs.Newf("duplicate per-access permission set %q", selector)
+		}
+		seen[selector] = struct{}{}
+		scopes, err := tokens.HTTPRequestScopesFromProto(grant.GetHttpRequestScopes())
+		if err != nil {
+			return errox.InvalidArgs.CausedBy(err)
+		}
+		claims.InternalRoles = append(claims.InternalRoles, &tokens.InternalRole{HTTPRequestScopes: scopes})
+	}
+	scoped, err := tokens.ValidatePerAccessHTTPScopes(&claims)
+	if err != nil {
+		return errox.InvalidArgs.CausedBy(err)
+	}
+	if !scoped {
+		return errox.InvalidArgs.New("per-access grants require HTTP method scopes")
+	}
+	return nil
+}
+
+func (p *tokenPolicy) validateLegacyPermissionSets(
+	req *v1.GenerateTokenForPermissionsAndScopeRequest, scopes tokens.HTTPRequestScopes, sensorClusterID string,
+) error {
+	if len(scopes) == 0 {
+		return errox.InvalidArgs.New("Sensor proxy tokens require HTTP method scopes")
+	}
+	hasMethod := false
+	for _, methods := range scopes {
+		if len(methods) > 0 {
+			hasMethod = true
+			break
+		}
+	}
+	if !hasMethod {
+		return errox.InvalidArgs.New("Sensor proxy tokens require an HTTP method scope")
+	}
+	return p.validateClusterScope(req.GetClusterScopes(), sensorClusterID)
+}
+
+// enforce validates the request and returns its HTTP scopes alongside the
 // request with a capped lifetime if necessary.
 func (p *tokenPolicy) enforce(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
-) (*v1.GenerateTokenForPermissionsAndScopeRequest, error) {
+) (*v1.GenerateTokenForPermissionsAndScopeRequest, tokens.HTTPRequestScopes, error) {
 	sensorClusterID, err := p.validateSensorIdentity(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if sensorClusterID == "" {
-		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
+		return nil, nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	if len(req.GetPermissionSetNames()) > 0 {
-		for _, permissionSetName := range req.GetPermissionSetNames() {
-			if permissionSetName != accesscontrol.ConsoleProxy {
-				return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
-			}
+	if len(req.GetScopedPermissionSets()) > 0 {
+		if err := p.validatePerAccessGrants(req, sensorClusterID); err != nil {
+			return nil, nil, err
+		}
+		req, err = p.enforceLifetimeLimit(req)
+		return req, nil, err
+	}
+	scopes, err := tokens.HTTPRequestScopesFromProto(req.GetHttpRequestScopes())
+	if err != nil {
+		return nil, nil, errox.InvalidArgs.CausedBy(err)
+	}
+	if len(req.GetPermissionSetNames()) > 0 && len(req.GetPermissionSetIds()) > 0 {
+		return nil, nil, errox.InvalidArgs.New("permission set names and IDs cannot be combined")
+	}
+	if len(req.GetPermissionSetNames()) > 0 || len(req.GetPermissionSetIds()) > 0 {
+		if err := p.validateLegacyPermissionSets(req, scopes, sensorClusterID); err != nil {
+			return nil, nil, err
 		}
 	} else {
 		if err := p.validatePermissions(req.GetPermissions()); err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+			return nil, nil, err
 		}
 	}
-	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
-		return nil, err
+	req, err = p.enforceLifetimeLimit(req)
+	if err != nil {
+		return nil, nil, err
 	}
-	return p.enforceLifetimeLimit(req)
+	return req, scopes, nil
 }

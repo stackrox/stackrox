@@ -4,8 +4,10 @@ import (
 	"testing"
 	"time"
 
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -150,6 +152,90 @@ func TestValidateClusterScope(t *testing.T) {
 	}
 }
 
+func TestEnforceScopedPermissionSets(t *testing.T) {
+	policy := defaultTokenPolicy()
+	valid := func() *v1.GenerateTokenForPermissionsAndScopeRequest {
+		return &v1.GenerateTokenForPermissionsAndScopeRequest{
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"team-a"}}},
+			Lifetime:      durationpb.New(5 * time.Minute),
+			ScopedPermissionSets: []*v1.ScopedPermissionSet{
+				{Name: "Deployment Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
+				{Name: "Image Reader", HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
+			},
+		}
+	}
+	for name, change := range map[string]func(*v1.GenerateTokenForPermissionsAndScopeRequest){
+		"valid": func(*v1.GenerateTokenForPermissionsAndScopeRequest) {},
+		"mixed selectors": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets[0].Name = ""
+			r.ScopedPermissionSets[0].Id = accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+		},
+		"console ID without cluster scope": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets = r.ScopedPermissionSets[:1]
+			r.ScopedPermissionSets[0].Name = ""
+			r.ScopedPermissionSets[0].Id = accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+			r.ClusterScopes = nil
+		},
+		"name and ID in same grant": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets[0].Id = accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+		},
+		"duplicate permission set ID": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			for _, grant := range r.ScopedPermissionSets {
+				grant.Name = ""
+				grant.Id = accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]
+			}
+		},
+		"legacy permission set IDs": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.PermissionSetIds = []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}
+		},
+		"overlapping route": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets[1].HttpRequestScopes[0].Path = "/v1/deployments"
+		},
+		"duplicate permission set": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets[1].Name = "Deployment Reader"
+		},
+		"missing methods": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets[0].HttpRequestScopes[0].Methods = nil
+		},
+		"missing all scopes": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			for _, grant := range r.ScopedPermissionSets {
+				grant.HttpRequestScopes = nil
+			}
+		},
+		"same path with distinct methods": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets[1].HttpRequestScopes[0].Path = "/v1/deployments"
+			r.ScopedPermissionSets[1].HttpRequestScopes[0].Methods = []string{"POST"}
+		},
+		"global legacy scope": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.HttpRequestScopes = []*apiV1.HTTPRequestScope{{Path: "/", Methods: []string{"GET"}}}
+		},
+		"legacy permissions": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.Permissions = map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS}
+		},
+		"other cluster": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ClusterScopes[0].ClusterId = fixtureconsts.Cluster2
+		},
+		"no cluster": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) { r.ClusterScopes = nil },
+		"constrained metrics reader can be combined": func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
+			r.ScopedPermissionSets[1].Name = permissions.MetricsPermissionSetName
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			req := valid()
+			change(req)
+			_, scopes, err := policy.enforce(sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1), req)
+			if name == "valid" || name == "same path with distinct methods" ||
+				name == "mixed selectors" || name == "console ID without cluster scope" ||
+				name == "no cluster" || name == "constrained metrics reader can be combined" {
+				require.NoError(t, err)
+				assert.Nil(t, scopes)
+			} else {
+				require.ErrorIs(t, err, errox.InvalidArgs)
+			}
+		})
+	}
+}
+
 func TestEnforce(t *testing.T) {
 	policyDuration := 1 * time.Hour
 	policy := newTokenPolicy(policyDuration, map[string]v1.Access{
@@ -165,13 +251,58 @@ func TestEnforce(t *testing.T) {
 		"console permission set without scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 				Lifetime:           durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
+		"console permission set ID without scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds:  []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"name and ID cannot be combined": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+				PermissionSetIds:   []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
+				Lifetime:           durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"console permission set can request approved scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+				Lifetime:           durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"legacy permissions can request independent scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Permissions:       map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"legacy permissions reject invalid scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Permissions:       map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/%6detrics", Methods: []string{"GET"}}},
+				Lifetime:          durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
 		"console permission set with namespace scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
 				Lifetime:           durationpb.New(30 * time.Minute),
 			},
@@ -180,6 +311,7 @@ func TestEnforce(t *testing.T) {
 		"console permission set with full cluster scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
 				Lifetime:           durationpb.New(30 * time.Minute),
 			},
@@ -197,27 +329,28 @@ func TestEnforce(t *testing.T) {
 		"console permission set ignores fallback permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 				Permissions:        map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
 				Lifetime:           durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
-		"unsupported permission set": {
+		"generic permission set with cluster scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{"unknown"},
-				Permissions:        map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
 				Lifetime:           durationpb.New(30 * time.Minute),
 			},
-			clusterID:   fixtureconsts.Cluster1,
-			expectError: true,
+			clusterID: fixtureconsts.Cluster1,
 		},
-		"unsupported permission set alongside console": {
+		"generic permission set without cluster scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy, "unknown"},
+				PermissionSetNames: []string{"unknown"},
+				HttpRequestScopes:  []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}},
 				Lifetime:           durationpb.New(30 * time.Minute),
 			},
-			clusterID:   fixtureconsts.Cluster1,
-			expectError: true,
+			clusterID: fixtureconsts.Cluster1,
 		},
 		"permission validation failure": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
@@ -292,7 +425,7 @@ func TestEnforce(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			ctx := sensorContext(t, gomock.NewController(t), tc.clusterID)
-			result, err := policy.enforce(ctx, tc.req)
+			result, _, err := policy.enforce(ctx, tc.req)
 			if tc.expectError {
 				assert.ErrorIs(t, err, errox.InvalidArgs)
 				assert.Nil(t, result)
@@ -314,7 +447,7 @@ func TestEnforce(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
-		result, err := policy.enforce(t.Context(), req)
+		result, _, err := policy.enforce(t.Context(), req)
 		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, result)
 	})
@@ -330,7 +463,7 @@ func TestEnforce(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
-		result, err := policy.enforce(ctx, req)
+		result, _, err := policy.enforce(ctx, req)
 		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, result)
 	})
@@ -349,7 +482,7 @@ func TestEnforce(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
-		result, err := policy.enforce(ctx, req)
+		result, _, err := policy.enforce(ctx, req)
 		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, result)
 	})
@@ -362,7 +495,7 @@ func TestEnforce(t *testing.T) {
 			Lifetime:      durationpb.New(2 * time.Hour),
 		}
 		ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
-		result, err := p.enforce(ctx, req)
+		result, _, err := p.enforce(ctx, req)
 		require.NoError(t, err)
 		assert.Equal(t, 2*time.Hour, result.GetLifetime().AsDuration())
 	})
@@ -375,7 +508,7 @@ func TestEnforce(t *testing.T) {
 			Lifetime:      durationpb.New(2 * time.Hour),
 		}
 		ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
-		result, err := p.enforce(ctx, req)
+		result, _, err := p.enforce(ctx, req)
 		require.NoError(t, err)
 		assert.Equal(t, 2*time.Hour, result.GetLifetime().AsDuration())
 	})
