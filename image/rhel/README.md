@@ -15,3 +15,8 @@ stages use UBI on every architecture.
 `PG_VERSION` selects the client major version. The `runtime-base` stage runs
 `pg_dump` and `pg_restore` and checks their versions in the runtime filesystem,
 so missing libraries or an older client fail the image build.
+
+For PGDG packages, DNF resolves both versions and download locations from repository
+metadata. Do not construct RPM URLs from the RHEL major version: PGDG minor-release
+repositories can contain package versions absent from the major-release path. Only
+the client and library RPMs are passed to the runtime installation stage.

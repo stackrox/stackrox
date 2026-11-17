@@ -5,15 +5,12 @@ set -euo pipefail
 arch=$(uname -m)
 postgres_major="${PG_VERSION:-16}"
 goarch="$arch"
-dnf_list_args=()
 if [[ "$arch" == "x86_64" ]]; then
     goarch="amd64"
 elif [[ "$arch" == "aarch64" ]]; then
     goarch="arm64"
-    dnf_list_args=('--nogpgcheck')
 elif [[ "$arch" == "arm64" ]]; then
     arch="aarch64"
-    dnf_list_args=('--nogpgcheck')
 fi
 
 output_dir="/output"
@@ -46,10 +43,20 @@ else
   pg_rhel_major=9
   postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-${pg_rhel_major}-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
   dnf install --disablerepo='*' -y "${postgres_repo_url}"
-  postgres_minor=$(dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' "--enablerepo=pgdg${postgres_major}" -y "postgresql${postgres_major}-server.${arch}" | tail -n 1 | awk '{print $2}')
-  postgres_minor="$postgres_minor.$arch"
+  download_dir=$(mktemp -d)
+  trap 'rm -rf "$download_dir"' EXIT
 
-  postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
-  curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres.rpm" "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
-  curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres-libs.rpm" "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
+  # Resolve package locations through PGDG metadata, including RHEL minor versions.
+  dnf install -y --downloadonly --downloaddir="$download_dir" \
+    "postgresql${postgres_major}.${arch}" "postgresql${postgres_major}-libs.${arch}"
+
+  shopt -s nullglob
+  postgres_rpms=("$download_dir"/postgresql"${postgres_major}"-[0-9]*."${arch}".rpm)
+  postgres_libs_rpms=("$download_dir"/postgresql"${postgres_major}"-libs-[0-9]*."${arch}".rpm)
+  if [[ ${#postgres_rpms[@]} -ne 1 || ${#postgres_libs_rpms[@]} -ne 1 ]]; then
+    echo "Expected exactly one PostgreSQL client RPM and one library RPM in $download_dir" >&2
+    exit 1
+  fi
+  mv "${postgres_rpms[0]}" "${output_dir}/rpms/postgres.rpm"
+  mv "${postgres_libs_rpms[0]}" "${output_dir}/rpms/postgres-libs.rpm"
 fi
