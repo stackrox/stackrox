@@ -57,6 +57,10 @@ function SimpleSelect({
             onOpenChange={(isOpen) => setIsOpen(isOpen)}
             toggle={toggle}
             shouldFocusToggleOnSelect
+            isScrollable
+            // Cap the menu at ~2/3 of the viewport height and scroll beyond it, so long attribute
+            // lists (global search entities can expose dozens of attributes) do not overflow the screen.
+            maxMenuHeight="66.66vh"
         >
             <SelectList aria-label={ariaLabelMenu}>{children}</SelectList>
         </Select>
