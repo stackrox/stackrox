@@ -1658,3 +1658,107 @@ func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter)
 		emptyImageGetterV2,
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }
+
+func TestEnrichWithMetadataV2_RegistryCooldown(t *testing.T) {
+	newImage := func() *storage.ImageV2 {
+		return &storage.ImageV2{
+			Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			Digest: "sha",
+			Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+		}
+	}
+
+	cases := map[string]struct {
+		metadataErr           error
+		errorsPerRegistry     int32
+		setCooldown           bool
+		cooldownUntil         time.Time
+		expectMetadataCall    bool
+		expectErrSubstring    string
+		expectedErrCount      int32
+		expectCooldownSet     bool
+		expectCooldownCleared bool
+	}{
+		"registry at threshold and cooldown active: metadata is not called": {
+			metadataErr:        errBroken,
+			errorsPerRegistry:  consecutiveErrorThreshold,
+			setCooldown:        true,
+			cooldownUntil:      time.Now().Add(time.Hour),
+			expectMetadataCall: false,
+			expectErrSubstring: "in cooldown",
+			expectedErrCount:   consecutiveErrorThreshold,
+		},
+		"registry at threshold, cooldown expired: probe attempt is allowed and can still fail": {
+			metadataErr:        errBroken,
+			errorsPerRegistry:  consecutiveErrorThreshold,
+			setCooldown:        true,
+			cooldownUntil:      time.Now().Add(-time.Minute),
+			expectMetadataCall: true,
+			expectedErrCount:   consecutiveErrorThreshold + 1,
+			expectCooldownSet:  true,
+		},
+		"registry at threshold, cooldown expired, probe succeeds: counter resets and cooldown clears": {
+			metadataErr:           nil,
+			errorsPerRegistry:     consecutiveErrorThreshold,
+			setCooldown:           true,
+			cooldownUntil:         time.Now().Add(-time.Minute),
+			expectMetadataCall:    true,
+			expectedErrCount:      0,
+			expectCooldownCleared: true,
+		},
+		"first threshold-crossing failure with nil cooldown map: lazy-inits without panicking": {
+			metadataErr:        errBroken,
+			errorsPerRegistry:  consecutiveErrorThreshold - 1,
+			setCooldown:        false,
+			expectMetadataCall: true,
+			expectedErrCount:   consecutiveErrorThreshold,
+			expectCooldownSet:  true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			fsr := newFakeRegistryScanner(opts{metadataErr: c.metadataErr})
+
+			registrySet := registryMocks.NewMockSet(ctrl)
+			registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
+
+			set := mocks.NewMockSet(ctrl)
+			set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+
+			mockReporter := reporterMocks.NewMockReporter(ctrl)
+			mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+			e := &enricherV2Impl{
+				integrations:              set,
+				errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: c.errorsPerRegistry},
+				integrationHealthReporter: mockReporter,
+				metadataLimiter:           rate.NewLimiter(rate.Inf, 0),
+				metadataCache:             newCache(),
+				metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
+			}
+			if c.setCooldown {
+				e.registryCooldownUntil = map[types.ImageRegistry]time.Time{fsr: c.cooldownUntil}
+			}
+
+			_, err := e.enrichWithMetadata(context.Background(), EnrichmentContext{}, newImage())
+
+			assert.Equal(t, c.expectMetadataCall, fsr.requestedMetadata)
+			if c.expectErrSubstring != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), c.expectErrSubstring)
+			}
+			assert.Equal(t, c.expectedErrCount, e.errorsPerRegistry[fsr])
+			if c.expectCooldownSet {
+				cooldownUntil, ok := e.registryCooldownUntil[fsr]
+				assert.True(t, ok)
+				assert.True(t, cooldownUntil.After(time.Now()))
+			}
+			if c.expectCooldownCleared {
+				_, ok := e.registryCooldownUntil[fsr]
+				assert.False(t, ok)
+			}
+		})
+	}
+}

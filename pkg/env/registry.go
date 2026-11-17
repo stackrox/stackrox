@@ -33,4 +33,12 @@ var (
 
 	// RegistryTLSCheckTTL will set the duration for which registry TLS checks will be cached.
 	RegistryTLSCheckTTL = registerDurationSetting("ROX_REGISTRY_TLS_CHECK_CACHE_TTL", 15*time.Minute)
+
+	// RegistryConsecutiveErrorCooldown is how long a registry integration is skipped
+	// (no Metadata calls attempted) after hitting consecutiveErrorThreshold consecutive
+	// failures, before a single probe attempt is allowed through again. This prevents a
+	// single persistently failing registry from re-attempting a slow/hanging call on
+	// every image in every enrichment pass, which can otherwise monopolize shared
+	// enrichment concurrency and starve unrelated, healthy registries.
+	RegistryConsecutiveErrorCooldown = registerDurationSetting("ROX_REGISTRY_CONSECUTIVE_ERROR_COOLDOWN", 5*time.Minute)
 )
