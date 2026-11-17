@@ -201,6 +201,7 @@ jobs:
 
           if "${GOCACHEPROG}" -fetch-any "$BIN_KEY" /tmp/go-binaries.tar 2>/dev/null && [ -s /tmp/go-binaries.tar ]; then
             tar -xf /tmp/go-binaries.tar
+            "${GOCACHEPROG}" -store-all "ca-binaries-latest-${{ matrix.arch }}" /tmp/go-binaries.tar || true
             echo "binaries: FETCHED from blob store"
           else
             echo "binaries: COMPILING (blob miss)"
@@ -216,6 +217,22 @@ jobs:
             fi
             export GOFLAGS="${GOFLAGS} -mod=vendor"
 
+            # Per-binary skip (P2): pre-place the last-built binaries
+            # so `go build`'s own output-freshness check (buildID match)
+            # skips links whose inputs are unchanged. Only affected
+            # binaries relink — e.g. a central-only change leaves sensor
+            # and roxctl links skipped.
+            LATEST_KEY="ca-binaries-latest-${{ matrix.arch }}"
+            if "${GOCACHEPROG}" -fetch-any "$LATEST_KEY" /tmp/latest.tar 2>/dev/null && [ -s /tmp/latest.tar ]; then
+              tar -xf /tmp/latest.tar
+              # arm the operator skip too: main-build-nodeps builds the
+              # un-renamed name and mv's it; pre-place both names
+              [ -f bin/linux_${{ matrix.arch }}/stackrox-operator ] && \
+                cp bin/linux_${{ matrix.arch }}/stackrox-operator bin/linux_${{ matrix.arch }}/cmd
+              echo "incremental base: restored (per-binary skip armed)"
+              echo "=== pre-build mtimes ==="; ls -la --time-style=+%s bin/linux_${{ matrix.arch }}/ | awk '{print $6, $7}'
+            fi
+
             # Compile via the CHECKOUT's own Makefile targets — the
             # binary set is the tree's source of truth (drift-proof:
             # a tree that adds/removes a binary, e.g. sensor-upgrader,
@@ -228,6 +245,8 @@ jobs:
             tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
               -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
             "${GOCACHEPROG}" -store-all "$BIN_KEY" /tmp/go-binaries.tar || true
+            "${GOCACHEPROG}" -store-all "$LATEST_KEY" /tmp/go-binaries.tar || true
+            echo "=== post-build mtimes ==="; ls -la --time-style=+%s bin/linux_${{ matrix.arch }}/ | awk '{print $6, $7}'
             echo "binaries: compiled and stored"
           fi
 
@@ -235,8 +254,19 @@ jobs:
           # /assets/downloads/cli/). Built by the checkout's `make cli`,
           # shared across arch legs. (Master stubs these on plain PR
           # builds; master-branch and release builds compile them.)
+          # NOTE: if download/upload time or registry space for the real
+          # binaries ever becomes the bottleneck, master's PR-stub policy
+          # (placeholder files unless labeled/master/release) is the
+          # fallback — see pre-build-cli in master's build.yaml.
+          # Incremental base for per-binary skip (same rationale as
+          # the main binaries): roxctl links skip when unchanged.
+          if "${GOCACHEPROG}" -fetch-any "ca-roxctl-all-latest" /tmp/roxctl-latest.tar 2>/dev/null && [ -s /tmp/roxctl-latest.tar ]; then
+            tar -xf /tmp/roxctl-latest.tar
+            echo "roxctl incremental base: restored"
+          fi
           if "${GOCACHEPROG}" -fetch-any "$ROXCTL_KEY" /tmp/roxctl-all.tar 2>/dev/null && [ -s /tmp/roxctl-all.tar ]; then
             tar -xf /tmp/roxctl-all.tar
+            "${GOCACHEPROG}" -store-all "ca-roxctl-all-latest" /tmp/roxctl-all.tar || true
             echo "roxctl (all platforms): FETCHED from blob store"
           else
             echo "roxctl (all platforms): COMPILING (blob miss)"
@@ -247,6 +277,7 @@ jobs:
               bin/linux_amd64 bin/linux_arm64 bin/linux_ppc64le bin/linux_s390x \
               bin/windows_amd64
             "${GOCACHEPROG}" -store-all "$ROXCTL_KEY" /tmp/roxctl-all.tar || true
+            "${GOCACHEPROG}" -store-all "ca-roxctl-all-latest" /tmp/roxctl-all.tar || true
             echo "roxctl (all platforms): compiled and stored"
           fi
 
