@@ -323,8 +323,7 @@ func (s *ManagerTestSuite) TestProcessApplyWithEmptyNamespace() {
 
 	r := result.Load()
 	s.Equal("req-empty-ns", r.RequestID)
-	s.Error(r.Error)
-	s.Contains(r.Error.Error(), "compliance operator namespace not known")
+	s.ErrorContains(r.Error, "compliance operator namespace not known")
 }
 
 func (s *ManagerTestSuite) TestReconcileMCPRolesUpdatesExistingScanSettings() {
@@ -344,7 +343,7 @@ func (s *ManagerTestSuite) TestReconcileMCPRolesUpdatesExistingScanSettings() {
 	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
 	s.mcpStore.Upsert("gpu", set.NewStringSet("gpu"))
 
-	s.manager.reconcileMCPRoles()
+	s.Require().NoError(s.manager.reconcileMCPRoles())
 
 	ss, err := s.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).
 		Namespace(testNS).Get(context.Background(), "role-scan", v1.GetOptions{})
@@ -369,7 +368,7 @@ func (s *ManagerTestSuite) TestReconcileMCPRolesNoOpWhenFFDisabled() {
 
 	s.mcpStore.Upsert("custom-role", set.NewStringSet("custom-role"))
 
-	s.manager.reconcileMCPRoles()
+	s.Require().NoError(s.manager.reconcileMCPRoles())
 
 	ss, err := s.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).
 		Namespace(testNS).Get(context.Background(), "noop-scan", v1.GetOptions{})
@@ -390,7 +389,8 @@ func (s *ManagerTestSuite) TestReconcileMCPRolesNoOpWithEmptyNamespace() {
 	s.manager.complianceOperatorInfo = &fakeStatusInfo{namespace: ""}
 	s.mcpStore.Upsert("infra", set.NewStringSet("infra"))
 
-	s.manager.reconcileMCPRoles()
+	err := s.manager.reconcileMCPRoles()
+	s.Require().ErrorContains(err, "compliance operator namespace not known")
 }
 
 func (s *ManagerTestSuite) TestReconcileMCPRolesNilMCPStore() {
@@ -401,7 +401,7 @@ func (s *ManagerTestSuite) TestReconcileMCPRolesNilMCPStore() {
 
 	s.manager.mcpStore = nil
 
-	s.manager.reconcileMCPRoles()
+	s.Require().NoError(s.manager.reconcileMCPRoles())
 }
 
 func getScanSettingRoles(client *fake.FakeDynamicClient, name string) ([]string, error) {
