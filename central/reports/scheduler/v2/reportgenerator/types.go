@@ -34,6 +34,7 @@ type ImageCVEQueryResponse struct {
 	Cluster                  *string                        `db:"cluster"`
 	Namespace                *string                        `db:"namespace"`
 	Deployment               *string                        `db:"deployment"`
+	ContainerName            *string                        `db:"deployment_container_name"`
 	Image                    *string                        `db:"image"`
 	Component                *string                        `db:"component"`
 	ComponentVersion         *string                        `db:"component_version"`
@@ -77,6 +78,13 @@ func (res *ImageCVEQueryResponse) GetDeployment() string {
 		return ""
 	}
 	return *res.Deployment
+}
+
+func (res *ImageCVEQueryResponse) GetContainerName() string {
+	if res.ContainerName == nil {
+		return ""
+	}
+	return *res.ContainerName
 }
 
 func (res *ImageCVEQueryResponse) GetImage() string {
