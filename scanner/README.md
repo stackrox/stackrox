@@ -54,6 +54,13 @@ export SCANNER_V4_INDEXER_ENABLE=false
 export SCANNER_V4_INDEXER_DATABASE_CONN_STRING="host=localhost port=5432"
 ```
 
+To keep Java packages attributed to Red Hat product CPEs matched against
+Maven/OSV while rolling out a vulnerability bundle with Red Hat VEX Maven
+records, set `SCANNER_V4_MATCHER_PREFER_OSV_FOR_RED_HAT_JAVA=true` on the
+Scanner V4 Matcher. After the updated bundle is imported, set it to `false`
+or remove it and restart the Matcher. This changes matching only; it does not
+change stored index reports.
+
 ### Running standalone in Kubernetes
 
 Scanner contains a testing helm chart to deploy it standalone.  This is used for E2E testing or development.

@@ -107,6 +107,18 @@ matcher:
 				return &cfg
 			}(),
 		},
+		{
+			name: "when OSV preference env var is set then Java matching is configured",
+			env: map[string]string{
+				"SCANNER_V4_MATCHER_PREFER_OSV_FOR_RED_HAT_JAVA": "true",
+			},
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.Matcher.PreferOSVForRedHatJava = true
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

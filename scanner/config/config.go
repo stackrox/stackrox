@@ -181,6 +181,9 @@ type MatcherConfig struct {
 	VulnerabilitiesURL string `mapstructure:"vulnerabilities_url"`
 	// EnableRCVulnBundle, when true, attempts to use an RC vulnerability bundle before falling back to the GA bundle.
 	EnableRCVulnBundle bool `mapstructure:"enable_rc_vuln_bundle"`
+	// PreferOSVForRedHatJava matches Java SBOM packages attributed to a Red Hat
+	// product CPE against Maven/OSV data instead of Red Hat VEX data.
+	PreferOSVForRedHatJava bool `mapstructure:"prefer_osv_for_red_hat_java"`
 	// VulnerabilitiesURLs internal list of candidate URLs for vulnerability bundles, ordered by preference.
 	VulnerabilitiesURLs []string `mapstructure:"-"`
 	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.

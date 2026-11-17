@@ -135,9 +135,10 @@ type Matcher interface {
 
 // matcherImpl implements Matcher on top of a local instance of libvuln.
 type matcherImpl struct {
-	libVuln       *libvuln.Libvuln
-	metadataStore postgres.MatcherMetadataStore
-	pool          *pgxpool.Pool
+	libVuln                *libvuln.Libvuln
+	metadataStore          postgres.MatcherMetadataStore
+	pool                   *pgxpool.Pool
+	preferOSVForRedHatJava bool
 
 	vulnUpdater     *vuln.Updater
 	sbomer          *sbom.SBOMer
@@ -271,9 +272,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 
 	success = true
 	return &matcherImpl{
-		libVuln:       libVuln,
-		metadataStore: metadataStore,
-		pool:          pool,
+		libVuln:                libVuln,
+		metadataStore:          metadataStore,
+		pool:                   pool,
+		preferOSVForRedHatJava: cfg.PreferOSVForRedHatJava,
 
 		vulnUpdater:     vulnUpdater,
 		sbomer:          sbomer,
@@ -285,7 +287,21 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 }
 
 func (m *matcherImpl) GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
-	return m.libVuln.Scan(ctx, ir)
+	matchReport := ir
+	if m.preferOSVForRedHatJava {
+		matchReport = routeRedHatJavaToOSV(ir)
+	}
+	report, err := m.libVuln.Scan(ctx, matchReport)
+	if err != nil {
+		return nil, err
+	}
+	if matchReport != ir {
+		// The temporary routing is only for matching. Return the indexer's
+		// repository attribution with the vulnerability findings.
+		report.Repositories = ir.Repositories
+		report.Environments = ir.Environments
+	}
+	return report, nil
 }
 
 func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
