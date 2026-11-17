@@ -44,6 +44,12 @@ var (
 	_ ImageEnricher = (*enricherImpl)(nil)
 
 	noImageScannersErr = errox.NotFound.CausedBy("no image scanners are integrated")
+
+	// errMetadataLimiterWait marks a failure to acquire the shared metadata rate limiter's token
+	// (e.g. due to context cancellation/deadline while queued) as distinct from a registry
+	// metadata-fetch failure. It must be excluded from per-registry error/cooldown accounting,
+	// since it says nothing about that specific registry's health.
+	errMetadataLimiterWait = errors.New("waiting for metadata limiter")
 )
 
 type enricherImpl struct {
@@ -484,22 +490,24 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 
 		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
 		if err != nil {
-			currentRegistryErrors := concurrency.WithLock1(&e.registryErrorsLock, func() int32 {
-				currentRegistryErrors := e.errorsPerRegistry[registry] + 1
-				e.errorsPerRegistry[registry] = currentRegistryErrors
-				return currentRegistryErrors
-			})
-
-			if currentRegistryErrors >= consecutiveErrorThreshold { // update health
-				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-					Id:            registry.Source().GetId(),
-					Name:          registry.Source().GetName(),
-					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
-					Status:        storage.IntegrationHealth_UNHEALTHY,
-					LastTimestamp: protocompat.TimestampNow(),
-					ErrorMessage:  err.Error(),
+			if !errors.Is(err, errMetadataLimiterWait) {
+				currentRegistryErrors := concurrency.WithLock1(&e.registryErrorsLock, func() int32 {
+					currentRegistryErrors := e.errorsPerRegistry[registry] + 1
+					e.errorsPerRegistry[registry] = currentRegistryErrors
+					return currentRegistryErrors
 				})
-				e.startRegistryCooldown(registry)
+
+				if currentRegistryErrors >= consecutiveErrorThreshold { // update health
+					e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+						Id:            registry.Source().GetId(),
+						Name:          registry.Source().GetName(),
+						Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
+						Status:        storage.IntegrationHealth_UNHEALTHY,
+						LastTimestamp: protocompat.TimestampNow(),
+						ErrorMessage:  err.Error(),
+					})
+					e.startRegistryCooldown(registry)
+				}
 			}
 			errorList.AddError(err)
 			continue
@@ -580,7 +588,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 	// Wait until limiter allows entrance
 	err := e.metadataLimiter.Wait(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "waiting for metadata limiter")
+		return false, fmt.Errorf("%w: %s", errMetadataLimiterWait, err)
 	}
 	metadata, err := registry.Metadata(image)
 	if err != nil {

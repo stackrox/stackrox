@@ -2162,3 +2162,53 @@ func TestEnrichWithMetadata_RegistryCooldown(t *testing.T) {
 		})
 	}
 }
+
+func TestEnrichWithMetadata_LimiterWaitErrorExcludedFromCooldown(t *testing.T) {
+	newImage := func() *storage.Image {
+		return &storage.Image{
+			Id:    "id",
+			Name:  &storage.ImageName{Registry: "reg"},
+			Names: []*storage.ImageName{{Registry: "reg"}},
+		}
+	}
+
+	ctrl := gomock.NewController(t)
+	fsr := newFakeRegistryScanner(opts{})
+
+	registrySet := registryMocks.NewMockSet(ctrl)
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+	// Simulate a busy, shared metadata limiter: the sole token is already spent, so the next
+	// Wait() call must queue for a refill that is far longer than the caller's deadline below.
+	limiter := rate.NewLimiter(rate.Every(time.Hour), 1)
+	require.True(t, limiter.Allow())
+
+	e := &enricherImpl{
+		integrations:              set,
+		errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: consecutiveErrorThreshold - 1},
+		integrationHealthReporter: mockReporter,
+		metadataLimiter:           limiter,
+		metadataCache:             newCache(),
+		metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
+	}
+
+	// An already-expired deadline makes rate.Limiter.Wait fail immediately rather than block,
+	// mirroring a caller whose context expired while queued behind the shared limiter.
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	_, err := e.enrichWithMetadata(ctx, EnrichmentContext{}, newImage())
+
+	require.Error(t, err)
+	assert.False(t, fsr.requestedMetadata, "registry.Metadata should never be reached when the limiter wait fails")
+	assert.Equal(t, int32(consecutiveErrorThreshold-1), e.errorsPerRegistry[fsr],
+		"a limiter-wait failure must not count as a registry error")
+	_, inCooldown := e.registryCooldownUntil[fsr]
+	assert.False(t, inCooldown, "a limiter-wait failure must not put the registry into cooldown")
+}

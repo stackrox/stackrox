@@ -492,7 +492,9 @@ func (e *enricherV2Impl) enrichWithMetadata(ctx context.Context, enrichmentConte
 
 		updated, err := e.enrichImageWithRegistry(ctx, imageV2, image, registry)
 		if err != nil {
-			_ = e.handleRegistryError(registry, err)
+			if !errors.Is(err, errMetadataLimiterWait) {
+				_ = e.handleRegistryError(registry, err)
+			}
 			errorList.AddError(err)
 			continue
 		}
@@ -589,7 +591,7 @@ func (e *enricherV2Impl) enrichImageWithRegistry(ctx context.Context, imageV2 *s
 	// Wait until limiter allows entrance
 	err := e.metadataLimiter.Wait(ctx)
 	if err != nil {
-		return false, errors.Wrap(err, "waiting for metadata limiter")
+		return false, fmt.Errorf("%w: %s", errMetadataLimiterWait, err)
 	}
 	metadata, err := registry.Metadata(image)
 	if err != nil {
