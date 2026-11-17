@@ -34,7 +34,7 @@ env:
   # Bump when the build RECIPE changes (step logic, flags, transform).
   # Receipts cover source state AND recipe; without this, a recipe fix
   # would silently keep serving images built by the old recipe.
-  WORKFLOW_RECIPE: v5
+  WORKFLOW_RECIPE: v6
 
 jobs:
   main-image:
@@ -94,34 +94,41 @@ jobs:
           echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
-          # Image tag + version stamps, computed once for all steps.
-          # BUILD_TAG feeds both go-build.sh x_def stamps AND the UI's
-          # getProductVersion() (make tag → git describe, which is empty
-          # on a shallow checkout → invalid semver → webpack fails).
-          # Computed shallow-friendly: base tag via ls-remote (remote
-          # query), commit count via the GitHub compare API.
+          # Two DECOUPLED identities:
+          #
+          # IMAGE_TAG (per-commit, git-describe format): the REGISTRY tag.
+          # e2e-dispatch waits for main:$(make tag) on a full checkout, so
+          # this must stay per-commit and match describe exactly (SHA
+          # abbreviation length included).
+          #
+          # BUILD_TAG/SHORTCOMMIT (STABLE): the stamps EMBEDDED in Go
+          # binaries (x_defs) and the UI plugin version. Stable values —
+          # the release train only (5.1.x → 5.1.0) — keep link ActionIDs
+          # unchanged across commits, so the blob-backed link-output
+          # cache hits and unchanged binaries are copied, not relinked.
+          # Per-commit stamps would invalidate every link ActionID every
+          # commit (ldflags feed the link hash), making per-binary skip
+          # structurally impossible. VCS info in buildinfo is
+          # deliberately dropped for CI speed; the image tag carries the
+          # commit identity.
           SHA="$(git rev-parse HEAD)"
-          # --short=10 to match git describe --abbrev=10 (make tag):
-          # e2e-dispatch waits for main:$(make tag) — the SHA
-          # abbreviation length must match exactly.
           SHORTSHA="$(git rev-parse --short=10 HEAD)"
           LATEST_TAG="$(git ls-remote --tags --refs origin \
             | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
           if [ -n "$LATEST_TAG" ]; then
             COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
               --jq .ahead_by 2>/dev/null || echo 0)"
-            BUILD_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
+            IMAGE_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
+            STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')"
           else
-            BUILD_TAG_VAL="0.0.0-g${SHORTSHA}"
+            IMAGE_TAG_VAL="0.0.0-g${SHORTSHA}"
+            STABLE_VERSION="0.0.0"
           fi
-          echo "BUILD_TAG=${BUILD_TAG_VAL}" >> "$GITHUB_ENV"
-          echo "SHORTCOMMIT=${SHORTSHA}" >> "$GITHUB_ENV"
-          # Image tag in master's format (make tag / git describe):
-          # e2e-dispatch waits for main:<this tag>, and master's Build
-          # pushes the same scheme.
-          echo "IMAGE_TAG=${BUILD_TAG_VAL}" >> "$GITHUB_ENV"
-          echo "image_tag=${BUILD_TAG_VAL}" >> "$GITHUB_OUTPUT"
-          echo "stamps: BUILD_TAG=${BUILD_TAG_VAL}"
+          echo "IMAGE_TAG=${IMAGE_TAG_VAL}" >> "$GITHUB_ENV"
+          echo "image_tag=${IMAGE_TAG_VAL}" >> "$GITHUB_OUTPUT"
+          echo "BUILD_TAG=${STABLE_VERSION}" >> "$GITHUB_ENV"
+          echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"
+          echo "stamps: image=${IMAGE_TAG_VAL} embedded=${STABLE_VERSION} (stable)"
 
       # =================================================================
       # FAST PATH — does the output already exist for this source state?
