@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime/debug"
 	"bufio"
 	"crypto/sha256"
 	"encoding/base64"
@@ -268,8 +269,55 @@ func writeStub(buildID, outfile string) error {
 	return os.WriteFile(outfile, buf, 0o755)
 }
 
+// applyMemoryLimit sets a soft Go memory limit (GOMEMLIMIT semantics)
+// so transient garbage — base64-decoded PUT bodies, gzip/gunzip
+// transients, pfb bundles — is collected aggressively instead of
+// accumulating next to the tmpfs local cache (which already counts
+// against runner RAM). A soft limit cannot prevent OOM from a single
+// oversized live allocation (the streaming CLI paths handle those);
+// it keeps the steady-state heap a good citizen on shared runners.
+// Env: GOCACHE_SERVE_GOMEMLIMIT (e.g. "1500MiB"; "0" disables).
+// Default: 1500MiB — generous vs. the measured working set, small vs.
+// the ~7GB RAM a 16GB runner has after tmpfs and the build itself.
+func applyMemoryLimit() {
+	v := os.Getenv("GOCACHE_SERVE_GOMEMLIMIT")
+	if v == "" {
+		v = "1500MiB"
+	}
+	if v == "0" {
+		return
+	}
+	var limit int64
+	for _, suf := range []struct {
+		s string
+		m int64
+	}{{"GiB", 1 << 30}, {"MiB", 1 << 20}, {"KiB", 1 << 10}, {"B", 1}} {
+		if strings.HasSuffix(v, suf.s) {
+			n, err := strconv.ParseInt(strings.TrimSuffix(v, suf.s), 10, 64)
+			if err != nil {
+				log.Printf("gocache-serve: bad GOCACHE_SERVE_GOMEMLIMIT %q, ignoring", v)
+				return
+			}
+			limit = n * suf.m
+			break
+		}
+	}
+	if limit == 0 {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			limit = n
+		}
+	}
+	if limit <= 0 {
+		log.Printf("gocache-serve: bad GOCACHE_SERVE_GOMEMLIMIT %q, ignoring", v)
+		return
+	}
+	old := debug.SetMemoryLimit(limit)
+	log.Printf("gocache-serve: memory limit %d MiB (was %d)", limit>>20, old>>20)
+}
+
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
+	applyMemoryLimit()
 	log.SetPrefix("gocache-serve: ")
 
 	// Workflow-level CLI subcommands (link-output caching). These run
