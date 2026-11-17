@@ -29,6 +29,12 @@ bundles:
     sources: [oracle, debian]
     env:
       STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
+  v5:
+    sources: [oracle, debian]
+    env:
+      STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: "true"
+  v6:
+    sources: [oracle, debian]
 updaters:
   default:
     interval: 4h
@@ -39,7 +45,7 @@ YAML
 
     cat > "${scripts}/scanner-get-released-tags.sh" <<'SH'
 #!/usr/bin/env bash
-echo '[{"version":"dev","ref":"master"},{"version":"v4","ref":"release"}]'
+echo '[{"version":"dev","ref":"master"},{"version":"v4","ref":"release"},{"version":"v5","ref":"release"},{"version":"v6","ref":"master"}]'
 SH
     cat > "${scripts}/scanner-updater-check-freshness.sh" <<'SH'
 #!/usr/bin/env bash
@@ -57,18 +63,21 @@ SH
 @test "due sources are scheduled in eligible hours across streams" {
     run "${scripts}/scanner-updater-matrix.sh"
     assert_success
+    matrix_output="$output"
     run jq -e '.has_due == "true" and .has_errors == "false" and
-        ([.matrix.include[] | select(.source == "oracle")] | length == 2)' <<< "$output"
+        ([.matrix.include[] | select(.source == "oracle")] | length == 4)' <<< "$matrix_output"
     assert_success
     run grep -c 'oracle.json.zst --max-age 28800' "$FRESHNESS_CALLS"
     assert_success
-    assert_output "2"
+    assert_output "4"
     run grep -c 'debian.json.zst --max-age 14400' "$FRESHNESS_CALLS"
     assert_success
-    assert_output "2"
+    assert_output "4"
     run jq -e '
         [.matrix.include[] | select(.source == "oracle" and (.object | test("/dev/"))) | .stream] == ["dev"] and
-        [.matrix.include[] | select(.source == "oracle" and (.object | test("/v4/"))) | .stream] == ["v4"]' <<< "$output"
+        [.matrix.include[] | select(.source == "oracle" and (.object | test("/v4/"))) | .stream] == ["v4"] and
+        [.matrix.include[] | select(.source == "oracle" and (.object | test("/v5/"))) | .stream] == ["v5"] and
+        [.matrix.include[] | select(.source == "oracle" and (.object | test("/v6/"))) | .stream] == ["v6"]' <<< "$matrix_output"
     assert_success
 }
 
@@ -87,7 +96,7 @@ SH
     run env SCHEDULE_TIME="2026-10-14T09:27:00Z" \
         "${scripts}/scanner-updater-matrix.sh"
     assert_success
-    run jq -e '.matrix.include | length == 2 and all(.[]; .source == "debian")' <<< "$output"
+    run jq -e '.matrix.include | length == 4 and all(.[]; .source == "debian")' <<< "$output"
     assert_success
     run grep oracle "$FRESHNESS_CALLS"
     assert_failure
@@ -104,7 +113,7 @@ SH
 @test "eligible windows include the whole hour and cross midnight" {
     for timestamp in 2026-10-14T23:59:59Z 2026-10-15T00:00:00Z 2026-10-15T00:59:59Z 2026-10-15T01:00:00Z; do
         expected=0
-        [[ "$timestamp" == *T00:* ]] && expected=2
+        [[ "$timestamp" == *T00:* ]] && expected=4
         run env SCHEDULE_TIME="$timestamp" "${scripts}/scanner-updater-matrix.sh"
         assert_success
         run jq -e --argjson expected "$expected" \
@@ -124,7 +133,7 @@ SH
     run env SCHEDULE_TIME="1970-01-02T01:27:00Z" \
         "${scripts}/scanner-updater-matrix.sh"
     assert_success
-    run jq -e '[.matrix.include[] | select(.source == "oracle")] | length == 2' <<< "$output"
+    run jq -e '[.matrix.include[] | select(.source == "oracle")] | length == 4' <<< "$output"
     assert_success
 }
 
@@ -132,7 +141,7 @@ SH
     run --separate-stderr env FRESHNESS_ERROR=true "${scripts}/scanner-updater-matrix.sh"
     assert_success
     [[ "$stderr" == *"::error::gs://test-bucket/test-prefix/dev/sources/oracle.json.zst: freshness check failed"* ]]
-    run jq -e '.has_errors == "true" and (.errors | length == 4) and
+    run jq -e '.has_errors == "true" and (.errors | length == 8) and
         (.matrix.include | length == 0)' <<< "$output"
     assert_success
 }
