@@ -54,6 +54,9 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if !authProviderSrc.Enabled() {
 		return nil, getExtractorError(fmt.Sprintf("auth provider %q is not enabled", authProviderSrc.Name()), nil)
 	}
+	if token.HTTPRequestScopes != nil && !tokens.AllowsHTTPRequest(token.HTTPRequestScopes, ri) {
+		return nil, getExtractorError("token is not valid for this HTTP method and path", nil)
+	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
 	// is not propagated to the user, so the user itself does not get any escalated privileges.
@@ -94,8 +97,21 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 
 	if len(token.InternalRoles) > 0 {
-		resolvedRoles := make([]permissions.ResolvedRole, 0, len(token.InternalRoles))
-		for _, role := range token.InternalRoles {
+		roles := token.InternalRoles
+		if roles[0] != nil && roles[0].HTTPRequestScopes != nil {
+			roles = tokens.ScopedRolesForHTTPRequest(roles, ri)
+			if len(roles) == 0 {
+				return nil, getExtractorError("token is not valid for this HTTP method and path", nil)
+			}
+		}
+		resolvedRoles := make([]permissions.ResolvedRole, 0, len(roles))
+		for _, role := range roles {
+			if role.HTTPRequestScopes != nil {
+				// Do not mutate the validated claims: they may be cached across requests.
+				selected := *role
+				selected.Clusters = token.Clusters
+				role = &selected
+			}
 			resolvedRoles = append(resolvedRoles, role)
 		}
 		return withResolvedRoles(resolvedRoles, token, authProviderSrc), nil

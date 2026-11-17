@@ -6,6 +6,14 @@ import (
 	"github.com/go-jose/go-jose/v4/jwt"
 )
 
+// Older Centrals reject HTTP-scoped tokens because they do not recognize the scoped source ID.
+// Scoped source IDs are reserved so newer Centrals can resolve them to their original token source.
+const httpScopedSourceSuffix = "-http-scoped"
+
+func scopedSourceID(sourceID string) string {
+	return sourceID + httpScopedSourceSuffix
+}
+
 // ExternalUserClaim represents the claim that this token identifies a user from an external identity provider.
 type ExternalUserClaim struct {
 	UserID   string `json:"user_id"`
@@ -32,6 +40,20 @@ type RoxClaims struct {
 	Name string `json:"name,omitempty"`
 	// Requester represents the name of the token requester, assigned by the creator.
 	Requester string `json:"req,omitempty"`
+	// HTTPRequestScopes restricts the token to the listed methods for each HTTP path.
+	HTTPRequestScopes HTTPRequestScopes `json:"http,omitempty"`
+	// Clusters is the shared cluster scope of HTTP-scoped internal roles.
+	Clusters ClusterScopes `json:"clusters,omitempty"`
+}
+
+// HTTPRequestScopes maps allowed HTTP paths to the methods permitted on each path.
+type HTTPRequestScopes map[string][]string
+
+// HTTPRequestScope binds a token to an HTTP method and an exact path, or a
+// prefix when Path ends in a slash.
+type HTTPRequestScope struct {
+	Method string
+	Path   string
 }
 
 // Claims are the claims contained in a token.

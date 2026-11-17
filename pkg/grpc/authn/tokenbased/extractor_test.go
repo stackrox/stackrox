@@ -3,6 +3,7 @@ package tokenbased
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -21,9 +22,91 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/metadata"
 )
+
+func TestExtractorEnforcesHTTPRequestScope(t *testing.T) {
+	te := getTestExtractor(t)
+	provider := createEnabledMockAuthProvider(te.mockCtrl)
+	scopedToken := &tokens.TokenInfo{
+		Claims: &tokens.Claims{RoxClaims: tokens.RoxClaims{
+			InternalRoles:     []*tokens.InternalRole{{RoleName: "metrics"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/metrics": {"GET"}},
+		}},
+		Sources: []tokens.Source{provider},
+	}
+	te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").AnyTimes().Return(scopedToken, nil)
+	for name, tc := range map[string]struct {
+		request *requestinfo.HTTPRequest
+		allowed bool
+	}{
+		"metrics HTTP route": {request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/metrics"}}, allowed: true},
+		"wrong method":       {request: &requestinfo.HTTPRequest{Method: "POST", URL: &url.URL{Path: "/metrics"}}},
+		"wrong route":        {request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/v1/metadata"}}},
+		"direct gRPC":        {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			id, err := te.extractor.IdentityForRequest(t.Context(), requestinfo.RequestInfo{
+				Metadata:    map[string][]string{"authorization": {"Bearer token"}},
+				HTTPRequest: tc.request,
+			})
+			if tc.allowed {
+				assert.Nil(t, err)
+				assert.NotNil(t, id)
+			} else {
+				assert.Nil(t, id)
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestExtractorSelectsOnlyMatchingScopedRole(t *testing.T) {
+	te := getTestExtractor(t)
+	provider := createEnabledMockAuthProvider(te.mockCtrl)
+	roles := []*tokens.InternalRole{
+		{RoleName: "deployments", Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/": {"GET"}}},
+		{RoleName: "images", Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Image"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/images": {"POST"}}},
+	}
+	scopedToken := &tokens.TokenInfo{
+		Claims: &tokens.Claims{RoxClaims: tokens.RoxClaims{InternalRoles: roles,
+			Clusters: tokens.ClusterScopes{"cluster": {"namespace"}}}},
+		Sources: []tokens.Source{provider},
+	}
+	te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").AnyTimes().Return(scopedToken, nil)
+	for name, tc := range map[string]struct {
+		method, path string
+		permission   string
+	}{
+		"broad route":              {method: "GET", path: "/v1/deployments", permission: "Deployment"},
+		"specific route":           {method: "POST", path: "/v1/images", permission: "Image"},
+		"specific denies fallback": {method: "GET", path: "/v1/images"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			id, err := te.extractor.IdentityForRequest(t.Context(), requestinfo.RequestInfo{
+				Metadata:    map[string][]string{"authorization": {"Bearer token"}},
+				HTTPRequest: &requestinfo.HTTPRequest{Method: tc.method, URL: &url.URL{Path: tc.path}},
+			})
+			if tc.permission == "" {
+				assert.Nil(t, id)
+				assert.Error(t, err)
+				return
+			}
+			assert.Nil(t, err)
+			require.NotNil(t, id)
+			assert.Equal(t, map[string]storage.Access{tc.permission: storage.Access_READ_ACCESS}, id.Permissions())
+			require.Len(t, id.Roles(), 1)
+			assert.Equal(t, tokens.ClusterScopes{"cluster": {"namespace"}},
+				id.Roles()[0].(*tokens.InternalRole).Clusters)
+		})
+	}
+	assert.Empty(t, roles[0].Clusters)
+	assert.Empty(t, roles[1].Clusters)
+}
 
 const (
 	mockSourceID  = "mock source ID"

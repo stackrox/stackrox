@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -41,6 +42,9 @@ func (s *sourceStore) Register(source Source) error {
 	s.sourcesMutex.Lock()
 	defer s.sourcesMutex.Unlock()
 
+	if strings.HasSuffix(source.ID(), httpScopedSourceSuffix) {
+		return fmt.Errorf("source ID %s is reserved for HTTP-scoped tokens", source.ID())
+	}
 	if _, exists := s.sources[source.ID()]; exists {
 		return fmt.Errorf("source with id %s already exists", source.ID())
 	}
