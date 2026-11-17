@@ -69,15 +69,6 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters/{id}"};
   }
 
-  // PostCluster is deprecated. Use operator-based installation with CRS instead.
-  rpc PostCluster(storage.Cluster) returns (ClusterResponse) {
-    option deprecated = true;
-    option (google.api.http) = {
-      post: "/v1/clusters"
-      body: "*"
-    };
-  }
-
   // PutCluster is deprecated. Use operator-based installation with CRS instead.
   rpc PutCluster(storage.Cluster) returns (ClusterResponse) {
     option deprecated = true;
