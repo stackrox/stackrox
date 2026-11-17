@@ -445,30 +445,91 @@ func TestUniversalTransformAuthProvider(t *testing.T) {
 	}
 }
 
+// TestTransformAuthProvider_NormalizesUIEndpoints verifies how the auth provider
+// transform normalizes the configured UI endpoints. The transform itself is
+// provider-agnostic here.
 func TestTransformAuthProvider_NormalizesUIEndpoints(t *testing.T) {
-	authProvider := &declarativeconfig.AuthProvider{
-		Name:             "test-auth-provider",
-		UIEndpoint:       "https://central.example.com",
-		ExtraUIEndpoints: []string{"http://localhost:8080", "central.example.com"},
-		OIDCConfig: &declarativeconfig.OIDCConfig{
-			Issuer:       "http://some-issuer",
-			CallbackMode: "auto",
-			ClientID:     "some-client-id",
-			ClientSecret: "some-client-secret",
+	cases := map[string]struct {
+		uiEndpoint               string
+		extraUIEndpoints         []string
+		expectedUIEndpoint       string
+		expectedExtraUIEndpoints []string
+		wantErr                  bool
+	}{
+		"no UI endpoints": {
+			expectedExtraUIEndpoints: []string{},
+		},
+		"empty extra UI endpoints are dropped": {
+			extraUIEndpoints:         []string{""},
+			expectedExtraUIEndpoints: []string{},
+		},
+		"primary UI endpoint is normalized": {
+			uiEndpoint:               "https://central.example.com:8443",
+			expectedUIEndpoint:       "central.example.com:8443",
+			expectedExtraUIEndpoints: []string{},
+		},
+		"primary UI endpoint with path is normalized": {
+			uiEndpoint:               "https://central.example.com:8443/some/path",
+			expectedUIEndpoint:       "central.example.com:8443",
+			expectedExtraUIEndpoints: []string{},
+		},
+		"multiple extra UI endpoints are normalized": {
+			extraUIEndpoints:         []string{"http://localhost:8080", "central.example.com"},
+			expectedExtraUIEndpoints: []string{"localhost:8080", "central.example.com:443"},
+		},
+		"empty entries among extra UI endpoints are dropped": {
+			extraUIEndpoints:         []string{"", "central.example.com:8443", ""},
+			expectedExtraUIEndpoints: []string{"central.example.com:8443"},
+		},
+		"primary and extra UI endpoints are normalized": {
+			uiEndpoint:               "https://central.example.com",
+			extraUIEndpoints:         []string{"http://localhost:8080", "central.example.com"},
+			expectedUIEndpoint:       "central.example.com:443",
+			expectedExtraUIEndpoints: []string{"localhost:8080", "central.example.com:443"},
+		},
+		"whitespace-only primary UI endpoint is rejected": {
+			uiEndpoint: " ",
+			wantErr:    true,
+		},
+		"invalid primary UI endpoint is rejected": {
+			uiEndpoint: "central.example.com:abc",
+			wantErr:    true,
+		},
+		"invalid extra UI endpoint is rejected": {
+			uiEndpoint:       "central.example.com:8443",
+			extraUIEndpoints: []string{"central.example.com:abc"},
+			wantErr:          true,
 		},
 	}
 
-	transformer := newAuthProviderTransformer()
-	protos, err := transformer.Transform(authProvider)
-	require.NoError(t, err)
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			authProvider := &declarativeconfig.AuthProvider{
+				Name:             "test-auth-provider",
+				UIEndpoint:       c.uiEndpoint,
+				ExtraUIEndpoints: c.extraUIEndpoints,
+				OpenshiftConfig:  &declarativeconfig.OpenshiftConfig{Enable: true},
+			}
 
-	require.Contains(t, protos, authProviderType)
-	require.Len(t, protos[authProviderType], 1)
-	authProviderProto, ok := protos[authProviderType][0].(*storage.AuthProvider)
-	require.True(t, ok)
+			transformer := newAuthProviderTransformer()
+			protoMsg, err := transformer.Transform(authProvider)
 
-	assert.Equal(t, "central.example.com:443", authProviderProto.GetUiEndpoint())
-	assert.Equal(t, []string{"localhost:8080", "central.example.com:443"}, authProviderProto.GetExtraUiEndpoints())
+			if c.wantErr {
+				require.Error(t, err)
+				assert.ErrorContains(t, err, "normalizing auth provider UI endpoints")
+				return
+			}
+			require.NoError(t, err)
+
+			require.Contains(t, protoMsg, authProviderType)
+			require.Len(t, protoMsg[authProviderType], 1)
+			authProviderProto, ok := protoMsg[authProviderType][0].(*storage.AuthProvider)
+			require.True(t, ok)
+
+			assert.Equal(t, c.expectedUIEndpoint, authProviderProto.GetUiEndpoint())
+			assert.Equal(t, c.expectedExtraUIEndpoints, authProviderProto.GetExtraUiEndpoints())
+		})
+	}
 }
 
 func TestTransformAuthProvider_NoMinimumRoleName(t *testing.T) {
