@@ -10,6 +10,12 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [NEXT RELEASE]
+
+### Technical Changes
+
+- ROX-39442: Declarative configuration no longer rejects auth providers without a `uiEndpoint`. In 5.0.0, config validation required `uiEndpoint` for every auth provider type, breaking OpenShift, user PKI, and IAP providers that do not use a UI endpoint (these worked without one before 5.0) OIDC and SAML auth providers still require a UI endpoint.
+
 ## [5.0.1]
 
 **Full Changelog**: [5.0.0...5.0.1](https://github.com/stackrox/stackrox/compare/5.0.0...5.0.1)
