@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
@@ -273,7 +274,6 @@ func (s *mockedRateLimitedLoggerTestSuite) TestCacheEvictionRace() {
 	log := "This is a rate limited log"
 	cachedLog := &rateLimitedLog{
 		logger:  s.mockLogger,
-		id:      "00000000-1111-2222-3333-111111111111",
 		level:   zapcore.InfoLevel,
 		limiter: limiter,
 		payload: log,
@@ -298,4 +298,58 @@ func (s *mockedRateLimitedLoggerTestSuite) TestCacheLookupReturnsValidNil() {
 	suffix := ""
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", gomock.Any(), log, suffix)
 	s.rlLogger.InfoL(limiter, "%s", log)
+}
+
+func TestRateLimitedLoggerCacheIdentity(t *testing.T) {
+	for name, tc := range map[string]struct {
+		found    bool
+		same     bool
+		replaced bool
+		wantLogs int
+	}{
+		"same entry":        {found: true, same: true},
+		"evicted entry":     {wantLogs: 1},
+		"nil entry":         {found: true, wantLogs: 1},
+		"replacement entry": {found: true, replaced: true, wantLogs: 1},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			logger := logMocks.NewMockLogger(ctrl)
+			cache := lruMocks.NewMockLRU[string, *rateLimitedLog](ctrl)
+			cached := &rateLimitedLog{logger: logger, payload: "message"}
+			var next *rateLimitedLog
+			if tc.same {
+				next = cached
+			} else if tc.replaced {
+				// Equal contents must not hide replacement of the cached object.
+				next = &rateLimitedLog{logger: logger, payload: "message"}
+			}
+			gomock.InOrder(
+				cache.EXPECT().Get(gomock.Any()).Return(cached, true),
+				cache.EXPECT().Get(gomock.Any()).Return(next, tc.found),
+			)
+			logger.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).Times(tc.wantLogs)
+			rl := &RateLimitedLogger{logger: logger, rateLimitedLogs: cache}
+			rl.InfoL("limiter", "message")
+		})
+	}
+}
+
+func TestRateLimitedLoggerInSynctest(t *testing.T) {
+	// Exercise new log entries concurrently without replacing crypto/rand.
+	// Logging must not need entropy, including under GODEBUG=fips140=on.
+	synctest.Test(t, func(t *testing.T) {
+		const entries = 32
+		ctrl := gomock.NewController(t)
+		logger := logMocks.NewMockLogger(ctrl)
+		cache := lruMocks.NewMockLRU[string, *rateLimitedLog](ctrl)
+		cache.EXPECT().Get(gomock.Any()).Return(nil, false).Times(entries)
+		cache.EXPECT().Add(gomock.Any(), gomock.Any()).Return(true).Times(entries)
+		logger.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).Times(entries)
+		rl := &RateLimitedLogger{logger: logger, rateLimitedLogs: cache}
+		for i := range entries {
+			go rl.InfoL("limiter", "message %d", i)
+		}
+		synctest.Wait()
+	})
 }
