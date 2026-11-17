@@ -69,6 +69,28 @@ func compileSubQuery(ctx context.Context, sub *v1.MatchFieldSubQuery, fields map
 	}}, nil
 }
 
+// Reject unresolved predicates before scope filters or supported siblings can
+// hide them. Empty queries and predicates without field references remain valid.
+func hasUnsupportedSubQueryPredicates(q *v1.Query, fields map[string]searchFieldMetadata) bool {
+	var unsupported bool
+	checkField := func(name string) {
+		unsupported = unsupported || fields[name].baseField == nil
+	}
+	search.ApplyFnToAllBaseQueries(q, func(base *v1.BaseQuery) {
+		switch predicate := base.GetQuery().(type) {
+		case *v1.BaseQuery_MatchFieldQuery:
+			checkField(predicate.MatchFieldQuery.GetField())
+		case *v1.BaseQuery_MatchFieldSubQuery:
+			checkField(predicate.MatchFieldSubQuery.GetField())
+		case *v1.BaseQuery_MatchLinkedFieldsQuery:
+			for _, linked := range predicate.MatchLinkedFieldsQuery.GetQuery() {
+				checkField(linked.GetField())
+			}
+		}
+	})
+	return unsupported
+}
+
 func isSingleValueFieldType(dataType postgres.DataType) bool {
 	switch dataType {
 	case postgres.Map, postgres.StringArray, postgres.EnumArray, postgres.IntArray:

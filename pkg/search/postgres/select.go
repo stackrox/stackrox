@@ -341,6 +341,14 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 func compileSelectQuery(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool, rejectUnsupportedPredicates bool) (*query, error) {
 	nowForQuery := time.Now()
 
+	if rejectUnsupportedPredicates {
+		standardizeFieldNamesInQuery(q)
+		_, fields := getJoinsAndFields(schema, q, arrayFields)
+		if hasUnsupportedSubQueryPredicates(q, fields) {
+			return nil, nil
+		}
+	}
+
 	var err error
 	q, err = scopeContextToQuery(ctx, q)
 	if err != nil {
@@ -373,18 +381,6 @@ func compileSelectQuery(ctx context.Context, q *v1.Query, schema *walker.Schema,
 	if err != nil {
 		return nil, err
 	}
-	if rejectUnsupportedPredicates && queryEntry == nil {
-		// Membership subqueries must not turn unsupported filters into match-all.
-		// Empty wrappers, including combined search and access scopes, still match all.
-		var hasPredicate bool
-		searchPkg.ApplyFnToAllBaseQueries(q, func(base *v1.BaseQuery) {
-			hasPredicate = hasPredicate || base.GetQuery() != nil
-		})
-		if hasPredicate {
-			return nil, nil
-		}
-	}
-
 	if queryEntry != nil {
 		parsedQuery.Where = queryEntry.Where.Query
 		parsedQuery.Data = append(parsedQuery.Data, queryEntry.Where.Values...)

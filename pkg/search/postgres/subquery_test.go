@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stretchr/testify/assert"
@@ -38,13 +40,29 @@ func TestSubQueryParameters(t *testing.T) {
 
 func TestSubQueryPredicates(t *testing.T) {
 	unsupported := search.NewQueryBuilder().AddExactMatches(search.FieldLabel("unsupported"), "value").ProtoQuery()
+	supported := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "app").ProtoQuery()
+	nested := supported.CloneVT()
+	nested.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+	contexts := map[string]context.Context{
+		"all access": sac.WithAllAccess(context.Background()),
+		"namespace access": sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Deployment),
+			sac.ClusterScopeKeys("00000000-0000-4000-8000-000000000001"), sac.NamespaceScopeKeys("payments"))),
+	}
 	for name, test := range map[string]struct {
 		query     *v1.Query
 		matchNone bool
 	}{
-		"empty query":            {query: search.EmptyQuery()},
-		"empty conjunction":      {query: search.ConjunctionQuery(search.EmptyQuery(), search.EmptyQuery())},
-		"empty disjunction":      {query: search.DisjunctionQuery(search.EmptyQuery(), search.EmptyQuery())},
+		"empty query":         {query: search.EmptyQuery()},
+		"empty conjunction":   {query: search.ConjunctionQuery(search.EmptyQuery(), search.EmptyQuery())},
+		"empty disjunction":   {query: search.DisjunctionQuery(search.EmptyQuery(), search.EmptyQuery())},
+		"supported predicate": {query: supported},
+		"supported boolean": {query: search.NewBooleanQuery(nil,
+			&v1.DisjunctionQuery{Queries: []*v1.Query{supported}})},
+		"supported nested membership": {query: search.MatchFieldSubQuery(search.DeploymentName, v1.SearchCategory_DEPLOYMENTS, nested)},
+		"unsupported nested membership field": {
+			query: search.MatchFieldSubQuery(search.FieldLabel("unsupported"), v1.SearchCategory_DEPLOYMENTS, nested), matchNone: true,
+		},
 		"unsupported base query": {query: unsupported, matchNone: true},
 		"unsupported conjunction": {
 			query: search.ConjunctionQuery(unsupported, search.EmptyQuery()), matchNone: true,
@@ -52,18 +70,38 @@ func TestSubQueryPredicates(t *testing.T) {
 		"unsupported disjunction": {
 			query: search.DisjunctionQuery(unsupported, search.EmptyQuery()), matchNone: true,
 		},
+		"mixed conjunction": {query: search.ConjunctionQuery(supported, unsupported), matchNone: true},
+		"mixed disjunction": {query: search.DisjunctionQuery(supported, unsupported), matchNone: true},
+		"unsupported boolean must": {query: search.NewBooleanQuery(
+			&v1.ConjunctionQuery{Queries: []*v1.Query{unsupported}}, nil), matchNone: true},
+		"unsupported boolean must not": {query: search.NewBooleanQuery(nil,
+			&v1.DisjunctionQuery{Queries: []*v1.Query{unsupported}}), matchNone: true},
+		"mixed boolean must": {query: search.NewBooleanQuery(
+			&v1.ConjunctionQuery{Queries: []*v1.Query{supported, unsupported}}, nil), matchNone: true},
+		"mixed boolean must not": {query: search.NewBooleanQuery(
+			&v1.ConjunctionQuery{Queries: []*v1.Query{supported}},
+			&v1.DisjunctionQuery{Queries: []*v1.Query{unsupported}}), matchNone: true},
+		"nested boolean": {query: search.ConjunctionQuery(supported, search.NewBooleanQuery(nil,
+			&v1.DisjunctionQuery{Queries: []*v1.Query{search.DisjunctionQuery(supported, unsupported)}})), matchNone: true},
+		"mixed linked fields": {query: search.NewQueryBuilder().AddLinkedFields(
+			[]search.FieldLabel{search.DeploymentName, search.FieldLabel("unsupported")}, []string{"app", "value"}).ProtoQuery(), matchNone: true},
 	} {
 		t.Run(name, func(t *testing.T) {
-			inner := test.query.CloneVT()
-			inner.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
-			q := search.MatchFieldSubQuery(search.DeploymentName, v1.SearchCategory_DEPLOYMENTS, inner)
-			compiled, err := standardizeQueryAndPopulatePath(sac.WithAllAccess(context.Background()), q, schema.DeploymentsSchema, COUNT)
-			require.NoError(t, err)
-			require.NotNil(t, compiled)
-			if test.matchNone {
-				assert.Equal(t, "false", compiled.Where)
-			} else {
-				assert.Contains(t, compiled.Where, "EXISTS (SELECT 1 FROM (")
+			for name, ctx := range contexts {
+				t.Run(name, func(t *testing.T) {
+					inner := test.query.CloneVT()
+					inner.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+					q := search.MatchFieldSubQuery(search.DeploymentName, v1.SearchCategory_DEPLOYMENTS, inner)
+					compiled, err := standardizeQueryAndPopulatePath(ctx, q, schema.DeploymentsSchema, COUNT)
+					require.NoError(t, err)
+					require.NotNil(t, compiled)
+					if test.matchNone {
+						assert.Contains(t, compiled.Where, "false")
+						assert.NotContains(t, compiled.Where, "EXISTS")
+					} else {
+						assert.Contains(t, compiled.Where, "EXISTS (SELECT 1 FROM (")
+					}
+				})
 			}
 		})
 	}
