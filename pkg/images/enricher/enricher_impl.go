@@ -491,23 +491,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
 		if err != nil {
 			if !errors.Is(err, errMetadataLimiterWait) {
-				currentRegistryErrors := concurrency.WithLock1(&e.registryErrorsLock, func() int32 {
-					currentRegistryErrors := e.errorsPerRegistry[registry] + 1
-					e.errorsPerRegistry[registry] = currentRegistryErrors
-					return currentRegistryErrors
-				})
-
-				if currentRegistryErrors >= consecutiveErrorThreshold { // update health
-					e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-						Id:            registry.Source().GetId(),
-						Name:          registry.Source().GetName(),
-						Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
-						Status:        storage.IntegrationHealth_UNHEALTHY,
-						LastTimestamp: protocompat.TimestampNow(),
-						ErrorMessage:  err.Error(),
-					})
-					e.startRegistryCooldown(registry)
-				}
+				_ = e.handleRegistryError(registry, err)
 			}
 			errorList.AddError(err)
 			continue
@@ -538,14 +522,29 @@ func (e *enricherImpl) isRegistryInCooldown(registry registryTypes.ImageRegistry
 	return false, nil
 }
 
-func (e *enricherImpl) startRegistryCooldown(registry registryTypes.ImageRegistry) error {
-	concurrency.WithLock(&e.registryErrorsLock, func() {
-		if e.registryCooldownUntil == nil {
-			e.registryCooldownUntil = make(map[registryTypes.ImageRegistry]time.Time)
+func (e *enricherImpl) handleRegistryError(registry registryTypes.ImageRegistry, err error) error {
+	currentRegistryErrors := concurrency.WithLock1(&e.registryErrorsLock, func() int32 {
+		currentRegistryErrors := e.errorsPerRegistry[registry] + 1
+		e.errorsPerRegistry[registry] = currentRegistryErrors
+		if currentRegistryErrors >= consecutiveErrorThreshold {
+			if e.registryCooldownUntil == nil {
+				e.registryCooldownUntil = make(map[registryTypes.ImageRegistry]time.Time)
+			}
+			e.registryCooldownUntil[registry] = time.Now().Add(env.RegistryConsecutiveErrorCooldown.DurationSetting())
 		}
-		e.registryCooldownUntil[registry] = time.Now().Add(env.RegistryConsecutiveErrorCooldown.DurationSetting())
+		return currentRegistryErrors
 	})
 
+	if currentRegistryErrors >= consecutiveErrorThreshold { // update health
+		e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+			Id:            registry.Source().GetId(),
+			Name:          registry.Source().GetName(),
+			Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
+			Status:        storage.IntegrationHealth_UNHEALTHY,
+			LastTimestamp: protocompat.TimestampNow(),
+			ErrorMessage:  err.Error(),
+		})
+	}
 	return nil
 }
 
