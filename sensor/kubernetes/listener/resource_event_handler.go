@@ -365,7 +365,8 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 	if features.ComplianceCustomNodeRoles.Enabled() {
 		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osMachineConfigGroupVersion); err != nil {
-			log.Errorf("Checking API resources for group %q: %v", osMachineConfigGroupVersion, err)
+			log.Errorf("Checking API resources for group %q: %v. The %q informer will not be started and node role changes will not be reconciled into scan settings; restarting Sensor retries this check",
+				osMachineConfigGroupVersion, err, osMachineConfigPoolsResourceName)
 		} else if listenerUtils.ResourceExists(resourceList, osMachineConfigPoolsResourceName, osMachineConfigGroupVersion) {
 			log.Infof("Initializing %q informer", osMachineConfigPoolsResourceName)
 			machineConfigPoolGVR := schema.GroupVersionResource{
