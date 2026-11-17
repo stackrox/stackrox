@@ -4,6 +4,13 @@ import type { SearchFilter } from 'types/search';
 
 import { searchNavMap } from './searchCategories';
 import type { SearchNavCategory } from './searchCategories';
+import { searchFilterConfig } from './searchFilterConfig';
+
+// Search terms of the curated compound search filter config. Accepted even when the dynamic
+// searchOptions request has not resolved or has failed, so curated filtering always works.
+const configSearchTerms = new Set<string>(
+    searchFilterConfig.flatMap(({ attributes }) => attributes.map(({ searchTerm }) => searchTerm))
+);
 
 export type SearchQueryObject = {
     searchFilter: SearchFilter;
@@ -25,7 +32,16 @@ export function parseQueryString(search: string, searchOptions: string[]): Searc
     const searchFilter = {};
     if (typeof s === 'object') {
         Object.entries(s).forEach(([key, value]) => {
-            if (searchOptions.includes(key)) {
+            // Keep a term when it is recognized: a known search option or a curated config term.
+            // While the dynamic search options are unavailable (empty: still loading, or the request
+            // failed) keep every term so a bookmarked/unresolved filter stays intact and is applied
+            // instead of being silently dropped or lost when another filter is edited. Once the
+            // options load they are authoritative, so genuinely unknown terms are then removed.
+            if (
+                searchOptions.length === 0 ||
+                searchOptions.includes(key) ||
+                configSearchTerms.has(key)
+            ) {
                 if (typeof value === 'string' || Array.isArray(value)) {
                     if (value.length !== 0) {
                         searchFilter[key] = value;
