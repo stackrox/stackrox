@@ -4,6 +4,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// MetricsPermissionSetName identifies the shared, administrator-managed OpenShift metrics permission set.
+const MetricsPermissionSetName = "OpenShift Prometheus Metrics Reader"
+
 // ResourceWithAccess stored a resource handle paired with an access level for configuring permissions.
 type ResourceWithAccess struct {
 	Resource ResourceMetadata

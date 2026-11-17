@@ -1,10 +1,12 @@
 package registry
 
 import (
+	"github.com/stackrox/rox/central/auth/openshift"
 	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/jwt"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,7 +27,8 @@ func initialize() {
 	registry = authproviders.NewStoreBackedRegistry(
 		ssoURLPathPrefix, tokenRedirectURLPath,
 		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
-		mapper.FactorySingleton(), clusterDataStore.Singleton())
+		openshift.WrapMetricsReaderRoleMapperFactory(mapper.FactorySingleton(), roleDataStore.Singleton()),
+		clusterDataStore.Singleton())
 	// Set the auth provider registry function in the group datastore to break circular dependency
 	groupDataStore.SetAuthProviderRegistryFunc(func() authproviders.Registry {
 		return registry
