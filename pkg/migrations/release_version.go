@@ -10,6 +10,11 @@ type ReleaseVersion struct {
 	Sequence int
 }
 
+// LatestReleaseVersion returns the newest release stream in the generated metadata.
+func LatestReleaseVersion() ReleaseVersion {
+	return releaseVersions[len(releaseVersions)-1]
+}
+
 // OverrideReleaseVersionsForTesting replaces release metadata until test cleanup.
 // It modifies global state and must not be used by parallel tests.
 func OverrideReleaseVersionsForTesting(t interface{ Cleanup(func()) }, releases []ReleaseVersion) {
