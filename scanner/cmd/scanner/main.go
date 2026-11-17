@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -59,6 +60,8 @@ func init() {
 }
 
 func main() {
+	fips.RequireEnabled()
+
 	configPath := flag.String("conf", "", "Path to scanner's configuration file.")
 	printVersion := flag.Bool("version", false,
 		"Print the build version tag and the vulnerability schema version, then exit.")

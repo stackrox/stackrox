@@ -22,6 +22,7 @@ import (
 	vStore "github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -40,6 +41,8 @@ var (
 )
 
 func main() {
+	fips.RequireEnabled()
+
 	premain.StartMain()
 
 	log.Infof("Starting central-worker")

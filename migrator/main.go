@@ -10,6 +10,7 @@ import (
 	cloneMgr "github.com/stackrox/rox/migrator/clone"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -20,6 +21,8 @@ import (
 )
 
 func main() {
+	fips.RequireEnabled()
+
 	startProfilingServer()
 	if err := run(); err != nil {
 		handleFailure(err, func(message string) error {

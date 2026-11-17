@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/maincommand"
@@ -16,6 +17,8 @@ import (
 )
 
 func main() {
+	fips.RequireEnabled()
+
 	c := maincommand.Command()
 
 	c.SetHelpFunc(utils.FormatHelp)

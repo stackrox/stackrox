@@ -198,6 +198,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	featuresTelemetry "github.com/stackrox/rox/pkg/features/telemetry"
+	"github.com/stackrox/rox/pkg/fips"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -278,6 +279,8 @@ func runSafeMode() {
 }
 
 func main() {
+	fips.RequireEnabled()
+
 	defer utils.IgnoreError(log.InnerLogger.Sync)
 
 	premain.StartMain()

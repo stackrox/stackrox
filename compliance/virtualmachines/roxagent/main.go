@@ -7,12 +7,15 @@ import (
 	"syscall"
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/cmd"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
 var log = logging.LoggerForModule()
 
 func main() {
+	fips.RequireEnabled()
+
 	// Create a context that is cancellable on the usual command line signals. Double
 	// signal forcefully exits.
 	ctx, cancel := context.WithCancel(context.Background())

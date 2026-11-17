@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/config-controller/internal/controller"
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/tlsprofile"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,6 +62,8 @@ func init() {
 }
 
 func main() {
+	fips.RequireEnabled()
+
 	var metricsAddr string
 	var probeAddr string
 	var secureMetrics bool

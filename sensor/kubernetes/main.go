@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -38,6 +39,8 @@ func init() {
 }
 
 func main() {
+	fips.RequireEnabled()
+
 	premain.StartMain()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
