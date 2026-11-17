@@ -37,6 +37,11 @@ var replicaAccounts = []string{"cigocache", "cigocacheeast", "cigochachecentral"
 //   - The marker is written AFTER the content per replica, so its
 //     presence implies a deliberate, complete store.
 func storeAll(key, file string) error {
+	// Large blobs stream (bounded memory): whole-buffer stores of the
+	// 1.5GB tars peaked ~4GB RAM and OOM-killed runners.
+	if st, err := os.Stat(file); err == nil && st.Size() >= largeBlobThreshold {
+		return storeAllStreamed(key, file)
+	}
 	body, err := os.ReadFile(file)
 	if err != nil {
 		return err
@@ -109,13 +114,45 @@ func storeAll(key, file string) error {
 // tree) or interrupted mid-write. Untrusted content is a miss; the
 // caller regenerates and the post-build store replaces it.
 func fetchAny(key, file string) error {
-	// Fast path: the selected/primary account (region-probed).
-	if b, err := newBackend(); err == nil && b != nil {
-		if ok, body := fetchVerified(b, key); ok {
-			if werr := os.WriteFile(file, body, 0o644); werr != nil {
-				return werr
+	// Streaming fetch (bounded memory): whole-buffer fetch of the 1.5GB
+	// roxctl-all tar OOM-killed runners. Order and marker verification
+	// match the original buffered flow: selected account first, then
+	// replicas; content serves only when its .sha256 marker matches.
+	tryFetch := func(bi Backend, label string) bool {
+		a, ok := bi.(*AzureBackend)
+		if !ok {
+			// Non-Azure backends (dir mode, tests): buffered path.
+			if ok, body := fetchVerified(bi, key); ok {
+				if werr := os.WriteFile(file, body, 0o644); werr != nil {
+					return false
+				}
+				fmt.Printf("fetch-any: %s from %s (%d bytes, verified)\n", key, label, len(body))
+				return true
 			}
-			fmt.Printf("fetch-any: %s from selected account (%d bytes, verified)\n", key, len(body))
+			return false
+		}
+		sum, found, err := getFileStream(a, key, file)
+		if err != nil || !found {
+			return false
+		}
+		marker, err := a.Get(key + ".sha256")
+		if err != nil || marker == nil {
+			fmt.Fprintf(os.Stderr, "fetch-any: %s unverified (no marker) — miss\n", key)
+			os.Remove(file)
+			return false
+		}
+		if want := strings.TrimSpace(string(marker)); sum != want {
+			fmt.Fprintf(os.Stderr, "fetch-any: %s hash mismatch (got %s, marker %s) — corrupt, treating as miss\n", key, sum[:16], want[:16])
+			os.Remove(file)
+			return false
+		}
+		if st, err := os.Stat(file); err == nil {
+			fmt.Printf("fetch-any: %s from %s (%d bytes, verified)\n", key, label, st.Size())
+		}
+		return true
+	}
+	if b, err := newBackend(); err == nil && b != nil {
+		if tryFetch(b, "selected account") {
 			return nil
 		}
 	}
@@ -124,11 +161,7 @@ func fetchAny(key, file string) error {
 		if b == nil {
 			continue
 		}
-		if ok, body := fetchVerified(b, key); ok {
-			if werr := os.WriteFile(file, body, 0o644); werr != nil {
-				return werr
-			}
-			fmt.Printf("fetch-any: %s from %s (%d bytes, verified)\n", key, acct, len(body))
+		if tryFetch(b, acct) {
 			return nil
 		}
 	}
@@ -180,4 +213,84 @@ func azureBackendFor(account string) Backend {
 			},
 		},
 	}
+}
+
+// storeAllStreamed stores a large file to all replicas without holding
+// it in memory: gzip once to a temp file, upload that to every replica,
+// write the marker. Marker semantics identical to the buffered path.
+func storeAllStreamed(key, file string) error {
+	gz, err := isGzipFile(file)
+	if err != nil {
+		return err
+	}
+	uploadPath := file
+	if !gz {
+		tmp, err := gzipToFileStreaming(file)
+		if err != nil {
+			return err
+		}
+		defer os.Remove(tmp)
+		uploadPath = tmp
+	}
+	sum, _, err := fileSHA256(file)
+	if err != nil {
+		return err
+	}
+	want := sum
+	type result struct {
+		acct    string
+		skipped bool
+		err     error
+	}
+	results := make(chan result, len(replicaAccounts))
+	var wg sync.WaitGroup
+	for _, acct := range replicaAccounts {
+		wg.Add(1)
+		go func(acct string) {
+			defer wg.Done()
+			b := azureBackendFor(acct)
+			if b == nil {
+				results <- result{acct, false, nil}
+				return
+			}
+			if marker, err := b.Get(key + ".sha256"); err == nil && marker != nil {
+				if strings.TrimSpace(string(marker)) == want {
+					results <- result{acct, true, nil}
+					return
+				}
+			}
+			if ab, ok := b.(*AzureBackend); ok {
+				if err := ab.putFileBlob(key, uploadPath); err != nil {
+					results <- result{acct, false, err}
+					return
+				}
+			} else if body, err := os.ReadFile(uploadPath); err == nil {
+				if err := b.Put(key, body); err != nil {
+					results <- result{acct, false, err}
+					return
+				}
+			} else {
+				results <- result{acct, false, err}
+				return
+			}
+			if err := b.Put(key+".sha256", []byte(want+"\n")); err != nil {
+				results <- result{acct, false, err}
+				return
+			}
+			results <- result{acct, false, nil}
+		}(acct)
+	}
+	wg.Wait()
+	close(results)
+	failed := 0
+	for r := range results {
+		if r.err != nil {
+			fmt.Fprintf(os.Stderr, "store-all: %s: %v\n", r.acct, r.err)
+			failed++
+		}
+	}
+	if failed == len(replicaAccounts) {
+		return fmt.Errorf("store-all: all replicas failed for %s", key)
+	}
+	return nil
 }
