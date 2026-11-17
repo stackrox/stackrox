@@ -191,6 +191,32 @@ func split(sum int) (x, y int) {
 - When you add the `go` keyword to a function call, check the function's
   concurrent correctness. 
 
+### Cryptographic randomness in synctest
+
+Go 1.26's FIPS entropy source samples clock jitter. Inside a `testing/synctest`
+bubble, its fake clock can make initialization panic with
+`fips140/drbg: failed to obtain initial entropy`
+([upstream issue](https://github.com/golang/go/issues/78557)). Warming up
+`crypto/rand` before the test is not reliable: concurrent calls can need another
+generator, and pooled generators can be discarded.
+
+- Avoid randomness when object identity is sufficient, as in the rate-limited
+  logger's cache replacement check.
+- Generate cryptographic fixtures outside the bubble. When verifying certificates
+  inside it, pass an explicit `x509.VerifyOptions.CurrentTime` matching the fixtures
+  instead of the bubble's fake date.
+- For tests of behavior that only need unique IDs, use
+  `testing/cryptotest.SetGlobalRandom(t, seed)` in the narrowest test scope, before
+  starting workers. Stop workers before its cleanup restores the random source.
+  This leaves FIPS mode enabled but replaces entropy generation with deterministic
+  test data; it does **not** validate cryptographic randomness. Do not assert exact
+  random output or use this process-wide hook in parallel tests. It is unsupported
+  with the Go Cryptographic Module v1.0.0; tests of that module or real entropy must
+  keep cryptographic operations outside the bubble instead.
+
+Do not disable FIPS globally to accommodate fake time. The upstream clock fix is
+[here](https://github.com/golang/go/commit/a81b20a431ce41417f7758929a2962d95a6a9453).
+
 ### Error handling
  
 - Use `errors.Wrap[f]()` from `github.com/pkg/errors` to add a message when
