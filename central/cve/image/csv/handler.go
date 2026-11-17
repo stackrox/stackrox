@@ -187,7 +187,7 @@ func ImageCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQ
 			errorList.AddError(err)
 		}
 		dataRow.Fixable = strconv.FormatBool(isFixable)
-		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
+		dataRow.CvssScore = csvCommon.FormatCVSSScore(d.Cvss(ctx), d.ScoreVersion(ctx))
 		envImpact, err := d.EnvImpact(ctx)
 		if err != nil {
 			errorList.AddError(err)
