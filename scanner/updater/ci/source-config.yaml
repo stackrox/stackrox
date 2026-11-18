@@ -98,3 +98,6 @@ bundles:
 updaters:
   default:
     interval: 4h
+  stackrox-rhel-csaf:
+    interval: 24h
+    attempt_cadence: 24h

@@ -144,12 +144,6 @@ check_scanner_v4_db_upgraded() {
     info "scanner-v4-db is on PostgreSQL $version."
 }
 
-# check_scanner_v4_ready waits for Scanner V4 to come back after a database restart.
-check_scanner_v4_ready() {
-    kubectl -n stackrox rollout status deploy/scanner-v4-indexer --timeout=300s
-    kubectl -n stackrox rollout status deploy/scanner-v4-matcher --timeout=300s
-}
-
 test_upgrade() {
     info "Starting postgres upgrade test"
 
@@ -486,6 +480,7 @@ test_scanner_v4_db_upgrade_fallback() {
     scanner_v4_db_psql "CREATE DATABASE $SCANNER_V4_UPGRADE_BLOCKER"
     scanner_v4_db_psql "ALTER DATABASE $SCANNER_V4_UPGRADE_BLOCKER WITH ALLOW_CONNECTIONS false"
 
+    wait_for_scanner_v4_readiness
     info "Upgrade scanner-v4-db ${EARLIER_TAG} => ${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/scanner-v4-db "*=${REGISTRY}/scanner-v4-db:${CURRENT_TAG}"
 
@@ -501,14 +496,14 @@ test_scanner_v4_db_upgrade_fallback() {
         die "scanner-v4-db did not decline the upgrade the way this test intends"
 
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
-    check_scanner_v4_ready
+    wait_for_scanner_v4_readiness
 
     info "Removing the blocker and restarting scanner-v4-db"
     scanner_v4_db_psql "DROP DATABASE $SCANNER_V4_UPGRADE_BLOCKER"
     kubectl -n stackrox rollout restart deploy/scanner-v4-db
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     check_scanner_v4_db_upgraded
-    check_scanner_v4_ready
+    wait_for_scanner_v4_readiness
 
     local old_pod new_pod=""
     old_pod="$(scanner_v4_db_pod)"
@@ -523,7 +518,7 @@ test_scanner_v4_db_upgrade_fallback() {
     kubectl -n stackrox wait --for=condition=Ready "po/$new_pod" --timeout=600s
 
     check_scanner_v4_db_upgraded
-    check_scanner_v4_ready
+    wait_for_scanner_v4_readiness
 
     collect_and_check_stackrox_logs "$log_output_dir" "scanner_v4_db_fallback_final"
 }
