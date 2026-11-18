@@ -90,8 +90,13 @@ jobs:
             echo "${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}" | docker login quay.io \
               -u "${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}" --password-stdin
           fi
-          # Blob store client
+          # Blob store client. Fixed GET concurrency: the adaptive AIMD
+          # (latency-tuned) under-ramps for large sequential transfers —
+          # measured ~5MB/s aggregate cross-region, which dominates the
+          # Go-change critical path (~600MB per roxctl platform fetched
+          # from cache).
           echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONCURRENCY=24" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
           # Two DECOUPLED identities:
