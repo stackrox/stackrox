@@ -226,7 +226,7 @@ jobs:
           BIN_KEY="ca-binaries-v3-${{ matrix.arch }}-${GO_HASH}-${BUILD_TAG}"
           # All-platform roxctl set: identical content in every arch's
           # image (the CLI download tarballs), so one shared key.
-          ROXCTL_KEY="ca-roxctl-all-v2-${GO_HASH}-${BUILD_TAG}"
+
 
           if "${GOCACHEPROG}" -fetch-any "$BIN_KEY" /tmp/go-binaries.tar 2>/dev/null && [ -s /tmp/go-binaries.tar ]; then
             tar -xf /tmp/go-binaries.tar
@@ -268,20 +268,39 @@ jobs:
           # binaries ever becomes the bottleneck, master's PR-stub policy
           # (placeholder files unless labeled/master/release) is the
           # fallback — see pre-build-cli in master's build.yaml.
-          if "${GOCACHEPROG}" -fetch-any "$ROXCTL_KEY" /tmp/roxctl-all.tar 2>/dev/null && [ -s /tmp/roxctl-all.tar ]; then
-            tar -xf /tmp/roxctl-all.tar
-            "${GOCACHEPROG}" -store-all "ca-roxctl-all-latest" /tmp/roxctl-all.tar || true
-            echo "roxctl (all platforms): FETCHED from blob store"
+          # Per-platform blobs: parallel fetch, parallel store. A single
+          # 1.5GB aggregate tar serialized both directions; per-platform
+          # keys (~250MB each) fetch/store concurrently.
+          ROXCTL_PLATFORMS="darwin_amd64 darwin_arm64 linux_amd64 linux_arm64 linux_ppc64le linux_s390x windows_amd64"
+          fetch_ok=1
+          for plat in $ROXCTL_PLATFORMS; do
+            ( "${GOCACHEPROG}" -fetch-any "ca-roxctl-v3-${plat}-${GO_HASH}-${BUILD_TAG}" "/tmp/rx-${plat}.tar" \
+              && tar -xf "/tmp/rx-${plat}.tar" && rm -f "/tmp/rx-${plat}.tar" ) &
+          done
+          wait || fetch_ok=0
+          for plat in $ROXCTL_PLATFORMS; do
+            [ -d "bin/${plat}" ] || fetch_ok=0
+          done
+          if [ "$fetch_ok" = 1 ]; then
+            echo "roxctl (all platforms): FETCHED from blob store (parallel)"
           else
             echo "roxctl (all platforms): COMPILING (blob miss)"
-            make cli
-            tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
-              -cvf /tmp/roxctl-all.tar \
-              bin/darwin_amd64 bin/darwin_arm64 \
-              bin/linux_amd64 bin/linux_arm64 bin/linux_ppc64le bin/linux_s390x \
-              bin/windows_amd64
-            "${GOCACHEPROG}" -store-all "$ROXCTL_KEY" /tmp/roxctl-all.tar || true
-            echo "roxctl (all platforms): compiled and stored"
+            # Parallel platform builds: each sub-target writes a disjoint
+            # bin/<os>_<arch>/ dir. Lower per-instance memory limit — 11
+            # concurrent gocache-serve children share the runner.
+            GOCACHE_SERVE_GOMEMLIMIT=300MiB make -j11 cli
+            for plat in $ROXCTL_PLATFORMS; do
+              tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+                -cf "/tmp/rx-${plat}.tar" "bin/${plat}" &
+            done
+            wait
+            for plat in $ROXCTL_PLATFORMS; do
+              "${GOCACHEPROG}" -store-all "ca-roxctl-v3-${plat}-${GO_HASH}-${BUILD_TAG}" "/tmp/rx-${plat}.tar" &
+            done
+            wait
+            rm -f /tmp/rx-*.tar
+            echo "roxctl (all platforms): compiled and stored (parallel)"
+          fi
           fi
 
       - name: UI — fetch from blob or build
