@@ -27,6 +27,9 @@ func (f *failingGetBackend) Get(id string) ([]byte, error) {
 	return f.inner.Get(id)
 }
 func (f *failingGetBackend) Put(id string, body []byte) error      { return f.inner.Put(id, body) }
+func (f *failingGetBackend) PutFromFile(id string, path string) error {
+	return f.inner.PutFromFile(id, path)
+}
 func (f *failingGetBackend) PutIfNotExist(id string, body []byte) (bool, error) {
 	return f.inner.PutIfNotExist(id, body)
 }
@@ -196,6 +199,9 @@ func (c *countingBackend) Get(id string) ([]byte, error) {
 	return c.inner.Get(id)
 }
 func (c *countingBackend) Put(id string, body []byte) error { return c.inner.Put(id, body) }
+func (c *countingBackend) PutFromFile(id string, path string) error {
+	return c.inner.PutFromFile(id, path)
+}
 func (c *countingBackend) PutIfNotExist(id string, body []byte) (bool, error) {
 	return c.inner.PutIfNotExist(id, body)
 }

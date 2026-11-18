@@ -24,6 +24,7 @@ import (
 type Backend interface {
 	Get(actionID string) ([]byte, error) // nil, nil = not found
 	Put(actionID string, body []byte) error
+	PutFromFile(key string, path string) error // streaming put for large bodies
 	PutIfNotExist(actionID string, body []byte) (bool, error) // atomic; false = exists
 	ListKeys() ([]string, error)                              // list all blob keys in the container
 	ListPrefix(prefix string) ([]string, error)               // server-side prefix-filtered listing
@@ -109,6 +110,30 @@ func (d *DirBackend) Put(key string, body []byte) error {
 	return os.WriteFile(p, gzipBytes(body), 0o644)
 }
 
+func (d *DirBackend) PutFromFile(key string, path string) error {
+	in, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	dst := d.path(key)
+	tmp := dst + ".tmp"
+	f, err := os.Create(tmp)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(f, in); err != nil {
+		f.Close()
+		os.Remove(tmp)
+		return err
+	}
+	if err := f.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	return os.Rename(tmp, dst)
+}
+
 func (d *DirBackend) PutIfNotExist(key string, body []byte) (bool, error) {
 	p := d.path(key)
 	if _, err := os.Stat(p); err == nil {
@@ -154,6 +179,7 @@ type NoopBackend struct{}
 
 func (n *NoopBackend) Get(string) ([]byte, error)                 { return nil, nil }
 func (n *NoopBackend) Put(string, []byte) error                   { return nil }
+func (n *NoopBackend) PutFromFile(string, string) error           { return nil }
 func (n *NoopBackend) PutIfNotExist(string, []byte) (bool, error) { return true, nil }
 func (n *NoopBackend) ListKeys() ([]string, error)                { return nil, nil }
 func (n *NoopBackend) ListPrefix(string) ([]string, error)        { return nil, nil }
@@ -365,6 +391,9 @@ func (f *fallbackBackend) Get(id string) ([]byte, error) {
 }
 
 func (f *fallbackBackend) Put(id string, body []byte) error { return f.primary.Put(id, body) }
+func (f *fallbackBackend) PutFromFile(id string, path string) error {
+	return f.primary.PutFromFile(id, path)
+}
 func (f *fallbackBackend) PutIfNotExist(id string, body []byte) (bool, error) {
 	return f.primary.PutIfNotExist(id, body)
 }
@@ -782,6 +811,13 @@ func (a *AzureBackend) Put(actionID string, body []byte) error {
 // PutIfNotExist writes a blob only if it does not already exist (atomic).
 // Returns false if another writer got there first (HTTP 409/412).
 // Used for advisory compilation leases between concurrent runners.
+// PutFromFile streams a large body to blob storage (gzip at rest via
+// temp file, bounded memory).
+func (a *AzureBackend) PutFromFile(key string, path string) error {
+	_, err := putFileStream(a, key, path)
+	return err
+}
+
 func (a *AzureBackend) PutIfNotExist(actionID string, body []byte) (bool, error) {
 	token, err := a.getToken()
 	if err != nil {

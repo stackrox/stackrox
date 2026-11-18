@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"errors"
 	"fmt"
 	"log"
@@ -110,6 +111,80 @@ func (lc *LocalCache) Get(actionID string) ([]byte, []byte, error) {
 	}
 	outputID, _ := os.ReadFile(lc.metaPath(actionID))
 	return body, outputID, nil
+}
+
+// PutFromFile ingests a file go wrote itself (put-with-DiskPath: go
+// sends the output's path instead of streaming its bytes — used for
+// LARGE outputs, i.e. exactly the link results whose cross-runner
+// sharing enables per-binary skip). Streams into the cache tier
+// (bounded memory). The source may be deleted by go right after the
+// put response, so the copy must complete before responding.
+func (lc *LocalCache) PutFromFile(actionID, outputID, srcPath string) (string, error) {
+	lc.mu.Lock()
+	defer lc.mu.Unlock()
+	in, err := os.Open(srcPath)
+	if err != nil {
+		return "", err
+	}
+	defer in.Close()
+	st, err := in.Stat()
+	if err != nil {
+		return "", err
+	}
+	p := lc.path(actionID)
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return "", err
+	}
+	if err := lc.writeStreamAtomic(p, in, st.Size()); err != nil {
+		// Primary full: spill to the disk tier.
+		if lc.spill == "" {
+			return "", err
+		}
+		sp := lc.spillPath(actionID)
+		if err := os.MkdirAll(filepath.Dir(sp), 0o755); err != nil {
+			return "", err
+		}
+		if err := lc.writeStreamAtomic(sp, in, st.Size()); err != nil {
+			return "", err
+		}
+		p = sp
+	}
+	if len(outputID) > 0 {
+		if err := writeFileAtomic(lc.metaPath(actionID), []byte(outputID)); err != nil {
+			return "", err
+		}
+	}
+	return p, nil
+}
+
+// writeStreamAtomic writes r (size bytes) to dst via a temp file + rename.
+func (lc *LocalCache) writeStreamAtomic(dst string, r io.Reader, size int64) error {
+	if in, ok := r.(*os.File); ok {
+		// re-seek for the spill retry path
+		if _, err := in.Seek(0, 0); err != nil {
+			return err
+		}
+	}
+	tmp := dst + ".tmp"
+	f, err := os.Create(tmp)
+	if err != nil {
+		return err
+	}
+	n, err := io.Copy(f, r)
+	if err != nil {
+		f.Close()
+		os.Remove(tmp)
+		return err
+	}
+	if err := f.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	if size > 0 && n != size {
+		os.Remove(tmp)
+		return fmt.Errorf("short copy: %d/%d", n, size)
+	}
+	return os.Rename(tmp, dst)
 }
 
 func (lc *LocalCache) Put(actionID string, outputID, body []byte) (string, error) {
@@ -530,6 +605,7 @@ type AsyncUploader struct {
 type uploadJob struct {
 	actionID string
 	body     []byte
+	file     string // file-backed job: stream from this path (body nil)
 }
 
 type UploadStats struct {
@@ -580,14 +656,25 @@ func (au *AsyncUploader) worker() {
 		if !ok {
 			continue
 		}
-		if err := au.backend.Put(job.actionID, job.body); err != nil {
+		var err error
+		var sent int64
+		if job.file != "" {
+			err = au.backend.PutFromFile(job.actionID, job.file)
+			if st, serr := os.Stat(job.file); serr == nil {
+				sent = st.Size()
+			}
+		} else {
+			err = au.backend.Put(job.actionID, job.body)
+			sent = int64(len(job.body))
+		}
+		if err != nil {
 			au.stats.mu.Lock()
 			au.stats.failed++
 			au.stats.mu.Unlock()
 		} else {
 			au.stats.mu.Lock()
 			au.stats.uploaded++
-			au.stats.bytesSent += int64(len(job.body))
+			au.stats.bytesSent += sent
 			au.stats.mu.Unlock()
 			if au.onUploaded != nil {
 				au.onUploaded(job.actionID) // release lease, best-effort
@@ -603,18 +690,18 @@ func (au *AsyncUploader) worker() {
 // is not on the compile critical path.
 func (au *AsyncUploader) QueuePri(actionID string, body []byte) {
 	select {
-	case au.pri <- uploadJob{actionID, body}:
+	case au.pri <- uploadJob{actionID: actionID, body: body}:
 		return
 	default:
 	}
 	select {
-	case au.ch <- uploadJob{actionID, body}:
+	case au.ch <- uploadJob{actionID: actionID, body: body}:
 		return
 	default:
 	}
 	atomic.AddInt64(&au.droppedPri, 1)
 	log.Printf("gocache-serve: WARNING both upload queues full, blocking on %s", shortID(actionID))
-	au.ch <- uploadJob{actionID, body} // block rather than lose the entry
+	au.ch <- uploadJob{actionID: actionID, body: body} // block rather than lose the entry
 }
 
 // QueueDepth reports pending upload jobs (both lanes).
@@ -629,16 +716,28 @@ func (au *AsyncUploader) Stats() (uploaded, failed, dropped int64) {
 	return au.stats.uploaded, au.stats.failed, atomic.LoadInt64(&au.dropped)
 }
 
+// QueueFile queues a file-backed upload (large entries streamed from
+// the local cache copy; no whole-body memory).
+func (au *AsyncUploader) QueueFile(actionID, path string) {
+	select {
+	case au.ch <- uploadJob{actionID: actionID, body: nil, file: path}:
+	default:
+		// Never drop (same rationale as Queue).
+		atomic.AddInt64(&au.dropped, 1)
+		au.ch <- uploadJob{actionID: actionID, body: nil, file: path}
+	}
+}
+
 func (au *AsyncUploader) Queue(actionID string, body []byte) {
 	select {
-	case au.ch <- uploadJob{actionID, body}:
+	case au.ch <- uploadJob{actionID: actionID, body: body}:
 	default:
 		// Never drop: the entry exists only on this runner's disk, and a
 		// lost upload permanently caps the cache's hit rate. Block instead
 		// (the local disk write already satisfied Go; the queue drains at
 		// ~4 workers x 50ms = 80/s).
 		atomic.AddInt64(&au.dropped, 1)
-		au.ch <- uploadJob{actionID, body}
+		au.ch <- uploadJob{actionID: actionID, body: body}
 	}
 }
 

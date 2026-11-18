@@ -1133,6 +1133,24 @@ func main() {
 				// Record produced entries too: a cold run has no hits, but
 				// its puts ARE the working set (they'll be hits next run).
 				manifest.Record(actionID, fmt.Sprintf("%x", req.OutputID))
+				if req.DiskPath != "" {
+					// Put-with-DiskPath: go wrote the output file itself —
+					// used for LARGE outputs (link results). Ingest the
+					// file into the cache (go may delete it right after
+					// this response) and queue a file-backed upload.
+					// Storing the empty body (the old behavior) is why
+					// link outputs never reached the blob, capping
+					// link-output sharing at a single runner.
+					path, err := local.PutFromFile(actionID, string(req.OutputID), req.DiskPath)
+					if err != nil {
+						resp.Err = fmt.Sprintf("local put-from-file: %v", err)
+						break
+					}
+					resp.DiskPath = path
+					resp.Size = req.BodySize
+					uploader.QueueFile(actionID, path)
+					break
+				}
 				path, err := local.Put(actionID, req.OutputID, req.Body)
 				if err != nil {
 					resp.Err = fmt.Sprintf("local put: %v", err)
