@@ -288,7 +288,7 @@ jobs:
             # Parallel platform builds: each sub-target writes a disjoint
             # bin/<os>_<arch>/ dir. Lower per-instance memory limit — 11
             # concurrent gocache-serve children share the runner.
-            GOCACHE_SERVE_GOMEMLIMIT=300MiB make -j11 cli
+            GOCACHE_SERVE_GOMEMLIMIT=300MiB make -j11 cli-build
             for plat in $ROXCTL_PLATFORMS; do
               tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
                 -cf "/tmp/rx-${plat}.tar" "bin/${plat}" &
