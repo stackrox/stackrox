@@ -47,7 +47,7 @@ export type NodeCVE = {
         low: { total: number };
         unknown: { total: number };
     };
-    topCVSS: number;
+    topCVSS: number | string;
     affectedNodeCount: number;
     firstDiscoveredInSystem: string;
     distroTuples: {

@@ -660,7 +660,7 @@ type Container struct {
 	Ports           []*PortConfig          `protobuf:"bytes,6,rep,name=ports,proto3" json:"ports,omitempty" policy:",ignore" search:"-"` // Policies use the port config on the top-level deployment. @gotags: policy:",ignore" search:"-"
 	Secrets         []*EmbeddedSecret      `protobuf:"bytes,7,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	Resources       *Resources             `protobuf:"bytes,8,opt,name=resources,proto3" json:"resources,omitempty"`
-	Name            string                 `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty" policy:"Container Name"` // @gotags: policy:"Container Name"
+	Name            string                 `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty" search:"Deployment Container Name,hidden" policy:"Container Name"` // @gotags: search:"Deployment Container Name,hidden" policy:"Container Name"
 	LivenessProbe   *LivenessProbe         `protobuf:"bytes,11,opt,name=liveness_probe,json=livenessProbe,proto3" json:"liveness_probe,omitempty"`
 	ReadinessProbe  *ReadinessProbe        `protobuf:"bytes,12,opt,name=readiness_probe,json=readinessProbe,proto3" json:"readiness_probe,omitempty"`
 	Type            ContainerType          `protobuf:"varint,13,opt,name=type,proto3,enum=storage.ContainerType" json:"type,omitempty" search:"Container Type" hash:"ignore" sensorhash:"ignore"` // @gotags: search:"Container Type" hash:"ignore" sensorhash:"ignore"
