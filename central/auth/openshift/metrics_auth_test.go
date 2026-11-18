@@ -143,7 +143,7 @@ func TestSeed_ExistingPermissionSetNameUsesExistingID(t *testing.T) {
 	ensureRole(t.Context(), roleDS, ensurePermissionSet(t.Context(), roleDS))
 }
 
-func TestSeed_MetricsPermissionSetNameCollisionDuringCreate(t *testing.T) {
+func TestSeed_OpenShiftPrometheusPermissionSetNameCollisionDuringCreate(t *testing.T) {
 	_, roleDS, _ := setupMocks(t)
 	const administratorID = "8320c699-af1b-4ef2-b7d1-04ec05ece046"
 	roleDS.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
