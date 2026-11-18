@@ -97,6 +97,18 @@ jobs:
           # from cache).
           echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONCURRENCY=24" >> "$GITHUB_ENV"
+          # Manifest + served-set + prefetch-bundle machinery (validated on
+          # the az-gocache branch): without GOCACHE_SERVE_MANIFEST, sessions
+          # record nothing, the next run prefetches nothing, and every
+          # entry fetches on-demand (~3-4 concurrent streams at ~6MB/s —
+          # measured as the dominant cost of Go-change builds).
+          manifest="$(printf '%s' "main-image-${{ matrix.branding }}-${{ matrix.arch }}" \
+            | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed 's/-\+/-/g; s/^-//; s/-$//')"
+          echo "GOCACHE_SERVE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+          # PR runs normally read manifests without writing (az-gocache
+          # policy); this branch writes to build up the working set.
+          echo "GOCACHE_SERVE_MANIFEST_WRITE=1" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
           # Two DECOUPLED identities:
