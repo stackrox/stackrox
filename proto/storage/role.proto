@@ -41,6 +41,18 @@ enum Access {
   READ_WRITE_ACCESS = 2;
 }
 
+// Constraints on access levels granted by a permission set.
+enum AccessConstraint {
+  ACCESS_CONSTRAINT_UNSPECIFIED = 0;
+  ACCESS_CONSTRAINT_READ = 1;
+}
+
+// Constraints on resource scopes granted by a permission set.
+enum ScopeConstraint {
+  SCOPE_CONSTRAINT_UNSPECIFIED = 0;
+  SCOPE_CONSTRAINT_CLUSTER_NAMESPACE = 1;
+}
+
 // This encodes a set of permissions for StackRox resources.
 message PermissionSet {
   // id is generated and cannot be changed.
@@ -53,6 +65,11 @@ message PermissionSet {
   map<string, Access> resource_to_access = 4;
 
   Traits traits = 5;
+
+  // UNSPECIFIED allows any access level; READ allows only read access.
+  AccessConstraint access_constraint = 6;
+  // UNSPECIFIED allows any resource; CLUSTER_NAMESPACE excludes global resources.
+  ScopeConstraint scope_constraint = 7;
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.

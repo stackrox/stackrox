@@ -19,6 +19,23 @@ func TestWrongConfigurationTypeTransformPermissionSet(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
+func TestTransformPermissionSetConstraints(t *testing.T) {
+	config := &declarativeconfig.PermissionSet{
+		Name:             "scoped-reader",
+		AccessConstraint: declarativeconfig.AccessConstraint(storage.AccessConstraint_ACCESS_CONSTRAINT_READ),
+		ScopeConstraint:  declarativeconfig.ScopeConstraint(storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE),
+		Resources: []declarativeconfig.ResourceWithAccess{{
+			Resource: "Deployment", Access: declarativeconfig.Access(storage.Access_READ_ACCESS),
+		}},
+	}
+	protos, err := newPermissionSetTransform().Transform(config)
+	require.NoError(t, err)
+	permissionSet, ok := protos[permissionSetType][0].(*storage.PermissionSet)
+	require.True(t, ok)
+	assert.Equal(t, storage.AccessConstraint_ACCESS_CONSTRAINT_READ, permissionSet.GetAccessConstraint())
+	assert.Equal(t, storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE, permissionSet.GetScopeConstraint())
+}
+
 func TestTransformPermissionSet(t *testing.T) {
 	permissionSet := &declarativeconfig.PermissionSet{
 		Name:        "some-permission-set",
