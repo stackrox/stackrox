@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -67,7 +68,7 @@ type manager struct {
 	lock                    sync.Mutex
 
 	deploymentObservationQueue queue.DeploymentObservationQueue
-	baselineFlushTicker        *time.Ticker
+	baselineFlushWorker        *periodicworker.Worker
 }
 
 func getNewObservationPeriodEnd() timestamp.MicroTS {
@@ -815,13 +816,6 @@ func (m *manager) flushBaselineQueue() {
 	}
 }
 
-func (m *manager) flushBaselineQueuePeriodically() {
-	defer m.baselineFlushTicker.Stop()
-	for range m.baselineFlushTicker.C {
-		m.flushBaselineQueue()
-	}
-}
-
 func (m *manager) getFlowStore(ctx context.Context, clusterID string) (networkFlowDS.FlowDataStore, error) {
 	flowStore, err := m.clusterFlows.GetFlowStore(ctx, clusterID)
 	if err != nil {
@@ -1105,6 +1099,13 @@ func (m *manager) enrichFlows(listDeployment *storage.ListDeployment, flows []*s
 	return append(flows, missingInfoFlows...)
 }
 
+// Stop gracefully shuts down the manager's background worker.
+func (m *manager) Stop() {
+	if m.baselineFlushWorker != nil {
+		m.baselineFlushWorker.Stop()
+	}
+}
+
 // New returns an initialized manager, and starts the manager's processing loop in the background.
 func New(
 	ds datastore.DataStore,
@@ -1125,7 +1126,6 @@ func New(
 		treeManager:                treeManager,
 		seenNetworkPolicies:        set.NewSet[uint64](),
 		deploymentObservationQueue: queue.New(),
-		baselineFlushTicker:        time.NewTicker(baselineFlushTickerDuration),
 		baselinesByDeploymentID:    make(map[string]*networkbaseline.BaselineInfo),
 	}
 	if err := m.initFromStore(); err != nil {
@@ -1133,7 +1133,14 @@ func New(
 	}
 
 	// Start the flush baseline process
-	go m.flushBaselineQueuePeriodically()
+	m.baselineFlushWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "networkbaseline_flush",
+		Interval:   baselineFlushTickerDuration,
+		RunOnStart: false,
+		Task:       func(ctx context.Context) error { m.flushBaselineQueue(); return nil },
+		Logger:     log,
+	})
+	m.baselineFlushWorker.Start()
 
 	return m, nil
 }
