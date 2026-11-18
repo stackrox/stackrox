@@ -454,25 +454,19 @@ const rules = {
                 'Replace className with status, size, iconSize, or isInline prop in Icon element';
             const hasClassName = (openingElement) =>
                 openingElement.attributes.some((attribute) => attribute.name?.name === 'className');
-            // Unwrap conditional and fragment children like {isAdded && <PlusIcon />} to find the Icon content elements.
-            const getContentElements = (child) => {
+            // Unwrap {cond && <X />}, ternaries, and fragments down to the elements they render.
+            const getRenderedElements = (child) => {
                 switch (child.type) {
                     case 'JSXElement':
                         return [child];
                     case 'JSXFragment':
-                        return child.children.flatMap(getContentElements);
+                        return child.children.flatMap(getRenderedElements);
                     case 'JSXExpressionContainer':
-                        return getContentElements(child.expression);
+                        return getRenderedElements(child.expression);
                     case 'LogicalExpression':
-                        return [
-                            ...getContentElements(child.left),
-                            ...getContentElements(child.right),
-                        ];
+                        return [child.left, child.right].flatMap(getRenderedElements);
                     case 'ConditionalExpression':
-                        return [
-                            ...getContentElements(child.consequent),
-                            ...getContentElements(child.alternate),
-                        ];
+                        return [child.consequent, child.alternate].flatMap(getRenderedElements);
                     default:
                         return [];
                 }
@@ -492,16 +486,14 @@ const rules = {
                     }
                 },
                 JSXElement(node) {
-                    if (iconLocalNames.has(node.openingElement.name.name)) {
-                        if (hasClassName(node.openingElement)) {
-                            context.report({ node: node.openingElement, message });
-                        }
-                        node.children.flatMap(getContentElements).forEach((element) => {
-                            if (hasClassName(element.openingElement)) {
-                                context.report({ node: element.openingElement, message });
-                            }
-                        });
+                    if (!iconLocalNames.has(node.openingElement.name.name)) {
+                        return;
                     }
+                    [node, ...node.children.flatMap(getRenderedElements)]
+                        .filter((element) => hasClassName(element.openingElement))
+                        .forEach((element) =>
+                            context.report({ node: element.openingElement, message })
+                        );
                 },
             };
         },
