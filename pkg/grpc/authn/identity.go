@@ -20,6 +20,7 @@ type Identity interface {
 	User() *storage.UserInfo
 	Permissions() map[string]storage.Access
 	Roles() []permissions.ResolvedRole
+	UserDescriptor() *permissions.UserDescriptor
 
 	Service() *storage.ServiceIdentity
 	Attributes() map[string][]string

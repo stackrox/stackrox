@@ -6,9 +6,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/central/jwt"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	roleMapper "github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -35,12 +38,16 @@ func Singleton() Backend {
 				sac.ResourceScopeKeys(resources.Integration)))
 
 		// Create and initialize source.
-		provider := tokenbased.NewTokenAuthProvider(
-			id,
-			apiToken,
-			apiToken,
+		options := []tokenbased.TokenAuthProviderOption{
 			tokenbased.WithRevocationLayer(tokens.NewRevocationLayer()),
-		)
+		}
+		if features.ACMAccessControlDelegation.Enabled() {
+			// API token identities carry their roles in the "role" attribute of
+			// the user descriptor, hence the role-name-based mapper.
+			options = append(options, tokenbased.WithRoleMapper(
+				roleMapper.NewRoleBasedMapper(roleDataStore.Singleton())))
+		}
+		provider := tokenbased.NewTokenAuthProvider(id, apiToken, apiToken, options...)
 		err := provider.InitFromStore(ctx, datastore.Singleton())
 		utils.Should(errors.Wrap(err, "could not initialize API tokens source"))
 
