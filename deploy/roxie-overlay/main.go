@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	flag "github.com/spf13/pflag"
 )
@@ -45,7 +48,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := run(overlayTag, *baseFlag, *collectorTag, *factTag); err != nil {
+	// Cancel in-flight lookups on Ctrl-C/SIGTERM instead of being killed mid-call.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := run(ctx, overlayTag, *baseFlag, *collectorTag, *factTag); err != nil {
 		log.Fatal("Error: ", err)
 	}
 }
@@ -58,12 +65,12 @@ type resolution struct {
 	onBase    []string
 }
 
-func run(overlayTag, baseTag, collectorTag, factTag string) error {
+func run(ctx context.Context, overlayTag, baseTag, collectorTag, factTag string) error {
 	// Lazily evaluated base tag.
 	base := NewBaseTag(imageRegistry, baseTag, overlayTag)
 
 	resolvers := imageResolvers(base, overlayTag, collectorTag, factTag)
-	res, err := resolveImages(resolvers, overlayTag)
+	res, err := resolveImages(ctx, resolvers, overlayTag)
 	if err != nil {
 		return err
 	}
@@ -100,7 +107,7 @@ func imageResolvers(base *BaseTag, overlayTag, collectorTag, factTag string) map
 	return resolvers
 }
 
-func resolveImages(resolvers map[image]TagResolver, overlayTag string) (resolution, error) {
+func resolveImages(ctx context.Context, resolvers map[image]TagResolver, overlayTag string) (resolution, error) {
 	res := resolution{tags: map[image]string{}}
 	// Iterate in image declaration order for a stable table order.
 	for img := range numImages {
@@ -108,7 +115,7 @@ func resolveImages(resolvers map[image]TagResolver, overlayTag string) (resoluti
 		if !ok {
 			continue
 		}
-		result, err := resolver.Resolve(img.name())
+		result, err := resolver.Resolve(ctx, img.name())
 		if err != nil {
 			return resolution{}, err
 		}

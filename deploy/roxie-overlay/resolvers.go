@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os/exec"
@@ -13,7 +14,7 @@ type ResolveResult struct {
 }
 
 type TagResolver interface {
-	Resolve(image string) (ResolveResult, error)
+	Resolve(ctx context.Context, image string) (ResolveResult, error)
 }
 
 // BaseTag resolves the base tag once and shares it. If baseTag is empty,
@@ -35,11 +36,11 @@ func (b *BaseTag) Peek() (string, bool) {
 	return b.tag, b.tag != ""
 }
 
-func (b *BaseTag) Get() (string, error) {
+func (b *BaseTag) Get(ctx context.Context) (string, error) {
 	if b.tag != "" {
 		return b.tag, nil
 	}
-	tag, err := autoResolveBase(b.registry, b.overlayTag)
+	tag, err := autoResolveBase(ctx, b.registry, b.overlayTag)
 	if err != nil {
 		return "", err
 	}
@@ -67,15 +68,15 @@ func NewBaseFallbackResolver(base *BaseTag, registry, overlayTag string, tagTran
 	}
 }
 
-func (r *baseFallbackResolver) locate(image, tag string) (imageLocation, error) {
+func (r *baseFallbackResolver) locate(ctx context.Context, image, tag string) (imageLocation, error) {
 	if r.tagTransformer != nil {
 		tag = r.tagTransformer(tag)
 	}
-	return locateImageRef(r.registry, image, tag)
+	return locateImageRef(ctx, r.registry, image, tag)
 }
 
-func (r *baseFallbackResolver) Resolve(image string) (ResolveResult, error) {
-	loc, err := r.locate(image, r.overlayTag)
+func (r *baseFallbackResolver) Resolve(ctx context.Context, image string) (ResolveResult, error) {
+	loc, err := r.locate(ctx, image, r.overlayTag)
 	if err != nil {
 		return ResolveResult{}, err
 	}
@@ -83,11 +84,11 @@ func (r *baseFallbackResolver) Resolve(image string) (ResolveResult, error) {
 		return ResolveResult{Tag: r.overlayTag, Location: loc}, nil
 	}
 
-	tag, err := r.base.Get()
+	tag, err := r.base.Get(ctx)
 	if err != nil {
 		return ResolveResult{}, err
 	}
-	loc, err = r.locate(image, tag)
+	loc, err = r.locate(ctx, image, tag)
 	if err != nil {
 		return ResolveResult{}, err
 	}
@@ -105,8 +106,8 @@ func NewFixedTagResolver(registry, tag string) TagResolver {
 	return &fixedTagResolver{registry: registry, tag: tag}
 }
 
-func (r *fixedTagResolver) Resolve(image string) (ResolveResult, error) {
-	loc, err := locateImageRef(r.registry, image, r.tag)
+func (r *fixedTagResolver) Resolve(ctx context.Context, image string) (ResolveResult, error) {
+	loc, err := locateImageRef(ctx, r.registry, image, r.tag)
 	if err != nil {
 		return ResolveResult{}, err
 	}
@@ -115,12 +116,12 @@ func (r *fixedTagResolver) Resolve(image string) (ResolveResult, error) {
 
 // autoResolveBase walks recent git history to find the newest commit
 // whose main image exists locally or in the remote registry.
-func autoResolveBase(registry, exclude string) (string, error) {
+func autoResolveBase(ctx context.Context, registry, exclude string) (string, error) {
 	log.Printf("auto-resolving base tag...")
 
 	// --first-parent stays on this branch's line and the one it branched from,
 	// skipping commits of merged-in side branches.
-	out, err := exec.Command("git", "log", "--first-parent", "--format=%h", "-50").Output()
+	out, err := exec.CommandContext(ctx, "git", "log", "--first-parent", "--format=%h", "-50").Output()
 	if err != nil {
 		return "", fmt.Errorf("git log: %w", err)
 	}
@@ -129,7 +130,7 @@ func autoResolveBase(registry, exclude string) (string, error) {
 		if sha == "" {
 			continue
 		}
-		tagOut, err := exec.Command("git", "describe", "--tags", "--abbrev=10", "--long", "--exclude", "*-nightly-*", sha).Output()
+		tagOut, err := exec.CommandContext(ctx, "git", "describe", "--tags", "--abbrev=10", "--long", "--exclude", "*-nightly-*", sha).Output()
 		if err != nil {
 			continue
 		}
@@ -137,7 +138,7 @@ func autoResolveBase(registry, exclude string) (string, error) {
 		if tag == "" || tag == exclude {
 			continue
 		}
-		loc, err := locateImageRef(registry, mainImage.name(), tag)
+		loc, err := locateImageRef(ctx, registry, mainImage.name(), tag)
 		if err != nil {
 			return "", err
 		}
