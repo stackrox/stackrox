@@ -2269,6 +2269,51 @@ func TestFilterNotAffectedVulnerabilities(t *testing.T) {
 			},
 		},
 		{
+			name: "ancestry package does not cover independently tracked RPM package",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"rpm-pkg":      {Id: "rpm-pkg", Kind: "binary", Name: "openssl"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+						"rhel-repo": {Id: "rhel-repo", Key: rhelRepositoryKey},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1", RepositoryIds: []string{"rhcc-repo"}}}},
+						"rpm-pkg":      {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1", RepositoryIds: []string{"rhel-repo"}}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"not-affected-vuln": {
+						Id:   "not-affected-vuln",
+						Name: "CVE-2024-24786",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"rpm-vuln": {
+						Id:      "rpm-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: redHatVEXUpdaterName,
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"rpm-pkg": {Values: []string{"rpm-vuln"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"not-affected-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"rpm-pkg": {"rpm-vuln"},
+			},
+		},
+		{
 			name: "alias matching - GHSA in vuln, CVE in not-affected aliases",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
