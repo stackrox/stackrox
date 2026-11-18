@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -122,9 +123,8 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 	nodeEnricher nodeEnricher.NodeEnricher, deployments deploymentDatastore.DataStore, images imageDatastore.DataStore,
 	imagesV2 imageV2Datastore.DataStore, nodes nodeDatastore.DataStore, risk manager.Manager,
 	watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration) *loopImpl {
-	return &loopImpl{
+	l := &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
-		deploymentRiskTickerDuration:  deploymentRiskDuration,
 
 		imageEnricher:   imageEnricher,
 		imageEnricherV2: imageEnricherV2,
@@ -143,7 +143,6 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		shortCircuitSig:   concurrency.NewSignal(),
 		stopSig:           concurrency.NewSignal(),
 		enrichmentStopped: concurrency.NewSignal(),
-		riskStopped:       concurrency.NewSignal(),
 
 		signatureVerificationSig: concurrency.NewSignal(),
 
@@ -151,6 +150,15 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		injectMessageTimeoutDur: env.ReprocessInjectMessageTimeout.DurationSetting(),
 	}
+
+	l.riskWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:     "reprocessor_risk",
+		Interval: deploymentRiskDuration,
+		Task:     l.riskTask,
+		Logger:   log,
+	})
+
+	return l
 }
 
 // imageReprocessingFunc represents the function used for image reprocessing. This enables us to specifically exclude
@@ -183,20 +191,16 @@ type loopImpl struct {
 
 	watchedImages watchedImageDataStore.DataStore
 
-	deployments                  deploymentDatastore.DataStore
-	deploymentRiskSet            set.StringSet
-	deploymentRiskLock           sync.Mutex
-	deploymentRiskTicker         *time.Ticker
-	deploymentRiskTickerDuration time.Duration
+	deployments        deploymentDatastore.DataStore
+	deploymentRiskSet  set.StringSet
+	deploymentRiskLock sync.Mutex
 
 	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
 
-	shortCircuitSig   concurrency.Signal
-	stopSig           concurrency.Signal
-	riskStopped       concurrency.Signal
-	enrichmentStopped concurrency.Signal
-
+	shortCircuitSig           concurrency.Signal
+	stopSig                   concurrency.Signal
+	enrichmentStopped         concurrency.Signal
 	signatureVerificationSig  concurrency.Signal
 	firstSignatureIntegration concurrency.Flag
 
@@ -205,6 +209,8 @@ type loopImpl struct {
 	connManager connection.Manager
 
 	injectMessageTimeoutDur time.Duration
+
+	riskWorker *periodicworker.Worker
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -216,17 +222,16 @@ func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
 // Start starts the enrich and detect loop.
 func (l *loopImpl) Start() {
 	l.enrichAndDetectTicker = time.NewTicker(l.enrichAndDetectTickerDuration)
-	l.deploymentRiskTicker = time.NewTicker(l.deploymentRiskTickerDuration)
+	l.riskWorker.Start()
 
-	go l.riskLoop()
 	go l.enrichLoop()
 }
 
 // Stop stops the enrich and detect loop.
 func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
-	l.riskStopped.Wait()
 	l.enrichmentStopped.Wait()
+	l.riskWorker.Stop()
 }
 
 func (l *loopImpl) ShortCircuit() {
@@ -1005,22 +1010,13 @@ func (l *loopImpl) enrichLoop() {
 	}
 }
 
-func (l *loopImpl) riskLoop() {
-	defer l.riskStopped.Signal()
-	defer l.deploymentRiskTicker.Stop()
-
-	for !l.stopSig.IsDone() {
-		select {
-		case <-l.stopSig.Done():
-			return
-		case <-l.deploymentRiskTicker.C:
-			concurrency.WithLock(&l.deploymentRiskLock, func() {
-				if l.deploymentRiskSet.Cardinality() > 0 {
-					// goroutine to ensure this is non-blocking.
-					go l.sendDeployments(l.deploymentRiskSet.AsSlice())
-					l.deploymentRiskSet.Clear()
-				}
-			})
+func (l *loopImpl) riskTask(ctx context.Context) error {
+	concurrency.WithLock(&l.deploymentRiskLock, func() {
+		if l.deploymentRiskSet.Cardinality() > 0 {
+			// goroutine to ensure this is non-blocking.
+			go l.sendDeployments(l.deploymentRiskSet.AsSlice())
+			l.deploymentRiskSet.Clear()
 		}
-	}
+	})
+	return nil
 }
