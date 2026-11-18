@@ -153,10 +153,7 @@ function ByNameSelector({
                                 <Button
                                     icon={
                                         <Icon>
-                                            <TrashIcon
-                                                className="pf-v6-u-flex-shrink-1"
-                                                style={{ cursor: 'pointer' }}
-                                            />
+                                            <TrashIcon style={{ cursor: 'pointer' }} />
                                         </Icon>
                                     }
                                     className="rule-selector-delete-value-button"
