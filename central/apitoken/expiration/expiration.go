@@ -10,9 +10,9 @@ import (
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -50,50 +50,36 @@ type TokenExpirationNotifier interface {
 }
 
 type expirationNotifierImpl struct {
-	store datastore.DataStore
-
-	stopper concurrency.Stopper
-
-	notificationTicker *time.Ticker
+	store  datastore.DataStore
+	worker *periodicworker.Worker
 
 	notifier TokenExpirationNotifier
 }
 
 func newExpirationNotifier(store datastore.DataStore) *expirationNotifierImpl {
-	return &expirationNotifierImpl{
+	n := &expirationNotifierImpl{
 		store:    store,
-		stopper:  concurrency.NewStopper(),
 		notifier: &logExpirationNotifier{},
 	}
+	n.worker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "apitoken_expiration_notifier",
+		Interval:   env.APITokenExpirationNotificationInterval.DurationSetting(),
+		RunOnStart: true,
+		Task: func(ctx context.Context) error {
+			n.checkAndNotifyExpirations()
+			return nil
+		},
+		Logger: log,
+	})
+	return n
 }
 
 func (n *expirationNotifierImpl) Start() {
-	n.notificationTicker = time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
-	go n.runExpirationNotifier()
+	n.worker.Start()
 }
 
 func (n *expirationNotifierImpl) Stop() {
-	n.stopper.Client().Stop()
-	err := n.stopper.Client().Stopped().Wait()
-	if err != nil {
-		log.Error("Error stopping API Token expiration loop: ", err)
-	}
-}
-
-func (n *expirationNotifierImpl) runExpirationNotifier() {
-	defer n.stopper.Flow().ReportStopped()
-
-	n.checkAndNotifyExpirations()
-
-	defer n.notificationTicker.Stop()
-	for {
-		select {
-		case <-n.notificationTicker.C:
-			n.checkAndNotifyExpirations()
-		case <-n.stopper.Flow().StopRequested():
-			return
-		}
-	}
+	n.worker.Stop()
 }
 
 func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
