@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/notifier"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/postgres"
 	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,6 +36,7 @@ type reportListener struct {
 	notifierProcessor   notifier.Processor
 	knownMu             sync.Mutex
 	knownReportIDs      set.StringSet
+	resyncWorker        *periodicworker.Worker
 }
 
 func newReportListener(
@@ -46,7 +48,7 @@ func newReportListener(
 	notifierStore notifierDS.DataStore,
 	notifierProcessor notifier.Processor,
 ) *reportListener {
-	return &reportListener{
+	r := &reportListener{
 		db:                  db,
 		scheduler:           scheduler,
 		reportConfigStore:   reportConfigStore,
@@ -56,6 +58,16 @@ func newReportListener(
 		notifierProcessor:   notifierProcessor,
 		knownReportIDs:      set.NewStringSet(),
 	}
+
+	r.resyncWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "report_listener_resync",
+		Interval:   time.Duration(env.CentralWorkerResyncIntervalMins.IntegerSetting()) * time.Minute,
+		Task:       r.resyncTask,
+		RunOnStart: false,
+		Logger:     log,
+	})
+
+	return r
 }
 
 func (r *reportListener) start(ctx context.Context) {
@@ -66,7 +78,7 @@ func (r *reportListener) start(ctx context.Context) {
 		pgNotify.ReportRequestCancelled,
 	)
 	go listener.Listen(ctx)
-	go r.periodicResync(ctx)
+	r.resyncWorker.Start()
 }
 
 func (r *reportListener) handleNotification(channel, payload string) {
@@ -151,18 +163,10 @@ func (r *reportListener) handleRequestCancelled(snapshotID string) {
 	}
 }
 
-func (r *reportListener) periodicResync(ctx context.Context) {
-	ticker := time.NewTicker(time.Duration(env.CentralWorkerResyncIntervalMins.IntegerSetting()) * time.Minute)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			r.resyncConfigs()
-			r.resyncPendingRequests()
-		}
-	}
+func (r *reportListener) resyncTask(ctx context.Context) error {
+	r.resyncConfigs()
+	r.resyncPendingRequests()
+	return nil
 }
 
 func (r *reportListener) resyncConfigs() {
