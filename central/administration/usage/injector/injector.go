@@ -4,7 +4,6 @@ import (
 	"time"
 
 	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -18,12 +17,8 @@ type Injector interface {
 
 // NewInjector creates an injector instance.
 func NewInjector(ds datastore.DataStore) Injector {
-	ticker := time.NewTicker(aggregationPeriod)
 	return &injectorImpl{
-		tickChan:       ticker.C,
-		onStop:         ticker.Stop,
 		ds:             ds,
-		stop:           concurrency.NewSignal(),
 		gatherersGroup: &sync.WaitGroup{},
 	}
 }

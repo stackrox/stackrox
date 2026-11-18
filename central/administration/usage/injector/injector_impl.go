@@ -2,12 +2,11 @@ package injector
 
 import (
 	"context"
-	"time"
 
 	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -21,12 +20,8 @@ var (
 )
 
 type injectorImpl struct {
-	// injector gathers data on tick from this channel.
-	tickChan <-chan time.Time
-	// onStop is called after injector has stopped the gathering loop.
-	onStop         func()
 	ds             datastore.DataStore
-	stop           concurrency.Signal
+	worker         *periodicworker.Worker
 	gatherersGroup *sync.WaitGroup
 }
 
@@ -42,40 +37,35 @@ func (i *injectorImpl) gather(ctx context.Context) {
 	}
 }
 
-func (i *injectorImpl) gatherLoop() {
-	ctx, cancel := context.WithCancel(context.Background())
-	// There will most probably be no data on startup: sensors won't have time
-	// to report.
-	var wg sync.WaitGroup
-	for {
-		select {
-		case <-i.tickChan:
-			wg.Go(func() {
-				i.gather(ctx)
-			})
-		case <-i.stop.Done():
-			cancel()
-			wg.Wait()
-			log.Info("Usage reporting stopped")
-			i.stop.Reset()
-			return
-		}
-	}
-}
-
 // Start initiates periodic data injections to the database with the
 // collected usage.
 func (i *injectorImpl) Start() {
+	i.worker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "administration_usage_gather",
+		Interval:   aggregationPeriod,
+		RunOnStart: false,
+		Task: func(ctx context.Context) error {
+			var wg sync.WaitGroup
+			wg.Go(func() {
+				i.gather(ctx)
+			})
+			wg.Wait()
+			return nil
+		},
+		Logger: log,
+	})
+
 	i.gatherersGroup.Go(func() {
-		i.gatherLoop()
+		i.worker.Start()
+		<-i.worker.Stopped().Done()
+		log.Info("Usage reporting stopped")
 	})
 }
 
 // Stop stops the scheduled timer and wait for the gatherer to stop.
 func (i *injectorImpl) Stop() {
-	i.stop.Signal()
-	i.gatherersGroup.Wait()
-	if i.onStop != nil {
-		i.onStop()
+	if i.worker != nil {
+		i.worker.Stop()
 	}
+	i.gatherersGroup.Wait()
 }

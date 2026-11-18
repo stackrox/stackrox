@@ -3,17 +3,16 @@ package gatherer
 import (
 	"bytes"
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -44,7 +43,7 @@ var (
 
 type defaultExtSrcsGathererImpl struct {
 	networkEntityDS entityDataStore.EntityDataStore
-	stopSig         concurrency.Signal
+	worker          *periodicworker.Worker
 	blobStore       blobstore.Datastore
 	currentChecksum []byte
 	mutex           sync.RWMutex
@@ -59,39 +58,40 @@ func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataSto
 }
 
 func (g *defaultExtSrcsGathererImpl) Start() {
-	go func() {
-		if err := g.loadBundledExternalSrcs(g.blobStore, g.networkEntityDS); err != nil {
-			log.Errorf("UNEXPECTED: Failed to load pre-bundled external networks data: %v", err)
-		}
-		go g.run()
-	}()
-}
+	if err := g.loadBundledExternalSrcs(g.blobStore, g.networkEntityDS); err != nil {
+		log.Errorf("UNEXPECTED: Failed to load pre-bundled external networks data: %v", err)
+	}
 
-func (g *defaultExtSrcsGathererImpl) run() {
-	// In offline mode, don't try to reconcile.
+	// In offline mode, don't start the worker.
 	if env.OfflineModeEnv.BooleanSetting() {
 		return
 	}
-	ticker := time.NewTicker(env.ExtNetworkSrcsGatherInterval.DurationSetting())
-	defer ticker.Stop()
 
-	for {
-		select {
-		case <-g.stopSig.Done():
-			return
-		case <-ticker.C:
+	g.worker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "networkgraph_external_srcs_gather",
+		Interval:   env.ExtNetworkSrcsGatherInterval.DurationSetting(),
+		RunOnStart: false,
+		Task: func(ctx context.Context) error {
 			if err := g.reconcileDefaultExternalSrcs(); err != nil {
 				log.Errorf("Failed to update default external networks: %v", err)
 			}
-		}
-	}
+			return nil
+		},
+		Logger: log,
+	})
+	g.worker.Start()
 }
 
 func (g *defaultExtSrcsGathererImpl) Stop() {
-	g.stopSig.Signal()
+	if g.worker != nil {
+		g.worker.Stop()
+	}
 }
 
 func (g *defaultExtSrcsGathererImpl) Update() error {
+	if g.worker != nil {
+		g.worker.Kick()
+	}
 	return g.reconcileDefaultExternalSrcs()
 }
 
