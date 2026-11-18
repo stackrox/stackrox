@@ -48,6 +48,6 @@ export DOCKER_HOST="unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')
 | Flag | Default | Description |
 |---|---|---|
 | `--base <tag>` | auto-resolved | base tag for images missing at the overlay tag |
-| `--registry <registry>` | `quay.io/stackrox-io` | registry to look up images in (private registries use your local docker/podman login credentials) |
+| `--registry <registry>` | `quay.io/stackrox-io` | registry to look up images in (private registries: credentials come from `~/.docker/config.json` if it exists, otherwise from podman's `auth.json`) |
 | `--collector-tag <tag>` | operator default | collector tag to deploy |
 | `--fact-tag <tag>` | operator default | fact tag to deploy |
