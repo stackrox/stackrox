@@ -1,6 +1,6 @@
 ARG PG_VERSION=16
 
-FROM registry.access.redhat.com/ubi9:latest@sha256:87f66688da4e206d5a1877088626c542288a5ccd97898cf363b588d57817e6be AS ubi-base
+FROM registry.access.redhat.com/ubi9:latest@sha256:1e9f0ed9fceafb40878bc1705ff124aa150e3fed873f18c42cdc2dded319e0a8 AS ubi-base
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
 FROM ubi-base AS downloads
