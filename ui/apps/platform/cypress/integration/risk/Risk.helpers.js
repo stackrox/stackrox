@@ -1,4 +1,3 @@
-import { graphql } from '../../constants/apiEndpoints';
 import { visitFromHorizontalNav } from '../../helpers/nav';
 import { interactAndVisitNetworkGraphWithDeploymentSelected } from '../../helpers/networkGraph';
 import { visit } from '../../helpers/visit';
@@ -9,8 +8,9 @@ const basePath = '/main/risk/workloads';
 
 export const deploymentswithprocessinfoAlias = 'deploymentswithprocessinfo';
 export const deploymentscountAlias = 'deploymentscount';
-export const searchOptionsAlias = 'searchOptions';
 
+// The compound search filter uses a static curated config, so the page no longer issues the
+// searchOptions GraphQL query that the legacy SearchFilterInput relied on.
 const routeMatcherMap = {
     [deploymentswithprocessinfoAlias]: {
         method: 'GET',
@@ -19,10 +19,6 @@ const routeMatcherMap = {
     [deploymentscountAlias]: {
         method: 'GET',
         url: '/v1/deploymentscount*',
-    },
-    [searchOptionsAlias]: {
-        method: 'POST',
-        url: graphql('searchOptions'),
     },
 };
 

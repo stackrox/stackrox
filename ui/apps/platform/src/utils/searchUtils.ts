@@ -486,6 +486,18 @@ export function isKeyValueSearchTerm(searchTerm: string): boolean {
     return keyValueSearchOptions.has(searchTerm.toLowerCase());
 }
 
+/*
+ Numeric search terms. The search API rejects string modifiers (regex "r/" and exact-match
+ quotes) on numeric fields with "modifiers not supported for numeric query: [...]", so
+ autocomplete must send their values unmodified. Add other numeric fields here as they are
+ surfaced through the compound search filter.
+*/
+const numericSearchOptions: Set<string> = new Set(['Port'].map((label) => label.toLowerCase()));
+
+export function isNumericSearchTerm(searchTerm: string): boolean {
+    return numericSearchOptions.has(searchTerm.toLowerCase());
+}
+
 export function isQuotedString(value: string): boolean {
     return value.startsWith('"') && value.endsWith('"') && value.length >= 2;
 }
