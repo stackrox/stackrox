@@ -8,9 +8,9 @@ import (
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -55,60 +55,58 @@ func NewLoop(cveStores ...vulnsStore) CVEUnsuppressLoop {
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
 func newLoopWithDuration(tickerDuration time.Duration, cveStores ...vulnsStore) CVEUnsuppressLoop {
-	return &cveUnsuppressLoopImpl{
-		cveStores:                 cveStores,
-		cveSuppressTickerDuration: tickerDuration,
-
-		stopper: concurrency.NewStopper(),
+	l := &cveUnsuppressLoopImpl{
+		cveStores: cveStores,
 	}
+	l.worker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "cve_unsuppress",
+		Interval:   tickerDuration,
+		RunOnStart: true,
+		Task: func(ctx context.Context) error {
+			l.unsuppressCVEsWithExpiredSuppressState()
+			return nil
+		},
+		Logger: log,
+	})
+	return l
 }
 
 type cveUnsuppressLoopImpl struct {
-	cveSuppressTickerDuration time.Duration
-	cveSuppressTicker         *time.Ticker
-
 	cveStores []vulnsStore
-
-	stopper concurrency.Stopper
+	worker    *periodicworker.Worker
 }
 
 // Start starts the CVE unsuppress loop.
 func (l *cveUnsuppressLoopImpl) Start() {
-	l.cveSuppressTicker = time.NewTicker(l.cveSuppressTickerDuration)
-	go l.loop()
+	l.worker.Start()
 }
 
 // Stop stops the CVE unsuppress loop.
 func (l *cveUnsuppressLoopImpl) Stop() {
-	l.stopper.Client().Stop()
-	_ = l.stopper.Client().Stopped().Wait()
+	l.worker.Stop()
 }
 
 func (l *cveUnsuppressLoopImpl) unsuppressCVEsWithExpiredSuppressState() {
-	select {
-	case <-l.stopper.Flow().StopRequested():
-		return
-	default:
-	}
+	go func() {
+		totalUnsuppressedCVEs := 0
+		for _, cveStore := range l.cveStores {
+			cves, err := getCVEsWithExpiredSuppressState(cveStore)
+			if err != nil {
+				log.Errorf("error retrieving CVEs for reprocessing: %v", err)
+				continue
+			}
+			if len(cves) == 0 {
+				continue
+			}
 
-	totalUnsuppressedCVEs := 0
-	for _, cveStore := range l.cveStores {
-		cves, err := getCVEsWithExpiredSuppressState(cveStore)
-		if err != nil {
-			log.Errorf("error retrieving CVEs for reprocessing: %v", err)
-			continue
+			if err := cveStore.Unsuppress(reprocessorCtx, cves...); err != nil {
+				log.Errorf("error unsuppressing CVEs %+s: %v", cves, err)
+				continue
+			}
+			totalUnsuppressedCVEs += len(cves)
 		}
-		if len(cves) == 0 {
-			continue
-		}
-
-		if err := cveStore.Unsuppress(reprocessorCtx, cves...); err != nil {
-			log.Errorf("error unsuppressing CVEs %+s: %v", cves, err)
-			continue
-		}
-		totalUnsuppressedCVEs += len(cves)
-	}
-	log.Infof("Successfully unsuppressed %d CVEs", totalUnsuppressedCVEs)
+		log.Infof("Successfully unsuppressed %d CVEs", totalUnsuppressedCVEs)
+	}()
 }
 
 func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
@@ -127,19 +125,4 @@ func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
 		cves = append(cves, cve)
 	}
 	return cves, nil
-}
-
-func (l *cveUnsuppressLoopImpl) loop() {
-	defer l.stopper.Flow().ReportStopped()
-	defer l.cveSuppressTicker.Stop()
-
-	go l.unsuppressCVEsWithExpiredSuppressState()
-	for {
-		select {
-		case <-l.stopper.Flow().StopRequested():
-			return
-		case <-l.cveSuppressTicker.C:
-			l.unsuppressCVEsWithExpiredSuppressState()
-		}
-	}
 }
