@@ -41,7 +41,7 @@ env:
   # Bump when the build RECIPE changes (step logic, flags, transform).
   # Receipts cover source state AND recipe; without this, a recipe fix
   # would silently keep serving images built by the old recipe.
-  WORKFLOW_RECIPE: v6
+  WORKFLOW_RECIPE: v7
 
 jobs:
   main-image:
@@ -138,15 +138,20 @@ jobs:
             COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
               --jq .ahead_by 2>/dev/null || echo 0)"
             IMAGE_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
-            STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')"
+            # Development-KIND stable stamp: a bare "5.1.0" parses as
+            # ReleaseKind in pkg/version/kind.go — dev images would
+            # masquerade as releases (upgrade/DB-restore gates act on
+            # it; e2e TestVersions catches the inconsistency). The
+            # -0-g<fixed hash> form is stable (no VCS info) AND dev-kind.
+            STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')-0-g0000000000"
           else
             IMAGE_TAG_VAL="0.0.0-g${SHORTSHA}"
-            STABLE_VERSION="0.0.0"
+            STABLE_VERSION="0.0.0-0-g0000000000"
           fi
           echo "IMAGE_TAG=${IMAGE_TAG_VAL}" >> "$GITHUB_ENV"
           echo "image_tag=${IMAGE_TAG_VAL}" >> "$GITHUB_OUTPUT"
           echo "BUILD_TAG=${STABLE_VERSION}" >> "$GITHUB_ENV"
-          echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"
+          echo "SHORTCOMMIT=0000000000" >> "$GITHUB_ENV"
           echo "stamps: image=${IMAGE_TAG_VAL} embedded=${STABLE_VERSION} (stable)"
 
       # =================================================================
@@ -564,9 +569,9 @@ jobs:
           # train only — keeps link ActionIDs stable across commits).
           LATEST_TAG="$(git ls-remote --tags --refs origin \
             | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
-          STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')"
+          STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')-0-g0000000000"
           echo "BUILD_TAG=${STABLE_VERSION:-0.0.0}" >> "$GITHUB_ENV"
-          echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"
+          echo "SHORTCOMMIT=0000000000" >> "$GITHUB_ENV"
           GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
             | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
           echo "GO_HASH=${GO_HASH}" >> "$GITHUB_ENV"
