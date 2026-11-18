@@ -596,7 +596,7 @@ jobs:
           # sweep run (netpol-analyzer@v1.4.4).
           VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
           if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
-            tar -xzf /tmp/vendor.tar.gz
+            tar -xf /tmp/vendor.tar.gz
           else
             unset GOCACHEPROG; go mod vendor; export GOCACHEPROG="${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve"
             tar -czf /tmp/vendor.tar.gz vendor/
