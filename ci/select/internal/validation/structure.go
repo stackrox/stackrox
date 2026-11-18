@@ -2,7 +2,7 @@ package validation
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/ci/select/internal/rules"
@@ -97,6 +97,6 @@ func sortedKeys(byJob map[string][]string) []string {
 	for job := range byJob {
 		keys = append(keys, job)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return keys
 }
