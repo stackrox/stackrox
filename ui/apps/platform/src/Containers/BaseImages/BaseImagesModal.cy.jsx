@@ -26,8 +26,8 @@ function TestWrapper({ children }) {
     );
 }
 
-// Drives the modal like BaseImagesPage does: the modal stays mounted while it is closed, and the
-// parent closes it from onSuccess without going through the modal's own close handler.
+// A host that keeps the modal mounted while it is closed, and closes it from onSuccess without
+// going through the modal's own close handler. BaseImagesPage unmounts the modal instead.
 function BaseImagesModalHost({ baseImageToEdit = null, onSuccess }) {
     const [isOpen, setIsOpen] = useState(true);
 
@@ -37,8 +37,8 @@ function BaseImagesModalHost({ baseImageToEdit = null, onSuccess }) {
             <BaseImagesModal
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
-                onSuccess={(successMessage) => {
-                    onSuccess(successMessage);
+                onSuccess={() => {
+                    onSuccess();
                     setIsOpen(false);
                 }}
                 baseImageToEdit={baseImageToEdit}
@@ -166,10 +166,7 @@ describe('BaseImagesModal', () => {
             cy.findByRole('button', { name: 'Save' }).click();
 
             cy.wait('@addBaseImage');
-            cy.get('@onSuccess').should(
-                'have.been.calledOnceWithExactly',
-                'Base image successfully added'
-            );
+            cy.get('@onSuccess').should('have.been.calledOnce');
             cy.contains('Base image successfully added').should('not.exist');
         });
 
@@ -228,10 +225,7 @@ describe('BaseImagesModal', () => {
             cy.findByRole('button', { name: 'Save' }).click();
 
             cy.wait('@updateBaseImage');
-            cy.get('@onSuccess').should(
-                'have.been.calledOnceWithExactly',
-                'Base image tag pattern successfully updated'
-            );
+            cy.get('@onSuccess').should('have.been.calledOnce');
             cy.findByRole('dialog').should('not.exist');
 
             cy.findByRole('button', { name: 'Open modal' }).click();

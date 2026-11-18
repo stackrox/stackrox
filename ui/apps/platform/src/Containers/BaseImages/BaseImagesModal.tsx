@@ -52,8 +52,7 @@ function categorizeErrorType(error: unknown): string {
 export type BaseImagesModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    /** Called after a successful save with a message for the parent to report, e.g. as a toast. */
-    onSuccess: (successMessage: string) => void;
+    onSuccess: () => void;
     baseImageToEdit?: BaseImageReference | null;
 };
 
@@ -173,7 +172,7 @@ function BaseImagesModal({
                         // handleModalClose does not run when the parent closes the modal after
                         // a save, so reset the request here too for the next open to start clean.
                         addMutation.reset();
-                        onSuccess('Base image successfully added');
+                        onSuccess();
                     },
                     onError: (error) => {
                         analyticsTrack({
@@ -205,7 +204,7 @@ function BaseImagesModal({
                     onSuccess: () => {
                         editFormik.resetForm();
                         updateMutation.reset();
-                        onSuccess('Base image tag pattern successfully updated');
+                        onSuccess();
                     },
                     onSettled: () => setSubmitting(false),
                 }

@@ -35,10 +35,6 @@ function mountPage() {
     );
 }
 
-function getToastTitle(title) {
-    return cy.get('ul.pf-v6-c-alert-group.pf-m-toast .pf-v6-c-alert__title').contains(title);
-}
-
 function openRowAction(actionName) {
     cy.findByRole('button', { name: 'Kebab toggle' }).click();
     cy.findByRole('menuitem', { name: actionName }).click();
@@ -52,7 +48,7 @@ describe(Cypress.spec.relative, () => {
         }).as('getBaseImages');
     });
 
-    it('should show a toast on the page after adding a base image', () => {
+    it('should reopen the add modal clean after adding a base image', () => {
         cy.intercept('POST', '/v2/baseimages', {
             statusCode: 200,
             body: { baseImageReference: { ...baseImage, id: 'new-base-image-id' } },
@@ -66,11 +62,17 @@ describe(Cypress.spec.relative, () => {
         cy.findByRole('button', { name: 'Save' }).click();
 
         cy.wait('@addBaseImage');
+        cy.wait('@getBaseImages'); // the table refetches after the save
         cy.findByRole('dialog').should('not.exist');
-        getToastTitle('Base image successfully added').should('be.visible');
+        cy.findByText('Base image successfully added').should('not.exist');
+
+        cy.findByRole('button', { name: 'Add base image' }).click();
+        cy.findByRole('dialog').should('be.visible');
+        cy.get('input#baseImagePath').should('have.value', '');
+        cy.findByText('Base image successfully added').should('not.exist');
     });
 
-    it('should show a toast on the page after updating a tag pattern', () => {
+    it('should reopen the edit modal clean after updating a tag pattern', () => {
         cy.intercept('PUT', '/v2/baseimages/base-image-id', { statusCode: 200, body: {} }).as(
             'updateBaseImage'
         );
@@ -81,28 +83,44 @@ describe(Cypress.spec.relative, () => {
         openRowAction('Edit tag pattern');
         cy.get('input#baseImageTagPattern').clear();
         cy.get('input#baseImageTagPattern').type('24.*');
+        cy.intercept('GET', '/v2/baseimages', {
+            statusCode: 200,
+            body: { baseImageReferences: [{ ...baseImage, baseImageTagPattern: '24.*' }] },
+        }).as('getUpdatedBaseImages');
         cy.findByRole('button', { name: 'Save' }).click();
 
         cy.wait('@updateBaseImage');
+        cy.wait('@getUpdatedBaseImages');
         cy.findByRole('dialog').should('not.exist');
-        getToastTitle('Base image tag pattern successfully updated').should('be.visible');
+        cy.findByText('Base image tag pattern successfully updated').should('not.exist');
+
+        openRowAction('Edit tag pattern');
+        cy.findByRole('dialog').should('be.visible');
+        cy.get('input#baseImageTagPattern').should('have.value', '24.*');
+        cy.findByText('Base image tag pattern successfully updated').should('not.exist');
     });
 
-    it('should show a toast on the page after deleting a base image', () => {
-        cy.intercept('DELETE', '/v2/baseimages/base-image-id', { statusCode: 200, body: {} }).as(
-            'deleteBaseImage'
-        );
+    it('should reopen the add modal without the error from a failed save', () => {
+        cy.intercept('POST', '/v2/baseimages', {
+            statusCode: 500,
+            body: { message: 'Internal server error' },
+        }).as('addBaseImageError');
 
         mountPage();
         cy.wait('@getBaseImages');
 
-        openRowAction('Delete base image');
-        cy.findByRole('dialog').within(() => {
-            cy.findByRole('button', { name: 'Delete' }).click();
-        });
+        cy.findByRole('button', { name: 'Add base image' }).click();
+        cy.get('input#baseImagePath').type('docker.io/library/alpine:3.18');
+        cy.findByRole('button', { name: 'Save' }).click();
 
-        cy.wait('@deleteBaseImage');
+        cy.wait('@addBaseImageError');
+        cy.findByText('Error adding base image').should('be.visible');
+        cy.findByRole('button', { name: 'Cancel' }).click();
         cy.findByRole('dialog').should('not.exist');
-        getToastTitle('Base image successfully deleted').should('be.visible');
+
+        cy.findByRole('button', { name: 'Add base image' }).click();
+        cy.findByRole('dialog').should('be.visible');
+        cy.get('input#baseImagePath').should('have.value', '');
+        cy.findByText('Error adding base image').should('not.exist');
     });
 });

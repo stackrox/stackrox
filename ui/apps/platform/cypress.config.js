@@ -83,8 +83,9 @@ module.exports = {
             viteConfig: {
                 configFile: path.resolve(__dirname, 'vite.config.js'),
                 optimizeDeps: {
-                    // Avoid rebuilding dependencies while loading the VM component spec.
-                    include: ['lodash/findIndex', 'react-feather'],
+                    // Avoid rebuilding dependencies while loading the VM component spec
+                    // and the base images page spec (react-helmet, via PageTitle).
+                    include: ['lodash/findIndex', 'react-feather', 'react-helmet'],
                 },
             },
         },
