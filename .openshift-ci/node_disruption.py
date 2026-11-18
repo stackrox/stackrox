@@ -67,9 +67,9 @@ def write_report(directory, expected, errors, cancelled=False):
         ET.SubElement(case, "failure").text = detail
     elif skipped:
         ET.SubElement(case, "skipped")
-    temporary = directory / "node-monitor.xml.tmp"
+    temporary = directory / "junit-node-monitor.xml.tmp"
     temporary.write_text(ET.tostring(suite, encoding="unicode", xml_declaration=True), encoding="utf-8")
-    temporary.replace(directory / "node-monitor.xml")
+    temporary.replace(directory / "junit-node-monitor.xml")
     return failed
 
 
