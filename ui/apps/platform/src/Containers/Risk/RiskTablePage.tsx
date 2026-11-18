@@ -1,21 +1,19 @@
 import { useMemo } from 'react';
-import { useQuery } from '@apollo/client';
 import { Flex, PageSection } from '@patternfly/react-core';
 
-import { searchCategories } from 'constants/entityTypes';
-import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
 
-import SearchFilterInput from 'Components/SearchFilterInput';
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import RiskTablePanel, { sortFields, defaultSortOption } from './RiskTablePanel';
 import RiskPageHeader from './RiskPageHeader';
+import RiskTableSearchFilter from './RiskTableSearchFilter';
 
 const DEFAULT_RISK_PAGE_SIZE = 20;
 
@@ -55,20 +53,15 @@ function RiskTablePage() {
         [urlSearch.searchFilter, additionalContextFilter]
     );
 
-    const searchQueryOptions = {
-        variables: {
-            categories: [searchCategories.DEPLOYMENT],
-        },
+    const onSearch: OnSearchCallback = (payload) => {
+        urlSearch.setSearchFilter(updateSearchFilter(urlSearch.searchFilter, payload));
+        urlPagination.setPage(1);
     };
-    const { data: searchData } = useQuery<{
-        searchOptions: string[];
-    }>(SEARCH_OPTIONS_QUERY, searchQueryOptions);
-    const searchOptions = searchData?.searchOptions ?? [];
-    const filteredOptions = searchOptions.filter(
-        (option) => option !== 'Platform Component' && option !== 'Orchestrator Component'
-    );
 
-    const autoCompleteCategory = searchCategories.DEPLOYMENT;
+    const onFilterChange = (newSearchFilter: SearchFilter) => {
+        urlSearch.setSearchFilter(newSearchFilter);
+        urlPagination.setPage(1);
+    };
 
     return (
         <>
@@ -76,28 +69,17 @@ function RiskTablePage() {
             {/* Nested PageSection here for visual consistency **as-is**. Once we move to Patternfly 6, we can remove this and clean up */}
             <PageSection>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
-                    <SearchFilterInput
-                        className=""
+                    <RiskTableSearchFilter
                         searchFilter={urlSearch.searchFilter}
-                        searchOptions={filteredOptions}
-                        searchCategory={autoCompleteCategory}
-                        placeholder="Filter deployments"
-                        handleChangeSearchFilter={(newSearchFilter) => {
-                            urlSearch.setSearchFilter(newSearchFilter);
-                            urlPagination.setPage(1);
-                        }}
-                        autocompleteQueryPrefix={getRequestQueryStringForSearchFilter(
-                            additionalContextFilter
-                        )}
+                        onSearch={onSearch}
+                        onFilterChange={onFilterChange}
+                        additionalContextFilter={additionalContextFilter}
                     />
                     <RiskTablePanel
                         sortOption={urlSort.sortOption}
                         getSortParams={urlSort.getSortParams}
                         searchFilter={mergedSearchFilter}
-                        onSearchFilterChange={(newSearchFilter) => {
-                            urlSearch.setSearchFilter(newSearchFilter);
-                            urlPagination.setPage(1);
-                        }}
+                        onSearchFilterChange={onFilterChange}
                         pagination={urlPagination}
                     />
                 </Flex>

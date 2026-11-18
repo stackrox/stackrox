@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
@@ -7,6 +8,7 @@ import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getDateTime } from 'utils/dateUtils';
 import { getTableUIState } from 'utils/getTableUIState';
+import { applyRegexSearchModifiers } from 'utils/searchUtils';
 
 import { DeploymentNameColumn } from './DeploymentNameColumn';
 import useDeploymentsCount from './useDeploymentsCount';
@@ -38,15 +40,25 @@ function RiskTablePanel({
 }: RiskTablePanelProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
 
+    // Apply regex/exact-match and key=value label formatting expected by the search API, matching
+    // the other compound search filter pages. Without this, an autocomplete-selected label such as
+    // "app=visa-processor" reaches the backend quoted as a single token and never matches.
+    // Memoized because applyRegexSearchModifiers clones into a new object; an unstable reference
+    // would re-trigger the data-fetching hooks every render (infinite loading loop).
+    const requestSearchFilter = useMemo(
+        () => applyRegexSearchModifiers(searchFilter),
+        [searchFilter]
+    );
+
     const { data, error, isLoading } = useDeploymentsWithProcessInfo({
-        searchFilter,
+        searchFilter: requestSearchFilter,
         sortOption,
         page,
         perPage,
     });
 
     const { data: deploymentCount = 0 } = useDeploymentsCount({
-        searchFilter,
+        searchFilter: requestSearchFilter,
     });
 
     const tableState = getTableUIState({ isLoading, data, error, searchFilter });
