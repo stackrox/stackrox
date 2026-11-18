@@ -26,6 +26,13 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded PR builds (rapid pushes stack 12-job runs otherwise).
+# workflow_dispatch runs get a unique group so validation dispatches are
+# never cancelled by a push.
+concurrency:
+  group: build-${{ github.event_name == 'workflow_dispatch' && format('dispatch-{0}', github.run_id) || github.event.pull_request.head.ref || github.ref }}
+  cancel-in-progress: true
+
 env:
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
