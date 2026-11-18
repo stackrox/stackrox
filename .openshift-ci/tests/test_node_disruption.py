@@ -1,7 +1,6 @@
 """Cluster-free tests for node-name polling and nongroovy integration."""
 
 import json
-import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -45,6 +44,18 @@ def kubectl_responses(responses):
 
 
 class CollectionTest(unittest.TestCase):
+    def test_report_is_discoverable_by_prow(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "node-names.txt").write_text("a\n", encoding="utf-8")
+            monitor.write_report(root, 1, [])
+            report = root / "junit-node-monitor.xml"
+            self.assertTrue(report.is_file())
+            self.assertRegex(report.name, r".*junit.*\.xml")
+            self.assertEqual(ET.parse(report).getroot().get("failures"), "0")
+            self.assertFalse((root / "junit-node-monitor.xml.tmp").exists())
+            self.assertFalse((root / "node-monitor.xml").exists())
+
     def test_expected_count(self):
         cases = {
             "unset": ({}, None),
@@ -71,7 +82,7 @@ class CollectionTest(unittest.TestCase):
                 directory = Path(directory)
                 (directory / "node-names.txt").write_text("a\n")
                 monitor.write_report(directory, 1, errors, cancelled)
-                case = ET.parse(directory / "node-monitor.xml").find(".//testcase")
+                case = ET.parse(directory / "junit-node-monitor.xml").find(".//testcase")
                 self.assertEqual([child.tag for child in case], [outcome] if outcome else [])
                 log.assert_called_once()
                 self.assertIn("Expected 1 nodes; observed 1 unique names: a", log.call_args.args[0])
@@ -101,7 +112,7 @@ class CollectionTest(unittest.TestCase):
                     monitor.sample_nodes(directory, {"KUBECONFIG": "test-config"})
                 failed = monitor.write_report(directory, expected, [], False)
                 self.assertEqual(failed, mismatch)
-                report = ET.parse(directory / "node-monitor.xml").getroot()
+                report = ET.parse(directory / "junit-node-monitor.xml").getroot()
                 self.assertEqual(report.get("failures"), str(int(mismatch)))
                 self.assertEqual(len(list(directory.glob("node-snapshot-*.json"))), len(replies))
                 self.assertEqual(run.call_args.kwargs["env"], {"KUBECONFIG": "test-config"})
@@ -124,7 +135,8 @@ class NodeMonitorTest(unittest.TestCase):
         for name, (error, report_error, skipped) in cases.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, patch.object(
                 monitor, "sample_nodes", return_value=["a"]
-            ) as sample, patch.object(monitor, "write_report", side_effect=OSError("disk full") if report_error else None
+            ) as sample, patch.object(
+                monitor, "write_report", side_effect=OSError("disk full") if report_error else None
             ) as report, patch.object(monitor.threading, "Thread") as thread:
                 try:
                     with monitor.monitor({"NUM_NODES": "1", "ARTIFACT_DIR": directory}):
@@ -160,7 +172,7 @@ class NodeMonitorTest(unittest.TestCase):
                     thread.return_value.start.side_effect = RuntimeError("thread unavailable")
                 with monitor.monitor({"NUM_NODES": count, "ARTIFACT_DIR": directory}):
                     pass
-                report = ET.parse(Path(directory) / "node-monitor.xml").getroot()
+                report = ET.parse(Path(directory) / "junit-node-monitor.xml").getroot()
                 self.assertEqual(report.get("failures"), "1")
 
     def test_periodic_polling_and_shutdown(self):

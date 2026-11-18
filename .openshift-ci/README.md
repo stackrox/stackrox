@@ -54,7 +54,9 @@ download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artif
 ## Nongroovy node-name monitoring
 
 Prow's `NonGroovyE2e` monitors nodes when `NUM_NODES` is a positive integer
-(exported by `GKECluster`). Unset or empty disables monitoring. It is independent
+(exported by `GKECluster`). The GKE nongroovy entrypoint defaults unset or empty
+`NUM_NODES` to one, matching provisioning; explicit overrides are preserved.
+For other callers, unset or empty disables monitoring. It is independent
 of `GKE_SPOT`; the nongroovy GHA workflow does not enable it.
 
 Node names are collected before tests, every five minutes, and after tests unless
@@ -68,7 +70,7 @@ Artifacts under `ARTIFACT_DIR` (default `junit-reports`):
 - `node-names.txt`: sampled names, including repetitions.
 - `node-snapshot-<timestamp>.json`: raw kubectl output, possibly partial.
 - `node-monitor.log`: collection attempts and kubectl stderr.
-- `node-monitor.xml`: one `ci.gke.node / NoNodeDisruption` success/failure/skipped
+- `junit-node-monitor.xml`: one `ci.gke.node / NoNodeDisruption` success/failure/skipped
   testcase. Cancellation is skipped unless an error was recorded. Failure details
   go into JUnit; counts, names, and errors also appear in job logs.
 
