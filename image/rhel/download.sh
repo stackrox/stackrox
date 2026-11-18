@@ -49,6 +49,10 @@ else
   postgres_rpm_url="$(dnf -y download --destdir=. --disablerepo='*' "--repofrompath=temp,${repo_url}" -y "postgresql${postgres_major}.${arch}" --url --quiet)"
   postgres_libs_rpm_url="$(dnf -y download --destdir=. --disablerepo='*' "--repofrompath=temp,${repo_url}" -y "postgresql${postgres_major}-libs.${arch}" --url --quiet)"
 
+  echo "Downloading ${postgres_rpm_url}..."
   curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres.rpm" "${postgres_rpm_url}"
+  echo "Downloading ${postgres_libs_rpm_url}..."
   curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres-libs.rpm" "${postgres_libs_rpm_url}"
 fi
+
+echo "Done"
