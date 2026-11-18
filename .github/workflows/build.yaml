@@ -75,11 +75,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Free disk (like master's job-preamble): the LATEST incremental
-          # base + build outputs + docker layers need the headroom.
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
-            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/swift \
-            /usr/share/swift /opt/az /usr/local/share/boost || true
           # Buildx (docker-container driver for full cache support)
           docker buildx create --name builder --driver docker-container --use 2>/dev/null || true
           # Registry auth (before build, so layer cache can pull)
@@ -200,6 +195,13 @@ jobs:
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "BUILD PATH: no receipt for go=${GO_HASH:0:8} ui=${UI_HASH:0:8} docker=${DOCKER_HASH:0:8}"
+          # Free disk (like master's job-preamble) — ONLY on the build
+          # path: fast-path legs re-tag and need neither the space nor
+          # the ~60-80s of rm -rf.
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/swift \
+            /usr/share/swift /opt/az /usr/local/share/boost &
+          DISK_CLEANUP_PID=$!
 
       # =================================================================
       # BUILD PATH — fetch or compile inputs → docker → push → receipt
