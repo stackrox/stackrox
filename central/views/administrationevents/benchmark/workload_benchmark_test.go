@@ -5,6 +5,7 @@ package benchmark_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -51,40 +52,42 @@ func BenchmarkWorkloadFilter(b *testing.B) {
 		"100000_events_10000_images":  {100000, 20000, 10000, 10000},
 		"100000_events_100000_images": {100000, 200000, 100000, 100000},
 	} {
-		b.Run(name, func(b *testing.B) {
-			fixture := newWorkloadBenchmark(b, size)
-			ctx := sac.WithAllAccess(context.Background())
-			for _, read := range []string{"count", "page"} {
-				b.Run(read, func(b *testing.B) {
-					for _, materialize := range []bool{false, true} {
-						strategy := "exists"
-						if materialize {
-							strategy = "image_ids_in_go"
-						}
-						b.Run(strategy, func(b *testing.B) {
-							expected := fixture.expectedCount
-							if read == "page" {
-								expected = min(expected, 50)
+		for _, mode := range []string{"force_custom_plan", "force_generic_plan"} {
+			b.Run(name+"/"+mode, func(b *testing.B) {
+				fixture := newWorkloadBenchmark(b, size, mode)
+				ctx := sac.WithAllAccess(context.Background())
+				for _, read := range []string{"count", "page"} {
+					b.Run(read, func(b *testing.B) {
+						for _, materialize := range []bool{false, true} {
+							strategy := "exists"
+							if materialize {
+								strategy = "image_ids_in_go"
 							}
-							actual, err := fixture.run(ctx, read, materialize)
-							require.NoError(b, err)
-							require.Equal(b, expected, actual)
-							b.ReportAllocs()
-							b.ResetTimer()
-							for b.Loop() {
+							b.Run(strategy, func(b *testing.B) {
+								expected := fixture.expectedCount
+								if read == "page" {
+									expected = min(expected, 50)
+								}
 								actual, err := fixture.run(ctx, read, materialize)
-								if err != nil {
-									b.Fatal(err)
+								require.NoError(b, err)
+								require.Equal(b, expected, actual)
+								b.ReportAllocs()
+								b.ResetTimer()
+								for b.Loop() {
+									actual, err := fixture.run(ctx, read, materialize)
+									if err != nil {
+										b.Fatal(err)
+									}
+									if actual != expected {
+										b.Fatalf("got %d events, want %d", actual, expected)
+									}
 								}
-								if actual != expected {
-									b.Fatalf("got %d events, want %d", actual, expected)
-								}
-							}
-						})
-					}
-				})
-			}
-		})
+							})
+						}
+					})
+				}
+			})
+		}
 	}
 }
 
@@ -108,7 +111,7 @@ func TestWorkloadFilterQueryPlan(t *testing.T) {
 
 func testWorkloadFilterQueryPlan(t *testing.T, size workloadBenchmarkSize) {
 	t.Helper()
-	fixture := newWorkloadBenchmark(t, size)
+	fixture := newWorkloadBenchmark(t, size, "")
 	ctx := sac.WithAllAccess(context.Background())
 	t.Logf("%d events (10%% non-image), %d deployments, two containers per deployment, %d matching distinct images",
 		size.events, size.deployments, size.matchingImages)
@@ -222,14 +225,21 @@ func (f *workloadBenchmark) query(ctx context.Context, materialize bool) (*v1.Qu
 		search.DisjunctionQuery(search.ConjunctionQuery(imageType, matches), otherTypes)), nil
 }
 
-func newWorkloadBenchmark(tb testing.TB, size workloadBenchmarkSize) *workloadBenchmark {
+func newWorkloadBenchmark(tb testing.TB, size workloadBenchmarkSize, planCacheMode string) *workloadBenchmark {
 	tb.Helper()
+	if planCacheMode != "" {
+		// Set the startup option before opening the pool so every connection uses this mode.
+		tb.Setenv("PGOPTIONS", os.Getenv("PGOPTIONS")+" -c plan_cache_mode="+planCacheMode)
+	}
 	db := pgtest.ForT(tb)
 	ctx := sac.WithAllAccess(context.Background())
 	var version, workMem, jit, sharedBuffers, cacheMode string
 	require.NoError(tb, db.QueryRow(ctx,
 		"SELECT version(), current_setting('work_mem'), current_setting('jit'), current_setting('shared_buffers'), current_setting('plan_cache_mode')").
 		Scan(&version, &workMem, &jit, &sharedBuffers, &cacheMode))
+	if planCacheMode != "" {
+		require.Equal(tb, planCacheMode, cacheMode)
+	}
 	tb.Logf("%s; work_mem=%s; jit=%s; shared_buffers=%s; plan_cache_mode=%s; flattened images=%v",
 		version, workMem, jit, sharedBuffers, cacheMode, features.FlattenImageData.Enabled())
 	connection, err := db.Acquire(ctx)

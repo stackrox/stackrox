@@ -25,7 +25,7 @@ WHERE administration_events.CreatedAt >= $1
       OR (TRUE AND NOT (administration_events.Resource_Type = $6)))
 ```
 
-The bound values were `2026-01-01 00:00:00 +00:00`, `2027-01-01 00:00:00 +00:00`, `Image`, `app`, `payments`, and `Image`. The page query selects serialized events, orders by last occurrence descending, and returns up to 50.
+The bound values were `2026-01-01 00:00:00 +00:00`, `2027-01-01 00:00:00 +00:00`, `Image`, `app`, `payments`, and `Image`. The page query selects serialized events, orders by last occurrence descending, and returns up to 50. These plan observations used `plan_cache_mode=auto` after six executions.
 
 | Events | Deployments | Matching distinct IDs / total | Warmed count and page plans |
 |---:|---:|---:|---|
@@ -54,25 +54,33 @@ The 10,000 non-image events passed through the other branch. Read the loop count
 
 The two-query implementation selects distinct image IDs through the deployment search API, collects them in Go, then calls the same event view. At the default threshold of 100 exact-match values the compiler switches from `IN` to one array parameter with `ANY`. Both approaches use the same time, resource-type and pagination filters. Tests check counts and compare the ordered page IDs.
 
-Each pair below is **EXISTS / IDs in Go**. Times are median milliseconds per request from three Go benchmark samples with a one-second target. The measurements include query construction, SQL compilation, database calls, and page decoding. KiB/op measures cumulative Go heap allocation. PostgreSQL memory and process peak RSS were outside this measurement.
+Each pair below is **EXISTS / IDs in Go**. Times are median milliseconds per request from three Go benchmark samples with a one-second target. Each dataset and plan mode has its own database fixture. PostgreSQL uses the specified mode for every execution, including the warmup and both statements of the two-query strategy. The measurements include query construction, SQL compilation, database calls, and page decoding. KiB/op measures cumulative Go heap allocation. PostgreSQL memory and process peak RSS were outside this measurement.
+
+**`force_custom_plan`**
 
 | Events | Matching IDs | Count (ms) | Page (ms) | Count (KiB/op) | Page (KiB/op) |
 |---:|---:|---:|---:|---:|---:|
-| 1,000 | 10 | 69.43 / 0.73 | 65.88 / 1.08 | 77 / 62 | 161 / 146 |
-| 10,000 | 250 | 9.27 / 3.54 | 10.85 / 3.92 | 77 / 389 | 161 / 472 |
-| 100,000 | 1,000 | 106.06 / 21.21 | 113.48 / 22.81 | 77 / 1,417 | 161 / 1,500 |
-| 100,000 | 10,000 | 104.12 / 42.26 | 120.85 / 1,427.40 | 77 / 14,527 | 161 / 14,609 |
-| 100,000 | 100,000 | 391.24 / 14,111.30 | 398.85 / 14,030.27 | 77 / 151,989 | 161 / 152,065 |
+| 1,000 | 10 | 0.58 / 0.73 | 0.79 / 0.96 | 77 / 62 | 161 / 146 |
+| 10,000 | 250 | 82.02 / 3.66 | 95.85 / 4.30 | 77 / 389 | 161 / 472 |
+| 100,000 | 1,000 | 108.10 / 22.88 | 123.73 / 23.20 | 77 / 1,417 | 161 / 1,500 |
+| 100,000 | 10,000 | 111.84 / 44.67 | 139.29 / 49.69 | 77 / 14,527 | 161 / 14,611 |
+| 100,000 | 100,000 | 386.05 / 284.47 | 391.46 / 301.56 | 78 / 151,987 | 161 / 152,068 |
 
-A repeat of the four smaller fixtures gave the same faster strategy for each count and page with JIT enabled. Fifteen of the 16 median times were within 9% of the previous run. The largest shift was the 250-ID EXISTS page, from 9.34 to 10.85 ms.
+**`force_generic_plan`**
 
-**Prepared statements explain the two-query result at 100,000 IDs.** The three count samples were 0.285, 14.161 and 14.111 seconds per request. The page samples were 0.293, 14.030 and 14.117 seconds. On a fresh connection we timed six calls and read the event statement's plan counters after each. The first five used custom plans and took 281–296 ms. The sixth used a generic plan and took about 14 seconds for either read. The small EXISTS fixture also changed shape between a custom plan (one hash build) and a generic plan (900 subplan executions).
+| Events | Matching IDs | Count (ms) | Page (ms) | Count (KiB/op) | Page (KiB/op) |
+|---:|---:|---:|---:|---:|---:|
+| 1,000 | 10 | 68.31 / 0.87 | 68.49 / 1.10 | 77 / 62 | 161 / 146 |
+| 10,000 | 250 | 9.25 / 22.90 | 10.69 / 23.23 | 77 / 389 | 161 / 472 |
+| 100,000 | 1,000 | 110.05 / 332.26 | 124.14 / 322.28 | 77 / 1,416 | 161 / 1,499 |
+| 100,000 | 10,000 | 115.90 / 1,515.51 | 136.88 / 1,503.58 | 77 / 14,526 | 161 / 14,609 |
+| 100,000 | 100,000 | 389.78 / 14,212.69 | 401.97 / 14,086.57 | 78 / 151,985 | 161 / 152,071 |
 
-**JIT and plan-cache settings affect the comparison.** With JIT off, the 100,000-ID EXISTS count and page took 323 and 329 ms, and the Go medians remained around 14 seconds. At 10,000 IDs the JIT-off count was close enough to change order between runs. For the 10,000-ID page, disabling JIT and forcing custom plans brought the two-query approach down to about 42 ms. These measurements represent one local client and synthetic data.
+**Automatic plan selection at 100,000 IDs.** A separate diagnostic uses `plan_cache_mode=auto` and records the event statement's plan counters after each request. In this run, PostgreSQL used custom plans for the first five executions of both reads. Execution six switched to a generic plan and took 14.08 s for count and 14.01 s for page. The timings above keep those two regimes separate.
 
 ## Reproduce from the repository root
 
-Use the backend branch of the stack containing the administration event view and these tests. The local runs used PostgreSQL 15.20 on arm64, Go 1.27.2 on an Apple M4 Pro, `work_mem=4MB`, `shared_buffers=128MB`, JIT on and `plan_cache_mode=auto`. The test creates an isolated database, applies the repository schemas and indexes, bulk-loads two containers per deployment and one timestamped event per second (90% image, 10% node), and runs `ANALYZE`. It uses one database connection. The exact plan and elapsed time can vary with the server, statistics and settings.
+Use the backend branch of the stack containing the administration event view and these tests. The local runs used PostgreSQL 15.20 on arm64, Go 1.27.2 on an Apple M4 Pro, `work_mem=4MB`, `shared_buffers=128MB`, JIT on and separate forced custom and generic plans for the benchmarks. The prepared-execution diagnostic uses `plan_cache_mode=auto`. The test creates an isolated database, applies the repository schemas and indexes, bulk-loads two containers per deployment and one timestamped event per second (90% image, 10% node), and runs `ANALYZE`. It uses one database connection. The exact plan and elapsed time can vary with the server, statistics and settings.
 
 Use a local PostgreSQL server whose login can create databases, or start a disposable instance. The following commands use the local operating-system username and assume `CI` is unset.
 
@@ -98,11 +106,11 @@ go test -tags sql_integration ./pkg/search/postgres \
 # SQL and EXPLAIN ANALYZE of the warmed production count and page at all five sizes.
 go test -tags sql_integration "$pkg" -run '^TestWorkloadFilterQueryPlan$' -v -count=1
 
-# All 20 application benchmark variants, including the 100,000-ID case.
+# Run all 40 variants across five sizes, two plan modes, two reads and two strategies.
 go test -tags sql_integration "$pkg" -run '^$' -bench '^BenchmarkWorkloadFilter$' \
   -benchmem -benchtime=1s -count=3 -timeout=25m
 
-# Timings and prepared-plan counters for the two-query approach.
+# Timings and prepared-plan counters for the two-query approach in auto mode.
 go test -tags 'sql_integration workload_experiments' "$pkg" \
   -run '^TestWorkloadPreparedExecutions$' -v -count=1 -timeout=20m
 ```
@@ -116,8 +124,8 @@ PGOPTIONS='-c plan_cache_mode=force_custom_plan' go test -tags sql_integration "
 PGOPTIONS='-c jit=off' go test -tags sql_integration "$pkg" \
   -run '^$' -bench '^BenchmarkWorkloadFilter$' -benchmem -benchtime=1s -count=3 -timeout=25m
 
-PGOPTIONS='-c jit=off -c plan_cache_mode=force_custom_plan' go test -tags sql_integration "$pkg" \
-  -run '^$' -bench '^BenchmarkWorkloadFilter$/^100000_events_10000_images$/^page$' \
+PGOPTIONS='-c jit=off' go test -tags sql_integration "$pkg" \
+  -run '^$' -bench '^BenchmarkWorkloadFilter$/^100000_events_10000_images$/^force_custom_plan$/^page$' \
   -benchmem -benchtime=1s -count=3
 ```
 

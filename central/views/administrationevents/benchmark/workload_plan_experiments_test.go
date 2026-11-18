@@ -14,7 +14,7 @@ import (
 // TestWorkloadPreparedExecutions measures complete two-query reads and records which
 // plan PostgreSQL used for the event statement on each execution.
 func TestWorkloadPreparedExecutions(t *testing.T) {
-	fixture := newWorkloadBenchmark(t, workloadBenchmarkSize{100000, 200000, 100000, 100000})
+	fixture := newWorkloadBenchmark(t, workloadBenchmarkSize{100000, 200000, 100000, 100000}, "auto")
 	ctx := sac.WithAllAccess(context.Background())
 	recorder := &workloadQueryRecorder{DB: fixture.db}
 	fixture.db = recorder
