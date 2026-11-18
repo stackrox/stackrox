@@ -8,7 +8,6 @@ import (
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
@@ -165,7 +164,7 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
 	expectPermissionSetLookup(t, roles,
-		[]string{accesscontrol.ConsoleProxy, permissions.MetricsPermissionSetName},
+		[]string{accesscontrol.ConsoleProxy, accesscontrol.OpenShiftPrometheus},
 		[]*storage.PermissionSet{
 			{
 				Name: accesscontrol.ConsoleProxy,
@@ -177,7 +176,7 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 				},
 			},
 			{
-				Name: permissions.MetricsPermissionSetName,
+				Name: accesscontrol.OpenShiftPrometheus,
 				ResourceToAccess: map[string]storage.Access{
 					"Deployment":     storage.Access_READ_ACCESS,
 					"Image":          storage.Access_READ_ACCESS,
@@ -190,7 +189,7 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 	role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
 			ClusterScopes:      []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"*"}}},
-			PermissionSetNames: []string{accesscontrol.ConsoleProxy, permissions.MetricsPermissionSetName},
+			PermissionSetNames: []string{accesscontrol.ConsoleProxy, accesscontrol.OpenShiftPrometheus},
 		})
 	require.NoError(t, err)
 	assert.Equal(t, &tokens.InternalRole{
@@ -223,10 +222,10 @@ func TestCreateSensorRoleFailsIfAnyPermissionSetCannotBeLoaded(t *testing.T) {
 			}}
 			matches = append(matches, tc.permissionSets...)
 			expectPermissionSetLookup(t, roles,
-				[]string{accesscontrol.ConsoleProxy, permissions.MetricsPermissionSetName}, matches, tc.storeErr)
+				[]string{accesscontrol.ConsoleProxy, accesscontrol.OpenShiftPrometheus}, matches, tc.storeErr)
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSetNames: []string{accesscontrol.ConsoleProxy, permissions.MetricsPermissionSetName}})
+					PermissionSetNames: []string{accesscontrol.ConsoleProxy, accesscontrol.OpenShiftPrometheus}})
 			assert.Nil(t, role)
 			if tc.storeErr != nil {
 				require.ErrorIs(t, err, tc.storeErr)
