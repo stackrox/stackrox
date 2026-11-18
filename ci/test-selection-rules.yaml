@@ -50,6 +50,10 @@ rules:
       - '^proto/'
       - '^generated/'
       - '^tools/'
+      - '^Makefile$'
+      - '^make/'
+      - '^scripts/go-test\.sh$'
+      - '^scripts/go-files-to-packages\.sh$'
       - '^go\.(mod|sum)$'
 
   # Sensor integration covers Sensor plus the shared code it imports.
@@ -60,6 +64,10 @@ rules:
       - '^pkg/'
       - '^proto/'
       - '^generated/'
+      - '^Makefile$'
+      - '^make/'
+      - '^scripts/go-test\.sh$'
+      - '^scripts/go-files-to-packages\.sh$'
       - '^go\.(mod|sum)$'
 
   # Backend e2e drives APIs and clusters, not the browser: same ui-or-docs
