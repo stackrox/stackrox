@@ -280,7 +280,7 @@ class UpgradesTest extends BaseSpecification {
         "Ignore ordering for exclusions and categories in policies by resorting them"
         upgradedPolicies = upgradedPolicies.collect { policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
-            if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
+            if (policy.exclusionsList != null && !policy.exclusionsList.isEmpty()) {
                 builder.clearExclusions().addAllExclusions(
                         // exclusionList is immutable, but .sort sees it as a list and assumes it's mutable
                         // so force it to not mutate otherwise this will throw
@@ -294,7 +294,7 @@ class UpgradesTest extends BaseSpecification {
         defaultPolicies = defaultPolicies.collectEntries { id, policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
 
-            if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
+            if (policy.exclusionsList != null && !policy.exclusionsList.isEmpty()) {
                 builder.clearExclusions().addAllExclusions(
                         policy.exclusionsList.sort(false) { it.name }
                 )
