@@ -454,6 +454,29 @@ const rules = {
                 'Replace className with status, size, iconSize, or isInline prop in Icon element';
             const hasClassName = (openingElement) =>
                 openingElement.attributes.some((attribute) => attribute.name?.name === 'className');
+            // Unwrap conditional and fragment children like {isAdded && <PlusIcon />} to find the Icon content elements.
+            const getContentElements = (child) => {
+                switch (child.type) {
+                    case 'JSXElement':
+                        return [child];
+                    case 'JSXFragment':
+                        return child.children.flatMap(getContentElements);
+                    case 'JSXExpressionContainer':
+                        return getContentElements(child.expression);
+                    case 'LogicalExpression':
+                        return [
+                            ...getContentElements(child.left),
+                            ...getContentElements(child.right),
+                        ];
+                    case 'ConditionalExpression':
+                        return [
+                            ...getContentElements(child.consequent),
+                            ...getContentElements(child.alternate),
+                        ];
+                    default:
+                        return [];
+                }
+            };
 
             return {
                 ImportDeclaration(node) {
@@ -473,9 +496,9 @@ const rules = {
                         if (hasClassName(node.openingElement)) {
                             context.report({ node: node.openingElement, message });
                         }
-                        node.children.forEach((child) => {
-                            if (child.type === 'JSXElement' && hasClassName(child.openingElement)) {
-                                context.report({ node: child.openingElement, message });
+                        node.children.flatMap(getContentElements).forEach((element) => {
+                            if (hasClassName(element.openingElement)) {
+                                context.report({ node: element.openingElement, message });
                             }
                         });
                     }
