@@ -4,6 +4,8 @@
 package jobcentric
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/ci/select/internal/resolver"
 	"github.com/stackrox/rox/ci/select/internal/ruleengine"
 	"github.com/stackrox/rox/ci/select/internal/validation"
@@ -18,7 +20,7 @@ type engine struct{}
 func (engine) Plan(rules []byte, changed []string) (ruleengine.Decision, error) {
 	m, err := validation.Validate(rules)
 	if err != nil {
-		return ruleengine.Decision{}, err
+		return ruleengine.Decision{}, errors.Wrap(err, "validate rules")
 	}
 	return resolver.Resolve(changed, m), nil
 }
