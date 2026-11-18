@@ -286,7 +286,28 @@ jobs:
           if [ "$fetch_ok" = 1 ]; then
             echo "roxctl (all platforms): FETCHED from blob store (parallel)"
           else
-            echo "roxctl (all platforms): COMPILING (blob miss)"
+            # The per-platform roxctl jobs run concurrently on their own
+            # runners; wait for their blobs before falling back to an
+            # inline build (first run of a new source state only).
+            echo "roxctl (all platforms): waiting for per-platform jobs..."
+            for i in $(seq 1 28); do
+              fetch_ok=1
+              for plat in $ROXCTL_PLATFORMS; do
+                if [ ! -f "/tmp/rx-${plat}.ok" ]; then
+                  ( "${GOCACHEPROG}" -fetch-any "ca-roxctl-v3-${plat}-${GO_HASH}-${BUILD_TAG}" "/tmp/rx-${plat}.tar" \
+                    && tar -xf "/tmp/rx-${plat}.tar" && rm -f "/tmp/rx-${plat}.tar" \
+                    && touch "/tmp/rx-${plat}.ok" ) &> "/tmp/rx-${plat}.log" || true
+                fi
+                [ -f "/tmp/rx-${plat}.ok" ] || fetch_ok=0
+              done
+              [ "$fetch_ok" = 1 ] && break
+              sleep 15
+            done
+          fi
+          if [ "$fetch_ok" = 1 ]; then
+            echo "roxctl (all platforms): FETCHED from per-platform jobs"
+          else
+            echo "roxctl (all platforms): COMPILING (blob miss, jobs timed out)"
             # Parallel platform builds: each sub-target writes a disjoint
             # bin/<os>_<arch>/ dir. -j11 OOM-killed the runner (11 go
             # builds + 11 prefetching gocache-serve children); -j4 with
@@ -497,6 +518,77 @@ jobs:
             echo "║  BUILD PATH: image built and pushed   ║"
             echo "╚══════════════════════════════════════╝"
           fi
+
+  # Per-platform roxctl builds, one runner each: parallelism across
+  # 4-core runners instead of within one (contention floor), and a
+  # per-platform prefetch manifest — each job's working set is its own,
+  # so no over-download of other platforms' entries. Keys are the same
+  # per-platform blobs the main-image legs fetch: first writer wins,
+  # everyone else fetches.
+  roxctl:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [darwin-amd64, darwin-arm64, linux-amd64, linux-arm64, linux-ppc64le, linux-s390x, windows-amd64]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Ensure CA build infrastructure present
+        run: |
+          if [ ! -f tools/gocache-serve/bin/gocache-serve ]; then
+            git fetch origin davdhacs/content-addressed-build --depth=1
+            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/
+          fi
+
+      - name: Setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Stable embedded stamps (same recipe as main-image: release
+          # train only — keeps link ActionIDs stable across commits).
+          LATEST_TAG="$(git ls-remote --tags --refs origin \
+            | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
+          STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')"
+          echo "BUILD_TAG=${STABLE_VERSION:-0.0.0}" >> "$GITHUB_ENV"
+          echo "SHORTCOMMIT=0000000" >> "$GITHUB_ENV"
+          GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+            | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          echo "GO_HASH=${GO_HASH}" >> "$GITHUB_ENV"
+          echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONCURRENCY=24" >> "$GITHUB_ENV"
+          # Per-platform manifest: this platform's working set only.
+          echo "GOCACHE_SERVE_MANIFEST=roxctl-${{ matrix.platform }}" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_MANIFEST_WRITE=1" >> "$GITHUB_ENV"
+
+      - name: Build platform binaries (or skip if blob exists)
+        run: |
+          set -euo pipefail
+          plat_dir="$(printf '%s' '${{ matrix.platform }}' | tr '-' '_')"
+          KEY="ca-roxctl-v3-${plat_dir}-${GO_HASH}-${BUILD_TAG}"
+          if "${GOCACHEPROG}" -fetch-any "$KEY" /tmp/rx.tar 2>/dev/null && [ -s /tmp/rx.tar ]; then
+            echo "roxctl ${{ matrix.platform }}: blob exists — skip"
+            exit 0
+          fi
+          os="${{ matrix.platform }}"; os="${os%%-*}"; arch="${{ matrix.platform }}"; arch="${arch##*-}"
+          export GOOS="$os" GOARCH="$arch"
+          scripts/go-build.sh ./roxctl
+          if [ "$os" = linux ]; then
+            scripts/go-build.sh ./compliance/virtualmachines/roxagent
+          fi
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+            -cf /tmp/rx.tar "bin/${plat_dir}"
+          "${GOCACHEPROG}" -store-all "$KEY" /tmp/rx.tar
+          echo "roxctl ${{ matrix.platform }}: built and stored"
 
   # The only coordination point in the workflow: assembling the multi-arch
   # manifest requires both arch legs' outputs. This is output assembly,
