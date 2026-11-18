@@ -288,9 +288,10 @@ jobs:
           else
             echo "roxctl (all platforms): COMPILING (blob miss)"
             # Parallel platform builds: each sub-target writes a disjoint
-            # bin/<os>_<arch>/ dir. Lower per-instance memory limit — 11
-            # concurrent gocache-serve children share the runner.
-            GOCACHE_SERVE_GOMEMLIMIT=300MiB make -j11 cli-build
+            # bin/<os>_<arch>/ dir. -j11 OOM-killed the runner (11 go
+            # builds + 11 prefetching gocache-serve children); -j4 with
+            # capped per-build parallelism fits 4-core/16GB runners.
+            GOCACHE_SERVE_GOMEMLIMIT=300MiB GOMAXPROCS=2 make -j4 cli-build
             for plat in $ROXCTL_PLATFORMS; do
               tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
                 -cf "/tmp/rx-${plat}.tar" "bin/${plat}" &
