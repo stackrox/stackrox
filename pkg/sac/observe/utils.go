@@ -4,6 +4,8 @@ import (
 	"context"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
@@ -54,9 +56,15 @@ func calculateUser(ctx context.Context) *v1.AuthorizationTraceResponse_User {
 	if id == nil {
 		return nil
 	}
+	var userRoles []permissions.ResolvedRole
+	if features.ACMAccessControlDelegation.Enabled() {
+		userRoles = permissions.ResolvedRolesFromContext(ctx)
+	} else {
+		userRoles = id.Roles()
+	}
 
-	roles := make([]*v1.AuthorizationTraceResponse_User_Role, 0, len(id.Roles()))
-	for _, rr := range id.Roles() {
+	roles := make([]*v1.AuthorizationTraceResponse_User_Role, 0, len(userRoles))
+	for _, rr := range userRoles {
 		r := &v1.AuthorizationTraceResponse_User_Role{
 			Name:            rr.GetRoleName(),
 			Permissions:     rr.GetPermissions(),

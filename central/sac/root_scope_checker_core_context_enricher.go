@@ -6,7 +6,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/central/sac/authorizer"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -44,6 +46,18 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 	if id.Service() != nil || userpass.IsLocalAdmin(id) {
 		// Admin => allow all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), observe.ScopeCheckerAllowAdminAndService, nil
+	}
+	if features.ACMAccessControlDelegation.Enabled() {
+		userRoles := permissions.ResolvedRolesFromContext(ctx)
+		if len(userRoles) == 0 {
+			// User has no valid role => deny all.
+			return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
+		}
+		scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, userRoles)
+		if err != nil {
+			return nil, observe.ScopeCheckerNone, errors.Wrap(err, "creating scoped authorizer for identity")
+		}
+		return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), observe.ScopeCheckerBuiltIn, nil
 	}
 	if len(id.Roles()) == 0 {
 		// User has no valid role => deny all.

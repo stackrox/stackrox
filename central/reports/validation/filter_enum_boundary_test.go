@@ -17,6 +17,7 @@ func TestValidateAndGenerateReportRequestRejectsInvalidNotificationMethodBeforeL
 	validator := &Validator{reportConfigDatastore: reportConfigDSMocks.NewMockDataStore(ctrl)}
 
 	_, err := validator.ValidateAndGenerateReportRequest(
+		t.Context(),
 		"config",
 		storage.ReportStatus_NotificationMethod(99),
 		storage.ReportStatus_ON_DEMAND,

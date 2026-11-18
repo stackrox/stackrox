@@ -15,7 +15,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -165,6 +167,13 @@ func (s *serviceImpl) GetResources(context.Context, *v1.Empty) (*v1.GetResources
 
 // GetMyPermissions returns the permissions for a user based on the context.
 func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
+	if features.ACMAccessControlDelegation.Enabled() {
+		roles := permissions.ResolvedRolesFromContext(ctx)
+		userPermissions := utils.NewUnionPermissions(roles)
+		return &v1.GetPermissionsResponse{
+			ResourceToAccess: userPermissions,
+		}, nil
+	}
 	// Get the perms from the current user context.
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {

@@ -182,7 +182,7 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			identity := tc.identityGen()
-			scopeRules := ExtractAccessScopeRules(identity)
+			scopeRules := ExtractAccessScopeRules(t.Context(), identity)
 			vulnReportFilters := &storage.VulnerabilityReportFilters{
 				AccessScopeRules: scopeRules,
 			}

@@ -5,7 +5,9 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
@@ -34,6 +36,11 @@ func (p *permissionChecker) EnrichContext(ctx context.Context, _ string) context
 }
 
 func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
+	if features.ACMAccessControlDelegation.Enabled() {
+		userRoles := permissions.ResolvedRolesFromContext(ctx)
+		userPermissions := utils.NewUnionPermissions(userRoles)
+		return p.checkPermissions(userPermissions)
+	}
 	// Pull the identity from the context.
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -111,8 +112,15 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	if err != nil {
 		return nil, err
 	}
-	if err := verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
-		return nil, errox.NotAuthorized.CausedBy(err)
+	if features.ACMAccessControlDelegation.Enabled() {
+		userRoles := permissions.ResolvedRolesFromContext(ctx)
+		if err := verifyNoPrivilegeEscalation(userRoles, roles); err != nil {
+			return nil, errox.NotAuthorized.CausedBy(err)
+		}
+	} else {
+		if err := verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
+			return nil, errox.NotAuthorized.CausedBy(err)
+		}
 	}
 
 	expiresAt := protocompat.ConvertTimestampToTimeOrNil(req.GetExpiration())
@@ -131,9 +139,15 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 }
 
 func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.ListAllowedTokenRolesResponse, error) {
-	id, err := authn.IdentityFromContext(ctx)
-	if err != nil {
-		return nil, err
+	var userRoles []permissions.ResolvedRole
+	if features.ACMAccessControlDelegation.Enabled() {
+		userRoles = permissions.ResolvedRolesFromContext(ctx)
+	} else {
+		id, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		userRoles = id.Roles()
 	}
 	allRoles, err := s.roles.GetAllResolvedRoles(ctx)
 	if err != nil {
@@ -146,7 +160,7 @@ func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*
 			continue
 		}
 		// We assume that error is returned only when there is a privilege escalation.
-		if err := verifyNoPrivilegeEscalation(id.Roles(), []permissions.ResolvedRole{role}); err == nil {
+		if err := verifyNoPrivilegeEscalation(userRoles, []permissions.ResolvedRole{role}); err == nil {
 			result = append(result, role.GetRoleName())
 		}
 	}
