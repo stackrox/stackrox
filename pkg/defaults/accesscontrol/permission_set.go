@@ -1,8 +1,7 @@
 package accesscontrol
 
-// Postgres IDs for permission sets
+// Postgres IDs for permission sets.
 // The values are UUIDs taken in descending order from ffffffff-ffff-fff4-f5ff-ffffffffffff
-// Next ID: ffffffff-ffff-fff4-f5ff-fffffffffff3
 const (
 	adminPermissionSetID                 = "ffffffff-ffff-fff4-f5ff-ffffffffffff"
 	analystPermissionSetID               = "ffffffff-ffff-fff4-f5ff-fffffffffffe"
@@ -18,6 +17,7 @@ const (
 	networkGraphViewerPermissionSetID = "ffffffff-ffff-fff4-f5ff-fffffffffff5"
 	vulnMgmtAdminPermissionSetID      = "ffffffff-ffff-fff4-f5ff-fffffffffff4"
 	configControllerPermissionSetID   = "ffffffff-ffff-fff4-f5ff-fffffffffff3"
+	consoleProxyPermissionSetID       = "ffffffff-ffff-fff4-f5ff-fffffffffff2"
 )
 
 const (
@@ -36,6 +36,11 @@ const (
 	// - view, request, and approve/deny vulnerability deferrals or false positives.
 	// - view and create vulnerability report configurations.
 	VulnerabilityManagementAdmin = "Vulnerability Management Admin"
+
+	// ConsoleProxy permission set provides necessary privileges to OpenShift Console users.
+	// This includes priveleges to:
+	// - view deployments and images.
+	ConsoleProxy = "OpenShift Secured Cluster Console Proxy"
 )
 
 var (
@@ -44,6 +49,7 @@ var (
 		Admin:                           adminPermissionSetID,
 		Analyst:                         analystPermissionSetID,
 		ConfigController:                configControllerPermissionSetID,
+		ConsoleProxy:                    consoleProxyPermissionSetID,
 		ContinuousIntegration:           continuousIntegrationPermissionSetID,
 		NetworkGraphViewer:              networkGraphViewerPermissionSetID,
 		None:                            nonePermissionSetID,
@@ -55,8 +61,3 @@ var (
 		VulnerabilityManagementAdmin:    vulnMgmtAdminPermissionSetID,
 	}
 )
-
-// IsDefaultPermissionSet will return true if the given permission set name is a default permission set.
-func IsDefaultPermissionSet(name string) bool {
-	return DefaultRoleNames.Contains(name)
-}
