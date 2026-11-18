@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -11,7 +12,7 @@ import (
 // ValidateScopedReadOnlyPermissionSet requires read-only, cluster/namespace-scoped constraints and grants.
 func ValidateScopedReadOnlyPermissionSet(ps *storage.PermissionSet) error {
 	if ps == nil {
-		return fmt.Errorf("permission set is missing")
+		return errors.New("permission set is missing")
 	}
 	if ps.GetAccessConstraint() != storage.AccessConstraint_ACCESS_CONSTRAINT_READ ||
 		ps.GetScopeConstraint() != storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE {

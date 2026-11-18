@@ -49,8 +49,8 @@ func TestMetricsReaderRoleMapper(t *testing.T) {
 			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
 			tc.set.Id = "8df4a4a0-a292-4e33-a076-fab229cbbcea"
 			roles.EXPECT().GetRole(gomock.Any(), roleName).Return(
-				&storage.Role{Name: roleName, PermissionSetId: tc.set.Id}, true, nil)
-			roles.EXPECT().GetPermissionSet(gomock.Any(), tc.set.Id).Return(tc.set, true, nil)
+				&storage.Role{Name: roleName, PermissionSetId: tc.set.GetId()}, true, nil)
+			roles.EXPECT().GetPermissionSet(gomock.Any(), tc.set.GetId()).Return(tc.set, true, nil)
 			delegate := testRoleMapper(func(context.Context, *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
 				rolePermissions := make(map[storage.Access][]string)
 				for resource, access := range tc.set.GetResourceToAccess() {
@@ -86,8 +86,8 @@ func TestMetricsReaderRoleMapperChecksCurrentConstraints(t *testing.T) {
 		ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
 	}
 	roles.EXPECT().GetRole(gomock.Any(), roleName).Return(
-		&storage.Role{Name: roleName, PermissionSetId: set.Id}, true, nil).Times(2)
-	roles.EXPECT().GetPermissionSet(gomock.Any(), set.Id).Return(set, true, nil).Times(2)
+		&storage.Role{Name: roleName, PermissionSetId: set.GetId()}, true, nil).Times(2)
+	roles.EXPECT().GetPermissionSet(gomock.Any(), set.GetId()).Return(set, true, nil).Times(2)
 	delegate := testRoleMapper(func(context.Context, *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
 		return []permissions.ResolvedRole{&tokens.InternalRole{
 			RoleName:    roleName,
