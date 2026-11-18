@@ -76,9 +76,10 @@ This checks names, not readiness or per-snapshot counts. Disappearance without
 replacement and transient nodes may go undetected. Replacement does not prove
 Spot preemption.
 
-Optional CLI: `python3 .openshift-ci/node_disruption.py run -- <command>`.
-Prow calls `run(timeout=...)`; the CLI has no timeout option. Both preserve product
-exit codes and clean up process groups on cancellation.
+Prow wraps its existing graceful-kill test runner in the monitoring context manager.
+Monitoring does not install signal handlers or manage product processes. On Python
+interruption unwinding it skips the final sample and reports skipped unless a
+monitoring error was recorded. Abrupt termination may leave no final report.
 
 Cluster-free tests live in `tests/test_node_disruption.py`. From the repo root:
 
