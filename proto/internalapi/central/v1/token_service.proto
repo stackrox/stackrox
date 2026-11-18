@@ -49,9 +49,11 @@ message GenerateTokenForPermissionsAndScopeRequest {
 
 // ScopedPermissionSet selects a Central-managed permission set.
 message ScopedPermissionSet {
-  // Exactly one of id or name must be set.
-  string id = 1;
-  string name = 2;
+  // A nonempty selector is required.
+  oneof selector {
+    string id = 1;
+    string name = 2;
+  }
 }
 
 // ClusterScope represents the access scope of a role within a cluster.

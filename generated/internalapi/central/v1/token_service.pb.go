@@ -177,9 +177,13 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSets() []*Scop
 // ScopedPermissionSet selects a Central-managed permission set.
 type ScopedPermissionSet struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Exactly one of id or name must be set.
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// A nonempty selector is required.
+	//
+	// Types that are valid to be assigned to Selector:
+	//
+	//	*ScopedPermissionSet_Id
+	//	*ScopedPermissionSet_Name
+	Selector      isScopedPermissionSet_Selector `protobuf_oneof:"selector"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -214,19 +218,46 @@ func (*ScopedPermissionSet) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{1}
 }
 
+func (x *ScopedPermissionSet) GetSelector() isScopedPermissionSet_Selector {
+	if x != nil {
+		return x.Selector
+	}
+	return nil
+}
+
 func (x *ScopedPermissionSet) GetId() string {
 	if x != nil {
-		return x.Id
+		if x, ok := x.Selector.(*ScopedPermissionSet_Id); ok {
+			return x.Id
+		}
 	}
 	return ""
 }
 
 func (x *ScopedPermissionSet) GetName() string {
 	if x != nil {
-		return x.Name
+		if x, ok := x.Selector.(*ScopedPermissionSet_Name); ok {
+			return x.Name
+		}
 	}
 	return ""
 }
+
+type isScopedPermissionSet_Selector interface {
+	isScopedPermissionSet_Selector()
+}
+
+type ScopedPermissionSet_Id struct {
+	Id string `protobuf:"bytes,1,opt,name=id,proto3,oneof"`
+}
+
+type ScopedPermissionSet_Name struct {
+	Name string `protobuf:"bytes,2,opt,name=name,proto3,oneof"`
+}
+
+func (*ScopedPermissionSet_Id) isScopedPermissionSet_Selector() {}
+
+func (*ScopedPermissionSet_Name) isScopedPermissionSet_Selector() {}
 
 // ClusterScope represents the access scope of a role within a cluster.
 //
@@ -354,10 +385,12 @@ const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\x0fpermission_sets\x18\x05 \x03(\v2\x1f.central.v1.ScopedPermissionSetR\x0epermissionSets\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"9\n" +
-	"\x13ScopedPermissionSet\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"}\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"I\n" +
+	"\x13ScopedPermissionSet\x12\x10\n" +
+	"\x02id\x18\x01 \x01(\tH\x00R\x02id\x12\x14\n" +
+	"\x04name\x18\x02 \x01(\tH\x00R\x04nameB\n" +
+	"\n" +
+	"\bselector\"}\n" +
 	"\fClusterScope\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12.\n" +
@@ -416,6 +449,10 @@ func init() { file_internalapi_central_v1_token_service_proto_init() }
 func file_internalapi_central_v1_token_service_proto_init() {
 	if File_internalapi_central_v1_token_service_proto != nil {
 		return
+	}
+	file_internalapi_central_v1_token_service_proto_msgTypes[1].OneofWrappers = []any{
+		(*ScopedPermissionSet_Id)(nil),
+		(*ScopedPermissionSet_Name)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

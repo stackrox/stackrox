@@ -164,21 +164,29 @@ func TestEnforce(t *testing.T) {
 	}{
 		"console permission set without scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
 		"console permission set ID without scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}}},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
-		"name and ID cannot be combined in one grant": {
+		"empty selected permission set name": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy, Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: ""}}},
+				Lifetime:       durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"empty selected permission set ID": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: ""}}},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
@@ -202,7 +210,7 @@ func TestEnforce(t *testing.T) {
 		},
 		"unsupported permission set ID": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Id: "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"}}},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
@@ -210,7 +218,7 @@ func TestEnforce(t *testing.T) {
 		},
 		"console permission set with namespace scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
 				ClusterScopes:  []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
@@ -218,7 +226,7 @@ func TestEnforce(t *testing.T) {
 		},
 		"console permission set with full cluster scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
 				ClusterScopes:  []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
@@ -226,7 +234,7 @@ func TestEnforce(t *testing.T) {
 		},
 		"console permission set cannot access other cluster": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
 				ClusterScopes:  []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
@@ -235,7 +243,7 @@ func TestEnforce(t *testing.T) {
 		},
 		"console permission set ignores fallback permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
 				Permissions:    map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
@@ -243,7 +251,7 @@ func TestEnforce(t *testing.T) {
 		},
 		"unsupported permission set": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: "unknown"}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: "unknown"}}},
 				Permissions:    map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
 				Lifetime:       durationpb.New(30 * time.Minute),
 			},
@@ -252,8 +260,11 @@ func TestEnforce(t *testing.T) {
 		},
 		"unsupported permission set alongside console": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}, {Name: "unknown"}},
-				Lifetime:       durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{
+					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+					{Selector: &v1.ScopedPermissionSet_Name{Name: "unknown"}},
+				},
+				Lifetime: durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,

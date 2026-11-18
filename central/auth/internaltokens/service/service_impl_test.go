@@ -257,7 +257,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	}{
 		"success - console permission set by ID": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}}},
 				Lifetime:       testExpirationDuration,
 			},
 			policy: permissivePolicy,
@@ -283,7 +283,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		},
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
 				Permissions:    map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
 				ClusterScopes:  []*v1.ClusterScope{requestSingleNamespace},
 				Lifetime:       testExpirationDuration,
@@ -322,9 +322,12 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		},
 		"success - duplicate permission set names": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}, {Name: accesscontrol.ConsoleProxy}},
-				ClusterScopes:  []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:       testExpirationDuration,
+				PermissionSets: []*v1.ScopedPermissionSet{
+					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+				},
+				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:      testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {

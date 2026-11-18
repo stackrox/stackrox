@@ -65,7 +65,7 @@ func TestCreateSensorRole(t *testing.T) {
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
 					ClusterScopes:  tc.scopes,
-					PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
 				},
 			)
 			require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestCreateSensorRoleFailsClosed(t *testing.T) {
 	_, err := manager.createSensorRole(t.Context(), nil)
 	require.ErrorIs(t, err, errox.ServerError)
 	_, err = manager.createSensorRole(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}}})
+		PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
 	require.ErrorIs(t, err, errox.ServerError)
 
 	ctrl := gomock.NewController(t)
@@ -93,7 +93,7 @@ func TestCreateSensorRoleFailsClosed(t *testing.T) {
 	expectPermissionSetLookup(t, roles, []string{accesscontrol.ConsoleProxy}, nil, nil)
 	manager.roleStore = roles
 	_, err = manager.createSensorRole(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}}})
+		PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
 	require.ErrorIs(t, err, errox.NotFound)
 }
 
@@ -108,7 +108,7 @@ func TestCreateSensorRoleResolvesAdministratorSetByName(t *testing.T) {
 	}}, nil)
 	role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
-			PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}}})
+			PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"Deployment"}, role.Permissions[storage.Access_READ_ACCESS])
 }
@@ -140,7 +140,7 @@ func TestCreateSensorRoleResolvesByID(t *testing.T) {
 				Return(tc.stored, tc.stored != nil, nil)
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSets: []*v1.ScopedPermissionSet{{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}}})
+					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}}}})
 			if tc.want != nil {
 				require.ErrorIs(t, err, tc.want)
 				assert.Nil(t, role)
@@ -155,7 +155,8 @@ func TestCreateSensorRoleResolvesByID(t *testing.T) {
 func TestCreateSensorRoleRejectsInvalidID(t *testing.T) {
 	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
 	_, err := (&roleManager{roles}).createSensorRole(t.Context(),
-		&v1.GenerateTokenForPermissionsAndScopeRequest{PermissionSets: []*v1.ScopedPermissionSet{{Id: "not-a-uuid"}}})
+		&v1.GenerateTokenForPermissionsAndScopeRequest{
+			PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: "not-a-uuid"}}}})
 	require.ErrorIs(t, err, errox.InvalidArgs)
 }
 
@@ -195,7 +196,7 @@ func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 				[]*storage.PermissionSet{{Name: accesscontrol.ConsoleProxy, ResourceToAccess: tc.permissions}}, nil)
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}}})
+					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
 			if tc.wantErr {
 				require.ErrorIs(t, err, errox.InvalidArgs)
 				assert.Nil(t, role)
@@ -234,8 +235,11 @@ func TestCreateSensorRoleCombinesPermissionSets(t *testing.T) {
 
 	role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
-			ClusterScopes:  []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"*"}}},
-			PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}, {Name: accesscontrol.OpenShiftPrometheus}},
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"*"}}},
+			PermissionSets: []*v1.ScopedPermissionSet{
+				{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+				{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.OpenShiftPrometheus}},
+			},
 		})
 	require.NoError(t, err)
 	assert.Equal(t, &tokens.InternalRole{
@@ -271,7 +275,10 @@ func TestCreateSensorRoleFailsIfAnyPermissionSetCannotBeLoaded(t *testing.T) {
 				[]string{accesscontrol.ConsoleProxy, accesscontrol.OpenShiftPrometheus}, matches, tc.storeErr)
 			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}, {Name: accesscontrol.OpenShiftPrometheus}}})
+					PermissionSets: []*v1.ScopedPermissionSet{
+						{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+						{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.OpenShiftPrometheus}},
+					}})
 			assert.Nil(t, role)
 			if tc.storeErr != nil {
 				require.ErrorIs(t, err, tc.storeErr)

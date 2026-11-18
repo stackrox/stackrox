@@ -66,8 +66,11 @@ func (m *ScopedPermissionSet) CloneVT() *ScopedPermissionSet {
 		return (*ScopedPermissionSet)(nil)
 	}
 	r := new(ScopedPermissionSet)
-	r.Id = m.Id
-	r.Name = m.Name
+	if m.Selector != nil {
+		r.Selector = m.Selector.(interface {
+			CloneVT() isScopedPermissionSet_Selector
+		}).CloneVT()
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -77,6 +80,24 @@ func (m *ScopedPermissionSet) CloneVT() *ScopedPermissionSet {
 
 func (m *ScopedPermissionSet) CloneMessageVT() proto.Message {
 	return m.CloneVT()
+}
+
+func (m *ScopedPermissionSet_Id) CloneVT() isScopedPermissionSet_Selector {
+	if m == nil {
+		return (*ScopedPermissionSet_Id)(nil)
+	}
+	r := new(ScopedPermissionSet_Id)
+	r.Id = m.Id
+	return r
+}
+
+func (m *ScopedPermissionSet_Name) CloneVT() isScopedPermissionSet_Selector {
+	if m == nil {
+		return (*ScopedPermissionSet_Name)(nil)
+	}
+	r := new(ScopedPermissionSet_Name)
+	r.Name = m.Name
+	return r
 }
 
 func (m *ClusterScope) CloneVT() *ClusterScope {
@@ -193,11 +214,17 @@ func (this *ScopedPermissionSet) EqualVT(that *ScopedPermissionSet) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Id != that.Id {
+	if this.Selector == nil && that.Selector != nil {
 		return false
-	}
-	if this.Name != that.Name {
-		return false
+	} else if this.Selector != nil {
+		if that.Selector == nil {
+			return false
+		}
+		if !this.Selector.(interface {
+			EqualVT(isScopedPermissionSet_Selector) bool
+		}).EqualVT(that.Selector) {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -209,6 +236,40 @@ func (this *ScopedPermissionSet) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (this *ScopedPermissionSet_Id) EqualVT(thatIface isScopedPermissionSet_Selector) bool {
+	that, ok := thatIface.(*ScopedPermissionSet_Id)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.Id != that.Id {
+		return false
+	}
+	return true
+}
+
+func (this *ScopedPermissionSet_Name) EqualVT(thatIface isScopedPermissionSet_Selector) bool {
+	that, ok := thatIface.(*ScopedPermissionSet_Name)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.Name != that.Name {
+		return false
+	}
+	return true
+}
+
 func (this *ClusterScope) EqualVT(that *ClusterScope) bool {
 	if this == that {
 		return true
@@ -380,23 +441,46 @@ func (m *ScopedPermissionSet) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Name)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
-		i--
-		dAtA[i] = 0xa
+	if vtmsg, ok := m.Selector.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
 	}
 	return len(dAtA) - i, nil
 }
 
+func (m *ScopedPermissionSet_Id) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ScopedPermissionSet_Id) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Id)
+	copy(dAtA[i:], m.Id)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+func (m *ScopedPermissionSet_Name) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ScopedPermissionSet_Name) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Name)
+	copy(dAtA[i:], m.Name)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Name)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
 func (m *ClusterScope) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -540,18 +624,33 @@ func (m *ScopedPermissionSet) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if vtmsg, ok := m.Selector.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
 	}
 	n += len(m.unknownFields)
 	return n
 }
 
+func (m *ScopedPermissionSet_Id) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
+func (m *ScopedPermissionSet_Name) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
 func (m *ClusterScope) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -948,7 +1047,7 @@ func (m *ScopedPermissionSet) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Id = string(dAtA[iNdEx:postIndex])
+			m.Selector = &ScopedPermissionSet_Id{Id: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -980,7 +1079,7 @@ func (m *ScopedPermissionSet) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Name = string(dAtA[iNdEx:postIndex])
+			m.Selector = &ScopedPermissionSet_Name{Name: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1593,7 +1692,7 @@ func (m *ScopedPermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Id = stringValue
+			m.Selector = &ScopedPermissionSet_Id{Id: stringValue}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1629,7 +1728,7 @@ func (m *ScopedPermissionSet) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Name = stringValue
+			m.Selector = &ScopedPermissionSet_Name{Name: stringValue}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

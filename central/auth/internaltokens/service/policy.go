@@ -136,8 +136,8 @@ func (p *tokenPolicy) enforce(
 	}
 	if len(req.GetPermissionSets()) > 0 {
 		for _, grant := range req.GetPermissionSets() {
-			if (grant.GetName() == "") == (grant.GetId() == "") {
-				return nil, errox.InvalidArgs.New("permission set requires exactly one name or ID")
+			if grant.GetName() == "" && grant.GetId() == "" {
+				return nil, errox.InvalidArgs.New("permission set requires a nonempty name or ID")
 			}
 			if grant.GetName() != "" && grant.GetName() != accesscontrol.ConsoleProxy ||
 				grant.GetId() != "" && grant.GetId() != accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy] {
