@@ -95,6 +95,8 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		}
 	}
 
+	c.K8sConfig.PublicImages = usesPublicImages(c, imageFlavor)
+
 	if mode == renderAll {
 		if err := injectImageTags(c); err != nil {
 			return err

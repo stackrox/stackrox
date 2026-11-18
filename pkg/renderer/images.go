@@ -95,3 +95,23 @@ func configureImageOverrides(c *Config, imageFlavor defaults.ImageFlavor) {
 
 	c.K8sConfig.ImageOverrides = imageOverrides
 }
+
+// usesPublicImages returns true if the flavor is served from a public registry and none of the configured images
+// were overridden to point somewhere else, i.e. deploying does not require registry credentials.
+func usesPublicImages(c *Config, imageFlavor defaults.ImageFlavor) bool {
+	if !imageFlavor.ImagePullSecrets.AnonymousPull {
+		return false
+	}
+	prefix := imageFlavor.MainRegistry + "/"
+	for _, img := range []string{
+		c.K8sConfig.MainImage,
+		c.K8sConfig.CentralDBImage,
+		c.K8sConfig.ScannerV4Image,
+		c.K8sConfig.ScannerV4DBImage,
+	} {
+		if !strings.HasPrefix(img, prefix) {
+			return false
+		}
+	}
+	return true
+}

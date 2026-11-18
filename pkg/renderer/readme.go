@@ -68,6 +68,7 @@ a README file detailing the Helm-based deployment process.`
 {{- $chartRef = "stackrox/central-services" -}}
 {{- end }}
   - Deploy Central and Scanner
+{{- if not .K8sConfig.PublicImages }}
     - Choose one of the following options for image pull secret setup:
       - Run scripts/setup.sh. This will prompt for Docker credentials for the chosen image
         registries. Then, pass
@@ -81,6 +82,7 @@ a README file detailing the Helm-based deployment process.`
         the arguments
           --set imagePullSecrets.allowNone=true
         to the following helm invocation.
+{{- end }}
 {{- end }}
     - Run
         helm install -n stackrox --create-namespace stackrox-central-services {{ $chartRef }}
