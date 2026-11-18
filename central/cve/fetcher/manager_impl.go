@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/throttle"
 )
@@ -35,20 +36,16 @@ func (m *orchestratorIstioCVEManagerImpl) Start() {
 	if !features.LegacyScanner.Enabled() {
 		return
 	}
-	go func() {
-		ticker := time.NewTicker(env.OrchestratorVulnScanInterval.DurationSetting())
-		defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				m.reconcileAllCVEs()
-			case <-m.updateSignal.Done():
-				m.updateSignal.Reset()
-				m.reconcileAllCVEs()
-			}
-		}
-	}()
+	m.fetchWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "cve_orchestrator_istio_fetch",
+		Interval:   env.OrchestratorVulnScanInterval.DurationSetting(),
+		RunOnStart: false,
+		Task:       func(ctx context.Context) error { m.reconcileAllCVEs(); return nil },
+		Kick:       &m.updateSignal,
+		Logger:     log,
+	})
+	m.fetchWorker.Start()
 }
 
 func (m *orchestratorIstioCVEManagerImpl) HandleClusterConnection() {
