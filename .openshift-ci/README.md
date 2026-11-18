@@ -31,6 +31,33 @@ make lint
 
 ## Debugging
 
+### Single-node OpenShift experiment (ROX-37373)
+
+OCP 4.22 Operator, non-Groovy, Scanner-install, QA and UI jobs use one
+`e2-standard-16` control-plane node and zero workers. There is no opt-in flag.
+`begin.sh` writes these settings to `shared_env` before automation-flavors
+provisions the cluster. Other versions and specialized suites keep their
+existing topology.
+
+This is an experiment awaiting PR CI results, not validated sizing. Inspect the
+rendered installer configuration, actual node count, ingress/operator health,
+scheduling, CPU/memory peaks, runtime and teardown before promotion. Include
+bootstrap, failed attempts and retries when comparing cost per successful run.
+Keep application resources and test concurrency unchanged while sizing the node.
+
+Before merging, establish passing multi-node coverage for each affected
+suite/stream and verify lower cost without new topology failures or more than
+10% worse p95 end-to-end runtime. Keep suites requiring multiple nodes on their
+existing topology. Roll back by removing the SNO selection in `ocp-topology.sh`.
+Expand to other streams only after verifying their provisioning compatibility.
+
+Local checks:
+
+```sh
+python3 -m unittest discover -s .openshift-ci/tests -p test_ocp_topology.py
+bash -n .openshift-ci/begin.sh .openshift-ci/ocp-topology.sh
+```
+
 ### Links
 
 Job Definition: https://github.com/openshift/release/tree/master/ci-operator/jobs/stackrox/stackrox

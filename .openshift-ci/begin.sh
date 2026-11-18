@@ -59,16 +59,9 @@ if [[ -z "${SHARED_DIR:-}" ]]; then
     exit 0 # not fatal but worth highlighting
 fi
 
-if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
-    info "Setting worker node type and count for OCP 4 jobs"
-    set_ci_shared_export WORKER_NODE_COUNT 2
-    if [[ "${JOB_NAME:-}" =~ vm-scanning ]]; then
-        # Selecting nodes with KVM support
-        set_ci_shared_export WORKER_NODE_TYPE n2-standard-8
-    else
-        set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
-    fi
-fi
+# shellcheck source=ocp-topology.sh
+source "$ROOT/.openshift-ci/ocp-topology.sh"
+configure_ocp_topology
 
 if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
     info "Provide access for the CI user to EKS"
