@@ -246,10 +246,6 @@ class Env {
         return get("SUPPORTS_LOAD_BALANCER_SVC", "true")
     }
 
-    static String mustGetOcmOfflineToken() {
-        return get("OCM_OFFLINE_TOKEN")
-    }
-
     static String mustGetOcmClientId() {
         return get("CLOUD_SOURCES_TEST_OCM_CLIENT_ID")
     }

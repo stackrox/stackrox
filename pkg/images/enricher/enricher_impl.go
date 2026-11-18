@@ -1121,8 +1121,10 @@ func FillScanStats(i *storage.Image) {
 	}
 }
 
-// toBaseImageInfos converts matched BaseImage objects to BaseImageInfo for storage in the image.
-// It computes the max layer index based on the first base image's metadata.
+// toBaseImageInfos converts matched base images into BaseImageInfo.
+// MaxLayerIndex is the manifest index of the last base content blob and is
+// the same for every match. MaxHistoryIndex is set per base image when its
+// history is a prefix of this image and this image is strictly longer.
 func toBaseImageInfos(metadata *storage.ImageMetadata, baseImages []*storage.BaseImage) []*storage.BaseImageInfo {
 	if len(baseImages) == 0 {
 		return nil
@@ -1149,16 +1151,42 @@ func toBaseImageInfos(metadata *storage.ImageMetadata, baseImages []*storage.Bas
 	}
 
 	infos := make([]*storage.BaseImageInfo, 0, len(baseImages))
+	childHistory := metadata.GetV1().GetLayers()
 	for _, bi := range baseImages {
-		infos = append(infos, &storage.BaseImageInfo{
+		info := &storage.BaseImageInfo{
 			BaseImageId:       bi.GetId(),
 			BaseImageFullName: fmt.Sprintf("%s:%s", bi.GetRepository(), bi.GetTag()),
 			BaseImageDigest:   bi.GetManifestDigest(),
 			Created:           bi.GetCreated(),
 			MaxLayerIndex:     int32(maxIndex),
-		})
+		}
+		if idx, ok := historyBoundary(childHistory, bi.GetHistory()); ok {
+			info.SetMaxHistoryIndex = &storage.BaseImageInfo_MaxHistoryIndex{
+				MaxHistoryIndex: idx,
+			}
+		}
+		infos = append(infos, info)
 	}
 	return infos
+}
+
+// historyBoundary returns the index of the last base history line when that
+// history is a prefix of child and child is strictly longer.
+// Instruction and value are compared. Empty is not, because builders disagree
+// on that flag for the same instruction.
+func historyBoundary(child []*storage.ImageLayer, history []*storage.BaseImageHistoryEntry) (int32, bool) {
+	if len(history) == 0 || len(child) <= len(history) {
+		return 0, false
+	}
+	for i, entry := range history {
+		layer := child[i]
+		if entry == nil || layer == nil ||
+			layer.GetInstruction() != entry.GetInstruction() ||
+			layer.GetValue() != entry.GetValue() {
+			return 0, false
+		}
+	}
+	return int32(len(history) - 1), true
 }
 
 // resolveLayerBoundary converts the base image's content layer count to the
