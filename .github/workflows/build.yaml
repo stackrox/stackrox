@@ -590,6 +590,19 @@ jobs:
           fi
           os="${{ matrix.platform }}"; os="${os%%-*}"; arch="${{ matrix.platform }}"; arch="${arch##*-}"
           export GOOS="$os" GOARCH="$arch"
+          # Vendor cache (go.sum-keyed, shared with main-image legs):
+          # without it every cold job downloads modules from
+          # proxy.golang.org — a transient proxy stream error killed a
+          # sweep run (netpol-analyzer@v1.4.4).
+          VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
+          if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
+            tar -xzf /tmp/vendor.tar.gz
+          else
+            unset GOCACHEPROG; go mod vendor; export GOCACHEPROG="${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve"
+            tar -czf /tmp/vendor.tar.gz vendor/
+            "${GOCACHEPROG}" -store-all "$VENDOR_KEY" /tmp/vendor.tar.gz || true
+          fi
+          export GOFLAGS="${GOFLAGS} -mod=vendor"
           scripts/go-build.sh ./roxctl
           if [ "$os" = linux ]; then
             scripts/go-build.sh ./compliance/virtualmachines/roxagent
