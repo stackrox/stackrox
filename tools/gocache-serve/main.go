@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"runtime/debug"
 	"bufio"
 	"crypto/sha256"
@@ -1102,6 +1103,20 @@ func main() {
 				}
 				atomic.AddInt64(&getBytes, int64(len(getBody)))
 				cloudMeta := metaBy[actionID]
+				// Integrity: the manifest's meta IS the entry's outputID —
+				// the sha256 of its content. Verify before serving: a
+				// corrupted or forged blob entry would otherwise inject
+				// object code into every downstream build. Mismatch → miss
+				// (go recompiles and re-puts, self-healing the entry).
+				if len(cloudMeta) == 32 {
+					sum := sha256.Sum256(getBody)
+					if !bytes.Equal(sum[:], cloudMeta) {
+						log.Printf("gocache-serve: INTEGRITY %s: body hash %x != manifest %x — treating as miss",
+							shortID(actionID), sum[:8], cloudMeta[:8])
+						resp.Miss = true
+						break
+					}
+				}
 				if cloudMeta == nil {
 					cloudMeta = req.ActionID // length-correct fallback
 				}
@@ -1163,6 +1178,18 @@ func main() {
 				// distribution), and an empty blob is a valid hittable
 				// entry — skipping it froze ~35% of gets as permanent
 				// misses (manifest recorded, store never served).
+				// Integrity: go computes OutputID as the sha256 of the
+				// body; a mismatch means corruption on OUR side (transport
+				// or a bug) — skip the upload rather than propagate it.
+				if len(req.OutputID) == 32 && req.BodySize > 0 {
+					if sum := sha256.Sum256(req.Body); !bytes.Equal(sum[:], req.OutputID) {
+						// Warn-only: protocol clients may use opaque
+						// outputIDs; blocking uploads would break them.
+						// The GET-side check still rejects bad content.
+						log.Printf("gocache-serve: INTEGRITY(put,warn) %s: body hash %x != outputID %x",
+							shortID(actionID), sum[:8], req.OutputID[:8])
+					}
+				}
 				uploader.Queue(actionID, req.Body)
 			}
 

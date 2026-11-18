@@ -11,6 +11,7 @@ package main
 // in-flight map, and the OutputID round-trip.
 
 import (
+	"crypto/sha256"
 	"bufio"
 	"encoding/base64"
 	"encoding/json"
@@ -170,14 +171,22 @@ func (ps *protoSession) close() {
 
 // TestProtocolPutGetRoundTrip: put an entry, close, restart the process,
 // get it back. The fundamental cache contract.
+
+// hashOutputID mirrors cmd/go: the outputID of a put is the sha256 of
+// its body. The GET-side integrity check relies on this identity.
+func hashOutputID(body []byte) []byte {
+	h := sha256.Sum256(body)
+	return h[:]
+}
+
 func TestProtocolPutGetRoundTrip(t *testing.T) {
 	storeDir := t.TempDir()
 	actionID := []byte("abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789")
-	outputID := make([]byte, 32)
-	for i := range outputID {
-		outputID[i] = byte(i)
-	}
+	// Faithful to cmd/go: outputID IS the sha256 of the body (the GET
+	// integrity check relies on this identity).
 	body := []byte("test entry body content — with unicode: hello wörld")
+	outputIDSlice := sha256.Sum256(body)
+	outputID := outputIDSlice[:]
 
 	// Session 1: put
 	ps := startProtoSession(t, storeDir)
@@ -250,8 +259,7 @@ func TestProtocolGetMiss(t *testing.T) {
 func TestProtocolEmptyPut(t *testing.T) {
 	storeDir := t.TempDir()
 	actionID := []byte(strings.Repeat("1", 64))
-	outputID := make([]byte, 32)
-	outputID[0], outputID[1], outputID[2] = 1, 2, 3
+	outputID := hashOutputID(nil)
 
 	// Session 1: put with empty body
 	ps := startProtoSession(t, storeDir)
@@ -299,7 +307,7 @@ func TestProtocolLargeBody(t *testing.T) {
 			ps.send(&protoReq{
 				Command:  "put",
 				ActionID: actionID,
-				OutputID: make([]byte, 32),
+				OutputID: hashOutputID(body),
 				BodySize: int64(size),
 			}, body)
 			ps.close()
@@ -340,7 +348,7 @@ func TestProtocolMultipleEntries(t *testing.T) {
 		ps1.send(&protoReq{
 			Command:  "put",
 			ActionID: id,
-			OutputID: make([]byte, 32),
+			OutputID: hashOutputID(body),
 			BodySize: int64(len(body)),
 		}, body)
 	}
@@ -373,7 +381,7 @@ func TestProtocolSameSessionGetAfterPut(t *testing.T) {
 	ps.send(&protoReq{
 		Command:  "put",
 		ActionID: actionID,
-		OutputID: make([]byte, 32),
+		OutputID: hashOutputID(body),
 		BodySize: int64(len(body)),
 	}, body)
 
