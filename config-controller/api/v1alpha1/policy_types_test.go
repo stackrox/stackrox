@@ -343,6 +343,64 @@ func TestToProtobufRejectsDeploymentAndExcludeByKind(t *testing.T) {
 	assert.EqualError(t, err, "exclusion cannot set both 'deployment' and 'excludeByKind'")
 }
 
+func TestToProtobufImageExclusion(t *testing.T) {
+	spec := SecurityPolicySpec{
+		PolicyName:      "image-exclusion",
+		Categories:      []string{"Security Best Practices"},
+		LifecycleStages: []LifecycleStage{"BUILD"},
+		Severity:        "LOW_SEVERITY",
+		Exclusions: []Exclusion{{
+			Name:  "Don't alert on Ubuntu images",
+			Image: Image{Name: "quay.io/repository/ubuntu*"},
+		}},
+	}
+
+	proto, err := spec.ToProtobuf(map[CacheType]map[string]string{
+		Notifier: {},
+		Cluster:  {},
+	})
+	assert.NoError(t, err)
+	protoassert.SlicesEqual(t, []*storage.Exclusion{{
+		Name:  "Don't alert on Ubuntu images",
+		Image: &storage.Exclusion_Image{Name: "quay.io/repository/ubuntu*"},
+	}}, proto.GetExclusions())
+}
+
+func TestToProtobufImageAndDeploymentExclusion(t *testing.T) {
+	spec := SecurityPolicySpec{
+		PolicyName:      "image-and-deployment-exclusion",
+		Categories:      []string{"Security Best Practices"},
+		LifecycleStages: []LifecycleStage{"BUILD", "DEPLOY"},
+		Severity:        "LOW_SEVERITY",
+		Exclusions: []Exclusion{{
+			Name: "Don't alert on collector images or deployments",
+			Deployment: Deployment{
+				Name: "collector",
+				Scope: Scope{
+					Namespace: "stackrox",
+				},
+			},
+			Image: Image{Name: "quay.io/stackrox/collector*"},
+		}},
+	}
+
+	proto, err := spec.ToProtobuf(map[CacheType]map[string]string{
+		Notifier: {},
+		Cluster:  {},
+	})
+	assert.NoError(t, err)
+	protoassert.SlicesEqual(t, []*storage.Exclusion{{
+		Name: "Don't alert on collector images or deployments",
+		Matcher: &storage.Exclusion_Deployment_{
+			Deployment: &storage.Exclusion_Deployment{
+				Name:  "collector",
+				Scope: &storage.Scope{Namespace: "stackrox"},
+			},
+		},
+		Image: &storage.Exclusion_Image{Name: "quay.io/stackrox/collector*"},
+	}}, proto.GetExclusions())
+}
+
 func TestToProtobufExcludeByKind(t *testing.T) {
 	caches := map[CacheType]map[string]string{
 		Notifier: {},
