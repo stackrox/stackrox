@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -60,8 +61,8 @@ type managerImpl struct {
 	nameExtractor types.NameExtractor
 	idExtractor   types.IDExtractor
 
-	reconciliationTicker *time.Ticker
 	shortCircuitSignal   concurrency.Signal
+	reconciliationWorker *periodicworker.Worker
 
 	reconciliationCtx context.Context
 
@@ -204,26 +205,18 @@ func (m *managerImpl) shortCircuitReconciliationLoop() {
 }
 
 func (m *managerImpl) startReconciliationLoop() {
-	m.reconciliationTicker = time.NewTicker(m.reconciliationTickerDuration)
-
-	go m.reconciliationLoop()
-}
-
-func (m *managerImpl) reconciliationLoop() {
-	// While we currently do not have an exit in the form of "stopping" the reconciliation, still, ensure that
-	// the ticker is stopped when we stop running the reconciliation.
-	defer m.reconciliationTicker.Stop()
-	for {
-		select {
-		case <-m.shortCircuitSignal.Done():
-			log.Debug("Received a short circuit signal, running the reconciliation")
-			m.shortCircuitSignal.Reset()
+	m.reconciliationWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "declarativeconfig_reconcile",
+		Interval:   m.reconciliationTickerDuration,
+		RunOnStart: false,
+		Task: func(ctx context.Context) error {
 			m.runReconciliation()
-		case <-m.reconciliationTicker.C:
-			log.Debug("Received a ticker signal, running the reconciliation")
-			m.runReconciliation()
-		}
-	}
+			return nil
+		},
+		Kick:   &m.shortCircuitSignal,
+		Logger: log,
+	})
+	m.reconciliationWorker.Start()
 }
 
 func (m *managerImpl) runReconciliation() {
