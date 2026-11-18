@@ -275,12 +275,14 @@ jobs:
           fetch_ok=1
           for plat in $ROXCTL_PLATFORMS; do
             ( "${GOCACHEPROG}" -fetch-any "ca-roxctl-v3-${plat}-${GO_HASH}-${BUILD_TAG}" "/tmp/rx-${plat}.tar" \
-              && tar -xf "/tmp/rx-${plat}.tar" && rm -f "/tmp/rx-${plat}.tar" ) &
+              && tar -xf "/tmp/rx-${plat}.tar" && rm -f "/tmp/rx-${plat}.tar" \
+              && touch "/tmp/rx-${plat}.ok" ) &> "/tmp/rx-${plat}.log" &
           done
-          wait || fetch_ok=0
+          wait
           for plat in $ROXCTL_PLATFORMS; do
-            [ -d "bin/${plat}" ] || fetch_ok=0
+            [ -f "/tmp/rx-${plat}.ok" ] || { fetch_ok=0; tail -2 "/tmp/rx-${plat}.log" >&2; }
           done
+          rm -f /tmp/rx-*.ok /tmp/rx-*.log
           if [ "$fetch_ok" = 1 ]; then
             echo "roxctl (all platforms): FETCHED from blob store (parallel)"
           else
@@ -300,7 +302,6 @@ jobs:
             wait
             rm -f /tmp/rx-*.tar
             echo "roxctl (all platforms): compiled and stored (parallel)"
-          fi
           fi
 
       - name: UI — fetch from blob or build
