@@ -113,6 +113,52 @@ func TestCreateSensorRoleResolvesAdministratorSetByName(t *testing.T) {
 	assert.Equal(t, []string{"Deployment"}, role.Permissions[storage.Access_READ_ACCESS])
 }
 
+func TestCreateSensorRoleResolvesByID(t *testing.T) {
+	for name, tc := range map[string]struct {
+		stored *storage.PermissionSet
+		want   error
+	}{
+		"console default": {stored: &storage.PermissionSet{
+			Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+			Name:             accesscontrol.ConsoleProxy,
+			AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+		}},
+		"missing": {want: errox.NotFound},
+		"different name": {stored: &storage.PermissionSet{
+			Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+			Name:             "unexpected set",
+			AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+		}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+			roles.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]).
+				Return(tc.stored, tc.stored != nil, nil)
+			role, err := (&roleManager{roles}).createSensorRole(t.Context(),
+				&v1.GenerateTokenForPermissionsAndScopeRequest{
+					PermissionSetIds: []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}})
+			if tc.want != nil {
+				require.ErrorIs(t, err, tc.want)
+				assert.Nil(t, role)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, []string{"Deployment"}, role.Permissions[storage.Access_READ_ACCESS])
+		})
+	}
+}
+
+func TestCreateSensorRoleRejectsInvalidID(t *testing.T) {
+	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
+	_, err := (&roleManager{roles}).createSensorRole(t.Context(),
+		&v1.GenerateTokenForPermissionsAndScopeRequest{PermissionSetIds: []string{"not-a-uuid"}})
+	require.ErrorIs(t, err, errox.InvalidArgs)
+}
+
 func TestCreateSensorRoleUsesStoredPermissions(t *testing.T) {
 	for name, tc := range map[string]struct {
 		permissions map[string]storage.Access

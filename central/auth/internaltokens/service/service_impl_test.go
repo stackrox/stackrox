@@ -255,6 +255,32 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		setup       func(*testing.T, *mockContainer)
 		expectedRsp *v1.GenerateTokenForPermissionsAndScopeResponse
 	}{
+		"success - console permission set by ID": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+				Lifetime:         testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(_ *testing.T, mocks *mockContainer) {
+				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]).
+					Return(&storage.PermissionSet{
+						Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+						Name:             accesscontrol.ConsoleProxy,
+						AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+						ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+						ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+					}, true, nil)
+				mocks.issuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName:    internalRoleName,
+						Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
+						testTokenExpiry.Format(time.RFC3339Nano)),
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-id-token"}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-id-token"},
+		},
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{accesscontrol.ConsoleProxy},

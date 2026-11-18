@@ -169,6 +169,30 @@ func TestEnforce(t *testing.T) {
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
+		"console permission set ID without scope": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID: fixtureconsts.Cluster1,
+		},
+		"name and ID cannot be combined": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+				PermissionSetIds:   []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+				Lifetime:           durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"unsupported permission set ID": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSetIds: []string{"b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"},
+				Lifetime:         durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
 		"console permission set with namespace scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSetNames: []string{accesscontrol.ConsoleProxy},

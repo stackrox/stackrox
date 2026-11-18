@@ -43,6 +43,11 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenFor
 		}
 		r.ClusterScopes = tmpContainer
 	}
+	if rhs := m.PermissionSetIds; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.PermissionSetIds = tmpContainer
+	}
 	if rhs := m.PermissionSetNames; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -139,6 +144,15 @@ func (this *GenerateTokenForPermissionsAndScopeRequest) EqualVT(that *GenerateTo
 	}
 	if this.Requester != that.Requester {
 		return false
+	}
+	if len(this.PermissionSetIds) != len(that.PermissionSetIds) {
+		return false
+	}
+	for i, vx := range this.PermissionSetIds {
+		vy := that.PermissionSetIds[i]
+		if vx != vy {
+			return false
+		}
 	}
 	if len(this.PermissionSetNames) != len(that.PermissionSetNames) {
 		return false
@@ -244,6 +258,15 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA
 			i -= len(m.PermissionSetNames[iNdEx])
 			copy(dAtA[i:], m.PermissionSetNames[iNdEx])
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.PermissionSetNames[iNdEx])))
+			i--
+			dAtA[i] = 0x32
+		}
+	}
+	if len(m.PermissionSetIds) > 0 {
+		for iNdEx := len(m.PermissionSetIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.PermissionSetIds[iNdEx])
+			copy(dAtA[i:], m.PermissionSetIds[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.PermissionSetIds[iNdEx])))
 			i--
 			dAtA[i] = 0x2a
 		}
@@ -423,6 +446,12 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 	l = len(m.Requester)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.PermissionSetIds) > 0 {
+		for _, s := range m.PermissionSetIds {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	if len(m.PermissionSetNames) > 0 {
 		for _, s := range m.PermissionSetNames {
@@ -716,6 +745,38 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) er
 			m.Requester = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PermissionSetIds = append(m.PermissionSetIds, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetNames", wireType)
 			}
@@ -1240,6 +1301,42 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []by
 			m.Requester = stringValue
 			iNdEx = postIndex
 		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.PermissionSetIds = append(m.PermissionSetIds, stringValue)
+			iNdEx = postIndex
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetNames", wireType)
 			}

@@ -10,6 +10,7 @@ import (
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -38,13 +39,19 @@ func (rm *roleManager) createSensorRole(
 		return nil, errox.ServerError.New("Sensor proxy permission set store unavailable")
 	}
 
-	permissionSetNames := req.GetPermissionSetNames()
-	if len(permissionSetNames) == 0 {
+	if len(req.GetPermissionSetNames()) == 0 && len(req.GetPermissionSetIds()) == 0 {
 		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
 	}
-	permissionSets, err := rm.getPermissionSetsByNames(ctx, permissionSetNames)
+	permissionSets, err := rm.getPermissionSetsByNames(ctx, req.GetPermissionSetNames())
 	if err != nil {
 		return nil, err
+	}
+	byID, err := rm.getPermissionSetsByIDs(ctx, req.GetPermissionSetIds())
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range req.GetPermissionSetIds() {
+		permissionSets = append(permissionSets, byID[id])
 	}
 	for _, permissionSet := range permissionSets {
 		if err := permissionsUtils.ValidateScopedReadOnlyPermissionSet(permissionSet); err != nil {
@@ -59,6 +66,9 @@ func (rm *roleManager) createSensorRole(
 }
 
 func (rm *roleManager) getPermissionSetsByNames(ctx context.Context, permissionSetNames []string) ([]*storage.PermissionSet, error) {
+	if len(permissionSetNames) == 0 {
+		return nil, nil
+	}
 	matches, err := rm.roleStore.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
 		return slices.Contains(permissionSetNames, ps.GetName())
 	})
@@ -78,6 +88,24 @@ func (rm *roleManager) getPermissionSetsByNames(ctx context.Context, permissionS
 		}
 	}
 	return matches, nil
+}
+
+func (rm *roleManager) getPermissionSetsByIDs(ctx context.Context, permissionSetIDs []string) (map[string]*storage.PermissionSet, error) {
+	sets := make(map[string]*storage.PermissionSet, len(permissionSetIDs))
+	for _, id := range permissionSetIDs {
+		if _, err := uuid.FromString(id); err != nil {
+			return nil, errox.InvalidArgs.Newf("invalid Sensor proxy permission set ID %q", id)
+		}
+		permissionSet, found, err := rm.roleStore.GetPermissionSet(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			return nil, errox.NotFound.Newf("Sensor proxy permission set ID %q not found", id)
+		}
+		sets[id] = permissionSet
+	}
+	return sets, nil
 }
 
 func permissionsFromSets(permissionSets []*storage.PermissionSet) map[storage.Access][]string {
