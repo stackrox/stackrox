@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -32,6 +33,7 @@ type orchestratorIstioCVEManagerImpl struct {
 
 	updateSignal    concurrency.Signal
 	lastUpdatedTime time.Time
+	fetchWorker     *periodicworker.Worker
 }
 
 // NewOrchestratorIstioCVEManagerImpl returns new instance of orchestratorIstioCVEManagerImpl

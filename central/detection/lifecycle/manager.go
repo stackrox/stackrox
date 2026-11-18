@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"context"
 	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
@@ -69,15 +71,35 @@ func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deployt
 		deploymentObservationQueue: queue.New(),
 
 		indicatorRateLimiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
-		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
-		baselineFlushTicker:  time.NewTicker(baselineFlushTickerDuration),
 
 		removedOrDisabledPolicies: set.NewStringSet(),
 
 		connectionManager: connectionManager,
 	}
 
-	go m.flushQueuePeriodically()
-	go m.flushBaselineQueuePeriodically()
+	m.indicatorFlushWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "detection_indicator_flush",
+		Interval:   indicatorFlushTickerDuration,
+		RunOnStart: false,
+		Task: func(ctx context.Context) error {
+			m.flushIndicatorQueue()
+			return nil
+		},
+		Logger: log,
+	})
+	m.indicatorFlushWorker.Start()
+
+	m.baselineFlushWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "detection_baseline_flush",
+		Interval:   baselineFlushTickerDuration,
+		RunOnStart: false,
+		Task: func(ctx context.Context) error {
+			m.flushBaselineQueue()
+			return nil
+		},
+		Logger: log,
+	})
+	m.baselineFlushWorker.Start()
+
 	return m
 }

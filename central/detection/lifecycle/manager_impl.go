@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -79,8 +80,9 @@ type managerImpl struct {
 	indicatorQueueLock   sync.Mutex
 	flushProcessingLock  concurrency.TransparentMutex
 	indicatorRateLimiter *rate.Limiter
-	indicatorFlushTicker *time.Ticker
-	baselineFlushTicker  *time.Ticker
+
+	indicatorFlushWorker *periodicworker.Worker
+	baselineFlushWorker  *periodicworker.Worker
 
 	policyAlertsLock          sync.RWMutex
 	removedOrDisabledPolicies set.StringSet
@@ -132,20 +134,6 @@ func (m *managerImpl) buildIndicatorFilter() {
 		utils.Should(errors.Wrap(err, "error removing process indicators"))
 	}
 	log.Infof("Successfully cleaned up those %d processes", len(processesToRemove))
-}
-
-func (m *managerImpl) flushQueuePeriodically() {
-	defer m.indicatorFlushTicker.Stop()
-	for range m.indicatorFlushTicker.C {
-		m.flushIndicatorQueue()
-	}
-}
-
-func (m *managerImpl) flushBaselineQueuePeriodically() {
-	defer m.baselineFlushTicker.Stop()
-	for range m.baselineFlushTicker.C {
-		m.flushBaselineQueue()
-	}
 }
 
 func indicatorToBaselineKey(indicator *storage.ProcessIndicator) processBaselineKey {

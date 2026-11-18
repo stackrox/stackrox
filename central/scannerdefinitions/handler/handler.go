@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/periodicworker"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -134,6 +135,9 @@ type httpHandler struct {
 
 	// offlineFiles coordinates reads and updates to offline files.
 	offlineFiles *offlineFileManager
+
+	// cleanupWorker periodically reaps stale updaters.
+	cleanupWorker *periodicworker.Worker
 }
 
 func init() {
@@ -186,7 +190,24 @@ func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
 	log.Info("In online mode: scanner definitions will be updated automatically")
 
 	h.updaters = make(map[string]*requestedUpdater)
-	go h.cleanUpdatersPeriodic(opts.cleanupInterval, opts.cleanupAge)
+
+	interval := defaultCleanupInterval
+	if opts.cleanupInterval != nil {
+		interval = *opts.cleanupInterval
+	}
+	age := defaultCleanupAge
+	if opts.cleanupAge != nil {
+		age = *opts.cleanupAge
+	}
+
+	h.cleanupWorker = periodicworker.MustNew(periodicworker.Config{
+		Name:       "scannerdefinitions_updater_reaper",
+		Interval:   interval,
+		RunOnStart: false,
+		Task:       func(ctx context.Context) error { h.cleanupUpdaters(age); return nil },
+		Logger:     log,
+	})
+	h.cleanupWorker.Start()
 
 	return h
 }
@@ -760,22 +781,6 @@ func writeErrorForFile(w http.ResponseWriter, err error, path string) {
 	}
 
 	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read vulnerability definition %s: %v", filepath.Base(path), err)
-}
-
-func (h *httpHandler) cleanUpdatersPeriodic(cleanupInterval, cleanupAge *time.Duration) {
-	interval := defaultCleanupInterval
-	if cleanupInterval != nil {
-		interval = *cleanupInterval
-	}
-	age := defaultCleanupAge
-	if cleanupAge != nil {
-		age = *cleanupAge
-	}
-
-	t := time.NewTicker(interval)
-	for range t.C {
-		h.cleanupUpdaters(age)
-	}
 }
 
 func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
