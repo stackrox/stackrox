@@ -227,7 +227,8 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 			req := fakeClient.lastRequest
 			require.NotNil(t, req)
 
-			assert.Equal(t, []string{accesscontrol.ConsoleProxy}, req.GetPermissionSetNames())
+			require.Len(t, req.GetPermissionSets(), 1)
+			assert.Equal(t, accesscontrol.ConsoleProxy, req.GetPermissionSets()[0].GetName())
 			assert.Equal(t, map[string]centralv1.Access{
 				"Deployment": centralv1.Access_READ_ACCESS,
 				"Image":      centralv1.Access_READ_ACCESS,
@@ -373,7 +374,8 @@ func TestBuildTokenRequest(t *testing.T) {
 	t.Run("empty scope", func(t *testing.T) {
 		req, err := provider.buildTokenRequest("")
 		require.NoError(t, err)
-		assert.Equal(t, []string{accesscontrol.ConsoleProxy}, req.GetPermissionSetNames())
+		require.Len(t, req.GetPermissionSets(), 1)
+		assert.Equal(t, accesscontrol.ConsoleProxy, req.GetPermissionSets()[0].GetName())
 		assert.Equal(t, map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,

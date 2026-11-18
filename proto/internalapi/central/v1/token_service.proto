@@ -39,15 +39,19 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // identifying who requested it. This can allow finer-grain tracking
   // of who requested an internal token in the audit log trail.
   string requester = 4;
-  // Select Central-managed permission sets by ID instead of by name.
-  // Do not combine with permission_set_names.
-  repeated string permission_set_ids = 5;
-  // permission_set_names select Central-managed permission sets by unique name.
+  // permission_sets select Central-managed permission sets by ID or unique name.
   // When set, Central uses the permission sets instead of permissions.
   // permissions may carry fallback values for older Centrals that do not
   // recognize this field. Console requests may specify cluster_scopes
   // within the authenticated Sensor's cluster.
-  repeated string permission_set_names = 6;
+  repeated ScopedPermissionSet permission_sets = 5;
+}
+
+// ScopedPermissionSet selects a Central-managed permission set.
+message ScopedPermissionSet {
+  // Exactly one of id or name must be set.
+  string id = 1;
+  string name = 2;
 }
 
 // ClusterScope represents the access scope of a role within a cluster.

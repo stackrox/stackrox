@@ -289,7 +289,7 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSetNames: []string{accesscontrol.ConsoleProxy},
+		PermissionSets: []*centralv1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
 		// Centrals without permission set support use these fallback permissions.
 		Permissions: map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,

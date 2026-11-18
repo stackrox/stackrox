@@ -257,8 +257,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	}{
 		"success - console permission set by ID": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
-				Lifetime:         testExpirationDuration,
+				PermissionSets: []*v1.ScopedPermissionSet{{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}},
+				Lifetime:       testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {
@@ -283,10 +283,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		},
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
-				Permissions:        map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
-				ClusterScopes:      []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:           testExpirationDuration,
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				Permissions:    map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes:  []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:       testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {
@@ -322,9 +322,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		},
 		"success - duplicate permission set names": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy, accesscontrol.ConsoleProxy},
-				ClusterScopes:      []*v1.ClusterScope{requestSingleNamespace},
-				Lifetime:           testExpirationDuration,
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}, {Name: accesscontrol.ConsoleProxy}},
+				ClusterScopes:  []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:       testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(t *testing.T, mocks *mockContainer) {

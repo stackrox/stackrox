@@ -99,17 +99,14 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// identifying who requested it. This can allow finer-grain tracking
 	// of who requested an internal token in the audit log trail.
 	Requester string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
-	// Select Central-managed permission sets by ID instead of by name.
-	// Do not combine with permission_set_names.
-	PermissionSetIds []string `protobuf:"bytes,5,rep,name=permission_set_ids,json=permissionSetIds,proto3" json:"permission_set_ids,omitempty"`
-	// permission_set_names select Central-managed permission sets by unique name.
+	// permission_sets select Central-managed permission sets by ID or unique name.
 	// When set, Central uses the permission sets instead of permissions.
 	// permissions may carry fallback values for older Centrals that do not
 	// recognize this field. Console requests may specify cluster_scopes
 	// within the authenticated Sensor's cluster.
-	PermissionSetNames []string `protobuf:"bytes,6,rep,name=permission_set_names,json=permissionSetNames,proto3" json:"permission_set_names,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	PermissionSets []*ScopedPermissionSet `protobuf:"bytes,5,rep,name=permission_sets,json=permissionSets,proto3" json:"permission_sets,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GenerateTokenForPermissionsAndScopeRequest) Reset() {
@@ -170,18 +167,65 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetRequester() string {
 	return ""
 }
 
-func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSetIds() []string {
+func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSets() []*ScopedPermissionSet {
 	if x != nil {
-		return x.PermissionSetIds
+		return x.PermissionSets
 	}
 	return nil
 }
 
-func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSetNames() []string {
+// ScopedPermissionSet selects a Central-managed permission set.
+type ScopedPermissionSet struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Exactly one of id or name must be set.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScopedPermissionSet) Reset() {
+	*x = ScopedPermissionSet{}
+	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScopedPermissionSet) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScopedPermissionSet) ProtoMessage() {}
+
+func (x *ScopedPermissionSet) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[1]
 	if x != nil {
-		return x.PermissionSetNames
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
 	}
-	return nil
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScopedPermissionSet.ProtoReflect.Descriptor instead.
+func (*ScopedPermissionSet) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ScopedPermissionSet) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ScopedPermissionSet) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
 }
 
 // ClusterScope represents the access scope of a role within a cluster.
@@ -203,7 +247,7 @@ type ClusterScope struct {
 
 func (x *ClusterScope) Reset() {
 	*x = ClusterScope{}
-	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[1]
+	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -215,7 +259,7 @@ func (x *ClusterScope) String() string {
 func (*ClusterScope) ProtoMessage() {}
 
 func (x *ClusterScope) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[1]
+	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -228,7 +272,7 @@ func (x *ClusterScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterScope.ProtoReflect.Descriptor instead.
 func (*ClusterScope) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{1}
+	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ClusterScope) GetClusterId() string {
@@ -261,7 +305,7 @@ type GenerateTokenForPermissionsAndScopeResponse struct {
 
 func (x *GenerateTokenForPermissionsAndScopeResponse) Reset() {
 	*x = GenerateTokenForPermissionsAndScopeResponse{}
-	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[2]
+	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -273,7 +317,7 @@ func (x *GenerateTokenForPermissionsAndScopeResponse) String() string {
 func (*GenerateTokenForPermissionsAndScopeResponse) ProtoMessage() {}
 
 func (x *GenerateTokenForPermissionsAndScopeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[2]
+	mi := &file_internalapi_central_v1_token_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -286,7 +330,7 @@ func (x *GenerateTokenForPermissionsAndScopeResponse) ProtoReflect() protoreflec
 
 // Deprecated: Use GenerateTokenForPermissionsAndScopeResponse.ProtoReflect.Descriptor instead.
 func (*GenerateTokenForPermissionsAndScopeResponse) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{2}
+	return file_internalapi_central_v1_token_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GenerateTokenForPermissionsAndScopeResponse) GetToken() string {
@@ -301,17 +345,19 @@ var File_internalapi_central_v1_token_service_proto protoreflect.FileDescriptor
 const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\n" +
 	"*internalapi/central/v1/token_service.proto\x12\n" +
-	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xe1\x03\n" +
+	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xcb\x03\n" +
 	"*GenerateTokenForPermissionsAndScopeRequest\x12i\n" +
 	"\vpermissions\x18\x01 \x03(\v2G.central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntryR\vpermissions\x12?\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\x18.central.v1.ClusterScopeR\rclusterScopes\x125\n" +
 	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1c\n" +
-	"\trequester\x18\x04 \x01(\tR\trequester\x12,\n" +
-	"\x12permission_set_ids\x18\x05 \x03(\tR\x10permissionSetIds\x120\n" +
-	"\x14permission_set_names\x18\x06 \x03(\tR\x12permissionSetNames\x1aR\n" +
+	"\trequester\x18\x04 \x01(\tR\trequester\x12H\n" +
+	"\x0fpermission_sets\x18\x05 \x03(\v2\x1f.central.v1.ScopedPermissionSetR\x0epermissionSets\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"}\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"9\n" +
+	"\x13ScopedPermissionSet\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"}\n" +
 	"\fClusterScope\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12.\n" +
@@ -341,27 +387,29 @@ func file_internalapi_central_v1_token_service_proto_rawDescGZIP() []byte {
 }
 
 var file_internalapi_central_v1_token_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_internalapi_central_v1_token_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_internalapi_central_v1_token_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_internalapi_central_v1_token_service_proto_goTypes = []any{
 	(Access)(0), // 0: central.v1.Access
-	(*GenerateTokenForPermissionsAndScopeRequest)(nil), // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest
-	(*ClusterScope)(nil), // 2: central.v1.ClusterScope
-	(*GenerateTokenForPermissionsAndScopeResponse)(nil), // 3: central.v1.GenerateTokenForPermissionsAndScopeResponse
-	nil,                         // 4: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
-	(*durationpb.Duration)(nil), // 5: google.protobuf.Duration
+	(*GenerateTokenForPermissionsAndScopeRequest)(nil),  // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest
+	(*ScopedPermissionSet)(nil),                         // 2: central.v1.ScopedPermissionSet
+	(*ClusterScope)(nil),                                // 3: central.v1.ClusterScope
+	(*GenerateTokenForPermissionsAndScopeResponse)(nil), // 4: central.v1.GenerateTokenForPermissionsAndScopeResponse
+	nil,                         // 5: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
+	(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
 }
 var file_internalapi_central_v1_token_service_proto_depIdxs = []int32{
-	4, // 0: central.v1.GenerateTokenForPermissionsAndScopeRequest.permissions:type_name -> central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
-	2, // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.v1.ClusterScope
-	5, // 2: central.v1.GenerateTokenForPermissionsAndScopeRequest.lifetime:type_name -> google.protobuf.Duration
-	0, // 3: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry.value:type_name -> central.v1.Access
-	1, // 4: central.v1.TokenService.GenerateTokenForPermissionsAndScope:input_type -> central.v1.GenerateTokenForPermissionsAndScopeRequest
-	3, // 5: central.v1.TokenService.GenerateTokenForPermissionsAndScope:output_type -> central.v1.GenerateTokenForPermissionsAndScopeResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	5, // 0: central.v1.GenerateTokenForPermissionsAndScopeRequest.permissions:type_name -> central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
+	3, // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest.cluster_scopes:type_name -> central.v1.ClusterScope
+	6, // 2: central.v1.GenerateTokenForPermissionsAndScopeRequest.lifetime:type_name -> google.protobuf.Duration
+	2, // 3: central.v1.GenerateTokenForPermissionsAndScopeRequest.permission_sets:type_name -> central.v1.ScopedPermissionSet
+	0, // 4: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry.value:type_name -> central.v1.Access
+	1, // 5: central.v1.TokenService.GenerateTokenForPermissionsAndScope:input_type -> central.v1.GenerateTokenForPermissionsAndScopeRequest
+	4, // 6: central.v1.TokenService.GenerateTokenForPermissionsAndScope:output_type -> central.v1.GenerateTokenForPermissionsAndScopeResponse
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_v1_token_service_proto_init() }
@@ -375,7 +423,7 @@ func file_internalapi_central_v1_token_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_v1_token_service_proto_rawDesc), len(file_internalapi_central_v1_token_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

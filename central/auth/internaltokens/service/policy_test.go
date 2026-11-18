@@ -164,81 +164,96 @@ func TestEnforce(t *testing.T) {
 	}{
 		"console permission set without scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
 		"console permission set ID without scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
-		"name and ID cannot be combined": {
+		"name and ID cannot be combined in one grant": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
-				PermissionSetIds:   []string{accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy, Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}},
+				Lifetime:       durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"empty permission set selector": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{{}},
+				Lifetime:       durationpb.New(30 * time.Minute),
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
+		"nil permission set selector": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{nil},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"unsupported permission set ID": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetIds: []string{"b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"},
-				Lifetime:         durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Id: "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"}},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"console permission set with namespace scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
-				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				ClusterScopes:  []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns"}}},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
 		"console permission set with full cluster scope": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
-				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				ClusterScopes:  []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
 		"console permission set cannot access other cluster": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
-				ClusterScopes:      []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				ClusterScopes:  []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2, FullClusterAccess: true}},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"console permission set ignores fallback permissions": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy},
-				Permissions:        map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}},
+				Permissions:    map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID: fixtureconsts.Cluster1,
 		},
 		"unsupported permission set": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{"unknown"},
-				Permissions:        map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: "unknown"}},
+				Permissions:    map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"unsupported permission set alongside console": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
-				PermissionSetNames: []string{accesscontrol.ConsoleProxy, "unknown"},
-				Lifetime:           durationpb.New(30 * time.Minute),
+				PermissionSets: []*v1.ScopedPermissionSet{{Name: accesscontrol.ConsoleProxy}, {Name: "unknown"}},
+				Lifetime:       durationpb.New(30 * time.Minute),
 			},
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,

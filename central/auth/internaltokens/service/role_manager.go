@@ -39,18 +39,26 @@ func (rm *roleManager) createSensorRole(
 		return nil, errox.ServerError.New("Sensor proxy permission set store unavailable")
 	}
 
-	if len(req.GetPermissionSetNames()) == 0 && len(req.GetPermissionSetIds()) == 0 {
+	if len(req.GetPermissionSets()) == 0 {
 		return nil, errox.InvalidArgs.New("Sensor proxy permission sets are required")
 	}
-	permissionSets, err := rm.getPermissionSetsByNames(ctx, req.GetPermissionSetNames())
+	var names, ids []string
+	for _, grant := range req.GetPermissionSets() {
+		if grant.GetName() != "" {
+			names = append(names, grant.GetName())
+		} else {
+			ids = append(ids, grant.GetId())
+		}
+	}
+	permissionSets, err := rm.getPermissionSetsByNames(ctx, names)
 	if err != nil {
 		return nil, err
 	}
-	byID, err := rm.getPermissionSetsByIDs(ctx, req.GetPermissionSetIds())
+	byID, err := rm.getPermissionSetsByIDs(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
-	for _, id := range req.GetPermissionSetIds() {
+	for _, id := range ids {
 		permissionSets = append(permissionSets, byID[id])
 	}
 	for _, permissionSet := range permissionSets {

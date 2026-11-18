@@ -134,17 +134,13 @@ func (p *tokenPolicy) enforce(
 	if sensorClusterID == "" {
 		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	if len(req.GetPermissionSetNames()) > 0 && len(req.GetPermissionSetIds()) > 0 {
-		return nil, errox.InvalidArgs.New("permission set names and IDs cannot be combined")
-	}
-	if len(req.GetPermissionSetNames()) > 0 || len(req.GetPermissionSetIds()) > 0 {
-		for _, permissionSetName := range req.GetPermissionSetNames() {
-			if permissionSetName != accesscontrol.ConsoleProxy {
-				return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
+	if len(req.GetPermissionSets()) > 0 {
+		for _, grant := range req.GetPermissionSets() {
+			if (grant.GetName() == "") == (grant.GetId() == "") {
+				return nil, errox.InvalidArgs.New("permission set requires exactly one name or ID")
 			}
-		}
-		for _, permissionSetID := range req.GetPermissionSetIds() {
-			if permissionSetID != accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy] {
+			if grant.GetName() != "" && grant.GetName() != accesscontrol.ConsoleProxy ||
+				grant.GetId() != "" && grant.GetId() != accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy] {
 				return nil, errox.InvalidArgs.New("unsupported Sensor proxy permission set")
 			}
 		}
