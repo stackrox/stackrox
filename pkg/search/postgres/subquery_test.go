@@ -59,8 +59,8 @@ func TestSubQueryPredicates(t *testing.T) {
 		"supported predicate": {query: supported},
 		"supported boolean": {query: search.NewBooleanQuery(nil,
 			&v1.DisjunctionQuery{Queries: []*v1.Query{supported}})},
-		"supported nested membership": {query: search.MatchFieldSubQuery(search.DeploymentName, v1.SearchCategory_DEPLOYMENTS, nested)},
-		"unsupported nested membership field": {
+		"nested subquery matches deployment names": {query: search.MatchFieldSubQuery(search.DeploymentName, v1.SearchCategory_DEPLOYMENTS, nested)},
+		"nested subquery compares an unknown field": {
 			query: search.MatchFieldSubQuery(search.FieldLabel("unsupported"), v1.SearchCategory_DEPLOYMENTS, nested), matchNone: true,
 		},
 		"unsupported base query": {query: unsupported, matchNone: true},
