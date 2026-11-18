@@ -3,7 +3,6 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -50,6 +49,10 @@ func getStatusConditions(conditions v1alpha1.Conditions) []*central.ComplianceOp
 
 // ProcessEvent processes a scan setting binding event
 func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		return nil
+	}
+
 	var scanSettingBindings v1alpha1.ScanSettingBinding
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
@@ -64,48 +67,23 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 	}
 	id := string(scanSettingBindings.UID)
 
-	profiles := make([]*storage.ComplianceOperatorScanSettingBinding_Profile, 0, len(scanSettingBindings.Profiles))
-	for _, p := range scanSettingBindings.Profiles {
-		profiles = append(profiles, &storage.ComplianceOperatorScanSettingBinding_Profile{
-			Name: p.Name,
-		})
-	}
-
-	events := []*central.SensorEvent{
-		{
-			Id:     id,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{
-				ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{
-					Id:          id,
-					Name:        scanSettingBindings.Name,
-					Labels:      scanSettingBindings.Labels,
-					Annotations: scanSettingBindings.Annotations,
-					Profiles:    profiles,
+	event := &central.SensorEvent{
+		Id:     id,
+		Action: action,
+		Resource: &central.SensorEvent_ComplianceOperatorScanSettingBindingV2{
+			ComplianceOperatorScanSettingBindingV2: &central.ComplianceOperatorScanSettingBindingV2{
+				Id:           id,
+				Name:         scanSettingBindings.Name,
+				ProfileNames: getProfileNames(scanSettingBindings.Profiles),
+				Status: &central.ComplianceOperatorStatus{
+					Conditions: getStatusConditions(scanSettingBindings.Status.Conditions),
 				},
+				ScanSettingName: scanSettingBindings.SettingsRef.Name,
+				Labels:          scanSettingBindings.Labels,
+				Annotations:     scanSettingBindings.Annotations,
 			},
 		},
 	}
 
-	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		events = append(events, &central.SensorEvent{
-			Id:     id,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorScanSettingBindingV2{
-				ComplianceOperatorScanSettingBindingV2: &central.ComplianceOperatorScanSettingBindingV2{
-					Id:           id,
-					Name:         scanSettingBindings.Name,
-					ProfileNames: getProfileNames(scanSettingBindings.Profiles),
-					Status: &central.ComplianceOperatorStatus{
-						Conditions: getStatusConditions(scanSettingBindings.Status.Conditions),
-					},
-					ScanSettingName: scanSettingBindings.SettingsRef.Name,
-					Labels:          scanSettingBindings.Labels,
-					Annotations:     scanSettingBindings.Annotations,
-				},
-			},
-		})
-	}
-
-	return component.NewEvent(events...)
+	return component.NewEvent(event)
 }

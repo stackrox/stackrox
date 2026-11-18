@@ -85,7 +85,7 @@ module.exports = {
                 optimizeDeps: {
                     // Avoid rebuilding dependencies while loading the VM component spec
                     // and the base images page spec (react-helmet, via PageTitle).
-                    include: ['lodash/findIndex', 'react-feather', 'react-helmet'],
+                    include: ['lodash/findIndex', 'lodash/reduce', 'react-feather', 'react-helmet'],
                 },
             },
         },

@@ -133,17 +133,29 @@ func getConfig(authProviderConfig *declarativeconfig.AuthProvider) (map[string]s
 	}
 }
 
+// normalizeUIEndpoints normalizes any provided UI endpoints (stripping schemes, paths
+// and trailing slashes). An empty primary endpoint is left empty: whether a UI endpoint
+// is required is enforced by the auth provider backends at provider-creation time.
 func normalizeUIEndpoints(primary string, extra []string) (string, []string, error) {
-	normalizedPrimary, err := authproviders.NormalizeUIEndpoint(primary)
-	if err != nil {
-		return "", nil, err
-	}
-	normalizedExtra := make([]string, len(extra))
-	for i, ep := range extra {
-		normalizedExtra[i], err = authproviders.NormalizeUIEndpoint(ep)
+	normalizedPrimary := ""
+	if primary != "" {
+		var err error
+		normalizedPrimary, err = authproviders.NormalizeUIEndpoint(primary)
 		if err != nil {
 			return "", nil, err
 		}
+	}
+	normalizedExtra := make([]string, 0, len(extra))
+	for _, ep := range extra {
+		if ep == "" {
+			continue
+		}
+
+		normalized, err := authproviders.NormalizeUIEndpoint(ep)
+		if err != nil {
+			return "", nil, err
+		}
+		normalizedExtra = append(normalizedExtra, normalized)
 	}
 	return normalizedPrimary, normalizedExtra, nil
 }

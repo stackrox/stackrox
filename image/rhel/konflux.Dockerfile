@@ -49,7 +49,7 @@ RUN arch=$(uname -m) ; \
        /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:88f3404fb31987036052725243f2bce5f37c475f13596b74eec6447e701e3203 as ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:623c4bda86a58190bb410ff85b7b3f8eaf16d8ead17d57388b9db1b6672c1742 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -71,9 +71,9 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b59ac4f291d86027c2681f7a7b1cbf7448972fc55a6cb8e25cab5aa5eef5ce5f AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:dbd325b96bcd432dd42816d31412bdf1dc0fb973b79ed310344bc23c76c068db AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8b212f75a0e5a156ac28b1c5c030d2e8a07715254e19d522286118279399af81 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:1e9f0ed9fceafb40878bc1705ff124aa150e3fed873f18c42cdc2dded319e0a8 AS package_installer
 
 ARG PG_VERSION
 

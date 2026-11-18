@@ -388,6 +388,9 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		return nil, err
 	}
 
+	// shortcut: response-level DataFreshness rollup left UNKNOWN (no consumer yet).
+	// Populating it correctly needs an unpaginated current/stale count for this
+	// cluster+profile; add that aggregate when a consumer needs the field.
 	return &v2.ListComplianceCheckResultResponse{
 		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
 		ProfileName:  request.GetProfileName(),
