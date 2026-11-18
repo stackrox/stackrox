@@ -1,57 +1,16 @@
 """Node-name polling shared by nongroovy CI entrypoints."""
 
-import argparse
-from dataclasses import dataclass
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
-import signal
+import threading
 import subprocess
 import time
 import xml.etree.ElementTree as ET
 
 API_TIMEOUT = 10
-TERM_GRACE = 5
 POLL_INTERVAL = 5 * 60
-
-
-@dataclass
-class RunResult:
-    exit_code: int
-    monitor_failed: bool
-    timed_out: bool = False
-
-
-class Cancellation:
-    def __init__(self):
-        self.signal = None
-
-    @property
-    def requested(self):
-        return self.signal is not None
-
-    def handle(self, signum, _frame):
-        self.signal = signum
-
-
-def terminate(process, grace=TERM_GRACE):
-    """Stop the whole product process group, including surviving descendants."""
-    if process is None:
-        return
-    deadline = time.monotonic() + grace
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-        try:
-            process.wait(timeout=grace)
-        except subprocess.TimeoutExpired:
-            pass
-        # A shell may exit before its children. Give the group the remaining grace.
-        os.killpg(process.pid, 0)
-        time.sleep(max(0, deadline - time.monotonic()))
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    process.wait()
 
 
 def expected_node_count(env):
@@ -93,11 +52,11 @@ def sample_nodes(directory, env):
     return names
 
 
-def write_report(directory, expected, errors, cancellation):
+def write_report(directory, expected, errors, cancelled=False):
     names_file = directory / "node-names.txt"
     names = sorted(set(names_file.read_text(encoding="utf-8").splitlines())) if names_file.exists() else []
-    failed = bool(errors) or (not cancellation.requested and len(names) != expected)
-    skipped = cancellation.requested and not failed
+    failed = bool(errors) or (not cancelled and len(names) != expected)
+    skipped = cancelled and not failed
     detail = f"Expected {expected} nodes; observed {len(names)} unique names: " f"{', '.join(names)}.\n" + "\n".join(
         errors
     )
@@ -112,20 +71,6 @@ def write_report(directory, expected, errors, cancellation):
     temporary.write_text(ET.tostring(suite, encoding="unicode", xml_declaration=True), encoding="utf-8")
     temporary.replace(directory / "node-monitor.xml")
     return failed
-
-
-def wait_for_test(test, sample, cancellation, timeout):
-    deadline = float("inf") if timeout is None else time.monotonic() + timeout
-    next_poll = time.monotonic() + POLL_INTERVAL
-    while not cancellation.requested and test.poll() is None:
-        now = time.monotonic()
-        if now >= deadline:
-            return True
-        if sample and now >= next_poll:
-            sample()
-            next_poll = time.monotonic() + POLL_INTERVAL
-        time.sleep(min(0.1, max(0, deadline - time.monotonic())))
-    return False
 
 
 def prepare_monitor(directory, env, sample, errors):
@@ -143,38 +88,30 @@ def prepare_monitor(directory, env, sample, errors):
         return None
 
 
-def finish_report(directory, env, expected, errors, cancellation):
+def finish_report(directory, env, expected, errors, cancelled=False):
     """Write the advisory report without letting artifact failures skip cleanup."""
     if not env.get("NUM_NODES"):
         return False
     try:
         directory.mkdir(parents=True, exist_ok=True)
-        return write_report(directory, expected, errors, cancellation)
+        return write_report(directory, expected, errors, cancelled)
     except (OSError, ValueError, RuntimeError) as exc:
         print(f"WARNING: Could not write node monitor report: {exc}", flush=True)
         return True
 
 
-def exit_code(test, cancellation, timed_out):
-    """Preserve cancellation and timeout precedence over the product exit code."""
-    if cancellation.requested:
-        return 128 + cancellation.signal
-    if timed_out:
-        return 124
-    code = test.returncode if test else 1
-    return code if code >= 0 else 128 - code
-
-
-def run(command, timeout=None, env=None):
-    """Run tests with advisory node monitoring when NUM_NODES is supplied."""
-    if not command:
-        raise ValueError("a product command is required")
-    env = os.environ if env is None else env
-    directory = Path(os.getenv("ARTIFACT_DIR", "junit-reports"))
-    cancellation = Cancellation()
+@contextmanager
+def monitor(env=None):
+    """Collect advisory node diagnostics without owning the product process."""
+    env = dict(os.environ if env is None else env)
+    if not env.get("NUM_NODES"):
+        yield
+        return
+    directory = Path(env.get("ARTIFACT_DIR", "junit-reports"))
     errors = []
-    previous = {sig: signal.signal(sig, cancellation.handle) for sig in (signal.SIGTERM, signal.SIGINT)}
-    test, expected, timed_out = None, None, False
+    stopped = threading.Event()
+    worker = None
+    cancelled = False
 
     def sample():
         try:
@@ -183,41 +120,27 @@ def run(command, timeout=None, env=None):
             errors.append(str(exc))
             return None
 
-    try:
-        expected = prepare_monitor(directory, env, sample, errors)
-        if not cancellation.requested:
-            test = subprocess.Popen(command, env=env, start_new_session=True)  # pylint: disable=consider-using-with
-            timed_out = wait_for_test(test, sample if expected else None, cancellation, timeout)
-            if expected and not cancellation.requested:
-                sample()
-    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
-        if not cancellation.requested:
-            errors.append(str(exc))
-            if not env.get("NUM_NODES"):
-                print(f"ERROR: Could not run test command: {exc}", flush=True)
-    finally:
+    def poll():
+        while not stopped.wait(POLL_INTERVAL):
+            sample()
+
+    expected = prepare_monitor(directory, env, sample, errors)
+    if expected is not None:
         try:
-            failed = finish_report(directory, env, expected, errors, cancellation)
-        finally:
-            try:
-                terminate(test)
-            finally:
-                for sig, handler in previous.items():
-                    signal.signal(sig, handler)
-
-    return RunResult(exit_code(test, cancellation, timed_out), failed, timed_out)
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["run"])
-    parser.add_argument("command", nargs=argparse.REMAINDER)
-    args = parser.parse_args()
-    command = args.command[1:] if args.command[:1] == ["--"] else args.command
-    if not command:
-        parser.error("a command is required after --")
-    return run(command).exit_code
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+            thread = threading.Thread(target=poll, name="node-monitor", daemon=True)
+            thread.start()
+            worker = thread
+        except RuntimeError as exc:
+            errors.append(str(exc))
+    try:
+        yield
+    except (KeyboardInterrupt, SystemExit):
+        cancelled = True
+        raise
+    finally:
+        stopped.set()
+        if worker is not None:
+            worker.join()
+        if expected is not None and not cancelled:
+            sample()
+        finish_report(directory, env, expected, errors, cancelled)
