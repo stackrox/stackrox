@@ -438,6 +438,51 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Icon-className': {
+        // Match imported PatternFly Icon only, because some files render a local Icon variable that holds a react-icons component.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace className with status, size, iconSize, or isInline prop in Icon element',
+            },
+            schema: [],
+        },
+        create(context) {
+            const iconLocalNames = new Set();
+            const message =
+                'Replace className with status, size, iconSize, or isInline prop in Icon element';
+            const hasClassName = (openingElement) =>
+                openingElement.attributes.some((attribute) => attribute.name?.name === 'className');
+
+            return {
+                ImportDeclaration(node) {
+                    if (node.source.value === '@patternfly/react-core') {
+                        node.specifiers.forEach((specifier) => {
+                            if (
+                                specifier.type === 'ImportSpecifier' &&
+                                specifier.imported.name === 'Icon'
+                            ) {
+                                iconLocalNames.add(specifier.local.name);
+                            }
+                        });
+                    }
+                },
+                JSXElement(node) {
+                    if (iconLocalNames.has(node.openingElement.name.name)) {
+                        if (hasClassName(node.openingElement)) {
+                            context.report({ node: node.openingElement, message });
+                        }
+                        node.children.forEach((child) => {
+                            if (child.type === 'JSXElement' && hasClassName(child.openingElement)) {
+                                context.report({ node: child.openingElement, message });
+                            }
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-Label-in-Link': {
         // PatternFly Label in (wrapped by) React Router Link element which is in LabelGroup
         // affects the height other Label element that is wrapped in `Tooltip` element.
