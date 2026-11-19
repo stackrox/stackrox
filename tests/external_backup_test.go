@@ -34,11 +34,8 @@ import (
 const (
 	backupRetryTries    = 5
 	backupRetryInterval = 10 * time.Second
-	// The retry budget around TestExternalBackup must tolerate both Central not
-	// being fully ready yet and short transient outages of external S3-compatible
-	// endpoints (e.g. the ODF side-cluster used by CI, observed returning
-	// InternalError for ~2 minutes) - ROX-39650. 30 tries at 10s intervals
-	// gives a ~5 minute budget.
+	// Tolerates Central startup lag and transient S3-endpoint outages (ROX-39650).
+	// Worst case ~10 min: 30 tries x (10s call timeout + 10s sleep between).
 	centralReadinessMaxTries = 30
 )
 
