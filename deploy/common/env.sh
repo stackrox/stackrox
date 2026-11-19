@@ -77,7 +77,11 @@ echo "API_ENDPOINT is set to ${API_ENDPOINT}"
 
 # BitWarden entry: https://vault.bitwarden.com/#/vault?itemId=b511eda7-63c9-4bbf-8872-b07a0123837a
 export ROX_DEV_INTERNAL_SSO_CLIENT_SECRET="${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET:-}"
-echo "ROX_DEV_INTERNAL_SSO_CLIENT_SECRET is set to ${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
+if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
+    echo "ROX_DEV_INTERNAL_SSO_CLIENT_SECRET is set"
+else
+    echo "ROX_DEV_INTERNAL_SSO_CLIENT_SECRET is not set"
+fi
 
 export ROX_HOTRELOAD="${HOTRELOAD:-false}"
 echo "ROX_HOTRELOAD is set to ${ROX_HOTRELOAD}"
