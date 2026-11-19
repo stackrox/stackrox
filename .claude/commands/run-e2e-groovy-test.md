@@ -77,10 +77,6 @@ If authentication fails or `ROX_ADMIN_PASSWORD` is not defined:
 
 User is expected to be `admin`, the password is contained in the roxie environment (either loaded into roxie's subshell or persisted in an envrc-style file).
 
-If roxie is not being used, try common fallbacks: `admin/admin`, `admin/stackrox`, `stackrox/stackrox`.
-
-Check whether these are valid using the above curl command. Once found, update `ROX_ADMIN_PASSWORD` in `qa-test-settings.properties`. If nothing works, ask the user.
-
 #### Critical: Cluster Name Check
 
 **Most tests expect cluster named "remote"** (hardcoded in `ClusterService.groovy:18`).
