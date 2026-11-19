@@ -46,7 +46,6 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
-	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
@@ -911,12 +910,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    user.With(permissions.View(resources.WorkflowAdministration)),
 			ServerHandler: policyHandler.Handler(policyDataStore.Singleton(), notifierDS.Singleton()),
 			Compression:   false,
-		},
-		{
-			Route:         "/api/extensions/clusters/helm-config.yaml",
-			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
-			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
-			Compression:   true,
 		},
 		{
 			Route:         "/api/administration/usage/secured-units/csv",
