@@ -62,10 +62,27 @@ message BaseImageRepository {
   string last_failure_message = 11;
 }
 
+// BaseImagePlatform holds per-platform metadata for a single platform of a tag.
+// os, architecture and variant identify the platform; variant distinguishes platforms
+// that share an os/architecture (e.g. arm v6/v7/v8), so os/architecture alone is not a
+// unique key.
+// Next tag: 7
+message BaseImagePlatform {
+  string os = 1;
+  string architecture = 2;
+  string variant = 3;
+  // This platform's (non-list) manifest digest.
+  string manifest_digest = 4;
+  // Layer digests in order, for base image matching via layer commonality.
+  repeated string layer_digests = 5;
+  // Config history, including empty lines, stored for promotion to base_images.
+  repeated BaseImageHistoryEntry history = 6;
+}
+
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 10
+// Next tag: 11
 message BaseImageTag {
   // Unique identifier.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
@@ -96,4 +113,8 @@ message BaseImageTag {
 
   // Config history, including empty lines, stored for promotion to base_images.
   repeated BaseImageHistoryEntry history = 9;
+
+  // Per-platform metadata, one entry per linux platform, stored for promotion to
+  // base_images. For a single-platform tag this has exactly one entry.
+  repeated BaseImagePlatform platforms = 10;
 }

@@ -13,6 +13,7 @@ import (
 	tagDS "github.com/stackrox/rox/central/baseimage/datastore/tag"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/baseimage/reposcan"
+	"github.com/stackrox/rox/pkg/baseimage/tagfetcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -413,9 +414,12 @@ func (w *watcherImpl) doScan(ctx context.Context, repo *storage.BaseImageReposit
 				BaseImageRepositoryId: repo.GetId(),
 				Tag:                   event.Tag,
 				ManifestDigest:        metadata.ManifestDigest,
+				IsManifestList:        metadata.IsManifestList,
 				Created:               protocompat.ConvertTimeToTimestampOrNil(metadata.Created),
+				ListDigests:           metadata.ListDigests,
 				LayerDigests:          metadata.LayerDigests,
 				History:               metadata.History,
+				Platforms:             toStoragePlatforms(metadata.Platforms),
 			}
 			adds = append(adds, tag)
 			if len(adds) >= w.batchSize {
@@ -513,6 +517,25 @@ func (w *watcherImpl) promoteTags(
 
 	// Atomically replace base images for this repository.
 	return w.baseImageDS.ReplaceByRepository(ctx, repo.GetId(), imgs)
+}
+
+// toStoragePlatforms converts fetched per-platform metadata into its storage form.
+func toStoragePlatforms(platforms []tagfetcher.PlatformTagMetadata) []*storage.BaseImagePlatform {
+	if len(platforms) == 0 {
+		return nil
+	}
+	result := make([]*storage.BaseImagePlatform, 0, len(platforms))
+	for _, p := range platforms {
+		result = append(result, &storage.BaseImagePlatform{
+			Os:             p.OS,
+			Architecture:   p.Architecture,
+			Variant:        p.Variant,
+			ManifestDigest: p.ManifestDigest,
+			LayerDigests:   p.LayerDigests,
+			History:        p.History,
+		})
+	}
+	return result
 }
 
 func validate(event reposcan.TagEvent) error {
