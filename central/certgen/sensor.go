@@ -37,7 +37,7 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 		return nil, nil, errors.Wrapf(errox.NotFound, "cluster with ID %q not found", clusterID)
 	}
 
-	certs, err := zip.GenerateCertsAndAddToZip(nil, cluster, s.serviceIdentities)
+	certs, err := zip.GenerateCertsAndAddToZip(cluster, s.serviceIdentities)
 	if err != nil {
 		return nil, nil, errors.Errorf("could not generate certs: %v", err)
 	}
