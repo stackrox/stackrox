@@ -133,9 +133,6 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        // A pod can still be listed after its deployment object is gone, and
-        // that holds this shared namespace in Terminating.
-        orchestrator.deleteManagedWorkloads(TEST_NAMESPACE)
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         try {
@@ -248,18 +245,15 @@ class AdmissionControllerTest extends BaseSpecification {
         true         | true
     }
 
-    // cleanupLabelTestNamespace removes workloads before the namespace. A pod
-    // from an allowed deployment keeps the namespace past the delete wait, and
-    // Central can still list it after the API object is gone (ROX-36941).
+    // cleanupLabelTestNamespace removes the namespace. A pod from an allowed
+    // deployment can keep it in Terminating past the delete wait, and Central
+    // can still list it after the API object is gone (ROX-36941).
     private void cleanupLabelTestNamespace(String testNs) {
         if (!testNs) {
             return
         }
-        orchestrator.deleteManagedWorkloads(testNs)
         orchestrator.deleteNamespace(testNs)
-        withRetry(30, 1) {
-            assert NamespaceService.getNamespaces().every { it.metadata.name != testNs }
-        }
+        assert NamespaceService.waitForNamespaceDeletion(testNs)
     }
 
     def deleteDeploymentWithCaution(Deployment deployment) {

@@ -39,14 +39,8 @@ class OpenShift extends Kubernetes {
                 .endMetadata()
                 .build()
 
-        try {
+        provisionNamespaceUnlessTerminating(ns) {
             oClient.projectrequests().create(projectRequest)
-            log.info "Created namespace ${ns}"
-        } catch (KubernetesClientException kce) {
-            if (kce.code != 409) {
-                throw kce
-            }
-            log.debug("Namespace ${ns} already exists")
         }
 
         provisionDefaultServiceAccount(ns)
@@ -114,6 +108,21 @@ class OpenShift extends Kubernetes {
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata().build()
             oClient.routes().inNamespace(namespace).delete(route)
+        }
+    }
+
+    // Routes are OpenShift-specific, so the base class cannot delete them.
+    // Delete them after the parent's workload cleanup and before the namespace
+    // itself is deleted.
+    @Override
+    void deleteManagedWorkloads(String ns) {
+        super.deleteManagedWorkloads(ns)
+        try {
+            oClient.routes().inNamespace(ns).delete()
+        } catch (KubernetesClientException e) {
+            if (e.code != 404) {
+                log.warn "Route delete during namespace cleanup failed: ${e.message}"
+            }
         }
     }
 

@@ -186,10 +186,8 @@ class SACTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
-        [NAMESPACE_QA1, NAMESPACE_QA2].forEach {
-            ns ->
-                orchestrator.deleteNamespace(ns)
-                orchestrator.waitForNamespaceDeletion(ns)
+        [NAMESPACE_QA1, NAMESPACE_QA2].forEach { ns ->
+            orchestrator.deleteNamespace(ns)
         }
         cleanupRole(*(tokenToRoles.values().flatten().unique()))
     }

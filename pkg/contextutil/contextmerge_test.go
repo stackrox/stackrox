@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/testutils/goleak"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMergeContext(t *testing.T) {
@@ -94,6 +95,59 @@ func TestMergeContext(t *testing.T) {
 			tt.Error("the first context should not be canceled")
 			tt.FailNow()
 		case <-time.After(100 * time.Millisecond):
+		}
+	})
+	t.Run("call stop should not cancel ctx1, ctx2, nor the merged ctx", func(tt *testing.T) {
+		goleak.AssertNoGoroutineLeaks(tt)
+		ctx1 := context.Background()
+		ctx2 := context.Background()
+		ctx, stopper := MergeContext(ctx1, ctx2)
+		assert.True(tt, stopper())
+		select {
+		case <-ctx1.Done():
+			tt.Error("ctx1 should not be cancelled")
+			tt.FailNow()
+		case <-time.After(100 * time.Millisecond):
+		}
+		select {
+		case <-ctx2.Done():
+			tt.Error("ctx2 should not be cancelled")
+			tt.FailNow()
+		case <-time.After(100 * time.Millisecond):
+		}
+		select {
+		case <-ctx.Done():
+			tt.Error("merged context should not be cancelled")
+			tt.FailNow()
+		case <-time.After(100 * time.Millisecond):
+		}
+	})
+	t.Run("after stop, canceling ctx2 should not cancel merged ctx", func(tt *testing.T) {
+		goleak.AssertNoGoroutineLeaks(tt)
+		ctx1 := context.Background()
+		ctx2, cancel2 := context.WithCancel(context.Background())
+		ctx, stopper := MergeContext(ctx1, ctx2)
+		assert.True(tt, stopper())
+		cancel2()
+		select {
+		case <-ctx.Done():
+			tt.Error("merged context should not be canceled after stop")
+			tt.FailNow()
+		case <-time.After(100 * time.Millisecond):
+		}
+	})
+	t.Run("after stop, canceling ctx1 should still cancel merged ctx", func(tt *testing.T) {
+		goleak.AssertNoGoroutineLeaks(tt)
+		ctx1, cancel1 := context.WithCancel(context.Background())
+		ctx2 := context.Background()
+		ctx, stopper := MergeContext(ctx1, ctx2)
+		assert.True(tt, stopper())
+		cancel1()
+		select {
+		case <-ctx.Done():
+		case <-time.After(100 * time.Millisecond):
+			tt.Error("merged context should be canceled after stop")
+			tt.FailNow()
 		}
 	})
 }
