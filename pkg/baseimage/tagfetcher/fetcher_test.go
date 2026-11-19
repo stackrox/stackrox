@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/registries/types/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,6 +39,23 @@ func collectResults(ch <-chan TagMetadata) []TagMetadata {
 	return results
 }
 
+// singlePlatform builds an AllPlatformsMetadata for a single linux/amd64 image.
+func singlePlatform(digest string, created *time.Time, layers ...string) *types.AllPlatformsMetadata {
+	return &types.AllPlatformsMetadata{
+		ManifestDigest: digest,
+		IsManifestList: false,
+		Platforms: []*types.PlatformMetadata{{
+			OS:           "linux",
+			Architecture: "amd64",
+			Metadata: &storage.ImageMetadata{
+				V1:        &storage.V1Metadata{Created: protocompat.ConvertTimeToTimestampOrNil(created)},
+				V2:        &storage.V2Metadata{Digest: digest},
+				LayerShas: layers,
+			},
+		}},
+	}
+}
+
 func TestTagFetcher_EmptyTags(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -62,33 +80,31 @@ func TestTagFetcher_SingleTag(t *testing.T) {
 	name := testImageName("registry.example.com", "repo/image")
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
-	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
-	reg.EXPECT().Metadata(gomock.Any()).DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+	reg.EXPECT().MetadataForAllPlatforms(gomock.Any()).DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 		assert.Equal(t, "v1.0.0", img.GetName().GetTag())
 		assert.Equal(t, "registry.example.com", img.GetName().GetRegistry())
 		assert.Equal(t, "repo/image", img.GetName().GetRemote())
-		return &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
-				Created: protoTime,
-			},
-			V2: &storage.V2Metadata{
-				Digest: "sha256:abc123",
-			},
-			LayerShas: []string{"sha256:layer1", "sha256:layer2"},
-		}, nil
+		return singlePlatform("sha256:abc123", &createdTime, "sha256:layer1", "sha256:layer2"), nil
 	})
 
 	fetcher := NewTagFetcher(reg, name, testLimiter(), nil)
 	collected := collectResults(fetcher.Fetch(context.Background(), []string{"v1.0.0"}))
 
 	require.Len(t, collected, 1)
-	assert.Equal(t, "v1.0.0", collected[0].Tag)
-	assert.Equal(t, "sha256:abc123", collected[0].ManifestDigest)
-	assert.NotNil(t, collected[0].Created)
-	assert.Equal(t, createdTime, *collected[0].Created)
-	assert.Equal(t, []string{"sha256:layer1", "sha256:layer2"}, collected[0].LayerDigests)
-	assert.Nil(t, collected[0].Error)
+	got := collected[0]
+	assert.Equal(t, "v1.0.0", got.Tag)
+	assert.Equal(t, "sha256:abc123", got.ManifestDigest)
+	assert.False(t, got.IsManifestList)
+	assert.NotNil(t, got.Created)
+	assert.Equal(t, createdTime, *got.Created)
+	assert.Equal(t, []string{"sha256:layer1", "sha256:layer2"}, got.LayerDigests)
+	require.Len(t, got.Platforms, 1)
+	assert.Equal(t, "linux", got.Platforms[0].OS)
+	assert.Equal(t, "amd64", got.Platforms[0].Architecture)
+	assert.Equal(t, []string{"sha256:layer1", "sha256:layer2"}, got.Platforms[0].LayerDigests)
+	assert.Equal(t, map[string]string{"linux/amd64": "sha256:abc123"}, got.ListDigests)
+	assert.Nil(t, got.Error)
 }
 
 func TestTagFetcher_MultipleTagsConcurrent(t *testing.T) {
@@ -101,17 +117,9 @@ func TestTagFetcher_MultipleTagsConcurrent(t *testing.T) {
 	tags := []string{"v1.0.0", "v1.1.0", "v1.2.0"}
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
-	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
-	reg.EXPECT().Metadata(gomock.Any()).Times(3).DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
-		return &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
-				Created: protoTime,
-			},
-			V2: &storage.V2Metadata{
-				Digest: "sha256:" + img.GetName().GetTag(),
-			},
-		}, nil
+	reg.EXPECT().MetadataForAllPlatforms(gomock.Any()).Times(3).DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
+		return singlePlatform("sha256:"+img.GetName().GetTag(), &createdTime), nil
 	})
 
 	fetcher := NewTagFetcher(reg, name, testLimiter(), nil)
@@ -138,20 +146,12 @@ func TestTagFetcher_WithErrors(t *testing.T) {
 	name := testImageName("registry.example.com", "repo/image")
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
-	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
-	reg.EXPECT().Metadata(gomock.Any()).DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+	reg.EXPECT().MetadataForAllPlatforms(gomock.Any()).DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 		if img.GetName().GetTag() == "v1.1.0" {
 			return nil, errors.New("registry error")
 		}
-		return &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
-				Created: protoTime,
-			},
-			V2: &storage.V2Metadata{
-				Digest: "sha256:" + img.GetName().GetTag(),
-			},
-		}, nil
+		return singlePlatform("sha256:"+img.GetName().GetTag(), &createdTime), nil
 	}).Times(2)
 
 	fetcher := NewTagFetcher(reg, name, testLimiter(), nil)
@@ -216,16 +216,12 @@ func TestTagFetcher_ContextCancellationDuringFetch(t *testing.T) {
 	var callsStarted atomic.Int32
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
-	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
 	// Mock returns with a short delay. Goroutines will be in-flight when we cancel.
-	reg.EXPECT().Metadata(gomock.Any()).AnyTimes().DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+	reg.EXPECT().MetadataForAllPlatforms(gomock.Any()).AnyTimes().DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 		callsStarted.Add(1)
 		time.Sleep(100 * time.Millisecond)
-		return &storage.ImageMetadata{
-			V1: &storage.V1Metadata{Created: protoTime},
-			V2: &storage.V2Metadata{Digest: "sha256:" + img.GetName().GetTag()},
-		}, nil
+		return singlePlatform("sha256:"+img.GetName().GetTag(), &createdTime), nil
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -265,20 +261,13 @@ func TestTagFetcher_SkipsUnchangedDigests(t *testing.T) {
 	}
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
-	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
-	reg.EXPECT().Metadata(gomock.Any()).Times(2).DoAndReturn(func(img *storage.Image) (*storage.ImageMetadata, error) {
+	reg.EXPECT().MetadataForAllPlatforms(gomock.Any()).Times(2).DoAndReturn(func(img *storage.Image) (*types.AllPlatformsMetadata, error) {
 		tag := img.GetName().GetTag()
 		if tag == "v1.0.0" {
-			return &storage.ImageMetadata{
-				V1: &storage.V1Metadata{Created: protoTime},
-				V2: &storage.V2Metadata{Digest: "sha256:unchanged"}, // Same as known.
-			}, nil
+			return singlePlatform("sha256:unchanged", &createdTime), nil // Same as known.
 		}
-		return &storage.ImageMetadata{
-			V1: &storage.V1Metadata{Created: protoTime},
-			V2: &storage.V2Metadata{Digest: "sha256:new-digest"}, // Different from known.
-		}, nil
+		return singlePlatform("sha256:new-digest", &createdTime), nil // Different from known.
 	})
 
 	fetcher := NewTagFetcher(reg, name, testLimiter(), knownDigests)
@@ -294,18 +283,23 @@ func Test_tagMetadata_FullMetadata(t *testing.T) {
 	createdTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
 	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
-	metadata := &storage.ImageMetadata{
-		V1: &storage.V1Metadata{
-			Created: protoTime,
-			Layers: []*storage.ImageLayer{
-				{Instruction: "ADD", Value: "rootfs"},
-				{Instruction: "USER", Value: "1001", Empty: true},
+	metadata := &types.AllPlatformsMetadata{
+		ManifestDigest: "sha256:abc123",
+		Platforms: []*types.PlatformMetadata{{
+			OS:           "linux",
+			Architecture: "amd64",
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Created: protoTime,
+					Layers: []*storage.ImageLayer{
+						{Instruction: "ADD", Value: "rootfs"},
+						{Instruction: "USER", Value: "1001", Empty: true},
+					},
+				},
+				V2:        &storage.V2Metadata{Digest: "sha256:abc123"},
+				LayerShas: []string{"sha256:layer1", "sha256:layer2", "sha256:layer3"},
 			},
-		},
-		V2: &storage.V2Metadata{
-			Digest: "sha256:abc123",
-		},
-		LayerShas: []string{"sha256:layer1", "sha256:layer2", "sha256:layer3"},
+		}},
 	}
 
 	result := tagMetadata("v1.0.0", metadata)
@@ -322,48 +316,77 @@ func Test_tagMetadata_FullMetadata(t *testing.T) {
 	assert.Equal(t, "USER", result.History[1].GetInstruction())
 	assert.Equal(t, "1001", result.History[1].GetValue())
 	assert.True(t, result.History[1].GetEmpty())
+
+	require.Len(t, result.Platforms, 1)
+	assert.Equal(t, []string{"sha256:layer1", "sha256:layer2", "sha256:layer3"}, result.Platforms[0].LayerDigests)
+	assert.Equal(t, map[string]string{"linux/amd64": "sha256:abc123"}, result.ListDigests)
 	assert.Nil(t, result.Error)
 }
 
-func Test_tagMetadata_MissingV2FallsBackToV1Digest(t *testing.T) {
+func Test_tagMetadata_MultiPlatformDistinguishesVariants(t *testing.T) {
 	createdTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
 	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
 
-	metadata := &storage.ImageMetadata{
-		V1: &storage.V1Metadata{
-			Digest:  "sha256:v1-digest",
-			Created: protoTime,
+	platform := func(os, arch, variant, digest string, layers ...string) *types.PlatformMetadata {
+		return &types.PlatformMetadata{
+			OS:           os,
+			Architecture: arch,
+			Variant:      variant,
+			Metadata: &storage.ImageMetadata{
+				V1:        &storage.V1Metadata{Created: protoTime},
+				V2:        &storage.V2Metadata{Digest: digest},
+				LayerShas: layers,
+			},
+		}
+	}
+
+	metadata := &types.AllPlatformsMetadata{
+		ManifestDigest: "sha256:list",
+		IsManifestList: true,
+		Platforms: []*types.PlatformMetadata{
+			platform("linux", "amd64", "", "sha256:amd", "sha256:amd-l1"),
+			platform("linux", "arm", "v6", "sha256:armv6", "sha256:armv6-l1"),
+			platform("linux", "arm", "v7", "sha256:armv7", "sha256:armv7-l1"),
 		},
-		// V2 is nil - should fallback to V1 digest
+	}
+
+	result := tagMetadata("8.10", metadata)
+
+	assert.Equal(t, "sha256:list", result.ManifestDigest)
+	assert.True(t, result.IsManifestList)
+	require.Len(t, result.Platforms, 3)
+
+	// Variants must not collide in ListDigests.
+	assert.Equal(t, map[string]string{
+		"linux/amd64":  "sha256:amd",
+		"linux/arm/v6": "sha256:armv6",
+		"linux/arm/v7": "sha256:armv7",
+	}, result.ListDigests)
+
+	// Primary platform (first) feeds the top-level fields.
+	assert.Equal(t, []string{"sha256:amd-l1"}, result.LayerDigests)
+}
+
+func Test_tagMetadata_MissingTopLevelDigestFallsBackToPlatform(t *testing.T) {
+	createdTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
+	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
+
+	metadata := &types.AllPlatformsMetadata{
+		ManifestDigest: "", // registry did not report a top-level digest
+		Platforms: []*types.PlatformMetadata{{
+			OS:           "linux",
+			Architecture: "amd64",
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Digest: "sha256:v1-digest", Created: protoTime},
+				// V2 nil - platform digest falls back to V1 digest.
+			},
+		}},
 	}
 
 	result := tagMetadata("v1.0.0", metadata)
 
-	assert.Equal(t, "sha256:v1-digest", result.ManifestDigest) // Fallback to V1 digest.
+	assert.Equal(t, "sha256:v1-digest", result.ManifestDigest)
 	assert.NotNil(t, result.Created)
-	assert.Equal(t, createdTime, *result.Created)
-	assert.Empty(t, result.LayerDigests) // No layers in metadata.
-	assert.Nil(t, result.Error)
-}
-
-func Test_tagMetadata_V2DigestPreferredOverV1(t *testing.T) {
-	createdTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
-	protoTime := protocompat.ConvertTimeToTimestampOrNil(&createdTime)
-
-	metadata := &storage.ImageMetadata{
-		V1: &storage.V1Metadata{
-			Digest:  "sha256:v1-digest",
-			Created: protoTime,
-		},
-		V2: &storage.V2Metadata{
-			Digest: "sha256:v2-digest",
-		},
-	}
-
-	result := tagMetadata("v1.0.0", metadata)
-
-	// V2 digest should be preferred when both exist.
-	assert.Equal(t, "sha256:v2-digest", result.ManifestDigest)
-	assert.NotNil(t, result.Created)
+	assert.Empty(t, result.LayerDigests)
 	assert.Nil(t, result.Error)
 }
