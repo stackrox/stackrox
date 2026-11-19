@@ -212,9 +212,9 @@ func TestComplianceV2FreshnessCurrent(t *testing.T) {
 }
 
 // TestComplianceV2FreshnessStaleViaSweeper deterministically drives the freshness sweeper
-// (central/complianceoperator/v2/freshness) to flip CURRENT results to STALE by updating the scan
-// config's schedule to a tick shortly after the results' LastStartedTime, then cutting off the
-// sensor so nothing can refresh them before the sweeper's grace window elapses.
+// (central/complianceoperator/v2/freshness) to flip CURRENT results to STALE by cutting off the
+// sensor and then pointing the scan config's schedule at a daily tick in the near future, so
+// nothing can refresh the results before the sweeper's grace window elapses past that tick.
 //
 // Run outside of other parallel tests: it scales the single cluster's Sensor to 0.
 func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
@@ -256,26 +256,37 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	// Nothing can refresh the results from this point on.
 	scaleSensorDownForTest(ctx, t, k8sClient, dynClient)
 
-	// A daily tick 2 minutes after the scan's completion (always >= every result's
-	// LastStartedTime, since a check result can't start after its scan finishes) gives the sweeper
-	// an "expected refresh" scheduled after the results' LastStartedTime without waiting a full day
-	// for the next occurrence; see previousScheduledStart in
-	// central/complianceoperator/v2/freshness/sweeper.go. Deriving the tick from Central's own
-	// LastScanTime (rather than a client-side guess of the scan's start time) avoids a tie: both the
-	// schedule (minute granularity) and LastStartedTime (second granularity, stamped by the
-	// Compliance Operator) truncate sub-minute precision, and CO can start a scan within a second of
-	// the request, so a 1-minute, start-time-based guess can land in the same minute as the actual
-	// LastStartedTime and never compare strictly less-than.
-	lastScanTime := currentResults.GetLastScanTime().AsTime()
+	// Point the schedule at a daily tick in the near future, picked immediately before the update:
+	// sweep() only applies a schedule to ticks that do not predate the config's LastUpdatedTime
+	// (see the guard in central/complianceoperator/v2/freshness/sweeper.go), so a tick that is
+	// already in the past when the update lands would be rejected and its next occurrence would be
+	// a full day away -- outside this test's window. A future tick is also strictly after every
+	// result's LastStartedTime, since those all predate the scale-down above.
+	tick := time.Now().UTC().Truncate(time.Minute).Add(time.Minute)
+	if time.Until(tick) < 15*time.Second {
+		// Minimum margin so the update is guaranteed to land before the tick.
+		tick = tick.Add(time.Minute)
+	}
 	updateReq := req.CloneVT()
 	updateReq.Id = resp.GetId()
-	updateReq.ScanConfig.ScanSchedule = scheduleAt(lastScanTime.Add(2 * time.Minute))
+	updateReq.ScanConfig.ScanSchedule = scheduleAt(tick)
 	_, err = scanConfigService.UpdateComplianceScanConfiguration(ctx, updateReq)
 	require.NoErrorf(t, err, "failed to update scan config %s schedule", testID)
 
-	// The sweeper flips results to STALE once now > (lastScanTime+2m) + grace, where grace is
+	// The sweeper only accepts the tick if it does not predate LastUpdatedTime (see above); verify
+	// that against Central's own view of the config rather than assume the update landed in time.
+	updatedCfg, err := scanConfigService.GetComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
+	require.NoErrorf(t, err, "failed to read back scan config %s", testID)
+	require.Falsef(t, updatedCfg.GetLastUpdatedTime().AsTime().After(tick),
+		"scan config %s was updated at %s, after the chosen tick %s; the sweeper would reject the tick",
+		testID, updatedCfg.GetLastUpdatedTime().AsTime(), tick)
+
+	// The sweeper flips results to STALE once now > tick + grace, where grace is
 	// ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT + ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT (shortened
-	// for e2e to 1m+2m=3m, see tests/e2e/lib.sh and deploy/common/k8sbased.sh).
+	// for e2e to 1m+2m=3m, see tests/e2e/lib.sh and deploy/common/k8sbased.sh), and detects the
+	// flip on its next sweep, at most minSweepInterval later (1m: the 20s e2e sweep interval is
+	// clamped, see central/complianceoperator/v2/freshness/singleton.go). The budget covers the
+	// wait for the tick itself plus all of that and slack.
 	// Scoped to this scan config, so the per-check assertion below can't see rows left behind by
 	// other configs that have used (or are using) the same profile on this cluster.
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
@@ -297,7 +308,7 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 		stats := getComplianceProfileStats(c, ctx, statsClient, freshnessProfile)
 		require.GreaterOrEqual(c, stats.GetStaleClusterCount(), int32(1))
 		require.GreaterOrEqual(c, stats.GetStaleCheckResultCount(), wantStaleCount)
-	}, 8*time.Minute, 15*time.Second)
+	}, time.Until(tick)+5*time.Minute, 15*time.Second)
 
 	// Filtering on the freshness label, scoped to this scan config, reflects the same transition
 	// precisely: every one of this config's checks is STALE and none is CURRENT.
