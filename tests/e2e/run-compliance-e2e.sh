@@ -26,6 +26,9 @@ test_compliance_e2e() {
 
     export SENSOR_HELM_DEPLOY=true
 
+    # Opt this job into the shortened compliance freshness timeouts (see lib.sh).
+    export SHORTEN_COMPLIANCE_FRESHNESS_TIMINGS=true
+
     setup_deployment_env false false
     remove_existing_stackrox_resources
     remove_compliance_operator_resources

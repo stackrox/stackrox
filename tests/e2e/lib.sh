@@ -565,6 +565,16 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SURFACE_STALE_DATA'
     customize_envVars+=$'\n        value: "true"'
+    # Shorten the compliance data-freshness timeouts so the freshness tests finish within the
+    # test budget. Only the compliance e2e job opts in, so other jobs keep production timings.
+    if [[ "${SHORTEN_COMPLIANCE_FRESHNESS_TIMINGS:-}" == "true" ]]; then
+        customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT'
+        customize_envVars+=$'\n        value: "2m"'
+        customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT'
+        customize_envVars+=$'\n        value: "1m"'
+        customize_envVars+=$'\n      - name: ROX_COMPLIANCE_FRESHNESS_SWEEP_INTERVAL'
+        customize_envVars+=$'\n        value: "20s"'
+    fi
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_CUSTOM_NODE_ROLES'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_REGISTRY_RESPONSE_TIMEOUT'
