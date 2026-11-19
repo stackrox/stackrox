@@ -31,9 +31,6 @@ USER root
 
 # Copy required PG15 extensions from the PG15 image to PG15 lib directory for fallback
 COPY --from=pg15-source /usr/lib64/pgsql/uuid-ossp.so /usr/lib64/pgsql/postgresql-15/lib/
-COPY --from=pg15-source /usr/lib64/pgsql/pgaudit.so /usr/lib64/pgsql/postgresql-15/lib/
-COPY --from=pg15-source /usr/lib64/pgsql/pgxml.so /usr/lib64/pgsql/postgresql-15/lib/
-COPY --from=pg15-source /usr/lib64/pgsql/sepgsql.so /usr/lib64/pgsql/postgresql-15/lib/
 
 COPY \
      scanner/image/db/scripts/docker-entrypoint.sh \

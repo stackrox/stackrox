@@ -20,6 +20,7 @@ postgres_major_version() {
     version="$(sed -n \
         -e 's/^[[:space:]]*ARG[[:space:]]\+PG_VERSION=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
         -e 's/^[[:space:]]*ENV[[:space:]]\+PG_MAJOR=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
+        -e '/[[:space:]]AS[[:space:]]/b' \
         -e 's/^[[:space:]]*FROM[[:space:]].*\/postgresql-\([1-9][0-9]*\)-.*$/\1/p')"
     # Missing or ambiguous versions must fail the check, not silently skip coverage.
     [[ "$version" =~ ^[1-9][0-9]*$ ]] || return 1
