@@ -161,9 +161,9 @@ jobs:
       timeout-minutes: 245
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
-    # API_ENDPOINT and ROX_ADMIN_PASSWORD are already available in $GITHUB_ENV
-    # from ci_export() calls during the test run (tests/e2e/lib.sh:352-353).
-    # Post-test step inherits these automatically.
+    # API_ENDPOINT and ROX_ADMIN_PASSWORD are exported to $GITHUB_ENV by
+    # ci_export() calls in tests/e2e/lib.sh during the test run, so this
+    # step inherits them without re-exporting.
     - name: Ensure API is ready for post-test
       if: always()
       run: |
