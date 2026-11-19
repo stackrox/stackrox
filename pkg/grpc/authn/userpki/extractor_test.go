@@ -1,12 +1,26 @@
 package userpki
 
 import (
+	"crypto/x509/pkix"
+	"math/big"
 	"testing"
+	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	authProviderMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/metadata"
 )
 
 var userA = []byte(`-----BEGIN CERTIFICATE-----
@@ -44,4 +58,158 @@ func TestExtractAttributes(t *testing.T) {
 	a.ElementsMatch(values[authproviders.NameAttribute], []string{"UserA"})
 
 	a.ElementsMatch(values["DN"], []string{"CN=UserA,OU=GroupA,O=Stackrox,C=US"})
+}
+
+const (
+	userFingerprint = "test-user-fingerprint"
+	caFingerprint   = "test-user-ca-fingerprint"
+)
+
+var (
+	errDummy = errors.New("dummy test error")
+
+	testNotAfter = time.Date(2050, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+	testRolePermissions = map[string]storage.Access{
+		"Deployment": storage.Access_READ_ACCESS,
+	}
+
+	userCert = mtls.CertInfo{
+		Subject: pkix.Name{
+			CommonName:         "UserA",
+			Organization:       []string{"Stackrox"},
+			OrganizationalUnit: []string{"GroupA"},
+			Country:            []string{"US"},
+		},
+		EmailAddresses:  []string{"usera@stackrox.io"},
+		SerialNumber:    big.NewInt(1),
+		NotAfter:        testNotAfter,
+		CertFingerprint: userFingerprint,
+	}
+
+	caCert = mtls.CertInfo{
+		Subject:         pkix.Name{CommonName: "User CA"},
+		CertFingerprint: caFingerprint,
+	}
+
+	expectedUserAttributes = map[string][]string{
+		"userid": {"userpki:" + userFingerprint},
+		"name":   {"UserA"},
+		"email":  {"usera@stackrox.io"},
+		"groups": {"GroupA"},
+		"CN":     {"UserA"},
+		"C":      {"US"},
+		"O":      {"Stackrox"},
+		"OU":     {"GroupA"},
+		"DN":     {"CN=UserA,OU=GroupA,O=Stackrox,C=US"},
+	}
+)
+
+// fakeProviderContainer is a test stand-in for the ProviderContainer interface.
+type fakeProviderContainer struct {
+	providers map[string]authproviders.Provider
+}
+
+func (c *fakeProviderContainer) GetProviderForFingerprint(fingerprint string) authproviders.Provider {
+	return c.providers[fingerprint]
+}
+
+func TestExtractorIdentityForRequest(t *testing.T) {
+	userRequestInfo := requestinfo.RequestInfo{
+		Metadata:       metadata.MD{},
+		VerifiedChains: [][]mtls.CertInfo{{userCert, caCert}},
+	}
+
+	// Requests that yield neither identity nor error.
+	for name, tc := range map[string]struct {
+		requestInfo requestinfo.RequestInfo
+	}{
+		"NoIdentity-NoError - authorization metadata present": {
+			// Tokens take precedence over certificates inside the browser app.
+			requestInfo: requestinfo.RequestInfo{
+				Metadata:       metadata.MD{"authorization": []string{"Bearer dummyTokenData"}},
+				VerifiedChains: [][]mtls.CertInfo{{userCert, caCert}},
+			},
+		},
+		"NoIdentity-NoError - no verified chains": {
+			requestInfo: requestinfo.RequestInfo{
+				Metadata: metadata.MD{},
+			},
+		},
+		"NoIdentity-NoError - no provider for any chain fingerprint": {
+			requestInfo: requestinfo.RequestInfo{
+				Metadata:       metadata.MD{},
+				VerifiedChains: [][]mtls.CertInfo{{userCert, {CertFingerprint: "unknown-fingerprint"}}},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			extractor := NewExtractor(&fakeProviderContainer{providers: map[string]authproviders.Provider{}})
+
+			id, err := extractor.IdentityForRequest(it.Context(), tc.requestInfo)
+			assert.Nil(it, err)
+			assert.Nil(it, id)
+		})
+	}
+
+	// Error paths.
+	t.Run("Error: role resolution fails", func(it *testing.T) {
+		mockCtrl := gomock.NewController(it)
+		defer mockCtrl.Finish()
+		roleMapper := permissionMocks.NewMockRoleMapper(mockCtrl)
+		roleMapper.EXPECT().
+			FromUserDescriptor(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return(nil, errDummy)
+		mockProvider := authProviderMocks.NewMockProvider(mockCtrl)
+		mockProvider.EXPECT().RoleMapper().Times(1).Return(roleMapper)
+		extractor := NewExtractor(&fakeProviderContainer{
+			providers: map[string]authproviders.Provider{caFingerprint: mockProvider},
+		})
+
+		id, err := extractor.IdentityForRequest(it.Context(), userRequestInfo)
+		assert.ErrorContains(it, err, "failed to resolve user roles")
+		assert.Nil(it, id)
+	})
+
+	// Success path.
+	t.Run("Valid user certificate", func(it *testing.T) {
+		mockCtrl := gomock.NewController(it)
+		defer mockCtrl.Finish()
+		testRole := roletest.NewResolvedRole("TestRole", testRolePermissions, nil)
+		roleMapper := permissionMocks.NewMockRoleMapper(mockCtrl)
+		roleMapper.EXPECT().
+			FromUserDescriptor(gomock.Any(), &permissions.UserDescriptor{
+				UserID:     "userpki:" + userFingerprint,
+				Attributes: expectedUserAttributes,
+			}).
+			Times(1).
+			Return([]permissions.ResolvedRole{testRole}, nil)
+		mockProvider := authProviderMocks.NewMockProvider(mockCtrl)
+		mockProvider.EXPECT().RoleMapper().Times(1).Return(roleMapper)
+		extractor := NewExtractor(&fakeProviderContainer{
+			providers: map[string]authproviders.Provider{caFingerprint: mockProvider},
+		})
+
+		id, err := extractor.IdentityForRequest(it.Context(), userRequestInfo)
+		assert.Nil(it, err)
+		require.NotNil(it, id)
+
+		assert.Equal(it, "userpki:"+userFingerprint, id.UID())
+		assert.Equal(it, "UserA", id.FriendlyName())
+		assert.Equal(it, "UserA", id.FullName())
+		assert.Equal(it, expectedUserAttributes, id.Attributes())
+		assert.Equal(it, []permissions.ResolvedRole{testRole}, id.Roles())
+		assert.Equal(it, testRolePermissions, id.Permissions())
+		protoassert.Equal(it, &storage.UserInfo{
+			FriendlyName: "UserA",
+			Permissions:  &storage.UserInfo_ResourceToAccess{ResourceToAccess: testRolePermissions},
+			Roles:        []*storage.UserInfo_Role{{Name: "TestRole", ResourceToAccess: testRolePermissions}},
+		}, id.User())
+		assert.Nil(it, id.Service())
+		validFrom, validUntil := id.ValidityPeriod()
+		assert.Zero(it, validFrom)
+		assert.Equal(it, testNotAfter, validUntil)
+		assert.Same(it, mockProvider, id.ExternalAuthProvider())
+	})
 }
