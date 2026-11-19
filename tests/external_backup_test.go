@@ -32,9 +32,14 @@ import (
 )
 
 const (
-	backupRetryTries         = 5
-	backupRetryInterval      = 10 * time.Second
-	centralReadinessMaxTries = 10
+	backupRetryTries    = 5
+	backupRetryInterval = 10 * time.Second
+	// The retry budget around TestExternalBackup must tolerate both Central not
+	// being fully ready yet and short transient outages of external S3-compatible
+	// endpoints (e.g. the ODF side-cluster used by CI, observed returning
+	// InternalError for ~2 minutes) - ROX-39650. 30 tries at 10s intervals
+	// gives a ~5 minute budget.
+	centralReadinessMaxTries = 30
 )
 
 type backupTestCase struct {
