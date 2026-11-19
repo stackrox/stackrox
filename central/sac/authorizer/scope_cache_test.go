@@ -199,3 +199,29 @@ func TestScopeCacheWaitCanBeCanceled(t *testing.T) {
 		t.Fatal("scope waiter did not observe cancellation")
 	}
 }
+
+func TestScopeLookupErrorsDenyPointChecks(t *testing.T) {
+	for name, lookupErr := range map[string]error{
+		"canceled": context.Canceled,
+		"deadline": context.DeadlineExceeded,
+		"database": errors.New("database connection lost"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			checker := newScopeChecker(t.Context(), []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())}, nil,
+				func(*storage.SimpleAccessScope_Rules) (*effectiveaccessscope.ScopeTree, error) {
+					return nil, lookupErr
+				})
+			resourceChecker := checker.SubScopeChecker(sac.AccessModeScopeKey(storage.Access_READ_ACCESS)).
+				SubScopeChecker(sac.ResourceScopeKey(resources.Deployment.GetResource()))
+			assert.False(t, resourceChecker.Allowed())
+			assert.False(t, resourceChecker.SubScopeChecker(sac.ClusterScopeKey(firstClusterID)).Allowed())
+			assert.False(t, resourceChecker.SubScopeChecker(sac.ClusterScopeKey(firstClusterID)).
+				SubScopeChecker(sac.NamespaceScopeKey(firstNamespaceName)).Allowed())
+			tree, err := resourceChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+				Resource: resources.Deployment, Access: storage.Access_READ_ACCESS,
+			})
+			assert.Nil(t, tree)
+			assert.ErrorIs(t, err, lookupErr)
+		})
+	}
+}

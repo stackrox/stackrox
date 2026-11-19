@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -726,43 +725,19 @@ func TestGlobalScopeCheckerCore(t *testing.T) {
 	assert.Equal(t, false, scc.Allowed())
 }
 
-func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T) {
-	tests := []struct {
-		name      string
-		roles     []permissions.ResolvedRole
-		scopeKeys []sac.ScopeKey
-		results   []bool
-	}{
-		{
-			name: "error when could not compute effective access scope",
-			roles: []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{
-				Id: "with-invalid-key",
-				Rules: &storage.SimpleAccessScope_Rules{
-					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{{
-						Requirements: []*storage.SetBasedLabelSelector_Requirement{
-							{Key: "invalid key"},
-						}}}}})},
-			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
-			results:   []bool{false},
+func TestBuiltInScopeAuthorizerDeniesWhenErrorOnComputeAccessScope(t *testing.T) {
+	roles := []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{
+		Id: "with-invalid-key",
+		Rules: &storage.SimpleAccessScope_Rules{
+			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{{
+				Requirements: []*storage.SetBasedLabelSelector_Requirement{{Key: "invalid key"}},
+			}},
 		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)
-			for i, scopeKey := range tc.scopeKeys {
-				scc = scc.SubScopeChecker(scopeKey)
-				if i >= len(tc.results) {
-					if !buildinfo.ReleaseBuild {
-						assert.Panics(t, func() { scc.Allowed() })
-					} else {
-						assert.Equal(t, false, scc.Allowed())
-					}
-				} else {
-					expected := tc.results[i]
-					assert.Equal(t, expected, scc.Allowed())
-				}
-			}
-		})
+	})}
+	checker := newGlobalScopeCheckerCore(clusters, namespaces, roles, nil)
+	for _, scopeKey := range readCluster(firstClusterID, resources.Cluster.Resource) {
+		checker = checker.SubScopeChecker(scopeKey)
+		assert.False(t, checker.Allowed())
 	}
 }
 

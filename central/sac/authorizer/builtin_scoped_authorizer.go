@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -176,7 +177,7 @@ func (a *resourceLevelScopeCheckerCore) Allowed() bool {
 	}
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
-		if utils.ShouldErr(err) != nil {
+		if err != nil {
 			return false
 		}
 		if scope.State == effectiveaccessscope.Included {
@@ -246,7 +247,7 @@ type clusterNamespaceLevelScopeCheckerCore struct {
 func (a *clusterNamespaceLevelScopeCheckerCore) Allowed() bool {
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
-		if utils.ShouldErr(err) != nil {
+		if err != nil {
 			return false
 		}
 		if effectiveAccessScopeAllows(scope, a.resource, a.clusterID, a.namespace) {
@@ -336,6 +337,9 @@ func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.S
 	}
 	eas, err := c.compute(accessScope.GetRules())
 	if err != nil {
+		if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			logging.Errorf("Could not compute effective access scope %q: %+v", accessScope.GetId(), err)
+		}
 		return nil, errors.Wrapf(err, "could not compute effective access scope for access scope with id %q", accessScope.GetId())
 	}
 	return eas, nil

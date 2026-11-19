@@ -19,6 +19,7 @@ import (
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
+	sacEnricher "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -135,6 +136,15 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
+	backgroundCtx := context.WithoutCancel(ctx)
+	// System reports have no identity and use fixed access scopes.
+	if authn.IdentityFromContextOrNil(ctx) != nil {
+		var err error
+		backgroundCtx, err = sacEnricher.GetEnricher().EnrichContext(backgroundCtx)
+		if err != nil {
+			return err
+		}
+	}
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -145,7 +155,7 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 
 	req := &reportRequest{
 		scanConfig:         scanConfig,
-		ctx:                context.WithoutCancel(ctx),
+		ctx:                backgroundCtx,
 		notificationMethod: method,
 	}
 	log.Infof("Submitting report for scan config %s at %s with method %s", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), method.String())
