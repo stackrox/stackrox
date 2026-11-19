@@ -1,3 +1,4 @@
+FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:d23329657fb56ace21119592c45801a9f599ee65b0cfc86394918e41e7ab7a9f AS pg15-source
 FROM registry.redhat.io/rhel9/postgresql-16:latest@sha256:cf20f6229c5c1cc4cd65be6636b5b06620ba9adb844dfbe080fa7a50605ecd52
 
 ARG BUILD_TAG
@@ -27,6 +28,12 @@ LABEL \
 ENV BUILD_TAG="${BUILD_TAG}"
 
 USER root
+
+# Copy required PG15 extensions from the PG15 image to PG15 lib directory for fallback
+COPY --from=pg15-source /usr/lib64/pgsql/uuid-ossp.so /usr/lib64/pgsql/postgresql-15/lib/
+COPY --from=pg15-source /usr/lib64/pgsql/pgaudit.so /usr/lib64/pgsql/postgresql-15/lib/
+COPY --from=pg15-source /usr/lib64/pgsql/pgxml.so /usr/lib64/pgsql/postgresql-15/lib/
+COPY --from=pg15-source /usr/lib64/pgsql/sepgsql.so /usr/lib64/pgsql/postgresql-15/lib/
 
 COPY \
      scanner/image/db/scripts/docker-entrypoint.sh \
