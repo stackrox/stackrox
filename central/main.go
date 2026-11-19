@@ -47,7 +47,6 @@ import (
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
 	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
-	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
@@ -158,7 +157,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
-	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
@@ -783,12 +781,6 @@ func uiRoute() routes.CustomRoute {
 func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
-		{
-			Route:         "/api/extensions/clusters/zip",
-			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
-			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
-			Compression:   false,
-		},
 		{
 			Route:         "/api/extensions/scanner/zip",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
