@@ -17,7 +17,7 @@
 
 ARG PG_VERSION=16
 
-FROM registry.access.redhat.com/ubi9:latest@sha256:87f66688da4e206d5a1877088626c542288a5ccd97898cf363b588d57817e6be AS downloads
+FROM registry.access.redhat.com/ubi9:latest AS downloads
 
 ARG PG_VERSION
 COPY image/rhel/signatures/RPM-GPG-KEY-CentOS-Official /tmp/
@@ -25,7 +25,7 @@ COPY image/rhel/download.sh /download.sh
 ENV DEBUG_BUILD=no
 RUN /download.sh && rm -f /download.sh
 
-FROM registry.access.redhat.com/ubi9:latest@sha256:87f66688da4e206d5a1877088626c542288a5ccd97898cf363b588d57817e6be AS package_installer
+FROM registry.access.redhat.com/ubi9:latest AS package_installer
 
 ARG PG_VERSION
 COPY --from=downloads /output/rpms/ /tmp/
