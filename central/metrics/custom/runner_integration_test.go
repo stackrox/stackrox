@@ -11,6 +11,7 @@ import (
 
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	sacEnricher "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
@@ -64,7 +65,10 @@ func TestRunnerBackgroundScopeSurvivesRequestCancellation(t *testing.T) {
 	requestCtx, err := sacEnricher.GetEnricher().EnrichContext(requestCtx)
 	require.NoError(t, err)
 	backgroundContexts := make(chan context.Context, 1)
-	runner := trackerRunner{{Tracker: contextCapturingTracker{contexts: backgroundContexts}}}
+	runner := trackerRunner{{Tracker: contextCapturingTracker{
+		Tracker:  image_vulnerabilities.New(nil),
+		contexts: backgroundContexts,
+	}}}
 	recorder := httptest.NewRecorder()
 	runner.ServeHTTP(recorder, httptest.NewRequestWithContext(requestCtx, http.MethodGet, "/metrics", nil))
 	require.Equal(t, http.StatusOK, recorder.Code)
