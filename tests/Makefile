@@ -30,8 +30,8 @@ external-backup-tests:
 
 .PHONY: compliance-v2-tests
 compliance-v2-tests:
-	# The freshness tests (TestComplianceV2Freshness*) add several minutes of time-based waits each
-	# (sweeper grace window, scan-watcher timeout), so the suite needs more than 30m.
+	# The freshness tests (TestComplianceV2Freshness*) add several minutes of time-based
+	# waits each, so the suite needs more than 30m.
 	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -timeout 45m -cover -v -run TestComplianceV2 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=compliance-v2-tests-results
 
