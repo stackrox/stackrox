@@ -93,7 +93,6 @@ import (
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	grpcPreferences "github.com/stackrox/rox/central/grpcpreference/service"
-	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
 	"github.com/stackrox/rox/central/imageintegration"
@@ -434,7 +433,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		featureFlagService.Singleton(),
 		groupService.Singleton(),
 		grpcPreferences.Singleton(),
-		helmcharts.NewService(),
 		iiService.Singleton(),
 		imageService.Singleton(),
 		integrationHealthService.Singleton(),
