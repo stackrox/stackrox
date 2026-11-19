@@ -34,7 +34,7 @@ func (m *mockRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error
 	panic("unsupported")
 }
 
-func (m *mockRegistry) MetadataForAllPlatforms(_ *storage.Image) ([]*types.PlatformMetadata, error) {
+func (m *mockRegistry) MetadataForAllPlatforms(_ *storage.Image) (*types.AllPlatformsMetadata, error) {
 	panic("unsupported")
 }
 

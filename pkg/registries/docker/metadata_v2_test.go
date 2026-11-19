@@ -149,12 +149,14 @@ func TestMetadataForAllPlatforms(t *testing.T) {
 			"/v2/test/repo/blobs/" + armV7Config:       configBlobJSON("linux", "arm"),
 		})
 
-		results, err := reg.MetadataForAllPlatforms(imageForTest(t, reg, "latest"))
+		result, err := reg.MetadataForAllPlatforms(imageForTest(t, reg, "latest"))
 		require.NoError(t, err)
-		require.Len(t, results, 4, "windows platform should be skipped, all linux platforms kept")
+		assert.Equal(t, listDigest, result.ManifestDigest)
+		assert.True(t, result.IsManifestList)
+		require.Len(t, result.Platforms, 4, "windows platform should be skipped, all linux platforms kept")
 
 		byPlatform := map[string]*types.PlatformMetadata{}
-		for _, pm := range results {
+		for _, pm := range result.Platforms {
 			byPlatform[platformKey(pm)] = pm
 		}
 		require.Len(t, byPlatform, 4, "arm v6 and v7 must not collide")
@@ -183,12 +185,14 @@ func TestMetadataForAllPlatforms(t *testing.T) {
 			"/v2/test/repo/blobs/" + amdConfig:       configBlobJSON("linux", "amd64"),
 		})
 
-		results, err := reg.MetadataForAllPlatforms(imageForTest(t, reg, "latest"))
+		result, err := reg.MetadataForAllPlatforms(imageForTest(t, reg, "latest"))
 		require.NoError(t, err)
-		require.Len(t, results, 1)
-		assert.Equal(t, "linux", results[0].OS)
-		assert.Equal(t, "amd64", results[0].Architecture)
-		assert.Equal(t, amdLayers, results[0].Metadata.GetLayerShas())
+		assert.Equal(t, amdManifest, result.ManifestDigest)
+		assert.False(t, result.IsManifestList)
+		require.Len(t, result.Platforms, 1)
+		assert.Equal(t, "linux", result.Platforms[0].OS)
+		assert.Equal(t, "amd64", result.Platforms[0].Architecture)
+		assert.Equal(t, amdLayers, result.Platforms[0].Metadata.GetLayerShas())
 	})
 
 	t.Run("manifest list with no linux platforms errors", func(t *testing.T) {
@@ -197,16 +201,16 @@ func TestMetadataForAllPlatforms(t *testing.T) {
 			"/v2/test/repo/manifests/" + listDigest: list,
 		})
 
-		results, err := reg.MetadataForAllPlatforms(imageForTest(t, reg, "latest"))
+		result, err := reg.MetadataForAllPlatforms(imageForTest(t, reg, "latest"))
 		assert.Error(t, err)
-		assert.Nil(t, results)
+		assert.Nil(t, result)
 	})
 
 	t.Run("nil image returns nil", func(t *testing.T) {
 		reg := newTestRegistry(t, listDigest, manifestlist.MediaTypeManifestList, nil)
-		results, err := reg.MetadataForAllPlatforms(nil)
+		result, err := reg.MetadataForAllPlatforms(nil)
 		assert.NoError(t, err)
-		assert.Nil(t, results)
+		assert.Nil(t, result)
 	})
 }
 

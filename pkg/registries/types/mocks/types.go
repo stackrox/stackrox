@@ -116,10 +116,10 @@ func (mr *MockRegistryMockRecorder) Metadata(image any) *gomock.Call {
 }
 
 // MetadataForAllPlatforms mocks base method.
-func (m *MockRegistry) MetadataForAllPlatforms(image *storage.Image) ([]*types.PlatformMetadata, error) {
+func (m *MockRegistry) MetadataForAllPlatforms(image *storage.Image) (*types.AllPlatformsMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MetadataForAllPlatforms", image)
-	ret0, _ := ret[0].([]*types.PlatformMetadata)
+	ret0, _ := ret[0].(*types.AllPlatformsMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -269,10 +269,10 @@ func (mr *MockImageRegistryMockRecorder) Metadata(image any) *gomock.Call {
 }
 
 // MetadataForAllPlatforms mocks base method.
-func (m *MockImageRegistry) MetadataForAllPlatforms(image *storage.Image) ([]*types.PlatformMetadata, error) {
+func (m *MockImageRegistry) MetadataForAllPlatforms(image *storage.Image) (*types.AllPlatformsMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MetadataForAllPlatforms", image)
-	ret0, _ := ret[0].([]*types.PlatformMetadata)
+	ret0, _ := ret[0].(*types.AllPlatformsMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

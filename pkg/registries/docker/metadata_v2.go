@@ -129,6 +129,12 @@ func handleOCIManifestWithPlatform(r *Registry, remote, ref string) (*storage.Im
 	}, platform, nil
 }
 
+// isManifestList reports whether the manifest media type is a multi-platform
+// manifest list or OCI image index.
+func isManifestList(manifestType string) bool {
+	return manifestType == manifestlist.MediaTypeManifestList || manifestType == registry.MediaTypeImageIndex
+}
+
 // handleManifestsAllPlatforms returns metadata for every linux platform described by
 // the manifest at ref. For a manifest list / OCI image index it fans out to each
 // platform's manifest; for a single-platform image it returns one entry.

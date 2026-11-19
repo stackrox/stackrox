@@ -139,9 +139,11 @@ func (f *fakeRegistryScanner) Metadata(*storage.Image) (*storage.ImageMetadata, 
 	return &storage.ImageMetadata{}, nil
 }
 
-func (f *fakeRegistryScanner) MetadataForAllPlatforms(*storage.Image) ([]*types.PlatformMetadata, error) {
+func (f *fakeRegistryScanner) MetadataForAllPlatforms(*storage.Image) (*types.AllPlatformsMetadata, error) {
 	f.requestedMetadata = true
-	return []*types.PlatformMetadata{{Metadata: &storage.ImageMetadata{}}}, nil
+	return &types.AllPlatformsMetadata{
+		Platforms: []*types.PlatformMetadata{{Metadata: &storage.ImageMetadata{}}},
+	}, nil
 }
 
 func (f *fakeRegistryScanner) Config(_ context.Context) *types.Config {

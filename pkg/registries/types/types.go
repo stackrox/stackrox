@@ -77,22 +77,37 @@ func (c *Config) GetRegistryHostname() string {
 }
 
 // PlatformMetadata pairs image metadata with the platform it describes.
-// MetadataForAllPlatforms returns one entry per linux platform for a multi-arch
-// manifest list, and a single entry for a single-platform image.
+// AllPlatformsMetadata holds one entry per linux platform for a multi-arch manifest
+// list, and a single entry for a single-platform image.
 type PlatformMetadata struct {
 	OS           string
 	Architecture string
 	// Variant distinguishes platforms that share an os/architecture, such as the arm
 	// variants v6/v7/v8. os/architecture alone is therefore not a unique key.
-	Variant      string
-	Metadata     *storage.ImageMetadata
+	Variant  string
+	Metadata *storage.ImageMetadata
+}
+
+// AllPlatformsMetadata is the result of resolving an image reference across all of its
+// platforms.
+type AllPlatformsMetadata struct {
+	// ManifestDigest is the top-level digest: the manifest-list digest for a multi-arch
+	// image, or the single manifest digest otherwise. It is the change-detection key.
+	ManifestDigest string
+	// IsManifestList is true when the reference points to a manifest list / OCI index.
+	IsManifestList bool
+	// Platforms holds one entry per linux platform.
+	Platforms []*PlatformMetadata
 }
 
 // Registry is the interface that all image registries must implement
 type Registry interface {
 	Match(image *storage.ImageName) bool
 	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
-	MetadataForAllPlatforms(image *storage.Image) ([]*PlatformMetadata, error)
+	// MetadataForAllPlatforms returns metadata for every linux platform the image
+	// supports, plus the top-level manifest digest. Unlike Metadata, it does not
+	// collapse a manifest list to the caller's architecture.
+	MetadataForAllPlatforms(image *storage.Image) (*AllPlatformsMetadata, error)
 	Test() error
 	Config(ctx context.Context) *Config
 	Name() string

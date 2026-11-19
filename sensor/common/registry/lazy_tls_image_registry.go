@@ -110,7 +110,7 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 	return meta, nil
 }
 
-func (l *lazyTLSCheckRegistry) MetadataForAllPlatforms(image *storage.Image) ([]*types.PlatformMetadata, error) {
+func (l *lazyTLSCheckRegistry) MetadataForAllPlatforms(image *storage.Image) (*types.AllPlatformsMetadata, error) {
 	if err := l.initialize(); err != nil {
 		return nil, err
 	}

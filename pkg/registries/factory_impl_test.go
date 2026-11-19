@@ -91,7 +91,7 @@ func (*FakeReg) ListTags(_ context.Context, _ string) ([]string, error)    { ret
 func (*FakeReg) Match(_ *storage.ImageName) bool                           { return false }
 func (*FakeReg) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) { return nil, nil }
 
-func (*FakeReg) MetadataForAllPlatforms(_ *storage.Image) ([]*types.PlatformMetadata, error) {
+func (*FakeReg) MetadataForAllPlatforms(_ *storage.Image) (*types.AllPlatformsMetadata, error) {
 	return nil, nil
 }
 func (f *FakeReg) Name() string { return f.name }
