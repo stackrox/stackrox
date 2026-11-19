@@ -113,9 +113,21 @@ jobs:
           LATEST_TAG="$(git ls-remote --tags --refs origin \
             | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
           if [ -n "$LATEST_TAG" ]; then
-            COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
-              --jq .ahead_by 2>/dev/null || echo 0)"
-            IMAGE_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
+            # Compare status: "ahead" = normal (commit newer than the tag
+            # fork); "behind"/"diverged" = HISTORICAL commit (ancestor of
+            # the release train — the fast formula would emit count 0 and
+            # the wrong train). Fall back to real describe (deepen once).
+            CMP="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
+              --jq '"\(.status) \(.ahead_by)"' 2>/dev/null || echo "diverged 0")"
+            CMP_STATUS="${CMP%% *}"; COUNT="${CMP##* }"
+            if [ "$CMP_STATUS" = "ahead" ] && [ "$COUNT" != "0" ]; then
+              IMAGE_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
+            else
+              git fetch --tags --deepen=3000 origin "$SHA" 2>/dev/null || \
+                git fetch --tags origin 2>/dev/null || true
+              IMAGE_TAG_VAL="$(git describe --tags --abbrev=10 --exclude '*-nightly-*' 2>/dev/null \
+                || echo "0.0.0-g${SHORTSHA}")"
+            fi
             # Dev-KIND stable stamp: stable (link cache) and parses as
             # DevelopmentKind — a bare semver would masquerade as a
             # release (prod upgrade gates act on the kind).
