@@ -61,20 +61,39 @@ validate_image_tag() {
     fi
 }
 
-# is_sensitive_env_name returns success when the variable name ends in PASSWORD, TOKEN, or SECRET.
+# is_sensitive_env_name returns success when it guesses by the variable name that it may have some sensitive secret value
 is_sensitive_env_name() {
-    [[ "${1:-}" =~ (PASSWORD|TOKEN|SECRET)$ ]]
+    local name="$1"
+    [[ "$name" =~ (PASSWORD|TOKEN|SECRET|_SA|KEY|WEBHOOK|IDENTITY)(_V[0-9]+)?$ ]] ||
+        [[ "$name" =~ SERVICE_ACCOUNT|CRED ]]
+}
+
+# is_unmaskable_line returns success for lines that must not be registered as masks: lines without any
+# alphanumeric character (such as the "{" and "}" lines of a JSON key) and placeholder values that sensitive-looking
+# names hold in CI (such as ROX_TELEMETRY_STORAGE_KEY_V1=DISABLED). Masking these would replace every occurrence of
+# them in the job log with "***".
+is_unmaskable_line() {
+    local line="$1"
+    [[ ! "$line" =~ [[:alnum:]] ]] && return 0
+    case "${line,,}" in
+        true|false|disabled|enabled|none|null) return 0 ;;
+    esac
+    return 1
 }
 
 # gha_mask_value registers a value with GitHub Actions so later log output shows it as "***".
 # ::add-mask:: works on one line at a time, so each line of a multi-line value is masked on its own.
 # Masking only applies to output written after this runs.
+# The runner decodes %25, %0D, and %0A in command data, so each line is encoded the same way as
+# escapeData in actions/toolkit (% first). Otherwise the registered mask could differ from the value.
 gha_mask_value() {
-    local value="${1:-}"
+    local value="$1"
     local line
     while IFS= read -r line || [[ -n "$line" ]]; do
-        if [[ -n "$line" ]]; then
-            echo "::add-mask::${line}"
+        if ! is_unmaskable_line "$line"; then
+            line="${line//%/%25}"
+            line="${line//$'\r'/%0D}"
+            printf '::add-mask::%s\n' "$line"
         fi
     done <<< "$value"
 }
@@ -89,7 +108,8 @@ ci_export() {
 
     if is_GITHUB_ACTIONS; then
         # Mask before writing to GITHUB_ENV. GHA prints GITHUB_ENV values in the env: block of
-        # every later step, and does not mask them unless they come from secrets.*.
+        # every later step. It only masks values that come from the secrets context
+        # (e.g. ${{ secrets.FOO }}), and values generated at runtime are not among them.
         if is_sensitive_env_name "$env_name"; then
             gha_mask_value "$env_value"
         fi
