@@ -26,6 +26,11 @@ test_compliance_e2e() {
 
     export SENSOR_HELM_DEPLOY=true
 
+    # Shorten compliance data-freshness timeouts so the freshness tests finish
+    # within the suite budget. Scoped to this job; consumed by
+    # deploy_central_via_operator (tests/e2e/lib.sh).
+    export SHORTEN_COMPLIANCE_FRESHNESS_TIMINGS=true
+
     setup_deployment_env false false
     remove_existing_stackrox_resources
     remove_compliance_operator_resources
