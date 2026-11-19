@@ -565,10 +565,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SURFACE_STALE_DATA'
     customize_envVars+=$'\n        value: "true"'
-    # Shorten the compliance data-freshness timeouts (production defaults are
-    # 40m/45m/5m) so they are exercised within the test budget. Only the compliance
-    # e2e job opts in (run-compliance-e2e.sh); other operator e2e jobs keep
-    # production timings so this behavior never affects them.
+    # Shorten the compliance data-freshness timeouts so the freshness tests finish within the
+    # test budget. Only the compliance e2e job opts in, so other jobs keep production timings.
     if [[ "${SHORTEN_COMPLIANCE_FRESHNESS_TIMINGS:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT'
         customize_envVars+=$'\n        value: "2m"'
