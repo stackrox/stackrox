@@ -12,6 +12,10 @@
 #
 # 3. If both SCANNER_BUNDLE_REFERENCE and SCANNER_BUNDLE_STREAM, use both.
 #
+# SCANNER_BUNDLE_MASTER_REFERENCE optionally replaces heads/master references
+# with a PR revision for matrix validation. Version equality is still checked
+# against that revision. Unset it for normal production scheduling.
+#
 # The reference in any of the above needs to be a valid git reference, or a
 # special reference type called "release version" on the form of X.Y.Z string,
 # which will be automatically resolved to the git reference for that release.
@@ -90,6 +94,9 @@ while read -r line; do
     case $ref in
         heads/*)
             resolved_tag="${ref#heads/}"
+            if [[ "$ref" == "heads/master" ]]; then
+                resolved_tag="${SCANNER_BUNDLE_MASTER_REFERENCE:-$resolved_tag}"
+            fi
             ;;
         tags/*)
             resolved_tag="${ref#tags/}"
