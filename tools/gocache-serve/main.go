@@ -270,16 +270,11 @@ func writeStub(buildID, outfile string) error {
 	return os.WriteFile(outfile, buf, 0o755)
 }
 
-// applyMemoryLimit sets a soft Go memory limit (GOMEMLIMIT semantics)
-// so transient garbage — base64-decoded PUT bodies, gzip/gunzip
-// transients, pfb bundles — is collected aggressively instead of
-// accumulating next to the tmpfs local cache (which already counts
-// against runner RAM). A soft limit cannot prevent OOM from a single
-// oversized live allocation (the streaming CLI paths handle those);
-// it keeps the steady-state heap a good citizen on shared runners.
-// Env: GOCACHE_SERVE_GOMEMLIMIT (e.g. "1500MiB"; "0" disables).
-// Default: 1500MiB — generous vs. the measured working set, small vs.
-// the ~7GB RAM a 16GB runner has after tmpfs and the build itself.
+// applyMemoryLimit sets a soft GOMEMLIMIT so transient garbage (base64
+// PUT bodies, gzip transients) is collected instead of accumulating
+// next to the tmpfs cache. Cannot prevent a single oversized allocation
+// (streaming paths handle those). Env GOCACHE_SERVE_GOMEMLIMIT, e.g.
+// "1500MiB"; "0" disables. Default 1500MiB.
 func applyMemoryLimit() {
 	v := os.Getenv("GOCACHE_SERVE_GOMEMLIMIT")
 	if v == "" {
@@ -1103,11 +1098,9 @@ func main() {
 				}
 				atomic.AddInt64(&getBytes, int64(len(getBody)))
 				cloudMeta := metaBy[actionID]
-				// Integrity: the manifest's meta IS the entry's outputID —
-				// the sha256 of its content. Verify before serving: a
-				// corrupted or forged blob entry would otherwise inject
-				// object code into every downstream build. Mismatch → miss
-				// (go recompiles and re-puts, self-healing the entry).
+				// Integrity: the manifest meta is the entry's outputID
+				// (sha256 of content). Mismatch → miss; go recompiles and
+				// re-puts (self-healing).
 				if len(cloudMeta) == 32 {
 					sum := sha256.Sum256(getBody)
 					if !bytes.Equal(sum[:], cloudMeta) {
@@ -1149,13 +1142,10 @@ func main() {
 				// its puts ARE the working set (they'll be hits next run).
 				manifest.Record(actionID, fmt.Sprintf("%x", req.OutputID))
 				if req.DiskPath != "" {
-					// Put-with-DiskPath: go wrote the output file itself —
-					// used for LARGE outputs (link results). Ingest the
-					// file into the cache (go may delete it right after
-					// this response) and queue a file-backed upload.
-					// Storing the empty body (the old behavior) is why
-					// link outputs never reached the blob, capping
-					// link-output sharing at a single runner.
+					// Put-with-DiskPath: go wrote the output file itself
+					// (large outputs). Ingest it now — go may delete the
+					// file right after this response — and queue a
+					// file-backed upload.
 					path, err := local.PutFromFile(actionID, string(req.OutputID), req.DiskPath)
 					if err != nil {
 						resp.Err = fmt.Sprintf("local put-from-file: %v", err)

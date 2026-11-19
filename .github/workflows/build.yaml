@@ -1,12 +1,7 @@
 name: Build
-# Content-addressed build system.
-# Each job is a self-contained pipeline: trace backward from the output,
-# check what exists, build only the delta. No `needs` chains. The blob
-# store IS the coordination mechanism.
-#
-# Warm run target: ~30s (re-tag only)
-# 1-binary-change target: ~2 min
-# Full rebuild target: ~5 min
+# Content-addressed build system: every artifact is keyed by its inputs'
+# content; jobs are self-contained (no `needs` chains) and the blob store
+# is the coordination mechanism. Design/history: content-addressed-build-plan.md.
 
 on:
   pull_request:
@@ -26,9 +21,7 @@ on:
 permissions:
   contents: read
 
-# Cancel superseded PR builds (rapid pushes stack 12-job runs otherwise).
-# workflow_dispatch runs get a unique group so validation dispatches are
-# never cancelled by a push.
+# Cancel superseded PR builds; dispatch runs get unique groups (never cancelled).
 concurrency:
   group: build-${{ github.event_name == 'workflow_dispatch' && format('dispatch-{0}', github.run_id) || github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: true
@@ -93,17 +86,12 @@ jobs:
               -u "${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}" --password-stdin
           fi
           # Blob store client. Fixed GET concurrency: the adaptive AIMD
-          # (latency-tuned) under-ramps for large sequential transfers —
-          # measured ~5MB/s aggregate cross-region, which dominates the
-          # Go-change critical path (~600MB per roxctl platform fetched
-          # from cache).
+          # under-ramps for large transfers (measured ~5MB/s cross-region).
           echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONCURRENCY=24" >> "$GITHUB_ENV"
-          # Manifest + served-set + prefetch-bundle machinery (validated on
-          # the az-gocache branch): without GOCACHE_SERVE_MANIFEST, sessions
-          # record nothing, the next run prefetches nothing, and every
-          # entry fetches on-demand (~3-4 concurrent streams at ~6MB/s —
-          # measured as the dominant cost of Go-change builds).
+          # Manifest/prefetch machinery: without GOCACHE_SERVE_MANIFEST
+          # nothing prefetches and entries fetch on-demand serially —
+          # measured as the dominant cost of Go-change builds.
           manifest="$(printf '%s' "main-image-${{ matrix.branding }}-${{ matrix.arch }}" \
             | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed 's/-\+/-/g; s/^-//; s/-$//')"
           echo "GOCACHE_SERVE_MANIFEST=$manifest" >> "$GITHUB_ENV"
@@ -113,23 +101,13 @@ jobs:
           echo "GOCACHE_SERVE_MANIFEST_WRITE=1" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
           echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
-          # Two DECOUPLED identities:
-          #
-          # IMAGE_TAG (per-commit, git-describe format): the REGISTRY tag.
-          # e2e-dispatch waits for main:$(make tag) on a full checkout, so
-          # this must stay per-commit and match describe exactly (SHA
-          # abbreviation length included).
-          #
-          # BUILD_TAG/SHORTCOMMIT (STABLE): the stamps EMBEDDED in Go
-          # binaries (x_defs) and the UI plugin version. Stable values —
-          # the release train only (5.1.x → 5.1.0) — keep link ActionIDs
-          # unchanged across commits, so the blob-backed link-output
-          # cache hits and unchanged binaries are copied, not relinked.
-          # Per-commit stamps would invalidate every link ActionID every
-          # commit (ldflags feed the link hash), making per-binary skip
-          # structurally impossible. VCS info in buildinfo is
-          # deliberately dropped for CI speed; the image tag carries the
-          # commit identity.
+          # Two decoupled identities:
+          # IMAGE_TAG — per-commit describe (registry tag; e2e waits on it).
+          # BUILD_TAG/SHORTCOMMIT — STABLE dev-kind stamps embedded in the
+          # binaries (x_defs) and UI plugin. Stable stamps keep link
+          # ActionIDs constant across commits, so the link-output cache
+          # serves unchanged binaries. Must stay DevelopmentKind (a bare
+          # semver parses as a release — prod upgrade gates act on it).
           SHA="$(git rev-parse HEAD)"
           SHORTSHA="$(git rev-parse --short=10 HEAD)"
           LATEST_TAG="$(git ls-remote --tags --refs origin \
@@ -138,11 +116,9 @@ jobs:
             COUNT="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
               --jq .ahead_by 2>/dev/null || echo 0)"
             IMAGE_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
-            # Development-KIND stable stamp: a bare "5.1.0" parses as
-            # ReleaseKind in pkg/version/kind.go — dev images would
-            # masquerade as releases (upgrade/DB-restore gates act on
-            # it; e2e TestVersions catches the inconsistency). The
-            # -0-g<fixed hash> form is stable (no VCS info) AND dev-kind.
+            # Dev-KIND stable stamp: stable (link cache) and parses as
+            # DevelopmentKind — a bare semver would masquerade as a
+            # release (prod upgrade gates act on the kind).
             STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')-0-g0000000000"
           else
             IMAGE_TAG_VAL="0.0.0-g${SHORTSHA}"
@@ -207,9 +183,7 @@ jobs:
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "BUILD PATH: no receipt for go=${GO_HASH:0:8} ui=${UI_HASH:0:8} docker=${DOCKER_HASH:0:8}"
-          # Free disk (like master's job-preamble) — ONLY on the build
-          # path: fast-path legs re-tag and need neither the space nor
-          # the ~60-80s of rm -rf.
+          # Free disk only on the build path (fast-path legs skip the rm -rf).
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
             /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/swift \
             /usr/share/swift /opt/az /usr/local/share/boost &
@@ -274,17 +248,12 @@ jobs:
             echo "binaries: compiled and stored"
           fi
 
-          # roxctl for every platform (served as CLI downloads from
-          # /assets/downloads/cli/). Built by the checkout's `make cli`,
-          # shared across arch legs. (Master stubs these on plain PR
-          # builds; master-branch and release builds compile them.)
-          # NOTE: if download/upload time or registry space for the real
-          # binaries ever becomes the bottleneck, master's PR-stub policy
-          # (placeholder files unless labeled/master/release) is the
-          # fallback — see pre-build-cli in master's build.yaml.
-          # Per-platform blobs: parallel fetch, parallel store. A single
-          # 1.5GB aggregate tar serialized both directions; per-platform
-          # keys (~250MB each) fetch/store concurrently.
+          # roxctl for every platform (CLI downloads at
+          # /assets/downloads/cli/). Per-platform blobs, fetched and
+          # stored in parallel; keys are arch-independent (shared across
+          # legs and the roxctl matrix jobs). If binary transfer ever
+          # becomes the bottleneck, master's PR-stub policy is the
+          # fallback (pre-build-cli in master's build.yaml).
           ROXCTL_PLATFORMS="darwin_amd64 darwin_arm64 linux_amd64 linux_arm64 linux_ppc64le linux_s390x windows_amd64"
           fetch_ok=1
           for plat in $ROXCTL_PLATFORMS; do
@@ -300,9 +269,8 @@ jobs:
           if [ "$fetch_ok" = 1 ]; then
             echo "roxctl (all platforms): FETCHED from blob store (parallel)"
           else
-            # The per-platform roxctl jobs run concurrently on their own
-            # runners; wait for their blobs before falling back to an
-            # inline build (first run of a new source state only).
+            # Wait for the concurrent per-platform roxctl jobs before
+            # falling back to an inline build.
             echo "roxctl (all platforms): waiting for per-platform jobs..."
             for i in $(seq 1 28); do
               fetch_ok=1
@@ -533,12 +501,10 @@ jobs:
             echo "╚══════════════════════════════════════╝"
           fi
 
-  # Per-platform roxctl builds, one runner each: parallelism across
-  # 4-core runners instead of within one (contention floor), and a
-  # per-platform prefetch manifest — each job's working set is its own,
-  # so no over-download of other platforms' entries. Keys are the same
-  # per-platform blobs the main-image legs fetch: first writer wins,
-  # everyone else fetches.
+  # Per-platform roxctl, one runner each: parallel across 4-core runners
+  # with a per-platform manifest (precise prefetch, no over-download).
+  # Same per-platform blob keys the main-image legs fetch — first
+  # writer wins, everyone else fetches.
   roxctl:
     strategy:
       fail-fast: false
@@ -595,10 +561,9 @@ jobs:
           fi
           os="${{ matrix.platform }}"; os="${os%%-*}"; arch="${{ matrix.platform }}"; arch="${arch##*-}"
           export GOOS="$os" GOARCH="$arch"
-          # Vendor cache (go.sum-keyed, shared with main-image legs):
-          # without it every cold job downloads modules from
-          # proxy.golang.org — a transient proxy stream error killed a
-          # sweep run (netpol-analyzer@v1.4.4).
+          # Vendor cache (go.sum-keyed, shared with main-image): avoids
+          # proxy.golang.org dependence (a transient proxy error killed
+          # a run before this existed).
           VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
           if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
             tar -xf /tmp/vendor.tar.gz

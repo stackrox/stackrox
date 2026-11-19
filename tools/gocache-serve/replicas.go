@@ -37,8 +37,7 @@ var replicaAccounts = []string{"cigocache", "cigocacheeast", "cigochachecentral"
 //   - The marker is written AFTER the content per replica, so its
 //     presence implies a deliberate, complete store.
 func storeAll(key, file string) error {
-	// Large blobs stream (bounded memory): whole-buffer stores of the
-	// 1.5GB tars peaked ~4GB RAM and OOM-killed runners.
+	// Large blobs stream: whole-buffer stores peaked ~4GB RAM.
 	if st, err := os.Stat(file); err == nil && st.Size() >= largeBlobThreshold {
 		return storeAllStreamed(key, file)
 	}
@@ -114,10 +113,8 @@ func storeAll(key, file string) error {
 // tree) or interrupted mid-write. Untrusted content is a miss; the
 // caller regenerates and the post-build store replaces it.
 func fetchAny(key, file string) error {
-	// Streaming fetch (bounded memory): whole-buffer fetch of the 1.5GB
-	// roxctl-all tar OOM-killed runners. Order and marker verification
-	// match the original buffered flow: selected account first, then
-	// replicas; content serves only when its .sha256 marker matches.
+	// Streaming fetch (bounded memory; the whole-buffer path OOM-killed
+	// runners). Account order and marker verification as before.
 	tryFetch := func(bi Backend, label string) bool {
 		a, ok := bi.(*AzureBackend)
 		if !ok {
@@ -215,9 +212,8 @@ func azureBackendFor(account string) Backend {
 	}
 }
 
-// storeAllStreamed stores a large file to all replicas without holding
-// it in memory: gzip once to a temp file, upload that to every replica,
-// write the marker. Marker semantics identical to the buffered path.
+// storeAllStreamed stores a large file to all replicas streaming:
+// gzip once to a temp file, upload to every replica, write the marker.
 func storeAllStreamed(key, file string) error {
 	gz, err := isGzipFile(file)
 	if err != nil {

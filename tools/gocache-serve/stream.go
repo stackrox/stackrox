@@ -1,17 +1,10 @@
 package main
 
 // Streaming large-blob paths for the CLI store/fetch subcommands.
-//
-// The original whole-buffer path (os.ReadFile + gzipBytes + Put) peaks at
-// ~2.5x the blob size in RAM: for the 1.5GB roxctl-all tar that is ~4GB,
-// which OOM-killed GitHub runners mid-upload ("runner has received a
-// shutdown signal", exit 137). These paths keep peak memory bounded
-// (a few MB of buffers) by streaming: file → gzip temp file → HTTP body,
-// and HTTP body → gunzip → destination file, hashing along the way.
-//
-// Marker semantics are identical to the buffered path: the .sha256 marker
-// is the hash of the LOGICAL (decompressed) content; the blob at rest is
-// gzip (level 1) unless the source already was gzip.
+// The whole-buffer path peaked at ~2.5x blob size in RAM (4GB for the
+// roxctl tars) and OOM-killed runners; these stream file → gzip temp →
+// HTTP body and back, with bounded memory. Marker semantics unchanged:
+// markers hash the LOGICAL (decompressed) content.
 
 import (
 	"bytes"
