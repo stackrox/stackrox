@@ -92,6 +92,7 @@ jobs:
       if: github.event_name == 'pull_request'
       env:
         SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+        SCANNER_BUNDLE_MASTER_REFERENCE: ${{ github.event.pull_request.head.sha }}
       run: |
         echo "Running matrix builder for validation (output not used for scheduling):"
         ./.github/workflows/scripts/scanner-updater-matrix.sh | jq .

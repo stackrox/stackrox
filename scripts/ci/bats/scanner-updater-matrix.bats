@@ -82,7 +82,7 @@ SH
 }
 
 @test "pull-request manual export uses the dev stream configuration" {
-    run yq -e '
+    run yq eval -e '
         .jobs.build-matrix.steps[] |
         select(.name == "Build updater matrix (PR)") |
         .run |
