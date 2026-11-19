@@ -11,9 +11,11 @@ src="${1:?usage: gen-dockerfile <path/to/image/rhel/Dockerfile> <base-image-pref
 base="${2:?base image prefix, e.g. quay.io/stackrox-io/main}"
 out="${3:-/tmp/generated.Dockerfile}"
 
-final="$(awk '/^FROM runtime-base/{last=NR} {lines[NR]=$0} END{if(last){for(i=last+1;i<=NR;i++) print lines[i]}}' "$src")"
+# The final stage is the LAST FROM in the file (Sept-era trees name it
+# ubi-micro-base; current trees runtime-base — both are last).
+final="$(awk '/^FROM /{last=NR} {lines[NR]=$0} END{if(last){for(i=last+1;i<=NR;i++) print lines[i]}}' "$src")"
 if [ -z "$final" ]; then
-  echo "ERROR: no 'FROM runtime-base' stage found in $src" >&2
+  echo "ERROR: no FROM stage found in $src" >&2
   exit 1
 fi
 
@@ -23,6 +25,7 @@ fi
   echo "FROM ${base}:base-\${TARGET_ARCH}"
   echo "$final" | sed -E \
     -e 's|^COPY (--link )?--from=downloads /output/go/ /go/|RUN mkdir -p /go/bin|' \
+    -e 's|^COPY (--link )?--from=package_installer /out/ /$|RUN true|' \
     -e 's|^COPY (--link )?--from=stackrox_data /stackrox-data /stackrox/static-data|COPY static-data/ /stackrox/static-data/|' \
     -e 's|^COPY (--link )?--from=cli-tarballs /tmp/roxctl/(roxctl-\*\.tar\.gz) /assets/downloads/cli/|COPY \1bin/\2 /assets/downloads/cli/|' \
     -e 's|^COPY (--link )?--from=cli-tarballs /tmp/roxctl/(roxctl-linux-\$\{TARGET_ARCH\}) /stackrox/roxctl|COPY \1bin/\2 /stackrox/roxctl|'
