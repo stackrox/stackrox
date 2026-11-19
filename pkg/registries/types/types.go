@@ -76,10 +76,23 @@ func (c *Config) GetRegistryHostname() string {
 	return ""
 }
 
+// PlatformMetadata pairs image metadata with the platform it describes.
+// MetadataForAllPlatforms returns one entry per linux platform for a multi-arch
+// manifest list, and a single entry for a single-platform image.
+type PlatformMetadata struct {
+	OS           string
+	Architecture string
+	// Variant distinguishes platforms that share an os/architecture, such as the arm
+	// variants v6/v7/v8. os/architecture alone is therefore not a unique key.
+	Variant      string
+	Metadata     *storage.ImageMetadata
+}
+
 // Registry is the interface that all image registries must implement
 type Registry interface {
 	Match(image *storage.ImageName) bool
 	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
+	MetadataForAllPlatforms(image *storage.Image) ([]*PlatformMetadata, error)
 	Test() error
 	Config(ctx context.Context) *Config
 	Name() string

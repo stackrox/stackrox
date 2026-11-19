@@ -90,8 +90,12 @@ func (*FakeReg) HTTPClient() *http.Client                                  { ret
 func (*FakeReg) ListTags(_ context.Context, _ string) ([]string, error)    { return nil, nil }
 func (*FakeReg) Match(_ *storage.ImageName) bool                           { return false }
 func (*FakeReg) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) { return nil, nil }
-func (f *FakeReg) Name() string                                            { return f.name }
-func (*FakeReg) Test() error                                               { return nil }
+
+func (*FakeReg) MetadataForAllPlatforms(_ *storage.Image) ([]*types.PlatformMetadata, error) {
+	return nil, nil
+}
+func (f *FakeReg) Name() string { return f.name }
+func (*FakeReg) Test() error    { return nil }
 
 func creatorWithoutRepoList() (string, types.Creator) {
 	return RegistryType,

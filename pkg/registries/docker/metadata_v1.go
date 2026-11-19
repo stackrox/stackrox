@@ -120,18 +120,21 @@ func HandleV1Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 	return r.populateV1DataFromManifest(manifest, ref)
 }
 
-func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*storage.V1Metadata, error) {
+// handleV1ManifestLayer downloads and parses the image config blob. It returns the
+// V1 metadata along with the config's platform (os/architecture), which callers use
+// to tag single-platform images.
+func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*storage.V1Metadata, *v1.Platform, error) {
 	v1r, err := r.Client.DownloadLayer(remote, ref)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	val, err := io.ReadAll(v1r)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	img := &v1.Image{}
 	if err := json.Unmarshal(val, img); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var layers []*storage.ImageLayer
@@ -169,5 +172,6 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 		metadata.Author = lastLayer.GetAuthor()
 	}
 	metadata.Layers = layers
-	return metadata, nil
+	platform := img.Platform
+	return metadata, &platform, nil
 }

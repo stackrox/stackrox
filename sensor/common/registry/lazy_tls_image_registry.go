@@ -110,6 +110,18 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 	return meta, nil
 }
 
+func (l *lazyTLSCheckRegistry) MetadataForAllPlatforms(image *storage.Image) ([]*types.PlatformMetadata, error) {
+	if err := l.initialize(); err != nil {
+		return nil, err
+	}
+
+	meta, err := l.registry.MetadataForAllPlatforms(image)
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "fetching all-platform metadata for image %s", image.GetName())
+	}
+	return meta, nil
+}
+
 func (l *lazyTLSCheckRegistry) ListTags(ctx context.Context, repository string) ([]string, error) {
 	if err := l.initialize(); err != nil {
 		return nil, err
