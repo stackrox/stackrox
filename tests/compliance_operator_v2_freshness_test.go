@@ -333,7 +333,9 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 // path (central/complianceoperator/v2/checkresults/datastore MarkScanChecksStale, invoked from
 // central/complianceoperator/v2/report/manager markPriorResultsStale) to mark a run's prior
 // results STALE: a rescan is started and then starved of sensor updates until its scan watcher
-// times out.
+// times out. The sensor is cut only after Central has observed the rescan's scan reset (the update
+// that creates the watcher and starts its timeout), and the final assertion compares the STALE set
+// against the first run's original result set.
 //
 // The config's schedule is set to a time with no near-term tick so the sweeper
 // (TestComplianceV2FreshnessStaleViaSweeper) cannot also produce STALE within this test's window.
@@ -376,6 +378,14 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile, testID,
 		v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, waitForDoneTimeout, waitForDoneInterval)
 	wantStaleCount := int32(len(currentResults.GetCheckResults()))
+	// The identity of the prior result set the timeout path must mark STALE.
+	priorCheckIDs := make([]string, 0, len(currentResults.GetCheckResults()))
+	for _, r := range currentResults.GetCheckResults() {
+		priorCheckIDs = append(priorCheckIDs, r.GetCheckId())
+	}
+	// Anchor for the scan-reset poll below: after a completed scan, Central reports the scan's end
+	// time here, and the rescan clears it.
+	require.NotNil(t, currentResults.GetLastScanTime(), "expected a last scan time after the first completed scan")
 
 	// Start a second scan that will never complete once the sensor is cut below; its watcher's
 	// prior results (the ones above) are what should end up STALE.
@@ -389,10 +399,25 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	// the Compliance Operator CRD directly, which only confirms the k8s-side state and says nothing
 	// about whether Central has ingested it yet.
 	waitForScanConfigRescanObserved(t, ctx, scanConfigService, resp.GetId(), clusterID, "DONE", 2*time.Minute, 5*time.Second)
-	// Small fixed buffer: the suite and scan/check-result updates are relayed as separate messages
-	// from the same sensor reconcile cycle, so observing the suite move off DONE does not strictly
-	// guarantee the scan message (which creates the watcher) has also landed yet.
-	time.Sleep(10 * time.Second)
+
+	// The suite and scan updates are relayed as separate messages, so the phase change above does
+	// not prove Central received the scan reset that carries the new run's start timestamp; cutting
+	// the sensor before that lands would leave no watcher to time out. CO's rescan resets the
+	// existing Scan CRs (new StartTimestamp, EndTimestamp cleared), and Central handles each scan
+	// update -- creating the watcher keyed on that start timestamp -- before upserting the scan rows
+	// the response's LastScanTime is derived from (max EndTimestamp across the profile's scans, the
+	// same authoritative read the sweeper test uses). Poll until LastScanTime is cleared: nil
+	// proves Central ingested the reset, watcher included.
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		resultsResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
+			ProfileName: freshnessProfile,
+			ClusterId:   clusterID,
+			Query:       scanConfigQuery(testID),
+		})
+		require.NoErrorf(c, err, "failed to get compliance results for profile %s cluster %s", freshnessProfile, clusterID)
+		require.Nilf(c, resultsResp.GetLastScanTime(),
+			"Central still reports last scan time %v; it has not observed the rescan's scan reset yet", resultsResp.GetLastScanTime())
+	}, 2*time.Minute, 5*time.Second)
 
 	scaleSensorDownForTest(ctx, t, k8sClient, dynClient)
 
@@ -419,4 +444,20 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 		require.GreaterOrEqual(c, stats.GetStaleClusterCount(), int32(1))
 		require.GreaterOrEqual(c, stats.GetStaleCheckResultCount(), wantStaleCount)
 	}, 4*time.Minute, 15*time.Second)
+
+	// Prove every prior check survived the timed-out run and was marked STALE: the STALE set,
+	// scoped to this scan config, must match the original result set exactly, not merely be
+	// nonempty next to the profile-wide stats above.
+	staleResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
+		ProfileName: freshnessProfile,
+		ClusterId:   clusterID,
+		Query:       scanConfigQuery(testID, "Compliance Check Data Freshness:STALE"),
+	})
+	require.NoError(t, err)
+	staleCheckIDs := make([]string, 0, len(staleResp.GetCheckResults()))
+	for _, r := range staleResp.GetCheckResults() {
+		staleCheckIDs = append(staleCheckIDs, r.GetCheckId())
+	}
+	assert.ElementsMatch(t, priorCheckIDs, staleCheckIDs,
+		"expected every one of the %d prior checks to survive and be marked STALE", len(priorCheckIDs))
 }
