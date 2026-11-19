@@ -56,6 +56,5 @@ cat "$SHARED_DIR/shared_env"
                         self.assertNotIn("MASTER_NODE_COUNT=", result.stdout)
 
 
-
 if __name__ == "__main__":
     unittest.main()
