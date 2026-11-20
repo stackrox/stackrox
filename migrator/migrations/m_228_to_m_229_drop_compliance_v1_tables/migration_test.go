@@ -48,13 +48,11 @@ func (s *migrationTestSuite) TestMigration() {
 		DBCtx:      s.ctx,
 	}
 
-	// Create all six tables to simulate a pre-migration customer database.
 	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceConfigsStmt)
 	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceDomainsStmt)
 	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceStringsStmt)
 	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceRunResultsStmt)
 	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceRunMetadataStmt)
-	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceIntegrationsStmt)
 
 	for _, table := range complianceV1Tables {
 		s.True(s.tableExists(table), "table %q should exist before migration", table)

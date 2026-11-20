@@ -14,10 +14,9 @@ var complianceV1Tables = []string{
 	oldSchema.ComplianceStringsTableName,
 	oldSchema.ComplianceRunResultsTableName,
 	oldSchema.ComplianceRunMetadataTableName,
-	oldSchema.ComplianceIntegrationsTableName,
 }
 
-// migrate drops the six orphaned Compliance 1.0 Postgres tables. The Compliance 1.0
+// migrate drops the five orphaned Compliance 1.0 Postgres tables. The Compliance 1.0
 // engine has been removed, so nothing reads or writes these tables anymore. GORM
 // AutoMigrate never drops tables, hence this explicit DDL migration.
 func migrate(database *types.Databases) error {
