@@ -27,10 +27,15 @@ import (
 )
 
 const (
-	// Tokens contain administrator-managed permissions, so refresh them soon
-	// after permission-set changes and before their signed lifetime expires.
-	tokenCacheTTL = 4 * time.Minute
-	tokenTTL      = 5 * time.Minute
+	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
+	// Tokens contain administrator-managed permissions. A longer cache window
+	// reduces token requests but delays permission reductions for up to the
+	// token lifetime.
+	tokenCacheTTL = 55 * time.Minute
+
+	// tokenTTL is the requested token lifetime.
+	// Slightly longer than cache TTL to ensure tokens remain valid during cache lifetime.
+	tokenTTL = tokenCacheTTL + 5*time.Minute
 
 	// tokenRequestTimeout is the maximum time allowed for a token request RPC.
 	// This ensures that token requests don't hang indefinitely when all callers have cancelled.
