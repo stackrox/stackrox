@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if and ._rox.monitoring ._rox.monitoring.openshift ._rox.monitoring.openshift.enabled -}}
+{{- if or ._rox.monitoring.openshift.enabled ._rox.monitoring.openshift.custom.enabled -}}
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -43,6 +43,7 @@ subjects:
   name: prometheus-k8s
   namespace: openshift-monitoring
 
+{{- if ._rox.monitoring.openshift.enabled }}
 ---
 
 {{- /*
@@ -76,8 +77,9 @@ spec:
   namespaceSelector:
     matchNames:
       - "{{ .Release.Namespace }}"
+{{- end }}
 
-{{- if and ._rox.monitoring.openshift.custom ._rox.monitoring.openshift.custom.enabled (not ._rox.env.managedServices) }}
+{{- if and ._rox.monitoring.openshift.custom.enabled (not ._rox.env.managedServices) }}
 ---
 
 {{- /*
@@ -136,6 +138,7 @@ subjects:
     name: central
     namespace: "{{ .Release.Namespace }}"
 
+{{- if ._rox.monitoring.openshift.enabled }}
 ---
 
 {{- /*
@@ -220,4 +223,5 @@ hostPath, or emptyDir persistence).
             description: "The Central DB PVC {{ $centralDBClaimName }} in namespace {{ .Release.Namespace }} is {{ "{{" }} $value | humanizePercentage {{ "}}" }} full (critical threshold 90%)."
 {{- end }}
 
+{{- end -}}
 {{- end -}}

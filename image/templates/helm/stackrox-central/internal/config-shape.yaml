@@ -192,6 +192,8 @@ configAsCode:
 monitoring:
   openshift:
     enabled: null # bool
+    custom:
+      enabled: null # bool
 meta:
   useLookup: null # bool
   fileOverrides: {} # dict
