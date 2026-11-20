@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	baseImageRepositoryDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
@@ -17,6 +18,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -69,16 +71,18 @@ var (
 )
 
 type reportGeneratorImpl struct {
-	reportSnapshotStore     reportSnapshotDS.DataStore
-	deploymentDatastore     deploymentDS.DataStore
-	watchedImageDatastore   watchedImageDS.DataStore
-	collectionQueryResolver collectionDS.QueryResolver
-	notificationProcessor   notifier.Processor
-	blobStore               blobDS.Datastore
-	clusterDatastore        clusterDS.DataStore
-	namespaceDatastore      namespaceDS.DataStore
-	imageCVE2Datastore      imageCVE2DS.DataStore
-	db                      postgres.DB
+	reportSnapshotStore          reportSnapshotDS.DataStore
+	deploymentDatastore          deploymentDS.DataStore
+	watchedImageDatastore        watchedImageDS.DataStore
+	collectionQueryResolver      collectionDS.QueryResolver
+	notificationProcessor        notifier.Processor
+	blobStore                    blobDS.Datastore
+	clusterDatastore             clusterDS.DataStore
+	namespaceDatastore           namespaceDS.DataStore
+	imageCVE2Datastore           imageCVE2DS.DataStore
+	imageDatastore               imageDS.DataStore
+	baseImageRepositoryDatastore baseImageRepositoryDS.DataStore
+	db                           postgres.DB
 }
 
 type ImageCVEInterface interface {
@@ -371,6 +375,7 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 	//  cveRefLinksCache is a map[string]string that maps CVE ID -> reference URL.
 	//  It caches the "Reference" link for each CVE (the external URL pointing to the CVE advisory, e.g., on NVD).
 	cveRefLinksCache := make(map[string]string)
+	baseImageCache := &baseImageNameCache{}
 	rowCount := 0
 
 	err = rg.blobStore.UpsertWithWriter(txCtx, tx, blob, func(w io.Writer) error {
@@ -386,7 +391,7 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 		}
 
 		for _, qs := range queries {
-			if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, cveRefLinksCache, &rowCount); err != nil {
+			if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, cveRefLinksCache, baseImageCache, &rowCount); err != nil {
 				return err
 			}
 		}
@@ -421,6 +426,7 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 	query *v1.Query,
 	csvW *csv.Writer,
 	cveRefLinksCache map[string]string,
+	baseImageCache *baseImageNameCache,
 	rowCount *int,
 ) error {
 	var batch []*ImageCVEQueryResponse
@@ -443,6 +449,9 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 			for _, cve := range cves {
 				cveRefLinksCache[cve.GetId()] = cve.GetCveBaseInfo().GetLink()
 			}
+		}
+		if err := rg.withBaseImageNames(ctx, batch, baseImageCache); err != nil {
+			return err
 		}
 		for _, r := range batch {
 			if link, ok := cveRefLinksCache[r.GetCVEID()]; ok {
@@ -545,6 +554,9 @@ func (rg *reportGeneratorImpl) getReportDataSQF(ctx context.Context, snap *stora
 	if err != nil {
 		return nil, err
 	}
+	if err := rg.withBaseImageNames(ctx, cveResponses, &baseImageNameCache{}); err != nil {
+		return nil, err
+	}
 
 	return &ReportData{
 		CVEResponses:            cveResponses,
@@ -600,6 +612,9 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(ctx context.Context, snap 
 
 	cveResponses, err = rg.withCVEReferenceLinks(ctx, cveResponses)
 	if err != nil {
+		return nil, err
+	}
+	if err := rg.withBaseImageNames(ctx, cveResponses, &baseImageNameCache{}); err != nil {
 		return nil, err
 	}
 
@@ -745,6 +760,7 @@ func selectSchema() *walker.Schema {
 func getSelectsWatchedImages() []*v1.QuerySelect {
 	ret := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageName).Proto(),
+		search.NewQuerySelect(search.ImageSHA).Proto(),
 		search.NewQuerySelect(search.Component).Proto(),
 		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),
@@ -771,6 +787,7 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 func getSelectsDeployedImages() []*v1.QuerySelect {
 	ret := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageName).Proto(),
+		search.NewQuerySelect(search.ImageSHA).Proto(),
 		search.NewQuerySelect(search.Component).Proto(),
 		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),

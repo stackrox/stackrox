@@ -28,16 +28,17 @@ const (
 	colNamespace   = 1
 	colDeployment  = 2
 	colImage       = 3
-	colComponent   = 4
-	colCompVersion = 5
-	colCVE         = 6
-	colFixable     = 7
-	colFixedBy     = 8
-	colFixDate     = 9
-	colSeverity    = 10
-	colCVSS        = 11
-	colNVDCVSS     = 12
-	colEPSS        = 13
+	colBaseImage   = 4
+	colComponent   = 5
+	colCompVersion = 6
+	colCVE         = 7
+	colFixable     = 8
+	colFixedBy     = 9
+	colFixDate     = 10
+	colSeverity    = 11
+	colCVSS        = 12
+	colNVDCVSS     = 13
+	colEPSS        = 14
 )
 
 // colOf returns the index of the named column in the current CSV layout, which
@@ -228,6 +229,8 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 	s.Require().Len(rows, 13, "1 header + 8 deployed + 4 watched")
 	containerNameColumn := slices.Index(rows[0], "Container Name")
 	s.Require().NotEqual(-1, containerNameColumn)
+	imageCreatedColumn := slices.Index(rows[0], "Image Created Date")
+	s.Require().NotEqual(-1, imageCreatedColumn)
 	stateColumn := slices.Index(rows[0], "Vulnerability State")
 	s.Require().NotEqual(-1, stateColumn)
 	statesByCVE := map[string]string{
@@ -243,6 +246,14 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 		"CVE-fixable_critical-c1_ns1_dep0_img_comp": "July 01, 2024",
 		"CVE-fixable_critical-w0_img_comp":          "July 01, 2024",
 	}
+	createdDatesByImage := map[string]string{
+		"c1_ns1_dep0_img": "2024-06-15",
+		"w0_img":          "2024-06-15",
+	}
+	baseImagesByImage := map[string]string{
+		"c1_ns1_dep0_img": "registry-a/base:9; registry-c/runtime:2",
+		"w0_img":          "registry-w/base:1",
+	}
 	for _, row := range rows[1:] {
 		s.Require().Len(row, len(rows[0]))
 		state, ok := statesByCVE[row[colCVE]]
@@ -255,6 +266,12 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 			fixDate = "Not Available"
 		}
 		s.Equal(fixDate, row[fixDateColumn], "CVE %s", row[colCVE])
+		createdDate, ok := createdDatesByImage[row[colImage]]
+		if !ok {
+			createdDate = "Not Available"
+		}
+		s.Equal(createdDate, row[imageCreatedColumn], "image %s", row[colImage])
+		s.Equal(baseImagesByImage[row[colImage]], row[colBaseImage], "image %s", row[colImage])
 		if row[colDeployment] == "" {
 			s.Empty(row[containerNameColumn], "watched image %s", row[colImage])
 		} else {
@@ -308,6 +325,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_C
 	s.Equal("c1_ns1_dep0", row[colDeployment])
 	s.Equal("c1_ns1_dep0_container", row[colOf("Container Name")])
 	s.Equal("c1_ns1_dep0_img", row[colImage])
+	s.Equal("registry-a/base:9; registry-c/runtime:2", row[colBaseImage])
 	s.Equal("c1_ns1_dep0_img_comp", row[colComponent])
 	s.Equal("1.0", row[colCompVersion])
 	s.Equal("CVE-fixable_critical-c1_ns1_dep0_img_comp", row[colCVE])

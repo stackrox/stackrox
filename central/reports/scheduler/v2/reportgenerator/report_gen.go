@@ -3,10 +3,12 @@ package reportgenerator
 import (
 	"context"
 
+	baseImageRepositoryDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -38,6 +40,8 @@ func New(
 	clusterDatastore clusterDS.DataStore,
 	namespaceDatastore namespaceDS.DataStore,
 	imageCVE2DataStore imageCVE2DS.DataStore,
+	imageDatastore imageDS.DataStore,
+	baseImageRepositoryDatastore baseImageRepositoryDS.DataStore,
 ) ReportGenerator {
 	return newReportGeneratorImpl(
 		db,
@@ -50,6 +54,8 @@ func New(
 		clusterDatastore,
 		namespaceDatastore,
 		imageCVE2DataStore,
+		imageDatastore,
+		baseImageRepositoryDatastore,
 	)
 }
 
@@ -64,17 +70,21 @@ func newReportGeneratorImpl(
 	clusterDatastore clusterDS.DataStore,
 	namespaceDatastore namespaceDS.DataStore,
 	imageCVE2Datastore imageCVE2DS.DataStore,
+	imageDatastore imageDS.DataStore,
+	baseImageRepositoryDatastore baseImageRepositoryDS.DataStore,
 ) *reportGeneratorImpl {
 	return &reportGeneratorImpl{
-		reportSnapshotStore:     reportSnapshotStore,
-		deploymentDatastore:     deploymentDatastore,
-		watchedImageDatastore:   watchedImageDatastore,
-		collectionQueryResolver: collectionQueryResolver,
-		notificationProcessor:   notificationProcessor,
-		clusterDatastore:        clusterDatastore,
-		namespaceDatastore:      namespaceDatastore,
-		imageCVE2Datastore:      imageCVE2Datastore,
-		blobStore:               blobStore,
-		db:                      db,
+		reportSnapshotStore:          reportSnapshotStore,
+		deploymentDatastore:          deploymentDatastore,
+		watchedImageDatastore:        watchedImageDatastore,
+		collectionQueryResolver:      collectionQueryResolver,
+		notificationProcessor:        notificationProcessor,
+		clusterDatastore:             clusterDatastore,
+		namespaceDatastore:           namespaceDatastore,
+		imageCVE2Datastore:           imageCVE2Datastore,
+		imageDatastore:               imageDatastore,
+		baseImageRepositoryDatastore: baseImageRepositoryDatastore,
+		blobStore:                    blobStore,
+		db:                           db,
 	}
 }

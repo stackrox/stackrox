@@ -12,6 +12,7 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageMapperDS "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
@@ -127,6 +128,13 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	images[1].Scan.Components[0].Vulns[1].State = storage.VulnerabilityState_FALSE_POSITIVE
 	fixDate := timestamppb.New(time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC))
 	images[0].Scan.Components[0].Vulns[0].FixAvailableTimestamp = fixDate
+	createdAt := timestamppb.New(time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC))
+	images[0].Metadata.V1.Created = createdAt
+	images[0].BaseImageInfo = []*storage.BaseImageInfo{
+		{BaseImageDigest: "sha256:base-a", BaseImageFullName: "registry-b/base:stable"},
+		{BaseImageDigest: "sha256:base-a", BaseImageFullName: "registry-a/base:9"},
+		{BaseImageDigest: "sha256:base-b", BaseImageFullName: "registry-c/runtime:2"},
+	}
 	// insert deployments in deployment table
 	for _, dep := range deployments {
 		err := resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
@@ -151,6 +159,10 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	watchedImages[0].Scan.Components[0].Vulns[0].State = storage.VulnerabilityState_DEFERRED
 	watchedImages[1].Scan.Components[0].Vulns[0].State = storage.VulnerabilityState_FALSE_POSITIVE
 	watchedImages[0].Scan.Components[0].Vulns[0].FixAvailableTimestamp = fixDate
+	watchedImages[0].Metadata.V1.Created = createdAt
+	watchedImages[0].BaseImageInfo = []*storage.BaseImageInfo{
+		{BaseImageDigest: "sha256:watched", BaseImageFullName: "registry-w/base:1"},
+	}
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	if features.FlattenImageData.Enabled() {
 		for _, image := range watchedImages {
@@ -172,7 +184,8 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, resolver.DeploymentDataStore,
 		s.watchedImageDatastore, collectionQueryResolver, nil, blobStore, s.clusterDatastore,
-		s.namespaceDatastore, resolver.ImageCVEV2DataStore)
+		s.namespaceDatastore, resolver.ImageCVEV2DataStore,
+		imageMapperDS.New(resolver.ImageDataStore, resolver.ImageV2DataStore), nil)
 }
 func (s *NewDataModelEnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
