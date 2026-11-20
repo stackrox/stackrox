@@ -1714,6 +1714,20 @@ cvss_load_probe() {
 cvss_probe_assert() {
     local image="${CVSS_PROBE_IMAGE:-quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3}"
     local base_url="${CVSS_PROBE_BASE_URL:-https://${API_ENDPOINT:-}}"
+    if [[ -z "${API_ENDPOINT:-}" && -z "${CVSS_PROBE_BASE_URL:-}" ]]; then
+        # In the roxie path API_ENDPOINT is only exported after deploy returns;
+        # discover the Central LoadBalancer endpoint like cvss_load_probe does.
+        local host
+        host="$(retrying_kubectl </dev/null -n stackrox get svc central-loadbalancer \
+            -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)"
+        if [[ -z "$host" ]]; then
+            host="$(retrying_kubectl </dev/null -n stackrox get svc central-loadbalancer \
+                -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)"
+        fi
+        if [[ -n "$host" ]]; then
+            base_url="https://${host}:443"
+        fi
+    fi
     local tries=6
     local interval=10
     local i result summary
