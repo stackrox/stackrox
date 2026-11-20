@@ -29,7 +29,6 @@ import (
 
 const (
 	authProviderID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80f"
-	accessScopeID  = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"
 
 	// Auth provider is hidden from the login screen but visible in Access Control.
 	// It trusts the Kubernetes client CA from extension-apiserver-authentication,
@@ -38,19 +37,20 @@ const (
 	authProviderName = "OpenShift Platform Client Certificates"
 
 	roleName        = accesscontrol.OpenShiftPrometheus
-	accessScopeName = "OpenShift Central Cluster"
+	accessScopeName = accesscontrol.CentralClusterAccessScope
 
 	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
 
+var accessScopeID = accesscontrol.DefaultAccessScopeIDs[accessScopeName]
+
 var log = logging.LoggerForModule()
 
-// SeedMetricsAuthProvider ensures that the metrics permission set exists on every Central,
-// including Centrals outside OpenShift that serve OpenShift secured clusters. When
-// OpenShift TLS is configured, it also seeds the userpki auth provider, role, and group
-// mapping required for OpenShift Prometheus to scrape /metrics on Central.
+// SeedMetricsAuthProvider ensures that the metrics permission set and the access
+// scope for the cluster hosting Central exist on every Central. When OpenShift TLS
+// is configured, it also seeds the userpki auth provider, role, and group mapping
+// required for OpenShift Prometheus to scrape /metrics on Central.
 //
-// The access scope and role are seeded only when OpenShift TLS is configured.
 // The auth provider's config and the group's auth-provider reference need the Kubernetes client CA
 // from the extension-apiserver-authentication ConfigMap (same CA that signs Prometheus
 // client certs), which may not be available yet; a ConfigMap watcher keeps the CA current
@@ -68,12 +68,12 @@ var log = logging.LoggerForModule()
 // Internal scrape tokens will receive the authenticated Sensor's cluster scope.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	metricsPermissionSetID := ensurePermissionSet(ctx, roleDS)
+	seedAccessScope(ctx)
 
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
 	}
 
-	seedAccessScope(ctx)
 	if metricsPermissionSetID != "" {
 		ensureRole(ctx, roleDS, metricsPermissionSetID)
 	}
@@ -171,7 +171,7 @@ func refreshCA(ctx context.Context, registry authproviders.Registry, provider au
 	}
 }
 
-// seedAccessScope upserts the OpenShift metrics access scope directly into the
+// seedAccessScope upserts the Central cluster access scope directly into the
 // underlying store, the same way the built-in DEFAULT access scopes (Unrestricted, Deny
 // All) are seeded in central/role/datastore/singleton.go. This keeps the scope's content
 // always in sync with the code (self-healing across restarts and upgrades) without going
