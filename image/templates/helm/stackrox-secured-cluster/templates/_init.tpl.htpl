@@ -118,6 +118,13 @@
   {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
   {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
 {{ end }}
+{{ if kindIs "invalid" $._rox.sensor.centralProxy.enabled }}
+  {{ $_ := set $._rox.sensor.centralProxy "enabled" false }}
+{{ end }}
+{{ if and $._rox.sensor.centralProxy.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "The Sensor Central proxy is supported only on OpenShift 4; disabling sensor.centralProxy.enabled.") }}
+  {{ $_ := set $._rox.sensor.centralProxy "enabled" false }}
+{{ end }}
 
 [<- if .AutoSensePodSecurityPolicies >]
 {{/* Detect enablePodSecurityPolicies */}}
