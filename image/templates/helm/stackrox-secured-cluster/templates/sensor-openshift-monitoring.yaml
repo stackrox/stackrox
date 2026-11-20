@@ -1,12 +1,12 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.monitoring.openshift.enabled -}}
+{{- if or ._rox.monitoring.openshift.enabled ._rox.monitoring.openshift.custom.enabled -}}
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: secured-cluster-prometheus-k8s
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "secured-cluster-prometheus-k8s") | nindent 4 }}
   annotations:
@@ -29,7 +29,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: secured-cluster-prometheus-k8s
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "secured-cluster-prometheus-k8s") | nindent 4 }}
   annotations:
@@ -43,6 +43,7 @@ subjects:
   name: prometheus-k8s
   namespace: openshift-monitoring
 
+{{- if ._rox.monitoring.openshift.enabled }}
 ---
 
 {{- /*
@@ -69,13 +70,13 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: "sensor.{{ .Release.Namespace }}.svc"
+      serverName: "sensor.{{ ._rox._namespace }}.svc"
   selector:
     matchLabels:
       app.kubernetes.io/component: sensor
   namespaceSelector:
     matchNames:
-    - "{{ .Release.Namespace }}"
+    - "{{ ._rox._namespace }}"
 
 ---
 
@@ -102,13 +103,13 @@ spec:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
       certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
       keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
-      serverName: "admission-control.{{ .Release.Namespace }}.svc"
+      serverName: "admission-control.{{ ._rox._namespace }}.svc"
   selector:
     matchLabels:
       app.kubernetes.io/component: admission-control
   namespaceSelector:
     matchNames:
-    - "{{ .Release.Namespace }}"
+    - "{{ ._rox._namespace }}"
 
 ---
 
@@ -131,7 +132,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: sensor
-    namespace: "{{ .Release.Namespace }}"
+    namespace: "{{ ._rox._namespace }}"
 
 ---
 
@@ -154,7 +155,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: admission-control
-    namespace: "{{ .Release.Namespace }}"
+    namespace: "{{ ._rox._namespace }}"
 
 ---
 
@@ -185,3 +186,55 @@ spec:
           record: rhacs:telemetry:rox_sensor_info
 
 {{- end -}}
+{{- end -}}
+
+{{- if and ._rox.monitoring.openshift.custom.enabled (not ._rox.monitoring.openshift.enabled) }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "rhacs-sensor-auth-reader-{{ .Release.Namespace }}"
+  namespace: kube-system
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" (print "rhacs-sensor-auth-reader-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-sensor-auth-reader-" .Release.Namespace)) | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: "{{ ._rox._namespace }}"
+{{- end }}
+
+{{- if ._rox.monitoring.openshift.custom.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "sensor-central-metrics-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "servicemonitor" (print "sensor-central-metrics-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "servicemonitor" (print "sensor-central-metrics-" .Release.Namespace)) | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 30s
+    path: /proxy/central/metrics
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "sensor-proxy.{{ ._rox._namespace }}.svc"
+  selector:
+    matchLabels:
+      stackrox.io/sensor-proxy: "true"
+  namespaceSelector:
+    matchNames:
+    - "{{ ._rox._namespace }}"
+{{- end }}

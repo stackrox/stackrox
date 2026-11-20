@@ -156,14 +156,19 @@ func GetHostAliases(key string, hostAliases []corev1.HostAlias) *ValuesBuilder {
 	return &v
 }
 
-// GetGlobalMonitoring converts *platform.GlobalMonitoring into *ValuesBuilder
+// GetGlobalMonitoring converts global monitoring settings into Helm values.
 func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
-	openshiftMonitoring := NewValuesBuilder()
-	// Default to true if undefined. Only set to false if explicitly disabled.
-	openshiftMonitoring.SetBoolValue("enabled", !m.IsOpenShiftMonitoringDisabled())
-	globalMonitoring := NewValuesBuilder()
-	globalMonitoring.AddChild("openshift", &openshiftMonitoring)
-	return &globalMonitoring
+	openshift := NewValuesBuilder()
+	openshift.SetBoolValue("enabled", !m.IsOpenShiftMonitoringDisabled())
+	// Both charts default custom monitoring to false, so omit the disabled value.
+	if m.IsOpenShiftCustomMonitoringEnabled() {
+		custom := NewValuesBuilder()
+		custom.SetBoolValue("enabled", true)
+		openshift.AddChild("custom", &custom)
+	}
+	monitoring := NewValuesBuilder()
+	monitoring.AddChild("openshift", &openshift)
+	return &monitoring
 }
 
 // SetScannerComponentDisableValue sets the value for the 'disable' key for scanner values

@@ -17,6 +17,32 @@ import (
 	fkClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+func TestGetGlobalMonitoringCustomMetrics(t *testing.T) {
+	tests := map[string]struct {
+		custom *platform.OpenShiftCustomMonitoring
+		want   bool
+	}{
+		"unset":    {},
+		"disabled": {custom: &platform.OpenShiftCustomMonitoring{Enabled: new(false)}},
+		"enabled":  {custom: &platform.OpenShiftCustomMonitoring{Enabled: new(true)}, want: true},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			values, err := GetGlobalMonitoring(&platform.GlobalMonitoring{
+				OpenShiftMonitoring: &platform.OpenShiftMonitoring{Custom: tt.custom},
+			}).Build()
+			require.NoError(t, err)
+			custom, err := values.PathValue("openshift.custom.enabled")
+			if tt.want {
+				require.NoError(t, err)
+				require.Equal(t, true, custom)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func TestGetCustomize(t *testing.T) {
 	tests := map[string]struct {
 		customizeSpec *platform.CustomizeSpec
