@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -75,9 +74,8 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 	ensureGroup(ctx, groupDS)
 }
 
-func TestSeed_WithoutOpenShiftTLS_CreatesPermissionSetOnly(t *testing.T) {
-	t.Setenv(env.Openshift.EnvVar(), "false")
-	registry, roleDS, groupDS := setupMocks(t)
+func TestEnsurePermissionSet(t *testing.T) {
+	_, roleDS, _ := setupMocks(t)
 	roleDS.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
 	roleDS.EXPECT().AddPermissionSet(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, ps *storage.PermissionSet) error {
@@ -88,7 +86,7 @@ func TestSeed_WithoutOpenShiftTLS_CreatesPermissionSetOnly(t *testing.T) {
 			return nil
 		})
 
-	SeedMetricsAuthProvider(t.Context(), registry, roleDS, groupDS)
+	assert.NotEmpty(t, ensurePermissionSet(t.Context(), roleDS))
 }
 
 func TestSeed_SubsequentBoot_CAUnchanged_NoUpdate(t *testing.T) {
