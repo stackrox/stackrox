@@ -7,6 +7,14 @@ import (
 
 type TokenAuthProviderOption func(*tokenAuthProviderImpl)
 
+// WithValidationLayer replaces the source's claim validation policy.
+// Revocation is checked separately after this layer accepts the claims.
+func WithValidationLayer(layer tokens.SourceLayer) TokenAuthProviderOption {
+	return func(ts *tokenAuthProviderImpl) {
+		ts.validationLayer = layer
+	}
+}
+
 // WithRevocationLayer registers a revocation layer in the token source,
 // allowing it to revoke issued tokens.
 func WithRevocationLayer(revocationLayer tokens.RevocationLayer) TokenAuthProviderOption {
