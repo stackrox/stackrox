@@ -37,22 +37,27 @@ check_topology() {
     fi
 }
 
-@test "OCP 4.22 functional presubmits use SNO while postsubmits stay multi-node" {
-    for suite in operator-e2e-tests nongroovy-e2e-tests scanner-v4-install-tests qa-e2e-tests ui-e2e-tests; do
-        check_topology "pull-ci-stackrox-stackrox-master-ocp-4-22-$suite" 0 e2-standard-8 true
-        check_topology "branch-ci-stackrox-stackrox-master-ocp-4-22-merge-$suite" 2 e2-standard-8 false
+@test "selected functional presubmits use SNO while postsubmits stay multi-node" {
+    for version in 4-22 5-0 next-candidate dev-preview; do
+        for suite in operator-e2e-tests nongroovy-e2e-tests scanner-v4-install-tests qa-e2e-tests ui-e2e-tests; do
+            check_topology "pull-ci-stackrox-stackrox-master-ocp-$version-$suite" 0 e2-standard-8 true
+            check_topology "branch-ci-stackrox-stackrox-master-ocp-$version-merge-$suite" 2 e2-standard-8 false
+        done
     done
 }
 
 @test "other versions and specialized suites retain existing topology" {
-    for version in 4-12 dev-preview 5-0; do
+    for version in 4-12 4-14 4-18 4-21 5-1; do
         for suite in operator-e2e-tests nongroovy-e2e-tests scanner-v4-install-tests qa-e2e-tests ui-e2e-tests; do
             check_topology "pull-ci-stackrox-stackrox-master-ocp-$version-$suite" 2 e2-standard-8 false
         done
     done
-    check_topology pull-ci-stackrox-stackrox-master-ocp-4-22-vm-scanning-e2e-tests 2 n2-standard-8 false
-    check_topology pull-ci-stackrox-stackrox-master-ocp-4-22-compliance-e2e-tests 2 e2-standard-8 false
-    check_topology pull-ci-stackrox-stackrox-master-ocp-4-22-unknown-e2e-tests 2 e2-standard-8 false
+    for version in 4-22 5-0 next-candidate dev-preview; do
+        check_topology "pull-ci-stackrox-stackrox-master-ocp-$version-vm-scanning-e2e-tests" 2 n2-standard-8 false
+        for suite in compliance-e2e-tests fips-qa-e2e-tests unknown-e2e-tests; do
+            check_topology "pull-ci-stackrox-stackrox-master-ocp-$version-$suite" 2 e2-standard-8 false
+        done
+    done
 }
 
 @test "non-OCP jobs receive no topology overrides" {
