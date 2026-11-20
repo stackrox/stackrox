@@ -23,11 +23,11 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 		return nil, errors.Wrap(err, "loading proxy TLS certificate")
 	}
 
-	tlsConfig, updateClientCA, updateServerCert := proxyTLSConfig(cert)
+	tlsConfig, updateServerCert := proxyTLSConfig(cert)
 	watchProxyServingCertificate(updateServerCert)
 	proxyHandler, ok := h.(*Handler)
 	if ok && proxyHandler.policy != nil {
-		proxyHandler.policy.configureTLS(tlsConfig, updateClientCA)
+		proxyHandler.policy.configureTLS(tlsConfig)
 	}
 
 	mux := http.NewServeMux()
@@ -42,10 +42,8 @@ func StartProxyServer(h http.Handler) (*http.Server, error) {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
-	if ok {
-		if policy, stoppable := proxyHandler.policy.(interface{ Stop() }); stoppable {
-			server.RegisterOnShutdown(policy.Stop)
-		}
+	if ok && proxyHandler.policy != nil {
+		server.RegisterOnShutdown(proxyHandler.policy.Stop)
 	}
 
 	go func() {
@@ -73,41 +71,24 @@ func watchProxyServingCertificate(updateServerCert func(*tls.Certificate)) {
 		}, updateServerCert, certwatch.WithVerify(false))
 }
 
-func proxyTLSConfig(initialCert tls.Certificate) (*tls.Config, func([]*x509.Certificate), func(*tls.Certificate)) {
-	var clientCAs atomic.Pointer[x509.CertPool]
-	clientCAs.Store(x509.NewCertPool())
+func proxyTLSConfig(initialCert tls.Certificate) (*tls.Config, func(*tls.Certificate)) {
 	var serverCert atomic.Pointer[tls.Certificate]
 	serverCert.Store(&initialCert)
 
 	config := verifier.DefaultTLSServerConfig(nil, []tls.Certificate{initialCert})
-	// A resumed session must not bypass client certificate verification after
-	// OpenShift rotates its trusted client CA.
+	// Disable resumption so each connection negotiates its client certificate.
 	config.SessionTicketsDisabled = true
 	config.GetConfigForClient = func(*tls.ClientHelloInfo) (*tls.Config, error) {
 		live := config.Clone()
 		live.GetConfigForClient = nil
 		live.Certificates = []tls.Certificate{*serverCert.Load()}
-		if live.ClientAuth == tls.VerifyClientCertIfGiven {
-			live.ClientCAs = clientCAs.Load()
-		}
 		return live, nil
 	}
 
-	updateClientCA := func(certs []*x509.Certificate) {
-		pool := x509.NewCertPool()
-		if len(certs) == 0 {
-			log.Warn("OpenShift Prometheus client CA is missing or invalid; retaining previous CA")
-			return
-		}
-		for _, cert := range certs {
-			pool.AddCert(cert)
-		}
-		clientCAs.Store(pool)
-	}
 	updateServerCert := func(cert *tls.Certificate) {
 		if cert != nil {
 			serverCert.Store(cert)
 		}
 	}
-	return config, updateClientCA, updateServerCert
+	return config, updateServerCert
 }

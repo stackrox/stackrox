@@ -58,7 +58,7 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 	assert.Equal(t, env.SecureMetricsClientCertCN.Setting(), defaults.Clients[0].Subject)
 	assert.Equal(t, accesscontrol.OpenShiftPrometheus, defaults.Clients[0].Access[0].PermissionSetName)
 	assert.Equal(t, "*", defaults.Clients[1].Subject)
-	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], defaults.Clients[1].Access[0].PermissionSetID)
+	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], defaults.Clients[1].Access[0].PermissionSetID)
 	assert.Equal(t, centralproxy.ConsoleHTTPScopes, defaults.Clients[1].Access[0].HTTPScopes)
 	grant, err := policy.Authorize(ctx, request, user)
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestClientPolicyBootstrapAndLiveUpdates(t *testing.T) {
 	assert.Equal(t, "alice-permissions", grant.PermissionSets[0].GetName())
 	grant, err = policy.Authorize(ctx, request, &authenticationv1.UserInfo{Username: "bob"})
 	require.NoError(t, err)
-	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], grant.PermissionSets[0].GetId())
+	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], grant.PermissionSets[0].GetId())
 	defaults.Version++
 	setClientPolicyConfigMap(t, ctx, client, defaults)
 	require.Eventually(t, func() bool { return policy.policy.Load() == nil }, time.Second, 10*time.Millisecond)
@@ -234,10 +234,10 @@ func TestClientPolicyMixedAndOverlappingGrants(t *testing.T) {
 	for name, access := range map[string][]clientPolicyAccess{
 		"unrestricted first": {
 			{PermissionSetName: "Unrestricted Reader"},
-			{PermissionSetName: accesscontrol.ConsoleProxy, HTTPScopes: consolePolicyHTTPScopes()},
+			{PermissionSetName: accesscontrol.K8sCentralProxyUser, HTTPScopes: consolePolicyHTTPScopes()},
 		},
 		"unrestricted last": {
-			{PermissionSetName: accesscontrol.ConsoleProxy, HTTPScopes: consolePolicyHTTPScopes()},
+			{PermissionSetName: accesscontrol.K8sCentralProxyUser, HTTPScopes: consolePolicyHTTPScopes()},
 			{PermissionSetName: "Unrestricted Reader"},
 		},
 		"same route": {
@@ -561,7 +561,7 @@ func TestClientPolicyRejectsMalformedPolicies(t *testing.T) {
 	for name, change := range map[string]func(*clientPolicyDocument){
 		"missing permission set": func(p *clientPolicyDocument) { p.Clients[0].Access[0].PermissionSetName = "" },
 		"both selectors": func(p *clientPolicyDocument) {
-			p.Clients[1].Access[0].PermissionSetName = accesscontrol.ConsoleProxy
+			p.Clients[1].Access[0].PermissionSetName = accesscontrol.K8sCentralProxyUser
 		},
 		"invalid ID": func(p *clientPolicyDocument) {
 			p.Clients[1].Access[0].PermissionSetID = "invalid"
