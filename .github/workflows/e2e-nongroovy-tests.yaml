@@ -175,14 +175,10 @@ jobs:
       timeout-minutes: 245
       shell: python
       run: |
-        import subprocess
         import sys
         sys.path.append('.openshift-ci')
-        from node_disruption import monitor
-
-        with monitor():
-            result = subprocess.run(["tests/e2e/run.sh", "/tmp/e2e-test-logs"], check=False)
-        sys.exit(result.returncode)
+        from ci_tests import NonGroovyE2e
+        NonGroovyE2e().run()
 
     - name: Ensure central stability before post-test
       if: always()
