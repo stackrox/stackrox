@@ -40,6 +40,7 @@ type tokenAuthProviderImpl struct {
 	sourceType string
 
 	revocationLayer tokens.RevocationLayer
+	validationLayer tokens.SourceLayer
 	roleMapper      permissions.RoleMapper
 }
 
@@ -65,6 +66,9 @@ func (s *tokenAuthProviderImpl) InitFromStore(ctx context.Context, tokenStore To
 }
 
 func (s *tokenAuthProviderImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+	if err := s.validationLayer.Validate(ctx, claims); err != nil {
+		return err
+	}
 	return s.revocationLayer.Validate(ctx, claims)
 }
 

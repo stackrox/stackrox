@@ -15,14 +15,16 @@ type Backend interface {
 	GetTokenOrNil(ctx context.Context, tokenID string) (*storage.TokenMetadata, error)
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 
-	IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time) (string, *storage.TokenMetadata, error)
+	IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time, httpScopes tokens.HTTPRequestScopes) (string, *storage.TokenMetadata, error)
 	RevokeToken(ctx context.Context, tokenID string) (bool, error)
 }
 
-func newBackend(issuer tokens.Issuer, source tokens.RevocationLayer, tokenStore datastore.DataStore) Backend {
+// New creates an API token backend with the given issuers, shared revocation layer, and datastore.
+func New(issuer, scopedIssuer tokens.Issuer, source tokens.RevocationLayer, tokenStore datastore.DataStore) Backend {
 	return &backendImpl{
-		tokenStore: tokenStore,
-		source:     source,
-		issuer:     issuer,
+		tokenStore:   tokenStore,
+		source:       source,
+		issuer:       issuer,
+		scopedIssuer: scopedIssuer,
 	}
 }
