@@ -1656,7 +1656,7 @@ wait_for_scanner_V4() {
 # never gates or fails the run.
 cvss_load_probe() {
     local image="${CVSS_PROBE_IMAGE:-quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3}"
-    local duration="${CVSS_PROBE_SECONDS:-2400}"
+    local duration="${CVSS_PROBE_SECONDS:-7200}"
     local interval="${CVSS_PROBE_INTERVAL:-10}"
     local namespace="${CVSS_PROBE_NAMESPACE:-stackrox}"
     (
