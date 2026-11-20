@@ -1,0 +1,122 @@
+name: cimemo experiment
+
+# In-region validation of the cimemo gocache remote tier (sensor #9).
+#
+#   control   — plain cold `go build` (baseline)
+#   populate  — same build through cimemo's GOCACHEPROG proxy with the
+#               remote tier on: compiles cold, uploads actions to Azure
+#   serve     — fresh runner, fresh cache: everything must come from the
+#               cloud, binary byte-identical to populate's
+#
+# The blob store is the same Azure account the CA work used; this
+# experiment writes only to the cimemo-ci container.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "go build target (package path)"
+        default: "./central"
+
+permissions: {}
+
+env:
+  CIMEMO_ACCOUNT: cigocache
+  CIMEMO_CONTAINER: cimemo-ci
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+      wall_ms: ${{ steps.time.outputs.wall_ms }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: plain cold build (baseline)
+        id: time
+        run: |
+          rm -rf /tmp/gc && mkdir -p /tmp/gc
+          START=$(date +%s%3N)
+          GOCACHE=/tmp/gc go build -o /tmp/central-control "${{ inputs.target }}"
+          END=$(date +%s%3N)
+          echo "wall_ms=$((END-START))" >> "$GITHUB_OUTPUT"
+          echo "CONTROL: $((END-START))ms"
+      - id: sha
+        run: echo "sha=$(sha256sum /tmp/central-control | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+  populate:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+      wall_ms: ${{ steps.time.outputs.wall_ms }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: build cimemo
+        run: cd tools/cimemo && go build -o /tmp/cimemo ./cmd/cimemo
+      - name: cold build + upload via proxy
+        id: time
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          CIMEMO_GOCACHE_REMOTE: "1"
+          CIMEMO_AZURE_ACCOUNT: ${{ env.CIMEMO_ACCOUNT }}
+          CIMEMO_GOCACHE_CONTAINER: ${{ env.CIMEMO_CONTAINER }}
+          CIMEMO_GOCACHE_STATS: /tmp/gc-stats.json
+        run: |
+          rm -rf /tmp/gc && mkdir -p /tmp/gc
+          START=$(date +%s%3N)
+          GOCACHE=/tmp/gc GOCACHEPROG="/tmp/cimemo gocache" \
+            go build -o /tmp/central-populate "${{ inputs.target }}"
+          END=$(date +%s%3N)
+          echo "wall_ms=$((END-START))" >> "$GITHUB_OUTPUT"
+          echo "POPULATE: $((END-START))ms (cold compile + cloud upload)"
+          echo "--- stats:"
+          cat /tmp/gc-stats.json
+      - id: sha
+        run: echo "sha=$(sha256sum /tmp/central-populate | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+  serve:
+    runs-on: ubuntu-latest
+    needs: populate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: build cimemo
+        run: cd tools/cimemo && go build -o /tmp/cimemo ./cmd/cimemo
+      - name: fresh-cache build served from cloud
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          CIMEMO_GOCACHE_REMOTE: "1"
+          CIMEMO_AZURE_ACCOUNT: ${{ env.CIMEMO_ACCOUNT }}
+          CIMEMO_GOCACHE_CONTAINER: ${{ env.CIMEMO_CONTAINER }}
+          CIMEMO_GOCACHE_STATS: /tmp/gc-stats.json
+        run: |
+          rm -rf /tmp/gc && mkdir -p /tmp/gc
+          START=$(date +%s%3N)
+          GOCACHE=/tmp/gc GOCACHEPROG="/tmp/cimemo gocache" \
+            go build -o /tmp/central-serve "${{ inputs.target }}"
+          END=$(date +%s%3N)
+          echo "SERVE: $((END-START))ms (fresh cache, served from cloud)"
+          echo "POPULATE was: ${{ needs.populate.outputs.wall_ms }}ms"
+          echo "--- stats:"
+          cat /tmp/gc-stats.json
+          SERVE_SHA=$(sha256sum /tmp/central-serve | cut -d' ' -f1)
+          echo "serve sha:   $SERVE_SHA"
+          echo "populate sha: ${{ needs.populate.outputs.sha }}"
+          if [ "$SERVE_SHA" = "${{ needs.populate.outputs.sha }}" ]; then
+            echo "✓ byte-identical"
+          else
+            echo "✗ BINARY MISMATCH"
+            exit 1
+          fi
