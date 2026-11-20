@@ -27,6 +27,7 @@ bundles:
   dev:
     - alpine
     - aws
+    - cisa-kev
     - debian
     - epss
     - manual
@@ -69,6 +70,7 @@ bundles:
   v4:
     - alpine
     - aws
+    - cisa-kev
     - debian
     - epss
     - manual
@@ -83,6 +85,7 @@ bundles:
   v5:
     - alpine
     - aws
+    - cisa-kev
     - debian
     - epss
     - manual
@@ -98,3 +101,6 @@ bundles:
 updaters:
   default:
     interval: 4h
+  stackrox-rhel-csaf:
+    interval: 24h
+    attempt_cadence: 24h

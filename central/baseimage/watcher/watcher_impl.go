@@ -415,6 +415,7 @@ func (w *watcherImpl) doScan(ctx context.Context, repo *storage.BaseImageReposit
 				ManifestDigest:        metadata.ManifestDigest,
 				Created:               protocompat.ConvertTimeToTimestampOrNil(metadata.Created),
 				LayerDigests:          metadata.LayerDigests,
+				History:               metadata.History,
 			}
 			adds = append(adds, tag)
 			if len(adds) >= w.batchSize {
@@ -505,6 +506,7 @@ func (w *watcherImpl) promoteTags(
 			DiscoveredAt:          protocompat.TimestampNow(),
 			Active:                true,
 			Created:               tag.GetCreated(),
+			History:               tag.GetHistory(),
 		}
 		imgs[bi] = tag.GetLayerDigests()
 	}
