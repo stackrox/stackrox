@@ -15,10 +15,10 @@ import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/imag
 import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
 import {
-    deploymentAttributes,
     Secret as deploymentSecretAttribute,
     ServiceAccount as deploymentServiceAccountAttribute,
     Type as deploymentTypeAttribute,
+    deploymentAttributes,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { namespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
 import {
