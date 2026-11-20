@@ -143,6 +143,10 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
+	// Let the report scheduler pick up the new configuration (no-op unless
+	// reports run on their own scheduler).
+	s.reportManager.OnScanConfigUpsert(scanConfig)
+
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.scanConfigDS)
 }
 
@@ -163,6 +167,10 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
+
+	// The report scheduler re-reads the configuration on every wake-up, so an
+	// upsert notification is enough for cron and notifier edits.
+	s.reportManager.OnScanConfigUpsert(scanConfig)
 
 	return &v2.Empty{}, nil
 }
@@ -206,6 +214,9 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
+
+	// Stop the configuration's scheduled reports.
+	s.reportManager.OnScanConfigDeleted(req.GetId())
 
 	return &v2.Empty{}, nil
 }

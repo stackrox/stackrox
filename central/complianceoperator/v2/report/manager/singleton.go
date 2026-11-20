@@ -1,6 +1,7 @@
 package manager
 
 import (
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -10,6 +11,7 @@ import (
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -33,5 +35,7 @@ func initialize() {
 		suiteDS.Singleton(),
 		bindingsDS.Singleton(),
 		checkResults.Singleton(),
+		clusterDatastore.Singleton(),
+		globaldb.GetPostgres(),
 		reportGen.Singleton())
 }

@@ -54,6 +54,7 @@ type getReportDataTestCase struct {
 	numMixedChecksPerCluster  int
 	numFailedClusters         int
 	numFullyFailedClusters    int
+	numOverdueClusters        int
 	expectedWalkByErr         error
 }
 
@@ -82,6 +83,14 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataResultsGeneration()
 			numMixedChecksPerCluster:  3,
 			numFullyFailedClusters:    1,
 		},
+		"generate report data with overdue cluster keeps its results": {
+			numClusters:               2,
+			numProfiles:               2,
+			numPassedChecksPerCluster: 2,
+			numFailedChecksPerCluster: 1,
+			numMixedChecksPerCluster:  3,
+			numOverdueClusters:        1,
+		},
 		"generate report walk by error": {
 			numClusters:       3,
 			numProfiles:       4,
@@ -91,9 +100,11 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataResultsGeneration()
 	for tname, tcase := range cases {
 		s.Run(tname, func() {
 			ctx := context.Background()
-			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles, tcase.numFailedClusters, tcase.numFullyFailedClusters)
-			// Fully-failed clusters (empty FailedScans) return early without calling WalkByQuery
-			walkByTimes := tcase.numClusters + tcase.numFailedClusters
+			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles, tcase.numFailedClusters, tcase.numFullyFailedClusters, tcase.numOverdueClusters)
+			// Fully-failed clusters (empty FailedScans, results not included)
+			// return early without calling WalkByQuery; overdue clusters
+			// (IncludeResults) are walked like healthy ones.
+			walkByTimes := tcase.numClusters + tcase.numFailedClusters + tcase.numOverdueClusters
 			s.checkResultsDS.EXPECT().WalkByQuery(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
 				Times(walkByTimes).
 				DoAndReturn(fakeWalkByResponse(
@@ -121,7 +132,7 @@ func fakeWalkByResponse(
 			if q.GetBaseQuery().GetMatchFieldQuery().GetField() == search.ClusterID.String() {
 				val := strings.Trim(q.GetBaseQuery().GetMatchFieldQuery().GetValue(), "\"")
 				if cluster, ok := clusterData[val]; ok {
-					if cluster.FailedInfo != nil {
+					if cluster.FailedInfo != nil && !cluster.FailedInfo.IncludeResults {
 						return expectedErr
 					}
 				}
@@ -566,7 +577,7 @@ func (s *ComplianceResultsAggregatorSuite) SetupTest() {
 	s.aggregator = NewAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.ruleDS)
 }
 
-func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters, numFullyFailedClusters int) *report.Request {
+func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters, numFullyFailedClusters, numOverdueClusters int) *report.Request {
 	ret := &report.Request{
 		Ctx:          ctx,
 		ScanConfigID: scanConfigID,
@@ -574,7 +585,7 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 		Profiles:     getNames("profile", numProfiles),
 	}
 	clusterData := make(map[string]*report.ClusterData)
-	totalExtra := numFailedClusters + numFullyFailedClusters
+	totalExtra := numFailedClusters + numFullyFailedClusters + numOverdueClusters
 	for i := 0; i < numClusters+totalExtra; i++ {
 		id := fmt.Sprintf("cluster-%d", i)
 		var profileNames []string
@@ -626,6 +637,23 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 		}
 		ret.NumFailedClusters += numFullyFailedClusters
 	}
+	// Overdue clusters (settle-audit-snapshot): findings are staleness, not
+	// execution failures, so the cluster's latest results stay in the report
+	// even though the cluster is flagged.
+	if numOverdueClusters > 0 {
+		offset := numClusters + numFailedClusters + numFullyFailedClusters
+		for i := offset; i < offset+numOverdueClusters; i++ {
+			id := fmt.Sprintf("cluster-%d", i)
+			ret.ClusterIDs = append(ret.ClusterIDs, id)
+			clusterData[id].FailedInfo = &report.FailedCluster{
+				ClusterId:      id,
+				ClusterName:    id,
+				Reasons:        []string{"scan is overdue"},
+				IncludeResults: true,
+			}
+		}
+		ret.NumFailedClusters += numOverdueClusters
+	}
 	ret.ClusterData = clusterData
 	return ret
 }
@@ -663,7 +691,8 @@ func getRowFromCluster(check, clusterID string) *report.ResultRow {
 }
 
 func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Results) {
-	assert.Equal(t, tcase.numClusters+tcase.numFailedClusters+tcase.numFullyFailedClusters, res.Clusters)
+	totalClusters := tcase.numClusters + tcase.numFailedClusters + tcase.numFullyFailedClusters + tcase.numOverdueClusters
+	assert.Equal(t, totalClusters, res.Clusters)
 	assert.Equal(t, tcase.numProfiles, len(res.Profiles))
 	if tcase.expectedWalkByErr != nil {
 		assert.Equal(t, 0, res.TotalPass)
@@ -672,10 +701,13 @@ func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Result
 		assert.Len(t, res.ResultCSVs, 0)
 		return
 	}
-	assert.Equal(t, tcase.numPassedChecksPerCluster*tcase.numClusters, res.TotalPass)
-	assert.Equal(t, tcase.numFailedChecksPerCluster*tcase.numClusters, res.TotalFail)
-	assert.Equal(t, tcase.numMixedChecksPerCluster*tcase.numClusters, res.TotalMixed)
-	for i := 0; i < tcase.numClusters; i++ {
+	// Overdue clusters keep their results, so they count towards the totals
+	// like healthy clusters.
+	clustersWithResults := tcase.numClusters + tcase.numOverdueClusters
+	assert.Equal(t, tcase.numPassedChecksPerCluster*clustersWithResults, res.TotalPass)
+	assert.Equal(t, tcase.numFailedChecksPerCluster*clustersWithResults, res.TotalFail)
+	assert.Equal(t, tcase.numMixedChecksPerCluster*clustersWithResults, res.TotalMixed)
+	for i := range clustersWithResults {
 		clusterID := fmt.Sprintf("cluster-%d", i)
 		var expResults []*report.ResultRow
 		for j := 0; j < tcase.numPassedChecksPerCluster; j++ {

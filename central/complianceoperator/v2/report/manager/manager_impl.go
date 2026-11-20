@@ -14,6 +14,7 @@ import (
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/helpers"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/settle"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sac"
@@ -48,6 +50,11 @@ type reportRequest struct {
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
 	clusterData        map[string]*report.ClusterData
 	numFailedClusters  int
+	// reportRequestType distinguishes on-demand requests (carrying the
+	// requesting user's identity in ctx) from scheduler-submitted requests
+	// (carrying the scan configuration's modifier in user).
+	reportRequestType storage.ComplianceOperatorReportStatus_RunMethod
+	user              *storage.SlimUser
 }
 
 type managerImpl struct {
@@ -94,6 +101,14 @@ type managerImpl struct {
 	metricsTickerC <-chan time.Time
 	// maxScansInParallel stores the maximum number of scans running in parallel between the ticks of metricsTicker.
 	maxScansInParallel atomic.Int32
+
+	// settler implements the settle-audit-snapshot primitive for report
+	// generation when ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER is enabled.
+	settler *settle.Settler
+	// reportScheduler fires scheduled reports on their own schedule instead
+	// of on scan completion (ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER): one
+	// scheduler per scan configuration, supervised by the manager.
+	reportScheduler *reportSchedulerManager
 }
 
 func New(scanConfigDS scanConfigurationDS.DataStore,
@@ -104,9 +119,11 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 	suiteDataStore suiteDS.DataStore,
 	bindingsDataStore bindingsDS.DataStore,
 	checkResultDataStore checkResults.DataStore,
+	clusterDataStore settle.ClusterStatusSource,
+	db postgres.DB,
 	reportGen reportGen.ComplianceReportGenerator) Manager {
 	gmt := time.NewTicker(env.ComplianceScansRunningInParallelMetricObservationPeriod.DurationSetting())
-	return &managerImpl{
+	m := &managerImpl{
 		scanConfigDataStore:    scanConfigDS,
 		scanDataStore:          scanDataStore,
 		profileDataStore:       profileDataStore,
@@ -129,6 +146,21 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 		metricsTicker:          gmt,
 		metricsTickerC:         gmt.C,
 	}
+	m.settler = settle.NewSettler(scanDataStore, complianceIntegration, clusterDataStore)
+	m.reportScheduler = newReportSchedulerManager(m.automaticReportingCtx, scanConfigDS, snapshotDatastore, m.submitScheduledReportRequest, db)
+	return m
+}
+
+// OnScanConfigUpsert notifies the report scheduler that a scan configuration
+// was created or updated (see the Manager interface).
+func (m *managerImpl) OnScanConfigUpsert(scanConfig *storage.ComplianceOperatorScanConfigurationV2) {
+	m.reportScheduler.onScanConfigUpsert(scanConfig)
+}
+
+// OnScanConfigDeleted notifies the report scheduler that a scan configuration
+// was deleted (see the Manager interface).
+func (m *managerImpl) OnScanConfigDeleted(scanConfigID string) {
+	m.reportScheduler.onScanConfigDeleted(scanConfigID)
 }
 
 func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, method storage.ComplianceOperatorReportStatus_NotificationMethod) error {
@@ -147,6 +179,7 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 		scanConfig:         scanConfig,
 		ctx:                context.WithoutCancel(ctx),
 		notificationMethod: method,
+		reportRequestType:  storage.ComplianceOperatorReportStatus_ON_DEMAND,
 	}
 	log.Infof("Submitting report for scan config %s at %s with method %s", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), method.String())
 	select {
@@ -175,9 +208,54 @@ func (m *managerImpl) Start() {
 	go m.handleReadyScan()
 	go m.handleReadyScanConfig()
 	go m.updateMetrics()
+	if settledReportingEnabled() {
+		m.reportScheduler.start()
+	}
+}
+
+// settledReportingEnabled reports whether reporting runs on its own scheduler
+// (settle-audit-snapshot) rather than on scan completion.
+func settledReportingEnabled() bool {
+	return features.ComplianceReporting.Enabled() &&
+		features.ScanScheduleReportJobs.Enabled() &&
+		features.ComplianceReportsOwnScheduler.Enabled()
+}
+
+// submitScheduledReportRequest queues a scheduled report request for execution
+// through the same settle-audit-snapshot primitive as on-demand reports. It is
+// the entry point the report scheduler calls; the request carries the scan
+// configuration's modifier as the user (there is no requesting identity).
+func (m *managerImpl) submitScheduledReportRequest(scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if _, ok := m.runningReportConfigs[scanConfig.GetId()]; ok {
+		return errors.New(fmt.Sprintf("Report request for scan configuration %q already in process", scanConfig.GetScanConfigName()))
+	}
+
+	req := &reportRequest{
+		scanConfig:         scanConfig,
+		ctx:                m.automaticReportingCtx,
+		notificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
+		reportRequestType:  storage.ComplianceOperatorReportStatus_SCHEDULED,
+		user:               scanConfig.GetModifiedBy(),
+	}
+	log.Infof("Submitting scheduled report for scan config %s at %s", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822))
+	select {
+	case m.reportRequests <- req:
+		m.runningReportConfigs[scanConfig.GetId()] = req
+	default:
+		return errors.New(fmt.Sprintf("Error submitting report request for scan configuration %q, request limit reached",
+			scanConfig.GetScanConfigName()))
+	}
+
+	return nil
 }
 
 func (m *managerImpl) Stop() {
+	// Stop the report scheduler first: it submits new report requests that
+	// flow through the rest of the machinery.
+	m.reportScheduler.stop()
 	m.metricsTicker.Stop()
 	if !m.isStarted.Load() {
 		log.Error("Compliance report manager not started")
@@ -281,9 +359,30 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		return true, nil
 	}
 
-	requesterID := authn.IdentityFromContextOrNil(request.ctx)
-	if requesterID == nil {
-		return false, errors.New("could not determine user identity from provided context")
+	if request.reportRequestType != storage.ComplianceOperatorReportStatus_SCHEDULED {
+		// On-demand requests carry the requesting user's identity in their
+		// context; scheduler-submitted requests are pre-populated with the
+		// scan configuration's modifier.
+		requesterID := authn.IdentityFromContextOrNil(request.ctx)
+		if requesterID == nil {
+			return false, errors.New("could not determine user identity from provided context")
+		}
+		request.user = &storage.SlimUser{
+			Id:   requesterID.UID(),
+			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
+		}
+	}
+
+	// Settle-audit-snapshot (ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER): the report
+	// runs on its own terms instead of subscribing to the ScanConfigWatcher.
+	// The watcher's wait set is every scan of the configuration in every
+	// cluster, so a partial scan cycle makes the report wait for scans that
+	// will never arrive and time out; the settled path waits only for the
+	// scans that are currently running, audits the freshness of the rest, and
+	// snapshots the datastore. It serves both on-demand requests and the ones
+	// the report scheduler submits.
+	if features.ComplianceReportsOwnScheduler.Enabled() {
+		return m.handleReportRequestSettled(request)
 	}
 
 	var w watcher.ScanConfigWatcher
@@ -298,14 +397,11 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		ReportStatus: &storage.ComplianceOperatorReportStatus{
 			RunState:                 storage.ComplianceOperatorReportStatus_WAITING,
 			StartedAt:                protocompat.TimestampNow(),
-			ReportRequestType:        storage.ComplianceOperatorReportStatus_ON_DEMAND,
+			ReportRequestType:        request.reportRequestType,
 			ReportNotificationMethod: request.notificationMethod,
 		},
 		ReportData: m.getReportData(request.scanConfig),
-		User: &storage.SlimUser{
-			Id:   requesterID.UID(),
-			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
-		},
+		User:       request.user,
 	}
 	if w == nil {
 		// The report is going to be generated now
@@ -351,6 +447,87 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		return false, errors.Wrap(err, "unable to upsert snapshot on report waiting")
 	}
 	return false, nil
+}
+
+// handleReportRequestSettled generates a report through the
+// settle-audit-snapshot primitive (ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER),
+// serving both on-demand requests and the ones the report scheduler submits:
+//
+//  1. Settle: wait, bounded, for the scans of the configuration that are
+//     currently running, with the scan datastore as the source of truth.
+//  2. Audit: classify every scan per cluster as fresh, unfinished or overdue,
+//     deriving a reason for each finding.
+//  3. Snapshot: read the cluster metadata and the latest results per scan
+//     from the datastore and deliver. The generator labels the report
+//     PARTIAL/FAILURE from the audit findings, so it is never delivered as a
+//     plain success with a dangling timeout error.
+//
+// Unlike the watcher-subscription path, a report cycle is never spawned by
+// scan completion and never waits for scans that are not running.
+func (m *managerImpl) handleReportRequestSettled(request *reportRequest) (bool, error) {
+	snapshot := &storage.ComplianceOperatorReportSnapshotV2{
+		ReportId:            uuid.NewV4().String(),
+		ScanConfigurationId: request.scanConfig.GetId(),
+		Name:                request.scanConfig.GetScanConfigName(),
+		Description:         request.scanConfig.GetDescription(),
+		ReportStatus: &storage.ComplianceOperatorReportStatus{
+			RunState:                 storage.ComplianceOperatorReportStatus_WAITING,
+			StartedAt:                protocompat.TimestampNow(),
+			ReportRequestType:        request.reportRequestType,
+			ReportNotificationMethod: request.notificationMethod,
+		},
+		ReportData: m.getReportData(request.scanConfig),
+		User:       request.user,
+	}
+	if err := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); err != nil {
+		return false, errors.Wrap(err, "unable to upsert snapshot on report preparation")
+	}
+
+	// 1. Settle the scans that are currently running.
+	settleRes, err := m.settler.Settle(m.automaticReportingCtx, request.scanConfig)
+	if err != nil {
+		log.Errorf("Unable to settle the running scans of scan configuration %q: %v", request.scanConfig.GetScanConfigName(), err)
+		if dbErr := helpers.UpdateSnapshotOnError(request.ctx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
+			return false, errors.Wrap(dbErr, "unable to upsert snapshot on settle failure")
+		}
+		return false, errors.Wrap(err, "unable to settle the running scans")
+	}
+
+	// 2. Audit the expectations: which scans are fresh, unfinished or overdue.
+	auditRes, err := m.settler.Audit(m.automaticReportingCtx, request.scanConfig, settleRes)
+	if err != nil {
+		log.Errorf("Unable to audit the scans of scan configuration %q: %v", request.scanConfig.GetScanConfigName(), err)
+		if dbErr := helpers.UpdateSnapshotOnError(request.ctx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
+			return false, errors.Wrap(dbErr, "unable to upsert snapshot on audit failure")
+		}
+		return false, errors.Wrap(err, "unable to audit the scans")
+	}
+
+	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	// Record the scans covered by this report so re-delivered scans are
+	// recognized as already handled.
+	snapshot.Scans = auditRes.Scans
+	if err := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); err != nil {
+		return false, errors.Wrap(err, "unable to upsert snapshot after settling")
+	}
+
+	// 3. Snapshot the datastore: cluster metadata and latest results per scan.
+	request.numFailedClusters = len(auditRes.FailedClusters)
+	request.clusterData, err = helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), auditRes.FailedClusters, m.scanDataStore)
+	if err != nil {
+		log.Errorf("unable to get clusters information: %v", err)
+		if dbErr := helpers.UpdateSnapshotOnError(request.ctx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
+			return false, errors.Wrap(dbErr, "unable to upsert snapshot on generation failure")
+		}
+		return false, errors.Wrap(err, "unable to get clusters information")
+	}
+	snapshot, err = m.addFailedClustersToTheSnapshot(auditRes.FailedClusters, snapshot)
+	if err != nil {
+		return false, err
+	}
+	request.snapshotID = snapshot.GetReportId()
+	m.generateReportNoLock(request)
+	return true, nil
 }
 
 // HandleScan starts a new ScanWatcher if needed and pushes the scan to it
@@ -512,6 +689,15 @@ func (m *managerImpl) handleReadyScan() {
 			continue
 		}
 		log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
+		if features.ComplianceReportsOwnScheduler.Enabled() {
+			// Settle-audit-snapshot: report cycles are no longer spawned by
+			// scan completion -- the report scheduler owns the schedule. Scan
+			// watchers remain for settle detection (old-results cleanup and
+			// stale marking above). This also retires the phantom cycles a
+			// stale re-delivery used to spawn (e.g. a NOT-APPLICABLE scan
+			// allowed through after a sensor restart).
+			continue
+		}
 		w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			continue
