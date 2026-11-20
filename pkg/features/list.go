@@ -58,6 +58,13 @@ var (
 	// ScanScheduleReportJobs enables support for compliance scan schedule report jobs
 	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS", enabled)
 
+	// ComplianceReportsOwnScheduler gates the settle-audit-snapshot PoC for compliance reports
+	// (proposal 1 of the "compliance reporting on partial scan cycles" design): on-demand
+	// reports settle the scans that are currently running, audit scan freshness per cluster,
+	// and snapshot the latest results per scan from the database, instead of subscribing to
+	// the ScanConfigWatcher and waiting for scans that may never arrive. Default off.
+	ComplianceReportsOwnScheduler = registerFeature("Compliance reports run on their own scheduler (settle-audit-snapshot) instead of waiting on scan completion", "ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER")
+
 	// PlatformComponents introduces the concept of platform collections and filtered views across the app.
 	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 

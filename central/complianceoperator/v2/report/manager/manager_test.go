@@ -3,13 +3,16 @@ package manager
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/pkg/errors"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
@@ -43,6 +46,7 @@ type ManagerTestSuite struct {
 	suiteDataStore                 *suiteDS.MockDataStore
 	bindingsDataStore              *bindingsDS.MockDataStore
 	checkResultDataStore           *checkResultsMocks.MockDataStore
+	clusterDataStore               *clusterMocks.MockDataStore
 	reportGen                      *reportGen.MockComplianceReportGenerator
 }
 
@@ -62,6 +66,7 @@ func (m *ManagerTestSuite) SetupTest() {
 	m.suiteDataStore = suiteDS.NewMockDataStore(m.mockCtrl)
 	m.bindingsDataStore = bindingsDS.NewMockDataStore(m.mockCtrl)
 	m.checkResultDataStore = checkResultsMocks.NewMockDataStore(m.mockCtrl)
+	m.clusterDataStore = clusterMocks.NewMockDataStore(m.mockCtrl)
 	m.reportGen = reportGen.NewMockComplianceReportGenerator(m.mockCtrl)
 }
 
@@ -70,7 +75,7 @@ func TestComplianceReportManager(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
 		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",
@@ -116,7 +121,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 			Return(getScans(len(scanConfig.GetProfiles())), nil)
 		m.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).Times(1).Return(nil)
 
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		req := &reportRequest{
 			scanConfig:         scanConfig,
@@ -134,7 +139,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(errors.New("db error"))
 
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		req := &reportRequest{
 			scanConfig:         scanConfig,
@@ -152,7 +157,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 		stubWatcher := &stubScanConfigWatcher{}
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		concurrency.WithLock(&impl.watchingScanConfigsLock, func() {
 			impl.watchingScanConfigs[scanConfig.GetId()] = stubWatcher
@@ -171,7 +176,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	})
 
 	m.Run("Missing identity returns error", func() {
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		req := &reportRequest{
 			scanConfig:         scanConfig,
@@ -183,6 +188,363 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 		m.Assert().False(generated)
 		m.Assert().Contains(err.Error(), "could not determine user identity")
 	})
+}
+
+// TestHandleReportRequestSettled covers the settle-audit-snapshot on-demand
+// path (ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER): the report settles the scans
+// that are currently running, audits the freshness of the rest, and snapshots
+// the datastore, instead of subscribing to the ScanConfigWatcher.
+func (m *ManagerTestSuite) TestHandleReportRequestSettled() {
+	m.T().Setenv(features.ComplianceReportsOwnScheduler.EnvVar(), "true")
+	m.T().Setenv(env.ComplianceReportSettleTimeout.EnvVar(), "200ms")
+	m.T().Setenv(env.ComplianceReportSettlePollInterval.EnvVar(), "5ms")
+
+	scanConfig := getTestScanConfig()
+
+	// settledMocks bundles freshly created mocks for one subtest, so gomock
+	// expectations never leak across subtests.
+	type settledMocks struct {
+		scanConfigDS  *scanConfigurationDS.MockDataStore
+		scanDS        *scanMocks.MockDataStore
+		profileDS     *profileMocks.MockDataStore
+		snapshotDS    *snapshotMocks.MockDataStore
+		integrationDS *integrationMocks.MockDataStore
+		suiteStore    *suiteDS.MockDataStore
+		bindingsStore *bindingsDS.MockDataStore
+		checkResultDS *checkResultsMocks.MockDataStore
+		clusterDS     *clusterMocks.MockDataStore
+		generator     *reportGen.MockComplianceReportGenerator
+	}
+	newMocks := func() *settledMocks {
+		ctrl := gomock.NewController(m.T())
+		t := &settledMocks{
+			scanConfigDS:  scanConfigurationDS.NewMockDataStore(ctrl),
+			scanDS:        scanMocks.NewMockDataStore(ctrl),
+			profileDS:     profileMocks.NewMockDataStore(ctrl),
+			snapshotDS:    snapshotMocks.NewMockDataStore(ctrl),
+			integrationDS: integrationMocks.NewMockDataStore(ctrl),
+			suiteStore:    suiteDS.NewMockDataStore(ctrl),
+			bindingsStore: bindingsDS.NewMockDataStore(ctrl),
+			checkResultDS: checkResultsMocks.NewMockDataStore(ctrl),
+			clusterDS:     clusterMocks.NewMockDataStore(ctrl),
+			generator:     reportGen.NewMockComplianceReportGenerator(ctrl),
+		}
+		// getReportData
+		t.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), gomock.Eq(scanConfig.GetId())).
+			Times(1).Return(getTestClusterStatusFromScanConfig(scanConfig), nil)
+		t.suiteStore.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
+		t.bindingsStore.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).
+			Times(len(scanConfig.GetClusters())).Return(nil, nil)
+		return t
+	}
+	newManager := func(t *settledMocks) *managerImpl {
+		return New(t.scanConfigDS, t.scanDS, t.profileDS, t.snapshotDS, t.integrationDS,
+			t.suiteStore, t.bindingsStore, t.checkResultDS, t.clusterDS, nil, t.generator).(*managerImpl)
+	}
+	newRequest := func(scanCfg *storage.ComplianceOperatorScanConfigurationV2) *reportRequest {
+		identity := mocks.NewMockIdentity(m.mockCtrl)
+		identity.EXPECT().UID().AnyTimes().Return("user-id")
+		identity.EXPECT().FullName().AnyTimes().Return("user-name")
+		identity.EXPECT().FriendlyName().AnyTimes().Return("user-friendly-name")
+		return &reportRequest{
+			scanConfig:         scanCfg,
+			ctx:                authn.ContextWithIdentity(context.Background(), identity, m.T()),
+			notificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
+		}
+	}
+
+	// scanStartedAgo builds a DONE scan on the given cluster whose last run
+	// started the given duration ago.
+	scanStartedAgo := func(clusterID string, ago time.Duration) *storage.ComplianceOperatorScanV2 {
+		start := time.Now().Add(-ago)
+		return &storage.ComplianceOperatorScanV2{
+			Id:              fmt.Sprintf("scan-%s", clusterID),
+			ClusterId:       clusterID,
+			ScanName:        fmt.Sprintf("profile-%s", clusterID),
+			ScanRefId:       fmt.Sprintf("ref-%s", clusterID),
+			ScanConfigName:  scanConfig.GetScanConfigName(),
+			LastStartedTime: protocompat.ConvertTimeToTimestampOrNil(&start),
+			Status:          &storage.ScanStatus{Phase: "DONE", Result: "COMPLIANT"},
+		}
+	}
+
+	m.Run("no scans in flight generates immediately with no failures", func() {
+		t := newMocks()
+		// Settle (1) + Audit (1) + GetClusterData (one per cluster).
+		t.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorScanV2{
+				scanStartedAgo("cluster-1", 30*time.Minute),
+				scanStartedAgo("cluster-2", 30*time.Minute),
+			}, nil)
+		var upserted []*storage.ComplianceOperatorReportSnapshotV2
+		t.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(2).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				// Store a copy: the manager keeps mutating the snapshot after upserting.
+				upserted = append(upserted, snapshot.CloneVT())
+				return nil
+			})
+		var processed *report.Request
+		t.generator.EXPECT().ProcessReportRequest(gomock.Any()).Times(1).
+			DoAndReturn(func(req *report.Request) error {
+				processed = req
+				return nil
+			})
+
+		req := newRequest(scanConfig)
+		generated, err := newManager(t).handleReportRequest(req)
+		m.Require().NoError(err)
+		m.Assert().True(generated)
+		m.Assert().NotEmpty(req.snapshotID)
+		m.Assert().Equal(storage.ComplianceOperatorReportStatus_WAITING, upserted[0].GetReportStatus().GetRunState())
+		m.Assert().Equal(storage.ComplianceOperatorReportStatus_PREPARING, upserted[1].GetReportStatus().GetRunState())
+		m.Assert().Zero(processed.NumFailedClusters)
+		m.Assert().Len(upserted[1].GetScans(), 2, "the scans covered by the report are recorded on the snapshot")
+	})
+
+	m.Run("waits for scans that are in flight", func() {
+		t := newMocks()
+		var calls atomic.Int32
+		t.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+			DoAndReturn(func(_ context.Context, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
+				phase := "RUNNING"
+				if calls.Add(1) >= 2 {
+					phase = "DONE"
+				}
+				scan := scanStartedAgo("cluster-1", 10*time.Minute)
+				scan.Status.Phase = phase
+				return []*storage.ComplianceOperatorScanV2{scan}, nil
+			})
+		var upserted []*storage.ComplianceOperatorReportSnapshotV2
+		t.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(2).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				// Store a copy: the manager keeps mutating the snapshot after upserting.
+				upserted = append(upserted, snapshot.CloneVT())
+				return nil
+			})
+		t.generator.EXPECT().ProcessReportRequest(gomock.Any()).Times(1).Return(nil)
+
+		generated, err := newManager(t).handleReportRequest(newRequest(scanConfig))
+		m.Require().NoError(err)
+		m.Assert().True(generated)
+		m.Assert().GreaterOrEqual(calls.Load(), int32(2), "the settle phase polled until the scan finished")
+		m.Assert().Equal(storage.ComplianceOperatorReportStatus_PREPARING, upserted[1].GetReportStatus().GetRunState())
+	})
+
+	m.Run("overdue scans label the report partial and are not waited on", func() {
+		t := newMocks()
+		// A daily schedule firing about now: the audit cutoff lands on the
+		// previous fire, so a scan started two days ago is overdue, and the
+		// report must not wait for it (it is DONE, just stale).
+		scheduledConfig := scanConfig.CloneVT()
+		now := time.Now()
+		scheduledConfig.Schedule = &storage.Schedule{
+			IntervalType: storage.Schedule_DAILY,
+			Hour:         int32(now.Hour()),
+			Minute:       int32(now.Minute()),
+		}
+		// Settle + Audit return only stale, DONE scans: nothing is in flight,
+		// so the report is produced without waiting.
+		t.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorScanV2{
+				scanStartedAgo("cluster-1", 48*time.Hour),
+				scanStartedAgo("cluster-2", 30*time.Minute),
+			}, nil)
+		// Diagnostics for the flagged cluster.
+		t.integrationDS.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
+			AnyTimes().Return([]*storage.ComplianceIntegration{{OperatorInstalled: true, Version: "v1.6.0"}}, nil)
+		t.clusterDS.EXPECT().GetCluster(gomock.Any(), gomock.Any()).
+			AnyTimes().Return(&storage.Cluster{
+			Id:           "cluster-1",
+			HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY},
+		}, true, nil)
+		var upserted []*storage.ComplianceOperatorReportSnapshotV2
+		t.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(3).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				// Store a copy: the manager keeps mutating the snapshot after upserting.
+				upserted = append(upserted, snapshot.CloneVT())
+				return nil
+			})
+		var processed *report.Request
+		t.generator.EXPECT().ProcessReportRequest(gomock.Any()).Times(1).
+			DoAndReturn(func(req *report.Request) error {
+				processed = req
+				return nil
+			})
+
+		generated, err := newManager(t).handleReportRequest(newRequest(scheduledConfig))
+		m.Require().NoError(err)
+		m.Assert().True(generated)
+		m.Assert().Equal(1, processed.NumFailedClusters, "the cluster with the overdue scan is counted as failed")
+		failed := upserted[2].GetFailedClusters()
+		m.Require().Len(failed, 1)
+		m.Assert().Equal("cluster-1", failed[0].GetClusterId())
+		m.Assert().NotEmpty(failed[0].GetReasons())
+		m.Assert().Empty(failed[0].GetScanNames(), "overdue scans keep their results and are not listed as failed scans")
+	})
+
+	m.Run("settle datastore error fails the snapshot", func() {
+		t := newMocks()
+		t.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
+			Return(nil, errors.New("db down"))
+		var upserted []*storage.ComplianceOperatorReportSnapshotV2
+		t.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(2).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				// Store a copy: the manager keeps mutating the snapshot after upserting.
+				upserted = append(upserted, snapshot.CloneVT())
+				return nil
+			})
+
+		generated, err := newManager(t).handleReportRequest(newRequest(scanConfig))
+		m.Require().Error(err)
+		m.Assert().False(generated)
+		m.Assert().Contains(err.Error(), "unable to settle the running scans")
+		m.Assert().Equal(storage.ComplianceOperatorReportStatus_FAILURE, upserted[1].GetReportStatus().GetRunState())
+	})
+
+	m.Run("scheduled request carries the configuration's modifier and needs no identity", func() {
+		t := newMocks()
+		scheduledConfig := scanConfig.CloneVT()
+		scheduledConfig.ModifiedBy = &storage.SlimUser{Id: "user-id", Name: "config-modifier"}
+		t.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorScanV2{
+				scanStartedAgo("cluster-1", 30*time.Minute),
+				scanStartedAgo("cluster-2", 30*time.Minute),
+			}, nil)
+		var upserted []*storage.ComplianceOperatorReportSnapshotV2
+		t.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(2).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				upserted = append(upserted, snapshot.CloneVT())
+				return nil
+			})
+		t.generator.EXPECT().ProcessReportRequest(gomock.Any()).Times(1).Return(nil)
+
+		impl := newManager(t)
+		req := &reportRequest{
+			scanConfig:         scheduledConfig,
+			ctx:                impl.automaticReportingCtx, // no identity, like scheduler submissions
+			notificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
+			reportRequestType:  storage.ComplianceOperatorReportStatus_SCHEDULED,
+			user:               scheduledConfig.GetModifiedBy(),
+		}
+		generated, err := impl.handleReportRequest(req)
+		m.Require().NoError(err)
+		m.Assert().True(generated)
+		m.Assert().Equal(storage.ComplianceOperatorReportStatus_SCHEDULED, upserted[0].GetReportStatus().GetReportRequestType())
+		m.Assert().Equal("config-modifier", upserted[0].GetUser().GetName())
+		m.Assert().Zero(upserted[0].GetReportStatus().GetErrorMsg())
+	})
+}
+
+// TestSubmitScheduledReportRequest covers the report scheduler's submission
+// entry point.
+func (m *ManagerTestSuite) TestSubmitScheduledReportRequest() {
+	scanConfig := getTestScanConfig()
+	scanConfig.ModifiedBy = &storage.SlimUser{Id: "user-id", Name: "config-modifier"}
+
+	mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
+	impl := mgr.(*managerImpl)
+
+	m.Require().NoError(impl.submitScheduledReportRequest(scanConfig))
+	concurrency.WithLock(&impl.mu, func() {
+		m.Assert().Len(impl.runningReportConfigs, 1)
+	})
+
+	// A duplicate submission for the same configuration is rejected while the
+	// first one is in flight.
+	m.Require().Error(impl.submitScheduledReportRequest(scanConfig))
+
+	select {
+	case req := <-impl.reportRequests:
+		m.Assert().Equal(storage.ComplianceOperatorReportStatus_SCHEDULED, req.reportRequestType)
+		m.Assert().Equal(storage.ComplianceOperatorReportStatus_EMAIL, req.notificationMethod)
+		m.Assert().Equal("config-modifier", req.user.GetName())
+		m.Assert().Equal(scanConfig.GetId(), req.scanConfig.GetId())
+	default:
+		m.FailNow("expected a queued scheduled report request")
+	}
+}
+
+// TestHandleReadyScanSettledSkipsConfigWatcher verifies that with
+// ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER enabled, scan completion no longer
+// spawns report cycles: the scan watcher's settle-detection duties
+// (old-results cleanup) still run, but the ScanConfigWatcher path is skipped.
+func (m *ManagerTestSuite) TestHandleReadyScanSettledSkipsConfigWatcher() {
+	m.T().Setenv(features.ComplianceReportsOwnScheduler.EnvVar(), "true")
+
+	ctrl := gomock.NewController(m.T())
+	checkResultDS := checkResultsMocks.NewMockDataStore(ctrl)
+	scanConfigDS := scanConfigurationDS.NewMockDataStore(ctrl)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	profileDS := profileMocks.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	integrationDS := integrationMocks.NewMockDataStore(ctrl)
+	suiteStore := suiteDS.NewMockDataStore(ctrl)
+	bindingsStore := bindingsDS.NewMockDataStore(ctrl)
+	generator := reportGen.NewMockComplianceReportGenerator(ctrl)
+	generator.EXPECT().Stop().AnyTimes()
+
+	now := protocompat.TimestampNow()
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              "scan-1",
+		ClusterId:       "cluster-1",
+		ScanConfigName:  "test-scan",
+		ScanRefId:       "ref-1",
+		LastStartedTime: now,
+	}
+
+	done := make(chan struct{})
+	// Settle detection is preserved: old results of the completed run are
+	// cleaned up.
+	checkResultDS.EXPECT().
+		DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
+		Times(1).
+		DoAndReturn(func(_, _, _, _ any) error {
+			close(done)
+			return nil
+		})
+	// The report scheduler manager starts with the manager and seeds itself
+	// from the (empty) database.
+	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		Times(1).Return(nil, nil)
+	// No expectation on GetScanConfigurationByName: the config-watcher path
+	// (which would spawn an automatic snapshot) must not run. An unexpected
+	// call fails the test.
+
+	manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, nil, nil, generator)
+	manager.Start()
+	m.T().Cleanup(func() {
+		manager.Stop()
+		ctrl.Finish()
+	})
+	managerImp := manager.(*managerImpl)
+
+	result := &watcher.ScanWatcherResults{
+		WatcherID: "watcher-1",
+		Scan:      scan,
+		Scope: watcher.ScanScope{
+			ScanRefID:       scan.GetScanRefId(),
+			LastStartedTime: scan.GetLastStartedTime(),
+		},
+	}
+
+	concurrency.WithLock(&managerImp.watchingScansLock, func() {
+		managerImp.watchingScansStartTime[result.WatcherID] = time.Now()
+	})
+
+	managerImp.readyQueue.Push(result)
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		m.FailNow("timeout waiting for handleReadyScan to process the result")
+	}
+	// Give the skipped path a moment to misbehave, then assert no config
+	// watcher was created.
+	m.Assert().Eventually(func() bool {
+		return concurrency.WithLock1[bool](&managerImp.watchingScanConfigsLock, func() bool {
+			return len(managerImp.watchingScanConfigs) == 0
+		})
+	}, 500*time.Millisecond, 10*time.Millisecond)
 }
 
 func (m *ManagerTestSuite) TestGenerateReportFromWatcherResults() {
@@ -211,7 +573,7 @@ func (m *ManagerTestSuite) TestGenerateReportFromWatcherResults() {
 				return nil
 			})
 
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		result := &watcher.ScanConfigWatcherResults{
 			WatcherID:  scanConfig.GetId(),
@@ -253,7 +615,7 @@ func (m *ManagerTestSuite) TestGenerateReportFromWatcherResults() {
 				return nil
 			})
 
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		result := &watcher.ScanConfigWatcherResults{
 			WatcherID:  scanConfig.GetId(),
@@ -292,7 +654,7 @@ func (m *ManagerTestSuite) TestCreateAutomaticSnapshotAndSubscribe() {
 		noNotifierConfig := getTestScanConfig()
 		noNotifierConfig.Notifiers = nil
 
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		stubWatcher := &stubScanConfigWatcher{}
 		err := impl.createAutomaticSnapshotAndSubscribe(m.ctx, noNotifierConfig, stubWatcher)
@@ -308,7 +670,7 @@ func (m *ManagerTestSuite) TestCreateAutomaticSnapshotAndSubscribe() {
 			Times(len(scanConfig.GetClusters())).Return(nil, nil)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
-		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+		mgr := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 		impl := mgr.(*managerImpl)
 		stubWatcher := &stubScanConfigWatcher{}
 		err := impl.createAutomaticSnapshotAndSubscribe(m.ctx, scanConfig, stubWatcher)
@@ -400,7 +762,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
 			generator.EXPECT().Stop().AnyTimes()
 
-			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
+			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, nil, nil, generator)
 			manager.Start()
 			m.T().Cleanup(func() {
 				manager.Stop()
@@ -486,7 +848,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanMarkStaleOnError() {
 			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
 			generator.EXPECT().Stop().AnyTimes()
 
-			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
+			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, nil, nil, generator)
 			manager.Start()
 			m.T().Cleanup(func() {
 				manager.Stop()
@@ -620,7 +982,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanStaleMarkingScope() {
 			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
 			generator.EXPECT().Stop().AnyTimes()
 
-			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
+			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, nil, nil, generator)
 			manager.Start()
 			m.T().Cleanup(func() {
 				manager.Stop()
@@ -679,7 +1041,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 		)
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	scan := &storage.ComplianceOperatorScanV2{
@@ -709,7 +1071,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 
 func (m *ManagerTestSuite) TestHandleScanRemove() {
 	m.reportGen.EXPECT().Stop().AnyTimes()
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	manager.Start()
@@ -783,7 +1145,7 @@ func (m *ManagerTestSuite) TestHandleScanRemove() {
 }
 
 func (m *ManagerTestSuite) TestHandleResult() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.clusterDataStore, nil, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	timeNow := time.Now()

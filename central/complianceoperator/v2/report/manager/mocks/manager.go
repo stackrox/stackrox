@@ -83,6 +83,30 @@ func (mr *MockManagerMockRecorder) HandleScanRemove(scanID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScanRemove", reflect.TypeOf((*MockManager)(nil).HandleScanRemove), scanID)
 }
 
+// OnScanConfigDeleted mocks base method.
+func (m *MockManager) OnScanConfigDeleted(scanConfigID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnScanConfigDeleted", scanConfigID)
+}
+
+// OnScanConfigDeleted indicates an expected call of OnScanConfigDeleted.
+func (mr *MockManagerMockRecorder) OnScanConfigDeleted(scanConfigID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnScanConfigDeleted", reflect.TypeOf((*MockManager)(nil).OnScanConfigDeleted), scanConfigID)
+}
+
+// OnScanConfigUpsert mocks base method.
+func (m *MockManager) OnScanConfigUpsert(scanConfig *storage.ComplianceOperatorScanConfigurationV2) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnScanConfigUpsert", scanConfig)
+}
+
+// OnScanConfigUpsert indicates an expected call of OnScanConfigUpsert.
+func (mr *MockManagerMockRecorder) OnScanConfigUpsert(scanConfig any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnScanConfigUpsert", reflect.TypeOf((*MockManager)(nil).OnScanConfigUpsert), scanConfig)
+}
+
 // Start mocks base method.
 func (m *MockManager) Start() {
 	m.ctrl.T.Helper()

@@ -22,6 +22,37 @@ var (
 	// The default is 45 mins.
 	ComplianceScanScheduleWatcherTimeout = registerDurationSetting("ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT", 45*time.Minute)
 
+	// ComplianceReportSettleTimeout bounds the settle phase of the settle-audit-snapshot
+	// report primitive (ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER): how long a report waits for
+	// the scans of the scan configuration that are currently running before it proceeds and
+	// labels them as unfinished. The default is 10 mins.
+	ComplianceReportSettleTimeout = registerDurationSetting("ROX_COMPLIANCE_REPORT_SETTLE_TIMEOUT", 10*time.Minute)
+
+	// ComplianceReportSettlePollInterval is how often the settle phase re-checks the scan
+	// datastore for scans that reached a terminal state. The default is 15 secs.
+	ComplianceReportSettlePollInterval = registerDurationSetting("ROX_COMPLIANCE_REPORT_SETTLE_POLL_INTERVAL", 15*time.Second)
+
+	// ComplianceReportScheduleGrace absorbs Compliance Operator and sensor scheduling delays
+	// (and the UTC approximation of the cluster-local cron) when the report audit decides
+	// whether a scan started within the expected schedule window. The default is 1 hour.
+	ComplianceReportScheduleGrace = registerDurationSetting("ROX_COMPLIANCE_REPORT_SCHEDULE_GRACE", 1*time.Hour)
+
+	// ComplianceReportSchedulerResyncInterval is how often the report scheduler
+	// (ROX_COMPLIANCE_REPORTS_OWN_SCHEDULER) reconciles its per-configuration schedulers
+	// against the scan configurations in the database. It is a safety net for missed
+	// create/delete notifications (the primary triggers are the scan-config pipeline
+	// callbacks and the schedulers' own due-time wake-ups). The default is 1 minute.
+	ComplianceReportSchedulerResyncInterval = registerDurationSetting("ROX_COMPLIANCE_REPORT_SCHEDULER_RESYNC_INTERVAL", 1*time.Minute)
+
+	// ComplianceReportScheduleDelay is the offset between a scan configuration's schedule
+	// firing and the scheduled report for that fire: the report runs at fire + delay, giving
+	// the scans time to finish before the report settles and snapshots them. The settle
+	// phase and the audit absorb the imprecision. It must stay well below the scan
+	// interval (the default of 1 hour vs. daily-or-slower scans leaves ample margin).
+	// A separate user-facing report cron is the cleaner long-term option (see the
+	// "compliance reporting on partial scan cycles" proposal, open product decisions).
+	ComplianceReportScheduleDelay = registerDurationSetting("ROX_COMPLIANCE_REPORT_SCHEDULE_DELAY", 1*time.Hour)
+
 	// ComplianceMaxNumberOfErrorsInReport defines the max number of errors that a report will store. This is done to avoid overwhelming the UI with many errors.
 	// The default is 4
 	ComplianceMaxNumberOfErrorsInReport = RegisterIntegerSetting("ROX_COMPLIANCE_MAX_NUMBER_OF_ERRORS_IN_REPORT", 4)

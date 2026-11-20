@@ -35,4 +35,11 @@ type FailedCluster struct {
 	Reasons         []string
 	OperatorVersion string
 	FailedScans     []*storage.ComplianceOperatorScanV2
+	// IncludeResults indicates whether the cluster's check results should stay in the
+	// report content even though the cluster is flagged. It is set when the findings are
+	// staleness (overdue scans) rather than execution failures: the latest results per
+	// scan are still the most complete data available, and mixed freshness is the
+	// intended semantics of settle-audit-snapshot reporting. When false and
+	// FailedScans is empty, the whole cluster is excluded from the report content.
+	IncludeResults bool
 }

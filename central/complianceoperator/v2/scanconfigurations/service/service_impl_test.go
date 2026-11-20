@@ -166,6 +166,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse.Id = uuid.NewDummy().String()
 	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
+	s.reportManager.EXPECT().OnScanConfigUpsert(gomock.Any()).Times(1)
 	s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 		{
 			ClusterId:    fixtureconsts.Cluster1,
@@ -212,6 +213,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse.Id = uuid.NewDummy().String()
 	s.manager.EXPECT().UpdateScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
+	s.reportManager.EXPECT().OnScanConfigUpsert(gomock.Any()).Times(1)
 
 	_, err := s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().NoError(err)
@@ -257,6 +259,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfigura
 		getSnapshot(snapshotID, storageRequester),
 	}
 	s.manager.EXPECT().DeleteScan(gomock.Any(), validID).Return(nil).Times(1)
+	s.reportManager.EXPECT().OnScanConfigDeleted(gomock.Eq(validID)).Times(1)
 	s.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).Return(snapshots, nil)
 	s.blobDS.EXPECT().Delete(gomock.Cond[context.Context](func(ctx context.Context) bool {
 		return validateBlobContext(ctx, storage.Access_READ_WRITE_ACCESS)

@@ -10,6 +10,7 @@ func init() {
 		scansRunningInParallel,
 		scanWatcherActiveTimeMinutes,
 		numWatchers,
+		scheduledReportsSubmitted,
 	)
 }
 
@@ -44,4 +45,10 @@ var (
 		Name:      coPrefix + "scan_watchers_active_time_minutes",
 		Help:      "How long (in minutes) a scan watcher was active. Value of 40m is the default timeout.",
 	}, []string{"name"})
+	scheduledReportsSubmitted = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      coPrefix + "report_scheduler_submitted_total",
+		Help:      "Number of scheduled compliance report requests submitted by the report scheduler (settle-audit-snapshot reporting).",
+	}, []string{"scan_config"})
 )
