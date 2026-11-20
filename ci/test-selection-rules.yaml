@@ -5,6 +5,7 @@ jobs:
   - go-postgres
   - go-bench
   - sensor-integration-tests
+  - local-roxctl-tests
   - e2e-byodb-tests
   - e2e-db-backup-restore-tests-gke
   - e2e-db-backup-restore-tests-gke-konflux
@@ -68,6 +69,19 @@ rules:
       - '^make/'
       - '^scripts/go-test\.sh$'
       - '^scripts/go-files-to-packages\.sh$'
+      - '^go\.(mod|sum)$'
+
+  # roxctl tests cover the CLI tool and its dependencies.
+  - name: roxctl
+    jobs: [local-roxctl-tests]
+    run_if_changed:
+      - '^roxctl/'
+      - '^pkg/'
+      - '^proto/'
+      - '^generated/'
+      - '^Makefile$'
+      - '^make/'
+      - '^scripts/ci/jobs/roxctl_tests\.sh$'
       - '^go\.(mod|sum)$'
 
   # Backend e2e drives APIs and clusters, not the browser: same ui-or-docs
