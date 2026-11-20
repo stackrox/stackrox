@@ -198,7 +198,10 @@ test_upgrade_paths() (
     # (4h) afterwards. Its startup pass here races the Scanner V4 matcher's initial
     # vulnerability import, so wait for the store and bounce Central once so the
     # images_v2 data the assertions read is populated by a ready scanner.
+    cvss_load_probe
     wait_for_scanner_v4_readiness
+    info "CVSSPROBE upgrade-path: scanner v4 readiness gate passed at $(date -u +%H:%M:%S)"
+    cvss_probe_assert
     info "Bouncing central to reprocess images with a ready Scanner V4"
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
@@ -241,6 +244,8 @@ test_upgrade_paths() (
     kubectl -n stackrox rollout status deploy/central --timeout=600s
     upgrade_operator_to_head
     wait_for_background_migrations
+    info "CVSSPROBE upgrade-path: operator upgraded to HEAD; matcher restarted against existing DB at $(date -u +%H:%M:%S)"
+    cvss_probe_assert
     test_equals_non_silent "$(roxcurl /v1/centralhealth/upgradestatus | jq -r '.upgradeStatus.version')" "$CURRENT_TAG"
     checkForPostgresAccessScopes
     trap - EXIT
