@@ -31,7 +31,7 @@ check_topology() {
     grep -qx "export WORKER_NODE_TYPE=$worker_type" "$SHARED_DIR/shared_env"
     if [[ "$sno" == true ]]; then
         grep -qx 'export MASTER_NODE_COUNT=1' "$SHARED_DIR/shared_env"
-        grep -qx 'export MASTER_NODE_TYPE=e2-standard-8' "$SHARED_DIR/shared_env"
+        grep -qx 'export MASTER_NODE_TYPE=e2-standard-16' "$SHARED_DIR/shared_env"
     else
         ! grep -q 'export MASTER_NODE_' "$SHARED_DIR/shared_env"
     fi
