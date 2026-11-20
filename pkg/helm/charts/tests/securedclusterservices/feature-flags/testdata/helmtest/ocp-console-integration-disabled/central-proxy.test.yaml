@@ -7,7 +7,6 @@ tests:
   set:
     env.openshift: 4
     monitoring.openshift.enabled: false
-    monitoring.openshift.custom.enabled: false
     sensor.centralProxy.enabled: true
   expect: |
     .services["sensor-proxy"].metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"] | assertThat(. == "sensor-proxy-tls")
