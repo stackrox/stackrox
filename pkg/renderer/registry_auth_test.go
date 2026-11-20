@@ -88,9 +88,14 @@ func TestUsesPublicImages(t *testing.T) {
 			images:   with(func(c *CommonConfig) { c.MainImage = public.MainRegistry + "-mirror/main:1.2.3" }),
 			expected: false,
 		},
-		"public flavor, image name and tag overridden within the registry": {
+		"public flavor, override to another repository under the same registry may be private": {
 			flavor:   public,
 			images:   with(func(c *CommonConfig) { c.MainImage = public.MainRegistry + "/my-main:custom" }),
+			expected: false,
+		},
+		"public flavor, only the tag overridden keeps the default repository": {
+			flavor:   public,
+			images:   with(func(c *CommonConfig) { c.MainImage = public.MainRegistry + "/" + public.MainImageName + ":custom" }),
 			expected: true,
 		},
 	}

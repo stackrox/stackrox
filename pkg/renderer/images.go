@@ -96,22 +96,40 @@ func configureImageOverrides(c *Config, imageFlavor defaults.ImageFlavor) {
 	c.K8sConfig.ImageOverrides = imageOverrides
 }
 
-// usesPublicImages returns true if the flavor is served from a public registry and none of the configured images
-// were overridden to point somewhere else, i.e. deploying does not require registry credentials.
+// usesPublicImages returns true if the flavor is served from a public registry and every
+// configured image points at one of the flavor's default repositories, i.e. deploying does not
+// require registry credentials. Visibility on registries such as Quay is per repository, not per
+// registry prefix, so an override to a different repository under the same registry (e.g.
+// quay.io/stackrox-io/some-other-repo) may still be private and must keep the credential path.
 func usesPublicImages(c *Config, imageFlavor defaults.ImageFlavor) bool {
 	if !imageFlavor.ImagePullSecrets.AnonymousPull {
 		return false
 	}
-	prefix := imageFlavor.MainRegistry + "/"
-	for _, img := range []string{
+	defaultImages := []string{
+		imageFlavor.MainImage(),
+		imageFlavor.CentralDBImage(),
+		imageFlavor.ScannerV4Image(),
+		imageFlavor.ScannerV4DBImage(),
+	}
+	configuredImages := []string{
 		c.K8sConfig.MainImage,
 		c.K8sConfig.CentralDBImage,
 		c.K8sConfig.ScannerV4Image,
 		c.K8sConfig.ScannerV4DBImage,
-	} {
-		if !strings.HasPrefix(img, prefix) {
+	}
+	for i, img := range configuredImages {
+		if imageRepository(img) != imageRepository(defaultImages[i]) {
 			return false
 		}
 	}
 	return true
+}
+
+// imageRepository returns the image reference without tag or digest, i.e. registry/repository.
+func imageRepository(ref string) string {
+	noDigest, _ := stringutils.Split2(ref, "@")
+	parts := strings.Split(noDigest, "/")
+	name, _ := stringutils.Split2(parts[len(parts)-1], ":")
+	parts[len(parts)-1] = name
+	return strings.Join(parts, "/")
 }
