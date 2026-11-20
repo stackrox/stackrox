@@ -1,5 +1,5 @@
-FROM quay.io/sclorg/postgresql-15-c9s:latest AS pg15-source
-FROM quay.io/sclorg/postgresql-16-c9s:latest
+ARG PG_VERSION=16
+FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest
 
 USER root
 
@@ -7,9 +7,6 @@ ENV LANG="en_US.utf8"
 
 # This will be ignored if empty in the init script.
 COPY --link init-bundles/db-init.dump.zst /db-init.dump.zst
-
-# Copy PG15 extensions from the PG15 image to PG15 lib directory for fallback
-COPY --from=pg15-source /usr/lib64/pgsql/uuid-ossp.so /usr/lib64/pgsql/postgresql-15/lib/
 
 RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     --mount=type=cache,target=/var/cache/yum,sharing=locked \
