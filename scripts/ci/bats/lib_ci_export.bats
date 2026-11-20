@@ -35,34 +35,28 @@ function teardown() {
         GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 \
         SLACK_MAIN_WEBHOOK \
         GCP_PROJECT_NUMBER_WORKLOAD_IDENTITY; do
-        run ci_export "$name" "val-${name}"
+        run ci_export "$name" "my-secret-value"
         assert_success
-        assert_output "::add-mask::val-${name}"
+        assert_output "::add-mask::my-secret-value"
     done
 }
 
-@test "does not mask names where a sensitive word is not at the end" {
+@test "masks names where a sensitive word is not at the end" {
     local name
     for name in ROX_UI_SECRETS_PAGE_MIGRATION GENERIC_WEBHOOK_SERVER_CA_CONTENTS ROX_KEYCLOAK_URL; do
-        run ci_export "$name" "val-${name}"
+        run ci_export "$name" "my-secret-value"
         assert_success
-        assert_output ""
+        assert_output "::add-mask::my-secret-value"
     done
 }
 
 @test "does not mask placeholder values of sensitive names" {
     local value
-    for value in DISABLED true False enabled none null; do
+    for value in DISABLED true False enabled none null On off AUTO '[]' '{}'; do
         run ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "$value"
         assert_success
         assert_output ""
     done
-}
-
-@test "does not mask lines without alphanumeric characters" {
-    run ci_export GCP_SERVICE_ACCOUNT_STACKROX_CI $'{\n  "type": "service_account",\n}'
-    assert_success
-    assert_output '::add-mask::  "type": "service_account",'
 }
 
 @test "does not mask non-sensitive values" {
@@ -72,18 +66,10 @@ function teardown() {
     assert_equal "$(cat "$GITHUB_ENV")" "API_ENDPOINT=localhost:8000"
 }
 
-@test "does not mask names that only contain a sensitive word" {
-    run ci_export ROX_UI_SECRETS_PAGE_MIGRATION "true"
-    assert_success
-    assert_output ""
-}
-
-@test "masks each line of a multi-line sensitive value" {
+@test "masks a multi-line sensitive value as a single escaped mask" {
     run ci_export MY_SECRET $'line1\n\nline2'
     assert_success
-    assert_line --index 0 "::add-mask::line1"
-    assert_line --index 1 "::add-mask::line2"
-    assert_equal "${#lines[@]}" 2
+    assert_output "::add-mask::line1%0A%0Aline2"
 }
 
 @test "escapes workflow-command data in the mask but not in GITHUB_ENV" {
