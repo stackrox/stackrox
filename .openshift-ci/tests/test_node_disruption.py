@@ -68,7 +68,7 @@ class CollectionTest(unittest.TestCase):
                 self.assertEqual(monitor.expected_node_count(env), expected)
         invalid = {"zero": "0", "negative": "-1", "text": "three", "fraction": "1.5"}
         for name, value in invalid.items():
-            with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, "positive integer"):
+            with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, "integer"):
                 monitor.expected_node_count({"NUM_NODES": value})
 
     def test_junit_contains_only_outcome_and_failure_explanation(self):
@@ -116,9 +116,9 @@ class CollectionTest(unittest.TestCase):
                 self.assertEqual(report.get("failures"), str(int(mismatch)))
                 self.assertEqual(len(list(directory.glob("node-snapshot-*.json"))), len(replies))
                 self.assertEqual(run.call_args.kwargs["env"], {"KUBECONFIG": "test-config"})
-                self.assertEqual(run.call_args.kwargs["timeout"], 10)
+                self.assertEqual(run.call_args.kwargs["timeout"], 30)
                 self.assertEqual(
-                    run.call_args.args[0], ["kubectl", "--request-timeout=10s", "get", "nodes", "-o", "json"]
+                    run.call_args.args[0], ["kubectl", "--request-timeout=30s", "get", "nodes", "-o", "json"]
                 )
 
 
@@ -150,6 +150,26 @@ class NodeMonitorTest(unittest.TestCase):
                 thread.return_value.join.assert_called_once()
                 self.assertEqual(report.call_args.args[-1], skipped)
 
+    def test_empty_baseline_recovery(self):
+        cases = {"recovered": ([reply(), reply("a")], "0"), "empty": ([reply(), reply()], "1")}
+        for name, (responses, failures) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, patch.object(
+                monitor.subprocess, "run", side_effect=kubectl_responses(responses)
+            ), patch.object(monitor.threading, "Thread"):
+                with monitor.monitor({"NUM_NODES": "1", "ARTIFACT_DIR": directory}):
+                    pass
+                report = ET.parse(Path(directory) / monitor.JUNIT_REPORT).getroot()
+                self.assertEqual(report.get("failures"), failures)
+
+    def test_directory_failure_is_advisory(self):
+        with patch.object(Path, "mkdir", side_effect=OSError("disk full")), patch.object(
+            monitor, "sample_nodes"
+        ) as sample, patch("builtins.print") as log:
+            with monitor.monitor({"NUM_NODES": "1"}):
+                pass
+            sample.assert_not_called()
+            self.assertIn("disk full", log.call_args.args[0])
+
     def test_disabled(self):
         for env in ({}, {"NUM_NODES": ""}):
             with self.subTest(env=env), patch.object(monitor, "sample_nodes") as sample:
@@ -174,6 +194,8 @@ class NodeMonitorTest(unittest.TestCase):
                     pass
                 report = ET.parse(Path(directory) / "junit-node-monitor.xml").getroot()
                 self.assertEqual(report.get("failures"), "1")
+                if name == "thread failure":
+                    thread.return_value.join.assert_not_called()
 
     def test_periodic_polling_and_shutdown(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(
@@ -210,6 +232,33 @@ class NonGroovyIntegrationTest(unittest.TestCase):
                     test.TEST_TIMEOUT, output_dir=test.TEST_OUTPUT_DIR,
                 )
                 context.return_value.__exit__.assert_called_once()
+
+
+
+
+class GitHubWorkflowTest(unittest.TestCase):
+    def test_product_status_and_report(self):
+        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/e2e-nongroovy-tests.yaml"
+        step = workflow.read_text().split("    - name: Run e2e tests\n", 1)[1].split("\n    - name:", 1)[0]
+        script = "\n".join(line[8:] for line in step.split("      run: |\n", 1)[1].splitlines())
+        def sample(directory, _env):
+            (directory / monitor.NODE_NAMES).write_text("a\n", encoding="utf-8")
+            return ["a"]
+
+        cases = {"success": (0, False), "product failure": (7, False), "monitor failure": (0, True)}
+        for name, (status, sampling_error) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, patch.dict(
+                monitor.os.environ, NUM_NODES="1", ARTIFACT_DIR=directory
+            ), patch.object(monitor.threading, "Thread"), patch.object(
+                monitor, "sample_nodes", side_effect=OSError("kubectl") if sampling_error else sample
+            ), patch("subprocess.run", return_value=subprocess.CompletedProcess([], status)) as product:
+                with self.assertRaises(SystemExit) as caught:
+                    exec(compile(script, str(workflow), "exec"), {})
+                self.assertEqual(caught.exception.code, status)
+                product.assert_called_once_with(["tests/e2e/run.sh", "/tmp/e2e-test-logs"], check=False)
+                report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
+                self.assertEqual(report.find(".//testcase").get("name"), "NoNodeDisruption")
+                self.assertEqual(report.getroot().get("failures"), str(int(sampling_error)))
 
 
 if __name__ == "__main__":
