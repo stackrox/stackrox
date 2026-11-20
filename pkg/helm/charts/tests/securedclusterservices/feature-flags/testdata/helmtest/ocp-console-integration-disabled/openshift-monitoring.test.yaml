@@ -1,0 +1,38 @@
+server:
+  availableSchemas:
+  - openshift-4.12
+  - com.coreos
+set:
+  env.openshift: 4
+  monitoring.openshift.enabled: false
+tests:
+- name: "Proxy resources are absent without console integration or custom metrics"
+  expect: |
+    .services["sensor-proxy"] | assertThat(. == null)
+    .networkpolicys["sensor-proxy"] | assertThat(. == null)
+    .servicemonitors["sensor-central-metrics-stackrox"] | assertThat(. == null)
+    [.deployments.sensor.spec.template.spec.containers[0].ports[] | select(.name == "proxy-https")] | assertThat(length == 0)
+    [.deployments.sensor.spec.template.spec.containers[0].volumeMounts[] | select(.name == "proxy-tls-volume")] | assertThat(length == 0)
+    [.deployments.sensor.spec.template.spec.volumes[] | select(.name == "proxy-tls-volume")] | assertThat(length == 0)
+
+- name: "Custom metrics alone enable the proxy and Prometheus ingress"
+  set:
+    monitoring.openshift.custom.enabled: true
+  expect: |
+    .services["sensor-proxy"].metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"] | assertThat(. == "sensor-proxy-tls")
+    .services["sensor-proxy"].metadata.labels["stackrox.io/sensor-proxy"] | assertThat(. == "true")
+    .services["sensor-proxy"].spec.ports | assertThat(. == [{"name": "https", "port": 443, "targetPort": "proxy-https", "protocol": "TCP"}])
+    [.deployments.sensor.spec.template.spec.containers[0].ports[] | select(.name == "proxy-https")] |
+      assertThat(. == [{"name": "proxy-https", "containerPort": 9444}])
+    [.deployments.sensor.spec.template.spec.containers[0].volumeMounts[] | select(.name == "proxy-tls-volume")] |
+      assertThat(. == [{"name": "proxy-tls-volume", "mountPath": "/run/secrets/stackrox.io/proxy-tls/", "readOnly": true}])
+    [.deployments.sensor.spec.template.spec.volumes[] | select(.name == "proxy-tls-volume")] |
+      assertThat(. == [{"name": "proxy-tls-volume", "secret": {"secretName": "sensor-proxy-tls"}}])
+    [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_SECURED_CLUSTER_METRICS_ENABLED")] |
+      assertThat(. == [{"name": "ROX_SECURED_CLUSTER_METRICS_ENABLED", "value": "true"}])
+    .networkpolicys["sensor-proxy"].spec.ingress | assertThat(length == 1)
+    .networkpolicys["sensor-proxy"].spec.ingress[0].from |
+      assertThat(. == [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "openshift-monitoring"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "prometheus"}}}])
+    .networkpolicys["sensor-proxy"].spec.ingress[0].ports | assertThat(. == [{"port": 9444, "protocol": "TCP"}])
+    .servicemonitors["sensor-central-metrics-stackrox"].spec.endpoints[0].path | assertThat(. == "/proxy/central/metrics")
+    .servicemonitors["sensor-monitor-stackrox"] | assertThat(. == null)

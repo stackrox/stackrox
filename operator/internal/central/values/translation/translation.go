@@ -105,8 +105,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		centralSpec = &platform.CentralComponentSpec{}
 	}
 
-	monitoring := c.Spec.Monitoring
-	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
+	v.AddChild("monitoring", translation.GetGlobalMonitoring(c.Spec.Monitoring))
 	central, err := getCentralComponentValues(ctx, centralSpec, c.GetNamespace(), t.client, deploymentDefaults)
 	if err != nil {
 		return nil, err

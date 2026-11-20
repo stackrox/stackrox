@@ -70,7 +70,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: sensor-monitoring-tls
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "sensor-monitoring-tls") | nindent 4 }}
   annotations:
@@ -86,20 +86,21 @@ spec:
   policyTypes:
     - Ingress
 {{- end }}
-{{- if and (eq ._rox.env.openshift 4) (or [< default false .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
+{{- if and (eq ._rox.env.openshift 4) (or [< default false .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled ._rox.sensor.centralProxy.enabled) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: sensor-proxy
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "sensor-proxy") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "sensor-proxy") | nindent 4 }}
 spec:
-  [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
+  {{- if or [< default false .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.monitoring.openshift.custom.enabled }}
   ingress:
+    [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
     - from:
         - namespaceSelector:
             matchLabels:
@@ -110,9 +111,22 @@ spec:
       ports:
         - port: 9444
           protocol: TCP
-  [<- else >]
+    [<- end >]
+    {{- if ._rox.monitoring.openshift.custom.enabled }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - port: 9444
+          protocol: TCP
+    {{- end }}
+  {{- else }}
   ingress: []
-  [<- end >]
+  {{- end }}
   podSelector:
     matchLabels:
       app: sensor
