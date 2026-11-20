@@ -32,12 +32,8 @@ import (
 
 func newPolicyHandlerFixture(t *testing.T) (*proxyTestFixture, *ClientPolicy) {
 	t.Helper()
-	policy := NewClientPolicy(fake.NewClientset())
-	t.Cleanup(policy.Stop)
-	require.NoError(t, policy.EnsureDefaults(t.Context()))
 	fixture := newProxyTestFixture(t, newAllowingAuthorizer(t))
-	fixture.handler.policy = policy
-	return fixture, policy
+	return fixture, fixture.handler.policy
 }
 
 func TestPolicyHandlerEnforcesIdentityAndRoutes(t *testing.T) {

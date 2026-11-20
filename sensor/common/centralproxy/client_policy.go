@@ -177,7 +177,7 @@ func consolePolicyHTTPScopes() tokens.HTTPRequestScopes {
 	return scopes
 }
 
-func (p *ClientPolicy) configureTLS(config *tls.Config, _ func([]*x509.Certificate)) {
+func (p *ClientPolicy) configureTLS(config *tls.Config) {
 	// Each entry verifies its own CA on every request, including reused connections.
 	config.ClientAuth = tls.RequestClientCert
 	config.ClientCAs = nil

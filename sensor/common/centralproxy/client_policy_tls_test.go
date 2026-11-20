@@ -16,8 +16,9 @@ func TestPolicyTLSAcceptsCertificatesFromReferencedCAs(t *testing.T) {
 	clientCA, clientKey, _ := clientPolicyTestCA(t)
 	serverCert := signedTestCertificate(t, serverCA, serverKey, "localhost", x509.ExtKeyUsageServerAuth)
 	clientCert := signedTestCertificate(t, clientCA, clientKey, "custom-client", x509.ExtKeyUsageClientAuth)
-	config, updateCA, updateCert := proxyTLSConfig(serverCert)
-	(&ClientPolicy{}).configureTLS(config, updateCA)
+	config, updateCert := proxyTLSConfig(serverCert)
+	(&ClientPolicy{}).configureTLS(config)
+	assert.True(t, config.SessionTicketsDisabled)
 	live, err := config.GetConfigForClient(nil)
 	require.NoError(t, err)
 	assert.Nil(t, live.ClientCAs, "policy verification must not advertise a shared CA pool")
@@ -48,5 +49,14 @@ func TestPolicyTLSAcceptsCertificatesFromReferencedCAs(t *testing.T) {
 	response, err := (&http.Client{Transport: transport}).Get(server.URL)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, response.StatusCode)
+	require.NoError(t, response.Body.Close())
+
+	withoutCertificate := &http.Transport{TLSClientConfig: &tls.Config{
+		RootCAs: roots, ServerName: "localhost", MinVersion: tls.VersionTLS12,
+	}}
+	t.Cleanup(withoutCertificate.CloseIdleConnections)
+	response, err = (&http.Client{Transport: withoutCertificate}).Get(server.URL)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
 	require.NoError(t, response.Body.Close())
 }

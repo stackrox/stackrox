@@ -1,13 +1,21 @@
 package centralproxy
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"io"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
@@ -37,6 +45,9 @@ func newReverseProxyForTest(baseURL *url.URL, transport http.RoundTripper) *http
 // newTestHandler creates a Handler for testing with the given components.
 func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTripper, authorizer *k8sAuthorizer, token string) *Handler {
 	t.Helper()
+	policy := NewClientPolicy(fake.NewClientset())
+	t.Cleanup(policy.Stop)
+	require.NoError(t, policy.EnsureDefaults(t.Context()))
 
 	transport := &scopedTokenTransport{
 		base: baseTransport,
@@ -47,7 +58,7 @@ func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTrip
 
 	return &Handler{
 		authorizer: authorizer,
-		policy:     &fixedClientPolicy{},
+		policy:     policy,
 		transport:  transport,
 		proxy:      newReverseProxyForTest(baseURL, transport),
 	}
@@ -204,4 +215,30 @@ func (f *proxyTestFixture) serveHTTP(t *testing.T, method, path string, headers 
 	w := httptest.NewRecorder()
 	f.handler.ServeHTTP(w, req)
 	return w
+}
+
+func signedTestCertificate(t *testing.T, ca *x509.Certificate, caKey *ecdsa.PrivateKey, cn string,
+	usage x509.ExtKeyUsage, expiry ...time.Time,
+) tls.Certificate {
+	t.Helper()
+	notAfter := time.Now().Add(time.Hour)
+	if len(expiry) > 0 {
+		notAfter = expiry[0]
+	}
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(time.Now().UnixNano()),
+		Subject:      pkix.Name{CommonName: cn},
+		DNSNames:     []string{"localhost"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     notAfter,
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{usage},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, ca, &key.PublicKey, caKey)
+	require.NoError(t, err)
+	leaf, err := x509.ParseCertificate(der)
+	require.NoError(t, err)
+	return tls.Certificate{Certificate: [][]byte{der, ca.Raw}, PrivateKey: key, Leaf: leaf}
 }
