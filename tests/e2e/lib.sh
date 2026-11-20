@@ -86,7 +86,9 @@ deploy_stackrox() {
     pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
 
     if retrying_kubectl </dev/null -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        cvss_load_probe
         wait_for_scanner_V4 "${central_namespace}"
+        info "CVSSPROBE matcher readiness gate PASSED at $(date -u +%H:%M:%S)"
     fi
 
     touch "${STATE_DEPLOYED}"
@@ -1638,6 +1640,37 @@ wait_for_scanner_V4() {
 
     wait_for_ready_deployment "$namespace" "scanner-v4-indexer" "$max_seconds"
     wait_for_ready_deployment "$namespace" "scanner-v4-matcher" "$matcher_max_seconds"
+}
+
+# cvss_load_probe is a diagnostic for ROX-36267/ROX-36688: matcher readiness
+# can flip before NVD CVSS enrichment completes, so vuln-dependent policies
+# silently do not fire. This probe samples forced scans of the fixture image
+# every CVSS_PROBE_INTERVAL seconds in the background, starting BEFORE the
+# readiness gate passes, capturing the enrichment curve relative to the flip
+# at a resolution the qa-tests-backend suite cannot match (its first sample
+# lands minutes after the gate). Output lines are prefixed CVSSPROBE and land
+# in the job log. Diagnostic only: it never gates or fails the run.
+cvss_load_probe() {
+    local image="${CVSS_PROBE_IMAGE:-quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3}"
+    local duration="${CVSS_PROBE_SECONDS:-1800}"
+    local interval="${CVSS_PROBE_INTERVAL:-10}"
+    (
+        local end=$((SECONDS + duration))
+        while (( SECONDS < end )); do
+            local ts resp summary
+            ts="$(date -u +%H:%M:%S)"
+            resp="$(curl -sk --max-time 20 -u "admin:${ROX_ADMIN_PASSWORD}" \
+                -H 'Content-Type: application/json' \
+                -d "{\"imageName\": \"${image}\", \"force\": true}" \
+                "https://${API_ENDPOINT}/v1/images/scan" 2>/dev/null)" || resp=""
+            summary="$(jq -r '[.scan.components[]?.vulns[]? | select(.fixedBy != "") | .cvss] as $f | "fixable=\($f|length) maxCvss=\($f|max // 0)"' <<<"$resp" 2>/dev/null)"
+            [[ -n "$summary" ]] || summary="scan_unavailable"
+            echo "CVSSPROBE ts=${ts} elapsed=${SECONDS}s ${summary}"
+            sleep "$interval"
+        done
+    ) &
+    CVSS_PROBE_PID=$!
+    info "CVSSPROBE background probe started (PID ${CVSS_PROBE_PID}, ${duration}s @ ${interval}s, image ${image})"
 }
 
 # shellcheck disable=SC2120
