@@ -214,8 +214,13 @@ class NodeMonitorTest(unittest.TestCase):
 
 class NonGroovyIntegrationTest(unittest.TestCase):
     def test_original_runner_and_exception_preserved(self):
-        for error in (None, RuntimeError("product"), subprocess.TimeoutExpired("product", 1)):
-            with self.subTest(error=error), patch.object(monitor, "monitor") as context, patch.object(
+        cases = {
+            "success": None,
+            "product failure": RuntimeError("product"),
+            "timeout": subprocess.TimeoutExpired("product", 1),
+        }
+        for name, error in cases.items():
+            with self.subTest(name=name), patch.object(monitor, "monitor") as context, patch.object(
                 NonGroovyE2e, "run_with_graceful_kill", side_effect=error
             ) as run:
                 context.return_value.__exit__.return_value = False
@@ -232,29 +237,36 @@ class NonGroovyIntegrationTest(unittest.TestCase):
                 )
                 context.return_value.__exit__.assert_called_once()
 
-
-
-
-class GitHubWorkflowTest(unittest.TestCase):
-    def test_product_status_and_report(self):
-        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/e2e-nongroovy-tests.yaml"
-        step = workflow.read_text().split("    - name: Run e2e tests\n", 1)[1].split("\n    - name:", 1)[0]
-        script = "\n".join(line[8:] for line in step.split("      run: |\n", 1)[1].splitlines())
+    def test_product_outcome_and_report(self):
         def sample(directory, _env):
             (directory / monitor.NODE_NAMES).write_text("a\n", encoding="utf-8")
             return ["a"]
 
-        cases = {"success": (0, False), "product failure": (7, False), "monitor failure": (0, True)}
-        for name, (status, sampling_error) in cases.items():
+        cases = {
+            "success": (None, False),
+            "product failure": (RuntimeError("product"), False),
+            "timeout": (subprocess.TimeoutExpired("product", 1), False),
+            "monitor failure": (None, True),
+            "both fail": (RuntimeError("product"), True),
+        }
+        for name, (error, sampling_error) in cases.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, patch.dict(
                 monitor.os.environ, NUM_NODES="1", ARTIFACT_DIR=directory
             ), patch.object(monitor.threading, "Thread"), patch.object(
                 monitor, "sample_nodes", side_effect=OSError("kubectl") if sampling_error else sample
-            ), patch("subprocess.run", return_value=subprocess.CompletedProcess([], status)) as product:
-                with self.assertRaises(SystemExit) as caught:
-                    exec(compile(script, str(workflow), "exec"), {})
-                self.assertEqual(caught.exception.code, status)
-                product.assert_called_once_with(["tests/e2e/run.sh", "/tmp/e2e-test-logs"], check=False)
+            ), patch.object(NonGroovyE2e, "run_with_graceful_kill", side_effect=error) as product:
+                test = NonGroovyE2e()
+                if error:
+                    with self.assertRaises(type(error)) as caught:
+                        test.run()
+                    self.assertIs(caught.exception, error)
+                else:
+                    test.run()
+                product.assert_called_once_with(
+                    ["tests/e2e/run.sh", "/tmp/e2e-test-logs"],
+                    180 * 60,
+                    output_dir="/tmp/e2e-test-logs",
+                )
                 report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
                 self.assertEqual(report.find(".//testcase").get("name"), "NoNodeDisruption")
                 self.assertEqual(report.getroot().get("failures"), str(int(sampling_error)))
