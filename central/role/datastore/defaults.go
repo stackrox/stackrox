@@ -19,13 +19,6 @@ type permSetAttributes struct {
 	scopeConstraint    storage.ScopeConstraint
 }
 
-func (attributes *permSetAttributes) getID() string {
-	if attributes.postgresID == "" {
-		return rolePkg.GeneratePermissionSetID()
-	}
-	return attributes.postgresID
-}
-
 var defaultPermissionSets = map[string]permSetAttributes{
 	accesscontrol.Admin: {
 		postgresID:         accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin],
@@ -195,7 +188,7 @@ func getDefaultPermissionSet(name string) *storage.PermissionSet {
 
 func newDefaultPermissionSet(name string, attributes permSetAttributes) *storage.PermissionSet {
 	return &storage.PermissionSet{
-		Id:               attributes.getID(),
+		Id:               attributes.postgresID,
 		Name:             name,
 		Description:      attributes.description,
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...),
