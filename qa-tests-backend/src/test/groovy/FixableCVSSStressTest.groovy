@@ -15,8 +15,8 @@ import spock.lang.Tag
 class FixableCVSSStressTest extends BaseSpecification {
 
     private static final String TEST_NAMESPACE = "qa-fixable-cvss-stress"
-    private static final int ITERATIONS = 20
-    private static final long DELAY_MS = 5000
+    private static final int ITERATIONS = 30
+    private static final long DELAY_MS = 60000
 
     def "Fixable CVSS >= 7 repeated scan diagnostic"() {
         given: "clone and enable the Fixable CVSS >= 7 policy"
@@ -24,14 +24,19 @@ class FixableCVSSStressTest extends BaseSpecification {
         Services.updatePolicyLifecycleStage(clone.name, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
         Services.setPolicyDisabled(clone.name, false)
 
-        when: "scan nginx-2.0.3 ${ITERATIONS} times"
+        when: "scan nginx-2.0.3 ${ITERATIONS} times, sampling over ~30 minutes"
+        // Each forced scan re-matches against the matcher's current vuln DB state;
+        // it does not prompt the updater. The iterations are passive samples that
+        // chart when CVSS enrichment becomes usable after the readiness gate passed.
         List<String> failures = []
         List<String> vulnCounts = []
+        long startMs = System.currentTimeMillis()
         for (int i = 1; i <= ITERATIONS; i++) {
             def scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa-multi-arch", "nginx-2.0.3")
             def alerts = scanResults.getAlertsList().findAll { it.getPolicy().name == clone.name }
             def vulnCount = scanResults.getAlertsList().size()
-            vulnCounts << "iter=${i}:alerts=${alerts.size()},total_alerts=${vulnCount}"
+            long elapsed = (System.currentTimeMillis() - startMs) / 1000
+            vulnCounts << "iter=${i}:t=${elapsed}s:alerts=${alerts.size()},total_alerts=${vulnCount}"
             if (alerts.size() != 1) {
                 failures << "iteration ${i}: ${alerts.size()} alerts for cloned policy (expected 1), total alerts: ${vulnCount}"
             }
