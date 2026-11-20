@@ -38,8 +38,8 @@ func TestIsDefaultPermissionSet(t *testing.T) {
 
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithTraits))
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithoutTraits))
-	assert.True(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy,
+	assert.True(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.K8sCentralProxyUser,
 		Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}))
-	assert.False(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy, Id: "custom-id"}))
+	assert.False(t, IsDefaultPermissionSet(&storage.PermissionSet{Name: accesscontrol.K8sCentralProxyUser, Id: "custom-id"}))
 	assert.False(t, IsDefaultPermissionSet(nonDefaultPermissionSet))
 }
