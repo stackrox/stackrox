@@ -10,6 +10,9 @@ import (
 )
 
 var staticDefaults = platform.SecuredClusterSpec{
+	Sensor: &platform.SensorComponentSpec{
+		CentralProxyEnabled: new(false),
+	},
 	AdmissionControl: &platform.AdmissionControlComponentSpec{
 		Bypass:        new(platform.BypassBreakGlassAnnotation),
 		FailurePolicy: new(platform.FailurePolicyIgnore),

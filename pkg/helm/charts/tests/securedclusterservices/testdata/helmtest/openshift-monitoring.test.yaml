@@ -6,6 +6,13 @@ server:
   - openshift-4.12
   - com.coreos
 tests:
+- name: "Central proxy opt-in is ignored outside OpenShift"
+  set:
+    env.openshift: false
+    sensor.centralProxy.enabled: true
+  expect: |
+    .services["sensor-proxy"] | assertThat(. == null)
+    [.deployments.sensor.spec.template.spec.containers[0].env[] | select(.name == "ROX_CENTRAL_PROXY_ENABLED")] | length | assertThat(. == 0)
 - name: "When enabled (legacy)"
   set:
     enableOpenShiftMonitoring: true
