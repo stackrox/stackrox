@@ -60,8 +60,8 @@ if [[ -z "${SHARED_DIR:-}" ]]; then
 fi
 
 if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
-    if [[ "${JOB_NAME:-}" =~ -ocp-4-22-(operator-e2e-tests|nongroovy-e2e-tests|scanner-v4-install-tests|qa-e2e-tests|ui-e2e-tests)$ ]]; then
-        # Start with the documented GCP SNO path; size from PR CI results.
+    if [[ "${JOB_NAME:-}" =~ -ocp-(4-22|5-0|next-candidate|dev-preview)-(operator-e2e-tests|nongroovy-e2e-tests|scanner-v4-install-tests|qa-e2e-tests|ui-e2e-tests)$ ]]; then
+        # Keep the validated node size while evaluating additional installer streams.
         set_ci_shared_export MASTER_NODE_COUNT 1
         set_ci_shared_export MASTER_NODE_TYPE e2-standard-16
         set_ci_shared_export WORKER_NODE_COUNT 0
