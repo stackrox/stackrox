@@ -230,7 +230,7 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 			require.NotNil(t, req)
 
 			require.Len(t, req.GetPermissionSets(), 1)
-			assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], req.GetPermissionSets()[0].GetId())
+			assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], req.GetPermissionSets()[0].GetId())
 			assert.Equal(t, map[string]centralv1.Access{
 				"Deployment": centralv1.Access_READ_ACCESS,
 				"Image":      centralv1.Access_READ_ACCESS,
@@ -377,7 +377,7 @@ func TestBuildTokenRequest(t *testing.T) {
 		req, err := provider.buildTokenRequest("")
 		require.NoError(t, err)
 		require.Len(t, req.GetPermissionSets(), 1)
-		assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], req.GetPermissionSets()[0].GetId())
+		assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], req.GetPermissionSets()[0].GetId())
 		assert.Len(t, req.GetPermissionSets()[0].GetHttpRequestScopes(), len(centralproxy.ConsoleHTTPScopes))
 		assert.Equal(t, map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,

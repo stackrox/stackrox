@@ -38,9 +38,9 @@ func expectPermissionSetLookup(t *testing.T, roles *roleMocks.MockDataStore, nam
 func TestCreateScopedRolesWithoutHTTPScopes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	roles := roleMocks.NewMockDataStore(ctrl)
-	expectPermissionSetLookup(t, roles, []string{accesscontrol.ConsoleProxy},
+	expectPermissionSetLookup(t, roles, []string{accesscontrol.K8sCentralProxyUser},
 		[]*storage.PermissionSet{{
-			Name: accesscontrol.ConsoleProxy,
+			Name: accesscontrol.K8sCentralProxyUser,
 			ResourceToAccess: map[string]storage.Access{
 				"Deployment": storage.Access_READ_ACCESS,
 				"Image":      storage.Access_READ_ACCESS,
@@ -51,7 +51,7 @@ func TestCreateScopedRolesWithoutHTTPScopes(t *testing.T) {
 	resolved, err := (&roleManager{roles}).createScopedRoles(t.Context(),
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
 			ClusterScopes:  []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"prod"}}},
-			PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
+			PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}}},
 		},
 	)
 	require.NoError(t, err)
@@ -137,32 +137,32 @@ func TestCreateScopedRolesFailsClosed(t *testing.T) {
 	_, err := manager.createScopedRoles(t.Context(), nil)
 	require.ErrorIs(t, err, errox.ServerError)
 	_, err = manager.createScopedRoles(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
+		PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}}}})
 	require.ErrorIs(t, err, errox.ServerError)
 
 	ctrl := gomock.NewController(t)
 	roles := roleMocks.NewMockDataStore(ctrl)
-	expectPermissionSetLookup(t, roles, []string{accesscontrol.ConsoleProxy}, nil, nil)
+	expectPermissionSetLookup(t, roles, []string{accesscontrol.K8sCentralProxyUser}, nil, nil)
 	manager.roleStore = roles
 	_, err = manager.createScopedRoles(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
+		PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}}}})
 	require.ErrorIs(t, err, errox.NotFound)
 }
 
 func TestCreateScopedRolesResolvesConsoleSetByName(t *testing.T) {
 	for name, id := range map[string]string{
 		"administrator set": "5e151917-5903-4701-9658-8fe4044c722f",
-		"default set":       accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+		"default set":       accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser],
 	} {
 		t.Run(name, func(t *testing.T) {
 			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
-			expectPermissionSetLookup(t, roles, []string{accesscontrol.ConsoleProxy}, []*storage.PermissionSet{{
-				Id: id, Name: accesscontrol.ConsoleProxy,
+			expectPermissionSetLookup(t, roles, []string{accesscontrol.K8sCentralProxyUser}, []*storage.PermissionSet{{
+				Id: id, Name: accesscontrol.K8sCentralProxyUser,
 				ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
 			}}, nil)
 			resolved, err := (&roleManager{roles}).createScopedRoles(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
+					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}}}})
 			require.NoError(t, err)
 			require.Len(t, resolved, 1)
 			assert.Equal(t, []string{"Deployment"}, resolved[0].Permissions[storage.Access_READ_ACCESS])
@@ -176,15 +176,15 @@ func TestCreateScopedRolesResolvesByID(t *testing.T) {
 		want   error
 	}{
 		"console default": {stored: &storage.PermissionSet{
-			Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
-			Name:             accesscontrol.ConsoleProxy,
+			Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser],
+			Name:             accesscontrol.K8sCentralProxyUser,
 			AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 			ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 			ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
 		}},
 		"missing": {want: errox.NotFound},
 		"different name": {stored: &storage.PermissionSet{
-			Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+			Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser],
 			Name:             "unexpected set",
 			AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 			ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
@@ -193,11 +193,11 @@ func TestCreateScopedRolesResolvesByID(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
-			roles.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]).
+			roles.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]).
 				Return(tc.stored, tc.stored != nil, nil)
 			resolved, err := (&roleManager{roles}).createScopedRoles(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}}}})
+					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]}}}})
 			if tc.want != nil {
 				require.ErrorIs(t, err, tc.want)
 				assert.Nil(t, resolved)
@@ -223,16 +223,16 @@ func TestCreateScopedRolesResolvesMixedSelectors(t *testing.T) {
 	expectPermissionSetLookup(t, roles, []string{"Image Reader"}, []*storage.PermissionSet{{
 		Id: "image-id", Name: "Image Reader", ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS},
 	}}, nil)
-	roles.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]).
+	roles.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]).
 		Return(&storage.PermissionSet{
-			Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], Name: accesscontrol.ConsoleProxy,
+			Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], Name: accesscontrol.K8sCentralProxyUser,
 			AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 			ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 			ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
 		}, true, nil)
 	scoped, err := (&roleManager{roles}).createScopedRoles(t.Context(), &v1.GenerateTokenForPermissionsAndScopeRequest{
 		PermissionSets: []*v1.ScopedPermissionSet{
-			{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+			{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]},
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/deployments", Methods: []string{"GET"}}}},
 			{Selector: &v1.ScopedPermissionSet_Name{Name: "Image Reader"},
 				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}}},
@@ -317,11 +317,11 @@ func TestCreateScopedRolesUsesStoredPermissions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			roles := roleMocks.NewMockDataStore(ctrl)
-			expectPermissionSetLookup(t, roles, []string{accesscontrol.ConsoleProxy},
-				[]*storage.PermissionSet{{Name: accesscontrol.ConsoleProxy, ResourceToAccess: tc.permissions}}, nil)
+			expectPermissionSetLookup(t, roles, []string{accesscontrol.K8sCentralProxyUser},
+				[]*storage.PermissionSet{{Name: accesscontrol.K8sCentralProxyUser, ResourceToAccess: tc.permissions}}, nil)
 			resolved, err := (&roleManager{roles}).createScopedRoles(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
-					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}}})
+					PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}}}})
 			if tc.wantErr {
 				require.ErrorIs(t, err, errox.InvalidArgs)
 				assert.Nil(t, resolved)
@@ -337,10 +337,10 @@ func TestCreateScopedRolesUsesStoredPermissions(t *testing.T) {
 func TestCreateScopedRolesKeepsUnscopedPermissionsSeparate(t *testing.T) {
 	roles := roleMocks.NewMockDataStore(gomock.NewController(t))
 	expectPermissionSetLookup(t, roles,
-		[]string{accesscontrol.ConsoleProxy, accesscontrol.OpenShiftPrometheus},
+		[]string{accesscontrol.K8sCentralProxyUser, accesscontrol.OpenShiftPrometheus},
 		[]*storage.PermissionSet{
 			{
-				Name: accesscontrol.ConsoleProxy,
+				Name: accesscontrol.K8sCentralProxyUser,
 				ResourceToAccess: map[string]storage.Access{
 					"Deployment":   storage.Access_READ_ACCESS,
 					"Image":        storage.Access_NO_ACCESS,
@@ -363,7 +363,7 @@ func TestCreateScopedRolesKeepsUnscopedPermissionsSeparate(t *testing.T) {
 		&v1.GenerateTokenForPermissionsAndScopeRequest{
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: "sensor-cluster", Namespaces: []string{"*"}}},
 			PermissionSets: []*v1.ScopedPermissionSet{
-				{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+				{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}},
 				{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.OpenShiftPrometheus}},
 			},
 		})
@@ -401,18 +401,18 @@ func TestCreateScopedRolesFailsIfAnyPermissionSetCannotBeLoaded(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			roles := roleMocks.NewMockDataStore(gomock.NewController(t))
 			matches := []*storage.PermissionSet{{
-				Name: accesscontrol.ConsoleProxy,
+				Name: accesscontrol.K8sCentralProxyUser,
 				ResourceToAccess: map[string]storage.Access{
 					"Deployment": storage.Access_READ_ACCESS,
 				},
 			}}
 			matches = append(matches, tc.permissionSets...)
 			expectPermissionSetLookup(t, roles,
-				[]string{accesscontrol.ConsoleProxy, accesscontrol.OpenShiftPrometheus}, matches, tc.storeErr)
+				[]string{accesscontrol.K8sCentralProxyUser, accesscontrol.OpenShiftPrometheus}, matches, tc.storeErr)
 			resolved, err := (&roleManager{roles}).createScopedRoles(t.Context(),
 				&v1.GenerateTokenForPermissionsAndScopeRequest{
 					PermissionSets: []*v1.ScopedPermissionSet{
-						{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+						{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}},
 						{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.OpenShiftPrometheus}},
 					}})
 			assert.Nil(t, resolved)
