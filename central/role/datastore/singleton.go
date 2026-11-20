@@ -47,7 +47,7 @@ func seedDefaultPermissionSets(ctx context.Context, permissionSetStorage store.P
 	var consoleProxy *storage.PermissionSet
 	others := make([]*storage.PermissionSet, 0, len(defaults))
 	for _, permissionSet := range defaults {
-		if permissionSet.GetName() == accesscontrol.ConsoleProxy {
+		if permissionSet.GetName() == accesscontrol.K8sCentralProxyUser {
 			consoleProxy = permissionSet
 		} else {
 			others = append(others, permissionSet)

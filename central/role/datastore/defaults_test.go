@@ -21,7 +21,7 @@ func TestDefaultPermissionSetConstraints(t *testing.T) {
 		accesscontrol.Admin:                 {},
 		accesscontrol.Analyst:               {access: storage.AccessConstraint_ACCESS_CONSTRAINT_READ},
 		accesscontrol.ContinuousIntegration: {},
-		accesscontrol.ConsoleProxy: {
+		accesscontrol.K8sCentralProxyUser: {
 			access: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 			scope:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 		},

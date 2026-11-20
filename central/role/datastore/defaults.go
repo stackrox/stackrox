@@ -127,9 +127,9 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.View(resources.Cluster),
 		},
 	},
-	accesscontrol.ConsoleProxy: {
-		postgresID:       accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
-		description:      "Access for Sensor-proxied OpenShift console requests",
+	accesscontrol.K8sCentralProxyUser: {
+		postgresID:       accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser],
+		description:      "For users: sensor-proxied requests by Kubernetes-authenticated users, including OpenShift Console",
 		accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 		scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 		resourceWithAccess: []permissions.ResourceWithAccess{
