@@ -10,6 +10,7 @@ import spock.lang.Tag
  * scanner state (scattered failures). See also ROX-36688 and ROX-39709.
  */
 @Tag("Parallel")
+@Tag("BAT")
 @Tag("PZ")
 class FixableCVSSStressTest extends BaseSpecification {
 

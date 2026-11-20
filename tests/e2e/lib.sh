@@ -89,6 +89,10 @@ deploy_stackrox() {
         wait_for_scanner_V4 "${central_namespace}"
     fi
 
+    # Wait for CVSS enrichment (ROX-36267/ROX-36688): the matcher can report
+    # ready before NVD scores are imported, causing vuln-dependent tests to fail.
+    wait_for_scored_image_scan_e2e
+
     touch "${STATE_DEPLOYED}"
 }
 
@@ -2152,4 +2156,44 @@ update_junit_prefix_with_central_and_sensor_version() {
         [[ ! -e $f ]] && continue
         sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
     done
+}
+
+# wait_for_scored_image_scan_e2e works around ROX-36267/ROX-36688: the matcher's
+# readiness (SCANNER_V4_MATCHER_READINESS=vulnerability) can precede NVD CVSS
+# enrichment, leaving fixable CVEs with CVSS zero. This forces a scan through
+# Central and waits until the result includes a fixable CVE with CVSS >= 7.
+# Uses the same fixture image as the upgrade preflight (PR #23539).
+wait_for_scored_image_scan_e2e() {
+    local image="${1:-quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine}"
+    local max_seconds="${SCANNER_V4_SCAN_READINESS_TIMEOUT:-300}"
+    local deadline=$((SECONDS + max_seconds))
+
+    info "Waiting for CVSS enrichment (timeout: ${max_seconds}s, image: ${image})"
+    while (( SECONDS < deadline )); do
+        local response
+        # Use the Central API directly with basic auth from the environment
+        if response="$(
+            curl --silent --show-error --fail --max-time 30 \
+                -u "${ROX_ADMIN_PASSWORD:+admin:}${ROX_ADMIN_PASSWORD}" \
+                -H 'Content-Type: application/json' \
+                -d "{\"imageName\": \"${image}\", \"force\": true}" \
+                "https://${API_ENDPOINT}/v1/images/scan" 2>&1
+        )"; then
+            # Check if any fixable CVE has CVSS >= 7
+            if jq -e 'any(.scan.components[]?.vulns[]?; (.cvss // 0) >= 7 and (.fixedBy // "") != "")' \
+                <<<"$response" >/dev/null 2>&1; then
+                info "CVSS enrichment is ready"
+                return 0
+            fi
+            info "Scan completed but no fixable CVEs with CVSS >= 7 yet (enrichment still loading)"
+        else
+            info "Scan request failed: ${response:0:120}"
+        fi
+        sleep 10
+    done
+    # Don't die — log a warning and let the test decide. If enrichment is truly
+    # broken, the test will fail with its normal assertion, which is clearer
+    # than a preflight timeout.
+    log WARN "CVSS enrichment preflight did not complete within ${max_seconds}s; continuing anyway"
+    return 0
 }
