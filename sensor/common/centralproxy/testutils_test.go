@@ -1,7 +1,6 @@
 package centralproxy
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -34,47 +34,22 @@ func newReverseProxyForTest(baseURL *url.URL, transport http.RoundTripper) *http
 	}
 }
 
-// testClusterIDGetter is a test implementation of clusterIDGetter.
-type testClusterIDGetter struct {
-	clusterID string
-}
-
-func (t *testClusterIDGetter) GetNoWait() string {
-	return t.clusterID
-}
-
-// mockTokenTransport is a test RoundTripper that injects a static token or returns an error.
-type mockTokenTransport struct {
-	base  http.RoundTripper
-	token string
-	err   error
-}
-
-func (m *mockTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	if m.base == nil {
-		return nil, errors.New("mockTokenTransport: base transport is nil")
-	}
-	reqCopy := req.Clone(req.Context())
-	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", m.token))
-	return m.base.RoundTrip(reqCopy) //nolint:wrapcheck
-}
-
 // newTestHandler creates a Handler for testing with the given components.
 func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTripper, authorizer *k8sAuthorizer, token string) *Handler {
 	t.Helper()
 
-	transport := &mockTokenTransport{
-		base:  baseTransport,
-		token: token,
+	transport := &scopedTokenTransport{
+		base: baseTransport,
+		tokenProvider: newTestTokenProvider(&fakeTokenServiceClient{
+			response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: token},
+		}, "test-cluster-id"),
 	}
 
 	return &Handler{
-		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
-		authorizer:      authorizer,
-		proxy:           newReverseProxyForTest(baseURL, transport),
+		authorizer: authorizer,
+		policy:     &fixedClientPolicy{},
+		transport:  transport,
+		proxy:      newReverseProxyForTest(baseURL, transport),
 	}
 }
 
@@ -82,15 +57,9 @@ func newTestHandler(t *testing.T, baseURL *url.URL, baseTransport http.RoundTrip
 func newTestHandlerWithTransportError(t *testing.T, baseURL *url.URL, authorizer *k8sAuthorizer, transportErr error) *Handler {
 	t.Helper()
 
-	transport := &mockTokenTransport{
-		err: transportErr,
-	}
-
-	return &Handler{
-		clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
-		authorizer:      authorizer,
-		proxy:           newReverseProxyForTest(baseURL, transport),
-	}
+	return newTestHandler(t, baseURL, pkghttputil.RoundTripperFunc(func(*http.Request) (*http.Response, error) {
+		return nil, transportErr
+	}), authorizer, "test-token")
 }
 
 // newAllowingAuthorizer creates a k8sAuthorizer with a fake client that allows all authorization requests.
@@ -181,6 +150,7 @@ func setupCentralCapsForTest(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{
 		centralsensor.InternalTokenAPISupported,
 		centralsensor.CentralProxyPathFiltering,
+		centralsensor.CentralProxyPerAccessTokens,
 	})
 	allowedpaths.Set([]string{"/v1/", "/v2/", "/api/graphql", "/api/v1/"})
 	t.Cleanup(func() {
