@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -40,11 +41,9 @@ function RiskTablePanel({
 }: RiskTablePanelProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
 
-    // Apply regex/exact-match and key=value label formatting expected by the search API, matching
-    // the other compound search filter pages. Without this, an autocomplete-selected label such as
-    // "app=visa-processor" reaches the backend quoted as a single token and never matches.
-    // Memoized because applyRegexSearchModifiers clones into a new object; an unstable reference
-    // would re-trigger the data-fetching hooks every render (infinite loading loop).
+    // Format values for the search API (e.g. a selected label "app=visa-processor" must become
+    // key=value, else it never matches). Memoized: applyRegexSearchModifiers clones, so a fresh
+    // reference each render would re-trigger the fetch hooks (loop).
     const requestSearchFilter = useMemo(
         () => applyRegexSearchModifiers(searchFilter),
         [searchFilter]
@@ -60,6 +59,14 @@ function RiskTablePanel({
     const { data: deploymentCount = 0 } = useDeploymentsCount({
         searchFilter: requestSearchFilter,
     });
+
+    // Server-side pagination: a page past the end returns an empty offset, so snap back to page 1
+    // once the real count is known (after first render, to not clobber a valid deep link).
+    useEffectAfterFirstRender(() => {
+        if (page > Math.ceil(deploymentCount / perPage)) {
+            setPage(1);
+        }
+    }, [deploymentCount, perPage, setPage]);
 
     const tableState = getTableUIState({ isLoading, data, error, searchFilter });
 

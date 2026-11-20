@@ -113,7 +113,7 @@ describe('Risk', () => {
             cy.get(RiskPageSelectors.search.filterChips).within(() => {
                 // Chip group category is the attribute's filterChipLabel, plus the value chip.
                 cy.contains('Namespace name');
-                cy.contains('.pf-v6-c-label', nsValue);
+                cy.contains(pf6.label, nsValue);
             });
         });
 
@@ -129,9 +129,9 @@ describe('Risk', () => {
             cy.get(RiskPageSelectors.search.filterChipGroup).should('have.length', 2);
             cy.get(RiskPageSelectors.search.filterChips).within(() => {
                 cy.contains('Namespace name');
-                cy.contains('.pf-v6-c-label', nsValue);
+                cy.contains(pf6.label, nsValue);
                 cy.contains('Deployment name');
-                cy.contains('.pf-v6-c-label', deployValue);
+                cy.contains(pf6.label, deployValue);
             });
         });
     });

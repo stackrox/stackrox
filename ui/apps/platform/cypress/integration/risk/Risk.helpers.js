@@ -9,8 +9,6 @@ const basePath = '/main/risk/workloads';
 export const deploymentswithprocessinfoAlias = 'deploymentswithprocessinfo';
 export const deploymentscountAlias = 'deploymentscount';
 
-// The compound search filter uses a static curated config, so the page no longer issues the
-// searchOptions GraphQL query that the legacy SearchFilterInput relied on.
 const routeMatcherMap = {
     [deploymentswithprocessinfoAlias]: {
         method: 'GET',
