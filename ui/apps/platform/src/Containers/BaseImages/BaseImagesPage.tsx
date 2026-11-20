@@ -114,12 +114,14 @@ function BaseImagesPage() {
                     error={baseImagesRequest.error as Error | null}
                 />
             </PageSection>
-            <BaseImagesModal
-                isOpen={isModalOpen}
-                onClose={handleModalClose}
-                onSuccess={handleModalSuccess}
-                baseImageToEdit={baseImageToEdit}
-            />
+            {isModalOpen && (
+                <BaseImagesModal
+                    isOpen={isModalOpen}
+                    onClose={handleModalClose}
+                    onSuccess={handleModalSuccess}
+                    baseImageToEdit={baseImageToEdit}
+                />
+            )}
             {baseImageToDelete && (
                 <ConfirmationModal
                     title="Delete base image?"
