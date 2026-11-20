@@ -53,7 +53,6 @@ class CollectionTest(unittest.TestCase):
             self.assertTrue(report.is_file())
             self.assertRegex(report.name, r".*junit.*\.xml")
             self.assertEqual(ET.parse(report).getroot().get("failures"), "0")
-            self.assertFalse((root / "junit-node-monitor.xml.tmp").exists())
             self.assertFalse((root / "node-monitor.xml").exists())
 
     def test_expected_count(self):

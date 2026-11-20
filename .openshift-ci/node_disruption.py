@@ -70,10 +70,9 @@ def write_report(directory, expected, errors, cancelled=False):
         ET.SubElement(case, "failure").text = detail
     elif skipped:
         ET.SubElement(case, "skipped")
-    # Publish complete XML so artifact consumers never see a partial report.
-    temporary = directory / f"{JUNIT_REPORT}.tmp"
-    temporary.write_text(ET.tostring(suite, encoding="unicode", xml_declaration=True), encoding="utf-8")
-    temporary.replace(directory / JUNIT_REPORT)
+    (directory / JUNIT_REPORT).write_text(
+        ET.tostring(suite, encoding="unicode", xml_declaration=True), encoding="utf-8"
+    )
     return failed
 
 
