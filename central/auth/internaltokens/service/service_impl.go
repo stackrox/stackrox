@@ -41,10 +41,16 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster),
 		),
 	)
+
+	accessReadChecker = sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Access),
+	)
 )
 
 type serviceImpl struct {
-	issuer tokens.Issuer
+	issuer       tokens.Issuer
+	scopedIssuer tokens.Issuer
 
 	roleManager *roleManager
 
@@ -91,19 +97,34 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	tokenRole, err := s.roleManager.createRoleForRoxClaims(ctx, req)
+	var tokenRoles []*tokens.InternalRole
+	if len(req.GetPermissionSets()) > 0 {
+		roleReadCtx := sac.WithGlobalAccessScopeChecker(ctx, accessReadChecker)
+		tokenRoles, err = s.roleManager.createScopedRoles(roleReadCtx, req)
+	} else {
+		var tokenRole *tokens.InternalRole
+		tokenRole, err = s.roleManager.createRoleForRoxClaims(ctx, req)
+		tokenRoles = []*tokens.InternalRole{tokenRole}
+	}
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
 		return nil, errors.Wrap(err, "building ephemeral role")
 	}
-	roleName := tokenRole.GetRoleName()
-	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
+	claimName := fmt.Sprintf(claimNameFormat, tokenRoles[0].GetRoleName(), expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{
-		InternalRoles: []*tokens.InternalRole{tokenRole},
+		InternalRoles: tokenRoles,
 		Name:          claimName,
 		Requester:     req.GetRequester(),
 	}
-	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
+	var hasHTTPScopes bool
+	for _, role := range tokenRoles {
+		hasHTTPScopes = hasHTTPScopes || role.HTTPRequestScopes != nil
+	}
+	issuer := s.issuer
+	if hasHTTPScopes {
+		issuer = s.scopedIssuer
+	}
+	tokenInfo, err := issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {
 		observeTokenGeneration(tokenGenResultIssuanceError, time.Since(start))
 		return nil, err

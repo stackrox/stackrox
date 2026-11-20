@@ -9,16 +9,20 @@ import (
 
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	roleDataStoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
+	"github.com/stackrox/rox/pkg/centralproxy"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -47,6 +51,70 @@ func sensorContext(t testing.TB, ctrl *gomock.Controller, clusterID string) cont
 		Type: storage.ServiceType_SENSOR_SERVICE,
 	}).AnyTimes()
 	return authn.ContextWithIdentity(t.Context(), mockIdentity, t)
+}
+
+func TestGenerateTokenWithPerAccessPermissions(t *testing.T) {
+	for name, tc := range map[string]struct {
+		deploymentPath string
+		imagePath      string
+		httpScoped     bool
+	}{
+		"all scoped":         {deploymentPath: "/v1/deployments", imagePath: "/v1/images", httpScoped: true},
+		"all unscoped":       {},
+		"first unscoped":     {imagePath: "/v1/images", httpScoped: true},
+		"last unscoped":      {deploymentPath: "/v1/deployments", httpScoped: true},
+		"overlapping routes": {deploymentPath: "/v1/images", imagePath: "/v1/images", httpScoped: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			store := roleDataStoreMocks.NewMockDataStore(ctrl)
+			expectPermissionSetLookup(t, store, []string{"Deployment Reader", "Image Reader"}, []*storage.PermissionSet{
+				{Name: "Image Reader", ResourceToAccess: map[string]storage.Access{"Image": storage.Access_READ_ACCESS}},
+				{Name: "Deployment Reader", ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS}},
+			}, nil)
+			grants := []*v1.ScopedPermissionSet{
+				{Selector: &v1.ScopedPermissionSet_Name{Name: "Deployment Reader"}},
+				{Selector: &v1.ScopedPermissionSet_Name{Name: "Image Reader"}},
+			}
+			claims := tokens.RoxClaims{
+				InternalRoles: []*tokens.InternalRole{
+					{RoleName: internalRoleName, Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}}},
+					{RoleName: internalRoleName, Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Image"}}},
+				},
+				Name:      fmt.Sprintf(claimNameFormat, internalRoleName, testTokenExpiry.Format(time.RFC3339Nano)),
+				Requester: "test-client",
+			}
+			for i, path := range []string{tc.deploymentPath, tc.imagePath} {
+				if path != "" {
+					grants[i].HttpRequestScopes = []*apiV1.HTTPRequestScope{{Path: path, Methods: []string{"GET"}}}
+					claims.InternalRoles[i].HTTPRequestScopes = tokens.HTTPRequestScopes{path: {"GET"}}
+				}
+			}
+			clusters := tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}}
+			for _, role := range claims.InternalRoles {
+				role.Clusters = clusters
+			}
+			issuer := tokensMocks.NewMockIssuer(ctrl)
+			scopedIssuer := tokensMocks.NewMockIssuer(ctrl)
+			selectedIssuer := issuer
+			if tc.httpScoped {
+				selectedIssuer = scopedIssuer
+			}
+			selectedIssuer.EXPECT().Issue(gomock.Any(), claims, gomock.Any()).Return(&tokens.TokenInfo{Token: "test-token"}, nil)
+			svc := &serviceImpl{issuer: issuer, scopedIssuer: scopedIssuer, roleManager: &roleManager{roleStore: store},
+				policy: defaultTokenPolicy(), now: testClock}
+			response, err := svc.GenerateTokenForPermissionsAndScope(sensorContext(t, ctrl, fixtureconsts.Cluster1),
+				&v1.GenerateTokenForPermissionsAndScopeRequest{
+					ClusterScopes:  []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"namespace A"}}},
+					Lifetime:       testExpirationDuration,
+					Requester:      "test-client",
+					PermissionSets: grants,
+					Permissions:    map[string]v1.Access{"NetworkGraph": v1.Access_READ_WRITE_ACCESS},
+				})
+			require.NoError(t, err)
+			assert.Equal(t, "test-token", response.GetToken())
+		})
+	}
 }
 
 func TestGetExpiresAt(t *testing.T) {
@@ -103,6 +171,7 @@ type mockContainer struct {
 	clusterStore *clusterDataStoreMocks.MockDataStore
 	roleStore    *roleDataStoreMocks.MockDataStore
 	issuer       *tokensMocks.MockIssuer
+	scopedIssuer *tokensMocks.MockIssuer
 }
 
 func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
@@ -152,6 +221,16 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				// The missing lifetime field causes computation of the
 				// token expiration to fail.
 				Lifetime: nil,
+			},
+			expectedErr: errox.InvalidArgs,
+		},
+		"duplicate permission sets": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{
+					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+				},
+				Lifetime: testExpirationDuration,
 			},
 			expectedErr: errox.InvalidArgs,
 		},
@@ -254,7 +333,118 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		setup       func(*testing.T, *mockContainer)
 		expectedRsp *v1.GenerateTokenForPermissionsAndScopeResponse
 	}{
-		"success - standard request": {
+		"success - console permission set by ID": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{{
+					Selector:          &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+					HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
+				}},
+				Lifetime: testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(_ *testing.T, mocks *mockContainer) {
+				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]).
+					Return(&storage.PermissionSet{
+						Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+						Name:             accesscontrol.ConsoleProxy,
+						AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+						ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+						ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+					}, true, nil)
+				mocks.scopedIssuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName:          internalRoleName,
+						Permissions:       map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+						HTTPRequestScopes: tokens.HTTPRequestScopes{"/api/graphql": {"POST"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
+						testTokenExpiry.Format(time.RFC3339Nano)),
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-id-token"}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-id-token"},
+		},
+		"success - secured-cluster metrics permission set": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{{
+					Selector:          &v1.ScopedPermissionSet_Name{Name: accesscontrol.OpenShiftPrometheus},
+					HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"GET"}}},
+				}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1, FullClusterAccess: true}},
+				Permissions:   map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
+				Lifetime:      testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(t *testing.T, mocks *mockContainer) {
+				mocks.roleStore.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+						_, hasDeadline := ctx.Deadline()
+						assert.True(t, hasDeadline)
+						assert.True(t, filter(&storage.PermissionSet{Name: accesscontrol.OpenShiftPrometheus}))
+						return []*storage.PermissionSet{{
+							Name:             accesscontrol.OpenShiftPrometheus,
+							AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+							ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+							ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+						}}, nil
+					})
+				mocks.scopedIssuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName: internalRoleName,
+						Permissions: map[storage.Access][]string{
+							storage.Access_READ_ACCESS: {"Deployment"},
+						},
+						HTTPRequestScopes: centralproxy.MetricsHTTPScopes,
+						Clusters:          tokens.ClusterScopes{fixtureconsts.Cluster1: {"*"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
+						testTokenExpiry.Format(time.RFC3339Nano)),
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "cluster-metrics-token"}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "cluster-metrics-token"},
+		},
+		"success - console permission set with namespace scope": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{{
+					Selector:          &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy},
+					HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+				}},
+				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:      testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(t *testing.T, mocks *mockContainer) {
+				mocks.roleStore.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+						_, hasDeadline := ctx.Deadline()
+						assert.True(t, hasDeadline)
+						assert.True(t, filter(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy}))
+						return []*storage.PermissionSet{{
+							Name:             accesscontrol.ConsoleProxy,
+							AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+							ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+							ResourceToAccess: map[string]storage.Access{
+								"Deployment": storage.Access_READ_ACCESS,
+								"Image":      storage.Access_READ_ACCESS,
+							},
+						}}, nil
+					})
+				mocks.scopedIssuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName: internalRoleName,
+						Permissions: map[storage.Access][]string{
+							storage.Access_READ_ACCESS: {"Deployment", "Image"},
+						},
+						HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/metadata": {"GET"}},
+						Clusters:          tokens.ClusterScopes{fixtureconsts.Cluster1: {"namespace A"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
+						testTokenExpiry.Format(time.RFC3339Nano)),
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "console-token"}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{Token: "console-token"},
+		},
+		"success - legacy permissions": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   deploymentPermission,
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
@@ -483,17 +673,96 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				clusterStore: clusterDataStoreMocks.NewMockDataStore(mockCtrl),
 				roleStore:    roleDataStoreMocks.NewMockDataStore(mockCtrl),
 				issuer:       tokensMocks.NewMockIssuer(mockCtrl),
+				scopedIssuer: tokensMocks.NewMockIssuer(mockCtrl),
 			}
 			svc := createService(it, mocks.issuer, tc.policy)
+			svc.scopedIssuer = mocks.scopedIssuer
+			svc.roleManager = &roleManager{mocks.roleStore}
 			if tc.setup != nil {
 				tc.setup(it, mocks)
 			}
-			ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
+			ctx, cancel := context.WithTimeout(sensorContext(it, mockCtrl, fixtureconsts.Cluster1), time.Minute)
+			defer cancel()
 
 			rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, tc.input)
 			assert.NotNil(it, rsp)
 			protoassert.Equal(it, tc.expectedRsp, rsp)
 			assert.NoError(it, err)
+		})
+	}
+}
+
+func TestGenerateTokenForGenericPermissionSet(t *testing.T) {
+	const permissionSetName = "custom-read-only-set"
+	for name, tc := range map[string]struct {
+		permissions map[string]storage.Access
+		expectedErr error
+		constrained bool
+	}{
+		"read-only set is signed": {
+			permissions: map[string]storage.Access{
+				"Image": storage.Access_READ_ACCESS, "Administration": storage.Access_NO_ACCESS,
+			},
+			constrained: true,
+		},
+		"unconstrained set is not signed": {
+			permissions: map[string]storage.Access{"Image": storage.Access_READ_ACCESS},
+			expectedErr: errox.InvalidArgs,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			roles := roleDataStoreMocks.NewMockDataStore(ctrl)
+			issuer := tokensMocks.NewMockIssuer(ctrl)
+			scopedIssuer := tokensMocks.NewMockIssuer(ctrl)
+			permissionSet := &storage.PermissionSet{Name: permissionSetName, ResourceToAccess: tc.permissions}
+			if tc.constrained {
+				permissionSet.AccessConstraint = storage.AccessConstraint_ACCESS_CONSTRAINT_READ
+				permissionSet.ScopeConstraint = storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
+			}
+			roles.EXPECT().GetPermissionSetsFiltered(gomock.Any(), gomock.Any()).
+				Return([]*storage.PermissionSet{permissionSet}, nil)
+			if tc.expectedErr == nil {
+				scopedIssuer.EXPECT().Issue(gomock.Any(), tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{{
+						RoleName: internalRoleName,
+						Permissions: map[storage.Access][]string{
+							storage.Access_READ_ACCESS: {"Image"}, storage.Access_NO_ACCESS: {"Administration"},
+						},
+						HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/images/": {"GET"}},
+						Clusters:          tokens.ClusterScopes{fixtureconsts.Cluster1: {"prod"}},
+					}},
+					Name: fmt.Sprintf(claimNameFormat, internalRoleName,
+						testClock().Add(time.Hour).Format(time.RFC3339Nano)),
+					Requester: "sensor proxy",
+				}, gomock.Any()).Return(&tokens.TokenInfo{Token: "generic-token"}, nil)
+			}
+			svc := &serviceImpl{
+				issuer: issuer, scopedIssuer: scopedIssuer, roleManager: &roleManager{roles},
+				now: testClock, policy: defaultTokenPolicy(),
+			}
+			req := &v1.GenerateTokenForPermissionsAndScopeRequest{
+				PermissionSets: []*v1.ScopedPermissionSet{{
+					Selector:          &v1.ScopedPermissionSet_Name{Name: permissionSetName},
+					HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/images/", Methods: []string{"GET"}}},
+				}},
+				Permissions: map[string]v1.Access{"Image": v1.Access_READ_WRITE_ACCESS},
+				ClusterScopes: []*v1.ClusterScope{{
+					ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"prod"},
+				}},
+				Lifetime:  durationpb.New(2 * time.Hour),
+				Requester: "sensor proxy",
+			}
+			ctx := sensorContext(t, ctrl, fixtureconsts.Cluster1)
+			response, err := svc.GenerateTokenForPermissionsAndScope(ctx, req)
+			if tc.expectedErr != nil {
+				assert.Nil(t, response)
+				assert.ErrorIs(t, err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, "generic-token", response.GetToken())
+			assert.Equal(t, 2*time.Hour, req.GetLifetime().AsDuration())
 		})
 	}
 }
