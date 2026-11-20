@@ -73,7 +73,8 @@ def main():
         Job(name='e2e-qa-tests-gke', require_pr_label=True),
         Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
         Job(name='e2e-qa-tests-ocp-fips-konflux', require_konflux_build=True),
-        Job(name='e2e-tls-compliance-ocp-konflux', require_pr_label=True, require_konflux_build=True, require_nightly=True),
+        # TODO: temporary; Konflux is down.
+        Job(name='e2e-tls-compliance-ocp-konflux', require_pr_label=True, require_nightly=True),
         Job(name='e2e-ui-tests-gke', require_pr_label=True, is_ui_test=True),
         Job(name='e2e-ui-tests-gke-konflux', require_konflux_build=True, is_ui_test=True),
     ]

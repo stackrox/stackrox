@@ -142,7 +142,8 @@ deploy_acs() {
     cat > "$roxie_config" <<EOF
 roxie:
   version: "${MAIN_IMAGE_TAG}"
-  konfluxImages: true
+  # TODO: temporary; Konflux is down.
+  konfluxImages: false
 central:
   namespace: ${ACS_NS}
   resourceProfile: ci
