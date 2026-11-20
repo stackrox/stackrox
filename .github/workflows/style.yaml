@@ -25,7 +25,12 @@ jobs:
 
   check-generated-files:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.proto$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '.go$')
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-24.04
@@ -98,6 +103,7 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
+    needs: detect-changes
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -130,24 +136,45 @@ jobs:
           pycodestyle --version
 
       - name: Cache Go dependencies
+        if: >-
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '.go$') ||
+          contains(needs.detect-changes.outputs.files, '.proto$') ||
+          contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+          contains(needs.detect-changes.outputs.files, '^go.sum$')
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Download scanner module for proto generation
+        if: >-
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '.proto$')
         run: go mod download github.com/stackrox/scanner
 
       - name: Cache UI dependencies
+        if: >-
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '^ui/')
         id: cache-ui
         uses: ./.github/actions/cache-ui-dependencies
 
       - name: Cache QA Test dependencies
+        if: >-
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '^qa-tests-backend/')
         uses: ./.github/actions/cache-gradle-dependencies
 
       - name: Fetch UI deps
-        if: steps.cache-ui.outputs.cache-hit != 'true'
+        if: >-
+          steps.cache-ui.outputs.cache-hit != 'true' &&
+          (!needs.detect-changes.outputs.files ||
+           contains(needs.detect-changes.outputs.files, '^ui/'))
         run: make -C ui deps
 
       - name: Skip UI deps on cache hit
-        if: steps.cache-ui.outputs.cache-hit == 'true'
+        if: >-
+          steps.cache-ui.outputs.cache-hit == 'true' &&
+          (!needs.detect-changes.outputs.files ||
+           contains(needs.detect-changes.outputs.files, '^ui/'))
         run: touch ui/deps
 
       - name: Cache ESLint results
@@ -158,7 +185,11 @@ jobs:
 
   golangci-lint:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$')
     timeout-minutes: 240
     runs-on: ubuntu-24.04
     steps:
