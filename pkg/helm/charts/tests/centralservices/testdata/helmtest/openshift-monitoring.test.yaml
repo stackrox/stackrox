@@ -160,6 +160,44 @@ tests:
             assertThat(.spec.endpoints[].tlsConfig.caFile == "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt")
           ]
 
+    - name: "custom metrics without standard OpenShift monitoring"
+      set:
+        monitoring.openshift.enabled: false
+        monitoring.openshift.custom.enabled: true
+      expect: |
+        .roles["central-prometheus-k8s"] | assertThat(. != null)
+        .rolebindings["central-prometheus-k8s"] | assertThat(. != null)
+        .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. != null)
+        .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
+        .prometheusrules["central-telemeter-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].path == "/metrics"),
+            assertThat(.spec.endpoints[].tlsConfig.serverName == "central-ocp.stackrox.svc")
+          ]
+        .services["central-ocp"].metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"] |
+          assertThat(. == "central-ocp-tls")
+        .services.central.metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"] |
+          assertThat(. == null)
+        [.deployments.central.spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_ENABLE_SECURE_METRICS")] | length | assertThat(. == 0)
+        [.deployments.central.spec.template.spec.containers[0].volumeMounts[] |
+          select(.name == "monitoring-tls")] | length | assertThat(. == 0)
+        .deployments.central.spec.template.spec.containers[0].volumeMounts[] |
+          select(.name == "ocp-tls") | assertThat(.readOnly == true)
+        [.deployments.central.spec.template.spec.volumes[] |
+          select(.name == "monitoring-tls")] | length | assertThat(. == 0)
+        .deployments.central.spec.template.spec.volumes[] |
+          select(.name == "ocp-tls") | assertThat(.secret.secretName == "central-ocp-tls")
+        .networkpolicys["central-monitoring-tls"] | assertThat(. == null)
+
+    - name: "custom metrics remain enabled with legacy monitoring switch"
+      set:
+        enableOpenShiftMonitoring: true
+        monitoring.openshift.custom.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. != null)
+
     - name: "custom metrics disabled on managed services"
       set:
         monitoring.openshift.enabled: true
@@ -167,6 +205,16 @@ tests:
         env.managedServices: true
       expect: |
         .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
+
+    - name: "custom metrics disabled outside OpenShift 4"
+      set:
+        env.openshift: false
+        monitoring.openshift.enabled: false
+        monitoring.openshift.custom.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-api-monitor-stackrox"] | assertThat(. == null)
+        .services["central-ocp"] | assertThat(. == null)
+        .roles["central-prometheus-k8s"] | assertThat(. == null)
 
 - name: "When enabled with Scanner V4"
   set:
