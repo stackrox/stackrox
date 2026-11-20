@@ -44,6 +44,11 @@ var (
 		GormModel: (*ComplianceRunMetadata)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
+
+	CreateTableComplianceIntegrationsStmt = &postgres.CreateStmts{
+		GormModel: (*ComplianceIntegrations)(nil),
+		Children:  []*postgres.CreateStmts{},
+	}
 )
 
 type ComplianceConfigs struct {
@@ -75,4 +80,13 @@ type ComplianceRunMetadata struct {
 	ClusterID       string     `gorm:"column:clusterid;type:uuid"`
 	FinishTimestamp *time.Time `gorm:"column:finishtimestamp;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+type ComplianceIntegrations struct {
+	ID                string `gorm:"column:id;type:uuid;primaryKey"`
+	Version           string `gorm:"column:version;type:varchar"`
+	ClusterID         string `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator"`
+	OperatorInstalled bool   `gorm:"column:operatorinstalled;type:bool"`
+	OperatorStatus    int32  `gorm:"column:operatorstatus;type:integer"`
+	Serialized        []byte `gorm:"column:serialized;type:bytea"`
 }

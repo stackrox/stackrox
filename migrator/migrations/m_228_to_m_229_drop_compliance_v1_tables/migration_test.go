@@ -76,11 +76,34 @@ func (s *migrationTestSuite) TestMigration() {
 }
 
 func (s *migrationTestSuite) TestMigration_FreshInstall() {
-	// A fresh installation won't have these tables — verify no error when tables are absent.
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
 		PostgresDB: s.db.DB,
 		DBCtx:      s.ctx,
 	}
 	s.Require().NoError(migration.Run(dbs))
+}
+
+func (s *migrationTestSuite) TestMigration_ComplianceIntegrationsPreserved() {
+	dbs := &types.Databases{
+		GormDB:     s.db.GetGormDB(),
+		PostgresDB: s.db.DB,
+		DBCtx:      s.ctx,
+	}
+
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableComplianceIntegrationsStmt)
+
+	const integrationID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+	_, err := dbs.PostgresDB.Exec(dbs.DBCtx,
+		"INSERT INTO compliance_integrations (id, version, clusterid, operatorinstalled, operatorstatus) VALUES ($1, '1.0', gen_random_uuid(), false, 0)",
+		integrationID)
+	s.Require().NoError(err)
+
+	s.Require().NoError(migration.Run(dbs))
+
+	var gotID string
+	err = dbs.PostgresDB.QueryRow(dbs.DBCtx,
+		"SELECT id FROM compliance_integrations WHERE id = $1", integrationID).Scan(&gotID)
+	s.Require().NoError(err, "compliance_integrations row must survive the migration")
+	s.Equal(integrationID, gotID)
 }
