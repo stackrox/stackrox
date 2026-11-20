@@ -179,10 +179,13 @@ deploy_stackrox_with_roxie() {
 
     # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
     # For Scanner V4 this means that it will also wait until vulnerabilities are loaded into the DB.
+    cvss_load_probe
     roxie deploy \
         --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
         --envrc "$roxie_envrc" \
         --config "$config_file"
+
+    info "CVSSPROBE roxie deploy returned (readiness gates passed) at $(date -u +%H:%M:%S)"
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
@@ -1646,23 +1649,48 @@ wait_for_scanner_V4() {
 # can flip before NVD CVSS enrichment completes, so vuln-dependent policies
 # silently do not fire. This probe samples forced scans of the fixture image
 # every CVSS_PROBE_INTERVAL seconds in the background, starting BEFORE the
-# readiness gate passes, capturing the enrichment curve relative to the flip
-# at a resolution the qa-tests-backend suite cannot match (its first sample
-# lands minutes after the gate). Output lines are prefixed CVSSPROBE and land
-# in the job log. Diagnostic only: it never gates or fails the run.
+# readiness gate passes (roxie deploy or wait_for_scanner_V4), capturing the
+# enrichment curve relative to the flip. It self-discovers the Central
+# endpoint so it can start before the deploy produces API_ENDPOINT. Output
+# lines are prefixed CVSSPROBE and land in the job log. Diagnostic only: it
+# never gates or fails the run.
 cvss_load_probe() {
     local image="${CVSS_PROBE_IMAGE:-quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3}"
-    local duration="${CVSS_PROBE_SECONDS:-1800}"
+    local duration="${CVSS_PROBE_SECONDS:-2400}"
     local interval="${CVSS_PROBE_INTERVAL:-10}"
+    local namespace="${CVSS_PROBE_NAMESPACE:-stackrox}"
     (
         local end=$((SECONDS + duration))
+        local base_url="https://${API_ENDPOINT:-}"
+        if [[ -z "${API_ENDPOINT:-}" ]]; then
+            # Deploy not done yet: discover the Central LoadBalancer endpoint.
+            # Central comes up long before scanner-v4-matcher readiness, so this
+            # resolves well before the flip we want to observe.
+            while (( SECONDS < end )); do
+                local host
+                host="$(retrying_kubectl </dev/null -n "$namespace" get svc central-loadbalancer                     -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)"
+                if [[ -z "$host" ]]; then
+                    host="$(retrying_kubectl </dev/null -n "$namespace" get svc central-loadbalancer                         -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)"
+                fi
+                if [[ -n "$host" ]]; then
+                    base_url="https://${host}:443"
+                    break
+                fi
+                sleep 5
+            done
+        fi
+        if [[ -z "$base_url" ]]; then
+            echo "CVSSPROBE failed to discover Central endpoint; aborting probe"
+            exit 0
+        fi
+        echo "CVSSPROBE probing ${base_url} (duration ${duration}s @ ${interval}s)"
         while (( SECONDS < end )); do
             local ts resp summary
             ts="$(date -u +%H:%M:%S)"
-            resp="$(curl -sk --max-time 20 -u "admin:${ROX_ADMIN_PASSWORD}" \
+            resp="$(curl -sk --max-time 20 -u "admin:${ROX_ADMIN_PASSWORD:-}" \
                 -H 'Content-Type: application/json' \
                 -d "{\"imageName\": \"${image}\", \"force\": true}" \
-                "https://${API_ENDPOINT}/v1/images/scan" 2>/dev/null)" || resp=""
+                "${base_url}/v1/images/scan" 2>/dev/null)" || resp=""
             summary="$(jq -r '[.scan.components[]?.vulns[]? | select(.fixedBy != "") | .cvss] as $f | "fixable=\($f|length) maxCvss=\($f|max // 0)"' <<<"$resp" 2>/dev/null)"
             [[ -n "$summary" ]] || summary="scan_unavailable"
             echo "CVSSPROBE ts=${ts} elapsed=${SECONDS}s ${summary}"
