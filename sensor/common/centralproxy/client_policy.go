@@ -147,7 +147,7 @@ func defaultClientPolicy() clientPolicyDocument {
 		},
 		{
 			AuthType: clientAuthKubernetesBearer, Subject: "*",
-			Access: []clientPolicyAccess{{PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+			Access: []clientPolicyAccess{{PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser],
 				HTTPScopes: consolePolicyHTTPScopes()}},
 		},
 	}}
@@ -177,7 +177,7 @@ func consolePolicyHTTPScopes() tokens.HTTPRequestScopes {
 	return scopes
 }
 
-func (p *ClientPolicy) configureTLS(config *tls.Config, _ func([]*x509.Certificate)) {
+func (p *ClientPolicy) configureTLS(config *tls.Config) {
 	// Each entry verifies its own CA on every request, including reused connections.
 	config.ClientAuth = tls.RequestClientCert
 	config.ClientCAs = nil
@@ -346,8 +346,8 @@ func parseClientPolicy(cm *corev1.ConfigMap) (*clientPolicyDocument, error) {
 				return nil, fmt.Errorf("duplicate permission set %q at entry %d", selector, i)
 			}
 			setSelectors[selector] = struct{}{}
-			if entry.Subject == "*" && name != accesscontrol.ConsoleProxy &&
-				id != accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy] {
+			if entry.Subject == "*" && name != accesscontrol.K8sCentralProxyUser &&
+				id != accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser] {
 				return nil, errors.New("wildcard bearer clients may only use the console permission set")
 			}
 			claims.InternalRoles = append(claims.InternalRoles, &tokens.InternalRole{HTTPRequestScopes: access.HTTPScopes})

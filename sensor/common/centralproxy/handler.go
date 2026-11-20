@@ -1,6 +1,7 @@
 package centralproxy
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	"net/http"
@@ -54,7 +55,7 @@ func proxyErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 type Handler struct {
 	centralReachable atomic.Bool
 	authorizer       *k8sAuthorizer
-	policy           requestPolicy
+	policy           *ClientPolicy
 	transport        *scopedTokenTransport
 	proxy            *httputil.ReverseProxy
 	metricsEnabled   bool
@@ -97,8 +98,8 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	if err != nil {
 		return nil, errors.Wrap(err, "creating kubernetes client")
 	}
-	policy, err := newRequestPolicy(k8sClient)
-	if err != nil {
+	policy := NewClientPolicy(k8sClient)
+	if err := policy.EnsureDefaults(context.Background()); err != nil {
 		return nil, errors.Wrap(err, "initializing proxy client policy")
 	}
 

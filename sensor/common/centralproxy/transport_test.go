@@ -69,15 +69,17 @@ func newTestTokenProvider(client centralv1.TokenServiceClient, clusterID string)
 
 func consoleTestProfile(scope string) *proxyTokenProfile {
 	return &proxyTokenProfile{
-		identity: clientAuthKubernetesBearer + ":test-user", permissionSets: consolePermissionSets(),
-		clusterScope: scope, legacyConsole: true,
+		identity:       clientAuthKubernetesBearer + ":test-user",
+		permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[1].Access),
+		clusterScope:   scope, legacyConsole: true,
 	}
 }
 
 func metricsTestProfile() *proxyTokenProfile {
 	return &proxyTokenProfile{
 		identity:       clientAuthMTLS + ":" + env.SecureMetricsClientCertCN.Setting(),
-		permissionSets: metricsPermissionSets(), clusterScope: FullClusterAccessScope,
+		permissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[0].Access),
+		clusterScope:   FullClusterAccessScope,
 	}
 }
 
@@ -343,9 +345,7 @@ func TestProfileTransportReplacesCallerCredentials(t *testing.T) {
 }
 
 func TestProfileTokenUnifiedGrantsAndLegacyFallback(t *testing.T) {
-	console := &centralv1.ScopedPermissionSet{
-		Selector: &centralv1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]}, HttpRequestScopes: consoleRequestScopes(),
-	}
+	console := clientPolicyAccessToProto(defaultClientPolicy().Clients[1].Access)[0]
 	unrestricted := &centralv1.ScopedPermissionSet{Selector: &centralv1.ScopedPermissionSet_Name{Name: "Reader"}}
 	for name, tc := range map[string]struct {
 		grants   []*centralv1.ScopedPermissionSet
@@ -706,8 +706,8 @@ func TestTokenProviderRequiresClusterID(t *testing.T) {
 	assert.Contains(t, err.Error(), "cluster ID not available")
 }
 
-func TestConsoleRequestScopes(t *testing.T) {
-	scopes := consoleRequestScopes()
+func TestClientPolicyScopesToProto(t *testing.T) {
+	scopes := clientPolicyScopesToProto(centralproxy.ConsoleHTTPScopes)
 	require.NotEmpty(t, scopes)
 	actual, err := tokens.HTTPRequestScopesFromProto(scopes)
 	require.NoError(t, err)
