@@ -2,6 +2,9 @@ package centralproxy
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +12,11 @@ import (
 	"strings"
 	"testing"
 
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
+	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/env"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -23,70 +30,86 @@ import (
 	k8sTesting "k8s.io/client-go/testing"
 )
 
-func TestValidateRequest(t *testing.T) {
+func TestLegacyProxyGrantAllowed(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPathFiltering})
+	allowedpaths.Set([]string{"/v1/metadata", "/metrics"})
+	t.Cleanup(func() { centralcaps.Set(nil); allowedpaths.Reset() })
+	for name, tc := range map[string]struct {
+		permissionSet string
+		path          string
+		method        string
+		allowed       bool
+	}{
+		"console default":                {accesscontrol.K8sCentralProxyUser, "/v1/metadata", "GET", true},
+		"metrics requires scoped tokens": {accesscontrol.OpenShiftPrometheus, "/metrics", "GET", false},
+		"generic set":                    {"custom-read-only-set", "/v1/metadata", "GET", false},
+		"extra method":                   {accesscontrol.OpenShiftPrometheus, "/metrics", "POST", false},
+		"extra route":                    {accesscontrol.K8sCentralProxyUser, "/v1/private", "GET", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			grant := &ClientPolicyGrant{PermissionSets: []*centralv1.ScopedPermissionSet{{
+				Selector:          &centralv1.ScopedPermissionSet_Name{Name: tc.permissionSet},
+				HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: tc.path, Methods: []string{tc.method}}},
+			}}}
+			assert.Equal(t, tc.allowed, legacyProxyGrantAllowed(grant, httptest.NewRequest(tc.method, tc.path, nil)))
+		})
+	}
+	grant := &ClientPolicyGrant{
+		PermissionSets: []*centralv1.ScopedPermissionSet{{
+			Selector:          &centralv1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]},
+			HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
+		}},
+	}
+	assert.True(t, legacyProxyGrantAllowed(grant, httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)))
+	grant.PermissionSets[0].HttpRequestScopes = nil
+	assert.False(t, legacyProxyGrantAllowed(grant, httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)))
+}
+
+func TestFixedPolicyValidateRequest(t *testing.T) {
 	tests := []struct {
-		name             string
-		method           string
-		centralReachable bool
-		wantStatusCode   int
-		wantError        string
+		name           string
+		method         string
+		wantStatusCode int
+		wantError      string
 	}{
 		{
-			name:             "GET is allowed",
-			method:           http.MethodGet,
-			centralReachable: true,
-			wantStatusCode:   0, // validateRequest returns nil on success
+			name:           "GET is allowed",
+			method:         http.MethodGet,
+			wantStatusCode: 0, // validateRequest returns nil on success
 		},
 		{
-			name:             "POST is allowed",
-			method:           http.MethodPost,
-			centralReachable: true,
-			wantStatusCode:   0,
+			name:           "POST is allowed",
+			method:         http.MethodPost,
+			wantStatusCode: 0,
 		},
 		{
-			name:             "OPTIONS is allowed (for CORS preflight)",
-			method:           http.MethodOptions,
-			centralReachable: true,
-			wantStatusCode:   0,
+			name:           "OPTIONS is allowed (for CORS preflight)",
+			method:         http.MethodOptions,
+			wantStatusCode: 0,
 		},
 		{
-			name:             "HEAD is allowed",
-			method:           http.MethodHead,
-			centralReachable: true,
-			wantStatusCode:   0,
+			name:           "HEAD is allowed",
+			method:         http.MethodHead,
+			wantStatusCode: 0,
 		},
 		{
-			name:             "PUT returns 405",
-			method:           http.MethodPut,
-			centralReachable: true,
-			wantStatusCode:   http.StatusMethodNotAllowed,
-			wantError:        "method PUT not allowed",
+			name:           "PUT returns 405",
+			method:         http.MethodPut,
+			wantStatusCode: http.StatusMethodNotAllowed,
+			wantError:      "method PUT not allowed",
 		},
 		{
-			name:             "DELETE returns 405",
-			method:           http.MethodDelete,
-			centralReachable: true,
-			wantStatusCode:   http.StatusMethodNotAllowed,
-			wantError:        "method DELETE not allowed",
-		},
-		{
-			name:             "central not reachable returns 503",
-			method:           http.MethodGet,
-			centralReachable: false,
-			wantStatusCode:   http.StatusServiceUnavailable,
-			wantError:        "central not reachable",
+			name:           "DELETE returns 405",
+			method:         http.MethodDelete,
+			wantStatusCode: http.StatusMethodNotAllowed,
+			wantError:      "method DELETE not allowed",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := &Handler{
-				clusterIDGetter: &testClusterIDGetter{clusterID: "test-cluster-id"},
-			}
-			h.centralReachable.Store(tt.centralReachable)
-
 			req := httptest.NewRequest(tt.method, "/v1/alerts", nil)
-			err := h.validateRequest(req)
+			err := (&fixedClientPolicy{}).validateRequest(req)
 
 			if tt.wantStatusCode == 0 {
 				assert.NoError(t, err)
@@ -133,9 +156,7 @@ func TestProxyPathFilteringCompatibility(t *testing.T) {
 				allowedpaths.Reset()
 			})
 
-			h := &Handler{}
-			h.centralReachable.Store(true)
-			err := h.validateRequest(httptest.NewRequest(http.MethodGet, tc.path, nil))
+			err := (&fixedClientPolicy{}).validateRequest(httptest.NewRequest(http.MethodGet, tc.path, nil))
 			if tc.allowed {
 				assert.NoError(t, err)
 			} else {
@@ -144,6 +165,88 @@ func TestProxyPathFilteringCompatibility(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMetricsScrapeRoute(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		path     string
+		method   string
+		cn       string
+		optIn    bool
+		paths    []string
+		wantCode int
+	}{
+		{"disabled by default", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), false,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"missing client certificate", "/metrics", http.MethodGet, "", true,
+			[]string{"/metrics"}, http.StatusUnauthorized},
+		{"wrong client identity", "/metrics", http.MethodGet, "other", true,
+			[]string{"/metrics"}, http.StatusUnauthorized},
+		{"metrics does not need an advertised path", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			nil, http.StatusOK},
+		{"POST rejected", "/metrics", http.MethodPost, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"trailing slash rejected", "/metrics/", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"encoded path rejected", "/m%65trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"doubly encoded path rejected", "/m%2565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"triply encoded path rejected", "/m%252565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusForbidden},
+		{"verified metrics scrape", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
+			[]string{"/metrics"}, http.StatusOK},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+			f.handler.metricsEnabled = tc.optIn
+			allowedpaths.Set(tc.paths)
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			if tc.cn != "" {
+				req.TLS = &tls.ConnectionState{VerifiedChains: [][]*x509.Certificate{{{
+					Subject: pkix.Name{CommonName: tc.cn},
+				}}}}
+			}
+			w := httptest.NewRecorder()
+			f.handler.ServeHTTP(w, req)
+			assert.Equal(t, tc.wantCode, w.Code)
+			assert.Equal(t, tc.wantCode == http.StatusOK, f.proxyCalled)
+		})
+	}
+	t.Run("Central without scoped token support", func(t *testing.T) {
+		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+		f.handler.metricsEnabled = true
+		centralcaps.Set([]centralsensor.CentralCapability{
+			centralsensor.InternalTokenAPISupported,
+			centralsensor.CentralProxyPathFiltering,
+		})
+		req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+		w := httptest.NewRecorder()
+		f.handler.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.False(t, f.proxyCalled)
+	})
+}
+
+func TestMetricsOptInDoesNotEnableK8sCentralProxyUser(t *testing.T) {
+	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
+	f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+	f.handler.metricsEnabled = true
+	allowedpaths.Set([]string{"/api/graphql"})
+
+	w := f.serveHTTP(t, http.MethodGet, "/api/graphql", map[string]string{"Authorization": "Bearer console-token"})
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.False(t, f.proxyCalled)
+
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.TLS = &tls.ConnectionState{VerifiedChains: [][]*x509.Certificate{{{
+		Subject: pkix.Name{CommonName: env.SecureMetricsClientCertCN.Setting()},
+	}}}}
+	w = httptest.NewRecorder()
+	f.handler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, f.proxyCalled)
 }
 
 func TestServeHTTP(t *testing.T) {

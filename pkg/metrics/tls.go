@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"path/filepath"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -14,9 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
+	"github.com/stackrox/rox/pkg/mtls/clientca"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -80,7 +79,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 		subjectCN: env.SecureMetricsClientCertCN.Setting(),
 	}
 	cfgr.tlsConfigHolder.SetCustomCertVerifier(tlsVerifier)
-	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
+	cfgr.k8sWatcher = clientca.NewWatcher(k8sClient, cfgr.updateClientCA)
 	cfgr.watchForChanges()
 	return cfgr
 }
@@ -168,23 +167,13 @@ func (t *tlsConfigurerImpl) updateCertificate(cert *tls.Certificate) {
 	t.tlsConfigHolder.UpdateTLSConfig()
 }
 
-func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
-	if cm == nil {
-		return
+func (t *tlsConfigurerImpl) updateClientCA(signerCAs []*x509.Certificate) {
+	log.Debugf("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
+	if len(signerCAs) == 0 {
+		log.Warnf("No client CAs have been found in %q/%q", t.clientCANamespace, t.clientCAConfigMap)
 	}
-	if caFile, ok := cm.Data[env.SecureMetricsClientCAKey.Setting()]; ok {
-		log.Debugf("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
-		signerCAs, err := helpers.ParseCertificatesPEM([]byte(caFile))
-		if err != nil {
-			log.Errorw("Unable to parse client CAs", logging.Err(err))
-			return
-		}
-		if len(signerCAs) == 0 {
-			log.Warnf("No client CAs have been found in %q/%q", t.clientCANamespace, t.clientCAConfigMap)
-		}
-		t.mutex.Lock()
-		defer t.mutex.Unlock()
-		t.clientCAs = signerCAs
-		t.tlsConfigHolder.UpdateTLSConfig()
-	}
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	t.clientCAs = signerCAs
+	t.tlsConfigHolder.UpdateTLSConfig()
 }
