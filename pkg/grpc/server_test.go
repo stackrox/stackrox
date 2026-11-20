@@ -46,6 +46,19 @@ func Test_APIServerSuite(t *testing.T) {
 	suite.Run(t, new(APIServerSuite))
 }
 
+func TestGatewayIncomingHeaderMatcher(t *testing.T) {
+	for _, header := range []string{"Grpc-Metadata-Rox-Requestinfo", "grpc-metadata-rox-requestinfo"} {
+		_, matched := gatewayIncomingHeaderMatcher(header)
+		require.False(t, matched)
+	}
+	for _, header := range []string{"Authorization", "Grpc-Metadata-Other"} {
+		wantKey, wantMatched := runtime.DefaultHeaderMatcher(header)
+		gotKey, gotMatched := gatewayIncomingHeaderMatcher(header)
+		require.Equal(t, wantKey, gotKey)
+		require.Equal(t, wantMatched, gotMatched)
+	}
+}
+
 var _ suite.SetupTestSuite = &APIServerSuite{}
 
 func (a *APIServerSuite) TestEnvValues() {
