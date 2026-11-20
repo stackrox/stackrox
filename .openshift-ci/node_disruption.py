@@ -127,9 +127,8 @@ def monitor(env=None):
     expected = prepare_monitor(directory, env, sample, errors)
     if expected is not None:
         try:
-            thread = threading.Thread(target=poll, name="node-monitor", daemon=True)
-            thread.start()
-            worker = thread
+            worker = threading.Thread(target=poll, name="node-monitor", daemon=True)
+            worker.start()
         except RuntimeError as exc:
             errors.append(str(exc))
     try:
