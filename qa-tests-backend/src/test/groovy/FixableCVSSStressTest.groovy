@@ -1,5 +1,6 @@
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import services.ImageService
 import services.PolicyService
 import spock.lang.Tag
 
