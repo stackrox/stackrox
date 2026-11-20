@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSeedConsoleProxyPermissionSetNameCollision(t *testing.T) {
+func TestSeedK8sCentralProxyUserPermissionSetNameCollision(t *testing.T) {
 	pgTest := pgtest.ForT(t)
 	require.NotNil(t, pgTest)
 	defer pgTest.Close()
@@ -29,13 +29,13 @@ func TestSeedConsoleProxyPermissionSetNameCollision(t *testing.T) {
 	store := permissionSetPGStore.New(pgTest.DB)
 	custom := &storage.PermissionSet{
 		Id:   rolePkg.GeneratePermissionSetID(),
-		Name: accesscontrol.ConsoleProxy,
+		Name: accesscontrol.K8sCentralProxyUser,
 	}
 	require.NoError(t, store.Upsert(ctx, custom))
 
 	for range 2 {
 		require.NoError(t, seedDefaultPermissionSets(ctx, store,
-			[]*storage.PermissionSet{getDefaultPermissionSet(accesscontrol.ConsoleProxy)}))
+			[]*storage.PermissionSet{getDefaultPermissionSet(accesscontrol.K8sCentralProxyUser)}))
 	}
 	stored, found, err := store.Get(ctx, custom.GetId())
 	require.NoError(t, err)
