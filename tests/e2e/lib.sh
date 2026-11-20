@@ -89,6 +89,7 @@ deploy_stackrox() {
         cvss_load_probe
         wait_for_scanner_V4 "${central_namespace}"
         info "CVSSPROBE matcher readiness gate PASSED at $(date -u +%H:%M:%S)"
+        cvss_probe_assert
     fi
 
     touch "${STATE_DEPLOYED}"
@@ -186,6 +187,7 @@ deploy_stackrox_with_roxie() {
         --config "$config_file"
 
     info "CVSSPROBE roxie deploy returned (readiness gates passed) at $(date -u +%H:%M:%S)"
+    cvss_probe_assert
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
@@ -1699,6 +1701,38 @@ cvss_load_probe() {
     ) &
     CVSS_PROBE_PID=$!
     info "CVSSPROBE background probe started (PID ${CVSS_PROBE_PID}, ${duration}s @ ${interval}s, image ${image})"
+}
+
+# cvss_probe_assert is the "sooner test" for ROX-36267/ROX-36688: it samples
+# the fixture image scan immediately after the readiness gate flips (within
+# seconds), asserting that fixable CVSS enrichment is already usable. The
+# qa-tests-backend suite cannot sample earlier than ~6 min post-flip (gradle
+# startup), which masks a premature flip on faster platforms. This assert
+# closes that gap: if the matcher reported ready before NVD enrichment
+# completed, the assert logs FAILURE at flip+seconds. Diagnostic: logs loudly,
+# never fails the run.
+cvss_probe_assert() {
+    local image="${CVSS_PROBE_IMAGE:-quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3}"
+    local base_url="${CVSS_PROBE_BASE_URL:-https://${API_ENDPOINT:-}}"
+    local tries=6
+    local interval=10
+    local i result summary
+    for ((i = 1; i <= tries; i++)); do
+        local resp
+        resp="$(curl -sk --max-time 20 -u "admin:${ROX_ADMIN_PASSWORD:-}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"imageName\": \"${image}\", \"force\": true}" \
+            "${base_url}/v1/images/scan" 2>/dev/null)" || resp=""
+        summary="$(jq -r '[.scan.components[]?.vulns[]? | select(.fixedBy != "") | .cvss] as $f | "fixable=\($f|length) maxCvss=\($f|max // 0)"' <<<"$resp" 2>/dev/null)"
+        if [[ "$summary" =~ maxCvss=([7-9]|[1-9][0-9])(\.[0-9]+)? ]]; then
+            info "CVSSPROBE-ASSERT PASS at flip+${i}x${interval}s: ${summary} (readiness gate honest)"
+            return 0
+        fi
+        info "CVSSPROBE-ASSERT attempt ${i}/${tries}: ${summary:-scan_unavailable}"
+        sleep "$interval"
+    done
+    info "CVSSPROBE-ASSERT FAILURE: enrichment absent for ${tries}x${interval}s after readiness gate flipped (ROX-36267/ROX-36688 signature)"
+    return 0
 }
 
 # shellcheck disable=SC2120
