@@ -74,7 +74,7 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     else
         set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
     fi
-    info "OCP masters=${MASTER_NODE_COUNT:-provisioner-default} master-type=${MASTER_NODE_TYPE:-provisioner-default} workers=$WORKER_NODE_COUNT worker-type=$WORKER_NODE_TYPE"
+    info "OCP masters=${MASTER_NODE_COUNT:-provisioner-default} master-type=${MASTER_NODE_TYPE:-provisioner-default} workers=${WORKER_NODE_COUNT:-unset} worker-type=${WORKER_NODE_TYPE:-unset}"
 fi
 
 if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
