@@ -2,6 +2,7 @@ package authorizer
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -87,4 +88,18 @@ func loadScopeInventory(ctx context.Context) (inventory, error) {
 		return inventory{}, errors.Wrap(err, "reading all namespaces")
 	}
 	return inventory{clusters: clusters, namespaces: namespaces}, nil
+}
+
+// SetScopeInventoryForTest serves the given clusters and namespaces as the
+// scope inventory for the duration of the test, avoiding database access.
+func SetScopeInventoryForTest(t testing.TB, clusters []effectiveaccessscope.Cluster, namespaces []effectiveaccessscope.Namespace) {
+	original := scopeInventory
+	scopeInventory = &scopeInventoryCache{
+		load: func(context.Context) (inventory, error) {
+			return inventory{clusters: clusters, namespaces: namespaces}, nil
+		},
+	}
+	t.Cleanup(func() {
+		scopeInventory = original
+	})
 }
