@@ -159,6 +159,17 @@ resources:
       access: READ_WRITE_ACCESS
 `),
 		},
+		"openshift auth provider without uiEndpoint": {
+			yaml: []byte(`name: acs-admin-group-only
+minimumRole: None
+groups:
+    - key: groups
+      value: admin_group
+      role: Admin
+openshift:
+    enable: true
+`),
+		},
 	}
 
 	for name, c := range cases {

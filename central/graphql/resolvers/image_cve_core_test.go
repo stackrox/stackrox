@@ -5,6 +5,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
@@ -38,6 +39,30 @@ func (s *ImageCVECoreResolverTestSuite) SetupSuite() {
 }
 
 func (s *ImageCVECoreResolverTestSuite) TearDownSuite() {}
+
+func (s *ImageCVECoreResolverTestSuite) TestTopNVDCVSS() {
+	schema, err := graphql.ParseSchema(Schema(), s.resolver)
+	s.Require().NoError(err)
+	cases := map[string]struct {
+		score float32
+		want  string
+	}{
+		"unavailable": {want: `{"imageCVEs":[{"topNvdCVSS":null}]}`},
+		"available":   {score: 7.5, want: `{"imageCVEs":[{"topNvdCVSS":7.5}]}`},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			data := imageCVEViewMock.NewMockCveCore(s.mockCtrl)
+			data.EXPECT().GetTopNVDCVSS().Return(tc.score)
+			s.imageCVEView.EXPECT().Get(gomock.Any(), gomock.Any(), views.ReadOptions{}).
+				Return([]imagecve.CveCore{data}, nil)
+
+			response := schema.Exec(s.ctx, `{ imageCVEs { topNvdCVSS } }`, "", nil)
+			s.Require().Empty(response.Errors)
+			s.JSONEq(tc.want, string(response.Data))
+		})
+	}
+}
 
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEsNoImagePerm() {
 	q := &PaginatedQuery{}

@@ -1,9 +1,17 @@
 package saml
 
 import (
+	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
@@ -412,4 +420,65 @@ func TestConsumeSAMLResponse_DifferentAssertionsAccepted(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorIs(t, err, errAssertionReplay)
 	assert.Nil(t, resp2Replay)
+}
+
+// TestCreateBackendRequiresUIEndpoint verifies that the SAML backend rejects creation
+// without exactly one UI endpoint, and accepts creation with exactly one.
+func TestCreateBackendRequiresUIEndpoint(t *testing.T) {
+	cases := map[string]struct {
+		uiEndpoints []string
+		hasError    bool
+	}{
+		"nil UI endpoints": {
+			uiEndpoints: nil,
+			hasError:    true,
+		},
+		"no UI endpoints": {
+			uiEndpoints: []string{},
+			hasError:    true,
+		},
+		"multiple UI endpoints": {
+			uiEndpoints: []string{"central.example.com:8443", "localhost:8080"},
+			hasError:    true,
+		},
+		"exactly one UI endpoint": {
+			uiEndpoints: []string{"central.example.com:8443"},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			factory := NewFactory("/sso")
+
+			config := map[string]string{
+				SpIssuerConfigKey:   "some-sp-issuer",
+				IDPIssuerConfigKey:  "some-idp-issuer",
+				IDPSSOUrlConfigKey:  "https://sso.example.com",
+				IDPCertPemConfigKey: selfSignedCertPEM(t),
+			}
+
+			_, err := factory.CreateBackend(context.Background(), "some-id", c.uiEndpoints, config, nil)
+			if c.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// selfSignedCertPEM returns a self-signed certificate in PEM format, for tests
+// configuring a SAML IdP from static settings.
+func selfSignedCertPEM(t *testing.T) string {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "test-idp"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(time.Hour),
+	}
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	require.NoError(t, err)
+	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}))
 }

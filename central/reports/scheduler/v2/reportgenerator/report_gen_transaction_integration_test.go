@@ -226,6 +226,8 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 	rows := s.readBlobCSV(blobStore, snap.GetReportConfigurationId(), snap.GetReportId())
 	// 8 deployed (4 deps × 2 CVEs) + 4 watched (2 images × 2 CVEs) + 1 header = 13
 	s.Require().Len(rows, 13, "1 header + 8 deployed + 4 watched")
+	containerNameColumn := slices.Index(rows[0], "Container Name")
+	s.Require().NotEqual(-1, containerNameColumn)
 	stateColumn := slices.Index(rows[0], "Vulnerability State")
 	s.Require().NotEqual(-1, stateColumn)
 	statesByCVE := map[string]string{
@@ -253,6 +255,11 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_D
 			fixDate = "Not Available"
 		}
 		s.Equal(fixDate, row[fixDateColumn], "CVE %s", row[colCVE])
+		if row[colDeployment] == "" {
+			s.Empty(row[containerNameColumn], "watched image %s", row[colImage])
+		} else {
+			s.Equal(row[colDeployment]+"_container", row[containerNameColumn])
+		}
 	}
 }
 
@@ -299,6 +306,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGenerateReportTransaction_C
 	s.Equal("c1", row[colCluster])
 	s.Equal("ns1", row[colNamespace])
 	s.Equal("c1_ns1_dep0", row[colDeployment])
+	s.Equal("c1_ns1_dep0_container", row[colOf("Container Name")])
 	s.Equal("c1_ns1_dep0_img", row[colImage])
 	s.Equal("c1_ns1_dep0_img_comp", row[colComponent])
 	s.Equal("1.0", row[colCompVersion])

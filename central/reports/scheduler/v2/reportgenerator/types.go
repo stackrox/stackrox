@@ -34,6 +34,7 @@ type ImageCVEQueryResponse struct {
 	Cluster                  *string                        `db:"cluster"`
 	Namespace                *string                        `db:"namespace"`
 	Deployment               *string                        `db:"deployment"`
+	ContainerName            *string                        `db:"deployment_container_name"`
 	Image                    *string                        `db:"image"`
 	Component                *string                        `db:"component"`
 	ComponentVersion         *string                        `db:"component_version"`
@@ -77,6 +78,13 @@ func (res *ImageCVEQueryResponse) GetDeployment() string {
 		return ""
 	}
 	return *res.Deployment
+}
+
+func (res *ImageCVEQueryResponse) GetContainerName() string {
+	if res.ContainerName == nil {
+		return ""
+	}
+	return *res.ContainerName
 }
 
 func (res *ImageCVEQueryResponse) GetImage() string {
@@ -135,11 +143,11 @@ func (res *ImageCVEQueryResponse) GetSeverity() storage.VulnerabilitySeverity {
 	return *res.Severity
 }
 
-func (res *ImageCVEQueryResponse) GetCVSS() float64 {
-	if res.CVSS == nil {
-		return 0.0
+func (res *ImageCVEQueryResponse) GetCVSS() *float64 {
+	if res.CVSS == nil || *res.CVSS == 0 {
+		return nil
 	}
-	return *res.CVSS
+	return res.CVSS
 }
 
 func (res *ImageCVEQueryResponse) GetOrigin() storage.VulnOrigin {
@@ -165,11 +173,11 @@ func (res *ImageCVEQueryResponse) GetVulnerabilityState() string {
 	}
 }
 
-func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {
-	if res.NVDCVSS == nil {
-		return 0.0
+func (res *ImageCVEQueryResponse) GetNVDCVSS() *float64 {
+	if res.NVDCVSS == nil || *res.NVDCVSS == 0 {
+		return nil
 	}
-	return *res.NVDCVSS
+	return res.NVDCVSS
 }
 
 func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {
