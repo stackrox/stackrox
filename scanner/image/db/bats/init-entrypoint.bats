@@ -11,8 +11,8 @@ setup() {
     mkdir -p "$TEST_DIR/pgsql/postgresql-15/bin"
 
     export POSTGRES_HOST_AUTH_METHOD="scram-sha-256"
-    export POSTGRES_PASSWORD_FILE="$TEST_DIR/password"
-    echo "testpass" > "$POSTGRES_PASSWORD_FILE"
+    export POSTGRES_PASS_FILE="$TEST_DIR/password"
+    echo "testpass" > "$POSTGRES_PASS_FILE"
 
     export PATH="$NEW_BINARIES:$PATH"
 

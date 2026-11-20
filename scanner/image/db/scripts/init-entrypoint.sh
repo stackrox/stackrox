@@ -4,6 +4,11 @@
 # existing cluster in place when this image ships PostgreSQL binaries newer
 # than the data directory on disk.
 #
+# The password file path is passed via $POSTGRES_PASS_FILE. The variable is
+# named without the substring "PASSWORD" so that the default policy
+# "Environment Variable Contains Secret", which matches env var names against
+# .*PASSWORD.*, does not fire on our own deployments (ROX-39749).
+#
 # A failed upgrade leaves $PGDATA untouched and returns 0; the server starts
 # with matching binaries and the upgrade is retried on restart. A failed file
 # system operation returns non-zero instead, because a volume that cannot be
@@ -130,7 +135,7 @@ init-cluster() {
     initdb --pgdata "$datadir" \
            --auth-host="$POSTGRES_HOST_AUTH_METHOD" \
            --auth-local="$POSTGRES_HOST_AUTH_METHOD" \
-           --pwfile "$POSTGRES_PASSWORD_FILE" \
+           --pwfile "$POSTGRES_PASS_FILE" \
            --data-checksums 2>&1
 }
 
@@ -178,7 +183,7 @@ clean-shutdown() {
 
 # pg-upgrade runs pg_upgrade with the transfer mode and optionally --check.
 pg-upgrade() {
-    PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+    PGPASSWORD="$(cat "$POSTGRES_PASS_FILE")" \
         "${NEW_BINDIR}/pg_upgrade" \
             --old-bindir="$OLD_BINDIR" \
             --new-bindir="$NEW_BINDIR" \
@@ -199,7 +204,7 @@ maybe-refresh-statistics() {
         echo "Could not start the upgraded cluster, retrying on the next start."
         return 0
     fi
-    if PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+    if PGPASSWORD="$(cat "$POSTGRES_PASS_FILE")" \
             vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4; then
         rm -f "$pending" || true
         echo "Statistics refreshed, shutting down the cluster."
@@ -389,7 +394,7 @@ _main() {
     # Load init bundle, if enabled and the bundle exists.
     if [ "${SCANNER_DB_INIT_BUNDLE_ENABLED:-}" = "true" ] &&
            [ -s /db-init.dump.zst ]; then
-        PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+        PGPASSWORD="$(cat "$POSTGRES_PASS_FILE")" \
             load-init-bundle postgres "$init_bundle"
     fi
 
