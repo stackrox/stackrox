@@ -82,6 +82,8 @@ rules:
       - '^Makefile$'
       - '^make/'
       - '^scripts/ci/jobs/roxctl_tests\.sh$'
+      - '^tests/roxctl/'
+      - '^tests/e2e/run\.sh$'
       - '^go\.(mod|sum)$'
 
   # Backend e2e drives APIs and clusters, not the browser: same ui-or-docs
