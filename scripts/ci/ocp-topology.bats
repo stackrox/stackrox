@@ -66,3 +66,14 @@ check_topology() {
     run grep -Eq 'export (MASTER|WORKER)_NODE_' "$SHARED_DIR/shared_env"
     [ "$status" -eq 1 ]
 }
+
+@test "topology logging tolerates exports deferred to later steps" {
+    cat >> "$BATS_TEST_TMPDIR/repo/scripts/ci/lib.sh" <<'EOF'
+info() { echo "$*"; }
+set_ci_shared_export() {
+    printf 'export %s=%q\n' "$1" "$2" >> "$SHARED_DIR/shared_env"
+}
+EOF
+    check_topology pull-ci-stackrox-stackrox-master-ocp-4-22-qa-e2e-tests 0 e2-standard-8 true
+    [[ "$output" == *"OCP masters=provisioner-default master-type=provisioner-default workers=unset worker-type=unset"* ]]
+}
