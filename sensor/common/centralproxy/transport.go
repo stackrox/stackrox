@@ -294,7 +294,7 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
 		PermissionSets: []*centralv1.ScopedPermissionSet{{
-			Selector:          &centralv1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+			Selector:          &centralv1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]},
 			HttpRequestScopes: consoleRequestScopes(),
 		}},
 		// Centrals without permission set support use these fallback permissions.

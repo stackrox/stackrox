@@ -176,10 +176,10 @@ func TestEnforcePermissionSets(t *testing.T) {
 	}{
 		"valid": {change: func(*v1.GenerateTokenForPermissionsAndScopeRequest) {}},
 		"mixed selectors": {change: func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			r.PermissionSets[0].Selector = &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}
+			r.PermissionSets[0].Selector = &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]}
 		}},
 		"console ID without cluster scope": {change: func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			r.PermissionSets = []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}}}
+			r.PermissionSets = []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]}}}
 			r.ClusterScopes = nil
 		}},
 		"empty selected ID": {expectError: true, change: func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
@@ -196,7 +196,7 @@ func TestEnforcePermissionSets(t *testing.T) {
 		}},
 		"duplicate permission set ID": {expectError: true, change: func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
 			for _, grant := range r.GetPermissionSets() {
-				grant.Selector = &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]}
+				grant.Selector = &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]}
 			}
 		}},
 		"overlapping route": {change: func(r *v1.GenerateTokenForPermissionsAndScopeRequest) {
@@ -396,7 +396,7 @@ func TestEnforce(t *testing.T) {
 
 	t.Run("missing sensor cluster ID rejects request", func(t *testing.T) {
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
-			PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}}},
+			PermissionSets: []*v1.ScopedPermissionSet{{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}}},
 			Lifetime:       durationpb.New(5 * time.Minute),
 		}
 		result, err := policy.enforce(sensorContext(t, gomock.NewController(t), ""), req)

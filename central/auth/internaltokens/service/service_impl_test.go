@@ -227,8 +227,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"duplicate permission sets": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSets: []*v1.ScopedPermissionSet{
-					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
-					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy}},
+					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}},
+					{Selector: &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser}},
 				},
 				Lifetime: testExpirationDuration,
 			},
@@ -336,17 +336,17 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"success - console permission set by ID": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSets: []*v1.ScopedPermissionSet{{
-					Selector:          &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]},
+					Selector:          &v1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]},
 					HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 				}},
 				Lifetime: testExpirationDuration,
 			},
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {
-				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy]).
+				mocks.roleStore.EXPECT().GetPermissionSet(gomock.Any(), accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]).
 					Return(&storage.PermissionSet{
-						Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
-						Name:             accesscontrol.ConsoleProxy,
+						Id:               accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser],
+						Name:             accesscontrol.K8sCentralProxyUser,
 						AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 						ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 						ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
@@ -405,7 +405,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"success - console permission set with namespace scope": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				PermissionSets: []*v1.ScopedPermissionSet{{
-					Selector:          &v1.ScopedPermissionSet_Name{Name: accesscontrol.ConsoleProxy},
+					Selector:          &v1.ScopedPermissionSet_Name{Name: accesscontrol.K8sCentralProxyUser},
 					HttpRequestScopes: []*apiV1.HTTPRequestScope{{Path: "/v1/metadata", Methods: []string{"GET"}}},
 				}},
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_WRITE_ACCESS},
@@ -418,9 +418,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					DoAndReturn(func(ctx context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
 						_, hasDeadline := ctx.Deadline()
 						assert.True(t, hasDeadline)
-						assert.True(t, filter(&storage.PermissionSet{Name: accesscontrol.ConsoleProxy}))
+						assert.True(t, filter(&storage.PermissionSet{Name: accesscontrol.K8sCentralProxyUser}))
 						return []*storage.PermissionSet{{
-							Name:             accesscontrol.ConsoleProxy,
+							Name:             accesscontrol.K8sCentralProxyUser,
 							AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 							ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 							ResourceToAccess: map[string]storage.Access{

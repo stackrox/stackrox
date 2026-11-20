@@ -23,14 +23,14 @@ func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 		invalid       bool
 	}{
 		"console permission set without scopes": {
-			permissionSet: accesscontrol.ConsoleProxy,
+			permissionSet: accesscontrol.K8sCentralProxyUser,
 		},
 		"console subset": {
-			permissionSet: accesscontrol.ConsoleProxy,
+			permissionSet: accesscontrol.K8sCentralProxyUser,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql", Methods: []string{"POST"}}},
 		},
 		"console accepts explicit non-profile route": {
-			permissionSet: accesscontrol.ConsoleProxy,
+			permissionSet: accesscontrol.K8sCentralProxyUser,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/v1/images", Methods: []string{"GET"}}},
 		},
 		"no scope":     {permissionSet: "custom read-only set"},
@@ -73,7 +73,7 @@ func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 			},
 		},
 		"console accepts deny-only scopes": {
-			permissionSet: accesscontrol.ConsoleProxy,
+			permissionSet: accesscontrol.K8sCentralProxyUser,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/api/graphql"}},
 		},
 		"metrics permission set without scopes": {
@@ -88,7 +88,7 @@ func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/metrics", Methods: []string{"POST"}}},
 		},
 		"duplicate path": {
-			permissionSet: accesscontrol.ConsoleProxy,
+			permissionSet: accesscontrol.K8sCentralProxyUser,
 			requested: []*apiV1.HTTPRequestScope{
 				{Path: "/api/graphql", Methods: []string{"POST"}},
 				{Path: "/api/graphql", Methods: []string{"GET"}},
@@ -96,7 +96,7 @@ func TestEnforcePermissionSetHTTPScopes(t *testing.T) {
 			invalid: true,
 		},
 		"escaped path": {
-			permissionSet: accesscontrol.ConsoleProxy,
+			permissionSet: accesscontrol.K8sCentralProxyUser,
 			requested:     []*apiV1.HTTPRequestScope{{Path: "/%2A", Methods: []string{"GET"}}},
 			invalid:       true,
 		},
