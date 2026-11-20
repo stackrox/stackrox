@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package central.v1;
 
+import "api/v1/common.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/duration.proto";
 
@@ -39,6 +40,24 @@ message GenerateTokenForPermissionsAndScopeRequest {
   // identifying who requested it. This can allow finer-grain tracking
   // of who requested an internal token in the audit log trail.
   string requester = 4;
+  // permission_sets select Central-managed permission sets by ID or unique name.
+  // When set, Central uses the permission sets instead of permissions.
+  // permissions may carry fallback values for older Centrals that do not
+  // recognize this field. Console requests may specify cluster_scopes
+  // within the authenticated Sensor's cluster.
+  repeated ScopedPermissionSet permission_sets = 5;
+}
+
+// ScopedPermissionSet selects a permission set with optional HTTP restrictions.
+message ScopedPermissionSet {
+  // A nonempty selector is required.
+  oneof selector {
+    string id = 1;
+    string name = 2;
+  }
+  // When omitted, the grant has no HTTP method/path restriction.
+  // Permission-set and cluster/namespace restrictions still apply.
+  repeated .v1.HTTPRequestScope http_request_scopes = 3;
 }
 
 // ClusterScope represents the access scope of a role within a cluster.

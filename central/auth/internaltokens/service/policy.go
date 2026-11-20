@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -35,14 +36,15 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 	}
 }
 
-// defaultTokenPolicy returns the hardcoded policy for internal tokens issued
-// to sensors. It caps lifetime to 1 hour and allows read access to Deployment
-// and Image resources.
-// This policy should be kept in sync with the needs of the ocp console plugin.
+// defaultTokenPolicy validates explicit permission requests from Sensors that do
+// not select a Central-managed permission set. Permission-set requests use
+// Central-managed permissions instead.
+// This policy caps lifetime to 1 hour and should remain compatible with the
+// OCP console plugin.
 func defaultTokenPolicy() *tokenPolicy {
-	// defaultAllowedPermissions lists the resource permissions that the default
-	// policy allows sensors to request. These must stay in sync with the needs
-	// of the known token consumers (including the OCP console plugin).
+	// defaultAllowedPermissions lists the resource permissions allowed for
+	// requests without a named permission set. These must stay in sync with the
+	// needs of the known token consumers (including the OCP console plugin).
 	defaultAllowedPermissions := map[string]v1.Access{
 		"Deployment": v1.Access_READ_ACCESS,
 		"Image":      v1.Access_READ_ACCESS,
@@ -119,8 +121,40 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 	return identity.Service().GetId(), nil
 }
 
-// enforce validates the request against all policy checks and returns the
-// request with a capped lifetime if necessary.
+func (p *tokenPolicy) validatePermissionSets(
+	req *v1.GenerateTokenForPermissionsAndScopeRequest, sensorClusterID string,
+) error {
+	if len(req.GetPermissionSets()) > 32 {
+		return errox.InvalidArgs.New("too many permission sets")
+	}
+	claims := tokens.RoxClaims{}
+	seen := make(map[string]struct{})
+	for _, grant := range req.GetPermissionSets() {
+		if grant.GetName() == "" && grant.GetId() == "" {
+			return errox.InvalidArgs.New("per-access grant requires a nonempty permission set name or ID")
+		}
+		selector := "name:" + grant.GetName()
+		if grant.GetId() != "" {
+			selector = "id:" + grant.GetId()
+		}
+		if _, exists := seen[selector]; exists {
+			return errox.InvalidArgs.Newf("duplicate per-access permission set %q", selector)
+		}
+		seen[selector] = struct{}{}
+		scopes, err := tokens.HTTPRequestScopesFromProto(grant.GetHttpRequestScopes())
+		if err != nil {
+			return errox.InvalidArgs.CausedBy(err)
+		}
+		claims.InternalRoles = append(claims.InternalRoles, &tokens.InternalRole{HTTPRequestScopes: scopes})
+	}
+	_, err := tokens.ValidatePerAccessHTTPScopes(&claims)
+	if err != nil {
+		return errox.InvalidArgs.CausedBy(err)
+	}
+	return p.validateClusterScope(req.GetClusterScopes(), sensorClusterID)
+}
+
+// enforce validates the request and caps its lifetime if necessary.
 func (p *tokenPolicy) enforce(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
@@ -129,11 +163,20 @@ func (p *tokenPolicy) enforce(
 	if err != nil {
 		return nil, err
 	}
-	if err := p.validatePermissions(req.GetPermissions()); err != nil {
-		return nil, err
+	if sensorClusterID == "" {
+		return nil, errox.NotAuthorized.New("sensor cluster ID is missing")
 	}
-	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
-		return nil, err
+	if len(req.GetPermissionSets()) > 0 {
+		if err := p.validatePermissionSets(req, sensorClusterID); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := p.validatePermissions(req.GetPermissions()); err != nil {
+			return nil, err
+		}
+		if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
+			return nil, err
+		}
 	}
 	return p.enforceLifetimeLimit(req)
 }

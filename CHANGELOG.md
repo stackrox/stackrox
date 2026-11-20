@@ -36,6 +36,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-30599: The internal GraphQL API now returns `null` for unavailable CVSS scores on image, node, and cluster vulnerabilities, and unavailable NVD CVSS scores on image vulnerabilities. These fields are now nullable. CSV vulnerability exports and v2 reports display "Not Available" for unavailable scores, consistent with EPSS.
 
 - ROX-33976: Virtual machine components now report pending scans and distinguish missing CPEs from missing repository metadata.
+- ROX-37581: The Sensor-proxied OpenShift console uses a fixed, non-editable permission set for Deployment and Image read access. The separate OpenShift Prometheus permission set remains configurable.
 - ROX-36950: Central DB cleans up recognized physical backups from earlier PostgreSQL major-version upgrades after verifying the new backup, or earlier if needed to reclaim upgrade space. The current upgrade's rollback backup is retained without age-based expiration.
 - ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
 - ROX-35137: Central now prunes deployments whose cluster no longer exists in the database.
