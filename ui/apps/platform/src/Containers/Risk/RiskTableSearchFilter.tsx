@@ -13,7 +13,7 @@ export type RiskTableSearchFilterProps = {
     searchFilter: SearchFilter;
     onSearch: OnSearchCallback;
     onFilterChange: (newFilter: SearchFilter) => void;
-    // Scopes value autocomplete to the active workflow view (Applications/Platform/Full).
+    // Extra filter applied to value-autocomplete requests to scope suggestions to the current context.
     additionalContextFilter: SearchFilter;
 };
 

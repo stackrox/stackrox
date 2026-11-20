@@ -4,11 +4,13 @@ import { Flex, PageSection } from '@patternfly/react-core';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
+import useAnalytics, { RISK_FILTER_APPLIED } from 'hooks/useAnalytics';
 
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import type { SearchFilter } from 'types/search';
 
 import RiskTablePanel, { sortFields, defaultSortOption } from './RiskTablePanel';
@@ -39,6 +41,8 @@ function RiskTablePage() {
     });
     const urlPagination = useURLPagination(DEFAULT_RISK_PAGE_SIZE);
     const urlSearch = useURLSearch();
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
     const additionalContextFilter = useMemo(
@@ -56,6 +60,7 @@ function RiskTablePage() {
     const onSearch: OnSearchCallback = (payload) => {
         urlSearch.setSearchFilter(updateSearchFilter(urlSearch.searchFilter, payload));
         urlPagination.setPage(1);
+        trackAppliedFilter(RISK_FILTER_APPLIED, payload);
     };
 
     const onFilterChange = (newSearchFilter: SearchFilter) => {

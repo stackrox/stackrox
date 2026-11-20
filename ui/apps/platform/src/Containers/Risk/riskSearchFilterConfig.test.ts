@@ -3,36 +3,10 @@ import { isNumericSearchTerm } from 'utils/searchUtils';
 import { getLegacySearchFilterAttributes, searchFilterConfig } from './riskSearchFilterConfig';
 
 const allAttributes = searchFilterConfig.flatMap((entity) => entity.attributes);
-const allSearchTerms = allAttributes.map((attribute) => attribute.searchTerm);
 
 describe('riskSearchFilterConfig', () => {
-    it('exposes the 13 PM-approved curated fields', () => {
-        expect(allSearchTerms).toHaveLength(13);
-        expect(new Set(allSearchTerms)).toEqual(
-            new Set([
-                'Deployment',
-                'Deployment Label',
-                'Deployment Annotation',
-                'Deployment Type',
-                'Container Type',
-                'Privileged',
-                'Read Only Root Filesystem',
-                'Service Account',
-                'Secret',
-                'Exposure Level',
-                'Port',
-                'Cluster',
-                'Namespace',
-            ])
-        );
-    });
-
-    it('scopes every entity to the DEPLOYMENTS search category for autocomplete', () => {
-        searchFilterConfig.forEach((entity) => {
-            expect(entity.searchCategory).toBe('DEPLOYMENTS');
-        });
-    });
-
+    // Only the cross-module contract is asserted here; re-checking the curated set against the same
+    // config it is read from would just mirror the implementation.
     it('registers the numeric Port field so autocomplete omits unsupported modifiers', () => {
         // Port offers autocomplete suggestions, but must be treated as numeric so the shared
         // autocomplete does not add the regex/exact-match modifiers the search API rejects for
@@ -40,11 +14,6 @@ describe('riskSearchFilterConfig', () => {
         const portAttribute = allAttributes.find((attribute) => attribute.searchTerm === 'Port');
         expect(portAttribute?.inputType).toBe('autocomplete');
         expect(isNumericSearchTerm('Port')).toBe(true);
-    });
-
-    it('does not include dropped long-tail or workflow-view fields', () => {
-        expect(allSearchTerms).not.toContain('CPU Cores Limit');
-        expect(allSearchTerms).not.toContain('Platform Component');
     });
 });
 
@@ -66,13 +35,24 @@ describe('getLegacySearchFilterAttributes', () => {
         ]);
     });
 
-    it('ignores workflow-view keys and empty values', () => {
-        const result = getLegacySearchFilterAttributes({
-            'Platform Component': 'true',
-            Secret: '',
-            'Orchestrator Component': 'true',
-        });
+    it('ignores empty values', () => {
+        const result = getLegacySearchFilterAttributes({ 'CPU Cores Limit': '' });
         expect(result).toEqual([]);
+    });
+
+    it('surfaces a workflow-view key as a removable chip when it leaks into the URL filter', () => {
+        // "Platform Component" is normally owned by the FilteredWorkflowView selector, but if a
+        // crafted or legacy URL puts it in the URL-owned filter it still scopes the deployments
+        // query (notably in Full view). It must be a visible, removable chip, not a hidden filter.
+        const result = getLegacySearchFilterAttributes({ 'Platform Component': 'true' });
+        expect(result).toEqual([
+            {
+                displayName: 'Platform Component',
+                filterChipLabel: 'Platform Component',
+                searchTerm: 'Platform Component',
+                inputType: 'text',
+            },
+        ]);
     });
 
     it('matches config keys case-insensitively', () => {

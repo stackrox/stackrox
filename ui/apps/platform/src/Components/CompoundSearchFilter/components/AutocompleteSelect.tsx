@@ -175,8 +175,8 @@ function AutocompleteSelect({
 
     // Wraps the value in quotes if it's an actual autocomplete suggestion from the backend,
     // otherwise returns it unchanged. This provides exact-match search for suggestions
-    // and regex search for manual/fallback entries. Numeric fields are excluded: the search API
-    // rejects the exact-match (quote) modifier on numeric queries, so their values stay unmodified.
+    // and regex search for manual/fallback entries. Numeric fields are excluded (they reject the
+    // exact-match quote modifier).
     const applySelectedText = (rawValue: string | number) => {
         const value = ensureString(rawValue);
         const isAutocompleteSuggestion = data.searchAutocomplete.includes(value);

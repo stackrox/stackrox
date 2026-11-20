@@ -3,6 +3,9 @@ import {
     ContainerType as DeploymentContainerType,
     Label as DeploymentLabel,
     Name as DeploymentName,
+    Secret,
+    ServiceAccount,
+    Type as DeploymentType,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { clusterNameAttribute } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { Name as NamespaceName } from 'Components/CompoundSearchFilter/attributes/namespace';
@@ -12,37 +15,12 @@ import type {
 } from 'Components/CompoundSearchFilter/types';
 import type { SearchFilter } from 'types/search';
 
-// Attributes below are not part of the shared attribute files because they are not (yet) reused by
-// other pages. They are standard DEPLOYMENTS search fields approved for the Risk curated filter set.
-// Within the Deployment entity the displayName is the short form (the entity already conveys
-// "Deployment"); the chip label and search term keep the full wording.
+// Risk-curated attributes. The select/numeric fields below stay local; autocomplete text fields that
+// need regex matching (Type, Service Account, Secret) live in shared deployment attributes so
+// searchUtils can register them in regexSearchOptions.
 
-const attributeForDeploymentType: CompoundSearchFilterAttribute = {
-    displayName: 'Type',
-    filterChipLabel: 'Deployment type',
-    searchTerm: 'Deployment Type',
-    inputType: 'autocomplete',
-};
-
-const attributeForServiceAccount: CompoundSearchFilterAttribute = {
-    displayName: 'Service account',
-    filterChipLabel: 'Service account',
-    searchTerm: 'Service Account',
-    inputType: 'autocomplete',
-};
-
-const attributeForSecret: CompoundSearchFilterAttribute = {
-    displayName: 'Secret',
-    filterChipLabel: 'Secret',
-    searchTerm: 'Secret',
-    inputType: 'autocomplete',
-};
-
-// Port is a numeric field. It uses 'autocomplete' for value suggestions, but is registered in
-// numericSearchOptions (see utils/searchUtils) so the shared autocomplete sends its value without
-// the regex/exact-match modifiers that the search API rejects for numeric queries
-// ("modifiers not supported for numeric query: [Equality]"). The shared 'condition-number' input
-// is hardcoded to the CVSS 0-10 range, so it is not usable here.
+// Numeric: registered in numericSearchOptions (utils/searchUtils) so autocomplete drops the
+// regex/quote modifiers the search API rejects for numeric queries.
 const attributeForPort: CompoundSearchFilterAttribute = {
     displayName: 'Port',
     filterChipLabel: 'Port',
@@ -93,8 +71,8 @@ const attributeForExposureLevel: CompoundSearchFilterAttribute = {
     },
 };
 
-// All entities use the DEPLOYMENTS search category so value autocomplete resolves against the same
-// space as the Risk deployments table (scoped further by the workflow-view additionalContextFilter).
+// Cluster/Namespace use the DEPLOYMENTS category (not their own) so autocomplete resolves against
+// the deployments the table shows.
 export const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Deployment',
@@ -103,12 +81,12 @@ export const searchFilterConfig: CompoundSearchFilterConfig = [
             DeploymentName,
             DeploymentLabel,
             DeploymentAnnotation,
-            attributeForDeploymentType,
+            DeploymentType,
             DeploymentContainerType,
             attributeForPrivileged,
             attributeForReadOnlyRootFilesystem,
-            attributeForServiceAccount,
-            attributeForSecret,
+            ServiceAccount,
+            Secret,
             attributeForExposureLevel,
             attributeForPort,
         ],
@@ -125,10 +103,6 @@ export const searchFilterConfig: CompoundSearchFilterConfig = [
     },
 ];
 
-// Keys that are managed by the FilteredWorkflowView selector (not by the search filter). They are
-// merged into the query separately, so they must never render as a removable catch-all chip.
-const workflowViewSearchKeys = new Set(['platform component', 'orchestrator component']);
-
 function getHandledConfigSearchKeys(config: CompoundSearchFilterConfig): Set<string> {
     const keys = new Set<string>();
     config.forEach((entity) => {
@@ -139,11 +113,9 @@ function getHandledConfigSearchKeys(config: CompoundSearchFilterConfig): Set<str
     return keys;
 }
 
-// Backwards compatibility: a bookmarked or saved URL may carry filter keys that are not in the
-// curated config (for example a dropped long-tail field). Those filters are still applied to the
-// deployments query, so surface each remaining key as a removable text chip rather than leaving it
-// as a hidden, unremovable filter. Returned as synthetic "text" attributes consumed by
-// CompoundSearchFilterLabels via its attributesSeparateFromConfig prop.
+// A bookmarked URL may carry filter keys absent from the curated config (a dropped field, or a
+// workflow-view key like "Platform Component"). They still scope the query, so surface them as
+// removable chips instead of hidden filters.
 export function getLegacySearchFilterAttributes(
     searchFilter: SearchFilter,
     config: CompoundSearchFilterConfig = searchFilterConfig
@@ -152,7 +124,7 @@ export function getLegacySearchFilterAttributes(
     return Object.keys(searchFilter)
         .filter((key) => {
             const lowerKey = key.toLowerCase();
-            if (configKeys.has(lowerKey) || workflowViewSearchKeys.has(lowerKey)) {
+            if (configKeys.has(lowerKey)) {
                 return false;
             }
             const value = searchFilter[key];

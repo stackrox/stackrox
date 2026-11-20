@@ -23,6 +23,11 @@ const dropdownSelectors = {
     dropdownItem: '*[data-ouia-component-type="PF6/DropdownItem"]',
 } as const;
 
+const labelSelectors = {
+    label: '.pf-v6-c-label',
+    labelGroup: '.pf-v6-c-label-group',
+} as const;
+
 const menu = 'div[data-ouia-component-type="PF6/Menu"]';
 const menuSelectors = {
     menu,
@@ -69,6 +74,7 @@ export default {
     ...cardSelectors,
     ...columnManagementSelectors,
     ...dropdownSelectors,
+    ...labelSelectors,
     ...menuSelectors,
     ...navSelectors,
     ...pageHeaderSelectors,
