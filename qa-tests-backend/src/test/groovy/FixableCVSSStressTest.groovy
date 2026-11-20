@@ -24,21 +24,29 @@ class FixableCVSSStressTest extends BaseSpecification {
         Services.updatePolicyLifecycleStage(clone.name, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
         Services.setPolicyDisabled(clone.name, false)
 
-        when: "scan nginx-2.0.3 ${ITERATIONS} times, sampling over ~30 minutes"
-        // Each forced scan re-matches against the matcher's current vuln DB state;
-        // it does not prompt the updater. The iterations are passive samples that
-        // chart when CVSS enrichment becomes usable after the readiness gate passed.
+        when: "sample nginx-2.0.3 ${ITERATIONS} times over ~30 minutes"
+        // Two probes per iteration:
+        // 1. Forced build-time scan (the exact call the failing ImageManagementTest
+        //    case makes) - exercises the real failing assertion.
+        // 2. Unforced scanImage (cached/scan view) - records max fixable CVSS, to
+        //    distinguish incomplete enrichment (scores zero) from policy-eval
+        //    failure (scores present, alert absent) and cache divergence.
         List<String> failures = []
-        List<String> vulnCounts = []
+        List<String> samples = []
         long startMs = System.currentTimeMillis()
         for (int i = 1; i <= ITERATIONS; i++) {
             def scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa-multi-arch", "nginx-2.0.3")
             def alerts = scanResults.getAlertsList().findAll { it.getPolicy().name == clone.name }
-            def vulnCount = scanResults.getAlertsList().size()
+
+            def image = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3", true, false)
+            def vulns = image?.scan?.componentsList?.collectMany { it.vulnsList } ?: []
+            def fixable = vulns.findAll { it.fixedBy }
+            def maxFixableCvss = (fixable*.cvss).max() ?: 0
+
             long elapsed = (System.currentTimeMillis() - startMs) / 1000
-            vulnCounts << "iter=${i}:t=${elapsed}s:alerts=${alerts.size()},total_alerts=${vulnCount}"
+            samples << "iter=${i}:t=${elapsed}s:alerts=${alerts.size()}:maxFixableCvss=${maxFixableCvss}:fixableCves=${fixable.size()}"
             if (alerts.size() != 1) {
-                failures << "iteration ${i}: ${alerts.size()} alerts for cloned policy (expected 1), total alerts: ${vulnCount}"
+                failures << "iteration ${i} (t=${elapsed}s): ${alerts.size()} alerts for cloned policy (expected 1), maxFixableCvss=${maxFixableCvss}, fixableCves=${fixable.size()}"
             }
             if (i < ITERATIONS) {
                 sleep(DELAY_MS)
@@ -46,9 +54,9 @@ class FixableCVSSStressTest extends BaseSpecification {
         }
 
         then: "all iterations should find exactly 1 alert"
-        if (!failures.isEmpty()) {
-            log.warn("Fixable CVSS stress test results:\n  ${vulnCounts.join('\n  ')}")
-        }
+        // Always log the full sample series - the enrichment-over-time curve is
+        // the diagnostic payload, not just pass/fail.
+        log.warn("Fixable CVSS stress test samples:\n  ${samples.join('\n  ')}")
         assert failures.isEmpty() : "Failed ${failures.size()}/${ITERATIONS} iterations:\n  ${failures.join('\n  ')}"
 
         cleanup:
