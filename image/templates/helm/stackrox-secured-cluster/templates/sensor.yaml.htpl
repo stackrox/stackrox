@@ -174,7 +174,7 @@ spec:
           - containerPort: 9091
             name: monitoring-tls
           {{- end }}
-          {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
+          {{- if and (eq ._rox.env.openshift 4) (or [< default false .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
           - containerPort: 9444
             name: proxy-https
           {{- end }}
@@ -293,7 +293,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
-        {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
+        {{- if and (eq ._rox.env.openshift 4) (or [< default false .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
         - name: proxy-tls-volume
           mountPath: /run/secrets/stackrox.io/proxy-tls/
           readOnly: true
@@ -376,7 +376,7 @@ spec:
         secret:
           secretName: sensor-monitoring-tls
       {{- end }}
-      {{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
+      {{- if and (eq ._rox.env.openshift 4) (or [< default false .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
       - name: proxy-tls-volume
         secret:
           secretName: sensor-proxy-tls
@@ -417,7 +417,7 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
-{{- if and (eq ._rox.env.openshift 4) (or [< .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
+{{- if and (eq ._rox.env.openshift 4) (or [< default false .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >] ._rox.sensor.centralProxy.enabled) }}
 apiVersion: v1
 kind: Service
 metadata:
