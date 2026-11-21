@@ -195,7 +195,7 @@ func seedAccessScope(ctx context.Context) {
 }
 
 func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) {
-	if _, exists, err := roleDS.GetPermissionSet(ctx, permissionSetID); err != nil {
+	if exists, err := roleDS.PermissionSetExists(ctx, permissionSetID); err != nil {
 		log.Warnf("Failed to check OpenShift metrics permission set: %v", err)
 		return
 	} else if exists {
@@ -215,7 +215,7 @@ func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) {
 }
 
 func ensureRole(ctx context.Context, roleDS roleDataStore.DataStore) {
-	if _, exists, err := roleDS.GetRole(ctx, roleName); err != nil {
+	if exists, err := roleDS.RoleExists(ctx, roleName); err != nil {
 		log.Warnf("Failed to check OpenShift metrics role: %v", err)
 		return
 	} else if exists {
@@ -258,15 +258,16 @@ func ensureAuthProvider(ctx context.Context, registry authproviders.Registry, ca
 
 func ensureGroup(ctx context.Context, groupDS groupDataStore.DataStore) {
 	cn := env.SecureMetricsClientCertCN.Setting()
-	existing, err := groupDS.GetFiltered(ctx, func(g *storage.Group) bool {
-		p := g.GetProps()
-		return p.GetAuthProviderId() == authProviderID && p.GetKey() == "name" && p.GetValue() == cn
+	exists, err := groupDS.Exists(ctx, &storage.GroupProperties{
+		AuthProviderId: authProviderID,
+		Key:            "name",
+		Value:          cn,
 	})
 	if err != nil {
 		log.Warnf("Failed to check OpenShift metrics group: %v", err)
 		return
 	}
-	if len(existing) > 0 {
+	if exists {
 		return
 	}
 	group := &storage.Group{

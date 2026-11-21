@@ -16,6 +16,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.AuthProvider, bool, error)
 
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.AuthProvider) error
