@@ -205,9 +205,11 @@ jobs:
           mkdir -p bin-exp
           START=$(date +%s%3N)
           for t in ./central ./sensor/kubernetes ./sensor/admission-control; do
-            /tmp/cimemo go build -o bin-exp/$(basename $t) $t 2>&1 | grep -E "CACHE HIT|running" | head -1
+            /tmp/cimemo go build -o bin-exp/$(basename $t) $t 2>&1 | tee -a /tmp/cimemo-warm.log
           done
-          /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:warm . 2>&1 | grep -E "CACHE HIT|running" | head -1
+          /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:warm . 2>&1 | tee -a /tmp/cimemo-warm.log
+          echo "--- cimemo summary:"
+          grep -E "CACHE HIT|commit receipt|running" /tmp/cimemo-warm.log
           echo "PIPELINE-RECEIPT: $(( $(date +%s%3N) - START ))ms"
           sha256sum bin-exp/* | tee /tmp/warm-shas
           if diff -q /tmp/cold-shas /tmp/warm-shas >/dev/null; then
@@ -243,21 +245,9 @@ jobs:
           mkdir -p bin-exp
           START=$(date +%s%3N)
           for t in ./central ./sensor/kubernetes ./sensor/admission-control; do
-            /tmp/cimemo go build -o bin-exp/$(basename $t) $t 2>&1 | grep -E "CACHE HIT|running" | head -1
+            /tmp/cimemo go build -o bin-exp/$(basename $t) $t 2>&1 | tee -a /tmp/cimemo-warm.log
           done
-          /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:warmfast . 2>&1 | grep -E "CACHE HIT|running" | head -1
+          /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:warmfast . 2>&1 | tee -a /tmp/cimemo-warm.log
           echo "PIPELINE-WARM: $(( $(date +%s%3N) - START ))ms"
-
-  gitdiag:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: tree cleanliness diagnostics
-        run: |
-          echo "HEAD: $(git rev-parse HEAD)"
-          git diff-index --quiet HEAD --; echo "diff-index rc=$?"
-          echo "status lines: $(git status --porcelain | wc -l)"
-          git status --porcelain | head -5
-          find . -exec touch -d @946684800 {} +
-          git diff-index --quiet HEAD --; echo "after touch-all rc=$?"
-          git status --porcelain | head -5
+          echo "--- cimemo summary:"
+          grep -E "CACHE HIT|commit receipt|running" /tmp/cimemo-warm.log
