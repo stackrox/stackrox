@@ -1,8 +1,10 @@
 package tokenbased
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -21,9 +23,408 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/metadata"
 )
+
+func TestExtractorEnforcesHTTPRequestScope(t *testing.T) {
+	te := getTestExtractor(t)
+	provider := createEnabledMockAuthProvider(te.mockCtrl)
+	scopedToken := &tokens.TokenInfo{
+		Claims: &tokens.Claims{RoxClaims: tokens.RoxClaims{
+			InternalRoles:     []*tokens.InternalRole{{RoleName: "metrics"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/metrics": {"GET"}},
+		}},
+		Sources: []tokens.Source{provider},
+	}
+	te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").AnyTimes().Return(scopedToken, nil)
+	for name, tc := range map[string]struct {
+		request *requestinfo.HTTPRequest
+		allowed bool
+	}{
+		"metrics HTTP route": {request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/metrics"}}, allowed: true},
+		"wrong method":       {request: &requestinfo.HTTPRequest{Method: "POST", URL: &url.URL{Path: "/metrics"}}},
+		"wrong route":        {request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/v1/metadata"}}},
+		"direct gRPC":        {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			id, err := te.extractor.IdentityForRequest(t.Context(), requestinfo.RequestInfo{
+				Metadata:    map[string][]string{"authorization": {"Bearer token"}},
+				HTTPRequest: tc.request,
+			})
+			if tc.allowed {
+				assert.Nil(t, err)
+				assert.NotNil(t, id)
+			} else {
+				assert.Nil(t, id)
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestExtractorCombinesTokenAndRoleHTTPRequestScopes(t *testing.T) {
+	for name, tc := range map[string]struct {
+		tokenScopes     tokens.HTTPRequestScopes
+		roleScopes      tokens.HTTPRequestScopes
+		otherRoleScopes tokens.HTTPRequestScopes
+		unscopedLast    bool
+		method, path    string
+		permissions     map[string]storage.Access
+		roleNames       []string
+	}{
+		"absent role scope inherits token allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/images",
+			permissions: testRole1Permissions,
+			roleNames:   []string{roleName1},
+		},
+		"absent role scope inherits token denial": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/": {"GET"}, "/v1/images": {}},
+			method:      "GET", path: "/v1/images",
+		},
+		"absent role scope cannot bypass token method": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/": {"GET"}},
+			method:      "POST", path: "/v1/images",
+		},
+		"absent role scope cannot bypass token path": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/deployments",
+		},
+		"absent role scope cannot bypass token restriction for gRPC": {
+			tokenScopes: tokens.HTTPRequestScopes{"/": {"GET"}},
+		},
+		"mixed scopes inherit and narrow token allow": {
+			tokenScopes:     tokens.HTTPRequestScopes{"/v1/": {"GET"}},
+			otherRoleScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:          "GET", path: "/v1/images",
+			permissions: bothTestRolePermissions,
+			roleNames:   []string{roleName1, roleName2},
+		},
+		"narrower role excluded while absent scope inherits": {
+			tokenScopes:     tokens.HTTPRequestScopes{"/v1/": {"GET"}},
+			otherRoleScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:          "GET", path: "/v1/deployments",
+			permissions: testRole1Permissions,
+			roleNames:   []string{roleName1},
+		},
+		"explicit denial preserves inheriting role last": {
+			tokenScopes:     tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			otherRoleScopes: tokens.HTTPRequestScopes{"/v1/": {}},
+			unscopedLast:    true,
+			method:          "GET", path: "/v1/images",
+			permissions: testRole1Permissions,
+			roleNames:   []string{roleName1},
+		},
+		"token broad denial cannot be bypassed by specific role allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/": {}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/images",
+		},
+		"role broad denial cannot be bypassed by specific token allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/": {}},
+			method:      "GET", path: "/v1/images",
+		},
+		"both levels allow with more specific role scope": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/images",
+			permissions: testRole1Permissions,
+			roleNames:   []string{roleName1},
+		},
+		"both levels allow with more specific token scope": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/": {"GET"}},
+			method:      "GET", path: "/v1/images",
+			permissions: testRole1Permissions,
+			roleNames:   []string{roleName1},
+		},
+		"most specific allow evaluated independently at both levels": {
+			tokenScopes: tokens.HTTPRequestScopes{"/": {}, "/v1/": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/": {}, "/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/images",
+			permissions: testRole1Permissions,
+			roleNames:   []string{roleName1},
+		},
+		"token specific denial overrides token broad allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/": {"GET"}, "/v1/images": {}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/images",
+		},
+		"role specific denial overrides role broad allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/": {"GET"}, "/v1/images": {}},
+			method:      "GET", path: "/v1/images",
+		},
+		"token method mismatch despite role allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/": {"POST"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/images",
+		},
+		"role method mismatch despite token allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/": {"POST"}},
+			method:      "GET", path: "/v1/images",
+		},
+		"token path mismatch despite role allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:      "GET", path: "/v1/images",
+		},
+		"role path mismatch despite token allow": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/deployments": {"GET"}},
+			method:      "GET", path: "/v1/images",
+		},
+		"unrelated denial does not affect allowed request": {
+			tokenScopes: tokens.HTTPRequestScopes{"/v1/": {"GET"}, "/v1/deployments": {}},
+			roleScopes:  tokens.HTTPRequestScopes{"/v1/images": {"GET"}, "/metrics": {}},
+			method:      "GET", path: "/v1/images",
+			permissions: testRole1Permissions,
+			roleNames:   []string{roleName1},
+		},
+		"direct gRPC rejected with scopes at both levels": {
+			tokenScopes: tokens.HTTPRequestScopes{"/": {"GET"}},
+			roleScopes:  tokens.HTTPRequestScopes{"/": {"GET"}},
+		},
+		"explicit role denial preserves another eligible role": {
+			tokenScopes:     tokens.HTTPRequestScopes{"/v1/": {"GET"}},
+			roleScopes:      tokens.HTTPRequestScopes{"/v1/images": {}},
+			otherRoleScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:          "GET", path: "/v1/images",
+			permissions: testRole2Permissions,
+			roleNames:   []string{roleName2},
+		},
+		"explicit role denial preserves another eligible role without token scopes": {
+			roleScopes:      tokens.HTTPRequestScopes{"/v1/images": {}},
+			otherRoleScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}},
+			method:          "GET", path: "/v1/images",
+			permissions: testRole2Permissions,
+			roleNames:   []string{roleName2},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			te := getTestExtractor(t)
+			roles := []*tokens.InternalRole{{
+				RoleName:          roleName1,
+				Permissions:       map[storage.Access][]string{storage.Access_READ_ACCESS: {deploymentResource}},
+				HTTPRequestScopes: tc.roleScopes,
+			}}
+			if tc.otherRoleScopes != nil {
+				roles = append(roles, &tokens.InternalRole{
+					RoleName:          roleName2,
+					Permissions:       map[storage.Access][]string{storage.Access_READ_WRITE_ACCESS: {imageResource}},
+					HTTPRequestScopes: tc.otherRoleScopes,
+				})
+			}
+			if tc.unscopedLast {
+				roles[0], roles[1] = roles[1], roles[0]
+			}
+			scopedToken := &tokens.TokenInfo{
+				Claims: &tokens.Claims{RoxClaims: tokens.RoxClaims{
+					InternalRoles:     roles,
+					HTTPRequestScopes: tc.tokenScopes,
+				}},
+				Sources: []tokens.Source{createEnabledMockAuthProvider(te.mockCtrl)},
+			}
+			originalClaims, err := json.Marshal(scopedToken.Claims)
+			require.NoError(t, err)
+			te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").Return(scopedToken, nil)
+			request := requestinfo.RequestInfo{
+				Metadata: map[string][]string{"authorization": {"Bearer token"}},
+			}
+			if tc.method != "" {
+				request.HTTPRequest = &requestinfo.HTTPRequest{Method: tc.method, URL: &url.URL{Path: tc.path}}
+			}
+			id, extractionErr := te.extractor.IdentityForRequest(t.Context(), request)
+			claims, err := json.Marshal(scopedToken.Claims)
+			require.NoError(t, err)
+			assert.Equal(t, originalClaims, claims)
+			if tc.permissions == nil {
+				assert.Nil(t, id)
+				assert.ErrorContains(t, extractionErr, "token is not valid for this HTTP method and path")
+				return
+			}
+			require.Nil(t, extractionErr)
+			require.NotNil(t, id)
+			assert.Equal(t, tc.permissions, id.Permissions())
+			actualRoleNames := make([]string, 0, len(id.Roles()))
+			for _, role := range id.Roles() {
+				actualRoleNames = append(actualRoleNames, role.GetRoleName())
+			}
+			assert.ElementsMatch(t, tc.roleNames, actualRoleNames)
+		})
+	}
+}
+
+func TestExtractorSelectsOnlyMatchingScopedRole(t *testing.T) {
+	te := getTestExtractor(t)
+	provider := createEnabledMockAuthProvider(te.mockCtrl)
+	roles := []*tokens.InternalRole{
+		{RoleName: "deployments", Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+			Clusters:          tokens.ClusterScopes{"deployment-cluster": {"deployment-namespace"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/": {"GET"}}},
+		{RoleName: "images", Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Image"}},
+			Clusters:          tokens.ClusterScopes{"image-cluster": {"image-namespace"}},
+			HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/images": {"POST"}}},
+	}
+	scopedToken := &tokens.TokenInfo{
+		Claims:  &tokens.Claims{RoxClaims: tokens.RoxClaims{InternalRoles: roles}},
+		Sources: []tokens.Source{provider},
+	}
+	originalClaims, err := json.Marshal(scopedToken.Claims)
+	require.NoError(t, err)
+	te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").AnyTimes().Return(scopedToken, nil)
+	for name, tc := range map[string]struct {
+		method, path       string
+		permission         string
+		cluster, namespace string
+	}{
+		"broad route": {method: "GET", path: "/v1/deployments", permission: "Deployment",
+			cluster: "deployment-cluster", namespace: "deployment-namespace"},
+		"specific route": {method: "POST", path: "/v1/images", permission: "Image",
+			cluster: "image-cluster", namespace: "image-namespace"},
+		"specific denies fallback": {method: "GET", path: "/v1/images"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			id, err := te.extractor.IdentityForRequest(t.Context(), requestinfo.RequestInfo{
+				Metadata:    map[string][]string{"authorization": {"Bearer token"}},
+				HTTPRequest: &requestinfo.HTTPRequest{Method: tc.method, URL: &url.URL{Path: tc.path}},
+			})
+			claims, marshalErr := json.Marshal(scopedToken.Claims)
+			require.NoError(t, marshalErr)
+			assert.Equal(t, originalClaims, claims)
+			if tc.permission == "" {
+				assert.Nil(t, id)
+				assert.Error(t, err)
+				return
+			}
+			assert.Nil(t, err)
+			require.NotNil(t, id)
+			assert.Equal(t, map[string]storage.Access{tc.permission: storage.Access_READ_ACCESS}, id.Permissions())
+			require.Len(t, id.Roles(), 1)
+			assert.Equal(t, tokens.ClusterScopes{tc.cluster: {tc.namespace}},
+				id.Roles()[0].(*tokens.InternalRole).Clusters)
+			protoassert.Equal(t, &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{ClusterId: tc.cluster, NamespaceName: tc.namespace},
+					},
+				},
+			}, id.Roles()[0].GetAccessScope())
+		})
+	}
+}
+
+func TestExtractorMixedHTTPScopes(t *testing.T) {
+	for order, unscopedFirst := range map[string]bool{"unscoped first": true, "unscoped last": false} {
+		t.Run(order, func(t *testing.T) {
+			te := getTestExtractor(t)
+			provider := createEnabledMockAuthProvider(te.mockCtrl)
+			unscoped := &tokens.InternalRole{RoleName: "unscoped",
+				Clusters:    tokens.ClusterScopes{"cluster": {"secrets"}},
+				Permissions: map[storage.Access][]string{storage.Access_READ_ACCESS: {"Secret"}}}
+			scoped := &tokens.InternalRole{RoleName: "scoped",
+				Clusters:          tokens.ClusterScopes{"cluster": {"deployments"}},
+				Permissions:       map[storage.Access][]string{storage.Access_READ_ACCESS: {"Deployment"}},
+				HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}}}
+			sameRoute := &tokens.InternalRole{RoleName: "same route",
+				Clusters:          tokens.ClusterScopes{"other": {"*"}},
+				Permissions:       map[storage.Access][]string{storage.Access_READ_ACCESS: {"Image"}},
+				HTTPRequestScopes: tokens.HTTPRequestScopes{"/v1/images": {"GET"}}}
+			roles := []*tokens.InternalRole{scoped, sameRoute, unscoped}
+			if unscopedFirst {
+				roles = []*tokens.InternalRole{unscoped, scoped, sameRoute}
+			}
+			expectedAccessScopes := make(map[string]*storage.SimpleAccessScope)
+			for _, role := range roles {
+				expectedAccessScopes[role.RoleName] = role.GetAccessScope()
+			}
+			token := &tokens.TokenInfo{
+				Claims: &tokens.Claims{RoxClaims: tokens.RoxClaims{
+					InternalRoles: roles,
+				}},
+				Sources: []tokens.Source{provider},
+			}
+			originalClaims, err := json.Marshal(token.Claims)
+			require.NoError(t, err)
+			te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").AnyTimes().Return(token, nil)
+			for name, tc := range map[string]struct {
+				request *requestinfo.HTTPRequest
+				matches bool
+			}{
+				"matching route": {
+					request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/v1/images"}},
+					matches: true,
+				},
+				"unmatched route": {
+					request: &requestinfo.HTTPRequest{Method: "GET", URL: &url.URL{Path: "/other"}},
+				},
+				"wrong method": {
+					request: &requestinfo.HTTPRequest{Method: "POST", URL: &url.URL{Path: "/v1/images"}},
+				},
+				"direct gRPC": {},
+			} {
+				t.Run(name, func(t *testing.T) {
+					id, err := te.extractor.IdentityForRequest(t.Context(), requestinfo.RequestInfo{
+						Metadata:    metadata.MD{"authorization": {"Bearer token"}},
+						HTTPRequest: tc.request,
+					})
+					require.Nil(t, err)
+					require.NotNil(t, id)
+					expectedPermissions := map[string]storage.Access{"Secret": storage.Access_READ_ACCESS}
+					expectedRoles := []string{"unscoped"}
+					if tc.matches {
+						expectedPermissions["Deployment"] = storage.Access_READ_ACCESS
+						expectedPermissions["Image"] = storage.Access_READ_ACCESS
+						expectedRoles = append(expectedRoles, "scoped", "same route")
+					}
+					assert.Equal(t, expectedPermissions, id.Permissions())
+					assert.ElementsMatch(t, expectedRoles, id.Attributes()["role"])
+					require.Len(t, id.Roles(), len(expectedRoles))
+					for _, role := range id.Roles() {
+						protoassert.Equal(t, expectedAccessScopes[role.GetRoleName()], role.GetAccessScope())
+					}
+					claims, marshalErr := json.Marshal(token.Claims)
+					require.NoError(t, marshalErr)
+					assert.Equal(t, originalClaims, claims, "validated claims must remain unchanged")
+				})
+			}
+		})
+	}
+}
+
+func TestExtractorAllUnscopedRolesPreserveClusterScopes(t *testing.T) {
+	te := getTestExtractor(t)
+	provider := createEnabledMockAuthProvider(te.mockCtrl)
+	roles := []*tokens.InternalRole{
+		{RoleName: "first", Clusters: tokens.ClusterScopes{"cluster": {"namespace"}}},
+		{RoleName: "second", Clusters: tokens.ClusterScopes{"other": {"*"}}},
+	}
+	token := &tokens.TokenInfo{
+		Claims:  &tokens.Claims{RoxClaims: tokens.RoxClaims{InternalRoles: roles}},
+		Sources: []tokens.Source{provider},
+	}
+	te.tokenValidator.EXPECT().Validate(gomock.Any(), "token").AnyTimes().Return(token, nil)
+	for name, request := range map[string]*requestinfo.HTTPRequest{
+		"direct gRPC": nil,
+		"HTTP":        {Method: "GET", URL: &url.URL{Path: "/v1/images"}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			id, err := te.extractor.IdentityForRequest(t.Context(), requestinfo.RequestInfo{
+				Metadata: metadata.MD{"authorization": {"Bearer token"}}, HTTPRequest: request,
+			})
+			require.Nil(t, err)
+			require.NotNil(t, id)
+			require.Len(t, id.Roles(), len(roles))
+			for i, role := range roles {
+				protoassert.Equal(t, role.GetAccessScope(), id.Roles()[i].GetAccessScope())
+			}
+		})
+	}
+}
 
 const (
 	mockSourceID  = "mock source ID"
