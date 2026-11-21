@@ -247,3 +247,17 @@ jobs:
           done
           /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:warmfast . 2>&1 | grep -E "CACHE HIT|running" | head -1
           echo "PIPELINE-WARM: $(( $(date +%s%3N) - START ))ms"
+
+  gitdiag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: tree cleanliness diagnostics
+        run: |
+          echo "HEAD: $(git rev-parse HEAD)"
+          git diff-index --quiet HEAD --; echo "diff-index rc=$?"
+          echo "status lines: $(git status --porcelain | wc -l)"
+          git status --porcelain | head -5
+          find . -exec touch -d @946684800 {} +
+          git diff-index --quiet HEAD --; echo "after touch-all rc=$?"
+          git status --porcelain | head -5
