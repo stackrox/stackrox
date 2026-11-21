@@ -104,6 +104,7 @@ const (
 	KubernetesEvent_Object_SECURITY_CONTEXT_CONSTRAINTS KubernetesEvent_Object_Resource = 8
 	KubernetesEvent_Object_EGRESS_FIREWALLS             KubernetesEvent_Object_Resource = 9
 	KubernetesEvent_Object_PODS_ATTACH                  KubernetesEvent_Object_Resource = 10
+	KubernetesEvent_Object_EVENTS                       KubernetesEvent_Object_Resource = 11
 )
 
 // Enum value maps for KubernetesEvent_Object_Resource.
@@ -120,6 +121,7 @@ var (
 		8:  "SECURITY_CONTEXT_CONSTRAINTS",
 		9:  "EGRESS_FIREWALLS",
 		10: "PODS_ATTACH",
+		11: "EVENTS",
 	}
 	KubernetesEvent_Object_Resource_value = map[string]int32{
 		"UNKNOWN":                      0,
@@ -133,6 +135,7 @@ var (
 		"SECURITY_CONTEXT_CONSTRAINTS": 8,
 		"EGRESS_FIREWALLS":             9,
 		"PODS_ATTACH":                  10,
+		"EVENTS":                       11,
 	}
 )
 
@@ -663,7 +666,7 @@ var File_storage_kube_event_proto protoreflect.FileDescriptor
 
 const file_storage_kube_event_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\f\n" +
+	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc1\f\n" +
 	"\x0fKubernetesEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x06object\x18\x02 \x01(\v2\x1f.storage.KubernetesEvent.ObjectR\x06object\x128\n" +
@@ -680,13 +683,13 @@ const file_storage_kube_event_proto_rawDesc = "" +
 	"user_agent\x18\x12 \x01(\tR\tuserAgent\x12P\n" +
 	"\x0fresponse_status\x18\x13 \x01(\v2'.storage.KubernetesEvent.ResponseStatusR\x0eresponseStatus\x12\x1f\n" +
 	"\vrequest_uri\x18\x14 \x01(\tR\n" +
-	"requestUri\x1a\x88\x03\n" +
+	"requestUri\x1a\x94\x03\n" +
 	"\x06Object\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12D\n" +
 	"\bresource\x18\x02 \x01(\x0e2(.storage.KubernetesEvent.Object.ResourceR\bresource\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xe6\x01\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xf2\x01\n" +
 	"\bResource\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tPODS_EXEC\x10\x01\x12\x14\n" +
@@ -700,7 +703,9 @@ const file_storage_kube_event_proto_rawDesc = "" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\b\x12\x14\n" +
 	"\x10EGRESS_FIREWALLS\x10\t\x12\x0f\n" +
 	"\vPODS_ATTACH\x10\n" +
-	"\x1aG\n" +
+	"\x12\n" +
+	"\n" +
+	"\x06EVENTS\x10\v\x1aG\n" +
 	"\vPodExecArgs\x12\x1c\n" +
 	"\tcontainer\x18\x01 \x01(\tR\tcontainer\x12\x1a\n" +
 	"\bcommands\x18\x02 \x03(\tR\bcommands\x1a*\n" +
