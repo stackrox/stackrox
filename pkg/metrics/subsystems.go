@@ -11,6 +11,7 @@ const (
 	AdmissionControlSubsystem Subsystem = "admission_control"
 	ComplianceSubsystem       Subsystem = "compliance"
 	ScannerSubsystem          Subsystem = "scanner"
+	BackgroundWorkerSubsystem Subsystem = "background_worker"
 )
 
 func (s Subsystem) String() string {
