@@ -6,15 +6,20 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/coalescer"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -26,9 +31,9 @@ import (
 
 const (
 	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
-	// These tokens carry narrowly scoped permissions and are not directly exposed
-	// to users. The longer cache window trades minimal revocation latency for
-	// significantly lower load on Central in clusters with many proxied requests.
+	// Console tokens contain administrator-managed permissions. A longer cache
+	// window reduces token requests but delays permission reductions for up to
+	// the token lifetime.
 	tokenCacheTTL = 55 * time.Minute
 
 	// tokenTTL is the requested token lifetime.
@@ -47,12 +52,6 @@ const (
 	// FullClusterAccessScope is the namespace scope value that indicates full cluster access.
 	FullClusterAccessScope = "*"
 )
-
-// tokenPermissions defines the required read permissions for proxy requests.
-var tokenPermissions = map[string]centralv1.Access{
-	"Deployment": centralv1.Access_READ_ACCESS,
-	"Image":      centralv1.Access_READ_ACCESS,
-}
 
 // errServiceUnavailable indicates the proxy is temporarily unavailable,
 // typically during sensor startup before Central connection is established.
@@ -294,8 +293,16 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		Permissions: tokenPermissions,
-		Lifetime:    durationpb.New(tokenTTL),
+		PermissionSets: []*centralv1.ScopedPermissionSet{{
+			Selector:          &centralv1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]},
+			HttpRequestScopes: consoleRequestScopes(),
+		}},
+		// Centrals without permission set support use these fallback permissions.
+		Permissions: map[string]centralv1.Access{
+			"Deployment": centralv1.Access_READ_ACCESS,
+			"Image":      centralv1.Access_READ_ACCESS,
+		},
+		Lifetime: durationpb.New(tokenTTL),
 	}
 
 	switch namespaceScope {
@@ -316,4 +323,14 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	return req, nil
+}
+
+func consoleRequestScopes() []*apiV1.HTTPRequestScope {
+	result := make([]*apiV1.HTTPRequestScope, 0, len(centralproxy.ConsoleHTTPScopes))
+	for _, path := range slices.Sorted(maps.Keys(centralproxy.ConsoleHTTPScopes)) {
+		result = append(result, &apiV1.HTTPRequestScope{
+			Path: path, Methods: slices.Clone(centralproxy.ConsoleHTTPScopes[path]),
+		})
+	}
+	return result
 }
