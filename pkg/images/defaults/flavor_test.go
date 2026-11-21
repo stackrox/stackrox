@@ -182,3 +182,19 @@ func TestGetVisibleImageFlavorNames(t *testing.T) {
 		})
 	}
 }
+
+func (s *imageFlavorTestSuite) TestAnonymousPull() {
+	testCases := map[string]struct {
+		flavor   ImageFlavor
+		expected bool
+	}{
+		ImageFlavorNameDevelopmentBuild: {flavor: DevelopmentBuildImageFlavor(), expected: false},
+		ImageFlavorNameRHACSRelease:     {flavor: RHACSReleaseImageFlavor(), expected: false},
+		ImageFlavorNameOpenSource:       {flavor: OpenSourceImageFlavor(), expected: true},
+	}
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			s.Equal(tc.expected, tc.flavor.ImagePullSecrets.AnonymousPull)
+		})
+	}
+}
