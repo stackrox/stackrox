@@ -807,6 +807,24 @@ func TestImageCVESelectDeploymentContainerName(t *testing.T) {
 	assert.Contains(t, sql, "join deployments_containers")
 }
 
+func TestImageCVESelectImageSHA(t *testing.T) {
+	q := search.NewQueryBuilder().AddSelectFields(
+		search.NewQuerySelect(search.CVE),
+		search.NewQuerySelect(search.ImageName),
+		search.NewQuerySelect(search.ImageSHA),
+	).ProtoQuery()
+	built, err := standardizeSelectQueryAndPopulatePath(sac.WithAllAccess(t.Context()), q, imageCVEV2Schema, SELECT, nil)
+	require.NoError(t, err)
+
+	if features.FlattenImageData.Enabled() {
+		assert.Contains(t, built.AsSQL(), "images_v2.Name_FullName as image")
+		assert.Contains(t, built.AsSQL(), "images_v2.Digest as image_sha")
+	} else {
+		assert.Contains(t, built.AsSQL(), "images.Name_FullName as image")
+		assert.Contains(t, built.AsSQL(), "images.Id as image_sha")
+	}
+}
+
 func TestDeleteQueries(t *testing.T) {
 
 	for _, c := range []struct {

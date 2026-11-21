@@ -6,11 +6,13 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageMapperDS "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
@@ -25,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestViewBasedReporting(t *testing.T) {
@@ -91,7 +94,8 @@ func (s *ViewBasedReportingTestSuite) SetupTest() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, s.resolver.DeploymentDataStore,
 		s.watchedImageDatastore, nil, nil, s.blobStore, s.clusterDatastore,
-		s.namespaceDatastore, s.resolver.ImageCVEV2DataStore)
+		s.namespaceDatastore, s.resolver.ImageCVEV2DataStore,
+		imageMapperDS.New(s.resolver.ImageDataStore, s.resolver.ImageV2DataStore), nil)
 }
 
 func (s *ViewBasedReportingTestSuite) TearDownTest() {
@@ -103,6 +107,71 @@ func (s *ViewBasedReportingTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
 
 	s.truncateTable(postgresSchema.CollectionsTableName)
+}
+
+func (s *ViewBasedReportingTestSuite) TestBaseImageNamesInDeployedAndWatchedReport() {
+	clusters := []*storage.Cluster{{Id: uuid.NewV4().String(), Name: "c1"}}
+	namespaces := testNamespaces(clusters, 1)
+	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
+	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).Return(namespaces, nil).AnyTimes()
+
+	deployedImage := testImage("base-report", nil, "quay.io")
+	deployedImage.BaseImageInfo = []*storage.BaseImageInfo{
+		{BaseImageDigest: "sha256:first", BaseImageFullName: "registry-b/base:stable"},
+		{BaseImageDigest: "sha256:first", BaseImageFullName: "registry-a/base:9"},
+		{BaseImageDigest: "sha256:second", BaseImageFullName: "registry-c/runtime:2"},
+	}
+	watchedImage := testImage("watched-base-report", nil, "quay.io")
+	watchedImage.BaseImageInfo = []*storage.BaseImageInfo{
+		{BaseImageDigest: "sha256:watched", BaseImageFullName: "registry-w/base:1"},
+	}
+	s.upsertManyImages([]*storage.Image{deployedImage, watchedImage})
+	s.upsertManyDeployments([]*storage.Deployment{testDeployment("base-report-deployment", namespaces[0], deployedImage)})
+	s.upsertManyWatchedImages([]*storage.Image{watchedImage})
+
+	reportData, err := s.reportGenerator.getReportDataViewBased(s.ctx, testViewBasedReportSnapshot("", nil))
+	s.Require().NoError(err)
+	s.Require().Len(reportData.CVEResponses, 4)
+	for _, row := range reportData.CVEResponses {
+		if row.GetDeployment() == "" {
+			s.Equal("registry-w/base:1", row.BaseImage)
+		} else {
+			s.Equal("registry-a/base:9; registry-c/runtime:2", row.BaseImage)
+		}
+	}
+}
+
+func (s *ViewBasedReportingTestSuite) TestImageCreatedDateTracksRebuiltDeploymentImage() {
+	clusters := []*storage.Cluster{{Id: uuid.NewV4().String(), Name: "c1"}}
+	namespaces := testNamespaces(clusters, 1)
+	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
+	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).Return(namespaces, nil).AnyTimes()
+
+	image := testImage("rebuild", nil, "quay.io")
+	image.Metadata.V1.Created = timestamppb.New(time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC))
+	deployment := testDeployment("rebuild-deployment", namespaces[0], image)
+	s.upsertManyImages([]*storage.Image{image})
+	s.upsertManyDeployments([]*storage.Deployment{deployment})
+
+	snapshot := testViewBasedReportSnapshot("", nil)
+	assertCreatedDate := func(expected string) {
+		reportData, err := s.reportGenerator.getReportDataViewBased(s.ctx, snapshot)
+		s.Require().NoError(err)
+		s.Require().Len(reportData.CVEResponses, 2)
+		for _, response := range reportData.CVEResponses {
+			s.Equal(expected, response.GetImageCreatedAt())
+		}
+	}
+	assertCreatedDate("2024-06-15")
+
+	rebuiltImage := testImage("rebuild", nil, "quay.io")
+	rebuiltImage.Id = "rebuild-new-digest"
+	rebuiltImage.Metadata.V1.Created = timestamppb.New(time.Date(2024, 9, 1, 0, 0, 0, 0, time.UTC))
+	rebuiltDeployment := testDeployment(deployment.GetName(), namespaces[0], rebuiltImage)
+	rebuiltDeployment.Id = deployment.GetId()
+	s.upsertManyImages([]*storage.Image{rebuiltImage})
+	s.upsertManyDeployments([]*storage.Deployment{rebuiltDeployment})
+	assertCreatedDate("2024-09-01")
 }
 
 func (s *ViewBasedReportingTestSuite) TestReportIdentifiesContainersSharingAnImage() {

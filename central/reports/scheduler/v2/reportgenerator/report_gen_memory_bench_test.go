@@ -12,6 +12,7 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageMapperDS "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -87,7 +88,8 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 
 	rg := newReportGeneratorImpl(testDB, reportSnapshotStore, resolver.DeploymentDataStore,
 		watchedImageDatastore, collectionQueryResolver, nil, blobStore, clusterDatastore,
-		nsDatastore, resolver.ImageCVEV2DataStore)
+		nsDatastore, resolver.ImageCVEV2DataStore,
+		imageMapperDS.New(resolver.ImageDataStore, resolver.ImageV2DataStore), nil)
 
 	// pgtest limits all pools to pool_max_conns=1 which is too restrictive for
 	// report generation. Use a shared pool with enough connections.
