@@ -452,7 +452,7 @@ class NetworkSimulator extends BaseSpecification {
         }
 
         // Verify removed contains the toDelete policy
-        assert simulation.removed.nodeDiffsMap.each { it.value.policyIdsList.contains(policy1.uid) }
+        assert simulation.removed.nodeDiffsMap[webAppId]?.policyIdsList?.contains(policy2.uid)
 
         cleanup:
         "cleanup"
