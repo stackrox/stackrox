@@ -158,31 +158,28 @@ func (r *Remote) putFileGzip(key, path string) error {
 	if err != nil {
 		return err
 	}
-	// Unique temp: concurrent uploads of the same outputID (two actions
-	// sharing one output) raced on a fixed name and crashed with
-	// "no such file" after one side cleaned up.
+	// Unique temp (concurrent uploads of the same outputID raced on a
+	// fixed name). One handle, closed once at the end — an earlier
+	// version Stat()'d after Close() and failed every CI upload.
 	f, err := os.CreateTemp(filepath.Dir(path), ".gz-*")
 	if err != nil {
 		return err
 	}
 	tmp := f.Name()
+	defer os.Remove(tmp)
 	zw := gzip.NewWriter(f)
 	src, err := os.Open(path)
 	if err != nil {
 		f.Close()
-		os.Remove(tmp)
 		return err
 	}
-	_, cerr := io.Copy(zw, src)
+	_, copyErr := io.Copy(zw, src)
 	src.Close()
 	zw.Close()
-	f.Close()
-	if cerr != nil {
-		os.Remove(tmp)
-		return cerr
+	if copyErr != nil {
+		f.Close()
+		return copyErr
 	}
-	defer os.Remove(tmp)
-
 	st, err := f.Stat()
 	if err != nil {
 		f.Close()
@@ -202,6 +199,7 @@ func (r *Remote) putFileGzip(key, path string) error {
 	req.Header.Set("x-ms-version", "2023-11-03")
 	req.ContentLength = st.Size()
 	resp, err := r.client.Do(req)
+	f.Close()
 	if err != nil {
 		return err
 	}
