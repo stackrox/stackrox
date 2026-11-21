@@ -32,5 +32,4 @@ jobs:
         KUBERNETES_PROVIDER=gke
         STORAGE_CLASS=stackrox-gke-ssd
         SCANNER_V4_DB_STORAGE_CLASS=stackrox-gke-ssd
-        MACHINE_TYPE=e2-standard-2
     secrets: inherit
