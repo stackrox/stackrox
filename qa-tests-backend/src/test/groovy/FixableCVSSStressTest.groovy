@@ -26,18 +26,20 @@ class FixableCVSSStressTest extends BaseSpecification {
         Services.setPolicyDisabled(clone.name, false)
 
         when: "sample nginx-2.0.3 ${ITERATIONS} times over ~30 minutes"
-        // Two probes per iteration:
-        // 1. Forced build-time scan (the exact call the failing ImageManagementTest
-        //    case makes) - exercises the real failing assertion.
-        // 2. Unforced scanImage (cached/scan view) - records max fixable CVSS, to
-        //    distinguish incomplete enrichment (scores zero) from policy-eval
-        //    failure (scores present, alert absent) and cache divergence.
+        // Forced build-time scan (the exact call the failing ImageManagementTest
+        // case makes). On any miss, capture forensics: the OTHER policies that
+        // fired in the same response (did policy evaluation run at all?),
+        // an immediate retry (transient vs persistent), and the stored image
+        // state (was enrichment intact?).
         List<String> failures = []
         List<String> samples = []
         long startMs = System.currentTimeMillis()
         for (int i = 1; i <= ITERATIONS; i++) {
+            long callStart = System.currentTimeMillis()
             def scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa-multi-arch", "nginx-2.0.3")
-            def alerts = scanResults.getAlertsList().findAll { it.getPolicy().name == clone.name }
+            long callMs = System.currentTimeMillis() - callStart
+            def allAlerts = scanResults.getAlertsList()
+            def alerts = allAlerts.findAll { it.getPolicy().name == clone.name }
 
             def image = ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3", true, false)
             def vulns = image?.scan?.componentsList?.collectMany { it.vulnsList } ?: []
@@ -45,9 +47,17 @@ class FixableCVSSStressTest extends BaseSpecification {
             def maxFixableCvss = (fixable*.cvss).max() ?: 0
 
             long elapsed = (System.currentTimeMillis() - startMs) / 1000
-            samples << "iter=${i}:t=${elapsed}s:alerts=${alerts.size()}:maxFixableCvss=${maxFixableCvss}:fixableCves=${fixable.size()}"
+            samples << "iter=${i}:t=${elapsed}s:alerts=${alerts.size()}:totalAlerts=${allAlerts.size()}:callMs=${callMs}:maxFixableCvss=${maxFixableCvss}:fixableCves=${fixable.size()}"
             if (alerts.size() != 1) {
-                failures << "iteration ${i} (t=${elapsed}s): ${alerts.size()} alerts for cloned policy (expected 1), maxFixableCvss=${maxFixableCvss}, fixableCves=${fixable.size()}"
+                // Forensics: other policies in the same response
+                def otherPolicies = allAlerts.collect { it.getPolicy().name }.unique().sort()
+                // Forensics: immediate retry
+                long retryStart = System.currentTimeMillis()
+                def retryResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa-multi-arch", "nginx-2.0.3")
+                def retryAlerts = retryResults.getAlertsList().findAll { it.getPolicy().name == clone.name }
+                long retryMs = System.currentTimeMillis() - retryStart
+                samples << "iter=${i}:MISS-FORENSICS:otherPolicies=${otherPolicies}:retryAlerts=${retryAlerts.size()}:retryMs=${retryMs}"
+                failures << "iteration ${i} (t=${elapsed}s): ${alerts.size()} alerts for cloned policy (expected 1), totalAlerts=${allAlerts.size()}, otherPolicies=${otherPolicies}, retryAlerts=${retryAlerts.size()}, callMs=${callMs}, maxFixableCvss=${maxFixableCvss}, fixableCves=${fixable.size()}"
             }
             if (i < ITERATIONS) {
                 sleep(DELAY_MS)
