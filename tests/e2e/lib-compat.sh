@@ -422,7 +422,9 @@ handle_load_balancer_setting() {
         patch_yaml "$config_file" ".central.spec.central.exposure.loadBalancer.enabled = true"
         ;;
     route)
-        patch_yaml "$config_file" ".central.spec.central.exposure.route.enabled = true"
+        # Set roxie's native exposure field: it drives both the derived
+        # spec.central.exposure.route setting and the endpoint lookup.
+        patch_yaml "$config_file" '.central.exposure = "route"'
         ;;
     *)
         die "Unsupported value for LOAD_BALANCER: $load_balancer"
