@@ -45,9 +45,16 @@ type ScopeTree struct {
 // Attributes field optionally stores additional node info, e.g., cluster id,
 // cluster name, labels.
 type clustersScopeSubTree struct {
-	State      scopeState
+	State scopeState
+	// Namespaces holds included entries or, when namespaceDefault is Included,
+	// exceptions. Access checks must use NamespaceAllowed rather than this map.
 	Namespaces map[string]*namespacesScopeSubTree // keyed by namespace name
 	Attributes treeNodeAttributes
+
+	// An exclusion map defaults to Included only within this request's known
+	// namespace inventory. Unknown names must still be denied.
+	namespaceDefault  scopeState
+	namespaceUniverse map[string]string // namespace name -> ID
 }
 
 // namespacesScopeSubTree is a subtree of namespace scopes with their states.
@@ -149,6 +156,9 @@ type MatchedNamespace struct {
 type MatchedNamespaceGroup struct {
 	ClusterName string
 	Namespaces  []MatchedNamespace
+	// Complete means Namespaces and ExcludedNamespaces cover the inventory.
+	Complete           bool
+	ExcludedNamespaces []MatchedNamespace
 }
 
 // FromMatchingScopes constructs a minimal tree from scopes already matched by
@@ -174,20 +184,15 @@ func FromMatchingScopes(clusters []Cluster, includedClusterIDs []string, namespa
 			parent = newClusterScopeSubTree(Excluded, treeNodeAttributes{Name: group.ClusterName})
 			root.Clusters[group.ClusterName] = parent
 		}
-		if len(parent.Namespaces) == 0 {
-			parent.Namespaces = make(map[string]*namespacesScopeSubTree, len(group.Namespaces))
-		}
-		for _, namespace := range group.Namespaces {
-			if existing := parent.Namespaces[namespace.Name]; existing != nil {
-				// Choose the smallest matching ID for duplicate recorded names
-				// so metadata does not depend on SQL result order.
-				if namespace.ID < existing.Attributes.ID {
-					existing.Attributes.ID = namespace.ID
-				}
-				continue
+		if parent.State != Included {
+			selection := namespaceSelection(group)
+			if len(parent.Namespaces) == 0 && parent.namespaceUniverse == nil {
+				parent.Namespaces = selection.Namespaces
+				parent.namespaceDefault = selection.namespaceDefault
+				parent.namespaceUniverse = selection.namespaceUniverse
+			} else {
+				parent.mergeNamespaces(selection)
 			}
-			parent.Namespaces[namespace.Name] = newNamespacesScopeSubTree(Included,
-				treeNodeAttributes{ID: namespace.ID})
 		}
 	}
 	root.bubbleUpStatesAndCompactify(v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
@@ -218,13 +223,8 @@ func (root *ScopeTree) Compactify() ScopeTreeCompacted {
 
 		// `clusterSubTree.State` is Partial.
 		namespaces := make([]string, 0)
-		for namespaceName, namespaceSubTree := range clusterSubTree.Namespaces {
-			switch namespaceSubTree.State {
-			case Excluded:
-				// Skip to the next one.
-			case Included:
-				namespaces = append(namespaces, namespaceName)
-			}
+		for name := range clusterSubTree.AllowedNamespaceNames() {
+			namespaces = append(namespaces, name)
 		}
 		// Ensure order consistency across invocations.
 		slices.Sort(namespaces)
@@ -349,6 +349,9 @@ func (root *ScopeTree) populateCluster(cluster Cluster, clusterState scopeState,
 func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	deleteUnnecessaryNodes := detail == v1.ComputeEffectiveAccessScopeRequest_MINIMAL
 	for clusterName, cluster := range root.Clusters {
+		if cluster.namespaceDefault == Included && cluster.HasNamespaceAccess() && cluster.State == Excluded {
+			cluster.State = Partial
+		}
 		for namespaceName, namespace := range cluster.Namespaces {
 			// Update the cluster's state from Excluded to Partial
 			// if any of its namespaces is included.
@@ -362,7 +365,7 @@ func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAcc
 				}
 			}
 			// Delete Excluded namespaces if desired.
-			if deleteUnnecessaryNodes && namespace.State == Excluded {
+			if deleteUnnecessaryNodes && namespace.State == Excluded && cluster.namespaceDefault != Included {
 				delete(cluster.Namespaces, namespaceName)
 			}
 		}
@@ -372,6 +375,8 @@ func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAcc
 		if deleteUnnecessaryNodes {
 			if cluster.State == Included {
 				cluster.Namespaces = nil
+				cluster.namespaceDefault = Excluded
+				cluster.namespaceUniverse = nil
 			} else if cluster.State == Excluded {
 				delete(root.Clusters, clusterName)
 			}
@@ -410,15 +415,7 @@ func (root *ScopeTree) Merge(tree *ScopeTree) {
 		if rootCluster.State == Included || cluster.State == Excluded {
 			continue
 		}
-		// partial
-		for nsName, namespace := range cluster.Namespaces {
-			if namespace.State == Included {
-				if rootCluster.Namespaces == nil {
-					rootCluster.Namespaces = map[string]*namespacesScopeSubTree{}
-				}
-				rootCluster.Namespaces[nsName] = namespace.copy()
-			}
-		}
+		rootCluster.mergeNamespaces(cluster)
 	}
 	root.bubbleUpStatesAndCompactify(v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 }
@@ -429,9 +426,11 @@ func (cluster *clustersScopeSubTree) copy() *clustersScopeSubTree {
 		namespaces[k] = v.copy()
 	}
 	return &clustersScopeSubTree{
-		State:      cluster.State,
-		Namespaces: namespaces,
-		Attributes: *cluster.Attributes.copy(),
+		State:             cluster.State,
+		Namespaces:        namespaces,
+		Attributes:        *cluster.Attributes.copy(),
+		namespaceDefault:  cluster.namespaceDefault,
+		namespaceUniverse: maps.Clone(cluster.namespaceUniverse),
 	}
 }
 
