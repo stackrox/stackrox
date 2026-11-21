@@ -334,10 +334,10 @@ run_proxy_tests() {
         echo "Failures: ${#failures[@]}"
 
         done
-        info "Test sensor generate k8s with ${server_name}:${port}, ${extra_args[*]} and --plaintext=${plaintext}"
+        info "Test central whoami with ${server_name}:${port}, ${extra_args[*]} and --plaintext=${plaintext}"
         roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" \
-            sensor generate k8s --name remote --continue-if-exists 1>/dev/null || \
-        failures+=("${p},sensor-generate")
+            central whoami 1>/dev/null || \
+        failures+=("${p},central-whoami")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"
     done
