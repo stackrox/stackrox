@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 from common import popen_graceful_kill
+import node_disruption
 
 
 class BaseTest:
@@ -205,11 +206,12 @@ class NonGroovyE2e(BaseTest):
     def run(self):
         print("Executing the E2e Test")
 
-        self.run_with_graceful_kill(
-            ["tests/e2e/run.sh", self.TEST_OUTPUT_DIR],
-            self.TEST_TIMEOUT,
-            output_dir=self.TEST_OUTPUT_DIR,
-        )
+        with node_disruption.monitor():
+            self.run_with_graceful_kill(
+                ["tests/e2e/run.sh", self.TEST_OUTPUT_DIR],
+                self.TEST_TIMEOUT,
+                output_dir=self.TEST_OUTPUT_DIR,
+            )
 
 
 class VMScanningE2e(BaseTest):

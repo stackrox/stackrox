@@ -50,3 +50,47 @@ Path in artifacts:
 ```
 download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artifacts/howto-locate-other-artifacts-summary.html
 ```
+
+## Nongroovy node-name monitoring
+
+`NonGroovyE2e`, shared by Prow and GHA, monitors nodes when `NUM_NODES` is a positive integer
+(exported by `GKECluster`). The GKE nongroovy entrypoint defaults unset or empty
+`NUM_NODES` to one, matching provisioning; explicit overrides are preserved.
+For other callers, unset or empty disables monitoring. It is independent
+of `GKE_SPOT`. The nongroovy GHA workflow shares its job-level `NUM_NODES`
+between provisioning and monitoring.
+
+Node names are collected before tests, every five minutes, and after tests unless
+cancelled, with a 30-second limit per kubectl call. The unique-name count must
+match `NUM_NODES`. Polling errors and invalid configuration also produce diagnostic failures.
+Empty samples are ignored; later samples can recover an empty initial baseline.
+Monitoring and artifact errors are advisory: they never change the product exit
+code or prevent tests from starting.
+
+Artifacts under `ARTIFACT_DIR` (default `junit-reports`):
+- `node-names.txt`: sampled names, including repetitions.
+- `node-snapshot-<timestamp>.json`: raw kubectl output, possibly partial.
+- `node-monitor.log`: collection attempts and kubectl stderr.
+- `junit-node-monitor.xml`: one `ci.gke.node / NoNodeDisruption` success/failure/skipped
+  testcase. Cancellation is skipped unless an error was recorded. Failure details
+  go into JUnit; counts, names, and errors also appear in job logs.
+
+This checks names, not readiness or per-snapshot counts. Disappearance without
+replacement and transient nodes may go undetected. Replacement does not prove
+Spot preemption.
+
+Both CI systems use the existing graceful-kill test runner inside the monitoring
+context manager, with a 180-minute test timeout. GHA retains its 245-minute outer
+step timeout. Product failures propagate as exceptions and fail the CI step.
+Monitoring does not install signal handlers or manage product processes. On Python
+interruption unwinding it skips the final sample and reports skipped unless a
+monitoring error was recorded. Abrupt termination may leave no final report.
+
+Cluster-free tests live in `tests/test_node_disruption.py`. From the repo root:
+
+```sh
+PYTHONPATH=.openshift-ci python3 -m unittest discover -s .openshift-ci/tests -p test_node_disruption.py
+```
+
+CI runs `make -C .openshift-ci test` in Unit Tests / `openshift-ci-unit-tests`,
+except for UI-only changes.
