@@ -132,7 +132,7 @@ jobs:
           # GROUND TRUTH: the receipt-restored binary vs a plain
           # no-cimemo build of the same tree. Independent of our
           # pipeline on the producing side.
-          if [ "${{ needs.control.sha }}" != "" ] && [ "$SERVE_SHA" = "${{ needs.control.outputs.sha }}" ]; then
+          if [ "$SERVE_SHA" = "${{ needs.control.outputs.sha }}" ]; then
             echo "GROUND TRUTH: receipt binary == plain build, byte-for-byte"
           else
             echo "GROUND TRUTH MISMATCH: receipt differs from plain build"

@@ -12,6 +12,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -133,12 +134,12 @@ func commitReceiptKey(wd, keyCommand, toolchain string) (string, bool) {
 	return hex.EncodeToString(h[:])[:16], true
 }
 
-// dockerBaseDigests resolves the digests of every FROM image in the
-// Dockerfile (via docker inspect). Base tags are MUTABLE (alpine:3
-// moves) — an image receipt keyed without them serves stale images
-// after a base update. Digest-pinned FROMs are already exact.
+// dockerBaseDigests resolves the CURRENT registry digest of every FROM
+// image. Registry-current (not locally-cached) so a moved base tag
+// changes the key and triggers a rebuild — the "check for updates".
+// Unpinned tags (alpine:3) are also AUDIT-reported: the Dockerfile is
+// nondeterministic config; pinning with @sha256 makes it exact.
 func dockerBaseDigests(wd string, args []string) []string {
-	// find -f/--file
 	dockerfile := "Dockerfile"
 	for i := 0; i < len(args); i++ {
 		if args[i] == "-f" || args[i] == "--file" {
@@ -157,17 +158,49 @@ func dockerBaseDigests(wd string, args []string) []string {
 		if len(f) >= 2 && strings.EqualFold(f[0], "FROM") {
 			image := f[1]
 			if strings.Contains(image, "@sha256:") {
-				out = append(out, image) // digest-pinned: exact already
+				out = append(out, image) // digest-pinned: exact config
 				continue
 			}
-			insp, err := exec.Command("docker", "inspect", "--format", "{{index .RepoDigests 0}}", image).Output()
-			if err == nil {
-				out = append(out, strings.TrimSpace(string(insp)))
-			} else {
-				// unresolvable (not pulled): fall back to the tag string
-				out = append(out, image)
+			digest := registryDigest(image)
+			if digest == "" {
+				// registry unreachable: fall back to the locally-cached
+				// digest (protects local drift; blind to registry moves)
+				digest = localDigest(image)
+				if digest == "" {
+					digest = image
+				}
 			}
+			fmt.Printf("[cimemo] AUDIT docker-base-unpinned: %s resolves to %s — mutable tag; pin with @%s for deterministic config\n",
+				image, digest, digest)
+			out = append(out, digest)
 		}
 	}
 	return out
+}
+
+// registryDigest resolves the CURRENT digest of a tag from the
+// registry (docker manifest inspect --verbose).
+func registryDigest(image string) string {
+	out, err := exec.Command("docker", "manifest", "inspect", "--verbose", image).Output()
+	if err != nil {
+		return ""
+	}
+	var m struct {
+		Descriptor struct {
+			Digest string `json:"digest"`
+		} `json:"Descriptor"`
+	}
+	if json.Unmarshal(out, &m) != nil || m.Descriptor.Digest == "" {
+		return ""
+	}
+	return image + "@" + m.Descriptor.Digest
+}
+
+// localDigest returns the digest of the locally-cached image.
+func localDigest(image string) string {
+	out, err := exec.Command("docker", "inspect", "--format", "{{index .RepoDigests 0}}", image).Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }

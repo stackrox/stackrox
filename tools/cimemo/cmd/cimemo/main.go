@@ -37,6 +37,7 @@ import (
 	"github.com/davdhacs/cimemo/key"
 	"github.com/davdhacs/cimemo/model"
 	"github.com/davdhacs/cimemo/observe"
+	"github.com/davdhacs/cimemo/pinaudit"
 	"github.com/davdhacs/cimemo/store"
 )
 
@@ -476,6 +477,13 @@ func cmdMemoize(args []string, forceFull bool) {
 	// content-addressed — zero extra storage; just a second index).
 	if !isDocker {
 		storeCommitReceiptIfClean(st, m, wd, keyCommand, toolchain)
+	}
+
+	// Pin audit (config determinism): floating dependency references
+	// make builds nondeterministic and caches unreliable — name them.
+	for _, f := range pinaudit.Audit(wd) {
+		fmt.Printf("[cimemo] AUDIT %s (%s): %s\n", f.Kind, f.File, f.Detail)
+		fmt.Printf("[cimemo]   warn: %s\n", f.Warning)
 	}
 
 	fmt.Printf("[cimemo] CACHED: %s\n", k)
