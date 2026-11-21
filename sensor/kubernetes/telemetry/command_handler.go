@@ -358,10 +358,7 @@ func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context,
 }
 
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{
-		centralsensor.PullTelemetryDataCap,
-		centralsensor.PullMetricsCap,
-	}
+	return nil
 }
 
 // writeHeapProfile is a wrapper around pprof.WriteHeapProfile which respects context cancellation.

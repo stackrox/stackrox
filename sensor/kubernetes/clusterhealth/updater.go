@@ -81,7 +81,7 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
+	return nil
 }
 
 func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
