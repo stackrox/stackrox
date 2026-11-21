@@ -214,12 +214,17 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 	}
 	statusKey := uuid.NewV5(clusterUUID, scanConfigID).String()
 
+	var clusterErrors []string
+	if clusterStatus != "" {
+		clusterErrors = []string{clusterStatus}
+	}
+
 	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{
 		Id:           statusKey,
 		ClusterId:    clusterID,
 		ClusterName:  clusterName,
 		ScanConfigId: scanConfigID,
-		Errors:       []string{clusterStatus},
+		Errors:       clusterErrors,
 	}
 
 	return ds.statusStorage.Upsert(ctx, clusterScanStatus)
