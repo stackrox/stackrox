@@ -14,6 +14,13 @@ on:
     - reopened
     - synchronize
     - ready_for_review
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Override image tag (pinned-artifact testing; empty = derive from checkout)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -66,6 +73,7 @@ jobs:
       DEV_TAG_SUFFIX: ""
       # MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
+      MAIN_IMAGE_TAG: ${{ inputs.image_tag }}
     outputs:
       tag: ${{ steps.image-references.outputs.tag }}
       tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}

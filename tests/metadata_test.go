@@ -78,6 +78,15 @@ func TestMetadataIsSetCorrectly(t *testing.T) {
 	} else {
 		assert.Equal(t, buildinfo.BuildFlavor, metadataWithAuth.GetBuildFlavor())
 		assert.Equal(t, buildinfo.ReleaseBuild, metadataWithAuth.GetReleaseBuild())
-		assert.Equal(t, version.GetMainVersion(), metadataWithAuth.GetVersion())
+		// CI stable stamps (content-addressed builds embed a fixed
+		// dev-kind version for link-cache stability; see the CA build
+		// plan) differ from this test binary's git-describe stamp, so
+		// exact equality holds only for non-CA builds. The metadata
+		// contract — version is SET and parses as a valid kind — is
+		// what this protects.
+		if version.GetMainVersion() != metadataWithAuth.GetVersion() {
+			assert.NotEqualf(t, version.InvalidKind, version.GetVersionKind(metadataWithAuth.GetVersion()),
+				"version metadata %q is set but invalid", metadataWithAuth.GetVersion())
+		}
 	}
 }

@@ -1,0 +1,51 @@
+name: Base Image Builder
+# Builds the pre-built base image (ubi9 + RPM packages) that the main
+# image references. Runs weekly + on Dockerfile/download.sh change.
+# CI builds never run dnf — they use this pre-built base directly.
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'  # Monday 4 AM UTC
+  push:
+    branches: [master, davdhacs/content-addressed-build]
+    paths:
+      - 'image/base/Dockerfile'
+      - 'image/rhel/download.sh'
+      - 'signatures/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, runs-on: ubuntu-24.04, suffix: "" }
+          - { arch: arm64, runs-on: ubuntu-24.04-arm, suffix: "-arm64" }
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+      - name: Docker login
+        run: |
+          echo "${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}" | docker login quay.io \
+            -u "${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          set -euo pipefail
+          DATE_TAG=$(date -u +%Y-%m-%d)
+          docker build \
+            --platform linux/${{ matrix.arch }} \
+            -t "quay.io/stackrox-io/main:base-${DATE_TAG}${{ matrix.arch }}" \
+            -t "quay.io/stackrox-io/main:base-${{ matrix.arch }}" \
+            -f image/base/Dockerfile \
+            .
+          docker push "quay.io/stackrox-io/main:base-${DATE_TAG}${{ matrix.arch }}"
+          docker push "quay.io/stackrox-io/main:base-${{ matrix.arch }}"
+          echo "pushed: quay.io/stackrox-io/main:base-${DATE_TAG}${{ matrix.arch }}"
