@@ -10,7 +10,6 @@ import (
 
 	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rhel/rhcc"
-
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
@@ -31,6 +30,9 @@ const (
 	vulnDataSourceDelimiter = "::"
 	// redHatVEXUpdaterName identifies vulnerabilities from Claircore's Red Hat VEX updater.
 	redHatVEXUpdaterName = "rhel-vex"
+	// rhelRepositoryKey identifies RPM packages associated with Red Hat CPE repositories.
+	// ClairCore does not export this key.
+	rhelRepositoryKey = "rhel-cpe-repository"
 )
 
 // digitSegment matches contiguous runs of digits for numeric segment comparisons.
@@ -652,8 +654,9 @@ func filterRedHatLayerVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 
 // filterNotAffectedVulnerabilities removes vulnerabilities from PackageVulnerabilities
 // when they are covered by VEX not-affected assertions via AncestryPackage entries.
-// A package is covered if it was introduced at or below the AncestryPackage's layer
-// and shares a common alias with the not-affected vulnerability.
+// Packages associated with Red Hat CPE repositories are excluded because their RPM
+// vulnerabilities are independently tracked. Other packages are covered if introduced
+// at or below the AncestryPackage's layer and share an alias with the assertion.
 func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
 	if len(report.GetPackageNotVulnerable()) == 0 {
 		return
@@ -694,6 +697,11 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 	// Remove PackageVulnerabilities entries covered by a same-or-lower-layer
 	// not-affected assertion.
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		// OCI ancestry assertions do not apply to independently tracked RPM packages.
+		if packageHasRepositoryKey(report, pkgID, rhelRepositoryKey) {
+			continue
+		}
+
 		pkgLayerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
 		if !ok {
 			continue
