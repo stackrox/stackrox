@@ -10,6 +10,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -110,4 +112,23 @@ func dockerContextClosure(wd string, args []string) []string {
 		files = files[:20000] // bound; dockerignore handling is future work
 	}
 	return files
+}
+
+// commitReceiptKey derives the git-commit fast-path key: a clean tree
+// at HEAD is EXACTLY determined (SHA → tree → contents), so the
+// content closure is implied without hashing files or running
+// `go list`. Sound only with a clean tree — callers must verify.
+func commitReceiptKey(wd, keyCommand, toolchain string) (string, bool) {
+	out, err := exec.Command("git", "-C", wd, "-c", "safe.directory="+wd, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return "", false
+	}
+	head := strings.TrimSpace(string(out))
+	// clean tree? (uncommitted changes fall back to the content path)
+	if err := exec.Command("git", "-C", wd, "-c", "safe.directory="+wd,
+		"diff-index", "--quiet", "HEAD", "--").Run(); err != nil {
+		return "", false
+	}
+	h := sha256.Sum256([]byte(head + "\x00" + keyCommand + "\x00" + toolchain))
+	return hex.EncodeToString(h[:])[:16], true
 }

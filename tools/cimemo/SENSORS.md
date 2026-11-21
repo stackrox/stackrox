@@ -85,6 +85,30 @@ per-project tooling. Absolute times are not comparable (local disk vs
 CI runners + docker assembly), but the warm path does the same work:
 validate inputs, restore/link outputs, skip the build.
 
+## Full pipeline leg (2026-11-22): three binaries + image
+
+The CA-scope equivalent: `./central` + `./sensor/kubernetes` +
+`./sensor/admission-control` built via receipts, then a docker image
+bundling them (itself an image receipt).
+
+| pass | wall | detail |
+|---|---|---|
+| cold | 189.2s | 3 binaries + image; shared closure dedups live (sensor hit 2,522 actions uploaded by the CONCURRENT populate job) |
+| **receipt** | **2.7s** | all 3 binary receipts + image re-tag; ALL BINARIES IDENTICAL |
+
+vs custom-CA whole-job warm ~36s (incl ~30s checkout/setup): the cimemo
+command work is now ~free; remaining job wall is structural setup
+(checkout + setup-go + module-cache restore + mtime normalization
+~40s). Docker image receipts are keyed on the CONTEXT closure (hash of
+every context file — untracked files included, the sound choice for
+image builds; .cimemo/.git excluded to avoid self-reference; the
+COPYied binaries are inputs to the image command even though they are
+outputs of the binary commands).
+
+Remaining for full CA-feature parity (roadmap): roxctl multi-platform
+matrix, UI build caching, the real image recipe (gen-dockerfile),
+assemble-manifest, cross-machine image receipts (docker save/load).
+
 ## Docker builds: how they fit (2026-11-22)
 
 Container builds DO fit the cimemo model — at two levels — and the

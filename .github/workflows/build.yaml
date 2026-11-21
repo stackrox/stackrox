@@ -216,3 +216,34 @@ jobs:
             echo "BINARY MISMATCH"
             exit 1
           fi
+
+  pipeline-warm:
+    # The trimmed warm path: commit receipts need neither the module
+    # cache nor mtime normalization — only git + the go binary + the
+    # vendored cimemo build. This is the true PR-rerun wall-clock.
+    runs-on: ubuntu-latest
+    needs: pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.10'
+          cache: false
+      - name: build cimemo (vendored, no network)
+        run: cd tools/cimemo && go build -o /tmp/cimemo ./cmd/cimemo
+      - name: receipt pass — commit fast path, minimal setup
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          CIMEMO_REMOTE: "1"
+          CIMEMO_AZURE_ACCOUNT: ${{ env.CIMEMO_ACCOUNT }}
+          CIMEMO_GOCACHE_CONTAINER: ${{ env.CIMEMO_CONTAINER }}
+        run: |
+          mkdir -p bin-exp
+          START=$(date +%s%3N)
+          for t in ./central ./sensor/kubernetes ./sensor/admission-control; do
+            /tmp/cimemo go build -o bin-exp/$(basename $t) $t 2>&1 | grep -E "CACHE HIT|running" | head -1
+          done
+          /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:warmfast . 2>&1 | grep -E "CACHE HIT|running" | head -1
+          echo "PIPELINE-WARM: $(( $(date +%s%3N) - START ))ms"

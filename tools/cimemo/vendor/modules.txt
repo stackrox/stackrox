@@ -1,0 +1,8 @@
+# github.com/fsnotify/fsnotify v1.10.1
+## explicit; go 1.23
+github.com/fsnotify/fsnotify
+github.com/fsnotify/fsnotify/internal
+# golang.org/x/sys v0.13.0
+## explicit; go 1.17
+golang.org/x/sys/unix
+golang.org/x/sys/windows

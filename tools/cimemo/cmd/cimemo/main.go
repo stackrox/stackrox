@@ -140,6 +140,28 @@ func cmdMemoize(args []string, forceFull bool) {
 
 	start := time.Now()
 
+	// === Commit-receipt fast path ===
+	// A clean tree at HEAD is exactly determined: SHA → tree → closure.
+	// This skips `go list`, closure hashing, and (in CI) the module
+	// cache + mtime normalization the content path needs. Falls
+	// through silently to the slower paths when the tree is dirty or
+	// no commit receipt exists.
+	if !forceFull && !isDocker {
+		keyCommand := command
+		if ck, ok := commitReceiptKey(wd, keyCommand, toolchain); ok && st.HasManifest(ck) {
+			if m, err := st.GetManifest(ck); err == nil && len(m.Blobs) > 0 {
+				verifyRestored(m, wd)
+				if count, bytes, err := st.RestoreManifest(m, wd); err == nil {
+					fmt.Printf("[cimemo] CACHE HIT (commit): %s — clean tree at HEAD implies closure\n", ck)
+					fmt.Printf("[cimemo]   %d outputs, %.1f MB (%s)\n",
+						count, float64(bytes)/1024/1024, time.Since(start).Round(time.Millisecond))
+					recordHit(mod, command)
+					return
+				}
+			}
+		}
+	}
+
 	// === Warm path (skipped for audit / shadow: both build fully) ===
 	if !forceFull {
 		if m := st.LatestManifestForCommand(command); m != nil {
@@ -440,6 +462,18 @@ func cmdMemoize(args []string, forceFull bool) {
 	}
 	if err := st.PutManifest(m); err != nil {
 		fatal("manifest store: %v", err)
+	}
+	// Commit receipt: same manifest under the git-HEAD key (blobs are
+	// content-addressed — zero extra storage; just a second index).
+	if isDocker == false && m.KeyKind == "" {
+		if ck, ok := commitReceiptKey(wd, keyCommand, toolchain); ok {
+			cm := *m
+			cm.Key = ck
+			cm.KeyKind = "commit"
+			if err := st.PutManifest(&cm); err == nil {
+				fmt.Printf("[cimemo] commit receipt: %s\n", ck)
+			}
+		}
 	}
 
 	fmt.Printf("[cimemo] CACHED: %s\n", k)

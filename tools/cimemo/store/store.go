@@ -64,6 +64,7 @@ type Manifest struct {
 	VCSCommit    string            `json:"vcs_commit,omitempty"`
 	OutputDirs   []string          `json:"output_dirs,omitempty"`
 	ImageOutputs []ImageRef        `json:"image_outputs,omitempty"`
+	KeyKind      string            `json:"key_kind,omitempty"` // "content" (default) | "commit"
 	ClosureHash  string            `json:"closure_hash,omitempty"`
 }
 
@@ -160,7 +161,10 @@ func (s *Store) PutManifest(m *Manifest) error {
 	if s.hasRemote() {
 		if err := s.remoteUploadManifest(m); err != nil {
 			// Remote failure must not fail the build — the local
-			// receipt is still valid on this machine.
+			// receipt is still valid on this machine — but never
+			// silently: an expired token or dead store otherwise looks
+			// like cache misses forever.
+			fmt.Fprintf(os.Stderr, "[cimemo] remote receipt upload failed: %v (local receipt still valid)\n", err)
 			return nil
 		}
 	}
