@@ -25,7 +25,16 @@ jobs:
 
   check-generated-files:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.proto$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$') ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^.containerignore$') ||
+      contains(needs.detect-changes.outputs.files, '^.dockerignore$') ||
+      contains(needs.detect-changes.outputs.files, '^scripts/style/shellcheck_skip.txt$') ||
+      contains(needs.detect-changes.outputs.files, '^operator/')
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-24.04
@@ -98,6 +107,7 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
+    needs: detect-changes
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -130,6 +140,12 @@ jobs:
           pycodestyle --version
 
       - name: Cache Go dependencies
+        if: >-
+          !needs.detect-changes.outputs.files ||
+          contains(needs.detect-changes.outputs.files, '.go$') ||
+          contains(needs.detect-changes.outputs.files, '.proto$') ||
+          contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+          contains(needs.detect-changes.outputs.files, '^go.sum$')
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Download scanner module for proto generation
@@ -158,7 +174,11 @@ jobs:
 
   golangci-lint:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      contains(needs.detect-changes.outputs.files, '.go$') ||
+      contains(needs.detect-changes.outputs.files, '^go.mod$') ||
+      contains(needs.detect-changes.outputs.files, '^go.sum$')
     timeout-minutes: 240
     runs-on: ubuntu-24.04
     steps:
