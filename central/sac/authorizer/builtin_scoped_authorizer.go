@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
+	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,12 +28,16 @@ var (
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
 // list of roles.
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
-	inventory, err := scopeInventory.get(ctx)
+	clusters, err := clusterStore.Singleton().GetClustersForSAC()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reading all clusters")
+	}
+	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC()
+	if err != nil {
+		return nil, errors.Wrap(err, "reading all namespaces")
 	}
 
-	return newGlobalScopeCheckerCore(inventory.clusters, inventory.namespaces, roles, observe.AuthzTraceFromContext(ctx)), nil
+	return newGlobalScopeCheckerCore(clusters, namespaces, roles, observe.AuthzTraceFromContext(ctx)), nil
 }
 
 func newGlobalScopeCheckerCore(clusters []effectiveaccessscope.Cluster, namespaces []effectiveaccessscope.Namespace, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
