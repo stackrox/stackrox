@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -25,6 +24,8 @@ import (
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
@@ -65,66 +66,8 @@ func TestLegacyProxyGrantAllowed(t *testing.T) {
 	assert.False(t, legacyProxyGrantAllowed(grant, httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)))
 }
 
-func TestFixedPolicyValidateRequest(t *testing.T) {
-	tests := []struct {
-		name           string
-		method         string
-		wantStatusCode int
-		wantError      string
-	}{
-		{
-			name:           "GET is allowed",
-			method:         http.MethodGet,
-			wantStatusCode: 0, // validateRequest returns nil on success
-		},
-		{
-			name:           "POST is allowed",
-			method:         http.MethodPost,
-			wantStatusCode: 0,
-		},
-		{
-			name:           "OPTIONS is allowed (for CORS preflight)",
-			method:         http.MethodOptions,
-			wantStatusCode: 0,
-		},
-		{
-			name:           "HEAD is allowed",
-			method:         http.MethodHead,
-			wantStatusCode: 0,
-		},
-		{
-			name:           "PUT returns 405",
-			method:         http.MethodPut,
-			wantStatusCode: http.StatusMethodNotAllowed,
-			wantError:      "method PUT not allowed",
-		},
-		{
-			name:           "DELETE returns 405",
-			method:         http.MethodDelete,
-			wantStatusCode: http.StatusMethodNotAllowed,
-			wantError:      "method DELETE not allowed",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, "/v1/alerts", nil)
-			err := (&fixedClientPolicy{}).validateRequest(req)
-
-			if tt.wantStatusCode == 0 {
-				assert.NoError(t, err)
-			} else {
-				require.Error(t, err)
-				httpErr, ok := err.(pkghttputil.HTTPError)
-				require.True(t, ok, "error should be an HTTPError")
-				assert.Equal(t, tt.wantStatusCode, httpErr.HTTPStatusCode())
-				assert.Contains(t, err.Error(), tt.wantError)
-			}
-		})
-	}
-}
-
 func TestProxyPathFilteringCompatibility(t *testing.T) {
+	grant := &ClientPolicyGrant{PermissionSets: clientPolicyAccessToProto(defaultClientPolicy().Clients[1].Access)}
 	for name, tc := range map[string]struct {
 		advertisesFiltering bool
 		allowedPaths        []string
@@ -132,17 +75,17 @@ func TestProxyPathFilteringCompatibility(t *testing.T) {
 		allowed             bool
 	}{
 		"older Central without path filtering": {
-			allowedPaths: []string{"/v1/deployments"}, path: "/v1/alerts", allowed: true,
+			allowedPaths: []string{"/v1/deployments"}, path: "/v1/metadata", allowed: true,
 		},
 		"advertised path is allowed": {
 			advertisesFiltering: true, allowedPaths: []string{"/v1/deployments"},
 			path: "/v1/deployments", allowed: true,
 		},
 		"unadvertised path is denied": {
-			advertisesFiltering: true, allowedPaths: []string{"/v1/deployments"}, path: "/v1/alerts",
+			advertisesFiltering: true, allowedPaths: []string{"/v1/deployments"}, path: "/v1/metadata",
 		},
 		"empty advertised list denies paths": {
-			advertisesFiltering: true, path: "/v1/alerts",
+			advertisesFiltering: true, path: "/v1/metadata",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -156,13 +99,7 @@ func TestProxyPathFilteringCompatibility(t *testing.T) {
 				allowedpaths.Reset()
 			})
 
-			err := (&fixedClientPolicy{}).validateRequest(httptest.NewRequest(http.MethodGet, tc.path, nil))
-			if tc.allowed {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-				assert.Equal(t, http.StatusForbidden, pkghttputil.StatusFromError(err))
-			}
+			assert.Equal(t, tc.allowed, legacyProxyGrantAllowed(grant, httptest.NewRequest(http.MethodGet, tc.path, nil)))
 		})
 	}
 }
@@ -174,39 +111,39 @@ func TestMetricsScrapeRoute(t *testing.T) {
 		method   string
 		cn       string
 		optIn    bool
-		paths    []string
 		wantCode int
 	}{
-		{"disabled by default", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), false,
-			[]string{"/metrics"}, http.StatusForbidden},
-		{"missing client certificate", "/metrics", http.MethodGet, "", true,
-			[]string{"/metrics"}, http.StatusUnauthorized},
-		{"wrong client identity", "/metrics", http.MethodGet, "other", true,
-			[]string{"/metrics"}, http.StatusUnauthorized},
-		{"metrics does not need an advertised path", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
-			nil, http.StatusOK},
-		{"POST rejected", "/metrics", http.MethodPost, env.SecureMetricsClientCertCN.Setting(), true,
-			[]string{"/metrics"}, http.StatusForbidden},
-		{"trailing slash rejected", "/metrics/", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
-			[]string{"/metrics"}, http.StatusForbidden},
-		{"encoded path rejected", "/m%65trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
-			[]string{"/metrics"}, http.StatusForbidden},
-		{"doubly encoded path rejected", "/m%2565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
-			[]string{"/metrics"}, http.StatusForbidden},
-		{"triply encoded path rejected", "/m%252565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
-			[]string{"/metrics"}, http.StatusForbidden},
-		{"verified metrics scrape", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true,
-			[]string{"/metrics"}, http.StatusOK},
+		{"disabled by default", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), false, http.StatusForbidden},
+		{"missing client certificate", "/metrics", http.MethodGet, "", true, http.StatusUnauthorized},
+		{"wrong client identity", "/metrics", http.MethodGet, "other", true, http.StatusForbidden},
+		{"metrics does not need an advertised path", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true, http.StatusOK},
+		{"POST rejected", "/metrics", http.MethodPost, env.SecureMetricsClientCertCN.Setting(), true, http.StatusForbidden},
+		{"trailing slash rejected", "/metrics/", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true, http.StatusForbidden},
+		{"encoded path rejected", "/m%65trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true, http.StatusForbidden},
+		{"doubly encoded path rejected", "/m%2565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true, http.StatusForbidden},
+		{"triply encoded path rejected", "/m%252565trics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true, http.StatusForbidden},
+		{"verified metrics scrape", "/metrics", http.MethodGet, env.SecureMetricsClientCertCN.Setting(), true, http.StatusOK},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			ca, caKey, caPEM := clientPolicyTestCA(t)
+			k8sClient := fake.NewClientset(&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: env.SecureMetricsClientCANamespace.Setting(),
+					Name:      env.SecureMetricsClientCAConfigMap.Setting(),
+				},
+				Data: map[string]string{env.SecureMetricsClientCAKey.Setting(): caPEM},
+			})
+			policy := NewClientPolicy(k8sClient)
+			t.Cleanup(policy.Stop)
+			require.NoError(t, policy.EnsureDefaults(t.Context()))
 			f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+			f.handler.policy = policy
 			f.handler.metricsEnabled = tc.optIn
-			allowedpaths.Set(tc.paths)
+			allowedpaths.Reset()
 			req := httptest.NewRequest(tc.method, tc.path, nil)
 			if tc.cn != "" {
-				req.TLS = &tls.ConnectionState{VerifiedChains: [][]*x509.Certificate{{{
-					Subject: pkix.Name{CommonName: tc.cn},
-				}}}}
+				cert := signedTestCertificate(t, ca, caKey, tc.cn, x509.ExtKeyUsageClientAuth)
+				req.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert.Leaf}}
 			}
 			w := httptest.NewRecorder()
 			f.handler.ServeHTTP(w, req)
@@ -215,38 +152,31 @@ func TestMetricsScrapeRoute(t *testing.T) {
 		})
 	}
 	t.Run("Central without scoped token support", func(t *testing.T) {
+		ca, caKey, caPEM := clientPolicyTestCA(t)
+		policy := NewClientPolicy(fake.NewClientset(&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: env.SecureMetricsClientCANamespace.Setting(),
+				Name:      env.SecureMetricsClientCAConfigMap.Setting(),
+			},
+			Data: map[string]string{env.SecureMetricsClientCAKey.Setting(): caPEM},
+		}))
+		t.Cleanup(policy.Stop)
+		require.NoError(t, policy.EnsureDefaults(t.Context()))
 		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+		f.handler.policy = policy
 		f.handler.metricsEnabled = true
 		centralcaps.Set([]centralsensor.CentralCapability{
 			centralsensor.InternalTokenAPISupported,
 			centralsensor.CentralProxyPathFiltering,
 		})
 		req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+		cert := signedTestCertificate(t, ca, caKey, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
+		req.TLS = &tls.ConnectionState{PeerCertificates: []*x509.Certificate{cert.Leaf}}
 		w := httptest.NewRecorder()
 		f.handler.ServeHTTP(w, req)
-		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Equal(t, http.StatusNotImplemented, w.Code)
 		assert.False(t, f.proxyCalled)
 	})
-}
-
-func TestMetricsOptInDoesNotEnableK8sCentralProxyUser(t *testing.T) {
-	t.Setenv("ROX_OCP_CONSOLE_INTEGRATION", "false")
-	f := newProxyTestFixture(t, newDenyingAuthorizer(t))
-	f.handler.metricsEnabled = true
-	allowedpaths.Set([]string{"/api/graphql"})
-
-	w := f.serveHTTP(t, http.MethodGet, "/api/graphql", map[string]string{"Authorization": "Bearer console-token"})
-	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.False(t, f.proxyCalled)
-
-	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-	req.TLS = &tls.ConnectionState{VerifiedChains: [][]*x509.Certificate{{{
-		Subject: pkix.Name{CommonName: env.SecureMetricsClientCertCN.Setting()},
-	}}}}
-	w = httptest.NewRecorder()
-	f.handler.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.True(t, f.proxyCalled)
 }
 
 func TestServeHTTP(t *testing.T) {
@@ -258,7 +188,7 @@ func TestServeHTTP(t *testing.T) {
 		h := newTestHandler(t, baseURL, nil, nil, "test-token")
 		h.centralReachable.Store(false) // Will fail validation
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 		w := httptest.NewRecorder()
 
 		h.ServeHTTP(w, req)
@@ -269,7 +199,7 @@ func TestServeHTTP(t *testing.T) {
 
 	t.Run("validation passes, request proxied", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
 			"Authorization": "Bearer test-token",
 		})
 		assert.True(t, f.proxyCalled, "proxy should be called")
@@ -285,7 +215,7 @@ func TestServeHTTP(t *testing.T) {
 		h := newTestHandlerWithTransportError(t, baseURL, newAllowingAuthorizer(t), errTransportError)
 		h.centralReachable.Store(true)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
@@ -322,7 +252,7 @@ func TestServeHTTP(t *testing.T) {
 		}
 		h.centralReachable.Store(true)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
@@ -339,6 +269,7 @@ func TestServeHTTP_ConstructsAbsoluteURLs(t *testing.T) {
 	tests := []struct {
 		name         string
 		baseURL      string
+		method       string
 		requestPath  string
 		requestQuery string
 		expectedURL  string
@@ -346,25 +277,29 @@ func TestServeHTTP_ConstructsAbsoluteURLs(t *testing.T) {
 		{
 			name:        "simple path without query",
 			baseURL:     "https://central.stackrox.svc:443",
-			requestPath: "/v1/alerts",
-			expectedURL: "https://central.stackrox.svc:443/v1/alerts",
+			method:      http.MethodGet,
+			requestPath: "/v1/metadata",
+			expectedURL: "https://central.stackrox.svc:443/v1/metadata",
 		},
 		{
 			name:         "path with query parameters",
 			baseURL:      "https://central.stackrox.svc:443",
-			requestPath:  "/v1/alerts",
+			method:       http.MethodGet,
+			requestPath:  "/v1/metadata",
 			requestQuery: "limit=10&offset=20",
-			expectedURL:  "https://central.stackrox.svc:443/v1/alerts?limit=10&offset=20",
+			expectedURL:  "https://central.stackrox.svc:443/v1/metadata?limit=10&offset=20",
 		},
 		{
 			name:        "graphql endpoint",
 			baseURL:     "https://central.stackrox.svc:443",
+			method:      http.MethodPost,
 			requestPath: "/api/graphql",
 			expectedURL: "https://central.stackrox.svc:443/api/graphql",
 		},
 		{
 			name:        "endpoint without port",
 			baseURL:     "https://central.stackrox.svc",
+			method:      http.MethodGet,
 			requestPath: "/v1/deployments",
 			expectedURL: "https://central.stackrox.svc/v1/deployments",
 		},
@@ -395,7 +330,7 @@ func TestServeHTTP_ConstructsAbsoluteURLs(t *testing.T) {
 			h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
 			h.centralReachable.Store(true)
 
-			req := httptest.NewRequest(http.MethodGet, tt.requestPath, nil)
+			req := httptest.NewRequest(tt.method, tt.requestPath, nil)
 			req.Header.Set("Authorization", "Bearer test-token")
 			if tt.requestQuery != "" {
 				req.URL.RawQuery = tt.requestQuery
@@ -500,7 +435,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 	t.Run("authorization failure prevents proxy call", func(t *testing.T) {
 		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
 		// Set namespace scope header to trigger SAR check.
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
 			"Authorization":         "Bearer test-token",
 			stackroxNamespaceHeader: "my-namespace",
 		})
@@ -511,7 +446,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 
 	t.Run("no authorizer returns server error", func(t *testing.T) {
 		f := newProxyTestFixture(t, nil)
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", nil)
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", nil)
 		assert.False(t, f.proxyCalled, "proxy should not be called when authorizer is not configured")
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "authorizer not configured")
@@ -519,7 +454,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 
 	t.Run("authorization success allows proxy call", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
 			"Authorization": "Bearer test-token",
 		})
 		assert.True(t, f.proxyCalled, "proxy should be called when authorization succeeds")
@@ -541,7 +476,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 
 	t.Run("specific namespace scope triggers SAR check", func(t *testing.T) {
 		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
 			"Authorization":         "Bearer test-token",
 			stackroxNamespaceHeader: "my-namespace",
 		})
@@ -551,7 +486,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 
 	t.Run("cluster-wide scope (*) triggers SAR check", func(t *testing.T) {
 		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
 			"Authorization":         "Bearer test-token",
 			stackroxNamespaceHeader: FullClusterAccessScope,
 		})
@@ -600,7 +535,7 @@ func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 		h := newTestHandler(t, baseURL, mockTransport, newK8sAuthorizer(fakeClient), "test-token")
 		h.centralReachable.Store(true)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 		req.Header.Set("Authorization", "Bearer test-token")
 		req.Header.Set(stackroxNamespaceHeader, "my-namespace")
 		w := httptest.NewRecorder()
@@ -621,7 +556,7 @@ func TestServeHTTP_TransportFailure(t *testing.T) {
 		h := newTestHandlerWithTransportError(t, baseURL, newAllowingAuthorizer(t), errTransportError)
 		h.centralReachable.Store(true)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
@@ -640,7 +575,7 @@ func TestServeHTTP_TransportFailure(t *testing.T) {
 		h := newTestHandlerWithTransportError(t, baseURL, newAllowingAuthorizer(t), errServiceUnavailable)
 		h.centralReachable.Store(true)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
@@ -672,7 +607,7 @@ func TestServeHTTP_TokenInjection(t *testing.T) {
 		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), expectedToken)
 		h.centralReachable.Store(true)
 
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
 		req.Header.Set("Authorization", "Bearer user-token") // User's incoming token
 		w := httptest.NewRecorder()
 
@@ -687,7 +622,7 @@ func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 	t.Run("missing token returns 401", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
 		// No Authorization header set.
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", nil)
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", nil)
 		assert.False(t, f.proxyCalled, "proxy should not be called without authorization header")
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 		assert.Contains(t, w.Body.String(), "bearer token")
@@ -695,7 +630,7 @@ func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 
 	t.Run("invalid token returns 401", func(t *testing.T) {
 		f := newProxyTestFixture(t, newUnauthenticatedAuthorizer(t))
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
 			"Authorization": "Bearer invalid-token",
 		})
 		assert.False(t, f.proxyCalled, "proxy should not be called with unauthenticated token")
@@ -703,27 +638,27 @@ func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 	})
 }
 
-func TestServeHTTP_PathFiltering(t *testing.T) {
-	t.Run("disallowed path returns 403", func(t *testing.T) {
+func TestServeHTTP_ClientPolicyRoutes(t *testing.T) {
+	t.Run("unconfigured path returns 403", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
 		w := f.serveHTTP(t, http.MethodGet, "/admin/secret", map[string]string{
 			"Authorization": "Bearer test-token",
 		})
-		assert.False(t, f.proxyCalled, "proxy should not be called for disallowed path")
+		assert.False(t, f.proxyCalled, "proxy should not be called for an unconfigured path")
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "not allowed by the proxy allow-list")
+		assert.Contains(t, w.Body.String(), "client policy does not allow request")
 	})
 
 	t.Run("allowed path proceeds normally", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
-		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
 			"Authorization": "Bearer test-token",
 		})
-		assert.True(t, f.proxyCalled, "proxy should be called for allowed path")
+		assert.True(t, f.proxyCalled, "proxy should be called for a configured path")
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
-	t.Run("no allow-list configured allows all paths", func(t *testing.T) {
+	t.Run("no allow-list does not bypass policy routes", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
 		// Override: remove path filtering capability and clear allowed paths.
 		centralcaps.Set([]centralsensor.CentralCapability{
@@ -734,7 +669,7 @@ func TestServeHTTP_PathFiltering(t *testing.T) {
 		w := f.serveHTTP(t, http.MethodGet, "/admin/anything", map[string]string{
 			"Authorization": "Bearer test-token",
 		})
-		assert.True(t, f.proxyCalled, "proxy should be called when no allow-list is configured")
-		assert.Equal(t, http.StatusOK, w.Code)
+		assert.False(t, f.proxyCalled, "policy should reject unconfigured routes even without Central path filtering")
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 }
