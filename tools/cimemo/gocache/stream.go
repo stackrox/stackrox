@@ -158,11 +158,14 @@ func (r *Remote) putFileGzip(key, path string) error {
 	if err != nil {
 		return err
 	}
-	tmp := path + ".tmp-gz"
-	f, err := os.Create(tmp)
+	// Unique temp: concurrent uploads of the same outputID (two actions
+	// sharing one output) raced on a fixed name and crashed with
+	// "no such file" after one side cleaned up.
+	f, err := os.CreateTemp(filepath.Dir(path), ".gz-*")
 	if err != nil {
 		return err
 	}
+	tmp := f.Name()
 	zw := gzip.NewWriter(f)
 	src, err := os.Open(path)
 	if err != nil {
@@ -180,17 +183,18 @@ func (r *Remote) putFileGzip(key, path string) error {
 	}
 	defer os.Remove(tmp)
 
-	st, err := os.Stat(tmp)
+	st, err := f.Stat()
 	if err != nil {
+		f.Close()
 		return err
 	}
-	fh, err := os.Open(tmp)
-	if err != nil {
+	if _, err := f.Seek(0, 0); err != nil {
+		f.Close()
 		return err
 	}
-	defer fh.Close()
-	req, err := http.NewRequest("PUT", r.containerURL()+"/"+key, fh)
+	req, err := http.NewRequest("PUT", r.containerURL()+"/"+key, f)
 	if err != nil {
+		f.Close()
 		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)

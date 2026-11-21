@@ -3,7 +3,9 @@ package store
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/davdhacs/cimemo/key"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -30,14 +32,19 @@ const (
 //
 // Returns (inputHashes, dirListings).
 func BuildProvenance(dir string, readSet []string) (map[string]string, map[string]string) {
+	return BuildProvenanceFiltered(dir, readSet, nil)
+}
+
+// BuildProvenanceFiltered records provenance with directory listings
+// that exclude the given names — callers pass the manifest's output
+// roots so validation and recording agree (output churn must not
+// invalidate input-dir listings).
+func BuildProvenanceFiltered(dir string, readSet []string, exclude map[string]bool) (map[string]string, map[string]string) {
 	inputs := make(map[string]string, len(readSet))
 	for _, rel := range readSet {
-		data, err := os.ReadFile(filepath.Join(dir, rel))
-		if err != nil {
-			continue
+		if v, ok := key.HashInput(dir, rel); ok {
+			inputs[rel] = v
 		}
-		sum := sha256.Sum256(data)
-		inputs[rel] = hex.EncodeToString(sum[:])
 	}
 
 	dirs := make(map[string]bool)
@@ -46,7 +53,7 @@ func BuildProvenance(dir string, readSet []string) (map[string]string, map[strin
 	}
 	listings := make(map[string]string, len(dirs))
 	for d := range dirs {
-		listings[d] = dirListingHash(filepath.Join(dir, d))
+		listings[d] = dirListingHashFiltered(dir, d, exclude)
 	}
 	return inputs, listings
 }
@@ -55,12 +62,31 @@ func BuildProvenance(dir string, readSet []string) (map[string]string, map[strin
 // Names only — not content, not mtimes — so it answers exactly
 // "did a file appear or disappear here?"
 func dirListingHash(dir string) string {
-	entries, err := os.ReadDir(dir)
+	return dirListingHashFiltered(dir, ".", nil)
+}
+
+// dirListingHashFiltered hashes a directory's entry names, excluding
+// entries whose RELATIVE PATH is an output dir or under one. Output
+// trees can nest arbitrarily deep (collector: collector/container/bin)
+// — name-at-one-level was too shallow and missed wiped output dirs.
+// dirListingHashFiltered hashes the entry names of relDir (under
+// root), excluding entries whose RELATIVE PATH is an output dir or
+// under one. The exclusion set is keyed by full relative paths
+// (collector/container/bin) — entries are joined with relDir before
+// lookup; comparing bare names against paths never matched (the bug
+// behind the collector's permanent "dir changed: collector/container/"
+// receipt misses).
+func dirListingHashFiltered(root, relDir string, excludeDirs map[string]bool) string {
+	entries, err := os.ReadDir(filepath.Join(root, relDir))
 	if err != nil {
 		return ""
 	}
 	var names []string
 	for _, e := range entries {
+		entryPath := path.Join(relDir, e.Name())
+		if excludeDirs[entryPath] {
+			continue
+		}
 		names = append(names, e.Name())
 	}
 	sort.Strings(names)
@@ -89,6 +115,15 @@ func (s *Store) Validate(m *Manifest, dir string) (bool, []string) {
 	var reasons []string
 
 	for _, rel := range m.ReadSet {
+		// Gitlinks hash via the submodule HEAD (not a file read).
+		if strings.Contains(rel, key.GitlinkMarker) {
+			if v, ok := key.HashInput(dir, rel); !ok {
+				reasons = append(reasons, "deleted: "+rel)
+			} else if m.InputHashes[rel] != "" && v != m.InputHashes[rel] {
+				reasons = append(reasons, "changed: "+rel)
+			}
+			continue
+		}
 		abs := filepath.Join(dir, rel)
 		info, err := os.Stat(abs)
 		if err != nil {
@@ -99,21 +134,38 @@ func (s *Store) Validate(m *Manifest, dir string) (bool, []string) {
 			continue // cannot have changed since the build
 		}
 		// Newer mtime — verify content.
-		data, err := os.ReadFile(abs)
-		if err != nil {
+		v, ok := key.HashInput(dir, rel)
+		if !ok {
 			reasons = append(reasons, "unreadable: "+rel)
 			continue
 		}
-		sum := sha256.Sum256(data)
-		if hex.EncodeToString(sum[:]) != m.InputHashes[rel] {
+		if v != m.InputHashes[rel] {
 			reasons = append(reasons, "changed: "+rel)
 		}
 		// mtime newer but same content: not a reason, but the file's
 		// new mtime stays — future validations hash it again. Cheap.
 	}
 
+	// Output dirs (every ancestor of each output path) are excluded
+	// from listing checks: wiping/restoring outputs churns those
+	// listings by design, at any depth (collector/container/bin).
+	outputRoots := map[string]bool{}
+	for _, b := range m.Blobs {
+		p := b.Path
+		for {
+			if i := strings.LastIndexByte(p, '/'); i > 0 {
+				p = p[:i]
+				outputRoots[p] = true
+			} else {
+				break
+			}
+		}
+	}
+	for _, d := range m.OutputDirs {
+		outputRoots[d] = true
+	}
 	for d, want := range m.DirListings {
-		if got := dirListingHash(filepath.Join(dir, d)); got != want {
+		if got := dirListingHashFiltered(dir, d, outputRoots); got != want {
 			reasons = append(reasons, "dir changed: "+d+"/")
 		}
 	}

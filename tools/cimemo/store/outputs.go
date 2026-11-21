@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,7 +30,18 @@ func (s *Store) SnapshotOutputs(key, dir string, readSet []string, builtAt int64
 	}
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			// Hidden dirs are pruned (VCS, caches) EXCEPT when the
+			// build itself created them (mtime > builtAt): build
+			// systems keep validity state in dot-dirs (cargo's
+			// target/debug/.fingerprint) that a receipt must restore
+			// for the tool to accept the outputs.
+			if strings.HasPrefix(info.Name(), ".") && info.ModTime().UnixNano() <= builtAt {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -44,14 +56,10 @@ func (s *Store) SnapshotOutputs(key, dir string, readSet []string, builtAt int64
 		// (.git, .idea) are pruned. SkipDir on a file would skip the rest of
 		// its directory — .DS_Store in the repo root would silently end the
 		// walk and capture nothing.
-		parts := strings.Split(rel, "/")
-		if strings.HasPrefix(parts[len(parts)-1], ".") {
+		// Hidden FILES are skipped (state files are handled at the
+		// directory level below).
+		if strings.HasPrefix(filepath.Base(rel), ".") {
 			return nil
-		}
-		for _, part := range parts[:len(parts)-1] {
-			if strings.HasPrefix(part, ".") {
-				return filepath.SkipDir
-			}
 		}
 
 		// Rule (a): inputs are never outputs.
@@ -80,6 +88,35 @@ func (s *Store) SnapshotOutputs(key, dir string, readSet []string, builtAt int64
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Record directories the build CREATED (mtime > builtAt), even
+	// empty ones: make-style builds mkdir output dirs (collector's
+	// container/libs) that hold no files — invisible to the blob set
+	// but their absence must not invalidate input-dir listings.
+	dirs := map[string]bool{}
+	err2 := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || !info.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(dir, path)
+		rel = filepath.ToSlash(rel)
+		if rel == "." {
+			return nil
+		}
+		if strings.HasPrefix(info.Name(), ".") && info.ModTime().UnixNano() <= builtAt {
+			return filepath.SkipDir
+		}
+		if info.ModTime().UnixNano() > builtAt {
+			dirs[rel] = true
+		}
+		return nil
+	})
+	if err2 == nil {
+		for d := range dirs {
+			m.OutputDirs = append(m.OutputDirs, d)
+		}
+		sort.Strings(m.OutputDirs)
 	}
 
 	sort.Slice(m.Blobs, func(i, j int) bool { return m.Blobs[i].Path < m.Blobs[j].Path })
@@ -116,4 +153,29 @@ func FormatReasons(reasons []string) string {
 		reasons = append(append([]string{}, reasons[:3]...), fmt.Sprintf("… +%d more", len(reasons)-3))
 	}
 	return strings.Join(reasons, ", ")
+}
+
+// LatestForClosure returns the most recent manifest with the given
+// closure hash (excluding excludeKey), or nil. The nondeterminism
+// detector's index: same closure + different key/output = divergence.
+func (s *Store) LatestForClosure(closureHash, excludeKey string) *Manifest {
+	var best *Manifest
+	manifestDir := filepath.Join(s.root, "manifests")
+	entries, _ := os.ReadDir(manifestDir)
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(manifestDir, e.Name()))
+		if err != nil {
+			continue
+		}
+		var m Manifest
+		if json.Unmarshal(data, &m) == nil && m.ClosureHash == closureHash && m.Key != excludeKey {
+			if best == nil || m.Created.After(best.Created) {
+				best = &m
+			}
+		}
+	}
+	return best
 }

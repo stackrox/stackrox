@@ -85,6 +85,131 @@ per-project tooling. Absolute times are not comparable (local disk vs
 CI runners + docker assembly), but the warm path does the same work:
 validate inputs, restore/link outputs, skip the build.
 
+## Docker builds: how they fit (2026-11-22)
+
+Container builds DO fit the cimemo model — at two levels — and the
+docs-recommended composition is three nested caches:
+
+1. **Image-level receipts (cimemo)**: `cimemo docker build -t x .` —
+   key = context closure (git-tracked; the daemon reads the context
+   where the host cannot observe), output = image ID, restore =
+   re-tag. Validated: same-context build to any tag hits in ~70ms;
+   context change misses. Tags are stripped from the key (output
+   names, not inputs — found via the divergence detector). This is
+   the CA branch's proven receipt→re-tag fast path, generalized.
+   Local receipts need the image present; cross-machine = docker
+   save into the blob store / registry push keyed by receipt (the CA
+   work's docker layer cache is the ported form).
+2. **Layer cache (docker's own)**: BuildKit `--cache-from/--cache-to`
+   IS a content-addressed remote cache — use it alongside cimemo, not
+   under it (changed-context builds skip unchanged layers).
+3. **Inner compiler caches**: RUN steps that compile (go/ccache/sccache)
+   carry their own protocol tiers inside the layers.
+
+What does NOT fit naively: host-side observation of docker builds
+(structurally blind — the daemon reads the context), and file-output
+snapshots (outputs are images, hence the ImageOutputs manifest type).
+
+## C/C++ case study (collector, 2026-11-21-22)
+
+Dockerized-builder pattern: host make → docker exec → cmake inside a
+builder container with the source MOUNTED — outputs land back on the
+host. Results (host-level cimemo wrapping `make -C collector collector`):
+
+| scenario | plain | cimemo |
+|---|---|---|
+| unchanged | ~26s (make no-op) | **HIT 1.6s** |
+| build tree wiped | 210s | receipt restores 1.5GB incl cmake-build |
+| build tree wiped + ccache | 210s | **31.3s** (98.9% compile hits) |
+
+- receipt restore: make/cmake accept it except 2 kernel-header-dependent
+  files (scap_bpf.c, scap_kmod.c) — 99.85% acceptance
+- ccache via PATH shims in the builder (no cmake changes), CCACHE_DIR
+  outside the repo so caches stay orthogonal
+- ccache 4.11 has only file-based remote storage; cross-machine ccache
+  = sync CCACHE_DIR through the blob store (files are content-addressed)
+  — future side-cache work
+- orchestrator blindness fix: observed read-sets are unioned with
+  git-tracked (host lsof saw ONE file — the Makefile — for the whole
+  build; the real reads happen inside the container)
+
+## sccache (rust protocol tier, 2026-11-22)
+
+- local: fact-api+ebpf cold 16.1s → wiped-target rebuild **5.1s**
+  (116/116 hits, 100%)
+- **cross-machine via sccache's native Azure backend**: fresh
+  container, fresh cache dir → 116/116 hits from the `sccache` blob
+  container (env: SCCACHE_AZURE_CONNECTION_STRING +
+  SCCACHE_AZURE_BLOB_CONTAINER — note the SCCACHE_ prefix; the
+  unprefixed names fail SILENTLY, zero cache-write errors)
+- the rust layer stack: unchanged → cimemo receipt 0.58s; wiped tree
+  → sccache 5.1s; cold machine → azure-sccache 18.5s (cross-region
+  from a laptop VM; in-region CI will be far faster)
+
+## Rust case study (fact, 2026-11-21) — full findings
+
+Full `fact-api` + `fact-ebpf` (eBPF compiles — needs Linux: container
+with clang + vendored libbpf headers via CPATH; Debian's libbpf is too
+old for bpf_ksym_exists). Note: the `fact` BINARY itself is broken at
+repo tip (E0600: `!running` on &OutputStatus with no Not impl —
+upstream bug, not ours).
+
+Receipts (in-container, 641MB target tree):
+- cold build 12.4s → receipt restore **581ms, cargo accepts 100%**
+  (0 recompiles) after the mtime-preserving restore fix
+- warm: HIT
+
+Determinism findings:
+- **rust rlibs are NOT byte-reproducible**: ar member names carry
+  per-build random suffixes (rustc codegen-unit temp names) and
+  lib.rmeta-link embeds them; member CONTENT is 100% deterministic.
+  Consequence: byte-keyed rlib caching cannot dedupe; cimemo's
+  divergence detector would false-positive → dissect gained ar-archive
+  mode (member-content multiset, name-listing members ignored) and
+  reports ContentEquivalent.
+- **eBPF objects (clang -target bpf) ARE byte-identical** across clean
+  rebuilds (dissect: format=elf, no differing sections).
+
+Robustness fixes born from this case study (each found live):
+1. gitlink blindness: submodules are gitlinks in `git ls-files`;
+   hashed-as-file = silently invisible → gitlink pseudo-inputs
+   (`path@gitlink:<HEAD>`) hashed via `git rev-parse` everywhere.
+2. git safe.directory: tar-copied/container checkouts trip git's
+   ownership check → cimemo silently degraded to no-cache → all git
+   calls carry `-c safe.directory=`.
+3. observed read-sets contained cargo's target/** state → filtered by
+   output roots (ancestor-mtime was too fragile — a stray dir touch
+   nuked the whole set).
+4. lsof-on-top-PID only sees the orchestrator (cargo), not workers
+   (rustc) → Linux observation now polls the process TREE via /proc.
+5. cargo's mtime-based freshness rejected restored outputs (15/170
+   recompiles) → restores preserve build-time mtimes → 0 recompiles.
+
+## Nondeterminism detector + dissector (2025-11-21)
+
+`cimemo` now warns when binaries change but files don't: manifests
+carry a ClosureHash (inputs only); a build whose closure matches a
+previous manifest's but whose key or outputs differ triggers a
+DIVERGENCE warning and an automatic dissection (section-level diff via
+stdlib ELF/Mach-O parsers + buildinfo comparison + date-string scan).
+Validated: a `-ldflags -X main.buildStamp=$(date)` build is caught and
+named ("buildinfo mismatch: ldflags ... != ..."), identical repeats
+stay silent. `cimemo dissect A B` runs it manually. Rust/C++ cause
+knowledge (vergen, __DATE__, DWARF paths, ar member mtimes) documented
+in dissect/dissect.go pending case studies.
+
+## CI receipt legs (2026-11-21, go build ./central, fresh runners)
+
+| leg | wall | detail |
+|---|---|---|
+| control (cold) | 302.7s | baseline |
+| populate | 521.0s | cold + upload 3.4GB / 6.8K actions + receipt |
+| serve-receipt | 13.8s | receipt hit: closure→key→manifest→300MB binary restored, go never ran, buildinfo verified, byte-identical |
+| serve-change | 210.6s | receipt miss, 6.8K actions prefetched, 14 recompiles + link |
+
+The 13.8s receipt leg is the CA fast path, generic. Remaining
+serve-change time is go's warm-build floor (action-ID hashing + link).
+
 ## Cross-runner action-ID drift — root cause & fix (2025-11-21, CI)
 
 Symptom: fresh-runner serves from the cloud recompiled ~1,255 of 5,196

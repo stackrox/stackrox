@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/davdhacs/cimemo/buildinfo"
+	"github.com/davdhacs/cimemo/dissect"
 	"github.com/davdhacs/cimemo/gocache"
 	"github.com/davdhacs/cimemo/key"
 	"github.com/davdhacs/cimemo/model"
@@ -82,6 +83,12 @@ func main() {
 		cmdGC(args[1:])
 	case args[0] == "clear":
 		cmdClear()
+	case args[0] == "dissect" && len(args) == 3:
+		rep, err := dissect.Diff(args[1], args[2])
+		if err != nil {
+			fatal("dissect: %v", err)
+		}
+		fmt.Print(rep)
 	case args[0] == "audit" && len(args) > 1:
 		cmdMemoize(args[1:], true)
 	default:
@@ -122,6 +129,7 @@ func cmdMemoize(args []string, forceFull bool) {
 
 	goPatterns := key.GoPatterns(args)
 	isGo := goPatterns != nil
+	isDocker := isDockerBuild(args)
 	var toolchain string
 	if isGo {
 		// Toolchain + build config: CGO_ENABLED, GOOS, GOARCH, GOFLAGS
@@ -142,6 +150,25 @@ func cmdMemoize(args []string, forceFull bool) {
 			} else if !vcsOK {
 				fmt.Printf("[cimemo] MISS: commit changed (VCS-stamped build)\n")
 			} else if valid, reasons := st.Validate(m, wd); valid {
+				if len(m.ImageOutputs) > 0 {
+					// Image receipt: re-tag instead of restoring files.
+					allOK := true
+					for _, ref := range m.ImageOutputs {
+						if err := dockerRetag(ref.ImageID, ref.Tag); err != nil {
+							fmt.Fprintf(os.Stderr, "[cimemo] retag %s failed: %v — rebuilding\n", ref.Tag, err)
+							allOK = false
+							break
+						}
+					}
+					if allOK {
+						fmt.Printf("[cimemo] CACHE HIT (image re-tag): %s\n", m.Key)
+						for _, ref := range m.ImageOutputs {
+							fmt.Printf("[cimemo]   %s -> %s\n", ref.ImageID[:19], ref.Tag)
+						}
+						recordHit(mod, command)
+						return
+					}
+				}
 				count, bytes, err := st.RestoreManifest(m, wd)
 				if err == nil {
 					fmt.Printf("[cimemo] CACHE HIT: %s\n", m.Key)
@@ -154,6 +181,38 @@ func cmdMemoize(args []string, forceFull bool) {
 				fmt.Fprintf(os.Stderr, "[cimemo] restore error: %v — rebuilding\n", err)
 			} else {
 				fmt.Printf("[cimemo] MISS: %s\n", store.FormatReasons(reasons))
+			}
+		}
+	}
+
+	// Docker keyed check BEFORE running: read-set is git-tracked
+	// (computable pre-build), and the receipt re-tags instead of
+	// restoring files.
+	if isDocker && !forceFull {
+		if gitFiles := gitTrackedFiles(wd); gitFiles != nil {
+			dk := key.FromFiles(wd, gitFiles, dockerKeyCommand(command, args)+"|"+toolchain+vcsFold(wd))
+			if st.HasManifest(dk) {
+				if m, err := st.GetManifest(dk); err == nil && len(m.ImageOutputs) > 0 {
+					allOK := true
+					for _, ref := range m.ImageOutputs {
+						if err := dockerRetag(ref.ImageID, ref.Tag); err != nil {
+							allOK = false
+							break
+						}
+					}
+					if allOK {
+						// Also satisfy the tags this invocation asked for.
+						for _, t := range dockerBuildTags(args) {
+							dockerRetag(m.ImageOutputs[0].ImageID, t)
+						}
+						fmt.Printf("[cimemo] CACHE HIT (image re-tag): %s\n", dk)
+						for _, ref := range m.ImageOutputs {
+							fmt.Printf("[cimemo]   %s -> %s\n", ref.ImageID[:19], ref.Tag)
+						}
+						recordHit(mod, command)
+						return
+					}
+				}
 			}
 		}
 	}
@@ -172,7 +231,7 @@ func cmdMemoize(args []string, forceFull bool) {
 			runPlain(args)
 			return
 		}
-		k := key.FromFiles(wd, readSet, command+"|"+toolchain+vcsFold(wd))
+		k := key.FromFiles(wd, readSet, dockerKeyCommand(command, args)+"|"+toolchain+vcsFold(wd))
 		if !forceFull && st.HasManifest(k) {
 			if m, err := st.GetManifest(k); err == nil {
 				count, bytes, err := st.RestoreManifest(m, wd)
@@ -234,7 +293,8 @@ func cmdMemoize(args []string, forceFull bool) {
 			statsPath = filepath.Join(wd, ".cimemo", fmt.Sprintf("gocache-stats-%d.json", os.Getpid()))
 			cmd.Env = append(os.Environ(),
 				"GOCACHEPROG="+self+" gocache",
-				"CIMEMO_GOCACHE_STATS="+statsPath)
+				"CIMEMO_GOCACHE_STATS="+statsPath,
+				"CIMEMO_GOCACHE_SCOPE="+strings.Join(goPatterns, " "))
 		}
 	}
 
@@ -242,7 +302,14 @@ func cmdMemoize(args []string, forceFull bool) {
 		fatal("start: %v", err)
 	}
 	if !isGo {
-		go reads.Track(cmd.Process.Pid, 50*time.Millisecond)
+		// Linux: poll the whole process tree via /proc (workers do the
+		// source reads; lsof on the top PID only sees the orchestrator).
+		// Elsewhere: lsof on the top PID.
+		if _, err := os.Stat("/proc"); err == nil {
+			go reads.TrackProcTree(cmd.Process.Pid, 20*time.Millisecond)
+		} else {
+			go reads.Track(cmd.Process.Pid, 50*time.Millisecond)
+		}
 	}
 	if err := cmd.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -264,35 +331,101 @@ func cmdMemoize(args []string, forceFull bool) {
 	}
 
 	// === Discover the read-set (non-Go commands) ===
-	if !isGo {
-		if observed := reads.Files(wd); len(observed) > 0 {
+	if isDocker {
+		// Docker builds read the context inside the daemon — host-side
+		// observation is structurally blind. Git-tracked fallback is
+		// the sound closure (Dockerfile + context files).
+		if gitFiles := gitTrackedFiles(wd); gitFiles != nil {
+			readSet = gitFiles
+			strategy = store.StrategyFallback
+		}
+	} else if !isGo {
+		if observed := filterBuildState(wd, reads.Files(wd), builtAt); len(observed) > 0 {
 			readSet = observed
 			strategy = store.StrategyObserved
+			// Orchestrator blindness: builds that delegate into
+			// containers (make -> docker exec -> cmake) do their real
+			// reads where the host cannot observe them — lsof saw ONE
+			// file (the Makefile) for the collector build. Union with
+			// git-tracked files so the key stays sound; observation
+			// then only ADDS precision when it catches real reads.
+			if gitFiles := gitTrackedFiles(wd); gitFiles != nil {
+				readSet = unionFiles(readSet, gitFiles)
+			}
 		} else if gitFiles := gitTrackedFiles(wd); gitFiles != nil {
 			readSet = gitFiles
 			strategy = store.StrategyFallback
 		}
 	}
 	if len(readSet) == 0 {
-		fmt.Println("[cimemo] no read-set derivable — output not cached")
+		fmt.Printf("[cimemo] no read-set derivable (observed raw=%d, git ok=%v) — output not cached\n",
+			len(reads.Files(wd)), gitTrackedFiles(wd) != nil)
 		return
 	}
 
 	// === Snapshot OUTPUTS ONLY and record provenance ===
-	k := key.FromFiles(wd, readSet, command+"|"+toolchain+vcsFold(wd))
-	m, err := st.SnapshotOutputs(k, wd, readSet, builtAt)
-	if err != nil {
-		fatal("snapshot: %v", err)
+	keyCommand := command
+	if isDocker {
+		// Tags are output NAMES, not inputs: the same context built to
+		// different tags is the same receipt (found via the divergence
+		// detector: same closure, same image, different key).
+		for _, t := range dockerBuildTags(args) {
+			keyCommand = strings.ReplaceAll(keyCommand, " "+t+" ", " ")
+		}
+	}
+	k := key.FromFiles(wd, readSet, keyCommand+"|"+toolchain+vcsFold(wd))
+	var m *store.Manifest
+	if isDocker {
+		// Image-level receipt: outputs are image IDs, not files.
+		m = &store.Manifest{Key: k, Created: time.Now()}
+		for _, tag := range dockerBuildTags(args) {
+			id, ierr := dockerImageID(tag)
+			if ierr != nil {
+				fatal("docker inspect %s: %v", tag, ierr)
+			}
+			m.ImageOutputs = append(m.ImageOutputs, store.ImageRef{ImageID: id, Tag: tag})
+		}
+	} else {
+		m, err = st.SnapshotOutputs(k, wd, readSet, builtAt)
+		if err != nil {
+			fatal("snapshot: %v", err)
+		}
 	}
 	m.Command = command
 	m.Strategy = strategy
 	m.ReadSet = readSet
-	m.InputHashes, m.DirListings = store.BuildProvenance(wd, readSet)
+	// Every ancestor directory of every output is an output dir:
+	// wiping any of them (cmake-build/, collector/container/bin) must
+	// not invalidate input-dir listings.
+	outputDirs := map[string]bool{}
+	for _, b := range m.Blobs {
+		p := b.Path
+		for {
+			if i := strings.LastIndexByte(p, '/'); i > 0 {
+				p = p[:i]
+				outputDirs[p] = true
+			} else {
+				break
+			}
+		}
+	}
+	for _, d := range m.OutputDirs {
+		outputDirs[d] = true
+	}
+	m.InputHashes, m.DirListings = store.BuildProvenanceFiltered(wd, readSet, outputDirs)
 	m.Closure = closure
 	m.Toolchain = toolchain
 	m.BuiltAt = builtAt
 	m.ActionStats = actionStats
 	m.VCSCommit = gitHead(wd)
+	m.ClosureHash = key.ClosureHash(wd, readSet)
+
+	// Nondeterminism detector: same closure, different key or different
+	// output = something invisible changed (or the build is
+	// nondeterministic). Dissect and warn.
+	if prev := st.LatestForClosure(m.ClosureHash, m.Key); prev != nil {
+		warnDivergence(st, prev, m, wd)
+	}
 
 	// Buildinfo audit (tier 1): inspect go-binary outputs, record in
 	// the manifest, warn on memoization-blind inputs.
@@ -384,6 +517,18 @@ func diffOutputHashes(a, b map[string]string) []string {
 		}
 	}
 	return out
+}
+
+// dockerKeyCommand strips output tags from a docker build command for
+// keying (tags are output names, not inputs).
+func dockerKeyCommand(command string, args []string) string {
+	if !isDockerBuild(args) {
+		return command
+	}
+	for _, t := range dockerBuildTags(args) {
+		command = strings.ReplaceAll(command, " "+t+" ", " ")
+	}
+	return command
 }
 
 // runPlain executes the command with no memoization.
@@ -478,16 +623,34 @@ func cmdClear() {
 }
 
 func gitTrackedFiles(dir string) []string {
-	cmd := exec.Command("git", "-C", dir, "ls-files")
+	// -s: stage mode prefixes. Submodule entries are gitlinks (mode
+	// 160000): hashing them as files fails silently, making submodule
+	// content invisible to the key (found via the fact case study —
+	// its build reads protos from third_party/stackrox). Replace each
+	// gitlink with the submodule's HEAD commit as a pseudo-input.
+	// -c safe.directory: tar-copied and container checkouts trip git's
+	// ownership check, silently degrading cimemo to no-cache (found in
+	// the fact-in-container case study).
+	cmd := exec.Command("git", "-C", dir, "-c", "safe.directory="+dir, "ls-files", "-s")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil
 	}
 	var files []string
 	for _, line := range strings.Split(string(out), "\n") {
-		if line = strings.TrimSpace(line); line != "" {
-			files = append(files, line)
+		fields := strings.Fields(line)
+		if len(fields) < 4 {
+			continue
 		}
+		mode, path := fields[0], fields[3]
+		if mode == "160000" {
+			// path is the submodule dir; its HEAD is the content key
+			if head, err := exec.Command("git", "-C", filepath.Join(dir, path), "-c", "safe.directory="+filepath.Join(dir, path), "rev-parse", "HEAD").Output(); err == nil {
+				files = append(files, path+"@gitlink:"+strings.TrimSpace(string(head)))
+			}
+			continue
+		}
+		files = append(files, path)
 	}
 	return files
 }
@@ -522,7 +685,7 @@ func vcsFoldActive() bool {
 
 // gitHead returns the current commit, or "" outside a repo.
 func gitHead(wd string) string {
-	out, err := exec.Command("git", "-C", wd, "rev-parse", "HEAD").Output()
+	out, err := exec.Command("git", "-C", wd, "-c", "safe.directory="+wd, "rev-parse", "HEAD").Output()
 	if err != nil {
 		return ""
 	}
@@ -538,7 +701,7 @@ func vcsFold(wd string) string {
 	if !vcsFoldActive() {
 		return ""
 	}
-	out, err := exec.Command("git", "-C", wd, "rev-parse", "HEAD").Output()
+	out, err := exec.Command("git", "-C", wd, "-c", "safe.directory="+wd, "rev-parse", "HEAD").Output()
 	if err != nil {
 		return "" // not a git repo — nothing to fold
 	}
@@ -579,4 +742,128 @@ func verifyRestored(m *store.Manifest, wd string) {
 		}
 		break
 	}
+}
+
+// LatestForClosure-style divergence warning: compare the outputs of
+// two builds with identical input closures.
+func warnDivergence(st *store.Store, prev, cur *store.Manifest, wd string) {
+	sameOutputs := len(prev.Blobs) == len(cur.Blobs)
+	if sameOutputs {
+		for i := range prev.Blobs {
+			if prev.Blobs[i].Hash != cur.Blobs[i].Hash {
+				sameOutputs = false
+				break
+			}
+		}
+	}
+	fmt.Printf("[cimemo] DIVERGENCE: same input closure built twice with different results\n")
+	fmt.Printf("[cimemo]   previous key %s, current key %s, outputs identical: %v\n",
+		prev.Key, cur.Key, sameOutputs)
+	if sameOutputs {
+		fmt.Printf("[cimemo]   (outputs match — only the key moved: hidden input like commit/env/toolchain)\n")
+		return
+	}
+	// Outputs differ with identical inputs: dissect.
+	for i := range cur.Blobs {
+		if i >= len(prev.Blobs) || prev.Blobs[i].Hash != cur.Blobs[i].Hash {
+			a := filepath.Join(".cimemo", "blobs", prev.Blobs[i].Hash[:2], prev.Blobs[i].Hash)
+			b := filepath.Join(wd, cur.Blobs[i].Path)
+			if rep, err := dissect.Diff(a, b); err == nil {
+				if rep.ContentEquivalent {
+					fmt.Printf("[cimemo]   dissection of %s: content-equivalent (archive naming only) — not a divergence\n", cur.Blobs[i].Path)
+					return
+				}
+				fmt.Printf("[cimemo]   dissection of %s:\n", cur.Blobs[i].Path)
+				for _, line := range strings.Split(rep.String(), "\n") {
+					if line != "" {
+						fmt.Printf("[cimemo]     %s\n", line)
+					}
+				}
+			}
+			break
+		}
+	}
+}
+
+// filterBuildState removes observed reads that live under OUTPUT ROOTS:
+// top-level directories containing build-fresh files (cargo's target/,
+// cimemo CI's bin-exp/). Build systems read their own intermediate
+// state there (cargo's fingerprints) — neither source nor stable
+// input; keeping it makes receipt validation fail whenever outputs
+// are wiped. Ancestor-mtime was tried first and is too fragile: any
+// stray touch of a source dir nukes the whole read-set (fact case
+// study).
+func filterBuildState(wd string, files []string, builtAt int64) []string {
+	roots := outputRoots(wd, builtAt)
+	var out []string
+	for _, f := range files {
+		top := f
+		if i := strings.IndexByte(f, '/'); i > 0 {
+			top = f[:i]
+		}
+		if !roots[top] {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// outputRoots finds top-level directories containing anything modified
+// after builtAt (bounded walk).
+func outputRoots(wd string, builtAt int64) map[string]bool {
+	roots := map[string]bool{}
+	entries, err := os.ReadDir(wd)
+	if err != nil {
+		return roots
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		if dirHasRecent(filepath.Join(wd, e.Name()), builtAt, 0) {
+			roots[e.Name()] = true
+		}
+	}
+	return roots
+}
+
+func dirHasRecent(dir string, builtAt int64, depth int) bool {
+	if depth > 6 {
+		return false
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		if info.ModTime().UnixNano() > builtAt {
+			return true
+		}
+		if e.IsDir() && dirHasRecent(filepath.Join(dir, e.Name()), builtAt, depth+1) {
+			return true
+		}
+	}
+	return false
+}
+
+func unionFiles(a, b []string) []string {
+	seen := make(map[string]bool, len(a)+len(b))
+	var out []string
+	for _, f := range a {
+		if !seen[f] {
+			seen[f] = true
+			out = append(out, f)
+		}
+	}
+	for _, f := range b {
+		if !seen[f] {
+			seen[f] = true
+			out = append(out, f)
+		}
+	}
+	return out
 }

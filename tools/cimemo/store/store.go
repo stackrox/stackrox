@@ -28,6 +28,12 @@ import (
 	"time"
 )
 
+// ImageRef is a docker image output (receipt: image ID, restore: re-tag).
+type ImageRef struct {
+	ImageID string `json:"image_id"`
+	Tag     string `json:"tag"`
+}
+
 // BlobRef is a reference to a stored blob.
 type BlobRef struct {
 	Hash string `json:"hash"` // SHA-256 of content
@@ -46,16 +52,19 @@ type Manifest struct {
 	// Provenance: how the read-set was discovered and how to re-derive
 	// it. Strategy picks the revalidation tier (see provenance.go);
 	// Closure re-derives the read-set without re-running the command.
-	Strategy    string            `json:"strategy,omitempty"`
-	ReadSet     []string          `json:"read_set,omitempty"`
-	InputHashes map[string]string `json:"input_hashes,omitempty"`
-	DirListings map[string]string `json:"dir_listings,omitempty"`
-	Closure     string            `json:"closure,omitempty"`
-	Toolchain   string            `json:"toolchain,omitempty"`
-	BuiltAt     int64             `json:"built_at,omitempty"`
-	ActionStats *gocache.Stats    `json:"action_stats,omitempty"`
-	BuildInfo   *buildinfo.Info   `json:"build_info,omitempty"`
-	VCSCommit   string            `json:"vcs_commit,omitempty"`
+	Strategy     string            `json:"strategy,omitempty"`
+	ReadSet      []string          `json:"read_set,omitempty"`
+	InputHashes  map[string]string `json:"input_hashes,omitempty"`
+	DirListings  map[string]string `json:"dir_listings,omitempty"`
+	Closure      string            `json:"closure,omitempty"`
+	Toolchain    string            `json:"toolchain,omitempty"`
+	BuiltAt      int64             `json:"built_at,omitempty"`
+	ActionStats  *gocache.Stats    `json:"action_stats,omitempty"`
+	BuildInfo    *buildinfo.Info   `json:"build_info,omitempty"`
+	VCSCommit    string            `json:"vcs_commit,omitempty"`
+	OutputDirs   []string          `json:"output_dirs,omitempty"`
+	ImageOutputs []ImageRef        `json:"image_outputs,omitempty"`
+	ClosureHash  string            `json:"closure_hash,omitempty"`
 }
 
 // Store is the content-addressed blob store with manifests.
@@ -211,6 +220,14 @@ func (s *Store) RestoreManifest(m *Manifest, dir string) (int, int64, error) {
 		}
 		if err := os.WriteFile(target, data, 0o644); err != nil {
 			return count, total, err
+		}
+		// Restore with the BUILD-time mtime: build systems with
+		// mtime-based freshness (cargo's fingerprints) treat
+		// restore-time mtimes as "newer than sources" and recompile
+		// (measured: 15 of ~170 crates on the fact case study).
+		if m.BuiltAt > 0 {
+			t := time.Unix(0, m.BuiltAt)
+			os.Chtimes(target, t, t)
 		}
 		count++
 		total += int64(len(data))

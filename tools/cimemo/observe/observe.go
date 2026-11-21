@@ -10,6 +10,7 @@
 package observe
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -82,6 +83,15 @@ func (r *Reads) Files(workDir string) []string {
 	defer r.mu.Unlock()
 	var out []string
 	for path := range r.files {
+		// Skip directories (cwd shows up as a held "read") and
+		// dot-files (lock files, transient state — cargo's
+		// .cargo-*-lock poisoned read-sets in the fact case study).
+		if info, err := os.Stat(path); err != nil || !info.Mode().IsRegular() {
+			continue
+		}
+		if strings.HasPrefix(filepath.Base(path), ".") {
+			continue
+		}
 		if rel, err := filepath.Rel(real, path); err == nil && !strings.HasPrefix(rel, "..") {
 			out = append(out, rel)
 		}

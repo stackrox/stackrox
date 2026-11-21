@@ -81,12 +81,10 @@ func FromFiles(dir string, files []string, cmd string) string {
 	h := sha256.New()
 	sort.Strings(files)
 	for _, f := range files {
-		data, err := os.ReadFile(filepath.Join(dir, f))
-		if err != nil {
+		contentHash, ok := HashInput(dir, f)
+		if !ok {
 			continue
 		}
-		sum := sha256.Sum256(data)
-		contentHash := hex.EncodeToString(sum[:])
 		fmt.Fprintf(h, "%s:%s\n", f, contentHash)
 	}
 	fmt.Fprintf(h, "cmd:%s", cmd)
