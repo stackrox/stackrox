@@ -11,6 +11,7 @@ import (
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -34,5 +35,6 @@ func New(datastore datastore.DataStore, processIndicators processIndicatorDataSt
 		risks:                  risks,
 		manager:                manager,
 		lightspeedClient:       lightspeed,
+		aiSummaryCache:         expiringcache.NewExpiringCache[string, string](aiSummaryCacheTTL),
 	}
 }
