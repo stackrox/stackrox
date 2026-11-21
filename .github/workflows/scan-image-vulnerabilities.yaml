@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # ratchet:actions/upload-artifact@v7
         with:
           name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
@@ -145,7 +145,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # ratchet:actions/upload-artifact@v7
         with:
           name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
