@@ -614,6 +614,6 @@
 #   # Enables integration with OpenShift platform monitoring.
 #   openshift:
 #     enabled: true
-#     # Enables custom metrics integration.
+#     # Enables OpenShift Prometheus to scrape Central custom metrics independently of openshift.enabled.
 #     custom:
 #       enabled: false
