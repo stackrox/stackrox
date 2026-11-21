@@ -108,9 +108,9 @@ roxie_config_from_environment_compat() {
     while read -r var_val; do
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
+        ci_export "$name" "$value"
         info "  ${name}=${value}"
         set_custom_env "$config_file" "central" "$name" "$value"
-        ci_export "$name" "$value"
     done < <(
         # These are set in env.sh and picked up roxctl/central/generate/generate.go:updateConfig().
         env_with_default ROX_DEVELOPMENT_BUILD "true"   # pkg/devbuild/setting.go.
@@ -155,9 +155,9 @@ roxie_config_from_environment_compat() {
     while read -r var_val; do
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
+        ci_export "$name" "$value"
         info "  ${name}=${value}"
         set_custom_env "$config_file" "securedCluster" "$name" "$value"
-        ci_export "$name" "$value"
     done < <(
         # Set in export_test_environment() and deploy_sensor_via_operator().
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
@@ -174,9 +174,9 @@ roxie_config_from_environment_compat() {
     while read -r var_val; do
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
+        ci_export "$name" "$value"
         info "  ${name}=${value} for DaemonSet/collector"
         set_overlay_env "$config_file" "securedCluster" "apps/v1" "DaemonSet" "collector" "collector" "$name" "$value"
-        ci_export "$name" "$value"
     done < <(
         # Set in deploy_sensor_via_operator() and deploy_sensor().
         env_with_default ROX_AFTERGLOW_PERIOD "15"

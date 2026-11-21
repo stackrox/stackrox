@@ -61,6 +61,34 @@ validate_image_tag() {
     fi
 }
 
+# is_sensitive_env_name returns success when it guesses by the variable name that it may have some sensitive secret value
+is_sensitive_env_name() {
+    local name="$1"
+    [[ "$name" =~ (PASSWORD|TOKEN|SECRET|_SA|KEY|WEBHOOK|IDENTITY|SERVICE_ACCOUNT|CRED) ]]
+}
+
+# is_not_sensitive_value returns success for empty or placeholder values that need no
+# masking even under a sensitive-looking name.
+is_not_sensitive_value() {
+    local value="$1"
+    case "${value,,}" in
+        ''|true|false|disabled|enabled|none|null|on|off|auto|'[]'|'{}') return 0 ;;
+    esac
+    return 1
+}
+
+# gha_mask_value registers a value with GitHub Actions so later log output shows it as "***".
+# Masking only applies to output written after this runs.
+# The runner decodes %25, %0D, and %0A in command data, so the value is encoded the same way as
+# escapeData in actions/toolkit (% first). Otherwise the registered mask could differ from the value.
+gha_mask_value() {
+    local value="$1"
+    value="${value//%/%25}"
+    value="${value//$'\r'/%0D}"
+    value="${value//$'\n'/%0A}"
+    printf '::add-mask::%s\n' "$value"
+}
+
 ci_export() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: ci_export <env-name> <env-value>"
@@ -70,6 +98,12 @@ ci_export() {
     local env_value="$2"
 
     if is_GITHUB_ACTIONS; then
+        # Mask before writing to GITHUB_ENV. GHA prints GITHUB_ENV values in the env: block of
+        # every later step. It only masks values that come from the secrets context
+        # (e.g. ${{ secrets.FOO }}), and values generated at runtime are not among them.
+        if is_sensitive_env_name "$env_name" && ! is_not_sensitive_value "$env_value"; then
+            gha_mask_value "$env_value"
+        fi
         export "${env_name}"="${env_value}"
         if [[ -z "${GITHUB_ENV:-}" ]]; then
             die "GITHUB_ENV is unset in the environment even though GITHUB_ACTION is set"
