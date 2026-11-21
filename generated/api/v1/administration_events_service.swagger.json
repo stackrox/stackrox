@@ -151,6 +151,13 @@
               ]
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.workloadQuery",
+            "description": "Raw search query scoped to workload context (cluster, namespace, deployment).\nMatches events whose resource is an image deployed in workloads matching this query.\nUses the same search query format as the deployment service (e.g. \"Cluster:prod+Namespace:default\").",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -279,6 +286,13 @@
               ]
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.workloadQuery",
+            "description": "Raw search query scoped to workload context (cluster, namespace, deployment).\nMatches events whose resource is an image deployed in workloads matching this query.\nUses the same search query format as the deployment service (e.g. \"Cluster:prod+Namespace:default\").",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -446,6 +460,10 @@
             "$ref": "#/definitions/v1AdministrationEventLevel"
           },
           "description": "Matches events based on their level."
+        },
+        "workloadQuery": {
+          "type": "string",
+          "description": "Raw search query scoped to workload context (cluster, namespace, deployment).\nMatches events whose resource is an image deployed in workloads matching this query.\nUses the same search query format as the deployment service (e.g. \"Cluster:prod+Namespace:default\")."
         }
       }
     },
