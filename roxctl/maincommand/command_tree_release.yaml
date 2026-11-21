@@ -1478,9 +1478,11 @@ declarative-config:
           - use-current-k8s-context
     permission-set:
       LOCAL_FLAGS:
+        - access-constraint
         - description
         - name
         - resource-with-access
+        - scope-constraint
       INHERITED_FLAGS:
         - ca
         - config-map
