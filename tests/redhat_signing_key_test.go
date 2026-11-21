@@ -30,6 +30,17 @@ const (
 	offlineModeEnv      = "ROX_OFFLINE_MODE"
 	shortWatchInterval  = "5s"
 
+	// The stock nginx-unprivileged config only listens on IPv4; serve both
+	// families so the bundle server is reachable on IPv6-primary clusters.
+	nginxDefaultConf = `server {
+    listen       8080;
+    listen       [::]:8080;
+    location / {
+        root   /usr/share/nginx/html;
+    }
+}
+`
+
 	testPublicKeyPEM1 = `-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE16IoQbiiB5exTRLTkl2rn5FuyXys
 4TbDn4+GhQD1JmLZnAiA0cXktX+gFdxu/0JM9pcjjaqT7pdXztbBs78cXg==
@@ -346,7 +357,8 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 
 	s.logf("Creating ConfigMap %q with key bundle", configMapName)
 	s.ensureConfigMapExists(testCtx, ns, configMapName, map[string]string{
-		"bundle.json": string(bundleJSON),
+		"bundle.json":  string(bundleJSON),
+		"default.conf": nginxDefaultConf,
 	})
 
 	defer func() {
@@ -375,11 +387,19 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 						Name:  "nginx",
 						Image: "docker.io/nginxinc/nginx-unprivileged:alpine",
 						Ports: []coreV1.ContainerPort{{ContainerPort: 8080, Protocol: coreV1.ProtocolTCP}},
-						VolumeMounts: []coreV1.VolumeMount{{
-							Name:      "bundle",
-							MountPath: "/usr/share/nginx/html",
-							ReadOnly:  true,
-						}},
+						VolumeMounts: []coreV1.VolumeMount{
+							{
+								Name:      "bundle",
+								MountPath: "/usr/share/nginx/html",
+								ReadOnly:  true,
+							},
+							{
+								Name:      "bundle",
+								MountPath: "/etc/nginx/conf.d/default.conf",
+								SubPath:   "default.conf",
+								ReadOnly:  true,
+							},
+						},
 					}},
 					Volumes: []coreV1.Volume{{
 						Name: "bundle",
@@ -481,7 +501,8 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 
 	s.logf("Creating ConfigMap %q with decoy key bundle", configMapName)
 	s.ensureConfigMapExists(testCtx, ns, configMapName, map[string]string{
-		"bundle.json": string(decoyBundleJSON),
+		"bundle.json":  string(decoyBundleJSON),
+		"default.conf": nginxDefaultConf,
 	})
 
 	defer func() {
@@ -510,11 +531,19 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 						Name:  "nginx",
 						Image: "docker.io/nginxinc/nginx-unprivileged:alpine",
 						Ports: []coreV1.ContainerPort{{ContainerPort: 8080, Protocol: coreV1.ProtocolTCP}},
-						VolumeMounts: []coreV1.VolumeMount{{
-							Name:      "bundle",
-							MountPath: "/usr/share/nginx/html",
-							ReadOnly:  true,
-						}},
+						VolumeMounts: []coreV1.VolumeMount{
+							{
+								Name:      "bundle",
+								MountPath: "/usr/share/nginx/html",
+								ReadOnly:  true,
+							},
+							{
+								Name:      "bundle",
+								MountPath: "/etc/nginx/conf.d/default.conf",
+								SubPath:   "default.conf",
+								ReadOnly:  true,
+							},
+						},
 					}},
 					Volumes: []coreV1.Volume{{
 						Name: "bundle",
