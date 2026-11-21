@@ -34,3 +34,34 @@ load "../../test_helpers.bats"
     assert_output --partial "add-vms-id_ed25519"
     assert_output --partial "virtctl ssh -n openshift-cnv --identity-file ./add-vms-id_ed25519 cloud-user@vmi/rhel10-1"
 }
+
+@test "write_github_summary reports quadlet agent failures" {
+    summary_file="${BATS_TEST_TMPDIR}/summary.md"
+
+    run env GITHUB_STEP_SUMMARY="$summary_file" bash -c '
+        source "$1"
+        NAMESPACE="openshift-cnv"
+        VM_OS="rhel10"
+        VM_PREFIX="rhel10"
+        NUM_VMS=2
+        AGENT_TYPE="quadlet"
+        MANAGED_VMS=("rhel10-1")
+        ADOPTED_VMS=()
+        SKIPPED_VMS=("rhel10-3")
+        QUADLET_AGENT_READY_VMS=("rhel10-1")
+        QUADLET_AGENT_FAILED_VMS=("rhel10-2")
+        write_github_summary
+    ' _ "${BATS_TEST_DIRNAME}/add-vms.sh"
+
+    assert_success
+    assert_output --partial "::error title=Add VMs incomplete::Skipped: rhel10-3; agent failed: rhel10-2"
+
+    run cat "$summary_file"
+    assert_output --partial "### Quadlet agent service verification"
+    assert_output --partial "roxagent.service"
+    assert_output --partial "Successfully started on:"
+    assert_output --partial "rhel10-1"
+    assert_output --partial "Needs attention:"
+    assert_output --partial "rhel10-2"
+    refute_output --partial "roxagent-serve.service"
+}
