@@ -74,12 +74,23 @@ jobs:
           END=$(date +%s%3N)
           echo "wall_ms=$((END-START))" >> "$GITHUB_OUTPUT"
           echo "POPULATE: $((END-START))ms (cold compile + cloud upload)"
-          echo "--- stats:"
-          cat /tmp/gc-stats.json
+          echo "--- stats summary:"
+          python3 -c "
+import json
+s = json.load(open('/tmp/gc-stats.json'))
+s['missed_count'] = len(s.get('missed_actions') or [])
+s.pop('missed_actions', None); s.pop('requested_all', None)
+print(json.dumps(s, indent=1))
+"
+          gzip -c /tmp/gc-stats.json > /tmp/gc-stats.json.gz
           echo "--- missed (first 5):"
           python3 -c "import json; s=json.load(open('/tmp/gc-stats.json')); print(s.get('missed_actions') or [])[:5]" 2>/dev/null || true
       - id: sha
         run: echo "sha=$(sha256sum /tmp/central-populate | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: populate-stats
+          path: /tmp/gc-stats.json.gz
 
   serve:
     runs-on: ubuntu-latest
@@ -110,8 +121,15 @@ jobs:
           END=$(date +%s%3N)
           echo "SERVE: $((END-START))ms (fresh cache, served from cloud)"
           echo "POPULATE was: ${{ needs.populate.outputs.wall_ms }}ms"
-          echo "--- stats:"
-          cat /tmp/gc-stats.json
+          echo "--- stats summary:"
+          python3 -c "
+import json
+s = json.load(open('/tmp/gc-stats.json'))
+s['missed_count'] = len(s.get('missed_actions') or [])
+s.pop('missed_actions', None); s.pop('requested_all', None)
+print(json.dumps(s, indent=1))
+"
+          gzip -c /tmp/gc-stats.json > /tmp/gc-stats.json.gz
           echo "--- missed (first 5):"
           python3 -c "import json; s=json.load(open('/tmp/gc-stats.json')); print(s.get('missed_actions') or [])[:5]" 2>/dev/null || true
           SERVE_SHA=$(sha256sum /tmp/central-serve | cut -d' ' -f1)
@@ -123,3 +141,7 @@ jobs:
             echo "BINARY MISMATCH"
             exit 1
           fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: serve-stats
+          path: /tmp/gc-stats.json.gz
