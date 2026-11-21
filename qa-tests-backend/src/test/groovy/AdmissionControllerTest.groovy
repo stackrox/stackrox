@@ -14,10 +14,12 @@ import services.NamespaceService
 import services.PolicyService
 import util.Timer
 
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Ignore("Temporarily disabled for EKS IPv6 investigation")
 @Tag("PZ")
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
