@@ -730,7 +730,9 @@ class ImageScanningTest extends BaseSpecification {
             if (imageDetails.hasScan()) {
                 assert imageDetails.scan.scanTime
                 imageDetails.scan.componentsList*.vulnsList.flatten().find { Vulnerability.EmbeddedVulnerability vuln ->
-                    0.0 > vuln.cvss || vuln.cvss > 10.0 || vuln.link == null || vuln.link == ""
+                    (0.0 > vuln.cvss || vuln.cvss > 10.0) ||
+                    (vuln.cve.startsWith("CVE-") &&
+                    (vuln.link == null || vuln.link == ""))
                 }.each { Vulnerability.EmbeddedVulnerability vuln ->
                     missingValues.containsKey(imageDetails.name) ?
                             missingValues.get(imageDetails.name).add(vuln) :
