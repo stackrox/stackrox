@@ -197,6 +197,7 @@ func cmdMemoize(args []string, forceFull bool) {
 					fmt.Printf("[cimemo]   %d outputs, %.1f MB, strategy=%s (%s)\n",
 						count, float64(bytes)/1024/1024, m.Strategy,
 						time.Since(start).Round(time.Millisecond))
+					storeCommitReceiptIfClean(st, m, wd, command, toolchain)
 					recordHit(mod, command)
 					return
 				}
@@ -263,6 +264,7 @@ func cmdMemoize(args []string, forceFull bool) {
 					fmt.Printf("[cimemo]   %d outputs, %.1f MB (%s)\n",
 						count, float64(bytes)/1024/1024,
 						time.Since(start).Round(time.Millisecond))
+					storeCommitReceiptIfClean(st, m, wd, command, toolchain)
 					recordHit(mod, command)
 					return
 				}
@@ -465,15 +467,8 @@ func cmdMemoize(args []string, forceFull bool) {
 	}
 	// Commit receipt: same manifest under the git-HEAD key (blobs are
 	// content-addressed — zero extra storage; just a second index).
-	if isDocker == false && m.KeyKind == "" {
-		if ck, ok := commitReceiptKey(wd, keyCommand, toolchain); ok {
-			cm := *m
-			cm.Key = ck
-			cm.KeyKind = "commit"
-			if err := st.PutManifest(&cm); err == nil {
-				fmt.Printf("[cimemo] commit receipt: %s\n", ck)
-			}
-		}
+	if !isDocker {
+		storeCommitReceiptIfClean(st, m, wd, keyCommand, toolchain)
 	}
 
 	fmt.Printf("[cimemo] CACHED: %s\n", k)
@@ -511,6 +506,25 @@ func cmdMemoize(args []string, forceFull bool) {
 
 	if err := mod.Save(); err != nil {
 		fmt.Fprintf(os.Stderr, "[cimemo] model save: %v\n", err)
+	}
+}
+
+// storeCommitReceiptIfClean writes the git-HEAD alias for the manifest
+// just used/created, when the tree is clean. Also called on CONTENT-path
+// hits: a clean tree + a valid closure receipt implies the commit
+// receipt, so the first hit at any commit makes every later run at
+// that commit take the fast path (no go list, no module cache).
+func storeCommitReceiptIfClean(st *store.Store, m *store.Manifest, wd, keyCommand, toolchain string) {
+	if m.KeyKind != "" {
+		return // already an alias
+	}
+	if ck, ok := commitReceiptKey(wd, keyCommand, toolchain); ok {
+		cm := *m
+		cm.Key = ck
+		cm.KeyKind = "commit"
+		if err := st.PutManifest(&cm); err == nil {
+			fmt.Printf("[cimemo] commit receipt: %s\n", ck)
+		}
 	}
 }
 
