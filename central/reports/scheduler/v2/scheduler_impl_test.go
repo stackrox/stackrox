@@ -3,6 +3,7 @@ package v2
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stackrox/rox/central/reports/config/datastore/mocks"
@@ -12,7 +13,9 @@ import (
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/semaphore"
 	"gopkg.in/robfig/cron.v2"
 )
 
@@ -334,4 +337,101 @@ func TestCancelReportRequestUpdatesWaitingReportToFailure(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, cancelled)
 	assert.Equal(t, 0, imageQueue.Len())
+}
+
+func TestSaturatedNodeReportRemainsCancellable(t *testing.T) {
+	t.Setenv("ROX_NODE_VULNERABILITY_REPORTS", "true")
+
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+		mockNodeReportGen := reportGenMocks.NewMockReportGenerator(ctrl)
+
+		cronScheduler := cron.New()
+		s := newSchedulerImpl(nil, mockSnapshotStore, nil, nil, nil, mockNodeReportGen, nil, cronScheduler)
+		s.isStarted.Store(true)
+		s.concurrencySema = semaphore.NewWeighted(1)
+		require.NoError(t, s.concurrencySema.Acquire(context.Background(), 1))
+		defer s.concurrencySema.Release(1)
+
+		nodeQueue := s.queueByType[storage.ReportSnapshot_NODE_VULNERABILITY]
+		req := &reportGen.ReportRequest{
+			ReportSnapshot: &storage.ReportSnapshot{
+				ReportId:              "waiting-node-report-id",
+				ReportConfigurationId: "node-config-id",
+				Name:                  "waiting-node-report",
+				Type:                  storage.ReportSnapshot_NODE_VULNERABILITY,
+				ReportStatus: &storage.ReportStatus{
+					RunState:          storage.ReportStatus_WAITING,
+					ReportRequestType: storage.ReportStatus_ON_DEMAND,
+				},
+			},
+		}
+		nodeQueue.Enqueue(req)
+
+		mockSnapshotStore.EXPECT().UpdateReportSnapshot(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, snap *storage.ReportSnapshot) error {
+				assert.Equal(t, storage.ReportStatus_FAILURE, snap.GetReportStatus().GetRunState())
+				return nil
+			})
+
+		s.readyForReports.Signal()
+		go s.runReports()
+		synctest.Wait()
+		assert.Equal(t, 1, nodeQueue.Len())
+
+		cancelled, err := s.CancelReportRequest(context.Background(), req.ReportSnapshot.GetReportId())
+		require.NoError(t, err)
+		require.True(t, cancelled)
+		assert.Equal(t, 0, nodeQueue.Len())
+
+		s.Stop()
+	})
+}
+
+func TestStopInterruptsReportCapacityWait(t *testing.T) {
+	t.Setenv("ROX_NODE_VULNERABILITY_REPORTS", "true")
+
+	synctest.Test(t, func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockNodeReportGen := reportGenMocks.NewMockReportGenerator(ctrl)
+		cronScheduler := cron.New()
+		s := newSchedulerImpl(nil, nil, nil, nil, nil, mockNodeReportGen, nil, cronScheduler)
+		s.isStarted.Store(true)
+		s.concurrencySema = semaphore.NewWeighted(1)
+		require.NoError(t, s.concurrencySema.Acquire(context.Background(), 1))
+		defer s.concurrencySema.Release(1)
+
+		nodeQueue := s.queueByType[storage.ReportSnapshot_NODE_VULNERABILITY]
+		nodeQueue.Enqueue(&reportGen.ReportRequest{
+			ReportSnapshot: &storage.ReportSnapshot{
+				ReportId: "waiting-node-report-id",
+				Type:     storage.ReportSnapshot_NODE_VULNERABILITY,
+				ReportStatus: &storage.ReportStatus{
+					ReportRequestType: storage.ReportStatus_ON_DEMAND,
+				},
+			},
+		})
+		s.readyForReports.Signal()
+		go s.runReports()
+		synctest.Wait()
+		assert.Equal(t, 1, nodeQueue.Len())
+
+		s.Stop()
+		assert.Equal(t, 1, nodeQueue.Len())
+	})
+}
+
+func TestStoppingSchedulerDoesNotCancelOtherInstance(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		first := newSchedulerImpl(nil, nil, nil, nil, nil, nil, nil, cron.New())
+		second := newSchedulerImpl(nil, nil, nil, nil, nil, nil, nil, cron.New())
+		defer second.stopCancel()
+		first.isStarted.Store(true)
+		go first.runReports()
+		synctest.Wait()
+		first.Stop()
+		assert.ErrorIs(t, first.stopCtx.Err(), context.Canceled)
+		assert.NoError(t, second.stopCtx.Err())
+	})
 }
