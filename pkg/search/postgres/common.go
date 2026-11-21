@@ -442,6 +442,7 @@ func (q *query) AsSQL() string {
 	queryString := replaceVars(querySB.String())
 	if env.PostgresQueryLogger.BooleanSetting() {
 		log.Info(queryString)
+		debug.PrintStack()
 	}
 	return queryString
 }
