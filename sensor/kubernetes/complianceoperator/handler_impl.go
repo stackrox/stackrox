@@ -228,6 +228,10 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 }
 
 func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
+	if err := m.validateComplianceScanStorage(m.ctx()); err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
 	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -704,6 +708,9 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		}
 	} else {
 		// The Resource is in Central but not in the cluster
+		if err := m.validateComplianceScanStorage(m.ctx()); err != nil {
+			return err
+		}
 		log.Debugf("Create %s %s", api.Kind, req.GetScanSettings().GetScanName())
 		resource, err := runtimeObjToUnstructured(convertFn(namespace, req.GetScanSettings(), req.GetCron()))
 		if err != nil {
