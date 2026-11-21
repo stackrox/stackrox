@@ -1,0 +1,34 @@
+{
+  "name": "File Activity Test Policy",
+  "description": "Test policy for file activity performance testing - triggers on file access in test directories",
+  "rationale": "This policy matches file activity in directories used by the fake workload to measure performance impact",
+  "remediation": "This is a test policy for performance testing",
+  "categories": ["Anomalous Activity"],
+  "lifecycleStages": ["RUNTIME"],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "disabled": false,
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "File Path",
+          "values": [
+            { "value": "/etc/security/**" },
+            { "value": "/etc/pam.d/**" },
+            { "value": "/etc/ssh/**" },
+            { "value": "/var/log/**" },
+            { "value": "/var/run/**" },
+            { "value": "/tmp/**" },
+            { "value": "/etc/kubernetes/**" },
+            { "value": "/etc/cni/**" },
+            { "value": "/etc/sysconfig/**" },
+            { "value": "/etc/audit/**" }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [],
+  "isDefault": false
+}
