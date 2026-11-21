@@ -45,10 +45,12 @@ func (s *imageScorerImpl) Score(ctx context.Context, image *storage.Image) *stor
 	}
 
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
-	overallScore := float32(1.0)
+	proposedScore := float32(1.0)
+	legacyScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
 		if riskResult := mult.Score(ctx, image); riskResult != nil {
-			overallScore *= riskResult.GetScore()
+			proposedScore *= riskResult.GetScore()
+			legacyScore *= riskResultLegacyScore(riskResult)
 			riskResults = append(riskResults, riskResult)
 		}
 	}
@@ -58,8 +60,10 @@ func (s *imageScorerImpl) Score(ctx context.Context, image *storage.Image) *stor
 	}
 
 	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
+		Score:                legacyScore,
+		ProposedScore:        proposedScore,
+		Results:              riskResults,
+		VulnerabilitySummary: vulnerabilitySummaryFromScan(image.GetScan()),
 		Subject: &storage.RiskSubject{
 			Id:   image.GetId(),
 			Type: storage.RiskSubjectType_IMAGE,
@@ -82,10 +86,12 @@ func (s *imageScorerImpl) ScoreV2(ctx context.Context, image *storage.ImageV2) *
 	}
 
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
-	overallScore := float32(1.0)
+	proposedScore := float32(1.0)
+	legacyScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
 		if riskResult := mult.ScoreV2(ctx, image); riskResult != nil {
-			overallScore *= riskResult.GetScore()
+			proposedScore *= riskResult.GetScore()
+			legacyScore *= riskResultLegacyScore(riskResult)
 			riskResults = append(riskResults, riskResult)
 		}
 	}
@@ -95,8 +101,10 @@ func (s *imageScorerImpl) ScoreV2(ctx context.Context, image *storage.ImageV2) *
 	}
 
 	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
+		Score:                legacyScore,
+		ProposedScore:        proposedScore,
+		Results:              riskResults,
+		VulnerabilitySummary: vulnerabilitySummaryFromScan(image.GetScan()),
 		Subject: &storage.RiskSubject{
 			Id:   image.GetId(),
 			Type: storage.RiskSubjectType_IMAGE,
@@ -111,4 +119,11 @@ func (s *imageScorerImpl) ScoreV2(ctx context.Context, image *storage.ImageV2) *
 	risk.Id = riskID
 
 	return risk
+}
+
+func riskResultLegacyScore(r *storage.Risk_Result) float32 {
+	if r.GetLegacyScore() > 0 {
+		return r.GetLegacyScore()
+	}
+	return r.GetScore()
 }

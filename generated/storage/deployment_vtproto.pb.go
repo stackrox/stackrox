@@ -42,6 +42,14 @@ func (m *Deployment) CloneVT() *Deployment {
 	r.ClusterId = m.ClusterId
 	r.ClusterName = m.ClusterName
 	r.Priority = m.Priority
+	r.RiskPriorityClassification = m.RiskPriorityClassification
+	r.RiskPrioritySortOrder = m.RiskPrioritySortOrder
+	r.RiskActivityClassification = m.RiskActivityClassification
+	r.RiskActivitySortOrder = m.RiskActivitySortOrder
+	r.RiskExposureClassification = m.RiskExposureClassification
+	r.RiskExposureSortOrder = m.RiskExposureSortOrder
+	r.RiskPostureClassification = m.RiskPostureClassification
+	r.RiskPostureSortOrder = m.RiskPostureSortOrder
 	r.Inactive = m.Inactive
 	r.ServiceAccount = m.ServiceAccount
 	r.ServiceAccountPermissionLevel = m.ServiceAccountPermissionLevel
@@ -52,6 +60,7 @@ func (m *Deployment) CloneVT() *Deployment {
 	r.RuntimeClass = m.RuntimeClass
 	r.StateTimestamp = m.StateTimestamp
 	r.RiskScore = m.RiskScore
+	r.ProposedRiskScore = m.ProposedRiskScore
 	r.PlatformComponent = m.PlatformComponent
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
@@ -577,6 +586,15 @@ func (m *ListDeployment) CloneVT() *ListDeployment {
 	r.Namespace = m.Namespace
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	r.Priority = m.Priority
+	r.RiskPriorityClassification = m.RiskPriorityClassification
+	r.RiskScore = m.RiskScore
+	r.ProposedRiskScore = m.ProposedRiskScore
+	r.RiskActivityClassification = m.RiskActivityClassification
+	r.RiskActivitySortOrder = m.RiskActivitySortOrder
+	r.RiskExposureClassification = m.RiskExposureClassification
+	r.RiskExposureSortOrder = m.RiskExposureSortOrder
+	r.RiskPostureClassification = m.RiskPostureClassification
+	r.RiskPostureSortOrder = m.RiskPostureSortOrder
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -760,6 +778,33 @@ func (this *Deployment) EqualVT(that *Deployment) bool {
 		return false
 	}
 	if this.PlatformComponent != that.PlatformComponent {
+		return false
+	}
+	if this.RiskPriorityClassification != that.RiskPriorityClassification {
+		return false
+	}
+	if this.RiskPrioritySortOrder != that.RiskPrioritySortOrder {
+		return false
+	}
+	if this.ProposedRiskScore != that.ProposedRiskScore {
+		return false
+	}
+	if this.RiskActivityClassification != that.RiskActivityClassification {
+		return false
+	}
+	if this.RiskActivitySortOrder != that.RiskActivitySortOrder {
+		return false
+	}
+	if this.RiskExposureClassification != that.RiskExposureClassification {
+		return false
+	}
+	if this.RiskExposureSortOrder != that.RiskExposureSortOrder {
+		return false
+	}
+	if this.RiskPostureClassification != that.RiskPostureClassification {
+		return false
+	}
+	if this.RiskPostureSortOrder != that.RiskPostureSortOrder {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1511,6 +1556,33 @@ func (this *ListDeployment) EqualVT(that *ListDeployment) bool {
 	if this.Hash != that.Hash {
 		return false
 	}
+	if this.RiskPriorityClassification != that.RiskPriorityClassification {
+		return false
+	}
+	if this.RiskScore != that.RiskScore {
+		return false
+	}
+	if this.ProposedRiskScore != that.ProposedRiskScore {
+		return false
+	}
+	if this.RiskActivityClassification != that.RiskActivityClassification {
+		return false
+	}
+	if this.RiskActivitySortOrder != that.RiskActivitySortOrder {
+		return false
+	}
+	if this.RiskExposureClassification != that.RiskExposureClassification {
+		return false
+	}
+	if this.RiskExposureSortOrder != that.RiskExposureSortOrder {
+		return false
+	}
+	if this.RiskPostureClassification != that.RiskPostureClassification {
+		return false
+	}
+	if this.RiskPostureSortOrder != that.RiskPostureSortOrder {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -1550,6 +1622,70 @@ func (m *Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.RiskPostureSortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPostureSortOrder))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xe0
+	}
+	if m.RiskPostureClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPostureClassification))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xd8
+	}
+	if m.RiskExposureSortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskExposureSortOrder))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xd0
+	}
+	if m.RiskExposureClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskExposureClassification))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xc8
+	}
+	if m.RiskActivitySortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskActivitySortOrder))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xc0
+	}
+	if m.RiskActivityClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskActivityClassification))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xb8
+	}
+	if m.ProposedRiskScore != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.ProposedRiskScore))))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xb5
+	}
+	if m.RiskPrioritySortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPrioritySortOrder))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xa8
+	}
+	if m.RiskPriorityClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPriorityClassification))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xa0
 	}
 	if m.PlatformComponent {
 		i--
@@ -3212,6 +3348,57 @@ func (m *ListDeployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.RiskPostureSortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPostureSortOrder))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x88
+	}
+	if m.RiskPostureClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPostureClassification))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x80
+	}
+	if m.RiskExposureSortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskExposureSortOrder))
+		i--
+		dAtA[i] = 0x78
+	}
+	if m.RiskExposureClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskExposureClassification))
+		i--
+		dAtA[i] = 0x70
+	}
+	if m.RiskActivitySortOrder != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskActivitySortOrder))
+		i--
+		dAtA[i] = 0x68
+	}
+	if m.RiskActivityClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskActivityClassification))
+		i--
+		dAtA[i] = 0x60
+	}
+	if m.ProposedRiskScore != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.ProposedRiskScore))))
+		i--
+		dAtA[i] = 0x5d
+	}
+	if m.RiskScore != 0 {
+		i -= 4
+		binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.RiskScore))))
+		i--
+		dAtA[i] = 0x55
+	}
+	if m.RiskPriorityClassification != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RiskPriorityClassification))
+		i--
+		dAtA[i] = 0x48
+	}
 	if m.Hash != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Hash))
 		i--
@@ -3406,6 +3593,33 @@ func (m *Deployment) SizeVT() (n int) {
 	}
 	if m.PlatformComponent {
 		n += 3
+	}
+	if m.RiskPriorityClassification != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPriorityClassification))
+	}
+	if m.RiskPrioritySortOrder != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPrioritySortOrder))
+	}
+	if m.ProposedRiskScore != 0 {
+		n += 6
+	}
+	if m.RiskActivityClassification != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskActivityClassification))
+	}
+	if m.RiskActivitySortOrder != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskActivitySortOrder))
+	}
+	if m.RiskExposureClassification != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskExposureClassification))
+	}
+	if m.RiskExposureSortOrder != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskExposureSortOrder))
+	}
+	if m.RiskPostureClassification != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPostureClassification))
+	}
+	if m.RiskPostureSortOrder != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPostureSortOrder))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3987,6 +4201,33 @@ func (m *ListDeployment) SizeVT() (n int) {
 	}
 	if m.Hash != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Hash))
+	}
+	if m.RiskPriorityClassification != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RiskPriorityClassification))
+	}
+	if m.RiskScore != 0 {
+		n += 5
+	}
+	if m.ProposedRiskScore != 0 {
+		n += 5
+	}
+	if m.RiskActivityClassification != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RiskActivityClassification))
+	}
+	if m.RiskActivitySortOrder != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RiskActivitySortOrder))
+	}
+	if m.RiskExposureClassification != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RiskExposureClassification))
+	}
+	if m.RiskExposureSortOrder != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RiskExposureSortOrder))
+	}
+	if m.RiskPostureClassification != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPostureClassification))
+	}
+	if m.RiskPostureSortOrder != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.RiskPostureSortOrder))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5142,6 +5383,169 @@ func (m *Deployment) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.PlatformComponent = bool(v != 0)
+		case 36:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPriorityClassification", wireType)
+			}
+			m.RiskPriorityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPriorityClassification |= RiskPriorityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPrioritySortOrder", wireType)
+			}
+			m.RiskPrioritySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPrioritySortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 38:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposedRiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ProposedRiskScore = float32(math.Float32frombits(v))
+		case 39:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivityClassification", wireType)
+			}
+			m.RiskActivityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivityClassification |= RiskActivityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 40:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivitySortOrder", wireType)
+			}
+			m.RiskActivitySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivitySortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 41:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureClassification", wireType)
+			}
+			m.RiskExposureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureClassification |= RiskExposureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 42:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureSortOrder", wireType)
+			}
+			m.RiskExposureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureSortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 43:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureClassification", wireType)
+			}
+			m.RiskPostureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureClassification |= RiskPostureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 44:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureSortOrder", wireType)
+			}
+			m.RiskPostureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureSortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -8912,6 +9316,161 @@ func (m *ListDeployment) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPriorityClassification", wireType)
+			}
+			m.RiskPriorityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPriorityClassification |= RiskPriorityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.RiskScore = float32(math.Float32frombits(v))
+		case 11:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposedRiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ProposedRiskScore = float32(math.Float32frombits(v))
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivityClassification", wireType)
+			}
+			m.RiskActivityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivityClassification |= RiskActivityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivitySortOrder", wireType)
+			}
+			m.RiskActivitySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivitySortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureClassification", wireType)
+			}
+			m.RiskExposureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureClassification |= RiskExposureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureSortOrder", wireType)
+			}
+			m.RiskExposureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureSortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureClassification", wireType)
+			}
+			m.RiskPostureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureClassification |= RiskPostureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureSortOrder", wireType)
+			}
+			m.RiskPostureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureSortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10148,6 +10707,169 @@ func (m *Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.PlatformComponent = bool(v != 0)
+		case 36:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPriorityClassification", wireType)
+			}
+			m.RiskPriorityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPriorityClassification |= RiskPriorityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 37:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPrioritySortOrder", wireType)
+			}
+			m.RiskPrioritySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPrioritySortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 38:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposedRiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ProposedRiskScore = float32(math.Float32frombits(v))
+		case 39:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivityClassification", wireType)
+			}
+			m.RiskActivityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivityClassification |= RiskActivityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 40:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivitySortOrder", wireType)
+			}
+			m.RiskActivitySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivitySortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 41:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureClassification", wireType)
+			}
+			m.RiskExposureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureClassification |= RiskExposureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 42:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureSortOrder", wireType)
+			}
+			m.RiskExposureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureSortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 43:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureClassification", wireType)
+			}
+			m.RiskPostureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureClassification |= RiskPostureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 44:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureSortOrder", wireType)
+			}
+			m.RiskPostureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureSortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14106,6 +14828,161 @@ func (m *ListDeployment) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Hash |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPriorityClassification", wireType)
+			}
+			m.RiskPriorityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPriorityClassification |= RiskPriorityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 10:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.RiskScore = float32(math.Float32frombits(v))
+		case 11:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProposedRiskScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ProposedRiskScore = float32(math.Float32frombits(v))
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivityClassification", wireType)
+			}
+			m.RiskActivityClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivityClassification |= RiskActivityClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskActivitySortOrder", wireType)
+			}
+			m.RiskActivitySortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskActivitySortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureClassification", wireType)
+			}
+			m.RiskExposureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureClassification |= RiskExposureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 15:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskExposureSortOrder", wireType)
+			}
+			m.RiskExposureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskExposureSortOrder |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureClassification", wireType)
+			}
+			m.RiskPostureClassification = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureClassification |= RiskPostureClassification(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RiskPostureSortOrder", wireType)
+			}
+			m.RiskPostureSortOrder = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RiskPostureSortOrder |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

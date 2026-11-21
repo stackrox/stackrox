@@ -2,6 +2,12 @@ import queryString from 'qs';
 
 import type { Deployment, ListDeployment } from 'types/deployment.proto';
 import type { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
+import type {
+    RiskActivityClassification,
+    RiskExposureClassification,
+    RiskPostureClassification,
+    RiskPriorityClassification,
+} from 'types/risk.proto';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { makeCancellableAxiosRequest } from './cancellationUtils';
@@ -18,6 +24,11 @@ export type Risk = {
     id: string;
     subject: RiskSubject;
     score: number; // float
+    proposedScore: number; // float
+    priorityClassification?: RiskPriorityClassification;
+    activityClassification?: RiskActivityClassification;
+    exposureClassification?: RiskExposureClassification;
+    postureClassification?: RiskPostureClassification;
     results: RiskResult[];
 };
 
@@ -25,6 +36,7 @@ export type RiskResult = {
     name: string;
     factors: RiskFactor[];
     score: number; // float
+    legacyScore: number; // float
 };
 
 export type RiskFactor = {

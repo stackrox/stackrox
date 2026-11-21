@@ -2,6 +2,12 @@ import type { ContainerRuntimeType } from './containerRuntime.proto';
 import type { ImageName } from './image.proto';
 import type { MatchLabelsSelector } from './labels.proto';
 import type { PermissionLevel } from './rbac.proto';
+import type {
+    RiskActivityClassification,
+    RiskExposureClassification,
+    RiskPostureClassification,
+    RiskPriorityClassification,
+} from './risk.proto';
 import type { Toleration } from './taints.proto';
 
 export type ListDeployment = {
@@ -13,6 +19,15 @@ export type ListDeployment = {
     namespace: string;
     created: string; // ISO 8601 date string
     priority: string; // int64
+    riskPriorityClassification?: RiskPriorityClassification;
+    riskScore: number; // float
+    proposedRiskScore: number; // float
+    riskActivityClassification?: RiskActivityClassification;
+    riskActivitySortOrder?: number; // int32
+    riskExposureClassification?: RiskExposureClassification;
+    riskExposureSortOrder?: number; // int32
+    riskPostureClassification?: RiskPostureClassification;
+    riskPostureSortOrder?: number; // int32
 };
 
 export type Deployment = {
@@ -33,6 +48,13 @@ export type Deployment = {
     containers: Container[];
     annotations: Record<string, string>;
     priority: string; // int64
+    riskPriorityClassification?: RiskPriorityClassification;
+    riskActivityClassification?: RiskActivityClassification;
+    riskActivitySortOrder?: number; // int32
+    riskExposureClassification?: RiskExposureClassification;
+    riskExposureSortOrder?: number; // int32
+    riskPostureClassification?: RiskPostureClassification;
+    riskPostureSortOrder?: number; // int32
     inactive: boolean;
     imagePullSecrets: string[];
     serviceAccount: string;
@@ -45,6 +67,7 @@ export type Deployment = {
     ports: PortConfig[];
     stateTimestamp: string; // int64
     riskScore: number; // float
+    proposedRiskScore: number; // float
     platformComponent: boolean;
 };
 
@@ -139,7 +162,7 @@ export type PortConfig = {
     exposureInfos: ExposureInfo[];
 };
 
-export type ExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST';
+export type ExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST' | 'ROUTE';
 
 export type ExposureInfo = {
     level: ExposureLevel;

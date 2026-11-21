@@ -55,6 +55,27 @@ var (
 				},
 			}
 		},
+		search.RiskPriorityClassification: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.RiskPrioritySortOrder.String(),
+					Reversed: option.GetReversed(),
+				},
+				{
+					Field:    search.ProposedDeploymentRiskScore.String(),
+					Reversed: !option.GetReversed(),
+				},
+			}
+		},
+		search.RiskActivityClassification: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{{Field: search.RiskActivitySortOrder.String(), Reversed: option.GetReversed()}}
+		},
+		search.RiskExposureClassification: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{{Field: search.RiskExposureSortOrder.String(), Reversed: option.GetReversed()}}
+		},
+		search.RiskPostureClassification: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{{Field: search.RiskPostureSortOrder.String(), Reversed: option.GetReversed()}}
+		},
 		search.ImagePriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
 				{
