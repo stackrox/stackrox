@@ -57,7 +57,7 @@ test_ui_e2e() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+    export DEPLOY_DIR="deploy"
 
     export_test_environment
     setup_deployment_env false false
