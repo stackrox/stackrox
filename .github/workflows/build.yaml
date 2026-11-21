@@ -36,6 +36,8 @@ env:
 jobs:
   control:
     runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -49,6 +51,8 @@ jobs:
           END=$(date +%s%3N)
           echo "CONTROL: $((END-START))ms"
           sha256sum /tmp/central-control
+      - id: sha
+        run: echo "sha=$(sha256sum /tmp/central-control | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
   populate:
     runs-on: ubuntu-latest
@@ -86,7 +90,7 @@ jobs:
 
   serve-receipt:
     runs-on: ubuntu-latest
-    needs: populate
+    needs: [populate, control]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -116,12 +120,22 @@ jobs:
           echo "SERVE-RECEIPT: $((END-START))ms"
           grep -E "CACHE HIT|running:|verified|MISS" /tmp/cimemo.log || true
           SERVE_SHA=$(sha256sum bin-exp/central | cut -d' ' -f1)
-          echo "receipt sha:  $SERVE_SHA"
-          echo "populate sha: ${{ needs.populate.outputs.sha }}"
+          echo "receipt sha:   $SERVE_SHA"
+          echo "populate sha:  ${{ needs.populate.outputs.sha }}"
+          echo "control sha:   ${{ needs.control.outputs.sha }} (plain-build ground truth)"
           if [ "$SERVE_SHA" = "${{ needs.populate.outputs.sha }}" ]; then
-            echo "BYTE-IDENTICAL: yes"
+            echo "BYTE-IDENTICAL (vs cimemo build): yes"
           else
-            echo "BINARY MISMATCH"
+            echo "BINARY MISMATCH (vs cimemo build)"
+            exit 1
+          fi
+          # GROUND TRUTH: the receipt-restored binary vs a plain
+          # no-cimemo build of the same tree. Independent of our
+          # pipeline on the producing side.
+          if [ "${{ needs.control.sha }}" != "" ] && [ "$SERVE_SHA" = "${{ needs.control.outputs.sha }}" ]; then
+            echo "GROUND TRUTH: receipt binary == plain build, byte-for-byte"
+          else
+            echo "GROUND TRUTH MISMATCH: receipt differs from plain build"
             exit 1
           fi
 
