@@ -72,7 +72,8 @@ type Stats struct {
 	Puts          int64    `json:"puts"`
 	PutBytes      int64    `json:"put_bytes"`
 	PutDiskPath   int64    `json:"put_diskpath"`
-	MissedActions []string `json:"missed_actions"` // actionID hex, capped
+	MissedActions []string `json:"missed_actions"`          // actionID hex, capped
+	RequestedAll  []string `json:"requested_all,omitempty"` // every requested get, capped (drift diagnosis)
 	DurationMs    int64    `json:"duration_ms"`
 
 	RemoteHits   int64 `json:"remote_hits,omitempty"`
@@ -162,6 +163,9 @@ func serveLoop(in io.Reader, out io.Writer, cacheDir, statsPath string, remote *
 		switch req.Command {
 		case "get":
 			stats.Gets++
+			if os.Getenv("CIMEMO_GOCACHE_RECORD_GETS") == "1" && len(stats.RequestedAll) < 20000 {
+				stats.RequestedAll = append(stats.RequestedAll, hex.EncodeToString(req.ActionID))
+			}
 			resp := handleGet(cacheDir, &req)
 			if resp.Miss && remote != nil {
 				// Local miss: dispatch the cloud fetch to a goroutine and
