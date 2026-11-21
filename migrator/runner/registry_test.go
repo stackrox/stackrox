@@ -5,18 +5,21 @@ import (
 
 	"github.com/stackrox/rox/migrator/migrations"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
-)
-
-const (
-	// lowestMigrationNumber is the lowest migration number that currently exists
-	// we will periodically bump this number and delete outdated migrations once enough releases
-	// have passed and we are sure customers are not on those releases
-	lowestMigrationNumber = 209
 )
 
 func TestValidityOfRegistry(t *testing.T) {
 	a := assert.New(t)
+
+	mainVersion := version.GetMainVersion()
+	if _, err := pkgMigrations.MinimumSupportedForVersion(mainVersion); err != nil {
+		mainVersion = pkgMigrations.LatestReleaseVersion().Version
+	}
+	setMainVersion(t, mainVersion)
+
+	lowestMigrationNumber, err := pkgMigrations.MinimumSupportedDBVersionSeqNum()
+	a.NoError(err)
 
 	for i := range lowestMigrationNumber {
 		_, exists := migrations.Get(i)
