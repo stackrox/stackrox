@@ -151,14 +151,7 @@ jobs:
           echo "BISECT (same runner, 2nd fresh cache): $((END-START))ms"
           python3 -c "import json; s=json.load(open('/tmp/gc-stats2.json')); s['missed_count']=len(s.get('missed_actions') or []); [s.pop(k,None) for k in ('missed_actions','requested_all','put_actions')]; print(json.dumps(s))"
           # Cross-build drift on ONE runner: do this build's put IDs match the first build's?
-          python3 -c "
-import json
-a = json.load(open('/tmp/gc-stats.json')).get('put_actions') or []
-b = json.load(open('/tmp/gc-stats2.json')).get('put_actions') or []
-sa, sb = set(a), set(b)
-print(f'build1 puts: {len(a)}, build2 puts: {len(b)}')
-print(f'same-runner put ID overlap: {len(sa & sb)} of union {len(sa | sb)}')
-"
+          python3 -c "import json; a=set(json.load(open('/tmp/gc-stats.json')).get('put_actions') or []); b=set(json.load(open('/tmp/gc-stats2.json')).get('put_actions') or []); print(f'build1 puts: {len(a)}, build2 puts: {len(b)}, overlap: {len(a & b)} of union {len(a | b)}')"
           gzip -c /tmp/gc-stats2.json > /tmp/gc-stats2.json.gz
       - uses: actions/upload-artifact@v4
         with:
