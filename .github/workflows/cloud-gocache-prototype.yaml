@@ -1,0 +1,612 @@
+name: Cloud GOCACHE multi-job prototype
+# PROTOTYPE (do not merge): cloud-backed GOCACHE across multiple CI jobs
+# with different compilation profiles, verifying that one content-addressed
+# store serves all users and that the upload/sync path expands correctly.
+#
+# Jobs tested (4 backends x 3 workloads):
+#   lint:      make golangci-lint (package loading — export data for all deps)
+#   cli:       make cli (binary compilation — roxctl + its dependency tree)
+#   unittests: make go-unit-tests (test compilation — repo + tests + coverage)
+#
+# Backends:
+#   azure:     blobfuse2 FUSE mount (same-cloud, runners are in Azure)
+#   gcs:       gcsfuse FUSE mount (cross-cloud via existing GCP creds)
+#   s3:        Mountpoint for S3 FUSE mount (cross-cloud via existing AWS creds)
+#   prefetch:  no FUSE — parallel bulk download to local disk, native fs speed
+on:
+  push:
+    branches:
+      - davdhacs/azure-gocache-prototype
+  workflow_dispatch:
+    inputs:
+      backends:
+        description: 'Comma-separated backends (cacheprog only; FUSE backends retired — see git history)'
+        default: 'cacheprog'
+        type: string
+      container:
+        description: 'Blob container for cacheprog backend (A/B experiments)'
+        default: 'ci-gocache'
+        type: string
+      storage_account:
+        description: 'Pin storage account (empty = region auto-detect)'
+        default: ''
+        type: string
+      wait_concurrent:
+        description: 'GOCACHE_SERVE_WAIT_FOR_CONCURRENT (-1=lease default, 0=off)'
+        default: '-1'
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  # Deterministic overlay path used by all backends
+  CLOUD_GOCACHE_DIR: /tmp/cloud-gocache/gocache
+
+jobs:
+  cloud-gocache:
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [azure, gcs, s3, prefetch, cacheprog]
+        workload: [lint, cli, unittests, testexec, docker]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    # Skip the full matrix for A/B and bench pushes (driven by the
+    # cloud-gocache-ab workflow instead). No matrix context allowed here.
+    if: ${{ !(github.event_name == 'push' && (startsWith(github.event.head_commit.message || '', 'ab-') || startsWith(github.event.head_commit.message || '', 'bench:'))) }}
+    name: cg-${{ matrix.workload }}-${{ matrix.backend }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          # fetch-depth: 0 needed for make cli (git describe for version info)
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Download scanner module for proto generation
+        run: go mod download github.com/stackrox/scanner
+
+      # golangci-lint analysis cache (same mechanism as style.yaml — the
+      # #23753/#23804 fix): without it, analyzers re-analyze the whole repo
+      # every run (measured 25-36 min of analyzer CPU), which dominates the
+      # lint job wall clock independently of the build cache.
+      - name: Export HOME for cache paths
+        if: matrix.workload == 'lint' && matrix.backend == 'cacheprog'
+        run: echo "HOME=$HOME" >> "$GITHUB_ENV"
+      - name: Restore golangci-lint analysis cache
+        if: matrix.workload == 'lint' && matrix.backend == 'cacheprog'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
+        with:
+          path: ${{ env.HOME }}/.cache/golangci-lint
+          key: go-lint-v2-${{ github.sha }}
+          restore-keys: |
+            go-lint-v2-
+
+      - name: Mount ${{ matrix.backend }} GOCACHE overlay
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          if [ "${{ matrix.backend }}" = "cacheprog" ]; then
+            # gocache-serve bootstrap: self-contained script that downloads
+            # the pre-built binary from blob store (zstd, ~1s) or builds
+            # from source (~30s) as fallback, then execs into the result.
+            # Callers just set GOCACHEPROG to the script — it IS gocache-serve.
+            # Near-inception: the cache server bootstraps from the store it serves.
+            # 4.5KB in the repo. No binary committed.
+            echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_MANIFEST=${{ matrix.workload }}" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_CONTAINER=${{ inputs.container || 'ci-gocache' }}" >> "$GITHUB_ENV"
+            echo "GOCACHE_SERVE_WAIT_FOR_CONCURRENT=${{ inputs.wait_concurrent || '-1' }}" >> "$GITHUB_ENV"
+            # Commit-message experiment modes (independent — combinable,
+            # e.g. "gate0+pfb500: warm leg"):
+            #   gate0:    disable the prefetch gate (SIGBUS A/B)
+            #   pfb500:   raise the pfb size gate to 500KB (all-under-bundle)
+            #   nobundle: disable bundle packing
+            #   trace:    per-request protocol tracing
+            case "$COMMIT_MSG" in *gate0*)
+              echo "GOCACHE_SERVE_GATE=0" >> "$GITHUB_ENV"
+              echo "gocache-serve: prefetch gate disabled (gate0)" ;; esac
+            case "$COMMIT_MSG" in *pfb500*)
+              echo "GOCACHE_SERVE_PFB_MAX_ENTRY=512000" >> "$GITHUB_ENV"
+              echo "gocache-serve: pfb gate 500KB (pfb500)" ;; esac
+            case "$COMMIT_MSG" in *nobundle:*)
+              echo "GOCACHE_SERVE_BUNDLES=0" >> "$GITHUB_ENV"
+              echo "gocache-serve: bundles disabled (nobundle)" ;; esac
+            case "$COMMIT_MSG" in *trace:*)
+              echo "GOCACHE_SERVE_TRACE=1" >> "$GITHUB_ENV"
+              echo "gocache-serve: protocol tracing enabled" ;; esac
+            case "$COMMIT_MSG" in *shm:*)
+              echo "GOCACHE_SERVE_DIR=/dev/shm/gocache-serve" >> "$GITHUB_ENV"
+              echo "gocache-serve: local cache on tmpfs /dev/shm (spill to disk enabled)" ;; esac
+            case "$COMMIT_MSG" in *memsnap:*)
+              echo "GOCACHE_MEMSNAP=1" >> "$GITHUB_ENV"
+              echo "page-cache meminfo snapshots enabled" ;; esac
+            case "$COMMIT_MSG" in *zram:*)
+              # Compressed tmpfs: tmpfs primary + zram swap backing.
+              # Hot entries: single uncompressed copy in tmpfs. Overflow:
+              # cold tmpfs pages swap into zram compressed (uncompressed
+              # copy freed — net RAM savings, the zram goal; the ext4-on-
+              # zram shape double-buffers eagerly and was counter to it).
+              # Compiler RSS cold pages also become swappable.
+              if sudo modprobe zram 2>/dev/null; then
+                echo zstd | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || \
+                  echo lz4 | sudo tee /sys/block/zram0/comp_algorithm >/dev/null 2>&1 || true
+                echo 8G | sudo tee /sys/block/zram0/disksize >/dev/null
+                if sudo mkswap /dev/zram0 >/dev/null 2>&1 && sudo swapon -p 100 /dev/zram0 2>/dev/null; then
+                  sudo mkdir -p /mnt/compressed-shm
+                  sudo mount -t tmpfs -o size=12g tmpfs /mnt/compressed-shm
+                  sudo chmod 777 /mnt/compressed-shm
+                  echo "GOCACHE_SERVE_DIR=/mnt/compressed-shm/gocache-serve" >> "$GITHUB_ENV"
+                  echo "gocache-serve: compressed tmpfs (12g tmpfs + 8g zram swap, zstd)"
+                else
+                  echo "zram swap setup failed — using default ladder"
+                fi
+              else
+                echo "zram module unavailable — using default ladder"
+              fi ;; esac
+            case "$COMMIT_MSG" in *p8*)
+              echo "GOFLAGS=-buildvcs=false -p=8" >> "$GITHUB_ENV"
+              echo "gocache-serve: -p=8 (overlap cache-fetch waits with compile)" ;; esac
+            case "$COMMIT_MSG" in *moldlink*)
+              echo "GOCACHE_MOLD=1" >> "$GITHUB_ENV"
+              echo "gocache-serve: mold external linker enabled" ;; esac
+            case "$COMMIT_MSG" in *allplat:*)
+              echo "GOCACHE_ALLPLAT=1" >> "$GITHUB_ENV"
+              echo "gocache-serve: all-platform make cli (release shape)" ;; esac
+            case "$COMMIT_MSG" in *extreme:*)
+              # Corner-case probe: 16GB working set on compressed tmpfs
+              # with a concurrent 8GB anonymous-memory hog (simulating a
+              # fat build / parallel links). Finds the failure boundary:
+              # graceful high-swap, thrash (session-time explosion), or OOM.
+              echo "GOCACHE_EXTREME=1" >> "$GITHUB_ENV"
+              echo "extreme memory-pressure probe enabled" ;; esac
+            case "$COMMIT_MSG" in *stubmode:*)
+              echo "GOCACHE_OUTBIN_MODE=stub" >> "$GITHUB_ENV"
+              echo "link-output STUB mode (bytes-only transfer)" ;; esac
+            case "$COMMIT_MSG" in *multibin:*)
+              echo "GOCACHE_MULTIBIN=1" >> "$GITHUB_ENV"
+              echo "multi-binary outbin inventory (roxctl + roxagent)" ;; esac
+            case "$COMMIT_MSG" in *dockerlayer:*)
+              echo "GOCACHE_DOCKER=1" >> "$GITHUB_ENV"
+              echo "docker COPY --link layer composition test" ;; esac
+            case "$COMMIT_MSG" in *testexec:*)
+              echo "test execution workload (not just compile)" ;; esac
+            case "$COMMIT_MSG" in *vendormode:*)
+              # Deterministic builds: generate vendor/ on the runner and
+              # build with -mod=vendor. This eliminates GOMODCACHE path
+              # sensitivity (measured: 585 ActionID changes with different
+              # GOMODCACHE paths in module mode vs 10 in vendor mode).
+              # The vendor directory is 405MB, generated fresh per runner
+              # from the pinned go.sum — same content every time.
+              echo "GOCACHE_VENDOR_MODE=1" >> "$GITHUB_ENV"
+              echo "deterministic builds via go mod vendor" ;; esac
+            case "$COMMIT_MSG" in *shallow:*)
+              echo "GOCACHE_SHALLOW=1" >> "$GITHUB_ENV"
+              echo "shallow checkout (fetch-depth=1)" ;; esac
+            case "$COMMIT_MSG" in *westpin*)
+              echo "AZURE_STORAGE_ACCOUNT=cigocache" >> "$GITHUB_ENV"
+              echo "gocache-serve: account pinned to westus3 (westpin)" ;; esac
+            if [ -n "${{ inputs.storage_account }}" ]; then
+              echo "AZURE_STORAGE_ACCOUNT=${{ inputs.storage_account }}" >> "$GITHUB_ENV"
+            fi
+            # Cache entries are ALWAYS uploaded (even from PRs — different
+            # ActionIDs coexist harmlessly and become useful after merge).
+            # Manifests are master-only by default; PRs read but don't write.
+            # For this test workflow we enable manifest writes in PRs so
+            # the prefetch can be exercised across runs.
+            if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ vars.GOCACHE_TEST_MANIFEST_WRITE }}" != "1" ]; then
+              echo "GOCACHE_SERVE_MANIFEST_WRITE=0" >> "$GITHUB_ENV"
+              echo "gocache-serve: manifest=${{ matrix.workload }} (read-only, PR)"
+            else
+              echo "gocache-serve: manifest=${{ matrix.workload }} (read+write)"
+            fi
+          else
+            scripts/ci/cloud-gocache.sh ${{ matrix.backend }} mount
+            # Verify the overlay directory exists and is writable
+            if [ ! -d "$CLOUD_GOCACHE_DIR" ]; then
+              echo "::error::GOCACHE overlay directory $CLOUD_GOCACHE_DIR does not exist"
+              exit 1
+            fi
+            # Test write access
+            echo "test" > "$CLOUD_GOCACHE_DIR/.write-test" && rm "$CLOUD_GOCACHE_DIR/.write-test"
+            # Persist GOCACHE via go env (affects all go invocations)
+            go env -w "GOCACHE=$CLOUD_GOCACHE_DIR"
+            echo "GOCACHE set to: $(go env GOCACHE)"
+          fi
+
+      - name: Run workload (${{ matrix.workload }})
+        env:
+          GOMEMLIMIT: 12GiB
+          GOCACHE: ${{ matrix.backend == 'cacheprog' && '/tmp/.gocache-fuzz' || env.CLOUD_GOCACHE_DIR }}
+          # buildvcs stamps vcs.revision into every main package and test
+          # binary — the commit SHA changes per run, churning link
+          # ActionIDs even on identical trees (see the 2026 ldflags/version
+          # stabilization work). Disabled for cache-stable measurement.
+          GOFLAGS: -buildvcs=false
+          # Stable version stamping: make/env.mk maps BUILD_TAG -> TAG ->
+          # the -X MainVersion ldflag; SHORTCOMMIT -> GitShortSha. Without
+          # these, every commit changes all binary content (the version
+          # embedding followup notes). Verified locally: byte-identical
+          # binaries and 100%-hit/0-put warm sessions with these set.
+          BUILD_TAG: 0.0.0
+          SHORTCOMMIT: '0000000'
+          # gocache-serve reads these directly for the Azure backend
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          if [ -n "$GOCACHE_MEMSNAP" ]; then
+            # page-cache ledger: memory composition around the workload
+            # (Cached = kernel page cache, Shmem = tmpfs tier, AnonPages =
+            # compiler RSS, Dirty = writeback debt)
+            (while true; do
+              awk '/^(Cached|Shmem|AnonPages|Dirty|MemFree|Buffers):/ {printf "%s=%s ", $1, $2} END {print ""}' /proc/meminfo
+              sleep 15
+            done) > /tmp/memsnap.log 2>&1 &
+            MEMSNAP_PID=$!
+          fi
+          echo "=== workload=${{ matrix.workload }} backend=${{ matrix.backend }} started at $(date -u +%H:%M:%S) ==="
+          echo "GOCACHE=$GOCACHE"
+          go env GOCACHE
+
+          # Deterministic builds via vendor mode with blob-store caching.
+          # The vendor/ directory (~405MB → ~100MB compressed) is keyed by
+          # a hash of go.sum: same dependencies = same vendor content.
+          # First run generates and caches; subsequent runs restore from
+          # the blob store (much faster than go mod vendor). Unused vendor
+          # caches age out via Azure lifecycle policies.
+          if [ -n "$GOCACHE_VENDOR_MODE" ]; then
+            VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
+            if "$GOCACHEPROG" -fetch "$VENDOR_KEY" /tmp/vendor-cache.tar.gz 2>/dev/null && [ -s /tmp/vendor-cache.tar.gz ]; then
+              echo "vendormode: restoring cached vendor/ (key: $VENDOR_KEY, $(du -sh /tmp/vendor-cache.tar.gz | cut -f1))"
+              tar -xzf /tmp/vendor-cache.tar.gz
+              echo "vendormode: vendor/ restored from cache"
+            else
+              echo "vendormode: generating vendor/ (cache miss for $VENDOR_KEY)"
+              go mod vendor 2>&1 | tail -3
+              # Cache for future runs (same go.sum = same key = hit)
+              if [ -d vendor ]; then
+                tar -czf /tmp/vendor-cache.tar.gz vendor/
+                "$GOCACHEPROG" -store "$VENDOR_KEY" /tmp/vendor-cache.tar.gz 2>&1 | tail -1
+                echo "vendormode: vendor/ cached ($(du -sh /tmp/vendor-cache.tar.gz | cut -f1) compressed)"
+              fi
+            fi
+            export GOFLAGS="$GOFLAGS -mod=vendor"
+            echo "vendormode: GOFLAGS=$GOFLAGS"
+          fi
+
+          case "${{ matrix.workload }}" in
+            lint)
+              make golangci-lint
+              ;;
+            cli)
+              # PR-CI shape: linux/amd64 only. Single platform gives the
+              # 99.9% warm-cache confirmation; cross-platform builds belong
+              # to release CI. Working set ~4-5GB (fits tmpfs), one link.
+              if [ -n "$GOCACHE_MOLD" ]; then
+                sudo apt-get install -y mold >/dev/null 2>&1 || echo "mold install failed — internal linker"
+                export ROX_LINKER=mold
+              fi
+              if [ -n "$GOCACHE_EXTREME" ]; then
+                # 8GB touched-anonymous hog (simulated fat build / parallel
+                # links) for the memory-pressure boundary probe.
+                python3 -c "b=bytearray(8*1024**3); [b.__setitem__(i,1) for i in range(0,len(b),4096)]; import time; print('memhog: 8GB touched, holding',flush=True); time.sleep(3600)" &
+                MEMHOG_PID=$!
+                echo "memhog PID $MEMHOG_PID (8GB anonymous, live)"
+              fi
+              if [ -n "$GOCACHE_ALLPLAT" ]; then
+                make cli
+              else
+                # Link-output restore, two modes (GOCACHE_OUTBIN_MODE):
+                #   full (default) — fetch the real binary; the buildID
+                #     check validates it. Safe/verifiable: the output is
+                #     the true binary (paranoid mode, and needed when the
+                #     binary itself is consumed downstream).
+                #   stub — fetch only the META blob (buildID string, bytes)
+                #     and write a ~250-byte stub carrying it; go's check
+                #     reads the note and skips compile+link. The real
+                #     binary is fetched only by consumers that need it
+                #     (docker --from=cached makes that rare).
+                mkdir -p bin/linux_amd64
+                OBM="${GOCACHE_OUTBIN_MODE:-full}"
+                if [ "$OBM" = "stub" ]; then
+                  if "$GOCACHEPROG" -fetch "outbin-META-linux_amd64" /tmp/outbin-meta 2>/dev/null && [ -s /tmp/outbin-meta ]; then
+                    BID=$(cat /tmp/outbin-meta)
+                    if "$GOCACHEPROG" -stub "$BID" bin/linux_amd64/roxctl; then
+                      echo "link-output STUB in place (${BID:0:16}...) — buildID check should skip compile+link"
+                    fi
+                  else
+                    echo "no outbin META — building from scratch"
+                  fi
+                elif [ "$OBM" = "full" ]; then
+                  if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null; then
+                    echo "link-output restored (full binary) — buildID check will skip or relink"
+                  else
+                    rm -f bin/linux_amd64/roxctl
+                  fi
+                fi
+                make roxctl_linux-amd64
+                # Item 5: multi-binary — also build roxagent
+                if [ -n "$GOCACHE_MULTIBIN" ]; then
+                  if "$GOCACHEPROG" -fetch "outbin-LATEST-roxagent-linux_amd64" bin/linux_amd64/roxagent 2>/dev/null; then
+                    echo "roxagent link-output restored"
+                  else
+                    rm -f bin/linux_amd64/roxagent
+                  fi
+                  make roxagent_linux-amd64 2>/dev/null || echo "roxagent build attempted"
+                  if [ -f bin/linux_amd64/roxagent ]; then
+                    "$GOCACHEPROG" -store "outbin-LATEST-roxagent-linux_amd64" bin/linux_amd64/roxagent 2>&1 | tail -1 || true
+                    echo "roxagent sha256: $(sha256sum bin/linux_amd64/roxagent 2>/dev/null | cut -c1-32)"
+                  fi
+                fi
+                # Item 10: Docker layer composition
+                if [ -n "$GOCACHE_DOCKER" ] && [ -f bin/linux_amd64/roxctl ] && [ $(stat -c%s bin/linux_amd64/roxctl 2>/dev/null || echo 0) -gt 1000000 ]; then
+                  echo "=== Docker layer composition (COPY --link) ==="
+                  echo 'FROM scratch' > /tmp/Dockerfile.layer
+                  echo 'COPY --link bin/linux_amd64/roxctl /roxctl' >> /tmp/Dockerfile.layer
+                  echo "First build (cold layer):"
+                  timeout 60 docker build -t test-layer-1 -f /tmp/Dockerfile.layer . 2>&1 | tail -3 || echo "docker unavailable"
+                  echo "Second build (should reuse layer):"
+                  timeout 60 docker build -t test-layer-2 -f /tmp/Dockerfile.layer . 2>&1 | tail -3 || echo "docker unavailable"
+                fi
+              fi
+              echo "CLI binary size: $(du -sh bin/linux_amd64/roxctl 2>/dev/null | cut -f1), linker: ${ROX_LINKER:-internal}"
+              echo "CLI binary sha256: $(sha256sum bin/linux_amd64/roxctl 2>/dev/null | cut -c1-32)"
+              if [ -n "$GOCACHE_EXTREME" ]; then
+                kill $MEMHOG_PID 2>/dev/null || true
+              fi
+              ;;
+            unittests)
+              # Compile-only: don't run tests, just build them
+              go build -tags test,test_e2e ./... 2>&1 | tail -5
+              go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -5 || true
+              ;;
+            docker)
+              # Docker layer caching experiment: build a minimal image
+              # with COPY --from=cached, comparing cold vs warm builds.
+              # Uses the roxctl binary from the link-output cache.
+              echo "=== Docker layer caching experiment ==="
+
+              # Fetch roxctl from outbin cache — no compilation needed
+              # for the Docker layer experiment. If no cached binary,
+              # skip the experiment (don't cold-build for 44 minutes).
+              if "$GOCACHEPROG" -fetch "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>/dev/null && \
+                 [ "$(stat -c%s bin/linux_amd64/roxctl 2>/dev/null || echo 0)" -gt 1000000 ]; then
+                echo "docker: roxctl restored from outbin cache ($(stat -c%s bin/linux_amd64/roxctl) bytes)"
+              else
+                echo "docker: ERROR — no cached roxctl binary (outbin store empty). Skipping Docker experiment." >&2
+                echo "docker: Run a cli workload first to populate the outbin store." >&2
+                exit 1
+              fi
+              ROXCTL_SIZE=$(stat -c%s bin/linux_amd64/roxctl 2>/dev/null || echo 0)
+              echo "docker: roxctl size: $ROXCTL_SIZE bytes"
+
+              # Create a minimal Dockerfile with two stages:
+              # 1. "cached" stage — references a previously-built image
+              # 2. Final stage — COPY --from=cached for unchanged, from build context for changed
+              mkdir -p /tmp/docker-test
+
+              # Build a "previous" image (simulates the registry's cached image)
+              echo 'FROM scratch' > /tmp/docker-test/Dockerfile.base && echo 'COPY bin/linux_amd64/roxctl /roxctl' >> /tmp/docker-test/Dockerfile.base
+
+              echo "--- Phase 1: cold build (no cache) ---"
+              COLD_START=$(date +%s%N)
+              docker build -t docker-test-cold -f /tmp/docker-test/Dockerfile.base . 2>&1 | tail -3
+              COLD_END=$(date +%s%N)
+              COLD_MS=$(( (COLD_END - COLD_START) / 1000000 ))
+              echo "Cold build: ${COLD_MS}ms"
+
+              echo ""
+              echo "--- Phase 2: warm build (COPY --link, same content) ---"
+              echo 'FROM scratch' > /tmp/docker-test/Dockerfile.warm && echo 'COPY --link bin/linux_amd64/roxctl /roxctl' >> /tmp/docker-test/Dockerfile.warm
+
+              WARM_START=$(date +%s%N)
+              docker build -t docker-test-warm -f /tmp/docker-test/Dockerfile.warm . 2>&1 | tail -3
+              WARM_END=$(date +%s%N)
+              WARM_MS=$(( (WARM_END - WARM_START) / 1000000 ))
+              echo "Warm build (--link): ${WARM_MS}ms"
+
+              echo ""
+              echo "--- Phase 3: --from=cached (reference existing layer) ---"
+              # Create a "cached" image that already has the binary
+              echo 'FROM docker-test-cold AS cached' > /tmp/docker-test/Dockerfile.cached && echo 'FROM scratch' >> /tmp/docker-test/Dockerfile.cached && echo 'COPY --link --from=cached /roxctl /roxctl' >> /tmp/docker-test/Dockerfile.cached
+
+              CACHED_START=$(date +%s%N)
+              docker build -t docker-test-cached -f /tmp/docker-test/Dockerfile.cached /tmp/docker-test 2>&1 | tail -3
+              CACHED_END=$(date +%s%N)
+              CACHED_MS=$(( (CACHED_END - CACHED_START) / 1000000 ))
+              echo "Cached build (--from=cached): ${CACHED_MS}ms"
+
+              echo ""
+              echo "--- Phase 4: --from=cached with buildx (lazy layer reference) ---"
+              if docker buildx version >/dev/null 2>&1; then
+                BUILDX_START=$(date +%s%N)
+                docker buildx build --tag docker-test-buildx \
+                  -f /tmp/docker-test/Dockerfile.cached \
+                  --push=false --load /tmp/docker-test 2>&1 | tail -3
+                BUILDX_END=$(date +%s%N)
+                BUILDX_MS=$(( (BUILDX_END - BUILDX_START) / 1000000 ))
+                echo "Buildx cached (--from=cached): ${BUILDX_MS}ms"
+              else
+                echo "(buildx not available)"
+              fi
+
+              echo ""
+              echo "--- Results ---"
+              echo "Cold (no cache):        ${COLD_MS}ms"
+              echo "Warm (--link, same):    ${WARM_MS}ms"
+              echo "Cached (--from=cached): ${CACHED_MS}ms"
+              [ -n "${BUILDX_MS:-}" ] && echo "Buildx (--from=cached): ${BUILDX_MS}ms"
+
+              echo ""
+              echo "--- Verify images have same content ---"
+              # Note: scratch images have no 'ls' — use stat via docker inspect
+              docker image inspect docker-test-cold --format 'cold:   {{.Size}} bytes' 2>/dev/null
+              docker image inspect docker-test-cached --format 'cached: {{.Size}} bytes' 2>/dev/null
+
+              # Phase 5: BuildKit cache export → blob store → import (the production pattern)
+              echo ""
+              echo "--- Phase 5: BuildKit cache export/import via blob store ---"
+              mkdir -p /tmp/bk-cache
+
+              # Export the BuildKit cache (layer-level, content-addressed)
+              BKC_START=$(date +%s%N)
+              docker buildx build \
+                --cache-export type=local,dest=/tmp/bk-cache \
+                -t docker-test-bk \
+                -f /tmp/docker-test/Dockerfile.base /tmp/../ 2>&1 | tail -3
+              BKC_END=$(date +%s%N)
+              BKC_MS=$(( (BKC_END - BKC_START) / 1000000 ))
+              echo "BuildKit cache export: ${BKC_MS}ms"
+              echo "Cache size: $(du -sh /tmp/bk-cache 2>/dev/null | cut -f1)"
+
+              # Upload to blob store (our existing infrastructure)
+              if [ -d /tmp/bk-cache ] && [ -n "$(find /tmp/bk-cache -type f 2>/dev/null | head -1)" ]; then
+                tar -czf /tmp/bk-cache.tar.gz -C /tmp bk-cache
+                BKS_KEY="docker-bk-cache-$(sha256sum bin/linux_amd64/roxctl | cut -c1-16)"
+                "$GOCACHEPROG" -store "$BKS_KEY" /tmp/bk-cache.tar.gz 2>&1 | tail -1
+                echo "Cache uploaded to blob store (key: $BKS_KEY, $(stat -c%s /tmp/bk-cache.tar.gz) bytes)"
+              fi
+
+              # Clear Docker's local cache, then rebuild using only the blob store cache
+              echo ""
+              echo "--- Phase 6: Rebuild from blob-store cache (no Docker cache) ---"
+              docker builder prune --force 2>/dev/null
+              rm -rf /tmp/bk-cache
+              mkdir -p /tmp/bk-cache
+
+              # Fetch from blob store
+              BKI_START=$(date +%s%N)
+              "$GOCACHEPROG" -fetch "$BKS_KEY" /tmp/bk-cache.tar.gz 2>/dev/null && \
+                tar -xzf /tmp/bk-cache.tar.gz -C /tmp
+              BKI_END=$(date +%s%N)
+              BKI_MS=$(( (BKI_END - BKI_START) / 1000000 ))
+              echo "Cache fetch from blob store: ${BKI_MS}ms"
+
+              # Rebuild using the fetched cache
+              BKR_START=$(date +%s%N)
+              docker buildx build \
+                --cache-from type=local,src=/tmp/bk-cache \
+                -t docker-test-bk-warm \
+                -f /tmp/docker-test/Dockerfile.base /tmp/../ 2>&1 | tail -3
+              BKR_END=$(date +%s%N)
+              BKR_MS=$(( (BKR_END - BKR_START) / 1000000 ))
+              echo "Rebuild from cache: ${BKR_MS}ms"
+
+              echo ""
+              echo "=== COMPLETE RESULTS ==="
+              echo "Cold (no cache):            ${COLD_MS}ms"
+              echo "Warm (Docker cache):        ${WARM_MS}ms"
+              echo "COPY --link:                ${WARM_MS}ms"
+              echo "--from=cached:              ${CACHED_MS}ms"
+              [ -n "${BUILDX_MS:-}" ] && echo "buildx --from=cached:       ${BUILDX_MS}ms"
+              echo "BuildKit cache export:      ${BKC_MS}ms"
+              echo "Blob store fetch:           ${BKI_MS}ms"
+              echo "Rebuild from blob cache:    ${BKR_MS}ms"
+
+              # Clean up test images
+              docker rmi docker-test-cold docker-test-warm docker-test-cached docker-test-buildx 2>/dev/null || true
+              ;;
+            testexec)
+              # actually EXECUTE a subset of tests to measure
+              # the test-execution stage (not just compile)
+              echo "=== compiling tests ==="
+              go test -count=1 -run '^$' ./pkg/... 2>&1 | tail -3 || true
+              echo "=== executing fast tests (pkg/version, pkg/env, pkg/utils) ==="
+              time go test -count=1 -timeout 300s ./pkg/version/... ./pkg/env/... ./pkg/utils/... 2>&1 | tail -20
+              echo "=== executing medium tests (pkg/mtls, pkg/search, pkg/stringutils) ==="
+              time go test -count=1 -timeout 300s ./pkg/mtls/... ./pkg/search/... ./pkg/stringutils/... 2>&1 | tail -20
+              ;;
+          esac
+          esac
+          echo "=== workload finished at $(date -u +%H:%M:%S) ==="
+          if [ -n "$GOCACHE_MEMSNAP" ]; then
+            kill $MEMSNAP_PID 2>/dev/null || true
+            echo "=== memsnap (15s intervals):"; tail -30 /tmp/memsnap.log
+            echo "=== tmpfs mount limits:"; df -hT /dev/shm /tmp /mnt / 2>/dev/null || true
+            echo "=== /mnt contents (Azure local temp disk?):"; ls /mnt 2>/dev/null || echo "no /mnt"
+            echo "=== all block devices:"; lsblk -o NAME,SIZE,TYPE,ROTA,MOUNTPOINT 2>/dev/null || true
+            echo "=== azure device symlinks (resource = local temp disk):"; ls -la /dev/disk/azure/ 2>/dev/null || echo "no /dev/disk/azure"
+            echo "=== unformatted disks:"; sudo blkid 2>/dev/null || true
+            echo "=== waagent resource-disk config:"; grep -i "^ResourceDisk" /etc/waagent.conf 2>/dev/null || echo "no waagent.conf"
+            echo "=== zram stats (orig_data compr_data mem_used = ratio):"; cat /sys/block/zram0/mm_stat 2>/dev/null || echo "no zram"
+            echo "=== swap activity:"; grep -a . /proc/swaps 2>/dev/null; awk '/^SwapCached|^SwapTotal|^SwapFree|^SwapIn|^SwapOut/ {printf "%s=%s ", $1, $2} END {print ""}' /proc/vmstat 2>/dev/null || true
+            echo "=== cache dir sizes:"; du -sh /tmp/gocache-serve /dev/shm/gocache-serve /tmp/gocache-serve-spill /mnt/zram-cache/gocache-serve 2>/dev/null || true
+          fi
+
+      - name: Measure and sync new cache entries
+        if: always()
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          echo "=== sync started at $(date -u +%H:%M:%S) ==="
+
+          if [ "${{ matrix.backend }}" = "cacheprog" ]; then
+            echo "cacheprog mode: uploads handled by gocache-serve's async uploader during the build"
+            # Link-output cache store side: dual-keyed. (1) LATEST pointer
+            # for the fetch heuristic; (2) the exact actionID(binary),
+            # extracted from the binary's own buildID note via
+            # `go tool buildid` — free, version-proof, enables cross-job
+            # dedup (any job building the same tree fetches instead of
+            # links). The buildID check validates on fetch either way.
+            if [ -f bin/linux_amd64/roxctl ] && [ "${{ matrix.workload }}" = "cli" ]; then
+              "$GOCACHEPROG" -store "outbin-LATEST-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+              BID=$(go tool buildid bin/linux_amd64/roxctl 2>/dev/null || true)
+              if [ -n "$BID" ]; then
+                printf '%s' "$BID" > /tmp/outbin-meta
+                "$GOCACHEPROG" -store "outbin-META-linux_amd64" /tmp/outbin-meta 2>&1 | tail -1 || true
+                ABID=$(printf '%s' "$BID" | cut -d/ -f1)
+                "$GOCACHEPROG" -store "outbin-${ABID}-linux_amd64" bin/linux_amd64/roxctl 2>&1 | tail -1 || true
+                echo "outbin stored: META + exact key ${ABID:0:16}..."
+              fi
+            fi
+            echo "=== sync finished at $(date -u +%H:%M:%S) ==="
+            exit 0
+          fi
+
+          # Measure what's new (upper layer for FUSE, whole dir for prefetch)
+          SYNC_DIR="/tmp/cloud-gocache/rw"
+          if [ "${{ matrix.backend }}" = "prefetch" ] || [ ! -d "$SYNC_DIR" ]; then
+            SYNC_DIR="$CLOUD_GOCACHE_DIR"
+          fi
+          if [ -d "$SYNC_DIR" ]; then
+            entry_count=$(find "$SYNC_DIR" -type f 2>/dev/null | wc -l)
+            total_bytes=$(du -sb "$SYNC_DIR" 2>/dev/null | cut -f1 || echo 0)
+            echo "NEW_ENTRIES: $entry_count files, $total_bytes bytes ($(( ${total_bytes:-0} / 1048576 )) MB)"
+          else
+            echo "WARNING: sync dir $SYNC_DIR does not exist"
+          fi
+
+          # Sync (tolerate empty dirs — nothing to upload on a fully warm run)
+          if [ "$entry_count" -gt 0 ] 2>/dev/null; then
+            scripts/ci/cloud-gocache.sh ${{ matrix.backend }} sync
+          else
+            echo "Nothing to sync (0 new entries)"
+          fi
+          echo "=== sync finished at $(date -u +%H:%M:%S) ==="
+
+      - name: Unmount
+        if: always()
+        run: |
+          if [ "${{ matrix.backend }}" = "cacheprog" ]; then
+            echo "cacheprog mode: GOCACHEPROG handles lifecycle automatically"
+          else
+            scripts/ci/cloud-gocache.sh ${{ matrix.backend }} unmount
+          fi
