@@ -68,6 +68,12 @@ jobs:
         with:
           name: envfp-populate
           path: /tmp/envfp
+      - name: normalize mtimes (go package-index hash embeds file mtimes)
+        run: |
+          EPOCH=946684800  # 2000-01-01: fixed so action IDs match across runners
+          sudo find /opt/hostedtoolcache/go -exec touch -d @$EPOCH {} +
+          find "$(go env GOMODCACHE)" -exec touch -d @$EPOCH {} + 2>/dev/null || true
+          find . -exec touch -d @$EPOCH {} +
       - name: cold build + upload via proxy
         id: time
         env:
@@ -123,6 +129,12 @@ jobs:
         with:
           name: envfp-serve
           path: /tmp/envfp
+      - name: normalize mtimes (go package-index hash embeds file mtimes)
+        run: |
+          EPOCH=946684800  # 2000-01-01: fixed so action IDs match across runners
+          sudo find /opt/hostedtoolcache/go -exec touch -d @$EPOCH {} +
+          find "$(go env GOMODCACHE)" -exec touch -d @$EPOCH {} + 2>/dev/null || true
+          find . -exec touch -d @$EPOCH {} +
       - name: fresh-cache build served from cloud
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -194,6 +206,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26.10'
+      - name: normalize mtimes (go package-index hash embeds file mtimes)
+        run: |
+          EPOCH=946684800  # 2000-01-01: fixed so action IDs match across runners
+          sudo find /opt/hostedtoolcache/go -exec touch -d @$EPOCH {} +
+          find "$(go env GOMODCACHE)" -exec touch -d @$EPOCH {} + 2>/dev/null || true
+          find . -exec touch -d @$EPOCH {} +
       - name: record action-hash inputs
         run: |
           rm -rf /tmp/gc && mkdir -p /tmp/gc
