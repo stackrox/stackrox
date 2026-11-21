@@ -75,13 +75,7 @@ jobs:
           echo "wall_ms=$((END-START))" >> "$GITHUB_OUTPUT"
           echo "POPULATE: $((END-START))ms (cold compile + cloud upload)"
           echo "--- stats summary:"
-          python3 -c "
-import json
-s = json.load(open('/tmp/gc-stats.json'))
-s['missed_count'] = len(s.get('missed_actions') or [])
-s.pop('missed_actions', None); s.pop('requested_all', None)
-print(json.dumps(s, indent=1))
-"
+          python3 -c "import json; s=json.load(open('/tmp/gc-stats.json')); s['missed_count']=len(s.get('missed_actions') or []); [s.pop(k,None) for k in ('missed_actions','requested_all')]; print(json.dumps(s))"
           gzip -c /tmp/gc-stats.json > /tmp/gc-stats.json.gz
           echo "--- missed (first 5):"
           python3 -c "import json; s=json.load(open('/tmp/gc-stats.json')); print(s.get('missed_actions') or [])[:5]" 2>/dev/null || true
@@ -122,13 +116,7 @@ print(json.dumps(s, indent=1))
           echo "SERVE: $((END-START))ms (fresh cache, served from cloud)"
           echo "POPULATE was: ${{ needs.populate.outputs.wall_ms }}ms"
           echo "--- stats summary:"
-          python3 -c "
-import json
-s = json.load(open('/tmp/gc-stats.json'))
-s['missed_count'] = len(s.get('missed_actions') or [])
-s.pop('missed_actions', None); s.pop('requested_all', None)
-print(json.dumps(s, indent=1))
-"
+          python3 -c "import json; s=json.load(open('/tmp/gc-stats.json')); s['missed_count']=len(s.get('missed_actions') or []); [s.pop(k,None) for k in ('missed_actions','requested_all')]; print(json.dumps(s))"
           gzip -c /tmp/gc-stats.json > /tmp/gc-stats.json.gz
           echo "--- missed (first 5):"
           python3 -c "import json; s=json.load(open('/tmp/gc-stats.json')); print(s.get('missed_actions') or [])[:5]" 2>/dev/null || true
