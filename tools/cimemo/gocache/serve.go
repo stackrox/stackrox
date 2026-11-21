@@ -73,6 +73,7 @@ type Stats struct {
 	PutBytes      int64    `json:"put_bytes"`
 	PutDiskPath   int64    `json:"put_diskpath"`
 	MissedActions []string `json:"missed_actions"`          // actionID hex, capped
+	PutActions    []string `json:"put_actions,omitempty"`   // actions this session produced
 	RequestedAll  []string `json:"requested_all,omitempty"` // every requested get, capped (drift diagnosis)
 	DurationMs    int64    `json:"duration_ms"`
 
@@ -116,6 +117,7 @@ func serveLoop(in io.Reader, out io.Writer, cacheDir, statsPath string, remote *
 
 	var stats Stats
 	start := time.Now()
+	var missedMu sync.Mutex
 
 	// Prefetch: bulk-download the expected working set (module-identity
 	// manifest) so gets mostly hit locally instead of paying per-request
@@ -188,6 +190,11 @@ func serveLoop(in io.Reader, out io.Writer, cacheDir, statsPath string, remote *
 					} else {
 						r = Response{ID: req.ID, Miss: true}
 						atomic.AddInt64(&stats.Misses, 1)
+						missedMu.Lock()
+						if len(stats.MissedActions) < maxLoggedMisses {
+							stats.MissedActions = append(stats.MissedActions, actionID)
+						}
+						missedMu.Unlock()
 					}
 					writeMu.Lock()
 					enc.Encode(r)
@@ -215,6 +222,9 @@ func serveLoop(in io.Reader, out io.Writer, cacheDir, statsPath string, remote *
 				stats.PutDiskPath++
 			}
 			storedPath, storedSize := handlePut(cacheDir, &req, body)
+			if storedPath != "" && os.Getenv("CIMEMO_GOCACHE_RECORD_GETS") == "1" && len(stats.PutActions) < 20000 {
+				stats.PutActions = append(stats.PutActions, hex.EncodeToString(req.ActionID))
+			}
 			if storedPath != "" {
 				// Record only actions that produced storable output. go
 				// also puts empty-body markers (buildid/vet) with no data
