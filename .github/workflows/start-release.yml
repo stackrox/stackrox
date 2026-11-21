@@ -284,6 +284,72 @@ jobs:
             "${{ needs.start-sha.outputs.start-sha }}" \
             "${{needs.variables.outputs.branch}}"
 
+  cleanup-migrations:
+    name: Clean up unsupported migrations
+    needs: [variables, branch]
+    if: needs.variables.outputs.patch == 0
+    runs-on: ubuntu-26.04
+    env:
+      VERSION: ${{ needs.variables.outputs.next-minor-release }}
+      BUILD_TAG: ${{ needs.variables.outputs.next-minor-release }}.x
+    steps:
+      - name: Check out ${{ env.main_branch }}
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          ref: ${{ env.main_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Clean up unsupported migrations
+        run: |
+          set -uo pipefail
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+
+          output="$(go run ./tools/cleanup-migrations "${args[@]}")"
+          printf '%s\n' "$output"
+
+          if [ -n "$output" ]; then
+            {
+              echo ":arrow_right: Migrations outside the supported range:"
+              echo '```text'
+              printf '%s\n' "$output" | sed "s#${PWD}/##g"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo ":arrow_right: No migrations outside the supported range." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Create Pull Request
+        if: env.DRY_RUN == 'false'
+        id: cpr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # ratchet:peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          base: ${{ env.main_branch }}
+          branch: automation/cleanup-migrations-${{ env.VERSION }}
+          title: "chore(migrations): Remove unsupported migrations for ${{ env.VERSION }}"
+          commit-message: "chore(migrations): Remove unsupported migrations"
+          committer: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>
+          author: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>
+          assignees: ${{ github.event.sender.login }}
+          delete-branch: true
+          body: |
+            Cleanup of database migrations outside the supported upgrade range
+            for ACS ${{ env.VERSION }}.
+      - name: Link Pull Request
+        if: env.DRY_RUN == 'false'
+        env:
+          PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+        run: |
+          if [ -n "$PR_URL" ]; then
+            echo ":arrow_right: Review and merge the [PR]($PR_URL) removing unsupported migrations." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   patch-scanner-versions:
     name: Patch Scanner updater configuration
     needs: [variables, branch]
