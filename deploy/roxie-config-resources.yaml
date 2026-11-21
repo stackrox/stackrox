@@ -1,0 +1,69 @@
+# Shared QA/UI/non-Groovy E2E overrides for Roxie's tiny profile.
+central:
+  resourceProfile: tiny
+  spec:
+    central:
+      db:
+        # Allow headroom for concurrent queries and maintenance beyond shared buffers.
+        resources:
+          requests:
+            memory: 1Gi
+          limits:
+            memory: 1Gi
+    overlays:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: central-db
+        # BYODB jobs have no managed Central DB deployment.
+        optional: true
+        patches:
+          - path: spec.template.spec.containers[name:central-db].args
+            value: |
+              - postgres
+              - -c
+              - config_file=/etc/stackrox.d/config/postgresql.conf
+              - -c
+              - shared_buffers=128MB
+              - -c
+              - work_mem=4MB
+              - -c
+              - maintenance_work_mem=64MB
+              - -c
+              - autovacuum_work_mem=64MB
+    centralWorker:
+      # Tiny does not override the worker's 500m CPU / 1 GiB request.
+      resources:
+        requests:
+          cpu: 10m
+          memory: 128Mi
+        limits:
+          memory: 128Mi
+    scannerV4:
+      db:
+        # Retain the database memory budget while adopting tiny's CPU request.
+        resources:
+          requests:
+            memory: 4Gi
+          limits:
+            memory: 4Gi
+securedCluster:
+  resourceProfile: tiny
+  spec:
+    # Tiny selects one admission replica but leaves these CPU requests at product defaults.
+    admissionControl:
+      resources:
+        requests:
+          cpu: 10m
+    perNode:
+      collector:
+        resources:
+          requests:
+            cpu: 10m
+      compliance:
+        resources:
+          requests:
+            cpu: 10m
+      nodeInventory:
+        resources:
+          requests:
+            cpu: 10m
