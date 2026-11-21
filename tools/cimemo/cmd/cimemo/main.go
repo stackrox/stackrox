@@ -213,7 +213,7 @@ func cmdMemoize(args []string, forceFull bool) {
 	// restoring files.
 	if isDocker && !forceFull {
 		if ctxFiles := dockerContextClosure(wd, args); len(ctxFiles) > 0 {
-			dk := key.FromFiles(wd, ctxFiles, dockerKeyCommand(command, args)+"|"+toolchain+vcsFold(wd))
+			dk := key.FromFiles(wd, ctxFiles, dockerKeyCommand(command, args)+"|"+toolchain+vcsFold(wd)+dockerKeyExtras(wd, args))
 			if st.HasManifest(dk) {
 				if m, err := st.GetManifest(dk); err == nil && len(m.ImageOutputs) > 0 {
 					allOK := true
@@ -258,6 +258,11 @@ func cmdMemoize(args []string, forceFull bool) {
 		if !forceFull && st.HasManifest(k) {
 			if m, err := st.GetManifest(k); err == nil {
 				count, bytes, err := st.RestoreManifest(m, wd)
+				if err != nil {
+					// Integrity failure or missing blob: visible, then
+					// self-heal via rebuild (never serve wrong bytes).
+					fmt.Fprintf(os.Stderr, "[cimemo] receipt restore failed: %v — rebuilding\n", err)
+				}
 				if err == nil {
 					verifyRestored(m, wd)
 					fmt.Printf("[cimemo] CACHE HIT (keyed): %s — closure re-derived\n", k)
@@ -388,6 +393,7 @@ func cmdMemoize(args []string, forceFull bool) {
 
 	// === Snapshot OUTPUTS ONLY and record provenance ===
 	keyCommand := command
+	extras := ""
 	if isDocker {
 		// Tags are output NAMES, not inputs: the same context built to
 		// different tags is the same receipt (found via the divergence
@@ -395,8 +401,9 @@ func cmdMemoize(args []string, forceFull bool) {
 		for _, t := range dockerBuildTags(args) {
 			keyCommand = strings.ReplaceAll(keyCommand, " "+t+" ", " ")
 		}
+		extras = dockerKeyExtras(wd, args)
 	}
-	k := key.FromFiles(wd, readSet, keyCommand+"|"+toolchain+vcsFold(wd))
+	k := key.FromFiles(wd, readSet, keyCommand+"|"+toolchain+vcsFold(wd)+extras)
 	var m *store.Manifest
 	if isDocker {
 		// Image-level receipt: outputs are image IDs, not files.
@@ -564,6 +571,16 @@ func diffOutputHashes(a, b map[string]string) []string {
 		}
 	}
 	return out
+}
+
+// dockerKeyExtras folds base-image digests into the docker key
+// fragment (mutable tags must not serve stale images).
+func dockerKeyExtras(wd string, args []string) string {
+	digests := dockerBaseDigests(wd, args)
+	if len(digests) == 0 {
+		return ""
+	}
+	return "|bases:" + strings.Join(digests, ",")
 }
 
 // dockerKeyCommand strips output tags from a docker build command for

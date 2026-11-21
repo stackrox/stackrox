@@ -210,13 +210,26 @@ func (s *Store) HasManifest(key string) bool {
 
 // RestoreManifest restores all blobs referenced by a manifest into dir.
 // Returns the number of files restored and total bytes.
+//
+// CERTAINTY: every blob is re-verified (sha256 == its key) before it
+// is written, INCLUDING locally-stored ones — a corrupted local blob
+// file would otherwise serve wrong bytes silently. Opt out only with
+// CIMEMO_TRUST_LOCAL=1 (skips ~1s per GB on restore).
 func (s *Store) RestoreManifest(m *Manifest, dir string) (int, int64, error) {
+	trustLocal := os.Getenv("CIMEMO_TRUST_LOCAL") == "1"
 	var count int
 	var total int64
 	for _, ref := range m.Blobs {
 		data, err := s.GetBlob(ref.Hash)
 		if err != nil {
 			return count, total, fmt.Errorf("restore %s (blob %s): %w", ref.Path, ref.Hash[:12], err)
+		}
+		if !trustLocal {
+			if sum := sha256.Sum256(data); hex.EncodeToString(sum[:]) != ref.Hash {
+				return count, total, fmt.Errorf(
+					"restore %s: INTEGRITY FAILURE blob %s: content hash mismatch — refusing to write",
+					ref.Path, ref.Hash[:12])
+			}
 		}
 		target := filepath.Join(dir, ref.Path)
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {

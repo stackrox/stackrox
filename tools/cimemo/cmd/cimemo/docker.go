@@ -132,3 +132,42 @@ func commitReceiptKey(wd, keyCommand, toolchain string) (string, bool) {
 	h := sha256.Sum256([]byte(head + "\x00" + keyCommand + "\x00" + toolchain))
 	return hex.EncodeToString(h[:])[:16], true
 }
+
+// dockerBaseDigests resolves the digests of every FROM image in the
+// Dockerfile (via docker inspect). Base tags are MUTABLE (alpine:3
+// moves) — an image receipt keyed without them serves stale images
+// after a base update. Digest-pinned FROMs are already exact.
+func dockerBaseDigests(wd string, args []string) []string {
+	// find -f/--file
+	dockerfile := "Dockerfile"
+	for i := 0; i < len(args); i++ {
+		if args[i] == "-f" || args[i] == "--file" {
+			if i+1 < len(args) {
+				dockerfile = args[i+1]
+			}
+		}
+	}
+	data, err := os.ReadFile(filepath.Join(wd, dockerfile))
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, line := range strings.Split(string(data), "\n") {
+		f := strings.Fields(line)
+		if len(f) >= 2 && strings.EqualFold(f[0], "FROM") {
+			image := f[1]
+			if strings.Contains(image, "@sha256:") {
+				out = append(out, image) // digest-pinned: exact already
+				continue
+			}
+			insp, err := exec.Command("docker", "inspect", "--format", "{{index .RepoDigests 0}}", image).Output()
+			if err == nil {
+				out = append(out, strings.TrimSpace(string(insp)))
+			} else {
+				// unresolvable (not pulled): fall back to the tag string
+				out = append(out, image)
+			}
+		}
+	}
+	return out
+}
