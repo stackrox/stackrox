@@ -91,6 +91,7 @@ var (
 	HostIPC                        = newFieldLabel("Host IPC")
 	HostNetwork                    = newFieldLabel("Host Network")
 	HostPID                        = newFieldLabel("Host PID")
+	ContainerStartTime             = newFieldLabel("Container Start Time")
 	ImageCreatedTime               = newFieldLabel("Image Created Time")
 	ImageName                      = newFieldLabel("Image")
 	ImageSHA                       = newFieldLabel("Image Sha")
