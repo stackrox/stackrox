@@ -3,23 +3,20 @@ package centralproxy
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"net/url"
-	"slices"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
-	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
-	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/coalescer"
-	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -31,9 +28,9 @@ import (
 
 const (
 	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
-	// Console tokens contain administrator-managed permissions. A longer cache
-	// window reduces token requests but delays permission reductions for up to
-	// the token lifetime.
+	// Tokens contain administrator-managed permissions. A longer cache window
+	// reduces token requests but delays permission reductions for up to the
+	// token lifetime.
 	tokenCacheTTL = 55 * time.Minute
 
 	// tokenTTL is the requested token lifetime.
@@ -65,7 +62,7 @@ type clusterIDGetter interface {
 
 // createBaseTransport creates the base HTTP transport for Central communication.
 // This transport handles TLS but does NOT inject authorization tokens.
-// Tokens are injected per-request based on the namespace scope.
+// Tokens are injected per-request based on the authorized profile.
 func createBaseTransport(baseURL *url.URL, certs []*x509.Certificate) (http.RoundTripper, error) {
 	certPool, err := verifier.SystemCertPool()
 	if err != nil {
@@ -93,16 +90,14 @@ func createBaseTransport(baseURL *url.URL, certs []*x509.Certificate) (http.Roun
 	return baseTransport, nil
 }
 
-// scopedTokenTransport is an http.RoundTripper that injects scope-appropriate tokens
-// into requests before forwarding them. The scope is determined by reading the
-// ACS-AUTH-NAMESPACE-SCOPE header from the request.
+// scopedTokenTransport injects tokens for the profile authorized by the handler.
 type scopedTokenTransport struct {
 	base          http.RoundTripper
 	tokenProvider *tokenProvider
 }
 
 // newScopedTokenTransport creates a new transport that wraps the base transport
-// and injects tokens based on the namespace scope header.
+// and injects tokens based on the authenticated request profile.
 func newScopedTokenTransport(base http.RoundTripper, clusterIDGetter clusterIDGetter) *scopedTokenTransport {
 	return &scopedTokenTransport{
 		base:          base,
@@ -117,12 +112,15 @@ func (t *scopedTokenTransport) SetClient(conn grpc.ClientConnInterface) {
 }
 
 // RoundTrip implements http.RoundTripper.
-// It reads the namespace scope from the request, obtains an appropriate token,
+// It reads the authorized profile from the request, obtains an appropriate token,
 // and injects it into the Authorization header before forwarding the request.
 // If Central returns 401 or 403, the cached token is invalidated and the request
 // is retried once with a fresh token.
 func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	scope := req.Header.Get(stackroxNamespaceHeader)
+	profile := proxyTokenProfileFromContext(req.Context())
+	if profile == nil {
+		return nil, errors.New("authorized proxy client profile is missing")
+	}
 
 	// Buffer the request body upfront so we can replay it on retry.
 	var bodyBytes []byte
@@ -139,7 +137,7 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
-	resp, err := t.doRoundTrip(req, scope)
+	resp, err := t.doProfileRoundTrip(req, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -158,24 +156,21 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
 
-		t.tokenProvider.invalidateToken(scope)
-		return t.doRoundTrip(req, scope)
+		t.tokenProvider.invalidateProfile(profile)
+		return t.doProfileRoundTrip(req, profile)
 	}
 
 	return resp, nil
 }
 
-// doRoundTrip performs a single round trip with token injection.
-func (t *scopedTokenTransport) doRoundTrip(req *http.Request, scope string) (*http.Response, error) {
-	token, err := t.tokenProvider.getTokenForScope(req.Context(), scope)
+func (t *scopedTokenTransport) doProfileRoundTrip(req *http.Request, profile *proxyTokenProfile) (*http.Response, error) {
+	token, err := t.tokenProvider.getTokenForProfile(req.Context(), profile)
 	if err != nil {
-		return nil, errors.Wrap(err, "obtaining authorization token")
+		return nil, errors.Wrap(err, "obtaining proxy client token")
 	}
-
-	// Clone the request to avoid modifying the original.
 	reqCopy := req.Clone(req.Context())
+	reqCopy.Header.Del(stackroxNamespaceHeader)
 	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
 	return t.base.RoundTrip(reqCopy) //nolint:wrapcheck
 }
 
@@ -183,24 +178,23 @@ func (t *scopedTokenTransport) doRoundTrip(req *http.Request, scope string) (*ht
 type tokenProvider struct {
 	// client holds the Central gRPC client. It is stored atomically to safeguard
 	// against data races.
-	client          atomic.Pointer[centralv1.TokenServiceClient]
-	clusterIDGetter clusterIDGetter
-	tokenCache      expiringcache.Cache[string, string]
-	// tokenGroup coalesces concurrent token requests for the same namespace scope.
-	tokenGroup *coalescer.Coalescer[string]
+	client            atomic.Pointer[centralv1.TokenServiceClient]
+	clusterIDGetter   clusterIDGetter
+	profileTokenCache expiringcache.Cache[string, string]
+	profileTokenGroup *coalescer.Coalescer[string]
 }
 
 // newTokenProvider creates a new tokenProvider.
 func newTokenProvider(clusterIDGetter clusterIDGetter) *tokenProvider {
 	return &tokenProvider{
-		clusterIDGetter: clusterIDGetter,
-		tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
-		tokenGroup:      coalescer.New[string](),
+		clusterIDGetter:   clusterIDGetter,
+		profileTokenCache: expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
+		profileTokenGroup: coalescer.New[string](),
 	}
 }
 
 // setClient sets the gRPC client connection to Central.
-// This method is safe to call concurrently with getTokenForScope.
+// This method is safe to call concurrently with getTokenForProfile.
 func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
 	if conn == nil {
 		return
@@ -209,128 +203,88 @@ func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
 	p.client.Store(&client)
 }
 
-// getTokenForScope returns a token for the given namespace scope.
-// Scope values:
-//   - "" (empty): Token with empty access scope (authentication only)
-//   - "<namespace>": Token scoped to the specific namespace
-//   - FullClusterAccessScope ("*"): Token with full cluster access
-//
-// Concurrent requests for the same scope are coalesced to reduce load on Central.
-func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope string) (string, error) {
+func profileCacheKey(profile *proxyTokenProfile) string {
+	// Include the identity, scope and all signed claims. Different clients must
+	// never reuse each other's bearer tokens, even with the same permission set.
+	data, _ := json.Marshal(struct {
+		Identity       string
+		PermissionSets []*centralv1.ScopedPermissionSet
+		ClusterScope   string
+		LegacyConsole  bool
+	}{profile.identity, profile.permissionSets, profile.clusterScope, profile.legacyConsole})
+	return fmt.Sprintf("%x", sha256.Sum256(data))
+}
+
+func (p *tokenProvider) getTokenForProfile(ctx context.Context, profile *proxyTokenProfile) (string, error) {
 	client := p.client.Load()
 	if client == nil {
 		incrementTokenRequest(tokenResultError)
-		return "", errors.Wrap(errServiceUnavailable, "token provider not initialized: central connection not available")
+		return "", errors.Wrap(errServiceUnavailable, "token provider not initialized")
 	}
-
-	// Fast path: check cache first.
-	if token, ok := p.tokenCache.Get(namespaceScope); ok {
+	key := p.clusterIDGetter.GetNoWait() + ":" + profileCacheKey(profile)
+	if token, ok := p.profileTokenCache.Get(key); ok {
 		incrementTokenRequest(tokenResultCacheHit)
 		return token, nil
 	}
-
-	// Slow path: coalesce concurrent requests for the same scope.
-	return p.tokenGroup.Coalesce(ctx, namespaceScope, func() (string, error) { //nolint:wrapcheck
-		// Double-check cache inside coalesce to avoid redundant API calls.
-		if token, ok := p.tokenCache.Get(namespaceScope); ok {
+	return p.profileTokenGroup.Coalesce(ctx, key, func() (string, error) { //nolint:wrapcheck
+		if token, ok := p.profileTokenCache.Get(key); ok {
 			incrementTokenRequest(tokenResultCacheHit)
 			return token, nil
 		}
-
-		log.Debugf("Token cache miss for namespace scope %q, requesting from Central", namespaceScope)
-
-		// Use a background context with timeout to ensure the shared function is independent
-		// of the initial request context while still having a bounded lifetime.
-		ctx, cancel := context.WithTimeout(context.Background(), tokenRequestTimeout)
+		// A canceled caller must not cancel an RPC shared with other requests.
+		requestCtx, cancel := context.WithTimeout(context.Background(), tokenRequestTimeout)
 		defer cancel()
-		token, err := p.requestToken(ctx, *client, namespaceScope)
+		token, err := p.requestProfileToken(requestCtx, *client, profile)
 		if err != nil {
 			incrementTokenRequest(tokenResultError)
 			return "", err
 		}
-
-		p.tokenCache.Add(namespaceScope, token)
+		p.profileTokenCache.Add(key, token)
 		incrementTokenRequest(tokenResultSuccess)
 		return token, nil
 	})
 }
 
-// requestToken performs the RPC call to Central to generate a token for the given scope.
-func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.TokenServiceClient, namespaceScope string) (string, error) {
-	req, err := p.buildTokenRequest(namespaceScope)
-	if err != nil {
-		return "", errors.Wrap(err, "building token request")
-	}
-	resp, err := client.GenerateTokenForPermissionsAndScope(ctx, req)
-	if err != nil {
-		return "", errors.Wrapf(err, "requesting token from Central for scope %q", namespaceScope)
-	}
-
-	token := resp.GetToken()
-	if token == "" {
-		return "", errors.Errorf("received empty token from Central for scope %q", namespaceScope)
-	}
-
-	return token, nil
-}
-
-// invalidateToken removes the cached token for the given scope.
-// It also removes the coalescer key so subsequent callers will
-// trigger a fresh token request rather than joining any in-progress request.
-// Note: This does not cancel already running requests; they will complete
-// normally but their results will not be used by new callers.
-func (p *tokenProvider) invalidateToken(scope string) {
-	p.tokenCache.Remove(scope)
-	p.tokenGroup.Forget(scope)
-}
-
-// buildTokenRequest creates the token request based on the namespace scope.
-// Returns an error if the cluster ID is not available yet.
-func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.GenerateTokenForPermissionsAndScopeRequest, error) {
+func (p *tokenProvider) requestProfileToken(ctx context.Context, client centralv1.TokenServiceClient,
+	profile *proxyTokenProfile,
+) (string, error) {
 	clusterID := p.clusterIDGetter.GetNoWait()
 	if clusterID == "" {
-		return nil, errors.Wrap(errServiceUnavailable, "cluster ID not available")
+		return "", errors.Wrap(errServiceUnavailable, "cluster ID not available")
 	}
-
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSets: []*centralv1.ScopedPermissionSet{{
-			Selector:          &centralv1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]},
-			HttpRequestScopes: consoleRequestScopes(),
-		}},
+		Requester:      profile.identity,
+		Lifetime:       durationpb.New(tokenTTL),
+		PermissionSets: profile.permissionSets,
+	}
+	if profile.legacyConsole {
 		// Centrals without permission set support use these fallback permissions.
-		Permissions: map[string]centralv1.Access{
+		req.Permissions = map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,
-		},
-		Lifetime: durationpb.New(tokenTTL),
+		}
 	}
-
-	switch namespaceScope {
-	case "":
-		// Empty scope: no cluster scopes (authentication only)
-	case FullClusterAccessScope:
-		// Cluster-wide access
-		req.ClusterScopes = []*centralv1.ClusterScope{{
-			ClusterId:         clusterID,
-			FullClusterAccess: true,
-		}}
-	default:
-		// Specific namespace
-		req.ClusterScopes = []*centralv1.ClusterScope{{
-			ClusterId:  clusterID,
-			Namespaces: []string{namespaceScope},
-		}}
+	if scope := profile.clusterScope; scope != "" {
+		clusterScope := &centralv1.ClusterScope{ClusterId: clusterID}
+		if scope == FullClusterAccessScope {
+			clusterScope.FullClusterAccess = true
+		} else {
+			clusterScope.Namespaces = []string{scope}
+		}
+		req.ClusterScopes = []*centralv1.ClusterScope{clusterScope}
 	}
-
-	return req, nil
+	response, err := client.GenerateTokenForPermissionsAndScope(ctx, req)
+	if err != nil {
+		return "", errors.Wrap(err, "requesting proxy client token")
+	}
+	if response.GetToken() == "" {
+		return "", errors.New("received empty proxy client token from Central")
+	}
+	return response.GetToken(), nil
 }
 
-func consoleRequestScopes() []*apiV1.HTTPRequestScope {
-	result := make([]*apiV1.HTTPRequestScope, 0, len(centralproxy.ConsoleHTTPScopes))
-	for _, path := range slices.Sorted(maps.Keys(centralproxy.ConsoleHTTPScopes)) {
-		result = append(result, &apiV1.HTTPRequestScope{
-			Path: path, Methods: slices.Clone(centralproxy.ConsoleHTTPScopes[path]),
-		})
-	}
-	return result
+func (p *tokenProvider) invalidateProfile(profile *proxyTokenProfile) {
+	key := p.clusterIDGetter.GetNoWait() + ":" + profileCacheKey(profile)
+	p.profileTokenCache.Remove(key)
+	p.profileTokenGroup.Forget(key)
 }

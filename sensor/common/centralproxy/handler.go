@@ -6,11 +6,17 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
+	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,6 +26,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"google.golang.org/grpc"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -46,10 +53,11 @@ func proxyErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
 	centralReachable atomic.Bool
-	clusterIDGetter  clusterIDGetter
 	authorizer       *k8sAuthorizer
+	policy           requestPolicy
 	transport        *scopedTokenTransport
 	proxy            *httputil.ReverseProxy
+	metricsEnabled   bool
 }
 
 // NewProxyHandler creates a new proxy handler that forwards requests to Central.
@@ -89,12 +97,17 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	if err != nil {
 		return nil, errors.Wrap(err, "creating kubernetes client")
 	}
+	policy, err := newRequestPolicy(k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "initializing proxy client policy")
+	}
 
 	return &Handler{
-		clusterIDGetter: clusterIDGetter,
-		authorizer:      newK8sAuthorizer(k8sClient),
-		transport:       transport,
-		proxy:           proxy,
+		authorizer:     newK8sAuthorizer(k8sClient),
+		policy:         policy,
+		transport:      transport,
+		proxy:          proxy,
+		metricsEnabled: env.SecuredClusterMetricsEnabled.BooleanSetting(),
 	}, nil
 }
 
@@ -115,34 +128,19 @@ func (h *Handler) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-// validateRequest validates the incoming request and returns an error if validation fails.
-func (h *Handler) validateRequest(request *http.Request) error {
-	// Allow GET, POST, OPTIONS (for CORS preflight), and HEAD.
-	switch request.Method {
-	case http.MethodGet, http.MethodPost, http.MethodOptions, http.MethodHead:
-		// allowed
-	default:
-		return pkghttputil.Errorf(http.StatusMethodNotAllowed, "method %s not allowed", request.Method)
-	}
-
-	if !h.centralReachable.Load() {
-		return pkghttputil.NewError(http.StatusServiceUnavailable, "central not reachable")
-	}
-
-	// Only enforce path filtering when Central advertises the capability.
-	// Otherwise allow the request for backwards compatibility.
-	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
-		normalizedPath := request.URL.EscapedPath()
-		if normalizedPath == "" {
-			normalizedPath = "/"
+func isMetricsPath(request *http.Request) bool {
+	decoded := request.URL.Path
+	for range 16 {
+		if path.Clean(decoded) == "/metrics" {
+			return true
 		}
-		if !allowedpaths.IsAllowed(normalizedPath) {
-			return pkghttputil.Errorf(http.StatusForbidden,
-				"path %q is not allowed by the proxy allow-list", request.URL.Path)
+		next, err := url.PathUnescape(decoded)
+		if err != nil || next == decoded {
+			return false
 		}
+		decoded = next
 	}
-
-	return nil
+	return strings.Contains(decoded, "%")
 }
 
 // checkInternalTokenAPISupport checks if Central supports the internal token API capability.
@@ -168,37 +166,103 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
-
-	if err := h.validateRequest(request); err != nil {
+	if !h.centralReachable.Load() {
 		result = requestResultValidationError
-		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+		http.Error(writer, "central not reachable", http.StatusServiceUnavailable)
 		return
 	}
-
-	if h.authorizer == nil {
+	if isMetricsPath(request) && !h.metricsEnabled {
+		result = requestResultValidationError
+		http.Error(writer, "secured-cluster metrics proxy unavailable", http.StatusForbidden)
+		return
+	}
+	if h.policy == nil {
 		result = requestResultConfigError
-		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
-		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
+		http.Error(writer, "proxy policy not configured", http.StatusInternalServerError)
 		return
 	}
-
-	userInfo, err := h.authorizer.authenticate(request.Context(), request)
+	var userInfo *authenticationv1.UserInfo
+	grant, err := h.policy.authorizeRequest(request.Context(), request, func() (*authenticationv1.UserInfo, error) {
+		if h.authorizer == nil {
+			result = requestResultConfigError
+			return nil, pkghttputil.NewError(http.StatusInternalServerError, "proxy authorizer not configured")
+		}
+		var err error
+		userInfo, err = h.authorizer.authenticate(request.Context(), request)
+		if err != nil {
+			result = requestResultAuthnError
+		}
+		return userInfo, err
+	})
 	if err != nil {
-		result = requestResultAuthnError
+		if result == requestResultSuccess {
+			result = requestResultAuthzError
+			if pkghttputil.StatusFromError(err) == http.StatusUnauthorized {
+				result = requestResultAuthnError
+			}
+		}
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
-
-	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
-		result = requestResultAuthzError
-		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+	if grant.isConsole() && !features.OCPConsoleIntegration.Enabled() {
+		result = requestResultValidationError
+		http.Error(writer, "console proxy is disabled", http.StatusForbidden)
 		return
 	}
-
+	perAccess := centralcaps.Has(centralsensor.CentralProxyPerAccessTokens)
+	if !perAccess && !legacyProxyGrantAllowed(grant, request) {
+		result = requestResultNotImplemented
+		http.Error(writer, "Central does not support this proxy client profile", http.StatusNotImplemented)
+		return
+	}
+	if userInfo != nil {
+		if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+			result = requestResultAuthzError
+			http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+			return
+		}
+	}
+	profile := &proxyTokenProfile{
+		identity:       grant.AuthType + ":" + grant.Subject,
+		permissionSets: grant.PermissionSets,
+		legacyConsole:  !perAccess && grant.isConsole(),
+	}
+	if userInfo == nil {
+		profile.clusterScope = FullClusterAccessScope
+	} else {
+		profile.clusterScope = request.Header.Get(stackroxNamespaceHeader)
+		if profile.clusterScope == "" && !grant.isConsole() {
+			result = requestResultAuthzError
+			http.Error(writer, "namespace scope is required for custom bearer clients", http.StatusForbidden)
+			return
+		}
+	}
+	request = request.WithContext(withProxyTokenProfile(request.Context(), profile))
 	tracker := pkghttputil.NewStatusTrackingWriter(writer)
 	h.proxy.ServeHTTP(tracker, request)
-
 	if statusCode := tracker.GetStatusCode(); statusCode != nil && *statusCode >= http.StatusBadRequest {
 		result = requestResultProxyError
 	}
+}
+
+func legacyProxyGrantAllowed(grant *ClientPolicyGrant, request *http.Request) bool {
+	if !grant.isConsole() || len(grant.PermissionSets[0].GetHttpRequestScopes()) == 0 {
+		return false
+	}
+	allowed := centralproxy.ConsoleHTTPScopes
+	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) && !allowedpaths.IsAllowed(request.URL.EscapedPath()) {
+		return false
+	}
+	for _, scope := range grant.PermissionSets[0].GetHttpRequestScopes() {
+		methods, found := allowed[scope.GetPath()]
+		if !found {
+			return false
+		}
+		for _, method := range scope.GetMethods() {
+			if !slices.Contains(methods, method) {
+				return false
+			}
+		}
+	}
+	return true
 }

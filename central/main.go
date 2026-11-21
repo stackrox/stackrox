@@ -507,9 +507,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
 	}
 
-	if features.OCPConsoleIntegration.Enabled() {
-		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
