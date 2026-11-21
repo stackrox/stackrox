@@ -55,6 +55,19 @@ jobs:
 
       - name: build cimemo
         run: cd tools/cimemo && go build -o /tmp/cimemo ./cmd/cimemo
+      - name: environment fingerprint
+        run: |
+          mkdir -p /tmp/envfp
+          go env > /tmp/envfp/goenv.txt
+          gcc --version | head -2 > /tmp/envfp/gcc.txt
+          echo "ImageVersion=$ImageVersion ImageOS=$ImageOS" > /tmp/envfp/image.txt
+          uname -a > /tmp/envfp/uname.txt
+          echo "cpu: $(nproc) $(grep -m1 'model name' /proc/cpuinfo)" >> /tmp/envfp/uname.txt
+          cat /tmp/envfp/goenv.txt /tmp/envfp/gcc.txt /tmp/envfp/image.txt /tmp/envfp/uname.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: envfp-populate
+          path: /tmp/envfp
       - name: cold build + upload via proxy
         id: time
         env:
@@ -97,6 +110,19 @@ jobs:
 
       - name: build cimemo
         run: cd tools/cimemo && go build -o /tmp/cimemo ./cmd/cimemo
+      - name: environment fingerprint
+        run: |
+          mkdir -p /tmp/envfp
+          go env > /tmp/envfp/goenv.txt
+          gcc --version | head -2 > /tmp/envfp/gcc.txt
+          echo "ImageVersion=$ImageVersion ImageOS=$ImageOS" > /tmp/envfp/image.txt
+          uname -a > /tmp/envfp/uname.txt
+          echo "cpu: $(nproc) $(grep -m1 'model name' /proc/cpuinfo)" >> /tmp/envfp/uname.txt
+          cat /tmp/envfp/goenv.txt /tmp/envfp/gcc.txt /tmp/envfp/image.txt /tmp/envfp/uname.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: envfp-serve
+          path: /tmp/envfp
       - name: fresh-cache build served from cloud
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
