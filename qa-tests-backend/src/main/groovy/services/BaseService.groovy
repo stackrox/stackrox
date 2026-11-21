@@ -146,6 +146,8 @@ class BaseService {
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
                     .keepAliveTime(1, TimeUnit.SECONDS)
+                    .keepAliveTimeout(10, TimeUnit.SECONDS)
+                    .keepAliveWithoutCalls(true)  // send keepalive even when idle to prevent load balancers from dropping idle connections
                     .idleTimeout(1, TimeUnit.MINUTES)
                     .maxInboundMessageSize(MAX_GRPC_MESSAGE_SIZE)
                     .build()
