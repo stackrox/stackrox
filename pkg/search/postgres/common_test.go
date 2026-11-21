@@ -275,6 +275,18 @@ func TestCountQueries(t *testing.T) {
 		expectedError     string
 	}{
 		{
+			desc: "subquery counts clusters with deployments in payments",
+			ctx:  baseCtx,
+			q: search.MatchFieldSubQuery(search.ClusterID, v1.SearchCategory_DEPLOYMENTS,
+				search.NewQueryBuilder().AddExactMatches(search.Namespace, "payments").
+					AddSelectFields(search.NewQuerySelect(search.ClusterID)).ProtoQuery()),
+			schema: schema.ClustersSchema,
+			expectedStatement: "select count(*) from clusters where EXISTS (SELECT 1 FROM (" +
+				"select deployments.ClusterId::text as cluster_id from deployments where deployments.Namespace = $1" +
+				") AS subquery WHERE subquery.cluster_id = clusters.Id::text)",
+			expectedData: []interface{}{"payments"},
+		},
+		{
 			desc:              "base schema query",
 			ctx:               baseCtx,
 			q:                 search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
@@ -1131,6 +1143,20 @@ func TestGetQueries(t *testing.T) {
 		expectedData  []interface{}
 		expectedError string
 	}{
+		{
+			desc: "subquery finds production clusters with deployments in payments",
+			q: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.Cluster, "production").ProtoQuery(),
+				search.MatchFieldSubQuery(search.ClusterID, v1.SearchCategory_DEPLOYMENTS,
+					search.NewQueryBuilder().AddExactMatches(search.Namespace, "payments").
+						AddSelectFields(search.NewQuerySelect(search.ClusterID)).ProtoQuery()),
+			),
+			schema: schema.ClustersSchema,
+			expectedQuery: "select clusters.serialized from clusters where (clusters.Name = $1 and EXISTS (SELECT 1 FROM (" +
+				"select deployments.ClusterId::text as cluster_id from deployments where deployments.Namespace = $2" +
+				") AS subquery WHERE subquery.cluster_id = clusters.Id::text))",
+			expectedData: []interface{}{"production", "payments"},
+		},
 		{
 			desc:          "base schema query - simple GET",
 			ctx:           sac.WithAllAccess(context.Background()),
