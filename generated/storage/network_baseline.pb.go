@@ -160,9 +160,8 @@ type NetworkBaseline struct {
 	ObservationPeriodEnd *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd,proto3" json:"observation_period_end,omitempty"`
 	// Indicates if this baseline has been locked by user.
 	// Here locking means:
-	//
-	//	1: Do not let system automatically add any allowed peer to baseline
-	//	2: Start reporting violations on flows that are not in the baseline
+	//   1: Do not let system automatically add any allowed peer to baseline
+	//   2: Start reporting violations on flows that are not in the baseline
 	Locked         bool   `protobuf:"varint,7,opt,name=locked,proto3" json:"locked,omitempty"`
 	DeploymentName string `protobuf:"bytes,8,opt,name=deployment_name,json=deploymentName,proto3" json:"deployment_name,omitempty"`
 	unknownFields  protoimpl.UnknownFields

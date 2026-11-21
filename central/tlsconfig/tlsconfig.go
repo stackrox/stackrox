@@ -138,11 +138,6 @@ func MaybeGetDefaultCertChain() ([][]byte, error) {
 	return cert.Certificate, nil
 }
 
-// MaybeGetDefaultTLSCertificateFromDefaultDirectory loads the default TLS certificate from the default directory.
-func MaybeGetDefaultTLSCertificateFromDefaultDirectory() (*tls.Certificate, error) {
-	return MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath)
-}
-
 // MaybeGetDefaultTLSCertificateFromDirectory loads the default TLS certificate from the given directory.
 func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, error) {
 	return maybeLoadTLSCertificateFromDirectory("default TLS", dir)

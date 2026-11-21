@@ -36,15 +36,15 @@ type AuthProvider struct {
 	// Config holds auth provider specific configuration. Each configuration options
 	// are different based on the given auth provider type.
 	// OIDC:
-	//   - "issuer": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.
-	//   - "client_id": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.
-	//   - "client_secret": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.
-	//   - "do_not_use_client_secret": set to "true" if you want to create a configuration with only
-	//     a client ID and no client secret.
-	//   - "mode": the OIDC callback mode, choosing from "fragment", "post", or "query".
-	//   - "disable_offline_access_scope": set to "true" if no offline tokens shall be issued.
-	//   - "extra_scopes": a space-delimited string of additional scopes to request in addition to "openid profile email"
-	//     according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.
+	// - "issuer": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.
+	// - "client_id": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.
+	// - "client_secret": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.
+	// - "do_not_use_client_secret": set to "true" if you want to create a configuration with only
+	//   a client ID and no client secret.
+	// - "mode": the OIDC callback mode, choosing from "fragment", "post", or "query".
+	// - "disable_offline_access_scope": set to "true" if no offline tokens shall be issued.
+	// - "extra_scopes": a space-delimited string of additional scopes to request in addition to "openid profile email"
+	//   according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.
 	//
 	// OpenShift Auth:
 	// These settings only apply for OpenShift Auth used with access control delegation to ACM.
@@ -83,25 +83,27 @@ type AuthProvider struct {
 	// Each key in this map contains a path in IdP token we want to map. Path is separated by "." symbol.
 	// For example, if IdP token payload looks like:
 	//
+	//
 	// {
 	//
-	//	"a": {
+	//      "a": {
 	//
-	//	    "b" : "c",
+	//          "b" : "c",
 	//
-	//	    "d": true,
+	//          "d": true,
 	//
-	//	    "e": [ "val1", "val2", "val3" ],
+	//          "e": [ "val1", "val2", "val3" ],
 	//
-	//	    "f": [ true, false, false ],
+	//          "f": [ true, false, false ],
 	//
-	//	    "g": 123.0,
+	//          "g": 123.0,
 	//
-	//	    "h": [ 1, 2, 3]
+	//          "h": [ 1, 2, 3]
 	//
-	//	}
+	//      }
 	//
 	// }
+	//
 	//
 	// then "a.b" would be a valid key and "a.z" is not.
 	//

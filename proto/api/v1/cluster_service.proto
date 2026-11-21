@@ -69,24 +69,6 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters/{id}"};
   }
 
-  // PostCluster is deprecated. Use operator-based installation with CRS instead.
-  rpc PostCluster(storage.Cluster) returns (ClusterResponse) {
-    option deprecated = true;
-    option (google.api.http) = {
-      post: "/v1/clusters"
-      body: "*"
-    };
-  }
-
-  // PutCluster is deprecated. Use operator-based installation with CRS instead.
-  rpc PutCluster(storage.Cluster) returns (ClusterResponse) {
-    option deprecated = true;
-    option (google.api.http) = {
-      put: "/v1/clusters/{id}"
-      body: "*"
-    };
-  }
-
   rpc DeleteCluster(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/clusters/{id}"};
   }
@@ -97,7 +79,9 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters-env/kernel-support-available"};
   }
 
+  // GetClusterDefaultValues is deprecated. Use operator-based installation with CRS instead.
   rpc GetClusterDefaultValues(Empty) returns (ClusterDefaultsResponse) {
+    option deprecated = true;
     option (google.api.http) = {get: "/v1/cluster-defaults"};
   }
 }

@@ -28,6 +28,12 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Deprecated Features
 
+- ROX-37648: The `GetClusterDefaultValues` gRPC endpoint (`GET /v1/cluster-defaults`) is deprecated and will be removed in a future release. It only provided defaults for manifest-based cluster configurations; use the operator for deployment management instead. The already deprecated `GetKernelSupportAvailable` (`GET /v1/clusters-env/kernel-support-available`) is not affected by this deprecation.
+- ROX-37648: The following REST endpoints for manifest-based installation are deprecated and will be removed in a future release. Please use the operator for deployment management instead.
+  - `/api/extensions/scanner/zip` (generates Scanner V4 deployment manifests), together with its client command `roxctl scanner generate`.
+  - `/api/extensions/certgen/cluster` (generates TLS secrets for manifest-installed secured clusters). Its client command `roxctl sensor generate-certs` is already deprecated.
+- ROX-37648: The `MANAGER_TYPE_MANUAL` and `MANAGER_TYPE_HELM_CHART` values of the `ManagerType` enum (field `managedBy` of `storage.Cluster`) are deprecated. They identify clusters installed using the deprecated manifest-based and Helm-based installation methods.
+
 ### Technical Changes
 
 - ROX-36223: Scanner V4 DB init container detects version downgrades (major.minor decrease) and automatically reinitializes the database, preventing schema incompatibility when ACS is rolled back to an older minor version. Rollback reinitialization is supported only when the target version is 5.1 or later.

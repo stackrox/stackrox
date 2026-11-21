@@ -501,17 +501,14 @@ const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\x04NONE\x10\x00\x12\x11\n" +
 	"\rLOAD_BALANCER\x10\x01\x12\r\n" +
 	"\tNODE_PORT\x10\x02\x12\t\n" +
-	"\x05ROUTE\x10\x032\x85\x05\n" +
+	"\x05ROUTE\x10\x032\xe0\x03\n" +
 	"\x0fClustersService\x12M\n" +
 	"\vGetClusters\x12\x16.v1.GetClustersRequest\x1a\x10.v1.ClustersList\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/clusters\x12N\n" +
 	"\n" +
-	"GetCluster\x12\x10.v1.ResourceByID\x1a\x13.v1.ClusterResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/clusters/{id}\x12P\n" +
-	"\vPostCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x1a\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/clusters\x88\x02\x01\x12T\n" +
-	"\n" +
-	"PutCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x1f\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/clusters/{id}\x88\x02\x01\x12G\n" +
+	"GetCluster\x12\x10.v1.ResourceByID\x1a\x13.v1.ClusterResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/clusters/{id}\x12G\n" +
 	"\rDeleteCluster\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/clusters/{id}\x12\x80\x01\n" +
-	"\x19GetKernelSupportAvailable\x12\t.v1.Empty\x1a\".v1.KernelSupportAvailableResponse\"4\x82\xd3\xe4\x93\x02+\x12)/v1/clusters-env/kernel-support-available\x88\x02\x01\x12_\n" +
-	"\x17GetClusterDefaultValues\x12\t.v1.Empty\x1a\x1b.v1.ClusterDefaultsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-defaultsB'\n" +
+	"\x19GetKernelSupportAvailable\x12\t.v1.Empty\x1a\".v1.KernelSupportAvailableResponse\"4\x82\xd3\xe4\x93\x02+\x12)/v1/clusters-env/kernel-support-available\x88\x02\x01\x12b\n" +
+	"\x17GetClusterDefaultValues\x12\t.v1.Empty\x1a\x1b.v1.ClusterDefaultsResponse\"\x1f\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-defaults\x88\x02\x01B'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x02b\x06proto3"
 
 var (
@@ -550,20 +547,16 @@ var file_api_v1_cluster_service_proto_depIdxs = []int32{
 	2,  // 4: v1.ClustersList.ClusterIdToRetentionInfoEntry.value:type_name -> v1.DecommissionedClusterRetentionInfo
 	6,  // 5: v1.ClustersService.GetClusters:input_type -> v1.GetClustersRequest
 	10, // 6: v1.ClustersService.GetCluster:input_type -> v1.ResourceByID
-	9,  // 7: v1.ClustersService.PostCluster:input_type -> storage.Cluster
-	9,  // 8: v1.ClustersService.PutCluster:input_type -> storage.Cluster
-	10, // 9: v1.ClustersService.DeleteCluster:input_type -> v1.ResourceByID
-	11, // 10: v1.ClustersService.GetKernelSupportAvailable:input_type -> v1.Empty
-	11, // 11: v1.ClustersService.GetClusterDefaultValues:input_type -> v1.Empty
-	5,  // 12: v1.ClustersService.GetClusters:output_type -> v1.ClustersList
-	3,  // 13: v1.ClustersService.GetCluster:output_type -> v1.ClusterResponse
-	3,  // 14: v1.ClustersService.PostCluster:output_type -> v1.ClusterResponse
-	3,  // 15: v1.ClustersService.PutCluster:output_type -> v1.ClusterResponse
-	11, // 16: v1.ClustersService.DeleteCluster:output_type -> v1.Empty
-	7,  // 17: v1.ClustersService.GetKernelSupportAvailable:output_type -> v1.KernelSupportAvailableResponse
-	4,  // 18: v1.ClustersService.GetClusterDefaultValues:output_type -> v1.ClusterDefaultsResponse
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
+	10, // 7: v1.ClustersService.DeleteCluster:input_type -> v1.ResourceByID
+	11, // 8: v1.ClustersService.GetKernelSupportAvailable:input_type -> v1.Empty
+	11, // 9: v1.ClustersService.GetClusterDefaultValues:input_type -> v1.Empty
+	5,  // 10: v1.ClustersService.GetClusters:output_type -> v1.ClustersList
+	3,  // 11: v1.ClustersService.GetCluster:output_type -> v1.ClusterResponse
+	11, // 12: v1.ClustersService.DeleteCluster:output_type -> v1.Empty
+	7,  // 13: v1.ClustersService.GetKernelSupportAvailable:output_type -> v1.KernelSupportAvailableResponse
+	4,  // 14: v1.ClustersService.GetClusterDefaultValues:output_type -> v1.ClusterDefaultsResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
