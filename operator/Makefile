@@ -44,7 +44,11 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 IMAGE_REPO ?= $(shell $(MAKE) --quiet --no-print-directory -C .. default-image-registry)
 # IMAGE_TAG_BASE defines the quay.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
+ifeq ($(USE_KONFLUX_IMAGES),true)
+IMAGE_TAG_BASE ?= $(IMAGE_REPO)/release-operator
+else
 IMAGE_TAG_BASE ?= $(IMAGE_REPO)/stackrox-operator
+endif
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -449,11 +453,39 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 	set -x ;\
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
 
+CHART_DIR ?= ./dist/chart
+
+EXTRA_HELM_ARGS :=
+ifeq ($(USE_KONFLUX_IMAGES),true)
+EXTRA_HELM_ARGS += --set manager.image.repository=quay.io/rhacs-eng/release-operator
+EXTRA_HELM_ARGS += --set 'manager.imagePullSecrets[0].name=stackrox'
+# Reset manager.env (Helm replaces the whole list) to drop the chart's valueless
+# RELATED_IMAGE_* placeholders, which would otherwise collide with the envOverrides below and
+# fail `helm upgrade` SSA with "duplicate entries for key". MEMORY_LIMIT_BYTES is restated here
+# because it's the one entry we must keep that envOverrides can't carry (it uses valueFrom).
+# TODO(ROX-37861): Helm operator chart SSA errors when overriding RELATED_IMAGE
+EXTRA_HELM_ARGS += --set 'manager.env[0].name=MEMORY_LIMIT_BYTES'
+EXTRA_HELM_ARGS += --set 'manager.env[0].valueFrom.resourceFieldRef.containerName=manager'
+EXTRA_HELM_ARGS += --set 'manager.env[0].valueFrom.resourceFieldRef.resource=limits.memory'
+# Point every related image at its Konflux release image. Generated from the RELATED_IMAGE_*
+# list in config/manager/manager.yaml so the two cannot drift when images are added/removed.
+EXTRA_HELM_ARGS += $(shell $(PROJECT_DIR)/hack/related-images-konflux-helm-args.sh $(VERSION))
+endif
+
 .PHONY: deploy-via-chart
-deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
+deploy-via-chart: ensure-operator-pull-secrets ## Deploy current version of operator via helm chart produced by the chart target.
 	helm upgrade --install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
 		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
-		rhacs-operator ./dist/chart
+		$(EXTRA_HELM_ARGS) \
+		rhacs-operator $(CHART_DIR)
+
+.PHONY: ensure-operator-pull-secrets
+ensure-operator-pull-secrets: ## Set up required image pull secrets on cluster.
+ifeq ($(USE_KONFLUX_IMAGES),true)
+# For deploying the Konflux `release-operator` image, which is private (unlike the public `stackrox-operator` one).
+	$(MAKE) stackrox-image-pull-secret NAMESPACE=$(TEST_NAMESPACE)
+endif
+
 
 .PHONY: deploy-previous-via-chart
 deploy-previous-via-chart: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using helm chart.
