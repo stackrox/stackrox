@@ -2,6 +2,8 @@
 
 # shellcheck source=./feature-flag-env.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/feature-flag-env.sh"
+# shellcheck source=../../scripts/ci/scanner-bundle.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../scripts/ci/scanner-bundle.sh"
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -510,9 +512,11 @@ function launch_central {
 
       # Specify CI value overrides after the default generated values-public.yaml/values-private.yaml above because Helm will prioritize the last (right-most) file specified.
       if [[ "${is_local_dev}" == "true" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
+        _scanner_v4_local_helm_values "${COMMON_DIR}/local-dev-values.yaml" > "${unzip_dir}/local-scanner-values.yaml" || return 1
+        helm_args+=(-f "${unzip_dir}/local-scanner-values.yaml")
       elif [[ -n "$CI" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
+        _scanner_v4_ci_helm_values "${COMMON_DIR}/ci-values.yaml" > "${unzip_dir}/ci-scanner-values.yaml" || return 1
+        helm_args+=(-f "${unzip_dir}/ci-scanner-values.yaml")
       fi
 
       if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then

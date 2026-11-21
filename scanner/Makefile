@@ -251,13 +251,13 @@ endif
 #################
 
 db-integration-timeout := 20m
-db-integration-d       := datastore/postgres
+db-integration-packages := ./datastore/postgres/... ./updater/ci/generate/...
 db-integration-go-tag  := scanner_db_integration
 
 .PHONY: db-integration-test
 db-integration-test: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v $(db-integration-packages)
 
 ##################
 ## Certificates ##
@@ -459,11 +459,16 @@ e2e-deploy: timeout := 30m
 
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
+	@source ../scripts/ci/scanner-bundle.sh; \
+	    version="$$(scanner_v4_ci_bundle_version)" || exit 1; \
+	    echo "Scanner V4 bundle: $$version"; \
+	    printf 'app:\n  scanner:\n    vulnerabilityVersion: %s\n' "$$version" > $(e2e-chart-d)/ci-bundle-values.yaml
 	helm $(if $(debug-templates),template,upgrade --install) --debug $(release) $< \
 	    --namespace $(namespace) \
 	    --create-namespace \
 	    $(if $(CI),,--atomic) \
 	    --timeout $(timeout) \
+	    -f $(e2e-chart-d)/ci-bundle-values.yaml \
 	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.db.image.registry=$(db-registry) \
 	    --set app.db.image.name=$(db-name) \
@@ -495,7 +500,8 @@ e2e-run: export DOCKER_PASSWORD=$(SCANNER_E2E_DOCKER_PASSWORD)
 
 e2e-run: $(build-deps-t)
 	@echo "+ $@"
-	$(GO_TEST_CMD) -tags $(go-tag) -count=1 -timeout=$(timeout) $(and $(re),--run $(re)) --v ./$(e2e-d)/...
+	SCANNER_E2E_CI_MINIMAL_BUNDLE="$$(grep -q "vulnerabilityVersion: ci-minimal-" $(e2e-chart-d)/ci-bundle-values.yaml && echo true || echo false)" \
+	    $(GO_TEST_CMD) -tags $(go-tag) -count=1 -timeout=$(timeout) $(and $(re),--run $(re)) --v ./$(e2e-d)/...
 
 $(e2e-files-d)/db-%.conf: ../image/templates/helm/shared/config-templates/scanner-v4-db/%.conf.default
 	$(SILENT)mkdir -p $(@D)

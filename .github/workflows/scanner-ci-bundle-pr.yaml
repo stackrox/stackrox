@@ -1,0 +1,48 @@
+name: Publish Scanner PR CI bundle
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+    - scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.repository == 'stackrox/stackrox' && github.event.pull_request.head.repo.full_name == 'stackrox/stackrox'
+    runs-on: ubuntu-24.04
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1
+    concurrency:
+      group: scanner-ci-bundle-publication
+      cancel-in-progress: false
+    steps:
+    - name: Checkout PR head
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        persist-credentials: false
+    - name: Verify checked-in bundle
+      run: |
+        go run ./scanner/updater/ci/generate -check
+        go test ./scanner/updater/ci/generate ./scanner/updater/bundle
+        CI_MINIMAL_BUNDLE_PATH="$PWD/scanner/image/scanner/bundles/ci-minimal/vulnerabilities.zip" \
+          go test ./scanner/updater -run '^TestCIMinimalBundle$'
+        go test ./scanner/matcher/updater/vuln -run '^TestCIMinimalBundleValid$'
+    - name: Authenticate with GCS
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+    - name: Publish and verify CI bundle
+      env:
+        SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        .github/workflows/scripts/scanner-publish-ci-bundle.sh
+        {
+          printf '\nSource commit: %s\n' "$SOURCE_SHA"
+          echo 'The bundle is ready. Rerun tests that started before publication completed.'
+        } >> "$GITHUB_STEP_SUMMARY"
