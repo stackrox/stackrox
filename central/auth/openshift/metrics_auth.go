@@ -2,9 +2,12 @@ package openshift
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/stackrox/rox/central/globaldb"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	rolePkg "github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -13,7 +16,9 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -23,30 +28,30 @@ import (
 )
 
 const (
-	authProviderID  = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80f"
-	permissionSetID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80e"
-	accessScopeID   = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"
+	authProviderID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80f"
 
 	// Auth provider is hidden from the login screen but visible in Access Control.
 	// It trusts the Kubernetes client CA from extension-apiserver-authentication,
 	// which signs Prometheus client certs. This adds the CA to userTrustRoots on the
 	// public :8443 endpoint (optional client cert verification).
-	authProviderName  = "OpenShift Platform Client Certificates"
-	roleName          = "OpenShift Prometheus Metrics Reader"
-	permissionSetName = "OpenShift Prometheus Metrics Reader"
-	accessScopeName   = "OpenShift Central Cluster"
+	authProviderName = "OpenShift Platform Client Certificates"
+
+	roleName        = accesscontrol.OpenShiftPrometheus
+	accessScopeName = accesscontrol.CentralClusterAccessScope
 
 	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
 
+var accessScopeID = accesscontrol.DefaultAccessScopeIDs[accessScopeName]
+
 var log = logging.LoggerForModule()
 
-// SeedMetricsAuthProvider ensures that the userpki auth provider, permission set, role,
-// and group mapping required for OpenShift Prometheus to scrape /metrics exist.
+// SeedMetricsAuthProvider ensures that the metrics permission set and the access
+// scope for the cluster hosting Central exist on every Central. When OpenShift TLS
+// is configured, it also seeds the userpki auth provider, role, and group mapping
+// required for OpenShift Prometheus to scrape /metrics on Central.
 //
-// The access scope, permission set, and role have static content with no dependency on
-// the client CA, so they are seeded unconditionally at startup. The auth provider's
-// config and the group's auth-provider reference, however, need the Kubernetes client CA
+// The auth provider's config and the group's auth-provider reference need the Kubernetes client CA
 // from the extension-apiserver-authentication ConfigMap (same CA that signs Prometheus
 // client certs), which may not be available yet; a ConfigMap watcher keeps the CA current
 // across rotations.
@@ -54,19 +59,24 @@ var log = logging.LoggerForModule()
 // The access scope uses DEFAULT origin (not user-modifiable) and is seeded the same way
 // as the other built-in DEFAULT access scopes (Unrestricted, Deny All): an idempotent
 // upsert straight to the underlying store, self-healing across restarts and upgrades.
+// A name collision with a custom scope uses a suffixed name while retaining the fixed ID.
 // The auth provider and group also use DEFAULT origin: the group can't be repointed to a
 // different role or deleted, which in turn keeps the role permanently referenced so it
-// can't be deleted either. Role and permission set use IMPERATIVE origin so operators can
-// still adjust their permissions or which access scope the role grants; they are only
-// created if missing, never overwritten.
+// can't be deleted either. The role and shared permission set use IMPERATIVE origin so
+// operators can adjust scoped read permissions for Central and secured-cluster metrics or
+// change the Central reader's access scope; they are only created if missing, never overwritten.
+// Internal scrape tokens will receive the authenticated Sensor's cluster scope.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
+	metricsPermissionSetID := ensurePermissionSet(ctx, roleDS)
+	seedAccessScope(ctx)
+
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
 	}
 
-	seedAccessScope(ctx)
-	ensurePermissionSet(ctx, roleDS)
-	ensureRole(ctx, roleDS)
+	if metricsPermissionSetID != "" {
+		ensureRole(ctx, roleDS, metricsPermissionSetID)
+	}
 
 	clientset, err := newK8sClient()
 	if err != nil {
@@ -161,7 +171,7 @@ func refreshCA(ctx context.Context, registry authproviders.Registry, provider au
 	}
 }
 
-// seedAccessScope upserts the OpenShift metrics access scope directly into the
+// seedAccessScope upserts the Central cluster access scope directly into the
 // underlying store, the same way the built-in DEFAULT access scopes (Unrestricted, Deny
 // All) are seeded in central/role/datastore/singleton.go. This keeps the scope's content
 // always in sync with the code (self-healing across restarts and upgrades) without going
@@ -189,32 +199,77 @@ func seedAccessScope(ctx context.Context) {
 		},
 	}
 	store := postgresSimpleAccessScopeStore.New(globaldb.GetPostgres())
+	names := make(map[string]string)
+	if err := store.Walk(ctx, func(existing *storage.SimpleAccessScope) error {
+		names[existing.GetName()] = existing.GetId()
+		return nil
+	}); err != nil {
+		log.Warnf("Failed to check OpenShift metrics access scope name: %v", err)
+		return
+	}
+	scope.Name = seededAccessScopeName(names)
 	if err := store.Upsert(ctx, scope); err != nil {
 		log.Warnf("Failed to seed OpenShift metrics access scope: %v", err)
 	}
 }
 
-func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) {
-	if _, exists, err := roleDS.GetPermissionSet(ctx, permissionSetID); err != nil {
-		log.Warnf("Failed to check OpenShift metrics permission set: %v", err)
-		return
-	} else if exists {
-		return
+func seededAccessScopeName(existing map[string]string) string {
+	if id, found := existing[accessScopeName]; !found || id == accessScopeID {
+		return accessScopeName
+	}
+	for suffix := 1; ; suffix++ {
+		name := fmt.Sprintf("%s (built-in %d)", accessScopeName, suffix)
+		if id, found := existing[name]; !found || id == accessScopeID {
+			return name
+		}
+	}
+}
+
+func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) string {
+	existing, err := roleDS.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
+		return ps.GetName() == accesscontrol.OpenShiftPrometheus
+	})
+	if err != nil {
+		log.Warnf("Failed to find OpenShift metrics permission set: %v", err)
+		return ""
+	}
+	if len(existing) > 0 {
+		if err := permissionsUtils.ValidateScopedReadOnlyPermissionSet(existing[0]); err != nil {
+			log.Warnf("OpenShift metrics permission set cannot be used: %v", err)
+			return ""
+		}
+		return existing[0].GetId()
 	}
 
 	ps := &storage.PermissionSet{
-		Id:          permissionSetID,
-		Name:        permissionSetName,
-		Description: "For OpenShift Prometheus: grant read access to resources used by custom metrics",
+		Id:               rolePkg.GeneratePermissionSetID(),
+		Name:             accesscontrol.OpenShiftPrometheus,
+		Description:      "For OpenShift Prometheus: grant read access to resources used by custom metrics",
+		AccessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		ScopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 		// Let's give no permissions by default to avoid unexpected sensitive data exposure.
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(),
 	}
 	if err := roleDS.AddPermissionSet(ctx, ps); err != nil {
+		if errors.Is(err, errox.AlreadyExists) {
+			existing, lookupErr := roleDS.GetPermissionSetsFiltered(ctx, func(ps *storage.PermissionSet) bool {
+				return ps.GetName() == accesscontrol.OpenShiftPrometheus
+			})
+			if lookupErr == nil && len(existing) > 0 {
+				if err := permissionsUtils.ValidateScopedReadOnlyPermissionSet(existing[0]); err != nil {
+					log.Warnf("OpenShift metrics permission set cannot be used: %v", err)
+					return ""
+				}
+				return existing[0].GetId()
+			}
+		}
 		log.Warnf("Failed to create OpenShift metrics permission set: %v", err)
+		return ""
 	}
+	return ps.GetId()
 }
 
-func ensureRole(ctx context.Context, roleDS roleDataStore.DataStore) {
+func ensureRole(ctx context.Context, roleDS roleDataStore.DataStore, metricsPermissionSetID string) {
 	if _, exists, err := roleDS.GetRole(ctx, roleName); err != nil {
 		log.Warnf("Failed to check OpenShift metrics role: %v", err)
 		return
@@ -225,7 +280,7 @@ func ensureRole(ctx context.Context, roleDS roleDataStore.DataStore) {
 	role := &storage.Role{
 		Name:            roleName,
 		Description:     "Maps OpenShift Prometheus service account to /metrics read access",
-		PermissionSetId: permissionSetID,
+		PermissionSetId: metricsPermissionSetID,
 		AccessScopeId:   accessScopeID,
 	}
 	if err := roleDS.AddRole(ctx, role); err != nil {
