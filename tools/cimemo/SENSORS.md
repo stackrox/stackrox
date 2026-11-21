@@ -85,6 +85,35 @@ per-project tooling. Absolute times are not comparable (local disk vs
 CI runners + docker assembly), but the warm path does the same work:
 validate inputs, restore/link outputs, skip the build.
 
+## Cross-runner action-ID drift — root cause & fix (2025-11-21, CI)
+
+Symptom: fresh-runner serves from the cloud recompiled ~1,255 of 5,196
+compile actions on EVERY run, deterministically, despite identical go
+version, GOFLAGS, gcc, runner image, CPU, and go env. Same-runner
+builds were stable (bisect: 2nd build on one runner = 4 puts).
+
+Root cause (via GODEBUG=gocachehash=1 probes on two runners, diffed):
+**go's package-index hash ("moduleIndex") embeds file NAME + MTIME +
+SIZE for the stdlib source tree, the module cache, and the source
+tree.** Each runner extracts/restores these at a different wall-clock
+time, so every action whose ID includes moduleIndex differs per
+runner. Content hashes keep outputs byte-identical — only cache
+matching breaks. (The GOGCCFLAGS /tmp/go-buildNNN prefix-map diff is a
+red herring: per-invocation but normalized in action IDs, proven by
+the same-runner bisect.)
+
+Fix: normalize mtimes to a fixed epoch before building:
+  sudo find /opt/hostedtoolcache/go -exec touch -d @946684800 {} +
+  find "$(go env GOMODCACHE)" -exec touch -d @946684800 {} +
+  find . -exec touch -d @946684800 {} +
+Result: serve = 5,185 hits / 4 puts (link+buildid only), byte-identical.
+
+Post-fix CI numbers (go build ./central, fresh runner, fresh cache,
+all from cloud): serve 231s = 38s prefetch (manifest bloated with
+drifted-era junk; clean store → ~12s) + ~190s go warm-build floor
+(action-ID hashing of ~8,800 files + link). That floor is why Level-1
+receipts exist: unchanged inputs skip go entirely.
+
 ## gocache (sensor #9) results — v0.4.0, 2025-11-20
 
 Local pass-through proxy over the standard GOCACHE layout (cohabits
