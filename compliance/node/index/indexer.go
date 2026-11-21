@@ -113,6 +113,8 @@ func extractHostname(rawURL string) (string, error) {
 
 // NodeIndexerConfig represents Scanner V4 node indexer configuration parameters.
 type NodeIndexerConfig struct {
+	// DebugDir enables diagnostic captures; empty disables them.
+	DebugDir string
 	// HostPath is the mount point of the read-only host filesystem on the node.
 	HostPath string
 	// OSReleasePath is the path where os-release can be found for RHCOS detection.
@@ -140,6 +142,7 @@ type NodeIndexerConfig struct {
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
 func DefaultNodeIndexerConfig() NodeIndexerConfig {
 	return NodeIndexerConfig{
+		DebugDir:      env.NodeIndexDebugDir.Setting(),
 		HostPath:      env.NodeIndexHostPath.Setting(),
 		OSReleasePath: env.NodeIndexOSReleasePath.Setting(),
 		// The default, mTLS-capable client will be used.
@@ -174,50 +177,81 @@ func (l *localNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
 }
 
 // IndexNode indexes a node at the configured host path mount.
-func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, error) {
+func (l *localNodeIndexer) IndexNode(ctx context.Context) (result *v4.IndexReport, indexErr error) {
+	diag := newIndexDiagnostics(l.cfg)
+	defer func() {
+		if indexErr != nil {
+			diag.writeJSON("error.json", indexErr.Error())
+		}
+	}()
 	// claircore no longer returns an error if the host path does not exist.
 	if _, err := os.Stat(l.cfg.HostPath); err != nil {
 		return nil, errors.Wrapf(err, "host path %q does not exist", l.cfg.HostPath)
 	}
 
-	layer, err := layer(ctx, layerDigest, l.cfg.HostPath)
+	indexLayer, err := layer(ctx, layerDigest, l.cfg.HostPath)
 	if err != nil {
 		return nil, err
 	}
-	defer pkgutils.IgnoreError(layer.Close)
+	defer pkgutils.IgnoreError(indexLayer.Close)
+	diag.captureInputs("index-root", indexLayer)
+	if diag != nil {
+		identityLayer, err := layer(ctx, layerDigest, l.cfg.OSReleasePath)
+		if err != nil {
+			diag.writeJSON("identity-root-error.json", err.Error())
+		} else {
+			diag.captureInputs("identity-root", identityLayer)
+			pkgutils.IgnoreError(identityLayer.Close)
+		}
+	}
 
-	repos, err := runRepositoryScanner(ctx, l.cfg, layer)
+	repos, err := runRepositoryScannerWithDiagnostics(ctx, l.cfg, indexLayer, diag)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run repository scanner")
 	}
+	diag.writeJSON("repositories.json", repos)
 
-	pkgs, err := runPackageScanner(ctx, l.cfg.PackageDBFilter, layer)
+	pkgs, err := runPackageScannerWithDiagnostics(ctx, l.cfg.PackageDBFilter, indexLayer, diag)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run package scanner")
 	}
+	diag.writeJSON("packages-filtered.json", pkgs)
 
 	ccReport, err := runCoalescer(ctx, ccLayerDigest, repos, pkgs)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to coalesce report")
 	}
 	log.Debugf("Finished coalescing report. Report contains %d repositories with %d packages", len(ccReport.Repositories), len(ccReport.Packages))
+	diag.writeJSON("coalesced.json", ccReport)
+	diag.captureAssignments(ccReport)
 
 	rhcosRel, err := osRelease(ctx, l.cfg.OSReleasePath)
 	if err != nil {
+		diag.writeJSON("rhcos-identity.json", map[string]any{"error": err.Error()})
 		log.Debugf("Not adding RHCOS package to index report: %v", err)
 	} else {
 		metadata, labelsPresent, err := readRHCOSImageMetadata(ctx, l.cfg.OSReleasePath)
+		identitySource := "labels.json"
+		labelsError := ""
 		if err != nil {
+			labelsError = err.Error()
 			log.Warnf("Unable to read RHCOS labels.json, using os-release identity: %v", err)
 		}
 		if err != nil || !labelsPresent {
+			identitySource = "os-release"
 			metadata, err = rhcosIdentityFromOSRelease(rhcosRel.osRel)
 		}
 		if err != nil {
+			diag.writeJSON("rhcos-identity.json", map[string]any{"source": identitySource, "error": err.Error()})
 			log.Debugf("Not adding RHCOS package to index report: %v", err)
 		} else {
 			rhcosRel.imageName = metadata.name
 			rhcosRel.repoCPE = *metadata.repoCPE
+			diag.writeJSON("rhcos-identity.json", map[string]any{
+				"source": identitySource, "os_release": rhcosRel.osRel,
+				"labels_present": labelsPresent, "labels_error": labelsError,
+				"name": metadata.name, "version": rhcosRel.version, "cpe": metadata.repoCPE.String(),
+			})
 			arch := extractArch(ccReport, pkgs)
 			addRHCOS(rhcosRel, arch, ccReport)
 		}
@@ -231,6 +265,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		return nil, errors.Wrap(err, "converting clair report to v4 report")
 	}
 
+	diag.writeJSON("index-report.json", report)
 	return report, nil
 }
 
@@ -261,12 +296,29 @@ func layer(ctx context.Context, digest string, hostPath string) (*claircore.Laye
 }
 
 func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *claircore.Layer) ([]*claircore.Repository, error) {
+	return runRepositoryScannerWithDiagnostics(ctx, cfg, l, nil)
+}
+
+func runRepositoryScannerWithDiagnostics(ctx context.Context, cfg NodeIndexerConfig, l *claircore.Layer, diag *indexDiagnostics) ([]*claircore.Repository, error) {
 	client := cfg.Client
 	if client == nil {
 		var err error
 		client, err = newDefaultClient(cfg.Repo2CPEMappingURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating repository scanner http client")
+		}
+	}
+	if diag != nil {
+		clientCopy := *client
+		transport := client.Transport
+		if transport == nil {
+			transport = http.DefaultTransport
+		}
+		clientCopy.Transport = &mappingCaptureTransport{base: transport, diag: diag}
+		client = &clientCopy
+		if cfg.Repo2CPEMappingFile != "" {
+			status := diag.captureFile("mapping-seed.json", os.DirFS(filepath.Dir(cfg.Repo2CPEMappingFile)), filepath.Base(cfg.Repo2CPEMappingFile))
+			diag.writeJSON("mapping-seed-status.json", status)
 		}
 	}
 
@@ -299,12 +351,17 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 }
 
 func runPackageScanner(ctx context.Context, packageDBFilter []string, layer *claircore.Layer) ([]*claircore.Package, error) {
+	return runPackageScannerWithDiagnostics(ctx, packageDBFilter, layer, nil)
+}
+
+func runPackageScannerWithDiagnostics(ctx context.Context, packageDBFilter []string, layer *claircore.Layer, diag *indexDiagnostics) ([]*claircore.Package, error) {
 	scanner := rhel.PackageScanner{}
 	pkgs, err := scanner.Scan(ctx, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
 
+	diag.writeJSON("packages-raw.json", pkgs)
 	filtered := filterPackages(pkgs, packageDBFilter)
 	for i, p := range filtered {
 		p.ID = strconv.Itoa(i)
