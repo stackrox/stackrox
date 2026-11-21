@@ -374,6 +374,11 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestTopImageVulnerability() {
 	topVuln, err := image.TopImageVulnerability(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(expected, topVuln.Id(ctx))
+
+	// The top vulnerability represents its own occurrence, which is not fixable.
+	isFixable, err := topVuln.IsFixable(ctx, RawQuery{})
+	s.NoError(err)
+	s.False(isFixable)
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityImages() {
