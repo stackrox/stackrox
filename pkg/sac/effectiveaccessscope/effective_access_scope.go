@@ -23,8 +23,10 @@ const (
 	Included
 
 	// FQSN stands for "fully qualified scope name".
-	clusterNameLabel   = "stackrox.io/authz.metadata.cluster.fqsn"
-	namespaceNameLabel = "stackrox.io/authz.metadata.namespace.fqsn"
+	// ClusterNameLabel is the virtual label containing a cluster name.
+	ClusterNameLabel = "stackrox.io/authz.metadata.cluster.fqsn"
+	// NamespaceNameLabel is the virtual label containing a namespace fully qualified name.
+	NamespaceNameLabel = "stackrox.io/authz.metadata.namespace.fqsn"
 	scopeSeparator     = "::"
 )
 
@@ -135,6 +137,61 @@ func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, cl
 	root.bubbleUpStatesAndCompactify(detail)
 
 	return root, nil
+}
+
+// MatchedNamespace contains the metadata needed for a minimal namespace node.
+type MatchedNamespace struct {
+	ID   string
+	Name string
+}
+
+// MatchedNamespaceGroup contains matched namespaces with the same recorded parent.
+type MatchedNamespaceGroup struct {
+	ClusterName string
+	Namespaces  []MatchedNamespace
+}
+
+// FromMatchingScopes constructs a minimal tree from scopes already matched by
+// a selector evaluator. clusters includes the known parents of matching
+// namespaces; only includedClusterIDs grant access to entire clusters.
+// Namespaces retain the existing grouping by their recorded cluster name.
+func FromMatchingScopes(clusters []Cluster, includedClusterIDs []string, namespaces []MatchedNamespaceGroup) *ScopeTree {
+	root := newEffectiveAccessScopeTree(Excluded)
+	included := make(map[string]bool, len(includedClusterIDs))
+	for _, id := range includedClusterIDs {
+		included[id] = true
+	}
+	for _, cluster := range clusters {
+		state := Excluded
+		if included[cluster.GetId()] {
+			state = Included
+		}
+		root.populateCluster(cluster, state, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+	}
+	for _, group := range namespaces {
+		parent := root.Clusters[group.ClusterName]
+		if parent == nil {
+			parent = newClusterScopeSubTree(Excluded, treeNodeAttributes{Name: group.ClusterName})
+			root.Clusters[group.ClusterName] = parent
+		}
+		if len(parent.Namespaces) == 0 {
+			parent.Namespaces = make(map[string]*namespacesScopeSubTree, len(group.Namespaces))
+		}
+		for _, namespace := range group.Namespaces {
+			if existing := parent.Namespaces[namespace.Name]; existing != nil {
+				// Choose the smallest matching ID for duplicate recorded names
+				// so metadata does not depend on SQL result order.
+				if namespace.ID < existing.Attributes.ID {
+					existing.Attributes.ID = namespace.ID
+				}
+				continue
+			}
+			parent.Namespaces[namespace.Name] = newNamespacesScopeSubTree(Included,
+				treeNodeAttributes{ID: namespace.ID})
+		}
+	}
+	root.bubbleUpStatesAndCompactify(v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+	return root
 }
 
 // Compactify yields a compact representation of the scope tree.
@@ -253,15 +310,16 @@ func (root *ScopeTree) populateStateForCluster(
 	ruleSelectors *selectors,
 	detail v1.ComputeEffectiveAccessScopeRequest_Detail,
 ) {
+	root.populateCluster(cluster, ruleSelectors.matchCluster(cluster), detail)
+}
+
+func (root *ScopeTree) populateCluster(cluster Cluster, clusterState scopeState, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := cluster.GetName()
 	clusterID := cluster.GetId()
 
 	// There is no need to check if root is Included as we start with Excluded root.
 	// If root is eventually Included then we can include the cluster and short-circuit:
 	// no need to match if parent is included.
-
-	// Match the cluster.
-	clusterState := ruleSelectors.matchCluster(cluster)
 
 	// Set the cluster state to the pre-existing state.
 	if clusterSubTree := root.Clusters[clusterName]; clusterSubTree != nil {

@@ -15,12 +15,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sorted"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 //go:generate mockgen-wrapper
@@ -29,7 +29,6 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 	GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error)
 
@@ -65,6 +64,10 @@ type datastoreImpl struct {
 
 // GetNamespace returns namespace with given id.
 func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
+	// Namespace IDs are canonical UUIDs. Preserve a cache miss for other strings.
+	if parsed, err := uuid.FromString(id); err != nil || parsed.String() != id {
+		return nil, false, nil
+	}
 	namespace, found, err := b.store.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
@@ -99,25 +102,6 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 	}
 	b.updateNamespacePriority(allowedNamespaces...)
 	return allowedNamespaces, nil
-}
-
-// GetNamespacesForSAC retrieves the namespace inventory used to evaluate access scopes.
-func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Namespace, error) {
-	var namespaces []effectiveaccessscope.Namespace
-	err := b.store.Walk(sac.WithAllAccess(ctx), func(namespace *storage.NamespaceMetadata) error {
-		namespaces = append(namespaces, &storage.NamespaceMetadata{
-			Id:          namespace.GetId(),
-			Name:        namespace.GetName(),
-			ClusterId:   namespace.GetClusterId(),
-			ClusterName: namespace.GetClusterName(),
-			Labels:      namespace.GetLabels(),
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return namespaces, nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
@@ -167,6 +151,9 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
+	if parsed, err := uuid.FromString(id); err != nil || parsed.String() != id {
+		return nil
+	}
 	if err := b.store.Delete(ctx, id); err != nil {
 		return err
 	}

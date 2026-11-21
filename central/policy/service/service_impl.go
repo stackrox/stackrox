@@ -17,6 +17,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	sacEnricher "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -389,8 +390,13 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 	}
 
 	t := func(c concurrency.ErrorWaitable) (interface{}, error) {
-		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
-		return s.predicateBasedDryRunPolicy(ctx, c, request)
+		jobCtx := contextutil.WithValuesFrom(concurrency.AsContext(c), ctx)
+		// Lazy scope lookups must use the job's lifetime after its submitting request ends.
+		jobCtx, err := sacEnricher.GetEnricher().EnrichContext(jobCtx)
+		if err != nil {
+			return nil, err
+		}
+		return s.predicateBasedDryRunPolicy(jobCtx, c, request)
 	}
 
 	identity, err := authn.IdentityFromContext(ctx)
