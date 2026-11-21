@@ -2,6 +2,8 @@ module github.com/stackrox/rox
 
 go 1.26.10
 
+godebug fips140=on
+
 require (
 	cloud.google.com/go/artifactregistry v1.28.1
 	cloud.google.com/go/compute/metadata v0.10.0

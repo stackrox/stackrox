@@ -41,6 +41,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/version"
 	rawZap "go.uber.org/zap"
@@ -114,6 +115,8 @@ func init() {
 }
 
 func main() {
+	fips.RequireEnabled()
+
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

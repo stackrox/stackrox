@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/compliance/node/inventory"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fips"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/retry/handler"
@@ -23,6 +24,8 @@ var (
 )
 
 func main() {
+	fips.RequireEnabled()
+
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
 		log.Errorf("unable to start continuous profiling: %v", err)
 	}

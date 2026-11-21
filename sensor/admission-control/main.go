@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fips"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
@@ -44,6 +45,8 @@ func init() {
 }
 
 func main() {
+	fips.RequireEnabled()
+
 	log.Infof("StackRox Sensor Admission Control Service, version %s", version.GetMainVersion())
 	features.LogFeatureFlags()
 
