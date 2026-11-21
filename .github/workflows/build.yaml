@@ -21,8 +21,6 @@ permissions: {}
 
 env:
   GOFLAGS: -buildvcs=false
-
-env:
   CIMEMO_ACCOUNT: cigocache
   CIMEMO_CONTAINER: cimemo-ci
 
@@ -68,7 +66,6 @@ jobs:
           CIMEMO_GOCACHE_CONTAINER: ${{ env.CIMEMO_CONTAINER }}
           CIMEMO_GOCACHE_STATS: /tmp/gc-stats.json
           CIMEMO_GOCACHE_RECORD_GETS: "1"
-          CIMEMO_GOCACHE_RECORD_GETS: "1"
         run: |
           rm -rf /tmp/gc && mkdir -p /tmp/gc
           START=$(date +%s%3N)
@@ -104,7 +101,6 @@ jobs:
           CIMEMO_AZURE_ACCOUNT: ${{ env.CIMEMO_ACCOUNT }}
           CIMEMO_GOCACHE_CONTAINER: ${{ env.CIMEMO_CONTAINER }}
           CIMEMO_GOCACHE_STATS: /tmp/gc-stats.json
-          CIMEMO_GOCACHE_RECORD_GETS: "1"
           CIMEMO_GOCACHE_RECORD_GETS: "1"
         run: |
           rm -rf /tmp/gc && mkdir -p /tmp/gc
