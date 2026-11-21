@@ -269,6 +269,7 @@ func rhelVexConfig(i any) error {
 				slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
 			}
 		}
+		cfg.URL = os.Getenv("STACKROX_RHEL_VEX_URL")
 		cfg.FixedInVersionCEL = rhcosFixedInVersionCEL
 	case *vex.UpdaterConfig:
 		cfg.IgnoreKernelPackages = ignoreKernel

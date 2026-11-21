@@ -352,6 +352,7 @@ jobs:
       - /opt:/mnt/opt
     env:
       STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
+      STACKROX_RHEL_VEX_URL: "https://security.access.redhat.com/data/csaf/v2/vex/"
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
