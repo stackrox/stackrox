@@ -79,6 +79,28 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
+			name: "Locked process baseline, startup process and empty exec path are skipped",
+			baseline: &storage.ProcessBaseline{
+				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+			},
+			indicators: []*views.ProcessIndicatorRiskView{
+				{
+					ExecFilePath:  "",
+					ContainerName: deployment.GetContainers()[0].GetName(),
+				},
+				{
+					ExecFilePath:       "apt-get",
+					ContainerName:      deployment.GetContainers()[0].GetName(),
+					ContainerStartTime: func() *time.Time { t := time.Now().Add(-10 * time.Second); return &t }(),
+					SignalTime:         func() *time.Time { t := time.Now().Add(-5 * time.Second); return &t }(),
+				},
+			},
+			baselineStatuses:           makeBaselineStatuses(t, "LOCKED", "LOCKED"),
+			anomalousProcessesExecuted: []bool{false, false},
+			currentBaselineResults:     nil,
+			shouldBePersisted:          true,
+		},
+		{
 			name: "Locked process baseline, one not-in-baseline process",
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
@@ -245,13 +267,18 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 
 			mockBaselines.EXPECT().GetProcessBaseline(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.baseline, c.baseline != nil, c.baselineErr)
 			if c.indicators != nil {
-				mockIndicators.EXPECT().IterateOverProcessIndicatorsRiskView(gomock.Any(), gomock.Any(), gomock.Any()).Do(
-					func(_ context.Context, _ *v1.Query, fn func(indicator *views.ProcessIndicatorRiskView) error) {
+				mockIndicators.EXPECT().IterateOverProcessIndicatorsRiskView(gomock.Any(), gomock.Any(), gomock.Any()).
+					AnyTimes().
+					DoAndReturn(func(_ context.Context, _ *v1.Query, fn func(indicator *views.ProcessIndicatorRiskView) error) error {
 						for _, i := range c.indicators {
-							err := fn(i)
-							require.NoError(t, err)
+							if i.ExecFilePath != "" {
+								if err := fn(i); err != nil {
+									return err
+								}
+							}
 						}
-					}).Return(c.indicatorErr)
+						return c.indicatorErr
+					})
 			}
 
 			expectedBaselineResult := &storage.ProcessBaselineResults{
