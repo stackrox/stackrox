@@ -157,3 +157,62 @@ jobs:
           END=$(date +%s%3N)
           echo "SERVE-CHANGE: $((END-START))ms (receipt miss + warm actions from cloud)"
           grep -E "CACHE HIT|MISS|running:|gocache:|CACHED" /tmp/cimemo.log | head -6 || true
+
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.10'
+      - name: build cimemo
+        run: cd tools/cimemo && go build -o /tmp/cimemo ./cmd/cimemo
+      - name: normalize mtimes
+        run: |
+          EPOCH=946684800
+          sudo find /opt/hostedtoolcache/go -exec touch -d @$EPOCH {} +
+          find "$(go env GOMODCACHE)" -exec touch -d @$EPOCH {} + 2>/dev/null || true
+          find . -exec touch -d @$EPOCH {} +
+      - name: cold pass — three binaries + image
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          CIMEMO_REMOTE: "1"
+          CIMEMO_AZURE_ACCOUNT: ${{ env.CIMEMO_ACCOUNT }}
+          CIMEMO_GOCACHE_CONTAINER: ${{ env.CIMEMO_CONTAINER }}
+        run: |
+          mkdir -p bin-exp
+          START=$(date +%s%3N)
+          for t in ./central ./sensor/kubernetes ./sensor/admission-control; do
+            echo "--- building $t"
+            /tmp/cimemo go build -o bin-exp/$(basename $t) $t 2>&1 | grep -E "CACHED|gocache:" | head -2
+          done
+          echo "--- image"
+          /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:cold . 2>&1 | grep -E "CACHED|\[cimemo\]" | head -2
+          echo "PIPELINE-COLD: $(( $(date +%s%3N) - START ))ms"
+          sha256sum bin-exp/* | tee /tmp/cold-shas
+      - name: receipt pass — everything from receipts
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          CIMEMO_REMOTE: "1"
+          CIMEMO_AZURE_ACCOUNT: ${{ env.CIMEMO_ACCOUNT }}
+          CIMEMO_GOCACHE_CONTAINER: ${{ env.CIMEMO_CONTAINER }}
+        run: |
+          rm -rf bin-exp
+          mkdir -p bin-exp
+          START=$(date +%s%3N)
+          for t in ./central ./sensor/kubernetes ./sensor/admission-control; do
+            /tmp/cimemo go build -o bin-exp/$(basename $t) $t 2>&1 | grep -E "CACHE HIT|running" | head -1
+          done
+          /tmp/cimemo docker build -f tools/cimemo/pipeline-image/Dockerfile -t cimemo-pipeline:warm . 2>&1 | grep -E "CACHE HIT|running" | head -1
+          echo "PIPELINE-RECEIPT: $(( $(date +%s%3N) - START ))ms"
+          sha256sum bin-exp/* | tee /tmp/warm-shas
+          if diff -q /tmp/cold-shas /tmp/warm-shas >/dev/null; then
+            echo "ALL BINARIES IDENTICAL"
+          else
+            echo "BINARY MISMATCH"
+            exit 1
+          fi

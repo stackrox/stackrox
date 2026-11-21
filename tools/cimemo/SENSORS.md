@@ -198,17 +198,26 @@ stay silent. `cimemo dissect A B` runs it manually. Rust/C++ cause
 knowledge (vergen, __DATE__, DWARF paths, ar member mtimes) documented
 in dissect/dissect.go pending case studies.
 
-## CI receipt legs (2026-11-21, go build ./central, fresh runners)
+## CI receipt legs (go build ./central, fresh runners)
+
+Best run 2026-11-22 (per-target manifest scope + upload fix):
 
 | leg | wall | detail |
 |---|---|---|
-| control (cold) | 302.7s | baseline |
-| populate | 521.0s | cold + upload 3.4GB / 6.8K actions + receipt |
-| serve-receipt | 13.8s | receipt hit: closure→key→manifest→300MB binary restored, go never ran, buildinfo verified, byte-identical |
-| serve-change | 210.6s | receipt miss, 6.8K actions prefetched, 14 recompiles + link |
+| control (cold) | 326.2s | baseline |
+| populate | 401.7s | cold + upload 3.4GB / 6.8K actions + receipt |
+| serve-receipt | **5.7s** | receipt hit: binary restored, go never ran, byte-identical |
+| serve-change | **183.1s** | receipt miss, 6.7K actions prefetched, **5 recompiles** (2.8MB) + link |
 
-The 13.8s receipt leg is the CA fast path, generic. Remaining
-serve-change time is go's warm-build floor (action-ID hashing + link).
+vs custom-CA (CI): warm 36s whole job / 1-binary change 7-10min.
+cimemo beats both legs for the go-build scope. The remaining
+serve-change time is go's warm-build floor: action-ID hashing of the
+whole closure + link (~160s on 4-core runners; ~25s on an M1).
+
+Earlier runs: 13.8s/210.6s (2026-11-21), 284.7s serve pre-mtime-fix.
+Regression fixed en route: putFileGzip Stat()'d a closed handle —
+every CI action upload failed silently for one run (found via the
+uploads: N FAILED log line).
 
 ## Cross-runner action-ID drift — root cause & fix (2025-11-21, CI)
 

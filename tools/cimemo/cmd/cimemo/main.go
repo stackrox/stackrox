@@ -189,8 +189,8 @@ func cmdMemoize(args []string, forceFull bool) {
 	// (computable pre-build), and the receipt re-tags instead of
 	// restoring files.
 	if isDocker && !forceFull {
-		if gitFiles := gitTrackedFiles(wd); gitFiles != nil {
-			dk := key.FromFiles(wd, gitFiles, dockerKeyCommand(command, args)+"|"+toolchain+vcsFold(wd))
+		if ctxFiles := dockerContextClosure(wd, args); len(ctxFiles) > 0 {
+			dk := key.FromFiles(wd, ctxFiles, dockerKeyCommand(command, args)+"|"+toolchain+vcsFold(wd))
 			if st.HasManifest(dk) {
 				if m, err := st.GetManifest(dk); err == nil && len(m.ImageOutputs) > 0 {
 					allOK := true
@@ -332,13 +332,12 @@ func cmdMemoize(args []string, forceFull bool) {
 
 	// === Discover the read-set (non-Go commands) ===
 	if isDocker {
-		// Docker builds read the context inside the daemon — host-side
-		// observation is structurally blind. Git-tracked fallback is
-		// the sound closure (Dockerfile + context files).
-		if gitFiles := gitTrackedFiles(wd); gitFiles != nil {
-			readSet = gitFiles
-			strategy = store.StrategyFallback
-		}
+		// The build context IS the input closure — including files
+		// that are outputs of earlier commands (binaries COPYied into
+		// the image). Git-tracked fallback is unsound for image builds
+		// (untracked context files would be invisible to the key).
+		readSet = dockerContextClosure(wd, args)
+		strategy = store.StrategyFallback
 	} else if !isGo {
 		if observed := filterBuildState(wd, reads.Files(wd), builtAt); len(observed) > 0 {
 			readSet = observed
