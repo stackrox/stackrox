@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 import {
+    Content,
+    Divider,
     Pagination,
     Toolbar,
     ToolbarContent,
@@ -7,6 +9,10 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     getAdministrationEventsFilter,
     replaceSearchFilterDomain,
@@ -15,7 +21,9 @@ import {
 } from 'services/AdministrationEventsService';
 import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
 import type { SearchFilter } from 'types/search';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
+import { workloadSearchFilterConfig } from './workloadSearchFilterConfig';
 import SearchFilterDomain from './SearchFilterDomain';
 import SearchFilterLevel from './SearchFilterLevel';
 import SearchFilterResourceType from './SearchFilterResourceType';
@@ -48,16 +56,25 @@ function AdministrationEventsToolbar({
     setSearchFilter,
     updateEvents,
 }: AdministrationEventsToolbarProps): ReactElement {
+    function onFilterChange(newFilter: SearchFilter) {
+        setSearchFilter(newFilter);
+        setPage(1);
+    }
+
     function setDomain(domain: string | undefined) {
-        setSearchFilter(replaceSearchFilterDomain(searchFilter, domain));
+        onFilterChange(replaceSearchFilterDomain(searchFilter, domain));
     }
 
     function setLevel(level: AdministrationEventLevel | undefined) {
-        setSearchFilter(replaceSearchFilterLevel(searchFilter, level));
+        onFilterChange(replaceSearchFilterLevel(searchFilter, level));
     }
 
     function setResourceType(resourceType: string | undefined) {
-        setSearchFilter(replaceSearchFilterResourceType(searchFilter, resourceType));
+        onFilterChange(replaceSearchFilterResourceType(searchFilter, resourceType));
+    }
+
+    function onWorkloadFilterApplied(payload: OnSearchPayload) {
+        onFilterChange(updateSearchFilter(searchFilter, payload));
     }
 
     const { domain, level, resourceType } = getAdministrationEventsFilter(searchFilter);
@@ -119,6 +136,34 @@ function AdministrationEventsToolbar({
                     </ToolbarItem>
                 </ToolbarGroup>
             </ToolbarContent>
+            <ToolbarContent>
+                <ToolbarItem>
+                    <Content component="p">
+                        Optionally, you can constrain image scanning events by filtering for the
+                        workloads that run the image.
+                    </Content>
+                </ToolbarItem>
+            </ToolbarContent>
+            <ToolbarContent>
+                <CompoundSearchFilter
+                    config={workloadSearchFilterConfig}
+                    isDisabled={isDisabled}
+                    searchFilter={searchFilter}
+                    onSearch={onWorkloadFilterApplied}
+                />
+                {getHasSearchApplied(searchFilter) && (
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[]}
+                            config={workloadSearchFilterConfig}
+                            hasClearFilters={false}
+                            onFilterChange={onFilterChange}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                )}
+            </ToolbarContent>
+            <Divider />
         </Toolbar>
     );
 }
