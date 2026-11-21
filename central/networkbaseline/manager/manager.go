@@ -53,4 +53,7 @@ type Manager interface {
 	// GetExternalNetworkPeers returns all external peers for a given deployment, filtered
 	// by the search query and timestamp.
 	GetExternalNetworkPeers(ctx context.Context, deploymentID string, query string, since *time.Time) ([]*v1.NetworkBaselineStatusPeer, error)
+
+	// Stop gracefully shuts down the manager's background worker.
+	Stop()
 }
