@@ -1111,3 +1111,54 @@ func (m mockOIDCToken) Claims(v interface{}) error {
 func (m mockOIDCToken) GetExpiry() time.Time {
 	return time.Now().Add(time.Minute * 2)
 }
+
+// TestCreateBackendRequiresUIEndpoint verifies that the OIDC backend rejects creation
+// without a default UI endpoint, and accepts creation with one or more UI endpoints.
+func TestCreateBackendRequiresUIEndpoint(t *testing.T) {
+	cases := map[string]struct {
+		uiEndpoints []string
+		hasError    bool
+	}{
+		"nil UI endpoints": {
+			uiEndpoints: nil,
+			hasError:    true,
+		},
+		"no UI endpoints": {
+			uiEndpoints: []string{},
+			hasError:    true,
+		},
+		"one UI endpoint": {
+			uiEndpoints: []string{"central.example.com:8443"},
+		},
+		"multiple UI endpoints": {
+			uiEndpoints: []string{"central.example.com:8443", "localhost:8080"},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := NewFactory("/sso").(*factory)
+			f.providerFactoryFunc = func(_ context.Context, _ string) (oidcProvider, error) {
+				return &mockOIDCProvider{
+					t:                      t,
+					responseTypesSupported: allResponseTypes,
+					responseModesSupported: allResponseModes,
+				}, nil
+			}
+
+			config := map[string]string{
+				ClientIDConfigKey:     "test-client-id",
+				ClientSecretConfigKey: "test-client-secret",
+				IssuerConfigKey:       "test-issuer",
+				ModeConfigKey:         "fragment",
+			}
+
+			_, err := f.CreateBackend(context.Background(), "some-id", c.uiEndpoints, config, nil)
+			if c.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
