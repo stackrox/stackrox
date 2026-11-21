@@ -2,8 +2,8 @@
 //
 // Architecture:
 //
-//   FIRST RUN: observe which files a command reads → store read-set in manifest
-//   SUBSEQUENT RUNS: watch read-set via fsnotify → if no changes → cache hit
+//	FIRST RUN: observe which files a command reads → store read-set in manifest
+//	SUBSEQUENT RUNS: watch read-set via fsnotify → if no changes → cache hit
 //
 // fsnotify provides kernel-level change notifications (kqueue on macOS,
 // inotify on Linux) — no polling, no hashing. The warm-path check

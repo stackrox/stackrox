@@ -120,4 +120,3 @@ func (s *Store) Validate(m *Manifest, dir string) (bool, []string) {
 
 	return len(reasons) == 0, reasons
 }
-

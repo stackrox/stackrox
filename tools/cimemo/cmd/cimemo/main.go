@@ -23,6 +23,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -30,6 +31,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davdhacs/cimemo/buildinfo"
 	"github.com/davdhacs/cimemo/gocache"
 	"github.com/davdhacs/cimemo/key"
 	"github.com/davdhacs/cimemo/model"
@@ -106,6 +108,13 @@ func cmdMemoize(args []string, forceFull bool) {
 	if err != nil {
 		fatal("store: %v", err)
 	}
+	// CIMEMO_REMOTE=1: receipts + output blobs in the cloud store, and
+	// the gocache proxy's remote tier on for Go commands (both levels
+	// share the backend and container).
+	if os.Getenv("CIMEMO_REMOTE") == "1" {
+		os.Setenv("CIMEMO_GOCACHE_REMOTE", "1")
+		st.SetRemote(gocache.NewRemoteFromEnv())
+	}
 	mod, err := model.Load(filepath.Join(wd, ".cimemo", "model.json"))
 	if err != nil {
 		fatal("model: %v", err)
@@ -127,8 +136,11 @@ func cmdMemoize(args []string, forceFull bool) {
 	if !forceFull {
 		if m := st.LatestManifestForCommand(command); m != nil {
 			toolchainOK := !isGo || m.Toolchain == toolchain
+			vcsOK := !isGo || !vcsFoldActive() || m.VCSCommit == gitHead(wd)
 			if !toolchainOK {
 				fmt.Printf("[cimemo] MISS: toolchain changed\n")
+			} else if !vcsOK {
+				fmt.Printf("[cimemo] MISS: commit changed (VCS-stamped build)\n")
 			} else if valid, reasons := st.Validate(m, wd); valid {
 				count, bytes, err := st.RestoreManifest(m, wd)
 				if err == nil {
@@ -160,11 +172,12 @@ func cmdMemoize(args []string, forceFull bool) {
 			runPlain(args)
 			return
 		}
-		k := key.FromFiles(wd, readSet, command+"|"+toolchain)
+		k := key.FromFiles(wd, readSet, command+"|"+toolchain+vcsFold(wd))
 		if !forceFull && st.HasManifest(k) {
 			if m, err := st.GetManifest(k); err == nil {
 				count, bytes, err := st.RestoreManifest(m, wd)
 				if err == nil {
+					verifyRestored(m, wd)
 					fmt.Printf("[cimemo] CACHE HIT (keyed): %s — closure re-derived\n", k)
 					fmt.Printf("[cimemo]   %d outputs, %.1f MB (%s)\n",
 						count, float64(bytes)/1024/1024,
@@ -266,7 +279,7 @@ func cmdMemoize(args []string, forceFull bool) {
 	}
 
 	// === Snapshot OUTPUTS ONLY and record provenance ===
-	k := key.FromFiles(wd, readSet, command+"|"+toolchain)
+	k := key.FromFiles(wd, readSet, command+"|"+toolchain+vcsFold(wd))
 	m, err := st.SnapshotOutputs(k, wd, readSet, builtAt)
 	if err != nil {
 		fatal("snapshot: %v", err)
@@ -279,6 +292,20 @@ func cmdMemoize(args []string, forceFull bool) {
 	m.Toolchain = toolchain
 	m.BuiltAt = builtAt
 	m.ActionStats = actionStats
+	m.VCSCommit = gitHead(wd)
+
+	// Buildinfo audit (tier 1): inspect go-binary outputs, record in
+	// the manifest, warn on memoization-blind inputs.
+	for _, ref := range m.Blobs {
+		if info, err := buildinfo.Inspect(filepath.Join(wd, ref.Path)); err == nil && info != nil {
+			m.BuildInfo = info
+			for _, f := range buildinfo.Audit(info, command) {
+				fmt.Printf("[cimemo] AUDIT %s: %s\n", f.Kind, f.Detail)
+				fmt.Printf("[cimemo]   warn: %s\n", f.Warning)
+			}
+			break // first go binary is the story; others are similar
+		}
+	}
 	if err := st.PutManifest(m); err != nil {
 		fatal("manifest store: %v", err)
 	}
@@ -427,6 +454,13 @@ func cmdGC(args []string) {
 	if err != nil {
 		fatal("store: %v", err)
 	}
+	// CIMEMO_REMOTE=1: receipts + output blobs in the cloud store, and
+	// the gocache proxy's remote tier on for Go commands (both levels
+	// share the backend and container).
+	if os.Getenv("CIMEMO_REMOTE") == "1" {
+		os.Setenv("CIMEMO_GOCACHE_REMOTE", "1")
+		st.SetRemote(gocache.NewRemoteFromEnv())
+	}
 	freed, removed, err := st.GC(maxAge)
 	if err != nil {
 		fatal("gc: %v", err)
@@ -474,4 +508,75 @@ func sha256Sum(data []byte) []byte {
 func fatal(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "[cimemo] ERROR: "+format+"\n", args...)
 	os.Exit(1)
+}
+
+// vcsFoldActive reports whether VCS state participates in keys for
+// this run: stamping not provably off (GOFLAGS) and not disabled via
+// .cimemo.json.
+func vcsFoldActive() bool {
+	if strings.Contains(os.Getenv("GOFLAGS"), "-buildvcs=false") {
+		return false
+	}
+	return loadConfig(".").Deterministic.BuildVCS != "off"
+}
+
+// gitHead returns the current commit, or "" outside a repo.
+func gitHead(wd string) string {
+	out, err := exec.Command("git", "-C", wd, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// vcsFold returns the key fragment that makes VCS-stamped builds
+// sound: git HEAD. Skipped when stamping is provably off (GOFLAGS
+// carries -buildvcs=false) or the user opted out via .cimemo.json
+// ("deterministic": {"buildvcs": "off"} — a promise that they disable
+// stamping themselves; cherry-picks then hit by content, correctly).
+func vcsFold(wd string) string {
+	if !vcsFoldActive() {
+		return ""
+	}
+	out, err := exec.Command("git", "-C", wd, "rev-parse", "HEAD").Output()
+	if err != nil {
+		return "" // not a git repo — nothing to fold
+	}
+	return "|commit:" + strings.TrimSpace(string(out))
+}
+
+// configFile is the checkable-in cimemo configuration.
+type configFile struct {
+	Deterministic struct {
+		BuildVCS string `json:"buildvcs"` // "off" to skip VCS key-folding
+	} `json:"deterministic"`
+}
+
+func loadConfig(wd string) configFile {
+	var c configFile
+	data, err := os.ReadFile(filepath.Join(wd, ".cimemo.json"))
+	if err == nil {
+		json.Unmarshal(data, &c)
+	}
+	return c
+}
+
+// verifyRestored re-inspects a restored go binary against the
+// manifest's recorded buildinfo — the semantic identity check.
+func verifyRestored(m *store.Manifest, wd string) {
+	if m.BuildInfo == nil {
+		return
+	}
+	for _, ref := range m.Blobs {
+		info, err := buildinfo.Inspect(filepath.Join(wd, ref.Path))
+		if err != nil || info == nil {
+			continue
+		}
+		if ok, mismatch := buildinfo.Verify(m.BuildInfo, info); !ok {
+			fmt.Printf("[cimemo] VERIFY FAILED on %s: %s — manifest may be stale\n", ref.Path, mismatch)
+		} else {
+			fmt.Printf("[cimemo] verified: %s buildinfo matches manifest\n", ref.Path)
+		}
+		break
+	}
 }

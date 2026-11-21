@@ -13,6 +13,7 @@
 package store
 
 import (
+	"github.com/davdhacs/cimemo/buildinfo"
 	"github.com/davdhacs/cimemo/gocache"
 
 	"crypto/sha256"
@@ -45,19 +46,22 @@ type Manifest struct {
 	// Provenance: how the read-set was discovered and how to re-derive
 	// it. Strategy picks the revalidation tier (see provenance.go);
 	// Closure re-derives the read-set without re-running the command.
-	Strategy     string            `json:"strategy,omitempty"`
-	ReadSet      []string          `json:"read_set,omitempty"`
-	InputHashes  map[string]string `json:"input_hashes,omitempty"`
-	DirListings  map[string]string `json:"dir_listings,omitempty"`
-	Closure      string            `json:"closure,omitempty"`
-	Toolchain    string            `json:"toolchain,omitempty"`
-	BuiltAt      int64             `json:"built_at,omitempty"`
-	ActionStats  *gocache.Stats    `json:"action_stats,omitempty"`
+	Strategy    string            `json:"strategy,omitempty"`
+	ReadSet     []string          `json:"read_set,omitempty"`
+	InputHashes map[string]string `json:"input_hashes,omitempty"`
+	DirListings map[string]string `json:"dir_listings,omitempty"`
+	Closure     string            `json:"closure,omitempty"`
+	Toolchain   string            `json:"toolchain,omitempty"`
+	BuiltAt     int64             `json:"built_at,omitempty"`
+	ActionStats *gocache.Stats    `json:"action_stats,omitempty"`
+	BuildInfo   *buildinfo.Info   `json:"build_info,omitempty"`
+	VCSCommit   string            `json:"vcs_commit,omitempty"`
 }
 
 // Store is the content-addressed blob store with manifests.
 type Store struct {
-	root string // directory root
+	root   string // directory root
+	remote *gocache.Remote
 }
 
 // New creates a Store rooted at dir.
@@ -105,28 +109,68 @@ func (s *Store) PutBlob(content io.Reader) (string, int64, error) {
 	return hash, int64(len(data)), nil
 }
 
-// GetBlob returns content by hash.
+// GetBlob returns content by hash, fetching from the remote store
+// (with integrity verification) when not local.
 func (s *Store) GetBlob(hash string) ([]byte, error) {
 	data, err := os.ReadFile(s.blobPath(hash))
+	if os.IsNotExist(err) && s.hasRemote() {
+		if ferr := s.remoteFetchBlob(hash); ferr == nil {
+			data, err = os.ReadFile(s.blobPath(hash))
+		}
+	}
 	if os.IsNotExist(err) {
 		return nil, fmt.Errorf("blob not found: %s", hash)
 	}
 	return data, err
 }
 
-// PutManifest stores a manifest (and updates LastRead).
+// writeAtomic + markBlob: small helpers for the remote tier.
+func writeAtomic(path string, data []byte) error {
+	os.MkdirAll(filepath.Dir(path), 0o755)
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
+}
+
+func (s *Store) markBlob(hash string) {}
+
+// PutManifest stores a manifest (and updates LastRead). With a remote
+// attached, also uploads the manifest and its blobs — this is what
+// makes receipts cross-machine.
 func (s *Store) PutManifest(m *Manifest) error {
 	m.LastRead = time.Now()
 	data, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.manifestPath(m.Key), data, 0o644)
+	if err := os.WriteFile(s.manifestPath(m.Key), data, 0o644); err != nil {
+		return err
+	}
+	if s.hasRemote() {
+		if err := s.remoteUploadManifest(m); err != nil {
+			// Remote failure must not fail the build — the local
+			// receipt is still valid on this machine.
+			return nil
+		}
+	}
+	return nil
 }
 
-// GetManifest retrieves a manifest by key, updating LastRead.
+// GetManifest retrieves a manifest by key, updating LastRead. Falls
+// back to the remote store when the local copy is absent.
 func (s *Store) GetManifest(key string) (*Manifest, error) {
 	data, err := os.ReadFile(s.manifestPath(key))
+	if os.IsNotExist(err) && s.hasRemote() {
+		if m, rerr := s.remoteFetchManifest(key); rerr == nil && m != nil {
+			// Cache it locally for subsequent reads.
+			if jdata, jerr := json.MarshalIndent(m, "", "  "); jerr == nil {
+				os.WriteFile(s.manifestPath(key), jdata, 0o644)
+			}
+			return m, nil
+		}
+	}
 	if os.IsNotExist(err) {
 		return nil, fmt.Errorf("manifest not found: %s", key)
 	}
@@ -139,10 +183,16 @@ func (s *Store) GetManifest(key string) (*Manifest, error) {
 	return &m, nil
 }
 
-// HasManifest reports whether a manifest exists.
+// HasManifest reports whether a manifest exists (locally or remote).
 func (s *Store) HasManifest(key string) bool {
-	_, err := os.Stat(s.manifestPath(key))
-	return err == nil
+	if _, err := os.Stat(s.manifestPath(key)); err == nil {
+		return true
+	}
+	if s.hasRemote() {
+		ok, err := s.remote.ExistsPub(remoteManifestPrefix + key)
+		return err == nil && ok
+	}
+	return false
 }
 
 // RestoreManifest restores all blobs referenced by a manifest into dir.

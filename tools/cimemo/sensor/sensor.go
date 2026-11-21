@@ -14,10 +14,10 @@ import (
 type Tier int
 
 const (
-	TierExact      Tier = iota // sound, re-derivable (go list, dep files)
-	TierLearned                // inferred from history; validated or not
-	TierHeuristic              // observation with known blind spots (lsof)
-	TierConservative           // over-approximates on purpose (git-tracked)
+	TierExact        Tier = iota // sound, re-derivable (go list, dep files)
+	TierLearned                  // inferred from history; validated or not
+	TierHeuristic                // observation with known blind spots (lsof)
+	TierConservative             // over-approximates on purpose (git-tracked)
 )
 
 func (t Tier) String() string {

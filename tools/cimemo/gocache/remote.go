@@ -297,6 +297,20 @@ func queueCloudPut(r *Remote, actionIDHex, outputIDHex, dataFilePath string, siz
 	r.upMu.Unlock()
 }
 
+// PutIfNotExistPub / PutPub / ExistsPub: exported wrappers for the
+// cimemo store package (receipts + output blobs share this backend).
+func (r *Remote) PutIfNotExistPub(key string, body []byte) (bool, error) {
+	return r.putIfNotExist(key, body)
+}
+
+func (r *Remote) PutPub(key string, body []byte) error {
+	return r.put(key, body)
+}
+
+func (r *Remote) ExistsPub(key string) (bool, error) {
+	return r.exists(key)
+}
+
 // flushUploadsConcurrent drains the queue with bounded parallelism.
 // Sequential draining measured 476s for a 3,654-action Prometheus
 // build (2 PUTs per action at ~65ms each) — the upload must not be

@@ -132,8 +132,8 @@ func TestGCRemovesOldManifests(t *testing.T) {
 
 	// Store a manifest
 	m := &Manifest{
-		Key:      "old",
-		Blobs:    []BlobRef{{Hash: "abc", Path: "x", Size: 10}},
+		Key:   "old",
+		Blobs: []BlobRef{{Hash: "abc", Path: "x", Size: 10}},
 	}
 	s.PutManifest(m)
 

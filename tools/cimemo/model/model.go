@@ -15,8 +15,8 @@ package model
 import (
 	"encoding/json"
 	"os"
-	"strings"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -29,9 +29,9 @@ type Edge struct {
 
 // Evidence is what we know about an edge.
 type Evidence struct {
-	CoChanges int       `json:"co_changes"`  // full builds where both changed
-	Missed    int       `json:"missed"`      // validations where the edge was absent from a prediction but needed
-	Validated bool      `json:"validated"`   // survived a shadow/audit scoring
+	CoChanges int       `json:"co_changes"` // full builds where both changed
+	Missed    int       `json:"missed"`     // validations where the edge was absent from a prediction but needed
+	Validated bool      `json:"validated"`  // survived a shadow/audit scoring
 	LastSeen  time.Time `json:"last_seen"`
 }
 
