@@ -33,6 +33,12 @@ type IndexerMetadataStore interface {
 	// GCManifests deletes manifests from the manifest_metadata table with timestamps older than expiration (converted to UTC)
 	// and returns their respective IDs.
 	GCManifests(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error)
+	// DeleteManifest immediately and unconditionally deletes the single given manifest, both from
+	// the manifest_metadata table and, via the underlying indexer.Store, from ClairCore's own
+	// manifest/index report/scanned-state tracking. Unlike GCManifests, this targets exactly the
+	// given manifest ID regardless of its expiration, so it is safe to use to force a fresh
+	// re-index of one specific, already-indexed manifest.
+	DeleteManifest(ctx context.Context, manifestID string) error
 }
 
 type indexerMetadataStore struct {

@@ -52,6 +52,23 @@ func (f FetchOption) forceRefetchCachedValues() bool {
 	return f == ForceRefetch || f == ForceRefetchCachedValuesOnly
 }
 
+// forceReindex reports whether this FetchOption already implies bypassing Central's own
+// cached scan and re-asking the configured scanner. These values cause fetchFromDatabase
+// to treat the existing image as not found for scan-reuse purposes, so the scanner is
+// always called again -- but a scanner's own internal index/result cache (e.g. Scanner V4's
+// claircore-backed indexer) has no way to know that, and may still silently return a stale,
+// previously-cached result for the same image content. Scanners that implement
+// ForceReindexer use this signal to also discard their own cached state.
+//
+// Note: ForceRefetchCachedValuesOnly triggers the same fetchFromDatabase short-circuit but
+// is deliberately excluded here -- it drives the continuous periodic reprocessing loop
+// (central/reprocessor), so forcing a real reindex on every cycle would be a severe
+// performance regression. ForceRefetch is included because its only callers are
+// one-off/startup paths (ScanImageInternal, Central's one-time startup reprocessing pass).
+func (f FetchOption) forceReindex() bool {
+	return f == ForceRefetch || f == ForceRefetchScansOnly || f == UseImageNamesRefetchCachedValues
+}
+
 // RequestSource describes where the enrichment request is coming from and allows for better scoping of image pull secrets
 type RequestSource struct {
 	ClusterID        string

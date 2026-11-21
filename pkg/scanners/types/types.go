@@ -44,6 +44,18 @@ type SBOMer interface {
 	ScanSBOM(ctx context.Context, reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error)
 }
 
+// ForceReindexer is implemented by scanners that can bypass their own
+// previously indexed/cached data for an image and perform a genuine re-scan.
+//
+// GetScan alone isn't enough for this: a scanner's own indexing cache may be
+// keyed only on image content (e.g. layer digests), with no way to know that
+// the scanner's own configuration changed since an image was last scanned.
+// Implementations should discard any such cached data and re-index the image
+// from scratch.
+type ForceReindexer interface {
+	GetScanForceReindex(image *storage.Image) (*storage.ImageScan, error)
+}
+
 // ScannerSBOMer represents a Scanner with SBOM generation capabilities. This
 // was initially created for mock generation to simplify tests.
 //
