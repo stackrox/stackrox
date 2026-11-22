@@ -66,6 +66,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Set up GCloud SDK (gke auth plugin)
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+        with:
+          install_components: "gke-gcloud-auth-plugin,beta"
+
       - name: Resolve image tag
         env:
           INPUT_TAG: ${{ inputs.main_image_tag }}
@@ -87,18 +92,15 @@ jobs:
 
       - name: Deploy StackRox
         env:
-          RH_PULL_SECRET: ${{ secrets.RH_PULL_SECRET }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           set -euo pipefail
           export PATH="$PWD/bin/$(go env GOOS)_$(go env GOARCH):$PATH"
           ./scripts/roxie.sh version >/dev/null
 
           kubectl create namespace "$NAMESPACE"
-          echo "$RH_PULL_SECRET" > /tmp/pull-secret.json
-          kubectl -n "$NAMESPACE" create secret docker-registry stackrox \
-            --from-file=.dockerconfigjson=/tmp/pull-secret.json
-          kubectl -n "$NAMESPACE" patch serviceaccount default \
-            -p '{"imagePullSecrets": [{"name": "stackrox"}]}'
+          ./scripts/pull-secret.sh stackrox quay.io | kubectl apply -n "$NAMESPACE" -f -
 
           cat > /tmp/repro-config.yaml <<'EOF'
           central:
