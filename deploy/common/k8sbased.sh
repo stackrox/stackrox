@@ -547,9 +547,7 @@ function launch_central {
       # requiring a second rollout via a post-launch `set env`.
       central_deployment="${unzip_dir}/central/01-central-13-deployment.yaml"
       if [[ -f "${central_deployment}" ]]; then
-        local central_env=(
-          ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s
-        )
+        local central_env=(ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
         if (( ${#feature_flag_env[@]} > 0 )); then
           echo "Injecting feature flag env into Central: ${feature_flag_env[*]}"
           central_env+=("${feature_flag_env[@]}")
