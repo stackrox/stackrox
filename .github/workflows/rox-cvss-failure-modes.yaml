@@ -1,0 +1,165 @@
+name: rox-cvss-failure-modes
+
+# Differentiated reproduction tests for the ROX-36267/ROX-36688 failure family.
+# Each scenario targets one suspected mechanism so failures attribute cleanly:
+#
+#   fresh-load-window    - mechanism C: how long is the matcher Ready-but-
+#                          unqueryable window on a clean initial load?
+#   interrupted-import   - mechanism A: killed mid-import -> poisoned empty
+#                          update_operation -> persistent ready-but-empty.
+#   error-masking        - mechanism E: does Central's scan API surface scan
+#                          pipeline failures, or silently serve stale data?
+#   transient-miss-stress- mechanism D: detectBuildTime returning 0 vuln-policy
+#                          alerts while stored data is complete (retry works).
+#
+# Every probe sample is correlated with Central's log so "empty" scans are
+# attributed to enrichment errors vs genuinely missing data.
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Which scenario to run'
+        type: choice
+        options:
+          - fresh-load-window
+          - interrupted-import
+          - error-masking
+          - transient-miss-stress
+        required: true
+      main_image_tag:
+        description: 'Image tag (defaults to newest 5.1.x tag on quay.io/rhacs-eng/main)'
+        type: string
+        required: false
+      window_threshold_seconds:
+        description: 'fresh-load-window: fail if Ready->usable exceeds this (default 120)'
+        type: number
+        required: false
+      iterations:
+        description: 'transient-miss-stress: number of detectBuildTime calls (default 60)'
+        type: number
+        required: false
+  push:
+    branches:
+      - davdhacs/rox-interrupted-import-repro
+    paths:
+      - .github/workflows/rox-cvss-failure-modes.yaml
+      - scripts/ci/cvss-failure-modes/**
+
+permissions:
+  contents: read
+
+env:
+  CLUSTER_ZONE: us-east4-a
+  NAMESPACE: stackrox
+
+jobs:
+  scenario:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+
+      - name: Job preamble (gcloud auth)
+        uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Resolve image tag
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          INPUT_TAG: ${{ inputs.main_image_tag }}
+        run: |
+          if [[ -n "$INPUT_TAG" ]]; then
+            echo "MAIN_IMAGE_TAG=$INPUT_TAG" >> "$GITHUB_ENV"; exit 0
+          fi
+          tag="$(
+            curl -s -u "${REGISTRY_USERNAME}:${REGISTRY_PASSWORD}" \
+              'https://quay.io/api/v1/repository/rhacs-eng/main/tag/?onlyActiveTags=true&limit=100&filter_tag_name=like:5.1.x' \
+              | jq -r '[.tags[].name | select(test("^5\\.1\\.x-[0-9]+-g[0-9a-f]+$"))] | .[0]'
+          )"
+          [[ -n "$tag" && "$tag" != "null" ]] || { echo "::error::no 5.1.x tag found"; exit 1; }
+          echo "Resolved tag: $tag"
+          echo "MAIN_IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+
+      - name: Create GKE cluster
+        run: |
+          gcloud container clusters create "rox-cvss-fm-${{ github.run_id }}" \
+            --machine-type e2-standard-8 --num-nodes 1 --disk-type pd-ssd --disk-size 200GB \
+            --release-channel stable --zone "$CLUSTER_ZONE" \
+            --enable-ip-alias --network "default" --quiet
+
+      - name: Deploy StackRox
+        env:
+          RH_PULL_SECRET: ${{ secrets.RH_PULL_SECRET }}
+        run: |
+          set -euo pipefail
+          export PATH="$PWD/bin/$(go env GOOS)_$(go env GOARCH):$PATH"
+          ./scripts/roxie.sh version >/dev/null
+
+          kubectl create namespace "$NAMESPACE"
+          echo "$RH_PULL_SECRET" > /tmp/pull-secret.json
+          kubectl -n "$NAMESPACE" create secret docker-registry stackrox \
+            --from-file=.dockerconfigjson=/tmp/pull-secret.json
+          kubectl -n "$NAMESPACE" patch serviceaccount default \
+            -p '{"imagePullSecrets": [{"name": "stackrox"}]}'
+
+          cat > /tmp/repro-config.yaml <<'EOF'
+          central:
+            namespace: stackrox
+            pauseReconciliation: true
+            resourceProfile: ci
+            portForwarding: false
+          securedCluster:
+            namespace: stackrox
+            pauseReconciliation: true
+            resourceProfile: ci
+          EOF
+
+          roxie deploy \
+            --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
+            --envrc /tmp/repro-envrc \
+            --config /tmp/repro-config.yaml \
+            --tag "$MAIN_IMAGE_TAG"
+
+          kubectl -n "$NAMESPACE" patch central stackrox-central-services --type=merge -p '
+          {
+            "spec": {
+              "customize": {
+                "envVars": [
+                  {"name": "SCANNER_V4_MATCHER_READINESS", "value": "vulnerability"},
+                  {"name": "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST", "value": "alpine, debian, epss, manual, ubuntu, nvd, osv, rhel-vex, stackrox-rhel-csaf"},
+                  {"name": "MODULE_LOGLEVELS", "value": "pkg/scanners/scannerv4=debug,pkg/images/enricher=debug"}
+                ]
+              }
+            }
+          }'
+          kubectl -n "$NAMESPACE" annotate central stackrox-central-services stackrox.io/pause-reconcile-
+          kubectl -n "$NAMESPACE" rollout status deploy/central --timeout=600s
+
+      - name: Run scenario
+        env:
+          SCENARIO: ${{ inputs.scenario || 'fresh-load-window' }}
+          WINDOW_THRESHOLD_SECONDS: ${{ inputs.window_threshold_seconds }}
+          ITERATIONS: ${{ inputs.iterations }}
+        run: |
+          # shellcheck disable=SC1091
+          source /tmp/repro-envrc
+          bash "scripts/ci/cvss-failure-modes/${SCENARIO}.sh"
+
+      - name: Dump forensics
+        if: always()
+        run: |
+          # shellcheck disable=SC1091
+          source /tmp/repro-envrc 2>/dev/null || true
+          # shellcheck disable=SC1091
+          source scripts/ci/cvss-failure-modes/lib.sh
+          cvss_dump_forensics || true
+
+      - name: Delete cluster
+        if: always()
+        run: |
+          gcloud container clusters delete "rox-cvss-fm-${{ github.run_id }}" \
+            --zone "$CLUSTER_ZONE" --quiet || true
