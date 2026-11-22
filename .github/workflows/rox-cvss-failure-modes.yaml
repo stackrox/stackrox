@@ -78,9 +78,20 @@ jobs:
           tag="$(
             curl -s -u "${REGISTRY_USERNAME}:${REGISTRY_PASSWORD}" \
               'https://quay.io/api/v1/repository/rhacs-eng/main/tag/?onlyActiveTags=true&limit=100&filter_tag_name=like:5.1.x' \
-              | jq -r '[.tags[].name | select(test("^5\\.1\\.x-[0-9]+-g[0-9a-f]+$"))] | .[0]'
+              | jq -r 'try ([.tags[].name | select(test("^5\\.1\\.x-[0-9]+-g[0-9a-f]+$"))] | .[0]) catch "null"'
           )"
-          [[ -n "$tag" && "$tag" != "null" ]] || { echo "::error::no 5.1.x tag found"; exit 1; }
+          if [[ -z "$tag" || "$tag" == "null" ]]; then
+            # Fallback: nightly tags are public and pushed daily; try today then yesterday.
+            for d in 0 1; do
+              candidate="5.1.x-nightly-$(date -u -d "-${d} day" +%Y%m%d 2>/dev/null || date -u -v-"${d}"d +%Y%m%d)"
+              if curl -s "https://quay.io/v2/rhacs-eng/main/manifests/${candidate}" \
+                   -H "Authorization: Bearer $(curl -s 'https://quay.io/v2/auth?repository=rhacs-eng/main&pull=1' | jq -r .token)" \
+                   -o /dev/null -w '%{http_code}' | grep -q 200; then
+                tag="$candidate"; break
+              fi
+            done
+          fi
+          [[ -n "$tag" && "$tag" != "null" ]] || { echo "::error::no usable image tag found"; exit 1; }
           echo "Resolved tag: $tag"
           echo "MAIN_IMAGE_TAG=$tag" >> "$GITHUB_ENV"
 
