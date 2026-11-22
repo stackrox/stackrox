@@ -552,6 +552,8 @@ deploy_central_via_operator() {
         customize_envVars+=$'\n      - name: MUTEX_WATCHDOG_TIMEOUT_SECS'
         customize_envVars+=$'\n        value: "15"'
     fi
+    customize_envVars+=$'\n      - name: MODULE_LOGLEVELS'
+    customize_envVars+=$'\n        value: "pkg/scanners/scannerv4=debug,pkg/images/enricher=debug"'
     customize_envVars+=$'\n      - name: ROX_BASELINE_GENERATION_DURATION'
     customize_envVars+=$'\n        value: '"${ROX_BASELINE_GENERATION_DURATION}"
     customize_envVars+=$'\n      - name: ROX_DEVELOPMENT_BUILD'

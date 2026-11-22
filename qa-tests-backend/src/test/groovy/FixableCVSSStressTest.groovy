@@ -47,7 +47,8 @@ class FixableCVSSStressTest extends BaseSpecification {
             def maxFixableCvss = (fixable*.cvss).max() ?: 0
 
             long elapsed = (System.currentTimeMillis() - startMs) / 1000
-            samples << "iter=${i}:t=${elapsed}s:alerts=${alerts.size()}:totalAlerts=${allAlerts.size()}:callMs=${callMs}:maxFixableCvss=${maxFixableCvss}:fixableCves=${fixable.size()}"
+            String wall = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date())
+            samples << "iter=${i}:t=${elapsed}s:wall=${wall}:alerts=${alerts.size()}:totalAlerts=${allAlerts.size()}:callMs=${callMs}:maxFixableCvss=${maxFixableCvss}:fixableCves=${fixable.size()}"
             if (alerts.size() != 1) {
                 // Forensics: other policies in the same response
                 def otherPolicies = allAlerts.collect { it.getPolicy().name }.unique().sort()
