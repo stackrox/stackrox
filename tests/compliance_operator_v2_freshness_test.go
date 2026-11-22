@@ -71,7 +71,8 @@ func scanConfigQuery(scanConfigName string, extra ...string) *v2.RawQuery {
 }
 
 // waitForCheckResultsFreshness polls until every check result of profile+scanConfigName reaches
-// want, then returns the last response so callers can read server-side data like LastScanTime.
+// want and Central reports a last scan time (results and the scan-end update arrive as separate
+// sensor messages), then returns the last response so callers can read server-side data.
 func waitForCheckResultsFreshness(t *testing.T, ctx context.Context, client v2.ComplianceResultsServiceClient,
 	clusterID, profile, scanConfigName string, want v2.ComplianceCheckDataFreshness, timeout, interval time.Duration,
 ) *v2.ListComplianceCheckResultResponse {
@@ -92,6 +93,8 @@ func waitForCheckResultsFreshness(t *testing.T, ctx context.Context, client v2.C
 			require.Equalf(c, want, r.GetDataFreshness(), "check %s freshness: got %s, want %s",
 				r.GetCheckName(), r.GetDataFreshness(), want)
 		}
+		require.NotNilf(c, resp.GetLastScanTime(),
+			"Central has not reported a last scan time for profile %s cluster %s yet", profile, clusterID)
 		concurrency.WithLock(&mu, func() { last = resp })
 	}, timeout, interval)
 	t.Logf("Check results of profile %s (scan config %s) on cluster %s reached freshness %s", profile, scanConfigName, clusterID, want)
@@ -165,16 +168,18 @@ func TestComplianceV2FreshnessCurrent(t *testing.T) {
 		ScanName: testID,
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			OneTimeScan:  false,
-			Profiles:     []string{freshnessProfile},
-			Description:  "freshness current e2e test",
-			ScanSchedule: initialSchedule,
+			OneTimeScan: false,
+			Profiles:    []string{freshnessProfile},
+			Description: "freshness current e2e test",
+			// A tick in the recent past won't recur for ~24h, so no scheduled run or sweeper tick
+			// can interfere with this test.
+			ScanSchedule: scheduleAt(time.Now().Add(-5 * time.Minute)),
 		},
 	}
 	resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+		assert.NoError(t, deleteScanConfig(ctx, resp.GetId(), scanConfigService), "failed to delete scan config %s", testID)
 		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
 	})
 
@@ -210,16 +215,18 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 		ScanName: testID,
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			OneTimeScan:  false,
-			Profiles:     []string{freshnessProfile},
-			Description:  "freshness sweeper e2e test",
-			ScanSchedule: initialSchedule,
+			OneTimeScan: false,
+			Profiles:    []string{freshnessProfile},
+			Description: "freshness sweeper e2e test",
+			// A tick in the recent past won't recur for ~24h, so nothing can flip results STALE
+			// before the deliberate tick is set below.
+			ScanSchedule: scheduleAt(time.Now().Add(-5 * time.Minute)),
 		},
 	}
 	resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+		assert.NoError(t, deleteScanConfig(ctx, resp.GetId(), scanConfigService), "failed to delete scan config %s", testID)
 		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
 	})
 
@@ -251,6 +258,22 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 	require.Falsef(t, updatedCfg.GetLastUpdatedTime().AsTime().After(tick),
 		"scan config %s was updated at %s, after the chosen tick %s; the sweeper would reject the tick",
 		testID, updatedCfg.GetLastUpdatedTime().AsTime(), tick)
+
+	// Lower bound: the grace window must be respected. Nothing may mark results STALE before
+	// tick + grace (the two watcher timeouts, 3m with the e2e timings in tests/e2e/lib.sh) has
+	// fully elapsed, so everything must still be CURRENT one minute before that point.
+	time.Sleep(time.Until(tick.Add(2 * time.Minute)))
+	preGraceResp, err := resultsClient.GetComplianceProfileClusterResults(ctx, &v2.ComplianceProfileClusterRequest{
+		ProfileName: freshnessProfile,
+		ClusterId:   clusterID,
+		Query:       scanConfigQuery(testID),
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, preGraceResp.GetCheckResults())
+	for _, r := range preGraceResp.GetCheckResults() {
+		require.Equalf(t, v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, r.GetDataFreshness(),
+			"check %s turned STALE before the grace window elapsed", r.GetCheckName())
+	}
 
 	// The sweeper flips results to STALE once now > tick + grace (the two watcher timeouts,
 	// shortened for e2e in tests/e2e/lib.sh) and detects it on its next sweep. The budget below
@@ -322,7 +345,7 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	resp, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		_ = deleteScanConfig(ctx, resp.GetId(), scanConfigService)
+		assert.NoError(t, deleteScanConfig(ctx, resp.GetId(), scanConfigService), "failed to delete scan config %s", testID)
 		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
 	})
 
@@ -334,9 +357,8 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 	for _, r := range currentResults.GetCheckResults() {
 		priorCheckIDs = append(priorCheckIDs, r.GetCheckId())
 	}
-	// After a completed scan Central reports an end time here, which the rescan clears. The poll
-	// below relies on that to confirm Central ingested the reset.
-	require.NotNil(t, currentResults.GetLastScanTime(), "expected a last scan time after the first completed scan")
+	// A completed scan leaves a last scan time here (the helper above waited for it); the rescan
+	// below clears it, which the later poll relies on to confirm Central ingested the reset.
 
 	// Start a rescan that will never complete once the sensor is cut. Its watcher's prior results
 	// are the ones that should end up STALE.
