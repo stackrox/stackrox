@@ -1,0 +1,266 @@
+name: rox-interrupted-import-repro
+
+# Deterministic reproduction of the ROX-36267/ROX-36688 "ready-but-empty" matcher state.
+#
+# What this reproduces:
+#   1. A matcher pod is killed mid-import (simulating an OOM, rollout, or node drain).
+#   2. The interrupted import leaves an update_operation row whose enrichment records
+#      never committed (empty UO), while the bundle's fingerprint was already recorded.
+#   3. The replacement matcher skips re-importing the bundle: claircore's fingerprint
+#      check matches the EMPTY UO ("fingerprint match, skipping"), and the skip path
+#      still advances last_vuln_update, so Initialized() reports the store complete.
+#   4. The matcher is Ready, but scans return fixable CVEs with CVSS 0 - vulnerability
+#      policies (e.g. "Fixable CVSS >= 7") silently do not fire. The state persists
+#      across restarts until the upstream definitions publish a new fingerprint.
+#
+# Verdict:
+#   - FAIL with forensics = the bug is reproduced (current expectation on master).
+#   - PASS = scans recovered after the interruption (the fix works).
+#
+# Everything needed to debug is dumped on failure: both matcher pod generations' logs,
+# Central scan debug lines, the scanner DB state (last_vuln_update, update_operation
+# record counts), and the full scan sample series.
+
+on:
+  workflow_dispatch:
+    inputs:
+      main_image_tag:
+        description: 'Image tag to deploy (defaults to newest 5.1.x tag on quay.io/rhacs-eng/main)'
+        type: string
+        required: false
+      interrupt_delay_seconds:
+        description: 'Seconds to wait after NVD import starts before killing the matcher pod'
+        type: number
+        required: false
+        default: 10
+
+permissions:
+  contents: read
+
+env:
+  CLUSTER_ZONE: us-east4-a
+  NAMESPACE: stackrox
+  FIXTURE_IMAGE: quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb90d8d89e4e9ddd9e3e0 # ratchet:actions/checkout@v7.0.0
+
+      - name: Job preamble (gcloud auth)
+        uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Resolve image tag
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          INPUT_TAG: ${{ inputs.main_image_tag }}
+        run: |
+          if [[ -n "$INPUT_TAG" ]]; then
+            echo "MAIN_IMAGE_TAG=$INPUT_TAG" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          tag="$(
+            curl -s -u "${REGISTRY_USERNAME}:${REGISTRY_PASSWORD}" \
+              'https://quay.io/api/v1/repository/rhacs-eng/main/tag/?onlyActiveTags=true&limit=100&filter_tag_name=like:5.1.x' \
+              | jq -r '[.tags[].name | select(test("^5\\.1\\.x-[0-9]+-g[0-9a-f]+$"))] | .[0]'
+          )"
+          if [[ -z "$tag" || "$tag" == "null" ]]; then
+            echo "::error::Could not resolve a 5.1.x image tag from quay.io/rhacs-eng/main"
+            exit 1
+          fi
+          echo "Resolved tag: $tag"
+          echo "MAIN_IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+
+      - name: Create GKE cluster
+        run: |
+          gcloud container clusters create "rox-import-repro-${{ github.run_id }}" \
+            --machine-type e2-standard-8 --num-nodes 1 --disk-type pd-ssd --disk-size 200GB \
+            --release-channel stable --zone "$CLUSTER_ZONE" \
+            --enable-ip-alias --network "default" --quiet
+
+      - name: Deploy StackRox
+        env:
+          RH_PULL_SECRET: ${{ secrets.RH_PULL_SECRET }}
+        run: |
+          set -euo pipefail
+          export PATH="$PWD/bin/$(go env GOOS)_$(go env GOARCH):$PATH"
+          ./scripts/roxie.sh version >/dev/null  # install pinned roxie
+
+          kubectl create namespace "$NAMESPACE"
+          echo "$RH_PULL_SECRET" > /tmp/pull-secret.json
+          kubectl -n "$NAMESPACE" create secret docker-registry stackrox \
+            --from-file=.dockerconfigjson=/tmp/pull-secret.json
+          kubectl -n "$NAMESPACE" patch serviceaccount default \
+            -p '{"imagePullSecrets": [{"name": "stackrox"}]}'
+
+          cat > /tmp/repro-config.yaml <<'EOF'
+          central:
+            namespace: stackrox
+            pauseReconciliation: true
+            resourceProfile: ci
+            portForwarding: false
+          securedCluster:
+            namespace: stackrox
+            pauseReconciliation: true
+            resourceProfile: ci
+          EOF
+
+          roxie deploy \
+            --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
+            --envrc /tmp/repro-envrc \
+            --config /tmp/repro-config.yaml \
+            --tag "$MAIN_IMAGE_TAG"
+
+          # CI-equivalent matcher configuration: vulnerability readiness gating,
+          # the CI bundle allowlist, and debug logging on the scan path.
+          kubectl -n "$NAMESPACE" patch central stackrox-central-services --type=merge -p '
+          {
+            "spec": {
+              "customize": {
+                "envVars": [
+                  {"name": "SCANNER_V4_MATCHER_READINESS", "value": "vulnerability"},
+                  {"name": "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST", "value": "alpine, debian, epss, manual, ubuntu, nvd, osv, rhel-vex, stackrox-rhel-csaf"},
+                  {"name": "MODULE_LOGLEVELS", "value": "pkg/scanners/scannerv4=debug,pkg/images/enricher=debug"}
+                ]
+              }
+            }
+          }'
+          # Let the operator propagate the env (pause-reconcile blocks it).
+          kubectl -n "$NAMESPACE" annotate central stackrox-central-services stackrox.io/pause-reconcile-
+          kubectl -n "$NAMESPACE" rollout status deploy/central --timeout=600s
+
+      - name: Interrupt the NVD import
+        env:
+          INTERRUPT_DELAY_SECONDS: ${{ inputs.interrupt_delay_seconds }}
+        run: |
+          set -euo pipefail
+          echo "=== Waiting for the matcher to start importing NVD ..."
+          deadline=$((SECONDS + 2400))
+          matcher_pod=""
+          while (( SECONDS < deadline )); do
+            matcher_pod="$(kubectl -n "$NAMESPACE" get pods -l app=scanner-v4-matcher -o name | head -1 | cut -d/ -f2)"
+            if [[ -n "$matcher_pod" ]] \
+               && kubectl -n "$NAMESPACE" logs "$matcher_pod" 2>/dev/null \
+                    | grep -q '"msg":"importing update".*"updater":"nvd"'; then
+              break
+            fi
+            sleep 5
+          done
+          if [[ -z "$matcher_pod" ]]; then
+            echo "::error::matcher pod never appeared"; exit 1
+          fi
+          if ! kubectl -n "$NAMESPACE" logs "$matcher_pod" 2>/dev/null \
+                 | grep -q '"msg":"importing update".*"updater":"nvd"'; then
+            echo "::error::NVD import never started within ${deadline}s"; exit 1
+          fi
+          echo "NVD import in progress on pod $matcher_pod. Waiting ${INTERRUPT_DELAY_SECONDS}s ..."
+          sleep "$INTERRUPT_DELAY_SECONDS"
+          echo "=== Killing matcher pod mid-import (simulated crash/OOM/rollout) ==="
+          kubectl -n "$NAMESPACE" delete pod "$matcher_pod" --grace-period=0
+
+          echo "=== Waiting for replacement matcher pod to become Ready ..."
+          kubectl -n "$NAMESPACE" wait --for=jsonpath='{.status.containerStatuses[0].ready}'=true \
+            pod -l app=scanner-v4-matcher --timeout=2400s \
+            || { echo "::error::replacement matcher never became ready"; exit 1; }
+          new_pod="$(kubectl -n "$NAMESPACE" get pods -l app=scanner-v4-matcher -o name | head -1 | cut -d/ -f2)"
+          ready_after=$((SECONDS % 10000))
+          echo "Replacement pod $new_pod is Ready."
+          echo "NOTE: if the pod became Ready in well under a minute, the poisoned skip path was taken."
+
+      - name: Verify scan enrichment (the verdict)
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC1091
+          source /tmp/repro-envrc
+          admin_password="$(grep ROX_ADMIN_PASSWORD /tmp/repro-envrc | cut -d= -f2 | tr -d "'\"")"
+
+          echo "=== Probing scans every 10s for up to 15 minutes ..."
+          series=""
+          verdict=""
+          deadline=$((SECONDS + 900))
+          last_zero_time=$SECONDS
+          while (( SECONDS < deadline )); do
+            resp="$(curl -sk --max-time 30 -u "admin:${admin_password}" \
+              -H 'Content-Type: application/json' \
+              -d "{\"imageName\": \"${FIXTURE_IMAGE}\", \"force\": true}" \
+              "https://${API_ENDPOINT}/v1/images/scan" 2>/dev/null || true)"
+            summary="$(jq -r \
+              '[.scan.components[]?.vulns[]? | select(.fixedBy != "")] as $f |
+               "fixable=\($f|length) maxCvss=\([$f[].cvss] | max // 0)"' <<<"$resp" 2>/dev/null || echo "scan_failed")"
+            ts="$(date -u +%H:%M:%S)"
+            echo "SCAN ts=${ts} ${summary}"
+            series+="SCAN ts=${ts} ${summary}"$'\n'
+            if [[ "$summary" =~ maxCvss=([7-9]|[1-9][0-9]) ]]; then
+              verdict="RECOVERED"
+              break
+            fi
+            if [[ "$summary" != "scan_failed" ]]; then
+              last_zero_time=$SECONDS
+            fi
+            # Enrichment broken for >12 min with the matcher Ready = bug reproduced.
+            if (( SECONDS - last_zero_time > 720 )); then
+              verdict="BUG_REPRODUCED"
+              break
+            fi
+            sleep 10
+          done
+
+          echo "$series" > /tmp/scan_series.txt
+          case "$verdict" in
+            RECOVERED)
+              echo "=== PASS: scans recovered after the interrupted import (fix present)."
+              exit 0
+              ;;
+            BUG_REPRODUCED)
+              echo "=== BUG REPRODUCED: matcher is Ready but scans lack CVSS enrichment."
+              echo "See the forensics below: empty update_operation, fingerprint skip, ready gate."
+              exit 1
+              ;;
+            *)
+              echo "=== INCONCLUSIVE: neither recovery nor a sustained broken state observed."
+              exit 1
+              ;;
+          esac
+
+      - name: Dump forensics
+        if: always()
+        run: |
+          set -uo pipefail
+          echo "############ SCAN SERIES ############"
+          cat /tmp/scan_series.txt 2>/dev/null || true
+          echo "############ MATCHER LOGS ############"
+          for pod in $(kubectl -n "$NAMESPACE" get pods -l app=scanner-v4-matcher -o name); do
+            echo "--- $pod:"
+            kubectl -n "$NAMESPACE" logs "$pod" 2>/dev/null | tail -200 || true
+          done
+          echo "############ CENTRAL SCAN DEBUG LINES ############"
+          kubectl -n "$NAMESPACE" logs deploy/central 2>/dev/null \
+            | grep "Vuln report" | tail -30 || true
+          echo "############ SCANNER DB STATE ############"
+          dbpass="$(kubectl -n "$NAMESPACE" get secret scanner-v4-db-password \
+            -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || true)"
+          if [[ -n "$dbpass" ]]; then
+            for q in \
+              "SELECT key, update_timestamp FROM last_vuln_update ORDER BY update_timestamp;" \
+              "SELECT u.id, u.updater, u.date, u.fingerprint,
+                       (SELECT count(*) FROM uo_enrich ue WHERE ue.uo = u.id) AS enrich_records,
+                       (SELECT count(*) FROM uo_vuln uv WHERE uv.uo = u.id) AS vuln_records
+                FROM update_operation u ORDER BY u.date DESC LIMIT 30;"; do
+              echo "--- $q"
+              kubectl -n "$NAMESPACE" exec deploy/scanner-v4-db -c db -- \
+                env PGPASSWORD="$dbpass" psql -U postgres -h localhost -d postgres -c "$q" 2>&1 || true
+            done
+          fi
+          echo "############ END FORENSICS ############"
+
+      - name: Delete cluster
+        if: always()
+        run: |
+          gcloud container clusters delete "rox-import-repro-${{ github.run_id }}" \
+            --zone "$CLUSTER_ZONE" --quiet || true
