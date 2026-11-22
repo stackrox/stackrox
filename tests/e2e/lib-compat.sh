@@ -138,6 +138,9 @@ roxie_config_from_environment_compat() {
         env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
         env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
 
+        # Diagnostic for ROX-36267: debug logging for the scan/enrichment path.
+        env_with_default MODULE_LOGLEVELS "pkg/scanners/scannerv4=debug,pkg/images/enricher=debug"
+
         # Not associated with default values.
         env_with_default ROX_TELEMETRY_API_WHITELIST # central/telemetry/centralclient/client.go
         env_with_default ROX_TELEMETRY_ENDPOINT      # pkg/env/telemetry.go
