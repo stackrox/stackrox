@@ -30,8 +30,8 @@ cvss_scan_summary() {
 # Prints enrichment errors and matcher vuln-report lines from the last <since>.
 cvss_central_scan_log() {
   local since="${1:-12s}"
-  kubectl -n "$NAMESPACE" logs deploy/central --since="$since" 2>/dev/null \
-    | grep -E "Error: Enriching image|Vuln report" | tail -5
+  { kubectl -n "$NAMESPACE" logs deploy/central --since="$since" 2>/dev/null \
+    | grep -E "Error: Enriching image|Vuln report" || true; } | tail -5
 }
 
 # probe_once - the instrumented sample: forced + unforced scan, correlated with
@@ -41,11 +41,11 @@ cvss_probe_once() {
   local forced unforced logline errs report
   forced="$(cvss_scan_summary true)"
   unforced="$(cvss_scan_summary false)"
-  logline="$(cvss_central_scan_log 12s)"
-  errs="$(grep -c "Error: Enriching image" <<<"$logline" || true)"
-  report="$(grep "Vuln report" <<<"$logline" | tail -1 \
-    | grep -oE '[0-9]+ pkg vulns, [0-9]+ vulns' || echo "n/a")"
-  cvss_log "PROBE forced=(${forced}) unforced=(${unforced}) enrich_errors=${errs:-0} matcher_report=${report}"
+  logline="$(cvss_central_scan_log 12s || true)"
+  errs="$(grep -c "Error: Enriching image" <<<"$logline" 2>/dev/null || true)"
+  report="$(grep "Vuln report" <<<"$logline" 2>/dev/null | tail -1 \
+    | grep -oE '[0-9]+ pkg vulns, [0-9]+ vulns' || true)"
+  cvss_log "PROBE forced=(${forced}) unforced=(${unforced}) enrich_errors=${errs:-0} matcher_report=${report:-n/a}"
 }
 
 # matcher_msg <pod> <since> - recent matcher milestone log lines.
@@ -53,8 +53,8 @@ cvss_matcher_milestones() {
   local pod since="${1:-15s}"
   pod="$(kubectl -n "$NAMESPACE" get pods -l app=scanner-v4-matcher -o name | head -1)"
   [ -z "$pod" ] && return 0
-  kubectl -n "$NAMESPACE" logs "$pod" --since="$since" 2>/dev/null \
-    | grep -E '"msg":"(starting update|completed bundle update|completed update|GC started|GC completed|setting to initialized|fingerprint match, skipping|importing update)"' \
+  { kubectl -n "$NAMESPACE" logs "$pod" --since="$since" 2>/dev/null \
+    | grep -E '"msg":"(starting update|completed bundle update|completed update|GC started|GC completed|setting to initialized|fingerprint match, skipping|importing update)"' || true; } \
     | python3 -c "
 import json,sys
 for line in sys.stdin:

@@ -125,7 +125,13 @@ jobs:
           }'
           # Let the operator propagate the env (pause-reconcile blocks it).
           kubectl -n "$NAMESPACE" annotate central stackrox-central-services stackrox.io/pause-reconcile-
-          kubectl -n "$NAMESPACE" rollout status deploy/central --timeout=600s
+          # The env change rolls every StackRox deployment; wait for ALL of them
+          # so the scenario does not race the rollout.
+          for d in central central-db central-worker config-controller \
+                   scanner-v4-db scanner-v4-indexer scanner-v4-matcher \
+                   admission-control sensor; do
+            kubectl -n "$NAMESPACE" rollout status "deploy/$d" --timeout=900s
+          done
 
       - name: Interrupt the NVD import
         env:
