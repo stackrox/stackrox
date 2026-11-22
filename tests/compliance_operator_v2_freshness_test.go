@@ -172,8 +172,6 @@ func TestComplianceV2FreshnessCurrent(t *testing.T) {
 		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
 	})
 
-	_, err = scanConfigService.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
-	require.NoErrorf(t, err, "failed to run scan config %s", testID)
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
 
 	waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile, testID,
@@ -219,8 +217,6 @@ func TestComplianceV2FreshnessStaleViaSweeper(t *testing.T) {
 		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
 	})
 
-	_, err = scanConfigService.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
-	require.NoErrorf(t, err, "failed to run scan config %s", testID)
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
 	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile, testID,
 		v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, waitForDoneTimeout, waitForDoneInterval)
@@ -324,8 +320,6 @@ func TestComplianceV2FreshnessStaleViaScanWatcherTimeout(t *testing.T) {
 		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
 	})
 
-	_, err = scanConfigService.RunComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: resp.GetId()})
-	require.NoErrorf(t, err, "failed to run scan config %s", testID)
 	waitForComplianceSuiteToComplete(t, dynClient, resp.GetScanName(), waitForDoneInterval, waitForDoneTimeout)
 	currentResults := waitForCheckResultsFreshness(t, ctx, resultsClient, clusterID, freshnessProfile, testID,
 		v2.ComplianceCheckDataFreshness_COMPLIANCE_CHECK_DATA_FRESHNESS_CURRENT, waitForDoneTimeout, waitForDoneInterval)
