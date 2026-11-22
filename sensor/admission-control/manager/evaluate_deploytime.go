@@ -110,6 +110,15 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return pass(req.UID), nil
 	}
 
+	// Enforced deploy-time policies are compiled into these sets when settings
+	// are applied. Neither set can deny the request when both are empty, so
+	// skip decoding the workload.
+	if !hasEnforcedDeployTimePolicies(s) {
+		log.Debugf("No enforced deploy-time policies, allowing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+		observeAdmissionReview(reviewResultAllowed, 0)
+		return pass(req.UID), nil
+	}
+
 	start := time.Now()
 	log.Debugf("Not bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 
@@ -228,6 +237,11 @@ func (m *manager) evaluateSlowPath(s *state, req *admission.AdmissionRequest, de
 	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
 	observeAdmissionReview(reviewResultDenied, time.Since(start))
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass(), 0)), nil
+}
+
+func hasEnforcedDeployTimePolicies(s *state) bool {
+	return len(s.specOnlyDeployDetector.PolicySet().GetCompiledPolicies()) > 0 ||
+		len(s.enrichmentRequiredDeployDetector.PolicySet().GetCompiledPolicies()) > 0
 }
 
 func toPlaceholderImages(deployment *storage.Deployment) []*storage.Image {
