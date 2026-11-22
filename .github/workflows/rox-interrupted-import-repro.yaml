@@ -81,18 +81,15 @@ jobs:
 
       - name: Deploy StackRox
         env:
-          RH_PULL_SECRET: ${{ secrets.RH_PULL_SECRET }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           set -euo pipefail
           export PATH="$PWD/bin/$(go env GOOS)_$(go env GOARCH):$PATH"
           ./scripts/roxie.sh version >/dev/null  # install pinned roxie
 
           kubectl create namespace "$NAMESPACE"
-          echo "$RH_PULL_SECRET" > /tmp/pull-secret.json
-          kubectl -n "$NAMESPACE" create secret docker-registry stackrox \
-            --from-file=.dockerconfigjson=/tmp/pull-secret.json
-          kubectl -n "$NAMESPACE" patch serviceaccount default \
-            -p '{"imagePullSecrets": [{"name": "stackrox"}]}'
+          ./scripts/pull-secret.sh stackrox quay.io | kubectl apply -n "$NAMESPACE" -f -
 
           cat > /tmp/repro-config.yaml <<'EOF'
           central:
