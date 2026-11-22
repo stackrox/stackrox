@@ -125,6 +125,16 @@ jobs:
           }'
           # Let the operator propagate the env (pause-reconcile blocks it).
           kubectl -n "$NAMESPACE" annotate central stackrox-central-services stackrox.io/pause-reconcile-
+          # Wait for the operator to actually propagate the env to the matcher
+          # (rollout status alone can pass on the old pods before reconcile).
+          for i in $(seq 1 60); do
+            if kubectl -n "$NAMESPACE" get deploy scanner-v4-matcher -o json \
+                | jq -e '.spec.template.spec.containers[0].env[]? | select(.name == "SCANNER_V4_MATCHER_READINESS" and .value == "vulnerability")' >/dev/null 2>&1; then
+              echo "matcher env propagated after ~$((i * 10))s"
+              break
+            fi
+            sleep 10
+          done
           # The env change rolls every StackRox deployment; wait for ALL of them
           # so the scenario does not race the rollout.
           for d in central central-db central-worker config-controller \
