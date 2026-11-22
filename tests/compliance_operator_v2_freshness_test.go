@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
@@ -138,6 +139,11 @@ func scaleSensorDownForTest(ctx context.Context, t *testing.T, k8sClient kuberne
 	t.Cleanup(func() {
 		scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 1)
 		waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 1)
+		// Sensor's readiness probe succeeds unconditionally, so also wait until Central sees the
+		// sensor again; otherwise the next test's first message to sensor fails.
+		connCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+		defer cancel()
+		waitUntilCentralSensorConnectionIs(t, connCtx, storage.ClusterHealthStatus_HEALTHY)
 	})
 	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 0)
 	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 0)
