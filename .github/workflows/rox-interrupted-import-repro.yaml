@@ -33,6 +33,11 @@ on:
         type: number
         required: false
         default: 10
+  push:
+    branches:
+      - davdhacs/rox-interrupted-import-repro
+    paths:
+      - .github/workflows/rox-interrupted-import-repro.yaml
 
 permissions:
   contents: read
