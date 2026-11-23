@@ -211,8 +211,10 @@ generator, and pooled generators can be discarded.
   random source when needed. Use it only for tests that can accept either real
   or deterministic randomness and have no parallel ancestors.
 
-Do not disable FIPS globally to accommodate fake time. The upstream clock fix is
-[here](https://github.com/golang/go/commit/a81b20a431ce41417f7758929a2962d95a6a9453).
+Do not disable FIPS globally to accommodate fake time. Once Go 1.27 is the
+minimum supported version, verify that the affected tests pass with FIPS enabled
+without `PrepareRandomForSynctest`. The [upstream fix](https://github.com/golang/go/commit/a81b20a431ce41417f7758929a2962d95a6a9453)
+uses the system monotonic clock for FIPS entropy collection inside a synctest bubble.
 
 ### Error handling
  
