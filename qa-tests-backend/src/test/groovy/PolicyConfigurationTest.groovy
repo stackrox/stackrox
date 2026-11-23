@@ -738,29 +738,28 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     private void logScopeViolationDiagnostics(
             Deployment deployment, String policyID, String policyName) {
-        log.error("Policy scope violation diagnostics for deployment ${deployment.name}, " +
+        log.info("Policy scope violation diagnostics for deployment ${deployment.name}, " +
                 "policy ${policyName} (${policyID})")
 
         try {
-            def storedPolicy = Services.getPolicy(policyID)
-            log.error("Stored policy: ${storedPolicy}")
+            log.info("Stored policy: ${Services.getPolicy(policyID)}")
         } catch (Exception e) {
-            log.error("Unable to read policy ${policyID}: ${e}")
+            log.info("Unable to read policy ${policyID}", e)
         }
 
+        def request = ListAlertsRequest.newBuilder()
+                .setQuery("Deployment:${deployment.name}".toString())
+                .build()
         try {
-            def alerts = AlertService.getViolations(
-                    ListAlertsRequest.newBuilder()
-                            .setQuery("Deployment:${deployment.name}".toString())
-                            .build())
-            log.error("Alerts for deployment ${deployment.name}: ${alerts.size()}")
+            def alerts = AlertService.getViolations(request)
+            log.info("Alerts for deployment ${deployment.name}: ${alerts.size()}")
             alerts.each { alert ->
-                log.error("  alert id=${alert.id} policy=${alert.policy.name} state=${alert.state} " +
+                log.info("  alert id=${alert.id} policy=${alert.policy.name} state=${alert.state} " +
                         "deployment=${alert.deployment.name} inactive=${alert.deployment.inactive} " +
                         "time=${alert.time}")
             }
         } catch (Exception e) {
-            log.error("Unable to list alerts for deployment ${deployment.name}: ${e}")
+            log.info("Unable to list alerts for deployment ${deployment.name}", e)
         }
     }
 
