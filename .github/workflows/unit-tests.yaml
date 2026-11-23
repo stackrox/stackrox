@@ -60,6 +60,8 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
+      env:
+        GODEBUG: fips140=on
       run: ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # ratchet:codecov/codecov-action@v7.1.1
