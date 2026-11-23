@@ -6,7 +6,7 @@ metadata:
 spec:
   imagePullSecrets:
   - name: e2e-test-pull-secret
-  # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
+  # Resource settings should be in sync with /deploy/roxie-config-local-dev.yaml
   central:
     adminPasswordSecret:
       name: admin-pass
