@@ -28,22 +28,56 @@ func (f fixedAuthorizer) Authorized(context.Context, string) error {
 	return f.Err
 }
 
-// RecordingAuthorizer captures every Authorized call for inspection.
-type RecordingAuthorizer struct {
-	Calls    int
-	Contexts []context.Context
-	Methods  []string
-	Err      error
+// RecordingAuthorizer is an Authorizer that captures every Authorized call
+// for inspection.
+type RecordingAuthorizer interface {
+	authz.Authorizer
+
+	// CallCount returns the number of recorded Authorized calls.
+	CallCount() int
+	// CallContexts returns the contexts received by the recorded Authorized calls.
+	CallContexts() []context.Context
+	// CallMethods returns the method names received by the recorded Authorized calls.
+	CallMethods() []string
 }
 
-var _ authz.Authorizer = (*RecordingAuthorizer)(nil)
+// recordingAuthorizer is the unexported implementation of RecordingAuthorizer.
+type recordingAuthorizer struct {
+	calls    int
+	contexts []context.Context
+	methods  []string
+	err      error
+}
+
+var _ RecordingAuthorizer = (*recordingAuthorizer)(nil)
 
 // Authorized records the call and returns the preset error, or nil if none was set.
-func (r *RecordingAuthorizer) Authorized(ctx context.Context, method string) error {
-	r.Calls++
-	r.Contexts = append(r.Contexts, ctx)
-	r.Methods = append(r.Methods, method)
-	return r.Err
+func (r *recordingAuthorizer) Authorized(ctx context.Context, method string) error {
+	r.calls++
+	r.contexts = append(r.contexts, ctx)
+	r.methods = append(r.methods, method)
+	return r.err
+}
+
+// NewRecordingAuthorizer returns a RecordingAuthorizer whose fields are all
+// unset. The testing.TB parameter is ignored.
+func NewRecordingAuthorizer(_ testing.TB) RecordingAuthorizer {
+	return &recordingAuthorizer{}
+}
+
+// CallCount returns the number of recorded Authorized calls.
+func (r *recordingAuthorizer) CallCount() int {
+	return r.calls
+}
+
+// CallContexts returns the contexts received by the recorded Authorized calls.
+func (r *recordingAuthorizer) CallContexts() []context.Context {
+	return r.contexts
+}
+
+// CallMethods returns the method names received by the recorded Authorized calls.
+func (r *recordingAuthorizer) CallMethods() []string {
+	return r.methods
 }
 
 // Allow returns an Authorizer that authorizes every request.

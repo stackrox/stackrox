@@ -57,10 +57,10 @@ func TestOr_Authorized(t *testing.T) {
 
 // TestOr_ShortCircuit verifies subsequent authorizers are not called once one succeeds.
 func TestOr_ShortCircuit(t *testing.T) {
-	second := &testutils.RecordingAuthorizer{}
+	second := testutils.NewRecordingAuthorizer(t)
 	err := Or(testutils.Allow(t), second).Authorized(t.Context(), "")
 	assert.NoError(t, err)
-	assert.Equal(t, 0, second.Calls, "second authorizer must not be called after first succeeds")
+	assert.Equal(t, 0, second.CallCount(), "second authorizer must not be called after first succeeds")
 }
 
 // TestOr_ForwardsContextAndMethod verifies ctx and methodName reach each sub-authorizer.
@@ -68,12 +68,12 @@ func TestOr_ForwardsContextAndMethod(t *testing.T) {
 	ctx := context.WithValue(t.Context(), struct{ key string }{"k"}, "v")
 	const method = "/some.Service/Method"
 
-	rec := &testutils.RecordingAuthorizer{}
+	rec := testutils.NewRecordingAuthorizer(t)
 	err := Or(rec).Authorized(ctx, method)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, rec.Calls)
-	assert.Equal(t, []string{method}, rec.Methods)
-	assert.Equal(t, []context.Context{ctx}, rec.Contexts)
+	assert.Equal(t, 1, rec.CallCount())
+	assert.Equal(t, []string{method}, rec.CallMethods())
+	assert.Equal(t, []context.Context{ctx}, rec.CallContexts())
 }
 
 func TestOr_ReturnsAuthorizer(t *testing.T) {

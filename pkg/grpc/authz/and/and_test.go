@@ -59,10 +59,10 @@ func TestAnd_Authorized(t *testing.T) {
 
 // TestAnd_NoShortCircuit verifies all authorizers are evaluated regardless of failures.
 func TestAnd_NoShortCircuit(t *testing.T) {
-	second := &testutils.RecordingAuthorizer{}
+	second := testutils.NewRecordingAuthorizer(t)
 	err := And(testutils.Deny(t), second).Authorized(context.Background(), "")
 	assert.ErrorIs(t, err, errox.NotAuthorized)
-	assert.Equal(t, 1, second.Calls, "second authorizer must be called even when first fails")
+	assert.Equal(t, 1, second.CallCount(), "second authorizer must be called even when first fails")
 }
 
 // TestAnd_ForwardsContextAndMethod verifies ctx and methodName reach each sub-authorizer.
@@ -70,13 +70,13 @@ func TestAnd_ForwardsContextAndMethod(t *testing.T) {
 	ctx := context.WithValue(context.Background(), struct{ key string }{"k"}, "v")
 	const method = "/some.Service/Method"
 
-	rec := &testutils.RecordingAuthorizer{}
+	rec := testutils.NewRecordingAuthorizer(t)
 	err := And(rec).Authorized(ctx, method)
 
 	assert.NoError(t, err)
-	require.Len(t, rec.Contexts, 1)
-	assert.Equal(t, ctx, rec.Contexts[0])
-	assert.Equal(t, method, rec.Methods[0])
+	require.Equal(t, 1, rec.CallCount())
+	assert.Equal(t, []context.Context{ctx}, rec.CallContexts())
+	assert.Equal(t, []string{method}, rec.CallMethods())
 }
 
 func TestAnd_ReturnsAuthorizer(t *testing.T) {

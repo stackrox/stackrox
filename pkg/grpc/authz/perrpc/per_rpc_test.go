@@ -68,24 +68,24 @@ func TestPerRPC_Authorized(t *testing.T) {
 
 func TestPerRPC_Authorized_ForwardsRPCName(t *testing.T) {
 	t.Run("to matched authorizer", func(it *testing.T) {
-		rec := &testutils.RecordingAuthorizer{}
+		rec := testutils.NewRecordingAuthorizer(it)
 		pr := &perRPC{
 			Default:     testutils.Deny(it),
 			Authorizers: map[string]authz.Authorizer{methodA: rec},
 		}
 		err := pr.Authorized(it.Context(), methodA)
-		assert.Equal(it, []string{methodA}, rec.Methods)
+		assert.Equal(it, []string{methodA}, rec.CallMethods())
 		assert.NoError(it, err)
 	})
 
 	t.Run("to default authorizer", func(it *testing.T) {
-		rec := &testutils.RecordingAuthorizer{}
+		rec := testutils.NewRecordingAuthorizer(it)
 		pr := &perRPC{
 			Default:     rec,
 			Authorizers: map[string]authz.Authorizer{methodA: testutils.Allow(it)},
 		}
 		err := pr.Authorized(it.Context(), methodB)
-		assert.Equal(it, []string{methodB}, rec.Methods)
+		assert.Equal(it, []string{methodB}, rec.CallMethods())
 		assert.NoError(it, err)
 	})
 }
@@ -131,8 +131,8 @@ func TestFromMap(t *testing.T) {
 	t.Run("duplicate rpcName returns deny.Everyone", func(it *testing.T) {
 		// Two distinct authorizers mapping the same method — programming error.
 		// FromMap must return deny.Everyone() directly; neither configured authorizer should be called.
-		rec1 := &testutils.RecordingAuthorizer{}
-		rec2 := &testutils.RecordingAuthorizer{}
+		rec1 := testutils.NewRecordingAuthorizer(it)
+		rec2 := testutils.NewRecordingAuthorizer(it)
 		a := FromMap(map[authz.Authorizer][]string{
 			rec1: {methodA},
 			rec2: {methodA},
@@ -143,7 +143,7 @@ func TestFromMap(t *testing.T) {
 		assert.ErrorIs(it, a.Authorized(it.Context(), methodB), errox.NoAuthzConfigured)
 
 		// Neither configured authorizer should have been called.
-		assert.Zero(it, rec1.Calls, "first authorizer must not be called")
-		assert.Zero(it, rec2.Calls, "second authorizer must not be called")
+		assert.Zero(it, rec1.CallCount(), "first authorizer must not be called")
+		assert.Zero(it, rec2.CallCount(), "second authorizer must not be called")
 	})
 }
