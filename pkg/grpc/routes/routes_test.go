@@ -7,30 +7,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/testutils"
 )
-
-// recordingAuthorizer records every Authorized invocation and returns the
-// configured error (nil means the request is authorized).
-type recordingAuthorizer struct {
-	returnErr error
-
-	calls []struct {
-		ctx            context.Context
-		fullMethodName string
-	}
-}
-
-func (a *recordingAuthorizer) Authorized(ctx context.Context, fullMethodName string) error {
-	a.calls = append(a.calls, struct {
-		ctx            context.Context
-		fullMethodName string
-	}{ctx: ctx, fullMethodName: fullMethodName})
-	return a.returnErr
-}
 
 func TestCustomRouteHandler(t *testing.T) {
 	const route = "/api/test/route"
@@ -44,14 +25,14 @@ func TestCustomRouteHandler(t *testing.T) {
 		expectServerHandlerCall bool
 	}{
 		"authorized request passes through the post-auth interceptor to the server handler": {
-			authorizer:              &recordingAuthorizer{},
+			authorizer:              testutils.NewRecordingAuthorizer(t),
 			expectStatus:            http.StatusOK,
 			expectAuthorizerCalls:   1,
 			expectInterceptorCalls:  1,
 			expectServerHandlerCall: true,
 		},
 		"unauthorized request is rejected without invoking the post-auth interceptor": {
-			authorizer:              &recordingAuthorizer{returnErr: errox.NotAuthorized},
+			authorizer:              testutils.NewRejectingRecordingAuthorizer(t, errox.NotAuthorized),
 			expectStatus:            http.StatusForbidden,
 			expectAuthorizerCalls:   1,
 			expectInterceptorCalls:  0,
@@ -105,13 +86,15 @@ func TestCustomRouteHandler(t *testing.T) {
 
 			// The comma-ok form guards the "nil authorizer" case, where the
 			// authorizer falls back to deny.Everyone and is never recorded.
-			if authorizer, ok := tc.authorizer.(*recordingAuthorizer); ok {
-				require.Len(t, authorizer.calls, tc.expectAuthorizerCalls)
+			if authorizer, ok := tc.authorizer.(testutils.RecordingAuthorizer); ok {
 				if tc.expectAuthorizerCalls > 0 {
 					// The authorizer must be exercised with the HTTP-equivalent
 					// RPC name and the context of the incoming request.
-					assert.Equal(t, RPCNameForHTTP(route, http.MethodGet), authorizer.calls[0].fullMethodName)
-					assert.Equal(t, reqCtx, authorizer.calls[0].ctx)
+					assert.Equal(t, []string{RPCNameForHTTP(route, http.MethodGet)}, authorizer.CallMethods())
+					assert.Equal(t, []context.Context{reqCtx}, authorizer.CallContexts())
+				} else {
+					assert.Empty(t, authorizer.CallMethods())
+					assert.Empty(t, authorizer.CallContexts())
 				}
 			}
 
