@@ -26,18 +26,37 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// This file documents the caching behavior that amplifies the ROX-36267 /
-// ROX-36688 failure family: a scan stored while the scanner's vulnerability
-// data was incomplete (e.g. the matcher reported ready before NVD CVSS
-// enrichment finished) is served by every subsequent force=false enrichment,
-// even after the scanner would return complete data. Only a forced refetch
-// (or an equivalent cache-invalidation mechanism) replaces the stored scan.
+// PROBLEM: vulnerability policies can silently not fire for images whose
+// scan was stored during a vulnerability-data loading window.
 //
-// In the CI failures, both the pre-scan and the test's own scans use
-// force=false (UseCachesIfPossible), and the test retry loops only retry
-// errors - so the stored incomplete scan is final for the whole test run.
-// See the corresponding e2e scenario (scripts/ci/cvss-failure-modes) for the
-// full end-to-end demonstration.
+// MECHANISM (demonstrated by the test below):
+//
+//	1. The scanner (e.g. Scanner V4 matcher) reports ready before its
+//	   vulnerability data is fully loaded (see ROX-36267, ROX-36688).
+//	2. A scan of an image during that window succeeds: the image is
+//	   indexed (components present) but has no scored vulnerabilities.
+//	   Central stores this scan.
+//	3. Every subsequent scan request with force=false (the default for
+//	   both /v1/images/scan and detectBuildTime) reuses the STORED scan
+//	   without consulting the scanner - even after the vulnerability
+//	   data has finished loading. The stored scan is indistinguishable
+//	   from a legitimately clean scan.
+//	4. Vulnerability policies (e.g. "Fixable CVSS >= 7") therefore do not
+//	   fire for that image, silently, for as long as the stored scan is
+//	   served.
+//
+// The CI test failures this family produced were confounding for years
+// precisely because of step 3: the data was loaded and the matcher was
+// serving correct results, but the tests read the cached empty scan.
+// Retry loops did not help because the response is a success, not an error.
+//
+// FIX DIRECTION: invalidate (or refuse to serve) stored scans whose
+// vulnerability data predates the latest vulnerability-definition update.
+// When such a fix lands, the Phase 2 assertions below should be flipped to
+// expect the fresh scan; this test then becomes the regression guard.
+//
+// See also the e2e scenarios in scripts/ci/cvss-failure-modes for the
+// end-to-end demonstration (trigger + amplifier + observed failure).
 
 // switchableFakeScanner is an ImageScanner whose scan result can be switched
 // mid-test, simulating the vulnerability store loading: first the incomplete
@@ -208,9 +227,12 @@ func TestStoredScanServedAfterScannerDataChanges(t *testing.T) {
 	// Central stores the enriched image.
 	stored = img1
 
-	// Phase 2: the vulnerability data finished loading (the scanner would now
-	// return complete results). A force=false enrichment - exactly what the
-	// failing tests use - must consult... what actually happens:
+	// Phase 2: THE BUG. The vulnerability data finished loading - the scanner
+	// would now return complete results - but a force=false enrichment
+	// (the default for /v1/images/scan and detectBuildTime, i.e. exactly
+	// what the CI tests use) serves the STORED incomplete scan instead.
+	// The scanner is never consulted; the response is a success; callers
+	// cannot distinguish this from a legitimately clean scan.
 	scanner.setScan(loadedScan())
 	callsBefore := scanner.callCount()
 
@@ -219,17 +241,17 @@ func TestStoredScanServedAfterScannerDataChanges(t *testing.T) {
 		EnrichmentContext{FetchOpt: UseCachesIfPossible}, img2)
 	require.NoError(t, err)
 
-	// DOCUMENTED BEHAVIOR (the amplifier): the stored incomplete scan is
-	// reused; the scanner is not consulted; the enrichment reports success.
-	// The image served to callers has components but no vulnerabilities,
-	// indistinguishable from a legitimately clean scan.
+	// If these assertions FAIL, the caching was fixed: force=false now
+	// reflects updated scanner data. Flip them to expect the good scan
+	// (ScanSucceeded, scanner consulted, vulnerabilities present) and keep
+	// this test as the regression guard.
 	assert.Equal(t, ScanReused, result2.ScanResult,
-		"the stored scan is reused without consulting the scanner")
+		"BUG (documented): the stored incomplete scan is reused")
 	assert.Equal(t, callsBefore, scanner.callCount(),
-		"the scanner was NOT consulted despite its data having changed")
+		"BUG (documented): the scanner was NOT consulted despite its data having changed")
 	require.NotNil(t, img2.GetScan())
 	assert.Empty(t, img2.GetScan().GetComponents()[0].GetVulns(),
-		"the served scan still has no vulnerabilities")
+		"BUG (documented): the served scan still has no vulnerabilities")
 
 	// Phase 3: only a forced refetch replaces the stored scan.
 	img3 := newImage()
