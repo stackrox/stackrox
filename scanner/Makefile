@@ -267,7 +267,7 @@ db-integration-go-tag  := scanner_db_integration
 .PHONY: db-integration-test
 db-integration-test: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -buildvcs=false -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/...
 
 ##################
 ## Certificates ##
