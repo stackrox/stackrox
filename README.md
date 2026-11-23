@@ -475,6 +475,11 @@ $ make fast-sensor
 
 # Only compile protobuf
 $ make proto-generated-srcs
+
+# Build all images (operator + operand) from this repo, sharing the tag from `make tag`,
+# which is often called a "main tag". Use `SKIP_EXISTING_IMAGES=1` to skip rebuilding images.
+#
+$ make all-images SKIP_EXISTING_IMAGES=1
 ```
 </details>
 
