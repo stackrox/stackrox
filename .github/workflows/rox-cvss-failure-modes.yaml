@@ -31,6 +31,14 @@ on:
         description: 'Image tag (defaults to newest 5.1.x tag on quay.io/rhacs-eng/main)'
         type: string
         required: false
+      matcher_readiness:
+        description: 'Matcher readiness config: vulnerability (gated, CI config) or default (database-ping, customer default)'
+        type: choice
+        options:
+          - vulnerability
+          - default
+        required: false
+        default: vulnerability
       window_threshold_seconds:
         description: 'fresh-load-window: fail if Ready->usable exceeds this (default 120)'
         type: number
@@ -94,6 +102,7 @@ jobs:
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          MATCHER_READINESS: ${{ inputs.matcher_readiness || 'vulnerability' }}
         run: |
           set -euo pipefail
           export PATH="$PWD/bin/$(go env GOOS)_$(go env GOARCH):$PATH"
@@ -120,18 +129,37 @@ jobs:
             --config /tmp/repro-config.yaml \
             --tag "$MAIN_IMAGE_TAG"
 
-          kubectl -n "$NAMESPACE" patch central stackrox-central-services --type=merge -p '
-          {
-            "spec": {
-              "customize": {
-                "envVars": [
-                  {"name": "SCANNER_V4_MATCHER_READINESS", "value": "vulnerability"},
-                  {"name": "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST", "value": "alpine, debian, epss, manual, ubuntu, nvd, osv, rhel-vex, stackrox-rhel-csaf"},
-                  {"name": "MODULE_LOGLEVELS", "value": "pkg/scanners/scannerv4=debug,pkg/images/enricher=debug"}
-                ]
+          # With matcher_readiness=default, SCANNER_V4_MATCHER_READINESS is
+          # deliberately omitted: that is the customer-default configuration,
+          # where the matcher reports Ready (database reachable) while the
+          # vulnerability store is still loading - the failure this scenario
+          # exists to demonstrate (measured: ~23 min Ready-but-unusable).
+          if [[ "$MATCHER_READINESS" == "vulnerability" ]]; then
+            kubectl -n "$NAMESPACE" patch central stackrox-central-services --type=merge -p '
+            {
+              "spec": {
+                "customize": {
+                  "envVars": [
+                    {"name": "SCANNER_V4_MATCHER_READINESS", "value": "vulnerability"},
+                    {"name": "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST", "value": "alpine, debian, epss, manual, ubuntu, nvd, osv, rhel-vex, stackrox-rhel-csaf"},
+                    {"name": "MODULE_LOGLEVELS", "value": "pkg/scanners/scannerv4=debug,pkg/images/enricher=debug"}
+                  ]
+                }
               }
-            }
-          }'
+            }'
+          else
+            kubectl -n "$NAMESPACE" patch central stackrox-central-services --type=merge -p '
+            {
+              "spec": {
+                "customize": {
+                  "envVars": [
+                    {"name": "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST", "value": "alpine, debian, epss, manual, ubuntu, nvd, osv, rhel-vex, stackrox-rhel-csaf"},
+                    {"name": "MODULE_LOGLEVELS", "value": "pkg/scanners/scannerv4=debug,pkg/images/enricher=debug"}
+                  ]
+                }
+              }
+            }'
+          fi
           kubectl -n "$NAMESPACE" annotate central stackrox-central-services stackrox.io/pause-reconcile-
           # Wait for the operator to actually propagate the env to the matcher
           # (rollout status alone can pass on the old pods before reconcile).
