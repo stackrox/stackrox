@@ -1,8 +1,0 @@
-spec:
-  template:
-    spec:
-      containers:
-      - name: matcher
-        resources:
-          requests:
-            cpu: "400m"
