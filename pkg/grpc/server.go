@@ -56,13 +56,6 @@ func init() {
 	grpc_logging.InitGrpcLogger()
 }
 
-func gatewayIncomingHeaderMatcher(key string) (string, bool) {
-	if strings.EqualFold(key, "Grpc-Metadata-Rox-Requestinfo") {
-		return "", false
-	}
-	return runtime.DefaultHeaderMatcher(key)
-}
-
 var (
 	log = logging.LoggerForModule()
 
@@ -432,7 +425,6 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 			},
 		}}),
 		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD),
-		runtime.WithIncomingHeaderMatcher(gatewayIncomingHeaderMatcher),
 		runtime.WithOutgoingHeaderMatcher(allowCookiesHeaderMatcher),
 		runtime.WithMarshalerOption(
 			"application/json+pretty", customMarshaler{&runtime.JSONPb{
