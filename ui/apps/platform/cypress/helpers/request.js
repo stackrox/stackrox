@@ -184,9 +184,11 @@ export function interceptAndOverridePermissions(overrides) {
  * Shortcut function to override feature flags. Will overwrite the feature flags for the user
  * with the provided enabled/disabled statuses, keeping the rest of the feature flags the same.
  * @param {Record<string, boolean>} overrides Feature flag env var to enabled boolean mapping
+ * @param {string} featureFlagsUrl URL glob of the feature flags request; the OCP console plugin
+ *        serves it under the /api-service proxy, so plugin tests must pass the proxied glob
  */
-export function interceptAndOverrideFeatureFlags(overrides) {
-    return cy.intercept('GET', '/v1/featureflags', (req) =>
+export function interceptAndOverrideFeatureFlags(overrides, featureFlagsUrl = '/v1/featureflags') {
+    return cy.intercept('GET', featureFlagsUrl, (req) =>
         req.continue((res) => {
             Object.entries(overrides).forEach(([feature, enabled]) => {
                 const flag = res.body.featureFlags.find((flag) => flag.envVar === feature);

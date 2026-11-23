@@ -4,9 +4,10 @@ import { assertVisibleTableColumns } from '../../helpers/tableHelpers';
 import { selectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
 import { selectProject } from '../../helpers/ocpConsole';
 import { assertSearchEntities } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.helpers';
-import { interceptAndWatchRequests } from '../../helpers/request';
+import { interceptAndOverrideFeatureFlags, interceptAndWatchRequests } from '../../helpers/request';
 import {
     acsAuthNamespaceHeader,
+    featureFlagsRouteMatcher,
     getImageCVEListRoute,
     getImageCVEListRouteMatcher,
     metadataRoute,
@@ -15,6 +16,10 @@ import {
 
 describe('Security vulnerabilities page', () => {
     it('should display only the expected table columns for each entity type', () => {
+        // The CVE column set depends on ROX_SCANNER_V4, so pin the flag in the plugin's own
+        // response instead of trusting the test environment to have exported the same flag
+        // (ROX-36808).
+        interceptAndOverrideFeatureFlags({ ROX_SCANNER_V4: false }, featureFlagsRouteMatcher.url);
         withOcpAuth();
         visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
         selectProject('All Projects');
@@ -25,8 +30,6 @@ describe('Security vulnerabilities page', () => {
             'CVE',
             'Images by severity',
             'Top CVSS',
-            'Top NVD CVSS',
-            'EPSS probability',
             'First discovered',
             'Published',
         ];

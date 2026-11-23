@@ -1,11 +1,12 @@
 import { visitFromConsoleLeftNavExpandable } from '../../helpers/nav';
 import { withOcpAuth } from '../../helpers/ocpAuth';
 import { assertVisibleTableColumns } from '../../helpers/tableHelpers';
-import { interceptAndWatchRequests } from '../../helpers/request';
+import { interceptAndOverrideFeatureFlags, interceptAndWatchRequests } from '../../helpers/request';
 import pf6 from '../../selectors/pf6';
 import { selectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
 import {
     acsAuthNamespaceHeader,
+    featureFlagsRouteMatcher,
     getImageCVEListRoute,
     getImageCVEListRouteMatcher,
     routeMatcherMapForBasePlugin,
@@ -59,6 +60,9 @@ function visitProjectSecurityTabAndCheckColumns(
     visitFunction: () => void,
     resourceIconTitle: string
 ) {
+    // The CVE column set depends on ROX_SCANNER_V4, so pin the flag in the plugin's own response
+    // instead of trusting the test environment to have exported the same flag (ROX-36808).
+    interceptAndOverrideFeatureFlags({ ROX_SCANNER_V4: false }, featureFlagsRouteMatcher.url);
     visitStackroxProjectSecurityTab(visitFunction, resourceIconTitle);
 
     // Check CVE table columns
@@ -67,8 +71,6 @@ function visitProjectSecurityTabAndCheckColumns(
         'CVE',
         'Images by severity',
         'Top CVSS',
-        'Top NVD CVSS',
-        'EPSS probability',
         'First discovered',
         'Published',
     ];
