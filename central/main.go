@@ -742,7 +742,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	ds := iiDatastore.Singleton()
 	for len(integrations) > 0 {
 		for idx, integration := range integrations {
-			_, exists, _ := ds.GetImageIntegration(imageIntegrationContext, integration.Integration.GetId())
+			exists, _ := ds.ImageIntegrationExists(imageIntegrationContext, integration.Integration.GetId())
 			if exists {
 				delete(integrations, idx)
 				continue
