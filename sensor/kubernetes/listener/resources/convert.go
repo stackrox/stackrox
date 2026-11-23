@@ -385,6 +385,18 @@ func (w *deploymentWrap) processContainerStatuses(
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 			}
 
+			// A workload pinned by a multi-arch index digest (a manifest list) runs a
+			// per-architecture child manifest, and the runtime reports that child digest
+			// in c.ImageID. Prefer the child digest so each architecture is tracked as the
+			// distinct image that actually ran, and is scanned as the correct architecture,
+			// instead of collapsing every architecture onto the shared index digest.
+			if features.MultiArchWorkloadChildDigest.Enabled() {
+				if childDigest := imageUtils.ExtractImageDigest(c.ImageID); childDigest != "" && childDigest != image.GetId() {
+					image.Id = childDigest
+					imageUtils.NormalizeImageFullName(image.GetName(), childDigest)
+				}
+			}
+
 			image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
 			updateImageWithNewerImageName(image, runtimeImageName, true)
 			if features.FlattenImageData.Enabled() {

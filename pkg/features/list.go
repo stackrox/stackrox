@@ -157,6 +157,9 @@ var (
 
 	// LightspeedRiskSummary enables Lightspeed AI risk summary
 	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY", enabled)
+
+	// MultiArchWorkloadChildDigest makes Sensor track the per-architecture child digest for multi-arch workloads pinned by an index digest. Disabled by default.
+	MultiArchWorkloadChildDigest = registerFeature("Sensor tracks the per-architecture child digest for multi-arch workloads pinned by an index digest", "ROX_MULTIARCH_WORKLOAD_CHILD_DIGEST")
 )
 
 // The following feature flags are related to Scanner V4.

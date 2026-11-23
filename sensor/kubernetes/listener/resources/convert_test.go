@@ -430,6 +430,186 @@ func TestPopulateImageMetadata(t *testing.T) {
 	}
 }
 
+func TestPopulateImageMetadataMultiArchChildDigest(t *testing.T) {
+	// Realistic sha256 values for a multi-arch index (manifest list) digest and the
+	// per-arch child manifest digests the container runtime would actually report.
+	const (
+		indexDigest = "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00"
+		amd64Child  = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
+		arm64Child  = "sha256:0f1e2d3c4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0"
+	)
+
+	const repo = "quay.io/example/multiarch"
+	indexPin := repo + "@" + indexDigest
+
+	// A registry/remote that differs from the spec pin, modeling a case where the
+	// container runtime pulled the image from a different location (e.g. a mirror or
+	// an unqualified-search-registry alias) than the spec references.
+	const runtimeRepo = "mirror.example.com/platform/multiarch"
+
+	cases := map[string]struct {
+		multiArchFlag bool
+		// unqualifiedFlag toggles features.UnqualifiedSearchRegistries, which enables
+		// re-syncing the image name (registry/remote) with what the runtime reported.
+		unqualifiedFlag bool
+		// deployImage is the image reference pinned in the deployment/pod spec.
+		deployImage string
+		// imageID is the ID the container runtime reports in the container status.
+		imageID string
+		// expectedID is the digest expected to win on the resulting image record.
+		expectedID string
+		// expectedFullName is the expected image name FullName after processing.
+		expectedFullName string
+	}{
+		"index digest pin, amd64 child reported, flag on": {
+			multiArchFlag:    true,
+			deployImage:      indexPin,
+			imageID:          "docker-pullable://" + repo + "@" + amd64Child,
+			expectedID:       amd64Child,
+			expectedFullName: repo + "@" + amd64Child,
+		},
+		"index digest pin, arm64 child reported, flag on": {
+			multiArchFlag:    true,
+			deployImage:      indexPin,
+			imageID:          "docker-pullable://" + repo + "@" + arm64Child,
+			expectedID:       arm64Child,
+			expectedFullName: repo + "@" + arm64Child,
+		},
+		"runtime digest equals spec digest is a no-op, flag on": {
+			multiArchFlag:    true,
+			deployImage:      indexPin,
+			imageID:          "docker-pullable://" + repo + "@" + indexDigest,
+			expectedID:       indexDigest,
+			expectedFullName: indexPin,
+		},
+		"index digest pin, runtime reports different registry/remote, unqualified+flag on": {
+			// With UnqualifiedSearchRegistries on, the multi-arch block first swaps in the
+			// child digest, then updateImageWithNewerImageName re-points the name at the
+			// registry/remote the runtime actually pulled from, re-normalizing the FullName
+			// around the (now child) digest. The resulting name reflects the runtime
+			// location carrying the child digest.
+			multiArchFlag:    true,
+			unqualifiedFlag:  true,
+			deployImage:      indexPin,
+			imageID:          "docker-pullable://" + runtimeRepo + "@" + amd64Child,
+			expectedID:       amd64Child,
+			expectedFullName: runtimeRepo + "@" + amd64Child,
+		},
+		"empty container image ID on index pin keeps index digest, flag on": {
+			// A not-ready container reports an empty ImageID; the child-digest block must
+			// short-circuit and leave the index digest and name untouched.
+			multiArchFlag:    true,
+			deployImage:      indexPin,
+			imageID:          "",
+			expectedID:       indexDigest,
+			expectedFullName: indexPin,
+		},
+		"index digest pin keeps index digest when flag off": {
+			multiArchFlag:    false,
+			deployImage:      indexPin,
+			imageID:          "docker-pullable://" + repo + "@" + amd64Child,
+			expectedID:       indexDigest,
+			expectedFullName: indexPin,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+			testutils.MustUpdateFeature(t, features.MultiArchWorkloadChildDigest, c.multiArchFlag)
+			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, c.unqualifiedFlag)
+
+			img, err := imageUtils.GenerateImageFromString(c.deployImage)
+			require.NoError(t, err)
+
+			wrap := deploymentWrap{
+				Deployment: &storage.Deployment{},
+			}
+			wrap.Containers = append(wrap.Containers, &storage.Container{
+				Name:  "container-0",
+				Image: img,
+			})
+
+			k8sPod := &v1.Pod{}
+			k8sPod.Spec.Containers = append(k8sPod.Spec.Containers, v1.Container{Name: "container-0", Image: c.deployImage})
+			k8sPod.Status.ContainerStatuses = append(k8sPod.Status.ContainerStatuses, v1.ContainerStatus{
+				Name:    "container-0",
+				ImageID: c.imageID,
+			})
+
+			wrap.populateImageMetadata(set.StringSet{}, k8sPod)
+
+			result := wrap.GetDeployment().GetContainers()[0].GetImage()
+			assert.Equal(t, c.expectedID, result.GetId())
+
+			if c.expectedFullName != "" {
+				assert.Equal(t, c.expectedFullName, result.GetName().GetFullName())
+				// IdV2 is derived from the (full) image name and the winning digest; compute
+				// the expectation independently from the result's name to avoid tautology.
+				expectedName := &storage.ImageName{FullName: c.expectedFullName}
+				assert.Equal(t, utils.NewImageV2ID(expectedName, c.expectedID), result.GetIdV2())
+			}
+		})
+	}
+}
+
+func TestPopulateImageMetadataMultiArchMultipleContainers(t *testing.T) {
+	// A pod with two containers where only one is pinned by a multi-arch index
+	// digest. The index-pinned container's runtime child digest differs from its
+	// spec digest and must be rewritten to the child digest, while the sibling
+	// container whose runtime digest already equals its spec digest must be left
+	// unchanged. This proves the child-digest rewrite matches per container name.
+	testutils.MustUpdateFeature(t, features.MultiArchWorkloadChildDigest, true)
+
+	const (
+		indexDigest     = "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00"
+		amd64Child      = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
+		singleArchChild = "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+	)
+
+	const (
+		multiArchPin  = "quay.io/example/multiarch@" + indexDigest
+		singleArchPin = "quay.io/example/singlearch@" + singleArchChild
+	)
+
+	multiArchImg, err := imageUtils.GenerateImageFromString(multiArchPin)
+	require.NoError(t, err)
+	singleArchImg, err := imageUtils.GenerateImageFromString(singleArchPin)
+	require.NoError(t, err)
+
+	wrap := deploymentWrap{
+		Deployment: &storage.Deployment{},
+	}
+	wrap.Containers = []*storage.Container{
+		{Name: "multiarch", Image: multiArchImg},
+		{Name: "singlearch", Image: singleArchImg},
+	}
+
+	pod := &v1.Pod{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{Name: "multiarch", Image: multiArchPin},
+				{Name: "singlearch", Image: singleArchPin},
+			},
+		},
+		Status: v1.PodStatus{
+			ContainerStatuses: []v1.ContainerStatus{
+				// Runtime reports a per-arch child manifest that differs from the index pin.
+				{Name: "multiarch", ImageID: "docker-pullable://quay.io/example/multiarch@" + amd64Child},
+				// Runtime reports the same digest the single-arch container was pinned by.
+				{Name: "singlearch", ImageID: "docker-pullable://quay.io/example/singlearch@" + singleArchChild},
+			},
+		},
+	}
+
+	wrap.populateImageMetadata(set.StringSet{}, pod)
+
+	// The index-pinned container is rewritten to the per-arch child digest.
+	assert.Equal(t, amd64Child, wrap.GetDeployment().GetContainers()[0].GetImage().GetId())
+	// The single-arch container (runtime digest == spec digest) is unchanged.
+	assert.Equal(t, singleArchChild, wrap.GetDeployment().GetContainers()[1].GetImage().GetId())
+}
+
 func TestPopulateImageMetadataWithInitContainers(t *testing.T) {
 	// Simulates a deployment with init containers in deployment.Containers that do not
 	// appear in pod.Status.ContainerStatuses. Name-based matching should skip the init
