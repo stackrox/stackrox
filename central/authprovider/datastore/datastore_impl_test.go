@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -57,7 +56,7 @@ func (s *authProviderDataStoreEnforceTestSuite) TearDownTest() {
 }
 
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAuthProviderExistsWithName() {
-	s.storage.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	s.storage.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
 
 	const testProviderName = "Test Auth Provider"
 
@@ -181,17 +180,17 @@ func (s *authProviderDataStoreTestSuite) TestErrorOnAdd() {
 func (s *authProviderDataStoreTestSuite) TestAuthProviderExistsWithName() {
 	testProviderName := "Test Auth Provider"
 	s.storage.EXPECT().
-		Search(gomock.Any(), gomock.Any()).
+		Count(gomock.Any(), gomock.Any()).
 		Times(1).
-		Return([]search.Result{{ID: "1234"}}, nil)
+		Return(1, nil)
 	exists, err := s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
 	s.NoError(err)
 	s.True(exists)
 
 	s.storage.EXPECT().
-		Search(gomock.Any(), gomock.Any()).
+		Count(gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(nil, nil)
+		Return(0, nil)
 	exists, err = s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
 	s.NoError(err)
 	s.False(exists)

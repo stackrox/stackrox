@@ -393,6 +393,12 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 			}
 		}
 
+		if exclusion.Image != (Image{}) {
+			protoExclusion.Image = &storage.Exclusion_Image{
+				Name: exclusion.Image.Name,
+			}
+		}
+
 		proto.Exclusions = append(proto.Exclusions, &protoExclusion)
 	}
 

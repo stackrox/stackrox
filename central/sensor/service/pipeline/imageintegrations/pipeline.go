@@ -368,9 +368,9 @@ func (s *pipelineImpl) OnFinish(_ string) {}
 // upsertImageIntegration will add the given image integration within the datastore.
 // It will return any errors during the creation and whether the integration existed previously.
 func (s *pipelineImpl) upsertImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (existed bool, err error) {
-	_, existed, err = s.datastore.GetImageIntegration(ctx, imageIntegration.GetId())
+	existed, err = s.datastore.ImageIntegrationExists(ctx, imageIntegration.GetId())
 	if err != nil {
-		return existed, errors.Wrapf(err, "retrieving image integration %q", imageIntegration.GetId())
+		return existed, errors.Wrapf(err, "checking image integration %q", imageIntegration.GetId())
 	}
 
 	if _, err := s.datastore.AddImageIntegration(ctx, imageIntegration); err != nil {

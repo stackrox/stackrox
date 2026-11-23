@@ -1,0 +1,171 @@
+package freshness
+
+import (
+	"context"
+	"time"
+
+	"github.com/adhocore/gronx"
+	checkResultDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+)
+
+var log = logging.LoggerForModule()
+
+// Sweeper periodically marks compliance check results STALE when their scan configuration's
+// schedule says they should have been refreshed by now but were not. It only ever transitions rows
+// to STALE; CURRENT is owned by the ingest path, and nil-timestamp rows stay UNKNOWN.
+type Sweeper interface {
+	Start()
+	Stop()
+}
+
+type sweeperImpl struct {
+	interval time.Duration
+	ticker   *time.Ticker
+
+	scanConfigDS  scanConfigDS.DataStore
+	checkResultDS checkResultDS.DataStore
+
+	stopper concurrency.Stopper
+}
+
+// New returns a Sweeper that ticks at the given interval, floored to minSweepInterval.
+//
+// interval only bounds detection latency: a result becomes stale at tick+grace but is marked at the
+// next sweep, so lag <= interval. It does not affect correctness, since the cutoff is computed from
+// absolute schedule time.
+func New(scanConfigDS scanConfigDS.DataStore, checkResultDS checkResultDS.DataStore, interval time.Duration) Sweeper {
+	return &sweeperImpl{
+		interval:      clampSweepInterval(interval),
+		scanConfigDS:  scanConfigDS,
+		checkResultDS: checkResultDS,
+		stopper:       concurrency.NewStopper(),
+	}
+}
+
+// Start starts the freshness sweeper loop.
+func (s *sweeperImpl) Start() {
+	s.ticker = time.NewTicker(s.interval)
+	go s.loop()
+}
+
+// Stop stops the freshness sweeper loop.
+func (s *sweeperImpl) Stop() {
+	s.stopper.Client().Stop()
+	_ = s.stopper.Client().Stopped().Wait()
+}
+
+func (s *sweeperImpl) loop() {
+	defer s.stopper.Flow().ReportStopped()
+	defer s.ticker.Stop()
+
+	// The sweeper is a background loop with no user identity: it must read every scan configuration
+	// and mark results stale across all clusters, so grant only Compliance read/read-write rather than
+	// all access. The context is cancelled once shutdown is requested, so in-flight DB calls do not
+	// outlive Stop().
+	ctx := sac.WithGlobalAccessScopeChecker(
+		concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal()),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Compliance),
+		),
+	)
+
+	s.sweep(ctx)
+	for {
+		select {
+		case <-s.stopper.Flow().StopRequested():
+			return
+		case <-s.ticker.C:
+			s.sweep(ctx)
+		}
+	}
+}
+
+// sweep marks STALE the check results of every scan configuration whose most recent scheduled scan
+// had its full grace window elapse without refreshing them.
+func (s *sweeperImpl) sweep(ctx context.Context) {
+	start := time.Now()
+	defer func() { sweepDuration.Observe(time.Since(start).Seconds()) }()
+
+	// Compliance schedules encode their hour/minute in UTC, so evaluate them against UTC "now".
+	// Otherwise, a Central running with a non-UTC TZ would shift the cutoff by its offset and
+	// falsely mark fresh results stale.
+	now := time.Now().UTC()
+	// grace is the combined budget the watchers allow for a scheduled scan to complete and have its
+	// results ingested. A result is stale only once a scheduled start has passed and its grace window
+	// has fully elapsed without new results, so we evaluate the schedule as of (now - grace).
+	grace := env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
+
+	configs, err := s.scanConfigDS.GetScanConfigurations(ctx, search.EmptyQuery())
+	if err != nil {
+		sweepErrors.WithLabelValues("list_configs").Inc()
+		log.Errorf("compliance freshness sweeper: listing scan configurations: %v", err)
+		return
+	}
+
+	for _, cfg := range configs {
+		select {
+		case <-s.stopper.Flow().StopRequested():
+			return
+		default:
+		}
+
+		// cutoff is the latest scheduled start that has already had its full grace period. Results
+		// that started before it were not refreshed in time and are stale.
+		cutoff, ok := previousScheduledStart(cfg.GetSchedule(), now.Add(-grace))
+		if !ok {
+			log.Debugf("compliance freshness sweeper: skipping scan configuration %q: no evaluable schedule", cfg.GetScanConfigName())
+			continue
+		}
+
+		// Do not apply the current schedule to ticks that predate it. A schedule edit bumps
+		// LastUpdatedTime; if cutoff falls before that, the current cadence was not in effect at that
+		// tick, so marking against it would falsely flip results from the old cadence stale. Skip
+		// until a tick under the new schedule has fully elapsed. (LastUpdatedTime changes only on
+		// config create/update and cluster removal, not on scan runs, so steady state is unaffected.)
+		if lu := cfg.GetLastUpdatedTime(); lu != nil && cutoff.Before(lu.AsTime()) {
+			continue
+		}
+
+		n, err := s.checkResultDS.MarkScanChecksStaleByConfig(ctx, cfg.GetScanConfigName(), cutoff)
+		if err != nil {
+			sweepErrors.WithLabelValues("mark_stale").Inc()
+			log.Errorf("compliance freshness sweeper: marking results stale for scan configuration %q: %v", cfg.GetScanConfigName(), err)
+			continue
+		}
+		if n > 0 {
+			resultsMarkedStale.Add(float64(n))
+			log.Infof("compliance freshness sweeper: marked %d check result(s) stale for scan configuration %q", n, cfg.GetScanConfigName())
+		}
+	}
+}
+
+// previousScheduledStart returns the most recent time strictly before ref at which sched expected a
+// scan to start, and true when that time could be computed. It returns false for a nil schedule, a
+// schedule that does not convert to a cron expression (e.g. an UNSET interval), or an unreachable
+// previous tick.
+func previousScheduledStart(sched *storage.Schedule, ref time.Time) (time.Time, bool) {
+	if sched == nil {
+		return time.Time{}, false
+	}
+	cron, err := schedule.ConvertToCronTab(sched)
+	if err != nil || cron == "" {
+		return time.Time{}, false
+	}
+	// gronx evaluates the cron in ref.Location(); schedule hour/minute are UTC, so pin ref to UTC.
+	// inclRefTime=false: we want the previous tick strictly before ref, not ref itself.
+	prev, err := gronx.PrevTickBefore(cron, ref.UTC(), false)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return prev, true
+}

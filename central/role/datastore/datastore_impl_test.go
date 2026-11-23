@@ -212,6 +212,30 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied, "still a permission error if the object does not exist")
 }
 
+func (s *roleDataStoreTestSuite) TestRoleAndPermissionSetExists() {
+	exists, err := s.dataStore.RoleExists(s.hasReadCtx, s.existingRole.GetName())
+	s.NoError(err)
+	s.True(exists)
+
+	exists, err = s.dataStore.RoleExists(s.hasReadCtx, "non-existing role")
+	s.NoError(err)
+	s.False(exists)
+
+	exists, err = s.dataStore.PermissionSetExists(s.hasReadCtx, s.existingPermissionSet.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	exists, err = s.dataStore.PermissionSetExists(s.hasReadCtx, "11111111-1111-1111-1111-111111111111")
+	s.NoError(err)
+	s.False(exists)
+
+	_, err = s.dataStore.RoleExists(s.hasNoneCtx, s.existingRole.GetName())
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	_, err = s.dataStore.PermissionSetExists(s.hasNoneCtx, s.existingPermissionSet.GetId())
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+}
+
 func (s *roleDataStoreTestSuite) TestRoleReadOperations() {
 	const nonExistingRoleName = "non-existing role"
 	fetchedRole, found, err := s.dataStore.GetRole(s.hasReadCtx, nonExistingRoleName)
