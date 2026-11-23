@@ -1,8 +1,19 @@
 package tlsprofile
 
 import (
+	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/fips140"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"math/big"
+	"net"
+	"os"
+	"os/exec"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
@@ -227,4 +238,89 @@ func (s *profileSuite) TestCipherSuites() {
 			s.Equal(tt.want, CipherSuites())
 		})
 	}
+}
+
+func TestCurvePreferencesFIPSHandshake(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mode        string
+		groups      string
+		wantFailure bool
+	}{
+		"x25519 without FIPS": {"off", "X25519", false},
+		"x25519 with FIPS":    {"on", "X25519", true},
+		"p256 with FIPS":      {"on", "secp256r1", false},
+	} {
+		if child := os.Getenv("ROX_TEST_TLS_HANDSHAKE_CASE"); child != "" {
+			if child == name {
+				require.Equal(t, tc.mode == "on", fips140.Enabled())
+				checkProfileHandshake(t, tc.wantFailure)
+				return
+			}
+			continue
+		}
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestCurvePreferencesFIPSHandshake$")
+			cmd.Env = append(os.Environ(), "ROX_TEST_TLS_HANDSHAKE_CASE="+name,
+				"GODEBUG=fips140="+tc.mode, "ROX_TLS_GROUPS="+tc.groups)
+			output, err := cmd.CombinedOutput()
+			require.NoError(t, err, "%s", output)
+		})
+	}
+	require.Empty(t, os.Getenv("ROX_TEST_TLS_HANDSHAKE_CASE"), "unknown handshake case")
+}
+
+func checkProfileHandshake(t *testing.T, wantFailure bool) {
+	t.Helper()
+	const hostname = "tlsprofile.test"
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	now := time.Now()
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		DNSNames:     []string{hostname},
+		NotBefore:    now.Add(-time.Minute),
+		NotAfter:     now.Add(time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+	cert := tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}
+	leaf, err := x509.ParseCertificate(der)
+	require.NoError(t, err)
+	roots := x509.NewCertPool()
+	roots.AddCert(leaf)
+
+	serverConn, clientConn := net.Pipe()
+	defer serverConn.Close()
+	defer clientConn.Close()
+	deadline := time.Now().Add(5 * time.Second)
+	require.NoError(t, serverConn.SetDeadline(deadline))
+	require.NoError(t, clientConn.SetDeadline(deadline))
+
+	server := tls.Server(serverConn, &tls.Config{
+		MinVersion:       tls.VersionTLS13,
+		Certificates:     []tls.Certificate{cert},
+		CurvePreferences: CurvePreferences(),
+	})
+	client := tls.Client(clientConn, &tls.Config{
+		MinVersion: tls.VersionTLS13,
+		ServerName: hostname,
+		RootCAs:    roots,
+		// Offer a key share usable by each successful case without a retry.
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	})
+	serverResult := make(chan error, 1)
+	go func() { serverResult <- server.Handshake() }()
+	clientErr := client.Handshake()
+	serverErr := <-serverResult
+	if wantFailure {
+		require.ErrorContains(t, serverErr, "no key exchanges supported by both client and server")
+		require.Error(t, clientErr)
+		return
+	}
+	require.NoError(t, clientErr, "server handshake error: %v", serverErr)
+	require.NoError(t, serverErr)
 }
