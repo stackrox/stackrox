@@ -108,8 +108,10 @@ jobs:
             resourceProfile: ci
           EOF
 
+          # early-readiness=true: this scenario must observe the live initial
+          # import, so the deploy must not wait out the vuln-gated readiness.
           roxie deploy \
-            --early-readiness=false --central-wait=2h --secured-cluster-wait=2h \
+            --early-readiness=true --central-wait=2h --secured-cluster-wait=2h \
             --envrc /tmp/repro-envrc \
             --config /tmp/repro-config.yaml \
             --tag "$MAIN_IMAGE_TAG"
@@ -150,8 +152,7 @@ jobs:
                    admission-control sensor; do
             kubectl -n "$NAMESPACE" rollout status "deploy/$d" --timeout=900s
           done
-          kubectl -n "$NAMESPACE" wait --for=jsonpath='{.status.containerStatuses[0].ready}'=true \
-            pod -l app=scanner-v4-matcher --timeout=2400s
+
 
       - name: Interrupt the NVD import
         env:
