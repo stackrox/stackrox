@@ -7,37 +7,9 @@ import (
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
-
-// fixedAuthorizer always returns the same preset error (nil = allow).
-type fixedAuthorizer struct {
-	err error
-}
-
-func (f fixedAuthorizer) Authorized(_ context.Context, _ string) error { return f.err }
-
-// recordingAuthorizer captures every Authorized call for inspection.
-type recordingAuthorizer struct {
-	calls []struct {
-		ctx        context.Context
-		methodName string
-	}
-	err error
-}
-
-func (r *recordingAuthorizer) Authorized(ctx context.Context, methodName string) error {
-	r.calls = append(r.calls, struct {
-		ctx        context.Context
-		methodName string
-	}{ctx, methodName})
-	return r.err
-}
-
-var (
-	allow = fixedAuthorizer{}
-	deny  = fixedAuthorizer{err: errox.NotAuthorized}
 )
 
 func TestAnd_Authorized(t *testing.T) {
@@ -51,29 +23,29 @@ func TestAnd_Authorized(t *testing.T) {
 			authorizers: nil,
 		},
 		"single authorizer allows": {
-			authorizers: []authz.Authorizer{allow},
+			authorizers: []authz.Authorizer{testutils.Allow(t)},
 		},
 		"single authorizer denies": {
-			authorizers: []authz.Authorizer{deny},
+			authorizers: []authz.Authorizer{testutils.Deny(t)},
 			wantErr:     errox.NotAuthorized,
 		},
 		"all authorizers allow": {
-			authorizers: []authz.Authorizer{allow, allow, allow},
+			authorizers: []authz.Authorizer{testutils.Allow(t), testutils.Allow(t), testutils.Allow(t)},
 		},
 		"all authorizers deny": {
-			authorizers: []authz.Authorizer{deny, deny, deny},
+			authorizers: []authz.Authorizer{testutils.Deny(t), testutils.Deny(t), testutils.Deny(t)},
 			wantErr:     errox.NotAuthorized,
 		},
 		"first denies, second allows": {
-			authorizers: []authz.Authorizer{deny, allow},
+			authorizers: []authz.Authorizer{testutils.Deny(t), testutils.Allow(t)},
 			wantErr:     errox.NotAuthorized,
 		},
 		"first allows, second denies": {
-			authorizers: []authz.Authorizer{allow, deny},
+			authorizers: []authz.Authorizer{testutils.Allow(t), testutils.Deny(t)},
 			wantErr:     errox.NotAuthorized,
 		},
 		"non-NotAuthorized error is wrapped in NotAuthorized": {
-			authorizers: []authz.Authorizer{fixedAuthorizer{err: customErr}},
+			authorizers: []authz.Authorizer{testutils.FixedAuthorizer(t, customErr)},
 			wantErr:     errox.NotAuthorized,
 		},
 	}
@@ -87,10 +59,10 @@ func TestAnd_Authorized(t *testing.T) {
 
 // TestAnd_NoShortCircuit verifies all authorizers are evaluated regardless of failures.
 func TestAnd_NoShortCircuit(t *testing.T) {
-	second := &recordingAuthorizer{}
-	err := And(deny, second).Authorized(context.Background(), "")
+	second := &testutils.RecordingAuthorizer{}
+	err := And(testutils.Deny(t), second).Authorized(context.Background(), "")
 	assert.ErrorIs(t, err, errox.NotAuthorized)
-	assert.Len(t, second.calls, 1, "second authorizer must be called even when first fails")
+	assert.Equal(t, 1, second.Calls, "second authorizer must be called even when first fails")
 }
 
 // TestAnd_ForwardsContextAndMethod verifies ctx and methodName reach each sub-authorizer.
@@ -98,13 +70,13 @@ func TestAnd_ForwardsContextAndMethod(t *testing.T) {
 	ctx := context.WithValue(context.Background(), struct{ key string }{"k"}, "v")
 	const method = "/some.Service/Method"
 
-	rec := &recordingAuthorizer{}
+	rec := &testutils.RecordingAuthorizer{}
 	err := And(rec).Authorized(ctx, method)
 
 	assert.NoError(t, err)
-	require.Len(t, rec.calls, 1)
-	assert.Equal(t, ctx, rec.calls[0].ctx)
-	assert.Equal(t, method, rec.calls[0].methodName)
+	require.Len(t, rec.Contexts, 1)
+	assert.Equal(t, ctx, rec.Contexts[0])
+	assert.Equal(t, method, rec.Methods[0])
 }
 
 func TestAnd_ReturnsAuthorizer(t *testing.T) {

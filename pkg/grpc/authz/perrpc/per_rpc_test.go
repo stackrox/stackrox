@@ -1,36 +1,13 @@
 package perrpc
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
-
-// fixedAuthorizer always returns the same preset error (nil = allow).
-type fixedAuthorizer struct {
-	err error
-}
-
-func (f fixedAuthorizer) Authorized(_ context.Context, _ string) error { return f.err }
-
-// recordingAuthorizer captures the last rpcName it received.
-type recordingAuthorizer struct {
-	lastRPCName string
-	err         error
-}
-
-func (r *recordingAuthorizer) Authorized(_ context.Context, rpcName string) error {
-	r.lastRPCName = rpcName
-	return r.err
-}
-
-var (
-	allowAll  = fixedAuthorizer{}
-	rejectAll = fixedAuthorizer{err: errox.NotAuthorized}
 )
 
 const (
@@ -46,37 +23,37 @@ func TestPerRPC_Authorized(t *testing.T) {
 	}{
 		"known RPC, mapped authorizer allows": {
 			perRPC: &perRPC{
-				Default:     rejectAll,
-				Authorizers: map[string]authz.Authorizer{methodA: allowAll},
+				Default:     testutils.Deny(t),
+				Authorizers: map[string]authz.Authorizer{methodA: testutils.Allow(t)},
 			},
 			rpcName: methodA,
 		},
 		"known RPC, mapped authorizer denies": {
 			perRPC: &perRPC{
-				Default:     allowAll,
-				Authorizers: map[string]authz.Authorizer{methodA: rejectAll},
+				Default:     testutils.Allow(t),
+				Authorizers: map[string]authz.Authorizer{methodA: testutils.Deny(t)},
 			},
 			rpcName: methodA,
 			wantErr: errox.NotAuthorized,
 		},
 		"unknown RPC, default allows": {
 			perRPC: &perRPC{
-				Default:     allowAll,
-				Authorizers: map[string]authz.Authorizer{methodA: rejectAll},
+				Default:     testutils.Allow(t),
+				Authorizers: map[string]authz.Authorizer{methodA: testutils.Deny(t)},
 			},
 			rpcName: methodB,
 		},
 		"unknown RPC, default denies": {
 			perRPC: &perRPC{
-				Default:     rejectAll,
-				Authorizers: map[string]authz.Authorizer{methodA: allowAll},
+				Default:     testutils.Deny(t),
+				Authorizers: map[string]authz.Authorizer{methodA: testutils.Allow(t)},
 			},
 			rpcName: methodB,
 			wantErr: errox.NotAuthorized,
 		},
 		"empty authorizers map falls through to default": {
 			perRPC: &perRPC{
-				Default:     allowAll,
+				Default:     testutils.Allow(t),
 				Authorizers: map[string]authz.Authorizer{},
 			},
 			rpcName: methodA,
@@ -91,24 +68,24 @@ func TestPerRPC_Authorized(t *testing.T) {
 
 func TestPerRPC_Authorized_ForwardsRPCName(t *testing.T) {
 	t.Run("to matched authorizer", func(it *testing.T) {
-		rec := &recordingAuthorizer{}
+		rec := &testutils.RecordingAuthorizer{}
 		pr := &perRPC{
-			Default:     rejectAll,
+			Default:     testutils.Deny(it),
 			Authorizers: map[string]authz.Authorizer{methodA: rec},
 		}
 		err := pr.Authorized(it.Context(), methodA)
-		assert.Equal(it, methodA, rec.lastRPCName)
+		assert.Equal(it, []string{methodA}, rec.Methods)
 		assert.NoError(it, err)
 	})
 
 	t.Run("to default authorizer", func(it *testing.T) {
-		rec := &recordingAuthorizer{}
+		rec := &testutils.RecordingAuthorizer{}
 		pr := &perRPC{
 			Default:     rec,
-			Authorizers: map[string]authz.Authorizer{methodA: allowAll},
+			Authorizers: map[string]authz.Authorizer{methodA: testutils.Allow(it)},
 		}
 		err := pr.Authorized(it.Context(), methodB)
-		assert.Equal(it, methodB, rec.lastRPCName)
+		assert.Equal(it, []string{methodB}, rec.Methods)
 		assert.NoError(it, err)
 	})
 }
@@ -122,21 +99,21 @@ func TestFromMap(t *testing.T) {
 
 	t.Run("mapped method uses its authorizer", func(it *testing.T) {
 		a := FromMap(map[authz.Authorizer][]string{
-			allowAll: {methodA},
+			testutils.Allow(it): {methodA},
 		})
 		assert.NoError(it, a.Authorized(it.Context(), methodA))
 	})
 
 	t.Run("unmapped method uses deny default", func(it *testing.T) {
 		a := FromMap(map[authz.Authorizer][]string{
-			allowAll: {methodA},
+			testutils.Allow(it): {methodA},
 		})
 		assert.ErrorIs(it, a.Authorized(it.Context(), methodB), errox.NoAuthzConfigured)
 	})
 
 	t.Run("multiple methods per authorizer all routed correctly", func(it *testing.T) {
 		a := FromMap(map[authz.Authorizer][]string{
-			allowAll: {methodA, methodB},
+			testutils.Allow(it): {methodA, methodB},
 		})
 		assert.NoError(it, a.Authorized(it.Context(), methodA))
 		assert.NoError(it, a.Authorized(it.Context(), methodB))
@@ -144,8 +121,8 @@ func TestFromMap(t *testing.T) {
 
 	t.Run("multiple authorizers each method routed to its own", func(it *testing.T) {
 		a := FromMap(map[authz.Authorizer][]string{
-			allowAll:  {methodA},
-			rejectAll: {methodB},
+			testutils.Allow(it): {methodA},
+			testutils.Deny(it):  {methodB},
 		})
 		assert.NoError(it, a.Authorized(it.Context(), methodA))
 		assert.ErrorIs(it, a.Authorized(it.Context(), methodB), errox.NotAuthorized)
@@ -154,8 +131,8 @@ func TestFromMap(t *testing.T) {
 	t.Run("duplicate rpcName returns deny.Everyone", func(it *testing.T) {
 		// Two distinct authorizers mapping the same method — programming error.
 		// FromMap must return deny.Everyone() directly; neither configured authorizer should be called.
-		rec1 := &recordingAuthorizer{}
-		rec2 := &recordingAuthorizer{}
+		rec1 := &testutils.RecordingAuthorizer{}
+		rec2 := &testutils.RecordingAuthorizer{}
 		a := FromMap(map[authz.Authorizer][]string{
 			rec1: {methodA},
 			rec2: {methodA},
@@ -166,7 +143,7 @@ func TestFromMap(t *testing.T) {
 		assert.ErrorIs(it, a.Authorized(it.Context(), methodB), errox.NoAuthzConfigured)
 
 		// Neither configured authorizer should have been called.
-		assert.Empty(it, rec1.lastRPCName, "first authorizer must not be called")
-		assert.Empty(it, rec2.lastRPCName, "second authorizer must not be called")
+		assert.Zero(it, rec1.Calls, "first authorizer must not be called")
+		assert.Zero(it, rec2.Calls, "second authorizer must not be called")
 	})
 }

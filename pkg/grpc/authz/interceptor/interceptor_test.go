@@ -10,25 +10,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-type registeringHandlerBase struct {
-	called bool
-}
-
-func (b *registeringHandlerBase) Handler(_ context.Context, _ interface{}) (interface{}, error) {
-	b.called = true
-	return nil, nil
-}
-
-type serverWithAuthorizer struct {
-	authZError error
-}
-
-func (s *serverWithAuthorizer) AuthFuncOverride(ctx context.Context, methodName string) (context.Context, error) {
-	return ctx, s.authZError
-}
-
-type serverWithoutAuthFuncOverride struct{}
-
 func TestAuthStatusString(t *testing.T) {
 	for name, tc := range map[string]struct {
 		authZError error

@@ -2,6 +2,7 @@ package or
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -9,36 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-)
-
-// fixedAuthorizer always returns the same preset error (nil = allow).
-type fixedAuthorizer struct {
-	err error
-}
-
-func (f fixedAuthorizer) Authorized(_ context.Context, _ string) error { return f.err }
-
-// recordingAuthorizer captures every Authorized call for inspection.
-type recordingAuthorizer struct {
-	calls    int
-	contexts []context.Context
-	methods  []string
-	err      error
-}
-
-func (r *recordingAuthorizer) Authorized(ctx context.Context, method string) error {
-	r.calls++
-	r.contexts = append(r.contexts, ctx)
-	r.methods = append(r.methods, method)
-	return r.err
-}
-
-var (
-	allow = fixedAuthorizer{}
-	deny  = fixedAuthorizer{err: errox.NotAuthorized}
 )
 
 func TestOr_Authorized(t *testing.T) {
@@ -52,24 +27,24 @@ func TestOr_Authorized(t *testing.T) {
 			wantErr:     errox.NotAuthorized,
 		},
 		"single authorizer allows": {
-			authorizers: []authz.Authorizer{allow},
+			authorizers: []authz.Authorizer{testutils.Allow(t)},
 		},
 		"single authorizer denies": {
-			authorizers: []authz.Authorizer{deny},
+			authorizers: []authz.Authorizer{testutils.Deny(t)},
 			wantErr:     errox.NotAuthorized,
 		},
 		"all authorizers allow": {
-			authorizers: []authz.Authorizer{allow, allow, allow},
+			authorizers: []authz.Authorizer{testutils.Allow(t), testutils.Allow(t), testutils.Allow(t)},
 		},
 		"all authorizers deny": {
-			authorizers: []authz.Authorizer{deny, deny, deny},
+			authorizers: []authz.Authorizer{testutils.Deny(t), testutils.Deny(t), testutils.Deny(t)},
 			wantErr:     errox.NotAuthorized,
 		},
 		"first allows, second denies": {
-			authorizers: []authz.Authorizer{allow, deny},
+			authorizers: []authz.Authorizer{testutils.Allow(t), testutils.Deny(t)},
 		},
 		"first denies, second allows": {
-			authorizers: []authz.Authorizer{deny, allow},
+			authorizers: []authz.Authorizer{testutils.Deny(t), testutils.Allow(t)},
 		},
 	}
 	for name, tt := range tests {
@@ -82,10 +57,10 @@ func TestOr_Authorized(t *testing.T) {
 
 // TestOr_ShortCircuit verifies subsequent authorizers are not called once one succeeds.
 func TestOr_ShortCircuit(t *testing.T) {
-	second := &recordingAuthorizer{}
-	err := Or(allow, second).Authorized(t.Context(), "")
+	second := &testutils.RecordingAuthorizer{}
+	err := Or(testutils.Allow(t), second).Authorized(t.Context(), "")
 	assert.NoError(t, err)
-	assert.Equal(t, 0, second.calls, "second authorizer must not be called after first succeeds")
+	assert.Equal(t, 0, second.Calls, "second authorizer must not be called after first succeeds")
 }
 
 // TestOr_ForwardsContextAndMethod verifies ctx and methodName reach each sub-authorizer.
@@ -93,12 +68,12 @@ func TestOr_ForwardsContextAndMethod(t *testing.T) {
 	ctx := context.WithValue(t.Context(), struct{ key string }{"k"}, "v")
 	const method = "/some.Service/Method"
 
-	rec := &recordingAuthorizer{}
+	rec := &testutils.RecordingAuthorizer{}
 	err := Or(rec).Authorized(ctx, method)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, rec.calls)
-	assert.Equal(t, []string{method}, rec.methods)
-	assert.Equal(t, []context.Context{ctx}, rec.contexts)
+	assert.Equal(t, 1, rec.Calls)
+	assert.Equal(t, []string{method}, rec.Methods)
+	assert.Equal(t, []context.Context{ctx}, rec.Contexts)
 }
 
 func TestOr_ReturnsAuthorizer(t *testing.T) {
@@ -106,42 +81,53 @@ func TestOr_ReturnsAuthorizer(t *testing.T) {
 }
 
 // ctxWithService builds a context carrying a mock identity with the given service type.
-func ctxWithService(t *testing.T, svcType storage.ServiceType) context.Context {
+func ctxWithService(t testing.TB, svcType storage.ServiceType) context.Context {
 	t.Helper()
 	id := mocks.NewMockIdentity(gomock.NewController(t))
 	id.EXPECT().Service().Return(&storage.ServiceIdentity{Type: svcType}).AnyTimes()
 	return authn.ContextWithIdentity(t.Context(), id, t)
 }
 
-func TestSensorOr(t *testing.T) {
-	tests := map[string]struct {
-		ctx         context.Context
-		innerAllows bool
-		wantErr     error
-	}{
-		"sensor identity is allowed": {
-			ctx: ctxWithService(t, storage.ServiceType_SENSOR_SERVICE),
+// serviceOrTestCase is a test case shared by TestSensorOr and TestScannerOr.
+type serviceOrTestCase struct {
+	ctx     context.Context
+	inner   authz.Authorizer
+	wantErr error
+}
+
+// getServiceOrTestCases builds the test cases common to the SensorOr/ScannerOr
+// authorizers: the target service type is allowed regardless of the inner
+// authorizer, the inner authorizer decides for other identities, and anything
+// else is denied.
+func getServiceOrTestCases(t testing.TB, targetServiceType, otherServiceType storage.ServiceType) map[string]serviceOrTestCase {
+	svc := strings.ToLower(strings.TrimSuffix(targetServiceType.String(), "_SERVICE"))
+	return map[string]serviceOrTestCase{
+		svc + " identity is allowed": {
+			ctx:   ctxWithService(t, targetServiceType),
+			inner: testutils.Deny(t),
 		},
-		"inner authorizer allows non-sensor": {
-			ctx:         context.Background(),
-			innerAllows: true,
+		"inner authorizer allows non-" + svc: {
+			ctx:   context.Background(),
+			inner: testutils.Allow(t),
 		},
 		"wrong service type and inner denies": {
-			ctx:     ctxWithService(t, storage.ServiceType_CENTRAL_SERVICE),
+			ctx:     ctxWithService(t, otherServiceType),
+			inner:   testutils.Deny(t),
 			wantErr: errox.NotAuthorized,
 		},
 		"no identity and inner denies": {
 			ctx:     context.Background(),
+			inner:   testutils.Deny(t),
 			wantErr: errox.NotAuthorized,
 		},
 	}
+}
+
+func TestSensorOr(t *testing.T) {
+	tests := getServiceOrTestCases(t, storage.ServiceType_SENSOR_SERVICE, storage.ServiceType_CENTRAL_SERVICE)
 	for name, tt := range tests {
 		t.Run(name, func(it *testing.T) {
-			inner := fixedAuthorizer{err: errox.NotAuthorized}
-			if tt.innerAllows {
-				inner = allow
-			}
-			a := SensorOr(inner)
+			a := SensorOr(tt.inner)
 			require.NotNil(it, a)
 			assert.ErrorIs(it, a.Authorized(tt.ctx, ""), tt.wantErr)
 		})
@@ -149,30 +135,10 @@ func TestSensorOr(t *testing.T) {
 }
 
 func TestScannerOr(t *testing.T) {
-	tests := map[string]struct {
-		ctx         context.Context
-		innerAllows bool
-		wantErr     error
-	}{
-		"scanner identity is allowed": {
-			ctx: ctxWithService(t, storage.ServiceType_SCANNER_SERVICE),
-		},
-		"inner authorizer allows non-scanner": {
-			ctx:         context.Background(),
-			innerAllows: true,
-		},
-		"wrong service type and inner denies": {
-			ctx:     ctxWithService(t, storage.ServiceType_SENSOR_SERVICE),
-			wantErr: errox.NotAuthorized,
-		},
-	}
+	tests := getServiceOrTestCases(t, storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SENSOR_SERVICE)
 	for name, tt := range tests {
 		t.Run(name, func(it *testing.T) {
-			inner := fixedAuthorizer{err: errox.NotAuthorized}
-			if tt.innerAllows {
-				inner = allow
-			}
-			a := ScannerOr(inner)
+			a := ScannerOr(tt.inner)
 			require.NotNil(it, a)
 			assert.ErrorIs(it, a.Authorized(tt.ctx, ""), tt.wantErr)
 		})

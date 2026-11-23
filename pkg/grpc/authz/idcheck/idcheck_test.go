@@ -14,15 +14,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// fakeIDAuthorizer is a simple IdentityBasedAuthorizer that returns a preset error.
-type fakeIDAuthorizer struct {
-	err error
-}
-
-func (f fakeIDAuthorizer) AuthorizeByIdentity(_ authn.Identity) error {
-	return f.err
-}
-
 func TestWrap_Authorized(t *testing.T) {
 	errCustom := errors.New("custom error")
 
