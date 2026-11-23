@@ -24,6 +24,8 @@ func Authenticated() authz.Authorizer {
 	return With()
 }
 
+var _ authz.Authorizer = (*permissionChecker)(nil)
+
 type permissionChecker struct {
 	requiredPermissions []permissions.ResourceWithAccess
 }

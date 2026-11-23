@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
+var _ authz.Authorizer = (*and)(nil)
+
 type and struct {
 	authorizers []authz.Authorizer
 }

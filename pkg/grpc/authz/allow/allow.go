@@ -14,6 +14,8 @@ func Anonymous() authz.Authorizer {
 	return anonymous{}
 }
 
+var _ authz.Authorizer = (*anonymous)(nil)
+
 type anonymous struct{}
 
 // Authorized allows all access, even if the client is not authenticated in any way.
