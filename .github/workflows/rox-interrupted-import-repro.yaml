@@ -82,7 +82,7 @@ jobs:
           gcloud container clusters create "rox-import-repro-${{ github.run_id }}" \
             --machine-type e2-standard-8 --num-nodes 1 --disk-type pd-ssd --disk-size 200GB \
             --release-channel stable --zone "$CLUSTER_ZONE" \
-            --enable-ip-alias --network "default" --quiet
+            --enable-ip-alias --network "rox-cvss-repro-net" --quiet
 
       - name: Deploy StackRox
         env:
