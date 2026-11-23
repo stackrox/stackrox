@@ -47,11 +47,38 @@ func (s *defaultPoliciesOnChartSuite) TestScannerV4DBDoesNotViolateSecretEnvVarP
 	policy := s.mustFindPolicyByID(secretEnvVarPolicyID)
 
 	for _, dep := range s.renderScannerV4DBDeployments() {
+		// The no-violation assertion below alone would also pass if the
+		// variable were absent entirely, so assert its presence and value
+		// explicitly first.
+		s.assertInitDBPasswordFileEnvVar(dep)
+
 		violations := s.matchDeployment(policy, dep)
 		s.Empty(violations.AlertViolations,
 			"default policy %q must not fire on deployment %q: env var names must not match the policy regex (ROX-39749)",
 			policy.GetName(), dep.GetName())
 	}
+}
+
+// assertInitDBPasswordFileEnvVar asserts that the init-db init container sets
+// POSTGRES_PASS_FILE to the path of the mounted password Secret.
+func (s *defaultPoliciesOnChartSuite) assertInitDBPasswordFileEnvVar(dep *storage.Deployment) {
+	var initContainer *storage.Container
+	for _, c := range dep.GetContainers() {
+		if c.GetName() == "init-db" {
+			initContainer = c
+			break
+		}
+	}
+	s.Require().NotNil(initContainer, "scanner-v4-db deployment should have an init-db container")
+
+	for _, env := range initContainer.GetConfig().GetEnv() {
+		if env.GetKey() == "POSTGRES_PASS_FILE" {
+			s.Equal("/run/secrets/stackrox.io/secrets/password", env.GetValue(),
+				"init-db must pass the mounted password file path via POSTGRES_PASS_FILE")
+			return
+		}
+	}
+	s.FailNowf("POSTGRES_PASS_FILE not set", "init-db container of deployment %q must set POSTGRES_PASS_FILE", dep.GetName())
 }
 
 // TestSecretEnvVarPolicyStillDetectsBadEnvVarNames is the negative control for
@@ -98,7 +125,7 @@ func (s *defaultPoliciesOnChartSuite) mustFindPolicyByID(id string) *storage.Pol
 			return p
 		}
 	}
-	s.FailNowf("default policy with ID %q not found", id)
+	s.FailNowf("default policy not found", "default policy with ID %q not found", id)
 	return nil
 }
 
