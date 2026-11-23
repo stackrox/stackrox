@@ -76,7 +76,7 @@ require (
 	github.com/heimdalr/dag v1.5.1
 	github.com/helm/helm-mapkubeapis v0.6.1
 	github.com/heroku/docker-registry-client v0.0.0
-	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jackc/pgx/v5 v5.13.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.20.3
@@ -108,7 +108,7 @@ require (
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/client_model v0.6.3
 	github.com/prometheus/common v0.73.1
-	github.com/quay/claircore v1.6.3
+	github.com/quay/claircore v1.6.5
 	github.com/quay/claircore/toolkit v1.7.0
 	github.com/quay/zlog/v2 v2.1.1
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
@@ -122,7 +122,7 @@ require (
 	github.com/sigstore/sigstore-go v1.3.0
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/spf13/viper v1.21.0
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
 	github.com/stackrox/hashstructure v0.0.4

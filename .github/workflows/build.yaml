@@ -503,7 +503,7 @@ jobs:
       - name: Build and push DB images in parallel with bake
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/bake-action@018cb6412ab401ebaa809aa5f85966b74628600f # ratchet:docker/bake-action@v7.4.0
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # ratchet:docker/bake-action@v7.5.0
         with:
           source: .
           files: .github/docker/images.hcl
