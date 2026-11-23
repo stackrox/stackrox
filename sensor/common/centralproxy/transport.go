@@ -17,6 +17,7 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/centralproxy"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -293,16 +295,18 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		PermissionSets: []*centralv1.ScopedPermissionSet{{
+		Lifetime: durationpb.New(tokenTTL),
+	}
+	if centralcaps.Has(centralsensor.CentralProxyPerAccessTokens) {
+		req.PermissionSets = []*centralv1.ScopedPermissionSet{{
 			Selector:          &centralv1.ScopedPermissionSet_Id{Id: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser]},
 			HttpRequestScopes: consoleRequestScopes(),
-		}},
-		// Centrals without permission set support use these fallback permissions.
-		Permissions: map[string]centralv1.Access{
+		}}
+	} else {
+		req.Permissions = map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,
-		},
-		Lifetime: durationpb.New(tokenTTL),
+		}
 	}
 
 	switch namespaceScope {

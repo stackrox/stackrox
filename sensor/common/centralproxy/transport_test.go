@@ -14,10 +14,12 @@ import (
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/centralproxy"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -182,12 +184,13 @@ func TestScopedTokenTransport_RoundTrip_Error(t *testing.T) {
 
 func TestTokenProvider_GetTokenForScope(t *testing.T) {
 	tests := []struct {
-		name           string
-		namespaceScope string
-		clusterID      string
-		wantScopes     bool
-		wantFullAccess bool
-		wantNamespaces []string
+		name            string
+		namespaceScope  string
+		clusterID       string
+		wantScopes      bool
+		wantFullAccess  bool
+		wantNamespaces  []string
+		perAccessTokens bool
 	}{
 		{
 			name:           "empty scope - auth only",
@@ -203,6 +206,14 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 			wantNamespaces: []string{"my-namespace"},
 		},
 		{
+			name:            "Central with per-access tokens",
+			namespaceScope:  "my-namespace",
+			clusterID:       "test-cluster-id",
+			wantScopes:      true,
+			wantNamespaces:  []string{"my-namespace"},
+			perAccessTokens: true,
+		},
+		{
 			name:           "cluster-wide access",
 			namespaceScope: FullClusterAccessScope,
 			clusterID:      "test-cluster-id",
@@ -213,6 +224,12 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			centralcaps.Set(nil)
+			if tt.perAccessTokens {
+				centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPerAccessTokens})
+			}
+			t.Cleanup(func() { centralcaps.Set(nil) })
+
 			fakeClient := &fakeTokenServiceClient{
 				response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{
 					Token: "test-token-123",
@@ -229,12 +246,17 @@ func TestTokenProvider_GetTokenForScope(t *testing.T) {
 			req := fakeClient.lastRequest
 			require.NotNil(t, req)
 
-			require.Len(t, req.GetPermissionSets(), 1)
-			assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], req.GetPermissionSets()[0].GetId())
-			assert.Equal(t, map[string]centralv1.Access{
-				"Deployment": centralv1.Access_READ_ACCESS,
-				"Image":      centralv1.Access_READ_ACCESS,
-			}, req.GetPermissions())
+			if tt.perAccessTokens {
+				require.Len(t, req.GetPermissionSets(), 1)
+				assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], req.GetPermissionSets()[0].GetId())
+				assert.Empty(t, req.GetPermissions())
+			} else {
+				assert.Empty(t, req.GetPermissionSets())
+				assert.Equal(t, map[string]centralv1.Access{
+					"Deployment": centralv1.Access_READ_ACCESS,
+					"Image":      centralv1.Access_READ_ACCESS,
+				}, req.GetPermissions())
+			}
 
 			// Verify scopes
 			if tt.wantScopes {
@@ -369,22 +391,35 @@ func TestTokenProvider_ErrorHandling(t *testing.T) {
 }
 
 func TestBuildTokenRequest(t *testing.T) {
+	centralcaps.Set(nil)
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
 	provider := &tokenProvider{
 		clusterIDGetter: &fakeClusterIDGetter{clusterID: "my-cluster-id"},
 	}
 
-	t.Run("empty scope", func(t *testing.T) {
+	t.Run("older Central uses only legacy permissions", func(t *testing.T) {
 		req, err := provider.buildTokenRequest("")
 		require.NoError(t, err)
-		require.Len(t, req.GetPermissionSets(), 1)
-		assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], req.GetPermissionSets()[0].GetId())
-		assert.Len(t, req.GetPermissionSets()[0].GetHttpRequestScopes(), len(centralproxy.ConsoleHTTPScopes))
+		assert.Empty(t, req.GetPermissionSets())
 		assert.Equal(t, map[string]centralv1.Access{
 			"Deployment": centralv1.Access_READ_ACCESS,
 			"Image":      centralv1.Access_READ_ACCESS,
 		}, req.GetPermissions())
 		assert.Empty(t, req.GetClusterScopes())
 		assert.NotNil(t, req.GetLifetime())
+	})
+
+	t.Run("Central with per-access tokens omits fallback permissions", func(t *testing.T) {
+		centralcaps.Set([]centralsensor.CentralCapability{centralsensor.CentralProxyPerAccessTokens})
+		t.Cleanup(func() { centralcaps.Set(nil) })
+
+		req, err := provider.buildTokenRequest("")
+		require.NoError(t, err)
+		require.Len(t, req.GetPermissionSets(), 1)
+		assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], req.GetPermissionSets()[0].GetId())
+		assert.Len(t, req.GetPermissionSets()[0].GetHttpRequestScopes(), len(centralproxy.ConsoleHTTPScopes))
+		assert.Empty(t, req.GetPermissions())
 	})
 
 	t.Run("specific namespace", func(t *testing.T) {
