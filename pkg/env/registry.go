@@ -33,4 +33,11 @@ var (
 
 	// RegistryTLSCheckTTL will set the duration for which registry TLS checks will be cached.
 	RegistryTLSCheckTTL = registerDurationSetting("ROX_REGISTRY_TLS_CHECK_CACHE_TTL", 15*time.Minute)
+
+	// RegistryECRTokenRefreshTimeout bounds how long the ECR transport waits for
+	// the AWS SDK GetAuthorizationToken call (STS/ECR token exchange) before
+	// giving up. This call is made with a context that is not bounded by any
+	// caller deadline (the vendored docker-registry-client never threads a real
+	// request context through), so it must be bounded here independently.
+	RegistryECRTokenRefreshTimeout = registerDurationSetting("ROX_REGISTRY_ECR_TOKEN_REFRESH_TIMEOUT", 10*time.Second)
 )

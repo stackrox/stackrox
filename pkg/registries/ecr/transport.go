@@ -11,23 +11,34 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const earlyExpiry = 5 * time.Minute
 
+type ecrTokenClient interface {
+	GetAuthorizationToken(ctx context.Context, params *awsECR.GetAuthorizationTokenInput, optFns ...func(*awsECR.Options)) (*awsECR.GetAuthorizationTokenOutput, error)
+}
+
 type awsTransport struct {
 	registry.Transport
-	name      string
-	config    *docker.Config
-	client    *awsECR.Client
-	expiresAt *time.Time
-	mutex     sync.RWMutex
+	name           string
+	config         *docker.Config
+	client         ecrTokenClient
+	expiresAt      *time.Time
+	mutex          sync.RWMutex
+	refreshTimeout time.Duration
 }
 
 func newAWSTransport(name string, config *docker.Config, client *awsECR.Client) *awsTransport {
-	transport := &awsTransport{name: name, config: config, client: client}
+	transport := &awsTransport{
+		name:           name,
+		config:         config,
+		client:         client,
+		refreshTimeout: env.RegistryECRTokenRefreshTimeout.DurationSetting(),
+	}
 	ctx := context.Background()
 	if err := transport.refreshNoLock(ctx); err != nil {
 		log.Error("Failed to refresh ECR token: ", err)
@@ -65,6 +76,8 @@ func (t *awsTransport) isValidNoLock() bool {
 
 func (t *awsTransport) refreshNoLock(ctx context.Context) error {
 	log.Debugf("Refreshing ECR token for image integration %q", t.name)
+	ctx, cancel := context.WithTimeout(ctx, t.refreshTimeout)
+	defer cancel()
 	authToken, err := t.client.GetAuthorizationToken(ctx, &awsECR.GetAuthorizationTokenInput{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get authorization token")
