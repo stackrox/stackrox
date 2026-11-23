@@ -387,11 +387,6 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -401,6 +396,12 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Install Bats
+      run: bash .github/workflows/scripts/install-bats.sh
+
+    - name: Install Expect
+      run: sudo apt-get update && sudo apt-get install -y expect
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -434,8 +435,6 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -445,6 +444,9 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Install Bats
+      run: bash .github/workflows/scripts/install-bats.sh
 
     - name: Shell Unit Tests
       run: make shell-unit-tests
@@ -471,8 +473,6 @@ jobs:
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-24.04
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -483,6 +483,12 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Install test dependencies
+        run: |
+          python3 -m venv "$RUNNER_TEMP/openshift-ci-venv"
+          "$RUNNER_TEMP/openshift-ci-venv/bin/pip" install -r .openshift-ci/dev-requirements.txt
+          echo "$RUNNER_TEMP/openshift-ci-venv/bin" >> "$GITHUB_PATH"
 
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
