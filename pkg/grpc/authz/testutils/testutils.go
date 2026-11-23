@@ -17,15 +17,27 @@ type fixedAuthorizer struct {
 
 var _ authz.Authorizer = fixedAuthorizer{}
 
+// Authorized returns the preset error, or nil if none was set.
+func (f fixedAuthorizer) Authorized(context.Context, string) error {
+	return f.Err
+}
+
 // FixedAuthorizer returns an Authorizer that always returns the given error
 // (nil = allow). The testing.TB parameter is ignored.
 func FixedAuthorizer(_ testing.TB, fixedError error) authz.Authorizer {
 	return fixedAuthorizer{Err: fixedError}
 }
 
-// Authorized returns the preset error, or nil if none was set.
-func (f fixedAuthorizer) Authorized(context.Context, string) error {
-	return f.Err
+// Allow returns an Authorizer that authorizes every request.
+// The testing.TB parameter is ignored.
+func Allow(_ testing.TB) authz.Authorizer {
+	return fixedAuthorizer{}
+}
+
+// Deny returns an Authorizer that denies every request.
+// The testing.TB parameter is ignored.
+func Deny(_ testing.TB) authz.Authorizer {
+	return fixedAuthorizer{Err: errox.NotAuthorized}
 }
 
 // RecordingAuthorizer is an Authorizer that captures every Authorized call
@@ -59,12 +71,6 @@ func (r *recordingAuthorizer) Authorized(ctx context.Context, method string) err
 	return r.err
 }
 
-// NewRecordingAuthorizer returns a RecordingAuthorizer whose fields are all
-// unset. The testing.TB parameter is ignored.
-func NewRecordingAuthorizer(_ testing.TB) RecordingAuthorizer {
-	return &recordingAuthorizer{}
-}
-
 // CallCount returns the number of recorded Authorized calls.
 func (r *recordingAuthorizer) CallCount() int {
 	return r.calls
@@ -80,14 +86,8 @@ func (r *recordingAuthorizer) CallMethods() []string {
 	return r.methods
 }
 
-// Allow returns an Authorizer that authorizes every request.
-// The testing.TB parameter is ignored.
-func Allow(_ testing.TB) authz.Authorizer {
-	return fixedAuthorizer{}
-}
-
-// Deny returns an Authorizer that denies every request.
-// The testing.TB parameter is ignored.
-func Deny(_ testing.TB) authz.Authorizer {
-	return fixedAuthorizer{Err: errox.NotAuthorized}
+// NewRecordingAuthorizer returns a RecordingAuthorizer whose fields are all
+// unset. The testing.TB parameter is ignored.
+func NewRecordingAuthorizer(_ testing.TB) RecordingAuthorizer {
+	return &recordingAuthorizer{}
 }
