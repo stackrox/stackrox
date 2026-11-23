@@ -7,13 +7,13 @@ import (
 	"net"
 	"path/filepath"
 	"testing"
-	"testing/cryptotest"
 	"testing/synctest"
 	"time"
 
 	roxagentvsock "github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"github.com/stretchr/testify/assert"
@@ -101,9 +101,7 @@ func exchangeOnce(t *testing.T, client *Client, lastKnownToken string, responder
 	var result *GetReportResult
 	var err error
 	synctest.Test(t, func(t *testing.T) {
-		// Request IDs are correlation metadata, not part of the crypto contract.
-		// Avoid Go 1.26's FIPS entropy sampling against the bubble's fake clock.
-		cryptotest.SetGlobalRandom(t, 0)
+		testutils.PrepareRandomForSynctest(t)
 		ctx, cancel := context.WithTimeout(t.Context(), exchangeTimeout)
 		defer cancel()
 
@@ -240,7 +238,7 @@ func syncOnce(t *testing.T, client *Client, mapping []byte, responder func(net.C
 	var meta *pb.ResponseMeta
 	var err error
 	synctest.Test(t, func(t *testing.T) {
-		cryptotest.SetGlobalRandom(t, 0)
+		testutils.PrepareRandomForSynctest(t)
 		ctx, cancel := context.WithTimeout(t.Context(), exchangeTimeout)
 		defer cancel()
 

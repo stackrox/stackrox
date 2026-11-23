@@ -3,7 +3,6 @@ package processsignal
 import (
 	"context"
 	"testing"
-	"testing/cryptotest"
 	"testing/synctest"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -322,8 +322,7 @@ func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
 
 func TestPubSubPipelineEnrichesAndDeliversIndicator(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-	// Only indicator identity matters here, not entropy generation in fake time.
-	cryptotest.SetGlobalRandom(t, 0)
+	testutils.PrepareRandomForSynctest(t)
 
 	synctest.Test(t, func(t *testing.T) {
 		sensorEvents := make(chan *message.ExpiringMessage, 1)
@@ -382,7 +381,7 @@ func TestPubSubPipelineFailsOnRegistrationError(t *testing.T) {
 
 func TestPubSubPipelineDropsSignalOnPublishFailure(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-	cryptotest.SetGlobalRandom(t, 0)
+	testutils.PrepareRandomForSynctest(t)
 
 	synctest.Test(t, func(t *testing.T) {
 		sensorEvents := make(chan *message.ExpiringMessage, 1)
