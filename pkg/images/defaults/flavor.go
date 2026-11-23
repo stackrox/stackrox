@@ -64,6 +64,9 @@ type ChartRepo struct {
 // ImagePullSecrets represents the image pull secret defaults.
 type ImagePullSecrets struct {
 	AllowNone bool
+	// AnonymousPull is true if all images of the flavor are served from registries that allow
+	// anonymous pulls, i.e. no registry credentials are needed to deploy them.
+	AnonymousPull bool
 }
 
 // ImageFlavor represents default settings for pulling images.
@@ -203,7 +206,8 @@ func OpenSourceImageFlavor() ImageFlavor {
 			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/StackRox_icon.png",
 		},
 		ImagePullSecrets: ImagePullSecrets{
-			AllowNone: true,
+			AllowNone:     true,
+			AnonymousPull: true,
 		},
 		Versions: v,
 	}

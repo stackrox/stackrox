@@ -104,6 +104,11 @@ type K8sConfig struct {
 	// k8s fields
 	Registry string
 
+	// PublicImages is true if all images are pulled from registries that allow anonymous pulls. In that case the
+	// generated scripts and instructions do not ask for registry credentials. The zero value (false) keeps the
+	// credential setup, which is the safe default.
+	PublicImages bool
+
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.
 	MainImageTag string
