@@ -19,7 +19,7 @@ if [ ! -f "$file" ]; then
 fi
 
 # This is purposefully kept as stackrox because this is where central should be run
-if ! kubectl -n stackrox get pvc/central-db > /dev/null; then
+if ! kubectl -n "${namespace}" get pvc/central-db > /dev/null; then
   >&2 echo "Running the scale workload requires a PVC"
   exit 1
 fi
@@ -36,16 +36,14 @@ kubectl -n "${namespace}" delete configmap scale-workload-config || true
 kubectl -n "${namespace}" create configmap scale-workload-config --from-file=workload.yaml="$file"
 kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","volumeMounts":[{"name":"scale-workload-config","mountPath":"/var/scale/stackrox"}]}],"volumes":[{"name":"scale-workload-config","configMap":{"name": "scale-workload-config"}}]}}}}'
 
-if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
-  exit 0
-fi
-
 if [[ -n "$CI" ]]; then
-  kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"8Gi","cpu":"5"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
-  kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"8Gi","cpu":"5"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
-  kubectl -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"8Gi","cpu":"5"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
+  >&2 echo "Patch deployments for CI scale tests run"
+  kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"10Gi","cpu":"3"},"limits":{"memory":"10Gi"}}}]}}}}'
+  kubectl -n "${namespace}" patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"2Gi","cpu":"1"},"limits":{"memory":"2Gi"}}}]}}}}'
+  kubectl -n "${namespace}" patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"4Gi","cpu":"1"},"limits":{"memory":"4Gi"}}}]}}}}'
 else
-  kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
-  kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
-  kubectl -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
+  >&2 echo "Patch deployments for dev scale tests run"
+  kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"12Gi","cpu":"2"},"limits":{"memory":"12Gi"}}}]}}}}'
+  kubectl -n "${namespace}" patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"12Gi","cpu":"2"},"limits":{"memory":"12Gi"}}}]}}}}'
+  kubectl -n "${namespace}" patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"12Gi","cpu":"2"},"limits":{"memory":"12Gi"}}}]}}}}'
 fi
