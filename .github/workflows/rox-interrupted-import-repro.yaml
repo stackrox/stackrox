@@ -60,6 +60,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Set up GCloud SDK (gke auth plugin)
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+        with:
+          install_components: "gke-gcloud-auth-plugin,beta"
+
       - name: Resolve image tag
         env:
           INPUT_TAG: ${{ inputs.main_image_tag }}
@@ -137,11 +142,16 @@ jobs:
           done
           # The env change rolls every StackRox deployment; wait for ALL of them
           # so the scenario does not race the rollout.
+          # NOTE: the matcher's rollout status cannot be used - the vuln-gated
+          # pod legitimately takes 20+ min (initial load) to become Ready,
+          # exceeding the deployment progress deadline. Wait on the pod instead.
           for d in central central-db central-worker config-controller \
-                   scanner-v4-db scanner-v4-indexer scanner-v4-matcher \
+                   scanner-v4-db scanner-v4-indexer \
                    admission-control sensor; do
             kubectl -n "$NAMESPACE" rollout status "deploy/$d" --timeout=900s
           done
+          kubectl -n "$NAMESPACE" wait --for=jsonpath='{.status.containerStatuses[0].ready}'=true \
+            pod -l app=scanner-v4-matcher --timeout=2400s
 
       - name: Interrupt the NVD import
         env:
