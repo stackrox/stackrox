@@ -72,8 +72,8 @@ func TestRedHatSigningKey(t *testing.T) {
 func (s *RedHatSigningKeySuite) SetupSuite() {
 	s.KubernetesSuite.SetupSuite()
 
-	// Deploy scripts (tests/e2e/lib.sh, deploy/common/k8sbased.sh) set
-	// watchIntervalEnv=5s at deploy time, so Central already polls quickly.
+	// tests/e2e/lib.sh sets watchIntervalEnv=5s at deploy time, so Central
+	// already polls quickly.
 	// This is a same-value no-op safety net for setups that deploy Central
 	// without the baked-in env var (e.g. local dev clusters).
 	ns := namespaces.StackRox

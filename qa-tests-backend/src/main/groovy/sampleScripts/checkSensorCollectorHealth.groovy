@@ -7,8 +7,7 @@ import util.ApplicationHealth
 import util.Env
 
 // Get a cluster client. Assumes you have a working kube configuration. Relies on:
-// CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent
-//   `deploy/{k8s,openshift}/central-deploy` dir
+// CLUSTER: Either `OPENSHIFT` or `K8S`, set as an environment variable.
 Kubernetes client = OrchestratorType.create(
         Env.mustGetOrchestratorType(),
         Constants.ORCHESTRATOR_NAMESPACE
