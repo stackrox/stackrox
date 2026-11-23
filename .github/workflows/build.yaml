@@ -1,1321 +1,739 @@
 name: Build
+# Content-addressed build system: every artifact is keyed by its inputs'
+# content; jobs are self-contained (no `needs` chains) and the blob store
+# is the coordination mechanism. Design/history: content-addressed-build-plan.md.
+
 on:
+  pull_request:
+    types: [opened, reopened, synchronize]
   workflow_dispatch:
     inputs:
       commit:
         description: 'Commit SHA to build'
         required: true
         type: string
-  workflow_call:
-  push:
-    tags:
-    - '*-nightly-*'
-    branches:
-    - master
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
+      retag_source:
+        description: 'Master build tag to copy e2e sidecar images from (empty = skip)'
+        required: false
+        default: ''
+        type: string
 
-defaults:
-  run:
-    # This enables `-o pipefail` for all jobs as compared to when shell isn't set.
-    # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
-    shell: bash
+permissions:
+  contents: read
+
+# Cancel superseded PR builds; dispatch runs get unique groups (never cancelled).
+concurrency:
+  group: build-${{ github.event_name == 'workflow_dispatch' && format('dispatch-{0}', github.run_id) || github.event.pull_request.head.ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  GOFLAGS: -buildvcs=false
+  # Bump when the build RECIPE changes (step logic, flags, transform).
+  # Receipts cover source state AND recipe; without this, a recipe fix
+  # would silently keep serving images built by the old recipe.
+  WORKFLOW_RECIPE: v7
 
 jobs:
-  define-job-matrix:
-    outputs:
-      matrix: ${{ steps.define-job-matrix.outputs.matrix }}
-      build-tag: ${{ steps.build-tag.outputs.tag }}
-      short-commit: ${{ steps.short-commit.outputs.shortcommit }}
-      gotags: ${{ steps.gotags.outputs.gotags }}
-      quay-tag-expiration: ${{ steps.quay-tag-expiration.outputs.expiration }}
-    runs-on: ubuntu-slim
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Compute build tag
-        id: build-tag
-        run: |
-          TAG=$(make --quiet --no-print-directory tag)
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-
-      - name: Compute short commit
-        id: short-commit
-        run: |
-          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
-          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
-
-      - name: Compute GOTAGS
-        id: gotags
-        run: |
-          GOTAGS=""
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
-            # Tag builds (release or nightly) get release GOTAGS
-            GOTAGS="release"
-          fi
-          echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
-
-      - name: Compute Quay tag expiration
-        id: quay-tag-expiration
-        run: |
-          EXPIRATION="13w"
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
-            # Tag builds (release or nightly) never expire
-            EXPIRATION="never"
-          fi
-          echo "expiration=${EXPIRATION}" >> "$GITHUB_OUTPUT"
-
-      - name: Define the matrix for build jobs
-        id: define-job-matrix
-        run: |
-          source './scripts/ci/lib.sh'
-
-          matrix='{
-            "pre_build_go_binaries": { "name":[], "arch":[] },
-            "build_and_push_main": { "name":[], "arch":[] },
-            "push_main_multiarch_manifests": { "name":[] },
-            "build_and_push_operator": { "name":[], "arch":[] },
-            "push_operator_multiarch_manifests": { "name":[] },
-            "build_and_push_scanner": { "name":[], "goos":[], "arch":[], "registry":[] },
-            "push_scanner_manifests": { "name":[], "registry":[] }
-          }'
-
-          # The base matrix
-          matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-
-          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
-
-          matrix="$(jq '.build_and_push_scanner.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_scanner.goos += ["linux"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_scanner.arch += ["amd64", "arm64"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_scanner.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
-
-          matrix="$(jq '.push_scanner_manifests.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.push_scanner_manifests.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
-
-          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-            matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_operator.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-          fi;
-
-          # Conditionally add a prerelease build (binaries built with GOTAGS=release)
-          if ! is_tagged; then
-            if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-              matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.build_and_push_scanner.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.push_scanner_manifests.name += ["prerelease"]' <<< "$matrix")"
-            fi
-          fi
-
-          # Conditionally add a -race debug build (binaries built with -race)
-          if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
-            matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
-            matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.name += ["race-condition-debug"]' <<< "$matrix")"
-            matrix="$(jq '.push_scanner_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
-            # Exclude "arm64", "ppc64le", "s390x"
-            matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
-          fi
-
-          echo "Job matrix after conditionals:"
-          jq <<< "$matrix"
-
-          condensed="$(jq -c <<< "$matrix")"
-          echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
-
-  pre-build-ui:
+  main-image:
     strategy:
       fail-fast: false
       matrix:
-        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
-      # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
-      UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
-    runs-on: ubuntu-24.04
+        include:
+          - { arch: amd64, branding: STACKROX_BRANDING, registry: quay.io/stackrox-io, runs-on: ubuntu-24.04 }
+          - { arch: amd64, branding: RHACS_BRANDING, registry: quay.io/rhacs-eng, runs-on: ubuntu-24.04 }
+          - { arch: arm64, branding: STACKROX_BRANDING, registry: quay.io/stackrox-io, runs-on: ubuntu-24.04-arm }
+          - { arch: arm64, branding: RHACS_BRANDING, registry: quay.io/rhacs-eng, runs-on: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 45
+    outputs:
+      image_tag: ${{ steps.setup.outputs.image_tag }}
     steps:
-      - name: Checkout
+      - name: Checkout (shallow)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
-        with:
-          node-version-file: ui/package.json
-
-      - name: Cache UI dependencies
-        id: cache-ui
-        uses: ./.github/actions/cache-ui-dependencies
-
-      - name: Fetch UI deps
-        if: steps.cache-ui.outputs.cache-hit != 'true'
-        run: make -C ui deps
-
-      - name: Skip UI deps on cache hit
-        if: steps.cache-ui.outputs.cache-hit == 'true'
-        run: touch ui/deps
-
-      - name: Build UI
-        run: make -C ui build
-
-      - uses: ./.github/actions/upload-artifact-with-retry
-        with:
-          name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
-          path: |
-            ui/build
-            ui/apps/platform/package-lock.json
-          retention-days: '1'
-
-  pre-build-cli:
-    needs: define-job-matrix
-    runs-on: ubuntu-24.04
-    env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Create CLI stub files
-        if: |
-          !(needs.define-job-matrix.outputs.gotags == 'release'
-            || github.ref_name == 'master'
-            || github.event_name == 'workflow_call'
-            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli'))
+      - name: Ensure CA build infrastructure present
+        # When building a tree that doesn't contain our infrastructure
+        # (e.g., a master commit for validation), fetch it from this
+        # branch. The source under test is the checkout; the build
+        # machinery (tools, Dockerfiles) always comes from here.
         run: |
-          cat > stub.txt << 'EOF'
-          This is a placeholder file. CLI binaries were not built for this PR build.
+          if [ ! -f tools/gocache-serve/bin/gocache-serve ] || [ ! -f tools/ca/gen-dockerfile ]; then
+            echo 'CA infrastructure not in checkout, fetching from branch...'
+            git fetch origin davdhacs/content-addressed-build --depth=1
+            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/ tools/ca/ image/base/
+          fi
 
-          To build CLI binaries in PR builds:
-          - Add the "ci-build-cli" label to your pull request
-          - Re-push to trigger a new build
+      - name: Setup
+        id: setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Buildx (docker-container driver for full cache support)
+          docker buildx create --name builder --driver docker-container --use 2>/dev/null || true
+          # Registry auth (before build, so layer cache can pull)
+          if [ "${{ matrix.branding }}" = "RHACS_BRANDING" ]; then
+            echo "${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}" | docker login quay.io \
+              -u "${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}" --password-stdin
+          else
+            echo "${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}" | docker login quay.io \
+              -u "${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}" --password-stdin
+          fi
+          # Blob store client. Fixed GET concurrency: the adaptive AIMD
+          # under-ramps for large transfers (measured ~5MB/s cross-region).
+          echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONCURRENCY=24" >> "$GITHUB_ENV"
+          # Manifest/prefetch machinery: without GOCACHE_SERVE_MANIFEST
+          # nothing prefetches and entries fetch on-demand serially —
+          # measured as the dominant cost of Go-change builds.
+          manifest="$(printf '%s' "main-image-${{ matrix.branding }}-${{ matrix.arch }}" \
+            | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' | sed 's/-\+/-/g; s/^-//; s/-$//')"
+          echo "GOCACHE_SERVE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+          # PR runs normally read manifests without writing (az-gocache
+          # policy); this branch writes to build up the working set.
+          echo "GOCACHE_SERVE_MANIFEST_WRITE=1" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
+          # Two decoupled identities:
+          # IMAGE_TAG — per-commit describe (registry tag; e2e waits on it).
+          # BUILD_TAG/SHORTCOMMIT — STABLE dev-kind stamps embedded in the
+          # binaries (x_defs) and UI plugin. Stable stamps keep link
+          # ActionIDs constant across commits, so the link-output cache
+          # serves unchanged binaries. Must stay DevelopmentKind (a bare
+          # semver parses as a release — prod upgrade gates act on it).
+          SHA="$(git rev-parse HEAD)"
+          SHORTSHA="$(git rev-parse --short=10 HEAD)"
+          LATEST_TAG="$(git ls-remote --tags --refs origin \
+            | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
+          if [ -n "$LATEST_TAG" ]; then
+            # Compare status: "ahead" = normal (commit newer than the tag
+            # fork); "behind"/"diverged" = HISTORICAL commit (ancestor of
+            # the release train — the fast formula would emit count 0 and
+            # the wrong train). Fall back to real describe (deepen once).
+            CMP="$(gh api repos/stackrox/stackrox/compare/${LATEST_TAG}...${SHA} \
+              --jq '"\(.status) \(.ahead_by)"' 2>/dev/null || echo "diverged 0")"
+            CMP_STATUS="${CMP%% *}"; COUNT="${CMP##* }"
+            if [ "$CMP_STATUS" = "ahead" ] && [ "$COUNT" != "0" ]; then
+              IMAGE_TAG_VAL="${LATEST_TAG}-${COUNT}-g${SHORTSHA}"
+            else
+              git fetch --tags --deepen=3000 origin "$SHA" 2>/dev/null || \
+                git fetch --tags origin 2>/dev/null || true
+              IMAGE_TAG_VAL="$(git describe --tags --abbrev=10 --exclude '*-nightly-*' 2>/dev/null \
+                || echo "0.0.0-g${SHORTSHA}")"
+            fi
+            # Dev-KIND stable stamp: stable (link cache) and parses as
+            # DevelopmentKind — a bare semver would masquerade as a
+            # release (prod upgrade gates act on the kind).
+            STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')-0-g0000000000"
+          else
+            IMAGE_TAG_VAL="0.0.0-g${SHORTSHA}"
+            STABLE_VERSION="0.0.0-0-g0000000000"
+          fi
+          echo "IMAGE_TAG=${IMAGE_TAG_VAL}" >> "$GITHUB_ENV"
+          echo "image_tag=${IMAGE_TAG_VAL}" >> "$GITHUB_OUTPUT"
+          echo "BUILD_TAG=${STABLE_VERSION}" >> "$GITHUB_ENV"
+          echo "SHORTCOMMIT=0000000000" >> "$GITHUB_ENV"
+          echo "stamps: image=${IMAGE_TAG_VAL} embedded=${STABLE_VERSION} (stable)"
 
-          To download the latest roxctl binary:
-          - Visit https://mirror.openshift.com/pub/rhacs/assets/latest/bin/
+      # =================================================================
+      # FAST PATH — does the output already exist for this source state?
+      # =================================================================
+      - name: Fast path (component-scoped receipt check → re-tag)
+        id: fastpath
+        run: |
+          set -euo pipefail
+          # Release guard: tag builds must never take the fast path —
+          # re-tagged images embed test-time version stamps, which is
+          # unacceptable for releases.
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "BUILD PATH: tag build (release guard — no fast path)"
+            exit 0
+          fi
+          # Component-scoped hashing: hash only files that affect each
+          # build component. A README or docs change doesn't invalidate
+          # the Go binaries or the image. This enables partial fast
+          # paths: "Go changed, UI didn't → fetch UI, rebuild binaries."
+          GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+            | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          UI_HASH=$(git ls-files 'ui/' 2>/dev/null \
+            | grep -Ev 'node_modules|test|spec' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 'docs/api/' 2>/dev/null \
+            | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
+          # Recipe hash: the transform script, the recipe version, and
+          # the base image digest. Base image is rebuilt weekly; a new
+          # base must invalidate receipts, not serve stale-layer images.
+          BASE_DIGEST=$(docker buildx imagetools inspect \
+            "quay.io/stackrox-io/main:base-${{ matrix.arch }}" 2>/dev/null \
+            | grep Digest: | awk '{print $2}' | cut -c8-19)
+          RECIPE_HASH=$((cat tools/ca/gen-dockerfile 2>/dev/null; \
+            echo "${{ env.WORKFLOW_RECIPE }}${BASE_DIGEST}") | sha256sum | cut -c1-16)
+          echo "component hashes: go=${GO_HASH} ui=${UI_HASH} docker=${DOCKER_HASH} recipe=${RECIPE_HASH}"
+          
+          RECEIPT_KEY="build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${RECIPE_HASH}-${BUILD_HASH}"
 
-          EOF
+          if "${GOCACHEPROG}" -fetch-any "$RECEIPT_KEY" /tmp/receipt.json 2>/dev/null && [ -s /tmp/receipt.json ]; then
+            DIGEST=$(jq -r '.digest // empty' /tmp/receipt.json)
+            REG=$(jq -r '.registry // empty' /tmp/receipt.json)
+            if [ -n "$DIGEST" ] && [ -n "$REG" ]; then
+              if docker buildx imagetools create \
+                -t "${REG}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" \
+                "${REG}/main@${DIGEST}" 2>/dev/null; then
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                echo "FAST PATH: re-tagged from receipt (go=${GO_HASH:0:8} ui=${UI_HASH:0:8})"
+                exit 0
+              fi
+            fi
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "BUILD PATH: no receipt for go=${GO_HASH:0:8} ui=${UI_HASH:0:8} docker=${DOCKER_HASH:0:8}"
+          # Free disk only on the build path (fast-path legs skip the rm -rf).
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/swift \
+            /usr/share/swift /opt/az /usr/local/share/boost &
+          DISK_CLEANUP_PID=$!
 
-          mkdir -p bin/{linux_{amd64,arm64,ppc64le,s390x},darwin_{amd64,arm64},windows_amd64}
+      # =================================================================
+      # BUILD PATH — fetch or compile inputs → docker → push → receipt
+      # =================================================================
 
-          for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
-            cp stub.txt bin/${arch}/roxctl
-            cp stub.txt bin/${arch}/roxagent
-          done
-          cp stub.txt bin/windows_amd64/roxctl.exe
-
-      - name: PR labels
-        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
-
-      - name: Cache Go dependencies
-        if: |
-          needs.define-job-matrix.outputs.gotags == 'release'
-            || github.ref_name == 'master'
-            || github.event_name == 'workflow_call'
-            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
-        uses: ./.github/actions/cache-go-dependencies
-
-      - name: Build CLI
-        if: |
-          needs.define-job-matrix.outputs.gotags == 'release'
-            || github.ref_name == 'master'
-            || github.event_name == 'workflow_call'
-            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
-        run: make cli
-
-      - name: Bundle build to preserve permissions
-        run: tar -cvf cli-build.tar bin
-
-      - uses: ./.github/actions/upload-artifact-with-retry
-        with:
-          name: cli-build
-          path: cli-build.tar
-          compression-level: 1
-          retention-days: '1'
-
-  pre-build-go-binaries:
-    strategy:
-      # Supports three go binary builds:
-      # default - built with environment defaults (see env.mk)
-      # prerelease - built with GOTAGS=release
-      # race-condition-debug - built with -race
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
-    needs: define-job-matrix
-    runs-on: ubuntu-24.04
-    env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Cache Go dependencies
+      - name: Binaries — fetch from blob or compile
+        if: steps.fastpath.outputs.skip != 'true'
         env:
           GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
-        with:
-          # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
-          # Default and prerelease share 93% of entries and should use the same cache.
-          key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
-
-      - name: PR labels
-        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
-
-      - name: Setup build env for debugging support
+          GOOS: linux
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
-            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
-          fi
+          set -euo pipefail
+          # Stamps come from the Setup step (BUILD_TAG/SHORTCOMMIT in env)
+          echo "stamps: BUILD_TAG=$BUILD_TAG SHORTCOMMIT=$SHORTCOMMIT go=$(go version)"
 
-      - name: Setup Go build environment for release
-        if: |
-          contains(github.event.pull_request.labels.*.name, 'ci-release-build')
-            ||
-          matrix.name == 'prerelease'
-        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+          GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+            | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          # The key includes BUILD_TAG: version stamps are baked into the
+          # binaries (x_defs), so a README-only change (same GO_HASH,
+          # different tag) must not reuse the old archive. The compile
+          # cache still dedupes the actual compilation; only the link
+          # re-runs.
+          BIN_KEY="ca-binaries-v3-${{ matrix.arch }}-${GO_HASH}-${BUILD_TAG}"
+          # All-platform roxctl set: identical content in every arch's
+          # image (the CLI download tarballs), so one shared key.
 
-      - name: Setup Go build environment for -race
-        if: |
-          matrix.arch == 'amd64'
-            &&
-          (
-            contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
-              ||
-            matrix.name == 'race-condition-debug'
-          )
-        run: echo "RACE=true" >> "$GITHUB_ENV"
 
-      - name: Install musl-tools for race builds
-        if: |
-          matrix.arch == 'amd64'
-            &&
-          (
-            contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
-              ||
-            matrix.name == 'race-condition-debug'
-          )
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools musl-dev linux-libc-dev
-          # musl-gcc searches /usr/include/x86_64-linux-musl by default
-          sudo ln -sf /usr/include/linux /usr/include/x86_64-linux-musl/linux
-          sudo ln -sf /usr/include/asm-generic /usr/include/x86_64-linux-musl/asm-generic
-          sudo ln -sf /usr/include/asm /usr/include/x86_64-linux-musl/asm
-
-      - name: Build Go Binaries
-        run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
-
-      - name: Bundle the build to preserve permissions
-        run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
-
-      - uses: ./.github/actions/upload-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: go-binaries-build.tar
-          compression-level: 1
-          retention-days: '1'
-
-  pre-build-docs:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-
-      - name: Download scanner module for proto generation
-        run: go mod download github.com/stackrox/scanner
-
-      - name: Generate the swagger docs
-        run: |
-          make swagger-docs
-          # Workaround to handle https://github.com/actions/cache/issues/753
-          rm -rf .proto
-
-      - uses: ./.github/actions/upload-artifact-with-retry
-        with:
-          name: docs-build
-          path: |
-            image/rhel/docs
-          retention-days: '1'
-
-  pre-build-oss-notice:
-    runs-on: ubuntu-24.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Set up Node.js
-      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v6
-      with:
-        node-version-file: ui/package.json
-
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-
-    - name: Cache UI dependencies
-      id: cache-ui
-      uses: ./.github/actions/cache-ui-dependencies
-
-    - name: Fetch UI deps
-      if: steps.cache-ui.outputs.cache-hit != 'true'
-      run: make -C ui deps
-
-    - name: Skip UI deps on cache hit
-      if: steps.cache-ui.outputs.cache-hit == 'true'
-      run: touch ui/deps
-
-    - name: Generate OSS notice
-      run: make ossls-notice
-
-    - uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: oss-notice
-        path: image/rhel/THIRD_PARTY_NOTICES
-        retention-days: '1'
-
-  build-and-push-db:
-    runs-on: ubuntu-24.04
-    needs:
-      - define-job-matrix
-    if: ${{ !cancelled() }}
-    env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # ratchet:docker/login-action@v4
-        continue-on-error: true
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # ratchet:docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
-
-      - name: Determine platforms
-        id: platforms
-        run: |
-          PLATFORMS="linux/amd64,linux/arm64"
-          if [[ "${{ github.event_name }}" != "pull_request" ]] || \
-             [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}" == "true" ]]; then
-            PLATFORMS="linux/amd64,linux/arm64,linux/ppc64le,linux/s390x"
-          fi
-          echo "platforms=${PLATFORMS}" >> "$GITHUB_OUTPUT"
-
-      - name: Login to quay.io/stackrox-io
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # ratchet:docker/login-action@v4
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      # scanner/image/db/Dockerfile does COPY init-bundles/db-init.dump.zst.
-      # This file is not in git - the Makefile creates it as empty by default
-      # (or populated if SCANNER_DB_INIT_BUNDLE_ENABLED=force, which is not used).
-      # Since we bypass make and build directly with buildx, we create the empty
-      # file here to match the default make behavior. The init script ignores it.
-      - name: Create empty init bundle for scanner-v4-db
-        run: |
-          mkdir -p scanner/image/db/init-bundles
-          touch scanner/image/db/init-bundles/db-init.dump.zst
-
-      - name: Build and push DB images in parallel with bake
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/bake-action@018cb6412ab401ebaa809aa5f85966b74628600f # ratchet:docker/bake-action@v7.4.0
-        with:
-          source: .
-          files: .github/docker/images.hcl
-          targets: databases
-          push: true
-        env:
-          TAG: ${{ env.BUILD_TAG }}
-          PLATFORMS: ${{ steps.platforms.outputs.platforms }}
-          REGISTRY: quay.io/stackrox-io
-          QUAY_TAG_EXPIRATION: ${{ needs.define-job-matrix.outputs.quay-tag-expiration }}
-
-      # We can't push to both quay.io/stackrox-io and quay.io/rhacs-eng in a single
-      # build because they require different credentials (different organizations).
-      # Instead, we build once and push to stackrox-io, then use skopeo to copy the
-      # multi-arch manifest list to rhacs-eng. This is more efficient than building
-      # twice and matches the pattern used for collector retag.
-      - name: Login to quay.io/rhacs-eng
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # ratchet:docker/login-action@v4
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-      - name: Copy central-db to rhacs-eng registry
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
-          skopeo copy --retry-times 5 --all \
-            "docker://quay.io/stackrox-io/central-db:${{ env.BUILD_TAG }}" \
-            "docker://quay.io/rhacs-eng/central-db:${{ env.BUILD_TAG }}"
-
-      - name: Copy scanner-v4-db to rhacs-eng registry
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
-          skopeo copy --retry-times 5 --all \
-            "docker://quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}" \
-            "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
-
-  build-operator-bundle:
-    runs-on: ubuntu-24.04
-    env:
-      QUAY_ORG: rhacs-eng
-      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
-      ROX_PRODUCT_BRANDING: RHACS_BRANDING
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Build Operator Bundle
-        run: make -C operator/ bundle bundle-build
-
-      - name: Push Operator Bundle and Index
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
-          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
-          make -C operator/ docker-push-bundle | cat
-          make -C operator/ index-build
-          make -C operator/ docker-push-index | cat
-
-  build-and-push-main:
-    # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
-    needs:
-      - define-job-matrix
-      - pre-build-cli
-      - pre-build-docs
-      - pre-build-go-binaries
-      - pre-build-oss-notice
-      - pre-build-ui
-    # This step will run even if required pre-* steps failed. By following this
-    # approach as much of the build matrix as possible is completed despite
-    # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
-    # require some part of the build matrix can still proceed.
-    if: ${{ !cancelled() }}
-    strategy:
-      # Supports four image builds (see Setup build env):
-      # STACKROX_BRANDING
-      # RHACS_BRANDING
-      # prerelease
-      # race-condition-debug
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main }}
-    env:
-      GO_BINARIES_BUILD_ARTIFACT: ""
-      ROX_PRODUCT_BRANDING: ""
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-      - name: Setup build env
-        run: |
-          case "${{ matrix.name }}" in
-            STACKROX_BRANDING)
-              go_binaries="default"
-              brand="STACKROX_BRANDING"
-              ;;
-            RHACS_BRANDING)
-              go_binaries="default"
-              brand="RHACS_BRANDING"
-              ;;
-            race-condition-debug)
-              go_binaries="race-condition-debug"
-              brand="RHACS_BRANDING"
-              ;;
-            prerelease)
-              go_binaries="prerelease"
-              brand="RHACS_BRANDING"
-              ;;
-            *)
-              echo "Unsupported build: ${{ matrix.name }}"
-              exit 1
-          esac
-
-          {
-            echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${{ matrix.arch }}-${go_binaries}"
-            echo "ROX_PRODUCT_BRANDING=${brand}"
-          } >> "$GITHUB_ENV"
-          if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
-            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
-          fi
-
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # ratchet:docker/login-action@v4
-        continue-on-error: true
-        # Skip for external contributions.
-        if: |
-          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
-          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
-
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # ratchet:docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
-
-      - name: Checkout submodules
-        run: |
-            git submodule update --init
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
-          path: ui
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: cli-build
-
-      - name: Unpack cli build
-        run: |
-          tar xvf cli-build.tar
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
-
-      - name: Unpack Go binaries build
-        run: |
-          tar xvf go-binaries-build.tar
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: docs-build
-          path: image/rhel/docs
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: oss-notice
-          path: image/rhel/THIRD_PARTY_NOTICES
-
-      - name: Set build tag for prerelease images
-        if: matrix.name == 'prerelease'
-        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
-
-      - name: Set build tag for race condition images
-        if: matrix.name == 'race-condition-debug'
-        run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
-
-      - name: Build main images
-        run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
-
-      - name: Check debugger presence in the main image
-        if: github.event_name != 'pull_request'
-        run: make check-debugger
-
-      - name: Prepare roxctl build context
-        run: |
-          cp -r image/rhel/THIRD_PARTY_NOTICES image/roxctl/THIRD_PARTY_NOTICES
-
-      - name: Build roxctl image
-        run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
-
-      # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
-
-      - name: Push images
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
+          if "${GOCACHEPROG}" -fetch-any "$BIN_KEY" /tmp/go-binaries.tar 2>/dev/null && [ -s /tmp/go-binaries.tar ]; then
+            tar -xf /tmp/go-binaries.tar
+            echo "binaries: FETCHED from blob store"
+          else
+            echo "binaries: COMPILING (blob miss)"
+            # Vendor restore
+            VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
+            if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
+              tar -xf /tmp/vendor.tar.gz
+              echo "vendor: restored"
+            else
+              unset GOCACHEPROG; go mod vendor; export GOCACHEPROG="${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve"
+              tar -czf /tmp/vendor.tar.gz vendor/
+              "${GOCACHEPROG}" -store-all "$VENDOR_KEY" /tmp/vendor.tar.gz || true
             fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+            export GOFLAGS="${GOFLAGS} -mod=vendor"
 
-  push-matching-collector-scanner:
-    runs-on: ubuntu-24.04
-    needs:
-      - define-job-matrix
-    if: ${{ !cancelled() }}
+            # Compile via the CHECKOUT's own Makefile targets — the
+            # binary set is the tree's source of truth (drift-proof:
+            # a tree that adds/removes a binary, e.g. sensor-upgrader,
+            # builds correctly without workflow changes). go-build.sh
+            # (invoked by make) applies -s -w, x_def stamps, and — on
+            # CA-branch trees — deterministic build IDs.
+            CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
+
+            # Store for other jobs/legs
+            tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+              -cvf /tmp/go-binaries.tar bin/linux_${{ matrix.arch }}
+            "${GOCACHEPROG}" -store-all "$BIN_KEY" /tmp/go-binaries.tar || true
+            echo "binaries: compiled and stored"
+          fi
+
+          # roxctl for every platform (CLI downloads at
+          # /assets/downloads/cli/). Per-platform blobs, fetched and
+          # stored in parallel; keys are arch-independent (shared across
+          # legs and the roxctl matrix jobs). If binary transfer ever
+          # becomes the bottleneck, master's PR-stub policy is the
+          # fallback (pre-build-cli in master's build.yaml).
+          ROXCTL_PLATFORMS="darwin_amd64 darwin_arm64 linux_amd64 linux_arm64 linux_ppc64le linux_s390x windows_amd64"
+          fetch_ok=1
+          for plat in $ROXCTL_PLATFORMS; do
+            ( "${GOCACHEPROG}" -fetch-any "ca-roxctl-v3-${plat}-${GO_HASH}-${BUILD_TAG}" "/tmp/rx-${plat}.tar" \
+              && tar -xf "/tmp/rx-${plat}.tar" && rm -f "/tmp/rx-${plat}.tar" \
+              && touch "/tmp/rx-${plat}.ok" ) &> "/tmp/rx-${plat}.log" &
+          done
+          wait
+          for plat in $ROXCTL_PLATFORMS; do
+            [ -f "/tmp/rx-${plat}.ok" ] || { fetch_ok=0; tail -2 "/tmp/rx-${plat}.log" >&2; }
+          done
+          rm -f /tmp/rx-*.ok /tmp/rx-*.log
+          if [ "$fetch_ok" = 1 ]; then
+            echo "roxctl (all platforms): FETCHED from blob store (parallel)"
+          else
+            # Wait for the concurrent per-platform roxctl jobs before
+            # falling back to an inline build.
+            echo "roxctl (all platforms): waiting for per-platform jobs..."
+            for i in $(seq 1 28); do
+              fetch_ok=1
+              for plat in $ROXCTL_PLATFORMS; do
+                if [ ! -f "/tmp/rx-${plat}.ok" ]; then
+                  ( "${GOCACHEPROG}" -fetch-any "ca-roxctl-v3-${plat}-${GO_HASH}-${BUILD_TAG}" "/tmp/rx-${plat}.tar" \
+                    && tar -xf "/tmp/rx-${plat}.tar" && rm -f "/tmp/rx-${plat}.tar" \
+                    && touch "/tmp/rx-${plat}.ok" ) &> "/tmp/rx-${plat}.log" || true
+                fi
+                [ -f "/tmp/rx-${plat}.ok" ] || fetch_ok=0
+              done
+              [ "$fetch_ok" = 1 ] && break
+              sleep 15
+            done
+          fi
+          if [ "$fetch_ok" = 1 ]; then
+            echo "roxctl (all platforms): FETCHED from per-platform jobs"
+          else
+            echo "roxctl (all platforms): COMPILING (blob miss, jobs timed out)"
+            # Parallel platform builds: each sub-target writes a disjoint
+            # bin/<os>_<arch>/ dir. -j11 OOM-killed the runner (11 go
+            # builds + 11 prefetching gocache-serve children); -j4 with
+            # capped per-build parallelism fits 4-core/16GB runners.
+            GOCACHE_SERVE_GOMEMLIMIT=300MiB GOMAXPROCS=2 make -j4 cli-build
+            for plat in $ROXCTL_PLATFORMS; do
+              tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+                -cf "/tmp/rx-${plat}.tar" "bin/${plat}" &
+            done
+            wait
+            for plat in $ROXCTL_PLATFORMS; do
+              "${GOCACHEPROG}" -store-all "ca-roxctl-v3-${plat}-${GO_HASH}-${BUILD_TAG}" "/tmp/rx-${plat}.tar" &
+            done
+            wait
+            rm -f /tmp/rx-*.tar
+            echo "roxctl (all platforms): compiled and stored (parallel)"
+          fi
+
+      - name: UI — fetch from blob or build
+        if: steps.fastpath.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          UI_HASH=$(git ls-files ui | grep -Ev 'node_modules' | xargs sha256sum | sort -k2 | sha256sum | cut -c1-16)
+          UI_KEY="ui-build-${{ matrix.branding }}-${UI_HASH}"
+
+          if "${GOCACHEPROG}" -fetch-any "$UI_KEY" /tmp/ui-build.tar 2>/dev/null && [ -s /tmp/ui-build.tar ]; then
+            tar -xf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE"
+            echo "UI: FETCHED from blob store"
+          else
+            echo "UI: BUILDING (blob miss)"
+            # Node.js setup
+            NODE_VER=$(jq -r '.engines.node // "22"' ui/package.json | grep -o '[0-9]*' | head -1 || echo "22")
+            curl -fsSL "https://deb.nodesource.com/setup_${NODE_VER}.x" | sudo -E bash - >/dev/null 2>&1 || true
+            sudo apt-get install -y nodejs >/dev/null 2>&1 || true
+
+            # Deps (content-addressed)
+            DEPS_KEY="ui-deps-${{ matrix.arch }}-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
+            if "${GOCACHEPROG}" -fetch-any "$DEPS_KEY" /tmp/ui-deps.tar 2>/dev/null && [ -s /tmp/ui-deps.tar ]; then
+              TAR_ARGS=(-C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules)
+              [ -d "$HOME/.cache/Cypress" ] && TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
+              tar -xf /tmp/ui-deps.tar "${TAR_ARGS[@]}" 2>/dev/null || true
+              touch ui/deps
+              echo "UI deps: fetched"
+            else
+              ROX_PRODUCT_BRANDING=${{ matrix.branding }} make -C ui deps
+              TAR_ARGS=(-C "$GITHUB_WORKSPACE" ui/apps/platform/node_modules)
+              [ -d "$HOME/.cache/Cypress" ] && TAR_ARGS=(-C "$HOME/.cache" ./Cypress "${TAR_ARGS[@]}")
+              tar -cf /tmp/ui-deps.tar "${TAR_ARGS[@]}"
+              "${GOCACHEPROG}" -store-all "$DEPS_KEY" /tmp/ui-deps.tar || true
+            fi
+
+            # Build UI
+            ROX_PRODUCT_BRANDING=${{ matrix.branding }} make -C ui build
+
+            # Store output
+            tar -cf /tmp/ui-build.tar -C "$GITHUB_WORKSPACE" ui/build
+            "${GOCACHEPROG}" -store-all "$UI_KEY" /tmp/ui-build.tar || true
+            echo "UI: built and stored"
+          fi
+
+      - name: OSS notices — fetch or generate
+        if: steps.fastpath.outputs.skip != 'true'
+        env:
+          # Tool installs (go install) must not inherit -mod=vendor:
+          # build tools aren't vendored, and vendor/'s mere presence
+          # auto-enables vendor mode on go >= 1.14.
+          GOFLAGS: -buildvcs=false -mod=mod
+        run: |
+          set -euo pipefail
+          # THIRD_PARTY_NOTICES is generated from the dependency tree —
+          # both Go deps (go.sum) and UI deps (package-lock.json).
+          NOTICE_KEY="ca-notices-$(sha256sum go.sum ui/apps/platform/package-lock.json | sha256sum | cut -c1-16)"
+          if "${GOCACHEPROG}" -fetch-any "$NOTICE_KEY" /tmp/notices.tar 2>/dev/null && [ -s /tmp/notices.tar ]; then
+            tar -xf /tmp/notices.tar -C image/rhel/
+            echo "notices: FETCHED from blob store"
+          else
+            echo "notices: GENERATING (blob miss)"
+            # ossls audits the UI dependency tree too, so node_modules
+            # must be present even when the UI build was blob-fetched.
+            if [ ! -d ui/apps/platform/node_modules ]; then
+              DEPS_KEY="ui-deps-${{ matrix.arch }}-$(sha256sum ui/apps/platform/package-lock.json | cut -c1-16)"
+              if "${GOCACHEPROG}" -fetch-any "$DEPS_KEY" /tmp/ui-deps.tar 2>/dev/null && [ -s /tmp/ui-deps.tar ]; then
+                tar -xf /tmp/ui-deps.tar -C "$GITHUB_WORKSPACE" 2>/dev/null || true
+                touch ui/deps
+              else
+                make -C ui deps
+              fi
+            fi
+            make ossls-notice
+            tar -cf /tmp/notices.tar -C image/rhel THIRD_PARTY_NOTICES
+            "${GOCACHEPROG}" -store-all "$NOTICE_KEY" /tmp/notices.tar || true
+          fi
+
+      - name: Static data — external networks + swagger
+        if: steps.fastpath.outputs.skip != 'true'
+        env:
+          # See notices step: build tools need module mode.
+          GOFLAGS: -buildvcs=false -mod=mod
+        run: |
+          set -euo pipefail
+          # swagger.json is GENERATED from API protos (make swagger-docs);
+          # the Makefile writes it to image/rhel/docs/ (GENERATED_DOC_PATH),
+          # which is where the checkout's Dockerfile COPYs it from.
+          # Keyed by the proto inputs + merge script.
+          SWAGGER_KEY="ca-swagger-v2-$(git ls-files 'proto/' 'central/docs/' 'scripts/mergeswag.sh' 'make/protogen.mk' 2>/dev/null \
+            | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)"
+          if "${GOCACHEPROG}" -fetch-any "$SWAGGER_KEY" /tmp/swagger.tar 2>/dev/null && [ -s /tmp/swagger.tar ]; then
+            tar -xf /tmp/swagger.tar
+            echo "swagger: FETCHED from blob store"
+          else
+            echo "swagger: GENERATING (blob miss)"
+            go mod download github.com/stackrox/scanner
+            make swagger-docs
+            tar -cf /tmp/swagger.tar image/rhel/docs
+            "${GOCACHEPROG}" -store-all "$SWAGGER_KEY" /tmp/swagger.tar || true
+          fi
+
+          # external-networks.zip is fetched from definitions.stackrox.io
+          # (drifts independently of the source tree, like master's build,
+          # which also fetches it fresh every time).
+          bash image/rhel/fetch-stackrox-data.sh image/rhel/static-data
+          echo "static-data: ready"
+
+      - name: Docker build + push
+        if: steps.fastpath.outputs.skip != 'true'
+        env:
+          CI: "1"
+        run: |
+          set -euo pipefail
+          # Stage the image context exactly the way the checkout's own
+          # Makefile does (image/rhel/): binaries with the tree's renames
+          # (worker→central-worker, kubernetes→kubernetes-sensor, ...),
+          # UI build output. Drift-proof by construction.
+          make copy-binaries-to-image-dir
+
+          # roxctl tarballs (what /assets/downloads/cli/ serves), like
+          # the checkout's cli-tarballs Docker stage.
+          (cd image/rhel/bin && \
+            for f in roxctl-*; do
+              [[ -f "$f" && -x "$f" ]] || continue
+              tar -czf "${f%.exe}.tar.gz" "$f"
+            done)
+
+          # Generate the Dockerfile from the checkout's own
+          # image/rhel/Dockerfile (final stage verbatim, base swapped
+          # for the pre-built content-addressed base).
+          # Base image lives on stackrox-io (public pull, no auth needed
+          # even on rhacs-eng-authenticated legs).
+          tools/ca/gen-dockerfile image/rhel/Dockerfile \
+            quay.io/stackrox-io/main /tmp/generated.Dockerfile
+
+          docker buildx build \
+            --platform "linux/${{ matrix.arch }}" \
+            --load \
+            --cache-from "type=registry,ref=${{ matrix.registry }}/main:cache-${{ matrix.arch }}" \
+            --cache-to type=inline \
+            -t "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" \
+            --build-arg "TARGET_ARCH=${{ matrix.arch }}" \
+            --build-arg "LABEL_VERSION=${{ env.IMAGE_TAG }}" \
+            --build-arg "LABEL_RELEASE=ci" \
+            --build-arg "ROX_IMAGE_FLAVOR=${{ matrix.branding == 'STACKROX_BRANDING' && 'opensource' || 'development_build' }}" \
+            --build-arg "ROX_PRODUCT_BRANDING=${{ matrix.branding }}" \
+            --file /tmp/generated.Dockerfile \
+            image/rhel 2>&1 | tail -5
+
+          # Push
+          docker push "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}"
+
+          # Update layer cache tag
+          docker buildx imagetools create \
+            -t "${{ matrix.registry }}/main:cache-${{ matrix.arch }}" \
+            "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" 2>&1 | tail -1 || true
+
+          # Get digest for receipt
+          DIGEST=$(docker buildx imagetools inspect \
+            "${{ matrix.registry }}/main:${{ env.IMAGE_TAG }}-${{ matrix.arch }}" 2>/dev/null | \
+            grep "Digest:" | awk '{print $2}') || DIGEST=""
+
+          # Store build receipt with component hashes (enables partial fast paths)
+          if [ -n "$DIGEST" ]; then
+            GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+              | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+            UI_HASH=$(git ls-files 'ui/' 2>/dev/null \
+              | grep -Ev 'node_modules|test|spec' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+            DOCKER_HASH=$(git ls-files 'image/' 'Dockerfile*' 'docs/api/' 2>/dev/null \
+              | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+            BASE_DIGEST=$(docker buildx imagetools inspect \
+              "quay.io/stackrox-io/main:base-${{ matrix.arch }}" 2>/dev/null \
+              | grep Digest: | awk '{print $2}' | cut -c8-19)
+            RECIPE_HASH=$((cat tools/ca/gen-dockerfile 2>/dev/null; \
+              echo "${{ env.WORKFLOW_RECIPE }}${BASE_DIGEST}") | sha256sum | cut -c1-16)
+            BUILD_HASH="${GO_HASH}-${UI_HASH}-${DOCKER_HASH}"
+            cat > /tmp/build-receipt.json <<EOF
+          {"go_hash":"${GO_HASH}","ui_hash":"${UI_HASH}","docker_hash":"${DOCKER_HASH}","branding":"${{ matrix.branding }}","arch":"${{ matrix.arch }}","registry":"${{ matrix.registry }}","tag":"${{ env.IMAGE_TAG }}","digest":"${DIGEST}","built_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+          EOF
+            "${GOCACHEPROG}" -store-all "build-receipt-${{ matrix.branding }}-${{ matrix.arch }}-${RECIPE_HASH}-${BUILD_HASH}" /tmp/build-receipt.json
+            echo "receipt stored: ${DIGEST:0:20}... (go=${GO_HASH:0:8} ui=${UI_HASH:0:8})"
+          fi
+
+      - name: Result
+        run: |
+          if [ "${{ steps.fastpath.outputs.skip }}" = "true" ]; then
+            echo "╔══════════════════════════════════════╗"
+            echo "║  FAST PATH: image re-tagged (~30s)   ║"
+            echo "╚══════════════════════════════════════╝"
+          else
+            echo "╔══════════════════════════════════════╗"
+            echo "║  BUILD PATH: image built and pushed   ║"
+            echo "╚══════════════════════════════════════╝"
+          fi
+
+  # Per-platform roxctl, one runner each: parallel across 4-core runners
+  # with a per-platform manifest (precise prefetch, no over-download).
+  # Same per-platform blob keys the main-image legs fetch — first
+  # writer wins, everyone else fetches.
+  roxctl:
     strategy:
       fail-fast: false
       matrix:
-        name: [RHACS_BRANDING, STACKROX_BRANDING]
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Push matching collector and scanner images
-        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-          source ./scripts/ci/lib.sh
-          push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}"
-
-  push-main-manifests:
+        platform: [darwin-amd64, darwin-arm64, linux-amd64, linux-arm64, linux-ppc64le, linux-s390x, windows-amd64]
     runs-on: ubuntu-24.04
-    needs:
-    - define-job-matrix
-    - build-and-push-main
-    # This step will run even if some of the build-and-push-matrix steps failed.
-    # By following this approach as much of the build matrix as possible is
-    # completed despite transient issues e.g. docker pull timeouts. In this way
-    # some e2e jobs that require some part of the build matrix can still
-    # proceed.
-    if: ${{ !cancelled() }}
-    permissions:
-      pull-requests: write
-    strategy:
-      # Supports four image builds (see Setup build env):
-      # STACKROX_BRANDING
-      # RHACS_BRANDING
-      # prerelease
-      # race-condition-debug
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
-    env:
-      ROX_PRODUCT_BRANDING: ""
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+    timeout-minutes: 20
     steps:
-    - name: Setup build env
-      run: |
-        case "${{ matrix.name }}" in
-          STACKROX_BRANDING)
-            brand="STACKROX_BRANDING"
-            ;;
-          RHACS_BRANDING)
-            brand="RHACS_BRANDING"
-            ;;
-          race-condition-debug)
-            brand="RHACS_BRANDING"
-            ;;
-          prerelease)
-            brand="RHACS_BRANDING"
-            ;;
-          *)
-            echo "Unsupported build: ${{ matrix.name }}"
-            exit 1
-        esac
-
-        {
-          echo "ROX_PRODUCT_BRANDING=${brand}"
-        } >> "$GITHUB_ENV"
-
-    - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
-
-    - name: Checkout submodules
-      run: |
-        git submodule update --init
-
-    - name: Set build tag for prerelease images
-      if: matrix.name == 'prerelease'
-      run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
-
-    - name: Set build tag for race condition images
-      if: matrix.name == 'race-condition-debug'
-      run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
-
-    - name: Build and push manifest lists
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-      run: |
-        source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        architectures="amd64,arm64"
-        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures="amd64,arm64,ppc64le,s390x"
-        fi
-        if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
-          architectures="amd64"
-        fi
-        push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
-
-    - name: Prepare build comment
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      run: |
-        cat > build-comment.md <<EOF
-        ## 🚀 Build Images Ready
-
-        Images are ready for commit ${{ needs.define-job-matrix.outputs.short-commit }}. To use with deploy scripts:
-        \`\`\`bash
-        export MAIN_IMAGE_TAG=${{ needs.define-job-matrix.outputs.build-tag }}
-        \`\`\`
-        EOF
-
-    - name: Comment on the PR
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # ratchet:mshick/add-pr-comment@v3
-      with:
-        message-id: build-images-ready
-        message-path: build-comment.md
-
-  build-and-push-operator:
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
-    needs:
-      - define-job-matrix
-      - pre-build-go-binaries
-      - pre-build-oss-notice
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
-      # Proto sources freshness is checked in another workflow.
-      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-      - name: Checkout
+      - name: Checkout (shallow)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/job-preamble
-        with:
-          free-disk-space: 40
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
-
-      - name: Download prebuilt operator binaries
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-default
-
-      - name: Extract prebuilt binaries
-        run: tar xf go-binaries-build.tar
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: oss-notice
-          path: THIRD_PARTY_NOTICES
-
-      - name: PR labels
-        uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
-
-      - name: Setup Go release build environment
-        if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
-        run: echo "GOTAGS=release" >> "$GITHUB_ENV"
-
-      - name: Setup Go RHACS build environment
-        if: matrix.name == 'RHACS_BRANDING'
-        run: echo "QUAY_ORG=rhacs-eng" >> "$GITHUB_ENV"
-
-      - name: Setup Go StackRox build environment
-        if: matrix.name == 'STACKROX_BRANDING'
-        run: echo "QUAY_ORG=stackrox-io" >> "$GITHUB_ENV"
-
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      - name: Ensure CA build infrastructure present
         run: |
-          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
-
-      - name: Build Operator image
-        run: |
-          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
-
-      - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # ratchet:docker/login-action@v4
-        continue-on-error: true
-        # Skip for external contributions.
-        if: |
-          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
-          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
-
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # ratchet:docker/setup-qemu-action@v4
-
-      - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
-
-      - name: Push image
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
-            fi
-            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
-            if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
-              echo "ERROR: push_operator_image failed" >&2
-              exit 1
-            fi
-            echo "Operator image push completed successfully"
-
-  build-and-push-scanner:
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
-    needs:
-      - define-job-matrix
-      - build-and-push-db
-      - pre-build-go-binaries
-      - pre-build-oss-notice
-    if: ${{ !cancelled() }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_scanner }}
-    env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # ratchet:docker/login-action@v4
-        continue-on-error: true
-        if: |
-          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
-          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
-
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # ratchet:docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
-
-      - uses: ./.github/actions/handle-tagged-build
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-
-      - name: Unpack Go binaries
-        run: tar xvf go-binaries-build.tar
-
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: oss-notice
-          path: scanner/image/scanner/THIRD_PARTY_NOTICES
-
-      - name: Copy scanner binary to expected location
-        run: |
-          mkdir -p scanner/image/scanner/bin
-          cp bin/linux_${{ matrix.arch }}/scanner scanner/image/scanner/bin/scanner
-
-      - name: Set build tag for prerelease images
-        if: matrix.name == 'prerelease'
-        run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
-
-      - name: Set build tag for race condition images
-        if: matrix.name == 'race-condition-debug'
-        run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
-
-      - name: Build Scanner and ScannerDB images
-        run: scripts/lib.sh retry 6 true make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.arch }} images
-
-      - name: Push Scanner and ScannerDB images
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        run: |
-          source ./scripts/ci/lib.sh
-          push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
-
-  push-scanner-manifests:
-    runs-on: ubuntu-24.04
-    needs:
-      - define-job-matrix
-      - build-and-push-scanner
-    # This step will run even if some of the build-and-push-scanner steps failed.
-    # By following this approach as much of the build matrix as possible is
-    # completed despite transient issues e.g. docker pull timeouts. In this way
-    # some e2e jobs that require some part of the build matrix can still
-    # proceed.
-    if: ${{ !cancelled() }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_scanner_manifests }}
-    env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
-
-    - name: Set build tag for prerelease images
-      if: matrix.name == 'prerelease'
-      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
-
-    - name: Set build tag for race condition images
-      if: matrix.name == 'race-condition-debug'
-      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
-
-    - name: Push Scanner and ScannerDB image manifests
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-      run: |
-          source ./scripts/ci/lib.sh
-
-          architectures="amd64,arm64"
-          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-            architectures="amd64,arm64,ppc64le,s390x"
-          fi
-          if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
-            architectures="amd64"
+          if [ ! -f tools/gocache-serve/bin/gocache-serve ]; then
+            git fetch origin davdhacs/content-addressed-build --depth=1
+            git checkout origin/davdhacs/content-addressed-build -- tools/gocache-serve/
           fi
 
-          push_scanner_image_manifest_lists "${{ matrix.registry }}" "$architectures"
-
-  push-operator-manifests:
-    runs-on: ubuntu-24.04
-    needs:
-    - define-job-matrix
-    - build-and-push-operator
-    # This step will run even if some of the build-and-push-matrix steps failed.
-    # By following this approach as much of the build matrix as possible is
-    # completed despite transient issues e.g. docker pull timeouts. In this way
-    # some e2e jobs that require some part of the build matrix can still
-    # proceed.
-    if: ${{ !cancelled() }}
-    strategy:
-      # Supports image builds (see Setup build env):
-      # RHACS_BRANDING
-      # STACKROX_BRANDING
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
-      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # ratchet:docker/setup-buildx-action@v4
-
-    - name: Push operator manifest lists
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-      run: |
-        source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ matrix.archs }}
-
-  scan-go-binaries:
-    if: |
-      contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
-    env:
-      ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-24.04
-    needs:
-    - pre-build-cli
-    - pre-build-go-binaries
-    steps:
-    - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 1
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: cli-build
-
-    - name: Unpack cli build
-      run: |
-        tar xvf cli-build.tar
-
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: go-binaries-build-amd64-default
-
-    - name: Unpack Go binaries build
-      run: |
-        tar xvf go-binaries-build.tar
-
-    - name: Scan
-      run: |
-        ./scripts/ci/govulncheck.sh
-
-    - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/**/*.xml'
-
-    - name: Report junit failures in jira
-      uses: ./.github/actions/junit2jira
-      if: always()
-      with:
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'junit-reports'
-
-  slack-on-build-failure:
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
-      TEST_FAILURES_NOTIFY_WEBHOOK: ${{ secrets.TEST_FAILURES_NOTIFY_WEBHOOK }}
-    if: |
-      failure() && (
-          github.event_name == 'push' ||
-          contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
-      )
-    name: Post failure message to Slack
-    runs-on: ubuntu-24.04
-    needs:
-      - build-and-push-db
-      - build-and-push-main
-      - build-and-push-operator
-      - build-and-push-scanner
-      - build-operator-bundle
-      - pre-build-cli
-      - pre-build-docs
-      - pre-build-go-binaries
-      - pre-build-ui
-      - push-matching-collector-scanner
-      - scan-go-binaries
-    permissions:
-      actions: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-
-      - name: Slack message
+      - name: Setup
         env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          source scripts/ci/lib.sh
-          slack_workflow_failure
+          set -euo pipefail
+          # Stable embedded stamps (same recipe as main-image: release
+          # train only — keeps link ActionIDs stable across commits).
+          LATEST_TAG="$(git ls-remote --tags --refs origin \
+            | awk -F/ '{print $NF}' | grep -E '^[0-9]+\.[0-9]+\.[0-9x]+$' | sort -V | tail -1)"
+          STABLE_VERSION="$(printf '%s' "$LATEST_TAG" | sed 's/\.x$/.0/')-0-g0000000000"
+          echo "BUILD_TAG=${STABLE_VERSION:-0.0.0}" >> "$GITHUB_ENV"
+          echo "SHORTCOMMIT=0000000000" >> "$GITHUB_ENV"
+          GO_HASH=$(git ls-files '*.go' 'go.mod' 'go.sum' 'Makefile' 'scripts/' 2>/dev/null \
+            | grep -v '_test.go' | xargs sha256sum 2>/dev/null | sort -k2 | sha256sum | cut -c1-16)
+          echo "GO_HASH=${GO_HASH}" >> "$GITHUB_ENV"
+          echo "GOCACHEPROG=${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_BACKEND=azure" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONTAINER=ci-gocache" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_CONCURRENCY=24" >> "$GITHUB_ENV"
+          # Per-platform manifest: this platform's working set only.
+          echo "GOCACHE_SERVE_MANIFEST=roxctl-${{ matrix.platform }}" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_RUN_ID=${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+          echo "GOCACHE_SERVE_MANIFEST_WRITE=1" >> "$GITHUB_ENV"
+
+      - name: Build platform binaries (or skip if blob exists)
+        run: |
+          set -euo pipefail
+          plat_dir="$(printf '%s' '${{ matrix.platform }}' | tr '-' '_')"
+          KEY="ca-roxctl-v3-${plat_dir}-${GO_HASH}-${BUILD_TAG}"
+          if "${GOCACHEPROG}" -fetch-any "$KEY" /tmp/rx.tar 2>/dev/null && [ -s /tmp/rx.tar ]; then
+            echo "roxctl ${{ matrix.platform }}: blob exists — skip"
+            exit 0
+          fi
+          os="${{ matrix.platform }}"; os="${os%%-*}"; arch="${{ matrix.platform }}"; arch="${arch##*-}"
+          export GOOS="$os" GOARCH="$arch"
+          # Vendor cache (go.sum-keyed, shared with main-image): avoids
+          # proxy.golang.org dependence (a transient proxy error killed
+          # a run before this existed).
+          VENDOR_KEY="vendor-cache-$(sha256sum go.sum | cut -c1-16)"
+          if "${GOCACHEPROG}" -fetch-any "$VENDOR_KEY" /tmp/vendor.tar.gz 2>/dev/null && [ -s /tmp/vendor.tar.gz ]; then
+            tar -xf /tmp/vendor.tar.gz
+          else
+            unset GOCACHEPROG; go mod vendor; export GOCACHEPROG="${{ github.workspace }}/tools/gocache-serve/bin/gocache-serve"
+            tar -czf /tmp/vendor.tar.gz vendor/
+            "${GOCACHEPROG}" -store-all "$VENDOR_KEY" /tmp/vendor.tar.gz || true
+          fi
+          export GOFLAGS="${GOFLAGS} -mod=vendor"
+          scripts/go-build.sh ./roxctl
+          if [ "$os" = linux ]; then
+            scripts/go-build.sh ./compliance/virtualmachines/roxagent
+          fi
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+            -cf /tmp/rx.tar "bin/${plat_dir}"
+          "${GOCACHEPROG}" -store-all "$KEY" /tmp/rx.tar
+          echo "roxctl ${{ matrix.platform }}: built and stored"
+
+  # The only coordination point in the workflow: assembling the multi-arch
+  # manifest requires both arch legs' outputs. This is output assembly,
+  # not build coordination — each leg remains self-contained.
+  assemble-manifest:
+    needs: main-image
+    if: always() && !cancelled() && needs.main-image.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Assemble multi-arch tags
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.main-image.outputs.image_tag }}"
+          echo "assembling multi-arch manifests for tag: ${TAG}"
+          # docker holds one quay.io credential at a time — re-login
+          # between registries.
+          echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login quay.io \
+            -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin
+          docker buildx imagetools create \
+            -t "quay.io/rhacs-eng/main:${TAG}" \
+            "quay.io/rhacs-eng/main:${TAG}-amd64" \
+            "quay.io/rhacs-eng/main:${TAG}-arm64"
+          echo "created quay.io/rhacs-eng/main:${TAG} (amd64+arm64)"
+          docker logout quay.io
+          echo "${QUAY_STACKROX_IO_RW_PASSWORD}" | docker login quay.io \
+            -u "${QUAY_STACKROX_IO_RW_USERNAME}" --password-stdin
+          docker buildx imagetools create \
+            -t "quay.io/stackrox-io/main:${TAG}" \
+            "quay.io/stackrox-io/main:${TAG}-amd64" \
+            "quay.io/stackrox-io/main:${TAG}-arm64"
+          echo "created quay.io/stackrox-io/main:${TAG} (amd64+arm64)"
+
+  # Validation aid: e2e-dispatch waits for the FULL image set at the PR
+  # tag; the CA system builds only main. This job copies the sidecar
+  # images (central-db, collector, fact, roxctl, scanner-v4,
+  # scanner-v4-db, operator-bundle) from a known-good master build.
+  retag-sidecars:
+    if: inputs.retag_source != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout (full, for make tag)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit }}
+
+      - name: Build operator bundle + image, retag sidecar images
+        env:
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: "true"
+          # RHACS branding selects the rhacs-eng registry (env.mk) —
+          # the e2e image set lives there.
+          ROX_PRODUCT_BRANDING: RHACS_BRANDING
+          # Tool installs and the operator binary build must not
+          # inherit vendor mode (see notices step note).
+          GOFLAGS: -buildvcs=false -mod=mod
+        run: |
+          set -euo pipefail
+          TARGET_TAG="$(make --quiet --no-print-directory tag)"
+          SOURCE="${{ inputs.retag_source }}"
+          echo "retagging ${SOURCE} -> ${TARGET_TAG}"
+
+          # Build the operator binary for both arches (main-build-nodeps
+          # normally renames operator/cmd -> stackrox-operator; here we
+          # build it directly and rename the same way).
+          for arch in amd64 arm64; do
+            GOOS=linux GOARCH=$arch scripts/go-build.sh operator/cmd
+            mv bin/linux_${arch}/cmd bin/linux_${arch}/stackrox-operator
+          done
+          # THIRD_PARTY_NOTICES is required by prebuilt.Dockerfile.
+          # Extract from our main image — generated from the same tree
+          # by the main-image legs (avoids the ossls node_modules dance).
+          # The main-image Build may still be pushing when this job
+          # starts; wait for the tag (the login below also fixes pulls).
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
+          for i in $(seq 1 40); do
+            docker buildx imagetools inspect "quay.io/rhacs-eng/main:${TARGET_TAG}" >/dev/null 2>&1 && break
+            echo "waiting for main:${TARGET_TAG} ..."; sleep 30
+          done
+          _cid=$(docker create "quay.io/rhacs-eng/main:${TARGET_TAG}")
+          docker cp "$_cid:/THIRD_PARTY_NOTICES" ./THIRD_PARTY_NOTICES
+          docker rm -f "$_cid" >/dev/null
+          echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login quay.io \
+            -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin
+          # central-db is built FROM THE TREE (era-matched): a rewind
+          # build pairs an old main image with modern sidecars otherwise —
+          # Sept central (pg_dump 15) vs modern central-db (PG 16) breaks
+          # central's DB-backup health check and central never readies.
+          docker build -t "quay.io/rhacs-eng/central-db:${TARGET_TAG}" \
+            --file image/postgres/Dockerfile image/postgres
+          docker push "quay.io/rhacs-eng/central-db:${TARGET_TAG}"
+          echo "built central-db from tree (era-matched)"
+
+          for repo in collector fact roxctl scanner-v4 scanner-v4-db; do
+            docker buildx imagetools create \
+              -t "quay.io/rhacs-eng/${repo}:${TARGET_TAG}" \
+              "quay.io/rhacs-eng/${repo}:${SOURCE}"
+            echo "retagged ${repo}"
+          done
+          # Build the operator bundle from this tree (like master's
+          # build-operator-bundle job): a retagged old bundle would pin
+          # old image tags in RELATED_IMAGES; building produces a bundle
+          # referencing OUR tag.
+          export BUILD_TAG="${TARGET_TAG}"
+          make -C operator bundle bundle-build
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
+          make -C operator docker-push-bundle | cat
+          echo "built and pushed operator-bundle"
+
+          # Build the operator IMAGE from this tree (master's recipe:
+          # docker-build-prebuilt) for both arches, verify runnability
+          # like master does, push arch tags, assemble the manifest
+          # list. A retagged foreign-lineage operator image crashed in
+          # e2e; building from the tree keeps image/CRD/bundle
+          # consistent.
+          OPERATOR_TARGET="$(BUILD_TAG="${TARGET_TAG}" make -C operator --quiet --no-print-directory tag)"
+          echo "operator image tag: ${OPERATOR_TARGET}"
+          for arch in amd64 arm64; do
+            GOARCH=$arch make -C operator docker-build-prebuilt
+            # Runnability check only on the native arch (the runner is
+            # amd64; running the arm64 binary needs QEMU, which the
+            # COPY-only Dockerfile build does not).
+            if [ "$arch" = amd64 ]; then
+              docker run --rm --platform linux/amd64 \
+                "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" --help >/dev/null
+            fi
+            docker tag "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" \
+              "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-${arch}"
+            docker push "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-${arch}"
+          done
+          docker buildx imagetools create \
+            -t "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}" \
+            "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-amd64" \
+            "quay.io/rhacs-eng/stackrox-operator:${OPERATOR_TARGET}-arm64"
+          echo "built and pushed operator image (amd64+arm64)"
