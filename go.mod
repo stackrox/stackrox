@@ -122,7 +122,7 @@ require (
 	github.com/sigstore/sigstore-go v1.3.0
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/spf13/viper v1.21.0
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
 	github.com/stackrox/hashstructure v0.0.4
@@ -132,7 +132,7 @@ require (
 	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
 	github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09
 	github.com/stretchr/testify v1.12.1
-	github.com/tidwall/gjson v1.20.0
+	github.com/tidwall/gjson v1.20.1
 	github.com/tkuchiki/go-timezone v0.2.3
 	github.com/travelaudience/go-promhttp v1.0.1
 	github.com/vbauerster/mpb/v4 v4.12.2

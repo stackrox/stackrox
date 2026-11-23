@@ -231,6 +231,7 @@ function PolicyScopeForm(): ReactElement {
                                         handleChange={handleChange}
                                         setFieldValue={setFieldValue}
                                         onDelete={() => deleteInclusionScope(index)}
+                                        hasAuditLogEventSource={hasAuditLogEventSource}
                                     />
                                 ) : (
                                     <PolicyScopeCardLegacy
@@ -313,6 +314,7 @@ function PolicyScopeForm(): ReactElement {
                                         handleChange={handleChange}
                                         setFieldValue={setFieldValue}
                                         onDelete={() => deleteExclusionDeploymentScope(index)}
+                                        hasAuditLogEventSource={hasAuditLogEventSource}
                                     />
                                 ) : (
                                     <PolicyScopeCardLegacy
