@@ -294,8 +294,8 @@ func checkProfileHandshake(t *testing.T, wantFailure bool) {
 	roots.AddCert(leaf)
 
 	serverConn, clientConn := net.Pipe()
-	defer serverConn.Close()
-	defer clientConn.Close()
+	t.Cleanup(func() { assert.NoError(t, serverConn.Close()) })
+	t.Cleanup(func() { assert.NoError(t, clientConn.Close()) })
 	deadline := time.Now().Add(5 * time.Second)
 	require.NoError(t, serverConn.SetDeadline(deadline))
 	require.NoError(t, clientConn.SetDeadline(deadline))
