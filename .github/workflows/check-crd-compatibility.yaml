@@ -25,8 +25,6 @@ jobs:
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-24.04
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
@@ -47,9 +45,12 @@ jobs:
         path: .crd-schema-checker
         ref: c313b6407231f6d1aabfb602f0823708f8c6b9fb # 2025-09-05
 
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
     - name: Build crd-schema-checker
       run: |
-        make -C .crd-schema-checker
+        make -C .crd-schema-checker SHELL=/bin/bash
 
     - name: Get previous released version
       id: get_previous_released_version
