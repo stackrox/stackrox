@@ -40,8 +40,7 @@ main() {
 
     while read -r tag version _; do
         # Sanity check: skip pre-V4 versions (before 4.4.0).
-        smallest=$(printf '%s\n' "$version" 4.4.0 | sort -V | head -1)
-        if [[ "$smallest" = "$version" && "$version" != "4.4.0" ]]; then
+        if ! printf '%s\n%s\n' 4.4.0 "$version" | sort -CV; then
             echo >&2 "info: skipping pre-V4 tag: $version"
             continue
         fi
