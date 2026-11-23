@@ -2,6 +2,7 @@
 export const CLUSTER_QUERY = 'Cluster';
 export const CHECK_NAME_QUERY = 'Compliance Check Name';
 export const CHECK_STATUS_QUERY = 'Compliance Check Status';
+export const CHECK_DATA_FRESHNESS_QUERY = 'Compliance Check Data Freshness';
 
 // status colors
 export const FAILING_VAR_COLOR = 'var(--pf-t--global--icon--color--status--danger--default)';

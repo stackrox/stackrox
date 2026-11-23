@@ -15,6 +15,7 @@ type ExclusionScopeCardProps = {
     handleChange: (event: FormEvent<HTMLInputElement>, value: string) => void;
     setFieldValue: (field: string, value: unknown, shouldValidate?: boolean) => void;
     onDelete: () => void;
+    hasAuditLogEventSource: boolean;
 };
 
 function ExclusionScopeCard({
@@ -24,6 +25,7 @@ function ExclusionScopeCard({
     handleChange,
     setFieldValue,
     onDelete,
+    hasAuditLogEventSource,
 }: ExclusionScopeCardProps): ReactElement {
     const scopePath = `excludedDeploymentScopes[${index}]`;
 
@@ -67,6 +69,7 @@ function ExclusionScopeCard({
                         placeholder="Workload name"
                         type="text"
                         value={excludedDeploymentScope.name ?? ''}
+                        isDisabled={hasAuditLogEventSource}
                     />
                 </FormGroup>
                 <FormGroup label="Workload label">
@@ -78,6 +81,7 @@ function ExclusionScopeCard({
                             placeholder="Label key"
                             type="text"
                             value={excludedDeploymentScope.scope?.label?.key ?? ''}
+                            isDisabled={hasAuditLogEventSource}
                         />
                         <TextInput
                             aria-label="Workload label value"
@@ -86,6 +90,7 @@ function ExclusionScopeCard({
                             placeholder="Label value"
                             type="text"
                             value={excludedDeploymentScope.scope?.label?.value ?? ''}
+                            isDisabled={hasAuditLogEventSource}
                         />
                     </Flex>
                 </FormGroup>

@@ -83,9 +83,10 @@ module.exports = {
             viteConfig: {
                 configFile: path.resolve(__dirname, 'vite.config.js'),
                 optimizeDeps: {
-                    // Avoid rebuilding dependencies while loading the VM component spec
-                    // and the base images page spec (react-helmet, via PageTitle).
-                    include: ['lodash/findIndex', 'lodash/reduce', 'react-feather', 'react-helmet'],
+                    // Pre-bundle on every start instead of trusting node_modules/.vite; it costs seconds even at
+                    // much larger scales. CI restores that directory from a cache frozen at the last lockfile
+                    // change, so a spec importing a dep missing from it re-optimized mid-run and failed to load.
+                    force: true,
                 },
             },
         },
