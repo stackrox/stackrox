@@ -122,6 +122,9 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 			if subBQ.MatchFieldQuery.GetValue() == search.NullString {
 				nullableFields.Add(subBQ.MatchFieldQuery.GetField())
 			}
+		case *v1.BaseQuery_MatchFieldSubQuery:
+			// The inner query builds its own joins for the category it searches.
+			collectedFields.Add(subBQ.MatchFieldSubQuery.GetField())
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
 				collectedFields.Add(q.GetField())

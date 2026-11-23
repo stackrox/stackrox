@@ -208,6 +208,7 @@ message BaseQuery {
     MatchLinkedFieldsQuery match_linked_fields_query = 3;
     DocIDQuery doc_id_query = 4;
     MatchNoneQuery match_none_query = 5;
+    MatchFieldSubQuery match_field_sub_query = 6;
   }
 }
 
@@ -258,6 +259,16 @@ message SearchOptionsResponse {
 
 message AutocompleteResponse {
   repeated string values = 1;
+}
+
+// MatchFieldSubQuery filters records whose field value matches a value returned
+// by another query. For example, it can filter images by selecting image IDs
+// from deployments in a particular namespace. The SQL search backend applies
+// the inner query's access and scope filters separately.
+message MatchFieldSubQuery {
+  string field = 1;
+  SearchCategory category = 2;
+  Query query = 3;
 }
 
 service SearchService {
