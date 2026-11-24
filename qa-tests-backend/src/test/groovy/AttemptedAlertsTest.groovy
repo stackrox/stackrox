@@ -131,7 +131,10 @@ class AttemptedAlertsTest extends BaseSpecification {
         and:
         "Verify alerts"
         List<ListAlert> listAlerts = []
-        withRetry(3, 3) {
+        // getViolationsWithTimeout returns as soon as any matching alert exists, so alerts
+        // from earlier iterations make it return immediately. The outer retry is the
+        // effective wait; 30 x 3s covers slow OCP alert creation (~16s observed in ROX-39663).
+        withRetry(30, 3) {
             listAlerts = Services.getViolationsWithTimeout(deploymentName, LATEST_TAG_POLICY_NAME, 60)
             // Expected number of alerts for deployment name relies on the order of data inputs.
             assert listAlerts && listAlerts.size() == numAlerts
@@ -210,7 +213,9 @@ class AttemptedAlertsTest extends BaseSpecification {
         and:
         "Verify alerts"
         List<ListAlert> listAlerts = []
-        withRetry(3, 3) {
+        // See the create test above: prior alerts short-circuit getViolationsWithTimeout,
+        // so the outer retry provides the effective wait.
+        withRetry(30, 3) {
             listAlerts = Services.getViolationsWithTimeout(DEP_NAMES[4], LATEST_TAG_POLICY_NAME, 60)
             // Expected number of alerts for deployment relies on the order of data inputs.
             assert listAlerts && listAlerts.size() == numAlerts
