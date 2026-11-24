@@ -1641,6 +1641,11 @@
                 "name": "history",
                 "type": "BaseImageHistoryEntry",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "metadata_version",
+                "type": "uint32"
               }
             ],
             "maps": [
