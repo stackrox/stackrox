@@ -40,6 +40,24 @@ func TestCreatePermissionSet_Failures(t *testing.T) {
 			},
 			err: errox.InvalidArgs,
 		},
+		"invalid access constraint": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--access-constraint=invalid",
+			},
+			err: errox.InvalidArgs,
+		},
+		"invalid scope constraint": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--scope-constraint=invalid",
+			},
+			err: errox.InvalidArgs,
+		},
 	}
 
 	for name, c := range cases {
@@ -113,6 +131,50 @@ resources:
       access: READ_ACCESS
     - resource: Admin
       access: READ_WRITE_ACCESS
+`,
+		},
+		"read access constraint": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--access-constraint=ACCESS_CONSTRAINT_READ",
+			},
+			expectedYAML: `name: some-name
+resources:
+    - resource: Cluster
+      access: READ_ACCESS
+accessConstraint: ACCESS_CONSTRAINT_READ
+`,
+		},
+		"scope constraint": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_WRITE_ACCESS",
+				"--scope-constraint=SCOPE_CONSTRAINT_CLUSTER_NAMESPACE",
+			},
+			expectedYAML: `name: some-name
+resources:
+    - resource: Cluster
+      access: READ_WRITE_ACCESS
+scopeConstraint: SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
+`,
+		},
+		"both constraints": {
+			args: []string{
+				"permission-set",
+				"--name=some-name",
+				"--resource-with-access=Cluster=READ_ACCESS",
+				"--access-constraint=ACCESS_CONSTRAINT_READ",
+				"--scope-constraint=SCOPE_CONSTRAINT_CLUSTER_NAMESPACE",
+			},
+			expectedYAML: `name: some-name
+resources:
+    - resource: Cluster
+      access: READ_ACCESS
+accessConstraint: ACCESS_CONSTRAINT_READ
+scopeConstraint: SCOPE_CONSTRAINT_CLUSTER_NAMESPACE
 `,
 		},
 	}

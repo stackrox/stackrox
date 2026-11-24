@@ -151,15 +151,20 @@ func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.
 	return &v1.Empty{}, nil
 }
 
-// GetResources returns all the possible resources in the system
+// GetResources returns all available resources and identifies globally scoped resources.
 func (s *serviceImpl) GetResources(context.Context, *v1.Empty) (*v1.GetResourcesResponse, error) {
-	resourceList := resources.ListAll()
-	resources := make([]string, 0, len(resourceList))
-	for _, r := range resourceList {
-		resources = append(resources, string(r))
+	resourceList := resources.ListAllMetadata()
+	resourceNames := make([]string, 0, len(resourceList))
+	var globalResources []string
+	for _, resource := range resourceList {
+		resourceNames = append(resourceNames, string(resource.Resource))
+		if resource.GetScope() == permissions.GlobalScope {
+			globalResources = append(globalResources, string(resource.Resource))
+		}
 	}
 	return &v1.GetResourcesResponse{
-		Resources: resources,
+		Resources:       resourceNames,
+		GlobalResources: globalResources,
 	}, nil
 }
 

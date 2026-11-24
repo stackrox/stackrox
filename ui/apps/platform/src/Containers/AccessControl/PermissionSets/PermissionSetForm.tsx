@@ -8,10 +8,15 @@ import {
     Button,
     Form,
     FormGroup,
+    FormGroupLabelHelp,
     FormHelperText,
     HelperText,
     HelperTextItem,
     Label,
+    Popover,
+    Stack,
+    StackItem,
+    Switch,
     TextInput,
     Title,
     Toolbar,
@@ -28,12 +33,14 @@ import type { PermissionSet } from 'services/RolesService';
 import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
+import { setPermissionSetConstraint } from './permissionSets.utils';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
     permissionSet: PermissionSet;
     permissionSets: PermissionSet[];
+    globalResources: readonly string[];
     handleCancel: () => void;
     handleEdit: () => void;
     handleSubmit: (values: PermissionSet) => Promise<null>; // because the form has only catch and finally
@@ -44,6 +51,7 @@ function PermissionSetForm({
     action,
     permissionSet,
     permissionSets,
+    globalResources,
     handleCancel,
     handleEdit,
     handleSubmit,
@@ -53,26 +61,27 @@ function PermissionSetForm({
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
-    const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
-        initialValues: permissionSet,
-        onSubmit: () => {},
-        validationSchema: yup.object({
-            name: yup
-                .string()
-                .required()
-                .test(
-                    'non-unique-name',
-                    'Another permission set already has this name',
-                    // Return true if current input name is initial name
-                    // or no other permission set already has this name.
-                    (nameInput) =>
-                        nameInput === permissionSet.name ||
-                        permissionSets.every(({ name }) => nameInput !== name)
-                ),
-            description: yup.string(),
-            // resourceToAccess is valid because selections of access level
-        }),
-    });
+    const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, setValues, values } =
+        useFormik({
+            initialValues: permissionSet,
+            onSubmit: () => {},
+            validationSchema: yup.object({
+                name: yup
+                    .string()
+                    .required()
+                    .test(
+                        'non-unique-name',
+                        'Another permission set already has this name',
+                        // Return true if current input name is initial name
+                        // or no other permission set already has this name.
+                        (nameInput) =>
+                            nameInput === permissionSet.name ||
+                            permissionSets.every(({ name }) => nameInput !== name)
+                    ),
+                description: yup.string(),
+                // resourceToAccess is valid because selections of access level
+            }),
+        });
 
     function setResourceValue(resource, value) {
         const { resourceToAccess } = values;
@@ -119,6 +128,8 @@ function PermissionSetForm({
 
     const nameErrorMessage = values.name.length !== 0 && errors.name ? errors.name : '';
     const nameValidatedState = nameErrorMessage ? 'error' : 'default';
+    const isReadAccessOnly = values.accessConstraint === 'ACCESS_CONSTRAINT_READ';
+    const isScopedOnly = values.scopeConstraint === 'SCOPE_CONSTRAINT_CLUSTER_NAMESPACE';
 
     return (
         <Form id="permission-set-form">
@@ -183,7 +194,59 @@ function PermissionSetForm({
                     isDisabled={isViewing}
                 />
             </FormGroup>
-            {action === 'create' && (
+            <FormGroup
+                label="Permission constraints"
+                fieldId="permission-constraints"
+                role="group"
+                labelHelp={
+                    <Popover
+                        aria-label="Permission constraints information"
+                        bodyContent="Permission constraints limit the access level and resource scope that the permission set can grant. Enabling a constraint removes incompatible permissions, and disabling a constraint does not restore them."
+                    >
+                        <FormGroupLabelHelp aria-label="About permission constraints" />
+                    </Popover>
+                }
+            >
+                <Stack hasGutter>
+                    <StackItem>
+                        <Switch
+                            id="read-access-only"
+                            label="Read access only"
+                            isChecked={isReadAccessOnly}
+                            isDisabled={isViewing}
+                            onChange={(_event, checked) =>
+                                setValues((current) =>
+                                    setPermissionSetConstraint(
+                                        current,
+                                        'accessConstraint',
+                                        checked,
+                                        globalResources
+                                    )
+                                )
+                            }
+                        />
+                    </StackItem>
+                    <StackItem>
+                        <Switch
+                            id="scoped-only"
+                            label="Scoped resources only"
+                            isChecked={isScopedOnly}
+                            isDisabled={isViewing}
+                            onChange={(_event, checked) =>
+                                setValues((current) =>
+                                    setPermissionSetConstraint(
+                                        current,
+                                        'scopeConstraint',
+                                        checked,
+                                        globalResources
+                                    )
+                                )
+                            }
+                        />
+                    </StackItem>
+                </Stack>
+            </FormGroup>
+            {action === 'create' && !isScopedOnly && (
                 <Alert
                     title="Recommended minimum set of read permissions"
                     component="p"
@@ -212,6 +275,9 @@ function PermissionSetForm({
                     resourceToAccess={values.resourceToAccess}
                     setResourceValue={setResourceValue}
                     isDisabled={isViewing}
+                    isReadAccessOnly={isReadAccessOnly}
+                    isScopedOnly={isScopedOnly}
+                    globalResources={globalResources}
                 />
             </FormGroup>
             {hasAction && (

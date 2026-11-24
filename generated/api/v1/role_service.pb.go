@@ -215,10 +215,12 @@ func (x *GetPermissionsResponse) GetResourceToAccess() map[string]storage.Access
 }
 
 type GetResourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Resources     []string               `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Resources []string               `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
+	// Resources whose permissions are not restricted by a cluster or namespace scope.
+	GlobalResources []string `protobuf:"bytes,2,rep,name=global_resources,json=globalResources,proto3" json:"global_resources,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetResourcesResponse) Reset() {
@@ -254,6 +256,13 @@ func (*GetResourcesResponse) Descriptor() ([]byte, []int) {
 func (x *GetResourcesResponse) GetResources() []string {
 	if x != nil {
 		return x.Resources
+	}
+	return nil
+}
+
+func (x *GetResourcesResponse) GetGlobalResources() []string {
+	if x != nil {
+		return x.GlobalResources
 	}
 	return nil
 }
@@ -783,9 +792,10 @@ const file_api_v1_role_service_proto_rawDesc = "" +
 	"\x12resource_to_access\x18\x03 \x03(\v20.v1.GetPermissionsResponse.ResourceToAccessEntryR\x10resourceToAccess\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x01\x10\x02J\x04\b\x02\x10\x03\"4\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x01\x10\x02J\x04\b\x02\x10\x03\"_\n" +
 	"\x14GetResourcesResponse\x12\x1c\n" +
-	"\tresources\x18\x01 \x03(\tR\tresources\"]\n" +
+	"\tresources\x18\x01 \x03(\tR\tresources\x12)\n" +
+	"\x10global_resources\x18\x02 \x03(\tR\x0fglobalResources\"]\n" +
 	"\x1aListPermissionSetsResponse\x12?\n" +
 	"\x0fpermission_sets\x18\x01 \x03(\v2\x16.storage.PermissionSetR\x0epermissionSets\"a\n" +
 	"\x1eListSimpleAccessScopesResponse\x12?\n" +

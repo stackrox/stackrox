@@ -16,6 +16,8 @@ type permSetAttributes struct {
 	postgresID         string // postgresID should be populated with valid UUID values.
 	description        string
 	resourceWithAccess []permissions.ResourceWithAccess
+	accessConstraint   storage.AccessConstraint
+	scopeConstraint    storage.ScopeConstraint
 }
 
 func (attributes *permSetAttributes) getID() string {
@@ -34,6 +36,7 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		postgresID:         accesscontrol.DefaultPermissionSetIDs[accesscontrol.Analyst],
 		resourceWithAccess: rolePkg.GetAnalystPermissions(),
 		description:        "For users: use it to give read-only access to all the resources",
+		accessConstraint:   storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
 	},
 	accesscontrol.ContinuousIntegration: {
 		idSuffix:    "continuousintegration",
@@ -53,6 +56,8 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.View(resources.NetworkGraph),
 			permissions.View(resources.NetworkPolicy),
 		},
+		accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+		scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 	},
 	accesscontrol.None: {
 		idSuffix:    "none",
@@ -174,18 +179,7 @@ func getDefaultPermissionSets() []*storage.PermissionSet {
 	permissionSets := make([]*storage.PermissionSet, 0, len(defaultPermissionSets))
 
 	for name, attributes := range defaultPermissionSets {
-		resourceToAccess := permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...)
-
-		permissionSet := &storage.PermissionSet{
-			Id:               attributes.getID(),
-			Name:             name,
-			Description:      attributes.description,
-			ResourceToAccess: resourceToAccess,
-			Traits: &storage.Traits{
-				Origin: storage.Traits_DEFAULT,
-			},
-		}
-		permissionSets = append(permissionSets, permissionSet)
+		permissionSets = append(permissionSets, newDefaultPermissionSet(name, attributes))
 	}
 
 	return permissionSets
@@ -202,11 +196,17 @@ func getDefaultPermissionSet(name string) *storage.PermissionSet {
 		return nil
 	}
 
+	return newDefaultPermissionSet(name, attributes)
+}
+
+func newDefaultPermissionSet(name string, attributes permSetAttributes) *storage.PermissionSet {
 	return &storage.PermissionSet{
 		Id:               attributes.getID(),
 		Name:             name,
 		Description:      attributes.description,
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...),
+		AccessConstraint: attributes.accessConstraint,
+		ScopeConstraint:  attributes.scopeConstraint,
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DEFAULT,
 		},
