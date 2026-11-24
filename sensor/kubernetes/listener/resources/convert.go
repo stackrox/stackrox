@@ -97,9 +97,24 @@ type deploymentWrap struct {
 
 // pinnedImageRef is the image reference a deployment declared for one container.
 type pinnedImageRef struct {
+	// fullName is the reference as recorded. It is used for the cluster-locality
+	// lookup, which is keyed by full names.
 	fullName string
+	// repo is "<registry>/<remote>". Pods are matched on repo plus digest rather than on
+	// fullName, because Kubernetes accepts both "repo:tag@digest" and "repo@digest" for
+	// the same image and the two produce different full names.
+	repo string
 	// digest is empty unless the deployment pinned the container image by digest.
 	digest string
+}
+
+// imageRepo returns the "<registry>/<remote>" portion of an image name, identifying the
+// repository independently of any tag or digest suffix.
+func imageRepo(name *storage.ImageName) string {
+	if name.GetRemote() == "" {
+		return ""
+	}
+	return name.GetRegistry() + "/" + name.GetRemote()
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -361,6 +376,7 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 		for name, c := range containersByName {
 			w.pinnedImages[name] = pinnedImageRef{
 				fullName: c.GetImage().GetName().GetFullName(),
+				repo:     imageRepo(c.GetImage().GetName()),
 				digest:   c.GetImage().GetId(),
 			}
 		}
@@ -371,11 +387,17 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 		return pods[j].CreationTimestamp.Before(&pods[i].CreationTimestamp)
 	})
 
+	// Containers for which a pod has already contributed the runtime image name and
+	// pullability during this build. Rebuilt per build so that each build makes the same
+	// choice from the same pods. Container names are unique across regular and init
+	// containers within a pod, so one set covers both.
+	metadataTaken := set.NewStringSet()
+
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
 		// Process regular and init container statuses separately to avoid building a combined status slice.
-		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages, p.GetName())
-		w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, p.GetName())
+		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages, metadataTaken, p.GetName())
+		w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, metadataTaken, p.GetName())
 	}
 }
 
@@ -386,6 +408,7 @@ func (w *deploymentWrap) processContainerStatuses(
 	specContainers []v1.Container,
 	containersByName map[string]*storage.Container,
 	localImages set.StringSet,
+	metadataTaken set.StringSet,
 	podName string,
 ) {
 	for i := range statuses {
@@ -450,8 +473,8 @@ func (w *deploymentWrap) processContainerStatuses(
 			// id resets to the pinned digest.
 			if features.MultiArchWorkloadChildDigest.Enabled() {
 				pinned := w.pinnedImages[c.Name]
-				specFullName := podSpecImageReference(specContainers, c.Name, w.registryOverride)
-				podMatchesPin := specFullName != "" && specFullName == pinned.fullName
+				specRepo, specDigest := podSpecImageReference(specContainers, c.Name, w.registryOverride)
+				podMatchesPin := specRepo != "" && specRepo == pinned.repo && specDigest == pinned.digest
 
 				if pinned.digest != "" {
 					childDigest := runtimeChildDigest(c.ImageID)
@@ -470,6 +493,15 @@ func (w *deploymentWrap) processContainerStatuses(
 						contributeMetadata = podMatchesPin
 					} else {
 						contributeMetadata = podMatchesPin && childDigest == image.GetId()
+					}
+					// Several pods can legitimately report the same child digest, each from
+					// the location its own node pulled from. They are equally valid, so
+					// without a tie-break the last one visited would decide the repository
+					// and, through it, IdV2. Pods are visited newest first, so taking the
+					// first reporting pod makes the choice deterministic, and deterministic
+					// in the same way on every rebuild of this wrap.
+					if metadataTaken.Contains(c.Name) {
+						contributeMetadata = false
 					}
 
 					// localImages is rebuilt on every build from the deployment's current
@@ -511,6 +543,10 @@ func (w *deploymentWrap) processContainerStatuses(
 			if contributeMetadata {
 				if c.ImageID != "" {
 					image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+					// Only an observation that actually reported something claims the
+					// container; a pod whose container is not ready yet reports an empty
+					// ImageID and must leave the choice to the next pod.
+					metadataTaken.Add(c.Name)
 				}
 				updateImageWithNewerImageName(image, runtimeImageName, true)
 			}
@@ -564,17 +600,17 @@ func findSpecContainerImage(specContainers []v1.Container, name string) string {
 // podSpecImageReference parses the pod spec image for the named container and returns
 // its digest (empty when the image is not pinned by a digest) and its full name. Both
 // are empty when the container is absent or its image cannot be parsed.
-func podSpecImageReference(specContainers []v1.Container, name, registryOverride string) (fullName string) {
+func podSpecImageReference(specContainers []v1.Container, name, registryOverride string) (repo, digest string) {
 	specImage := findSpecContainerImage(specContainers, name)
 	if specImage == "" {
-		return ""
+		return "", ""
 	}
 	parsed, err := imageUtils.GenerateImageFromStringWithOverride(specImage, registryOverride)
 	if err != nil {
 		// The pod spec image is malformed, so it cannot be matched against the deployment.
-		return ""
+		return "", ""
 	}
-	return parsed.GetName().GetFullName()
+	return imageRepo(parsed.GetName()), parsed.GetId()
 }
 
 // runtimeChildDigest returns the per-architecture child manifest digest reported by the

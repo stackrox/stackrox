@@ -283,13 +283,42 @@ func TestPopulateImageMetadataMultiArchMultiplePods(t *testing.T) {
 		},
 		"different repository with the same digest cannot supply the child digest": {
 			// The image still carries the pinned digest, so the digest check passes; only the
-			// full-name comparison against the pod spec rejects this pod.
+			// repository comparison against the pinned reference rejects this pod. This also
+			// guards that matching on repository plus digest did not loosen the check.
 			deployImage: indexPin,
 			pods: []testPod{
 				{spec: oldRepo + "@" + indexDigest, imageID: "docker-pullable://" + oldRepo + "@" + amd64Child, created: newerPod},
 			},
 			expectedID:   indexDigest,
 			expectedName: indexPin,
+		},
+		"a tagged pod reference with the same repository and pin can supply the child digest": {
+			// Kubernetes accepts both repo:tag@digest and repo@digest for one image, and the
+			// two parse to different full names. Pin matching must compare the normalized
+			// repository and the digest, so the redundant tag does not disqualify this pod.
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: repo + ":1.0@" + indexDigest, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:   amd64Child,
+			expectedName: repo + "@" + amd64Child,
+		},
+		"an older replica reporting the same child from another repository cannot change the repository": {
+			// Both pods match the pin and report the same child digest, but the older one
+			// pulled it through a mirror. The first matching pod with a non-empty image ID
+			// supplies the runtime name; a later pod must not flip the repository, and
+			// therefore IdV2, even though the digest is identical.
+			unqualified: true,
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://mirror.example.com/platform/multiarch@" + amd64Child, created: olderPod},
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:       amd64Child,
+			expectedName:     repo + "@" + amd64Child,
+			expectedRegistry: "quay.io",
+			expectedRemote:   "example/multiarch",
+			expectPullable:   true,
 		},
 		"mixed-arch replicas retain the newest observation within one build": {
 			// One deployment with replicas on both architectures can only carry one image
@@ -600,6 +629,20 @@ func TestPopulateImageMetadataMultiArchResolverRebuild(t *testing.T) {
 			expectedID:           amd64Child,
 			expectedName:         repo + "@" + amd64Child,
 			expectedClusterLocal: true,
+		},
+		"the selected repository survives the rebuild": {
+			// Two pods match the pin and report the same child digest from different pull
+			// repositories. The repository chosen by the first pass must be the one still
+			// reported after the second pass re-runs over the already-mutated wrap.
+			unqualified: true,
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+				{spec: indexPin, imageID: "docker-pullable://mirror.example.com/platform/multiarch@" + amd64Child, created: olderPod},
+			},
+			expectedID:       amd64Child,
+			expectedName:     repo + "@" + amd64Child,
+			expectedRegistry: "quay.io",
+			expectedRemote:   "example/multiarch",
 		},
 		"an older pod cannot overwrite the runtime image name": {
 			// With unqualified search registries on, a stale pod must not re-point the
