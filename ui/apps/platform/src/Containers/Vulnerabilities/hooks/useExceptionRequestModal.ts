@@ -24,16 +24,31 @@ export type UseExceptionRequestModalReturn = {
     }) => { title: string; onClick: () => void }[];
 };
 
+export type UseExceptionRequestModalOptions = {
+    // Optional loader for the CVE summary when the caller only has an empty placeholder.
+    resolveSummary?: (cve: string) => Promise<string>;
+};
+
 /**
  * Manages the state of the exception request modal and the completion modal.
  */
-export default function useExceptionRequestModal(): UseExceptionRequestModalReturn {
+export default function useExceptionRequestModal(
+    options: UseExceptionRequestModalOptions = {}
+): UseExceptionRequestModalReturn {
     const [exceptionRequestOptions, setExceptionRequestOptions] =
         useState<ExceptionRequestModalOptions | null>(null);
 
     const [completedException, setCompletedException] = useState<BaseVulnerabilityException | null>(
         null
     );
+
+    async function withSummary(cve: string, summary: string, numAffectedImages: number) {
+        if (summary || !options.resolveSummary) {
+            return { cve, summary, numAffectedImages };
+        }
+        const resolvedSummary = await options.resolveSummary(cve).catch(() => '');
+        return { cve, summary: resolvedSummary, numAffectedImages };
+    }
 
     function showModal(action: ShowExceptionModalAction) {
         if (action.type === 'COMPLETION') {
@@ -56,15 +71,18 @@ export default function useExceptionRequestModal(): UseExceptionRequestModalRetu
         createExceptionModalActions: ({ cve, summary, numAffectedImages }) => [
             {
                 title: 'Defer CVE',
-                onClick: () =>
-                    showModal({ type: 'DEFERRAL', cves: [{ cve, summary, numAffectedImages }] }),
+                onClick: async () =>
+                    showModal({
+                        type: 'DEFERRAL',
+                        cves: [await withSummary(cve, summary, numAffectedImages)],
+                    }),
             },
             {
                 title: 'Mark as false positive',
-                onClick: () =>
+                onClick: async () =>
                     showModal({
                         type: 'FALSE_POSITIVE',
-                        cves: [{ cve, summary, numAffectedImages }],
+                        cves: [await withSummary(cve, summary, numAffectedImages)],
                     }),
             },
         ],

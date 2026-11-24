@@ -10,10 +10,9 @@ import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import ImageOverviewTable, { defaultColumns, tableId } from '../Tables/ImageOverviewTable';
 import type { ImageOverviewTableProps } from '../Tables/ImageOverviewTable';
-import type { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import type { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-import { useImages } from './useImages';
+import { useVulnMgmtImages } from './useVulnMgmtImages';
 
 type ImagesTableContainerProps = {
     searchFilter: SearchFilter;
@@ -48,7 +47,7 @@ function ImagesTableContainer({
 }: ImagesTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useImages({
+    const { error, loading, data } = useVulnMgmtImages({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,
@@ -93,7 +92,6 @@ function ImagesTableContainer({
                     tableState={tableState}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
-                    filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                     onWatchImage={onWatchImage}
                     onUnwatchImage={onUnwatchImage}

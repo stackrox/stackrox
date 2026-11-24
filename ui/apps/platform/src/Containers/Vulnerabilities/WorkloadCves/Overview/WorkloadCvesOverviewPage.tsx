@@ -11,7 +11,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
-import { useApolloClient } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import difference from 'lodash/difference';
 import isEmpty from 'lodash/isEmpty';
@@ -39,14 +38,24 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
-import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
-import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
+import {
+    isVulnMgmtLocalStorage,
+    severityTabValues,
+    workloadEntityTabValues,
+} from '../../types';
+import type {
+    DefaultFilters,
+    SeverityTab,
+    VulnMgmtLocalStorage,
+    WorkloadEntityTab,
+} from '../../types';
 import { normalizeLocalStorageKeys } from '../../utils/localStorageUtils';
 import {
     getNamespaceViewPagePath,
     getRegexScopedQueryString,
     normalizeSearchFilterKeys,
     parseQuerySearchFilter,
+    severityLabelToSeverity,
 } from '../../utils/searchUtils';
 import {
     getDefaultZeroCveSortOption,
@@ -66,7 +75,7 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
-import { imageListQuery } from '../Tables/ImageOverviewTable';
+import { invalidateVulnMgmtCache } from 'services/VulnMgmtService';
 import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import VulnerabilitiesOverview from './VulnerabilitiesOverview';
@@ -114,7 +123,6 @@ export const defaultStorage: VulnMgmtLocalStorage = {
 } as const;
 
 function WorkloadCvesOverviewPage() {
-    const apolloClient = useApolloClient();
     const navigate = useNavigate();
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -162,14 +170,25 @@ function WorkloadCvesOverviewPage() {
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
+    const [severityTab, setSeverityTab] = useURLStringUnion('severityTab', severityTabValues);
+    const useSeverityTabs = isViewingWithCves;
+
+    // Badges and entity counts are computed across all severities; the active severity only
+    // narrows the table itself.
+    const countsQuerySearchFilter = { ...querySearchFilter };
+    delete countsQuerySearchFilter.Severity;
+
     // If the user is viewing observed CVEs, we need to scope the query based on
-    // the selected vulnerability state. If the user is viewing _without_ CVEs, we
-    // need to scope the query to only show images/deployments with 0 CVEs.
+    // the selected vulnerability state and severity tab. If the user is viewing
+    // _without_ CVEs, we need to scope the query to only show images/deployments with 0 CVEs.
     const workloadCvesScopedSearchFilter = isViewingWithCves
         ? {
               ...baseSearchFilter,
               ...querySearchFilter,
               'Vulnerability State': [currentVulnerabilityState],
+              ...(useSeverityTabs
+                  ? { Severity: [severityLabelToSeverity(severityTab)] }
+                  : {}),
           }
         : {
               ...baseSearchFilter,
@@ -177,8 +196,21 @@ function WorkloadCvesOverviewPage() {
               'Image CVE Count': ['0'],
           };
 
+    const countsSearchFilter = isViewingWithCves
+        ? {
+              ...baseSearchFilter,
+              ...countsQuerySearchFilter,
+              'Vulnerability State': [currentVulnerabilityState],
+          }
+        : {
+              ...baseSearchFilter,
+              ...countsQuerySearchFilter,
+              'Image CVE Count': ['0'],
+          };
+
     // For request and view-based report.
     const workloadCvesScopedQueryString = getRegexScopedQueryString(workloadCvesScopedSearchFilter);
+    const countsQueryString = getRegexScopedQueryString(countsSearchFilter);
 
     const getDefaultSortOption = isViewingWithCves
         ? getWorkloadCveOverviewDefaultSortOption
@@ -188,7 +220,7 @@ function WorkloadCvesOverviewPage() {
 
     const sort = useURLSort({
         sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
+        defaultSortOption: getDefaultSortOption(activeEntityTabKey),
         onSort: () => pagination.setPage(1),
     });
 
@@ -221,8 +253,16 @@ function WorkloadCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(entityTab, searchFilter));
+        sort.setSortOption(getDefaultSortOption(entityTab));
         trackEntityTabViewed(entityTab);
+    }
+
+    function onSeverityTabChange(severity: SeverityTab) {
+        setSeverityTab(severity);
+        pagination.setPage(1);
+        if (activeEntityTabKey === 'CVE') {
+            sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
+        }
     }
 
     function onVulnerabilityStateChange(vulnerabilityState: VulnerabilityState) {
@@ -277,7 +317,8 @@ function WorkloadCvesOverviewPage() {
     const unwatchImageModalToggle = useSelectToggle();
 
     function onWatchedImagesChange() {
-        return apolloClient.refetchQueries({ include: [imageListQuery] });
+        invalidateVulnMgmtCache();
+        return Promise.resolve();
     }
 
     // Keep getSearchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
@@ -436,6 +477,10 @@ function WorkloadCvesOverviewPage() {
                         </>
                     }
                     showDeferralUI={showDeferralUI}
+                    countsQueryString={countsQueryString}
+                    useSeverityTabs={useSeverityTabs}
+                    severityTab={severityTab}
+                    onSeverityTabChange={onSeverityTabChange}
                     cveTableColumnOverrides={{
                         cveSelection: hideColumnIf(!showDeferralUI),
                         topNvdCvss: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
@@ -444,13 +489,13 @@ function WorkloadCvesOverviewPage() {
                         rowActions: hideColumnIf(!showDeferralUI),
                     }}
                     imageTableColumnOverrides={{
-                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                        matchingCveCount: hideColumnIf(!isViewingWithCves),
                         rowActions: hideColumnIf(
                             !hasWriteAccessForWatchedImage && !hasWriteAccessForImage
                         ),
                     }}
                     deploymentTableColumnOverrides={{
-                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                        matchingCveCount: hideColumnIf(!isViewingWithCves),
                     }}
                 />
                 <WatchedImagesModal

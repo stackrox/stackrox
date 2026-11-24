@@ -39,33 +39,11 @@ export function getWorkloadCveOverviewSortFields(
 ): (string | string[])[] {
     switch (entityTab) {
         case 'CVE':
-            return [
-                'CVE',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'CVSS',
-                'Image Sha',
-                'CVE Created Time',
-            ];
+            // Severity is fixed by the active severity tab, so severity count fields are
+            // neither useful nor sortable here.
+            return ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
-            return [
-                'Image',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'Image OS',
-                'Image Created Time',
-                'Image Scan Time',
-            ];
+            return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
             return [
                 'Deployment',
@@ -92,23 +70,20 @@ export function getWorkloadCveOverviewSortFields(
  * @returns The default sort option
  */
 export function getWorkloadCveOverviewDefaultSortOption(
-    entityTab: WorkloadEntityTab,
-    searchFilter?: SearchFilter
+    entityTab: WorkloadEntityTab
 ): SortOption | NonEmptyArray<SortOption> {
-    // Array.prototype.map does not currently retain the arity of an input tuple, so
-    // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
-    // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841
-    const appliedSeveritySortOptions = getSeveritySortOptions(
-        getAppliedSeverities(searchFilter ?? {})
-    ).map((o) => ({ ...o, direction: 'desc' })) as NonEmptyArray<SortOption>;
-
     switch (entityTab) {
         case 'CVE':
-            return appliedSeveritySortOptions;
+            // Within a severity tab, rank CVEs by how many images they affect.
+            return {
+                field: 'Image Sha',
+                direction: 'desc',
+                aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
+            };
         case 'Deployment':
             return { field: 'Deployment', direction: 'asc' };
         case 'Image':
-            return appliedSeveritySortOptions;
+            return { field: 'Image', direction: 'asc' };
         default:
             return ensureExhaustive(entityTab);
     }

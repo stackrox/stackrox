@@ -3,11 +3,16 @@ import { useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 
 import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DEFAULT_VM_PAGE_SIZE } from 'Containers/Vulnerabilities/constants';
-import { workloadEntityTabValues } from 'Containers/Vulnerabilities/types';
-import type { DefaultFilters, WorkloadEntityTab } from 'Containers/Vulnerabilities/types';
+import { severityTabValues, workloadEntityTabValues } from 'Containers/Vulnerabilities/types';
+import type {
+    DefaultFilters,
+    SeverityTab,
+    WorkloadEntityTab,
+} from 'Containers/Vulnerabilities/types';
 import {
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
+    severityLabelToSeverity,
 } from 'Containers/Vulnerabilities/utils/searchUtils';
 import {
     getWorkloadCveOverviewDefaultSortOption,
@@ -45,15 +50,32 @@ export function VulnerabilitiesOverviewContainer() {
     const { baseSearchFilter } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    const [severityTab, setSeverityTab] = useURLStringUnion('severityTab', severityTabValues);
+    const useSeverityTabs = true;
+
+    const countsQuerySearchFilter = { ...querySearchFilter };
+    delete countsQuerySearchFilter.Severity;
+
+    // If "All Projects" is selected, use the query search filter's Namespace, otherwise override with the active namespace
+    const namespaceFilter =
+        activeNamespace === ALL_NAMESPACES_KEY
+            ? querySearchFilter.Namespace
+            : [activeNamespace];
+
+    const countsQueryString = getVulnStateScopedQueryString(
+        {
+            ...baseSearchFilter,
+            ...countsQuerySearchFilter,
+            Namespace: namespaceFilter,
+        },
+        'OBSERVED'
+    );
     const workloadCvesScopedQueryString = getVulnStateScopedQueryString(
         {
             ...baseSearchFilter,
             ...querySearchFilter,
-            // If "All Projects" is selected, use the query search filter's Namespace, otherwise override with the active namespace
-            Namespace:
-                activeNamespace === ALL_NAMESPACES_KEY
-                    ? querySearchFilter.Namespace
-                    : [activeNamespace],
+            Namespace: namespaceFilter,
+            Severity: [severityLabelToSeverity(severityTab)],
         },
         'OBSERVED'
     );
@@ -64,10 +86,7 @@ export function VulnerabilitiesOverviewContainer() {
 
     const sort = useURLSort({
         sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
-        defaultSortOption: getWorkloadCveOverviewDefaultSortOption(
-            activeEntityTabKey,
-            searchFilter
-        ),
+        defaultSortOption: getWorkloadCveOverviewDefaultSortOption(activeEntityTabKey),
         onSort: () => pagination.setPage(1),
     });
 
@@ -84,7 +103,15 @@ export function VulnerabilitiesOverviewContainer() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption(entityTab, searchFilter));
+        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption(entityTab));
+    }
+
+    function onSeverityTabChange(severity: SeverityTab) {
+        setSeverityTab(severity);
+        pagination.setPage(1);
+        if (activeEntityTabKey === 'CVE') {
+            sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
+        }
     }
 
     return (
@@ -106,6 +133,10 @@ export function VulnerabilitiesOverviewContainer() {
             additionalToolbarItems={undefined}
             additionalHeaderItems={undefined}
             showDeferralUI={false}
+            countsQueryString={countsQueryString}
+            useSeverityTabs={useSeverityTabs}
+            severityTab={severityTab}
+            onSeverityTabChange={onSeverityTabChange}
             cveTableColumnOverrides={{
                 cveSelection: hideColumnIf(true),
                 rowActions: hideColumnIf(true),
