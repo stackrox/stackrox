@@ -16,7 +16,8 @@
 # and retried; the script gives up after 5 consecutive failed polls.
 #
 # Exits 0 when new terminal results were printed, 1 on timeout, 2 on usage
-# errors, 3 after repeated poll failures.
+# errors, 3 after repeated poll failures, 4 when the state file cannot be
+# written.
 #
 # Usage:
 #   watch-checks.sh <PR-number> [--repo <owner/name>] [--only <substring>]
@@ -156,16 +157,22 @@ added_terminal() {
   diff <(snapshot_lines "$prev") <(snapshot_lines "$1") | grep '^>' | sed 's/^> //'
 }
 
+# Persist the snapshot so a restarted watcher resumes from it. A failed save
+# would silently break restart safety, so treat it as fatal.
 save_state() {
-  printf '%s' "$1" >"$STATE_FILE"
+  if ! printf '%s' "$1" >"$STATE_FILE" 2>/dev/null; then
+    echo "error: cannot write state file ${STATE_FILE}; restart safety is broken" >&2
+    exit 4
+  fi
 }
 
 prev=""
 baseline_set=0
 
 # Resume from a previous watcher's snapshot so checks that went terminal
-# between watchers are still reported.
-if [ -s "$STATE_FILE" ]; then
+# between watchers are still reported. The snapshot may legitimately be empty
+# (all checks were pending when it was saved), so test for existence, not size.
+if [ -f "$STATE_FILE" ]; then
   prev="$(cat "$STATE_FILE")"
   baseline_set=1
   echo "Resuming from snapshot in ${STATE_FILE}"
