@@ -5,6 +5,9 @@ set -Eeo pipefail
 # shellcheck source=backup-cleanup.sh
 source "$(dirname "${BASH_SOURCE[0]}")/backup-cleanup.sh"
 
+# File flag that marks a statistics refresh is needed.
+STATS_PENDING_FILE=".stats-pending"
+
 # Return the list of possible backup locations based on the mounted volumes.
 # The result is either two locations, if the backup volume is mounted, or only
 # one otherwise.
@@ -51,6 +54,37 @@ check_available_space () {
 
     echo "Volume at ${MOUNT_POINT} has enough available disk space (${AVAILABLE})"
     return 0
+}
+
+# Run the analyze a major-version upgrade left pending. pg_upgrade does not
+# transfer optimizer statistics, and autovacuum will not rebuild them promptly
+# because the upgrade records no row changes, so later migrations and Central
+# would plan against default selectivity estimates. The marker is written into
+# the new data directory before the swap, so a failed or interrupted refresh
+# retries on the next start instead of leaving the cluster unanalyzed.
+maybe_refresh_statistics () {
+    PENDING_FILE="${PGDATA}/${STATS_PENDING_FILE}"
+
+    if [ ! -e "${PENDING_FILE}" ]; then
+        return 0
+    fi
+
+    echo "Refreshing optimizer statistics."
+    if ! pg_ctl -D "${PGDATA}" start -w --timeout 86400 -o "-h 127.0.0.1"; then
+        echo "Could not start the upgraded cluster, retrying on the next start."
+        return 0
+    fi
+    if PGPASSWORD="$(cat /run/secrets/stackrox.io/secrets/password)" \
+            vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4; then
+        rm -f "${PENDING_FILE}" || true
+        echo "Statistics refreshed, shutting down the cluster."
+    else
+        echo "vacuumdb failed, retrying on the next start."
+    fi
+    if ! pg_ctl -D "${PGDATA}" stop -w --timeout 600; then
+        echo "Could not stop the refresh server, retrying on the next start."
+        return 1
+    fi
 }
 
 # Will be used by both initdb and postgresql-upgrade
@@ -295,7 +329,20 @@ else
         fi
 
         mv "${PGDATA}"/*.conf "${PGDATA_NEW}"
+
+        # Mark statistics pending; the refresh below clears it once the
+        # analyze succeeds.
+        touch "${PGDATA_NEW}/${STATS_PENDING_FILE}" || {
+            echo "Could not mark statistics pending, aborting."
+            exit 1
+        }
+
         rm -rf "${PGDATA}"
         mv "${PGDATA_NEW}" "${PGDATA}"
     fi
+
+    # Refresh statistics left behind by a major-version upgrade. This runs on
+    # every start, and is a no-op unless a marker is present, so an interrupted
+    # or failed refresh is retried rather than lost.
+    maybe_refresh_statistics
 fi
