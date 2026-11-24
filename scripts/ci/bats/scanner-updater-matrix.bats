@@ -85,11 +85,10 @@ SH
     run yq eval -e '
         .jobs.build-matrix.steps[] |
         select(.name == "Build updater matrix (PR)") |
-        .run |
-        contains("\\\"stream\\\":\\\"dev\\\"")
+        .run
     ' "${repo_root}/.github/workflows/scanner-updater-schedule.yaml"
     assert_success
-    assert_output "true"
+    assert_output --partial '\"stream\":\"dev\"'
 }
 
 @test "ineligible hours skip Oracle before freshness checks but retain other sources" {
