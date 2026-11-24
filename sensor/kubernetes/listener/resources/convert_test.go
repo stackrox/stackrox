@@ -437,6 +437,9 @@ func TestPopulateImageMetadataMultiArchChildDigest(t *testing.T) {
 		indexDigest = "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00"
 		amd64Child  = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
 		arm64Child  = "sha256:0f1e2d3c4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0"
+		// configID models the bare image config digest a runtime reports for an image it
+		// did not pull from a registry (locally built or preloaded).
+		configID = "sha256:9f8e7d6c5b4a3928170615f4e3d2c100ffeeddccbbaa99887766554433221100"
 	)
 
 	const repo = "quay.io/example/multiarch"
@@ -501,6 +504,24 @@ func TestPopulateImageMetadataMultiArchChildDigest(t *testing.T) {
 			multiArchFlag:    true,
 			deployImage:      indexPin,
 			imageID:          "",
+			expectedID:       indexDigest,
+			expectedFullName: indexPin,
+		},
+		"bare config digest is not a manifest, flag on": {
+			// A bare config digest is not a manifest: no registry can serve it, so it must
+			// never replace the pinned index digest even though it differs from the spec.
+			multiArchFlag:    true,
+			deployImage:      indexPin,
+			imageID:          configID,
+			expectedID:       indexDigest,
+			expectedFullName: indexPin,
+		},
+		"docker-schemed bare config digest is not a manifest, flag on": {
+			// Docker reports non-pullable image IDs as "docker://sha256:<config>". Removing
+			// the scheme still leaves no repository, so the pin must be retained.
+			multiArchFlag:    true,
+			deployImage:      indexPin,
+			imageID:          "docker://" + configID,
 			expectedID:       indexDigest,
 			expectedFullName: indexPin,
 		},
@@ -608,6 +629,230 @@ func TestPopulateImageMetadataMultiArchMultipleContainers(t *testing.T) {
 	assert.Equal(t, amd64Child, wrap.GetDeployment().GetContainers()[0].GetImage().GetId())
 	// The single-arch container (runtime digest == spec digest) is unchanged.
 	assert.Equal(t, singleArchChild, wrap.GetDeployment().GetContainers()[1].GetImage().GetId())
+}
+
+func TestPopulateImageMetadataMultiArchMultiplePods(t *testing.T) {
+	// Multiple pods of a single deployment are visited newest first. These cases cover the
+	// guards around the child-digest rewrite: older rollout revisions, a different
+	// repository with the same digest, mixed-architecture replicas, cluster locality, and
+	// the non-repeatable "first usable observation wins" behavior.
+	const (
+		indexDigest = "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00"
+		oldIndex    = "sha256:b1c2d3e4f5a60719283a4b5c6d7e8f90112233445566778899aabbccddeeff01"
+		amd64Child  = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
+		arm64Child  = "sha256:0f1e2d3c4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0"
+		oldChild    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+	)
+
+	const (
+		repo     = "quay.io/example/multiarch"
+		oldRepo  = "quay.io/example/multiarch-old"
+		indexPin = repo + "@" + indexDigest
+	)
+
+	newerPod := metav1.NewTime(time.Now())
+	olderPod := metav1.NewTime(time.Now().Add(-time.Hour))
+
+	type testPod struct {
+		spec    string
+		imageID string
+		created metav1.Time
+	}
+
+	cases := map[string]struct {
+		deployImage          string
+		pods                 []testPod
+		localImages          []string
+		expectedID           string
+		expectedName         string
+		expectedClusterLocal bool
+	}{
+		"older pod from a previous revision cannot replace the newest digest": {
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: oldRepo + "@" + oldIndex, imageID: "docker-pullable://" + oldRepo + "@" + oldChild, created: olderPod},
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:   amd64Child,
+			expectedName: repo + "@" + amd64Child,
+		},
+		"single old-revision pod cannot supply the child digest": {
+			// The deployment is pinned to indexDigest but its only pod still carries an older
+			// revision's digest. The spec-digest comparison alone must reject it, isolating
+			// that check from the "already rewritten" check.
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: oldRepo + "@" + oldIndex, imageID: "docker-pullable://" + oldRepo + "@" + oldChild, created: newerPod},
+			},
+			expectedID:   indexDigest,
+			expectedName: indexPin,
+		},
+		"different repository with the same digest cannot supply the child digest": {
+			// The image still carries the pinned digest, so the digest check passes; only the
+			// full-name comparison against the pod spec rejects this pod.
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: oldRepo + "@" + indexDigest, imageID: "docker-pullable://" + oldRepo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:   indexDigest,
+			expectedName: indexPin,
+		},
+		"mixed-arch replicas retain the newest observation within one build": {
+			// One deployment with replicas on both architectures can only carry one image
+			// per container in the current data model. Within a single build the newest pod's
+			// digest wins; the rewrite is not repeatable across builds (see convert.go).
+			// Representing both digests requires a schema change (out of scope).
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + arm64Child, created: olderPod},
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:   amd64Child,
+			expectedName: repo + "@" + amd64Child,
+		},
+		"cluster-local image stays cluster-local after the rewrite": {
+			deployImage: indexPin,
+			// localImages is keyed by the pinned reference, as the resolver builds it
+			// before any rewrite has happened.
+			localImages: []string{indexPin},
+			// The second, older pod is processed after the newest pod rewrote the name, so
+			// it exercises the spec-reference fallback in the locality lookup.
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: olderPod},
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:           amd64Child,
+			expectedName:         repo + "@" + amd64Child,
+			expectedClusterLocal: true,
+		},
+		"cluster-local image keyed by the child digest stays local (invariant)": {
+			// A rebuild sees the image already rewritten from the previous build, and the
+			// resolver rebuilds localImages from those rewritten names. Locality must still
+			// resolve, even though the pod spec still carries the pinned reference. This is an
+			// invariant, not a regression guard: it also holds without the fix, because the
+			// image is already at the child digest.
+			deployImage: repo + "@" + amd64Child,
+			localImages: []string{repo + "@" + amd64Child},
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:           amd64Child,
+			expectedName:         repo + "@" + amd64Child,
+			expectedClusterLocal: true,
+		},
+		"runtime without a digest keeps the pinned digest (invariant)": {
+			// A tag-form runtime image ID yields no digest both before and after the fix, so
+			// this is a safety net rather than a regression guard.
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://" + repo + ":1.0", created: newerPod},
+			},
+			expectedID:   indexDigest,
+			expectedName: indexPin,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+			testutils.MustUpdateFeature(t, features.MultiArchWorkloadChildDigest, true)
+			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, false)
+
+			img, err := imageUtils.GenerateImageFromString(c.deployImage)
+			require.NoError(t, err)
+
+			wrap := deploymentWrap{
+				Deployment: &storage.Deployment{},
+			}
+			wrap.Containers = []*storage.Container{
+				{Name: "container-0", Image: img},
+			}
+
+			localImages := set.NewStringSet()
+			for _, li := range c.localImages {
+				localImages.Add(li)
+			}
+
+			pods := make([]*v1.Pod, 0, len(c.pods))
+			for _, p := range c.pods {
+				pods = append(pods, &v1.Pod{
+					ObjectMeta: metav1.ObjectMeta{CreationTimestamp: p.created},
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{{Name: "container-0", Image: p.spec}},
+					},
+					Status: v1.PodStatus{
+						ContainerStatuses: []v1.ContainerStatus{{Name: "container-0", ImageID: p.imageID}},
+					},
+				})
+			}
+
+			wrap.populateImageMetadata(localImages, pods...)
+
+			result := wrap.GetDeployment().GetContainers()[0].GetImage()
+			assert.Equal(t, c.expectedID, result.GetId())
+			assert.Equal(t, c.expectedName, result.GetName().GetFullName())
+			assert.Equal(t, c.expectedClusterLocal, result.GetIsClusterLocal())
+
+			// Compute IdV2 independently from the expected name and digest.
+			expectedName := &storage.ImageName{FullName: c.expectedName}
+			assert.Equal(t, utils.NewImageV2ID(expectedName, c.expectedID), result.GetIdV2())
+		})
+	}
+}
+
+func TestPopulateImageMetadataMultiArchTagWorkloadUnaffected(t *testing.T) {
+	// A by-tag workload has no index digest to expand, so enabling the flag must leave
+	// the resulting image record identical, including the digest, full name, and IdV2.
+	const (
+		repo      = "quay.io/example/multiarch"
+		tagRef    = repo + ":1.0"
+		newDigest = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
+		oldDigest = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+	)
+
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, false)
+
+	run := func(flag bool) *storage.ContainerImage {
+		testutils.MustUpdateFeature(t, features.MultiArchWorkloadChildDigest, flag)
+
+		img, err := imageUtils.GenerateImageFromString(tagRef)
+		require.NoError(t, err)
+
+		wrap := deploymentWrap{
+			Deployment: &storage.Deployment{},
+		}
+		wrap.Containers = []*storage.Container{
+			{Name: "container-0", Image: img},
+		}
+
+		pods := []*v1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{CreationTimestamp: metav1.NewTime(time.Now().Add(-time.Hour))},
+				Spec:       v1.PodSpec{Containers: []v1.Container{{Name: "container-0", Image: tagRef}}},
+				Status: v1.PodStatus{ContainerStatuses: []v1.ContainerStatus{
+					{Name: "container-0", ImageID: "docker-pullable://" + repo + "@" + oldDigest},
+				}},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{CreationTimestamp: metav1.NewTime(time.Now())},
+				Spec:       v1.PodSpec{Containers: []v1.Container{{Name: "container-0", Image: tagRef}}},
+				Status: v1.PodStatus{ContainerStatuses: []v1.ContainerStatus{
+					{Name: "container-0", ImageID: "docker-pullable://" + repo + "@" + newDigest},
+				}},
+			},
+		}
+
+		wrap.populateImageMetadata(set.NewStringSet(), pods...)
+		return wrap.GetDeployment().GetContainers()[0].GetImage()
+	}
+
+	withFlag := run(true)
+	withoutFlag := run(false)
+
+	protoassert.Equal(t, withoutFlag, withFlag)
+	assert.Equal(t, newDigest, withFlag.GetId())
+	assert.Equal(t, tagRef, withFlag.GetName().GetFullName())
 }
 
 func TestPopulateImageMetadataWithInitContainers(t *testing.T) {

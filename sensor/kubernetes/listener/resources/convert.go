@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
@@ -385,19 +386,47 @@ func (w *deploymentWrap) processContainerStatuses(
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 			}
 
+			imageName := image.GetName()
+			imageFullName := imageName.GetFullName()
+			// localImages is keyed by the image references recorded for this deployment.
+			// Determine cluster-locality before the child-digest rewrite below replaces the
+			// name with the per-architecture digest the container runtime reported.
+			isClusterLocal := localImages.Contains(imageFullName)
+
 			// A workload pinned by a multi-arch index digest (a manifest list) runs a
-			// per-architecture child manifest, and the runtime reports that child digest
-			// in c.ImageID. Prefer the child digest so each architecture is tracked as the
+			// per-architecture child manifest, and the runtime reports that child digest in
+			// c.ImageID. Prefer the child digest so each architecture is tracked as the
 			// distinct image that actually ran, and is scanned as the correct architecture,
-			// instead of collapsing every architecture onto the shared index digest.
+			// instead of collapsing every architecture onto the shared index digest. This
+			// only takes effect when the runtime reports a child digest; otherwise the
+			// pinned digest is retained.
+			//
+			// Only a pod pinned by the deployment's own digest may supply the child digest.
+			// A by-tag workload has no index digest to expand, and a pod left over from an
+			// older rollout revision must not replace the digest of the current revision.
+			// Requiring the image to still carry the spec digest also makes the rewrite
+			// non-repeatable: within one build, pods are visited newest first, so the first
+			// pod that supplies a usable child digest wins and a later pod cannot replace
+			// it. The rewritten digest persists on the stored deployment wrap, so the same
+			// pod keeps winning until the wrap is rebuilt from the Deployment and the image
+			// id resets to the pinned digest.
 			if features.MultiArchWorkloadChildDigest.Enabled() {
-				if childDigest := imageUtils.ExtractImageDigest(c.ImageID); childDigest != "" && childDigest != image.GetId() {
-					image.Id = childDigest
-					imageUtils.NormalizeImageFullName(image.GetName(), childDigest)
+				specDigest, specFullName := podSpecImageReference(specContainers, c.Name, w.registryOverride)
+				// localImages is rebuilt on every build from the deployment's current image
+				// names, which may still be the pinned reference or already be the rewritten
+				// child reference. Accept either so locality survives the rewrite.
+				if specFullName != "" {
+					isClusterLocal = isClusterLocal || localImages.Contains(specFullName)
+				}
+				if specDigest != "" && image.GetId() == specDigest && imageFullName == specFullName {
+					if childDigest := runtimeChildDigest(c.ImageID); childDigest != "" && childDigest != specDigest {
+						image.Id = childDigest
+						imageUtils.NormalizeImageFullName(imageName, childDigest)
+					}
 				}
 			}
 
-			image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
+			image.IsClusterLocal = isClusterLocal
 			updateImageWithNewerImageName(image, runtimeImageName, true)
 			if features.FlattenImageData.Enabled() {
 				image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), image.GetId())
@@ -444,6 +473,40 @@ func findSpecContainerImage(specContainers []v1.Container, name string) string {
 		}
 	}
 	return ""
+}
+
+// podSpecImageReference parses the pod spec image for the named container and returns
+// its digest (empty when the image is not pinned by a digest) and its full name. Both
+// are empty when the container is absent or its image cannot be parsed.
+func podSpecImageReference(specContainers []v1.Container, name, registryOverride string) (digest, fullName string) {
+	specImage := findSpecContainerImage(specContainers, name)
+	if specImage == "" {
+		return "", ""
+	}
+	parsed, err := imageUtils.GenerateImageFromStringWithOverride(specImage, registryOverride)
+	if err != nil {
+		// The pod spec image is malformed, so it can neither be matched nor supply a digest.
+		return "", ""
+	}
+	return parsed.GetId(), parsed.GetName().GetFullName()
+}
+
+// runtimeChildDigest returns the per-architecture child manifest digest reported by the
+// container runtime, or the empty string when the runtime did not report a
+// repository-qualified reference. Runtimes also report a bare config digest for images
+// they did not pull from a registry (for example "sha256:<id>" or "docker://sha256:<id>").
+// That digest addresses an image config, not a manifest, so no registry can serve it and
+// it must never replace a pinned image reference. A pulled image is reported as
+// "[scheme://]<repository>@sha256:<manifest>".
+func runtimeChildDigest(imageID string) string {
+	ref := imageUtils.RemoveScheme(imageID)
+	if !strings.Contains(ref, "@") {
+		return ""
+	}
+	if name, _, err := imageUtils.GenerateImageNameFromString(ref); err != nil || name.GetRemote() == "" {
+		return ""
+	}
+	return imageUtils.ExtractImageDigest(ref)
 }
 
 // updateImageWithNewerImageName will update the registry, remote, and full name
