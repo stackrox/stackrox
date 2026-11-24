@@ -31,9 +31,11 @@ is terminal, triaging failures as they land instead of waiting for the full run 
    ```
 
    Its first poll establishes the baseline (possibly empty when no checks run yet); it
-   exits as soon as the set of terminal (pass/fail) results changes, printing only the
-   newly terminal check(s). If the harness offers a `Monitor` tool with until-loop
-   support, prefer that; the script is the portable fallback and reference implementation.
+   exits as soon as a check newly reaches a terminal state, printing only the new
+   result(s). The snapshot is persisted to a state file, so re-arming the watcher after
+   a notification does not miss results that land in between. If the harness offers a
+   `Monitor` tool with until-loop support, prefer that; the script is the portable
+   fallback and reference implementation.
 
 3. **React to each watcher notification immediately.** Read the background task's output
    file; it prints only the newly terminal check(s) and their pass/fail state. Then re-arm

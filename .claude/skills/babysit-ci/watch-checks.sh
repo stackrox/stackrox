@@ -1,27 +1,41 @@
 #!/usr/bin/env bash
-# Watch PR checks; exit as soon as the set of terminal (pass/fail) results
-# changes, so the caller can react to the newest result immediately.
+# Watch PR checks; exit as soon as a check newly reaches a terminal (pass/fail)
+# state, so the caller can react to the newest result immediately.
 #
 # The first poll establishes the baseline (possibly empty, e.g. when no checks
-# are running yet). Every later change in the set of terminal results is
-# printed as a delta of newly terminal checks and the script exits 0.
-# Exits 1 on timeout, 2 on usage errors.
+# are running yet). The baseline is persisted to a state file, so a restarted
+# watcher (this script is meant to be re-armed after every notification)
+# resumes from the last reported snapshot instead of silently absorbing
+# results that landed in between. Only newly terminal checks are printed.
+#
+# A check going back to pending (e.g. a rerun of a failed check) updates the
+# baseline without exiting; when it reaches a terminal state again, that
+# result is reported.
+#
+# Poll failures (auth or network errors) are distinguished from empty results
+# and retried; the script gives up after 5 consecutive failed polls.
+#
+# Exits 0 when new terminal results were printed, 1 on timeout, 2 on usage
+# errors, 3 after repeated poll failures.
 #
 # Usage:
 #   watch-checks.sh <PR-number> [--repo <owner/name>] [--only <substring>]
 #                   [--interval <seconds>] [--timeout <minutes>]
+#                   [--state-file <path>]
 set -u
 
 REPO="stackrox/stackrox"
 ONLY=""
 INTERVAL=90
 TIMEOUT=360
+STATE_FILE=""
+MAX_POLL_FAILURES=5
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") <PR-number> [options]
 
-Watch the checks of a GitHub pull request and exit as soon as a new check
+Watch the checks of a GitHub pull request and exit as soon as a check newly
 reaches a terminal (pass/fail) state, printing only the new result(s).
 
 Options:
@@ -29,6 +43,8 @@ Options:
   --only <substring>    only consider checks whose name contains this substring
   --interval <seconds>  poll interval in seconds (default: ${INTERVAL})
   --timeout <minutes>   give up after this many minutes (default: ${TIMEOUT})
+  --state-file <path>   snapshot file for restart safety
+                        (default: \${TMPDIR:-/tmp}/watch-checks-<repo>-<pr>.state)
   -h, --help            show this help
 EOF
 }
@@ -56,7 +72,7 @@ shift
 while [ $# -gt 0 ]; do
   # Every supported option takes a value; reject a dangling one up front.
   case "$1" in
-    --repo | --only | --interval | --timeout)
+    --repo | --only | --interval | --timeout | --state-file)
       if [ $# -lt 2 ]; then
         echo "error: $1 requires a value" >&2
         usage >&2
@@ -69,6 +85,7 @@ while [ $# -gt 0 ]; do
     --only) ONLY="$2" ;;
     --interval) INTERVAL="$2" ;;
     --timeout) TIMEOUT="$2" ;;
+    --state-file) STATE_FILE="$2" ;;
     -h | --help)
       usage
       exit 0
@@ -89,40 +106,107 @@ if ! is_positive_integer "$PR_NUMBER"; then
 fi
 if ! is_positive_integer "$INTERVAL"; then
   echo "error: --interval must be a positive integer, got: ${INTERVAL}" >&2
+  usage >&2
   exit 2
 fi
 if ! is_positive_integer "$TIMEOUT"; then
   echo "error: --timeout must be a positive integer, got: ${TIMEOUT}" >&2
+  usage >&2
   exit 2
+fi
+
+if [ -z "$STATE_FILE" ]; then
+  STATE_FILE="${TMPDIR:-/tmp}/watch-checks-${REPO//\//-}-${PR_NUMBER}.state"
 fi
 
 echo "Watching checks on ${REPO}#${PR_NUMBER} (interval ${INTERVAL}s, timeout ${TIMEOUT}m)"
 
-# gh pr checks exits non-zero when any check has failed; capture output regardless.
-poll_terminal_checks() {
-  gh -R "$REPO" pr checks "$PR_NUMBER" 2>/dev/null |
+ERR_FILE="$(mktemp)"
+trap 'rm -f "$ERR_FILE"' EXIT
+
+# Populates RAW with the full `gh pr checks` output (all states) and returns 0
+# on a successful poll. `gh pr checks` exits non-zero when any check has
+# failed; that is still a successful poll. An empty output combined with the
+# "no checks reported" error is a valid empty result; any other error means
+# the query itself failed and is reported as a poll failure.
+RAW=""
+poll_checks() {
+  RAW="$(gh -R "$REPO" pr checks "$PR_NUMBER" 2>"$ERR_FILE")" || true
+  if [ -n "$RAW" ]; then
+    return 0
+  fi
+  if grep -q "no checks reported on the" "$ERR_FILE" 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
+terminal_checks() {
+  printf '%s\n' "$RAW" |
     awk -F'\t' '$2 == "pass" || $2 == "fail" {print $1 "\t" $2}' |
     if [ -n "$ONLY" ]; then grep -- "$ONLY" || true; else cat; fi |
     sort
 }
 
+snapshot_lines() {
+  if [ -n "$1" ]; then printf '%s\n' "$1"; fi
+}
+
+added_terminal() {
+  diff <(snapshot_lines "$prev") <(snapshot_lines "$1") | grep '^>' | sed 's/^> //'
+}
+
+save_state() {
+  printf '%s' "$1" >"$STATE_FILE"
+}
+
 prev=""
 baseline_set=0
+
+# Resume from a previous watcher's snapshot so checks that went terminal
+# between watchers are still reported.
+if [ -s "$STATE_FILE" ]; then
+  prev="$(cat "$STATE_FILE")"
+  baseline_set=1
+  echo "Resuming from snapshot in ${STATE_FILE}"
+fi
+
+consecutive_failures=0
 deadline=$((TIMEOUT * 60))
 SECONDS=0
 
 while ((SECONDS < deadline)); do
-  cur="$(poll_terminal_checks)"
+  if ! poll_checks; then
+    consecutive_failures=$((consecutive_failures + 1))
+    echo "warning: gh pr checks failed (${consecutive_failures}/${MAX_POLL_FAILURES}): $(cat "$ERR_FILE")" >&2
+    if [ "$consecutive_failures" -ge "$MAX_POLL_FAILURES" ]; then
+      echo "error: giving up after ${MAX_POLL_FAILURES} consecutive failed polls" >&2
+      exit 3
+    fi
+    sleep "$INTERVAL"
+    continue
+  fi
+  consecutive_failures=0
+
+  cur="$(terminal_checks)"
   if [ "$baseline_set" -eq 0 ]; then
     prev="$cur"
     baseline_set=1
-  elif [ -n "$cur" ] && [ "$cur" != "$prev" ]; then
-    echo "=== NEW TERMINAL CHECK RESULT(S) ==="
-    diff <(printf '%s\n' "$prev") <(printf '%s\n' "$cur") | grep '^>' | sed 's/^> //'
-    exit 0
+  else
+    added="$(added_terminal "$cur")"
+    if [ -n "$added" ]; then
+      echo "=== NEW TERMINAL CHECK RESULT(S) ==="
+      echo "$added"
+      save_state "$cur"
+      exit 0
+    fi
+    # No new terminal results: adopt the current snapshot (it may have lost
+    # rows, e.g. a check going back to pending for a rerun) and keep waiting.
   fi
+  prev="$cur"
+  save_state "$prev"
   sleep "$INTERVAL"
 done
 
-echo "Timed out after ${TIMEOUT}m with no new terminal results"
+echo "Timed out after ${TIMEOUT}m with no new terminal results (snapshot kept in ${STATE_FILE})"
 exit 1
