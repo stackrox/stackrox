@@ -10,6 +10,8 @@ import xml.etree.ElementTree as ET
 
 import node_disruption as monitor
 from ci_tests import NonGroovyE2e
+from clusters import GKECluster
+from runners import ClusterTestRunner
 
 
 def snapshot(*names, ready="True"):
@@ -149,8 +151,8 @@ class NodeMonitorTest(unittest.TestCase):
                 thread.return_value.join.assert_called_once()
                 self.assertEqual(report.call_args.args[-1], skipped)
 
-    def test_empty_baseline_recovery(self):
-        cases = {"recovered": ([reply(), reply("a")], "0"), "empty": ([reply(), reply()], "1")}
+    def test_empty_baseline_is_advisory_failure(self):
+        cases = {"recovered": ([reply(), reply("a")], "1"), "empty": ([reply(), reply()], "1")}
         for name, (responses, failures) in cases.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, patch.object(
                 monitor.subprocess, "run", side_effect=kubectl_responses(responses)
@@ -159,6 +161,22 @@ class NodeMonitorTest(unittest.TestCase):
                     pass
                 report = ET.parse(Path(directory) / monitor.JUNIT_REPORT).getroot()
                 self.assertEqual(report.get("failures"), failures)
+
+    def test_openshift_baseline(self):
+        cases = {
+            "stable": (("a", "b"), "0"),
+            "addition": (("a", "b", "c"), "1"),
+            "removal": (("a",), "1"),
+            "replacement": (("a", "c"), "1"),
+        }
+        for name, (final, failures) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, patch.object(
+                monitor.subprocess, "run", side_effect=kubectl_responses([reply("a", "b"), reply(*final)])
+            ), patch.object(monitor.threading, "Thread"):
+                with monitor.monitor({"ARTIFACT_DIR": directory}, baseline=True, phase="part-1"):
+                    pass
+                report = ET.parse(Path(directory) / "part-1" / monitor.JUNIT_REPORT)
+                self.assertEqual(report.getroot().get("failures"), failures)
 
     def test_directory_failure_is_advisory(self):
         with patch.object(Path, "mkdir", side_effect=OSError("disk full")), patch.object(
@@ -220,10 +238,9 @@ class NonGroovyIntegrationTest(unittest.TestCase):
             "timeout": subprocess.TimeoutExpired("product", 1),
         }
         for name, error in cases.items():
-            with self.subTest(name=name), patch.object(monitor, "monitor") as context, patch.object(
+            with self.subTest(name=name), patch.object(
                 NonGroovyE2e, "run_with_graceful_kill", side_effect=error
             ) as run:
-                context.return_value.__exit__.return_value = False
                 test = NonGroovyE2e()
                 if error:
                     with self.assertRaises(type(error)) as caught:
@@ -235,7 +252,6 @@ class NonGroovyIntegrationTest(unittest.TestCase):
                     ["tests/e2e/run.sh", test.TEST_OUTPUT_DIR],
                     test.TEST_TIMEOUT, output_dir=test.TEST_OUTPUT_DIR,
                 )
-                context.return_value.__exit__.assert_called_once()
 
     def test_product_outcome_and_report(self):
         def sample(directory, _env):
@@ -255,7 +271,10 @@ class NonGroovyIntegrationTest(unittest.TestCase):
             ), patch.object(monitor.threading, "Thread"), patch.object(
                 monitor, "sample_nodes", side_effect=OSError("kubectl") if sampling_error else sample
             ), patch.object(NonGroovyE2e, "run_with_graceful_kill", side_effect=error) as product:
-                test = NonGroovyE2e()
+                cluster = GKECluster("test")
+                cluster.provision = lambda: None
+                cluster.teardown = lambda: None
+                test = ClusterTestRunner(cluster=cluster, test=NonGroovyE2e())
                 if error:
                     with self.assertRaises(type(error)) as caught:
                         test.run()

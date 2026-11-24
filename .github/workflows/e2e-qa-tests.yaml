@@ -77,6 +77,9 @@ jobs:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      NUM_NODES: ${{ inputs.cluster-provisioning-method == 'direct-gke' && '1' || '' }}
+      CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
+      INFRA_FLAVOR: ${{ inputs.infra-flavor }}
       ARTIFACT_DIR: ./junit-reports/
       USE_LOCAL_ROXCTL: "true"
       ROX_RISK_REPROCESSING_INTERVAL: 15s
@@ -162,7 +165,6 @@ jobs:
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
           MACHINE_TYPE: "e2-standard-16"
-          NUM_NODES: "1"
           GKE_SPOT: "false"
         run: |
           scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
@@ -283,7 +285,16 @@ jobs:
           GCP_SERVICE_ACCOUNT_EMAIL_STACKROX_CI_WORKLOAD_IDENTITY: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL_STACKROX_CI_WORKLOAD_IDENTITY }}
           GCP_PROJECT_NUMBER_WORKLOAD_IDENTITY: ${{ secrets.GCP_PROJECT_NUMBER_WORKLOAD_IDENTITY }}
         timeout-minutes: ${{ inputs.part1-timeout-minutes }}
-        run: qa-tests-backend/scripts/run-part-1.sh
+        run: |
+          monitor_args=()
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra ]]; then
+            if [[ "$INFRA_FLAVOR" == openshift* ]]; then
+              monitor_args+=(--baseline)
+            else
+              exec qa-tests-backend/scripts/run-part-1.sh
+            fi
+          fi
+          python3 .openshift-ci/node_disruption.py "${monitor_args[@]}" --phase part-1 -- qa-tests-backend/scripts/run-part-1.sh
 
       - name: Run Part 1 post-test
         if: always() && env.KUBECONFIG != ''
@@ -302,7 +313,16 @@ jobs:
         id: run-part-2
         env: *test_env
         timeout-minutes: ${{ inputs.part2-timeout-minutes }}
-        run: qa-tests-backend/scripts/run-part-2.sh
+        run: |
+          monitor_args=()
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra ]]; then
+            if [[ "$INFRA_FLAVOR" == openshift* ]]; then
+              monitor_args+=(--baseline)
+            else
+              exec qa-tests-backend/scripts/run-part-2.sh
+            fi
+          fi
+          python3 .openshift-ci/node_disruption.py "${monitor_args[@]}" --phase part-2 -- qa-tests-backend/scripts/run-part-2.sh
 
       - name: Run Part 2 post-test
         if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''

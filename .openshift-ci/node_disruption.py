@@ -1,4 +1,4 @@
-"""Node-name polling shared by nongroovy CI entrypoints."""
+"""Node-name polling shared by cluster-backed CI jobs."""
 
 from contextlib import contextmanager
 import json
@@ -76,10 +76,10 @@ def write_report(directory, expected, errors, cancelled=False):
     return failed
 
 
-def prepare_monitor(directory, env, sample, errors):
+def prepare_monitor(directory, env, sample, errors, *, baseline=False):
     try:
-        expected = expected_node_count(env)
-        if expected is not None:
+        expected = None if baseline else expected_node_count(env)
+        if baseline or expected is not None:
             (directory / NODE_NAMES).write_text("", encoding="utf-8")
             (directory / MONITOR_LOG).write_text("", encoding="utf-8")
             sample()
@@ -89,10 +89,8 @@ def prepare_monitor(directory, env, sample, errors):
         return None
 
 
-def finish_report(directory, env, expected, errors, cancelled=False):
+def finish_report(directory, expected, errors, cancelled=False):
     """Write the advisory report without letting artifact failures skip cleanup."""
-    if not env.get("NUM_NODES"):
-        return False
     try:
         return write_report(directory, expected, errors, cancelled)
     except (OSError, ValueError, RuntimeError) as exc:
@@ -101,13 +99,15 @@ def finish_report(directory, env, expected, errors, cancelled=False):
 
 
 @contextmanager
-def monitor(env=None):
+def monitor(env=None, *, baseline=False, phase=None):
     """Collect advisory node diagnostics without owning the product process."""
     env = dict(os.environ if env is None else env)
-    if not env.get("NUM_NODES"):
+    if not baseline and not env.get("NUM_NODES"):
         yield
         return
     directory = Path(env.get("ARTIFACT_DIR", "junit-reports"))
+    if phase:
+        directory /= phase
     try:
         directory.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
@@ -119,9 +119,23 @@ def monitor(env=None):
     worker = None
     cancelled = False
 
+    initial = None
+
     def sample():
+        nonlocal initial
         try:
-            return sample_nodes(directory, env)
+            names = set(sample_nodes(directory, env))
+            if initial is None:
+                initial = names
+                if not names:
+                    errors.append("Initial node snapshot is empty")
+                elif not baseline and len(names) != expected_node_count(env):
+                    errors.append(f"Initial snapshot contains {len(names)} nodes")
+            elif names != initial:
+                change = f"Nodes added: {sorted(names - initial)}; removed: {sorted(initial - names)}"
+                if change not in errors:
+                    errors.append(change)
+            return names
         except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as exc:
             errors.append(str(exc))
             return None
@@ -130,8 +144,10 @@ def monitor(env=None):
         while not stopped.wait(POLL_INTERVAL):
             sample()
 
-    expected = prepare_monitor(directory, env, sample, errors)
-    if expected is not None:
+    expected = prepare_monitor(directory, env, sample, errors, baseline=baseline)
+    if baseline and initial is not None:
+        expected = len(initial)
+    if expected is not None and initial is not None:
         try:
             worker = threading.Thread(target=poll, name="node-monitor", daemon=True)
             worker.start()
@@ -148,6 +164,22 @@ def monitor(env=None):
         stopped.set()
         if worker is not None:
             worker.join()
-        if expected is not None and not cancelled:
+        if expected is not None and initial is not None and not cancelled:
             sample()
-        finish_report(directory, env, expected, errors, cancelled)
+        finish_report(directory, expected, errors, cancelled)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--baseline", action="store_true")
+    parser.add_argument("--phase")
+    parser.add_argument("command", nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+    command = args.command[1:] if args.command[:1] == ["--"] else args.command
+    if not command:
+        parser.error("a test command is required")
+    with monitor(baseline=args.baseline, phase=args.phase):
+        status = subprocess.call(command)
+    raise SystemExit(status if status >= 0 else 128 - status)

@@ -42,6 +42,7 @@ jobs:
       CI_JOB_NAME: ${{ inputs.ci-job-name }}
       USE_KONFLUX_IMAGES: ${{ inputs.use-konflux-images }}
       CLUSTER_NAME_PREFIX: ${{ inputs.cluster-name-prefix }}
+      NUM_NODES: "1"
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: "false"
       STORAGE_CLASS: faster
@@ -80,7 +81,6 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "1"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
@@ -130,6 +130,7 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: |
+        python3 .openshift-ci/node_disruption.py -- bash -eo pipefail <<'TEST_SCRIPT'
         source tests/e2e/lib.sh
         source tests/scripts/setup-certs.sh
         source scripts/ci/sensor-wait.sh
@@ -148,6 +149,7 @@ jobs:
         rm -f "$roxie_config"
 
         db_backup_and_restore_test /tmp/db-backup-restore-test
+        TEST_SCRIPT
 
     - name: Run post-test
       if: always()

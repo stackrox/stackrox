@@ -173,12 +173,7 @@ jobs:
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       timeout-minutes: 245
-      shell: python
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from ci_tests import NonGroovyE2e
-        NonGroovyE2e().run()
+      run: python3 .openshift-ci/node_disruption.py -- tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Ensure central stability before post-test
       if: always()
