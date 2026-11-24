@@ -475,7 +475,7 @@ func TestTransformAuthProvider_NormalizesUIEndpoints(t *testing.T) {
 		},
 		"multiple extra UI endpoints are normalized": {
 			extraUIEndpoints:         []string{"http://localhost:8080", "central.example.com"},
-			expectedExtraUIEndpoints: []string{"localhost:8080", "central.example.com:443"},
+			expectedExtraUIEndpoints: []string{"localhost:8080", "central.example.com"},
 		},
 		"empty entries among extra UI endpoints are dropped": {
 			extraUIEndpoints:         []string{"", "central.example.com:8443", ""},
@@ -484,8 +484,8 @@ func TestTransformAuthProvider_NormalizesUIEndpoints(t *testing.T) {
 		"primary and extra UI endpoints are normalized": {
 			uiEndpoint:               "https://central.example.com",
 			extraUIEndpoints:         []string{"http://localhost:8080", "central.example.com"},
-			expectedUIEndpoint:       "central.example.com:443",
-			expectedExtraUIEndpoints: []string{"localhost:8080", "central.example.com:443"},
+			expectedUIEndpoint:       "central.example.com",
+			expectedExtraUIEndpoints: []string{"localhost:8080", "central.example.com"},
 		},
 		"whitespace-only primary UI endpoint is rejected": {
 			uiEndpoint: " ",

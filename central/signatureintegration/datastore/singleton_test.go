@@ -15,7 +15,7 @@ func TestSeedFirstInstall(t *testing.T) {
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
 	id := signatures.DefaultRedHatIntegrationID
-	mockStore.EXPECT().Get(gomock.Any(), id).Return(nil, false, nil).Times(1)
+	mockStore.EXPECT().Exists(gomock.Any(), id).Return(false, nil).Times(1)
 	mockStore.EXPECT().Upsert(gomock.Any(), signatures.DefaultRedHatSignatureIntegration).Return(nil).Times(1)
 
 	seedRedHatDefaultSignatureIntegration(mockStore)
@@ -26,7 +26,7 @@ func TestSeedSubsequentStartup(t *testing.T) {
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
 	id := signatures.DefaultRedHatIntegrationID
-	mockStore.EXPECT().Get(gomock.Any(), id).Return(signatures.DefaultRedHatSignatureIntegration, true, nil).Times(1)
+	mockStore.EXPECT().Exists(gomock.Any(), id).Return(true, nil).Times(1)
 
 	seedRedHatDefaultSignatureIntegration(mockStore)
 }

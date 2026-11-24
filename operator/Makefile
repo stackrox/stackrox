@@ -167,6 +167,14 @@ help: ## Display this help.
 tag: ## Print the correct operator version (== image tag).
 	@echo $(VERSION)
 
+.PHONY: operator-image-ref
+operator-image-ref: ## Print the operator image ref built by docker-build.
+	@echo $(IMG)
+
+.PHONY: operator-bundle-image-ref
+operator-bundle-image-ref: ## Print the bundle image ref built by bundle-build.
+	@echo $(BUNDLE_IMG)
+
 .PHONY: replaced-version
 replaced-version: ## Print the replaced operator version, without the v prefix.
 	@sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v?(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml

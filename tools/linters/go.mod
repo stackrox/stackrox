@@ -3,7 +3,7 @@ module github.com/stackrox/stackrox/tools/linters
 go 1.26.10
 
 require (
-	actionlint.kjanat.dev v1.17.0
+	actionlint.kjanat.dev v1.17.1
 	github.com/golangci/golangci-lint/v2 v2.15.0
 	github.com/nilslice/protolock v0.17.0
 	github.com/sethvargo/ratchet v0.12.0

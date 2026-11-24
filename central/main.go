@@ -49,6 +49,7 @@ import (
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
+	complianceFreshness "github.com/stackrox/rox/central/complianceoperator/v2/freshness"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
@@ -374,6 +375,9 @@ func startServices() {
 
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
+	if features.ComplianceSurfaceStaleData.Enabled() && features.ComplianceEnhancements.Enabled() {
+		complianceFreshness.Singleton().Start()
+	}
 	pruning.Singleton().Start()
 	if baseImageWatcher.Enabled() {
 		baseImageWatcher.Singleton().Start()
@@ -733,7 +737,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	ds := iiDatastore.Singleton()
 	for len(integrations) > 0 {
 		for idx, integration := range integrations {
-			_, exists, _ := ds.GetImageIntegration(imageIntegrationContext, integration.Integration.GetId())
+			exists, _ := ds.ImageIntegrationExists(imageIntegrationContext, integration.Integration.GetId())
 			if exists {
 				delete(integrations, idx)
 				continue
@@ -1056,6 +1060,11 @@ func waitForTerminationSignal() {
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
+	}
+
+	if features.ComplianceSurfaceStaleData.Enabled() && features.ComplianceEnhancements.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{complianceFreshness.Singleton(), "compliance freshness sweeper"})
 	}
 
 	if features.PlatformComponents.Enabled() {

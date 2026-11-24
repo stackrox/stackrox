@@ -13,6 +13,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetRole(ctx context.Context, name string) (*storage.Role, bool, error)
+	RoleExists(ctx context.Context, name string) (bool, error)
 	GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, []string, error)
 	GetAllRoles(ctx context.Context) ([]*storage.Role, error)
 	GetRolesFiltered(ctx context.Context, filter func(role *storage.Role) bool) ([]*storage.Role, error)
@@ -23,6 +24,7 @@ type DataStore interface {
 	RemoveFilteredRoles(ctx context.Context, filter func(*storage.Role) bool) (int, error)
 
 	GetPermissionSet(ctx context.Context, id string) (*storage.PermissionSet, bool, error)
+	PermissionSetExists(ctx context.Context, id string) (bool, error)
 	GetAllPermissionSets(ctx context.Context) ([]*storage.PermissionSet, error)
 	GetPermissionSetsFiltered(ctx context.Context, filter func(permissionSet *storage.PermissionSet) bool) ([]*storage.PermissionSet, error)
 	CountPermissionSets(ctx context.Context) (int, error)

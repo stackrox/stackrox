@@ -22,6 +22,7 @@ var (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetImageIntegration(ctx context.Context, id string) (*storage.ImageIntegration, bool, error)
+	ImageIntegrationExists(ctx context.Context, id string) (bool, error)
 	GetImageIntegrations(ctx context.Context, integration *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error)
 
 	AddImageIntegration(ctx context.Context, integration *storage.ImageIntegration) (string, error)
