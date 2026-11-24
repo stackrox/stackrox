@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/metadata"
@@ -95,7 +96,7 @@ func TestUserFromContext(t *testing.T) {
 				ctx = ContextWithIdentity(ctx, id, it)
 			}
 
-			assert.Equal(it, tc.expectedUser, UserFromContext(ctx))
+			protoassert.Equal(it, tc.expectedUser, UserFromContext(ctx))
 		})
 	}
 }

@@ -3,7 +3,6 @@ package basic
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/errox"
@@ -11,21 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
-
-func newTestHashFile(t *testing.T, username, password string) *htpasswd.HashFile {
-	hashFile := htpasswd.New()
-	require.NoError(t, hashFile.Set(username, password))
-	return hashFile
-}
-
-func newRoleMapperReturningRole(mockCtrl *gomock.Controller, roles []permissions.ResolvedRole) permissions.RoleMapper {
-	roleMapper := permissionMocks.NewMockRoleMapper(mockCtrl)
-	roleMapper.EXPECT().
-		FromUserDescriptor(gomock.Any(), gomock.Any()).
-		AnyTimes().
-		Return(roles, nil)
-	return roleMapper
-}
 
 func TestManagerIdentityForCreds(t *testing.T) {
 	for name, tc := range map[string]struct {
