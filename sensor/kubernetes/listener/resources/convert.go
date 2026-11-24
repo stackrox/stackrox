@@ -418,10 +418,13 @@ func (w *deploymentWrap) processContainerStatuses(
 			// name with the per-architecture digest the container runtime reported.
 			isClusterLocal := localImages.Contains(imageFullName)
 
-			// staleRevision marks a pod that is not running the reference this deployment
-			// declares for this container, i.e. a leftover from an older rollout revision.
-			// Nothing it reports describes the current revision.
-			staleRevision := false
+			// contributeMetadata reports whether this pod's observation may supply the
+			// pullability and runtime image name that accompany the image's digest. It is
+			// withheld from a pod left over from an older rollout revision, which describes
+			// nothing about the current one, and from any pod once another has already
+			// supplied the child digest, so that the digest, the repository it is read from
+			// and its pullability all come from a single observation.
+			contributeMetadata := true
 
 			// A workload pinned by a multi-arch index digest (a manifest list) runs a
 			// per-architecture child manifest, and the runtime reports that child digest in
@@ -451,7 +454,23 @@ func (w *deploymentWrap) processContainerStatuses(
 				podMatchesPin := specFullName != "" && specFullName == pinned.fullName
 
 				if pinned.digest != "" {
-					staleRevision = !podMatchesPin
+					childDigest := runtimeChildDigest(c.ImageID)
+					// The image still carrying the pinned digest means no observation has
+					// supplied a child digest yet, so the rewrite below is available and
+					// this pod may contribute metadata if it is running the current
+					// revision. Once some observation has supplied one, only a pod
+					// reporting that same digest describes the image now recorded, so only
+					// it may contribute. That keeps the digest, the repository it was read
+					// from, and its pullability from being taken from different pods --
+					// including a replica on another architecture, or a second pod of the
+					// same revision reporting a bare config ID. It holds across repeated
+					// builds of one wrap, since it is derived from the recorded digest
+					// rather than from progress made during a single pass.
+					if image.GetId() == pinned.digest {
+						contributeMetadata = podMatchesPin
+					} else {
+						contributeMetadata = podMatchesPin && childDigest == image.GetId()
+					}
 
 					// localImages is rebuilt on every build from the deployment's current
 					// image names, which may already be the rewritten child reference while
@@ -464,29 +483,35 @@ func (w *deploymentWrap) processContainerStatuses(
 						isClusterLocal = localImages.Contains(pinned.fullName)
 					}
 
-					if podMatchesPin && image.GetId() == pinned.digest {
-						if childDigest := runtimeChildDigest(c.ImageID); childDigest != "" && childDigest != pinned.digest {
-							image.Id = childDigest
-							imageUtils.NormalizeImageFullName(imageName, childDigest)
-						}
+					if podMatchesPin && image.GetId() == pinned.digest &&
+						childDigest != "" && childDigest != pinned.digest {
+						image.Id = childDigest
+						imageUtils.NormalizeImageFullName(imageName, childDigest)
 					}
 				}
 			}
+
+			// Locality is a property of the references this deployment declares, not of
+			// any pod observation, so it is assigned unconditionally. Withholding it would
+			// publish false for a cluster-local deployment whose pods are all from an
+			// older revision, which is not what the same deployment reports with the
+			// feature flag off.
+			image.IsClusterLocal = isClusterLocal
 
 			// If the image ID is populated then determine if the image is pullable,
 			// otherwise assume the image is pullable. An Image ID may be empty when a
 			// container is not ready yet per the container runtime.
 			//
 			// Pullability and the runtime image name must come from the same observation
-			// that supplied the digest, so a pod from an older rollout revision may not
-			// contribute either. Without this, an older pod's registry and remote could
+			// that supplied the digest. Otherwise an older pod's registry and remote could
 			// replace the current revision's, and with FlattenImageData that repository
-			// would then be combined with the current revision's digest in IdV2.
-			if !staleRevision {
+			// would then be combined with the current revision's digest in IdV2; likewise a
+			// second pod of the same revision could report a bare config ID, which is not
+			// pullable and carries no repository, over a child digest another pod supplied.
+			if contributeMetadata {
 				if c.ImageID != "" {
 					image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				}
-				image.IsClusterLocal = isClusterLocal
 				updateImageWithNewerImageName(image, runtimeImageName, true)
 			}
 			if features.FlattenImageData.Enabled() {

@@ -229,6 +229,7 @@ func TestPopulateImageMetadataMultiArchMultiplePods(t *testing.T) {
 		amd64Child  = "sha256:00ffeeddccbbaa998877665544332211009f8e7d6c5b4a3928170615f4e3d2c1"
 		arm64Child  = "sha256:0f1e2d3c4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0"
 		oldChild    = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+		configID    = "4444444444444444444444444444444444444444444444444444444444444444"
 	)
 
 	const (
@@ -250,10 +251,14 @@ func TestPopulateImageMetadataMultiArchMultiplePods(t *testing.T) {
 
 	cases := map[string]struct {
 		deployImage          string
+		unqualified          bool
 		pods                 []testPod
 		localImages          []string
 		expectedID           string
 		expectedName         string
+		expectedRegistry     string
+		expectedRemote       string
+		expectPullable       bool
 		expectedClusterLocal bool
 	}{
 		"older pod from a previous revision cannot replace the newest digest": {
@@ -331,6 +336,62 @@ func TestPopulateImageMetadataMultiArchMultiplePods(t *testing.T) {
 			expectedName:         repo + "@" + amd64Child,
 			expectedClusterLocal: false,
 		},
+		"a same-revision pod with a bare config id cannot override the selected observation": {
+			// Both pods match the pin, so neither is stale. Once the newest pod has recorded a
+			// child digest, an older same-revision pod reporting only a config id must not
+			// contribute pullability or the runtime image name: with unqualified search
+			// registries on, that would blank registry/remote and mark the image not pullable.
+			unqualified: true,
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker://sha256:" + configID, created: olderPod},
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:       amd64Child,
+			expectedName:     repo + "@" + amd64Child,
+			expectedRegistry: "quay.io",
+			expectedRemote:   "example/multiarch",
+			expectPullable:   true,
+		},
+		"an arm64 replica cannot relabel the record selected from the amd64 pod": {
+			// A same-revision replica on another architecture, pulled through a mirror, must
+			// change neither the digest nor the repository of the record already selected.
+			unqualified: true,
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://mirror.example.com/platform/multiarch@" + arm64Child, created: olderPod},
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:       amd64Child,
+			expectedName:     repo + "@" + amd64Child,
+			expectedRegistry: "quay.io",
+			expectedRemote:   "example/multiarch",
+			expectPullable:   true,
+		},
+		"an older pod may still supply the child digest when the newest reports only the index (invariant)": {
+			// Nothing is locked until a child digest has actually been recorded. This passes
+			// with and without the change; it guards against a future "first pod wins"
+			// implementation and is not a regression guard for this one.
+			deployImage: indexPin,
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + arm64Child, created: olderPod},
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + indexDigest, created: newerPod},
+			},
+			expectedID:   arm64Child,
+			expectedName: repo + "@" + arm64Child,
+		},
+		"a cluster-local deployment stays cluster-local when only older-revision pods report": {
+			// Locality is a property of the deployment's declared reference, not of any pod, so
+			// a deployment whose only pod is on an older revision must still be reported local.
+			deployImage: indexPin,
+			localImages: []string{indexPin},
+			pods: []testPod{
+				{spec: oldRepo + "@" + oldIndex, imageID: "docker-pullable://" + oldRepo + "@" + oldChild, created: newerPod},
+			},
+			expectedID:           indexDigest,
+			expectedName:         indexPin,
+			expectedClusterLocal: true,
+		},
 		"runtime without a digest keeps the pinned digest (invariant)": {
 			// A tag-form runtime image ID yields no digest both before and after the fix, so
 			// this is a safety net rather than a regression guard.
@@ -347,7 +408,7 @@ func TestPopulateImageMetadataMultiArchMultiplePods(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 			testutils.MustUpdateFeature(t, features.MultiArchWorkloadChildDigest, true)
-			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, false)
+			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, c.unqualified)
 
 			img, err := imageUtils.GenerateImageFromString(c.deployImage)
 			require.NoError(t, err)
@@ -383,6 +444,13 @@ func TestPopulateImageMetadataMultiArchMultiplePods(t *testing.T) {
 			assert.Equal(t, c.expectedID, result.GetId())
 			assert.Equal(t, c.expectedName, result.GetName().GetFullName())
 			assert.Equal(t, c.expectedClusterLocal, result.GetIsClusterLocal())
+			if c.expectedRegistry != "" {
+				assert.Equal(t, c.expectedRegistry, result.GetName().GetRegistry())
+				assert.Equal(t, c.expectedRemote, result.GetName().GetRemote())
+			}
+			if c.expectPullable {
+				assert.False(t, result.GetNotPullable())
+			}
 
 			// Compute IdV2 independently from the expected name and digest.
 			expectedName := &storage.ImageName{FullName: c.expectedName}
@@ -512,6 +580,20 @@ func TestPopulateImageMetadataMultiArchResolverRebuild(t *testing.T) {
 			// This already held before the fix, via the pod-spec fallback that the fix
 			// replaced with the captured pin, so it guards the behavior, not the change.
 			localImages: []string{indexPin},
+			pods: []testPod{
+				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
+			},
+			expectedID:           amd64Child,
+			expectedName:         repo + "@" + amd64Child,
+			expectedClusterLocal: true,
+		},
+		"locality keyed by the child reference resolves after the rebuild (invariant)": {
+			// localImages holds only the child reference, which no pass can know before the
+			// rewrite. The first pass cannot report locality; the second must find it through
+			// the now-rewritten live name. This closes a coverage gap rather than guarding
+			// this change: every other fixture keys localImages by the pin, so the pinned-key
+			// fallback alone could satisfy them. It passes before and after the fix.
+			localImages: []string{repo + "@" + amd64Child},
 			pods: []testPod{
 				{spec: indexPin, imageID: "docker-pullable://" + repo + "@" + amd64Child, created: newerPod},
 			},
