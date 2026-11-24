@@ -207,13 +207,14 @@ function WorkloadCvesOverviewPage() {
     const countsQueryString = getRegexScopedQueryString(countsSearchFilter);
 
     const getDefaultSortOption = isViewingWithCves
-        ? getWorkloadCveOverviewDefaultSortOption
+        ? (entityTab: WorkloadEntityTab) =>
+              getWorkloadCveOverviewDefaultSortOption(entityTab, { useSeverityTabs })
         : getDefaultZeroCveSortOption;
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
+        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey, useSeverityTabs),
         defaultSortOption: getDefaultSortOption(activeEntityTabKey),
         onSort: () => pagination.setPage(1),
     });
@@ -255,7 +256,7 @@ function WorkloadCvesOverviewPage() {
         setSeverityTab(severity);
         pagination.setPage(1);
         if (activeEntityTabKey === 'CVE') {
-            sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
+            sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE', { useSeverityTabs }));
         }
     }
 
@@ -263,7 +264,7 @@ function WorkloadCvesOverviewPage() {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
         setSearchFilter({});
-        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
+        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE', { useSeverityTabs }));
         pagination.setPage(1);
 
         // Re-apply the default filters when changing to the "OBSERVED" state

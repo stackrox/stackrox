@@ -103,13 +103,16 @@ describe('Workload CVE overview page tests', () => {
     });
 
     it('should apply the correct baseline filters when switching between built in views using the user-workload based template', () => {
-        // Direct visit without using the helper because granular waits are used in this test.
-        visit('/main/vulnerabilities/platform/');
-
         interceptAndWatchRequests(getRouteMatcherMapForVulnMgmt()).then(
             ({ waitForRequests, waitAndYieldRequestQueryParameters }) => {
-                // Initial request
-                waitForRequests(['getVulnMgmtCVEs', 'getVulnMgmtCounts']);
+                // Test the 'Platform' view which is the default in e2e tests
+                visit('/main/vulnerabilities/platform/');
+                waitAndYieldRequestQueryParameters(['getVulnMgmtCVEs']).then((query) => {
+                    const requestQuery = query.toLowerCase();
+                    expect(requestQuery).to.contain('vulnerability state:observed');
+                    expect(requestQuery).to.contain('platform component:true');
+                    expect(requestQuery).not.to.contain('image cve count');
+                });
 
                 applyDefaultFilters(['Critical', 'Important'], ['Fixable']);
                 waitForRequests(['getVulnMgmtCVEs', 'getVulnMgmtCounts']);
@@ -120,15 +123,6 @@ describe('Workload CVE overview page tests', () => {
                     const requestQuery = query.toLowerCase();
                     expect(requestQuery).to.contain('vulnerability state:observed');
                     expect(requestQuery).to.contain('platform component:false');
-                    expect(requestQuery).not.to.contain('image cve count');
-                });
-
-                // Test the 'Platform' view which is the default in e2e tests
-                visitFromHorizontalNav('Platform');
-                waitAndYieldRequestQueryParameters(['getVulnMgmtCVEs']).then((query) => {
-                    const requestQuery = query.toLowerCase();
-                    expect(requestQuery).to.contain('vulnerability state:observed');
-                    expect(requestQuery).to.contain('platform component:true');
                     expect(requestQuery).not.to.contain('image cve count');
                 });
 
@@ -284,7 +278,7 @@ describe('Workload CVE overview page tests', () => {
 
         it('should use the affected-images sort by default and reset it on severity tab change', () => {
             interceptAndWatchRequests(getRouteMatcherMapForVulnMgmt()).then(
-                ({ waitForRequests, waitAndYieldRequestSort }) => {
+                ({ waitAndYieldRequestSort }) => {
                     const basePath = '/main/vulnerabilities/platform/';
                     const defaultSort = {
                         field: 'Image Sha',
@@ -293,7 +287,6 @@ describe('Workload CVE overview page tests', () => {
                     };
 
                     visit(basePath);
-                    waitForRequests(['getVulnMgmtCVEs']);
                     waitAndYieldRequestSort(['getVulnMgmtCVEs']).then((sort) => {
                         expect(sort).to.deep.equal(defaultSort);
                     });

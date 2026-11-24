@@ -29,35 +29,50 @@ export const aggregateByCreatedTime: SortAggregate = {
     aggregateFunc: 'min',
 };
 
+const severityCountFields = [
+    'Critical Severity Count',
+    'Important Severity Count',
+    'Moderate Severity Count',
+    'Low Severity Count',
+    'Unknown Severity Count',
+];
+
+export type WorkloadCveSortOptions = {
+    // When severity tabs are active, severity is fixed by the tab so severity count fields
+    // are neither useful nor sortable, and the Image tab sorts by entity columns.
+    useSeverityTabs?: boolean;
+    searchFilter?: SearchFilter;
+};
+
 /**
  * Get the available sort fields for a given Workload CVE entity
  * @param entityTab The chosen entity
+ * @param useSeverityTabs Whether severity is fixed by a tab (overview) or not (other pages)
  * @returns The available sort fields
  */
 export function getWorkloadCveOverviewSortFields(
-    entityTab: WorkloadEntityTab
+    entityTab: WorkloadEntityTab,
+    useSeverityTabs = false
 ): (string | string[])[] {
     switch (entityTab) {
         case 'CVE':
-            // Severity is fixed by the active severity tab, so severity count fields are
-            // neither useful nor sortable here.
-            return ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
+            if (useSeverityTabs) {
+                return ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
+            }
+            return ['CVE', severityCountFields, 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
-            return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
-        case 'Deployment':
+            if (useSeverityTabs) {
+                return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
+            }
             return [
-                'Deployment',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'Cluster',
-                'Namespace',
-                'Created',
+                'Image',
+                severityCountFields,
+                'Image OS',
+                'Image Created Time',
+                'Image Scan Time',
             ];
+        case 'Deployment':
+            return ['Deployment', severityCountFields, 'Cluster', 'Namespace', 'Created'];
         default:
             return ensureExhaustive(entityTab);
     }
@@ -67,23 +82,39 @@ export function getWorkloadCveOverviewSortFields(
  *  Get the default table sort option for a given Workload CVE entity
  *
  * @param entityTab The chosen entity
+ * @param options.useSeverityTabs Whether severity is fixed by a tab (overview)
+ * @param options.searchFilter The applied search filter, used for the severity sort fallback
  * @returns The default sort option
  */
 export function getWorkloadCveOverviewDefaultSortOption(
-    entityTab: WorkloadEntityTab
+    entityTab: WorkloadEntityTab,
+    { useSeverityTabs = false, searchFilter }: WorkloadCveSortOptions = {}
 ): SortOption | NonEmptyArray<SortOption> {
+    // Array.prototype.map does not currently retain the arity of an input tuple, so
+    // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
+    // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841
+    const appliedSeveritySortOptions = getSeveritySortOptions(
+        getAppliedSeverities(searchFilter ?? {})
+    ).map((o) => ({ ...o, direction: 'desc' })) as NonEmptyArray<SortOption>;
+
     switch (entityTab) {
         case 'CVE':
-            // Within a severity tab, rank CVEs by how many images they affect.
-            return {
-                field: 'Image Sha',
-                direction: 'desc',
-                aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
-            };
+            if (useSeverityTabs) {
+                // Within a severity tab, rank CVEs by how many images they affect.
+                return {
+                    field: 'Image Sha',
+                    direction: 'desc',
+                    aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
+                };
+            }
+            return appliedSeveritySortOptions;
         case 'Deployment':
             return { field: 'Deployment', direction: 'asc' };
         case 'Image':
-            return { field: 'Image', direction: 'asc' };
+            if (useSeverityTabs) {
+                return { field: 'Image', direction: 'asc' };
+            }
+            return appliedSeveritySortOptions;
         default:
             return ensureExhaustive(entityTab);
     }

@@ -83,8 +83,10 @@ export function VulnerabilitiesOverviewContainer() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
-        defaultSortOption: getWorkloadCveOverviewDefaultSortOption(activeEntityTabKey),
+        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey, true),
+        defaultSortOption: getWorkloadCveOverviewDefaultSortOption(activeEntityTabKey, {
+            useSeverityTabs: true,
+        }),
         onSort: () => pagination.setPage(1),
     });
 
@@ -101,14 +103,18 @@ export function VulnerabilitiesOverviewContainer() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption(entityTab));
+        sort.setSortOption(
+            getWorkloadCveOverviewDefaultSortOption(entityTab, { useSeverityTabs: true })
+        );
     }
 
     function onSeverityTabChange(severity: SeverityTab) {
         setSeverityTab(severity);
         pagination.setPage(1);
         if (activeEntityTabKey === 'CVE') {
-            sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
+            sort.setSortOption(
+                getWorkloadCveOverviewDefaultSortOption('CVE', { useSeverityTabs: true })
+            );
         }
     }
 
