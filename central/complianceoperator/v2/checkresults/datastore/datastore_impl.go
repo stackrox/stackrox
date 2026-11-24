@@ -509,34 +509,62 @@ const freshnessUpdateBatchSize = 1000
 // MarkScanChecksStale marks STALE the check results (from the scan specified via scanRefID) whose
 // LastStartedTime predates olderThan.
 func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+	return d.markStaleOlderThan(ctx, search.ComplianceOperatorScanRef, scanRefID, olderThan, nil,
+		"marking prior compliance check results stale")
+}
+
+// MarkScanChecksStaleByConfig marks STALE the check results (of the scan configuration specified
+// via scanConfigName) whose LastStartedTime predates olderThan. It mirrors MarkScanChecksStale but
+// is keyed by the scan configuration name, which the time-driven freshness sweeper derives from the
+// configuration's schedule.
+func (d *datastoreImpl) MarkScanChecksStaleByConfig(ctx context.Context, scanConfigName string, olderThan time.Time) (int64, error) {
+	return d.markStaleOlderThan(ctx, search.ComplianceOperatorScanConfigName, scanConfigName, olderThan,
+		func(result *storage.ComplianceOperatorCheckResultV2) bool {
+			// Guard against a config relabel (scanRefID is stable, but the config name is not) between
+			// the read and the fenced re-read: only stale rows that still belong to this configuration,
+			// so we never apply the wrong config's cutoff.
+			return result.GetScanConfigName() == scanConfigName
+		},
+		"marking stale compliance check results by scan configuration")
+}
+
+// markStaleOlderThan marks STALE the non-stale check results matched by (queryField == targetValue) whose
+// LastStartedTime predates olderThan. belongs, when non-nil, is an extra membership guard applied to
+// every candidate (both at the initial read and under the fenced re-read); pass nil when the keyed
+// field cannot change for a row.
+func (d *datastoreImpl) markStaleOlderThan(ctx context.Context, queryField search.FieldLabel, targetValue string, olderThan time.Time, belongs func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
 		return 0, sac.ErrResourceAccessDenied
 	}
-	if scanRefID == "" {
+	if targetValue == "" {
 		return 0, nil
 	}
 
-	// Narrow the candidate scan at the DB so it does not read and deserialize results that shouldStale would reject
-	// anyway: skip rows that are already STALE, and rows whose LastStartedTime is not older than olderThan.
+	// Narrow the candidates at the DB so markStale does not read and deserialize results that the
+	// predicate would reject anyway: skip rows that are already STALE, and rows whose LastStartedTime
+	// is not older than olderThan.
 	//
 	// The search DSL formats timestamps with second granularity (see sqlTimeStampFormat), so pushing olderThan down
 	// verbatim could drop a row whose sub-second LastStartedTime is still before olderThan (under-selection). We round
-	// the upper bound up to the next whole second to guarantee the DB returns a superset, then shouldStale re-checks
+	// the upper bound up to the next whole second to guarantee the DB returns a superset, then the predicate re-checks
 	// every candidate in Go with full precision.
 	upperBound := olderThan.Truncate(time.Second).Add(time.Second)
 	query := search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		AddExactMatches(queryField, targetValue).
 		AddStrings(search.ComplianceOperatorCheckDataFreshness,
 			search.NegateQueryString(search.ExactMatchString(storage.ComplianceOperatorCheckResultV2_STALE.String()))).
 		AddTimeRangeField(search.ComplianceOperatorCheckLastStartedTime, time.Unix(0, 0), upperBound).
 		ProtoQuery()
 
 	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		if belongs != nil && !belongs(result) {
+			return false
+		}
 		started := result.GetLastStartedTime()
 		return started != nil && started.AsTime().Before(olderThan)
-	}, "marking prior compliance check results stale")
+	}, errMsg)
 }
 
 // markStale performs a read-modify-upsert that flips to STALE every result matched by query for

@@ -14,6 +14,7 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -31,10 +32,11 @@ import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import {
     attributeForComplianceCheckStatus,
+    complianceDataSearchFilterConfig,
     profileCheckSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [profileCheckSearchFilterConfig];
+const searchFilterConfig = [profileCheckSearchFilterConfig, complianceDataSearchFilterConfig];
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -65,6 +67,10 @@ function ClusterDetailsTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const searchFilterConfigWithFeatureFlags = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfig
+    ).filter(({ attributes }) => attributes.length !== 0);
     const colSpan = isScanStatusEnabled ? 4 : 3;
 
     function toggleRow(selectedRowIndex: number) {
@@ -83,7 +89,7 @@ function ClusterDetailsTable({
             <Toolbar>
                 <ToolbarContent>
                     <CompoundSearchFilter
-                        config={searchFilterConfig}
+                        config={searchFilterConfigWithFeatureFlags}
                         searchFilter={searchFilter}
                         onSearch={onSearch}
                     />
@@ -96,7 +102,7 @@ function ClusterDetailsTable({
                     <ToolbarGroup className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
-                            config={searchFilterConfig}
+                            config={searchFilterConfigWithFeatureFlags}
                             onFilterChange={onFilterChange}
                             searchFilter={searchFilter}
                         />
@@ -123,7 +129,7 @@ function ClusterDetailsTable({
                         </Th>
                         {isScanStatusEnabled && (
                             <Th modifier="fitContent" width={10}>
-                                Scan status
+                                Data freshness
                             </Th>
                         )}
                         <Th modifier="fitContent" width={10}>
@@ -207,7 +213,10 @@ function ClusterDetailsTable({
                                                 )}
                                             </Td>
                                             {isScanStatusEnabled && (
-                                                <Td dataLabel="Scan status" modifier="fitContent">
+                                                <Td
+                                                    dataLabel="Data freshness"
+                                                    modifier="fitContent"
+                                                >
                                                     {getCheckScanStatus(dataFreshness)}
                                                 </Td>
                                             )}

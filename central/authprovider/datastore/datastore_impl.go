@@ -47,12 +47,12 @@ func (b *datastoreImpl) AuthProviderExistsWithName(ctx context.Context, name str
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.AuthProviderName, name).ProtoQuery()
-	results, err := b.storage.Search(ctx, query)
+	count, err := b.storage.Count(ctx, query)
 	if err != nil {
 		return false, err
 	}
 
-	return len(results) > 0, nil
+	return count > 0, nil
 }
 
 func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,

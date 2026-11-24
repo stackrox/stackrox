@@ -42,12 +42,7 @@ is-downgrade() {
     local current=${2:-}
 
     [ -z "$stored" ] || [ -z "$current" ] && return 1
-    [ "$stored" = "$current" ] && return 1
-
-    local oldest
-    oldest=$(printf '%s\n%s\n' "$stored" "$current" | sort -V | head -1)
-    [ "$oldest" = "$current" ] && return 0
-    return 1
+    ! printf '%s\n%s\n' "$stored" "$current" | sort -CV
 }
 
 # reset-on-downgrade invalidates initialization when the stored version is unsafe.

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -71,6 +72,32 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 		return nil, errox.NotFound.Newf("could not find group %s", props.GetId())
 	}
 	return group, err
+}
+
+// Exists reports whether a group with the given properties exists. The lookup is a
+// narrowed count query over the property tuple instead of a walk over all groups.
+// Like GetFiltered, it reports no match without an error when read access is denied.
+func (ds *dataStoreImpl) Exists(ctx context.Context, props *storage.GroupProperties) (bool, error) {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, nil
+	}
+
+	if err := ValidateProps(props, false); err != nil {
+		return false, errox.InvalidArgs.CausedBy(err)
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.GroupAuthProvider, props.GetAuthProviderId()).
+		AddExactMatches(search.GroupKey, props.GetKey()).
+		AddExactMatches(search.GroupValue, props.GetValue()).
+		ProtoQuery()
+	count, err := ds.storage.Count(ctx, query)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func (ds *dataStoreImpl) ForEach(ctx context.Context, fn func(group *storage.Group) error) error {

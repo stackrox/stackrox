@@ -89,7 +89,7 @@ function ProfileClustersTable({
                                 Cluster
                             </Th>
                             <Th modifier="fitContent">Last scanned</Th>
-                            {isScanStatusEnabled && <Th modifier="fitContent">Scan status</Th>}
+                            {isScanStatusEnabled && <Th modifier="fitContent">Data freshness</Th>}
                             <Th modifier="fitContent">Pass status</Th>
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
@@ -159,7 +159,7 @@ function ProfileClustersTable({
                                                 {lastScanTimeAsPhrase}
                                             </Td>
                                             {isScanStatusEnabled && (
-                                                <Td dataLabel="Scan status">
+                                                <Td dataLabel="Data freshness">
                                                     {getAggregateScanStatus(dataFreshness)}
                                                 </Td>
                                             )}

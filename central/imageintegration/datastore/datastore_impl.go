@@ -43,6 +43,17 @@ func (ds *datastoreImpl) GetImageIntegration(ctx context.Context, id string) (*s
 	return ds.storage.Get(ctx, id)
 }
 
+// ImageIntegrationExists reports whether an image integration with the given ID exists.
+func (ds *datastoreImpl) ImageIntegrationExists(ctx context.Context, id string) (bool, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, nil
+	}
+
+	return ds.storage.Exists(ctx, id)
+}
+
 // GetImageIntegrations provides an in memory layer on top of the underlying DB based storage.
 func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
