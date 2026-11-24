@@ -5,6 +5,122 @@ set -Eeo pipefail
 # shellcheck source=backup-cleanup.sh
 source "$(dirname "${BASH_SOURCE[0]}")/backup-cleanup.sh"
 
+# Experimental comparison switch: both paths use the same image and conversion.
+UPGRADE_BACKUP_MODE="${ROX_POSTGRES_UPGRADE_BACKUP_MODE:-tar}"
+case "${UPGRADE_BACKUP_MODE}" in
+    tar|directory) ;;
+    *) echo "Invalid ROX_POSTGRES_UPGRADE_BACKUP_MODE: expected tar or directory" >&2; exit 1 ;;
+esac
+
+# Copy semantics for directory mode. `never` is the portable default; `auto`
+# reflinks when the destination filesystem supports it and copies otherwise.
+COPY_REFLINK="${ROX_POSTGRES_UPGRADE_COPY_REFLINK:-never}"
+case "${COPY_REFLINK}" in
+    never|auto|always) ;;
+    *) echo "Invalid ROX_POSTGRES_UPGRADE_COPY_REFLINK: expected never, auto or always" >&2; exit 1 ;;
+esac
+
+# A directory backup is only usable when its metadata and data directory are
+# both published. The staging name is never eligible for recovery or cleanup.
+DIRECTORY_ARTIFACT_DIR="directory-v1"
+DIRECTORY_ARTIFACT_STAGING="directory-v1.partial"
+DIRECTORY_ARTIFACT_DATA="pgdata"
+DIRECTORY_ARTIFACT_METADATA="metadata.tsv"
+
+# FORCE_CLEANUP only removes the unfinished conversion directory, which is safe
+# for a directory backup. The remaining flags assume the legacy archive format.
+DIRECTORY_UNSUPPORTED_RECOVERY=false
+for flag in FORCE_NEW_BACKUP RESTORE_BACKUP FORCE_OLD_BINARIES; do
+    if [[ "${!flag:-}" == true ]]; then
+        DIRECTORY_UNSUPPORTED_RECOVERY=true
+    fi
+done
+if [[ "${UPGRADE_BACKUP_MODE}" == directory && "${DIRECTORY_UNSUPPORTED_RECOVERY}" == true ]]; then
+    echo "Directory backup prototype does not support that recovery flag; use FORCE_CLEANUP or manual recovery" >&2
+    exit 1
+fi
+
+# Coarse elapsed seconds are sufficient to compare data-sized transfers. Keep
+# command arguments/passwords out of these logs and preserve failures under -e.
+upgrade_phase() {
+    local now=${SECONDS}
+    if [[ -n "${UPGRADE_PHASE:-}" ]]; then
+        printf 'PG_UPGRADE_TIMING mode=%s phase=%s event=end elapsed_s=%s exit_code=0\n' \
+            "${UPGRADE_BACKUP_MODE}" "${UPGRADE_PHASE}" "$((now - UPGRADE_PHASE_STARTED))"
+    fi
+    UPGRADE_PHASE=$1
+    UPGRADE_PHASE_STARTED=${now}
+    printf 'PG_UPGRADE_TIMING mode=%s phase=%s event=start\n' "${UPGRADE_BACKUP_MODE}" "${UPGRADE_PHASE}"
+}
+
+upgrade_timing_exit() {
+    local result=$1 now=${SECONDS}
+    printf 'PG_UPGRADE_TIMING mode=%s phase=%s event=end elapsed_s=%s exit_code=%s\n' \
+        "${UPGRADE_BACKUP_MODE}" "${UPGRADE_PHASE}" "$((now - UPGRADE_PHASE_STARTED))" "${result}"
+    printf 'PG_UPGRADE_TIMING mode=%s phase=initializer_total event=end elapsed_s=%s exit_code=%s\n' \
+        "${UPGRADE_BACKUP_MODE}" "$((now - UPGRADE_STARTED))" "${result}"
+}
+
+# The runtime images ship coreutils; macOS only matters for the local tests.
+sha256_file() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# Report bytes, preferring apparent size so sparse files are not undercounted.
+# `du` output differs between GNU and BSD, hence the fallback.
+apparent_bytes() {
+    local kb
+    kb=$(du --apparent-size -s -k "$1" 2>/dev/null | awk '{print $1}') || kb=""
+    if [[ -z "${kb}" ]]; then
+        kb=$(du -s -k "$1" | awk '{print $1}')
+    fi
+    echo "$((kb * 1024))"
+}
+
+allocated_bytes() {
+    local kb
+    kb=$(du -s -k "$1" | awk '{print $1}')
+    echo "$((kb * 1024))"
+}
+
+# metadata.tsv is data, never sourced: fixed TAB-separated keys, no duplicates,
+# written before publication so an artifact without it is not a usable backup.
+write_directory_metadata() {
+    local artifact="$1" data="$2"
+    local control="${data}/global/pg_control"
+    local control_data source_identifier="" checkpoint_location="" checkpoint_timeline=""
+    local operation_id artifact_id
+
+    control_data=$("${OLD_BINARIES}/pg_controldata" "$data")
+    source_identifier=$(sed -n 's/^Database system identifier: *//p' <<< "${control_data}")
+    checkpoint_location=$(sed -n 's/^Latest checkpoint location: *//p' <<< "${control_data}")
+    checkpoint_timeline=$(sed -n "s/^Latest checkpoint's TimeLineID: *//p" <<< "${control_data}")
+
+    operation_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+    artifact_id="${DIRECTORY_ARTIFACT_DIR}:${source_identifier}:${PG_DATA_VERSION}->${PG_BINARY_VERSION}"
+
+    {
+        printf 'format_version\t1\n'
+        printf 'artifact_id\t%s\n' "${artifact_id}"
+        printf 'operation_id\t%s\n' "${operation_id}"
+        printf 'source_major\t%s\n' "${PG_DATA_VERSION}"
+        printf 'target_major\t%s\n' "${PG_BINARY_VERSION}"
+        printf 'source_system_identifier\t%s\n' "${source_identifier}"
+        printf 'source_checkpoint_location\t%s\n' "${checkpoint_location}"
+        printf 'source_checkpoint_timeline\t%s\n' "${checkpoint_timeline}"
+        printf 'source_control_file_hash\t%s\n' "${SOURCE_CONTROL_FILE_HASH}"
+        printf 'verified_control_file_hash\t%s\n' "$(sha256_file "${control}")"
+        printf 'backup_data_path\t%s\n' "${DIRECTORY_ARTIFACT_DATA}"
+        printf 'logical_bytes\t%s\n' "$(apparent_bytes "${data}")"
+        printf 'allocated_bytes\t%s\n' "$(allocated_bytes "${data}")"
+        printf 'verified\ttrue\n'
+    } > "${artifact}/${DIRECTORY_ARTIFACT_METADATA}"
+}
+
 # Return the list of possible backup locations based on the mounted volumes.
 # The result is either two locations, if the backup volume is mounted, or only
 # one otherwise.
@@ -73,6 +189,26 @@ else
     backup_locations=()
     get_backup_locations backup_locations
 
+    # A directory backup is not a legacy archive. Protect it even if a later
+    # attempt selects tar mode, especially before FORCE_NEW_BACKUP can delete it.
+    for location in "${backup_locations[@]}"; do
+        directory_backup="${location}/${POSTGRESQL_PREV_VERSION}-${PG_BINARY_VERSION}/${DIRECTORY_ARTIFACT_DIR}"
+        if [[ -e "${directory_backup}" || -L "${directory_backup}" ]]; then
+            # This artifact is the only recovery point for the previous version
+            # and this image cannot rebuild it. Directory mode may reuse it for
+            # its own version pair; everything else must stop before deletion.
+            if [[ "${FORCE_NEW_BACKUP:-}" == true ]]; then
+                echo "Refusing to remove ${directory_backup}: it contains a verified directory backup" >&2
+                exit 1
+            fi
+            if [[ "${RESTORE_BACKUP:-}" == true || "${FORCE_OLD_BINARIES:-}" == true ||
+                "${UPGRADE_BACKUP_MODE}" != directory ]]; then
+                echo "Existing directory backup requires a matching DB image or manual recovery: ${directory_backup}" >&2
+                exit 1
+            fi
+        fi
+    done
+
     if [[ -v FORCE_CLEANUP && "${FORCE_CLEANUP}" == "true" ]]; then
         echo "Remove leftovers from previous upgrade."
 
@@ -89,8 +225,11 @@ else
         # postgresql-container image itself.
         for location in "${backup_locations[@]}"
         do
-            echo "Removing ${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
-            rm -rf "${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION/"
+            # The protection check above refuses to reach this point when the
+            # pair contains a verified directory backup.
+            backup_pair="${location}/$POSTGRESQL_PREV_VERSION-$PG_BINARY_VERSION"
+            echo "Removing ${backup_pair}/"
+            rm -rf "${backup_pair:?}/"
         done
     fi
 
@@ -122,6 +261,15 @@ else
             echo "Restoring from ${PG_BACKUP_DIR}"
         fi
 
+        if [[ ! -f "${PG_BACKUP_DIR}/backup.tar" ]]; then
+            if [[ -d "${PG_BACKUP_DIR}/${DIRECTORY_ARTIFACT_DIR}" ]]; then
+                echo "Cannot restore ${PG_BACKUP_DIR}: it contains a directory backup; use a DB image that supports that format or recover manually" >&2
+                exit 1
+            fi
+            echo "Upgrade backup archive is missing in ${PG_BACKUP_DIR}, restore is cancelled." >&2
+            exit 1
+        fi
+
         PGDATA_NEW="${PGDATA}-new"
         mkdir -p "${PGDATA_NEW}"
         tar -xf "${PG_BACKUP_DIR}/backup.tar" -C "${PGDATA_NEW}" --checkpoint=10000
@@ -135,6 +283,31 @@ else
     fi
 
     if [ "$PG_DATA_VERSION" -lt "$PG_BINARY_VERSION" ]; then
+        UPGRADE_STARTED=${SECONDS}
+        upgrade_phase preflight
+        trap 'upgrade_timing_exit "$?"' EXIT
+
+        if [[ "${UPGRADE_BACKUP_MODE}" == directory ]]; then
+            # A completed artifact for this pair is reused; an incomplete one is
+            # discarded and recopied. Legacy archives are never overwritten.
+            for location in "${backup_locations[@]}"; do
+                backup_path="${location}/${PG_DATA_VERSION}-${PG_BINARY_VERSION}"
+                if [[ -L "${location}" || -L "${backup_path}" ]]; then
+                    echo "Directory backup prototype does not support linked backup paths: ${backup_path}" >&2
+                    exit 1
+                fi
+                if [[ -e "${backup_path}/backup.tar" || -L "${backup_path}/backup.tar" ]]; then
+                    echo "Directory backup prototype requires a fresh backup location: ${backup_path}" >&2
+                    exit 1
+                fi
+            done
+            source_link=$(find "${PGDATA}" -type l -print -quit)
+            if [[ -n "${source_link}" ]]; then
+                echo "Directory backup prototype does not support source symlinks: ${source_link}" >&2
+                exit 1
+            fi
+        fi
+
         # Binaries version is newer, upgrade the data
         PGDATA_NEW="${PGDATA}-new"
 
@@ -169,6 +342,7 @@ else
 
         # Upgrade requires restrictive permissions and a cleanly stopped source DB.
         # Check its health before reclaiming space from any older backups.
+        upgrade_phase source_health
         chmod 0700 "${PGDATA}"
         echo "Make sure PostgreSQL is shutdown clearly."
         "${OLD_BINARIES}/pg_ctl" start -w --timeout 86400 -o "-h 127.0.0.1"
@@ -187,6 +361,7 @@ else
         # This is the amount of disk space we currently consume. Normally we
         # could use df as well, since the data will be the only disk space
         # consumer, but in testing environment it might not be the case.
+        upgrade_phase space_check
         PG_DATA_USED=$(du -s "${PGDATA}" | awk '{print $1}')
 
         PG_BACKUP_VOLUME=""
@@ -225,26 +400,62 @@ else
             echo "Backup will be stored in ${PG_BACKUP_VOLUME}"
         fi
 
+        BACKUP_STARTED=${SECONDS}
         BACKUP_DIR="${PG_BACKUP_VOLUME}/$PG_DATA_VERSION-$PG_BINARY_VERSION/"
-        # Do not care about symlinks yet
-        if [ -d "${BACKUP_DIR}" ]; then
-          echo "An upgrade backup directory already exists, skip."
+        DIRECTORY_STAGING=""
+        if [[ "${UPGRADE_BACKUP_MODE}" == directory ]]; then
+            DIRECTORY_BACKUP="${BACKUP_DIR}/${DIRECTORY_ARTIFACT_DIR}"
+            if is_complete_upgrade_backup "${BACKUP_DIR}"; then
+                upgrade_phase directory_reuse
+                BACKUP_VERIFY_PGDATA="${DIRECTORY_BACKUP}/${DIRECTORY_ARTIFACT_DATA}"
+                echo "Reusing verified directory backup ${DIRECTORY_BACKUP}"
+            else
+                upgrade_phase directory_copy
+                # mkdir (without -p) also refuses a directory created since preflight.
+                if [[ ! -d "${BACKUP_DIR}" ]]; then
+                    mkdir "${BACKUP_DIR}"
+                fi
+                DIRECTORY_STAGING="${BACKUP_DIR}/${DIRECTORY_ARTIFACT_STAGING}"
+                # An incomplete staging directory is never eligible; start over.
+                rm -rf -- "${DIRECTORY_STAGING}"
+                mkdir "${DIRECTORY_STAGING}"
+                BACKUP_VERIFY_PGDATA="${DIRECTORY_STAGING}/${DIRECTORY_ARTIFACT_DATA}"
+                mkdir "${BACKUP_VERIFY_PGDATA}"
+                # Record the source identity before the copy: verification starts
+                # the copy, which rewrites its control file.
+                SOURCE_CONTROL_FILE_HASH=$(sha256_file "${PGDATA}/global/pg_control")
+                # Skip the SELinux context: the destination volume already has the
+                # label the pod needs, and preserving it can fail on OpenShift.
+                cp -a --no-preserve=context --reflink="${COPY_REFLINK}" \
+                    "${PGDATA}/." "${BACKUP_VERIFY_PGDATA}/"
+                upgrade_phase backup_flush
+                sync -f "${BACKUP_VERIFY_PGDATA}"
+            fi
         else
-            # Do a backup before upgrading. Since the database is stopped we
-            # may as well simple take a filesystem backup. Alternatives would
-            # be pg_dump or pg_basebackup, both require running database
-            # cluster.
-            echo "Backup..."
-            mkdir -p "${BACKUP_DIR}"
-            tar -cf "${BACKUP_DIR}/backup.tar" -C "${PGDATA}" --checkpoint=10000 .
-            sync "${BACKUP_DIR}/backup.tar"
+            upgrade_phase tar_create
+            # Do not care about symlinks yet
+            if [ -d "${BACKUP_DIR}" ]; then
+              echo "An upgrade backup directory already exists, skip."
+            else
+                # Do a backup before upgrading. Since the database is stopped we
+                # may as well simple take a filesystem backup. Alternatives would
+                # be pg_dump or pg_basebackup, both require running database
+                # cluster.
+                echo "Backup..."
+                mkdir -p "${BACKUP_DIR}"
+                tar -cf "${BACKUP_DIR}/backup.tar" -C "${PGDATA}" --checkpoint=10000 .
+                upgrade_phase backup_flush
+                sync "${BACKUP_DIR}/backup.tar"
+            fi
+
+            upgrade_phase tar_extract
+            BACKUP_VERIFY_PGDATA="${BACKUP_DIR}/backup-restore-test"
+            mkdir -p "${BACKUP_VERIFY_PGDATA}"
+            tar -xf "${BACKUP_DIR}/backup.tar" -C "${BACKUP_VERIFY_PGDATA}" --checkpoint=10000
         fi
 
         echo "Verify backup..."
-        BACKUP_VERIFY_PGDATA="${BACKUP_DIR}/backup-restore-test"
-        mkdir -p "${BACKUP_VERIFY_PGDATA}"
-        tar -xf "${BACKUP_DIR}/backup.tar" -C "${BACKUP_VERIFY_PGDATA}" --checkpoint=10000
-
+        upgrade_phase backup_verify
         "${OLD_BINARIES}/pg_ctl" \
             -D "${BACKUP_VERIFY_PGDATA}" \
             -w start -o "-h 127.0.0.1"
@@ -252,18 +463,40 @@ else
             -D "${BACKUP_VERIFY_PGDATA}" \
             -w stop
 
-        rm -rf "${BACKUP_VERIFY_PGDATA}"
+        if [[ "${UPGRADE_BACKUP_MODE}" == directory ]]; then
+            # Verification starts/stops the copy, so flush its writes too. The
+            # retained copy must remain independent of link-mode working data.
+            upgrade_phase verification_flush
+            sync -f "${BACKUP_VERIFY_PGDATA}"
+            if [[ -n "${DIRECTORY_STAGING}" ]]; then
+                # Publish in a fixed order: metadata, rename, parent flush. A
+                # directory without metadata is never treated as a backup.
+                write_directory_metadata "${DIRECTORY_STAGING}" "${BACKUP_VERIFY_PGDATA}"
+                sync -f "${DIRECTORY_STAGING}"
+                mv "${DIRECTORY_STAGING}" "${DIRECTORY_BACKUP}"
+                sync -f "${BACKUP_DIR}"
+            fi
+            echo "Retained experimental directory backup: ${DIRECTORY_BACKUP}"
+        else
+            upgrade_phase verification_cleanup
+            rm -rf "${BACKUP_VERIFY_PGDATA}"
+        fi
+        printf 'PG_UPGRADE_TIMING mode=%s phase=backup_total event=end elapsed_s=%s exit_code=0\n' \
+            "${UPGRADE_BACKUP_MODE}" "$((SECONDS - BACKUP_STARTED))"
 
+        upgrade_phase stale_backup_cleanup
         if [ "${ALLOW_BACKUP_CLEANUP}" == true ]; then
             cleanup_stale_upgrade_backups \
                 "${PG_DATA_VERSION}-${PG_BINARY_VERSION}" "${backup_locations[@]}"
         fi
 
         echo "Upgrade..."
+        upgrade_phase target_init
         # Good idea to --check first
         # shellcheck disable=SC2086
         "${NEW_BINARIES}/initdb" $PGSETUP_INITDB_OPTIONS "${PGDATA_NEW}"
 
+        upgrade_phase conversion_check
         PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password) \
             "${NEW_BINARIES}/pg_upgrade" \
                 --old-bindir="${OLD_BINARIES}" \
@@ -279,6 +512,7 @@ else
             exit 1
         fi
 
+        upgrade_phase conversion
         PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password) \
             "${NEW_BINARIES}/pg_upgrade" \
                 --old-bindir="${OLD_BINARIES}" \
@@ -294,6 +528,7 @@ else
             exit 1
         fi
 
+        upgrade_phase finalization
         mv "${PGDATA}"/*.conf "${PGDATA_NEW}"
         rm -rf "${PGDATA}"
         mv "${PGDATA_NEW}" "${PGDATA}"
