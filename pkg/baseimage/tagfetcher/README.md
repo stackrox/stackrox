@@ -9,13 +9,13 @@ checked tag, but the result is only written when the cache entry is not current.
 A cache entry is current when **both** hold:
 
 1. the digest fetched from the registry equals the cached `manifest_digest`;
-2. the cached `metadata_version` equals `tagfetcher.MetadataVersion`.
+2. the cached `metadata_version` equals `tagfetcher.CurrentMetadataVersion`.
 
 Otherwise the fetcher emits a metadata event and the watcher upserts the row.
 
 ## Changing cached fields
 
-`MetadataVersion` versions the **derivation**, not the proto schema. Whenever a
+`CurrentMetadataVersion` versions the **derivation**, not the proto schema. Whenever a
 field that is persisted in the cache is added, removed, or computed
 differently, bump the constant. No data migration is required:
 

@@ -260,8 +260,8 @@ func TestTagFetcher_SkipsUnchangedDigests(t *testing.T) {
 
 	// v1.0.0 has an unchanged digest, v1.1.0 has a changed digest.
 	knownTags := map[string]KnownTag{
-		"v1.0.0": {ManifestDigest: "sha256:unchanged", MetadataVersion: MetadataVersion},
-		"v1.1.0": {ManifestDigest: "sha256:old-digest", MetadataVersion: MetadataVersion},
+		"v1.0.0": {ManifestDigest: "sha256:unchanged", MetadataVersion: CurrentMetadataVersion},
+		"v1.1.0": {ManifestDigest: "sha256:old-digest", MetadataVersion: CurrentMetadataVersion},
 	}
 
 	createdTime := time.Date(2024, 3, 15, 10, 30, 0, 0, time.UTC)
@@ -314,9 +314,9 @@ func TestTagFetcher_RefetchesStaleVersion(t *testing.T) {
 		// Legacy row: predates versioning.
 		"legacy": {ManifestDigest: "sha256:same", MetadataVersion: 0},
 		// Written by an older derivation.
-		"older": {ManifestDigest: "sha256:same", MetadataVersion: MetadataVersion - 1},
+		"older": {ManifestDigest: "sha256:same", MetadataVersion: CurrentMetadataVersion - 1},
 		// Current, but with no cached digest.
-		"no-digest": {ManifestDigest: "", MetadataVersion: MetadataVersion},
+		"no-digest": {ManifestDigest: "", MetadataVersion: CurrentMetadataVersion},
 	}
 
 	fetcher := NewTagFetcher(reg, name, testLimiter(), knownTags)
@@ -326,7 +326,7 @@ func TestTagFetcher_RefetchesStaleVersion(t *testing.T) {
 	require.Len(t, collected, 4)
 	for _, result := range collected {
 		assert.NoError(t, result.Error)
-		assert.Equal(t, MetadataVersion, result.MetadataVersion)
+		assert.Equal(t, CurrentMetadataVersion, result.MetadataVersion)
 	}
 }
 
@@ -350,7 +350,7 @@ func TestTagFetcher_SkipsCurrentEntry(t *testing.T) {
 	})
 
 	fetcher := NewTagFetcher(reg, name, testLimiter(), map[string]KnownTag{
-		"v1.0.0": {ManifestDigest: "sha256:same", MetadataVersion: MetadataVersion},
+		"v1.0.0": {ManifestDigest: "sha256:same", MetadataVersion: CurrentMetadataVersion},
 	})
 	collected := collectResults(fetcher.Fetch(context.Background(), []string{"v1.0.0"}))
 

@@ -146,7 +146,7 @@ func TestDoScan_StampsMetadataVersion(t *testing.T) {
 		DoAndReturn(func(_ context.Context, tags []*storage.BaseImageTag) error {
 			require.Len(t, tags, 1)
 			assert.Equal(t, "9.8", tags[0].GetTag())
-			assert.Equal(t, tagfetcher.MetadataVersion, tags[0].GetMetadataVersion())
+			assert.Equal(t, tagfetcher.CurrentMetadataVersion, tags[0].GetMetadataVersion())
 			return nil
 		})
 	mockBaseImageDS.EXPECT().
@@ -165,7 +165,7 @@ func TestDoScan_StampsMetadataVersion(t *testing.T) {
 				ManifestDigest:  "sha256:new",
 				Created:         &created,
 				LayerDigests:    []string{"sha256:layer"},
-				MetadataVersion: tagfetcher.MetadataVersion,
+				MetadataVersion: tagfetcher.CurrentMetadataVersion,
 			},
 		}}},
 		tagLimit:  10,
@@ -868,7 +868,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 			BaseImageRepositoryId: "11111111-1111-1111-1111-111111111111",
 			Tag:                   "1.25",
 			ManifestDigest:        "sha256:digest-25",
-			MetadataVersion:       tagfetcher.MetadataVersion,
+			MetadataVersion:       tagfetcher.CurrentMetadataVersion,
 			Created:               timestamppb.New(now.Add(-1 * time.Hour)), // Newest
 		},
 		{
@@ -876,7 +876,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 			BaseImageRepositoryId: "11111111-1111-1111-1111-111111111111",
 			Tag:                   "1.24",
 			ManifestDigest:        "sha256:digest-24",
-			MetadataVersion:       tagfetcher.MetadataVersion,
+			MetadataVersion:       tagfetcher.CurrentMetadataVersion,
 			Created:               timestamppb.New(now.Add(-2 * time.Hour)),
 		},
 		{
@@ -884,7 +884,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 			BaseImageRepositoryId: "11111111-1111-1111-1111-111111111111",
 			Tag:                   "1.23",
 			ManifestDigest:        "sha256:digest-23",
-			MetadataVersion:       tagfetcher.MetadataVersion,
+			MetadataVersion:       tagfetcher.CurrentMetadataVersion,
 			Created:               timestamppb.New(now.Add(-3 * time.Hour)), // Oldest
 		},
 	}

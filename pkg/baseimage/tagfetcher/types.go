@@ -6,8 +6,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// MetadataVersion identifies the set of derived fields this package writes
-// into the tag cache and how they are computed.
+// CurrentMetadataVersion identifies the set of derived fields this package
+// writes into the tag cache and how they are computed.
 //
 // Bump this whenever a cached field is added, removed, or its derivation
 // changes. Cached rows stamped with a different version are treated as misses
@@ -15,7 +15,7 @@ import (
 //
 // Version history:
 //   - 1: added BaseImageTag.history.
-const MetadataVersion uint32 = 1
+const CurrentMetadataVersion uint32 = 1
 
 // KnownTag is the cached state for a single tag, used to decide whether a
 // fetch result is redundant.

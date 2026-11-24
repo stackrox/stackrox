@@ -51,8 +51,8 @@ func NewTagFetcher(
 
 // Fetch fetches metadata for the given tags and sends results to the returned channel.
 // The channel is closed when all fetches complete.
-// Tags whose cached entry is current (same digest at the current
-// MetadataVersion) are not sent to the channel.
+// Tags whose cached entry is current (same digest at the current derivation
+// version) are not sent to the channel.
 func (f *TagFetcher) Fetch(ctx context.Context, tags []string) <-chan TagMetadata {
 	results := make(chan TagMetadata, f.maxConcurrency)
 
@@ -145,7 +145,7 @@ func (f *TagFetcher) metadata(ctx context.Context, name *storage.ImageName) (*st
 // A missing entry is the zero value, so it is never fresh; that also makes
 // legacy rows (version 0) refetch exactly once after an upgrade.
 func (tm TagMetadata) isFresh(known KnownTag) bool {
-	return known.MetadataVersion == MetadataVersion &&
+	return known.MetadataVersion == CurrentMetadataVersion &&
 		known.ManifestDigest != "" &&
 		tm.ManifestDigest == known.ManifestDigest
 }
@@ -170,7 +170,7 @@ func tagMetadata(tag string, metadata *storage.ImageMetadata) TagMetadata {
 	// Extract layer digests for base image matching via layer commonality.
 	result.LayerDigests = metadata.GetLayerShas()
 	result.History = historyFromLayers(metadata.GetV1().GetLayers())
-	result.MetadataVersion = MetadataVersion
+	result.MetadataVersion = CurrentMetadataVersion
 
 	return result
 }
