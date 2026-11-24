@@ -98,7 +98,8 @@ message TolerationsConfig {
   bool disabled = 1;
 }
 
-// The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
+// The difference between Static and Dynamic cluster config is that Static values
+// are not sent over the Central to Sensor gRPC connection. They are *not* dynamically reloaded.
 message StaticClusterConfig {
   ClusterType type = 1;
   string main_image = 2;
@@ -213,8 +214,8 @@ message Cluster {
 
 enum ManagerType {
   MANAGER_TYPE_UNKNOWN = 0;
-  MANAGER_TYPE_MANUAL = 1;
-  MANAGER_TYPE_HELM_CHART = 2;
+  MANAGER_TYPE_MANUAL = 1 [deprecated = true];
+  MANAGER_TYPE_HELM_CHART = 2 [deprecated = true];
   MANAGER_TYPE_KUBERNETES_OPERATOR = 3;
 }
 

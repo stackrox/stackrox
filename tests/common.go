@@ -745,40 +745,6 @@ func getClusterID(t *testing.T) string {
 	return resp.GetClusters()[0].GetId()
 }
 
-// setClusterLabels sets cluster labels using Central's Cluster API.
-// Pass nil to remove all labels.
-// Works for both operator-managed and helm-managed deployments.
-func setClusterLabels(t *testing.T, clusterID string, labels map[string]string) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	clusterService := v1.NewClustersServiceClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Get current cluster
-	resp, err := clusterService.GetCluster(ctx, &v1.ResourceByID{Id: clusterID})
-	require.NoError(t, err, "getting cluster %s", clusterID)
-
-	cluster := resp.GetCluster()
-	require.NotNil(t, cluster, "GetCluster returned nil cluster for ID %s", clusterID)
-
-	// Update labels
-	cluster.Labels = labels
-
-	// Put updated cluster
-	ctx2, cancel2 := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel2()
-
-	_, err = clusterService.PutCluster(ctx2, cluster)
-	require.NoError(t, err, "updating cluster %s with labels %v", clusterID, labels)
-
-	if labels == nil {
-		t.Logf("Removed cluster labels")
-	} else {
-		t.Logf("Set cluster labels: %v", labels)
-	}
-}
-
 // createNamespaceWithLabels creates a namespace with the specified labels.
 // On OpenShift, it also grants the anyuid SCC to the default service account
 // so that containers (e.g., nginx) can run without permission errors.

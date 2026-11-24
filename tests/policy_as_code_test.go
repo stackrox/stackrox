@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/config-controller/api/v1alpha1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
@@ -45,9 +44,8 @@ var (
 )
 
 const (
-	server      = "smtp.mailgun.org"
-	user        = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
-	clusterName = fixtureconsts.ClusterName1
+	server = "smtp.mailgun.org"
+	user   = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
 )
 
 func TestPolicyAsCode(t *testing.T) {
@@ -58,7 +56,6 @@ type PolicyAsCodeSuite struct {
 	suite.Suite
 	policyClient      v1.PolicyServiceClient
 	notifierClient    v1.NotifierServiceClient
-	clusterClient     v1.ClustersServiceClient
 	centralHTTPClient *http.Client
 	k8sClient         dynamic.ResourceInterface
 	informerfactory   dynamicinformer.DynamicSharedInformerFactory
@@ -78,8 +75,7 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	conn := centralgrpc.GRPCConnectionToCentral(pc.T())
 	pc.policyClient = v1.NewPolicyServiceClient(conn)
 	pc.notifierClient = v1.NewNotifierServiceClient(conn)
-	pc.clusterClient = v1.NewClustersServiceClient(conn)
-	pc.cluster = pc.createClusterInCentral()
+	pc.cluster = mustGetCluster(pc.T(), pc.ctx)
 	pc.notifier = pc.createNotifierInCentral()
 
 	pc.centralHTTPClient = centralgrpc.HTTPClientForCentral(pc.T())
@@ -166,7 +162,7 @@ func (pc *PolicyAsCodeSuite) TestClusterIDResolution() {
 	k8sPolicy := createBasePolicyStruct("test-cluster-id-resolution")
 	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetName()}
 	k8sPolicy.Spec.Scope = []v1alpha1.Scope{{
-		Cluster: clusterName,
+		Cluster: pc.cluster.GetName(),
 	}}
 
 	id := pc.createCRAndObserveInCentral(k8sPolicy)
@@ -281,13 +277,6 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 	})
 	pc.Require().NoError(err)
 	return policy
-}
-
-func (pc *PolicyAsCodeSuite) createClusterInCentral() *storage.Cluster {
-	pc.T().Logf("Adding cluster with name \"%s\"", clusterName)
-	cluster, err := pc.clusterClient.PostCluster(pc.ctx, &storage.Cluster{Name: fixtureconsts.ClusterName1, MainImage: "docker.io/stackrox/rox:latest", CentralApiEndpoint: "central.stackrox:443"})
-	pc.NoError(err)
-	return cluster.GetCluster()
 }
 
 func (pc *PolicyAsCodeSuite) createNotifierInCentral() *storage.Notifier {
@@ -533,13 +522,6 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 		pc.Require().NoError(err)
 	}
 
-	if pc.cluster != nil {
-		pc.T().Logf("Deleting cluster with name \"%s\"", pc.cluster.GetName())
-		_, err := pc.clusterClient.DeleteCluster(pc.ctx, &v1.ResourceByID{
-			Id: pc.cluster.GetId(),
-		})
-		pc.Require().NoError(err)
-	}
 	// TODO: Remove finalizers if delete fails
 	pc.Require().NoError(pc.k8sClient.DeleteCollection(pc.ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: "test=policy-as-code",

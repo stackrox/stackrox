@@ -35,7 +35,7 @@ func (s *generateCertsTestSuite) TestGenerateCertsAndAddToZip() {
 	mockStore := mocks.NewMockDataStore(ctrl)
 	mockStore.EXPECT().AddServiceIdentity(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
-	certs, err := GenerateCertsAndAddToZip(nil, cluster, mockStore)
+	certs, err := GenerateCertsAndAddToZip(cluster, mockStore)
 	s.Require().NoError(err)
 
 	x509CACert, _ := pem.Decode(certs.Files["secrets/ca.pem"])
