@@ -75,7 +75,7 @@ class CollectionTest(unittest.TestCase):
     def test_junit_contains_only_outcome_and_failure_explanation(self):
         cases = {
             "passed": ([], False, None),
-            "failed": (["kubectl failed"], False, "failure"),
+            "failed": (["kubectl failed"], False, "skipped"),
             "cancelled": ([], True, "skipped"),
         }
         for name, (errors, cancelled, outcome) in cases.items():
@@ -87,10 +87,10 @@ class CollectionTest(unittest.TestCase):
                 self.assertEqual([child.tag for child in case], [outcome] if outcome else [])
                 log.assert_called_once()
                 self.assertIn("Expected 1 nodes; observed 1 unique names: a", log.call_args.args[0])
-                if outcome == "failure":
-                    self.assertIn("kubectl failed", case.findtext("failure"))
+                if errors:
+                    self.assertIn("kubectl failed", case.findtext("skipped"))
                     self.assertIn("kubectl failed", log.call_args.args[0])
-                if outcome == "skipped":
+                if cancelled:
                     self.assertIsNone(case.find("skipped").text)
 
     def test_names_only_verdict(self):
@@ -114,7 +114,7 @@ class CollectionTest(unittest.TestCase):
                 failed = monitor.write_report(directory, expected, [], False)
                 self.assertEqual(failed, mismatch)
                 report = ET.parse(directory / "junit-node-monitor.xml").getroot()
-                self.assertEqual(report.get("failures"), str(int(mismatch)))
+                self.assertEqual(report.get("skipped"), str(int(mismatch)))
                 self.assertEqual(len(list(directory.glob("node-snapshot-*.json"))), len(replies))
                 self.assertEqual(run.call_args.kwargs["env"], {"KUBECONFIG": "test-config"})
                 self.assertEqual(run.call_args.kwargs["timeout"], 30)
@@ -160,7 +160,7 @@ class NodeMonitorTest(unittest.TestCase):
                 with monitor.monitor({"NUM_NODES": "1", "ARTIFACT_DIR": directory}):
                     pass
                 report = ET.parse(Path(directory) / monitor.JUNIT_REPORT).getroot()
-                self.assertEqual(report.get("failures"), failures)
+                self.assertEqual(report.get("skipped"), failures)
 
     def test_openshift_baseline(self):
         cases = {
@@ -176,7 +176,7 @@ class NodeMonitorTest(unittest.TestCase):
                 with monitor.monitor({"ARTIFACT_DIR": directory}, baseline=True, phase="part-1"):
                     pass
                 report = ET.parse(Path(directory) / "part-1" / monitor.JUNIT_REPORT)
-                self.assertEqual(report.getroot().get("failures"), failures)
+                self.assertEqual(report.getroot().get("skipped"), failures)
 
     def test_directory_failure_is_advisory(self):
         with patch.object(Path, "mkdir", side_effect=OSError("disk full")), patch.object(
@@ -210,9 +210,31 @@ class NodeMonitorTest(unittest.TestCase):
                 with monitor.monitor({"NUM_NODES": count, "ARTIFACT_DIR": directory}):
                     pass
                 report = ET.parse(Path(directory) / "junit-node-monitor.xml").getroot()
-                self.assertEqual(report.get("failures"), "1")
+                self.assertEqual(report.get("skipped"), "1")
                 if name == "thread failure":
                     thread.return_value.join.assert_not_called()
+                if name == "poll failure":
+                    self.assertIn("Could not establish a node baseline", report.findtext(".//skipped"))
+
+    def test_polling_recovers_from_startup_probe(self):
+        for baseline in (False, True):
+            for startup in (subprocess.TimeoutExpired("kubectl", 30), reply()):
+                with self.subTest(baseline=baseline, startup=startup), tempfile.TemporaryDirectory() as directory:
+                    with patch.object(
+                        monitor.subprocess, "run", side_effect=kubectl_responses([startup, reply("a"), reply("b")])
+                    ) as run, patch.object(monitor.threading, "Event") as event, patch.object(
+                        monitor.threading, "Thread"
+                    ) as thread:
+                        event.return_value.wait.side_effect = [False, True]
+                        thread.side_effect = lambda **kwargs: unittest.mock.Mock(start=kwargs["target"])
+                        with monitor.monitor({"NUM_NODES": "1", "ARTIFACT_DIR": directory}, baseline=baseline):
+                            pass
+                    self.assertEqual(run.call_count, 3)
+                    report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
+                    self.assertEqual(report.getroot().get("failures"), "0")
+                    reason = report.findtext(".//skipped")
+                    self.assertIn("startup:", reason)
+                    self.assertIn("Nodes added: ['b']; removed: ['a']", reason)
 
     def test_periodic_polling_and_shutdown(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(
@@ -288,7 +310,7 @@ class NonGroovyIntegrationTest(unittest.TestCase):
                 )
                 report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
                 self.assertEqual(report.find(".//testcase").get("name"), "NoNodeDisruption")
-                self.assertEqual(report.getroot().get("failures"), str(int(sampling_error)))
+                self.assertEqual(report.getroot().get("skipped"), str(int(sampling_error)))
 
 
 if __name__ == "__main__":

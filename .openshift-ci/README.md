@@ -59,14 +59,15 @@ Parts 1 and 2. GKE validates the initial node count against the provisioning
 count. OpenShift uses the initial node names as its baseline.
 
 The monitor samples at startup, every five minutes, and at completion unless
-cancelled. Each kubectl call has a 30-second timeout. Changes in node membership
-and sampling errors produce advisory failures without changing the suite outcome.
+cancelled. Each kubectl call has a 30-second timeout. The first usable snapshot establishes the baseline, even after a failed startup
+probe. Changes in node membership and sampling errors produce skipped JUnit
+cases with advisory details and preserve the suite outcome.
 Changes between samples may go undetected.
 
 The monitor writes `junit-node-monitor.xml`, `node-monitor.log`, sampled names,
 and raw snapshots under `ARTIFACT_DIR` (default `junit-reports`). The JUnit
 case is `ci.gke.node.NoNodeDisruption`. Abrupt termination may prevent a final
-report. The advisory JUnit failure does not suppress fallback job-failure reports.
+report. Advisory results do not suppress fallback job-failure reports.
 
 Cluster-free tests live in `tests/test_node_disruption.py`. From the repo root:
 

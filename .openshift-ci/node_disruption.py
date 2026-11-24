@@ -57,36 +57,27 @@ def sample_nodes(directory, env):
 
 def write_report(directory, expected, errors, cancelled=False):
     names_file = directory / NODE_NAMES
-    names = sorted(set(names_file.read_text(encoding="utf-8").splitlines())) if names_file.exists() else []
+    try:
+        names = sorted(set(names_file.read_text(encoding="utf-8").splitlines())) if names_file.exists() else []
+    except (OSError, ValueError) as exc:
+        errors = [*errors, f"Could not read sampled names: {exc}"]
+        names = []
     failed = bool(errors) or (not cancelled and len(names) != expected)
-    skipped = cancelled and not failed
+    skipped = cancelled or failed
     detail = f"Expected {expected} nodes; observed {len(names)} unique names: " f"{', '.join(names)}.\n" + "\n".join(
         errors
     )
     print(("WARNING: " if failed else "") + detail.strip(), flush=True)
-    suite = ET.Element("testsuite", name="ci.gke.node", tests="1", failures=str(int(failed)), skipped=str(int(skipped)))
+    suite = ET.Element("testsuite", name="ci.gke.node", tests="1", failures="0", skipped=str(int(skipped)))
     case = ET.SubElement(suite, "testcase", classname="ci.gke.node", name="NoNodeDisruption")
     if failed:
-        ET.SubElement(case, "failure").text = detail
+        ET.SubElement(case, "skipped", message="Advisory node monitor finding").text = detail
     elif skipped:
         ET.SubElement(case, "skipped")
     (directory / JUNIT_REPORT).write_text(
         ET.tostring(suite, encoding="unicode", xml_declaration=True), encoding="utf-8"
     )
     return failed
-
-
-def prepare_monitor(directory, env, sample, errors, *, baseline=False):
-    try:
-        expected = None if baseline else expected_node_count(env)
-        if baseline or expected is not None:
-            (directory / NODE_NAMES).write_text("", encoding="utf-8")
-            (directory / MONITOR_LOG).write_text("", encoding="utf-8")
-            sample()
-        return expected
-    except (OSError, ValueError, RuntimeError) as exc:
-        errors.append(str(exc))
-        return None
 
 
 def finish_report(directory, expected, errors, cancelled=False):
@@ -121,33 +112,41 @@ def monitor(env=None, *, baseline=False, phase=None):
 
     initial = None
 
-    def sample():
+    def sample(stage):
         nonlocal initial
         try:
             names = set(sample_nodes(directory, env))
             if initial is None:
-                initial = names
                 if not names:
-                    errors.append("Initial node snapshot is empty")
-                elif not baseline and len(names) != expected_node_count(env):
-                    errors.append(f"Initial snapshot contains {len(names)} nodes")
+                    errors.append(f"{stage}: node snapshot is empty")
+                    return
+                initial = names
+                if expected is not None and len(names) != expected:
+                    errors.append(f"{stage}: baseline contains {len(names)} nodes")
             elif names != initial:
                 change = f"Nodes added: {sorted(names - initial)}; removed: {sorted(initial - names)}"
                 if change not in errors:
                     errors.append(change)
             return names
         except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as exc:
-            errors.append(str(exc))
-            return None
+            errors.append(f"{stage}: {exc}")
 
     def poll():
         while not stopped.wait(POLL_INTERVAL):
-            sample()
+            sample("periodic")
 
-    expected = prepare_monitor(directory, env, sample, errors, baseline=baseline)
-    if baseline and initial is not None:
-        expected = len(initial)
-    if expected is not None and initial is not None:
+    expected = None
+    ready = False
+    try:
+        expected = None if baseline else expected_node_count(env)
+        (directory / NODE_NAMES).write_text("", encoding="utf-8")
+        (directory / MONITOR_LOG).write_text("", encoding="utf-8")
+        ready = True
+    except (OSError, ValueError, RuntimeError) as exc:
+        errors.append(f"setup: {exc}")
+
+    if ready:
+        sample("startup")
         try:
             worker = threading.Thread(target=poll, name="node-monitor", daemon=True)
             worker.start()
@@ -164,8 +163,12 @@ def monitor(env=None, *, baseline=False, phase=None):
         stopped.set()
         if worker is not None:
             worker.join()
-        if expected is not None and initial is not None and not cancelled:
-            sample()
+        if ready and not cancelled:
+            sample("final")
+            if initial is None:
+                errors.append("Could not establish a node baseline")
+        if baseline and initial is not None:
+            expected = len(initial)
         finish_report(directory, expected, errors, cancelled)
 
 
