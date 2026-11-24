@@ -21,7 +21,8 @@ differently, bump the constant. No data migration is required:
 
 - existing rows carry the proto3 zero value or an older number, so they fail
   the freshness check;
-- their next normal scan refetches them once and stamps the new version;
+- on their next normal scan the fetched metadata is persisted and stamped with
+  the new version;
 - rows that are never checked (for example tags outside the top-N) stay stale
   until they are checked, which is harmless because nothing reads them.
 

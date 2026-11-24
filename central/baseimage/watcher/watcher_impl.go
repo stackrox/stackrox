@@ -557,6 +557,9 @@ func validate(event reposcan.TagEvent) error {
 		if event.Metadata.Created == nil {
 			return errors.New("metadata created timestamp is empty")
 		}
+		if event.Metadata.MetadataVersion == 0 {
+			return errors.New("metadata version is empty")
+		}
 	default:
 		return fmt.Errorf("unknown event type: %d", event.Type)
 	}

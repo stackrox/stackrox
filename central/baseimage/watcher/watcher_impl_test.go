@@ -1408,15 +1408,34 @@ func TestValidate_TagEventMetadata_Valid(t *testing.T) {
 		Tag:  "1.0",
 		Type: reposcan.TagEventMetadata,
 		Metadata: &tagfetcher.TagMetadata{
-			Tag:            "1.0",
-			ManifestDigest: "sha256:abc123",
-			Created:        &now,
-			LayerDigests:   []string{"sha256:layer1", "sha256:layer2"},
+			Tag:             "1.0",
+			ManifestDigest:  "sha256:abc123",
+			Created:         &now,
+			LayerDigests:    []string{"sha256:layer1", "sha256:layer2"},
+			MetadataVersion: tagfetcher.CurrentMetadataVersion,
 		},
 	}
 
 	err := validate(event)
 	assert.NoError(t, err)
+}
+
+func TestValidate_TagEventMetadata_EmptyMetadataVersion(t *testing.T) {
+	now := time.Now()
+	event := reposcan.TagEvent{
+		Tag:  "1.0",
+		Type: reposcan.TagEventMetadata,
+		Metadata: &tagfetcher.TagMetadata{
+			Tag:            "1.0",
+			ManifestDigest: "sha256:abc123",
+			Created:        &now,
+			LayerDigests:   []string{"sha256:layer1"},
+		},
+	}
+
+	err := validate(event)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "metadata version is empty")
 }
 
 func TestValidate_TagEventMetadata_WithError(t *testing.T) {

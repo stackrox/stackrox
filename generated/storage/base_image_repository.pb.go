@@ -296,7 +296,7 @@ type BaseImageTag struct {
 	History []*BaseImageHistoryEntry `protobuf:"bytes,9,rep,name=history,proto3" json:"history,omitempty"`
 	// Version of the metadata derivation that produced this row (see
 	// tagfetcher.CurrentMetadataVersion). Rows stamped with any other version are
-	// treated as cache misses and refetched on their next scan, so cached
+	// treated as cache misses and written again by the next scan, so cached
 	// fields can be added or changed without a data backfill migration.
 	// The proto3 zero value means "unknown/legacy", which invalidates rows
 	// written before this field existed.

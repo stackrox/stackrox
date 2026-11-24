@@ -107,7 +107,8 @@ func (c *LocalScanner) ScanRepository(
 		if len(toFetch) > 0 {
 			// Create fetcher for this repo, uses the cached tag state and a shared
 			// limiter per registry integration. Entries written at an older
-			// derivation version are treated as misses and refetched.
+			// derivation version are treated as misses, so their fetched
+			// metadata is yielded and written.
 			id := reg.Source().GetId()
 			limiter := c.getRateLimiter(id)
 			known := make(map[string]tagfetcher.KnownTag, len(req.CheckTags))

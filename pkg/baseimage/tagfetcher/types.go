@@ -10,8 +10,9 @@ import (
 // writes into the tag cache and how they are computed.
 //
 // Bump this whenever a cached field is added, removed, or its derivation
-// changes. Cached rows stamped with a different version are treated as misses
-// and refetched on their next scan, so no data migration is needed.
+// changes. Cached rows stamped with a different version are treated as misses,
+// so their next normal scan writes the fetched data with the current version.
+// No data migration is needed.
 //
 // Version history:
 //   - 1: added BaseImageTag.history.

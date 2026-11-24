@@ -143,7 +143,7 @@ func (f *TagFetcher) metadata(ctx context.Context, name *storage.ImageName) (*st
 
 // isFresh reports whether the cached entry fully describes this fetch result.
 // A missing entry is the zero value, so it is never fresh; that also makes
-// legacy rows (version 0) refetch exactly once after an upgrade.
+// legacy rows (version 0) a miss exactly once after an upgrade.
 func (tm TagMetadata) isFresh(known KnownTag) bool {
 	return known.MetadataVersion == CurrentMetadataVersion &&
 		known.ManifestDigest != "" &&
