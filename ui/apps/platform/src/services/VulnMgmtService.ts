@@ -29,7 +29,9 @@ function getCached<T>(url: string): Promise<T> {
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
         return Promise.resolve(cached.data as T);
     }
-    return axios.get<T>(url).then((response) => {
+    // Some of these queries walk large CVE tables and can legitimately take tens of
+    // seconds; the client default is 10s, which aborted the counts request.
+    return axios.get<T>(url, { timeout: 180000 }).then((response) => {
         responseCache.set(url, { data: response.data, timestamp: Date.now() });
         return response.data;
     });

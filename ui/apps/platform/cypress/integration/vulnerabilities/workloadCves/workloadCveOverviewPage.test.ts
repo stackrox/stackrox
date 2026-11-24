@@ -131,7 +131,7 @@ describe('Workload CVE overview page tests', () => {
                 waitAndYieldRequestQueryParameters(['getVulnMgmtCVEs']).then((query) => {
                     const requestQuery = query.toLowerCase();
                     expect(requestQuery).to.contain('vulnerability state:observed');
-                    expect(requestQuery).to.contain('platform component:true,false,-');
+                    expect(requestQuery).not.to.contain('platform component');
                     expect(requestQuery).not.to.contain('image cve count');
                 });
 
