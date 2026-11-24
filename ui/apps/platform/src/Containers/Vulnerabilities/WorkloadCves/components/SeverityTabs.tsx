@@ -5,6 +5,8 @@ import { severityTabValues } from '../../types';
 import type { SeverityTab } from '../../types';
 import { severityLabelToSeverity } from '../../utils/searchUtils';
 
+const severityTabContentId = 'severity-tab-content';
+
 export type SeverityTabsProps = {
     activeKey: SeverityTab;
     counts?: Partial<Record<SeverityTab, number>>;
@@ -31,13 +33,16 @@ function SeverityTabs({ activeKey, counts, onChange }: SeverityTabsProps) {
                     <Tab
                         key={severity}
                         eventKey={severity}
+                        tabContentId={severityTabContentId}
                         title={
                             <>
                                 <TabTitleIcon>
                                     <Icon />
                                 </TabTitleIcon>
                                 <TabTitleText>{severity}</TabTitleText>
-                                {count !== undefined && <Badge isRead>{count.toLocaleString()}</Badge>}
+                                {count !== undefined && (
+                                    <Badge isRead>{count.toLocaleString()}</Badge>
+                                )}
                             </>
                         }
                     />

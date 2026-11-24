@@ -329,10 +329,7 @@ function WorkloadCVEOverviewTable({
                             const summary = '';
 
                             const labels: ReactNode[] = [];
-                            if (
-                                isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-                                knownExploit
-                            ) {
+                            if (isFeatureFlagEnabled('ROX_SCANNER_V4') && knownExploit) {
                                 labels.push(<KnownExploitLabel key="exploit" isCompact />);
                                 if (knownRansomwareCampaignUse) {
                                     labels.push(
@@ -477,7 +474,10 @@ function WorkloadCVEOverviewTable({
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
                                                 {isExpanded && (
-                                                    <CVESummaryContent cve={cve} query={queryString} />
+                                                    <CVESummaryContent
+                                                        cve={cve}
+                                                        query={queryString}
+                                                    />
                                                 )}
                                             </ExpandableRowContent>
                                         </Td>

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Alert, Content, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -12,12 +12,15 @@ export type CVESummaryContentProps = {
 
 function CVESummaryContent({ cve, query }: CVESummaryContentProps) {
     const cacheVersion = useVulnMgmtCacheVersion();
-    const requestFn = useCallback(
-        () => fetchCVEDetail(cve, query),
-        // cacheVersion is included so invalidation triggers a refetch.
-        [cve, query, cacheVersion]
-    );
-    const { data, isLoading, error } = useRestQuery(requestFn);
+    const requestFn = useCallback(() => fetchCVEDetail(cve, query), [cve, query]);
+    const { data, isLoading, error, refetch } = useRestQuery(requestFn);
+
+    // Refetch when a mutation invalidates the REST cache.
+    useEffect(() => {
+        if (cacheVersion > 0) {
+            refetch();
+        }
+    }, [cacheVersion, refetch]);
 
     if (isLoading) {
         return <Spinner size="md" />;

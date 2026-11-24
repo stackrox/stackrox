@@ -1,9 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import type useURLPagination from 'hooks/useURLPagination';
 import useRestQuery from 'hooks/useRestQuery';
 import { fetchImages } from 'services/VulnMgmtService';
-import type { VulnMgmtImageListItem } from 'services/VulnMgmtService';
 import type { ApiSortOption } from 'types/search';
 
 import { useVulnMgmtCacheVersion } from './useVulnMgmtCacheVersion';
@@ -21,18 +20,22 @@ export function useVulnMgmtImages({
     const cacheVersion = useVulnMgmtCacheVersion();
     const requestFn = useCallback(
         () => fetchImages({ query, page, perPage, sortOption }),
-        // cacheVersion is included so invalidation triggers a refetch.
-        [query, page, perPage, sortOption, cacheVersion]
+        [query, page, perPage, sortOption]
     );
 
     const { data, isLoading, error, refetch } = useRestQuery(requestFn);
 
+    // Refetch when a mutation invalidates the REST cache.
+    useEffect(() => {
+        if (cacheVersion > 0) {
+            refetch();
+        }
+    }, [cacheVersion, refetch]);
+
     return {
         loading: isLoading,
         error: error ?? undefined,
-        data: data
-            ? { images: data.items as VulnMgmtImageListItem[], totalCount: data.totalCount }
-            : undefined,
+        data: data ? { images: data.items, totalCount: data.totalCount } : undefined,
         refetch,
     };
 }

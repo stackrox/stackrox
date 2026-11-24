@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';
 import { fetchVulnMgmtCounts } from 'services/VulnMgmtService';
@@ -13,11 +13,15 @@ export function useVulnMgmtCounts(query: string): {
     refetch: () => void;
 } {
     const cacheVersion = useVulnMgmtCacheVersion();
-    const requestFn = useCallback(
-        () => fetchVulnMgmtCounts(query),
-        // cacheVersion is included so invalidation triggers a refetch.
-        [query, cacheVersion]
-    );
+    const requestFn = useCallback(() => fetchVulnMgmtCounts(query), [query]);
     const { data, isLoading, error, refetch } = useRestQuery(requestFn);
+
+    // Refetch when a mutation invalidates the REST cache.
+    useEffect(() => {
+        if (cacheVersion > 0) {
+            refetch();
+        }
+    }, [cacheVersion, refetch]);
+
     return { counts: data, loading: isLoading, error: error ?? undefined, refetch };
 }

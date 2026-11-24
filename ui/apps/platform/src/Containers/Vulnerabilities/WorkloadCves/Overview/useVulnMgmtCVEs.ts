@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import type useURLPagination from 'hooks/useURLPagination';
 import useRestQuery from 'hooks/useRestQuery';
@@ -21,11 +21,17 @@ export function useVulnMgmtCVEs({
     const cacheVersion = useVulnMgmtCacheVersion();
     const requestFn = useCallback(
         () => fetchCVEs({ query, page, perPage, sortOption }),
-        // cacheVersion is included so invalidation triggers a refetch.
-        [query, page, perPage, sortOption, cacheVersion]
+        [query, page, perPage, sortOption]
     );
 
     const { data, isLoading, error, refetch } = useRestQuery(requestFn);
+
+    // Refetch when a mutation invalidates the REST cache.
+    useEffect(() => {
+        if (cacheVersion > 0) {
+            refetch();
+        }
+    }, [cacheVersion, refetch]);
 
     return {
         loading: isLoading,

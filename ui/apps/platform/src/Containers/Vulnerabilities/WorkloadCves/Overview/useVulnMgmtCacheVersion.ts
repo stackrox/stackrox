@@ -6,9 +6,6 @@ import { subscribeVulnMgmtCache } from 'services/VulnMgmtService';
 // invalidated, so data hooks can refetch the affected lists.
 export function useVulnMgmtCacheVersion(): number {
     const [version, setVersion] = useState(0);
-    useEffect(
-        () => subscribeVulnMgmtCache(() => setVersion((current) => current + 1)),
-        []
-    );
+    useEffect(() => subscribeVulnMgmtCache(() => setVersion((current) => current + 1)), []);
     return version;
 }

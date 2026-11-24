@@ -59,12 +59,7 @@ function CVEsTableContainer({
 }: CVEsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
-    const {
-        error,
-        loading,
-        data,
-        refetch: refetchCVEs,
-    } = useVulnMgmtCVEs({
+    const { error, loading, data } = useVulnMgmtCVEs({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,
@@ -95,13 +90,11 @@ function CVEsTableContainer({
 
     async function showBulkModal(type: 'DEFERRAL' | 'FALSE_POSITIVE') {
         const cves = await Promise.all(
-            Array.from(selectedCves.values()).map(
-                async ({ cve, summary, numAffectedImages }) => ({
-                    cve,
-                    summary: summary || (await resolveSummary(cve).catch(() => '')),
-                    numAffectedImages,
-                })
-            )
+            Array.from(selectedCves.values()).map(async ({ cve, summary, numAffectedImages }) => ({
+                cve,
+                summary: summary || (await resolveSummary(cve).catch(() => '')),
+                numAffectedImages,
+            }))
         );
         showModal({ type, cves });
     }
@@ -130,7 +123,6 @@ function CVEsTableContainer({
                     onExceptionRequestSuccess={(exception) => {
                         selectedCves.clear();
                         showModal({ type: 'COMPLETION', exception });
-                        refetchCVEs();
                         return refetchAll();
                     }}
                     onClose={closeModals}

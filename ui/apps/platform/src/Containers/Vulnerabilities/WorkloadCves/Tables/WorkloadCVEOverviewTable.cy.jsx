@@ -20,66 +20,50 @@ function AggregateScoreTable({ data }) {
             vulnerabilityState="OBSERVED"
             onClearFilters={() => {}}
             columnVisibilityState={columns}
+            queryString=""
         />
     );
 }
 
 describe(Cypress.spec.relative, () => {
-    it('displays unavailable aggregate scores and preserves numeric maxima', () => {
+    it('displays unavailable scores and preserves numeric maxima', () => {
         const cases = {
             unavailable: {
                 topCVSS: 'Not available',
                 topNvdCVSS: null,
-                scores: [null],
                 expectedCvss: 'Not available',
                 expectedNvd: 'Not available',
             },
             mixed: {
                 topCVSS: 7.2,
                 topNvdCVSS: 7.2,
-                scores: [7.2, 5.8, null],
-                expectedCvss: '7.2 (V3)',
-                expectedNvd: '7.2 (V3)',
+                expectedCvss: '7.2',
+                expectedNvd: '7.2',
             },
             missingNvd: {
                 topCVSS: 6.8,
                 topNvdCVSS: null,
-                scores: [6.8],
-                expectedCvss: '6.8 (V3)',
+                expectedCvss: '6.8',
                 expectedNvd: 'Not available',
             },
             zero: {
                 topCVSS: 0,
                 topNvdCVSS: 0,
-                scores: [0],
-                expectedCvss: '0.0 (V3)',
-                expectedNvd: '0.0 (V3)',
+                expectedCvss: '0.0',
+                expectedNvd: '0.0',
             },
         };
-        const data = Object.entries(cases).map(([name, { topCVSS, topNvdCVSS, scores }]) => ({
+        const data = Object.entries(cases).map(([name, { topCVSS, topNvdCVSS }]) => ({
             cve: `CVE-${name}`,
-            affectedImageCountBySeverity: {
-                critical: { total: 0 },
-                important: { total: 0 },
-                moderate: { total: 0 },
-                low: { total: 0 },
-                unknown: { total: 1 },
-            },
             topCVSS,
             topNvdCVSS,
+            topEpssProbability: 0,
             affectedImageCount: 1,
             firstDiscoveredInSystem: null,
             publishedOn: null,
             pendingExceptionCount: 0,
-            distroTuples: scores.map((cvss) => ({
-                summary: 'Example vulnerability',
-                operatingSystem: 'rhel:9',
-                cvss,
-                scoreVersion: 'V3',
-                nvdCvss: typeof topNvdCVSS === 'number' ? cvss : null,
-                nvdScoreVersion: typeof topNvdCVSS === 'number' ? 'V3' : 'UNKNOWN_VERSION',
-                cveBaseInfo: {},
-            })),
+            knownExploit: false,
+            knownRansomwareCampaignUse: false,
         }));
 
         cy.mount(

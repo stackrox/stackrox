@@ -58,9 +58,7 @@ export function VulnerabilitiesOverviewContainer() {
 
     // If "All Projects" is selected, use the query search filter's Namespace, otherwise override with the active namespace
     const namespaceFilter =
-        activeNamespace === ALL_NAMESPACES_KEY
-            ? querySearchFilter.Namespace
-            : [activeNamespace];
+        activeNamespace === ALL_NAMESPACES_KEY ? querySearchFilter.Namespace : [activeNamespace];
 
     const countsQueryString = getVulnStateScopedQueryString(
         {

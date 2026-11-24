@@ -38,11 +38,7 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import { vulnerabilityImageViewBasedJobsPath } from 'routePaths';
 
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
-import {
-    isVulnMgmtLocalStorage,
-    severityTabValues,
-    workloadEntityTabValues,
-} from '../../types';
+import { isVulnMgmtLocalStorage, severityTabValues, workloadEntityTabValues } from '../../types';
 import type {
     DefaultFilters,
     SeverityTab,
@@ -186,9 +182,7 @@ function WorkloadCvesOverviewPage() {
               ...baseSearchFilter,
               ...querySearchFilter,
               'Vulnerability State': [currentVulnerabilityState],
-              ...(useSeverityTabs
-                  ? { Severity: [severityLabelToSeverity(severityTab)] }
-                  : {}),
+              ...(useSeverityTabs ? { Severity: [severityLabelToSeverity(severityTab)] } : {}),
           }
         : {
               ...baseSearchFilter,
