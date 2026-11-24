@@ -1,9 +1,12 @@
 """Cluster-free tests for node-name polling and nongroovy integration."""
 
 import json
+import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -252,6 +255,53 @@ class NodeMonitorTest(unittest.TestCase):
             event.return_value.set.assert_called_once()
 
 
+class ActionsMonitorTest(unittest.TestCase):
+    def test_start_waits_for_first_probe(self):
+        for startup, reason in [(snapshot("a"), "Nodes added: ['b']; removed: ['a']"), (None, "startup:")]:
+            with self.subTest(startup=startup), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                kubectl = root / "kubectl"
+                kubectl.write_text('#!/bin/sh\nsleep 0.2\ncat "$RUNNER_TEMP/nodes.json"\n')
+                kubectl.chmod(0o755)
+                nodes = root / "nodes.json"
+                if startup:
+                    nodes.write_text(json.dumps(startup))
+                env = dict(os.environ, PATH=directory + os.pathsep + os.defpath, RUNNER_TEMP=directory,
+                           ARTIFACT_DIR=directory, NUM_NODES="1", GITHUB_RUN_ID="1", GITHUB_RUN_ATTEMPT="1",
+                           GITHUB_JOB="qa")
+                command = [sys.executable, monitor.__file__]
+                subprocess.run([*command, "start", "--phase", "part-1"], env=env, timeout=10, check=True)
+                try:
+                    self.assertTrue((root / "node-monitor-1-1-qa-part-1/ready").is_file())
+                    nodes.write_text(json.dumps(snapshot("b")))
+                finally:
+                    subprocess.run([*command, "finish", "--phase", "part-1"], env=env, timeout=10, check=True)
+                report = ET.parse(root / "part-1" / monitor.JUNIT_REPORT)
+                self.assertIn(reason, report.findtext(".//skipped"))
+
+    def test_missing_startup_acknowledgement(self):
+        for exit_code, message in [(1, "worker exited 1"), (None, "within 45 seconds")]:
+            with self.subTest(exit_code=exit_code), tempfile.TemporaryDirectory() as directory, patch.object(
+                monitor.subprocess, "Popen"
+            ) as spawn, patch.object(monitor.time, "monotonic", side_effect=[0, 46]):
+                state = Path(directory) / "state"
+                spawn.return_value.poll.return_value = exit_code
+                spawn.return_value.returncode = exit_code
+                monitor.start_actions_monitor(state)
+                args = SimpleNamespace(phase=None, baseline=False, outcome="success")
+                if exit_code is None:
+                    # A late first probe must still produce an advisory finding.
+                    (state / "stop").write_text(args.outcome)
+                    with patch.dict(os.environ, NUM_NODES="1", ARTIFACT_DIR=directory), patch.object(
+                        monitor.subprocess, "run", side_effect=kubectl_responses([reply("a"), reply("a")])
+                    ):
+                        monitor.run_actions_worker(state, args)
+                with patch.object(monitor.time, "monotonic", side_effect=[0, 91]):
+                    monitor.finish_actions_monitor(state, Path(directory), args)
+                report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
+                self.assertIn(message, report.findtext(".//skipped"))
+
+
 class NonGroovyIntegrationTest(unittest.TestCase):
     def test_original_runner_and_exception_preserved(self):
         cases = {
@@ -295,7 +345,7 @@ class NonGroovyIntegrationTest(unittest.TestCase):
             ), patch.object(NonGroovyE2e, "run_with_graceful_kill", side_effect=error) as product:
                 cluster = GKECluster("test")
                 cluster.provision = lambda: None
-                cluster.teardown = lambda: None
+                cluster.teardown = unittest.mock.create_autospec(cluster.teardown)
                 test = ClusterTestRunner(cluster=cluster, test=NonGroovyE2e())
                 if error:
                     with self.assertRaises(type(error)) as caught:

@@ -92,23 +92,54 @@ def finish_report(directory, expected, errors, cancelled=False):
         return True
 
 
+def compare_snapshot(initial, names, expected, stage, errors):
+    if initial is None:
+        if not names:
+            errors.append(f"{stage}: node snapshot is empty")
+            return None
+        if expected is not None and len(names) != expected:
+            errors.append(f"{stage}: baseline contains {len(names)} nodes")
+        return names
+    if names != initial:
+        change = f"Nodes added: {sorted(names - initial)}; removed: {sorted(initial - names)}"
+        if change not in errors:
+            errors.append(change)
+    return initial
+
+
+def start_polling(stopped, sample, errors):
+    def poll():
+        while not stopped.wait(POLL_INTERVAL):
+            sample("periodic")
+
+    try:
+        worker = threading.Thread(target=poll, name="node-monitor", daemon=True)
+        worker.start()
+        return worker
+    except RuntimeError as exc:
+        errors.append(str(exc))
+        return None
+
+
+def artifact_directory(env, phase):
+    return Path(env.get("ARTIFACT_DIR", "junit-reports")) / (phase or "")
+
+
 @contextmanager
 def monitor(env=None, *, baseline=False, phase=None):
-    """Collect advisory node diagnostics without owning the product process."""
+    """Collect node diagnostics and yield the list of advisory errors for the final report."""
     env = dict(os.environ if env is None else env)
+    errors = []
     if not baseline and not env.get("NUM_NODES"):
-        yield
+        yield errors
         return
-    directory = Path(env.get("ARTIFACT_DIR", "junit-reports"))
-    if phase:
-        directory /= phase
+    directory = artifact_directory(env, phase)
     try:
         directory.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
         print(f"WARNING: Could not create node monitor directory: {exc}", flush=True)
-        yield
+        yield errors
         return
-    errors = []
     stopped = threading.Event()
     worker = None
     cancelled = False
@@ -119,24 +150,9 @@ def monitor(env=None, *, baseline=False, phase=None):
         nonlocal initial
         try:
             names = set(sample_nodes(directory, env))
-            if initial is None:
-                if not names:
-                    errors.append(f"{stage}: node snapshot is empty")
-                    return
-                initial = names
-                if expected is not None and len(names) != expected:
-                    errors.append(f"{stage}: baseline contains {len(names)} nodes")
-            elif names != initial:
-                change = f"Nodes added: {sorted(names - initial)}; removed: {sorted(initial - names)}"
-                if change not in errors:
-                    errors.append(change)
-            return names
+            initial = compare_snapshot(initial, names, expected, stage, errors)
         except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as exc:
             errors.append(f"{stage}: {exc}")
-
-    def poll():
-        while not stopped.wait(POLL_INTERVAL):
-            sample("periodic")
 
     expected = None
     ready = False
@@ -150,15 +166,9 @@ def monitor(env=None, *, baseline=False, phase=None):
 
     if ready:
         sample("startup")
-        try:
-            worker = threading.Thread(target=poll, name="node-monitor", daemon=True)
-            worker.start()
-        except RuntimeError as exc:
-            # Cleanup must not join a thread that failed to start.
-            worker = None
-            errors.append(str(exc))
+        worker = start_polling(stopped, sample, errors)
     try:
-        yield
+        yield errors
     except (KeyboardInterrupt, SystemExit):
         cancelled = True
         raise
@@ -175,52 +185,82 @@ def monitor(env=None, *, baseline=False, phase=None):
         finish_report(directory, expected, errors, cancelled)
 
 
+def start_actions_monitor(state):
+    state.mkdir()
+    with (state / "worker.log").open("w") as log:
+        # The detached worker must outlive this start step.
+        worker = subprocess.Popen(  # pylint: disable=consider-using-with
+            [sys.executable, __file__, "worker", *sys.argv[2:]],
+            stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True,
+        )
+    deadline = time.monotonic() + 45
+    while not (state / "ready").exists():
+        if worker.poll() is not None:
+            error = f"Node monitor worker exited {worker.returncode} before completing its startup probe"
+            break
+        if time.monotonic() >= deadline:
+            error = "Node monitor startup probe was not acknowledged within 45 seconds"
+            break
+        time.sleep(0.25)
+    else:
+        return
+    (state / "startup-error").write_text(error)
+    print(f"WARNING: {error}", flush=True)
+
+
+def run_actions_worker(state, args):
+    stop = state / "stop"
+    try:
+        with monitor(baseline=args.baseline, phase=args.phase) as errors:
+            (state / "ready").touch()
+            while not stop.exists():
+                time.sleep(0.25)
+            if (state / "startup-error").exists():
+                errors.append((state / "startup-error").read_text())
+            if stop.read_text() == "cancelled":
+                raise KeyboardInterrupt
+    except KeyboardInterrupt:
+        pass
+    finally:
+        (state / "done").touch()
+
+
+def finish_actions_monitor(state, directory, args):
+    stop = state / "stop"
+    done = state / "done"
+    if args.outcome == "skipped" and not state.exists():
+        return
+    if state.exists():
+        request = state / "request"
+        request.write_text(args.outcome)
+        request.replace(stop)
+        deadline = time.monotonic() + 90
+        while not done.exists() and time.monotonic() < deadline:
+            time.sleep(0.25)
+    worker_log = state / "worker.log"
+    if worker_log.is_file():
+        print(worker_log.read_text(encoding="utf-8"), end="", flush=True)
+    if not done.exists() or not (directory / JUNIT_REPORT).is_file():
+        directory.mkdir(parents=True, exist_ok=True)
+        errors = ["Background node monitor did not publish a report"]
+        if (state / "startup-error").exists():
+            errors.append((state / "startup-error").read_text())
+        finish_report(directory, None, errors)
+
+
 def actions_monitor(args):
     if not args.baseline and not os.environ.get("NUM_NODES"):
         return
-    directory = Path(os.environ.get("ARTIFACT_DIR", "junit-reports"))
-    if args.phase:
-        directory /= args.phase
     state = Path(os.environ["RUNNER_TEMP"]) / (
         f"node-monitor-{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}-"
         f"{os.environ['GITHUB_JOB']}-{args.phase or 'main'}"
     )
-    stop = state / "stop"
-    done = state / "done"
     if args.action == "start":
-        state.mkdir()
-        with (state / "worker.log").open("w") as log:
-            subprocess.Popen(
-                [sys.executable, __file__, "worker", *sys.argv[2:]],
-                stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True,
-            )
+        start_actions_monitor(state)
     elif args.action == "worker":
-        try:
-            with monitor(baseline=args.baseline, phase=args.phase):
-                while not stop.exists():
-                    time.sleep(0.25)
-                if stop.read_text() == "cancelled":
-                    raise KeyboardInterrupt
-        except KeyboardInterrupt:
-            pass
-        finally:
-            done.touch()
+        run_actions_worker(state, args)
     else:
-        if args.outcome == "skipped" and not state.exists():
-            return
-        if state.exists():
-            request = state / "request"
-            request.write_text(args.outcome)
-            request.replace(stop)
-            deadline = time.monotonic() + 90
-            while not done.exists() and time.monotonic() < deadline:
-                time.sleep(0.25)
-        worker_log = state / "worker.log"
-        if worker_log.is_file():
-            print(worker_log.read_text(encoding="utf-8"), end="", flush=True)
-        if not done.exists() or not (directory / JUNIT_REPORT).is_file():
-            directory.mkdir(parents=True, exist_ok=True)
-            finish_report(directory, None, ["Background node monitor did not publish a report"])
+        finish_actions_monitor(state, artifact_directory(os.environ, args.phase), args)
 
 
 if __name__ == "__main__":
