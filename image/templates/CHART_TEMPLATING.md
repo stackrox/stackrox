@@ -95,39 +95,23 @@ The chart instantiation process is implemented in several key files:
    func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues
    ```
 
-4. **Instantiation in roxctl**: https://github.com/stackrox/stackrox/blob/master/roxctl/helm/output/output.go, function `outputHelmChart`.
+4. **Instantiation in the Operator**: https://github.com/stackrox/stackrox/blob/master/image/embed_charts.go, function `LoadChart`.
 
-5. **Instantiation in the Operator**: https://github.com/stackrox/stackrox/blob/master/image/embed_charts.go, function `LoadChart`.
-
-6. **Instantiation in Central handler**: https://github.com/stackrox/stackrox/blob/master/central/helmcharts/service_impl.go, function `servceChart`.
+5. **Instantiation in Central handler**: https://github.com/stackrox/stackrox/blob/master/central/helmcharts/service_impl.go, function `servceChart`.
 
 
-### Using roxctl for Chart Instantiation
+### Chart Instantiation
 
-The standard way to instantiate Helm charts is using `roxctl helm output`:
+Helm charts are instantiated from the templates embedded in the operator image; the operator
+renders them when reconciling `Central` and `SecuredCluster` custom resources.
 
-```bash
-roxctl helm output central-services
-roxctl helm output secured-cluster-services
-```
-
-### Development Mode with --debug
-
-For quick iteration during Helm chart development, use the `--debug` parameter:
-
-```bash
-roxctl helm output central-services --debug
-```
-
-**Important**: The `--debug` flag is only available in non-release builds. It causes roxctl to use chart template files directly from the repository instead of the templates embedded in the roxctl binary. This allows for rapid testing of chart changes without rebuilding roxctl.
+To verify chart changes, use the chart tests under
+`pkg/helm/charts/tests/{centralservices,securedclusterservices}` (see [Testing](README.md#testing)).
 
 ### Feature Flag Configuration
 
-By default, `roxctl helm output` uses the default feature flag configuration from https://github.com/stackrox/stackrox/blob/master/pkg/features/list.go. You can override specific feature flags using environment variables:
-
-```bash
-ROX_ADMISSION_CONTROLLER_CONFIG=true ROX_COMPLIANCE_ENHANCEMENTS=false roxctl helm output secured-cluster-services
-```
+Chart instantiation uses the default feature flag configuration from
+https://github.com/stackrox/stackrox/blob/master/pkg/features/list.go.
 
 ### Legacy Deployment Integration
 

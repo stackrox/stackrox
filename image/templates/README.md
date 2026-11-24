@@ -31,9 +31,7 @@ Installs:
 
 To extend templating to, e.g., `Chart.yaml`, which in a normal helm chart cannot be templated `.htpl` files are used, which we call "meta templating".
 The main difference is that `.htpl` files are rendered before loading the files as a Helm chart
-(i.e., the rendered `.htpl` file is loaded for the helm chart). This pre-rendering takes place whenever the Helm charts are instantiated, e.g. during use by the operator or via roxctl.
-
-To render files at the meta templating stage the `roxctl helm output` commands are used.
+(i.e., the rendered `.htpl` file is loaded for the helm chart). This pre-rendering takes place whenever the Helm charts are instantiated, e.g. during use by the operator or in chart tests.
 
 Meta templating does the following:
 
@@ -62,29 +60,12 @@ Example:
 
 ### Workflow
 
-This example shows how to work with the `stackrox central services` chart.
+Chart templates are instantiated by the StackRox Operator, which renders the charts embedded
+in the operator image. To deploy a development instance of Central, use `roxie deploy`
+(see `deploy/AGENTS.md`).
 
+To access central, forward port 443:
 ```
-# Go to rox root
-$ cdrox
-
-# Receive the rendered helm chart from roxctl
-# To use a custom template path use the `--debug-path=</path/to/templates>` argument.
-$ ./bin/darwin_amd64/roxctl helm output central-services --image-defaults=development_build --debug
-
-# Install the helm chart
-$ helm upgrade --install -n stackrox stackrox-central-services --create-namespace  ./stackrox-central-services-chart \
-    -f ./dev-tools/helm/central-services/docker-values-public.yaml \
-    --set imagePullSecrets.username=<USERNAME> \
-    --set imagePullSecrets.password=<PASSWORD>
-
-# List all helm releases
-$ helm list -n stackrox
-
-# To uninstall central, run:
-$ helm uninstall stackrox-central-services -n stackrox
-
-# To access central, forward port 443:
 $ kubectl -n stackrox port-forward svc/central 8000:443 &
 ```
 
