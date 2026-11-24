@@ -54,8 +54,9 @@ download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artif
 ## E2E node disruption monitoring
 
 Prow starts one monitor per GKE or OpenShift cluster runner after provisioning.
-GitHub Actions wraps each test command, with separate report directories for QA
-Parts 1 and 2. GKE validates the initial node count against the provisioning
+GitHub Actions starts a background monitor before the test and collects the
+report in a separate step. Test commands run directly with their existing step
+timeouts. QA Parts 1 and 2 use separate report directories. GKE validates the initial node count against the provisioning
 count. OpenShift uses the initial node names as its baseline.
 
 The monitor samples at startup, every five minutes, and at completion unless

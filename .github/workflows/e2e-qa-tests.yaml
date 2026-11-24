@@ -252,7 +252,18 @@ jobs:
           from pre_tests import PreSystemTests
           PreSystemTests().run()
 
+      - name: Start node monitor (part-1)
+        continue-on-error: true
+        timeout-minutes: 1
+        run: |
+          monitor_args=()
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
+            monitor_args+=(--baseline)
+          fi
+          python3 .openshift-ci/node_disruption.py start --phase part-1 "${monitor_args[@]}"
+
       - name: Run Part 1 tests
+        id: run-product-tests
         env: &test_env
           USE_ROXIE_DEPLOY: true
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -285,16 +296,20 @@ jobs:
           GCP_SERVICE_ACCOUNT_EMAIL_STACKROX_CI_WORKLOAD_IDENTITY: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL_STACKROX_CI_WORKLOAD_IDENTITY }}
           GCP_PROJECT_NUMBER_WORKLOAD_IDENTITY: ${{ secrets.GCP_PROJECT_NUMBER_WORKLOAD_IDENTITY }}
         timeout-minutes: ${{ inputs.part1-timeout-minutes }}
+        run: qa-tests-backend/scripts/run-part-1.sh
+
+      - name: Finish node monitor (part-1)
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
+        continue-on-error: true
+        timeout-minutes: 2
         run: |
           monitor_args=()
-          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra ]]; then
-            if [[ "$INFRA_FLAVOR" == openshift* ]]; then
-              monitor_args+=(--baseline)
-            else
-              exec qa-tests-backend/scripts/run-part-1.sh
-            fi
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
+            monitor_args+=(--baseline)
           fi
-          python3 .openshift-ci/node_disruption.py "${monitor_args[@]}" --phase part-1 -- qa-tests-backend/scripts/run-part-1.sh
+          python3 .openshift-ci/node_disruption.py finish --phase part-1 "${monitor_args[@]}" --outcome "$TEST_OUTCOME"
 
       - name: Run Part 1 post-test
         if: always() && env.KUBECONFIG != ''
@@ -309,20 +324,34 @@ jobs:
           )
           post.run([os.environ['ARTIFACT_DIR']])
 
+      - name: Start node monitor (part-2)
+        continue-on-error: true
+        timeout-minutes: 1
+        run: |
+          monitor_args=()
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
+            monitor_args+=(--baseline)
+          fi
+          python3 .openshift-ci/node_disruption.py start --phase part-2 "${monitor_args[@]}"
+
       - name: Run Part 2 tests
         id: run-part-2
         env: *test_env
         timeout-minutes: ${{ inputs.part2-timeout-minutes }}
+        run: qa-tests-backend/scripts/run-part-2.sh
+
+      - name: Finish node monitor (part-2)
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.run-part-2.outcome }}
+        continue-on-error: true
+        timeout-minutes: 2
         run: |
           monitor_args=()
-          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra ]]; then
-            if [[ "$INFRA_FLAVOR" == openshift* ]]; then
-              monitor_args+=(--baseline)
-            else
-              exec qa-tests-backend/scripts/run-part-2.sh
-            fi
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
+            monitor_args+=(--baseline)
           fi
-          python3 .openshift-ci/node_disruption.py "${monitor_args[@]}" --phase part-2 -- qa-tests-backend/scripts/run-part-2.sh
+          python3 .openshift-ci/node_disruption.py finish --phase part-2 "${monitor_args[@]}" --outcome "$TEST_OUTCOME"
 
       - name: Run Part 2 post-test
         if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''

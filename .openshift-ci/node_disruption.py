@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import threading
 import subprocess
+import sys
 import time
 import xml.etree.ElementTree as ET
 
@@ -74,9 +75,11 @@ def write_report(directory, expected, errors, cancelled=False):
         ET.SubElement(case, "skipped", message="Advisory node monitor finding").text = detail
     elif skipped:
         ET.SubElement(case, "skipped")
-    (directory / JUNIT_REPORT).write_text(
+    temporary = directory / f".{JUNIT_REPORT}.{os.getpid()}.tmp"
+    temporary.write_text(
         ET.tostring(suite, encoding="unicode", xml_declaration=True), encoding="utf-8"
     )
+    temporary.replace(directory / JUNIT_REPORT)
     return failed
 
 
@@ -172,17 +175,63 @@ def monitor(env=None, *, baseline=False, phase=None):
         finish_report(directory, expected, errors, cancelled)
 
 
+def actions_monitor(args):
+    if not args.baseline and not os.environ.get("NUM_NODES"):
+        return
+    directory = Path(os.environ.get("ARTIFACT_DIR", "junit-reports"))
+    if args.phase:
+        directory /= args.phase
+    state = Path(os.environ["RUNNER_TEMP"]) / (
+        f"node-monitor-{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}-"
+        f"{os.environ['GITHUB_JOB']}-{args.phase or 'main'}"
+    )
+    stop = state / "stop"
+    done = state / "done"
+    if args.action == "start":
+        state.mkdir()
+        with (state / "worker.log").open("w") as log:
+            subprocess.Popen(
+                [sys.executable, __file__, "worker", *sys.argv[2:]],
+                stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True,
+            )
+    elif args.action == "worker":
+        try:
+            with monitor(baseline=args.baseline, phase=args.phase):
+                while not stop.exists():
+                    time.sleep(0.25)
+                if stop.read_text() == "cancelled":
+                    raise KeyboardInterrupt
+        except KeyboardInterrupt:
+            pass
+        finally:
+            done.touch()
+    else:
+        if args.outcome == "skipped" and not state.exists():
+            return
+        if state.exists():
+            request = state / "request"
+            request.write_text(args.outcome)
+            request.replace(stop)
+            deadline = time.monotonic() + 90
+            while not done.exists() and time.monotonic() < deadline:
+                time.sleep(0.25)
+        worker_log = state / "worker.log"
+        if worker_log.is_file():
+            print(worker_log.read_text(encoding="utf-8"), end="", flush=True)
+        if not done.exists() or not (directory / JUNIT_REPORT).is_file():
+            directory.mkdir(parents=True, exist_ok=True)
+            finish_report(directory, None, ["Background node monitor did not publish a report"])
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("action", choices=("start", "worker", "finish"))
     parser.add_argument("--baseline", action="store_true")
     parser.add_argument("--phase")
-    parser.add_argument("command", nargs=argparse.REMAINDER)
-    args = parser.parse_args()
-    command = args.command[1:] if args.command[:1] == ["--"] else args.command
-    if not command:
-        parser.error("a test command is required")
-    with monitor(baseline=args.baseline, phase=args.phase):
-        status = subprocess.call(command)
-    raise SystemExit(status if status >= 0 else 128 - status)
+    parser.add_argument("--outcome", default="")
+    try:
+        actions_monitor(parser.parse_args())
+    except (OSError, ValueError, RuntimeError, KeyError) as exc:
+        print(f"WARNING: Node monitor: {exc}", flush=True)

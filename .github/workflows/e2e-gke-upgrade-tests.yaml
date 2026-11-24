@@ -121,7 +121,13 @@ jobs:
         echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
         echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
 
+    - name: Start node monitor
+      continue-on-error: true
+      timeout-minutes: 1
+      run: python3 .openshift-ci/node_disruption.py start
+
     - name: Run central upgrade test
+      id: run-product-tests
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -132,9 +138,17 @@ jobs:
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
       run: |
-        python3 .openshift-ci/node_disruption.py -- tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
+        tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
         touch /tmp/stackrox_ci_state_deployed
+
+    - name: Finish node monitor
+      if: always()
+      env:
+        TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
+      continue-on-error: true
+      timeout-minutes: 2
+      run: python3 .openshift-ci/node_disruption.py finish --outcome "$TEST_OUTCOME"
 
     - name: Run post-test
       if: always()
@@ -304,7 +318,13 @@ jobs:
         echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
         echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
 
+    - name: Start node monitor
+      continue-on-error: true
+      timeout-minutes: 1
+      run: python3 .openshift-ci/node_disruption.py start
+
     - name: Run postgres version upgrade test
+      id: run-product-tests
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -314,9 +334,17 @@ jobs:
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
       run: |
-        python3 .openshift-ci/node_disruption.py -- tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
+        tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
         touch /tmp/stackrox_ci_state_deployed
+
+    - name: Finish node monitor
+      if: always()
+      env:
+        TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
+      continue-on-error: true
+      timeout-minutes: 2
+      run: python3 .openshift-ci/node_disruption.py finish --outcome "$TEST_OUTCOME"
 
     - name: Run post-test
       if: always()
