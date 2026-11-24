@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 
+	"github.com/distribution/reference"
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/hashstructure"
@@ -79,7 +79,27 @@ type deploymentWrap struct {
 	// to be processed soon (since we can guarantee that there is a deployment event in the resolver queue).
 	isBuilt bool
 
+	// pinnedImages records, per container name, the image reference this deployment
+	// declared, captured before any pod observation could mutate it. A wrap is rebuilt
+	// from the Deployment whenever the Deployment object changes, so this is the
+	// deployment's own immutable reference for the lifetime of the wrap.
+	//
+	// It is needed because populateImageMetadata runs more than once over the same wrap
+	// (once when the Deployment event is converted, and again from
+	// BuildDeploymentWithDependencies), while updateImageWithNewerImageName may rewrite
+	// the container image's registry and remote in between. Matching a pod against the
+	// live container image would therefore compare against a value an earlier pod
+	// observation produced, rather than against what the deployment actually declares.
+	pinnedImages map[string]pinnedImageRef
+
 	mutex sync.RWMutex
+}
+
+// pinnedImageRef is the image reference a deployment declared for one container.
+type pinnedImageRef struct {
+	fullName string
+	// digest is empty unless the deployment pinned the container image by digest.
+	digest string
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -334,6 +354,18 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 		containersByName[c.GetName()] = c
 	}
 
+	// Capture the deployment's own image references on the first pass, while the
+	// container images still hold exactly what the Deployment declared.
+	if features.MultiArchWorkloadChildDigest.Enabled() && w.pinnedImages == nil {
+		w.pinnedImages = make(map[string]pinnedImageRef, len(containersByName))
+		for name, c := range containersByName {
+			w.pinnedImages[name] = pinnedImageRef{
+				fullName: c.GetImage().GetName().GetFullName(),
+				digest:   c.GetImage().GetId(),
+			}
+		}
+	}
+
 	// Sort the pods by time created as that pod will be most likely to have the most updated spec
 	sort.SliceStable(pods, func(i, j int) bool {
 		return pods[j].CreationTimestamp.Before(&pods[i].CreationTimestamp)
@@ -379,19 +411,17 @@ func (w *deploymentWrap) processContainerStatuses(
 		// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
 		// and remote with the container runtime.
 		if image.GetId() != "" {
-			// If the image ID is populated then determine if the image is pullable,
-			// otherwise assume the image is pullable. An Image ID may be empty when a
-			// container is not ready yet per the container runtime.
-			if c.ImageID != "" {
-				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-			}
-
 			imageName := image.GetName()
 			imageFullName := imageName.GetFullName()
 			// localImages is keyed by the image references recorded for this deployment.
 			// Determine cluster-locality before the child-digest rewrite below replaces the
 			// name with the per-architecture digest the container runtime reported.
 			isClusterLocal := localImages.Contains(imageFullName)
+
+			// staleRevision marks a pod that is not running the reference this deployment
+			// declares for this container, i.e. a leftover from an older rollout revision.
+			// Nothing it reports describes the current revision.
+			staleRevision := false
 
 			// A workload pinned by a multi-arch index digest (a manifest list) runs a
 			// per-architecture child manifest, and the runtime reports that child digest in
@@ -401,33 +431,64 @@ func (w *deploymentWrap) processContainerStatuses(
 			// only takes effect when the runtime reports a child digest; otherwise the
 			// pinned digest is retained.
 			//
-			// Only a pod pinned by the deployment's own digest may supply the child digest.
-			// A by-tag workload has no index digest to expand, and a pod left over from an
-			// older rollout revision must not replace the digest of the current revision.
-			// Requiring the image to still carry the spec digest also makes the rewrite
+			// Only a pod running the deployment's own digest-pinned reference may supply the
+			// child digest. A by-tag workload has no index digest to expand, and a pod left
+			// over from an older rollout revision must not replace the digest of the current
+			// revision. The comparison uses the reference captured from the Deployment rather
+			// than the live container image, because the live name may already have been
+			// rewritten by this rewrite or by updateImageWithNewerImageName during an earlier
+			// pass over the same wrap.
+			//
+			// Requiring the image to still carry the pinned digest also makes the rewrite
 			// non-repeatable: within one build, pods are visited newest first, so the first
 			// pod that supplies a usable child digest wins and a later pod cannot replace
 			// it. The rewritten digest persists on the stored deployment wrap, so the same
 			// pod keeps winning until the wrap is rebuilt from the Deployment and the image
 			// id resets to the pinned digest.
 			if features.MultiArchWorkloadChildDigest.Enabled() {
-				specDigest, specFullName := podSpecImageReference(specContainers, c.Name, w.registryOverride)
-				// localImages is rebuilt on every build from the deployment's current image
-				// names, which may still be the pinned reference or already be the rewritten
-				// child reference. Accept either so locality survives the rewrite.
-				if specFullName != "" {
-					isClusterLocal = isClusterLocal || localImages.Contains(specFullName)
-				}
-				if specDigest != "" && image.GetId() == specDigest && imageFullName == specFullName {
-					if childDigest := runtimeChildDigest(c.ImageID); childDigest != "" && childDigest != specDigest {
-						image.Id = childDigest
-						imageUtils.NormalizeImageFullName(imageName, childDigest)
+				pinned := w.pinnedImages[c.Name]
+				specFullName := podSpecImageReference(specContainers, c.Name, w.registryOverride)
+				podMatchesPin := specFullName != "" && specFullName == pinned.fullName
+
+				if pinned.digest != "" {
+					staleRevision = !podMatchesPin
+
+					// localImages is rebuilt on every build from the deployment's current
+					// image names, which may already be the rewritten child reference while
+					// localImages still holds the pinned one (or the reverse). Fall back to
+					// this container's own pinned reference so locality survives the rewrite.
+					// The fallback deliberately uses the pinned reference rather than the
+					// pod's, so a pod running some other image cannot make this container
+					// look cluster-local.
+					if !isClusterLocal && pinned.fullName != "" {
+						isClusterLocal = localImages.Contains(pinned.fullName)
+					}
+
+					if podMatchesPin && image.GetId() == pinned.digest {
+						if childDigest := runtimeChildDigest(c.ImageID); childDigest != "" && childDigest != pinned.digest {
+							image.Id = childDigest
+							imageUtils.NormalizeImageFullName(imageName, childDigest)
+						}
 					}
 				}
 			}
 
-			image.IsClusterLocal = isClusterLocal
-			updateImageWithNewerImageName(image, runtimeImageName, true)
+			// If the image ID is populated then determine if the image is pullable,
+			// otherwise assume the image is pullable. An Image ID may be empty when a
+			// container is not ready yet per the container runtime.
+			//
+			// Pullability and the runtime image name must come from the same observation
+			// that supplied the digest, so a pod from an older rollout revision may not
+			// contribute either. Without this, an older pod's registry and remote could
+			// replace the current revision's, and with FlattenImageData that repository
+			// would then be combined with the current revision's digest in IdV2.
+			if !staleRevision {
+				if c.ImageID != "" {
+					image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				}
+				image.IsClusterLocal = isClusterLocal
+				updateImageWithNewerImageName(image, runtimeImageName, true)
+			}
 			if features.FlattenImageData.Enabled() {
 				image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), image.GetId())
 			}
@@ -478,17 +539,17 @@ func findSpecContainerImage(specContainers []v1.Container, name string) string {
 // podSpecImageReference parses the pod spec image for the named container and returns
 // its digest (empty when the image is not pinned by a digest) and its full name. Both
 // are empty when the container is absent or its image cannot be parsed.
-func podSpecImageReference(specContainers []v1.Container, name, registryOverride string) (digest, fullName string) {
+func podSpecImageReference(specContainers []v1.Container, name, registryOverride string) (fullName string) {
 	specImage := findSpecContainerImage(specContainers, name)
 	if specImage == "" {
-		return "", ""
+		return ""
 	}
 	parsed, err := imageUtils.GenerateImageFromStringWithOverride(specImage, registryOverride)
 	if err != nil {
-		// The pod spec image is malformed, so it can neither be matched nor supply a digest.
-		return "", ""
+		// The pod spec image is malformed, so it cannot be matched against the deployment.
+		return ""
 	}
-	return parsed.GetId(), parsed.GetName().GetFullName()
+	return parsed.GetName().GetFullName()
 }
 
 // runtimeChildDigest returns the per-architecture child manifest digest reported by the
@@ -499,14 +560,19 @@ func podSpecImageReference(specContainers []v1.Container, name, registryOverride
 // it must never replace a pinned image reference. A pulled image is reported as
 // "[scheme://]<repository>@sha256:<manifest>".
 func runtimeChildDigest(imageID string) string {
-	ref := imageUtils.RemoveScheme(imageID)
-	if !strings.Contains(ref, "@") {
+	name, ref, err := imageUtils.GenerateImageNameFromString(imageUtils.RemoveScheme(imageID))
+	// A bare digest parses as a reference, but carries no repository, so GetRemote() is
+	// empty. Requiring a repository is what rejects the config-digest forms above.
+	if err != nil || name.GetRemote() == "" {
 		return ""
 	}
-	if name, _, err := imageUtils.GenerateImageNameFromString(ref); err != nil || name.GetRemote() == "" {
+	digested, ok := ref.(reference.Digested)
+	if !ok {
 		return ""
 	}
-	return imageUtils.ExtractImageDigest(ref)
+	// Take the digest from the parsed reference rather than scanning the raw string, so
+	// that a repository path component named "sha256" cannot be mistaken for the digest.
+	return digested.Digest().String()
 }
 
 // updateImageWithNewerImageName will update the registry, remote, and full name
