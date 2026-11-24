@@ -75,6 +75,23 @@ func TestUpgradeRefetchesLegacyTagCacheEntry(t *testing.T) {
 	require.Equal(t, uint32(0), seeded[0].GetMetadataVersion(), "legacy row must look unstamped")
 	require.Empty(t, seeded[0].GetHistory(), "legacy row must have no history")
 
+	// Seed the promoted row too: on a real upgrade base_images already has an
+	// entry without history.
+	require.NoError(t, baseImages.ReplaceByRepository(ctx, repo.GetId(), map[*storage.BaseImage][]string{
+		{
+			Id:                    tagID,
+			BaseImageRepositoryId: repo.GetId(),
+			Repository:            repo.GetRepositoryPath(),
+			Tag:                   tag,
+			ManifestDigest:        digest,
+			Created:               timestamppb.New(time.Now().Add(-time.Hour)),
+		}: {layer},
+	}))
+	promotedBefore, err := baseImages.ListByRepository(ctx, repo.GetId())
+	require.NoError(t, err)
+	require.Len(t, promotedBefore, 1)
+	require.Empty(t, promotedBefore[0].GetHistory(), "promoted row must start without history")
+
 	history := []*storage.BaseImageHistoryEntry{
 		{Instruction: "ADD", Value: "rootfs"},
 		{Instruction: "USER", Value: "1001", Empty: true},
@@ -144,6 +161,11 @@ func TestUpgradeRefetchesLegacyTagCacheEntry(t *testing.T) {
 	require.Len(t, stored, 1)
 	require.Equal(t, tagfetcher.CurrentMetadataVersion, stored[0].GetMetadataVersion())
 	protoassert.SlicesEqual(t, history, stored[0].GetHistory())
+
+	promoted, err = baseImages.ListByRepository(ctx, repo.GetId())
+	require.NoError(t, err)
+	require.Len(t, promoted, 1)
+	protoassert.SlicesEqual(t, history, promoted[0].GetHistory())
 }
 
 // countingTagDataStore counts writes while delegating to the real store.
