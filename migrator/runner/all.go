@@ -10,4 +10,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_225_to_m_226_drop_unused_child_idx_indexes"
 	_ "github.com/stackrox/rox/migrator/migrations/m_226_to_m_227_backfill_report_type"
 	_ "github.com/stackrox/rox/migrator/migrations/m_227_to_m_228_remove_sensor_upgrade_configs_table"
+	_ "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_compliance_v1_tables"
 )
