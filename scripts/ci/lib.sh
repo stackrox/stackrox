@@ -72,7 +72,7 @@ is_sensitive_env_name() {
 is_not_sensitive_value() {
     local value="$1"
     case "${value,,}" in
-        ''|true|false|disabled|enabled|none|null|on|off|auto|'[]'|'{}') return 0 ;;
+        ''|true|false|disabled|enabled|none|null|on|off|yes|no|auto|'[]'|'{}') return 0 ;;
     esac
     return 1
 }
