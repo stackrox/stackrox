@@ -340,6 +340,36 @@ func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatWithPagination() {
 	}
 }
 
+// TestGetImageCVEFlatWithCVENameFiltering verifies that the CVE-name phase 1/2 path
+// returns exactly the same results as the row-ID path for every paginated query.
+func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatWithCVENameFiltering() {
+	for _, paginationTestCase := range s.paginationTestCases() {
+		baseTestCases := s.testCases()
+		for idx := range baseTestCases {
+			tc := &baseTestCases[idx]
+			if !tc.readOptions.IsDefault() {
+				continue
+			}
+			applyPaginationProps(tc, paginationTestCase)
+			tc.readOptions.UseCVENameFiltering = true
+
+			s.T().Run(tc.desc, func(t *testing.T) {
+				actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+
+				assert.Equal(t, len(expected), len(actual))
+				assertResponsesAreEqual(t, expected, actual, true)
+			})
+		}
+	}
+}
+
 func (s *ImageCVEFlatViewTestSuite) TestCountImageCVEFlat() {
 	for _, tc := range s.testCases() {
 		if tc.skipCountTests {

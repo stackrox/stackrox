@@ -21,6 +21,8 @@ type imageCVEFlatResponse struct {
 	FirstImageOccurrence    *time.Time                     `db:"first_image_occurrence_timestamp_min"`
 	State                   *storage.VulnerabilityState    `db:"vulnerability_state_max"`
 	AffectedImageCountV2    int                            `db:"image_id_count"`
+	KnownExploitCount       int                            `db:"known_exploit_count"`
+	KnownRansomwareCount    int                            `db:"known_ransomware_campaign_count"`
 }
 
 func (c *imageCVEFlatResponse) GetCVE() string {
@@ -77,6 +79,14 @@ func (c *imageCVEFlatResponse) GetPublishDate() *time.Time {
 
 func (c *imageCVEFlatResponse) GetFirstImageOccurrence() *time.Time {
 	return c.FirstImageOccurrence
+}
+
+func (c *imageCVEFlatResponse) GetKnownExploit() bool {
+	return c.KnownExploitCount > 0
+}
+
+func (c *imageCVEFlatResponse) GetKnownRansomwareCampaignUse() bool {
+	return c.KnownRansomwareCount > 0
 }
 
 func (c *imageCVEFlatResponse) GetState() *storage.VulnerabilityState {

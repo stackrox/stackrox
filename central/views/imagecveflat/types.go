@@ -24,6 +24,8 @@ type CveFlat interface {
 	GetPublishDate() *time.Time
 	GetFirstImageOccurrence() *time.Time
 	GetState() *storage.VulnerabilityState
+	GetKnownExploit() bool
+	GetKnownRansomwareCampaignUse() bool
 }
 
 // CveFlatView interface is like a SQL view that provides functionality to fetch the image CVE data
