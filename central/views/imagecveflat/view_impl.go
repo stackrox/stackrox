@@ -56,17 +56,17 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	cloned = common.UpdateSortAggs(cloned)
 
 	// Performance improvements to narrow aggregations performed
-	var cveIDsToFilter []string
+	var cvesToFilter []string
 	var err error
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
-		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
+		cvesToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
 			log.Error(err)
 			return nil, err
 		}
 
 		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
-			// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
+			// The CVE list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
 			// we do not need to re-apply pagination limit and offset
 			cloned.Pagination = &v1.QueryPagination{SortOptions: cloned.GetPagination().GetSortOptions()}
 		}
@@ -76,7 +76,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	defer cancel()
 
 	var ret []CveFlat
-	err = pgSearch.RunSelectRequestForSchemaFn[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEFlatResponseQuery(cloned, cveIDsToFilter, options), func(r *imageCVEFlatResponse) error {
+	err = pgSearch.RunSelectRequestForSchemaFn[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEFlatResponseQuery(cloned, cvesToFilter, options), func(r *imageCVEFlatResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
@@ -91,10 +91,18 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	return ret, nil
 }
 
-func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
+// withSelectCVEStringsQuery builds the lightweight phase-1 paging query that
+// selects only the CVE string (the generator adds the max() aggregates needed
+// by the sort), grouped by CVE. It deliberately does NOT aggregate the per-CVE
+// instance IDs via jsonb_agg(DISTINCT id): a DISTINCT aggregate forces a sorted
+// GroupAggregate over the entire image_cves_v2 fan-out, which spills to disk at
+// scale (observed ~93s / 649MB at 100k images / 5M CVE rows). max()-only
+// aggregation uses an in-memory HashAggregate with no such sort. The selected
+// CVE strings then scope the phase-2 detail query (withSelectCVEFlatResponseQuery).
+func withSelectCVEStringsQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
+		search.NewQuerySelect(search.CVE).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
@@ -103,10 +111,13 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	return cloned
 }
 
-func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
+func withSelectCVEFlatResponseQuery(q *v1.Query, cvesToFilter []string, options views.ReadOptions) *v1.Query {
 	cloned := q.CloneVT()
-	if len(cveIDsToFilter) > 0 {
-		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+	if len(cvesToFilter) > 0 {
+		// Scope the detail/aggregate query to the CVEs selected by phase 1. The
+		// full joins and WHERE clause are re-applied here, so the aggregated
+		// values match exactly what filtering by instance IDs would have produced.
+		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddExactMatches(search.CVE, cvesToFilter...).ProtoQuery())
 		cloned.Pagination = q.GetPagination()
 	}
 
@@ -148,17 +159,18 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	return cloned
 }
 
+// getFilteredCVEs runs phase 1: it returns the page of CVE strings (ordered by
+// the requested sort, with limit/offset applied) that the phase-2 detail query
+// is then scoped to. See withSelectCVEStringsQuery for why it returns CVE
+// strings rather than instance IDs.
 func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
-	var cveIDsToFilter []string
+	var cvesToFilter []string
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
-	//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
-	//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
-	err := pgSearch.RunSelectRequestForSchemaFn[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q), func(r *imageCVEFlatResponse) error {
-		cveIDsToFilter = append(cveIDsToFilter, r.CVEIDs...)
+	err := pgSearch.RunSelectRequestForSchemaFn[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEStringsQuery(q), func(r *imageCVEFlatResponse) error {
+		cvesToFilter = append(cvesToFilter, r.CVE)
 		return nil
 	})
 	if err != nil {
@@ -166,5 +178,5 @@ func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 		return nil, err
 	}
 
-	return cveIDsToFilter, nil
+	return cvesToFilter, nil
 }
