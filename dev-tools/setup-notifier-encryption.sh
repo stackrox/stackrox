@@ -27,7 +27,7 @@ echo "
 
 echo "Enabling notifierSecretsEncryption on the Central custom resource"
 echo "The operator will restart Central with ROX_ENC_NOTIFIER_CREDS=true and the key chain mounted"
-kubectl -n stackrox patch central central --type=merge \
+kubectl -n stackrox patch central stackrox-central-services --type=merge \
   -p '{"spec":{"notifierSecretsEncryption":{"enabled":true}}}'
 
 echo "Done. Notifier secrets stored in the Central DB are now encrypted with the test key chain."
