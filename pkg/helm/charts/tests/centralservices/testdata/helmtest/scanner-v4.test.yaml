@@ -421,3 +421,19 @@ tests:
     scannerV4.disable: false
   expect: |
     .deployments["scanner-v4-db"].spec.template.spec.initContainers[] | select(.name == "init-db") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
+
+# ROX-39749: the default policy "Environment Variable Contains Secret" flags the names
+# of RAW (literal-value) env vars matching .*SECRET.*|.*PASSWORD.* (case-insensitive),
+# even when the value is only a file path, so the password file path must be passed via
+# POSTGRES_PASS_FILE. Env vars backed by valueFrom are exempt from the policy.
+- name: "Scanner V4 DB does not trip the secret env var default policy"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-db"].spec.template.spec.initContainers[] | select(.name == "init-db")
+      | .env[] | select(.name == "POSTGRES_PASS_FILE")
+      | assertThat(.value == "/run/secrets/stackrox.io/secrets/password")
+    .deployments["scanner-v4-db"].spec.template.spec
+      | [.initContainers[]?.env[]?, .containers[]?.env[]?]
+      | map(select(.valueFrom == null) | .name)
+      | assertThat(all(test("SECRET|PASSWORD"; "i") | not))

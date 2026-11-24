@@ -55,7 +55,11 @@ spec:
           value: "/var/lib/postgresql/data/pgdata"
         - name: POSTGRES_HOST_AUTH_METHOD
           value: "scram-sha-256"
-        - name: POSTGRES_PASSWORD_FILE
+        # The name intentionally avoids the substring "PASSWORD": the default
+        # policy "Environment Variable Contains Secret" flags env var names
+        # matching .*PASSWORD.*, even when the value is only a file path
+        # (ROX-39749).
+        - name: POSTGRES_PASS_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
 {{- if ._rox.env.centralServices }}
         - name: SCANNER_DB_INIT_BUNDLE_ENABLED
