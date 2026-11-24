@@ -101,7 +101,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return errox.NotAuthorized.CausedByf("only sensor may access this API, unexpected client identity %q", svcType)
 	}
 
-	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)
+	sensorHello, err := receiveSensorHello(server)
 	if err != nil {
 		return err
 	}
@@ -129,66 +129,64 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return errors.Errorf("unable to generate a pipeline for cluster %q", cluster.GetId())
 	}
 
-	if sensorSupportsHello {
-		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
-		utils.Should(err)
+	installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
+	utils.Should(err)
 
-		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
-		capabilities = append(capabilities, centralsensor.SecuredClusterCertificatesReissue)
-		capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
-		if features.ComplianceEnhancements.Enabled() {
-			capabilities = append(capabilities, centralsensor.ComplianceV2Integrations)
-			capabilities = append(capabilities, centralsensor.ComplianceV2TailoredProfiles)
-		}
-		if features.ComplianceRemediationV2.Enabled() {
-			capabilities = append(capabilities, centralsensor.ComplianceV2Remediations)
-		}
-		if features.ScannerV4.Enabled() {
-			capabilities = append(capabilities, centralsensor.ScannerV4Supported)
-		}
-		if features.ClusterRegistrationSecrets.Enabled() {
-			capabilities = append(capabilities, centralsensor.ClusterRegistrationSecretSupported)
-		}
-		if features.FlattenImageData.Enabled() {
-			capabilities = append(capabilities, centralsensor.FlattenImageData)
-		}
-		capabilities = append(capabilities, centralsensor.InitContainerSupport)
-		if features.OCPConsoleIntegration.Enabled() {
-			capabilities = append(capabilities, centralsensor.InternalTokenAPISupported.String())
-			capabilities = append(capabilities, centralsensor.CentralProxyPathFiltering.String())
-		}
+	capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
+	capabilities = append(capabilities, centralsensor.SecuredClusterCertificatesReissue)
+	capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
+	if features.ComplianceEnhancements.Enabled() {
+		capabilities = append(capabilities, centralsensor.ComplianceV2Integrations)
+		capabilities = append(capabilities, centralsensor.ComplianceV2TailoredProfiles)
+	}
+	if features.ComplianceRemediationV2.Enabled() {
+		capabilities = append(capabilities, centralsensor.ComplianceV2Remediations)
+	}
+	if features.ScannerV4.Enabled() {
+		capabilities = append(capabilities, centralsensor.ScannerV4Supported)
+	}
+	if features.ClusterRegistrationSecrets.Enabled() {
+		capabilities = append(capabilities, centralsensor.ClusterRegistrationSecretSupported)
+	}
+	if features.FlattenImageData.Enabled() {
+		capabilities = append(capabilities, centralsensor.FlattenImageData)
+	}
+	capabilities = append(capabilities, centralsensor.InitContainerSupport)
+	if features.OCPConsoleIntegration.Enabled() {
+		capabilities = append(capabilities, centralsensor.InternalTokenAPISupported.String())
+		capabilities = append(capabilities, centralsensor.CentralProxyPathFiltering.String())
+	}
 
-		preferences := s.manager.GetConnectionPreference(clusterID)
+	preferences := s.manager.GetConnectionPreference(clusterID)
 
-		// Let's be polite and respond with a greeting from our side.
-		centralHello := &central.CentralHello{
-			ClusterId:         clusterID,
-			ManagedCentral:    env.ManagedCentral.BooleanSetting(),
-			CentralId:         installInfo.GetId(),
-			Capabilities:      capabilities,
-			SendDeduperState:  preferences.SendDeduperState,
-			AllowedProxyPaths: centralproxy.AllowedProxyPaths.AsSlice(),
-		}
+	// Let's be polite and respond with a greeting from our side.
+	centralHello := &central.CentralHello{
+		ClusterId:         clusterID,
+		ManagedCentral:    env.ManagedCentral.BooleanSetting(),
+		CentralId:         installInfo.GetId(),
+		Capabilities:      capabilities,
+		SendDeduperState:  preferences.SendDeduperState,
+		AllowedProxyPaths: centralproxy.AllowedProxyPaths.AsSlice(),
+	}
 
-		if err := safe.RunE(func() error {
-			sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
-			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(
-				sensorNamespace, clusterID, isCARotationSupported(sensorHello), "")
-			if err != nil {
-				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
-			}
-			centralHello.CertBundle, err = protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
-			if err != nil {
-				return errors.Wrap(err, "converting typed service certificate set to file map")
-			}
-			return nil
-		}); err != nil {
-			log.Errorf("Could not include certificate bundle in sensor hello message: %s.", err)
+	if err := safe.RunE(func() error {
+		sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
+		certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(
+			sensorNamespace, clusterID, isCARotationSupported(sensorHello), "")
+		if err != nil {
+			return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 		}
+		centralHello.CertBundle, err = protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
+		if err != nil {
+			return errors.Wrap(err, "converting typed service certificate set to file map")
+		}
+		return nil
+	}); err != nil {
+		log.Errorf("Could not include certificate bundle in sensor hello message: %s.", err)
+	}
 
-		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
-			return errors.Wrap(err, "sending CentralHello message to sensor")
-		}
+	if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
+		return errors.Wrap(err, "sending CentralHello message to sensor")
 	}
 
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
@@ -297,36 +295,26 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 	return cluster, nil
 }
 
-func receiveSensorHello(server central.SensorService_CommunicateServer) (*central.SensorHello, bool, error) {
+func receiveSensorHello(server central.SensorService_CommunicateServer) (*central.SensorHello, error) {
 	incomingMD := metautils.ExtractIncoming(server.Context())
+	if incomingMD.Get(centralsensor.SensorHelloMetadataKey) != "true" {
+		return nil, errors.New("missing Rox-Sensor-Hello metadata; proto SensorHello handshake is required")
+	}
+
 	outMD := metautils.MD{}
-
-	sensorSupportsHello := incomingMD.Get(centralsensor.SensorHelloMetadataKey) == "true"
-	if sensorSupportsHello {
-		outMD.Set(centralsensor.SensorHelloMetadataKey, "true")
-	}
-
+	outMD.Set(centralsensor.SensorHelloMetadataKey, "true")
 	if err := server.SendHeader(metadata.MD(outMD)); err != nil {
-		return nil, false, errors.Wrap(err, "sending header metadata")
-	}
-
-	if !sensorSupportsHello {
-		sensorHello, err := centralsensor.DeriveSensorHelloFromIncomingMetadata(incomingMD)
-		if err != nil {
-			log.Warnf("Failed to completely derive SensorHello information from header metadata: %s", err)
-		}
-
-		return sensorHello, false, nil
+		return nil, errors.Wrap(err, "sending header metadata")
 	}
 
 	firstMsg, err := server.Recv()
 	if err != nil {
-		return nil, false, errors.Wrap(err, "receiving first message")
+		return nil, errors.Wrap(err, "receiving first message")
 	}
 	sensorHello := firstMsg.GetHello()
 	if sensorHello == nil {
-		return nil, false, errors.Wrapf(err, "first message received is not a SensorHello message, but %T", firstMsg.GetMsg())
+		return nil, errors.Errorf("first message received is not a SensorHello message, but %T", firstMsg.GetMsg())
 	}
 
-	return sensorHello, true, nil
+	return sensorHello, nil
 }

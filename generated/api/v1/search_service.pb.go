@@ -37,18 +37,14 @@ const (
 	SearchCategory_PODS                               SearchCategory = 25
 	SearchCategory_SECRETS                            SearchCategory = 5
 	SearchCategory_PROCESS_INDICATORS                 SearchCategory = 6
-	SearchCategory_COMPLIANCE                         SearchCategory = 7
 	SearchCategory_CLUSTERS                           SearchCategory = 8
 	SearchCategory_NAMESPACES                         SearchCategory = 9
 	SearchCategory_NODES                              SearchCategory = 10
+	SearchCategory_SERVICE_ACCOUNTS                   SearchCategory = 14
 	SearchCategory_NODE_COMPONENTS                    SearchCategory = 38
 	SearchCategory_NODE_VULN_EDGE                     SearchCategory = 28
 	SearchCategory_NODE_COMPONENT_EDGE                SearchCategory = 29
 	SearchCategory_NODE_COMPONENT_CVE_EDGE            SearchCategory = 33
-	SearchCategory_COMPLIANCE_STANDARD                SearchCategory = 11
-	SearchCategory_COMPLIANCE_CONTROL_GROUP           SearchCategory = 12
-	SearchCategory_COMPLIANCE_CONTROL                 SearchCategory = 13
-	SearchCategory_SERVICE_ACCOUNTS                   SearchCategory = 14
 	SearchCategory_ROLES                              SearchCategory = 15
 	SearchCategory_ROLEBINDINGS                       SearchCategory = 16
 	SearchCategory_REPORT_CONFIGURATIONS              SearchCategory = 37
@@ -66,9 +62,6 @@ const (
 	SearchCategory_NETWORK_BASELINE                   SearchCategory = 39
 	SearchCategory_NETWORK_POLICIES                   SearchCategory = 40
 	SearchCategory_PROCESS_BASELINE_RESULTS           SearchCategory = 41
-	SearchCategory_COMPLIANCE_METADATA                SearchCategory = 42
-	SearchCategory_COMPLIANCE_RESULTS                 SearchCategory = 43
-	SearchCategory_COMPLIANCE_DOMAIN                  SearchCategory = 44
 	SearchCategory_CLUSTER_HEALTH                     SearchCategory = 45
 	SearchCategory_POLICY_CATEGORIES                  SearchCategory = 46
 	SearchCategory_IMAGE_INTEGRATIONS                 SearchCategory = 47
@@ -123,18 +116,14 @@ var (
 		25: "PODS",
 		5:  "SECRETS",
 		6:  "PROCESS_INDICATORS",
-		7:  "COMPLIANCE",
 		8:  "CLUSTERS",
 		9:  "NAMESPACES",
 		10: "NODES",
+		14: "SERVICE_ACCOUNTS",
 		38: "NODE_COMPONENTS",
 		28: "NODE_VULN_EDGE",
 		29: "NODE_COMPONENT_EDGE",
 		33: "NODE_COMPONENT_CVE_EDGE",
-		11: "COMPLIANCE_STANDARD",
-		12: "COMPLIANCE_CONTROL_GROUP",
-		13: "COMPLIANCE_CONTROL",
-		14: "SERVICE_ACCOUNTS",
 		15: "ROLES",
 		16: "ROLEBINDINGS",
 		37: "REPORT_CONFIGURATIONS",
@@ -152,9 +141,6 @@ var (
 		39: "NETWORK_BASELINE",
 		40: "NETWORK_POLICIES",
 		41: "PROCESS_BASELINE_RESULTS",
-		42: "COMPLIANCE_METADATA",
-		43: "COMPLIANCE_RESULTS",
-		44: "COMPLIANCE_DOMAIN",
 		45: "CLUSTER_HEALTH",
 		46: "POLICY_CATEGORIES",
 		47: "IMAGE_INTEGRATIONS",
@@ -206,18 +192,14 @@ var (
 		"PODS":                               25,
 		"SECRETS":                            5,
 		"PROCESS_INDICATORS":                 6,
-		"COMPLIANCE":                         7,
 		"CLUSTERS":                           8,
 		"NAMESPACES":                         9,
 		"NODES":                              10,
+		"SERVICE_ACCOUNTS":                   14,
 		"NODE_COMPONENTS":                    38,
 		"NODE_VULN_EDGE":                     28,
 		"NODE_COMPONENT_EDGE":                29,
 		"NODE_COMPONENT_CVE_EDGE":            33,
-		"COMPLIANCE_STANDARD":                11,
-		"COMPLIANCE_CONTROL_GROUP":           12,
-		"COMPLIANCE_CONTROL":                 13,
-		"SERVICE_ACCOUNTS":                   14,
 		"ROLES":                              15,
 		"ROLEBINDINGS":                       16,
 		"REPORT_CONFIGURATIONS":              37,
@@ -235,9 +217,6 @@ var (
 		"NETWORK_BASELINE":                   39,
 		"NETWORK_POLICIES":                   40,
 		"PROCESS_BASELINE_RESULTS":           41,
-		"COMPLIANCE_METADATA":                42,
-		"COMPLIANCE_RESULTS":                 43,
-		"COMPLIANCE_DOMAIN":                  44,
 		"CLUSTER_HEALTH":                     45,
 		"POLICY_CATEGORIES":                  46,
 		"IMAGE_INTEGRATIONS":                 47,
@@ -1235,6 +1214,7 @@ type BaseQuery struct {
 	//	*BaseQuery_MatchLinkedFieldsQuery
 	//	*BaseQuery_DocIdQuery
 	//	*BaseQuery_MatchNoneQuery
+	//	*BaseQuery_MatchFieldSubQuery
 	Query         isBaseQuery_Query `protobuf_oneof:"query"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1313,6 +1293,15 @@ func (x *BaseQuery) GetMatchNoneQuery() *MatchNoneQuery {
 	return nil
 }
 
+func (x *BaseQuery) GetMatchFieldSubQuery() *MatchFieldSubQuery {
+	if x != nil {
+		if x, ok := x.Query.(*BaseQuery_MatchFieldSubQuery); ok {
+			return x.MatchFieldSubQuery
+		}
+	}
+	return nil
+}
+
 type isBaseQuery_Query interface {
 	isBaseQuery_Query()
 }
@@ -1333,6 +1322,10 @@ type BaseQuery_MatchNoneQuery struct {
 	MatchNoneQuery *MatchNoneQuery `protobuf:"bytes,5,opt,name=match_none_query,json=matchNoneQuery,proto3,oneof"`
 }
 
+type BaseQuery_MatchFieldSubQuery struct {
+	MatchFieldSubQuery *MatchFieldSubQuery `protobuf:"bytes,6,opt,name=match_field_sub_query,json=matchFieldSubQuery,proto3,oneof"`
+}
+
 func (*BaseQuery_MatchFieldQuery) isBaseQuery_Query() {}
 
 func (*BaseQuery_MatchLinkedFieldsQuery) isBaseQuery_Query() {}
@@ -1340,6 +1333,8 @@ func (*BaseQuery_MatchLinkedFieldsQuery) isBaseQuery_Query() {}
 func (*BaseQuery_DocIdQuery) isBaseQuery_Query() {}
 
 func (*BaseQuery_MatchNoneQuery) isBaseQuery_Query() {}
+
+func (*BaseQuery_MatchFieldSubQuery) isBaseQuery_Query() {}
 
 type ConjunctionQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1739,6 +1734,70 @@ func (x *AutocompleteResponse) GetValues() []string {
 	return nil
 }
 
+// MatchFieldSubQuery filters records whose field value matches a value returned
+// by another query. For example, it can filter images by selecting image IDs
+// from deployments in a particular namespace. The SQL search backend applies
+// the inner query's access and scope filters separately.
+type MatchFieldSubQuery struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	Category      SearchCategory         `protobuf:"varint,2,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
+	Query         *Query                 `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MatchFieldSubQuery) Reset() {
+	*x = MatchFieldSubQuery{}
+	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MatchFieldSubQuery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MatchFieldSubQuery) ProtoMessage() {}
+
+func (x *MatchFieldSubQuery) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MatchFieldSubQuery.ProtoReflect.Descriptor instead.
+func (*MatchFieldSubQuery) Descriptor() ([]byte, []int) {
+	return file_api_v1_search_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *MatchFieldSubQuery) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+func (x *MatchFieldSubQuery) GetCategory() SearchCategory {
+	if x != nil {
+		return x.Category
+	}
+	return SearchCategory_SEARCH_UNSET
+}
+
+func (x *MatchFieldSubQuery) GetQuery() *Query {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
 type SearchResult_Matches struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
@@ -1748,7 +1807,7 @@ type SearchResult_Matches struct {
 
 func (x *SearchResult_Matches) Reset() {
 	*x = SearchResult_Matches{}
-	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	mi := &file_api_v1_search_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1760,7 +1819,7 @@ func (x *SearchResult_Matches) String() string {
 func (*SearchResult_Matches) ProtoMessage() {}
 
 func (x *SearchResult_Matches) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_search_service_proto_msgTypes[23]
+	mi := &file_api_v1_search_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1793,7 +1852,7 @@ type SearchResponse_Count struct {
 
 func (x *SearchResponse_Count) Reset() {
 	*x = SearchResponse_Count{}
-	mi := &file_api_v1_search_service_proto_msgTypes[25]
+	mi := &file_api_v1_search_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1805,7 +1864,7 @@ func (x *SearchResponse_Count) String() string {
 func (*SearchResponse_Count) ProtoMessage() {}
 
 func (x *SearchResponse_Count) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_search_service_proto_msgTypes[25]
+	mi := &file_api_v1_search_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1898,13 +1957,14 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x03(\v2\x13.v1.MatchFieldQueryR\x05query\"\x1e\n" +
 	"\n" +
 	"DocIDQuery\x12\x10\n" +
-	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xa4\x02\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xf1\x02\n" +
 	"\tBaseQuery\x12A\n" +
 	"\x11match_field_query\x18\x02 \x01(\v2\x13.v1.MatchFieldQueryH\x00R\x0fmatchFieldQuery\x12W\n" +
 	"\x19match_linked_fields_query\x18\x03 \x01(\v2\x1a.v1.MatchLinkedFieldsQueryH\x00R\x16matchLinkedFieldsQuery\x122\n" +
 	"\fdoc_id_query\x18\x04 \x01(\v2\x0e.v1.DocIDQueryH\x00R\n" +
 	"docIdQuery\x12>\n" +
-	"\x10match_none_query\x18\x05 \x01(\v2\x12.v1.MatchNoneQueryH\x00R\x0ematchNoneQueryB\a\n" +
+	"\x10match_none_query\x18\x05 \x01(\v2\x12.v1.MatchNoneQueryH\x00R\x0ematchNoneQuery\x12K\n" +
+	"\x15match_field_sub_query\x18\x06 \x01(\v2\x16.v1.MatchFieldSubQueryH\x00R\x12matchFieldSubQueryB\a\n" +
 	"\x05query\"7\n" +
 	"\x10ConjunctionQuery\x12#\n" +
 	"\aqueries\x18\x01 \x03(\v2\t.v1.QueryR\aqueries\"7\n" +
@@ -1936,7 +1996,11 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\xc6\x0e\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\"{\n" +
+	"\x12MatchFieldSubQuery\x12\x14\n" +
+	"\x05field\x18\x01 \x01(\tR\x05field\x12.\n" +
+	"\bcategory\x18\x02 \x01(\x0e2\x12.v1.SearchCategoryR\bcategory\x12\x1f\n" +
+	"\x05query\x18\x03 \x01(\v2\t.v1.QueryR\x05query*\xc9\r\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -1950,22 +2014,17 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\vDEPLOYMENTS\x10\x04\x12\b\n" +
 	"\x04PODS\x10\x19\x12\v\n" +
 	"\aSECRETS\x10\x05\x12\x16\n" +
-	"\x12PROCESS_INDICATORS\x10\x06\x12\x0e\n" +
-	"\n" +
-	"COMPLIANCE\x10\a\x12\f\n" +
+	"\x12PROCESS_INDICATORS\x10\x06\x12\f\n" +
 	"\bCLUSTERS\x10\b\x12\x0e\n" +
 	"\n" +
 	"NAMESPACES\x10\t\x12\t\n" +
 	"\x05NODES\x10\n" +
-	"\x12\x13\n" +
+	"\x12\x14\n" +
+	"\x10SERVICE_ACCOUNTS\x10\x0e\x12\x13\n" +
 	"\x0fNODE_COMPONENTS\x10&\x12\x12\n" +
 	"\x0eNODE_VULN_EDGE\x10\x1c\x12\x17\n" +
 	"\x13NODE_COMPONENT_EDGE\x10\x1d\x12\x1b\n" +
-	"\x17NODE_COMPONENT_CVE_EDGE\x10!\x12\x17\n" +
-	"\x13COMPLIANCE_STANDARD\x10\v\x12\x1c\n" +
-	"\x18COMPLIANCE_CONTROL_GROUP\x10\f\x12\x16\n" +
-	"\x12COMPLIANCE_CONTROL\x10\r\x12\x14\n" +
-	"\x10SERVICE_ACCOUNTS\x10\x0e\x12\t\n" +
+	"\x17NODE_COMPONENT_CVE_EDGE\x10!\x12\t\n" +
 	"\x05ROLES\x10\x0f\x12\x10\n" +
 	"\fROLEBINDINGS\x10\x10\x12\x19\n" +
 	"\x15REPORT_CONFIGURATIONS\x10%\x12\x15\n" +
@@ -1982,10 +2041,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\fVULN_REQUEST\x10 \x12\x14\n" +
 	"\x10NETWORK_BASELINE\x10'\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10(\x12\x1c\n" +
-	"\x18PROCESS_BASELINE_RESULTS\x10)\x12\x17\n" +
-	"\x13COMPLIANCE_METADATA\x10*\x12\x16\n" +
-	"\x12COMPLIANCE_RESULTS\x10+\x12\x15\n" +
-	"\x11COMPLIANCE_DOMAIN\x10,\x12\x12\n" +
+	"\x18PROCESS_BASELINE_RESULTS\x10)\x12\x12\n" +
 	"\x0eCLUSTER_HEALTH\x10-\x12\x15\n" +
 	"\x11POLICY_CATEGORIES\x10.\x12\x16\n" +
 	"\x12IMAGE_INTEGRATIONS\x10/\x12\x0f\n" +
@@ -2023,7 +2079,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x18VIRTUAL_MACHINE_SCANS_V2\x10Q\x12!\n" +
 	"\x1dVIRTUAL_MACHINE_COMPONENTS_V2\x10R\x12&\n" +
 	"\"VIRTUAL_MACHINE_VULNERABILITIES_V2\x10S\x12\x13\n" +
-	"\x0fIMAGE_CVE_INFOS\x10T\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
+	"\x0fIMAGE_CVE_INFOS\x10T\"\x04\b\x1e\x10\x1e\"\x04\b\a\x10\a\"\x04\b\v\x10\v\"\x04\b\f\x10\f\"\x04\b\r\x10\r\"\x04\b*\x10*\"\x04\b+\x10+\"\x04\b,\x10,\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
 	"\x0eSearchDataType\x12\x0f\n" +
 	"\vSEARCH_BOOL\x10\x00\x12\x12\n" +
 	"\x0eSEARCH_NUMERIC\x10\x01\x12\x11\n" +
@@ -2052,7 +2108,7 @@ func file_api_v1_search_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_search_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_v1_search_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_api_v1_search_service_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_api_v1_search_service_proto_goTypes = []any{
 	(SearchCategory)(0),            // 0: v1.SearchCategory
 	(SearchDataType)(0),            // 1: v1.SearchDataType
@@ -2079,16 +2135,17 @@ var file_api_v1_search_service_proto_goTypes = []any{
 	(*SearchOptionsRequest)(nil),   // 22: v1.SearchOptionsRequest
 	(*SearchOptionsResponse)(nil),  // 23: v1.SearchOptionsResponse
 	(*AutocompleteResponse)(nil),   // 24: v1.AutocompleteResponse
-	(*SearchResult_Matches)(nil),   // 25: v1.SearchResult.Matches
-	nil,                            // 26: v1.SearchResult.FieldToMatchesEntry
-	(*SearchResponse_Count)(nil),   // 27: v1.SearchResponse.Count
-	(*Pagination)(nil),             // 28: v1.Pagination
-	(*AggregateBy)(nil),            // 29: v1.AggregateBy
+	(*MatchFieldSubQuery)(nil),     // 25: v1.MatchFieldSubQuery
+	(*SearchResult_Matches)(nil),   // 26: v1.SearchResult.Matches
+	nil,                            // 27: v1.SearchResult.FieldToMatchesEntry
+	(*SearchResponse_Count)(nil),   // 28: v1.SearchResponse.Count
+	(*Pagination)(nil),             // 29: v1.Pagination
+	(*AggregateBy)(nil),            // 30: v1.AggregateBy
 }
 var file_api_v1_search_service_proto_depIdxs = []int32{
-	28, // 0: v1.RawQuery.pagination:type_name -> v1.Pagination
+	29, // 0: v1.RawQuery.pagination:type_name -> v1.Pagination
 	0,  // 1: v1.RawSearchRequest.categories:type_name -> v1.SearchCategory
-	29, // 2: v1.QuerySortOption.aggregate_by:type_name -> v1.AggregateBy
+	30, // 2: v1.QuerySortOption.aggregate_by:type_name -> v1.AggregateBy
 	11, // 3: v1.QuerySelectFilter.query:type_name -> v1.Query
 	5,  // 4: v1.QuerySelect.field:type_name -> v1.QueryField
 	6,  // 5: v1.QuerySelect.filter:type_name -> v1.QuerySelectFilter
@@ -2107,26 +2164,29 @@ var file_api_v1_search_service_proto_depIdxs = []int32{
 	14, // 18: v1.BaseQuery.match_linked_fields_query:type_name -> v1.MatchLinkedFieldsQuery
 	15, // 19: v1.BaseQuery.doc_id_query:type_name -> v1.DocIDQuery
 	19, // 20: v1.BaseQuery.match_none_query:type_name -> v1.MatchNoneQuery
-	11, // 21: v1.ConjunctionQuery.queries:type_name -> v1.Query
-	11, // 22: v1.DisjunctionQuery.queries:type_name -> v1.Query
-	0,  // 23: v1.SearchResult.category:type_name -> v1.SearchCategory
-	26, // 24: v1.SearchResult.field_to_matches:type_name -> v1.SearchResult.FieldToMatchesEntry
-	20, // 25: v1.SearchResponse.results:type_name -> v1.SearchResult
-	27, // 26: v1.SearchResponse.counts:type_name -> v1.SearchResponse.Count
-	0,  // 27: v1.SearchOptionsRequest.categories:type_name -> v1.SearchCategory
-	25, // 28: v1.SearchResult.FieldToMatchesEntry.value:type_name -> v1.SearchResult.Matches
-	0,  // 29: v1.SearchResponse.Count.category:type_name -> v1.SearchCategory
-	3,  // 30: v1.SearchService.Search:input_type -> v1.RawSearchRequest
-	22, // 31: v1.SearchService.Options:input_type -> v1.SearchOptionsRequest
-	3,  // 32: v1.SearchService.Autocomplete:input_type -> v1.RawSearchRequest
-	21, // 33: v1.SearchService.Search:output_type -> v1.SearchResponse
-	23, // 34: v1.SearchService.Options:output_type -> v1.SearchOptionsResponse
-	24, // 35: v1.SearchService.Autocomplete:output_type -> v1.AutocompleteResponse
-	33, // [33:36] is the sub-list for method output_type
-	30, // [30:33] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	25, // 21: v1.BaseQuery.match_field_sub_query:type_name -> v1.MatchFieldSubQuery
+	11, // 22: v1.ConjunctionQuery.queries:type_name -> v1.Query
+	11, // 23: v1.DisjunctionQuery.queries:type_name -> v1.Query
+	0,  // 24: v1.SearchResult.category:type_name -> v1.SearchCategory
+	27, // 25: v1.SearchResult.field_to_matches:type_name -> v1.SearchResult.FieldToMatchesEntry
+	20, // 26: v1.SearchResponse.results:type_name -> v1.SearchResult
+	28, // 27: v1.SearchResponse.counts:type_name -> v1.SearchResponse.Count
+	0,  // 28: v1.SearchOptionsRequest.categories:type_name -> v1.SearchCategory
+	0,  // 29: v1.MatchFieldSubQuery.category:type_name -> v1.SearchCategory
+	11, // 30: v1.MatchFieldSubQuery.query:type_name -> v1.Query
+	26, // 31: v1.SearchResult.FieldToMatchesEntry.value:type_name -> v1.SearchResult.Matches
+	0,  // 32: v1.SearchResponse.Count.category:type_name -> v1.SearchCategory
+	3,  // 33: v1.SearchService.Search:input_type -> v1.RawSearchRequest
+	22, // 34: v1.SearchService.Options:input_type -> v1.SearchOptionsRequest
+	3,  // 35: v1.SearchService.Autocomplete:input_type -> v1.RawSearchRequest
+	21, // 36: v1.SearchService.Search:output_type -> v1.SearchResponse
+	23, // 37: v1.SearchService.Options:output_type -> v1.SearchOptionsResponse
+	24, // 38: v1.SearchService.Autocomplete:output_type -> v1.AutocompleteResponse
+	36, // [36:39] is the sub-list for method output_type
+	33, // [33:36] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_search_service_proto_init() }
@@ -2149,6 +2209,7 @@ func file_api_v1_search_service_proto_init() {
 		(*BaseQuery_MatchLinkedFieldsQuery)(nil),
 		(*BaseQuery_DocIdQuery)(nil),
 		(*BaseQuery_MatchNoneQuery)(nil),
+		(*BaseQuery_MatchFieldSubQuery)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2156,7 +2217,7 @@ func file_api_v1_search_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_search_service_proto_rawDesc), len(file_api_v1_search_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

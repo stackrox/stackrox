@@ -100,13 +100,13 @@ test_upgrade_paths() (
     restore_backup
     wait_for_api
 
-    # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
-
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
 
     cd "$TEST_ROOT"
+
+    # Run with some scale to have data populated to migrate
+    deploy_scaled_workload
 
     # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
     # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
@@ -193,6 +193,15 @@ test_upgrade_paths() (
 
     # Verify data is still there
     checkForPostgresAccessScopes
+
+    # Central reprocesses images at startup and only every ROX_REPROCESSING_INTERVAL
+    # (4h) afterwards. Its startup pass here races the Scanner V4 matcher's initial
+    # vulnerability import, so wait for the store and bounce Central once so the
+    # images_v2 data the assertions read is populated by a ready scanner.
+    wait_for_scanner_v4_readiness
+    info "Bouncing central to reprocess images with a ready Scanner V4"
+    kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
+    wait_for_api
 
     validate_upgrade "03_postgres_postgres_upgrade" "Upgrade Postgres backed central" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 

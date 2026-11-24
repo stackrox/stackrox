@@ -85,13 +85,13 @@ validate_helm_charts() {
         fi
     fi
 
-    if [[ $(printf '%s\n' "5.1.0" "${RELEASE_PATCH}" | sort -V | head -n1) != 5.1.0 ]]; then
+    if ! printf '%s\n%s\n' "5.1.0" "${RELEASE_PATCH}" | sort -CV; then
         # The legacy charts are not published starting from 5.1.0.
         check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.central-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
         check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.secured-cluster-services[] | select( .appVersion == \"${RELEASE_PATCH}\")"
     fi
     # The operator chart is published to charts.stackrox.io starting from 4.11.0.
-    if [[ $(printf '%s\n' "4.11.0" "${RELEASE_PATCH}" | sort -V | head -n1) = 4.11.0 ]]; then
+    if printf '%s\n%s\n' "4.11.0" "${RELEASE_PATCH}" | sort -CV; then
         check_url_yaml_contains "https://charts.stackrox.io/index.yaml?v=$(date +%s)" ".entries.stackrox-operator[] | select( .appVersion == \"${RELEASE_PATCH}\")"
     fi
 }

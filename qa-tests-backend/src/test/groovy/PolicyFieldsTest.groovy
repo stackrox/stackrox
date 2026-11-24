@@ -863,24 +863,42 @@ class PolicyFieldsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        orchestrator.deleteDeployment(UNSCANNED)
+        // Deployments share namespaces, so collect the unique set first and
+        // leave the orchestrator namespace alone.
+        Set<String> namespaces = DEPLOYMENTS*.namespace as Set
+        namespaces.addAll([NAMESPACE_C, NAMESPACE_D])
+        namespaces.remove(Constants.ORCHESTRATOR_NAMESPACE)
 
-        for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(deployment)
-            // Delete namespace as well
-            if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE) {
-                orchestrator.deleteNamespace(deployment.namespace)
+        List<Exception> failures = []
+        List<Closure> cleanupActions = [
+                { orchestrator.deleteDeployment(UNSCANNED) },
+        ]
+        // The explicit return is required: a closure whose whole body is braces
+        // runs immediately and the collect stores its result, not the closure.
+        cleanupActions.addAll(DEPLOYMENTS.collect { deployment ->
+            return { orchestrator.deleteDeployment(deployment) }
+        })
+        cleanupActions.addAll(createdPolicyIds.collect { policyID ->
+            return { PolicyService.deletePolicy(policyID) }
+        })
+        cleanupActions.addAll(namespaces.collect { ns ->
+            return { orchestrator.deleteNamespace(ns) }
+        })
+
+        // One failing action must not leave the rest behind.
+        cleanupActions.each { action ->
+            try {
+                action.call()
+            } catch (Exception e) {
+                log.warn("Cleanup step failed", e)
+                failures.add(e)
             }
         }
 
-        for (policyID in createdPolicyIds) {
-            PolicyService.deletePolicy(policyID)
-        }
-
-        [NAMESPACE_C, NAMESPACE_D].forEach {
-            ns ->
-                orchestrator.deleteNamespace(ns)
-                orchestrator.waitForNamespaceDeletion(ns)
+        if (!failures.isEmpty()) {
+            AssertionError failure = new AssertionError("Cleanup of PolicyFieldsTest resources failed")
+            failures.each { failure.addSuppressed(it) }
+            throw failure
         }
     }
 

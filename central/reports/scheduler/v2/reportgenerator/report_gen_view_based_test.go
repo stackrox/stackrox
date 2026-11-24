@@ -50,7 +50,7 @@ type viewBasedReportData struct {
 	imageNames      []string
 	componentNames  []string
 	cveNames        []string
-	cvss            []float64
+	cvss            []*float64
 }
 
 func (s *ViewBasedReportingTestSuite) SetupSuite() {
@@ -103,6 +103,35 @@ func (s *ViewBasedReportingTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
 
 	s.truncateTable(postgresSchema.CollectionsTableName)
+}
+
+func (s *ViewBasedReportingTestSuite) TestReportIdentifiesContainersSharingAnImage() {
+	clusters := []*storage.Cluster{{Id: uuid.NewV4().String(), Name: "c1"}}
+	namespaces := testNamespaces(clusters, 1)
+	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
+	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).Return(namespaces, nil).AnyTimes()
+
+	image := testImage("shared", nil, "quay.io")
+	deployment := testDeployment("shared-deployment", namespaces[0], image)
+	secondContainer := deployment.GetContainers()[0].CloneVT()
+	secondContainer.Name = "sidecar"
+	deployment.Containers = append(deployment.Containers, secondContainer)
+	s.upsertManyImages([]*storage.Image{image})
+	s.upsertManyDeployments([]*storage.Deployment{deployment})
+
+	reportData, err := s.reportGenerator.getReportDataViewBased(s.ctx, testViewBasedReportSnapshot("", nil))
+	s.Require().NoError(err)
+	s.Require().Len(reportData.CVEResponses, 4)
+
+	containersByCVE := make(map[string][]string)
+	for _, row := range reportData.CVEResponses {
+		s.Equal(deployment.GetName(), row.GetDeployment())
+		containersByCVE[row.GetCVE()] = append(containersByCVE[row.GetCVE()], row.GetContainerName())
+	}
+	s.Require().Len(containersByCVE, 2)
+	for _, names := range containersByCVE {
+		s.ElementsMatch([]string{"shared-deployment_container", "sidecar"}, names)
+	}
 }
 
 func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
@@ -661,7 +690,7 @@ func (s *ViewBasedReportingTestSuite) collectViewBasedReportData(cveResponses []
 	imageNames := set.NewStringSet()
 	componentNames := set.NewStringSet()
 	cveNames := make([]string, 0, len(cveResponses))
-	cvss := make([]float64, 0, len(cveResponses))
+	cvss := make([]*float64, 0, len(cveResponses))
 
 	for _, res := range cveResponses {
 		if res.GetDeployment() != "" {

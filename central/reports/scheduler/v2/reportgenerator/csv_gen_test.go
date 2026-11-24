@@ -106,10 +106,54 @@ func TestGenerateCSV_FixDates(t *testing.T) {
 	}
 }
 
+func TestGenerateCSV_ContainerNames(t *testing.T) {
+	cve := "CVE-2024-1234"
+	image := "quay.io/test:latest"
+	deployment := "test-deploy"
+	app := "app"
+	sidecar := "sidecar"
+	responses := []*ImageCVEQueryResponse{
+		{Deployment: &deployment, Image: &image, CVE: &cve, ContainerName: &app},
+		{Deployment: &deployment, Image: &image, CVE: &cve, ContainerName: &sidecar},
+		{Image: &image, CVE: &cve},
+	}
+	expectedNames := []string{"app", "sidecar", ""}
+
+	for name, enabled := range map[string]bool{"KEV disabled": false, "KEV enabled": true} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), strconv.FormatBool(enabled))
+
+			buf, err := GenerateCSV(responses, "test")
+			require.NoError(t, err)
+			reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+			require.NoError(t, err)
+			require.Len(t, reader.File, 1)
+			file, err := reader.File[0].Open()
+			require.NoError(t, err)
+			defer func() { assert.NoError(t, file.Close()) }()
+
+			rows, err := csv.NewReader(file).ReadAll()
+			require.NoError(t, err)
+			require.Len(t, rows, len(expectedNames)+1)
+			assert.Equal(t, formatCol(), rows[0])
+			cveColumn := slices.Index(rows[0], "CVE")
+			require.NotEqual(t, -1, cveColumn)
+			containerNameColumn := slices.Index(rows[0], "Container Name")
+			require.NotEqual(t, -1, containerNameColumn)
+			for i, expected := range expectedNames {
+				require.Len(t, rows[i+1], len(rows[0]))
+				assert.Equal(t, cve, rows[i+1][cveColumn])
+				assert.Equal(t, expected, rows[i+1][containerNameColumn])
+			}
+		})
+	}
+}
+
 func TestFormatCSVRow(t *testing.T) {
 	cluster := "test-cluster"
 	ns := "test-ns"
 	deploy := "test-deploy"
+	containerName := "app"
 	image := "quay.io/test:latest"
 	component := "openssl"
 	compVersion := "1.1.1"
@@ -130,6 +174,7 @@ func TestFormatCSVRow(t *testing.T) {
 		Cluster:                  &cluster,
 		Namespace:                &ns,
 		Deployment:               &deploy,
+		ContainerName:            &containerName,
 		Image:                    &image,
 		Component:                &component,
 		ComponentVersion:         &compVersion,
@@ -164,6 +209,7 @@ func TestFormatCSVRow(t *testing.T) {
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Image Created Date")])
 		assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[slices.Index(formatCol(), "Reference")])
 		assert.Equal(t, "Observed", row[slices.Index(formatCol(), "Vulnerability State")])
+		assert.Equal(t, "app", row[slices.Index(formatCol(), "Container Name")])
 	})
 
 	t.Run("KEV enabled", func(t *testing.T) {
@@ -181,6 +227,7 @@ func TestFormatCSVRow(t *testing.T) {
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Image Created Date")])
 		assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2024-1234", row[slices.Index(formatCol(), "Reference")])
 		assert.Equal(t, "Observed", row[slices.Index(formatCol(), "Vulnerability State")])
+		assert.Equal(t, "app", row[slices.Index(formatCol(), "Container Name")])
 	})
 }
 
@@ -198,6 +245,7 @@ func TestFormatCSVRow_NilFields(t *testing.T) {
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Fix Date")])
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Image Created Date")])
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Vulnerability State")])
+		assert.Empty(t, row[slices.Index(formatCol(), "Container Name")])
 	})
 
 	t.Run("KEV enabled", func(t *testing.T) {
@@ -213,6 +261,7 @@ func TestFormatCSVRow_NilFields(t *testing.T) {
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Fix Date")])
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Image Created Date")])
 		assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "Vulnerability State")])
+		assert.Empty(t, row[slices.Index(formatCol(), "Container Name")])
 	})
 }
 
@@ -224,4 +273,48 @@ func TestCsvReportName(t *testing.T) {
 	longName := strings.Repeat("a", 100)
 	name = csvReportName(longName)
 	assert.Contains(t, name, "...")
+}
+
+func TestCVSSScoresInCSV(t *testing.T) {
+	cases := map[string]struct {
+		cvss        *float64
+		nvdCVSS     *float64
+		wantCVSS    string
+		wantNVDCVSS string
+	}{
+		"absent":        {wantCVSS: "Not Available", wantNVDCVSS: "Not Available"},
+		"stored zeros":  {cvss: new(0.0), nvdCVSS: new(0.0), wantCVSS: "Not Available", wantNVDCVSS: "Not Available"},
+		"populated":     {cvss: new(9.8), nvdCVSS: new(9.5), wantCVSS: "9.80", wantNVDCVSS: "9.50"},
+		"only CVSS":     {cvss: new(7.5), wantCVSS: "7.50", wantNVDCVSS: "Not Available"},
+		"only NVD CVSS": {nvdCVSS: new(6.9), wantCVSS: "Not Available", wantNVDCVSS: "6.90"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			for _, kev := range []string{"false", "true"} {
+				t.Run("KEV="+kev, func(t *testing.T) {
+					t.Setenv(features.KnownExploitedVulnerabilities.EnvVar(), kev)
+					r := &ImageCVEQueryResponse{CVSS: tc.cvss, NVDCVSS: tc.nvdCVSS}
+					row := formatCSVRow(r)
+					require.Len(t, row, len(formatCol()))
+					assert.Equal(t, tc.wantCVSS, row[slices.Index(formatCol(), "CVSS")])
+					assert.Equal(t, tc.wantNVDCVSS, row[slices.Index(formatCol(), "NVDCVSS")])
+					assert.Equal(t, "Not Available", row[slices.Index(formatCol(), "EPSS Probability Percentage")])
+
+					buf, err := GenerateCSV([]*ImageCVEQueryResponse{r}, "test")
+					require.NoError(t, err)
+					reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+					require.NoError(t, err)
+					require.Len(t, reader.File, 1)
+					file, err := reader.File[0].Open()
+					require.NoError(t, err)
+					defer func() { assert.NoError(t, file.Close()) }()
+					records, err := csv.NewReader(file).ReadAll()
+					require.NoError(t, err)
+					require.Len(t, records, 2)
+					assert.Equal(t, formatCol(), records[0])
+					assert.Equal(t, row, records[1], "streamed and buffered reports must agree")
+				})
+			}
+		})
+	}
 }

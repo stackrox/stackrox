@@ -153,7 +153,6 @@ jobs:
         SLACK_FIXABLE_VULNS_CHANNEL: ${{ secrets.SLACK_FIXABLE_VULNS_CHANNEL }}
         SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
         SLACK_ALT_WEBHOOK: ${{ secrets.SLACK_ALT_WEBHOOK }}
-        OCM_OFFLINE_TOKEN: ${{ secrets.OCM_OFFLINE_TOKEN }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
@@ -221,9 +220,10 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@55ceecfe93bd353dbca4682b12842ceca6301fa2 # ratchet:stackrox/actions/test/junit2jira@v1.0.50
       with:
-        create-jiras: ${{ github.event_name == 'push' }}
+        dry-run: ${{ github.event_name != 'push' }}
+        enable-auto-priority: true
         jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}

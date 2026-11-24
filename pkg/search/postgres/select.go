@@ -335,7 +335,19 @@ func getSelectCursorSession(ctx context.Context, db postgres.DB, builtQuery *que
 }
 
 func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool) (*query, error) {
+	return compileSelectQuery(ctx, q, schema, queryType, arrayFields, false)
+}
+
+func compileSelectQuery(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool, rejectUnsupportedPredicates bool) (*query, error) {
 	nowForQuery := time.Now()
+
+	if rejectUnsupportedPredicates {
+		standardizeFieldNamesInQuery(q)
+		_, fields := getJoinsAndFields(schema, q, arrayFields)
+		if hasUnsupportedSubQueryPredicates(q, fields) {
+			return nil, nil
+		}
+	}
 
 	var err error
 	q, err = scopeContextToQuery(ctx, q)
@@ -361,15 +373,14 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		Joins:     joins,
 	}
 
-	if err = populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, arrayFields); err != nil {
+	if err = populateSelect(ctx, parsedQuery, schema, q, dbFields, nowForQuery, arrayFields); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 	}
 
-	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
+	queryEntry, err := compileQueryToPostgres(ctx, schema, q, dbFields, nowForQuery)
 	if err != nil {
 		return nil, err
 	}
-
 	if queryEntry != nil {
 		parsedQuery.Where = queryEntry.Where.Query
 		parsedQuery.Data = append(parsedQuery.Data, queryEntry.Where.Values...)
@@ -542,7 +553,7 @@ func retryableRunSelectDirectFn(ctx context.Context, db postgres.DB, q *query, c
 	return rows.Err()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
+func populateSelect(ctx context.Context, querySoFar *query, schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
 	querySelects := q.GetSelects()
 	if len(querySelects) == 0 {
 		return errors.New("select portion of the query cannot be empty")
@@ -581,7 +592,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 		}
 
 		filter := qs.GetFilter()
-		qe, err := compileQueryToPostgres(schema, filter.GetQuery(), queryFields, nowForQuery)
+		qe, err := compileQueryToPostgres(ctx, schema, filter.GetQuery(), queryFields, nowForQuery)
 		if err != nil {
 			return errors.New("failed to parse filter in select portion of query")
 		}

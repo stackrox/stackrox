@@ -184,7 +184,20 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 		}
 	}
 
-	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countQuery := d.withStaleCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName), search.ComplianceOperatorProfileName)
+	// Count distinct clusters with any stale result per profile for the stale-data banner.
+	countQuery.Selects = append(countQuery.Selects,
+		search.NewQuerySelect(search.ClusterID).
+			AggrFunc(aggregatefunc.Count).
+			Distinct().
+			Filter(search.ComplianceStaleClusterCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceOperatorCheckDataFreshness,
+						storage.ComplianceOperatorCheckResultV2_STALE.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
 	var countResults []*ResourceResultCountByProfile
 	err := pgSearch.RunSelectRequestForSchemaFn[ResourceResultCountByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultCountByProfile) error {
 		countResults = append(countResults, r)
@@ -237,7 +250,7 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		}
 	}
 
-	countQuery := d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName)
+	countQuery := d.withFreshnessCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ComplianceOperatorProfileName), search.ComplianceOperatorProfileName)
 	var results []*ResourceResultsByProfile
 	err := pgSearch.RunSelectRequestForSchemaFn[ResourceResultsByProfile](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResourceResultsByProfile) error {
 		results = append(results, r)
@@ -282,7 +295,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 		}
 	}
 
-	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
+	countQuery := d.withFreshnessCountSelectQuery(d.withCountByResultSelectQuery(cloned, search.ClusterID), search.ClusterID)
 	var countResults []*ResultStatusCountByCluster
 	err := pgSearch.RunSelectRequestForSchemaFn[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery, func(r *ResultStatusCountByCluster) error {
 		countResults = append(countResults, r)
@@ -432,6 +445,42 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	return cloned
 }
 
+// withStaleCountSelectQuery appends the stale check-count select. The per-profile
+// banner needs only this count, not the current one.
+func (d *datastoreImpl) withStaleCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceStaleCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceOperatorCheckDataFreshness,
+						storage.ComplianceOperatorCheckResultV2_STALE.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
+	return cloned
+}
+
+// withFreshnessCountSelectQuery appends current/stale check-count selects, for the
+// per-check and per-cluster rollups that need both counts.
+func (d *datastoreImpl) withFreshnessCountSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
+	cloned := d.withStaleCountSelectQuery(q, countOn)
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(countOn).
+			AggrFunc(aggregatefunc.Count).
+			Filter(search.ComplianceCurrentCount.Alias(),
+				search.NewQueryBuilder().
+					AddExactMatches(
+						search.ComplianceOperatorCheckDataFreshness,
+						storage.ComplianceOperatorCheckResultV2_CURRENT.String(),
+					).ProtoQuery(),
+			).Proto(),
+	)
+	return cloned
+}
+
 func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
 	if scanRefID == "" || lastStartedTimestamp == nil {
 		return nil
@@ -460,34 +509,62 @@ const freshnessUpdateBatchSize = 1000
 // MarkScanChecksStale marks STALE the check results (from the scan specified via scanRefID) whose
 // LastStartedTime predates olderThan.
 func (d *datastoreImpl) MarkScanChecksStale(ctx context.Context, scanRefID string, olderThan time.Time) (int64, error) {
+	return d.markStaleOlderThan(ctx, search.ComplianceOperatorScanRef, scanRefID, olderThan, nil,
+		"marking prior compliance check results stale")
+}
+
+// MarkScanChecksStaleByConfig marks STALE the check results (of the scan configuration specified
+// via scanConfigName) whose LastStartedTime predates olderThan. It mirrors MarkScanChecksStale but
+// is keyed by the scan configuration name, which the time-driven freshness sweeper derives from the
+// configuration's schedule.
+func (d *datastoreImpl) MarkScanChecksStaleByConfig(ctx context.Context, scanConfigName string, olderThan time.Time) (int64, error) {
+	return d.markStaleOlderThan(ctx, search.ComplianceOperatorScanConfigName, scanConfigName, olderThan,
+		func(result *storage.ComplianceOperatorCheckResultV2) bool {
+			// Guard against a config relabel (scanRefID is stable, but the config name is not) between
+			// the read and the fenced re-read: only stale rows that still belong to this configuration,
+			// so we never apply the wrong config's cutoff.
+			return result.GetScanConfigName() == scanConfigName
+		},
+		"marking stale compliance check results by scan configuration")
+}
+
+// markStaleOlderThan marks STALE the non-stale check results matched by (queryField == targetValue) whose
+// LastStartedTime predates olderThan. belongs, when non-nil, is an extra membership guard applied to
+// every candidate (both at the initial read and under the fenced re-read); pass nil when the keyed
+// field cannot change for a row.
+func (d *datastoreImpl) markStaleOlderThan(ctx context.Context, queryField search.FieldLabel, targetValue string, olderThan time.Time, belongs func(*storage.ComplianceOperatorCheckResultV2) bool, errMsg string) (int64, error) {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
 		return 0, sac.ErrResourceAccessDenied
 	}
-	if scanRefID == "" {
+	if targetValue == "" {
 		return 0, nil
 	}
 
-	// Narrow the candidate scan at the DB so it does not read and deserialize results that shouldStale would reject
-	// anyway: skip rows that are already STALE, and rows whose LastStartedTime is not older than olderThan.
+	// Narrow the candidates at the DB so markStale does not read and deserialize results that the
+	// predicate would reject anyway: skip rows that are already STALE, and rows whose LastStartedTime
+	// is not older than olderThan.
 	//
 	// The search DSL formats timestamps with second granularity (see sqlTimeStampFormat), so pushing olderThan down
 	// verbatim could drop a row whose sub-second LastStartedTime is still before olderThan (under-selection). We round
-	// the upper bound up to the next whole second to guarantee the DB returns a superset, then shouldStale re-checks
+	// the upper bound up to the next whole second to guarantee the DB returns a superset, then the predicate re-checks
 	// every candidate in Go with full precision.
 	upperBound := olderThan.Truncate(time.Second).Add(time.Second)
 	query := search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanRef, scanRefID).
+		AddExactMatches(queryField, targetValue).
 		AddStrings(search.ComplianceOperatorCheckDataFreshness,
 			search.NegateQueryString(search.ExactMatchString(storage.ComplianceOperatorCheckResultV2_STALE.String()))).
 		AddTimeRangeField(search.ComplianceOperatorCheckLastStartedTime, time.Unix(0, 0), upperBound).
 		ProtoQuery()
 
 	return d.markStale(ctx, query, func(result *storage.ComplianceOperatorCheckResultV2) bool {
+		if belongs != nil && !belongs(result) {
+			return false
+		}
 		started := result.GetLastStartedTime()
 		return started != nil && started.AsTime().Before(olderThan)
-	}, "marking prior compliance check results stale")
+	}, errMsg)
 }
 
 // markStale performs a read-modify-upsert that flips to STALE every result matched by query for
