@@ -18,7 +18,6 @@ on:
         required: false
         default: true
         type: boolean
-  pull_request: # Only for testing, remove before merge
 
 # Ensure that only a single automation workflow can run at a time for each release.
 concurrency: Central DB backup ${{ inputs.version }}
@@ -28,8 +27,7 @@ jobs:
     name: Setup variables
     uses: ./.github/workflows/variables.yml
     with:
-      # Remove the 4.11.0 fallback before merging
-      version: ${{ github.event.inputs.version || '4.11.0' }}
+      version: ${{ github.event.inputs.version }}
       assert-format: A.B.C
 
   create-backup:
@@ -40,8 +38,7 @@ jobs:
       KUBECONFIG: "/tmp/kubeconfig"
       RELEASE: ${{ needs.variables.outputs.release }}
       PATCH: ${{ needs.variables.outputs.patch }}
-      # Remove the fallback before merging
-      PREVIOUS_VERSION: ${{ github.event.inputs.previous-version || '4.10.0' }}
+      PREVIOUS_VERSION: ${{ github.event.inputs.previous-version }}
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
@@ -85,13 +82,11 @@ jobs:
     - name: Upload backup as an artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
-        # Remove the 4.11.0 fallback before merging
-        name: postgres-db-${{ inputs.version || '4.11.0' }}-backup
-        path: postgres_db_${{ inputs.version || '4.11.0' }}.sql.zip
+        name: postgres-db-${{ inputs.version }}-backup
+        path: postgres_db_${{ inputs.version }}.sql.zip
 
     - name: Upload backup to GCS
-      # Remove fallback before merging
-      if: ${{ !(inputs.dry-run || true) }}
+      if: ${{ ! inputs.dry-run }}
       run: |
         backup="postgres_db_${RELEASE}.${PATCH}.sql.zip"
         gsutil cp "$backup" "gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/$backup"
