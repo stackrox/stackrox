@@ -48,7 +48,7 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 	id := signatures.DefaultRedHatIntegrationID
-	_, exists, err := siStore.Get(ctx, id)
+	exists, err := siStore.Exists(ctx, id)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "checking for default Red Hat signature integration"))
 		return

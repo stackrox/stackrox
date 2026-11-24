@@ -104,6 +104,21 @@ func (mr *MockDataStoreMockRecorder) GetImageIntegrations(ctx, integration any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIntegrations", reflect.TypeOf((*MockDataStore)(nil).GetImageIntegrations), ctx, integration)
 }
 
+// ImageIntegrationExists mocks base method.
+func (m *MockDataStore) ImageIntegrationExists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ImageIntegrationExists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ImageIntegrationExists indicates an expected call of ImageIntegrationExists.
+func (mr *MockDataStoreMockRecorder) ImageIntegrationExists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageIntegrationExists", reflect.TypeOf((*MockDataStore)(nil).ImageIntegrationExists), ctx, id)
+}
+
 // RemoveImageIntegration mocks base method.
 func (m *MockDataStore) RemoveImageIntegration(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()

@@ -89,12 +89,12 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedInt
 	}
 
 	// In case this was the first integration we added, signal this to the reprocessing loop.
-	integrations, err := s.datastore.GetAllSignatureIntegrations(ctx)
+	numIntegrations, err := s.datastore.CountSignatureIntegrations(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list signature integrations")
+		return nil, errors.Wrap(err, "failed to count signature integrations")
 	}
 
-	s.reprocessingLoop.ReprocessSignatureVerifications(len(integrations) == 1)
+	s.reprocessingLoop.ReprocessSignatureVerifications(numIntegrations == 1)
 	return integration, nil
 }
 

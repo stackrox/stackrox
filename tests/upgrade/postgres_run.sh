@@ -100,13 +100,13 @@ test_upgrade_paths() (
     restore_backup
     wait_for_api
 
-    # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
-
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
 
     cd "$TEST_ROOT"
+
+    # Run with some scale to have data populated to migrate
+    deploy_scaled_workload
 
     # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
     # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.

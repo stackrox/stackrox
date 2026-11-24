@@ -241,6 +241,7 @@ export const searchFieldLabels = [
     'Compliance Rule Severity',
     'Compliance Operator Status',
     'Compliance Check Status',
+    'Compliance Check Data Freshness',
     'Compliance Rule Name',
     'Compliance Profile ID',
     'Compliance Profile Name',

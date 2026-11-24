@@ -165,13 +165,13 @@ func TestNormalizeAuthProviderEndpoints(t *testing.T) {
 		"nil provider": {
 			input: nil,
 		},
-		"strips scheme and infers port": {
+		"strips scheme, keeps no port": {
 			input: &storage.AuthProvider{
 				UiEndpoint:       "https://central.example.com",
 				ExtraUiEndpoints: []string{"http://localhost:8080", "central.example.com"},
 			},
-			expectedEndpoint: "central.example.com:443",
-			expectedExtraEPs: []string{"localhost:8080", "central.example.com:443"},
+			expectedEndpoint: "central.example.com",
+			expectedExtraEPs: []string{"localhost:8080", "central.example.com"},
 		},
 		"already canonical": {
 			input: &storage.AuthProvider{

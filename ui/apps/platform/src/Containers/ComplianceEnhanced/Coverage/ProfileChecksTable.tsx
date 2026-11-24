@@ -118,7 +118,7 @@ function ProfileChecksTable({
                                 Check
                             </Th>
                             <Th modifier="fitContent">Controls</Th>
-                            {isScanStatusEnabled && <Th modifier="fitContent">Scan status</Th>}
+                            {isScanStatusEnabled && <Th modifier="fitContent">Data freshness</Th>}
                             <Th modifier="fitContent">Pass status</Th>
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
@@ -220,7 +220,7 @@ function ProfileChecksTable({
                                                     )}
                                                 </Td>
                                                 {isScanStatusEnabled && (
-                                                    <Td dataLabel="Scan status">
+                                                    <Td dataLabel="Data freshness">
                                                         {getAggregateScanStatus(dataFreshness)}
                                                     </Td>
                                                 )}
