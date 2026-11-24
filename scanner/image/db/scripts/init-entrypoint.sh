@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
 # init-entrypoint.sh initializes the DB if it does not exist.
+#
+# The password file path is passed via $POSTGRES_PASS_FILE. The variable is
+# named without the substring "PASSWORD" so that the default policy
+# "Environment Variable Contains Secret", which matches env var names against
+# .*PASSWORD.*, does not fire on our own deployments (ROX-39749). Pod specs
+# from releases that predate the rename set POSTGRES_PASSWORD_FILE instead,
+# and both are accepted below, so image-only upgrades keep working.
 
 set -Eeo pipefail
 
@@ -30,6 +37,9 @@ load-init-bundle() {
 main() {
     local init_check="$PGDATA/.init-ready"
     local init_bundle="/db-init.dump.zst"
+    # Prefer POSTGRES_PASS_FILE; fall back to the pre-rename
+    # POSTGRES_PASSWORD_FILE so image-only upgrades under old pod specs work.
+    local pwfile="${POSTGRES_PASS_FILE:-${POSTGRES_PASSWORD_FILE:-}}"
 
     [ -e "$init_check" ] && return
 
@@ -39,13 +49,13 @@ main() {
     # Create cluster.
     initdb --auth-host="$POSTGRES_HOST_AUTH_METHOD" \
            --auth-local="$POSTGRES_HOST_AUTH_METHOD" \
-           --pwfile "$POSTGRES_PASSWORD_FILE" \
+           --pwfile "$pwfile" \
            --data-checksums
 
     # Load init bundle, if enabled and the bundle exists.
     if [ "${SCANNER_DB_INIT_BUNDLE_ENABLED:-}" = "true" ] &&
            [ -s /db-init.dump.zst ]; then
-        PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" \
+        PGPASSWORD="$(cat "$pwfile")" \
             load-init-bundle postgres "$init_bundle"
     fi
 
