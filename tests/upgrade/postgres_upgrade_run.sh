@@ -89,6 +89,23 @@ check_postgres_version() {
     test_equals_non_silent "${actual_version%%.*}" "$expected_version"
 }
 
+# central_db_psql runs one statement against the active Central database and
+# echoes the result. The active database is central_active, not the default
+# database psql would otherwise connect to.
+central_db_psql() {
+    local sql=${1:?missing first required argument: sql}
+    local db_password
+
+    db_password="$(kubectl -n stackrox get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)" || \
+        die "Cannot read the Central DB password"
+
+    # Pass the password on stdin so it does not appear in the exec command.
+    # shellcheck disable=SC2016
+    kubectl -n stackrox exec -i deploy/central-db -c central-db -- env "SQL=$sql" \
+        bash -ec 'PGPASSWORD="$(cat)" \
+            psql -X -w -h 127.0.0.1 -U postgres -d central_active -v ON_ERROR_STOP=1 -Atc "$SQL"' <<< "$db_password"
+}
+
 SCANNER_V4_PGDATA="/var/lib/postgresql/data/pgdata"
 
 scanner_v4_db_exec() {
@@ -267,6 +284,23 @@ test_upgrade_path() {
     kubectl -n stackrox set image deploy/scanner-v4-matcher "*=${REGISTRY}/scanner-v4:${CURRENT_TAG}"
     wait_for_api
     check_postgres_version "$CURRENT_POSTGRES_VERSION"
+
+    if [[ "$CENTRAL_DB_UPGRADE_REQUIRED" == true ]]; then
+        # The statistics refresh runs in the central-db init container, before
+        # the database serves. Verify it logged success, cleared the pending
+        # marker (which only the refresh removes), and analyzed the active
+        # database.
+        wait_for_log_line stackrox deployment/central-db init-db \
+            "Statistics refreshed, shutting down the cluster." 600
+
+        kubectl -n stackrox exec deploy/central-db -c central-db -- bash -ec \
+            'test ! -e /var/lib/postgresql/data/pgdata/.stats-pending' || \
+            die "The central-db statistics refresh marker survived the upgrade"
+
+        [ -n "$(central_db_psql "SELECT last_analyze FROM pg_stat_user_tables WHERE relname = 'deployments'")" ] || \
+            die "central-db deployments was not analyzed after the upgrade"
+    fi
+
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_CURRENT_PG"
 

@@ -88,7 +88,7 @@ require (
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v1.1.5
-	github.com/onsi/ginkgo/v2 v2.33.1
+	github.com/onsi/ginkgo/v2 v2.34.0
 	github.com/onsi/gomega v1.44.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
@@ -141,16 +141,16 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.28.0
 	go.yaml.in/yaml/v3 v3.0.6
-	golang.org/x/crypto v0.58.0
-	golang.org/x/mod v0.42.0
-	golang.org/x/net v0.62.0
+	golang.org/x/crypto v0.59.0
+	golang.org/x/mod v0.43.0
+	golang.org/x/net v0.63.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sync v0.25.0
 	golang.org/x/sys v0.50.0
-	golang.org/x/term v0.47.0
-	golang.org/x/text v0.43.0
+	golang.org/x/term v0.48.0
+	golang.org/x/text v0.44.0
 	golang.org/x/time v0.16.0
-	golang.org/x/tools v0.52.0
+	golang.org/x/tools v0.53.0
 	golang.stackrox.io/grpc-http1 v0.5.1
 	google.golang.org/api v0.311.0
 	google.golang.org/genproto v0.0.0-20261012220534-4341edf3f941
@@ -458,6 +458,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
+	golang.org/x/crypto/openpgp v0.1.0-deprecated // indirect
 	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e // indirect

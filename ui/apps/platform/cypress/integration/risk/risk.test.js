@@ -95,58 +95,44 @@ describe('Risk', () => {
             });
         });
 
-        const searchPlaceholderSelector = `${RiskPageSelectors.search.valueContainer} input[placeholder="Filter deployments"]`;
-
         it('should not have anything in search bar when URL has no search params', () => {
             visitRiskDeployments('Platform view');
 
-            // Positive assertion:
-            cy.get(searchPlaceholderSelector);
-            // Negative assertion:
-            cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
+            // Positive assertion: the compound search filter input is present.
+            cy.get(RiskPageSelectors.search.input);
+            // Negative assertion: no applied filter chips.
+            cy.get(RiskPageSelectors.search.filterChipGroup).should('not.exist');
         });
 
-        it('should have a single URL search param key/value pair in its search bar', () => {
-            const nsOption = 'Namespace';
+        it('should render a chip for a single URL search param key/value pair', () => {
             const nsValue = 'stackrox';
 
-            visitRiskDeploymentsWithSearchQuery('Platform view', `s[${nsOption}]=${nsValue}`);
+            visitRiskDeploymentsWithSearchQuery('Platform view', `s[Namespace]=${nsValue}`);
 
-            cy.get(searchPlaceholderSelector).should('not.exist');
-            cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 2);
-            cy.get(`${RiskPageSelectors.search.searchLabels}:nth(0)`).should(
-                'have.text',
-                `${nsOption}:`
-            );
-            cy.get(`${RiskPageSelectors.search.searchLabels}:nth(1)`).should('have.text', nsValue);
+            cy.get(RiskPageSelectors.search.filterChipGroup).should('have.length', 1);
+            cy.get(RiskPageSelectors.search.filterChips).within(() => {
+                // Chip group category is the attribute's filterChipLabel, plus the value chip.
+                cy.contains('Namespace name');
+                cy.contains(pf6.label, nsValue);
+            });
         });
 
-        it('should have multiple URL search param key/value pairs in its search bar', () => {
-            const nsOption = 'Namespace';
+        it('should render chips for multiple URL search param key/value pairs', () => {
             const nsValue = 'stackrox';
-            const deployOption = 'Deployment';
             const deployValue = 'scanner-v4-indexer';
 
             visitRiskDeploymentsWithSearchQuery(
                 'Platform view',
-                `s[${nsOption}]=${nsValue}&s[${deployOption}]=${deployValue}`
+                `s[Namespace]=${nsValue}&s[Deployment]=${deployValue}`
             );
 
-            cy.get(searchPlaceholderSelector).should('not.exist');
-            cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 4);
-            cy.get(`${RiskPageSelectors.search.searchLabels}:nth(0)`).should(
-                'have.text',
-                `${nsOption}:`
-            );
-            cy.get(`${RiskPageSelectors.search.searchLabels}:nth(1)`).should('have.text', nsValue);
-            cy.get(`${RiskPageSelectors.search.searchLabels}:nth(2)`).should(
-                'have.text',
-                `${deployOption}:`
-            );
-            cy.get(`${RiskPageSelectors.search.searchLabels}:nth(3)`).should(
-                'have.text',
-                deployValue
-            );
+            cy.get(RiskPageSelectors.search.filterChipGroup).should('have.length', 2);
+            cy.get(RiskPageSelectors.search.filterChips).within(() => {
+                cy.contains('Namespace name');
+                cy.contains(pf6.label, nsValue);
+                cy.contains('Deployment name');
+                cy.contains(pf6.label, deployValue);
+            });
         });
     });
 });
