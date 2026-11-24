@@ -42,7 +42,7 @@ expect "Create PodSecurityPolicy resources*:*: " { send "\n" }
 expect "Administrator password*:*: " { send "\n" }
 expect "Orchestrator (k8s, openshift)*: " { send "k8s\n" }
 expect "Default container images settings*:*: " { send "$flavor\n" }
-expect "The directory to output the deployment bundle to*:*: " { send "$out_dir\n" }
+expect "The directory to output the deployment bundle to*:" { send "$out_dir\n" }
 expect "Whether to enable telemetry*:" { send "\n" }
 
 # The central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
