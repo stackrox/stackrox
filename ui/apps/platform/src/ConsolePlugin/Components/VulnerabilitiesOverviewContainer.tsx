@@ -64,10 +64,7 @@ export function VulnerabilitiesOverviewContainer() {
 
     const sort = useURLSort({
         sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
-        defaultSortOption: getWorkloadCveOverviewDefaultSortOption(
-            activeEntityTabKey,
-            searchFilter
-        ),
+        defaultSortOption: getWorkloadCveOverviewDefaultSortOption(activeEntityTabKey),
         onSort: () => pagination.setPage(1),
     });
 
@@ -84,7 +81,7 @@ export function VulnerabilitiesOverviewContainer() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption(entityTab, searchFilter));
+        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption(entityTab));
     }
 
     return (

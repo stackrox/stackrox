@@ -18,7 +18,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import type useMap from 'hooks/useMap';
-import type { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
+import type { CveBaseInfo, VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
@@ -29,9 +29,9 @@ import ExpandRowTh from 'Components/ExpandRowTh';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils';
-import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -39,7 +39,6 @@ import {
     aggregateByEPSS,
     getScoreVersionsForTopCVSS,
     getScoreVersionsForTopNvdCVSS,
-    getSeveritySortOptions,
     sortCveDistroList,
 } from '../../utils/sortUtils';
 import type { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
@@ -53,6 +52,34 @@ import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { infoForEpssProbability } from './infoForTh';
 import { formatEpssProbabilityAsPercent, getCveBaseInfoFromDistroTuples } from './table.utils';
+
+// The CVE list now surfaces a single "highest severity" per CVE (matching the server-side
+// max(severity) sort) instead of the per-severity affected-image distribution. The highest severity
+// is the most severe bucket that has at least one affected image.
+function getHighestSeverityWithCount(counts: {
+    criticalCount: number;
+    importantCount: number;
+    moderateCount: number;
+    lowCount: number;
+    unknownCount: number;
+}): VulnerabilitySeverity | null {
+    if (counts.criticalCount > 0) {
+        return 'CRITICAL_VULNERABILITY_SEVERITY';
+    }
+    if (counts.importantCount > 0) {
+        return 'IMPORTANT_VULNERABILITY_SEVERITY';
+    }
+    if (counts.moderateCount > 0) {
+        return 'MODERATE_VULNERABILITY_SEVERITY';
+    }
+    if (counts.lowCount > 0) {
+        return 'LOW_VULNERABILITY_SEVERITY';
+    }
+    if (counts.unknownCount > 0) {
+        return 'UNKNOWN_VULNERABILITY_SEVERITY';
+    }
+    return null;
+}
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
@@ -72,7 +99,7 @@ export const defaultColumns = {
         isUntoggleAble: true,
     },
     imagesBySeverity: {
-        title: 'Images by severity',
+        title: 'Severity',
         isShownByDefault: true,
     },
     topCvss: {
@@ -203,6 +230,8 @@ export type WorkloadCVEOverviewTableProps = {
     unfilteredImageCount: number;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    // Retained for API compatibility with the overview page; the CVE list now shows a single
+    // highest-severity column instead of the per-severity distribution, so it is no longer used here.
     filteredSeverities?: VulnerabilitySeverityLabel[];
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     createTableActions?: (cve: {
@@ -220,7 +249,6 @@ function WorkloadCVEOverviewTable({
     unfilteredImageCount,
     getSortParams,
     isFiltered,
-    filteredSeverities,
     selectedCves,
     createTableActions = () => [],
     vulnerabilityState,
@@ -246,13 +274,10 @@ function WorkloadCVEOverviewTable({
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <TooltipTh
                         className={getVisibilityClass('imagesBySeverity')}
-                        sort={getSortParams(
-                            'Images By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
-                        tooltip="Severity of this CVE across images"
+                        sort={getSortParams('Severity')}
+                        tooltip="Highest severity of this CVE across affected images"
                     >
-                        Images by severity
+                        Severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <TooltipTh
@@ -336,6 +361,13 @@ function WorkloadCVEOverviewTable({
                             const moderateCount = affectedImageCountBySeverity.moderate.total;
                             const lowCount = affectedImageCountBySeverity.low.total;
                             const unknownCount = affectedImageCountBySeverity.unknown.total;
+                            const highestSeverity = getHighestSeverityWithCount({
+                                criticalCount,
+                                importantCount,
+                                moderateCount,
+                                lowCount,
+                                unknownCount,
+                            });
 
                             const prioritizedDistros = sortCveDistroList(distroTuples);
                             const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
@@ -410,17 +442,16 @@ function WorkloadCVEOverviewTable({
                                             </Link>
                                         </Td>
                                         <Td
-                                            dataLabel="Images by severity"
+                                            dataLabel="Severity"
                                             className={getVisibilityClass('imagesBySeverity')}
                                         >
-                                            <SeverityCountLabels
-                                                criticalCount={criticalCount}
-                                                importantCount={importantCount}
-                                                moderateCount={moderateCount}
-                                                lowCount={lowCount}
-                                                unknownCount={unknownCount}
-                                                filteredSeverities={filteredSeverities}
-                                            />
+                                            {highestSeverity ? (
+                                                <VulnerabilitySeverityIconText
+                                                    severity={highestSeverity}
+                                                />
+                                            ) : (
+                                                'N/A'
+                                            )}
                                         </Td>
                                         <Td
                                             dataLabel="Top CVSS"
