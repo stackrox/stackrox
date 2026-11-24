@@ -28,9 +28,9 @@ type AuthProvider struct {
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
 	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"AuthProvider Name,hidden"` // @gotags: sql:"unique" search:"AuthProvider Name,hidden"
 	Type  string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	// The UI endpoint of the Central instance, e.g. "central.example.com:443".
+	// The UI endpoint of the Central instance, e.g. "central.example.com" or "central.example.com:8443".
 	// URLs with scheme (e.g. "https://central.example.com") are accepted and
-	// normalized to host:port format. If no port is given, 443 is assumed.
+	// normalized to host[:port] format. An endpoint without a port is kept without one.
 	UiEndpoint string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
 	Enabled    bool   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	// Config holds auth provider specific configuration. Each configuration options
