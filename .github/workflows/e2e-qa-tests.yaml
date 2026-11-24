@@ -141,6 +141,16 @@ jobs:
         run: |
           args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)
           echo "args=$args" >> "$GITHUB_OUTPUT"
+          case "$INFRA_FLAVOR" in
+            gke-default)
+              nodes=$(sed -n 's/^nodes=//p' <<< "$INFRA_ARGS" | tail -n 1)
+              echo "NUM_NODES=$nodes" >> "$GITHUB_ENV"
+              if [[ -z "$nodes" ]]; then
+                echo "NODE_MONITOR_BASELINE=true" >> "$GITHUB_ENV"
+              fi
+              ;;
+            openshift*) echo "NODE_MONITOR_BASELINE=true" >> "$GITHUB_ENV" ;;
+          esac
 
       - name: Trigger cluster creation via infra
         if: inputs.cluster-provisioning-method == 'infra'
@@ -256,11 +266,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 1
         run: |
-          monitor_args=()
-          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
-            monitor_args+=(--baseline)
-          fi
-          python3 .openshift-ci/node_disruption.py start --phase part-1 "${monitor_args[@]}"
+          python3 .openshift-ci/node_disruption.py start --phase part-1 ${NODE_MONITOR_BASELINE:+--baseline}
 
       - name: Run Part 1 tests
         id: run-product-tests
@@ -305,11 +311,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 2
         run: |
-          monitor_args=()
-          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
-            monitor_args+=(--baseline)
-          fi
-          python3 .openshift-ci/node_disruption.py finish --phase part-1 "${monitor_args[@]}" --outcome "$TEST_OUTCOME"
+          python3 .openshift-ci/node_disruption.py finish --phase part-1 ${NODE_MONITOR_BASELINE:+--baseline} --outcome "$TEST_OUTCOME"
 
       - name: Run Part 1 post-test
         if: always() && env.KUBECONFIG != ''
@@ -328,11 +330,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 1
         run: |
-          monitor_args=()
-          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
-            monitor_args+=(--baseline)
-          fi
-          python3 .openshift-ci/node_disruption.py start --phase part-2 "${monitor_args[@]}"
+          python3 .openshift-ci/node_disruption.py start --phase part-2 ${NODE_MONITOR_BASELINE:+--baseline}
 
       - name: Run Part 2 tests
         id: run-part-2
@@ -347,11 +345,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 2
         run: |
-          monitor_args=()
-          if [[ "$CLUSTER_PROVISIONING_METHOD" == infra && "$INFRA_FLAVOR" == openshift* ]]; then
-            monitor_args+=(--baseline)
-          fi
-          python3 .openshift-ci/node_disruption.py finish --phase part-2 "${monitor_args[@]}" --outcome "$TEST_OUTCOME"
+          python3 .openshift-ci/node_disruption.py finish --phase part-2 ${NODE_MONITOR_BASELINE:+--baseline} --outcome "$TEST_OUTCOME"
 
       - name: Run Part 2 post-test
         if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''
