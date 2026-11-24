@@ -22,6 +22,7 @@ import {
     formatKeyValue,
     getRequestQueryStringForSearchFilter,
     isKeyValueSearchTerm,
+    isNumericSearchTerm,
     wrapInQuotes,
 } from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
@@ -121,6 +122,9 @@ function AutocompleteSelect({
     let autocompleteFilterValue = filterValue ? `r/${filterValue}` : '';
     if (filterValue && isKeyValueSearchTerm(searchTerm)) {
         autocompleteFilterValue = formatKeyValue(filterValue, (v) => `r/${v}`).join(',');
+    } else if (filterValue && isNumericSearchTerm(searchTerm)) {
+        // Numeric fields reject the r/ (Regex) modifier; send the typed value as-is.
+        autocompleteFilterValue = filterValue;
     }
     const autocompleteSearchString = `${searchTerm}:${autocompleteFilterValue}`;
 
@@ -171,11 +175,13 @@ function AutocompleteSelect({
 
     // Wraps the value in quotes if it's an actual autocomplete suggestion from the backend,
     // otherwise returns it unchanged. This provides exact-match search for suggestions
-    // and regex search for manual/fallback entries.
+    // and regex search for manual/fallback entries. Numeric fields are excluded (they reject the
+    // exact-match quote modifier).
     const applySelectedText = (rawValue: string | number) => {
         const value = ensureString(rawValue);
         const isAutocompleteSuggestion = data.searchAutocomplete.includes(value);
-        const valueToApply = isAutocompleteSuggestion ? wrapInQuotes(value) : value;
+        const useExactMatch = isAutocompleteSuggestion && !isNumericSearchTerm(searchTerm);
+        const valueToApply = useExactMatch ? wrapInQuotes(value) : value;
         onChange(valueToApply);
         onSearch(valueToApply);
         setFilterValue('');
