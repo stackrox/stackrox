@@ -372,9 +372,3 @@ yaml_valid() {
   run yq e "$1"
   assert_success
 }
-
-delete_cluster() {
-  local name="$1";shift
-  run roxctl_authenticated cluster delete --name "$name" --timeout=1m
-  assert_success
-}
