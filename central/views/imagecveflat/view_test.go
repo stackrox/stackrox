@@ -1069,3 +1069,32 @@ func assertResponsesAreEqual(t *testing.T, expected []CveFlat, actual []CveFlat,
 		assert.Equal(t, expected[i].GetState().String(), flatCVE.GetState().String())
 	}
 }
+
+// TestGetImageCVEFlatWithExploitData verifies the exploit-data read option adds the
+// extra selects without changing the result set. The shared fixtures have no exploit
+// data, so the flags must be false.
+func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatWithExploitData() {
+	for _, tc := range s.testCases() {
+		if !tc.readOptions.IsDefault() {
+			continue
+		}
+		tc.readOptions.IncludeExploitData = true
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+			assert.Equal(t, len(expected), len(actual))
+			assertResponsesAreEqual(t, expected, actual, tc.testOrder)
+
+			for _, cve := range actual {
+				assert.False(t, cve.GetKnownExploit())
+				assert.False(t, cve.GetKnownRansomwareCampaignUse())
+			}
+		})
+	}
+}
