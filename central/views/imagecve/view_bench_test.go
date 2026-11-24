@@ -101,7 +101,7 @@ func (e *benchEnv) allVariants() []benchVariant {
 // severity-count multisort, comparing the schema with and without the search tag.
 func BenchmarkImageCVEViewFilterSQL(b *testing.B) {
 	env := setupBenchmarkEnv(b, smallDataset)
-	runBenchmarks(b, env, benchmarkFilters(smallDataset), benchmarkSortPagination(), []int32{0}, env.allVariants())
+	runBenchmarks(b, env, benchmarkFilters(smallDataset), benchmarkSortPagination(), []int32{0}, views.ReadOptions{}, env.allVariants())
 }
 
 // BenchmarkImageCVEViewLargeScale runs the four query strategies against the
@@ -111,9 +111,9 @@ func BenchmarkImageCVEViewLargeScale(b *testing.B) {
 }
 
 // BenchmarkImageCVEViewHugeScale runs the same strategies against the 10M-row
-// dataset.
+// dataset, with and without the search tag.
 func BenchmarkImageCVEViewHugeScale(b *testing.B) {
-	benchmarkAffectedImagesSets(b, hugeDataset, false)
+	benchmarkAffectedImagesSets(b, hugeDataset, true)
 }
 
 // benchmarkAffectedImagesSets compares the default query (severity-count multisort)
@@ -130,6 +130,7 @@ func benchmarkAffectedImagesSets(b *testing.B, ds benchDataset, includeNoTag boo
 		name       string
 		filters    []benchFilter
 		pagination *v1.QueryPagination
+		options    views.ReadOptions
 	}{
 		{
 			name:       "no-extra-filters-multisort",
@@ -146,18 +147,22 @@ func benchmarkAffectedImagesSets(b *testing.B, ds benchDataset, includeNoTag boo
 			filters: addSeverityAndFixable(benchmarkFilters(ds),
 				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, true),
 			pagination: affectedImagesPagination(),
+			// The severity breakdown is not rendered when the user has already
+			// narrowed the view to one severity/fixability combination.
+			options: views.ReadOptions{SkipGetImagesBySeverity: true},
 		},
 		{
 			name: "important-not-fixable-affected-images",
 			filters: addSeverityAndFixable(benchmarkFilters(ds),
 				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, false),
 			pagination: affectedImagesPagination(),
+			options:    views.ReadOptions{SkipGetImagesBySeverity: true},
 		},
 	}
 	firstFourPageOffsets := []int32{0, benchPageSize, 2 * benchPageSize, 3 * benchPageSize}
 	for _, set := range sets {
 		b.Run(set.name, func(b *testing.B) {
-			runBenchmarks(b, env, set.filters, set.pagination, firstFourPageOffsets, variants)
+			runBenchmarks(b, env, set.filters, set.pagination, firstFourPageOffsets, set.options, variants)
 		})
 	}
 }
@@ -255,7 +260,7 @@ func benchmarkDBConfig(testDB *pgtest.TestPostgres, ds benchDataset) *postgres.C
 	return cfg
 }
 
-func runBenchmarks(b *testing.B, env *benchEnv, filters []benchFilter, pagination *v1.QueryPagination, offsets []int32, variants []benchVariant) {
+func runBenchmarks(b *testing.B, env *benchEnv, filters []benchFilter, pagination *v1.QueryPagination, offsets []int32, options views.ReadOptions, variants []benchVariant) {
 	for _, filter := range filters {
 		for _, offset := range offsets {
 			pageQuery := filter.query.CloneVT()
@@ -268,7 +273,7 @@ func runBenchmarks(b *testing.B, env *benchEnv, filters []benchFilter, paginatio
 					b.ReportAllocs()
 					b.ResetTimer()
 					for i := 0; i < b.N; i++ {
-						res, err := variant.view.Get(env.ctx, pageQuery, views.ReadOptions{})
+						res, err := variant.view.Get(env.ctx, pageQuery, options)
 						if err != nil {
 							b.Fatal(err)
 						}
@@ -341,6 +346,13 @@ func benchmarkFilters(ds benchDataset) []benchFilter {
 		{
 			name: "vulnerability state observed",
 			query: search.NewQueryBuilder().
+				AddExactMatches(search.VulnerabilityState, observed).
+				ProtoQuery(),
+		},
+		{
+			name: "platform component any observed",
+			query: search.NewQueryBuilder().
+				AddStrings(search.PlatformComponent, "true", "false", search.NullString).
 				AddExactMatches(search.VulnerabilityState, observed).
 				ProtoQuery(),
 		},
