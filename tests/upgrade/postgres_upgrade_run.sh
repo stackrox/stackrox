@@ -307,7 +307,11 @@ test_upgrade_path() {
     # vulnerability import and only runs again after ROX_REPROCESSING_INTERVAL
     # (4h). Wait for the store, then let the bounce below trigger a fresh
     # reprocessing pass so images_v2 is populated for the assertions.
+    reset_scanner_v4_vuln_metadata
     wait_for_scanner_v4_readiness
+
+    # Verify the updater imported fresh data after the postgres upgrade
+    verify_scanner_v4_updater_ran
 
     ########################################################################################
     # Bounce central to ensure everything starts back up.                                  #
@@ -471,6 +475,70 @@ test_not_enough_disk_space() {
     collect_and_check_stackrox_logs "$log_output_dir" "disk_space_01_final"
 }
 
+# reset_scanner_v4_vuln_metadata clears the vulnerability update timestamps in the matcher database
+# so the updater will fetch fresh data on its next run, ensuring we test actual import functionality.
+reset_scanner_v4_vuln_metadata() {
+    local namespace="${1:-stackrox}"
+
+    info "Resetting Scanner V4 vulnerability metadata to force fresh fetch"
+
+    # Get the password from the secret
+    local db_password
+    db_password="$(kubectl -n "$namespace" get secret scanner-v4-db-password -o jsonpath='{.data.password}' | base64 -d)" || \
+        die "Cannot read the scanner-v4-db password"
+
+    # Delete all vuln_metadata entries to reset the timestamps
+    # This forces the updater to fetch fresh data instead of using 304 Not Modified
+    # shellcheck disable=SC2016
+    kubectl -n "$namespace" exec -i deploy/scanner-v4-db -c db -- \
+        env "SQL=DELETE FROM matcher.vuln_metadata;" \
+        bash -ec 'PGPASSWORD="$(cat)" psql -U postgres -h 127.0.0.1 -d matcher -XAt -v ON_ERROR_STOP=1 -c "$SQL"' \
+        <<< "$db_password" || \
+        warn "Could not reset vuln metadata (table may not exist yet)"
+
+    info "Vulnerability metadata reset complete"
+}
+
+# verify_scanner_v4_updater_ran checks that the Scanner V4 matcher updater successfully
+# imported vulnerability data. We test actual updater functionality by verifying that
+# vulnerability bundles were imported (after resetting metadata timestamps).
+verify_scanner_v4_updater_ran() {
+    local namespace="${1:-stackrox}"
+
+    info "Verifying Scanner V4 matcher updater imported vulnerability data"
+
+    local logs
+    logs="$(kubectl -n "$namespace" logs deploy/scanner-v4-matcher -c matcher --tail=200 2>/dev/null || echo "")"
+
+    # Check (1): Updater completed the update cycle
+    if grep -q "completed update" <<< "$logs"; then
+        info "✓ Updater completed update cycle"
+    else
+        die "Updater did not complete update cycle"
+    fi
+
+    # Check (2): Vulnerability data was actually imported
+    # Since we reset the metadata, the updater must fetch and import data, not use 304
+    if grep -q "update imported\|importing update" <<< "$logs"; then
+        info "✓ Vulnerability bundles were imported into the store"
+    else
+        die "No vulnerability bundles imported - updater may have received 304 Not Modified"
+    fi
+
+    # Check (3): Verify no fatal errors in updater
+    if grep -q "errors encountered during updater run" <<< "$logs"; then
+        die "Found errors in matcher updater logs"
+    fi
+    info "✓ No updater errors found"
+
+    # Check (4): Verify initialization (should be complete after import)
+    if grep -q "all vulnerability bundles were updated at least once" <<< "$logs"; then
+        info "✓ All vulnerability bundles marked as initialized"
+    fi
+
+    info "✓ Scanner V4 matcher updater successfully imported vulnerability data post-upgrade"
+}
+
 # Verify scanner-v4-db falls back to the previous major when pg_upgrade cannot run,
 # and upgrades once the obstruction is removed.
 test_scanner_v4_db_upgrade_fallback() {
@@ -552,7 +620,11 @@ test_scanner_v4_db_upgrade_fallback() {
     kubectl -n stackrox wait --for=condition=Ready "po/$new_pod" --timeout=600s
 
     check_scanner_v4_db_upgraded
+    reset_scanner_v4_vuln_metadata
     wait_for_scanner_v4_readiness
+
+    # Verify the updater imported fresh data after the scanner-v4-db upgrade
+    verify_scanner_v4_updater_ran
 
     collect_and_check_stackrox_logs "$log_output_dir" "scanner_v4_db_fallback_final"
 }
