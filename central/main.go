@@ -66,6 +66,7 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
+	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	"github.com/stackrox/rox/central/cve/suppress"
@@ -173,14 +174,19 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
+	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualMachineScanV2DS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	virtualMachineV2DS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	virtualmachineV2Service "github.com/stackrox/rox/central/virtualmachine/v2/service"
+	vulnmgmtREST "github.com/stackrox/rox/central/vulnmgmt/rest"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
+	watchedImageDatastore "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
@@ -1006,6 +1012,41 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/v2/compliance/scan/configurations/reports/download",
 			Authorizer:    user.With(permissions.Modify(resources.Compliance)),
 			ServerHandler: complianceScanSettings.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
+
+	// Vulnerability management REST API (PoC). Both the exact collection path and the
+	// subtree form are registered so ServeMux does not 301-redirect API calls.
+	vulnMgmtRESTHandler := vulnmgmtREST.NewHandler(vulnmgmtREST.Deps{
+		CVEView:           imagecveflat.Singleton(),
+		CVECountView:      imagecve.Singleton(),
+		CVEDataStore:      imageCVEDS.Singleton(),
+		VulnReqStore:      vulnReqDataStore.Singleton(),
+		ImageStore:        imageV2Datastore.Singleton(),
+		DeploymentStore:   deploymentDatastore.Singleton(),
+		WatchedImageStore: watchedImageDatastore.Singleton(),
+		DB:                globaldb.GetPostgres(),
+	})
+	imageAuthz := user.With(permissions.View(resources.Image))
+	deploymentAuthz := user.With(permissions.View(resources.Deployment))
+	for _, route := range []struct {
+		path       string
+		authorizer authz.Authorizer
+	}{
+		{"/api/v2/vulnmgmt/cves", imageAuthz},
+		{"/api/v2/vulnmgmt/cves/", imageAuthz},
+		{"/api/v2/vulnmgmt/images", imageAuthz},
+		{"/api/v2/vulnmgmt/images/", imageAuthz},
+		{"/api/v2/vulnmgmt/counts", imageAuthz},
+		{"/api/v2/vulnmgmt/counts/", imageAuthz},
+		{"/api/v2/vulnmgmt/deployments", deploymentAuthz},
+		{"/api/v2/vulnmgmt/deployments/", deploymentAuthz},
+	} {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         route.path,
+			Authorizer:    route.authorizer,
+			ServerHandler: vulnMgmtRESTHandler,
 			Compression:   true,
 		})
 	}
