@@ -205,7 +205,7 @@ func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) {
 	ps := &storage.PermissionSet{
 		Id:          permissionSetID,
 		Name:        permissionSetName,
-		Description: "For OpenShift Prometheus: grant read access to resources used by custom metrics",
+		Description: "For OpenShift Prometheus: use it to grant read-only access to scoped resources used by custom metrics",
 		// Let's give no permissions by default to avoid unexpected sensitive data exposure.
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(),
 	}
