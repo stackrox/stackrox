@@ -13,9 +13,9 @@ message AuthProvider {
   string id = 1; // @gotags: sql:"pk"
   string name = 2; // @gotags: sql:"unique" search:"AuthProvider Name,hidden"
   string type = 3;
-  // The UI endpoint of the Central instance, e.g. "central.example.com:443".
+  // The UI endpoint of the Central instance, e.g. "central.example.com" or "central.example.com:8443".
   // URLs with scheme (e.g. "https://central.example.com") are accepted and
-  // normalized to host:port format. If no port is given, 443 is assumed.
+  // normalized to host[:port] format. An endpoint without a port is kept without one.
   string ui_endpoint = 4;
   bool enabled = 5;
   // Config holds auth provider specific configuration. Each configuration options

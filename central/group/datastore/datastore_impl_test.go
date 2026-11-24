@@ -6,6 +6,7 @@ import (
 
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -137,6 +139,52 @@ func (s *groupDataStoreTestSuite) TestGetWithoutID() {
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(g)
+}
+
+func (s *groupDataStoreTestSuite) TestEnforcesExists() {
+	s.storage.EXPECT().Count(gomock.Any(), gomock.Any()).Times(0)
+
+	exists, err := s.dataStore.Exists(s.hasNoneCtx, &storage.GroupProperties{
+		AuthProviderId: "some-id",
+		Key:            "name",
+		Value:          "some-value",
+	})
+	s.NoError(err, "expected no error, should return false without access")
+	s.False(exists)
+}
+
+func (s *groupDataStoreTestSuite) TestExists() {
+	props := &storage.GroupProperties{
+		AuthProviderId: "some-id",
+		Key:            "name",
+		Value:          "some-value",
+	}
+	expectedQuery := search.NewQueryBuilder().
+		AddExactMatches(search.GroupAuthProvider, props.GetAuthProviderId()).
+		AddExactMatches(search.GroupKey, props.GetKey()).
+		AddExactMatches(search.GroupValue, props.GetValue()).
+		ProtoQuery()
+
+	s.storage.EXPECT().Count(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, q *v1.Query) (int, error) {
+			protoassert.Equal(s.T(), expectedQuery, q)
+			return 1, nil
+		}).Times(1)
+	exists, err := s.dataStore.Exists(s.hasReadCtx, props)
+	s.NoError(err)
+	s.True(exists)
+
+	s.storage.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).Times(1)
+	exists, err = s.dataStore.Exists(s.hasReadCtx, props)
+	s.NoError(err)
+	s.False(exists)
+}
+
+func (s *groupDataStoreTestSuite) TestExistsWithoutAuthProviderID() {
+	s.storage.EXPECT().Count(gomock.Any(), gomock.Any()).Times(0)
+
+	_, err := s.dataStore.Exists(s.hasReadCtx, &storage.GroupProperties{Key: "name", Value: "some-value"})
+	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesGetAll() {

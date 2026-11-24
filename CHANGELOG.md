@@ -31,6 +31,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 - ROX-36223: Scanner V4 DB init container detects version downgrades (major.minor decrease) and automatically reinitializes the database, preventing schema incompatibility when ACS is rolled back to an older minor version. Rollback reinitialization is supported only when the target version is 5.1 or later.
+- ROX-30599: The internal GraphQL API now returns `null` for unavailable CVSS scores on image, node, and cluster vulnerabilities, and unavailable NVD CVSS scores on image vulnerabilities. These fields are now nullable. CSV vulnerability exports and v2 reports display "Not Available" for unavailable scores, consistent with EPSS.
+
 - ROX-33976: Virtual machine components now report pending scans and distinguish missing CPEs from missing repository metadata.
 - ROX-36950: Central DB cleans up recognized physical backups from earlier PostgreSQL major-version upgrades after verifying the new backup, or earlier if needed to reclaim upgrade space. The current upgrade's rollback backup is retained without age-based expiration.
 - ROX-36534: roxctl binaries in the Central image are now stored as `.tar.gz` archives. Central extracts and streams the binary on download, so the user-facing download behavior is unchanged.
@@ -43,6 +45,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37383: Scanner V4 DB now runs PostgreSQL 16, upgraded from 15. The data directory is upgraded in place the first time the new image starts, and the vulnerability store is preserved, so no re-download is needed. If the upgrade cannot be completed, Scanner V4 DB keeps serving with PostgreSQL 15 and retries on the next restart.
 - ROX-37861: Omitted `RELATED_IMAGE` entries in operator helm chart. Note that two consecutive upgrade runs are necessary to fix `manager.envOverrides` unless using server-side apply.
 - ROX-39442: Declarative configuration no longer rejects auth providers without a `uiEndpoint`. In 5.0.0, config validation required `uiEndpoint` for every auth provider type, breaking OpenShift, user PKI, and IAP providers that do not use a UI endpoint (these worked without one before 5.0). OIDC and SAML auth providers still require a UI endpoint.
+- ROX-37916: Auth provider UI endpoints given without a port are stored without one again, as before 5.0.0. In 5.0.0 they were stored with `:443`, so OIDC and SAML logins sent redirect and ACS URLs with `:443`, which identity providers that match redirect URIs exactly rejected. Auth providers saved with 5.0.0 keep the stored `:443`, and saving one unchanged keeps it: remove `:443` from each affected UI endpoint, then save. Declarative configuration that gives the endpoint without a port is updated on its next reconciliation.
 
 ## [5.0.0]
 
