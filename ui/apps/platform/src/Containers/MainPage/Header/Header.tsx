@@ -27,8 +27,8 @@ function Header(): ReactElement {
                 <MastheadToggle className="pf-v6-u-pl-lg">
                     <PageToggleButton isHamburgerButton variant="plain"></PageToggleButton>
                 </MastheadToggle>
-                <MastheadBrand data-codemods>
-                    <MastheadLogo data-codemods>
+                <MastheadBrand>
+                    <MastheadLogo>
                         <BrandLogo />
                     </MastheadLogo>
                 </MastheadBrand>
