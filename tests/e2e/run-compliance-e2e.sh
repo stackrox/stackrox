@@ -28,6 +28,11 @@ test_compliance_e2e() {
 
     # Opt this job into the shortened compliance freshness timeouts (see lib.sh).
     export SHORTEN_COMPLIANCE_FRESHNESS_TIMINGS=true
+    # The overrides are applied only on the operator deploy path, so fail fast rather than run
+    # the time-based freshness tests with production timings.
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR:-}" != "true" ]]; then
+        die "SHORTEN_COMPLIANCE_FRESHNESS_TIMINGS requires DEPLOY_STACKROX_VIA_OPERATOR=true"
+    fi
 
     setup_deployment_env false false
     remove_existing_stackrox_resources
