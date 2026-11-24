@@ -1,0 +1,66 @@
+# roxie equivalent of the chaos-proxy setup in the legacy deploy flow (sensor-toxiproxy-patch.json
+# plus the follow-up `kubectl set env` in k8sbased.sh).
+#
+# It adds a toxiproxy sidecar to the sensor deployment and routes sensor's connection to Central
+# through it, via the SecuredCluster CR's operator overlays.
+#
+# Sensor configures toxiproxy itself (sensor/common/chaos): it creates a proxy
+# localhost:8989 -> ROX_CENTRAL_ENDPOINT_NO_PROXY and applies the fault profile from ROX_CHAOS_PROFILE.
+# Supported profiles: periodicdisconnect, droppedpackets, none.
+central:
+  namespace: stackrox
+securedCluster:
+  namespace: stackrox
+  spec:
+    overlays:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: sensor
+        patches:
+          # Adds toxiproxy as a native sidecar (init container with restartPolicy: Always,
+          # Kubernetes >= 1.29) instead of a regular container.
+          #
+          # Why: sensor tries exactly once, right at startup, to create the proxy via toxiproxy's
+          # API on localhost:8474 (sensor/common/chaos/config.go) and never retries. Regular
+          # containers are started concurrently, so if toxiproxy comes up later (e.g. while its
+          # image is still being pulled), proxy creation fails and sensor can never reach Central.
+          # A native sidecar must pass its startupProbe before the main containers are started,
+          # which guarantees that the API is up when sensor starts.
+          #
+          # Appended after the "crs" init container, which talks to Central directly and does not
+          # need the proxy. The API binds to 0.0.0.0 (default: localhost) so that the kubelet can
+          # probe it; the sensor NetworkPolicy does not allow ingress on 8474, so it stays
+          # unreachable from outside the pod.
+          - path: spec.template.spec.initContainers[-1]
+            value: |
+              name: toxiproxy
+              image: ghcr.io/shopify/toxiproxy:2.5.0
+              restartPolicy: Always
+              args:
+                - -host=0.0.0.0
+              startupProbe:
+                httpGet:
+                  path: /version
+                  port: 8474
+                periodSeconds: 1
+                failureThreshold: 60
+              ports:
+                - containerPort: 8474
+                  name: toxiproxy-api
+                - containerPort: 8989
+                  name: toxiproxy-proxy
+          # Real Central endpoint, used by sensor as the proxy upstream. This is the chart default
+          # (centralEndpoint) for Central in namespace "stackrox"; adjust if Central lives elsewhere.
+          - path: spec.template.spec.containers[name:sensor].env[-1]
+            value: |
+              name: ROX_CENTRAL_ENDPOINT_NO_PROXY
+              value: central.stackrox.svc:443
+          # Route sensor -> Central through toxiproxy. Only the main sensor container is patched:
+          # spec.centralEndpoint is deliberately left alone because it is also used by the init
+          # container and the cluster config, which run before sensor has set up the proxy.
+          - path: spec.template.spec.containers[name:sensor].env[name:ROX_CENTRAL_ENDPOINT].value
+            verbatim: localhost:8989
+          - path: spec.template.spec.containers[name:sensor].env[-1]
+            value: |
+              name: ROX_CHAOS_PROFILE
+              value: periodicdisconnect
