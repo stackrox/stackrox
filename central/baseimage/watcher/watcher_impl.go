@@ -416,6 +416,7 @@ func (w *watcherImpl) doScan(ctx context.Context, repo *storage.BaseImageReposit
 				Created:               protocompat.ConvertTimeToTimestampOrNil(metadata.Created),
 				LayerDigests:          metadata.LayerDigests,
 				History:               metadata.History,
+				MetadataVersion:       metadata.MetadataVersion,
 			}
 			adds = append(adds, tag)
 			if len(adds) >= w.batchSize {

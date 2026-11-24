@@ -22,9 +22,9 @@ type TagFetcher struct {
 	imageName *storage.ImageName
 	limiter   *rate.Limiter
 
-	// knownDigests maps tag names to their known manifest digests.
-	// Tags with unchanged digests are skipped (not sent to results channel).
-	knownDigests map[string]string
+	// knownTags maps tag names to their cached state.
+	// Tags whose cache entry is current are skipped (not sent to results channel).
+	knownTags map[string]KnownTag
 
 	// maxConcurrency is the maximum number of concurrent requests per metadata call.
 	maxConcurrency int
@@ -32,26 +32,27 @@ type TagFetcher struct {
 
 // NewTagFetcher creates a TagFetcher for fetching tag metadata from a registry.
 // The limiter parameter allows sharing rate limits across multiple fetchers.
-// KnownDigests maps tag to their last known manifest digests. During fetching,
-// tags with unmodified digest are skipped.
+// KnownTags maps tag names to their cached state. During fetching, tags whose
+// cached entry is current are skipped.
 func NewTagFetcher(
 	registry types.Registry,
 	imageName *storage.ImageName,
 	limiter *rate.Limiter,
-	knownDigests map[string]string,
+	knownTags map[string]KnownTag,
 ) *TagFetcher {
 	return &TagFetcher{
 		registry:       registry,
 		imageName:      imageName,
 		limiter:        limiter,
-		knownDigests:   knownDigests,
+		knownTags:      knownTags,
 		maxConcurrency: 5,
 	}
 }
 
 // Fetch fetches metadata for the given tags and sends results to the returned channel.
 // The channel is closed when all fetches complete.
-// Tags with unchanged digests (matching knownDigests) are not sent to the channel.
+// Tags whose cached entry is current (same digest at the current
+// MetadataVersion) are not sent to the channel.
 func (f *TagFetcher) Fetch(ctx context.Context, tags []string) <-chan TagMetadata {
 	results := make(chan TagMetadata, f.maxConcurrency)
 
@@ -96,7 +97,7 @@ func (f *TagFetcher) fetchTags(ctx context.Context, tags []string, results chan<
 			continue
 		}
 
-		go func(name *storage.ImageName, digest string) {
+		go func(name *storage.ImageName, known KnownTag) {
 			defer sem.Release(1)
 			defer wg.Done()
 
@@ -110,12 +111,12 @@ func (f *TagFetcher) fetchTags(ctx context.Context, tags []string, results chan<
 			}
 
 			tm := tagMetadata(name.GetTag(), m)
-			if digest != "" && tm.ManifestDigest == digest {
-				// Skip since digest hasn't changed
+			if tm.isFresh(known) {
+				// The cache already fully describes this digest.
 				return
 			}
 			results <- tm
-		}(tagName, f.knownDigests[tag])
+		}(tagName, f.knownTags[tag])
 	}
 }
 
@@ -140,6 +141,15 @@ func (f *TagFetcher) metadata(ctx context.Context, name *storage.ImageName) (*st
 	return metadata, nil
 }
 
+// isFresh reports whether the cached entry fully describes this fetch result.
+// A missing entry is the zero value, so it is never fresh; that also makes
+// legacy rows (version 0) refetch exactly once after an upgrade.
+func (tm TagMetadata) isFresh(known KnownTag) bool {
+	return known.MetadataVersion == MetadataVersion &&
+		known.ManifestDigest != "" &&
+		tm.ManifestDigest == known.ManifestDigest
+}
+
 // tagMetadata extracts TagMetadata from storage.ImageMetadata.
 //
 // TODO(ROX-32382): Manifest lists are not handled currently, and it will require
@@ -160,6 +170,7 @@ func tagMetadata(tag string, metadata *storage.ImageMetadata) TagMetadata {
 	// Extract layer digests for base image matching via layer commonality.
 	result.LayerDigests = metadata.GetLayerShas()
 	result.History = historyFromLayers(metadata.GetV1().GetLayers())
+	result.MetadataVersion = MetadataVersion
 
 	return result
 }
