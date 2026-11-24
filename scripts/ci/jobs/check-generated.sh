@@ -199,6 +199,11 @@ run_generator_command bash -c check-containerignore-is-in-sync || {
 # shellcheck disable=SC2016
 info 'Check: Shellcheck skip list is up to date. If this fails, run `make update-shellcheck-skip` and commit the result.'
 function check-shellcheck-failing-list() {
+    if ! git cat-file -e "HEAD:scripts/style/shellcheck_skip.txt" 2>/dev/null; then
+        echo 'scripts/style/shellcheck_skip.txt is not tracked in HEAD.' >&2
+        return 1
+    fi
+
     make update-shellcheck-skip
 
     echo 'Checking for diffs after updating shellcheck failing list...'

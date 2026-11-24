@@ -17,6 +17,10 @@ retrieve_shell_scripts() {
 }
 
 run_shellcheck() {
+    if [[ ! -f "${ROOT}/${known_failures_file}" ]]; then
+        die "${known_failures_file} is required."
+    fi
+
     info "Running shellcheck on all .sh files (excluding ${known_failures_file})"
 
     pushd "$ROOT" > /dev/null
