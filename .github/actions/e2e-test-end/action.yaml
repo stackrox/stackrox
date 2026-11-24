@@ -87,7 +87,7 @@ runs:
     - name: Report junit failures in jira
       if: (!cancelled()) && env.DEBUG_RUN == 'false'
       id: junit2jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@55ceecfe93bd353dbca4682b12842ceca6301fa2 # ratchet:stackrox/actions/test/junit2jira@v1.0.50
       with:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-user: ${{ inputs.jira-user }}
