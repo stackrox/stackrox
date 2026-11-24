@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/generatecerts"
-	"github.com/stackrox/rox/roxctl/sensor/getbundle"
 	"github.com/stackrox/rox/roxctl/sensor/migratetooperator"
 )
 
@@ -16,7 +15,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Commands related to deploying StackRox services in secured clusters",
 	}
 	c.AddCommand(
-		getbundle.Command(cliEnvironment),
 		generatecerts.Command(cliEnvironment),
 		migratetooperator.Command(cliEnvironment),
 	)

@@ -1700,27 +1700,6 @@ sensor:
       - timeout
       - token-file
       - use-current-k8s-context
-  get-bundle:
-    PERSISTENT_FLAGS:
-      - create-upgrader-sa
-      - istio-support
-      - output-dir
-      - timeout
-    INHERITED_FLAGS:
-      - ca
-      - direct-grpc
-      - endpoint
-      - force-http1
-      - help
-      - insecure
-      - insecure-skip-tls-verify
-      - no-color
-      - password
-      - plaintext
-      - retry-timeout
-      - server-name
-      - token-file
-      - use-current-k8s-context
   migrate-to-operator:
     LOCAL_FLAGS:
       - from-dir
