@@ -11,10 +11,10 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	integrationMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
-	"github.com/stackrox/rox/pkg/registries/types"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
+	"github.com/stackrox/rox/pkg/registries/types"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	scannertypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
@@ -36,11 +36,10 @@ import (
 // scenarioScanner is an ImageScanner/Registry whose behavior can be switched
 // mid-test to simulate vulnerability-store state transitions.
 type scenarioScanner struct {
-	mutex     sync.Mutex
-	scan      *storage.ImageScan
-	scanCalls int
-	scanErr   error
-	defsTs    *timestamppb.Timestamp
+	mutex   sync.Mutex
+	scan    *storage.ImageScan
+	scanErr error
+	defsTs  *timestamppb.Timestamp
 }
 
 func (s *scenarioScanner) setScan(scan *storage.ImageScan) {
@@ -61,18 +60,12 @@ func (s *scenarioScanner) setVulnDefinitions(ts *timestamppb.Timestamp) {
 	s.defsTs = ts
 }
 
-func (s *scenarioScanner) callCount() int {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	return s.scanCalls
-}
-
-func (*scenarioScanner) Type() string                        { return "fake-v4" }
-func (*scenarioScanner) Name() string                        { return "scenario-scanner" }
-func (*scenarioScanner) Match(*storage.ImageName) bool       { return true }
-func (*scenarioScanner) Test() error                         { return nil }
+func (*scenarioScanner) Type() string                           { return "fake-v4" }
+func (*scenarioScanner) Name() string                           { return "scenario-scanner" }
+func (*scenarioScanner) Match(*storage.ImageName) bool          { return true }
+func (*scenarioScanner) Test() error                            { return nil }
 func (*scenarioScanner) Config(_ context.Context) *types.Config { return nil }
-func (*scenarioScanner) HTTPClient() *http.Client             { return nil }
+func (*scenarioScanner) HTTPClient() *http.Client               { return nil }
 func (*scenarioScanner) ListTags(_ context.Context, _ string) ([]string, error) {
 	return nil, nil
 }
@@ -97,7 +90,6 @@ func (s *scenarioScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, err
 func (s *scenarioScanner) GetScan(_ *storage.Image) (*storage.ImageScan, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.scanCalls++
 	if s.scanErr != nil {
 		return nil, s.scanErr
 	}
@@ -373,7 +365,7 @@ func TestScenario4_ErrorMaskingAsStaleSuccess(t *testing.T) {
 	// The scanner is never called (useExistingScan short-circuits), so the
 	// error is invisible. The consumer sees clean, current-looking data.
 	img2 := newScenarioImage()
-	result, err := enricher.EnrichImage(context.Background(),
+	result, _ := enricher.EnrichImage(context.Background(),
 		EnrichmentContext{FetchOpt: UseCachesIfPossible}, img2)
 
 	// DESIRED: when the scan pipeline is broken, the consumer should
@@ -427,7 +419,7 @@ func TestScenario5_RetryLoopLocksInBadResults(t *testing.T) {
 	// eventually return the loaded data. The retry pattern (retry on
 	// error only) cannot self-heal this failure mode because the
 	// response is always a success with bad data.
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		img, err := attempt()
 		require.NoError(t, err, "retry %d", i)
 		require.NotNil(t, img.GetScan())
