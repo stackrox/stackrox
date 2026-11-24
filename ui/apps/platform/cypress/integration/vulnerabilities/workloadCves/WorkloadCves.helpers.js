@@ -27,26 +27,109 @@ export function getFutureDateByDays(days) {
     return addDays(new Date(), days);
 }
 
-export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
-    const routeMatcherMap = getRouteMatcherMapForGraphQL(['getImageCVEList']);
-    const staticResponseMap = {
-        getImageCVEList: { fixture: 'vulnerabilities/workloadCves/getImageCVEList.json' },
+const severityKeys = ['critical', 'important', 'moderate', 'low', 'unknown'];
+
+function countSumBySeverity(countBySeverity) {
+    return severityKeys.reduce((sum, key) => sum + (countBySeverity?.[key]?.total ?? 0), 0);
+}
+
+function toVulnMgmtCVEListResponse(graphqlResponse) {
+    const cves = graphqlResponse?.data?.imageCVEs ?? [];
+    return {
+        items: cves.map((cve) => ({
+            cve: cve.cve,
+            topCvss: Number(cve.topCVSS) || 0,
+            topNvdCvss: Number(cve.topNvdCVSS) || 0,
+            topEpssProbability: 0,
+            affectedImageCount: cve.affectedImageCount ?? 0,
+            firstDiscoveredInSystem: cve.firstDiscoveredInSystem ?? undefined,
+            publishedOn: cve.publishedOn ?? undefined,
+            pendingExceptionCount: cve.pendingExceptionCount ?? 0,
+            knownExploit: false,
+            knownRansomwareCampaignUse: false,
+        })),
+        totalCount: cves.length,
     };
-    const basePath = '/main/vulnerabilities/platform/';
-    visit(basePath + urlSearch, routeMatcherMap, staticResponseMap);
+}
 
-    cy.get(`h1:contains("Platform vulnerabilities")`);
-    cy.location('pathname').should('eq', basePath);
+function toVulnMgmtCountsResponse(cveListResponse) {
+    return {
+        cve: cveListResponse.totalCount,
+        image: 1,
+        deployment: 1,
+        severity: { critical: 0, important: 0, moderate: 0, low: 0, unknown: 0 },
+    };
+}
 
-    if (clearFiltersOnVisit) {
-        interactAndWaitForResponses(
-            () => {
-                cy.get(vulnSelectors.clearFiltersButton).click();
+function toVulnMgmtImageListResponse(graphqlResponse) {
+    const images = graphqlResponse?.data?.images ?? [];
+    return {
+        items: images.map((image) => ({
+            id: image.id,
+            digest: image.digest ?? image.id,
+            name: {
+                registry: image.name?.registry ?? '',
+                remote: image.name?.remote ?? '',
+                tag: image.name?.tag ?? '',
+                fullName: image.name?.fullName ?? '',
             },
-            routeMatcherMap,
-            staticResponseMap
-        );
-    }
+            operatingSystem: image.operatingSystem ?? '',
+            scanTime: image.scanTime ?? undefined,
+            createdAt: image.metadata?.v1?.created ?? undefined,
+            scanNotes: image.scanNotes ?? [],
+            notes: image.notes ?? [],
+            watchStatus: image.watchStatus ?? 'UNKNOWN',
+            deploymentCount: image.deploymentCount ?? 0,
+            matchedCveCount: countSumBySeverity(image.imageCVECountBySeverity),
+            signatureVerificationData: image.signatureVerificationData ?? null,
+        })),
+        totalCount: images.length,
+    };
+}
+
+function toVulnMgmtDeploymentListResponse(graphqlResponse) {
+    const deployments = graphqlResponse?.data?.deployments ?? [];
+    return {
+        items: deployments.map((deployment) => ({
+            id: deployment.id,
+            name: deployment.name,
+            type: deployment.type,
+            cluster: deployment.clusterName,
+            namespace: deployment.namespace,
+            createdAt: deployment.created ?? undefined,
+            imageCount: deployment.imageCount ?? 0,
+            matchedCveCount: countSumBySeverity(deployment.imageCVECountBySeverity),
+        })),
+        totalCount: deployments.length,
+    };
+}
+
+export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
+    return cy
+        .fixture('vulnerabilities/workloadCves/getImageCVEList.json')
+        .then((graphqlFixture) => {
+            const cveListResponse = toVulnMgmtCVEListResponse(graphqlFixture);
+            cy.intercept(
+                { method: 'GET', url: '/api/v2/vulnmgmt/cves?*' },
+                { body: cveListResponse }
+            ).as('getVulnMgmtCVEs');
+            cy.intercept(
+                { method: 'GET', url: '/api/v2/vulnmgmt/counts?*' },
+                { body: toVulnMgmtCountsResponse(cveListResponse) }
+            ).as('getVulnMgmtCounts');
+
+            const basePath = '/main/vulnerabilities/platform/';
+            visit(basePath + urlSearch);
+
+            cy.get(`h1:contains("Platform vulnerabilities")`);
+            cy.location('pathname').should('eq', basePath);
+            cy.wait(['@getVulnMgmtCVEs', '@getVulnMgmtCounts']);
+
+            if (clearFiltersOnVisit) {
+                cy.get(vulnSelectors.clearFiltersButton).click();
+                cy.wait(['@getVulnMgmtCVEs', '@getVulnMgmtCounts']);
+            }
+        });
 }
 
 /**
@@ -472,13 +555,14 @@ export function interactAndWaitForCveList(callback) {
  * @returns {Cypress.Chainable}
  */
 export function interactAndWaitForImageList(callback) {
-    const imageListOpname = 'getImageList';
-    const imageListRouteMatcherMap = getRouteMatcherMapForGraphQL([imageListOpname]);
-    imageListRouteMatcherMap[imageListOpname].times = 1;
-    const staticResponseMap = {
-        [imageListOpname]: { fixture: 'vulnerabilities/workloadCves/getImageList.json' },
-    };
-    return interactAndWaitForResponses(callback, imageListRouteMatcherMap, staticResponseMap);
+    return cy.fixture('vulnerabilities/workloadCves/getImageList.json').then((graphqlFixture) => {
+        cy.intercept(
+            { method: 'GET', url: '/api/v2/vulnmgmt/images?*' },
+            { body: toVulnMgmtImageListResponse(graphqlFixture) }
+        ).as('getVulnMgmtImages');
+        callback();
+        return cy.wait('@getVulnMgmtImages');
+    });
 }
 
 /**
@@ -487,13 +571,16 @@ export function interactAndWaitForImageList(callback) {
  * @returns {Cypress.Chainable}
  */
 export function interactAndWaitForDeploymentList(callback) {
-    const deploymentListOpname = 'getDeploymentList';
-    const deploymentListRouteMatcherMap = getRouteMatcherMapForGraphQL([deploymentListOpname]);
-    deploymentListRouteMatcherMap[deploymentListOpname].times = 1;
-    const staticResponseMap = {
-        [deploymentListOpname]: { fixture: 'vulnerabilities/workloadCves/getDeploymentList.json' },
-    };
-    return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap, staticResponseMap);
+    return cy
+        .fixture('vulnerabilities/workloadCves/getDeploymentList.json')
+        .then((graphqlFixture) => {
+            cy.intercept(
+                { method: 'GET', url: '/api/v2/vulnmgmt/deployments?*' },
+                { body: toVulnMgmtDeploymentListResponse(graphqlFixture) }
+            ).as('getVulnMgmtDeployments');
+            callback();
+            return cy.wait('@getVulnMgmtDeployments');
+        });
 }
 
 export function visitNamespaceView() {
