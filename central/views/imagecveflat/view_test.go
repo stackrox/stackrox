@@ -851,7 +851,20 @@ func (s *ImageCVEFlatViewTestSuite) sacTestCases() map[string]map[string]bool {
 
 func applyPaginationProps(baseTc *testCase, paginationTc testCase) {
 	baseTc.desc = fmt.Sprintf("%s %s", baseTc.desc, paginationTc.desc)
-	baseTc.q.Pagination = paginationTc.q.GetPagination()
+
+	pagination := paginationTc.q.GetPagination()
+	if pagination == nil {
+		pagination = &v1.QueryPagination{}
+	} else {
+		pagination = pagination.CloneVT()
+	}
+	// The pagination cases only define sort options. Add a limit above the fixture size
+	// so the two-phase path is exercised without changing the expected results.
+	if pagination.GetLimit() == 0 && pagination.GetOffset() == 0 {
+		pagination.Limit = 10000
+	}
+
+	baseTc.q.Pagination = pagination
 	baseTc.less = paginationTc.less
 }
 
