@@ -10,7 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/generated/storage"
@@ -36,18 +38,22 @@ type sbomGenHttpHandler struct {
 	enricherV2       enricher.ImageEnricherV2
 	clusterSACHelper sachelper.ClusterSacHelper
 	riskManager      manager.Manager
+	images           imageDatastore.DataStore
+	imagesV2         imageV2Datastore.DataStore
 }
 
 var _ http.Handler = (*sbomGenHttpHandler)(nil)
 
 // SBOMHandler returns a handler for get sbom http request.
-func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager) http.Handler {
+func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager, images imageDatastore.DataStore, imagesV2 imageV2Datastore.DataStore) http.Handler {
 	return sbomGenHttpHandler{
 		integration:      integration,
 		enricher:         enricher,
 		enricherV2:       enricherV2,
 		clusterSACHelper: clusterSACHelper,
 		riskManager:      riskManager,
+		images:           images,
+		imagesV2:         imagesV2,
 	}
 }
 
@@ -121,36 +127,12 @@ func (h sbomGenHttpHandler) enrichWithModelSwitch(
 	return img, nil, nil
 }
 
-// enrichImage enriches the image with the given name and based on the given enrichment context.
-func (h sbomGenHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, ci *storage.ContainerImage) (*storage.Image, bool, error) {
-	// forcedEnrichment is set to true when enrichImage forces an enrichment.
-	forcedEnrichment := false
-
-	img, imgV2, err := h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
-	if err != nil {
-		return nil, forcedEnrichment, err
+func (h sbomGenHttpHandler) cachedImage(ctx context.Context, ci *storage.ContainerImage) (*storage.Image, bool, error) {
+	if features.FlattenImageData.Enabled() {
+		img, found, err := h.imagesV2.GetImage(ctx, ci.GetIdV2())
+		return utils.ConvertToV1(img), found, err
 	}
-
-	// SBOM generation requires an image to have been scanned by Scanner V4, if the existing image
-	// was scanned by a different scanner we force enrichment using Scanner V4.
-	scannedByV4 := h.scannedByScannerV4(img.GetScan())
-	if enrichmentCtx.FetchOpt != enricher.UseImageNamesRefetchCachedValues && !scannedByV4 {
-		// Force scan by Scanner V4.
-		addForceToEnrichmentContext(&enrichmentCtx)
-		forcedEnrichment = true
-
-		img, imgV2, err = h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
-		if err != nil {
-			return nil, forcedEnrichment, err
-		}
-	}
-
-	err = h.saveImage(img, imgV2)
-	if err != nil {
-		return nil, forcedEnrichment, err
-	}
-
-	return img, forcedEnrichment, nil
+	return h.images.GetImage(ctx, ci.GetId())
 }
 
 // errorOrNotScanned will return an error if err is populated or the enrichmentResult indicates a scan
@@ -160,7 +142,7 @@ func errorOrNotScanned(enrichmentResult enricher.EnrichmentResult, err error) er
 		return err
 	}
 
-	if !enrichmentResult.ScanResult.HasScanData() {
+	if enrichmentResult.ScanResult != enricher.ScanSucceeded {
 		return errors.New("scan could not be completed, please check that an applicable registry is integrated")
 	}
 
@@ -169,14 +151,11 @@ func errorOrNotScanned(enrichmentResult enricher.EnrichmentResult, err error) er
 
 // getSBOM generates an SBOM for the specified parameters.
 func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
+	// A scoped miss can mean access was denied. Do not retry via the enricher's privileged scan cache.
 	enrichmentCtx := enricher.EnrichmentContext{
 		Delegable:       true,
-		FetchOpt:        enricher.UseCachesIfPossible,
+		FetchOpt:        enricher.UseImageNamesRefetchCachedValues,
 		ScannerTypeHint: scannerTypes.ScannerV4,
-	}
-
-	if params.Force {
-		addForceToEnrichmentContext(&enrichmentCtx)
 	}
 
 	if params.Cluster != "" {
@@ -195,39 +174,33 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 		return nil, err
 	}
 
-	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, ci)
-	if err != nil {
-		sendAdminEvent(err, params.ImageName)
-		return nil, err
-	}
-
-	// Verify the Index Report exists. If it doesn't, force image enrichment using Scanner V4.
 	scannerV4, err := h.getScannerV4SBOMIntegration()
 	if err != nil {
 		return nil, err
 	}
 
-	sbom, found, err := scannerV4.GetSBOM(img)
+	if !params.Force && ci.GetId() != "" {
+		img, found, err := h.cachedImage(ctx, ci)
+		if err != nil {
+			return nil, fmt.Errorf("reading image for SBOM: %w", err)
+		}
+		if found && enricher.CachedImageIsValid(img) && h.scannedByScannerV4(img.GetScan()) {
+			sbom, found, err := scannerV4.GetSBOM(img)
+			if err != nil || found {
+				return sbom, err
+			}
+		}
+	}
+	img, imgV2, err := h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
 	if err != nil {
+		sendAdminEvent(err, params.ImageName)
 		return nil, err
 	}
-
-	if !found && !params.Force && !alreadyForcedEnrichment {
-		// Since the Index Report for image does not exist, force scan by Scanner V4.
-		addForceToEnrichmentContext(&enrichmentCtx)
-		img, _, err := h.enrichImage(ctx, enrichmentCtx, ci)
-		if err != nil {
-			sendAdminEvent(err, params.ImageName)
-			return nil, err
-		}
-
-		sbom, _, err = scannerV4.GetSBOM(img)
-		if err != nil {
-			return nil, err
-		}
+	if err := h.saveImage(img, imgV2); err != nil {
+		return nil, err
 	}
-
-	return sbom, nil
+	sbom, _, err := scannerV4.GetSBOM(img)
+	return sbom, err
 }
 
 // containerImage will return a populated container image with fields derived from params.
@@ -262,10 +235,6 @@ func sendAdminEvent(err error, imageName string) {
 			logging.Bool("ad_hoc", true),
 		)
 	}
-}
-
-func addForceToEnrichmentContext(enrichmentCtx *enricher.EnrichmentContext) {
-	enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 }
 
 // getScannerV4SBOMIntegration returns the SBOM interface of Scanner V4.
