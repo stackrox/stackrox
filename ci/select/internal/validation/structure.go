@@ -62,7 +62,30 @@ func clauseCount(r *rules.Rule) int {
 
 func checkJobCoverage(m rules.Mapping) []string {
 	var findings []string
-	inventory := set.NewStringSet(m.Jobs...)
+	names := m.JobNames()
+	inventory := set.NewStringSet(names...)
+
+	// Validate job entries: no empty names, no duplicates, no duplicate aliases.
+	seenNames := set.NewStringSet()
+	seenAliases := set.NewStringSet()
+	for _, j := range m.Jobs {
+		if j.Name == "" {
+			findings = append(findings, "jobs inventory contains a job with an empty name")
+			continue
+		}
+		if !seenNames.Add(j.Name) {
+			findings = append(findings, fmt.Sprintf("job %q appears more than once in the inventory", j.Name))
+		}
+		for _, alias := range j.ProwAliases {
+			if alias == "" {
+				findings = append(findings, fmt.Sprintf("job %q has an empty prow_alias", j.Name))
+				continue
+			}
+			if !seenAliases.Add(alias) {
+				findings = append(findings, fmt.Sprintf("prow_alias %q is registered for more than one job", alias))
+			}
+		}
+	}
 
 	// Track every claimant per job so a double-decided job can name both.
 	decidedBy := map[string][]string{}
@@ -84,9 +107,9 @@ func checkJobCoverage(m rules.Mapping) []string {
 			findings = append(findings, fmt.Sprintf("job %q is decided more than once: %s", job, strings.Join(places, ", ")))
 		}
 	}
-	for _, job := range m.Jobs {
-		if _, ok := decidedBy[job]; !ok {
-			findings = append(findings, fmt.Sprintf("job %q is in the inventory but no rule decides it", job))
+	for _, name := range names {
+		if _, ok := decidedBy[name]; !ok {
+			findings = append(findings, fmt.Sprintf("job %q is in the inventory but no rule decides it", name))
 		}
 	}
 	return findings

@@ -23,11 +23,43 @@ rules:
 `)
 	m, err := Parse(data)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"go", "postgres", "lint"}, m.Jobs)
+	assert.Equal(t, []JobEntry{{Name: "go"}, {Name: "postgres"}, {Name: "lint"}}, m.Jobs)
 	require.Len(t, m.Rules, 3)
 	assert.Equal(t, []string{"^ui/"}, m.Rules[0].SkipIfOnlyChanged)
 	assert.Equal(t, []string{"^central/"}, m.Rules[1].RunIfChanged)
 	assert.True(t, m.Rules[2].AlwaysRun)
+}
+
+func TestParseWithProwAliases(t *testing.T) {
+	data := []byte(`
+jobs:
+  - go
+  - name: e2e-tests
+    prow_aliases: [gke-e2e-tests, ocp-e2e-tests]
+  - lint
+rules:
+  - name: go-unit
+    jobs: [go]
+    always_run: true
+  - name: e2e
+    jobs: [e2e-tests]
+    skip_if_only_changed: ['^.*\.md$']
+  - name: lint-rule
+    jobs: [lint]
+    always_run: true
+`)
+	m, err := Parse(data)
+	require.NoError(t, err)
+	require.Len(t, m.Jobs, 3)
+	assert.Equal(t, "e2e-tests", m.Jobs[1].Name)
+	assert.Equal(t, []string{"gke-e2e-tests", "ocp-e2e-tests"}, m.Jobs[1].ProwAliases)
+
+	assert.Equal(t, []string{"go", "e2e-tests", "lint"}, m.JobNames())
+	assert.True(t, m.HasJob("go"))
+	assert.False(t, m.HasJob("missing"))
+	assert.Equal(t, "e2e-tests", m.ResolveByProwAlias("gke-e2e-tests"))
+	assert.Equal(t, "e2e-tests", m.ResolveByProwAlias("ocp-e2e-tests"))
+	assert.Equal(t, "", m.ResolveByProwAlias("unknown"))
 }
 
 func TestParseRejects(t *testing.T) {

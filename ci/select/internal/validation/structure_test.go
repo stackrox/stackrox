@@ -10,7 +10,7 @@ import (
 
 func TestCheckStructure(t *testing.T) {
 	good := rules.Mapping{
-		Jobs: []string{"go", "postgres", "lint"},
+		Jobs: []rules.JobEntry{{Name: "go"}, {Name: "postgres"}, {Name: "lint"}},
 		Rules: []*rules.Rule{
 			{Name: "go-unit", Jobs: []string{"go"}, SkipIfOnlyChanged: []string{`^ui/`}},
 			{Name: "db", Jobs: []string{"postgres"}, RunIfChanged: []string{`^central/`}},
@@ -60,15 +60,30 @@ func TestCheckStructure(t *testing.T) {
 			want:   `names job "nope", which is not in the jobs inventory`,
 		},
 		"inventory job undecided": {
-			mutate: func(m *rules.Mapping) { m.Jobs = append(m.Jobs, "orphan") },
-			want:   `job "orphan" is in the inventory but no rule decides it`,
+			mutate: func(m *rules.Mapping) {
+				m.Jobs = append(m.Jobs, rules.JobEntry{Name: "orphan"})
+			},
+			want: `job "orphan" is in the inventory but no rule decides it`,
+		},
+		"duplicate inventory job": {
+			mutate: func(m *rules.Mapping) {
+				m.Jobs = append(m.Jobs, rules.JobEntry{Name: "go"})
+			},
+			want: `job "go" appears more than once in the inventory`,
+		},
+		"duplicate prow alias": {
+			mutate: func(m *rules.Mapping) {
+				m.Jobs[0].ProwAliases = []string{"gke-tests"}
+				m.Jobs[1].ProwAliases = []string{"gke-tests"}
+			},
+			want: `prow_alias "gke-tests" is registered for more than one job`,
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			m := good
-			m.Jobs = append([]string(nil), good.Jobs...)
+			m.Jobs = append([]rules.JobEntry(nil), good.Jobs...)
 			m.Rules = []*rules.Rule{
 				{Name: "go-unit", Jobs: []string{"go"}, SkipIfOnlyChanged: []string{`^ui/`}},
 				{Name: "db", Jobs: []string{"postgres"}, RunIfChanged: []string{`^central/`}},

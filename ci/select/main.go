@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/ci/select/internal/ruleengine"
 	"github.com/stackrox/rox/ci/select/internal/ruleengine/jobcentric"
+	"github.com/stackrox/rox/ci/select/internal/rules"
 	"github.com/stackrox/rox/ci/select/internal/validation"
 )
 
@@ -20,12 +21,16 @@ import (
 // lint report; main exits nonzero without printing it a second time.
 var errLintReported = errors.New("lint findings were reported")
 
+// errGateShouldSkip signals that the gate command decided the job should be
+// skipped; main exits nonzero without printing an error message.
+var errGateShouldSkip = errors.New("gate: job should be skipped")
+
 //nolint:forbidigo // The entry point supplies standard streams to the injectable command runner.
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr, jobcentric.New()); err != nil {
-		if !errors.Is(err, errLintReported) {
+		if !errors.Is(err, errLintReported) && !errors.Is(err, errGateShouldSkip) {
 			fmt.Fprintln(os.Stderr, "ci-select:", err)
 		}
 		os.Exit(1)
@@ -44,7 +49,7 @@ func run(ctx context.Context, args []string, output, diagnostic io.Writer, eng r
 			return errors.New("a subcommand is required (plan or validate)")
 		},
 	}
-	root.AddCommand(newPlanCommand(eng), newValidateCommand())
+	root.AddCommand(newPlanCommand(eng), newValidateCommand(), newGateCommand(eng))
 	// A nil argument list would make Cobra read the process arguments.
 	if args == nil {
 		args = []string{}
@@ -90,6 +95,66 @@ func newPlanCommand(eng ruleengine.Engine) *cobra.Command {
 	}
 	command.Flags().StringVar(&rulesPath, "rules", "ci/test-selection-rules.yaml", "YAML rules file")
 	command.Flags().StringVar(&filesPath, "files-file", "", "Changed paths, one per line (e.g. from detect-changes)")
+	return command
+}
+
+// newGateCommand returns the gate subcommand. It resolves <job> as either an
+// inventory name or a prow_alias and exits 0 (run) or 1 (skip). It fails open
+// on any error so a misconfigured or missing rules file never blocks a Prow job.
+func newGateCommand(eng ruleengine.Engine) *cobra.Command {
+	var rulesPath, filesPath string
+	command := &cobra.Command{
+		Use:   "gate <job>",
+		Short: "Exit 0 (run) or 1 (skip) for a CI job",
+		Long: `gate resolves <job> as either an inventory name or a prow_alias and
+exits 0 if the job should run, 1 if it should be skipped.
+Fails open: exits 0 on error or if <job> is not in the rules.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			jobArg := args[0]
+
+			data, err := os.ReadFile(rulesPath)
+			if err != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "ci-select gate: %v; failing open\n", err)
+				return nil
+			}
+			changed, err := readChangedPaths(filesPath)
+			if err != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "ci-select gate: %v; failing open\n", err)
+				return nil
+			}
+
+			// Parse to resolve prow_alias → inventory name. Fail open on error.
+			m, err := rules.Parse(data)
+			if err != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "ci-select gate: parse rules: %v; failing open\n", err)
+				return nil
+			}
+
+			// Resolve: inventory name first, then prow alias. Unknown → fail open.
+			inventoryName := jobArg
+			if !m.HasJob(jobArg) {
+				inventoryName = m.ResolveByProwAlias(jobArg)
+				if inventoryName == "" {
+					return nil
+				}
+			}
+
+			// Run the plan. Fail open on engine error.
+			decision, err := eng.Plan(data, changed)
+			if err != nil {
+				fmt.Fprintf(cmd.ErrOrStderr(), "ci-select gate: plan: %v; failing open\n", err)
+				return nil
+			}
+
+			if decision.Action(inventoryName) == "skip" {
+				return errGateShouldSkip
+			}
+			return nil
+		},
+	}
+	command.Flags().StringVar(&rulesPath, "rules", "ci/test-selection-rules.yaml", "YAML rules file")
+	command.Flags().StringVar(&filesPath, "files-file", "", "Changed paths file")
 	return command
 }
 

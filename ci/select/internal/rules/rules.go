@@ -19,8 +19,15 @@ import (
 type (
 	// Mapping is one parsed rules file; Jobs is the inventory.
 	Mapping struct {
-		Jobs  []string `json:"jobs"`
-		Rules []*Rule  `json:"rules"`
+		Jobs  []JobEntry `json:"jobs"`
+		Rules []*Rule    `json:"rules"`
+	}
+
+	// JobEntry is one entry in the jobs inventory. Plain-string ("jobname") and
+	// object ({name: ..., prow_aliases: [...]}) forms are both accepted.
+	JobEntry struct {
+		Name        string   `json:"name"`
+		ProwAliases []string `json:"prow_aliases,omitempty"`
 	}
 
 	// Rule governs one job group and declares exactly one of RunIfChanged,
@@ -42,6 +49,57 @@ type (
 		exclude    bool
 	}
 )
+
+// UnmarshalJSON supports plain-string and object forms for a job inventory entry.
+func (j *JobEntry) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 && data[0] == '"' {
+		return json.Unmarshal(data, &j.Name)
+	}
+	var obj struct {
+		Name        string   `json:"name"`
+		ProwAliases []string `json:"prow_aliases,omitempty"`
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&obj); err != nil {
+		return err
+	}
+	j.Name = obj.Name
+	j.ProwAliases = obj.ProwAliases
+	return nil
+}
+
+// JobNames returns inventory job names in declaration order.
+func (m Mapping) JobNames() []string {
+	names := make([]string, len(m.Jobs))
+	for i, j := range m.Jobs {
+		names[i] = j.Name
+	}
+	return names
+}
+
+// HasJob reports whether name is in the inventory.
+func (m Mapping) HasJob(name string) bool {
+	for _, j := range m.Jobs {
+		if j.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// ResolveByProwAlias returns the inventory name for a Prow job alias,
+// or empty string if the alias is not registered.
+func (m Mapping) ResolveByProwAlias(alias string) string {
+	for _, j := range m.Jobs {
+		for _, a := range j.ProwAliases {
+			if a == alias {
+				return j.Name
+			}
+		}
+	}
+	return ""
+}
 
 // Parse decodes one YAML document into a Mapping; rule substance is left to
 // validation.
