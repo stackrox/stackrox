@@ -6,6 +6,18 @@
 version: 2
 updates:
   - package-ecosystem: 'npm'
+    directory: '/.github/ci/bats'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    versioning-strategy: increase
+    groups:
+      bats:
+        patterns:
+          - 'bats'
+          - 'bats-*'
+
+  - package-ecosystem: 'npm'
     directory: 'ui/apps/platform'
     schedule:
       interval: 'weekly'

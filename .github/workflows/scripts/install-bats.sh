@@ -2,14 +2,13 @@
 
 set -euo pipefail
 
-sudo npm install -g bats bats-support bats-assert
-npm_root=$(sudo npm root -g)
+bats_dir="${GITHUB_WORKSPACE}/.github/ci/bats"
+npm ci --prefix "$bats_dir" --no-audit --no-fund
+echo "$bats_dir/node_modules/.bin" >> "$GITHUB_PATH"
 
-# The existing Bats helpers look here for CI-installed libraries.
-helpers_dir=/usr/lib/node_modules
-if [[ "$npm_root" != "$helpers_dir" ]]; then
-    sudo mkdir -p "$helpers_dir"
-    for package in bats-support bats-assert; do
-        sudo ln -sfn "$npm_root/$package" "$helpers_dir/$package"
-    done
-fi
+# tests/roxctl/bats-tests/helpers.bash, scripts/test_helpers.bats and
+# scripts/ci/store-artifacts.bats look in /usr/lib/node_modules for CI libraries.
+sudo mkdir -p /usr/lib/node_modules
+for package in bats-support bats-assert; do
+    sudo ln -sfnT "$bats_dir/node_modules/$package" "/usr/lib/node_modules/$package"
+done
