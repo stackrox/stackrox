@@ -31,7 +31,8 @@ strip_deprecation_notice() {
 }
 
 tmp_roxctl="tmp/roxctl-bats/bin"
-test_data="$BATS_TEST_DIRNAME/../test-data"
+# Exported because it is only used by the .bats files that load this file.
+export test_data="$BATS_TEST_DIRNAME/../test-data"
 
 any_version='[0-9]+\.[0-9]+\.'
 
