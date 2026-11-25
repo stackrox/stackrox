@@ -4,8 +4,6 @@ import { assertVisibleTableColumns } from '../../helpers/tableHelpers';
 import { selectors } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.selectors';
 import { selectors as vulnerabilitiesSelectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
 import { selectProject } from '../../helpers/ocpConsole';
-import { hasFeatureFlag } from '../../helpers/features';
-import { toImageV2Response } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.helpers';
 import { acsAuthNamespaceHeader, interceptWorkloadCveFixtures, watchOcpGraphQL } from '../routes';
 import pf6 from '../../selectors/pf6';
 
@@ -36,37 +34,30 @@ describe('Security vulnerabilities - Image Detail page', () => {
         visitImageDetailPage().then(() => {
             cy.get('button[role="tab"]:contains("Resources")').click();
 
-            const resourcesFixture = 'vulnerabilities/workloadCves/getImageResources.json';
-            cy.fixture(resourcesFixture)
-                .then((v1Response) => {
-                    const isFlattenImageData = hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA');
-                    const resourcesFixtures = {
-                        getImageResources: {
-                            body: isFlattenImageData ? toImageV2Response(v1Response) : v1Response,
-                        },
-                    };
-
-                    return watchOcpGraphQL(resourcesFixtures);
-                })
-                .then(({ waitForRequests }) => {
-                    // We manually set 'stackrox' as the namespace for the first request
-                    waitForRequests(['getImageResources']).then((interception) => {
-                        const req = Array.isArray(interception) ? interception[0] : interception;
-                        expect(req.request.headers[acsAuthNamespaceHeader]).to.equal('stackrox');
-                    });
-
-                    assertVisibleTableColumns('table', ['Name', 'Created']);
-
-                    // Change to 'All Projects' to test the 'Namespace' column
-                    selectProject('All Projects');
-
-                    waitForRequests(['getImageResources']).then((interception) => {
-                        const req = Array.isArray(interception) ? interception[0] : interception;
-                        expect(req.request.headers[acsAuthNamespaceHeader]).to.equal('*');
-                    });
-
-                    assertVisibleTableColumns('table', ['Name', 'Namespace', 'Created']);
+            const resourcesFixtures = {
+                getImageResources: {
+                    fixture: 'vulnerabilities/workloadCves/getImageResources.json',
+                },
+            };
+            watchOcpGraphQL(resourcesFixtures).then(({ waitForRequests }) => {
+                // We manually set 'stackrox' as the namespace for the first request
+                waitForRequests(['getImageResources']).then((interception) => {
+                    const req = Array.isArray(interception) ? interception[0] : interception;
+                    expect(req.request.headers[acsAuthNamespaceHeader]).to.equal('stackrox');
                 });
+
+                assertVisibleTableColumns('table', ['Name', 'Created']);
+
+                // Change to 'All Projects' to test the 'Namespace' column
+                selectProject('All Projects');
+
+                waitForRequests(['getImageResources']).then((interception) => {
+                    const req = Array.isArray(interception) ? interception[0] : interception;
+                    expect(req.request.headers[acsAuthNamespaceHeader]).to.equal('*');
+                });
+
+                assertVisibleTableColumns('table', ['Name', 'Namespace', 'Created']);
+            });
         });
     });
 

@@ -1,7 +1,8 @@
 {
     "data": {
-        "image": {
-            "id": "sha256:abcxyz",
+        "imageV2": {
+            "id": "4c657931-d333-5cb8-8f0d-7e3836525ec7",
+            "digest": "sha256:abcxyz",
             "name": {
                 "registry": "docker.io",
                 "remote": "cypress-test/image",
@@ -21,7 +22,7 @@
                 },
                 "__typename": "ImageMetadata"
             },
-            "__typename": "Image",
+            "__typename": "ImageV2",
             "imageVulnerabilityCount": 2,
             "imageCVECountBySeverity": {
                 "unknown": {

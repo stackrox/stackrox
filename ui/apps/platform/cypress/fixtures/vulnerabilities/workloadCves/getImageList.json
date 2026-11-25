@@ -47,7 +47,7 @@
                 "scanTime": "2024-12-02T13:51:19.876935617Z",
                 "scanNotes": [],
                 "notes": [],
-                "__typename": "Image"
+                "__typename": "ImageV2"
             }
         ]
     }
