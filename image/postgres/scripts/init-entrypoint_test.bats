@@ -38,8 +38,19 @@ case "${0##*/}" in
     pg_ctl)
         if [[ "$*" == *backup-restore-test* ]]; then
             [[ "${TEST_FAIL_VERIFICATION:-}" != true ]]
+        elif [[ "$*" == "-D ${PGDATA} start"* ]]; then
+            [[ "${TEST_FAIL_REFRESH_START:-}" != true ]]
+        elif [[ "$*" == "-D ${PGDATA} stop"* ]]; then
+            [[ "${TEST_FAIL_REFRESH_STOP:-}" != true ]]
         else
             [[ "${TEST_FAIL_SOURCE_START:-}" != true ]]
+        fi
+        ;;
+    vacuumdb)
+        if [[ "$*" == *--all* && "$*" == *--analyze-only* ]]; then
+            [[ "${TEST_FAIL_VACUUMDB:-}" != true ]]
+        else
+            exit 1
         fi
         ;;
     pg_isready) exit 0 ;;
@@ -80,7 +91,7 @@ MOCK
     for binary in postgres pg_ctl pg_isready pg_controldata; do
         cp "${TEST_ROOT}/mock" "${TEST_ROOT}/old/postgresql-15/bin/${binary}"
     done
-    for binary in postgres initdb pg_upgrade df tar sync; do
+    for binary in postgres initdb pg_upgrade df tar sync pg_ctl vacuumdb; do
         cp "${TEST_ROOT}/mock" "${TEST_ROOT}/bin/${binary}"
     done
     export PATH="${TEST_ROOT}/bin:${PATH}"
@@ -330,4 +341,90 @@ assert_older_backups_preserved() {
     [ "${status}" -ne 0 ]
     [ "$(cat "${PGDATA}/PG_VERSION")" = 15 ]
     [ -s "${BACKUP_VOLUME}/15-16/backup.tar" ]
+}
+
+@test "successful upgrade refreshes statistics and clears the marker" {
+    run_init
+
+    [ "${status}" -eq 0 ]
+    [ "$(cat "${PGDATA}/PG_VERSION")" = 16 ]
+    [ ! -e "${PGDATA}/.stats-pending" ]
+    grep -q "^vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4$" "${TEST_EVENTS}"
+}
+
+@test "successful upgrade starts and stops the refresh server" {
+    run_init
+
+    [ "${status}" -eq 0 ]
+    grep -q "^pg_ctl -D ${PGDATA} start " "${TEST_EVENTS}"
+    grep -q "^pg_ctl -D ${PGDATA} stop " "${TEST_EVENTS}"
+}
+
+@test "failed statistics refresh keeps the marker and retries on the next start" {
+    export TEST_FAIL_VACUUMDB=true
+
+    run_init
+
+    [ "${status}" -eq 0 ]
+    [ -e "${PGDATA}/.stats-pending" ]
+
+    unset TEST_FAIL_VACUUMDB
+    run_init
+
+    [ "${status}" -eq 0 ]
+    [ ! -e "${PGDATA}/.stats-pending" ]
+    grep -q "^vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4$" "${TEST_EVENTS}"
+}
+
+@test "statistics refresh keeps the marker when the upgraded cluster will not start" {
+    export TEST_FAIL_REFRESH_START=true
+
+    run_init
+
+    [ "${status}" -eq 0 ]
+    [ -e "${PGDATA}/.stats-pending" ]
+    if grep -q "^vacuumdb " "${TEST_EVENTS}"; then
+        return 1
+    fi
+
+    unset TEST_FAIL_REFRESH_START
+    run_init
+
+    [ "${status}" -eq 0 ]
+    [ ! -e "${PGDATA}/.stats-pending" ]
+}
+
+@test "statistics refresh fails the init container when the refresh server will not stop" {
+    export TEST_FAIL_REFRESH_STOP=true TEST_FAIL_VACUUMDB=true
+
+    run_init
+
+    [ "${status}" -ne 0 ]
+    [ -e "${PGDATA}/.stats-pending" ]
+    [[ "${output}" == *"Could not stop the refresh server"* ]]
+}
+
+@test "ordinary startup refreshes a pending statistics marker" {
+    echo 16 > "${PGDATA}/PG_VERSION"
+    touch "${PGDATA}/.stats-pending"
+
+    run_init
+
+    [ "${status}" -eq 0 ]
+    [ ! -e "${PGDATA}/.stats-pending" ]
+    grep -q "^vacuumdb --host 127.0.0.1 --all --analyze-only --jobs 4$" "${TEST_EVENTS}"
+}
+
+@test "ordinary startup does not analyze without the marker" {
+    echo 16 > "${PGDATA}/PG_VERSION"
+
+    run_init
+
+    [ "${status}" -eq 0 ]
+    if grep -q "^vacuumdb " "${TEST_EVENTS}"; then
+        return 1
+    fi
+    if grep -q "^pg_ctl -D ${PGDATA} start " "${TEST_EVENTS}"; then
+        return 1
+    fi
 }

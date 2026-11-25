@@ -2,7 +2,7 @@
 ARG roxpath=/tmp/workspace/src/github.com/stackrox/rox
 ARG TARGET_ARCH=amd64
 
-FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:1.26 AS builder
+FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:1.27 AS builder
 
 # Build the manager binary
 ARG TARGET_ARCH

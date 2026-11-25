@@ -1,12 +1,15 @@
+import { useMemo } from 'react';
 import { Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getDateTime } from 'utils/dateUtils';
 import { getTableUIState } from 'utils/getTableUIState';
+import { applyRegexSearchModifiers } from 'utils/searchUtils';
 
 import { DeploymentNameColumn } from './DeploymentNameColumn';
 import useDeploymentsCount from './useDeploymentsCount';
@@ -38,16 +41,32 @@ function RiskTablePanel({
 }: RiskTablePanelProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
 
+    // Format values for the search API (e.g. a selected label "app=visa-processor" must become
+    // key=value, else it never matches). Memoized: applyRegexSearchModifiers clones, so a fresh
+    // reference each render would re-trigger the fetch hooks (loop).
+    const requestSearchFilter = useMemo(
+        () => applyRegexSearchModifiers(searchFilter),
+        [searchFilter]
+    );
+
     const { data, error, isLoading } = useDeploymentsWithProcessInfo({
-        searchFilter,
+        searchFilter: requestSearchFilter,
         sortOption,
         page,
         perPage,
     });
 
     const { data: deploymentCount = 0 } = useDeploymentsCount({
-        searchFilter,
+        searchFilter: requestSearchFilter,
     });
+
+    // Server-side pagination: a page past the end returns an empty offset, so snap back to page 1
+    // once the real count is known (after first render, to not clobber a valid deep link).
+    useEffectAfterFirstRender(() => {
+        if (page > Math.ceil(deploymentCount / perPage)) {
+            setPage(1);
+        }
+    }, [deploymentCount, perPage, setPage]);
 
     const tableState = getTableUIState({ isLoading, data, error, searchFilter });
 

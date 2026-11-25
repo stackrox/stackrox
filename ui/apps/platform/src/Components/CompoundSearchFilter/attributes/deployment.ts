@@ -1,4 +1,6 @@
-// If you're adding a new attribute, make sure to add it to "deploymentAttributes" as well
+// New attributes go in `deploymentAttributes` too, so they render wherever the Deployment entity is
+// shown. Exception: page-scoped fields (Type, ServiceAccount, Secret) stay out of the aggregate to
+// avoid surfacing elsewhere, but remain exported so searchUtils can register them for regex.
 
 import type { CompoundSearchFilterAttribute } from '../types';
 
@@ -54,6 +56,28 @@ export const Inactive: CompoundSearchFilterAttribute = {
             { value: 'true', label: 'Inactive' },
         ],
     },
+};
+
+// Page-scoped fields (see note at top): kept out of deploymentAttributes on purpose.
+export const Type: CompoundSearchFilterAttribute = {
+    displayName: 'Type',
+    filterChipLabel: 'Deployment type',
+    searchTerm: 'Deployment Type',
+    inputType: 'autocomplete',
+};
+
+export const ServiceAccount: CompoundSearchFilterAttribute = {
+    displayName: 'Service account',
+    filterChipLabel: 'Service account',
+    searchTerm: 'Service Account',
+    inputType: 'autocomplete',
+};
+
+export const Secret: CompoundSearchFilterAttribute = {
+    displayName: 'Secret',
+    filterChipLabel: 'Secret',
+    searchTerm: 'Secret',
+    inputType: 'autocomplete',
 };
 
 export const deploymentAttributes = [Annotation, ContainerType, ID, Label, Name, Inactive];

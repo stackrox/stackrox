@@ -1,7 +1,5 @@
-// Package ruleengine is the seam between the selection callers (the CLI
-// and, later, the GitHub Actions planner) and a rules engine. Callers
-// depend only on this package, so replacing the engine means adding an
-// implementation.
+// Package ruleengine defines the interface used to match the changed paths
+// against rules that defines what jobs to run or skip
 package ruleengine
 
 import (
@@ -29,6 +27,7 @@ func (d Decision) Action(target string) string {
 	return "run"
 }
 
+// String renders the plan as sorted "<target> <action>" lines.
 func (d Decision) String() string {
 	if len(d.Actions) == 0 {
 		return "all targets run\n"
@@ -40,10 +39,10 @@ func (d Decision) String() string {
 	return text.String()
 }
 
-// Engine turns a rules document and the changed paths into a plan. The
-// engine owns the rules format, so swapping engines swaps the language with
-// it. changed is the pull request's changed files, detected upstream (for
-// example by the detect-changes workflow) and passed in.
+// Engine selects jobs for one rules format; replacing it replaces the language.
 type Engine interface {
+	// Plan matches changed against rules to decide run/skip per job. changed is
+	// the pull request's changed files, detected upstream (e.g. detect-changes);
+	// rules is the rules document.
 	Plan(rules []byte, changed []string) (Decision, error)
 }

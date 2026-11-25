@@ -72,14 +72,9 @@ var log = logging.LoggerForModule()
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Info("Running sensor with Kubernetes re-sync disabled")
 
-	var internalMessageDispatcher common.PubSubDispatcher
-	if features.SensorInternalPubSub.Enabled() {
-		log.Info("Internal PubSub system enabled")
-		var err error
-		internalMessageDispatcher, err = buildPubSubDispatcher(cfg.eventPipelineQueueSize)
-		if err != nil {
-			return nil, err
-		}
+	internalMessageDispatcher, err := buildPubSubDispatcher(cfg.eventPipelineQueueSize)
+	if err != nil {
+		return nil, err
 	}
 
 	clusterID := cfg.clusterIDHandler
@@ -248,7 +243,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	coReadySignal := concurrency.NewSignal()
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
-	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
+	coManager := complianceoperator.NewManager(cfg.k8sClient.Dynamic(), coInfoUpdater, storeProvider.MachineConfigPool(), &coReadySignal, internalMessageDispatcher)
+	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(coManager, internalMessageDispatcher))
 
 	sensorNamespace := pods.GetPodNamespace()
 

@@ -50,6 +50,9 @@ func buildPubSubDispatcher(eventPipelineQueueSize int) (common.PubSubDispatcher,
 			lane.NewBlockingLane(pubsub.SoftRestartLane),
 			lane.NewBlockingLane(pubsub.ResourceSyncFinishedLane),
 			lane.NewBlockingLane(pubsub.FakeFileActivityLane),
+			lane.NewBlockingLane(pubsub.NodeRoleChangeLane),
+			lane.NewBlockingLane(pubsub.ComplianceCentralRequestLane),
+			lane.NewBlockingLane(pubsub.ComplianceCentralResultLane),
 		},
 	))
 	if err != nil {

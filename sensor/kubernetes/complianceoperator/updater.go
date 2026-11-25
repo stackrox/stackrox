@@ -107,11 +107,15 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, r
 
 type updaterImpl struct {
 	unimplemented.Receiver
-	client               kubernetes.Interface
-	updateTicker         *time.Ticker
-	updateInterval       time.Duration
-	response             chan *message.ExpiringMessage
-	stopSig              concurrency.Signal
+	client         kubernetes.Interface
+	updateTicker   *time.Ticker
+	updateInterval time.Duration
+	response       chan *message.ExpiringMessage
+	stopSig        concurrency.Signal
+	// nsLock guards complianceOperatorNS: the updater's run goroutine writes
+	// it on every collection cycle, while other components (e.g. the Manager)
+	// read it through the StatusInfo interface from their own goroutines.
+	nsLock               sync.RWMutex
 	complianceOperatorNS string
 	isReady              *concurrency.Signal
 }
@@ -153,7 +157,15 @@ func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (u *updaterImpl) GetNamespace() string {
+	u.nsLock.RLock()
+	defer u.nsLock.RUnlock()
 	return u.complianceOperatorNS
+}
+
+func (u *updaterImpl) setNamespace(ns string) {
+	u.nsLock.Lock()
+	defer u.nsLock.Unlock()
+	u.complianceOperatorNS = ns
 }
 
 func (u *updaterImpl) run(tickerC <-chan time.Time) {
@@ -175,7 +187,7 @@ func (u *updaterImpl) run(tickerC <-chan time.Time) {
 
 func (u *updaterImpl) collectInfoAndSendResponse() bool {
 	info := u.getComplianceOperatorInfo()
-	u.complianceOperatorNS = info.GetNamespace()
+	u.setNamespace(info.GetNamespace())
 	if info.GetIsInstalled() {
 		u.isReady.Signal()
 	} else {
@@ -204,7 +216,7 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 }
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	complianceOperatorDeployment, err := searchForDeployment(u.ctx(), u.complianceOperatorNS, u.client)
+	complianceOperatorDeployment, err := searchForDeployment(u.ctx(), u.GetNamespace(), u.client)
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),

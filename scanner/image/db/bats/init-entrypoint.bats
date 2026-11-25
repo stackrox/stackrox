@@ -11,8 +11,8 @@ setup() {
     mkdir -p "$TEST_DIR/pgsql/postgresql-15/bin"
 
     export POSTGRES_HOST_AUTH_METHOD="scram-sha-256"
-    export POSTGRES_PASSWORD_FILE="$TEST_DIR/password"
-    echo "testpass" > "$POSTGRES_PASSWORD_FILE"
+    export POSTGRES_PASS_FILE="$TEST_DIR/password"
+    echo "testpass" > "$POSTGRES_PASS_FILE"
 
     export PATH="$NEW_BINARIES:$PATH"
 
@@ -50,7 +50,9 @@ setup_binaries() {
             mock_executable "$NEW_BINARIES/pg_upgrade" '[[ "$*" == *"--check"* ]] && exit 0; exit 1'
             ;;
         *)
-            mock_executable "$NEW_BINARIES/pg_upgrade" ''
+            # Fail on an unexpected PGPASSWORD so tests catch a lost or
+            # mistyped password-file variable (ROX-39749).
+            mock_executable "$NEW_BINARIES/pg_upgrade" '[[ "$PGPASSWORD" == testpass ]] || { echo "pg_upgrade: unexpected PGPASSWORD" >&2; exit 1; }'
             ;;
     esac
 }
@@ -65,7 +67,7 @@ given_pending_statistics() {
     given_binary_version "$NEW_BINARIES" 16
     mock_executable "$NEW_BINARIES/pg_ctl" 'touch "$TEST_DIR/started"'
     mock_executable "$NEW_BINARIES/vacuumdb" \
-        '[[ "$*" == *--all* && "$*" == *--analyze-only* ]] && touch "$TEST_DIR/analyzed"'
+        '[[ "$*" == *--all* && "$*" == *--analyze-only* && "$PGPASSWORD" == testpass ]] && touch "$TEST_DIR/analyzed"'
     touch "$PGDATA/.stats-pending"
 }
 
@@ -253,6 +255,40 @@ assert_upgrade() {
     assert_output --partial "malformed version"
     assert_upgrade "16"
     assert_equal "$(cat "$version_file")" "5.1"
+}
+
+# Pod specs from releases that predate the ROX-39749 rename set only
+# POSTGRES_PASSWORD_FILE; an image-only upgrade runs this script under such a
+# spec (see tests/upgrade/postgres_upgrade_run.sh). The old name must keep
+# working via the fallback resolved in _main.
+@test "main: pre-rename POSTGRES_PASSWORD_FILE still initializes the cluster" {
+    init_pgdata
+    echo "garbage" > "$PGDATA/.scanner-db-version"
+    given_initdb "$NEW_BINARIES" 16
+    unset POSTGRES_PASS_FILE
+    export POSTGRES_PASSWORD_FILE="$TEST_DIR/password"
+    export BUILD_TAG="5.1.0"
+
+    run _main
+
+    assert_success
+    assert_output --partial "malformed version"
+    assert_upgrade "16"
+}
+
+# The pre-rename name must also carry the password through a PostgreSQL
+# upgrade, not only a fresh initialization.
+@test "upgrade - pre-rename POSTGRES_PASSWORD_FILE still upgrades the cluster" {
+    init_pgdata
+    given_data_version "$PGDATA" 15
+    setup_binaries 15 16
+    unset POSTGRES_PASS_FILE
+    export POSTGRES_PASSWORD_FILE="$TEST_DIR/password"
+
+    run maybe-upgrade "$TEST_DIR/pgsql"
+
+    assert_success
+    assert_upgrade "16"
 }
 
 @test "main: empty stored version warns and reinitializes" {

@@ -2,6 +2,7 @@ import static Services.checkForNoViolations
 import static Services.waitForViolation
 import static util.Helpers.withRetry
 
+import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass
@@ -21,6 +22,8 @@ import objects.K8sServiceAccount
 import objects.K8sSubject
 import objects.Service
 import objects.Volume
+import orchestratormanager.OrchestratorTypes
+import services.AlertService
 import services.ClusterService
 import services.ImageService
 import services.NodeService
@@ -46,7 +49,10 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private String NGINX_LATEST_NAME = "nginx-latest"
     private static final String CLUSTER_ROLE_NAME = "policy-config-role"
 
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 450 : 90
+    // OpenShift control planes can queue policy re-evaluation for several minutes; match the
+    // OpenShift timeout used by the other policy tests (see BuiltinPoliciesTest).
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            (isRaceBuild() || Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 450 : 90
 
     private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
             name: SERVICE_ACCOUNT_NAME,
@@ -730,6 +736,33 @@ class PolicyConfigurationTest extends BaseSpecification {
         DeploymentOuterClass.ContainerConfig.EnvironmentConfig.EnvVarSource.RESOURCE_FIELD | _
     }
 
+    private void logScopeViolationDiagnostics(
+            Deployment deployment, String policyID, String policyName) {
+        log.info("Policy scope violation diagnostics for deployment ${deployment.name}, " +
+                "policy ${policyName} (${policyID})")
+
+        try {
+            log.info("Stored policy: ${Services.getPolicy(policyID)}")
+        } catch (Exception e) {
+            log.info("Unable to read policy ${policyID}", e)
+        }
+
+        def request = ListAlertsRequest.newBuilder()
+                .setQuery("Deployment:${deployment.name}".toString())
+                .build()
+        try {
+            def alerts = AlertService.getViolations(request)
+            log.info("Alerts for deployment ${deployment.name}: ${alerts.size()}")
+            alerts.each { alert ->
+                log.info("  alert id=${alert.id} policy=${alert.policy.name} state=${alert.state} " +
+                        "deployment=${alert.deployment.name} inactive=${alert.deployment.inactive} " +
+                        "time=${alert.time}")
+            }
+        } catch (Exception e) {
+            log.info("Unable to list alerts for deployment ${deployment.name}", e)
+        }
+    }
+
     @Unroll
     @Tag("BAT")
     def "Verify policy scopes are triggered appropriately: #policyName"() {
@@ -750,7 +783,13 @@ class PolicyConfigurationTest extends BaseSpecification {
         then:
         "Verify Violation #policyName is/is not triggered based on scope"
         violatedDeployments.each {
-            assert waitForViolation(it.name, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
+            boolean triggered = waitForViolation(it.name, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
+            if (!triggered) {
+                logScopeViolationDiagnostics(it, policyID, policy.getName())
+            }
+            assert triggered,
+                    "Violation for deployment ${it.name} and policy ${policy.getName()} " +
+                    "was not triggered within ${WAIT_FOR_VIOLATION_TIMEOUT}s"
         }
         nonViolatedDeployments.each {
             // We can wait for a very short period of time here because if we have the violation deployments
