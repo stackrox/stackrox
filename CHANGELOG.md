@@ -31,6 +31,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Deprecated Features
 
+- ROX-39905: The `roxctl central migrate-to-operator` and `roxctl sensor migrate-to-operator` commands are now deprecated and will be removed in a future release. Use the StackRox operator for deployment management instead.
+
 ### Technical Changes
 
 - ROX-36223: Scanner V4 DB init container detects version downgrades (major.minor decrease) and automatically reinitializes the database, preventing schema incompatibility when ACS is rolled back to an older minor version. Rollback reinitialization is supported only when the target version is 5.1 or later.
