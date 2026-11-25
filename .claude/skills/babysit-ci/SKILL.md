@@ -1,6 +1,7 @@
 ---
 name: babysit-ci
 description: Babysit CI on a StackRox PR: reactively watch both GitHub Actions and Prow checks, react to each result as it lands, triage failures, and summarize. Use when asked to watch/babysit CI or PR checks.
+disable-model-invocation: true
 ---
 
 # Babysit CI

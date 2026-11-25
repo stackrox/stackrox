@@ -54,7 +54,7 @@ When creating pull requests, you must follow these requirements:
 ### Watching CI
 
 When a PR is created or its tests are triggered, ask the user if they want you to babysit CI.
-If so, use the `babysit-ci` skill (`/babysit-ci`, in `.claude/skills/babysit-ci/`): it watches
+If so, follow `.claude/skills/babysit-ci/SKILL.md` (user-invocable as `/babysit-ci`): it watches
 GitHub Actions and Prow checks, reacts to each result as it lands, and triages failures
 (Prow via the `stackrox-ci-failure-investigator` agent).
 
