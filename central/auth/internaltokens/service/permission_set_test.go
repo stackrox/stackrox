@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
@@ -105,7 +106,7 @@ func TestPermissionSetPolicy(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, time.Hour, result.GetLifetime().AsDuration())
 			assert.Equal(t, original.GetPermissionSet(), result.GetPermissionSet())
-			assert.Equal(t, original, req, "lifetime capping must not mutate the request")
+			protoassert.Equal(t, original, req, "lifetime capping must not mutate the request")
 		})
 	}
 }
