@@ -35,12 +35,6 @@ func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalCount, err := h.deps.CVEView.Count(ctx, queryWithoutTraversal(query))
-	if err != nil {
-		writeError(w, err, http.StatusInternalServerError)
-		return
-	}
-
 	cveNames := make([]string, 0, len(cveFlats))
 	for _, cf := range cveFlats {
 		cveNames = append(cveNames, cf.GetCVE())
@@ -67,7 +61,7 @@ func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	writeJSON(w, CVEListResponse{Items: items, TotalCount: totalCount})
+	writeJSON(w, CVEListResponse{Items: items})
 }
 
 func batchExceptionCounts(ctx context.Context, store vulnReqDS.DataStore, cves []string, requestStatuses []string) (map[string]int32, error) {

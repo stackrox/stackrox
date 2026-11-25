@@ -36,19 +36,13 @@ func (h *handler) listDeployments(w http.ResponseWriter, r *http.Request) {
 	}
 	query = withPaginationLimits(query)
 
-	totalCount, err := h.deps.DeploymentStore.Count(ctx, queryWithoutTraversal(query))
-	if err != nil {
-		writeError(w, err, http.StatusInternalServerError)
-		return
-	}
-
 	ids, err := h.pageDeploymentIDs(ctx, query)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	if len(ids) == 0 {
-		writeJSON(w, DeploymentListResponse{Items: []DeploymentListItem{}, TotalCount: totalCount})
+		writeJSON(w, DeploymentListResponse{Items: []DeploymentListItem{}})
 		return
 	}
 
@@ -91,7 +85,7 @@ func (h *handler) listDeployments(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	writeJSON(w, DeploymentListResponse{Items: items, TotalCount: totalCount})
+	writeJSON(w, DeploymentListResponse{Items: items})
 }
 
 func (h *handler) pageDeploymentIDs(ctx context.Context, query *v1.Query) ([]string, error) {

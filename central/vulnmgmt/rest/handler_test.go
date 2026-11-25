@@ -167,7 +167,6 @@ func decodeResponse[T any](s *HandlerTestSuite, rec *httptest.ResponseRecorder) 
 
 func (s *HandlerTestSuite) TestListCVEs() {
 	resp := decodeResponse[CVEListResponse](s, s.get("/api/v2/vulnmgmt/cves", nil))
-	s.Equal(3, resp.TotalCount)
 	s.Len(resp.Items, 3)
 	for _, item := range resp.Items {
 		s.NotEmpty(item.CVE)
@@ -188,7 +187,6 @@ func (s *HandlerTestSuite) TestListCVEsWithSeverityFilter() {
 	params := url.Values{}
 	params.Set("query", "Severity:CRITICAL_VULNERABILITY_SEVERITY")
 	resp := decodeResponse[CVEListResponse](s, s.get("/api/v2/vulnmgmt/cves", params))
-	s.Equal(1, resp.TotalCount)
 	s.Require().Len(resp.Items, 1)
 	s.Equal("CVE-2024-0001", resp.Items[0].CVE)
 }
@@ -202,7 +200,6 @@ func (s *HandlerTestSuite) TestGetCVEDetail() {
 
 func (s *HandlerTestSuite) TestListImages() {
 	resp := decodeResponse[ImageListResponse](s, s.get("/api/v2/vulnmgmt/images", nil))
-	s.Equal(3, resp.TotalCount)
 	s.Len(resp.Items, 3)
 
 	byID := make(map[string]ImageListItem)
@@ -226,7 +223,6 @@ func (s *HandlerTestSuite) TestListImagesWithSeverityFilter() {
 	params := url.Values{}
 	params.Set("query", "Severity:CRITICAL_VULNERABILITY_SEVERITY")
 	resp := decodeResponse[ImageListResponse](s, s.get("/api/v2/vulnmgmt/images", params))
-	s.Equal(2, resp.TotalCount)
 	s.Len(resp.Items, 2)
 	for _, item := range resp.Items {
 		s.Equal(1, item.MatchedCVECount)
@@ -237,7 +233,6 @@ func (s *HandlerTestSuite) TestListImagesWithoutCVEs() {
 	params := url.Values{}
 	params.Set("query", "Image CVE Count:0")
 	resp := decodeResponse[ImageListResponse](s, s.get("/api/v2/vulnmgmt/images", params))
-	s.Equal(1, resp.TotalCount)
 	s.Require().Len(resp.Items, 1)
 	s.Equal("image-3", resp.Items[0].ID)
 	s.Equal(0, resp.Items[0].MatchedCVECount)
@@ -246,7 +241,6 @@ func (s *HandlerTestSuite) TestListImagesWithoutCVEs() {
 
 func (s *HandlerTestSuite) TestListDeployments() {
 	resp := decodeResponse[DeploymentListResponse](s, s.get("/api/v2/vulnmgmt/deployments", nil))
-	s.Equal(3, resp.TotalCount)
 	s.Len(resp.Items, 3)
 
 	byName := make(map[string]DeploymentListItem)
@@ -263,7 +257,6 @@ func (s *HandlerTestSuite) TestListDeploymentsWithSeverityFilter() {
 	params := url.Values{}
 	params.Set("query", "Severity:CRITICAL_VULNERABILITY_SEVERITY")
 	resp := decodeResponse[DeploymentListResponse](s, s.get("/api/v2/vulnmgmt/deployments", params))
-	s.Equal(2, resp.TotalCount)
 	s.Len(resp.Items, 2)
 	for _, item := range resp.Items {
 		s.Equal(1, item.MatchedCVECount)

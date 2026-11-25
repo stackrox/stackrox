@@ -16,8 +16,7 @@ type CVEListItem struct {
 
 // CVEListResponse is the response for the CVE list endpoint.
 type CVEListResponse struct {
-	Items      []CVEListItem `json:"items"`
-	TotalCount int           `json:"totalCount"`
+	Items []CVEListItem `json:"items"`
 }
 
 // CVEDetailItem represents a single distro detail for a CVE.
@@ -74,8 +73,7 @@ type ImageListItem struct {
 
 // ImageListResponse is the response for the image list endpoint.
 type ImageListResponse struct {
-	Items      []ImageListItem `json:"items"`
-	TotalCount int             `json:"totalCount"`
+	Items []ImageListItem `json:"items"`
 }
 
 // DeploymentListItem represents a single deployment in the list response.
@@ -92,8 +90,7 @@ type DeploymentListItem struct {
 
 // DeploymentListResponse is the response for the deployment list endpoint.
 type DeploymentListResponse struct {
-	Items      []DeploymentListItem `json:"items"`
-	TotalCount int                  `json:"totalCount"`
+	Items []DeploymentListItem `json:"items"`
 }
 
 // SeverityCounts holds CVE counts per severity.

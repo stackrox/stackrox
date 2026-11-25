@@ -43,19 +43,13 @@ func (h *handler) listImages(w http.ResponseWriter, r *http.Request) {
 	}
 	query = withPaginationLimits(query)
 
-	totalCount, err := h.deps.ImageStore.Count(ctx, queryWithoutTraversal(query))
-	if err != nil {
-		writeError(w, err, http.StatusInternalServerError)
-		return
-	}
-
 	ids, err := h.pageImageIDs(ctx, query)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 	if len(ids) == 0 {
-		writeJSON(w, ImageListResponse{Items: []ImageListItem{}, TotalCount: totalCount})
+		writeJSON(w, ImageListResponse{Items: []ImageListItem{}})
 		return
 	}
 
@@ -113,7 +107,7 @@ func (h *handler) listImages(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	writeJSON(w, ImageListResponse{Items: items, TotalCount: totalCount})
+	writeJSON(w, ImageListResponse{Items: items})
 }
 
 func (h *handler) pageImageIDs(ctx context.Context, query *v1.Query) ([]string, error) {
