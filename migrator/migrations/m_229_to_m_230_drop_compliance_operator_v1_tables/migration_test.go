@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	oldSchema "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_compliance_operator_v1_tables/schema/old"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
@@ -52,17 +51,13 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(migration.Run(dbs))
 
 	for _, table := range complianceOperatorV1Tables {
-		var num int64
-		err := dbs.PostgresDB.QueryRow(dbs.DBCtx, "SELECT 1 FROM information_schema.tables WHERE table_name = $1", table).Scan(&num)
-		s.Require().ErrorIs(err, pgx.ErrNoRows, "table %q should be gone after migration", table)
+		s.False(s.tableExists(table), "table %q should be gone after migration", table)
 	}
 
 	// Idempotency: second run must be a no-op
 	s.Require().NoError(migration.Run(dbs))
 	for _, table := range complianceOperatorV1Tables {
-		var num int64
-		err := dbs.PostgresDB.QueryRow(dbs.DBCtx, "SELECT 1 FROM information_schema.tables WHERE table_name = $1", table).Scan(&num)
-		s.Require().ErrorIs(err, pgx.ErrNoRows, "table %q should still be gone after second run", table)
+		s.False(s.tableExists(table), "table %q should still be gone after second run", table)
 	}
 }
 
