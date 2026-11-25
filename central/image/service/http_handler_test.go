@@ -148,6 +148,9 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				testutils.MustUpdateFeature(t, features.FlattenImageData, tc.flattenImageDataEnabled)
 				t.Setenv(features.ScannerV4.EnvVar(), "true")
+				// Pin the handler timeout above the request's 30s deadline so the request
+				// deadline is always the effective one, regardless of the environment.
+				t.Setenv("ROX_SCAN_TIMEOUT", "10m")
 
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
