@@ -1,6 +1,5 @@
 import { visitFromConsoleLeftNavExpandable } from '../../helpers/nav';
 import { withOcpAuth } from '../../helpers/ocpAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { assertVisibleTableColumns } from '../../helpers/tableHelpers';
 import { interceptAndWatchRequests } from '../../helpers/request';
 import pf6 from '../../selectors/pf6';
@@ -68,11 +67,11 @@ function visitProjectSecurityTabAndCheckColumns(
         'CVE',
         'Images by severity',
         'Top CVSS',
-        hasFeatureFlag('ROX_SCANNER_V4') ? 'Top NVD CVSS' : null,
-        hasFeatureFlag('ROX_SCANNER_V4') ? 'EPSS probability' : null,
+        'Top NVD CVSS',
+        'EPSS probability',
         'First discovered',
         'Published',
-    ].filter((column) => column !== null);
+    ];
     assertVisibleTableColumns('table', expectedCveTableColumns);
 
     // Check Image table columns
