@@ -9,7 +9,6 @@ import (
 	rolePkg "github.com/stackrox/rox/central/role"
 	permissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -85,7 +84,8 @@ func TestSeedMetricsPermissionSetPreservesAdminGrants(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, found)
 			protoassert.Equal(t, existing, stored)
-			require.Error(t, permissionsUtils.ValidateScopedReadOnlyPermissionSet(stored),
+			require.True(t, stored.GetAccessConstraint() == storage.AccessConstraint_ACCESS_CONSTRAINT_READ &&
+				stored.GetScopeConstraint() == storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 				"existing grants need explicit constraints before use for scoped tokens")
 		})
 	}
