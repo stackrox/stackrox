@@ -42,6 +42,7 @@ expect "Create PodSecurityPolicy resources*:*: " { send "\n" }
 expect "Administrator password*:*: " { send "\n" }
 expect "Orchestrator (k8s, openshift)*: " { send "k8s\n" }
 expect "Default container images settings*:*: " { send "$flavor\n" }
+# Only containers get a default output directory, so the host prompt lacks the "default:" hint.
 expect "The directory to output the deployment bundle to*:" { send "$out_dir\n" }
 expect "Whether to enable telemetry*:" { send "\n" }
 
