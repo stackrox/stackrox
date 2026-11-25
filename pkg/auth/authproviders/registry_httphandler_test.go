@@ -677,6 +677,10 @@ func (*tstTokenIssuerFactory) CreateIssuer(_ tokens.Source, _ ...tokens.Option) 
 	return testTokenIssuer, nil
 }
 
+func (*tstTokenIssuerFactory) RegisterSource(_ tokens.Source) error {
+	return nil
+}
+
 func (*tstTokenIssuerFactory) UnregisterSource(_ tokens.Source) error {
 	return nil
 }
