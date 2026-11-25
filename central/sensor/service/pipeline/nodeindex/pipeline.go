@@ -11,6 +11,7 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
+	scannerDefinitions "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/scos"
 )
 
 var (
@@ -99,8 +101,6 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		len(report.GetContents().GetRepositories()),
 		len(report.GetContents().GetRepositoriesDEPRECATED()),
 	)
-	report = report.CloneVT()
-
 	// Query storage for the node this report comes from
 	nodeId := event.GetId()
 	node, found, err := p.nodeDatastore.GetNode(ctx, nodeId)
@@ -109,6 +109,19 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 	if !found {
 		return errors.WithMessagef(err, "node %s not found in datastore", nodeId)
+	}
+	report = report.CloneVT()
+	if scos.Enabled() {
+		if profile, ok := scos.Detect(node.GetOsImage(), node.GetKernelVersion()); ok {
+			mapping, err := scannerDefinitions.Singleton().RepositoryToCPEMapping(ctx)
+			if err != nil {
+				return errors.Wrap(err, "loading SCOS repository mapping")
+			}
+			report, err = scos.AddCompatibility(report, profile, mapping)
+			if err != nil {
+				return errors.Wrap(err, "preparing SCOS report")
+			}
+		}
 	}
 
 	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan

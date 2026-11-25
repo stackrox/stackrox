@@ -24,6 +24,10 @@ var (
 	// NodeIndexEnabled defines whether Compliance will actually run indexing code.
 	NodeIndexEnabled = registerFeature("Instructs Central to prefer NodeIndex (Node scanning V4) messages over NodeInventory (Node scanning V2)", "ROX_NODE_INDEX_ENABLED", enabled)
 
+	// SCOSNodeScanning enables experimental CentOS Stream CoreOS matching in Central using RHEL advisories.
+	// It requires ScannerV4 and NodeIndexEnabled.
+	SCOSNodeScanning = registerFeature("Match CentOS Stream CoreOS node packages against RHEL advisories", "ROX_SCOS_NODE_SCANNING")
+
 	// ComplianceReporting enables support for compliance reporting.
 	ComplianceReporting = registerFeature("Enable support for V2 compliance reporting", "ROX_COMPLIANCE_REPORTING", enabled)
 

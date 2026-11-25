@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/scannerv4/scos"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -251,6 +252,11 @@ var nodeScanningOSImagePrefixes = []string{"Red Hat Enterprise Linux CoreOS"}
 
 // SupportsNodeScanning returns if the provided node object supports full host node scanning.
 func SupportsNodeScanning(node *storage.Node) bool {
+	if scos.Enabled() {
+		if _, ok := scos.Detect(node.GetOsImage(), node.GetKernelVersion()); ok {
+			return true
+		}
+	}
 	for _, osPrefix := range nodeScanningOSImagePrefixes {
 		if strings.HasPrefix(node.GetOsImage(), osPrefix) {
 			return true

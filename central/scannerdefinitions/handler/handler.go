@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -134,6 +135,10 @@ type httpHandler struct {
 
 	// offlineFiles coordinates reads and updates to offline files.
 	offlineFiles *offlineFileManager
+
+	repoMappingLock    sync.Mutex
+	repoMapping        *repositorytocpe.MappingFile
+	repoMappingExpires time.Time
 }
 
 func init() {
@@ -162,6 +167,10 @@ func init() {
 
 // New creates a new http.Handler to handle vulnerability data.
 func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
+	return newHandler(blobStore, opts)
+}
+
+func newHandler(blobStore blob.Datastore, opts handlerOpts) *httpHandler {
 	dataDir, err := os.MkdirTemp("", tmpDirPattern)
 	utils.CrashOnError(err) // Fundamental problem if we cannot create a temp directory.
 
@@ -189,6 +198,36 @@ func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
 	go h.cleanUpdatersPeriodic(opts.cleanupInterval, opts.cleanupAge)
 
 	return h
+}
+
+// RepositoryToCPEMapping loads the mapping served to connected scanners. The
+// returned mapping is shared and callers must treat it as read-only.
+func (h *httpHandler) RepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error) {
+	h.repoMappingLock.Lock()
+	defer h.repoMappingLock.Unlock()
+	if time.Now().Before(h.repoMappingExpires) {
+		return h.repoMapping, nil
+	}
+	const name = "repo2cpe"
+	file, err := h.openDefinitions(ctx, mappingUpdaterType, openOpts{
+		name:            name,
+		fileName:        v4FileMapping[name],
+		offlineBlobName: offlineScannerV4DefsBlobName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if file == nil {
+		return nil, errors.New("repository-to-CPE mapping is unavailable")
+	}
+	defer utils.IgnoreError(file.Close)
+	var mapping repositorytocpe.MappingFile
+	if err := json.NewDecoder(file).Decode(&mapping); err != nil {
+		return nil, fmt.Errorf("decoding repository-to-CPE mapping: %w", err)
+	}
+	h.repoMapping = &mapping
+	h.repoMappingExpires = time.Now().Add(5 * time.Minute)
+	return h.repoMapping, nil
 }
 
 func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
