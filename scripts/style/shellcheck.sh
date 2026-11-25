@@ -30,7 +30,9 @@ run_shellcheck() {
 
     rm -f "${output}/*" "${flag_failure}"
 
-    for shell in $(retrieve_shell_scripts | grep -v -x -f "${known_failures_file}"); do
+    local scripts
+    scripts="$(retrieve_shell_scripts | grep -v -x -F -f "${known_failures_file}")"
+    for shell in $scripts; do
         if ! shellcheck --norc -P SCRIPTDIR -x "$shell"; then
             if [[ "${CI:-}" == "true" ]]; then
                 mkdir -p "${output}"
@@ -43,8 +45,6 @@ run_shellcheck() {
         fi
     done
 
-    popd > /dev/null
-
     if [[ -e "${flag_failure}" ]]; then
         rm -f "${flag_failure}"
         if [[ "${CI:-}" == "true" ]]; then
@@ -53,6 +53,8 @@ run_shellcheck() {
         info "errors were detected"
         exit 1
     fi
+
+    popd > /dev/null
 }
 
 update_failing_list() {
