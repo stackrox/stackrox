@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,9 +52,12 @@ func scanConfig(id, name string, sched *storage.Schedule) *storage.ComplianceOpe
 	}
 }
 
-// newTestScheduler returns a scheduler wired to a fresh gomock datastore. The gomock controller
-// is bound to t, so expectations are verified when the (sub)test ends.
+// newTestScheduler returns a scheduler wired to a fresh gomock datastore with the decoupled
+// reporting feature enabled. The gomock controller is bound to t, so expectations are verified
+// when the (sub)test ends.
 func newTestScheduler(t *testing.T) (*managerImpl, *scanConfigMocks.MockDataStore) {
+	t.Setenv(features.ComplianceReporting.EnvVar(), "true")
+	t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
 	return New(scanConfigMock).(*managerImpl), scanConfigMock
@@ -253,7 +257,7 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 		<-release
 	}
 
-	m.Start()
+	m.start()
 	defer m.Stop()
 
 	// The first job of cfg1 runs; a second submission of cfg1 must wait behind it.
@@ -387,9 +391,9 @@ func TestSchedulerStartStop(t *testing.T) {
 	_, scanConfigMock := newTestScheduler(t)
 	scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
-	s := New(scanConfigMock)
-	s.Start()
-	s.Stop()
+	m := New(scanConfigMock).(*managerImpl)
+	m.start()
+	m.Stop()
 }
 
 // TestSchedulerRunsInitialReconcileOnStart asserts Start() reconciles the stored scan
@@ -408,9 +412,9 @@ func TestSchedulerRunsInitialReconcileOnStart(t *testing.T) {
 			return nil, nil
 		}).AnyTimes()
 
-	s := New(scanConfigMock)
-	s.Start()
-	defer s.Stop()
+	m := New(scanConfigMock).(*managerImpl)
+	m.start()
+	defer m.Stop()
 
 	select {
 	case <-called:
@@ -451,7 +455,7 @@ func TestUpsertReordersUpcomingFires(t *testing.T) {
 			}
 		}
 
-		m.Start()
+		m.start()
 		defer m.Stop()
 
 		drain := func() []string {
@@ -513,7 +517,7 @@ func TestSchedulerFiresOnSchedule(t *testing.T) {
 			}
 		}
 
-		m.Start()
+		m.start()
 		defer m.Stop()
 
 		// Half an hour past the tick nothing has fired yet.
@@ -539,6 +543,138 @@ func TestSchedulerFiresOnSchedule(t *testing.T) {
 		case job := <-fired:
 			t.Fatalf("report for %q refired for the same cycle", job.scanConfigName)
 		case <-time.After(time.Until(start.Add(90 * time.Minute))):
+		}
+	})
+}
+
+// TestStartDisabled asserts Start is a no-op while the rollout feature is disabled: nothing
+// starts and no advisory lock is taken (the nil DB would panic otherwise).
+func TestStartDisabled(t *testing.T) {
+	t.Setenv(features.ComplianceReporting.EnvVar(), "true")
+	t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "false")
+
+	ctrl := gomock.NewController(t)
+	m := New(scanConfigMocks.NewMockDataStore(ctrl)).(*managerImpl)
+
+	m.Start(nil)
+	assert.False(t, m.isStarted.Load())
+}
+
+func TestScheduleRescanReport(t *testing.T) {
+	t.Setenv(env.ComplianceReportScheduleDelay.EnvVar(), "1h")
+
+	t.Run("unknown configuration is skipped", func(t *testing.T) {
+		m, scanConfigMock := newTestScheduler(t)
+		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg-unknown").
+			Return(nil, false, nil)
+
+		m.ScheduleRescanReport("cfg-unknown")
+		assert.Empty(t, m.rescanEntryIDs)
+	})
+
+	t.Run("one-time scans get a re-run report", func(t *testing.T) {
+		m, scanConfigMock := newTestScheduler(t)
+		cfg := &storage.ComplianceOperatorScanConfigurationV2{Id: "cfg-ot", ScanConfigName: "cfg-one-time", OneTimeScan: true}
+		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg-ot").
+			Return(cfg, true, nil)
+
+		m.ScheduleRescanReport("cfg-ot")
+		assert.Len(t, m.rescanEntryIDs, 1)
+		assert.Empty(t, m.entryIDs, "one-time scans have no recurring entry")
+	})
+
+	t.Run("re-running replaces the pending report", func(t *testing.T) {
+		m, scanConfigMock := newTestScheduler(t)
+		cfg := scanConfig("cfg1", "cfg-one", dailySchedule(0, 0))
+		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+			Return(cfg, true, nil).Times(2)
+
+		m.ScheduleRescanReport("cfg1")
+		require.Len(t, m.rescanEntryIDs, 1)
+		first := m.rescanEntryIDs["cfg1"]
+
+		m.ScheduleRescanReport("cfg1")
+		require.Len(t, m.rescanEntryIDs, 1)
+		assert.NotEqual(t, first, m.rescanEntryIDs["cfg1"], "the pending report was replaced, not duplicated")
+	})
+
+	t.Run("removing the configuration drops the pending report", func(t *testing.T) {
+		m, scanConfigMock := newTestScheduler(t)
+		cfg := scanConfig("cfg1", "cfg-one", dailySchedule(0, 0))
+		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+			Return(cfg, true, nil)
+
+		m.UpsertScanConfig(cfg)
+		m.ScheduleRescanReport("cfg1")
+		require.Len(t, m.rescanEntryIDs, 1)
+
+		m.RemoveScanConfig("cfg1")
+		assert.Empty(t, m.entryIDs)
+		assert.Empty(t, m.rescanEntryIDs)
+	})
+
+	t.Run("disabled feature schedules nothing", func(t *testing.T) {
+		m, _ := newTestScheduler(t)
+		t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "false")
+		// No GetScanConfiguration expectation: the disabled scheduler must not read the store.
+
+		m.ScheduleRescanReport("cfg1")
+		assert.Empty(t, m.rescanEntryIDs)
+	})
+
+	// End to end: the re-run report fires once, one delay after the latest re-run, and a
+	// re-run before the report fires coalesces into it.
+	synctest.Test(t, func(t *testing.T) {
+		m, scanConfigMock := newTestScheduler(t)
+		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+			Return(scanConfig("cfg1", "cfg-one", dailySchedule(0, 0)), true, nil).AnyTimes()
+
+		fired := make(chan *reportJob, 4)
+		m.runJob = func(_ context.Context, job *reportJob) {
+			select {
+			case fired <- job:
+			default:
+			}
+		}
+
+		m.start()
+		defer m.Stop()
+
+		firstScheduledAt := time.Now()
+		m.ScheduleRescanReport("cfg1")
+
+		// Half the delay: nothing has fired yet.
+		select {
+		case <-fired:
+			t.Fatal("re-run report fired before the delay elapsed")
+		case <-time.After(time.Until(firstScheduledAt.Add(30 * time.Minute))):
+		}
+
+		// Re-running coalesces: the report is due one delay after the latest re-run.
+		secondScheduledAt := time.Now()
+		m.ScheduleRescanReport("cfg1")
+
+		// The first re-run's due time passes without a report.
+		select {
+		case <-fired:
+			t.Fatal("re-run report fired at the first re-run's due time")
+		case <-time.After(time.Until(firstScheduledAt.Add(59 * time.Minute))):
+		}
+
+		var job *reportJob
+		select {
+		case job = <-fired:
+		case <-time.After(time.Until(secondScheduledAt.Add(time.Hour + time.Minute))):
+			t.Fatal("re-run report did not fire one delay after the latest re-run")
+		}
+		assert.Equal(t, "cfg1", job.scanConfigID)
+
+		// The report fires exactly once.
+		select {
+		case <-fired:
+			t.Fatal("re-run report fired twice")
+		case <-time.After(time.Until(secondScheduledAt.Add(90 * time.Minute))):
 		}
 	})
 }

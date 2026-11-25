@@ -55,6 +55,7 @@ import (
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
+	complianceReportScheduler "github.com/stackrox/rox/central/complianceoperator/v2/report/scheduler"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
 	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
@@ -1075,6 +1076,11 @@ func waitForTerminationSignal() {
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
+	}
+
+	if features.ComplianceReporting.Enabled() && features.ComplianceDecoupledReports.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{complianceReportScheduler.Singleton(), "compliance report scheduler"})
 	}
 
 	if features.ComplianceSurfaceStaleData.Enabled() && features.ComplianceEnhancements.Enabled() {
