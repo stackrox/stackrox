@@ -109,7 +109,7 @@ data and permissions routes through the console grant and the remaining
 routes through an authentication-only grant. Administrators can configure
 different maps for any permission set. The console feature flag applies to
 clients whose grants select only the console permission set, identified by
-the fixed ID or the name `OpenShift Secured Cluster Console Proxy`; adding
+the fixed ID or the name `Kubernetes Secured Cluster User`; adding
 any other permission set turns the client into a custom client the flag does
 not gate.
 

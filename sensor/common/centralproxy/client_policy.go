@@ -148,7 +148,7 @@ func defaultClientPolicy() clientPolicyDocument {
 			clientPolicyEntry{AuthType: clientAuthKubernetesBearer, Subject: "*",
 				Access: []clientPolicyAccess{
 					{
-						PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+						PermissionSetID: accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser],
 						HTTPScopes:      copyHTTPScopes(centralproxy.ConsoleDataHTTPScopes),
 					},
 					{
