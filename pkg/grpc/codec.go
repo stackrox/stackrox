@@ -14,7 +14,6 @@ type vtprotoMessage interface {
 }
 
 type codec struct {
-	// similar to customMarshaler we fall back to original implementation when message is not supported
 	encoding.CodecV2
 }
 
