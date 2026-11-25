@@ -260,6 +260,8 @@ func (noopIssuerFactory) CreateIssuer(tokens.Source, ...tokens.Option) (tokens.I
 	return nil, nil
 }
 
+func (noopIssuerFactory) RegisterSource(tokens.Source) error { return nil }
+
 func (noopIssuerFactory) UnregisterSource(tokens.Source) error { return nil }
 
 type noopRoleMapperFactory struct{}
