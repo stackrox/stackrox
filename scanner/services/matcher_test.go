@@ -175,6 +175,37 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 	})
 }
 
+func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_legacy_sensor_cpe() {
+	const legacyCPE = "cpe:2.3:*"
+	canonicalCPE := cpe.MustUnbind("cpe:2.3:*:*:*:*:*:*:*:*:*:*:*")
+	s.matcherMock.EXPECT().Initialized(gomock.Any()).Return(nil)
+	s.matcherMock.EXPECT().GetVulnerabilities(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
+			s.Equal(canonicalCPE, ir.Packages["600"].CPE)
+			s.Equal(canonicalCPE, ir.Packages["600"].Source.CPE)
+			s.Equal(canonicalCPE, ir.Repositories["600"].CPE)
+			return &claircore.VulnerabilityReport{}, nil
+		},
+	)
+
+	legacyPackage := &v4.Package{
+		Id: "600", Name: "rhcos", Kind: "binary", Cpe: legacyCPE,
+		Source: &v4.Package{Id: "600", Name: "rhcos", Kind: "source", Cpe: legacyCPE},
+	}
+	legacyRepository := &v4.Repository{Id: "600", Cpe: legacyCPE}
+	service := NewMatcherService(s.matcherMock, nil)
+	_, err := service.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
+		HashId: hashID,
+		Contents: &v4.Contents{
+			Packages:               map[string]*v4.Package{"600": legacyPackage},
+			PackagesDEPRECATED:     []*v4.Package{legacyPackage},
+			Repositories:           map[string]*v4.Repository{"600": legacyRepository},
+			RepositoriesDEPRECATED: []*v4.Repository{legacyRepository},
+		},
+	})
+	s.NoError(err)
+}
+
 func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
