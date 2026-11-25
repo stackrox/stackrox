@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/scannerv4/cpecompat"
 )
 
 // hasIDAndCPE is the common interface offered by some proto definitions related
@@ -162,7 +162,7 @@ func validateMap[T hasIDAndCPE](m map[string]T, fieldName string, validateF func
 		if v.GetId() == "" {
 			return fmt.Errorf("%s element %q: ID is empty", fieldName, k)
 		}
-		_, err := cpe.Unbind(v.GetCpe())
+		_, err := cpecompat.Unbind(v.GetCpe())
 		if err != nil {
 			return fmt.Errorf("%s element %q: invalid CPE: %w", fieldName, k, err)
 		}
@@ -182,7 +182,7 @@ func validateList[T hasIDAndCPE](l []T, fieldName string, validateF func(T) erro
 		if o.GetId() == "" {
 			return fmt.Errorf("%s element #%d: Id is empty", fieldName, n)
 		}
-		_, err := cpe.Unbind(o.GetCpe())
+		_, err := cpecompat.Unbind(o.GetCpe())
 		if err != nil {
 			return fmt.Errorf("%s element #%d (id: %q): invalid CPE: %w", fieldName, n, o.GetId(), err)
 		}
