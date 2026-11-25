@@ -210,7 +210,7 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		newCtx = sac.CopyAccessScopeCheckerCore(newCtx, reqCtx)
 		for _, tracker := range tr {
 			if tracker.CanView(reqCtx) {
-				go tracker.GatherWithKey(newCtx, userID)
+				go tracker.Gather(newCtx, userID)
 			}
 		}
 	}

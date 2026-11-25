@@ -41,7 +41,7 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
@@ -50,7 +50,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 	})
 
@@ -65,7 +65,7 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
@@ -74,7 +74,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 	})
 }
@@ -149,8 +149,8 @@ func TestRunner_ServeHTTP(t *testing.T) {
 
 	runner := makeRunner(&runnerDatastores{deployments: dds, alerts: ads})
 	runner.initialize(cds)
-	runner[0].Gather(makeAdminContext(t))
-	runner[1].Gather(makeAdminContext(t))
+	runner[0].Gather(makeAdminContext(t), "")
+	runner[1].Gather(makeAdminContext(t), "")
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
 		metricName = "rox_central_" + metricName
