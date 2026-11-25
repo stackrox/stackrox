@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/policyreport"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/virtualmachine"
@@ -28,6 +29,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 	complianceOperatorAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/crd"
+	policyReportAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/policyreport"
 	virtualMachineAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -276,6 +278,40 @@ func (k *listenerImpl) handleAllEvents() {
 		}
 	}
 
+	// PolicyReport Watcher and Informers
+	shouldTrackPolicyReports := features.PolicyReports.Enabled()
+	var policyReportInformer cache.SharedIndexInformer
+
+	if features.PolicyReports.Enabled() {
+		prWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
+		prAvailabilityChecker := policyReportAvailabilityChecker.NewAvailabilityChecker()
+		if err := prAvailabilityChecker.AppendToCRDWatcher(prWatcher); err != nil {
+			log.Errorf("Unable to add the Resource to the PolicyReport CRD Watcher: %v", err)
+		}
+
+		prCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
+			allResourcesAvailable(),
+			k.pubSub,
+			"PolicyReport resources have been updated. Connection will restart to force reconciliation with Central")
+
+		shouldTrackPolicyReports, err = prAvailabilityChecker.Available(k.client)
+		if err != nil {
+			log.Errorf("Failed to check the availability of PolicyReport resources: %v", err)
+		}
+
+		if shouldTrackPolicyReports {
+			log.Info("Initializing PolicyReport informers")
+			policyReportInformer = crdSharedInformerFactory.ForResource(policyreport.PolicyReport.GroupVersionResource()).Informer()
+			prCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
+				resourcesUnavailable(),
+				k.pubSub,
+				"PolicyReport resources have been removed. Connection will restart to force reconciliation with Central")
+		}
+		if err := prWatcher.Watch(prCrdHandlerFn); err != nil {
+			log.Errorf("Failed to start watching the PolicyReport CRDs: %v", err)
+		}
+	}
+
 	// This call to clusterID.Get might block if a cluster ID is initially unavailable, which is okay.
 	clusterID := k.clusterID.Get()
 
@@ -383,6 +419,11 @@ func (k *listenerImpl) handleAllEvents() {
 		// send duplicate update events during sync
 		log.Info("Syncing virtual machine instances")
 		handle(k.context, informerVirtualMachineInstances, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+	}
+
+	if shouldTrackPolicyReports {
+		log.Info("Syncing policy reports")
+		handle(k.context, informerPolicyReports, policyReportInformer, dispatchers.ForPolicyReports(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {

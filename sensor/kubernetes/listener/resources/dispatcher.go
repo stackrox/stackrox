@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	policyReportDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/policyreport"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -49,6 +50,8 @@ type DispatcherRegistry interface {
 
 	ForVirtualMachines() Dispatcher
 	ForVirtualMachineInstances() Dispatcher
+
+	ForPolicyReports() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
@@ -112,6 +115,8 @@ func NewDispatcherRegistry(
 
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
+
+		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID),
 	}
 }
 
@@ -142,6 +147,8 @@ type registryImpl struct {
 
 	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
 	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
+
+	policyReportDispatcher *policyReportDispatcher.Dispatcher
 }
 
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
@@ -346,4 +353,8 @@ func (d *registryImpl) ForVirtualMachines() Dispatcher {
 
 func (d *registryImpl) ForVirtualMachineInstances() Dispatcher {
 	return wrapDispatcher(d.virtualMachineInstanceDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForPolicyReports() Dispatcher {
+	return wrapDispatcher(d.policyReportDispatcher, d.traceWriter)
 }
