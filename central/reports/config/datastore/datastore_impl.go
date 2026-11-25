@@ -29,6 +29,13 @@ func (d *dataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.reportConfigStore.Count(ctx, q)
 }
 
+func (d *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
+	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
+		return false, err
+	}
+	return d.reportConfigStore.Exists(ctx, id)
+}
+
 func (d *dataStoreImpl) GetReportConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ReportConfiguration, error) {
 	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err

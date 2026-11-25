@@ -284,8 +284,11 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, id.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
-	reportSnapshots, _ := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
-	if len(reportSnapshots) > 0 {
+	numActiveSnapshots, err := s.snapshotDatastore.Count(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error finding active report snapshots")
+	}
+	if numActiveSnapshots > 0 {
 		return &apiV2.Empty{}, errors.Wrapf(errox.InvalidArgs, "Report config ID '%s' has job in preparing or waiting state", id.GetId())
 	}
 

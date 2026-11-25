@@ -402,12 +402,12 @@ func (s *scheduler) queuePendingReports() {
 			continue
 		}
 
-		_, found, err := s.reportConfigDatastore.GetReportConfiguration(scheduledCtx, snap.GetReportConfigurationId())
+		exists, err := s.reportConfigDatastore.Exists(scheduledCtx, snap.GetReportConfigurationId())
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 			continue
 		}
-		if !found {
+		if !exists {
 			log.Errorf("Report configuration with ID %s had pending reports but the configuration no longer exists",
 				snap.GetReportConfigurationId())
 			continue

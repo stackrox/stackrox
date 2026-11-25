@@ -280,8 +280,8 @@ func TestQueuePendingReports(t *testing.T) {
 	// View-based report should NOT trigger a config lookup.
 	// Config-based report should trigger a config lookup.
 	mockReportConfigDS.EXPECT().
-		GetReportConfiguration(gomock.Any(), "config-1").
-		Return(&storage.ReportConfiguration{Id: "config-1"}, true, nil)
+		Exists(gomock.Any(), "config-1").
+		Return(true, nil)
 
 	mockCollectionDS.EXPECT().
 		Get(gomock.Any(), "collection-1").
