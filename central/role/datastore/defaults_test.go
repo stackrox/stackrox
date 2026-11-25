@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
-	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -86,5 +85,6 @@ func TestConsoleProxyPermissionSet(t *testing.T) {
 		"Deployment": storage.Access_READ_ACCESS,
 		"Image":      storage.Access_READ_ACCESS,
 	}, ps.GetResourceToAccess())
-	require.NoError(t, permissionsUtils.ValidateScopedReadOnlyPermissionSet(ps))
+	require.True(t, ps.GetAccessConstraint() == storage.AccessConstraint_ACCESS_CONSTRAINT_READ &&
+		ps.GetScopeConstraint() == storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE)
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/role"
 	storeMocks "github.com/stackrox/rox/central/role/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
@@ -72,7 +71,8 @@ func TestSeedMetricsPermissionSet(t *testing.T) {
 					assert.False(t, role.IsDefaultPermissionSet(ps))
 					assert.True(t, declarativeconfig.CanModifyResource(ctx, ps))
 					require.NoError(t, role.ValidatePermissionSet(ps))
-					require.NoError(t, permissionsUtils.ValidateScopedReadOnlyPermissionSet(ps))
+					require.True(t, ps.GetAccessConstraint() == storage.AccessConstraint_ACCESS_CONSTRAINT_READ &&
+						ps.GetScopeConstraint() == storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE)
 					return nil
 				}),
 				store.EXPECT().Exists(ctx, accesscontrol.OpenShiftPrometheusMetricsReaderID).Return(true, nil),
