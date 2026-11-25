@@ -328,7 +328,12 @@ rox_fips_approved_groups() {
 ###   cluster TLS profile. Overrides the default list below.
 rox_ssl_groups() {
 	local configured="${ROX_OPENSSL_TLS_GROUPS:-}"
-	if [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)" = "1" ]; then
+	if [ "$(command -v postgres)" != "/usr/bin/postgres" ]; then
+		if [ -n "$configured" ]; then
+			echo "Ignoring ROX_OPENSSL_TLS_GROUPS=${configured} for previous-major PostgreSQL binaries" >&2
+		fi
+		echo 'prime256v1'
+	elif [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)" = "1" ]; then
 		# ML-KEM and X25519 are not approved for FIPS; keep the PG15/16 default
 		# unless P-curves were configured.
 		local approved
@@ -337,14 +342,6 @@ rox_ssl_groups() {
 			echo "FIPS mode: dropping non-FIPS-approved TLS groups from ROX_OPENSSL_TLS_GROUPS=${configured}" >&2
 		fi
 		echo "${approved:-prime256v1}"
-	elif [ "$(command -v postgres)" != "/usr/bin/postgres" ]; then
-		# Previous-major binaries (FORCE_OLD_BINARIES below): a pre-upgrade
-		# server may lack the ssl_ecdh_curve PQC backport.
-		# It only accepts a single curve name, so ignore any configured groups.
-		if [ -n "$configured" ]; then
-			echo "Ignoring ROX_OPENSSL_TLS_GROUPS=${configured} for previous-major PostgreSQL binaries" >&2
-		fi
-		echo 'prime256v1'
 	elif [ -n "$configured" ]; then
 		echo "$configured"
 	else

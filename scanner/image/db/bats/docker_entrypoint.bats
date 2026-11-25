@@ -153,13 +153,27 @@ function use_matching_binaries() {
 # == rox_ssl_groups ==
 
 @test "rox_ssl_groups - previous-major binaries ignore configured groups" {
-    if [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)" = "1" ]; then
-        skip "host is in FIPS mode"
-    fi
     # Any postgres other than /usr/bin/postgres counts as previous-major binaries.
     given_binary_version "$image_bin" 15
     ROX_OPENSSL_TLS_GROUPS="X25519MLKEM768:secp256r1" run rox_ssl_groups
     assert_success
     assert_line "prime256v1"
     assert_output --partial "Ignoring ROX_OPENSSL_TLS_GROUPS"
+}
+
+@test "rox_ssl_groups - previous-major binaries ignore FIPS-approved P-curves" {
+    # On a FIPS node the Operator sends only P-curves; the old server must still
+    # get a single curve it understands.
+    given_binary_version "$image_bin" 15
+    ROX_OPENSSL_TLS_GROUPS="secp384r1:secp521r1" run rox_ssl_groups
+    assert_success
+    assert_line "prime256v1"
+    refute_line "secp384r1:secp521r1"
+}
+
+@test "rox_ssl_groups - previous-major binaries without configured groups" {
+    given_binary_version "$image_bin" 15
+    run rox_ssl_groups
+    assert_success
+    assert_output "prime256v1"
 }
