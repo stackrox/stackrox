@@ -151,23 +151,6 @@ jobs:
           scripts/ci/store-artifacts.sh store_artifacts "$dest" tls-compliance/stackrox-logs
           scripts/ci/store-artifacts.sh store_artifacts "${ARTIFACT_DIR}" tls-compliance/junit-reports
 
-      - name: Publish test summary
-        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-        if: always()
-        with:
-          paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-          show: "fail, pass, skip"
-
-      - name: Report junit failures in jira
-        if: (!cancelled())
-        uses: ./.github/actions/junit2jira
-        with:
-          create-jiras: ${{ github.event_name == 'push' }}
-          jira-user: ${{ secrets.JIRA_USER }}
-          jira-token: ${{ secrets.JIRA_TOKEN }}
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-          directory: ${{ env.ARTIFACT_DIR }}
-
       - name: Delete cluster
         if: always()
         continue-on-error: true
