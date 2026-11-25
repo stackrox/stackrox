@@ -6,10 +6,18 @@
 # named without the substring "PASSWORD" so that the default policy
 # "Environment Variable Contains Secret", which matches env var names against
 # .*PASSWORD.*, does not fire on our own deployments (ROX-39749). Pod specs
-# from releases that predate the rename set POSTGRES_PASSWORD_FILE instead,
-# and both are accepted below, so image-only upgrades keep working.
+# from releases that predate the rename set POSTGRES_PASSWORD_FILE instead;
+# password-file resolves both, so image-only upgrades keep working.
 
 set -Eeo pipefail
+
+# password-file echoes the path of the password file. It prefers
+# POSTGRES_PASS_FILE and falls back to the pre-ROX-39749 POSTGRES_PASSWORD_FILE
+# when the new name is unset or empty, so an image-only upgrade can run this
+# image under a pod spec that predates the rename.
+password-file() {
+    echo "${POSTGRES_PASS_FILE:-${POSTGRES_PASSWORD_FILE:-}}"
+}
 
 # load-init-bundle calls pg_restore on the database init bundle.
 load-init-bundle() {
@@ -37,9 +45,6 @@ load-init-bundle() {
 main() {
     local init_check="$PGDATA/.init-ready"
     local init_bundle="/db-init.dump.zst"
-    # Prefer POSTGRES_PASS_FILE; fall back to the pre-rename
-    # POSTGRES_PASSWORD_FILE so image-only upgrades under old pod specs work.
-    local pwfile="${POSTGRES_PASS_FILE:-${POSTGRES_PASSWORD_FILE:-}}"
 
     [ -e "$init_check" ] && return
 
@@ -49,13 +54,13 @@ main() {
     # Create cluster.
     initdb --auth-host="$POSTGRES_HOST_AUTH_METHOD" \
            --auth-local="$POSTGRES_HOST_AUTH_METHOD" \
-           --pwfile "$pwfile" \
+           --pwfile "$(password-file)" \
            --data-checksums
 
     # Load init bundle, if enabled and the bundle exists.
     if [ "${SCANNER_DB_INIT_BUNDLE_ENABLED:-}" = "true" ] &&
            [ -s /db-init.dump.zst ]; then
-        PGPASSWORD="$(cat "$pwfile")" \
+        PGPASSWORD="$(cat "$(password-file)")" \
             load-init-bundle postgres "$init_bundle"
     fi
 
