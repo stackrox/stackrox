@@ -291,7 +291,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     local config_file; config_file="$(mktemp)"
     local roxie_envrc; roxie_envrc="$(mktemp)"
 
-    # Fix the cluster name so setup_generated_certs_for_test can look it up by name.
+    # Fix the cluster name, which several tests use to look up the cluster.
     merge_yaml "$config_file" <<EOF
 securedCluster:
   spec:
@@ -992,26 +992,22 @@ setup_client_CA_auth_provider() {
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
 
-setup_generated_certs_for_test() {
+# Extract the certs that sensor persists in the tls-cert-sensor secret, for use
+# as a client certificate by endpoints_test.go.
+extract_sensor_certs_for_test() {
     if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: setup_generated_certs_for_test <dir>"
+        die "missing args. usage: extract_sensor_certs_for_test <dir>"
     fi
 
-    info "Setting up generated certs for test"
+    info "Extracting sensor certs for test"
 
     local dir="$1"
 
-    require_environment "API_ENDPOINT"
-    require_environment "ROX_ADMIN_PASSWORD"
+    local secret_json
+    secret_json="$(retrying_kubectl </dev/null -n stackrox get secret tls-cert-sensor -o json)"
 
-    roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
-        sensor generate-certs remote --output-dir "$dir"
-    [[ -f "$dir"/cluster-remote-tls.yaml ]]
-    # Use the certs in future steps that will use client auth.
-    # This will ensure that the certs are valid.
-    sensor_tls_cert="$(retrying_kubectl </dev/null create --dry-run=client -o json -f "$dir"/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
-    for file in ca.pem sensor-cert.pem sensor-key.pem; do
-        echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.stringData[$filename]' -r > "$dir/${file}"
+    for file in ca.pem cert.pem key.pem; do
+        jq -re --arg filename "${file}" '.data[$filename]' <<< "$secret_json" | base64 -d > "$dir/${file}"
     done
 }
 
