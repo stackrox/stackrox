@@ -150,21 +150,14 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				defer ctrl.Finish()
 
 				// initialize mocks
-				scannerSet := scannerMocks.NewMockSet(ctrl)
-				set := intergrationMocks.NewMockSet(ctrl)
 				mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
 				mockEnricherV2 := enricherMock.NewMockImageEnricherV2(ctrl)
 				scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-				fsr := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
+				set := scannerV4Mocks(ctrl, scanner)
 
 				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
 				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
-				scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
 				scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
-				set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
-				fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
-				fsr.EXPECT().DataSource().Return(nil).AnyTimes()
-				scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
 				reqBody := &apiparams.SBOMRequestBody{
 					ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
@@ -301,9 +294,9 @@ func TestSBOMCachedImage(t *testing.T) {
 							stored = utils.ConvertToV2(img)
 						}
 						imagesV2.EXPECT().GetImage(callerScope, utils.NewImageV2ID(img.Name, digest)).Return(stored, tc.readable, nil)
-						if !tc.readable {
-							// The digest-based fallback lookup also misses for an out-of-scope caller.
-							imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(nil, nil)
+						if !tc.readable || !tc.v4 {
+							// The digest-based fallback lookup runs under the caller's scope too.
+							imagesV2.EXPECT().SearchRawImages(callerScope, gomock.Any()).Return(nil, nil)
 						}
 					} else {
 						var stored *storage.Image
@@ -403,7 +396,6 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 		imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
 		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(nil, false, nil)
 		imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return([]*storage.ImageV2{utils.ConvertToV2(img)}, nil)
-		imagesV2.EXPECT().GetImageNames(gomock.Any(), digest).Return([]*storage.ImageName{img.GetName()}, nil)
 
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
 		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
@@ -502,5 +494,73 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 
 		require.Equal(t, 499, w.Code)
 		require.Contains(t, w.Body.String(), "context canceled")
+	})
+
+	t.Run("uuid in digest field is not used as a row id", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+		t.Setenv(features.ScannerV4.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+
+		// A UUID-shaped digest must not fetch an unrelated row: only the name-derived
+		// UUID lookup and the digest search may run, and neither finds anything.
+		uuidDigest := "48b3fca2-8a4d-5c5e-9f0a-1b2c3d4e5f67"
+		ci, err := containerImage(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: uuidDigest})
+		require.NoError(t, err)
+
+		imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
+		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(nil, false, nil)
+		imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+		eV2 := enricherMock.NewMockImageEnricherV2(ctrl)
+		eV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(enricher.EnrichmentResult{ScanResult: enricher.ScanNotDone}, errors.New("registry unavailable")).Times(1)
+
+		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: uuidDigest})
+		require.NoError(t, err)
+		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		w := httptest.NewRecorder()
+		SBOMGenHandler(scannerV4Mocks(ctrl, scannerTypesMocks.NewMockScannerSBOMer(ctrl)), nil, eV2, nil, nil, imageMapperDatastore.New(nil, imagesV2)).ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+		require.Contains(t, w.Body.String(), "registry unavailable")
+	})
+
+	t.Run("digest search selects a scanner v4 row", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+		t.Setenv(features.ScannerV4.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+
+		nonV4 := &storage.Image{
+			Id: digest, Name: &storage.ImageName{FullName: "registry.example.org/app:old"},
+			Metadata: &storage.ImageMetadata{},
+			Scan:     &storage.ImageScan{DataSource: &storage.DataSource{Id: "some-other-scanner"}},
+		}
+		v4 := &storage.Image{
+			Id: digest, Name: &storage.ImageName{FullName: "registry.example.org/app:latest"}, IsClusterLocal: true,
+			Metadata: &storage.ImageMetadata{},
+			Scan:     &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}},
+		}
+
+		// The exact UUID hit carries a non-V4 scan; the digest search finds both rows
+		// and the usable V4 row is served.
+		ci, err := containerImage(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: digest})
+		require.NoError(t, err)
+		imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
+		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(utils.ConvertToV2(nonV4), true, nil)
+		imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).
+			Return([]*storage.ImageV2{utils.ConvertToV2(nonV4), utils.ConvertToV2(v4)}, nil)
+
+		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).
+			Return([]byte(`{"cached":true}`), true, nil)
+
+		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: digest})
+		require.NoError(t, err)
+		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		w := httptest.NewRecorder()
+		SBOMGenHandler(scannerV4Mocks(ctrl, scanner), nil, nil, nil, nil, imageMapperDatastore.New(nil, imagesV2)).ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusOK, w.Code)
+		require.JSONEq(t, `{"cached":true}`, w.Body.String())
 	})
 }

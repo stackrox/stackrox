@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 )
@@ -127,13 +128,29 @@ func (h sbomGenHttpHandler) enrichWithModelSwitch(
 }
 
 func (h sbomGenHttpHandler) cachedImage(ctx context.Context, ci *storage.ContainerImage) (*storage.Image, bool, error) {
-	// The exact UUID lookup is cheapest when a V2 ID is known; a miss falls back to a
-	// digest-based lookup, which finds the stored row regardless of the request's name
-	// form (tag, inline digest, or tagless repo@digest as sent by roxctl).
-	if idV2 := ci.GetIdV2(); idV2 != "" {
-		if img, found, err := h.images.GetImage(ctx, idV2); found || err != nil {
-			return img, found, err
+	if features.FlattenImageData.Enabled() {
+		// Exact UUID fast path, used only when that row has a usable Scanner V4 scan;
+		// otherwise the digest search below may find another row for the same digest.
+		if idV2 := ci.GetIdV2(); idV2 != "" {
+			if img, found, err := h.images.GetImage(ctx, idV2); err != nil || (found && h.scannedByScannerV4(img.GetScan())) {
+				return img, found, err
+			}
 		}
+		// Digest-based scoped search: finds rows for the digest regardless of the request's
+		// name form (tag, inline digest, or tagless repo@digest) and never interprets the
+		// value as a row ID, so a non-digest string in the request cannot fetch an
+		// unrelated image.
+		images, err := h.images.SearchRawImages(ctx, searchPkg.NewQueryBuilder().
+			AddExactMatches(searchPkg.ImageSHA, ci.GetId()).ProtoQuery())
+		if err != nil {
+			return nil, false, err
+		}
+		for _, img := range images {
+			if h.scannedByScannerV4(img.GetScan()) {
+				return img, true, nil
+			}
+		}
+		return nil, false, nil
 	}
 	return h.images.GetImage(ctx, ci.GetId())
 }
