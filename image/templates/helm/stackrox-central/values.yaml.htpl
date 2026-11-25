@@ -495,6 +495,3 @@ central:
 #  # Enables integration with OpenShift platform monitoring.
 #  openshift:
 #    enabled: true
-#    # Enables custom metrics integration.
-#    custom:
-#      enabled: false

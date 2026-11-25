@@ -6,7 +6,6 @@ import (
 	"errors"
 	"testing"
 
-	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -23,46 +22,27 @@ import (
 
 const testCAPEM = "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n"
 
-func setupMocks(t *testing.T) (*providerMocks.MockRegistry, *roleMocks.MockDataStore, *groupMocks.MockDataStore) {
+func setupMocks(t *testing.T) (*providerMocks.MockRegistry, *roleMocks.MockDataStore) {
 	ctrl := gomock.NewController(t)
 	return providerMocks.NewMockRegistry(ctrl),
-		roleMocks.NewMockDataStore(ctrl),
-		groupMocks.NewMockDataStore(ctrl)
+		roleMocks.NewMockDataStore(ctrl)
 }
 
-func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
-	registry, roleDS, groupDS := setupMocks(t)
+func TestSeed_FirstBoot_CreatesProviderAndPermissionSet(t *testing.T) {
+	registry, roleDS := setupMocks(t)
 	ctx := context.Background()
 
 	roleDS.EXPECT().PermissionSetExists(gomock.Any(), permissionSetID).Return(false, nil)
 	roleDS.EXPECT().AddPermissionSet(gomock.Any(), gomock.Any()).Return(nil)
-	roleDS.EXPECT().RoleExists(gomock.Any(), roleName).Return(false, nil)
-	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
-
-	providerCreated := false
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
-	registry.EXPECT().CreateProvider(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, _ ...interface{}) (interface{}, error) {
-			providerCreated = true
-			return nil, nil
-		})
-	groupDS.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
-	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, _ *storage.Group) error {
-			if !providerCreated {
-				t.Error("group Add called before provider creation")
-			}
-			return nil
-		})
+	registry.EXPECT().CreateProvider(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	ensurePermissionSet(ctx, roleDS)
-	ensureRole(ctx, roleDS)
 	ensureAuthProvider(ctx, registry, testCAPEM)
-	ensureGroup(ctx, groupDS)
 }
 
 func TestSeed_SubsequentBoot_CAUnchanged_NoUpdate(t *testing.T) {
-	registry, _, _ := setupMocks(t)
+	registry, _ := setupMocks(t)
 	ctx := context.Background()
 
 	existing := providerMocks.NewMockProvider(gomock.NewController(t))
@@ -74,65 +54,24 @@ func TestSeed_SubsequentBoot_CAUnchanged_NoUpdate(t *testing.T) {
 	ensureAuthProvider(ctx, registry, testCAPEM)
 }
 
-func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
-	registry, roleDS, groupDS := setupMocks(t)
+func TestSeed_ExistingPermissionSetIsPreserved(t *testing.T) {
+	registry, roleDS := setupMocks(t)
 	ctx := context.Background()
 
 	roleDS.EXPECT().PermissionSetExists(gomock.Any(), permissionSetID).Return(true, nil)
-	roleDS.EXPECT().RoleExists(gomock.Any(), roleName).Return(false, nil)
-	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
 	registry.EXPECT().CreateProvider(gomock.Any(), gomock.Any()).Return(nil, nil)
-	groupDS.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
-	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).Return(nil)
 
 	ensurePermissionSet(ctx, roleDS)
-	ensureRole(ctx, roleDS)
 	ensureAuthProvider(ctx, registry, testCAPEM)
-	ensureGroup(ctx, groupDS)
-}
-
-func TestSeed_Group_IsDefaultOriginAndImmutable(t *testing.T) {
-	_, _, groupDS := setupMocks(t)
-	ctx := context.Background()
-
-	groupDS.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
-	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(addCtx context.Context, group *storage.Group) error {
-			if group.GetProps().GetTraits().GetOrigin() != storage.Traits_DEFAULT {
-				t.Errorf("expected group to use DEFAULT origin, got %v", group.GetProps().GetTraits().GetOrigin())
-			}
-			assert.False(t, declarativeconfig.CanModifyResource(ctx, group.GetProps()))
-			if !declarativeconfig.CanModifyResource(addCtx, group.GetProps()) {
-				t.Error("expected ensureGroup to pass a context that can modify DEFAULT-origin resources")
-			}
-			return nil
-		})
-
-	ensureGroup(ctx, groupDS)
-}
-
-func TestSeed_SubsequentBoot_GroupExists_NotOverwritten(t *testing.T) {
-	_, _, groupDS := setupMocks(t)
-	ctx := context.Background()
-
-	groupDS.EXPECT().Exists(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, props *storage.GroupProperties) (bool, error) {
-			assert.Equal(t, authProviderID, props.GetAuthProviderId())
-			assert.Equal(t, "name", props.GetKey())
-			assert.Equal(t, "system:serviceaccount:openshift-monitoring:prometheus-k8s", props.GetValue())
-			return true, nil
-		})
-
-	ensureGroup(ctx, groupDS)
 }
 
 // TestSeed_CARotation_RegistersNewCA runs against a real auth provider registry because
 // the interesting part of a rotation happens past the registry: a mocked registry only
 // shows that UpdateProvider was called, not whether the new CA reached the client CA
 // manager. Persisting the bundle without also rebuilding the provider backend leaves
-// Central advertising the superseded CA until restart, breaking Prometheus scrapes
-// roughly monthly when OpenShift rotates its CSR signer.
+// Central advertising the superseded CA until restart, breaking certificate authentication
+// when OpenShift rotates its CSR signer.
 func TestSeed_CARotation_RegistersNewCA(t *testing.T) {
 	ctx := context.Background()
 	caManager := &recordingCAManager{}
