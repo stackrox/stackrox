@@ -152,6 +152,7 @@ central:
 securedCluster:
   namespace: ${ACS_NS}
   resourceProfile: ci
+  crsIssueRetries: 60
   spec:
     network:
       policies: Disabled
