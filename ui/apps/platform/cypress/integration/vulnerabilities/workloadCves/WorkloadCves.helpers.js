@@ -541,12 +541,16 @@ export function unwatchImageFromModal(imageFullName, imageNameAndTag) {
  * @returns {Cypress.Chainable}
  */
 export function interactAndWaitForCveList(callback) {
-    const cveListOpname = 'getImageCVEList';
-    const cveListRouteMatcherMap = getRouteMatcherMapForGraphQL([cveListOpname]);
-    const staticResponseMap = {
-        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/getImageCVEList.json' },
-    };
-    return interactAndWaitForResponses(callback, cveListRouteMatcherMap, staticResponseMap);
+    return cy
+        .fixture('vulnerabilities/workloadCves/getImageCVEList.json')
+        .then((graphqlFixture) => {
+            cy.intercept(
+                { method: 'GET', url: '/api/v2/vulnmgmt/cves?*' },
+                { body: toVulnMgmtCVEListResponse(graphqlFixture) }
+            ).as('getVulnMgmtCVEs');
+            callback();
+            return cy.wait('@getVulnMgmtCVEs');
+        });
 }
 
 /**
