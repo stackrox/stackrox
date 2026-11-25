@@ -50,6 +50,7 @@ jobs:
 
     - name: Build crd-schema-checker
       run: |
+        # The checker uses set -o pipefail, which dash (Ubuntu’s /bin/sh) does not support.
         make -C .crd-schema-checker SHELL=/bin/bash
 
     - name: Get previous released version
