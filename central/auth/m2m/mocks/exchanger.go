@@ -100,6 +100,20 @@ func (mr *MockTokenExchangerMockRecorder) GetTokenExpirationDuration() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenExpirationDuration", reflect.TypeOf((*MockTokenExchanger)(nil).GetTokenExpirationDuration))
 }
 
+// GetType mocks base method.
+func (m *MockTokenExchanger) GetType() storage.AuthMachineToMachineConfig_Type {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetType")
+	ret0, _ := ret[0].(storage.AuthMachineToMachineConfig_Type)
+	return ret0
+}
+
+// GetType indicates an expected call of GetType.
+func (mr *MockTokenExchangerMockRecorder) GetType() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetType", reflect.TypeOf((*MockTokenExchanger)(nil).GetType))
+}
+
 // Provider mocks base method.
 func (m *MockTokenExchanger) Provider() authproviders.Provider {
 	m.ctrl.T.Helper()
