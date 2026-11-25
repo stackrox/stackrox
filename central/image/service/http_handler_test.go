@@ -158,9 +158,13 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
 				set := scannerV4Mocks(ctrl, scanner)
 
+				reqCtx, cancelRequest := context.WithTimeout(t.Context(), 30*time.Second)
+				defer cancelRequest()
+				requestDeadline, _ := reqCtx.Deadline()
+
 				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
 				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
-				scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
+				scanner.EXPECT().GetSBOM(withRequestDeadline(requestDeadline), gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
 
 				reqBody := &apiparams.SBOMRequestBody{
 					ImageName: "quay.io/quay-qetest/nodejs-test-image:latest",
@@ -169,7 +173,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 				reqJson, err := json.Marshal(reqBody)
 				assert.NoError(t, err)
-				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+				req := httptest.NewRequestWithContext(reqCtx, http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 				recorder := httptest.NewRecorder()
 
 				handler := SBOMGenHandler(set, mockEnricher, mockEnricherV2, nil, nil, nil)
@@ -251,6 +255,9 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 }
 
 func TestSBOMCachedImage(t *testing.T) {
+	// Pin the handler timeout above the test requests' 30s deadline so the request
+	// deadline is always the effective one, regardless of the environment.
+	t.Setenv("ROX_SCAN_TIMEOUT", "10m")
 	const imageName = "registry.example.org/app:latest"
 	const digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	for _, v2 := range []bool{false, true} {
@@ -339,7 +346,7 @@ func TestSBOMCachedImage(t *testing.T) {
 						}
 					}
 					if tc.readable {
-						scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"cached":false}`), true, nil)
+						scanner.EXPECT().GetSBOM(withRequestDeadline(requestDeadline), gomock.Any()).Return([]byte(`{"cached":false}`), true, nil)
 					}
 				}
 				body, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: imageName, Digest: digest, Force: tc.force})
@@ -390,6 +397,9 @@ func scannerV4Mocks(ctrl *gomock.Controller, scanner *scannerTypesMocks.MockScan
 }
 
 func TestSBOMCachedImageFallbacks(t *testing.T) {
+	// Pin the handler timeout above the test requests' 30s deadline so the request
+	// deadline is always the effective one, regardless of the environment.
+	t.Setenv("ROX_SCAN_TIMEOUT", "10m")
 	const digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 	newRequestCtx := func() (context.Context, time.Time) {
@@ -495,12 +505,13 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 		// The mock enricher leaves the image without metadata, so saveImageV1 has no SHA
 		// to key on and skips the upsert; no risk manager call is expected.
 
+		reqCtx, requestDeadline := newRequestCtx()
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
+		scanner.EXPECT().GetSBOM(withRequestDeadline(requestDeadline), gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
 
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest"})
 		require.NoError(t, err)
-		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		req := httptest.NewRequestWithContext(reqCtx, http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		w := httptest.NewRecorder()
 		SBOMGenHandler(scannerV4Mocks(ctrl, scanner), mockEnricher, nil, nil, riskManagerMocks.NewMockManager(ctrl), imageMapperDatastore.New(nil, nil)).ServeHTTP(w, req)
 
