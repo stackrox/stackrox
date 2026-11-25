@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_machine_to_machine_configuration_unique_index_per_issuer/schema/old"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_machine_to_machine_configuration_unique_index_per_issuer/schema/new"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -69,11 +69,10 @@ func insertIntoAuthMachineToMachineConfigs(batch *pgx.Batch, obj *storage.AuthMa
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
-		obj.GetIssuer(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO auth_machine_to_machine_configs (Id, Issuer, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Issuer = EXCLUDED.Issuer, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO auth_machine_to_machine_configs (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -106,7 +105,6 @@ func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storag
 
 var copyColsAuthMachineToMachineConfigs = []string{
 	"id",
-	"issuer",
 	"serialized",
 }
 
@@ -142,7 +140,6 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 
 		return []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
-			obj.GetIssuer(),
 			serialized,
 		}, nil
 	})

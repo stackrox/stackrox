@@ -1,16 +1,16 @@
 //go:build sql_integration
 
-package m228tom229
+package m229tom230
 
 import (
 	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_machine_to_machine_configuration_unique_index_per_issuer/schema/old"
-	newM2MStore "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_machine_to_machine_configuration_unique_index_per_issuer/store/new/auth_machine_to_machine_configs"
-	oldM2MStore "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_machine_to_machine_configuration_unique_index_per_issuer/store/old/auth_machine_to_machine_configs"
-	oldRoleStore "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_machine_to_machine_configuration_unique_index_per_issuer/store/old/roles"
+	oldSchema "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_machine_to_machine_configuration_unique_index_per_issuer/schema/old"
+	newM2MStore "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_machine_to_machine_configuration_unique_index_per_issuer/store/new/auth_machine_to_machine_configs"
+	oldM2MStore "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_machine_to_machine_configuration_unique_index_per_issuer/store/old/auth_machine_to_machine_configs"
+	oldRoleStore "github.com/stackrox/rox/migrator/migrations/m_229_to_m_230_drop_machine_to_machine_configuration_unique_index_per_issuer/store/old/roles"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
