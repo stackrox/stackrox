@@ -400,15 +400,6 @@ jobs:
     - name: Install Bats
       uses: ./.github/actions/setup-bats
 
-    - name: Install Expect
-      run: |
-        if ! command -v expect >/dev/null; then
-          sudo apt-get install -y expect || {
-            sudo apt-get update
-            sudo apt-get install -y expect
-          }
-        fi
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
