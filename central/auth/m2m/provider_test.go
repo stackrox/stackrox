@@ -16,9 +16,9 @@ func TestNewProvider(t *testing.T) {
 	cfgId := uuid.NewTestUUID(1).String()
 	issuer := "https://issuer.example.com"
 	config := &storage.AuthMachineToMachineConfig{
-		Id:   cfgId,
+		Id:     cfgId,
 		Issuer: issuer,
-		Type: storage.AuthMachineToMachineConfig_GENERIC,
+		Type:   storage.AuthMachineToMachineConfig_GENERIC,
 	}
 	mockRoleMapper := permissionsMocks.NewMockRoleMapper(mockCtrl)
 	provider := newProvider(config.GetIssuer(), config.GetType().String(), mockRoleMapper)
