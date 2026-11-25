@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"slices"
 
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
-	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 )
@@ -15,6 +15,14 @@ import (
 const (
 	internalRoleName = "internal role"
 )
+
+func validatePermissionSetConstrains(ps *storage.PermissionSet) error {
+	if ps.GetAccessConstraint() != storage.AccessConstraint_ACCESS_CONSTRAINT_READ ||
+		ps.GetScopeConstraint() != storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE {
+		return fmt.Errorf("permission set %q must constrain access to read and resources to cluster/namespace", ps.GetName())
+	}
+	return nil
+}
 
 type roleManager struct {
 	roleStore roleDS.DataStore
@@ -32,7 +40,7 @@ func (rm *roleManager) createRoleForRoxClaims(
 		if err != nil {
 			return nil, err
 		}
-		if err := permissionsUtils.ValidateScopedReadOnlyPermissionSet(permissionSet); err != nil {
+		if err := validatePermissionSetConstrains(permissionSet); err != nil {
 			return nil, errox.InvalidArgs.CausedBy(err)
 		}
 		role.Permissions = make(map[storage.Access][]string)
