@@ -39,6 +39,7 @@ scripts/ci/bats/lib_pr_has_label.bats
 scripts/ci/bats/scanner-get-released-tags.bats
 scripts/ci/bats/scanner-updater-matrix.bats
 scripts/ci/bats/start_central_test.bats
+scripts/ci/central-backup.sh
 scripts/ci/complianceoperator/create.sh
 scripts/ci/gcp.sh
 scripts/ci/jobs/check-dependabot-gomod.sh
