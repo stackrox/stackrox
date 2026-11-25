@@ -37,7 +37,6 @@ type TokenExchanger interface {
 type machineToMachineTokenExchanger struct {
 	exchangerType     storage.AuthMachineToMachineConfig_Type
 	configs           []*storage.AuthMachineToMachineConfig
-	configMappings    []*storage.AuthMachineToMachineConfig_Mapping
 	verifiers         []tokenVerifier
 	provider          authproviders.Provider
 	issuer            tokens.Issuer
@@ -80,11 +79,9 @@ func newMultiConfigTokenExchanger(
 	}
 
 	audiences := set.NewStringSet()
-	mappings := make([]*storage.AuthMachineToMachineConfig_Mapping, 0)
 	parsedMappings := make([]parsedMapping, 0)
 	for _, cfg := range configs {
 		audiences.Add(cfg.GetAudience())
-		mappings = append(mappings, cfg.GetMappings()...)
 		parsedMappings = append(
 			parsedMappings,
 			parseMappings(cfg.GetMappings(), cfg.GetAudience())...,
