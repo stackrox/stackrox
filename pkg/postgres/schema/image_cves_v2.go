@@ -24,7 +24,7 @@ var (
 		Indexes: []*postgres.IndexDefinition{
 			{Name: "imagecvesv2_imageid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_imageid ON image_cves_v2 USING btree (imageid)"},
 			{Name: "imagecvesv2_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_cvebaseinfo_cve ON image_cves_v2 USING btree (cvebaseinfo_cve)"},
-			{Name: "imagecvesv2_severity", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_severity ON image_cves_v2 USING btree (severity)"},
+			{Name: "imagecvesv2_severity_state_isfixable_imageidv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_severity_state_isfixable_imageidv2 ON image_cves_v2 USING btree (severity, state, isfixable, imageidv2)"},
 			{Name: "imagecvesv2_state", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_state ON image_cves_v2 USING btree (state)"},
 			{Name: "imagecvesv2_componentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_componentid ON image_cves_v2 USING btree (componentid)"},
 			{Name: "imagecvesv2_imageidv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_imageidv2 ON image_cves_v2 USING btree (imageidv2)"},
