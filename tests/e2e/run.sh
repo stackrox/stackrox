@@ -183,7 +183,7 @@ run_roxctl_tests() {
     junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
         "$ROOT/tests/roxctl/helm-chart-generation.sh"
 
-    CA="$SERVICE_CA_FILE" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
+    CA="${ROX_CA_CERT_FILE:-}" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
         "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 
