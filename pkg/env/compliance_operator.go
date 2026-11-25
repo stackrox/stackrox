@@ -22,6 +22,13 @@ var (
 	// The default is 45 mins.
 	ComplianceScanScheduleWatcherTimeout = registerDurationSetting("ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT", 45*time.Minute)
 
+	// ComplianceReportScheduleDelay defines the delay by which the compliance report scheduler
+	// shifts a scan configuration's schedule: the report job of the scan cycle starting at the
+	// scheduled time T fires at T+delay, giving the cycle's scans time to finish before the
+	// report is generated. The delay is a heuristic that the settler and the expectation audit
+	// (later iterations of the decoupled reporting rollout) absorb. The default is 1 hour.
+	ComplianceReportScheduleDelay = registerDurationSetting("ROX_COMPLIANCE_REPORT_SCHEDULE_DELAY", time.Hour)
+
 	// ComplianceFreshnessSweepInterval defines how often the compliance data freshness sweeper runs.
 	// It must stay well under the sweeper's grace window (ComplianceScanScheduleWatcherTimeout +
 	// ComplianceScanWatcherTimeout) so stale data is surfaced promptly after the grace elapses.
