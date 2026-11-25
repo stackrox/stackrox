@@ -142,7 +142,7 @@ jobs:
         PreSystemTests().run()
 
     - name: Install Bats
-      run: bash .github/workflows/scripts/install-bats.sh
+      uses: ./.github/actions/setup-bats
 
     - name: Run e2e tests
       # SETUP_WORKLOAD_IDENTITIES is intentionally omitted; WIF tests run in the Prow pipeline.

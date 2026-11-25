@@ -3,7 +3,7 @@
 set -euo pipefail
 
 bats_dir="${GITHUB_WORKSPACE}/.github/ci/bats"
-npm ci --prefix "$bats_dir" --no-audit --no-fund
+npm ci --prefer-offline --fetch-retries=3 --prefix "$bats_dir" --no-audit --no-fund
 echo "$bats_dir/node_modules/.bin" >> "$GITHUB_PATH"
 
 # tests/roxctl/bats-tests/helpers.bash, scripts/test_helpers.bats and

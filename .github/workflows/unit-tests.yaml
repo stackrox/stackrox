@@ -398,7 +398,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Install Bats
-      run: bash .github/workflows/scripts/install-bats.sh
+      uses: ./.github/actions/setup-bats
 
     - name: Install Expect
       run: |
@@ -452,7 +452,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Install Bats
-      run: bash .github/workflows/scripts/install-bats.sh
+      uses: ./.github/actions/setup-bats
 
     - name: Shell Unit Tests
       run: make shell-unit-tests
