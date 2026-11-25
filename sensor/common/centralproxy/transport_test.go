@@ -86,24 +86,24 @@ func TestTokenProviderPermissionSetCapability(t *testing.T) {
 					req := client.lastRequest
 					require.NotNil(t, req)
 					if capable {
-						assert.Empty(t, req.Permissions)
+						assert.Empty(t, req.GetPermissions())
 						assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy], req.GetPermissionSetId())
 						assert.NotEmpty(t, req.GetPermissionSetId())
 					} else {
 						assert.Nil(t, req.GetPermissionSet())
 						assert.Equal(t, map[string]centralv1.Access{
 							"Deployment": centralv1.Access_READ_ACCESS, "Image": centralv1.Access_READ_ACCESS,
-						}, req.Permissions)
+						}, req.GetPermissions())
 					}
-					assert.Equal(t, tokenTTL, req.Lifetime.AsDuration())
+					assert.Equal(t, tokenTTL, req.GetLifetime().AsDuration())
 					if scope == "" {
-						assert.Empty(t, req.ClusterScopes)
+						assert.Empty(t, req.GetClusterScopes())
 					} else {
-						require.Len(t, req.ClusterScopes, 1)
-						assert.Equal(t, "sensor-cluster", req.ClusterScopes[0].ClusterId)
-						assert.Equal(t, scope == FullClusterAccessScope, req.ClusterScopes[0].FullClusterAccess)
+						require.Len(t, req.GetClusterScopes(), 1)
+						assert.Equal(t, "sensor-cluster", req.GetClusterScopes()[0].GetClusterId())
+						assert.Equal(t, scope == FullClusterAccessScope, req.GetClusterScopes()[0].GetFullClusterAccess())
 						if scope != FullClusterAccessScope {
-							assert.Equal(t, []string{scope}, req.ClusterScopes[0].Namespaces)
+							assert.Equal(t, []string{scope}, req.GetClusterScopes()[0].GetNamespaces())
 						}
 					}
 				})
@@ -129,7 +129,7 @@ func TestTokenProviderPermissionSetFailureDoesNotFallBack(t *testing.T) {
 	require.ErrorIs(t, err, lookupErr)
 	assert.Nil(t, response)
 	assert.EqualValues(t, 1, calls.Load())
-	assert.Empty(t, client.lastRequest.Permissions)
+	assert.Empty(t, client.lastRequest.GetPermissions())
 	assert.NotEmpty(t, client.lastRequest.GetPermissionSetId())
 }
 
@@ -152,7 +152,7 @@ func TestTokenProviderCapabilityChangeDoesNotReuseLegacyToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "permission-set-token", token)
 	assert.EqualValues(t, 2, calls.Load())
-	assert.Empty(t, client.lastRequest.Permissions)
+	assert.Empty(t, client.lastRequest.GetPermissions())
 	assert.NotEmpty(t, client.lastRequest.GetPermissionSetId())
 }
 

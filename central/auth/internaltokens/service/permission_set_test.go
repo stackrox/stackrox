@@ -53,7 +53,7 @@ func TestPermissionSetPolicy(t *testing.T) {
 	}{
 		"name": {},
 		"id": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
-			req.PermissionSet = permissionSetRequest(true).PermissionSet
+			req.PermissionSet = permissionSetRequest(true).GetPermissionSet()
 		}},
 		"empty name": {change: func(req *v1.GenerateTokenForPermissionsAndScopeRequest) {
 			req.PermissionSet = &v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetName{}
@@ -103,8 +103,8 @@ func TestPermissionSetPolicy(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, time.Hour, result.Lifetime.AsDuration())
-			assert.Equal(t, original.PermissionSet, result.PermissionSet)
+			assert.Equal(t, time.Hour, result.GetLifetime().AsDuration())
+			assert.Equal(t, original.GetPermissionSet(), result.GetPermissionSet())
 			assert.Equal(t, original, req, "lifetime capping must not mutate the request")
 		})
 	}
@@ -134,7 +134,7 @@ func TestPermissionSetSelectorPresenceOnWire(t *testing.T) {
 			require.NoError(t, err)
 			decoded := new(v1.GenerateTokenForPermissionsAndScopeRequest)
 			require.NoError(t, decoded.UnmarshalVT(encoded))
-			assert.Equal(t, req.PermissionSet, decoded.PermissionSet)
+			assert.Equal(t, req.GetPermissionSet(), decoded.GetPermissionSet())
 			ctx := sensorContext(t, gomock.NewController(t), "sensor-cluster")
 			_, err = defaultTokenPolicy().enforce(ctx, decoded)
 			if req.PermissionSet == nil {
@@ -255,7 +255,7 @@ func TestPermissionSetTokenRoundTrip(t *testing.T) {
 				assert.False(t, allowed)
 			}
 			if tc.byID {
-				store.EXPECT().GetPermissionSet(gomock.Any(), ps.Id).DoAndReturn(
+				store.EXPECT().GetPermissionSet(gomock.Any(), ps.GetId()).DoAndReturn(
 					func(ctx context.Context, _ string) (*storage.PermissionSet, bool, error) {
 						checkLookupContext(ctx)
 						return ps, true, nil
@@ -279,7 +279,7 @@ func TestPermissionSetTokenRoundTrip(t *testing.T) {
 			token, err := validator.Validate(t.Context(), response.GetToken())
 			require.NoError(t, err)
 			assert.Equal(t, []string{internalTokenId}, []string(token.Audience))
-			assert.Equal(t, req.Requester, token.Requester)
+			assert.Equal(t, req.GetRequester(), token.Requester)
 			assert.Equal(t, now.Add(time.Hour), token.Expiry())
 			require.Len(t, token.InternalRoles, 1)
 			assert.Equal(t, internalRoleName, token.InternalRoles[0].RoleName)
@@ -287,7 +287,7 @@ func TestPermissionSetTokenRoundTrip(t *testing.T) {
 			if tc.emptySet {
 				assert.Empty(t, token.InternalRoles[0].GetPermissions())
 			} else {
-				assert.Equal(t, ps.ResourceToAccess, token.InternalRoles[0].GetPermissions())
+				assert.Equal(t, ps.GetResourceToAccess(), token.InternalRoles[0].GetPermissions())
 				assert.Equal(t, []string{"Deployment", "Node"}, token.InternalRoles[0].Permissions[storage.Access_READ_ACCESS])
 			}
 			assert.Empty(t, token.RoleNames)
