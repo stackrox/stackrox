@@ -3,10 +3,12 @@
 # state, so the caller can react to the newest result immediately.
 #
 # The first poll establishes the baseline (possibly empty, e.g. when no checks
-# are running yet). The baseline is persisted to a state file, so a restarted
-# watcher (this script is meant to be re-armed after every notification)
-# resumes from the last reported snapshot instead of silently absorbing
-# results that landed in between. Only newly terminal checks are printed.
+# are running yet); any checks that have already FAILED at that point are
+# reported immediately so they can be triaged. The baseline is persisted to a
+# state file, so a restarted watcher (this script is meant to be re-armed
+# after every notification) resumes from the last reported snapshot instead of
+# silently absorbing results that landed in between, reporting only newly
+# terminal checks.
 #
 # A check going back to pending (e.g. a rerun of a failed check) updates the
 # baseline without exiting; when it reaches a terminal state again, that
@@ -199,6 +201,17 @@ while ((SECONDS < deadline)); do
   if [ "$baseline_set" -eq 0 ]; then
     prev="$cur"
     baseline_set=1
+    save_state "$prev"
+    # Fresh start (no state file): surface failures that are already terminal
+    # so they get triaged instead of silently becoming part of the baseline.
+    # A resumed watcher does not do this; it reports only results that are new
+    # since its saved snapshot.
+    fails="$(printf '%s\n' "$cur" | awk -F'\t' '$2 == "fail" {print $1 "\t" $2}')"
+    if [ -n "$fails" ]; then
+      echo "=== ALREADY-TERMINAL FAILURE(S) AT WATCHER START ==="
+      echo "$fails"
+      exit 0
+    fi
   else
     added="$(added_terminal "$cur")"
     if [ -n "$added" ]; then
