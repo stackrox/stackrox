@@ -83,7 +83,15 @@ func FetchProfile(ctx context.Context, c ctrlClient.Reader) (*ClusterTLSProfile,
 //   - clusterTLS is nil (not on OpenShift)
 //   - forceProfile is false and the adherence policy does not require honoring
 //     the cluster TLS profile
+//
+// In FIPS mode, non-FIPS-approved groups are dropped. clusterTLS itself is not
+// modified, so the TLS profile watcher keeps comparing against the unfiltered
+// cluster profile.
 func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfile {
+	return convertProfile(clusterTLS, forceProfile, libgocrypto.IsFIPSEnabled())
+}
+
+func convertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool, fipsEnabled bool) *TLSProfile {
 	if clusterTLS == nil {
 		return nil
 	}
@@ -100,7 +108,7 @@ func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfil
 			"clampedVersion", minVersion)
 	}
 
-	groups, opensslGroups := convertGroups(clusterTLS.ProfileSpec.Groups)
+	groups, opensslGroups := convertGroups(FIPSApprovedGroups(clusterTLS.ProfileSpec.Groups, fipsEnabled))
 	return &TLSProfile{
 		MinVersion:     minVersion,
 		CipherSuites:   convertCiphersToIANA(clusterTLS.ProfileSpec.Ciphers),
@@ -108,4 +116,20 @@ func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfil
 		Groups:         groups,
 		OpenSSLGroups:  opensslGroups,
 	}
+}
+
+// FIPSApprovedGroups returns groups unchanged when fipsEnabled is false.
+// Otherwise it returns a new slice with only the FIPS-approved groups,
+// preserving order. Operands such as PostgreSQL refuse to start when offered
+// non-approved groups in FIPS mode, so every consumer of the cluster profile's
+// groups must go through this filter.
+func FIPSApprovedGroups(groups []configv1.TLSGroup, fipsEnabled bool) []configv1.TLSGroup {
+	if !fipsEnabled {
+		return groups
+	}
+	approved := libgocrypto.FIPSApprovedTLSGroups(groups)
+	if dropped := len(groups) - len(approved); dropped > 0 {
+		log.Info("FIPS mode: dropping non-FIPS-approved TLS groups from cluster profile", "dropped", dropped)
+	}
+	return approved
 }

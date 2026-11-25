@@ -2,6 +2,7 @@ package tlsprofile
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -188,4 +189,61 @@ func TestConvertProfile_ForceOverridesLegacyAdherence(t *testing.T) {
 	require.NoError(t, err)
 	profile := ConvertProfile(clusterTLS, true)
 	require.NotNil(t, profile)
+}
+
+func TestConvertProfile_FIPSDropsNonApprovedGroups(t *testing.T) {
+	clusterTLS := &ClusterTLSProfile{
+		ProfileSpec: configv1.TLSProfileSpec{
+			MinTLSVersion: configv1.VersionTLS12,
+			Groups: []configv1.TLSGroup{
+				configv1.TLSGroupX25519MLKEM768,
+				configv1.TLSGroupSecP256r1,
+				configv1.TLSGroupX25519,
+				configv1.TLSGroupSecP384r1,
+			},
+		},
+		Adherence: configv1.TLSAdherencePolicyStrictAllComponents,
+	}
+	original := slices.Clone(clusterTLS.ProfileSpec.Groups)
+
+	profile := convertProfile(clusterTLS, false, true)
+	require.NotNil(t, profile)
+	assert.Equal(t, "secp256r1,secp384r1", profile.Groups)
+	assert.Equal(t, "secp256r1:secp384r1", profile.OpenSSLGroups)
+	assert.Equal(t, original, clusterTLS.ProfileSpec.Groups,
+		"cluster profile must stay unfiltered so the watcher does not detect a spurious change")
+
+	profile = convertProfile(clusterTLS, false, false)
+	require.NotNil(t, profile)
+	assert.Equal(t, "X25519MLKEM768,secp256r1,X25519,secp384r1", profile.Groups)
+	assert.Equal(t, "X25519MLKEM768:secp256r1:X25519:secp384r1", profile.OpenSSLGroups)
+}
+
+func TestFIPSApprovedGroups(t *testing.T) {
+	tests := map[string]struct {
+		input       []configv1.TLSGroup
+		fipsEnabled bool
+		want        []configv1.TLSGroup
+	}{
+		"non-FIPS keeps all groups": {
+			input: []configv1.TLSGroup{configv1.TLSGroupX25519MLKEM768, configv1.TLSGroupSecP256r1},
+			want:  []configv1.TLSGroup{configv1.TLSGroupX25519MLKEM768, configv1.TLSGroupSecP256r1},
+		},
+		"FIPS keeps only P-curves in order": {
+			input:       []configv1.TLSGroup{configv1.TLSGroupX25519MLKEM768, configv1.TLSGroupSecP384r1, configv1.TLSGroupX25519, configv1.TLSGroupSecP256r1},
+			fipsEnabled: true,
+			want:        []configv1.TLSGroup{configv1.TLSGroupSecP384r1, configv1.TLSGroupSecP256r1},
+		},
+		"FIPS with no approved groups yields empty": {
+			input:       []configv1.TLSGroup{configv1.TLSGroupX25519MLKEM768},
+			fipsEnabled: true,
+			want:        []configv1.TLSGroup{},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, FIPSApprovedGroups(tt.input, tt.fipsEnabled))
+		})
+	}
 }
