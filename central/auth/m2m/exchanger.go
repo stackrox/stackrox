@@ -71,7 +71,7 @@ func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachine
 
 func getTTLFromConfigs(configs []*storage.AuthMachineToMachineConfig) (time.Duration, error) {
 	if len(configs) == 0 {
-		return time.Duration(0), errox.InvalidArgs.New("should have at lease one config in input")
+		return time.Duration(0), errox.InvalidArgs.New("should have at least one config in input")
 	}
 	ttl, err := time.ParseDuration(configs[0].GetTokenExpirationDuration())
 	if err != nil {

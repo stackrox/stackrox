@@ -17,6 +17,12 @@ type IDToken struct {
 	Audience []string
 }
 
+// The tokenVerifier interface is unexported and references the IDToken type of this package, hence the mock is
+// generated into this package (rather than the mocks subpackage) using -self_package to avoid an import cycle.
+// The destination is a _test.go file, so the mock is only compiled as part of the tests and does not leak into
+// production code.
+//
+//go:generate mockgen -package m2m -self_package github.com/stackrox/rox/central/auth/m2m -destination mock_token_verifier_test.go -source token_verifier.go
 type tokenVerifier interface {
 	VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error)
 }
