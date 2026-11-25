@@ -92,10 +92,28 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				defer ctrl.Finish()
 				// initialize mocks
 				mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
-				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
-
 				mockEnricherV2 := enricherMock.NewMockImageEnricherV2(ctrl)
-				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, errors.New("Image enrichment failed")).AnyTimes()
+				// Without a Scanner V4 integration the handler fails before reaching the
+				// enricher, so provide one to actually exercise the enrichment error path.
+				set := intergrationMocks.NewMockSet(ctrl)
+				scannerSet := scannerMocks.NewMockSet(ctrl)
+				scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+				integration := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
+				set.EXPECT().ScannerSet().Return(scannerSet)
+				scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{integration})
+				integration.EXPECT().GetScanner().Return(scanner).AnyTimes()
+				integration.EXPECT().DataSource().Return(nil)
+				scanner.EXPECT().Type().Return(scannerTypes.ScannerV4)
+
+				// Exactly the enricher selected by the feature flag must be called once.
+				enrichErr := errors.New("Image enrichment failed")
+				if tc.flattenImageDataEnabled {
+					mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
+						Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, enrichErr).Times(1)
+				} else {
+					mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
+						Return(enricher.EnrichmentResult{ImageUpdated: false, ScanResult: enricher.ScanNotDone}, enrichErr).Times(1)
+				}
 
 				reqBody := &apiparams.SBOMRequestBody{
 					ImageName: "test-image",
@@ -106,13 +124,14 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 				recorder := httptest.NewRecorder()
 
-				handler := SBOMGenHandler(imageintegration.Set(), mockEnricher, mockEnricherV2, nil, nil, nil, nil)
+				handler := SBOMGenHandler(set, mockEnricher, mockEnricherV2, nil, nil, nil, nil)
 				handler.ServeHTTP(recorder, req)
 
 				res := recorder.Result()
 				err = res.Body.Close()
 				assert.NoError(t, err)
 				assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+				assert.Contains(t, recorder.Body.String(), "Image enrichment failed")
 			})
 		}
 	})
@@ -341,4 +360,114 @@ func TestSBOMCachedImage(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestSBOMCachedImageFallbacks(t *testing.T) {
+	const digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	const otherDigest = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+	// scannerV4Mocks returns a mock integration set yielding the given Scanner V4 SBOMer.
+	scannerV4Mocks := func(ctrl *gomock.Controller, scanner *scannerTypesMocks.MockScannerSBOMer) *intergrationMocks.MockSet {
+		set := intergrationMocks.NewMockSet(ctrl)
+		scannerSet := scannerMocks.NewMockSet(ctrl)
+		integration := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
+		set.EXPECT().ScannerSet().Return(scannerSet)
+		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{integration})
+		integration.EXPECT().GetScanner().Return(scanner).AnyTimes()
+		integration.EXPECT().DataSource().Return(nil)
+		scanner.EXPECT().Type().Return(scannerTypes.ScannerV4)
+		return set
+	}
+
+	serveSBOMRequest := func(handler http.Handler) *httptest.ResponseRecorder {
+		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: digest})
+		require.NoError(t, err)
+		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		return w
+	}
+
+	t.Run("inline digest reference finds stored V2 row", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+		t.Setenv(features.ScannerV4.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+
+		img := &storage.Image{
+			Id: digest, Name: &storage.ImageName{FullName: "registry.example.org/app:latest"}, IsClusterLocal: true,
+			Metadata: &storage.ImageMetadata{},
+			Scan:     &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}},
+		}
+
+		// The with-suffix key misses; the stripped key finds the stored row.
+		ci, err := containerImage(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest@" + digest})
+		require.NoError(t, err)
+		strippedName := ci.GetName().CloneVT()
+		strippedName.FullName = "registry.example.org/app:latest"
+
+		imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
+		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(nil, false, nil)
+		imagesV2.EXPECT().GetImage(gomock.Any(), utils.NewImageV2ID(strippedName, digest)).
+			Return(utils.ConvertToV2(img), true, nil)
+
+		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+		scanner.EXPECT().GetSBOM(gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
+
+		handler := SBOMGenHandler(scannerV4Mocks(ctrl, scanner), nil, nil, nil, nil, nil, imagesV2)
+		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest@" + digest})
+		require.NoError(t, err)
+		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusOK, w.Code)
+		require.JSONEq(t, `{"cached":true}`, w.Body.String())
+	})
+
+	t.Run("cache read error falls back to enrichment", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.FlattenImageData, false)
+		t.Setenv(features.ScannerV4.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+
+		images := imageMocks.NewMockDataStore(ctrl)
+		images.EXPECT().GetImage(gomock.Any(), digest).Return(nil, false, errors.New("db unavailable"))
+
+		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(enricher.EnrichmentResult{ScanResult: enricher.ScanSucceeded}, nil).Times(1)
+
+		risk := riskManagerMocks.NewMockManager(ctrl)
+		risk.EXPECT().CalculateRiskAndUpsertImage(gomock.Any())
+
+		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+		scanner.EXPECT().GetSBOM(gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
+
+		w := serveSBOMRequest(SBOMGenHandler(scannerV4Mocks(ctrl, scanner), mockEnricher, nil, nil, risk, images, nil))
+		require.Equal(t, http.StatusOK, w.Code)
+		require.JSONEq(t, `{"fresh":true}`, w.Body.String())
+	})
+
+	t.Run("moved tag digest mismatch is rejected", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.FlattenImageData, false)
+		t.Setenv(features.ScannerV4.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+
+		images := imageMocks.NewMockDataStore(ctrl)
+		images.EXPECT().GetImage(gomock.Any(), digest).Return(nil, false, nil)
+
+		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
+		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, _ enricher.EnrichmentContext, img *storage.Image) (enricher.EnrichmentResult, error) {
+				// The tag moved: enrichment resolved a different digest than requested.
+				img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: otherDigest}}
+				return enricher.EnrichmentResult{ScanResult: enricher.ScanSucceeded}, nil
+			}).Times(1)
+
+		// No risk upsert: an image with an unexpected digest must not be saved.
+		handler := SBOMGenHandler(scannerV4Mocks(ctrl, scannerTypesMocks.NewMockScannerSBOMer(ctrl)), mockEnricher, nil, nil, riskManagerMocks.NewMockManager(ctrl), images, nil)
+		w := serveSBOMRequest(handler)
+
+		require.Equal(t, http.StatusInternalServerError, w.Code)
+		require.Contains(t, w.Body.String(), "resolved to digest")
+	})
 }

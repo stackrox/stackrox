@@ -130,6 +130,17 @@ func (h sbomGenHttpHandler) enrichWithModelSwitch(
 func (h sbomGenHttpHandler) cachedImage(ctx context.Context, ci *storage.ContainerImage) (*storage.Image, bool, error) {
 	if features.FlattenImageData.Enabled() {
 		img, found, err := h.imagesV2.GetImage(ctx, ci.GetIdV2())
+		if err == nil && !found {
+			// An inline digest reference (name@digest) yields a different V2 ID than the same
+			// request with the digest supplied separately (e.g. by roxctl). Retry with the digest
+			// suffix stripped so both request forms resolve to the stored row.
+			// shortcut: only the inline->separate direction is covered; the reverse is not.
+			if fullName := ci.GetName().GetFullName(); strings.HasSuffix(fullName, "@"+ci.GetId()) {
+				strippedName := ci.GetName().CloneVT()
+				strippedName.FullName = strings.TrimSuffix(fullName, "@"+ci.GetId())
+				img, found, err = h.imagesV2.GetImage(ctx, utils.NewImageV2ID(strippedName, ci.GetId()))
+			}
+		}
 		return utils.ConvertToV1(img), found, err
 	}
 	return h.images.GetImage(ctx, ci.GetId())
@@ -182,9 +193,13 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 	if !params.Force && ci.GetId() != "" {
 		img, found, err := h.cachedImage(ctx, ci)
 		if err != nil {
-			return nil, fmt.Errorf("reading image for SBOM: %w", err)
-		}
-		if found && enricher.CachedImageIsValid(img) && h.scannedByScannerV4(img.GetScan()) {
+			// A failed cache read must not block SBOM generation when fresh enrichment
+			// could still succeed. Fall through without using any data from the failed read.
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			log.Errorw("Reading cached image for SBOM generation", logging.ImageName(params.ImageName), logging.Err(err))
+		} else if found && enricher.CachedImageIsValid(img) && h.scannedByScannerV4(img.GetScan()) {
 			sbom, found, err := scannerV4.GetSBOM(img)
 			if err != nil || found {
 				return sbom, err
@@ -195,6 +210,20 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 	if err != nil {
 		sendAdminEvent(err, params.ImageName)
 		return nil, err
+	}
+	// Enrichment resolves the image name at scan time, so a moved tag can return a different
+	// image than requested. Never save or return an SBOM for a digest the caller did not ask for.
+	if requestedDigest := ci.GetId(); requestedDigest != "" {
+		actualDigest := img.GetMetadata().GetV2().GetDigest()
+		if actualDigest == "" {
+			actualDigest = img.GetMetadata().GetV1().GetDigest()
+		}
+		if actualDigest != "" && actualDigest != requestedDigest {
+			err := errors.Errorf("image %q resolved to digest %q but digest %q was requested",
+				params.ImageName, actualDigest, requestedDigest)
+			sendAdminEvent(err, params.ImageName)
+			return nil, err
+		}
 	}
 	if err := h.saveImage(img, imgV2); err != nil {
 		return nil, err
