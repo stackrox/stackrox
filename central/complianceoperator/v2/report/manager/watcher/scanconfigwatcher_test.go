@@ -302,6 +302,53 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 	assert.ErrorIs(t, result.Error, ErrScanConfigTimeout)
 }
 
+// TestScanConfigWatcherPushAfterCompletion verifies that pushing results after the watcher
+// finished returns an error instead of blocking forever on the unbuffered results channel.
+func TestScanConfigWatcherPushAfterCompletion(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
+	watcherID := "sc-id"
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
+		Id: watcherID,
+	}
+	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
+	// A single scan in the configuration: the watcher completes as soon as it is pushed.
+	profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(2).
+		Return([]*storage.ComplianceOperatorProfileV2{{Id: "p"}}, nil)
+	scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(2).
+		Return([]*storage.ComplianceOperatorScanV2{{Id: "scan-0", ScanName: "scan-0"}}, nil)
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+	handleScanResults("scan-0")(t, scanConfigWatcher)
+
+	require.Eventually(t, func() bool {
+		return resultsQueue.Len() == 1
+	}, 200*time.Millisecond, 10*time.Millisecond)
+	require.NotNil(t, resultsQueue.Pull())
+	select {
+	case <-scanConfigWatcher.Finished().Done():
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for the watcher to finish")
+	}
+
+	// The push must fail fast instead of blocking on the unbuffered results channel.
+	done := make(chan error, 1)
+	go func() {
+		done <- scanConfigWatcher.PushScanResults(&ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{Id: "scan-1", ScanName: "scan-1"},
+		})
+	}()
+	select {
+	case err := <-done:
+		assert.Error(t, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for PushScanResults after the watcher finished")
+	}
+}
+
 func TestScanConfigWatcherSubscribe(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)

@@ -150,6 +150,11 @@ func (w *scanConfigWatcherImpl) scanConfigName() string {
 
 func (w *scanConfigWatcherImpl) run(timer Timer) {
 	defer func() {
+		// Cancel the watcher context so results pushed after this watcher finished (e.g.
+		// late scan results, or NOT-APPLICABLE scans counted in at cycle start racing an
+		// instantly-completing cycle) fail fast instead of blocking forever on the
+		// unbuffered results channel.
+		w.cancel()
 		w.stopped.Signal()
 		<-w.stopped.Done()
 		timer.Stop()
@@ -291,9 +296,23 @@ func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scope
 	return errList.ToError()
 }
 
-// GetScansFromScanConfiguration returns the scans associated with a given ScanConfiguration
+// GetScansFromScanConfiguration returns the keys (clusterID:scanID) of the scans associated
+// with a given ScanConfiguration.
 func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, profileDataStore profileDatastore.DataStore, scanDataStore scanDataStore.DataStore) (set.StringSet, error) {
+	scans, err := GetScanListFromScanConfiguration(ctx, scanConfig, profileDataStore, scanDataStore)
+	if err != nil {
+		return nil, err
+	}
 	ret := set.NewStringSet()
+	for _, s := range scans {
+		ret.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
+	}
+	return ret, nil
+}
+
+// GetScanListFromScanConfiguration returns the scans associated with a given
+// ScanConfiguration, as stored in the datastore.
+func GetScanListFromScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, profileDataStore profileDatastore.DataStore, scanDataStore scanDataStore.DataStore) ([]*storage.ComplianceOperatorScanV2, error) {
 	profileNames := make([]string, 0, len(scanConfig.GetProfiles()))
 	for _, p := range scanConfig.GetProfiles() {
 		profileNames = append(profileNames, p.GetProfileName())
@@ -315,6 +334,7 @@ func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.Comp
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to search the profiles")
 	}
+	ret := make([]*storage.ComplianceOperatorScanV2, 0)
 	for _, p := range profiles {
 		scanRefQuery := search.NewQueryBuilder().AddExactMatches(
 			search.ComplianceOperatorProfileRef,
@@ -326,7 +346,7 @@ func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.Comp
 		}
 		for _, s := range scans {
 			log.Debugf("Adding scan to wait %s", s.GetScanName())
-			ret.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
+			ret = append(ret, s)
 		}
 	}
 	return ret, nil
