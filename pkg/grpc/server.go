@@ -416,14 +416,14 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	gwMux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, exportMarshaler{&runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
 				EmitUnpopulated: true,
 			},
 			UnmarshalOptions: protojson.UnmarshalOptions{
 				DiscardUnknown: true,
 			},
-		}),
+		}}),
 		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD),
 		runtime.WithOutgoingHeaderMatcher(allowCookiesHeaderMatcher),
 		runtime.WithMarshalerOption(
