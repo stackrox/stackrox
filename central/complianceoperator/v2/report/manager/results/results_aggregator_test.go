@@ -3,6 +3,7 @@ package results
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -399,6 +400,116 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataTimestampFiltering(
 			assert.Len(s.T(), res.ResultCSVs[clusterID], tc.expectedTotal)
 		})
 	}
+}
+
+func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataRunningScan() {
+	// Check results as they would be returned by the datastore once both scans of the
+	// configuration have completed.
+	checkResults := []*storage.ComplianceOperatorCheckResultV2{
+		{
+			CheckName:       "check-a",
+			ScanName:        "scan-a",
+			Status:          storage.ComplianceOperatorCheckResultV2_PASS,
+			LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC)),
+		},
+		{
+			CheckName:       "check-b",
+			ScanName:        "scan-b",
+			Status:          storage.ComplianceOperatorCheckResultV2_FAIL,
+			LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 10, 5, 0, 0, time.UTC)),
+		},
+	}
+	cases := map[string]struct {
+		hasRunningScan  bool
+		failedInfo      *report.FailedCluster
+		expectWalk      bool
+		expectedScans   []string
+		expectedNumRows int
+	}{
+		"running scan returns no rows without querying the datastore": {
+			hasRunningScan: true,
+		},
+		"running scan with failed scans still reports successful scans": {
+			hasRunningScan: true,
+			failedInfo: &report.FailedCluster{
+				ClusterId:   "cluster-0",
+				ClusterName: "cluster-0",
+				Reasons:     []string{"timeout"},
+				FailedScans: []*storage.ComplianceOperatorScanV2{{ScanName: "scan-b"}},
+			},
+			expectWalk:      true,
+			expectedScans:   []string{"scan-a"},
+			expectedNumRows: 1,
+		},
+		"no running scan queries the datastore": {
+			expectWalk:      true,
+			expectedScans:   []string{"scan-a", "scan-b"},
+			expectedNumRows: 2,
+		},
+	}
+	for tname, tc := range cases {
+		s.Run(tname, func() {
+			ctx := context.Background()
+			clusterID := "cluster-0"
+			req := &report.Request{
+				Ctx:          ctx,
+				ScanConfigID: scanConfigID,
+				ClusterIDs:   []string{clusterID},
+				Profiles:     []string{"profile-0"},
+				ClusterData: map[string]*report.ClusterData{
+					clusterID: {
+						ClusterId:      clusterID,
+						ClusterName:    clusterID,
+						ScanNames:      []string{"scan-a", "scan-b"},
+						FailedInfo:     tc.failedInfo,
+						HasRunningScan: tc.hasRunningScan,
+					},
+				},
+			}
+			if tc.expectWalk {
+				s.checkResultsDS.EXPECT().WalkByQuery(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
+					Times(1).
+					DoAndReturn(func(_ context.Context, query *v1.Query, fn checkResultWalkByQuery) error {
+						queriedScans := scanNamesFromQuery(s.T(), query)
+						assert.ElementsMatch(s.T(), tc.expectedScans, queriedScans)
+						// Only results matching the queried scan names reach the walk function.
+						for _, cr := range checkResults {
+							if slices.Contains(queriedScans, cr.GetScanName()) {
+								_ = fn(cr)
+							}
+						}
+						return nil
+					})
+			}
+			s.aggregator.aggreateResults = mockWalkByQueryWrapper
+			res := s.aggregator.GetReportData(req)
+			assert.Len(s.T(), res.ResultCSVs[clusterID], tc.expectedNumRows)
+		})
+	}
+}
+
+// scanNamesFromQuery extracts the values of the ComplianceOperatorScanName matches from a
+// query built with AddExactMatches(search.ComplianceOperatorScanName, ...): a single value
+// is a MatchFieldQuery directly in the top-level conjunction, multiple values are wrapped
+// in a disjunction.
+func scanNamesFromQuery(t *testing.T, query *v1.Query) []string {
+	t.Helper()
+	names := make([]string, 0, 2)
+	collect := func(q *v1.Query) {
+		if mfq := q.GetBaseQuery().GetMatchFieldQuery(); mfq.GetField() == search.ComplianceOperatorScanName.String() {
+			names = append(names, strings.Trim(mfq.GetValue(), "\""))
+		}
+	}
+	for _, q := range query.GetConjunction().GetQueries() {
+		if disjunction := q.GetDisjunction(); disjunction != nil {
+			for _, dq := range disjunction.GetQueries() {
+				collect(dq)
+			}
+			continue
+		}
+		collect(q)
+	}
+	return names
 }
 
 func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {

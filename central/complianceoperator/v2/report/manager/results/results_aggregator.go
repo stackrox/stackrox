@@ -105,6 +105,18 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 		totalFail:  0,
 		totalMixed: 0,
 	}
+	// While a scan of the cluster is running, the stored results mix the previous cycle's
+	// rows (stale, skipped by the filter below) with the current cycle's rows as they
+	// arrive, so a report generated at this point would include only some scans' results
+	// while looking complete: the formatter only emits the "scan in progress" notice when
+	// a cluster has no rows at all. Reports are queued behind a ScanConfigWatcher once
+	// the first scan of the configuration has received all its results, so this mainly
+	// covers on-demand reports requested before that point: return no rows so the report
+	// is either complete or marked as pending. Clusters with failed scans are exempt
+	// because their successful scans' results are still reported.
+	if clusterData.HasRunningScan && clusterData.FailedInfo == nil {
+		return ret, statuses, nil
+	}
 	successfulScanNames := clusterData.ScanNames
 	if clusterData.FailedInfo != nil {
 		if len(clusterData.FailedInfo.FailedScans) == 0 {
