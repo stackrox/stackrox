@@ -262,14 +262,14 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 func (suite *NodePostgresDataStoreTestSuite) TestSCOSScanIsIsolatedFromOtherNodeScans() {
 	ctx := sac.WithAllAccess(suite.T().Context())
 	scosNode := getTestNodeForPostgres(fixtureconsts.Node1, "scos-node")
-	scosNode.Scan.OperatingSystem = "scos:10:x86_64"
+	scosNode.GetScan().OperatingSystem = "scos:10:x86_64"
 	suite.Require().NoError(suite.datastore.UpsertNode(ctx, scosNode))
 
 	// An older collector can report the same packages without any findings.
 	legacyNode := scosNode.CloneVT()
 	legacyNode.Id = fixtureconsts.Node2
-	legacyNode.Scan.OperatingSystem = ""
-	for _, component := range legacyNode.Scan.Components {
+	legacyNode.GetScan().OperatingSystem = ""
+	for _, component := range legacyNode.GetScan().GetComponents() {
 		component.Vulnerabilities = nil
 	}
 	suite.Require().NoError(suite.datastore.UpsertNode(ctx, legacyNode))
