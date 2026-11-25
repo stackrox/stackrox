@@ -241,19 +241,27 @@ func (s *profileSuite) TestCipherSuites() {
 }
 
 func TestCurvePreferencesFIPSHandshake(t *testing.T) {
+	// Setting ROX_TLS_GROUPS directly exercises Go's TLS filtering. In FIPS mode,
+	// the Operator drops X25519MLKEM768 before passing cluster profile groups to components.
 	for name, tc := range map[string]struct {
 		mode        string
 		groups      string
 		wantFailure bool
 	}{
-		"x25519 without FIPS": {"off", "X25519", false},
-		"x25519 with FIPS":    {"on", "X25519", true},
-		"p256 with FIPS":      {"on", "secp256r1", false},
+		"X25519MLKEM768 without FIPS": {"off", "X25519MLKEM768", false},
+		"X25519MLKEM768 with FIPS":    {"on", "X25519MLKEM768", false},
+		"x25519 without FIPS":         {"off", "X25519", false},
+		"x25519 with FIPS":            {"on", "X25519", true},
+		"p256 with FIPS":              {"on", "secp256r1", false},
 	} {
 		if child := os.Getenv("ROX_TEST_TLS_HANDSHAKE_CASE"); child != "" {
 			if child == name {
 				require.Equal(t, tc.mode == "on", fips140.Enabled())
-				checkProfileHandshake(t, tc.wantFailure)
+				clientGroups := []tls.CurveID{tls.X25519, tls.CurveP256}
+				if tc.groups == "X25519MLKEM768" {
+					clientGroups = []tls.CurveID{tls.X25519MLKEM768}
+				}
+				checkProfileHandshake(t, clientGroups, tc.wantFailure)
 				return
 			}
 			continue
@@ -271,7 +279,7 @@ func TestCurvePreferencesFIPSHandshake(t *testing.T) {
 	require.Empty(t, os.Getenv("ROX_TEST_TLS_HANDSHAKE_CASE"), "unknown handshake case")
 }
 
-func checkProfileHandshake(t *testing.T, wantFailure bool) {
+func checkProfileHandshake(t *testing.T, clientGroups []tls.CurveID, wantFailure bool) {
 	t.Helper()
 	const hostname = "tlsprofile.test"
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -309,8 +317,8 @@ func checkProfileHandshake(t *testing.T, wantFailure bool) {
 		MinVersion: tls.VersionTLS13,
 		ServerName: hostname,
 		RootCAs:    roots,
-		// Offer a key share usable by each successful case without a retry.
-		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+		// Offer a usable key share without a retry on the unbuffered pipe.
+		CurvePreferences: clientGroups,
 	})
 	serverResult := make(chan error, 1)
 	go func() { serverResult <- server.Handshake() }()
