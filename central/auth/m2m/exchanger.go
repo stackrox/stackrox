@@ -2,7 +2,6 @@ package m2m
 
 import (
 	"context"
-	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -31,7 +30,6 @@ type TokenExchanger interface {
 
 type machineToMachineTokenExchanger struct {
 	config            *storage.AuthMachineToMachineConfig
-	configRegExps     []*regexp.Regexp
 	verifier          tokenVerifier
 	provider          authproviders.Provider
 	issuer            tokens.Issuer
