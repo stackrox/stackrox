@@ -74,7 +74,7 @@ func TestClientPolicyBootstrapUpdatesAndDeletion(t *testing.T) {
 	var doc clientPolicyDocument
 	require.NoError(t, json.Unmarshal([]byte(cm.Data[ClientPolicyDataKey]), &doc))
 	require.Len(t, doc.Clients, 2)
-	assert.Equal(t, accesscontrol.OpenShiftPrometheusMetricsReader, doc.Clients[0].Access[0].PermissionSetName)
+	assert.Equal(t, accesscontrol.OpenShiftPrometheus, doc.Clients[0].Access[0].PermissionSetName)
 	assert.Equal(t, accesscontrol.DefaultPermissionSetIDs[accesscontrol.K8sCentralProxyUser], doc.Clients[1].Access[0].PermissionSetID)
 	assert.Empty(t, doc.Clients[1].Access[1].PermissionSetID, "the second default grant is authentication-only")
 	assert.Contains(t, cm.Data[ClientPolicyDataKey], `"access"`)
@@ -128,29 +128,43 @@ func TestDefaultPolicyWithoutOpenShift(t *testing.T) {
 }
 
 func TestClientPolicyPreservesExistingConfig(t *testing.T) {
-	for name, data := range map[string]string{
-		"valid":   `{"version":1,"clients":[]}`,
-		"invalid": `{"version":2,"clients":[]}`,
+	for name, tc := range map[string]struct {
+		data    string
+		clients int
+		wantErr bool
+	}{
+		"valid":   {data: `{"version":1,"clients":[]}`},
+		"invalid": {data: `{"version":2,"clients":[]}`, wantErr: true},
+		"original metrics name": {
+			data: `{"version":1,"clients":[{"authType":"kubernetesBearer","subject":"alice",
+				"access":[{"permissionSetName":"OpenShift Prometheus Metrics Reader","httpRequestScopes":{"/metrics":["GET"]}}]}]}`,
+			clients: 1,
+		},
+		"metrics ID": {
+			data: `{"version":1,"clients":[{"authType":"kubernetesBearer","subject":"alice",
+				"access":[{"permissionSetId":"b3070020-ecc3-4f34-a3f6-ad28ffc9b80e","httpRequestScopes":{"/metrics":["GET"]}}]}]}`,
+			clients: 1,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			cm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{Name: ClientPolicyConfigMapName, Namespace: pods.GetPodNamespace()},
-				Data:       map[string]string{ClientPolicyDataKey: data},
+				Data:       map[string]string{ClientPolicyDataKey: tc.data},
 			}
 			client := fake.NewClientset(cm)
 			policy := NewClientPolicy(client)
 			t.Cleanup(policy.Stop)
 			err := policy.EnsureDefaults(t.Context())
-			if name == "invalid" {
+			if tc.wantErr {
 				require.Error(t, err)
 				assert.False(t, policy.ready.Load())
 			} else {
 				require.NoError(t, err)
-				assert.Empty(t, policy.policy.Load().document.Clients)
+				assert.Len(t, policy.policy.Load().document.Clients, tc.clients)
 			}
 			got, err := client.CoreV1().ConfigMaps(cm.Namespace).Get(t.Context(), cm.Name, metav1.GetOptions{})
 			require.NoError(t, err)
-			assert.Equal(t, data, got.Data[ClientPolicyDataKey])
+			assert.Equal(t, tc.data, got.Data[ClientPolicyDataKey])
 			for _, action := range client.Actions() {
 				assert.NotContains(t, []string{"create", "update", "patch", "delete"}, action.GetVerb())
 			}
@@ -177,7 +191,7 @@ func TestClientPolicyRejectsMalformedConfig(t *testing.T) {
 		"subject whitespace":   func(p *clientPolicyDocument) { p.Clients[0].Subject = " alice " },
 		"wildcard certificate": func(p *clientPolicyDocument) { p.Clients[0].Subject = "*" },
 		"wildcard custom set": func(p *clientPolicyDocument) {
-			p.Clients[1].Access[0].PermissionSetID = accesscontrol.OpenShiftPrometheusMetricsReaderID
+			p.Clients[1].Access[0].PermissionSetID = accesscontrol.OpenShiftPrometheusID
 		},
 		"too many clients": func(p *clientPolicyDocument) {
 			p.Clients = nil

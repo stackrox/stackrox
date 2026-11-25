@@ -143,7 +143,7 @@ func defaultClientPolicy() clientPolicyDocument {
 		})
 		clients = append(clients,
 			clientPolicyEntry{AuthType: clientAuthMTLS, Subject: env.SecureMetricsClientCertCN.Setting(), CARef: caRef,
-				Access: []clientPolicyAccess{{PermissionSetName: accesscontrol.OpenShiftPrometheusMetricsReader,
+				Access: []clientPolicyAccess{{PermissionSetName: accesscontrol.OpenShiftPrometheus,
 					HTTPScopes: copyHTTPScopes(centralproxy.MetricsHTTPScopes)}}},
 			clientPolicyEntry{AuthType: clientAuthKubernetesBearer, Subject: "*",
 				Access: []clientPolicyAccess{

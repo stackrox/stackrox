@@ -236,7 +236,7 @@ func TestCustomMTLSRoutesAndConsoleClassification(t *testing.T) {
 func TestDefaultMetricsClientStillMetricsOnly(t *testing.T) {
 	ca, key := testProxyCA(t)
 	cert := signedTestCertificate(t, ca, key, env.SecureMetricsClientCertCN.Setting(), x509.ExtKeyUsageClientAuth)
-	metricsID := accesscontrol.OpenShiftPrometheusMetricsReaderID
+	metricsID := accesscontrol.OpenShiftPrometheusID
 	for selector, id := range map[string]string{
 		"name":         "",
 		"ID":           metricsID,

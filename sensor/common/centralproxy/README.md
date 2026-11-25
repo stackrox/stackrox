@@ -43,7 +43,7 @@ policy is:
         "key": "client-ca-file"
       },
       "access": [{
-        "permissionSetName": "OpenShift Prometheus Metrics Reader",
+        "permissionSetName": "OpenShift Prometheus",
         "httpRequestScopes": {"/metrics": ["GET"]}
       }]
     },
@@ -90,6 +90,14 @@ unsupported versions, and more than 64 clients reject the entire policy.
 Each client may have at most 32 grants and 32 HTTP paths and methods in total.
 Duplicate selectors are invalid; Central also rejects aliases that resolve
 multiple grants to the same permission set.
+
+Central updates the seeded metrics permission-set name from `OpenShift Prometheus Metrics Reader`
+to `OpenShift Prometheus`, preserving its ID and administrator-managed
+fields. Administrator-chosen names are preserved. A conflicting new name is logged
+and leaves both permission sets unchanged. Existing policy ConfigMaps are
+never overwritten with new defaults: update any `permissionSetName` selector using
+the original name to `OpenShift Prometheus` after the rename. Selectors using the
+unchanged ID `b3070020-ecc3-4f34-a3f6-ad28ffc9b80e` remain valid.
 
 Bearer subjects are exact TokenReview usernames or `*`. Wildcard entries may
 only combine authentication-only grants with grants selecting the console

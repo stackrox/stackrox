@@ -24,7 +24,7 @@ func TestSeedProxyPermissionSetNameCollision(t *testing.T) {
 			return seedDefaultPermissionSets(ctx, store,
 				[]*storage.PermissionSet{getDefaultPermissionSet(accesscontrol.K8sCentralProxyUser)})
 		},
-		accesscontrol.OpenShiftPrometheusMetricsReader: func(ctx context.Context, store permissionSetPGStore.Store) error {
+		accesscontrol.OpenShiftPrometheus: func(ctx context.Context, store permissionSetPGStore.Store) error {
 			seedMetricsPermissionSet(ctx, store)
 			return nil
 		},
@@ -71,22 +71,89 @@ func TestSeedMetricsPermissionSetPreservesAdminGrants(t *testing.T) {
 			ctx := sac.WithAllAccess(t.Context())
 			store := permissionSetPGStore.New(pgTest.DB)
 			existing := &storage.PermissionSet{
-				Id:               accesscontrol.OpenShiftPrometheusMetricsReaderID,
-				Name:             "Administrator renamed metrics",
+				Id:               accesscontrol.OpenShiftPrometheusID,
+				Name:             "OpenShift Prometheus Metrics Reader",
 				Description:      "Administrator description",
 				ResourceToAccess: grants,
 			}
 			require.NoError(t, store.Upsert(ctx, existing))
+			expected := existing.CloneVT()
+			expected.Name = accesscontrol.OpenShiftPrometheus
 			for range 2 {
 				seedMetricsPermissionSet(ctx, store)
 			}
 			stored, found, err := store.Get(ctx, existing.GetId())
 			require.NoError(t, err)
 			require.True(t, found)
-			protoassert.Equal(t, existing, stored)
+			protoassert.Equal(t, expected, stored)
 			require.False(t, stored.GetAccessConstraint() == storage.AccessConstraint_ACCESS_CONSTRAINT_READ &&
 				stored.GetScopeConstraint() == storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
 				"existing grants need explicit constraints before use for scoped tokens")
+		})
+	}
+}
+
+func TestSeedMetricsPermissionSetRename(t *testing.T) {
+	for name, tc := range map[string]struct {
+		storedName string
+		collision  bool
+		wantName   string
+	}{
+		"original name": {
+			storedName: "OpenShift Prometheus Metrics Reader",
+			wantName:   accesscontrol.OpenShiftPrometheus,
+		},
+		"current name": {
+			storedName: accesscontrol.OpenShiftPrometheus,
+			wantName:   accesscontrol.OpenShiftPrometheus,
+		},
+		"custom name": {
+			storedName: "Administrator renamed metrics",
+			wantName:   "Administrator renamed metrics",
+		},
+		"rename collision": {
+			storedName: "OpenShift Prometheus Metrics Reader",
+			collision:  true,
+			wantName:   "OpenShift Prometheus Metrics Reader",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			pgTest := pgtest.ForT(t)
+			defer pgTest.Close()
+			ctx := sac.WithAllAccess(t.Context())
+			store := permissionSetPGStore.New(pgTest.DB)
+			existing := metricsPermissionSetWithAdminFields(tc.storedName)
+			require.NoError(t, store.Upsert(ctx, existing))
+			var other *storage.PermissionSet
+			if tc.collision {
+				other = &storage.PermissionSet{
+					Id:               rolePkg.GeneratePermissionSetID(),
+					Name:             accesscontrol.OpenShiftPrometheus,
+					Description:      "Unrelated administrator permission set",
+					ResourceToAccess: map[string]storage.Access{"Administration": storage.Access_READ_WRITE_ACCESS},
+				}
+				require.NoError(t, store.Upsert(ctx, other))
+			}
+			for range 2 {
+				seedMetricsPermissionSet(ctx, store)
+			}
+			stored, found, err := store.Get(ctx, existing.GetId())
+			require.NoError(t, err)
+			require.True(t, found)
+			expected := existing.CloneVT()
+			expected.Name = tc.wantName
+			protoassert.Equal(t, expected, stored)
+			expectedCount := 1
+			if other != nil {
+				storedOther, found, err := store.Get(ctx, other.GetId())
+				require.NoError(t, err)
+				require.True(t, found)
+				protoassert.Equal(t, other, storedOther)
+				expectedCount++
+			}
+			count, err := store.Count(ctx, search.EmptyQuery())
+			require.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
 		})
 	}
 }
