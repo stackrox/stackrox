@@ -1,6 +1,7 @@
 package nodeindex
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/scannerv4/scos"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -121,6 +124,76 @@ func TestPipelineWarnsWhenPersistedScanTimeRegresses(t *testing.T) {
 				assert.Empty(t, rejections)
 				assert.Empty(t, regressions)
 			}
+		})
+	}
+}
+
+func TestPipelineSCOSIndexReport(t *testing.T) {
+	t.Setenv(features.SCOSNodeScanning.EnvVar(), "true")
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+	for _, tc := range []struct {
+		name    string
+		mapping map[string]repositorytocpe.Repo
+		wantErr string
+	}{
+		{
+			name: "matches the existing inventory",
+			mapping: map[string]repositorytocpe.Repo{
+				"rhel-10-for-x86_64-baseos-rpms":    {CPEs: []string{"cpe:/o:redhat:enterprise_linux:10::baseos"}},
+				"rhel-10-for-x86_64-appstream-rpms": {CPEs: []string{"cpe:/a:redhat:enterprise_linux:10::appstream"}},
+			},
+		},
+		{
+			name:    "keeps the previous scan when the mapping is incomplete",
+			wantErr: "repository-to-CPE mapping is missing",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+			nodes := nodeDatastoreMocks.NewMockDataStore(ctrl)
+			scanner := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+			risk := riskManagerMocks.NewMockManager(ctrl)
+			node := &storage.Node{
+				Id:            "1",
+				ClusterId:     "scos-test-cluster",
+				OsImage:       "CentOS Stream CoreOS 10.0.20260414-0 (Coughlan)",
+				KernelVersion: "6.12.0-219.el10.x86_64",
+			}
+			index := &v4.IndexReport{Contents: &v4.Contents{
+				Packages:     map[string]*v4.Package{"1": {Id: "1", Name: "openssl", Version: "1.2.3"}},
+				Environments: map[string]*v4.Environment_List{"1": {Environments: []*v4.Environment{{PackageDb: "sqlite:usr/share/rpm"}}}},
+			}}
+			msg := createMsg(index)
+			nodes.EXPECT().GetNode(gomock.Any(), msg.GetEvent().GetId()).Return(node, true, nil)
+			if tc.wantErr == "" {
+				scanner.EXPECT().EnrichNodeWithVulnerabilities(node, nil, gomock.Any()).
+					DoAndReturn(func(n *storage.Node, _ *storage.NodeInventory, report *v4.IndexReport) error {
+						assert.Equal(t, "10", report.GetContents().GetDistributions()[scos.DistributionID].GetVersionId())
+						assert.Len(t, report.GetContents().GetEnvironments()["1"].GetEnvironments()[0].GetRepositoryIds(), 2)
+						n.Scan = &storage.NodeScan{ScanTime: protocompat.TimestampNow()}
+						return nil
+					})
+				clusterStore.EXPECT().GetClusterName(gomock.Any(), node.GetClusterId()).Return("scos-test", true, nil)
+				risk.EXPECT().CalculateRiskAndUpsertNode(node)
+			}
+			p := &pipelineImpl{
+				clusterStore:  clusterStore,
+				nodeDatastore: nodes,
+				enricher:      scanner,
+				riskManager:   risk,
+				getSCOSMapping: func(context.Context) (*repositorytocpe.MappingFile, error) {
+					return &repositorytocpe.MappingFile{Data: tc.mapping}, nil
+				},
+			}
+			err := p.Run(t.Context(), node.GetClusterId(), msg, nil)
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.wantErr)
+			}
+			assert.Empty(t, index.GetContents().GetRepositories())
 		})
 	}
 }

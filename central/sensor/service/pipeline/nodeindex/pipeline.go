@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/scannerv4/scos"
 )
 
@@ -44,14 +45,18 @@ func newPipeline(clusters clusterDataStore.DataStore, nodes nodeDatastore.DataSt
 		nodeDatastore: nodes,
 		enricher:      enricher,
 		riskManager:   riskManager,
+		getSCOSMapping: func(ctx context.Context) (*repositorytocpe.MappingFile, error) {
+			return scannerDefinitions.Singleton().RepositoryToCPEMapping(ctx)
+		},
 	}
 }
 
 type pipelineImpl struct {
-	clusterStore  clusterDataStore.DataStore
-	nodeDatastore nodeDatastore.DataStore
-	enricher      enricher.NodeEnricher
-	riskManager   riskManager.Manager
+	clusterStore   clusterDataStore.DataStore
+	nodeDatastore  nodeDatastore.DataStore
+	enricher       enricher.NodeEnricher
+	riskManager    riskManager.Manager
+	getSCOSMapping func(context.Context) (*repositorytocpe.MappingFile, error)
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {
@@ -113,7 +118,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	report = report.CloneVT()
 	if scos.Enabled() {
 		if profile, ok := scos.Detect(node.GetOsImage(), node.GetKernelVersion()); ok {
-			mapping, err := scannerDefinitions.Singleton().RepositoryToCPEMapping(ctx)
+			mapping, err := p.getSCOSMapping(ctx)
 			if err != nil {
 				return errors.Wrap(err, "loading SCOS repository mapping")
 			}

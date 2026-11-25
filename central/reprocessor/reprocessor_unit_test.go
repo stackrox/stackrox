@@ -116,6 +116,20 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 			},
 		},
 		{
+			name: "when SCOS host scanning is enabled then no legacy scan replaces findings",
+			setUpMocks: func(t *testing.T, a *args, m *mocks) {
+				t.Setenv(features.SCOSNodeScanning.EnvVar(), "true")
+				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
+				node := &storage.Node{
+					OsImage:       "CentOS Stream CoreOS 10.0.20260414-0 (Coughlan)",
+					KernelVersion: "6.12.0-219.el10.x86_64",
+					Scan:          &storage.NodeScan{OperatingSystem: "scos:10:x86_64", ScannerVersion: storage.NodeScan_SCANNER_V4},
+				}
+				m.nodes.EXPECT().GetNode(gomock.Any(), a.id).Return(node, true, nil)
+			},
+		},
+		{
 			name: "when node is not RHCOS then scanner is called and node is upserted",
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
 				node := &storage.Node{

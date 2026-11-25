@@ -75,6 +75,22 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			},
 		},
 		{
+			name: "SCOS metadata update preserves Scanner V4 scan",
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				t.Setenv(features.SCOSNodeScanning.EnvVar(), "true")
+				t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
+				a.msg = createMsg("CentOS Stream CoreOS 418.9.202409241032-0")
+				a.clusterID = "test cluster id"
+				a.msg.GetEvent().GetNode().KernelVersion = "5.14.0-570.el9_6.x86_64"
+				m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ context.Context, node *storage.Node) error {
+						assert.Nil(t, node.GetScan())
+						return nil
+					})
+			},
+		},
+		{
 			name: "when node is not full host scanned then enrich and upsert with risk",
 			setUp: func(t *testing.T, a *args, m *mocks) {
 				testutils.MustUpdateFeature(t, features.LegacyScanner, true)
