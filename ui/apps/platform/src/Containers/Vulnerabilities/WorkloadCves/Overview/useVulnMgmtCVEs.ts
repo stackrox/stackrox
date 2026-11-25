@@ -52,7 +52,6 @@ export function useVulnMgmtCVEs({
                           knownRansomwareCampaignUse: item.knownRansomwareCampaignUse,
                       })
                   ),
-                  totalCount: data.totalCount,
               }
             : undefined,
         refetch,

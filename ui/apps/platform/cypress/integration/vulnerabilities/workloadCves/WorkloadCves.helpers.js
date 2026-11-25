@@ -48,13 +48,12 @@ function toVulnMgmtCVEListResponse(graphqlResponse) {
             knownExploit: false,
             knownRansomwareCampaignUse: false,
         })),
-        totalCount: cves.length,
     };
 }
 
 function toVulnMgmtCountsResponse(cveListResponse) {
     return {
-        cve: cveListResponse.totalCount,
+        cve: cveListResponse.items.length,
         image: 1,
         deployment: 1,
         severity: { critical: 0, important: 0, moderate: 0, low: 0, unknown: 0 },
@@ -83,7 +82,6 @@ function toVulnMgmtImageListResponse(graphqlResponse) {
             matchedCveCount: countSumBySeverity(image.imageCVECountBySeverity),
             signatureVerificationData: image.signatureVerificationData ?? null,
         })),
-        totalCount: images.length,
     };
 }
 
@@ -100,7 +98,6 @@ function toVulnMgmtDeploymentListResponse(graphqlResponse) {
             imageCount: deployment.imageCount ?? 0,
             matchedCveCount: countSumBySeverity(deployment.imageCVECountBySeverity),
         })),
-        totalCount: deployments.length,
     };
 }
 

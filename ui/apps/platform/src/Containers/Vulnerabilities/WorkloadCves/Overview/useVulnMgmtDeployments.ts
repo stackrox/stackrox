@@ -35,12 +35,7 @@ export function useVulnMgmtDeployments({
     return {
         loading: isLoading,
         error: error ?? undefined,
-        data: data
-            ? {
-                  deployments: data.items,
-                  totalCount: data.totalCount,
-              }
-            : undefined,
+        data: data ? { deployments: data.items } : undefined,
         refetch,
     };
 }

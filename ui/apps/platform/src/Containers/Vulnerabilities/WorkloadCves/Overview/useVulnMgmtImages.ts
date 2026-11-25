@@ -35,7 +35,7 @@ export function useVulnMgmtImages({
     return {
         loading: isLoading,
         error: error ?? undefined,
-        data: data ? { images: data.items, totalCount: data.totalCount } : undefined,
+        data: data ? { images: data.items } : undefined,
         refetch,
     };
 }

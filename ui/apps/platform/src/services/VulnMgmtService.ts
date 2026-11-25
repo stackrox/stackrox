@@ -67,7 +67,6 @@ export type CVEListItem = {
 
 export type CVEListResponse = {
     items: CVEListItem[];
-    totalCount: number;
 };
 
 export type CVEDetailItem = {
@@ -122,7 +121,6 @@ export type VulnMgmtImageListItem = {
 
 export type ImageListResponse = {
     items: VulnMgmtImageListItem[];
-    totalCount: number;
 };
 
 export type VulnMgmtDeploymentListItem = {
@@ -138,7 +136,6 @@ export type VulnMgmtDeploymentListItem = {
 
 export type DeploymentListResponse = {
     items: VulnMgmtDeploymentListItem[];
-    totalCount: number;
 };
 
 export type FetchListParams = {

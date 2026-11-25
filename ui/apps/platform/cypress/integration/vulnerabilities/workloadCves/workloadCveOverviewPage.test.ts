@@ -72,11 +72,11 @@ describe('Workload CVE overview page tests', () => {
 
         cy.intercept(
             { method: 'GET', url: '/api/v2/vulnmgmt/images?*' },
-            { body: { items: [], totalCount: 0 } }
+            { body: { items: [] } }
         ).as('getSeverityTabImages');
         cy.intercept(
             { method: 'GET', url: '/api/v2/vulnmgmt/deployments?*' },
-            { body: { items: [], totalCount: 0 } }
+            { body: { items: [] } }
         ).as('getSeverityTabDeployments');
 
         function expectImportantSeverity(url: string) {
