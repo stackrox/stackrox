@@ -453,19 +453,6 @@ you configure the Helm chart to not create TLS certificate secrets.
   - `admission-control-cert.pem`: PEM-encoded StackRox Admission Control certificate
   - `admission-control-key.pem`: PEM-encoded private key for the StackRox Admision Control certificate
 
-#### Obtaining secrets for an existing cluster
-
-If you upgrade from a previous Helm chart, you can create certificates specific
-to a particular cluster by using the following `roxctl` CLI command:
-
-```sh
-export ROX_API_TOKEN=<StackRox API token>
-roxctl -e <central endpoint and port> sensor generate-certs <cluster name>
-```
-Running this command create a file called `cluster-<cluster-name>-tls.yaml` in
-the current directory. The file contains YAML manifests for the
-[required Kubernetes secrets](#required-kubernetes-secrets).
-
 #### Obtaining secrets for an init bundle
 
 If you want to deploy multiple clusters using this Helm chart and want to create
