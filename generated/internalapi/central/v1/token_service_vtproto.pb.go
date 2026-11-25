@@ -43,6 +43,11 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenFor
 		}
 		r.ClusterScopes = tmpContainer
 	}
+	if m.PermissionSet != nil {
+		r.PermissionSet = m.PermissionSet.(interface {
+			CloneVT() isGenerateTokenForPermissionsAndScopeRequest_PermissionSet
+		}).CloneVT()
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -52,6 +57,24 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenFor
 
 func (m *GenerateTokenForPermissionsAndScopeRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
+}
+
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetId) CloneVT() isGenerateTokenForPermissionsAndScopeRequest_PermissionSet {
+	if m == nil {
+		return (*GenerateTokenForPermissionsAndScopeRequest_PermissionSetId)(nil)
+	}
+	r := new(GenerateTokenForPermissionsAndScopeRequest_PermissionSetId)
+	r.PermissionSetId = m.PermissionSetId
+	return r
+}
+
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetName) CloneVT() isGenerateTokenForPermissionsAndScopeRequest_PermissionSet {
+	if m == nil {
+		return (*GenerateTokenForPermissionsAndScopeRequest_PermissionSetName)(nil)
+	}
+	r := new(GenerateTokenForPermissionsAndScopeRequest_PermissionSetName)
+	r.PermissionSetName = m.PermissionSetName
+	return r
 }
 
 func (m *ClusterScope) CloneVT() *ClusterScope {
@@ -100,6 +123,18 @@ func (this *GenerateTokenForPermissionsAndScopeRequest) EqualVT(that *GenerateTo
 	} else if this == nil || that == nil {
 		return false
 	}
+	if this.PermissionSet == nil && that.PermissionSet != nil {
+		return false
+	} else if this.PermissionSet != nil {
+		if that.PermissionSet == nil {
+			return false
+		}
+		if !this.PermissionSet.(interface {
+			EqualVT(isGenerateTokenForPermissionsAndScopeRequest_PermissionSet) bool
+		}).EqualVT(that.PermissionSet) {
+			return false
+		}
+	}
 	if len(this.Permissions) != len(that.Permissions) {
 		return false
 	}
@@ -145,6 +180,40 @@ func (this *GenerateTokenForPermissionsAndScopeRequest) EqualMessageVT(thatMsg p
 	}
 	return this.EqualVT(that)
 }
+func (this *GenerateTokenForPermissionsAndScopeRequest_PermissionSetId) EqualVT(thatIface isGenerateTokenForPermissionsAndScopeRequest_PermissionSet) bool {
+	that, ok := thatIface.(*GenerateTokenForPermissionsAndScopeRequest_PermissionSetId)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.PermissionSetId != that.PermissionSetId {
+		return false
+	}
+	return true
+}
+
+func (this *GenerateTokenForPermissionsAndScopeRequest_PermissionSetName) EqualVT(thatIface isGenerateTokenForPermissionsAndScopeRequest_PermissionSet) bool {
+	that, ok := thatIface.(*GenerateTokenForPermissionsAndScopeRequest_PermissionSetName)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.PermissionSetName != that.PermissionSetName {
+		return false
+	}
+	return true
+}
+
 func (this *ClusterScope) EqualVT(that *ClusterScope) bool {
 	if this == that {
 		return true
@@ -225,6 +294,15 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if vtmsg, ok := m.PermissionSet.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
 	if len(m.Requester) > 0 {
 		i -= len(m.Requester)
 		copy(dAtA[i:], m.Requester)
@@ -274,6 +352,34 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA
 	return len(dAtA) - i, nil
 }
 
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetId) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetId) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.PermissionSetId)
+	copy(dAtA[i:], m.PermissionSetId)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.PermissionSetId)))
+	i--
+	dAtA[i] = 0x2a
+	return len(dAtA) - i, nil
+}
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetName) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetName) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.PermissionSetName)
+	copy(dAtA[i:], m.PermissionSetName)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.PermissionSetName)))
+	i--
+	dAtA[i] = 0x32
+	return len(dAtA) - i, nil
+}
 func (m *ClusterScope) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -401,10 +507,33 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if vtmsg, ok := m.PermissionSet.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
+	}
 	n += len(m.unknownFields)
 	return n
 }
 
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetId) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.PermissionSetId)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
+func (m *GenerateTokenForPermissionsAndScopeRequest_PermissionSetName) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.PermissionSetName)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
 func (m *ClusterScope) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -685,6 +814,70 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			m.Requester = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PermissionSet = &GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{PermissionSetId: string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PermissionSet = &GenerateTokenForPermissionsAndScopeRequest_PermissionSetName{PermissionSetName: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1177,6 +1370,78 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []by
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Requester = stringValue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.PermissionSet = &GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{PermissionSetId: stringValue}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PermissionSetName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.PermissionSet = &GenerateTokenForPermissionsAndScopeRequest_PermissionSetName{PermissionSetName: stringValue}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

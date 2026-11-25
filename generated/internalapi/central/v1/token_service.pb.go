@@ -98,7 +98,16 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	// The requester field allows to set a custom string in the generated token,
 	// identifying who requested it. This can allow finer-grain tracking
 	// of who requested an internal token in the audit log trail.
-	Requester     string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
+	Requester string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
+	// Selects one Central-managed read-only, cluster/namespace-constrained
+	// permission set instead of permissions. A selected value must be nonempty.
+	// permissions and a permission set selector are mutually exclusive.
+	//
+	// Types that are valid to be assigned to PermissionSet:
+	//
+	//	*GenerateTokenForPermissionsAndScopeRequest_PermissionSetId
+	//	*GenerateTokenForPermissionsAndScopeRequest_PermissionSetName
+	PermissionSet isGenerateTokenForPermissionsAndScopeRequest_PermissionSet `protobuf_oneof:"permission_set"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -159,6 +168,49 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetRequester() string {
 		return x.Requester
 	}
 	return ""
+}
+
+func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSet() isGenerateTokenForPermissionsAndScopeRequest_PermissionSet {
+	if x != nil {
+		return x.PermissionSet
+	}
+	return nil
+}
+
+func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSetId() string {
+	if x != nil {
+		if x, ok := x.PermissionSet.(*GenerateTokenForPermissionsAndScopeRequest_PermissionSetId); ok {
+			return x.PermissionSetId
+		}
+	}
+	return ""
+}
+
+func (x *GenerateTokenForPermissionsAndScopeRequest) GetPermissionSetName() string {
+	if x != nil {
+		if x, ok := x.PermissionSet.(*GenerateTokenForPermissionsAndScopeRequest_PermissionSetName); ok {
+			return x.PermissionSetName
+		}
+	}
+	return ""
+}
+
+type isGenerateTokenForPermissionsAndScopeRequest_PermissionSet interface {
+	isGenerateTokenForPermissionsAndScopeRequest_PermissionSet()
+}
+
+type GenerateTokenForPermissionsAndScopeRequest_PermissionSetId struct {
+	PermissionSetId string `protobuf:"bytes,5,opt,name=permission_set_id,json=permissionSetId,proto3,oneof"`
+}
+
+type GenerateTokenForPermissionsAndScopeRequest_PermissionSetName struct {
+	PermissionSetName string `protobuf:"bytes,6,opt,name=permission_set_name,json=permissionSetName,proto3,oneof"`
+}
+
+func (*GenerateTokenForPermissionsAndScopeRequest_PermissionSetId) isGenerateTokenForPermissionsAndScopeRequest_PermissionSet() {
+}
+
+func (*GenerateTokenForPermissionsAndScopeRequest_PermissionSetName) isGenerateTokenForPermissionsAndScopeRequest_PermissionSet() {
 }
 
 // ClusterScope represents the access scope of a role within a cluster.
@@ -278,15 +330,18 @@ var File_internalapi_central_v1_token_service_proto protoreflect.FileDescriptor
 const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\n" +
 	"*internalapi/central/v1/token_service.proto\x12\n" +
-	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\x81\x03\n" +
+	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xf3\x03\n" +
 	"*GenerateTokenForPermissionsAndScopeRequest\x12i\n" +
 	"\vpermissions\x18\x01 \x03(\v2G.central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntryR\vpermissions\x12?\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\x18.central.v1.ClusterScopeR\rclusterScopes\x125\n" +
 	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1c\n" +
-	"\trequester\x18\x04 \x01(\tR\trequester\x1aR\n" +
+	"\trequester\x18\x04 \x01(\tR\trequester\x12,\n" +
+	"\x11permission_set_id\x18\x05 \x01(\tH\x00R\x0fpermissionSetId\x120\n" +
+	"\x13permission_set_name\x18\x06 \x01(\tH\x00R\x11permissionSetName\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"}\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01B\x10\n" +
+	"\x0epermission_set\"}\n" +
 	"\fClusterScope\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12.\n" +
@@ -343,6 +398,10 @@ func init() { file_internalapi_central_v1_token_service_proto_init() }
 func file_internalapi_central_v1_token_service_proto_init() {
 	if File_internalapi_central_v1_token_service_proto != nil {
 		return
+	}
+	file_internalapi_central_v1_token_service_proto_msgTypes[0].OneofWrappers = []any{
+		(*GenerateTokenForPermissionsAndScopeRequest_PermissionSetId)(nil),
+		(*GenerateTokenForPermissionsAndScopeRequest_PermissionSetName)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

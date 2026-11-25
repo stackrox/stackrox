@@ -13,22 +13,24 @@ import (
 
 	"github.com/pkg/errors"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/coalescer"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 const (
 	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
-	// These tokens carry narrowly scoped permissions and are not directly exposed
-	// to users. The longer cache window trades minimal revocation latency for
-	// significantly lower load on Central in clusters with many proxied requests.
+	// Tokens contain administrator-managed permissions. Caching reduces load on
+	// Central but permission reductions may take up to the token lifetime to apply.
 	tokenCacheTTL = 55 * time.Minute
 
 	// tokenTTL is the requested token lifetime.
@@ -223,17 +225,23 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 		incrementTokenRequest(tokenResultError)
 		return "", errors.Wrap(errServiceUnavailable, "token provider not initialized: central connection not available")
 	}
+	req, err := p.buildTokenRequest(namespaceScope)
+	if err != nil {
+		incrementTokenRequest(tokenResultError)
+		return "", errors.Wrap(err, "building token request")
+	}
+	cacheKey := p.tokenCacheKey(namespaceScope, req.GetPermissionSet() != nil)
 
 	// Fast path: check cache first.
-	if token, ok := p.tokenCache.Get(namespaceScope); ok {
+	if token, ok := p.tokenCache.Get(cacheKey); ok {
 		incrementTokenRequest(tokenResultCacheHit)
 		return token, nil
 	}
 
 	// Slow path: coalesce concurrent requests for the same scope.
-	return p.tokenGroup.Coalesce(ctx, namespaceScope, func() (string, error) { //nolint:wrapcheck
+	return p.tokenGroup.Coalesce(ctx, cacheKey, func() (string, error) { //nolint:wrapcheck
 		// Double-check cache inside coalesce to avoid redundant API calls.
-		if token, ok := p.tokenCache.Get(namespaceScope); ok {
+		if token, ok := p.tokenCache.Get(cacheKey); ok {
 			incrementTokenRequest(tokenResultCacheHit)
 			return token, nil
 		}
@@ -244,32 +252,28 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 		// of the initial request context while still having a bounded lifetime.
 		ctx, cancel := context.WithTimeout(context.Background(), tokenRequestTimeout)
 		defer cancel()
-		token, err := p.requestToken(ctx, *client, namespaceScope)
+		token, err := p.requestToken(ctx, *client, req)
 		if err != nil {
 			incrementTokenRequest(tokenResultError)
 			return "", err
 		}
 
-		p.tokenCache.Add(namespaceScope, token)
+		p.tokenCache.Add(cacheKey, token)
 		incrementTokenRequest(tokenResultSuccess)
 		return token, nil
 	})
 }
 
 // requestToken performs the RPC call to Central to generate a token for the given scope.
-func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.TokenServiceClient, namespaceScope string) (string, error) {
-	req, err := p.buildTokenRequest(namespaceScope)
-	if err != nil {
-		return "", errors.Wrap(err, "building token request")
-	}
+func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.TokenServiceClient, req *centralv1.GenerateTokenForPermissionsAndScopeRequest) (string, error) {
 	resp, err := client.GenerateTokenForPermissionsAndScope(ctx, req)
 	if err != nil {
-		return "", errors.Wrapf(err, "requesting token from Central for scope %q", namespaceScope)
+		return "", errors.Wrap(err, "requesting token from Central")
 	}
 
 	token := resp.GetToken()
 	if token == "" {
-		return "", errors.Errorf("received empty token from Central for scope %q", namespaceScope)
+		return "", errors.New("received empty token from Central")
 	}
 
 	return token, nil
@@ -281,8 +285,14 @@ func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.Token
 // Note: This does not cancel already running requests; they will complete
 // normally but their results will not be used by new callers.
 func (p *tokenProvider) invalidateToken(scope string) {
-	p.tokenCache.Remove(scope)
-	p.tokenGroup.Forget(scope)
+	cacheKey := p.tokenCacheKey(scope, centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens))
+	p.tokenCache.Remove(cacheKey)
+	p.tokenGroup.Forget(cacheKey)
+}
+
+func (p *tokenProvider) tokenCacheKey(scope string, permissionSet bool) string {
+	// A capability change must not reuse tokens issued through the legacy policy.
+	return fmt.Sprintf("%s:%t:%s", p.clusterIDGetter.GetNoWait(), permissionSet, scope)
 }
 
 // buildTokenRequest creates the token request based on the namespace scope.
@@ -294,8 +304,14 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	}
 
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
-		Permissions: tokenPermissions,
-		Lifetime:    durationpb.New(tokenTTL),
+		Lifetime: durationpb.New(tokenTTL),
+	}
+	if centralcaps.Has(centralsensor.CentralProxyPermissionSetTokens) {
+		req.PermissionSet = &centralv1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId{
+			PermissionSetId: accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConsoleProxy],
+		}
+	} else {
+		req.Permissions = tokenPermissions
 	}
 
 	switch namespaceScope {

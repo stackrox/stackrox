@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -35,10 +37,8 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 	}
 }
 
-// defaultTokenPolicy returns the hardcoded policy for internal tokens issued
-// to sensors. It caps lifetime to 1 hour and allows read access to Deployment
-// and Image resources.
-// This policy should be kept in sync with the needs of the ocp console plugin.
+// defaultTokenPolicy caps Sensor token lifetimes to one hour. Requests without
+// a permission set selector use the legacy console permission allowlist.
 func defaultTokenPolicy() *tokenPolicy {
 	// defaultAllowedPermissions lists the resource permissions that the default
 	// policy allows sensors to request. These must stay in sync with the needs
@@ -116,7 +116,30 @@ func (p *tokenPolicy) validateSensorIdentity(ctx context.Context) (string, error
 			"only sensor may access this API, unexpected service type %q",
 			identity.Service().GetType())
 	}
-	return identity.Service().GetId(), nil
+	clusterID := identity.Service().GetId()
+	if clusterID == "" {
+		return "", errox.NotAuthorized.New("sensor cluster ID is missing")
+	}
+	return clusterID, nil
+}
+
+func validatePermissionSetSelector(req *v1.GenerateTokenForPermissionsAndScopeRequest) error {
+	if len(req.GetPermissions()) != 0 {
+		return errox.InvalidArgs.New("permission set selector and permissions are mutually exclusive")
+	}
+	switch selector := req.GetPermissionSet().(type) {
+	case *v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetId:
+		if _, err := uuid.FromString(selector.PermissionSetId); err != nil {
+			return errox.InvalidArgs.New("permission set ID must be a UUID")
+		}
+	case *v1.GenerateTokenForPermissionsAndScopeRequest_PermissionSetName:
+		if selector.PermissionSetName == "" || strings.TrimSpace(selector.PermissionSetName) != selector.PermissionSetName {
+			return errox.InvalidArgs.New("permission set name must be nonempty without surrounding whitespace")
+		}
+	default:
+		return errox.InvalidArgs.New("permission set selector is required")
+	}
+	return nil
 }
 
 // enforce validates the request against all policy checks and returns the
@@ -129,8 +152,14 @@ func (p *tokenPolicy) enforce(
 	if err != nil {
 		return nil, err
 	}
-	if err := p.validatePermissions(req.GetPermissions()); err != nil {
-		return nil, err
+	if req.GetPermissionSet() != nil {
+		if err := validatePermissionSetSelector(req); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := p.validatePermissions(req.GetPermissions()); err != nil {
+			return nil, err
+		}
 	}
 	if err := p.validateClusterScope(req.GetClusterScopes(), sensorClusterID); err != nil {
 		return nil, err
