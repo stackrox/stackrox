@@ -47,4 +47,10 @@ func TestSCOSNodeInventoryScan(t *testing.T) {
 	rhcos := toNodeScan(vr, "Red Hat Enterprise Linux CoreOS 419.96.20250915-0")
 	assert.Equal(t, "rhcos:4.19", rhcos.GetOperatingSystem())
 	assert.Equal(t, "3.0.1", rhcos.GetComponents()[0].GetVulns()[0].GetFixedBy())
+
+	legacyReport := vr.CloneVT()
+	legacyReport.Contents.Distributions = nil
+	legacyScan := toNodeScan(legacyReport, scos.Name+" 10.0.20260414-0 (Coughlan)")
+	assert.Equal(t, "scos:10:x86_64", legacyScan.GetOperatingSystem())
+	assert.Empty(t, legacyScan.GetComponents()[0].GetVulns()[0].GetFixedBy())
 }

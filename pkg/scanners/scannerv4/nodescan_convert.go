@@ -29,7 +29,7 @@ func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan 
 
 	convertedOS := toOperatingSystem(osImageRef)
 	components := toStorageComponents(r)
-	dist := r.GetContents().GetDistributions()[scos.DistributionID]
+	dist := distributions(r)[scos.DistributionID]
 	if dist.GetDid() == scos.DistributionID && strings.HasPrefix(osImageRef, scos.Name) {
 		// Component IDs include this field. Keep compatibility findings separate
 		// from RHCOS, other SCOS profiles and reports with no OS identity.
