@@ -16,6 +16,7 @@ import (
 	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/env"
@@ -29,6 +30,7 @@ import (
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypesMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -296,7 +298,7 @@ func TestSBOMCachedImage(t *testing.T) {
 						imagesV2.EXPECT().GetImage(callerScope, utils.NewImageV2ID(img.Name, digest)).Return(stored, tc.readable, nil)
 						if !tc.readable || !tc.v4 {
 							// The digest-based fallback lookup runs under the caller's scope too.
-							imagesV2.EXPECT().SearchRawImages(callerScope, gomock.Any()).Return(nil, nil)
+							imagesV2.EXPECT().SearchRawImages(callerScope, imageSHAQuery(digest)).Return(nil, nil)
 						}
 					} else {
 						var stored *storage.Image
@@ -306,7 +308,11 @@ func TestSBOMCachedImage(t *testing.T) {
 						images.EXPECT().GetImage(callerScope, digest).Return(stored, tc.readable, nil)
 					}
 					if tc.readable && tc.v4 {
-						scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).Return([]byte(`{"cached":true}`), tc.indexFound, nil)
+						withDeadline := gomock.Cond(func(ctx context.Context) bool {
+							_, ok := ctx.Deadline()
+							return ok
+						})
+						scanner.EXPECT().GetSBOM(withDeadline, gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).Return([]byte(`{"cached":true}`), tc.indexFound, nil)
 					}
 				}
 				if !tc.indexFound || !tc.v4 {
@@ -350,6 +356,22 @@ func TestSBOMCachedImage(t *testing.T) {
 	}
 }
 
+// withRequestDeadline matches a context carrying a deadline, e.g. the request context.
+func withRequestDeadline() gomock.Matcher {
+	return gomock.Cond(func(ctx context.Context) bool {
+		_, ok := ctx.Deadline()
+		return ok
+	})
+}
+
+// imageSHAQuery matches a query searching for the exact given image digest.
+func imageSHAQuery(digest string) gomock.Matcher {
+	expected := searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.ImageSHA, digest).ProtoQuery()
+	return gomock.Cond(func(q *v1.Query) bool {
+		return q.String() == expected.String()
+	})
+}
+
 // scannerV4Mocks returns a mock integration set yielding the given Scanner V4 SBOMer.
 func scannerV4Mocks(ctrl *gomock.Controller, scanner *scannerTypesMocks.MockScannerSBOMer) *intergrationMocks.MockSet {
 	set := intergrationMocks.NewMockSet(ctrl)
@@ -388,17 +410,17 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 
 		// A tagless repo@digest reference (as roxctl sends it) yields a V2 ID that does not
 		// match a row stored under repo:tag. The UUID lookup misses; the digest-based
-		// search finds the stored row with all its names.
+		// search finds the stored row.
 		imageName := "registry.example.org/app@" + digest
 		ci, err := containerImage(apiparams.SBOMRequestBody{ImageName: imageName})
 		require.NoError(t, err)
 
 		imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
 		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(nil, false, nil)
-		imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return([]*storage.ImageV2{utils.ConvertToV2(img)}, nil)
+		imagesV2.EXPECT().SearchRawImages(gomock.Any(), imageSHAQuery(digest)).Return([]*storage.ImageV2{utils.ConvertToV2(img)}, nil)
 
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
+		scanner.EXPECT().GetSBOM(withRequestDeadline(), gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
 
 		handler := SBOMGenHandler(scannerV4Mocks(ctrl, scanner), nil, nil, nil, nil, imageMapperDatastore.New(nil, imagesV2))
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: imageName})
@@ -509,7 +531,7 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 
 		imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
 		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(nil, false, nil)
-		imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(nil, nil)
+		imagesV2.EXPECT().SearchRawImages(gomock.Any(), imageSHAQuery(uuidDigest)).Return(nil, nil)
 
 		eV2 := enricherMock.NewMockImageEnricherV2(ctrl)
 		eV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -547,11 +569,11 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 		require.NoError(t, err)
 		imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
 		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(utils.ConvertToV2(nonV4), true, nil)
-		imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).
+		imagesV2.EXPECT().SearchRawImages(gomock.Any(), imageSHAQuery(digest)).
 			Return([]*storage.ImageV2{utils.ConvertToV2(nonV4), utils.ConvertToV2(v4)}, nil)
 
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).
+		scanner.EXPECT().GetSBOM(withRequestDeadline(), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).
 			Return([]byte(`{"cached":true}`), true, nil)
 
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: digest})
