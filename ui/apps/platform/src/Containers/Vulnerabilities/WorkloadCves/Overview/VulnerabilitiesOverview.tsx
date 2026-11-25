@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { gql, useQuery } from '@apollo/client';
 import { Flex } from '@patternfly/react-core';
 
 import type { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
@@ -14,7 +13,14 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import type { DefaultFilters, QuerySearchFilter, WorkloadEntityTab } from '../../types';
+import type {
+    DefaultFilters,
+    QuerySearchFilter,
+    SeverityTab,
+    WorkloadEntityTab,
+} from '../../types';
+import SeverityTabs from '../components/SeverityTabs';
+import { useVulnMgmtCounts } from './useVulnMgmtCounts';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer from './ImagesTableContainer';
@@ -38,14 +44,6 @@ function getSearchFilterEntityByTab(entityTab: WorkloadEntityTab): 'CVE' | 'Imag
     }
 }
 
-export const entityTypeCountsQuery = gql`
-    query getEntityTypeCounts($query: String) {
-        imageCount(query: $query)
-        deploymentCount(query: $query)
-        imageCVECount(query: $query)
-    }
-`;
-
 type VulnerabilitiesOverviewProps = {
     defaultFilters: DefaultFilters;
     searchFilter: SearchFilter;
@@ -64,6 +62,10 @@ type VulnerabilitiesOverviewProps = {
     additionalToolbarItems: ReactNode;
     additionalHeaderItems: ReactNode;
     showDeferralUI: boolean;
+    countsQueryString: string;
+    useSeverityTabs: boolean;
+    severityTab: SeverityTab;
+    onSeverityTabChange: (severity: SeverityTab) => void;
     cveTableColumnOverrides: ColumnConfigOverrides<keyof typeof cveDefaultColumns>;
     imageTableColumnOverrides: ColumnConfigOverrides<keyof typeof imageDefaultColumns>;
     deploymentTableColumnOverrides: ColumnConfigOverrides<keyof typeof deploymentDefaultColumns>;
@@ -87,6 +89,10 @@ function VulnerabilitiesOverview({
     additionalToolbarItems,
     additionalHeaderItems,
     showDeferralUI,
+    countsQueryString,
+    useSeverityTabs,
+    severityTab,
+    onSeverityTabChange,
     cveTableColumnOverrides,
     imageTableColumnOverrides,
     deploymentTableColumnOverrides,
@@ -103,21 +109,23 @@ function VulnerabilitiesOverview({
 
     const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
 
-    const { data } = useQuery<{
-        imageCount: number;
-        imageCVECount: number;
-        deploymentCount: number;
-    }>(entityTypeCountsQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-        },
-    });
+    const { counts } = useVulnMgmtCounts(countsQueryString);
 
     const entityCounts = {
-        CVE: data?.imageCVECount ?? 0,
-        Image: data?.imageCount ?? 0,
-        Deployment: data?.deploymentCount ?? 0,
+        CVE: counts?.cve ?? 0,
+        Image: counts?.image ?? 0,
+        Deployment: counts?.deployment ?? 0,
     };
+
+    const severityCounts: Partial<Record<SeverityTab, number>> | undefined = counts
+        ? {
+              Critical: counts.severity.critical,
+              Important: counts.severity.important,
+              Moderate: counts.severity.moderate,
+              Low: counts.severity.low,
+              Unknown: counts.severity.unknown,
+          }
+        : undefined;
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
@@ -133,7 +141,7 @@ function VulnerabilitiesOverview({
                 pagination.setPage(1);
                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
             }}
-            includeCveSeverityFilters={isViewingWithCves}
+            includeCveSeverityFilters={isViewingWithCves && !useSeverityTabs}
             includeCveStatusFilters={isViewingWithCves}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
         >
@@ -159,6 +167,13 @@ function VulnerabilitiesOverview({
                 >
                     {additionalHeaderItems}
                 </Flex>
+            )}
+            {useSeverityTabs && (
+                <SeverityTabs
+                    activeKey={severityTab}
+                    counts={severityCounts}
+                    onChange={onSeverityTabChange}
+                />
             )}
             {activeEntityTabKey === 'CVE' && (
                 <CVEsTableContainer

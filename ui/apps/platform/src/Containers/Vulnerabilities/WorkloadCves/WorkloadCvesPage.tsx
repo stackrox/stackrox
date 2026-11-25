@@ -125,7 +125,9 @@ function getWorkloadCveContextFromView(
             pageTitle = 'All vulnerable images';
             pageTitleDescription =
                 'Findings for user, platform, and inactive images simultaneously';
-            baseSearchFilter = { 'Platform Component': ['true', 'false', '-'] };
+            // Omitting the filter is equivalent to true/false/unknown and avoids a
+            // deployment join that makes the counts and list queries much slower.
+            baseSearchFilter = {};
             viewContext = 'All vulnerable images';
             break;
         case inactiveImagesViewId:

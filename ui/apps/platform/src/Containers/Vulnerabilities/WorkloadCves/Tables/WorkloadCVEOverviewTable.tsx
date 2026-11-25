@@ -12,7 +12,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
-import { Content, LabelGroup } from '@patternfly/react-core';
+import { LabelGroup } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -29,18 +29,11 @@ import ExpandRowTh from 'Components/ExpandRowTh';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
-import type { VulnerabilitySeverityLabel } from '../../types';
-import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils';
-import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
     aggregateByCVSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
     aggregateByEPSS,
-    getScoreVersionsForTopCVSS,
-    getScoreVersionsForTopNvdCVSS,
-    getSeveritySortOptions,
-    sortCveDistroList,
 } from '../../utils/sortUtils';
 import type { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
@@ -49,10 +42,10 @@ import KnownExploitLabel from '../../components/KnownExploitLabel';
 import KnownRansomwareCampaignLabel from '../../components/KnownRansomwareCampaignLabel';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
-import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
+import CVESummaryContent from '../components/CVESummaryContent';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { infoForEpssProbability } from './infoForTh';
-import { formatEpssProbabilityAsPercent, getCveBaseInfoFromDistroTuples } from './table.utils';
+import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
@@ -70,10 +63,6 @@ export const defaultColumns = {
         title: 'CVE',
         isShownByDefault: true,
         isUntoggleAble: true,
-    },
-    imagesBySeverity: {
-        title: 'Images by severity',
-        isShownByDefault: true,
     },
     topCvss: {
         title: 'Top CVSS',
@@ -198,12 +187,25 @@ export type ImageCVE = {
     pendingExceptionCount: number;
 };
 
+// Shape returned by the vulnerability management REST API for the CVE list.
+export type WorkloadCVEListItem = {
+    cve: string;
+    topCVSS: number;
+    topNvdCVSS: number;
+    topEpssProbability: number;
+    affectedImageCount: number;
+    firstDiscoveredInSystem: string | null;
+    publishedOn: string | null;
+    pendingExceptionCount: number;
+    knownExploit: boolean;
+    knownRansomwareCampaignUse: boolean;
+};
+
 export type WorkloadCVEOverviewTableProps = {
-    tableState: TableUIState<ImageCVE>;
+    tableState: TableUIState<WorkloadCVEListItem>;
     unfilteredImageCount: number;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
-    filteredSeverities?: VulnerabilitySeverityLabel[];
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     createTableActions?: (cve: {
         cve: string;
@@ -213,6 +215,7 @@ export type WorkloadCVEOverviewTableProps = {
     vulnerabilityState: VulnerabilityState;
     onClearFilters: () => void;
     columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
+    queryString: string;
 };
 
 function WorkloadCVEOverviewTable({
@@ -220,12 +223,12 @@ function WorkloadCVEOverviewTable({
     unfilteredImageCount,
     getSortParams,
     isFiltered,
-    filteredSeverities,
     selectedCves,
     createTableActions = () => [],
     vulnerabilityState,
     onClearFilters,
     columnVisibilityState,
+    queryString,
 }: WorkloadCVEOverviewTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { urlBuilder } = useWorkloadCveViewContext();
@@ -244,17 +247,6 @@ function WorkloadCVEOverviewTable({
                         selectedCves={selectedCves}
                     />
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <TooltipTh
-                        className={getVisibilityClass('imagesBySeverity')}
-                        sort={getSortParams(
-                            'Images By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
-                        tooltip="Severity of this CVE across images"
-                    >
-                        Images by severity
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
                     <TooltipTh
                         className={getVisibilityClass('topCvss')}
                         sort={getSortParams('CVSS', aggregateByCVSS)}
@@ -319,42 +311,27 @@ function WorkloadCVEOverviewTable({
                         (
                             {
                                 cve,
-                                affectedImageCountBySeverity,
                                 topCVSS,
                                 topNvdCVSS,
+                                topEpssProbability,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
                                 publishedOn,
-                                distroTuples,
                                 pendingExceptionCount,
+                                knownExploit,
+                                knownRansomwareCampaignUse,
                             },
                             rowIndex
                         ) => {
                             const isExpanded = expandedRowSet.has(cve);
-                            const criticalCount = affectedImageCountBySeverity.critical.total;
-                            const importantCount = affectedImageCountBySeverity.important.total;
-                            const moderateCount = affectedImageCountBySeverity.moderate.total;
-                            const lowCount = affectedImageCountBySeverity.low.total;
-                            const unknownCount = affectedImageCountBySeverity.unknown.total;
-
-                            const prioritizedDistros = sortCveDistroList(distroTuples);
-                            const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
-                            const nvdScoreVersions = getScoreVersionsForTopNvdCVSS(
-                                topNvdCVSS,
-                                distroTuples
-                            );
-                            const cveBaseInfo = getCveBaseInfoFromDistroTuples(distroTuples);
-                            const epssProbability = cveBaseInfo?.epss?.epssProbability;
-                            const summary =
-                                prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
+                            // The summary is loaded lazily on expansion; actions receive an
+                            // empty summary until then.
+                            const summary = '';
 
                             const labels: ReactNode[] = [];
-                            if (
-                                isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-                                hasKnownExploit(cveBaseInfo?.exploit)
-                            ) {
+                            if (isFeatureFlagEnabled('ROX_SCANNER_V4') && knownExploit) {
                                 labels.push(<KnownExploitLabel key="exploit" isCompact />);
-                                if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
+                                if (knownRansomwareCampaignUse) {
                                     labels.push(
                                         <KnownRansomwareCampaignLabel
                                             key="knownRansomwareCampaignUse"
@@ -410,45 +387,22 @@ function WorkloadCVEOverviewTable({
                                             </Link>
                                         </Td>
                                         <Td
-                                            dataLabel="Images by severity"
-                                            className={getVisibilityClass('imagesBySeverity')}
-                                        >
-                                            <SeverityCountLabels
-                                                criticalCount={criticalCount}
-                                                importantCount={importantCount}
-                                                moderateCount={moderateCount}
-                                                lowCount={lowCount}
-                                                unknownCount={unknownCount}
-                                                filteredSeverities={filteredSeverities}
-                                            />
-                                        </Td>
-                                        <Td
                                             dataLabel="Top CVSS"
                                             className={getVisibilityClass('topCvss')}
                                         >
-                                            <CvssFormatted
-                                                cvss={topCVSS}
-                                                scoreVersion={
-                                                    scoreVersions.length > 0
-                                                        ? scoreVersions.join('/')
-                                                        : undefined
-                                                }
-                                            />
+                                            <CvssFormatted cvss={topCVSS} />
                                         </Td>
                                         <Td
                                             className={getVisibilityClass('topNvdCvss')}
                                             dataLabel="Top NVD CVSS"
                                         >
-                                            <CvssFormatted
-                                                cvss={topNvdCVSS}
-                                                scoreVersion={nvdScoreVersions.join('/')}
-                                            />
+                                            <CvssFormatted cvss={topNvdCVSS} />
                                         </Td>
                                         <Td
                                             className={getVisibilityClass('epssProbability')}
                                             dataLabel="EPSS probability"
                                         >
-                                            {formatEpssProbabilityAsPercent(epssProbability)}
+                                            {formatEpssProbabilityAsPercent(topEpssProbability)}
                                         </Td>
                                         <Td
                                             dataLabel="Affected images"
@@ -519,10 +473,11 @@ function WorkloadCVEOverviewTable({
                                         <Td />
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
-                                                {summary ? (
-                                                    <Content component="p">{summary}</Content>
-                                                ) : (
-                                                    <PartialCVEDataAlert />
+                                                {isExpanded && (
+                                                    <CVESummaryContent
+                                                        cve={cve}
+                                                        query={queryString}
+                                                    />
                                                 )}
                                             </ExpandableRowContent>
                                         </Td>

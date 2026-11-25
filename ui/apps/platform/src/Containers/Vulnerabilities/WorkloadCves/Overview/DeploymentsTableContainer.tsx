@@ -11,8 +11,7 @@ import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DeploymentsTable, { defaultColumns, tableId } from '../Tables/DeploymentOverviewTable';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import type { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-import type { VulnerabilitySeverityLabel } from '../../types';
-import { useDeployments } from './useDeployments';
+import { useVulnMgmtDeployments } from './useVulnMgmtDeployments';
 
 type DeploymentsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -41,7 +40,7 @@ function DeploymentsTableContainer({
 }: DeploymentsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useDeployments({
+    const { error, loading, data } = useVulnMgmtDeployments({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,
@@ -86,7 +85,6 @@ function DeploymentsTableContainer({
                     tableState={tableState}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
-                    filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                     onClearFilters={() => {
                         onFilterChange({});
                         pagination.setPage(1);

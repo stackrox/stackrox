@@ -38,6 +38,48 @@ export function getRouteMatcherMapForGraphQL(opnames) {
     return routeMatcherMap;
 }
 
+/**
+ * Route matchers for the vulnerability management REST list endpoints.
+ *
+ * @returns Record<string, { method: string, url: string }>
+ */
+export function getRouteMatcherMapForVulnMgmt() {
+    return {
+        getVulnMgmtCVEs: { method: 'GET', url: '/api/v2/vulnmgmt/cves?*' },
+        getVulnMgmtCounts: { method: 'GET', url: '/api/v2/vulnmgmt/counts?*' },
+        getVulnMgmtImages: { method: 'GET', url: '/api/v2/vulnmgmt/images?*' },
+        getVulnMgmtDeployments: { method: 'GET', url: '/api/v2/vulnmgmt/deployments?*' },
+    };
+}
+
+function searchParamsFromRequest(request) {
+    return new URL(request.url, 'http://localhost').searchParams;
+}
+
+function requestQueryFromRequest(request) {
+    return searchParamsFromRequest(request).get('query') ?? '';
+}
+
+function requestSortFromRequest(request) {
+    const params = searchParamsFromRequest(request);
+    const field = params.get('pagination.sortOption.field');
+    if (!field) {
+        return undefined;
+    }
+    const sort = {
+        field,
+        reversed: params.get('pagination.sortOption.reversed') === 'true',
+    };
+    const aggregateFunc = params.get('pagination.sortOption.aggregateBy.aggrFunc');
+    if (aggregateFunc) {
+        sort.aggregateBy = {
+            aggregateFunc: aggregateFunc.toLowerCase(),
+            distinct: params.get('pagination.sortOption.aggregateBy.distinct') === 'true',
+        };
+    }
+    return sort;
+}
+
 export function toAliases(keys) {
     return keys.map((key) => `@${key}`);
 }
@@ -159,9 +201,37 @@ export function interceptAndWatchRequests(routeMatcherMap, staticResponseMap) {
         });
     }
 
+    /**
+     * Wait for requests to complete after an interaction and yield the `query` URL
+     * parameter of the intercepted REST request.
+     */
+    function waitAndYieldRequestQueryParameters(keys, waitOptions) {
+        return waitForRequests(keys, waitOptions).then((interception) => {
+            if (Array.isArray(interception)) {
+                return cy.wrap(interception.map(requestQueryFromRequest));
+            }
+            return cy.wrap(requestQueryFromRequest(interception.request));
+        });
+    }
+
+    /**
+     * Wait for requests to complete after an interaction and yield the REST sort option
+     * parsed from the intercepted request URL.
+     */
+    function waitAndYieldRequestSort(keys, waitOptions) {
+        return waitForRequests(keys, waitOptions).then((interception) => {
+            if (Array.isArray(interception)) {
+                return cy.wrap(interception.map(({ request }) => requestSortFromRequest(request)));
+            }
+            return cy.wrap(requestSortFromRequest(interception.request));
+        });
+    }
+
     return cy.wrap({
         waitForRequests,
         waitAndYieldRequestBodyVariables,
+        waitAndYieldRequestQueryParameters,
+        waitAndYieldRequestSort,
     });
 }
 

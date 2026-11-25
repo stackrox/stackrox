@@ -18,6 +18,12 @@ describe('Exception Management Request Details Page', () => {
 
     beforeEach(() => {
         cancelAllCveExceptions();
+
+        // The request details CVE table still uses the GraphQL list query.
+        cy.intercept(
+            { method: 'POST', url: '/api/graphql?opname=getImageCVEList' },
+            { fixture: 'vulnerabilities/workloadCves/getImageCVEList.json' }
+        );
     });
 
     after(() => {

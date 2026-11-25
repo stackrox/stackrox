@@ -1,10 +1,8 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { visitFromHorizontalNav, visitFromHorizontalNavExpandable } from '../../../helpers/nav';
-import { graphql } from '../../../constants/apiEndpoints';
 import {
     applyDefaultFilters,
-    applyLocalSeverityFilters,
     interactAndWaitForDeploymentList,
     interactAndWaitForImageList,
     mockSbomGenerationRequest,
@@ -19,8 +17,7 @@ import {
     verifyColumnManagement,
 } from '../../../helpers/tableHelpers';
 import {
-    expectRequestedSort,
-    getRouteMatcherMapForGraphQL,
+    getRouteMatcherMapForVulnMgmt,
     interceptAndOverrideFeatureFlags,
     interceptAndOverridePermissions,
     interceptAndWatchRequests,
@@ -70,110 +67,93 @@ describe('Workload CVE overview page tests', () => {
         });
     });
 
-    it('should correctly handle applied filters across entity tabs', () => {
+    it('should apply the selected severity tab to every entity tab', () => {
         visitWorkloadCveOverview();
 
-        const entityOpnameMap = {
-            CVE: 'getImageCVEList',
-            Image: 'getImageList',
-            Deployment: 'getDeploymentList',
-        };
+        cy.intercept(
+            { method: 'GET', url: '/api/v2/vulnmgmt/images?*' },
+            { body: { items: [] } }
+        ).as('getSeverityTabImages');
+        cy.intercept(
+            { method: 'GET', url: '/api/v2/vulnmgmt/deployments?*' },
+            { body: { items: [] } }
+        ).as('getSeverityTabDeployments');
 
-        const { CVE, Image, Deployment } = entityOpnameMap;
-
-        // Intercept and mock responses as empty, since we don't care about the response
-        cy.intercept({ method: 'POST', url: graphql(CVE) }, { data: {} }).as(CVE);
-        cy.intercept({ method: 'POST', url: graphql(Image) }, { data: {} }).as(Image);
-        cy.intercept({ method: 'POST', url: graphql(Deployment) }, { data: {} }).as(Deployment);
-
-        applyLocalSeverityFilters('Critical');
-
-        // Test that the correct filters are applied for each entity tab, and that the correct
-        // search filter is sent in the request for each tab
-        Object.entries(entityOpnameMap).forEach(([entity /*, opname */]) => {
-            // @ts-ignore
-            selectEntityTab(entity);
-
-            // Ensure that only the correct filter label is present
-            const filterLabelGroupName = 'CVE severity';
-            cy.get(selectors.filterLabelGroupItem(filterLabelGroupName, 'Critical'));
-            cy.get(selectors.filterLabelGroupItems(filterLabelGroupName)).should(
-                'have.lengthOf',
-                1
+        function expectImportantSeverity(url: string) {
+            const query = new URL(url, 'http://localhost').searchParams.get('query') ?? '';
+            expect(decodeURIComponent(query)).to.contain(
+                'Severity:IMPORTANT_VULNERABILITY_SEVERITY'
             );
+        }
 
-            // TODO - See if there is a clean way to re-enable this to handle both cases where the
-            // feature flag is not enabled and not enabled
-            /*
-            // Ensure the correct search filter is present in the request
-            cy.wait(`@${opname}`).should((xhr) => {
-                expect(xhr.request.body.variables.query).to.contain(
-                    'Severity:CRITICAL_VULNERABILITY_SEVERITY'
-                );
-            });
-            */
+        cy.get('[role="tab"]').contains('Important').click();
+        cy.wait('@getVulnMgmtCVEs').then(({ request }) => {
+            expectImportantSeverity(request.url);
+        });
+
+        selectEntityTab('Image');
+        cy.wait('@getSeverityTabImages').then(({ request }) => {
+            expectImportantSeverity(request.url);
+        });
+
+        selectEntityTab('Deployment');
+        cy.wait('@getSeverityTabDeployments').then(({ request }) => {
+            expectImportantSeverity(request.url);
         });
     });
 
     it('should apply the correct baseline filters when switching between built in views using the user-workload based template', () => {
-        // Direct visit without using helper since we do not care about global mocking for this test, and
-        // the mocking interferes with the granular waits used in this test
-        visit('/main/vulnerabilities/platform/');
+        interceptAndWatchRequests(getRouteMatcherMapForVulnMgmt()).then(
+            ({ waitForRequests, waitAndYieldRequestQueryParameters }) => {
+                // Test the 'Platform' view which is the default in e2e tests
+                visit('/main/vulnerabilities/platform/');
+                waitAndYieldRequestQueryParameters(['getVulnMgmtCVEs']).then((query) => {
+                    const requestQuery = query.toLowerCase();
+                    expect(requestQuery).to.contain('vulnerability state:observed');
+                    expect(requestQuery).to.contain('platform component:true');
+                    expect(requestQuery).not.to.contain('image cve count');
+                });
 
-        interceptAndWatchRequests(
-            getRouteMatcherMapForGraphQL(['getImageCVEList', 'getImageList'])
-        ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
-            // Initial request
-            waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
+                applyDefaultFilters(['Critical', 'Important'], ['Fixable']);
+                waitForRequests(['getVulnMgmtCVEs', 'getVulnMgmtCounts']);
 
-            applyDefaultFilters(['Critical', 'Important'], ['Fixable']); // Set the default filters to none to prevent multiple requests on each page visit
-            waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
+                // Test the 'User Workloads' view
+                visitFromHorizontalNav('User Workloads');
+                waitAndYieldRequestQueryParameters(['getVulnMgmtCVEs']).then((query) => {
+                    const requestQuery = query.toLowerCase();
+                    expect(requestQuery).to.contain('vulnerability state:observed');
+                    expect(requestQuery).to.contain('platform component:false');
+                    expect(requestQuery).not.to.contain('image cve count');
+                });
 
-            // Test the 'User Workloads' view
-            visitFromHorizontalNav('User Workloads');
-            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
-                const requestQuery = query.toLowerCase();
-                expect(requestQuery).to.contain('vulnerability state:observed');
-                expect(requestQuery).to.contain('platform component:false');
-                expect(requestQuery).not.to.contain('image cve count');
-            });
+                // Test the 'All vulnerable images' view
+                visitFromHorizontalNavExpandable('More Views')('All vulnerable images');
+                waitAndYieldRequestQueryParameters(['getVulnMgmtCVEs']).then((query) => {
+                    const requestQuery = query.toLowerCase();
+                    expect(requestQuery).to.contain('vulnerability state:observed');
+                    expect(requestQuery).not.to.contain('platform component');
+                    expect(requestQuery).not.to.contain('image cve count');
+                });
 
-            // Test the 'Platform' view which is the default in e2e tests
-            visitFromHorizontalNav('Platform');
-            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
-                const requestQuery = query.toLowerCase();
-                expect(requestQuery).to.contain('vulnerability state:observed');
-                expect(requestQuery).to.contain('platform component:true');
-                expect(requestQuery).not.to.contain('image cve count');
-            });
+                // Test the 'Inactive images' view
+                visitFromHorizontalNavExpandable('All vulnerable images')('Inactive images');
+                waitAndYieldRequestQueryParameters(['getVulnMgmtCVEs']).then((query) => {
+                    const requestQuery = query.toLowerCase();
+                    expect(requestQuery).to.contain('vulnerability state:observed');
+                    expect(requestQuery).to.contain('platform component:-');
+                    expect(requestQuery).not.to.contain('image cve count');
+                });
 
-            // Test the 'All vulnerable images' view
-            visitFromHorizontalNavExpandable('More Views')('All vulnerable images');
-            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
-                const requestQuery = query.toLowerCase();
-                expect(requestQuery).to.contain('vulnerability state:observed');
-                expect(requestQuery).to.contain('platform component:true,false,-');
-                expect(requestQuery).not.to.contain('image cve count');
-            });
-
-            // Test the 'Inactive images' view
-            visitFromHorizontalNavExpandable('All vulnerable images')('Inactive images');
-            waitAndYieldRequestBodyVariables(['getImageCVEList']).then(({ query }) => {
-                const requestQuery = query.toLowerCase();
-                expect(requestQuery).to.contain('vulnerability state:observed');
-                expect(requestQuery).to.contain('platform component:-');
-                expect(requestQuery).not.to.contain('image cve count');
-            });
-
-            // Test the 'Images without CVEs' view
-            visitFromHorizontalNavExpandable('Inactive images')('Images without CVEs');
-            waitAndYieldRequestBodyVariables(['getImageList']).then(({ query }) => {
-                const requestQuery = query.toLowerCase();
-                expect(requestQuery).not.to.contain('platform component:observed');
-                expect(requestQuery).not.to.contain('vulnerability state');
-                expect(requestQuery).to.contain('image cve count:0');
-            });
-        });
+                // Test the 'Images without CVEs' view
+                visitFromHorizontalNavExpandable('Inactive images')('Images without CVEs');
+                waitAndYieldRequestQueryParameters(['getVulnMgmtImages']).then((query) => {
+                    const requestQuery = query.toLowerCase();
+                    expect(requestQuery).not.to.contain('platform component:observed');
+                    expect(requestQuery).not.to.contain('vulnerability state');
+                    expect(requestQuery).to.contain('image cve count:0');
+                });
+            }
+        );
     });
 
     describe('Column management tests', () => {
@@ -184,13 +164,13 @@ describe('Workload CVE overview page tests', () => {
 
         it('should allow the user to hide and show columns on the Images tab', () => {
             visitWorkloadCveOverview();
-            selectEntityTab('Image');
+            interactAndWaitForImageList(() => selectEntityTab('Image'));
             verifyColumnManagement({ tableSelector: 'table' });
         });
 
         it('should allow the user to hide and show columns on the Deployment tab', () => {
             visitWorkloadCveOverview();
-            selectEntityTab('Deployment');
+            interactAndWaitForDeploymentList(() => selectEntityTab('Deployment'));
             verifyColumnManagement({ tableSelector: 'table' });
         });
     });
@@ -247,23 +227,24 @@ describe('Workload CVE overview page tests', () => {
         it('should remove cve-related UI elements when viewing the "without cves" view', () => {
             visitWorkloadCveOverview();
 
-            const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
+            const matchingCveCountHeader = 'th:contains("Matching CVEs")';
+            const severityTabs = '[role="tablist"]:contains("Critical")';
             const namespaceViewLink = 'a:contains("Namespace view")';
             const defaultFiltersButton = 'button:contains("Default filters")';
 
             function assertCveElementsArePresent() {
-                cy.get(cvesBySeverityHeader);
+                cy.get(matchingCveCountHeader);
                 cy.get(namespaceViewLink);
                 cy.get(defaultFiltersButton);
-                cy.get(selectors.severityDropdown);
+                cy.get(severityTabs);
                 cy.get(selectors.fixabilityDropdown);
             }
 
             function assertCveElementsAreNotPresent() {
-                cy.get(cvesBySeverityHeader).should('not.be.visible');
+                cy.get(matchingCveCountHeader).should('not.be.visible');
                 cy.get(namespaceViewLink).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
-                cy.get(selectors.severityDropdown).should('not.exist');
+                cy.get(severityTabs).should('not.exist');
                 cy.get(selectors.fixabilityDropdown).should('not.exist');
             }
 
@@ -295,69 +276,40 @@ describe('Workload CVE overview page tests', () => {
             assertCveElementsAreNotPresent();
         });
 
-        it('should default to multi-severity sort and keep in sync with applied filters', () => {
-            interceptAndWatchRequests(getRouteMatcherMapForGraphQL(['getImageCVEList']), {
-                getImageCVEList: {
-                    fixture: 'vulnerabilities/workloadCves/getImageCVEList.json',
-                },
-            }).then(({ waitAndYieldRequestBodyVariables }) => {
-                const basePath = '/main/vulnerabilities/platform/';
-                visit(basePath);
+        it('should use the affected-images sort by default and reset it on severity tab change', () => {
+            interceptAndWatchRequests(getRouteMatcherMapForVulnMgmt()).then(
+                ({ waitAndYieldRequestSort }) => {
+                    const basePath = '/main/vulnerabilities/platform/';
+                    const defaultSort = {
+                        field: 'Image Sha',
+                        reversed: true,
+                        aggregateBy: { aggregateFunc: 'count', distinct: true },
+                    };
 
-                // Check the default sort
-                waitAndYieldRequestBodyVariables().then(
-                    expectRequestedSort([
-                        { field: 'Critical Severity Count', reversed: true },
-                        { field: 'Important Severity Count', reversed: true },
-                    ])
-                );
+                    visit(basePath);
+                    waitAndYieldRequestSort(['getVulnMgmtCVEs']).then((sort) => {
+                        expect(sort).to.deep.equal(defaultSort);
+                    });
 
-                // Check that adding a severity filter changes the sort
-                applyLocalSeverityFilters('Moderate');
-                waitAndYieldRequestBodyVariables().then(
-                    expectRequestedSort([
-                        { field: 'Critical Severity Count', reversed: true },
-                        { field: 'Important Severity Count', reversed: true },
-                        { field: 'Moderate Severity Count', reversed: true },
-                    ])
-                );
+                    // Sorting by the CVE column works and replaces the default sort
+                    sortByTableHeader('CVE');
+                    waitAndYieldRequestSort(['getVulnMgmtCVEs']).then((sort) => {
+                        expect(sort).to.deep.equal({ field: 'CVE', reversed: true });
+                    });
 
-                // Check that the severity sort is reversible
-                sortByTableHeader('Images by severity');
-                waitAndYieldRequestBodyVariables().then(
-                    expectRequestedSort([
-                        { field: 'Critical Severity Count', reversed: false },
-                        { field: 'Important Severity Count', reversed: false },
-                        { field: 'Moderate Severity Count', reversed: false },
-                    ])
-                );
+                    // Changing the severity tab resets the CVE tab sort to the default
+                    cy.get('[role="tab"]').contains('Important').click();
+                    waitAndYieldRequestSort(['getVulnMgmtCVEs']).then((sort) => {
+                        expect(sort).to.deep.equal(defaultSort);
+                    });
 
-                // Check that sorting by another column works as intended
-                sortByTableHeader('CVE');
-                waitAndYieldRequestBodyVariables().then(
-                    expectRequestedSort({ field: 'CVE', reversed: true })
-                );
-
-                // Check that changing the severity filter when a non-severity sort is applied
-                // maintains the current sort
-                applyLocalSeverityFilters('Low');
-                waitAndYieldRequestBodyVariables().then(
-                    expectRequestedSort({ field: 'CVE', reversed: true })
-                );
-
-                // Check that visiting via a direct link that includes a severity filter maintains
-                // the correct sort
-                visit(`${basePath}?s[Severity][0]=Important`);
-                waitAndYieldRequestBodyVariables().then(
-                    expectRequestedSort([{ field: 'Important Severity Count', reversed: true }])
-                );
-
-                // Check that visiting via a legacy link with SEVERITY (uppercase) still works
-                visit(`${basePath}?s[SEVERITY][0]=Important`);
-                waitAndYieldRequestBodyVariables().then(
-                    expectRequestedSort([{ field: 'Important Severity Count', reversed: true }])
-                );
-            });
+                    // A direct link with a severity tab still uses the default sort
+                    visit(`${basePath}?severityTab=Important`);
+                    waitAndYieldRequestSort(['getVulnMgmtCVEs']).then((sort) => {
+                        expect(sort).to.deep.equal(defaultSort);
+                    });
+                }
+            );
         });
     });
 

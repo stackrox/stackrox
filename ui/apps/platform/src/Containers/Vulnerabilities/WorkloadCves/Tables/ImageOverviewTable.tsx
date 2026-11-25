@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
@@ -20,21 +19,15 @@ import type { ManagedColumns } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import type { GenerateSbomImageParams } from 'services/ImageSbomService';
+import type { VulnMgmtImageListItem } from 'services/VulnMgmtService';
 import GenerateSbomModal from '../../components/GenerateSbomModal';
 import { getSbomGenerationStatusMessage } from '../../utils/getSbomGenerationStatusMessage';
 import ImageNameLink from '../components/ImageNameLink';
-import SeverityCountLabels from '../../components/SeverityCountLabels';
-import type {
-    SignatureVerificationResult,
-    VulnerabilitySeverityLabel,
-    WatchStatus,
-} from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabel';
 import VerifiedSignatureLabel, {
     getVerifiedSignatureInResults,
 } from '../components/VerifiedSignatureLabel';
 import getImageScanMessage from '../utils/getImageScanMessage';
-import { getSeveritySortOptions } from '../../utils/sortUtils';
 
 export const tableId = 'WorkloadCvesImageOverviewTable';
 
@@ -44,8 +37,8 @@ export const defaultColumns = {
         isShownByDefault: true,
         isUntoggleAble: true,
     },
-    cvesBySeverity: {
-        title: 'CVEs by severity',
+    matchingCveCount: {
+        title: 'Matching CVEs',
         isShownByDefault: true,
     },
     operatingSystem: {
@@ -71,145 +64,10 @@ export const defaultColumns = {
     },
 } as const;
 
-export const imageListQuery = gql`
-    query getImageList($query: String, $pagination: Pagination) {
-        images(query: $query, pagination: $pagination) {
-            id
-            digest: id
-            name {
-                registry
-                remote
-                tag
-                fullName
-            }
-            imageCVECountBySeverity(query: $query) {
-                critical {
-                    total
-                }
-                important {
-                    total
-                }
-                moderate {
-                    total
-                }
-                low {
-                    total
-                }
-                unknown {
-                    total
-                }
-            }
-            operatingSystem
-            deploymentCount(query: $query)
-            watchStatus
-            metadata {
-                v1 {
-                    created
-                }
-            }
-            scanTime
-            scanNotes
-            notes
-            signatureVerificationData {
-                results {
-                    status
-                    verifiedImageReferences
-                    verifierId
-                    verifierName
-                }
-            }
-        }
-    }
-`;
-
-export const imageV2ListQuery = gql`
-    query getImageList($query: String, $pagination: Pagination) {
-        images: imageV2s(query: $query, pagination: $pagination) {
-            id
-            digest
-            name {
-                registry
-                remote
-                tag
-                fullName
-            }
-            imageCVECountBySeverity(query: $query) {
-                critical {
-                    total
-                }
-                important {
-                    total
-                }
-                moderate {
-                    total
-                }
-                low {
-                    total
-                }
-                unknown {
-                    total
-                }
-            }
-            operatingSystem
-            deploymentCount(query: $query)
-            watchStatus
-            metadata {
-                v1 {
-                    created
-                }
-            }
-            scanTime
-            scanNotes
-            notes
-            signatureVerificationData {
-                results {
-                    status
-                    verifiedImageReferences
-                    verifierId
-                    verifierName
-                }
-            }
-        }
-    }
-`;
-
-export type Image = {
-    id: string; // UUID for linking
-    digest?: string; // For ImageV2, the actual SHA digest for display
-    name: {
-        registry: string;
-        remote: string;
-        tag: string;
-        fullName: string;
-    } | null;
-    imageCVECountBySeverity: {
-        critical: { total: number };
-        important: { total: number };
-        moderate: { total: number };
-        low: { total: number };
-        unknown: { total: number };
-    };
-    operatingSystem: string;
-    deploymentCount: number;
-    watchStatus: WatchStatus;
-    metadata: {
-        v1: {
-            created: string | null;
-        } | null;
-    } | null;
-    scanTime: string | null;
-    scanNotes: string[];
-    notes: string[];
-    signatureVerificationData: {
-        results: SignatureVerificationResult[];
-    } | null;
-};
-
 export type ImageOverviewTableProps = {
-    tableState: TableUIState<Image>;
+    tableState: TableUIState<VulnMgmtImageListItem>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
-    filteredSeverities?: VulnerabilitySeverityLabel[];
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
@@ -221,7 +79,6 @@ function ImageOverviewTable({
     tableState,
     getSortParams,
     isFiltered,
-    filteredSeverities,
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
@@ -245,14 +102,10 @@ function ImageOverviewTable({
                         Image
                     </Th>
                     <TooltipTh
-                        className={getVisibilityClass('cvesBySeverity')}
-                        tooltip="CVEs by severity across this image"
-                        sort={getSortParams(
-                            'CVEs By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
+                        className={getVisibilityClass('matchingCveCount')}
+                        tooltip="CVEs in this image matching the active severity and filters"
                     >
-                        CVEs by severity
+                        Matching CVEs
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <Th
@@ -293,21 +146,16 @@ function ImageOverviewTable({
                         const {
                             id,
                             name,
-                            imageCVECountBySeverity,
+                            matchedCveCount,
                             operatingSystem,
                             deploymentCount,
-                            metadata,
+                            createdAt,
                             watchStatus,
                             scanTime,
                             scanNotes,
                             notes,
                             signatureVerificationData,
                         } = image;
-                        const criticalCount = imageCVECountBySeverity.critical.total;
-                        const importantCount = imageCVECountBySeverity.important.total;
-                        const moderateCount = imageCVECountBySeverity.moderate.total;
-                        const lowCount = imageCVECountBySeverity.low.total;
-                        const unknownCount = imageCVECountBySeverity.unknown.total;
 
                         const isWatchedImage = watchStatus === 'WATCHED';
                         const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
@@ -405,18 +253,10 @@ function ImageOverviewTable({
                                         )}
                                     </Td>
                                     <Td
-                                        className={getVisibilityClass('cvesBySeverity')}
-                                        dataLabel="CVEs by severity"
+                                        className={getVisibilityClass('matchingCveCount')}
+                                        dataLabel="Matching CVEs"
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="image"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {matchedCveCount}
                                     </Td>
                                     <Td
                                         dataLabel="Operating system"
@@ -441,11 +281,8 @@ function ImageOverviewTable({
                                         )}
                                     </Td>
                                     <Td dataLabel="Age" className={getVisibilityClass('age')}>
-                                        {metadata?.v1?.created ? (
-                                            <DateDistance
-                                                date={metadata.v1.created}
-                                                asPhrase={false}
-                                            />
+                                        {createdAt ? (
+                                            <DateDistance date={createdAt} asPhrase={false} />
                                         ) : (
                                             'unknown'
                                         )}

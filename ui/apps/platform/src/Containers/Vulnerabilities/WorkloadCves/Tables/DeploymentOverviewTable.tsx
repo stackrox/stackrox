@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom-v5-compat';
-import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Truncate } from '@patternfly/react-core';
@@ -12,11 +11,9 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { TableUIState } from 'utils/getTableUIState';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
-import SeverityCountLabels from '../../components/SeverityCountLabels';
-import type { VulnerabilitySeverityLabel } from '../../types';
+import type { VulnMgmtDeploymentListItem } from 'services/VulnMgmtService';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { getSeveritySortOptions } from '../../utils/sortUtils';
 
 export const tableId = 'WorkloadCvesDeploymentOverviewTable';
 
@@ -26,8 +23,8 @@ export const defaultColumns = {
         isShownByDefault: true,
         isUntoggleAble: true,
     },
-    cvesBySeverity: {
-        title: 'CVEs by severity',
+    matchingCveCount: {
+        title: 'Matching CVEs',
         isShownByDefault: true,
     },
     cluster: {
@@ -48,59 +45,10 @@ export const defaultColumns = {
     },
 } as const;
 
-export const deploymentListQuery = gql`
-    query getDeploymentList($query: String, $pagination: Pagination) {
-        deployments(query: $query, pagination: $pagination) {
-            id
-            name
-            type
-            imageCVECountBySeverity(query: $query) {
-                critical {
-                    total
-                }
-                important {
-                    total
-                }
-                moderate {
-                    total
-                }
-                low {
-                    total
-                }
-                unknown {
-                    total
-                }
-            }
-            clusterName
-            namespace
-            imageCount(query: $query)
-            created
-        }
-    }
-`;
-
-export type Deployment = {
-    id: string;
-    name: string;
-    type: string;
-    imageCVECountBySeverity: {
-        critical: { total: number };
-        important: { total: number };
-        moderate: { total: number };
-        low: { total: number };
-        unknown: { total: number };
-    };
-    clusterName: string;
-    namespace: string;
-    imageCount: number;
-    created: string | null;
-};
-
-type DeploymentOverviewTableProps = {
-    tableState: TableUIState<Deployment>;
+export type DeploymentOverviewTableProps = {
+    tableState: TableUIState<VulnMgmtDeploymentListItem>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
-    filteredSeverities?: VulnerabilitySeverityLabel[];
     onClearFilters: () => void;
     columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
@@ -109,7 +57,6 @@ function DeploymentOverviewTable({
     tableState,
     getSortParams,
     isFiltered,
-    filteredSeverities,
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
@@ -130,14 +77,10 @@ function DeploymentOverviewTable({
                         Deployment
                     </Th>
                     <TooltipTh
-                        className={getVisibilityClass('cvesBySeverity')}
-                        tooltip="CVEs by severity across this deployment"
-                        sort={getSortParams(
-                            'CVEs By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
+                        className={getVisibilityClass('matchingCveCount')}
+                        tooltip="CVEs in this deployment matching the active severity and filters"
                     >
-                        CVEs by severity
+                        Matching CVEs
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
@@ -172,17 +115,12 @@ function DeploymentOverviewTable({
                             id,
                             name,
                             type,
-                            imageCVECountBySeverity,
-                            clusterName,
+                            cluster,
                             namespace,
+                            createdAt,
                             imageCount,
-                            created,
+                            matchedCveCount,
                         } = deployment;
-                        const criticalCount = imageCVECountBySeverity.critical.total;
-                        const importantCount = imageCVECountBySeverity.important.total;
-                        const moderateCount = imageCVECountBySeverity.moderate.total;
-                        const lowCount = imageCVECountBySeverity.low.total;
-                        const unknownCount = imageCVECountBySeverity.unknown.total;
                         return (
                             <Tbody key={id}>
                                 <Tr>
@@ -200,24 +138,16 @@ function DeploymentOverviewTable({
                                         </Link>
                                     </Td>
                                     <Td
-                                        dataLabel="CVEs by severity"
-                                        className={getVisibilityClass('cvesBySeverity')}
+                                        dataLabel="Matching CVEs"
+                                        className={getVisibilityClass('matchingCveCount')}
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="deployment"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {matchedCveCount}
                                     </Td>
                                     <Td
                                         dataLabel="Cluster"
                                         className={getVisibilityClass('cluster')}
                                     >
-                                        {clusterName}
+                                        {cluster}
                                     </Td>
                                     <Td
                                         dataLabel="Namespace"
@@ -239,7 +169,7 @@ function DeploymentOverviewTable({
                                         className={getVisibilityClass('firstDiscovered')}
                                         modifier="nowrap"
                                     >
-                                        <DateDistance date={created} />
+                                        <DateDistance date={createdAt} />
                                     </Td>
                                 </Tr>
                             </Tbody>
