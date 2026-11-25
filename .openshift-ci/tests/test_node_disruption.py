@@ -60,21 +60,6 @@ class CollectionTest(unittest.TestCase):
             self.assertEqual(ET.parse(report).getroot().get("failures"), "0")
             self.assertFalse((root / "node-monitor.xml").exists())
 
-    def test_expected_count(self):
-        cases = {
-            "unset": ({}, None),
-            "empty": ({"NUM_NODES": ""}, None),
-            "one": ({"NUM_NODES": "1"}, 1),
-            "many": ({"NUM_NODES": "3"}, 3),
-        }
-        for name, (env, expected) in cases.items():
-            with self.subTest(name=name):
-                self.assertEqual(monitor.expected_node_count(env), expected)
-        invalid = {"zero": "0", "negative": "-1", "text": "three", "fraction": "1.5"}
-        for name, value in invalid.items():
-            with self.subTest(name=name), self.assertRaisesRegex(RuntimeError, "integer"):
-                monitor.expected_node_count({"NUM_NODES": value})
-
     def test_junit_contains_only_outcome_and_failure_explanation(self):
         cases = {
             "passed": ([], False, None),
@@ -165,9 +150,10 @@ class NodeMonitorTest(unittest.TestCase):
                 report = ET.parse(Path(directory) / monitor.JUNIT_REPORT).getroot()
                 self.assertEqual(report.get("skipped"), failures)
 
-    def test_openshift_baseline(self):
+    def test_observed_baseline(self):
         cases = {
             "stable": (("a", "b"), "0"),
+            "stable with conflicting NUM_NODES": (("a", "b"), "0"),
             "addition": (("a", "b", "c"), "1"),
             "removal": (("a",), "1"),
             "replacement": (("a", "c"), "1"),
@@ -176,7 +162,10 @@ class NodeMonitorTest(unittest.TestCase):
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory, patch.object(
                 monitor.subprocess, "run", side_effect=kubectl_responses([reply("a", "b"), reply(*final)])
             ), patch.object(monitor.threading, "Thread"):
-                with monitor.monitor({"ARTIFACT_DIR": directory}, baseline=True, phase="part-1"):
+                env = {"ARTIFACT_DIR": directory}
+                if name == "stable with conflicting NUM_NODES":
+                    env["NUM_NODES"] = "5"
+                with monitor.monitor(env, phase="part-1"):
                     pass
                 report = ET.parse(Path(directory) / "part-1" / monitor.JUNIT_REPORT)
                 self.assertEqual(report.getroot().get("skipped"), failures)
@@ -190,16 +179,8 @@ class NodeMonitorTest(unittest.TestCase):
             sample.assert_not_called()
             self.assertIn("disk full", log.call_args.args[0])
 
-    def test_disabled(self):
-        for env in ({}, {"NUM_NODES": ""}):
-            with self.subTest(env=env), patch.object(monitor, "sample_nodes") as sample:
-                with monitor.monitor(env):
-                    pass
-                sample.assert_not_called()
-
     def test_errors_are_advisory(self):
         cases = {
-            "invalid count": ("0", ["a"], None),
             "empty baseline": ("1", [], None),
             "poll failure": ("1", None, OSError("kubectl")),
             "thread failure": ("1", ["a"], None),
@@ -220,24 +201,23 @@ class NodeMonitorTest(unittest.TestCase):
                     self.assertIn("Could not establish a node baseline", report.findtext(".//skipped"))
 
     def test_polling_recovers_from_startup_probe(self):
-        for baseline in (False, True):
-            for startup in (subprocess.TimeoutExpired("kubectl", 30), reply()):
-                with self.subTest(baseline=baseline, startup=startup), tempfile.TemporaryDirectory() as directory:
-                    with patch.object(
-                        monitor.subprocess, "run", side_effect=kubectl_responses([startup, reply("a"), reply("b")])
-                    ) as run, patch.object(monitor.threading, "Event") as event, patch.object(
-                        monitor.threading, "Thread"
-                    ) as thread:
-                        event.return_value.wait.side_effect = [False, True]
-                        thread.side_effect = lambda **kwargs: unittest.mock.Mock(start=kwargs["target"])
-                        with monitor.monitor({"NUM_NODES": "1", "ARTIFACT_DIR": directory}, baseline=baseline):
-                            pass
-                    self.assertEqual(run.call_count, 3)
-                    report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
-                    self.assertEqual(report.getroot().get("failures"), "0")
-                    reason = report.findtext(".//skipped")
-                    self.assertIn("startup:", reason)
-                    self.assertIn("Nodes added: ['b']; removed: ['a']", reason)
+        for startup in (subprocess.TimeoutExpired("kubectl", 30), reply()):
+            with self.subTest(startup=startup), tempfile.TemporaryDirectory() as directory:
+                with patch.object(
+                    monitor.subprocess, "run", side_effect=kubectl_responses([startup, reply("a"), reply("b")])
+                ) as run, patch.object(monitor.threading, "Event") as event, patch.object(
+                    monitor.threading, "Thread"
+                ) as thread:
+                    event.return_value.wait.side_effect = [False, True]
+                    thread.side_effect = lambda **kwargs: unittest.mock.Mock(start=kwargs["target"])
+                    with monitor.monitor({"NUM_NODES": "1", "ARTIFACT_DIR": directory}):
+                        pass
+                self.assertEqual(run.call_count, 3)
+                report = ET.parse(Path(directory) / monitor.JUNIT_REPORT)
+                self.assertEqual(report.getroot().get("failures"), "0")
+                reason = report.findtext(".//skipped")
+                self.assertIn("startup:", reason)
+                self.assertIn("Nodes added: ['b']; removed: ['a']", reason)
 
     def test_periodic_polling_and_shutdown(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(
@@ -288,7 +268,7 @@ class ActionsMonitorTest(unittest.TestCase):
                 spawn.return_value.poll.return_value = exit_code
                 spawn.return_value.returncode = exit_code
                 monitor.start_actions_monitor(state)
-                args = SimpleNamespace(phase=None, baseline=False, outcome="success")
+                args = SimpleNamespace(phase=None, outcome="success")
                 if exit_code is None:
                     # A late first probe must still produce an advisory finding.
                     (state / "stop").write_text(args.outcome)

@@ -56,8 +56,7 @@ download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artif
 Prow starts one monitor per GKE or OpenShift cluster runner after provisioning.
 GitHub Actions starts a background monitor before the test and collects the
 report in a separate step. Test commands run directly with their existing step
-timeouts. QA Parts 1 and 2 use separate report directories. GKE validates the initial node count against the provisioning
-count. OpenShift uses the initial node names as its baseline.
+timeouts. QA Parts 1 and 2 use separate report directories.
 
 The monitor samples at startup, every five minutes, and at completion unless
 cancelled. Each kubectl call has a 30-second timeout. The first usable snapshot establishes the baseline, even after a failed startup

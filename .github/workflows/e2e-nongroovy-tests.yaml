@@ -37,7 +37,6 @@ jobs:
       BUILD_TAG: ${{ inputs.tag }}
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: ${{ inputs.ci-job-name }}
-      NUM_NODES: "1"
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
@@ -89,6 +88,7 @@ jobs:
     - name: Create GKE cluster
       env:
         MACHINE_TYPE: e2-standard-8
+        NUM_NODES: "1"
         GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
@@ -149,6 +149,7 @@ jobs:
         sudo ln -s /usr/local/lib/node_modules/bats-assert /usr/lib/node_modules/bats-assert
 
     - name: Start node monitor
+      id: start-node-monitor
       continue-on-error: true
       timeout-minutes: 1
       run: python3 .openshift-ci/node_disruption.py start
@@ -182,7 +183,7 @@ jobs:
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Finish node monitor
-      if: always()
+      if: always() && steps.start-node-monitor.outcome != 'skipped'
       env:
         TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
       continue-on-error: true

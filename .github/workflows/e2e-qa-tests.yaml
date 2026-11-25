@@ -77,9 +77,6 @@ jobs:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ inputs.ci-job-name }}
-      NUM_NODES: ${{ inputs.cluster-provisioning-method == 'direct-gke' && '1' || '' }}
-      CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
-      INFRA_FLAVOR: ${{ inputs.infra-flavor }}
       ARTIFACT_DIR: ./junit-reports/
       USE_LOCAL_ROXCTL: "true"
       ROX_RISK_REPROCESSING_INTERVAL: 15s
@@ -141,16 +138,6 @@ jobs:
         run: |
           args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)
           echo "args=$args" >> "$GITHUB_OUTPUT"
-          case "$INFRA_FLAVOR" in
-            gke-default)
-              nodes=$(sed -n 's/^nodes=//p' <<< "$INFRA_ARGS" | tail -n 1)
-              echo "NUM_NODES=$nodes" >> "$GITHUB_ENV"
-              if [[ -z "$nodes" ]]; then
-                echo "NODE_MONITOR_BASELINE=true" >> "$GITHUB_ENV"
-              fi
-              ;;
-            openshift*) echo "NODE_MONITOR_BASELINE=true" >> "$GITHUB_ENV" ;;
-          esac
 
       - name: Trigger cluster creation via infra
         if: inputs.cluster-provisioning-method == 'infra'
@@ -175,6 +162,7 @@ jobs:
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
           MACHINE_TYPE: "e2-standard-16"
+          NUM_NODES: "1"
           GKE_SPOT: "false"
         run: |
           scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
@@ -263,10 +251,12 @@ jobs:
           PreSystemTests().run()
 
       - name: Start node monitor (part-1)
+        id: start-node-monitor-part-1
+        if: inputs.cluster-provisioning-method == 'direct-gke' || inputs.infra-flavor == 'gke-default' || startsWith(inputs.infra-flavor, 'openshift')
         continue-on-error: true
         timeout-minutes: 1
         run: |
-          python3 .openshift-ci/node_disruption.py start --phase part-1 ${NODE_MONITOR_BASELINE:+--baseline}
+          python3 .openshift-ci/node_disruption.py start --phase part-1
 
       - name: Run Part 1 tests
         id: run-product-tests
@@ -305,13 +295,13 @@ jobs:
         run: qa-tests-backend/scripts/run-part-1.sh
 
       - name: Finish node monitor (part-1)
-        if: always()
+        if: always() && steps.start-node-monitor-part-1.outcome != 'skipped'
         env:
           TEST_OUTCOME: ${{ steps.run-product-tests.outcome }}
         continue-on-error: true
         timeout-minutes: 2
         run: |
-          python3 .openshift-ci/node_disruption.py finish --phase part-1 ${NODE_MONITOR_BASELINE:+--baseline} --outcome "$TEST_OUTCOME"
+          python3 .openshift-ci/node_disruption.py finish --phase part-1 --outcome "$TEST_OUTCOME"
 
       - name: Run Part 1 post-test
         if: always() && env.KUBECONFIG != ''
@@ -327,10 +317,12 @@ jobs:
           post.run([os.environ['ARTIFACT_DIR']])
 
       - name: Start node monitor (part-2)
+        id: start-node-monitor-part-2
+        if: inputs.cluster-provisioning-method == 'direct-gke' || inputs.infra-flavor == 'gke-default' || startsWith(inputs.infra-flavor, 'openshift')
         continue-on-error: true
         timeout-minutes: 1
         run: |
-          python3 .openshift-ci/node_disruption.py start --phase part-2 ${NODE_MONITOR_BASELINE:+--baseline}
+          python3 .openshift-ci/node_disruption.py start --phase part-2
 
       - name: Run Part 2 tests
         id: run-part-2
@@ -339,13 +331,13 @@ jobs:
         run: qa-tests-backend/scripts/run-part-2.sh
 
       - name: Finish node monitor (part-2)
-        if: always()
+        if: always() && steps.start-node-monitor-part-2.outcome != 'skipped'
         env:
           TEST_OUTCOME: ${{ steps.run-part-2.outcome }}
         continue-on-error: true
         timeout-minutes: 2
         run: |
-          python3 .openshift-ci/node_disruption.py finish --phase part-2 ${NODE_MONITOR_BASELINE:+--baseline} --outcome "$TEST_OUTCOME"
+          python3 .openshift-ci/node_disruption.py finish --phase part-2 --outcome "$TEST_OUTCOME"
 
       - name: Run Part 2 post-test
         if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''

@@ -17,19 +17,6 @@ JUNIT_REPORT = "junit-node-monitor.xml"
 POLL_INTERVAL = 5 * 60
 
 
-def expected_node_count(env):
-    value = env.get("NUM_NODES")
-    if not value:
-        return None
-    try:
-        count = int(value)
-    except ValueError as exc:
-        raise RuntimeError("NUM_NODES must be an integer") from exc
-    if count > 0:
-        return count
-    raise RuntimeError("NUM_NODES must be a positive integer")
-
-
 def sample_nodes(directory, env):
     """Keep raw kubectl output for diagnosis and append names for the final check."""
     snapshot = directory / f"node-snapshot-{time.time_ns()}.json"
@@ -92,13 +79,11 @@ def finish_report(directory, expected, errors, cancelled=False):
         return True
 
 
-def compare_snapshot(initial, names, expected, stage, errors):
+def compare_snapshot(initial, names, stage, errors):
     if initial is None:
         if not names:
             errors.append(f"{stage}: node snapshot is empty")
             return None
-        if expected is not None and len(names) != expected:
-            errors.append(f"{stage}: baseline contains {len(names)} nodes")
         return names
     if names != initial:
         change = f"Nodes added: {sorted(names - initial)}; removed: {sorted(initial - names)}"
@@ -126,13 +111,10 @@ def artifact_directory(env, phase):
 
 
 @contextmanager
-def monitor(env=None, *, baseline=False, phase=None):
+def monitor(env=None, *, phase=None):
     """Collect node diagnostics and yield the list of advisory errors for the final report."""
     env = dict(os.environ if env is None else env)
     errors = []
-    if not baseline and not env.get("NUM_NODES"):
-        yield errors
-        return
     directory = artifact_directory(env, phase)
     try:
         directory.mkdir(parents=True, exist_ok=True)
@@ -150,14 +132,12 @@ def monitor(env=None, *, baseline=False, phase=None):
         nonlocal initial
         try:
             names = set(sample_nodes(directory, env))
-            initial = compare_snapshot(initial, names, expected, stage, errors)
+            initial = compare_snapshot(initial, names, stage, errors)
         except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as exc:
             errors.append(f"{stage}: {exc}")
 
-    expected = None
     ready = False
     try:
-        expected = None if baseline else expected_node_count(env)
         (directory / NODE_NAMES).write_text("", encoding="utf-8")
         (directory / MONITOR_LOG).write_text("", encoding="utf-8")
         ready = True
@@ -180,8 +160,7 @@ def monitor(env=None, *, baseline=False, phase=None):
             sample("final")
             if initial is None:
                 errors.append("Could not establish a node baseline")
-        if baseline and initial is not None:
-            expected = len(initial)
+        expected = len(initial) if initial else None
         finish_report(directory, expected, errors, cancelled)
 
 
@@ -211,7 +190,7 @@ def start_actions_monitor(state):
 def run_actions_worker(state, args):
     stop = state / "stop"
     try:
-        with monitor(baseline=args.baseline, phase=args.phase) as errors:
+        with monitor(phase=args.phase) as errors:
             (state / "ready").touch()
             while not stop.exists():
                 time.sleep(0.25)
@@ -249,8 +228,6 @@ def finish_actions_monitor(state, directory, args):
 
 
 def actions_monitor(args):
-    if not args.baseline and not os.environ.get("NUM_NODES"):
-        return
     state = Path(os.environ["RUNNER_TEMP"]) / (
         f"node-monitor-{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}-"
         f"{os.environ['GITHUB_JOB']}-{args.phase or 'main'}"
@@ -268,7 +245,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("start", "worker", "finish"))
-    parser.add_argument("--baseline", action="store_true")
     parser.add_argument("--phase")
     parser.add_argument("--outcome", default="")
     try:

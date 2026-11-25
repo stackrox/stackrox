@@ -57,9 +57,8 @@ class GKECluster:
         return self
 
     def _provision(self):
-        os.environ["NUM_NODES"] = str(
-            self.num_nodes if self.num_nodes is not None else os.environ.get("NUM_NODES") or 3
-        )
+        if self.num_nodes is not None:
+            os.environ["NUM_NODES"] = str(self.num_nodes)
         if self.machine_type is not None:
             os.environ["MACHINE_TYPE"] = str(self.machine_type)
         if self.disk_gb is not None:

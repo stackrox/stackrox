@@ -122,7 +122,7 @@ class ClusterTestSetsRunner:
             os.environ.get("ORCHESTRATOR_FLAVOR") == "openshift"
             or os.environ.get("KUBERNETES_PROVIDER") == "ocp"
         ):
-            return node_disruption.monitor(baseline=True)
+            return node_disruption.monitor()
         return nullcontext()
 
     def run_test_sets(self):

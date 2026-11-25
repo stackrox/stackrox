@@ -1,4 +1,4 @@
-"""Verify the nongroovy job supplies the same node count to provisioning and monitoring."""
+"""Verify the nongroovy job provisions one node."""
 
 import os
 from pathlib import Path
@@ -8,7 +8,6 @@ import unittest
 from unittest.mock import Mock, patch
 
 from clusters import GKECluster
-import node_disruption
 
 
 class GKENonGroovyEntrypointTest(unittest.TestCase):
@@ -16,7 +15,7 @@ class GKENonGroovyEntrypointTest(unittest.TestCase):
         cases = {
             "unset": ({}, "1"),
             "empty": ({"NUM_NODES": ""}, "1"),
-            "override": ({"NUM_NODES": "5"}, "5"),
+            "override": ({"NUM_NODES": "5"}, "1"),
         }
         entrypoint = Path(__file__).resolve().parents[2] / "scripts/ci/jobs/gke_nongroovy_e2e_tests.py"
         for name, (env, expected) in cases.items():
@@ -26,7 +25,7 @@ class GKENonGroovyEntrypointTest(unittest.TestCase):
                 runpy.run_path(str(entrypoint))
                 cluster = runner.call_args.kwargs["cluster"]
                 self.assertIsInstance(cluster, GKECluster)
-                self.assertEqual(cluster.num_nodes, expected)
+                self.assertEqual(cluster.num_nodes, int(expected))
                 self.assertEqual(cluster.machine_type, "e2-standard-8")
                 runner.return_value.run.assert_called_once()
 
@@ -45,7 +44,6 @@ class GKENonGroovyEntrypointTest(unittest.TestCase):
                     "clusters.subprocess.run"
                 ), patch("clusters.signal.signal"):
                     cluster.provision()
-                    self.assertEqual(node_disruption.expected_node_count(os.environ), int(expected))
 
 
 if __name__ == "__main__":
