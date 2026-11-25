@@ -407,10 +407,11 @@ test_not_enough_disk_space() {
         fallocate -l 700mb "${PGDATA}/fake_data"
         fallocate -l 1GiB /var/lib/postgresql/backup/fake_data
         df -H "$PGDATA" /var/lib/postgresql/backup
-        # Postgres renames temp pg_internal.init.<pid> files away while this runs, so a vanished file must not fail du (ROX-39910).
-        du -sch "$PGDATA"/* /var/lib/postgresql/backup/fake_data || true
+        # Postgres renames temp pg_internal.init.<pid> files away while this runs; excluding them
+        # keeps du from failing on files that vanish mid-scan (ROX-39910).
+        du -sch --exclude="pg_internal.init.*" "$PGDATA"/* /var/lib/postgresql/backup/fake_data
 
-        required=$(du -sk "$PGDATA" | awk "{print \$1 * 2}")
+        required=$(du -sk --exclude="pg_internal.init.*" "$PGDATA" | awk "{print \$1 * 2}")
         for location in /var/lib/postgresql/data /var/lib/postgresql/backup; do
             available=$(df -Pk "$location" | awk "END {print \$4}")
             echo "$location: $available KiB available; $required KiB required for backup and verification"
