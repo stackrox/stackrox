@@ -260,7 +260,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestSCOSScanIsIsolatedFromOtherNodeScans() {
-	ctx := sac.WithAllAccess(context.Background())
+	ctx := sac.WithAllAccess(suite.T().Context())
 	scosNode := getTestNodeForPostgres(fixtureconsts.Node1, "scos-node")
 	scosNode.Scan.OperatingSystem = "scos:10:x86_64"
 	suite.Require().NoError(suite.datastore.UpsertNode(ctx, scosNode))

@@ -200,9 +200,7 @@ func newHandler(blobStore blob.Datastore, opts handlerOpts) *httpHandler {
 	return h
 }
 
-// RepositoryToCPEMapping loads the mapping served to connected scanners. The
-// returned mapping is shared and callers must treat it as read-only.
-func (h *httpHandler) RepositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error) {
+func (h *httpHandler) repositoryToCPEMapping(ctx context.Context) (*repositorytocpe.MappingFile, error) {
 	h.repoMappingLock.Lock()
 	defer h.repoMappingLock.Unlock()
 	if time.Now().Before(h.repoMappingExpires) {

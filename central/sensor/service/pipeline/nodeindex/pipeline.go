@@ -41,13 +41,11 @@ func GetPipeline() pipeline.Fragment {
 // newPipeline returns a new instance of Pipeline.
 func newPipeline(clusters clusterDataStore.DataStore, nodes nodeDatastore.DataStore, enricher enricher.NodeEnricher, riskManager riskManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
-		clusterStore:  clusters,
-		nodeDatastore: nodes,
-		enricher:      enricher,
-		riskManager:   riskManager,
-		getSCOSMapping: func(ctx context.Context) (*repositorytocpe.MappingFile, error) {
-			return scannerDefinitions.Singleton().RepositoryToCPEMapping(ctx)
-		},
+		clusterStore:   clusters,
+		nodeDatastore:  nodes,
+		enricher:       enricher,
+		riskManager:    riskManager,
+		getSCOSMapping: scannerDefinitions.RepositoryToCPEMapping,
 	}
 }
 
