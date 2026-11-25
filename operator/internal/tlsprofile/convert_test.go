@@ -91,30 +91,37 @@ func TestConvertCiphersToIANA(t *testing.T) {
 
 func TestConvertGroups(t *testing.T) {
 	tests := map[string]struct {
-		input []configv1.TLSGroup
-		want  string
+		input       []configv1.TLSGroup
+		wantGo      string
+		wantOpenSSL string
 	}{
 		"preserves order": {
-			input: []configv1.TLSGroup{configv1.TLSGroupX25519MLKEM768, configv1.TLSGroupX25519, configv1.TLSGroupSecP256r1},
-			want:  "X25519MLKEM768,X25519,secp256r1",
+			input:       []configv1.TLSGroup{configv1.TLSGroupX25519MLKEM768, configv1.TLSGroupX25519, configv1.TLSGroupSecP256r1},
+			wantGo:      "X25519MLKEM768,X25519,secp256r1",
+			wantOpenSSL: "X25519MLKEM768:X25519:secp256r1",
 		},
 		"drops unknown groups": {
-			input: []configv1.TLSGroup{configv1.TLSGroupSecP256r1, "bogus", configv1.TLSGroupSecP384r1},
-			want:  "secp256r1,secp384r1",
+			input:       []configv1.TLSGroup{configv1.TLSGroupSecP256r1, "bogus", configv1.TLSGroupSecP384r1},
+			wantGo:      "secp256r1,secp384r1",
+			wantOpenSSL: "secp256r1:secp384r1",
 		},
 		"all unknown yields empty": {
-			input: []configv1.TLSGroup{"bogus"},
-			want:  "",
+			input:       []configv1.TLSGroup{"bogus"},
+			wantGo:      "",
+			wantOpenSSL: "",
 		},
 		"empty input": {
-			input: nil,
-			want:  "",
+			input:       nil,
+			wantGo:      "",
+			wantOpenSSL: "",
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tt.want, convertGroups(tt.input))
+			gotGo, gotOpenSSL := convertGroups(tt.input)
+			assert.Equal(t, tt.wantGo, gotGo)
+			assert.Equal(t, tt.wantOpenSSL, gotOpenSSL)
 		})
 	}
 }

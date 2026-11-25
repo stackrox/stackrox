@@ -63,9 +63,10 @@ func convertCiphersToOpenSSL(opensslCiphers []string) string {
 }
 
 // convertGroups produces a comma-separated list of TLS named group names (in
-// OpenShift API spelling) for ROX_TLS_GROUPS, preserving order. Groups unknown
-// to Go are dropped.
-func convertGroups(groups []configv1.TLSGroup) string {
+// OpenShift API spelling) for ROX_TLS_GROUPS, and a colon-separated list of the
+// same groups for ROX_OPENSSL_TLS_GROUPS, preserving order. Groups unknown to
+// Go are dropped from both lists to keep Go and OpenSSL-based components consistent.
+func convertGroups(groups []configv1.TLSGroup) (goGroups string, opensslGroups string) {
 	recognized := make([]string, 0, len(groups))
 	var skipped []configv1.TLSGroup
 	for _, g := range groups {
@@ -79,7 +80,7 @@ func convertGroups(groups []configv1.TLSGroup) string {
 		log.Info("Some groups from cluster TLS profile are not supported by Go and were dropped.",
 			"droppedGroups", skipped)
 	}
-	return strings.Join(recognized, ",")
+	return strings.Join(recognized, ","), strings.Join(recognized, ":")
 }
 
 func filterTLS13(ciphers []string) []string {

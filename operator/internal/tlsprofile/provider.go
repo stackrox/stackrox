@@ -46,6 +46,9 @@ type TLSProfile struct {
 	// spelling, e.g. "X25519,secp256r1") for ROX_TLS_GROUPS. Empty keeps
 	// components on their defaults.
 	Groups string
+	// OpenSSLGroups is a colon-separated list of the same TLS named groups
+	// for ROX_OPENSSL_TLS_GROUPS, consumed by PostgreSQL ssl_ecdh_curve.
+	OpenSSLGroups string
 }
 
 // FetchProfile reads the cluster TLS profile from the APIServer resource.
@@ -97,10 +100,12 @@ func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfil
 			"clampedVersion", minVersion)
 	}
 
+	groups, opensslGroups := convertGroups(clusterTLS.ProfileSpec.Groups)
 	return &TLSProfile{
 		MinVersion:     minVersion,
 		CipherSuites:   convertCiphersToIANA(clusterTLS.ProfileSpec.Ciphers),
 		OpenSSLCiphers: convertCiphersToOpenSSL(clusterTLS.ProfileSpec.Ciphers),
-		Groups:         convertGroups(clusterTLS.ProfileSpec.Groups),
+		Groups:         groups,
+		OpenSSLGroups:  opensslGroups,
 	}
 }

@@ -129,3 +129,37 @@ function use_matching_binaries() {
     rox_use_matching_binaries "$prev_dir"
     assert_equal "${PATH%%:*}" "$image_bin"
 }
+
+# == rox_fips_approved_groups ==
+
+@test "rox_fips_approved_groups - keeps only NIST P-curves, preserving order" {
+    run rox_fips_approved_groups "X25519MLKEM768:secp384r1:X25519:secp256r1:SecP256r1MLKEM768"
+    assert_success
+    assert_output "secp384r1:secp256r1"
+}
+
+@test "rox_fips_approved_groups - no approved groups yields empty" {
+    run rox_fips_approved_groups "X25519MLKEM768:X25519"
+    assert_success
+    assert_output ""
+}
+
+@test "rox_fips_approved_groups - empty input yields empty" {
+    run rox_fips_approved_groups ""
+    assert_success
+    assert_output ""
+}
+
+# == rox_ssl_groups ==
+
+@test "rox_ssl_groups - previous-major binaries ignore configured groups" {
+    if [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)" = "1" ]; then
+        skip "host is in FIPS mode"
+    fi
+    # Any postgres other than /usr/bin/postgres counts as previous-major binaries.
+    given_binary_version "$image_bin" 15
+    ROX_OPENSSL_TLS_GROUPS="X25519MLKEM768:secp256r1" run rox_ssl_groups
+    assert_success
+    assert_line "prime256v1"
+    assert_output --partial "Ignoring ROX_OPENSSL_TLS_GROUPS"
+}

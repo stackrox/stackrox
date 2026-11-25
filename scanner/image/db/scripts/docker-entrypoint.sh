@@ -356,15 +356,48 @@ rox_use_matching_binaries() {
 	export PATH="$matching_bin_dir:$PATH"
 }
 
-### STACKROX MODIFIED - Default TLS groups for this environment.
+### STACKROX MODIFIED - Keep only FIPS-approved TLS groups (the NIST P-curves)
+### from a colon-separated OpenSSL group list. Mirrors library-go's
+### FIPSApprovedTLSGroups, which filters the groups for Go components.
+rox_fips_approved_groups() {
+	local group approved=""
+	local -a groups
+	IFS=':' read -ra groups <<< "${1:-}"
+	for group in "${groups[@]}"; do
+		case "$group" in
+		secp256r1|secp384r1|secp521r1|prime256v1|P-256|P-384|P-521)
+			approved="${approved:+${approved}:}${group}"
+			;;
+		esac
+	done
+	echo "$approved"
+}
+
+### STACKROX MODIFIED - TLS groups for ssl_ecdh_curve in this environment.
+### ROX_OPENSSL_TLS_GROUPS: colon-separated OpenSSL group names
+###   (e.g. "X25519MLKEM768:X25519:secp256r1"), set by the Operator from the
+###   cluster TLS profile. Overrides the default list below.
 rox_ssl_groups() {
+	local configured="${ROX_OPENSSL_TLS_GROUPS:-}"
 	if [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)" = "1" ]; then
-		# ML-KEM is not yet approved for FIPS; keep the PG15/16 default.
-		echo 'prime256v1'
+		# ML-KEM and X25519 are not approved for FIPS; keep the PG15/16 default
+		# unless P-curves were configured.
+		local approved
+		approved="$(rox_fips_approved_groups "$configured")"
+		if [ "$approved" != "$configured" ]; then
+			echo "FIPS mode: dropping non-FIPS-approved TLS groups from ROX_OPENSSL_TLS_GROUPS=${configured}" >&2
+		fi
+		echo "${approved:-prime256v1}"
 	elif [ "$(command -v postgres)" != "/usr/bin/postgres" ]; then
 		# Previous-major binaries (rox_use_matching_binaries above): a
 		# pre-upgrade server may lack the ssl_ecdh_curve PQC backport.
+		# It only accepts a single curve name, so ignore any configured groups.
+		if [ -n "$configured" ]; then
+			echo "Ignoring ROX_OPENSSL_TLS_GROUPS=${configured} for previous-major PostgreSQL binaries" >&2
+		fi
 		echo 'prime256v1'
+	elif [ -n "$configured" ]; then
+		echo "$configured"
 	else
 		# X25519MLKEM768 enables post-quantum key exchange (hybrid ML-KEM),
 		# with prime256v1 as a fallback for older clients.
@@ -445,6 +478,7 @@ _main() {
 	if [ -n "${ROX_OPENSSL_TLS_CIPHER_SUITES:-}" ]; then
 		set -- "$@" -c "ssl_ciphers=${ROX_OPENSSL_TLS_CIPHER_SUITES}"
 	fi
+	### ROX_OPENSSL_TLS_GROUPS: see rox_ssl_groups.
 	set -- "$@" -c "ssl_ecdh_curve=$(rox_ssl_groups)"
 
 	### STACKROX MODIFIED - Start Postgres as a child process and
