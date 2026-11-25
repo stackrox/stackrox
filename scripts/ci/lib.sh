@@ -1821,7 +1821,7 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
         base_link="$(get_base_link)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.30/junit2jira-linux-amd64 -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.31/junit2jira-linux-amd64 -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             --enable-auto-priority \
@@ -1872,7 +1872,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.30/flakechecker-linux-amd64 -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.31/flakechecker-linux-amd64 -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 
@@ -2788,3 +2788,44 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     shift
     "$fn" "$@"
 fi
+
+# OLM version detection for operator e2e tests
+
+get_ocp_version() {
+  # Returns OCP version as X.Y.Z to stdout
+  # Returns 1 on error (not an OpenShift cluster or version cannot be retrieved)
+  local version
+  if ! version=$("${SCRIPTS_ROOT}/operator/hack/retry-kubectl.sh" < /dev/null get clusterversion -o jsonpath='{.items[0].status.desired.version}' 2>/dev/null); then
+    echo "Failed to get OpenShift version - cluster may not be OpenShift or clusterversion resource is unavailable" >&2
+    return 1
+  fi
+  if [[ -z "$version" ]]; then
+    echo "OpenShift version is empty - clusterversion resource may be misconfigured" >&2
+    return 1
+  fi
+  echo "$version"
+}
+
+get_olm_version() {
+  # Returns "v1" to stdout if OLMv1 should be used (OCP >= 4.20.1), "v0" otherwise
+  # Returns 1 on error (OCP version cannot be determined)
+  local ocp_version
+  if ! ocp_version="$(get_ocp_version)"; then
+    return 1
+  fi
+
+  if [[ ! "$ocp_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+    echo "Could not parse OCP version '$ocp_version' - expected format X.Y.Z" >&2
+    return 1
+  fi
+
+  local -r min_version="4.20.1"
+  # sort -CV succeeds iff the two lines are already in version order, i.e. ocp_version >= min_version.
+  if printf '%s\n%s\n' "$min_version" "$ocp_version" | sort -CV; then
+    info "OCP version $ocp_version >= $min_version, using OLMv1" >&2
+    echo "v1"  # Function return value (captured by caller)
+  else
+    info "OCP version $ocp_version < $min_version, using OLMv0" >&2
+    echo "v0"  # Function return value (captured by caller)
+  fi
+}

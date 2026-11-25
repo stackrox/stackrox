@@ -20,6 +20,7 @@ postgres_major_version() {
     version="$(sed -n \
         -e 's/^[[:space:]]*ARG[[:space:]]\+PG_VERSION=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
         -e 's/^[[:space:]]*ENV[[:space:]]\+PG_MAJOR=\([1-9][0-9]*\)[[:space:]]*$/\1/p' \
+        -e '/[[:space:]]AS[[:space:]]/b' \
         -e 's/^[[:space:]]*FROM[[:space:]].*\/postgresql-\([1-9][0-9]*\)-.*$/\1/p')"
     # Missing or ambiguous versions must fail the check, not silently skip coverage.
     [[ "$version" =~ ^[1-9][0-9]*$ ]] || return 1
@@ -86,6 +87,23 @@ check_postgres_version() {
 
     info "Central DB is running PostgreSQL $actual_version; expected major version $expected_version"
     test_equals_non_silent "${actual_version%%.*}" "$expected_version"
+}
+
+# central_db_psql runs one statement against the active Central database and
+# echoes the result. The active database is central_active, not the default
+# database psql would otherwise connect to.
+central_db_psql() {
+    local sql=${1:?missing first required argument: sql}
+    local db_password
+
+    db_password="$(kubectl -n stackrox get secret central-db-password -o jsonpath='{.data.password}' | base64 -d)" || \
+        die "Cannot read the Central DB password"
+
+    # Pass the password on stdin so it does not appear in the exec command.
+    # shellcheck disable=SC2016
+    kubectl -n stackrox exec -i deploy/central-db -c central-db -- env "SQL=$sql" \
+        bash -ec 'PGPASSWORD="$(cat)" \
+            psql -X -w -h 127.0.0.1 -U postgres -d central_active -v ON_ERROR_STOP=1 -Atc "$SQL"' <<< "$db_password"
 }
 
 SCANNER_V4_PGDATA="/var/lib/postgresql/data/pgdata"
@@ -226,13 +244,13 @@ test_upgrade_path() {
     restore_backup
     wait_for_api
 
-    # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
-
     # Get the API_TOKEN for the upgrades
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
 
     cd "$TEST_ROOT"
+
+    # Run with some scale to have data populated to migrate
+    deploy_scaled_workload
 
     # This test does a lot of upgrades and bounces.  If things take a little longer to bounce we can get entries in
     # logs indicating communication problems.  Those need to be allowed in the case of this test ONLY.
@@ -266,6 +284,23 @@ test_upgrade_path() {
     kubectl -n stackrox set image deploy/scanner-v4-matcher "*=${REGISTRY}/scanner-v4:${CURRENT_TAG}"
     wait_for_api
     check_postgres_version "$CURRENT_POSTGRES_VERSION"
+
+    if [[ "$CENTRAL_DB_UPGRADE_REQUIRED" == true ]]; then
+        # The statistics refresh runs in the central-db init container, before
+        # the database serves. Verify it logged success, cleared the pending
+        # marker (which only the refresh removes), and analyzed the active
+        # database.
+        wait_for_log_line stackrox deployment/central-db init-db \
+            "Statistics refreshed, shutting down the cluster." 600
+
+        kubectl -n stackrox exec deploy/central-db -c central-db -- bash -ec \
+            'test ! -e /var/lib/postgresql/data/pgdata/.stats-pending' || \
+            die "The central-db statistics refresh marker survived the upgrade"
+
+        [ -n "$(central_db_psql "SELECT last_analyze FROM pg_stat_user_tables WHERE relname = 'deployments'")" ] || \
+            die "central-db deployments was not analyzed after the upgrade"
+    fi
+
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_CURRENT_PG"
 
@@ -481,11 +516,17 @@ test_scanner_v4_db_upgrade_fallback() {
     scanner_v4_db_psql "ALTER DATABASE $SCANNER_V4_UPGRADE_BLOCKER WITH ALLOW_CONNECTIONS false"
 
     wait_for_scanner_v4_readiness
-    info "Upgrade scanner-v4-db ${EARLIER_TAG} => ${CURRENT_TAG}"
+
+    info "Upgrade ${EARLIER_TAG} => ${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/central "*=${REGISTRY}/main:${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/central-db "*=${REGISTRY}/central-db:${CURRENT_TAG}"
     kubectl -n stackrox set image deploy/scanner-v4-db "*=${REGISTRY}/scanner-v4-db:${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/scanner-v4-indexer "*=${REGISTRY}/scanner-v4:${CURRENT_TAG}"
+    kubectl -n stackrox set image deploy/scanner-v4-matcher "*=${REGISTRY}/scanner-v4:${CURRENT_TAG}"
+    wait_for_api
 
     # The pod should come up instead of aborting and crashlooping.
-    kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
+    wait_for_scanner_v4_readiness
 
     local init_log
     init_log="$(kubectl -n stackrox logs deploy/scanner-v4-db -c init-db)"
@@ -496,14 +537,14 @@ test_scanner_v4_db_upgrade_fallback() {
         die "scanner-v4-db did not decline the upgrade the way this test intends"
 
     test_equals_non_silent "$(scanner_v4_db_pg_version)" "$SCANNER_V4_DB_EARLIER_PG"
-    wait_for_scanner_v4_readiness
 
     info "Removing the blocker and restarting scanner-v4-db"
     scanner_v4_db_psql "DROP DATABASE $SCANNER_V4_UPGRADE_BLOCKER"
     kubectl -n stackrox rollout restart deploy/scanner-v4-db
     kubectl -n stackrox rollout status deploy/scanner-v4-db --timeout=600s
-    check_scanner_v4_db_upgraded
+
     wait_for_scanner_v4_readiness
+    check_scanner_v4_db_upgraded
 
     local old_pod new_pod=""
     old_pod="$(scanner_v4_db_pod)"
@@ -517,8 +558,8 @@ test_scanner_v4_db_upgrade_fallback() {
     [[ -n "$new_pod" ]] || die "scanner-v4-db was not recreated after the bounce"
     kubectl -n stackrox wait --for=condition=Ready "po/$new_pod" --timeout=600s
 
-    check_scanner_v4_db_upgraded
     wait_for_scanner_v4_readiness
+    check_scanner_v4_db_upgraded
 
     collect_and_check_stackrox_logs "$log_output_dir" "scanner_v4_db_fallback_final"
 }

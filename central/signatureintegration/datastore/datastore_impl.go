@@ -175,7 +175,7 @@ func (d *datastoreImpl) verifyIntegrationIDAndUpdates(ctx context.Context,
 }
 
 func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id string) error {
-	_, found, err := d.storage.Get(ctx, id)
+	found, err := d.storage.Exists(ctx, id)
 	if err != nil {
 		return err
 	} else if found {

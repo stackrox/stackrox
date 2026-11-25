@@ -14,7 +14,12 @@ import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node'
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
 import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
 import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
-import { deploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
+import {
+    Secret as deploymentSecretAttribute,
+    ServiceAccount as deploymentServiceAccountAttribute,
+    Type as deploymentTypeAttribute,
+    deploymentAttributes,
+} from 'Components/CompoundSearchFilter/attributes/deployment';
 import { namespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
 import {
     clusterIdAttribute,
@@ -445,6 +450,10 @@ const regexSearchOptions = [
     imageCVEAttributes,
     imageComponentAttributes,
     deploymentAttributes,
+    // Deployment fields excluded from the aggregate but still regex-eligible.
+    deploymentTypeAttribute,
+    deploymentServiceAccountAttribute,
+    deploymentSecretAttribute,
     namespaceAttributes,
     clusterIdAttribute,
     clusterKubernetesVersionAttribute,
@@ -484,6 +493,16 @@ const keyValueSearchOptions: Set<string> = new Set(
 
 export function isKeyValueSearchTerm(searchTerm: string): boolean {
     return keyValueSearchOptions.has(searchTerm.toLowerCase());
+}
+
+/*
+ Numeric fields: the search API rejects string modifiers (regex "r/", exact-match quotes) on them,
+ so autocomplete must send their values unmodified. Add numeric fields here as they are surfaced.
+*/
+const numericSearchOptions: Set<string> = new Set(['Port'].map((label) => label.toLowerCase()));
+
+export function isNumericSearchTerm(searchTerm: string): boolean {
+    return numericSearchOptions.has(searchTerm.toLowerCase());
 }
 
 export function isQuotedString(value: string): boolean {

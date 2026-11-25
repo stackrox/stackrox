@@ -31,6 +31,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"stsEnabled: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AccessConstraint(0)))
 	utils.Must(builder.AddType("AclEntry", []string{
 		"id: Int!",
 		"perm: Int!",
@@ -316,7 +317,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ClusterCVE", []string{
 		"cveBaseInfo: CVEInfo",
-		"cvss: Float!",
 		"id: ID!",
 		"impactScore: Float!",
 		"severity: VulnerabilitySeverity!",
@@ -888,7 +888,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NodeCVE", []string{
 		"cveBaseInfo: CVEInfo",
-		"cvss: Float!",
 		"id: ID!",
 		"impactScore: Float!",
 		"operatingSystem: String!",
@@ -965,9 +964,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
 	utils.Must(builder.AddType("PermissionSet", []string{
+		"accessConstraint: AccessConstraint!",
 		"description: String!",
 		"id: ID!",
 		"name: String!",
+		"scopeConstraint: ScopeConstraint!",
 		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("Pod", []string{
@@ -1169,6 +1170,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"namespaceLabel: Scope_Label",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ScopeConstraint(0)))
 	utils.Must(builder.AddType("Scope_Label", []string{
 		"key: String!",
 		"value: String!",
@@ -1632,6 +1634,24 @@ func toAccesses(values *[]string) []storage.Access {
 	output := make([]storage.Access, len(*values))
 	for i, v := range *values {
 		output[i] = toAccess(&v)
+	}
+	return output
+}
+
+func toAccessConstraint(value *string) storage.AccessConstraint {
+	if value != nil {
+		return storage.AccessConstraint(storage.AccessConstraint_value[*value])
+	}
+	return storage.AccessConstraint(0)
+}
+
+func toAccessConstraints(values *[]string) []storage.AccessConstraint {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.AccessConstraint, len(*values))
+	for i, v := range *values {
+		output[i] = toAccessConstraint(&v)
 	}
 	return output
 }
@@ -4350,11 +4370,6 @@ func (resolver *Resolver) wrapClusterCVEsWithContext(ctx context.Context, values
 func (resolver *clusterCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
 	value := resolver.data.GetCveBaseInfo()
 	return resolver.root.wrapCVEInfo(value, true, nil)
-}
-
-func (resolver *clusterCVEResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
 }
 
 func (resolver *clusterCVEResolver) Id(ctx context.Context) graphql.ID {
@@ -10063,11 +10078,6 @@ func (resolver *nodeCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResol
 	return resolver.root.wrapCVEInfo(value, true, nil)
 }
 
-func (resolver *nodeCVEResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
-}
-
 func (resolver *nodeCVEResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -10705,6 +10715,11 @@ func (resolver *Resolver) wrapPermissionSetsWithContext(ctx context.Context, val
 	return output, nil
 }
 
+func (resolver *permissionSetResolver) AccessConstraint(ctx context.Context) string {
+	value := resolver.data.GetAccessConstraint()
+	return value.String()
+}
+
 func (resolver *permissionSetResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
 	return value
@@ -10718,6 +10733,11 @@ func (resolver *permissionSetResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *permissionSetResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func (resolver *permissionSetResolver) ScopeConstraint(ctx context.Context) string {
+	value := resolver.data.GetScopeConstraint()
+	return value.String()
 }
 
 func (resolver *permissionSetResolver) Traits(ctx context.Context) (*traitsResolver, error) {
@@ -12567,6 +12587,24 @@ func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 func (resolver *scopeResolver) NamespaceLabel(ctx context.Context) (*scope_LabelResolver, error) {
 	value := resolver.data.GetNamespaceLabel()
 	return resolver.root.wrapScope_Label(value, true, nil)
+}
+
+func toScopeConstraint(value *string) storage.ScopeConstraint {
+	if value != nil {
+		return storage.ScopeConstraint(storage.ScopeConstraint_value[*value])
+	}
+	return storage.ScopeConstraint(0)
+}
+
+func toScopeConstraints(values *[]string) []storage.ScopeConstraint {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ScopeConstraint, len(*values))
+	for i, v := range *values {
+		output[i] = toScopeConstraint(&v)
+	}
+	return output
 }
 
 type scope_LabelResolver struct {

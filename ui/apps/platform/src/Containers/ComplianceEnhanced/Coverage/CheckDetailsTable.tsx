@@ -19,6 +19,7 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
@@ -32,9 +33,10 @@ import useScanConfigRouter from './hooks/useScanConfigRouter';
 import {
     attributeForComplianceCheckStatus,
     clusterSearchFilterConfig,
+    complianceDataSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [clusterSearchFilterConfig];
+const searchFilterConfig = [clusterSearchFilterConfig, complianceDataSearchFilterConfig];
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -68,6 +70,10 @@ function CheckDetailsTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isScanStatusEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_SURFACE_STALE_DATA');
+    const searchFilterConfigWithFeatureFlags = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfig
+    ).filter(({ attributes }) => attributes.length !== 0);
     const colSpan = isScanStatusEnabled ? 4 : 3;
 
     return (
@@ -75,7 +81,7 @@ function CheckDetailsTable({
             <Toolbar>
                 <ToolbarContent>
                     <CompoundSearchFilter
-                        config={searchFilterConfig}
+                        config={searchFilterConfigWithFeatureFlags}
                         searchFilter={searchFilter}
                         onSearch={onSearch}
                     />
@@ -88,7 +94,7 @@ function CheckDetailsTable({
                     <ToolbarGroup className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
-                            config={searchFilterConfig}
+                            config={searchFilterConfigWithFeatureFlags}
                             onFilterChange={onFilterChange}
                             searchFilter={searchFilter}
                         />
@@ -111,7 +117,7 @@ function CheckDetailsTable({
                     <Tr>
                         <Th sort={getSortParams('Cluster')}>Cluster</Th>
                         <Th>Last scanned</Th>
-                        {isScanStatusEnabled && <Th modifier="fitContent">Scan status</Th>}
+                        {isScanStatusEnabled && <Th modifier="fitContent">Data freshness</Th>}
                         <Th>Compliance status</Th>
                     </Tr>
                 </Thead>
@@ -158,7 +164,7 @@ function CheckDetailsTable({
                                         </Td>
                                         <Td dataLabel="Last scanned">{lastScanTimeAsPhrase}</Td>
                                         {isScanStatusEnabled && (
-                                            <Td dataLabel="Scan status">
+                                            <Td dataLabel="Data freshness">
                                                 {getCheckScanStatus(dataFreshness)}
                                             </Td>
                                         )}

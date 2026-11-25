@@ -143,6 +143,8 @@ endif
 ############
 
 image-prefix := scanner-v4
+scanner-image-ref    := $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix):$(TAG)
+scanner-db-image-ref := $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix)-db:$(TAG)
 
 image-scripts        := restore-all-dir-contents \
                         import-additional-cas \
@@ -179,7 +181,7 @@ image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
 	@echo "+ $@"
 	$(DOCKERBUILD) \
             -t stackrox/$(image-prefix):$(TAG) \
-            -t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix):$(TAG) \
+            -t $(scanner-image-ref) \
             $(DOCKERBUILD_ARGS) \
             -f image/scanner/Dockerfile image/scanner
 
@@ -209,12 +211,20 @@ $(image-db-init-t): | $(image-db-init-d)
 	$(SILENT)>$@
 endif
 
+.PHONY: scanner-image-ref
+scanner-image-ref:
+	@echo $(scanner-image-ref)
+
+.PHONY: scanner-db-image-ref
+scanner-db-image-ref:
+	@echo $(scanner-db-image-ref)
+
 .PHONY: image-db
 image-db: $(image-db-init-t)
 	@echo "+ $@"
 	$(DOCKERBUILD) \
             -t stackrox/$(image-prefix)-db:$(TAG) \
-            -t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix)-db:$(TAG) \
+            -t $(scanner-db-image-ref) \
             $(DOCKERBUILD_ARGS) \
             $(DB_DOCKERBUILD_ARGS) \
             -f image/db/Dockerfile image/db

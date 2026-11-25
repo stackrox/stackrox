@@ -10,7 +10,10 @@ import type {
     SelectSearchFilterAttribute,
 } from 'Components/CompoundSearchFilter/types';
 
-import { CHECK_STATUS_QUERY } from './Coverage/compliance.coverage.constants';
+import {
+    CHECK_DATA_FRESHNESS_QUERY,
+    CHECK_STATUS_QUERY,
+} from './Coverage/compliance.coverage.constants';
 
 export const profileSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Profile',
@@ -18,10 +21,31 @@ export const profileSearchFilterConfig: CompoundSearchFilterEntity = {
     attributes: [profileName, profileType],
 };
 
+const dataFreshnessSearchFilterAttribute: SelectSearchFilterAttribute = {
+    displayName: 'Data freshness',
+    filterChipLabel: 'Data freshness',
+    searchTerm: CHECK_DATA_FRESHNESS_QUERY,
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { label: 'Current', value: 'CURRENT' },
+            { label: 'Stale', value: 'STALE' },
+            { label: 'Unknown', value: 'UNKNOWN' },
+        ],
+    },
+    featureFlagDependency: ['ROX_COMPLIANCE_SURFACE_STALE_DATA'],
+};
+
 export const profileCheckSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Profile check',
     searchCategory: 'COMPLIANCE',
     attributes: profileCheckAttributes,
+};
+
+export const complianceDataSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Compliance data',
+    searchCategory: 'COMPLIANCE',
+    attributes: [dataFreshnessSearchFilterAttribute],
 };
 
 export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {

@@ -153,6 +153,7 @@ type DeploymentsContainers struct {
 	ResourcesCPUCoresLimit                float32               `gorm:"column:resources_cpucoreslimit;type:numeric"`
 	ResourcesMemoryMbRequest              float32               `gorm:"column:resources_memorymbrequest;type:numeric"`
 	ResourcesMemoryMbLimit                float32               `gorm:"column:resources_memorymblimit;type:numeric"`
+	Name                                  string                `gorm:"column:name;type:varchar"`
 	Type                                  storage.ContainerType `gorm:"column:type;type:integer"`
 	DeploymentsRef                        Deployments           `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

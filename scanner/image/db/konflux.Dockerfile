@@ -1,4 +1,5 @@
-FROM registry.redhat.io/rhel9/postgresql-16:latest@sha256:cf20f6229c5c1cc4cd65be6636b5b06620ba9adb844dfbe080fa7a50605ecd52
+FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:80f39e290ee715a77495d71df2d9984f9bb508ac0b2cbe570a03760a8d843a92 AS pg15-source
+FROM registry.redhat.io/rhel9/postgresql-16:latest@sha256:96c837685c0f33d895a20a7b5a2922092bf7c1bb2b79359687c90401f4886557
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -27,6 +28,9 @@ LABEL \
 ENV BUILD_TAG="${BUILD_TAG}"
 
 USER root
+
+# Copy required PG15 extensions from the PG15 image to PG15 lib directory for fallback
+COPY --from=pg15-source /usr/lib64/pgsql/uuid-ossp.so /usr/lib64/pgsql/postgresql-15/lib/
 
 COPY \
      scanner/image/db/scripts/docker-entrypoint.sh \

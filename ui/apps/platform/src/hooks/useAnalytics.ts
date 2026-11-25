@@ -61,6 +61,7 @@ export const AGING_IMAGES_WIDGET_CLICKED = 'Aging Images Widget Link Clicked';
 
 // risk
 export const RISK_SUMMARY_GENERATED = 'Risk Summary Generated';
+export const RISK_FILTER_APPLIED = 'Risk Filter Applied';
 
 // vulnerability reports
 
@@ -128,6 +129,13 @@ export const searchCategoriesWithFilter = [
     'Lifecycle Stage',
     'Resource Type',
     'Inactive Deployment',
+    // Risk page deployment filters (bounded, non-sensitive).
+    'Deployment Type',
+    'Container Type',
+    'Privileged',
+    'Read Only Root Filesystem',
+    'Exposure Level',
+    'Port',
     'Control',
     'Compliance Check Name',
     'Compliance State',
@@ -229,6 +237,15 @@ export type AnalyticsEvent =
               | typeof NODE_CVE_FILTER_APPLIED
               | typeof PLATFORM_CVE_FILTER_APPLIED;
           properties: { category: SearchCategoryWithFilter; filter: string } | { category: string };
+      }
+    /**
+     * Tracks each time the user applies a filter on the Risk page.
+     * We only track the value of the applied filter when it does not represent
+     * specifics of a customer environment.
+     */
+    | {
+          event: typeof RISK_FILTER_APPLIED;
+          properties: { category: string; filter: string } | { category: string };
       }
     /**
      * Tracks each time the user changes the default filters on the Workload CVE overview page.

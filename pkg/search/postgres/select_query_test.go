@@ -98,6 +98,40 @@ func TestSelectQuery(t *testing.T) {
 
 	for _, c := range []selectQTestCase{
 		{
+			desc: "subquery keeps rows whose string matches a value from the child-table query",
+			q: func() *v1.Query {
+				inner := search.NewQueryBuilder().AddExactMatches(search.TestNestedString, "nested_acs").
+					AddSelectFields(search.NewQuerySelect(search.TestString)).ProtoQuery()
+				q := search.MatchFieldSubQuery(search.TestString, v1.SearchCategory(101), inner)
+				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.TestString).Proto()}
+				return q
+			}(),
+			resultStruct: Struct1{},
+			expectedQuery: "select test_structs.String_ as test_string from test_structs where EXISTS (SELECT 1 FROM (" +
+				"select test_structs.String_ as test_string from test_structs inner join test_structs_nesteds " +
+				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
+				"where test_structs_nesteds.Nested = $1) AS subquery WHERE subquery.test_string = test_structs.String_)",
+			expectedResult: []*Struct1{{"acs"}, {"acs"}},
+		},
+		{
+			desc: "subquery excludes rows whose string matches a returned value",
+			q: func() *v1.Query {
+				inner := search.NewQueryBuilder().AddExactMatches(search.TestNestedString, "nested_acs").
+					AddSelectFields(search.NewQuerySelect(search.TestString)).ProtoQuery()
+				q := search.NewBooleanQuery(nil, &v1.DisjunctionQuery{Queries: []*v1.Query{
+					search.MatchFieldSubQuery(search.TestString, v1.SearchCategory(101), inner),
+				}})
+				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.TestString).Proto()}
+				return q
+			}(),
+			resultStruct: Struct1{},
+			expectedQuery: "select test_structs.String_ as test_string from test_structs where (true and not (" +
+				"EXISTS (SELECT 1 FROM (select test_structs.String_ as test_string from test_structs " +
+				"inner join test_structs_nesteds on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
+				"where test_structs_nesteds.Nested = $1) AS subquery WHERE subquery.test_string = test_structs.String_)))",
+			expectedResult: []*Struct1{{"bcs"}, {"bcs"}},
+		},
+		{
 			desc: "base schema; no select",
 			q: search.NewQueryBuilder().
 				AddExactMatches(search.TestString, "acs").ProtoQuery(),
