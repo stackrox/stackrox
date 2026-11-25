@@ -155,10 +155,16 @@ func TestPermissionSetRoleRejectsUnsafeSets(t *testing.T) {
 		"missing scope constraint": func(ps *storage.PermissionSet) {
 			ps.ScopeConstraint = storage.ScopeConstraint_SCOPE_CONSTRAINT_UNSPECIFIED
 		},
-		"write grant":    func(ps *storage.PermissionSet) { ps.ResourceToAccess["Deployment"] = storage.Access_READ_WRITE_ACCESS },
-		"global grant":   func(ps *storage.PermissionSet) { ps.ResourceToAccess["Access"] = storage.Access_READ_ACCESS },
-		"unknown grant":  func(ps *storage.PermissionSet) { ps.ResourceToAccess["UnknownResource"] = storage.Access_READ_ACCESS },
-		"unknown access": func(ps *storage.PermissionSet) { ps.ResourceToAccess["Deployment"] = storage.Access(42) },
+		"missing both": func(ps *storage.PermissionSet) {
+			ps.AccessConstraint = storage.AccessConstraint_ACCESS_CONSTRAINT_UNSPECIFIED
+			ps.ScopeConstraint = storage.ScopeConstraint_SCOPE_CONSTRAINT_UNSPECIFIED
+		},
+		"unknown read constraint": func(ps *storage.PermissionSet) {
+			ps.AccessConstraint = storage.AccessConstraint_ACCESS_CONSTRAINT_READ + 1
+		},
+		"unknown scope constraint": func(ps *storage.PermissionSet) {
+			ps.ScopeConstraint = storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE + 1
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			store := roleMocks.NewMockDataStore(gomock.NewController(t))
