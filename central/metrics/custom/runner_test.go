@@ -41,7 +41,7 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
@@ -50,7 +50,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 	})
 
@@ -65,7 +65,7 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
@@ -74,7 +74,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 	})
 }
@@ -149,8 +149,8 @@ func TestRunner_ServeHTTP(t *testing.T) {
 
 	runner := makeRunner(&runnerDatastores{deployments: dds, alerts: ads})
 	runner.initialize(cds)
-	runner[0].Gather(makeAdminContext(t))
-	runner[1].Gather(makeAdminContext(t))
+	runner[0].Gather(makeAdminContext(t), "")
+	runner[1].Gather(makeAdminContext(t), "")
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
 		metricName = "rox_central_" + metricName
@@ -196,6 +196,7 @@ func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
 
 	runner := makeRunner(&runnerDatastores{})
 	workflowIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
+	workflowIdentity.EXPECT().Roles().AnyTimes().Return(nil)
 	workflowIdentity.EXPECT().UID().AnyTimes().Return("workflow-authz-test")
 	workflowIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
 		"WorkflowAdministration": storage.Access_READ_ACCESS,
@@ -203,6 +204,7 @@ func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
 	workflowCtx := authn.ContextWithIdentity(context.Background(), workflowIdentity, t)
 	t.Cleanup(func() { metrics.DeleteCustomRegistry("workflow-authz-test") })
 	scopedIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
+	scopedIdentity.EXPECT().Roles().AnyTimes().Return(nil)
 	scopedIdentity.EXPECT().UID().AnyTimes().Return("scoped-only-authz-test")
 	scopedIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
 		"Deployment": storage.Access_READ_ACCESS,
