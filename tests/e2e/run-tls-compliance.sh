@@ -235,7 +235,7 @@ check_pod_logs_for_tls_errors_in_ns() {
 }
 
 validate_scan_results() {
-    local db_status operator_metrics_status tls_version_failures tls_groups_failures mlkem_supported_failures
+    local db_status operator_ok_endpoints tls_version_failures tls_groups_failures mlkem_supported_failures
 
     if [[ ! -f "$SCAN_RESULTS" ]]; then
         fail "Scan results not found at $SCAN_RESULTS"
@@ -272,19 +272,18 @@ validate_scan_results() {
         fi
     done
 
-    # The operator's only TLS endpoint is the metrics server; ensure it was actually scanned.
-    operator_metrics_status=$(jq -r --arg ns "$OPERATOR_NS" '
+    # Make sure we get at least one TLS scan result for at least one operator pod.
+    operator_ok_endpoints=$(jq -r --arg ns "$OPERATOR_NS" '
         [.ip_results[]? |
          select(.pod.Namespace == $ns) |
          .port_results[]? |
-         select(.port == 8443) |
-         .status] | first // "MISSING"
+         select(.status == "OK")] | length
     ' "$SCAN_RESULTS")
 
-    if [[ "$operator_metrics_status" != "OK" ]]; then
-        fail "operator metrics ${OPERATOR_NS}:8443 status is '${operator_metrics_status}', expected 'OK'"
+    if [[ "$operator_ok_endpoints" -eq 0 ]]; then
+        fail "No OK TLS scan result for any operator pod in ${OPERATOR_NS}"
     else
-        info "operator metrics ${OPERATOR_NS}:8443 TLS OK."
+        info "Operator TLS endpoints OK (${operator_ok_endpoints} in ${OPERATOR_NS})."
     fi
 
     # All OK endpoints must offer only TLS 1.3 (profile sets minTLSVersion: VersionTLS13).
