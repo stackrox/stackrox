@@ -202,16 +202,16 @@ message ImageCVEV2 {
   CVEInfo cve_base_info = 3;
   // cvss stores ACS preferred cvss score
   float cvss = 4; // @gotags: search:"CVSS"
-  VulnerabilitySeverity severity = 5; // @gotags: search:"Severity" sql:"index=btree"
+  VulnerabilitySeverity severity = 5; // @gotags: search:"Severity" sql:"index=name:imagecvesv2_severity_state_isfixable_imageidv2;type=btree"
   float impact_score = 6; // @gotags: search:"Impact Score"
 
   // nvdcvss stores cvss score for a cve from NVD
   float nvdcvss = 7; // @gotags: search:"NVD CVSS"
   CvssScoreVersion nvd_score_version = 8;
   google.protobuf.Timestamp first_image_occurrence = 9; // @gotags: search:"First Image Occurrence Timestamp,hidden"
-  VulnerabilityState state = 10; // @gotags: search:"Vulnerability State" sql:"index=btree"
+  VulnerabilityState state = 10; // @gotags: search:"Vulnerability State" sql:"index=btree,index=name:imagecvesv2_severity_state_isfixable_imageidv2;type=btree"
 
-  bool is_fixable = 11; // @gotags: search:"Fixable"
+  bool is_fixable = 11; // @gotags: search:"Fixable" sql:"index=name:imagecvesv2_severity_state_isfixable_imageidv2;type=btree"
   // Whether there is a version the CVE is fixed in the component.
   oneof has_fixed_by {
     string fixed_by = 12; // @gotags: search:"Fixed By,hidden"
@@ -220,7 +220,7 @@ message ImageCVEV2 {
   string component_id = 13; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
   storage.Advisory advisory = 14;
 
-  string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+  string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree,index=name:imagecvesv2_severity_state_isfixable_imageidv2;type=btree,allow-null"
 
   // Timestamp when the fix for this CVE was made available according to the sources.
   google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
