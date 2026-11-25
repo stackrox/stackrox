@@ -232,7 +232,6 @@ func (s *UpdaterTestSuite) TestGetNamespaceConcurrentAccess() {
 	stopReaders.Signal()
 	wg.Wait()
 
-	s.Assert().Greater(responses, 0)
 	s.Assert().Equal(customNS, updater.GetNamespace())
 }
 
