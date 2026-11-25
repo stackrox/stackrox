@@ -1007,7 +1007,7 @@ extract_sensor_certs_for_test() {
     secret_json="$(retrying_kubectl </dev/null -n stackrox get secret tls-cert-sensor -o json)"
 
     for file in ca.pem cert.pem key.pem; do
-        jq -r --arg filename "${file}" '.data[$filename]' <<< "$secret_json" | base64 -d > "$dir/${file}"
+        jq -re --arg filename "${file}" '.data[$filename]' <<< "$secret_json" | base64 -d > "$dir/${file}"
     done
 }
 
