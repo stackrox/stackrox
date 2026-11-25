@@ -1,0 +1,44 @@
+package utils
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/resources"
+)
+
+// ValidateScopedReadOnlyPermissionSet requires read-only, cluster/namespace-scoped constraints and grants.
+// Explicit constraints are required even when the current grants happen to be compatible.
+func ValidateScopedReadOnlyPermissionSet(ps *storage.PermissionSet) error {
+	if ps == nil {
+		return errors.New("permission set is missing")
+	}
+	if ps.GetAccessConstraint() != storage.AccessConstraint_ACCESS_CONSTRAINT_READ ||
+		ps.GetScopeConstraint() != storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE {
+		return fmt.Errorf("permission set %q must constrain access to read and resources to cluster/namespace", ps.GetName())
+	}
+	if err := ValidateScopedReadOnlyPermissions(ps.GetResourceToAccess()); err != nil {
+		return fmt.Errorf("permission set %q: %w", ps.GetName(), err)
+	}
+	return nil
+}
+
+// ValidateScopedReadOnlyPermissions rejects writes and grants to resources without a known cluster or namespace scope.
+func ValidateScopedReadOnlyPermissions(grants map[string]storage.Access) error {
+	for resource, access := range grants {
+		switch access {
+		case storage.Access_NO_ACCESS:
+			continue
+		case storage.Access_READ_ACCESS:
+			metadata, known := resources.MetadataForResource(permissions.Resource(resource))
+			if !known || (metadata.GetScope() != permissions.ClusterScope && metadata.GetScope() != permissions.NamespaceScope) {
+				return fmt.Errorf("resource %q grants unscoped read access", resource)
+			}
+		default:
+			return fmt.Errorf("resource %q grants non-read-only access %s", resource, access)
+		}
+	}
+	return nil
+}
