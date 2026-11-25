@@ -12,7 +12,6 @@ import (
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
-	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,14 +37,15 @@ type sbomGenHttpHandler struct {
 	enricherV2       enricher.ImageEnricherV2
 	clusterSACHelper sachelper.ClusterSacHelper
 	riskManager      manager.Manager
-	images           imageDatastore.DataStore
-	imagesV2         imageV2Datastore.DataStore
+	// images is the image datastore mapper, which dispatches to the V1 or V2
+	// datastore depending on the FlattenImageData feature and the key format.
+	images imageDatastore.DataStore
 }
 
 var _ http.Handler = (*sbomGenHttpHandler)(nil)
 
 // SBOMHandler returns a handler for get sbom http request.
-func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager, images imageDatastore.DataStore, imagesV2 imageV2Datastore.DataStore) http.Handler {
+func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager, images imageDatastore.DataStore) http.Handler {
 	return sbomGenHttpHandler{
 		integration:      integration,
 		enricher:         enricher,
@@ -53,7 +53,6 @@ func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher
 		clusterSACHelper: clusterSACHelper,
 		riskManager:      riskManager,
 		images:           images,
-		imagesV2:         imagesV2,
 	}
 }
 
@@ -128,21 +127,13 @@ func (h sbomGenHttpHandler) enrichWithModelSwitch(
 }
 
 func (h sbomGenHttpHandler) cachedImage(ctx context.Context, ci *storage.ContainerImage) (*storage.Image, bool, error) {
-	if features.FlattenImageData.Enabled() {
-		img, found, err := h.imagesV2.GetImage(ctx, ci.GetIdV2())
-		if err == nil && !found {
-			// An inline digest reference (name@digest, as roxctl sends it) yields a different
-			// V2 ID than the same request with the digest supplied separately (as the UI sends
-			// it). Retry with the digest suffix stripped so both request forms resolve to the
-			// stored row.
-			// shortcut: only the inline->separate direction is covered; the reverse is not.
-			if fullName := ci.GetName().GetFullName(); strings.HasSuffix(fullName, "@"+ci.GetId()) {
-				strippedName := ci.GetName().CloneVT()
-				strippedName.FullName = strings.TrimSuffix(fullName, "@"+ci.GetId())
-				img, found, err = h.imagesV2.GetImage(ctx, utils.NewImageV2ID(strippedName, ci.GetId()))
-			}
+	// The exact UUID lookup is cheapest when a V2 ID is known; a miss falls back to a
+	// digest-based lookup, which finds the stored row regardless of the request's name
+	// form (tag, inline digest, or tagless repo@digest as sent by roxctl).
+	if idV2 := ci.GetIdV2(); idV2 != "" {
+		if img, found, err := h.images.GetImage(ctx, idV2); found || err != nil {
+			return img, found, err
 		}
-		return utils.ConvertToV1(img), found, err
 	}
 	return h.images.GetImage(ctx, ci.GetId())
 }
