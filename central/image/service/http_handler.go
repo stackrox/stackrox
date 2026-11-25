@@ -131,9 +131,10 @@ func (h sbomGenHttpHandler) cachedImage(ctx context.Context, ci *storage.Contain
 	if features.FlattenImageData.Enabled() {
 		img, found, err := h.imagesV2.GetImage(ctx, ci.GetIdV2())
 		if err == nil && !found {
-			// An inline digest reference (name@digest) yields a different V2 ID than the same
-			// request with the digest supplied separately (e.g. by roxctl). Retry with the digest
-			// suffix stripped so both request forms resolve to the stored row.
+			// An inline digest reference (name@digest, as roxctl sends it) yields a different
+			// V2 ID than the same request with the digest supplied separately (as the UI sends
+			// it). Retry with the digest suffix stripped so both request forms resolve to the
+			// stored row.
 			// shortcut: only the inline->separate direction is covered; the reverse is not.
 			if fullName := ci.GetName().GetFullName(); strings.HasSuffix(fullName, "@"+ci.GetId()) {
 				strippedName := ci.GetName().CloneVT()
@@ -195,20 +196,19 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 		if err != nil {
 			// A failed cache read must not block SBOM generation when fresh enrichment
 			// could still succeed. Fall through without using any data from the failed read.
-			if ctx.Err() != nil {
-				return nil, ctx.Err()
-			}
 			log.Errorw("Reading cached image for SBOM generation", logging.ImageName(params.ImageName), logging.Err(err))
-		} else if found && enricher.CachedImageIsValid(img) && h.scannedByScannerV4(img.GetScan()) {
-			sbom, found, err := scannerV4.GetSBOM(img)
+		} else if found && h.scannedByScannerV4(img.GetScan()) {
+			// The SBOM is generated from the stored scan's index report, so stale pull
+			// metadata does not disqualify the cached image.
+			sbom, found, err := scannerV4.GetSBOM(ctx, img)
 			if err != nil || found {
 				return sbom, err
 			}
 		}
-		// Do not start expensive enrichment work for a request that is already gone.
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
+	}
+	// Do not start expensive enrichment work for a request that is already gone.
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
 	}
 	img, imgV2, err := h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
 	if err != nil {
@@ -222,7 +222,7 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 	if err := h.saveImage(img, imgV2); err != nil {
 		return nil, err
 	}
-	sbom, _, err := scannerV4.GetSBOM(img)
+	sbom, _, err := scannerV4.GetSBOM(ctx, img)
 	return sbom, err
 }
 

@@ -172,9 +172,9 @@ func (m *MockSBOMer) EXPECT() *MockSBOMerMockRecorder {
 }
 
 // GetSBOM mocks base method.
-func (m *MockSBOMer) GetSBOM(image *storage.Image) ([]byte, bool, error) {
+func (m *MockSBOMer) GetSBOM(ctx context.Context, image *storage.Image) ([]byte, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSBOM", image)
+	ret := m.ctrl.Call(m, "GetSBOM", ctx, image)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -182,9 +182,9 @@ func (m *MockSBOMer) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 }
 
 // GetSBOM indicates an expected call of GetSBOM.
-func (mr *MockSBOMerMockRecorder) GetSBOM(image any) *gomock.Call {
+func (mr *MockSBOMerMockRecorder) GetSBOM(ctx, image any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockSBOMer)(nil).GetSBOM), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockSBOMer)(nil).GetSBOM), ctx, image)
 }
 
 // ScanSBOM mocks base method.
@@ -227,9 +227,9 @@ func (m *MockScannerSBOMer) EXPECT() *MockScannerSBOMerMockRecorder {
 }
 
 // GetSBOM mocks base method.
-func (m *MockScannerSBOMer) GetSBOM(image *storage.Image) ([]byte, bool, error) {
+func (m *MockScannerSBOMer) GetSBOM(ctx context.Context, image *storage.Image) ([]byte, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSBOM", image)
+	ret := m.ctrl.Call(m, "GetSBOM", ctx, image)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -237,9 +237,9 @@ func (m *MockScannerSBOMer) GetSBOM(image *storage.Image) ([]byte, bool, error) 
 }
 
 // GetSBOM indicates an expected call of GetSBOM.
-func (mr *MockScannerSBOMerMockRecorder) GetSBOM(image any) *gomock.Call {
+func (mr *MockScannerSBOMerMockRecorder) GetSBOM(ctx, image any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockScannerSBOMer)(nil).GetSBOM), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockScannerSBOMer)(nil).GetSBOM), ctx, image)
 }
 
 // GetScan mocks base method.

@@ -34,7 +34,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func getFakeSBOM(_ any) ([]byte, bool, error) {
+func getFakeSBOM(_, _ any) ([]byte, bool, error) {
 	sbom := createMockSBOM()
 	sbomBytes, err := json.Marshal(sbom)
 	if err != nil {
@@ -167,7 +167,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
 				mockEnricherV2.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).Return(enricher.EnrichmentResult{ImageUpdated: tc.imageUpdated, ScanResult: tc.scanResult}, nil).AnyTimes()
 				scanner.EXPECT().Type().Return(scannerTypes.ScannerV4).AnyTimes()
-				scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
+				scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
 				set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 				fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
 				fsr.EXPECT().DataSource().Return(nil).AnyTimes()
@@ -318,7 +318,7 @@ func TestSBOMCachedImage(t *testing.T) {
 						images.EXPECT().GetImage(callerScope, digest).Return(stored, tc.readable, nil)
 					}
 					if tc.readable {
-						scanner.EXPECT().GetSBOM(gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).Return([]byte(`{"cached":true}`), tc.indexFound, nil)
+						scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).Return([]byte(`{"cached":true}`), tc.indexFound, nil)
 					}
 				}
 				if !tc.indexFound {
@@ -342,7 +342,7 @@ func TestSBOMCachedImage(t *testing.T) {
 						}
 					}
 					if tc.readable {
-						scanner.EXPECT().GetSBOM(gomock.Any()).Return([]byte(`{"cached":false}`), true, nil)
+						scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"cached":false}`), true, nil)
 					}
 				}
 				body, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: imageName, Digest: digest, Force: tc.force})
@@ -410,7 +410,7 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 			Return(utils.ConvertToV2(img), true, nil)
 
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
+		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
 
 		handler := SBOMGenHandler(scannerV4Mocks(ctrl, scanner), nil, nil, nil, nil, nil, imagesV2)
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest@" + digest})
@@ -433,13 +433,23 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(enricher.EnrichmentResult{ScanResult: enricher.ScanSucceeded}, nil).Times(1)
+			DoAndReturn(func(_ context.Context, _ enricher.EnrichmentContext, img *storage.Image) (enricher.EnrichmentResult, error) {
+				img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: digest}}
+				img.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
+				return enricher.EnrichmentResult{ScanResult: enricher.ScanSucceeded}, nil
+			}).Times(1)
 
 		risk := riskManagerMocks.NewMockManager(ctrl)
-		risk.EXPECT().CalculateRiskAndUpsertImage(gomock.Any())
+		risk.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).DoAndReturn(func(saved *storage.Image) error {
+			// The persisted object must be the freshly enriched image, keyed by the requested digest.
+			require.Equal(t, digest, saved.GetId())
+			require.Equal(t, digest, saved.GetMetadata().GetV2().GetDigest())
+			require.Equal(t, iiStore.DefaultScannerV4Integration.GetId(), saved.GetScan().GetDataSource().GetId())
+			return nil
+		})
 
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
+		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
 
 		w := serveSBOMRequest(SBOMGenHandler(scannerV4Mocks(ctrl, scanner), mockEnricher, nil, nil, risk, images, nil))
 		require.Equal(t, http.StatusOK, w.Code)
@@ -460,7 +470,7 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 		// to key on and skips the upsert; no risk manager call is expected.
 
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
+		scanner.EXPECT().GetSBOM(gomock.Any(), gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
 
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest"})
 		require.NoError(t, err)

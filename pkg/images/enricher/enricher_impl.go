@@ -173,7 +173,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	// if FetchOpt forces refetch. Assumes signatures in DB are OK, reprocessing
 	// or forcing re-scan will trigger updates as necessary.
 	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
-	if exists && CachedImageIsValid(existingImg) {
+	if exists && cachedImageIsValid(existingImg) {
 		updated := e.updateImageWithExistingImage(image, existingImg, enrichCtx.FetchOpt)
 		if updated {
 			// Image is cached, but we force base image detection in case base images tags were updated.
@@ -209,8 +209,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	return true, nil
 }
 
-// CachedImageIsValid reports whether an image has current metadata and a scan.
-func CachedImageIsValid(cachedImage *storage.Image) bool {
+func cachedImageIsValid(cachedImage *storage.Image) bool {
 	if cachedImage == nil {
 		return false
 	}
