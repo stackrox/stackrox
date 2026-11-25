@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
@@ -285,6 +286,12 @@ func TestSBOMCachedImage(t *testing.T) {
 				if tc.readable {
 					ctx = sac.WithAllAccess(t.Context())
 				}
+				// A request deadline shorter than the handler timeout: the effective deadline
+				// of any derived context must be exactly this one.
+				var requestDeadline time.Time
+				ctx, cancelRequest := context.WithTimeout(ctx, 30*time.Second)
+				defer cancelRequest()
+				requestDeadline, _ = ctx.Deadline()
 				if !tc.force {
 					callerScope := gomock.Cond(func(ctx context.Context) bool {
 						allowed, err := sac.ForResource(resources.Image).ReadAllowed(ctx)
@@ -308,11 +315,7 @@ func TestSBOMCachedImage(t *testing.T) {
 						images.EXPECT().GetImage(callerScope, digest).Return(stored, tc.readable, nil)
 					}
 					if tc.readable && tc.v4 {
-						withDeadline := gomock.Cond(func(ctx context.Context) bool {
-							_, ok := ctx.Deadline()
-							return ok
-						})
-						scanner.EXPECT().GetSBOM(withDeadline, gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).Return([]byte(`{"cached":true}`), tc.indexFound, nil)
+						scanner.EXPECT().GetSBOM(withRequestDeadline(requestDeadline), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).Return([]byte(`{"cached":true}`), tc.indexFound, nil)
 					}
 				}
 				if !tc.indexFound || !tc.v4 {
@@ -356,11 +359,12 @@ func TestSBOMCachedImage(t *testing.T) {
 	}
 }
 
-// withRequestDeadline matches a context carrying a deadline, e.g. the request context.
-func withRequestDeadline() gomock.Matcher {
+// withRequestDeadline matches a context carrying exactly the given deadline, i.e. one
+// derived from the request context rather than a detached background context.
+func withRequestDeadline(deadline time.Time) gomock.Matcher {
 	return gomock.Cond(func(ctx context.Context) bool {
-		_, ok := ctx.Deadline()
-		return ok
+		dl, ok := ctx.Deadline()
+		return ok && dl.Equal(deadline)
 	})
 }
 
@@ -388,10 +392,19 @@ func scannerV4Mocks(ctrl *gomock.Controller, scanner *scannerTypesMocks.MockScan
 func TestSBOMCachedImageFallbacks(t *testing.T) {
 	const digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
-	serveSBOMRequest := func(handler http.Handler) *httptest.ResponseRecorder {
+	newRequestCtx := func() (context.Context, time.Time) {
+		// A request deadline shorter than the handler timeout: the effective deadline of
+		// any derived context must be exactly this one.
+		ctx, cancel := context.WithTimeout(sac.WithAllAccess(t.Context()), 30*time.Second)
+		deadline, _ := ctx.Deadline()
+		t.Cleanup(cancel)
+		return ctx, deadline
+	}
+
+	serveSBOMRequest := func(ctx context.Context, handler http.Handler) *httptest.ResponseRecorder {
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: digest})
 		require.NoError(t, err)
-		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		return w
@@ -419,13 +432,14 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 		imagesV2.EXPECT().GetImage(gomock.Any(), ci.GetIdV2()).Return(nil, false, nil)
 		imagesV2.EXPECT().SearchRawImages(gomock.Any(), imageSHAQuery(digest)).Return([]*storage.ImageV2{utils.ConvertToV2(img)}, nil)
 
+		reqCtx, requestDeadline := newRequestCtx()
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(withRequestDeadline(), gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
+		scanner.EXPECT().GetSBOM(withRequestDeadline(requestDeadline), gomock.Any()).Return([]byte(`{"cached":true}`), true, nil)
 
 		handler := SBOMGenHandler(scannerV4Mocks(ctrl, scanner), nil, nil, nil, nil, imageMapperDatastore.New(nil, imagesV2))
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: imageName})
 		require.NoError(t, err)
-		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		req := httptest.NewRequestWithContext(reqCtx, http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 
@@ -458,15 +472,12 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 			return nil
 		})
 
+		reqCtx, requestDeadline := newRequestCtx()
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
 		// The Scanner V4 lookup must run under the request's deadline, not a background context.
-		withDeadline := gomock.Cond(func(ctx context.Context) bool {
-			_, ok := ctx.Deadline()
-			return ok
-		})
-		scanner.EXPECT().GetSBOM(withDeadline, gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
+		scanner.EXPECT().GetSBOM(withRequestDeadline(requestDeadline), gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
 
-		w := serveSBOMRequest(SBOMGenHandler(scannerV4Mocks(ctrl, scanner), mockEnricher, nil, nil, risk, imageMapperDatastore.New(images, nil)))
+		w := serveSBOMRequest(reqCtx, SBOMGenHandler(scannerV4Mocks(ctrl, scanner), mockEnricher, nil, nil, risk, imageMapperDatastore.New(images, nil)))
 		require.Equal(t, http.StatusOK, w.Code)
 		require.JSONEq(t, `{"fresh":true}`, w.Body.String())
 	})
@@ -572,13 +583,14 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 		imagesV2.EXPECT().SearchRawImages(gomock.Any(), imageSHAQuery(digest)).
 			Return([]*storage.ImageV2{utils.ConvertToV2(nonV4), utils.ConvertToV2(v4)}, nil)
 
+		reqCtx, requestDeadline := newRequestCtx()
 		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
-		scanner.EXPECT().GetSBOM(withRequestDeadline(), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).
+		scanner.EXPECT().GetSBOM(withRequestDeadline(requestDeadline), gomock.Cond(func(i *storage.Image) bool { return i.GetIsClusterLocal() && i.GetId() == digest })).
 			Return([]byte(`{"cached":true}`), true, nil)
 
 		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest", Digest: digest})
 		require.NoError(t, err)
-		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		req := httptest.NewRequestWithContext(reqCtx, http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 		w := httptest.NewRecorder()
 		SBOMGenHandler(scannerV4Mocks(ctrl, scanner), nil, nil, nil, nil, imageMapperDatastore.New(nil, imagesV2)).ServeHTTP(w, req)
 
