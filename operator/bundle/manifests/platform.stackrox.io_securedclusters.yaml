@@ -566,14 +566,21 @@ spec:
                 description: Monitoring configuration.
                 properties:
                   openshift:
-                    description: OpenShiftMonitoring defines settings related to OpenShift
-                      Monitoring
+                    description: SecuredClusterOpenShiftMonitoring configures OpenShift
+                      monitoring integrations.
                     properties:
+                      custom:
+                        description: |-
+                          Enables scraping Central custom metrics through this secured cluster's Sensor proxy.
+                          Independent of openshift.enabled, including on the cluster hosting Central.
+                        properties:
+                          enabled:
+                            description: 'The default is: false.'
+                            type: boolean
+                        type: object
                       enabled:
                         description: 'The default is: true.'
                         type: boolean
-                    required:
-                    - enabled
                     type: object
                 type: object
               network:

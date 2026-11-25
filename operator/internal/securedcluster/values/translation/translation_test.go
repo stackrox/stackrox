@@ -470,9 +470,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 								},
 							},
 						},
-						Monitoring: &platform.GlobalMonitoring{
-							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+						Monitoring: &platform.SecuredClusterMonitoring{
+							OpenShiftMonitoring: &platform.SecuredClusterOpenShiftMonitoring{
 								Enabled: new(true),
+								Custom:  &platform.OpenShiftCustomMonitoring{Enabled: new(true)},
 							},
 						},
 						Scanner: &platform.LocalScannerComponentSpec{
@@ -837,6 +838,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
+						"custom": map[string]interface{}{
+							"enabled": true,
+						},
 					},
 				},
 				"registryOverride": "my.registry.override.com",

@@ -163,7 +163,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddChild("customize", &customize)
 	v.AddChild("meta", getMetaValues(sc))
 
-	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
+	v.AddChild("monitoring", getMonitoringValues(sc.Spec.Monitoring))
 
 	if sc.Spec.RegistryOverride != nil && *sc.Spec.RegistryOverride != "" {
 		v.SetStringValue("registryOverride", *sc.Spec.RegistryOverride)
@@ -182,6 +182,24 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddChild("virtualMachines", getVirtualMachinesValues(sc.Spec.VirtualMachines))
 
 	return v.Build()
+}
+
+func getMonitoringValues(m *platform.SecuredClusterMonitoring) *translation.ValuesBuilder {
+	openshift := translation.NewValuesBuilder()
+	enabled := true
+	if m != nil && m.OpenShiftMonitoring != nil {
+		if m.OpenShiftMonitoring.Enabled != nil {
+			enabled = *m.OpenShiftMonitoring.Enabled
+		}
+		custom := m.OpenShiftMonitoring.Custom
+		if custom != nil && custom.Enabled != nil && *custom.Enabled {
+			openshift.SetPathValue("custom.enabled", true)
+		}
+	}
+	openshift.SetBoolValue("enabled", enabled)
+	monitoring := translation.NewValuesBuilder()
+	monitoring.AddChild("openshift", &openshift)
+	return &monitoring
 }
 
 // getTLSValues reads TLS configuration and looks up CA certificate from secrets.

@@ -1029,6 +1029,11 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'The default is: false.'
+        displayName: Enabled
+        path: monitoring.openshift.custom.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: 'The default is: true.'
         displayName: Enabled
         path: monitoring.openshift.enabled
@@ -1176,6 +1181,13 @@ spec:
           Cannot be used together with pinToNodes.
         displayName: Node Selector
         path: customize.deploymentDefaults.nodeSelector
+      - description: |-
+          Enables scraping Central custom metrics through this secured cluster's Sensor proxy.
+          Independent of openshift.enabled, including on the cluster hosting Central.
+        displayName: Custom
+        path: monitoring.openshift.custom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind

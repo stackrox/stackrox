@@ -422,3 +422,8 @@
 #  # Enables integration with OpenShift platform monitoring.
 #  openshift:
 #    enabled: true
+#    # Explicit opt-in for OpenShift Prometheus to scrape Central custom metrics
+#    # through this secured cluster's Sensor proxy (independent of enabled).
+#    # Use this setting also on the secured cluster hosting Central.
+#    custom:
+#      enabled: false

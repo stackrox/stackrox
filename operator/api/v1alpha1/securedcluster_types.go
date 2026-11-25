@@ -103,7 +103,7 @@ type SecuredClusterSpec struct {
 
 	// Monitoring configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
+	Monitoring *SecuredClusterMonitoring `json:"monitoring,omitempty"`
 
 	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
@@ -157,6 +157,30 @@ type SensorComponentSpec struct {
 	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Central API Proxy",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	CentralProxyEnabled *bool `json:"centralProxyEnabled,omitempty"`
+}
+
+// SecuredClusterMonitoring configures operational and custom metrics for a secured cluster.
+type SecuredClusterMonitoring struct {
+	OpenShiftMonitoring *SecuredClusterOpenShiftMonitoring `json:"openshift,omitempty"`
+}
+
+// SecuredClusterOpenShiftMonitoring configures OpenShift monitoring integrations.
+type SecuredClusterOpenShiftMonitoring struct {
+	// The default is: true.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Enables scraping Central custom metrics through this secured cluster's Sensor proxy.
+	// Independent of openshift.enabled, including on the cluster hosting Central.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Custom *OpenShiftCustomMonitoring `json:"custom,omitempty"`
+}
+
+// OpenShiftCustomMonitoring configures scraping Central's custom metrics through Sensor.
+type OpenShiftCustomMonitoring struct {
+	// The default is: false.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.
