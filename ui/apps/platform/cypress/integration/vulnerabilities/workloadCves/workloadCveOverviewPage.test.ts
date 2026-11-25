@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { visitFromHorizontalNav, visitFromHorizontalNavExpandable } from '../../../helpers/nav';
 import { graphql } from '../../../constants/apiEndpoints';
 import {
@@ -21,7 +20,6 @@ import {
 import {
     expectRequestedSort,
     getRouteMatcherMapForGraphQL,
-    interceptAndOverrideFeatureFlags,
     interceptAndOverridePermissions,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
@@ -209,21 +207,7 @@ describe('Workload CVE overview page tests', () => {
             cy.get(rowMenuSbomModalButton).should('not.exist');
         });
 
-        it('should disable the SBOM generation button when Scanner V4 is not enabled', () => {
-            interceptAndOverrideFeatureFlags({ ROX_SCANNER_V4: false });
-
-            visitWorkloadCveOverview();
-            interactAndWaitForImageList(() => selectEntityTab('Image'));
-            openTableRowActionMenu(selectors.firstTableRow);
-
-            cy.get(rowMenuSbomModalButton).should('have.attr', 'aria-disabled', 'true');
-        });
-
-        it('should trigger a download of the image SBOM via confirmation modal', function () {
-            if (!hasFeatureFlag('ROX_SCANNER_V4')) {
-                this.skip();
-            }
-
+        it('should trigger a download of the image SBOM via confirmation modal', () => {
             visitWorkloadCveOverview();
             interactAndWaitForImageList(() => selectEntityTab('Image'));
             mockSbomGenerationRequest();

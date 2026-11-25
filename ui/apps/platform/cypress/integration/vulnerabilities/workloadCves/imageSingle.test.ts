@@ -1,10 +1,8 @@
 import withAuth from '../../../helpers/basicAuth';
 import { compoundFiltersSelectors } from '../../../helpers/compoundFilters';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
-    interceptAndOverrideFeatureFlags,
     interceptAndOverridePermissions,
 } from '../../../helpers/request';
 import { verifyColumnManagement } from '../../../helpers/tableHelpers';
@@ -231,19 +229,7 @@ describe('Workload CVE Image Single page', () => {
             cy.get(headerSbomModalButton).should('not.exist');
         });
 
-        it('should disable the SBOM generation button when Scanner V4 is not enabled', () => {
-            interceptAndOverrideFeatureFlags({ ROX_SCANNER_V4: false });
-
-            visitFirstImage();
-
-            cy.get(headerSbomModalButton).should('have.attr', 'aria-disabled', 'true');
-        });
-
-        it('should trigger a download of the image SBOM via confirmation modal', function () {
-            if (!hasFeatureFlag('ROX_SCANNER_V4')) {
-                this.skip();
-            }
-
+        it('should trigger a download of the image SBOM via confirmation modal', () => {
             mockSbomGenerationRequest();
 
             visitFirstImage().then((imageFullName) => {
