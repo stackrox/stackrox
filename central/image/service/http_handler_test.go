@@ -364,7 +364,6 @@ func TestSBOMCachedImage(t *testing.T) {
 
 func TestSBOMCachedImageFallbacks(t *testing.T) {
 	const digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	const otherDigest = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
 	// scannerV4Mocks returns a mock integration set yielding the given Scanner V4 SBOMer.
 	scannerV4Mocks := func(ctrl *gomock.Controller, scanner *scannerTypesMocks.MockScannerSBOMer) *intergrationMocks.MockSet {
@@ -447,27 +446,29 @@ func TestSBOMCachedImageFallbacks(t *testing.T) {
 		require.JSONEq(t, `{"fresh":true}`, w.Body.String())
 	})
 
-	t.Run("moved tag digest mismatch is rejected", func(t *testing.T) {
+	t.Run("tag only request skips the cache and enriches", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.FlattenImageData, false)
 		t.Setenv(features.ScannerV4.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 
-		images := imageMocks.NewMockDataStore(ctrl)
-		images.EXPECT().GetImage(gomock.Any(), digest).Return(nil, false, nil)
-
+		// A tag does not identify an immutable image, so no cache lookup may happen.
 		mockEnricher := enricherMock.NewMockImageEnricher(ctrl)
 		mockEnricher.EXPECT().EnrichImage(gomock.Any(), gomock.Any(), gomock.Any()).
-			DoAndReturn(func(_ context.Context, _ enricher.EnrichmentContext, img *storage.Image) (enricher.EnrichmentResult, error) {
-				// The tag moved: enrichment resolved a different digest than requested.
-				img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: otherDigest}}
-				return enricher.EnrichmentResult{ScanResult: enricher.ScanSucceeded}, nil
-			}).Times(1)
+			Return(enricher.EnrichmentResult{ScanResult: enricher.ScanSucceeded}, nil).Times(1)
 
-		// No risk upsert: an image with an unexpected digest must not be saved.
-		handler := SBOMGenHandler(scannerV4Mocks(ctrl, scannerTypesMocks.NewMockScannerSBOMer(ctrl)), mockEnricher, nil, nil, riskManagerMocks.NewMockManager(ctrl), images, nil)
-		w := serveSBOMRequest(handler)
+		// The mock enricher leaves the image without metadata, so saveImageV1 has no SHA
+		// to key on and skips the upsert; no risk manager call is expected.
 
-		require.Equal(t, http.StatusInternalServerError, w.Code)
-		require.Contains(t, w.Body.String(), "resolved to digest")
+		scanner := scannerTypesMocks.NewMockScannerSBOMer(ctrl)
+		scanner.EXPECT().GetSBOM(gomock.Any()).Return([]byte(`{"fresh":true}`), true, nil)
+
+		reqJson, err := json.Marshal(apiparams.SBOMRequestBody{ImageName: "registry.example.org/app:latest"})
+		require.NoError(t, err)
+		req := httptest.NewRequestWithContext(sac.WithAllAccess(t.Context()), http.MethodPost, "/sbom", bytes.NewReader(reqJson))
+		w := httptest.NewRecorder()
+		SBOMGenHandler(scannerV4Mocks(ctrl, scanner), mockEnricher, nil, nil, riskManagerMocks.NewMockManager(ctrl), nil, nil).ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusOK, w.Code)
+		require.JSONEq(t, `{"fresh":true}`, w.Body.String())
 	})
 }

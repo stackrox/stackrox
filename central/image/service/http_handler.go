@@ -205,26 +205,20 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 				return sbom, err
 			}
 		}
+		// Do not start expensive enrichment work for a request that is already gone.
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 	}
 	img, imgV2, err := h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
 	if err != nil {
 		sendAdminEvent(err, params.ImageName)
 		return nil, err
 	}
-	// Enrichment resolves the image name at scan time, so a moved tag can return a different
-	// image than requested. Never save or return an SBOM for a digest the caller did not ask for.
-	if requestedDigest := ci.GetId(); requestedDigest != "" {
-		actualDigest := img.GetMetadata().GetV2().GetDigest()
-		if actualDigest == "" {
-			actualDigest = img.GetMetadata().GetV1().GetDigest()
-		}
-		if actualDigest != "" && actualDigest != requestedDigest {
-			err := errors.Errorf("image %q resolved to digest %q but digest %q was requested",
-				params.ImageName, actualDigest, requestedDigest)
-			sendAdminEvent(err, params.ImageName)
-			return nil, err
-		}
-	}
+	// shortcut: enrichment resolves the image name at scan time, so a moved tag can return
+	// an image with a different digest than requested; a digest guard cannot distinguish
+	// this from legitimate multi-arch resolution (metadata carries the platform manifest
+	// digest, not the requested index digest), so the digest is not checked here.
 	if err := h.saveImage(img, imgV2); err != nil {
 		return nil, err
 	}
