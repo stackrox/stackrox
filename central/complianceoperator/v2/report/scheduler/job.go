@@ -1,8 +1,6 @@
 package scheduler
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -57,13 +55,4 @@ func (q *jobQueue) markDone(scanConfigID string) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.runningConfigs.Remove(scanConfigID)
-}
-
-// runReportJob is the report job of a scan configuration.
-//
-// Iteration 1 of the decoupled reporting rollout: a no-op placeholder. Later iterations settle
-// running scans, audit expectations, and generate and deliver the report.
-func runReportJob(_ context.Context, job *reportJob) {
-	reportJobsFired.WithLabelValues(job.scanConfigName).Inc()
-	log.Infof("Compliance report due for scan configuration %q", job.scanConfigName)
 }

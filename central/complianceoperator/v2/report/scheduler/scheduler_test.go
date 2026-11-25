@@ -7,7 +7,13 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/stackrox/rox/central/complianceoperator/v2/report"
+	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
+	generatorMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	scanDSMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
+	bindingsMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
+	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -52,15 +58,32 @@ func scanConfig(id, name string, sched *storage.Schedule) *storage.ComplianceOpe
 	}
 }
 
-// newTestScheduler returns a scheduler wired to a fresh gomock datastore with the decoupled
+// schedulerMocks bundles the scheduler's gomock dependencies.
+type schedulerMocks struct {
+	scanConfigDS *scanConfigMocks.MockDataStore
+	scanDS       *scanDSMocks.MockDataStore
+	snapshotDS   *snapshotMocks.MockDataStore
+	suiteDS      *suiteMocks.MockDataStore
+	bindingsDS   *bindingsMocks.MockDataStore
+	reportGen    *generatorMocks.MockComplianceReportGenerator
+}
+
+// newTestScheduler returns a scheduler wired to fresh gomock datastores with the decoupled
 // reporting feature enabled. The gomock controller is bound to t, so expectations are verified
 // when the (sub)test ends.
-func newTestScheduler(t *testing.T) (*managerImpl, *scanConfigMocks.MockDataStore) {
+func newTestScheduler(t *testing.T) (*managerImpl, *schedulerMocks) {
 	t.Setenv(features.ComplianceReporting.EnvVar(), "true")
 	t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
-	scanConfigMock := scanConfigMocks.NewMockDataStore(ctrl)
-	return New(scanConfigMock).(*managerImpl), scanConfigMock
+	mocks := &schedulerMocks{
+		scanConfigDS: scanConfigMocks.NewMockDataStore(ctrl),
+		scanDS:       scanDSMocks.NewMockDataStore(ctrl),
+		snapshotDS:   snapshotMocks.NewMockDataStore(ctrl),
+		suiteDS:      suiteMocks.NewMockDataStore(ctrl),
+		bindingsDS:   bindingsMocks.NewMockDataStore(ctrl),
+		reportGen:    generatorMocks.NewMockComplianceReportGenerator(ctrl),
+	}
+	return New(mocks.scanConfigDS, mocks.scanDS, mocks.snapshotDS, mocks.suiteDS, mocks.bindingsDS, mocks.reportGen).(*managerImpl), mocks
 }
 
 // reportScheduleFor returns the report schedule of the manager's cron entry for the given scan
@@ -245,17 +268,21 @@ func TestJobQueue(t *testing.T) {
 
 // TestRunJobsRunsSubmittedJobs exercises the execution loop: jobs run asynchronously, a second
 // job of a running configuration waits for it to finish, and jobs of other configurations are
-// not blocked.
+// not blocked. Execution is observed at the report job's first datastore read, which the mock
+// parks until released: a started job holds its configuration in the running set.
 func TestRunJobsRunsSubmittedJobs(t *testing.T) {
-	m, scanConfigMock := newTestScheduler(t)
-	scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	m, mocks := newTestScheduler(t)
+	mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
-	started := make(chan *reportJob, 4)
+	started := make(chan string, 4)
 	release := make(chan struct{})
-	m.runJob = func(_ context.Context, job *reportJob) {
-		started <- job
-		<-release
-	}
+	mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, scanConfigID string) (*storage.ComplianceOperatorScanConfigurationV2, bool, error) {
+			started <- scanConfigID
+			<-release
+			// Not found: the job finishes without generating anything.
+			return nil, false, nil
+		}).AnyTimes()
 
 	m.start()
 	defer m.Stop()
@@ -264,13 +291,12 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 	m.submitJob("cfg1", "cfg-one")
 	m.submitJob("cfg1", "cfg-one")
 
-	var first *reportJob
 	select {
-	case first = <-started:
+	case id := <-started:
+		assert.Equal(t, "cfg1", id)
 	case <-time.After(5 * time.Second):
 		t.Fatal("the first job did not run")
 	}
-	assert.Equal(t, "cfg1", first.scanConfigID)
 
 	select {
 	case <-started:
@@ -281,8 +307,8 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 	// A job of another configuration is not blocked by the running one.
 	m.submitJob("cfg2", "cfg-two")
 	select {
-	case job := <-started:
-		assert.Equal(t, "cfg2", job.scanConfigID)
+	case id := <-started:
+		assert.Equal(t, "cfg2", id)
 	case <-time.After(5 * time.Second):
 		t.Fatal("a job of another configuration did not run")
 	}
@@ -290,8 +316,8 @@ func TestRunJobsRunsSubmittedJobs(t *testing.T) {
 	// Releasing the running jobs lets the queued job of cfg1 run.
 	close(release)
 	select {
-	case job := <-started:
-		assert.Equal(t, "cfg1", job.scanConfigID)
+	case id := <-started:
+		assert.Equal(t, "cfg1", id)
 	case <-time.After(5 * time.Second):
 		t.Fatal("the queued job did not run after the running one finished")
 	}
@@ -340,8 +366,8 @@ func TestUpsertAndRemoveScanConfig(t *testing.T) {
 
 func TestReconcile(t *testing.T) {
 	t.Run("creates entries for configurations with evaluable schedules only", func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
-		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		m, mocks := newTestScheduler(t)
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{
 				scanConfig("cfg-daily", "cfg-daily", dailySchedule(1, 30)),
 				scanConfig("cfg-nil", "cfg-nil", nil),
@@ -356,10 +382,10 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("drops entries of configurations no longer stored", func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
+		m, mocks := newTestScheduler(t)
 		m.UpsertScanConfig(scanConfig("cfg-gone", "cfg-gone", dailySchedule(1, 30)))
 
-		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{
 				scanConfig("cfg-kept", "cfg-kept", dailySchedule(1, 30)),
 			}, nil)
@@ -371,10 +397,10 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("list error keeps the existing entries", func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
+		m, mocks := newTestScheduler(t)
 		m.UpsertScanConfig(scanConfig("cfg-keep", "cfg-keep", dailySchedule(1, 30)))
 
-		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return(nil, errors.New("boom"))
 
 		m.reconcile(context.Background())
@@ -388,10 +414,9 @@ func TestSchedulerStartStop(t *testing.T) {
 
 	// The loop reconciles immediately on Start; tolerate any number of list calls, and no
 	// entries since there are no configurations.
-	_, scanConfigMock := newTestScheduler(t)
-	scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	m, mocks := newTestScheduler(t)
+	mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
-	m := New(scanConfigMock).(*managerImpl)
 	m.start()
 	m.Stop()
 }
@@ -400,10 +425,10 @@ func TestSchedulerStartStop(t *testing.T) {
 // configurations synchronously, so configurations that predate the process get cron entries
 // without producing events.
 func TestSchedulerRunsInitialReconcileOnStart(t *testing.T) {
-	_, scanConfigMock := newTestScheduler(t)
+	m, mocks := newTestScheduler(t)
 
 	called := make(chan struct{}, 1)
-	scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+	mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(context.Context, *v1.Query) ([]*storage.ComplianceOperatorScanConfigurationV2, error) {
 			select {
 			case called <- struct{}{}:
@@ -412,7 +437,6 @@ func TestSchedulerRunsInitialReconcileOnStart(t *testing.T) {
 			return nil, nil
 		}).AnyTimes()
 
-	m := New(scanConfigMock).(*managerImpl)
 	m.start()
 	defer m.Stop()
 
@@ -431,7 +455,7 @@ func TestUpsertReordersUpcomingFires(t *testing.T) {
 	t.Setenv(env.ComplianceReportScheduleDelay.EnvVar(), "1h")
 
 	synctest.Test(t, func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
+		m, mocks := newTestScheduler(t)
 
 		start := time.Now().UTC().Truncate(time.Minute).Add(time.Minute)
 		at := func(offset time.Duration) *storage.Schedule {
@@ -441,19 +465,23 @@ func TestUpsertReordersUpcomingFires(t *testing.T) {
 
 		// cfg1's report is due at start+110m and cfg2's at start+180m, so the pending order is
 		// 1 then 2.
-		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{
 				scanConfig("cfg1", "cfg-one", at(50*time.Minute)),
 				scanConfig("cfg2", "cfg-two", at(120*time.Minute)),
 			}, nil).AnyTimes()
 
-		fired := make(chan *reportJob, 4)
-		m.runJob = func(_ context.Context, job *reportJob) {
-			select {
-			case fired <- job:
-			default:
-			}
-		}
+		// A fired report job starts by reading its configuration; observe it there and let it
+		// finish as "not found".
+		fired := make(chan string, 4)
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, scanConfigID string) (*storage.ComplianceOperatorScanConfigurationV2, bool, error) {
+				select {
+				case fired <- scanConfigID:
+				default:
+				}
+				return nil, false, nil
+			}).AnyTimes()
 
 		m.start()
 		defer m.Stop()
@@ -462,8 +490,8 @@ func TestUpsertReordersUpcomingFires(t *testing.T) {
 			var ids []string
 			for {
 				select {
-				case job := <-fired:
-					ids = append(ids, job.scanConfigID)
+				case id := <-fired:
+					ids = append(ids, id)
 				default:
 					return ids
 				}
@@ -498,7 +526,7 @@ func TestSchedulerFiresOnSchedule(t *testing.T) {
 	t.Setenv(env.ComplianceReportScheduleDelay.EnvVar(), "1h")
 
 	synctest.Test(t, func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
+		m, mocks := newTestScheduler(t)
 
 		// The schedule ticks one minute after the bubble epoch on a whole-minute boundary (so
 		// it coincides with a cron tick), so "now" starts strictly before it; the report is due
@@ -506,42 +534,45 @@ func TestSchedulerFiresOnSchedule(t *testing.T) {
 		start := time.Now().UTC().Truncate(time.Minute).Add(time.Minute)
 		sched := dailySchedule(int32(start.Hour()), int32(start.Minute()))
 
-		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 			Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig("cfg1", "cfg-daily", sched)}, nil).AnyTimes()
 
-		fired := make(chan *reportJob, 4)
-		m.runJob = func(_ context.Context, job *reportJob) {
-			select {
-			case fired <- job:
-			default:
-			}
-		}
+		// A fired report job starts by reading its configuration; observe the fake clock there
+		// and let the job finish as "not found".
+		firedAt := make(chan time.Time, 4)
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+			DoAndReturn(func(context.Context, string) (*storage.ComplianceOperatorScanConfigurationV2, bool, error) {
+				select {
+				case firedAt <- time.Now():
+				default:
+				}
+				return nil, false, nil
+			}).AnyTimes()
 
 		m.start()
 		defer m.Stop()
 
 		// Half an hour past the tick nothing has fired yet.
 		select {
-		case job := <-fired:
-			t.Fatalf("report for %q fired before tick+delay", job.scanConfigName)
+		case at := <-firedAt:
+			t.Fatalf("report fired before tick+delay, at %v", at)
 		case <-time.After(time.Until(start.Add(30 * time.Minute))):
 		}
 
 		// At tick+delay the report fires exactly.
-		var job *reportJob
+		var at time.Time
 		select {
-		case job = <-fired:
+		case at = <-firedAt:
 		case <-time.After(time.Until(start.Add(time.Hour + time.Minute))):
 			t.Fatal("report did not fire at tick+delay")
 		}
-		assert.Equal(t, "cfg1", job.scanConfigID)
-		assert.False(t, time.Now().Before(start.Add(time.Hour)), "report fired early")
-		assert.LessOrEqual(t, time.Since(start.Add(time.Hour)), time.Second, "report fired late")
+		assert.False(t, at.Before(start.Add(time.Hour)), "report fired early: %v", at)
+		assert.LessOrEqual(t, at.Sub(start.Add(time.Hour)), time.Second, "report fired late: %v", at)
 
 		// The job does not refire for the same cycle.
 		select {
-		case job := <-fired:
-			t.Fatalf("report for %q refired for the same cycle", job.scanConfigName)
+		case at := <-firedAt:
+			t.Fatalf("report refired for the same cycle, at %v", at)
 		case <-time.After(time.Until(start.Add(90 * time.Minute))):
 		}
 	})
@@ -550,11 +581,8 @@ func TestSchedulerFiresOnSchedule(t *testing.T) {
 // TestStartDisabled asserts Start is a no-op while the rollout feature is disabled: nothing
 // starts and no advisory lock is taken (the nil DB would panic otherwise).
 func TestStartDisabled(t *testing.T) {
-	t.Setenv(features.ComplianceReporting.EnvVar(), "true")
+	m, _ := newTestScheduler(t)
 	t.Setenv(features.ComplianceDecoupledReports.EnvVar(), "false")
-
-	ctrl := gomock.NewController(t)
-	m := New(scanConfigMocks.NewMockDataStore(ctrl)).(*managerImpl)
 
 	m.Start(nil)
 	assert.False(t, m.isStarted.Load())
@@ -564,8 +592,8 @@ func TestScheduleRescanReport(t *testing.T) {
 	t.Setenv(env.ComplianceReportScheduleDelay.EnvVar(), "1h")
 
 	t.Run("unknown configuration is skipped", func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
-		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg-unknown").
+		m, mocks := newTestScheduler(t)
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg-unknown").
 			Return(nil, false, nil)
 
 		m.ScheduleRescanReport("cfg-unknown")
@@ -573,9 +601,9 @@ func TestScheduleRescanReport(t *testing.T) {
 	})
 
 	t.Run("one-time scans get a re-run report", func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
+		m, mocks := newTestScheduler(t)
 		cfg := &storage.ComplianceOperatorScanConfigurationV2{Id: "cfg-ot", ScanConfigName: "cfg-one-time", OneTimeScan: true}
-		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg-ot").
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg-ot").
 			Return(cfg, true, nil)
 
 		m.ScheduleRescanReport("cfg-ot")
@@ -584,9 +612,9 @@ func TestScheduleRescanReport(t *testing.T) {
 	})
 
 	t.Run("re-running replaces the pending report", func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
+		m, mocks := newTestScheduler(t)
 		cfg := scanConfig("cfg1", "cfg-one", dailySchedule(0, 0))
-		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
 			Return(cfg, true, nil).Times(2)
 
 		m.ScheduleRescanReport("cfg1")
@@ -599,9 +627,9 @@ func TestScheduleRescanReport(t *testing.T) {
 	})
 
 	t.Run("removing the configuration drops the pending report", func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
+		m, mocks := newTestScheduler(t)
 		cfg := scanConfig("cfg1", "cfg-one", dailySchedule(0, 0))
-		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
 			Return(cfg, true, nil)
 
 		m.UpsertScanConfig(cfg)
@@ -623,20 +651,28 @@ func TestScheduleRescanReport(t *testing.T) {
 	})
 
 	// End to end: the re-run report fires once, one delay after the latest re-run, and a
-	// re-run before the report fires coalesces into it.
+	// re-run before the report fires coalesces into it. Observation happens at the PREPARING
+	// snapshot persist, which only a running report job performs (ScheduleRescanReport itself
+	// also reads the configuration, so the read cannot distinguish the two).
 	synctest.Test(t, func(t *testing.T) {
-		m, scanConfigMock := newTestScheduler(t)
-		scanConfigMock.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
-		scanConfigMock.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
-			Return(scanConfig("cfg1", "cfg-one", dailySchedule(0, 0)), true, nil).AnyTimes()
+		m, mocks := newTestScheduler(t)
+		mocks.scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").
+			Return(scheduledScanConfig("cfg1", "cfg-one"), true, nil).AnyTimes()
+		// Report data conversion for the generated report.
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil).AnyTimes()
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
-		fired := make(chan *reportJob, 4)
-		m.runJob = func(_ context.Context, job *reportJob) {
-			select {
-			case fired <- job:
-			default:
-			}
-		}
+		generated := make(chan struct{}, 4)
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(context.Context, *storage.ComplianceOperatorReportSnapshotV2) error {
+				select {
+				case generated <- struct{}{}:
+				default:
+				}
+				return nil
+			}).AnyTimes()
+		mocks.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).Return(nil).AnyTimes()
 
 		m.start()
 		defer m.Stop()
@@ -646,7 +682,7 @@ func TestScheduleRescanReport(t *testing.T) {
 
 		// Half the delay: nothing has fired yet.
 		select {
-		case <-fired:
+		case <-generated:
 			t.Fatal("re-run report fired before the delay elapsed")
 		case <-time.After(time.Until(firstScheduledAt.Add(30 * time.Minute))):
 		}
@@ -657,24 +693,125 @@ func TestScheduleRescanReport(t *testing.T) {
 
 		// The first re-run's due time passes without a report.
 		select {
-		case <-fired:
+		case <-generated:
 			t.Fatal("re-run report fired at the first re-run's due time")
 		case <-time.After(time.Until(firstScheduledAt.Add(59 * time.Minute))):
 		}
 
-		var job *reportJob
 		select {
-		case job = <-fired:
+		case <-generated:
 		case <-time.After(time.Until(secondScheduledAt.Add(time.Hour + time.Minute))):
 			t.Fatal("re-run report did not fire one delay after the latest re-run")
 		}
-		assert.Equal(t, "cfg1", job.scanConfigID)
 
 		// The report fires exactly once.
 		select {
-		case <-fired:
+		case <-generated:
 			t.Fatal("re-run report fired twice")
 		case <-time.After(time.Until(secondScheduledAt.Add(90 * time.Minute))):
 		}
+	})
+}
+
+// scheduledScanConfig returns a scan configuration that passes the scheduler's report
+// conditions: it has notifiers and a last modifier.
+func scheduledScanConfig(id, name string) *storage.ComplianceOperatorScanConfigurationV2 {
+	cfg := scanConfig(id, name, dailySchedule(0, 0))
+	cfg.Notifiers = []*storage.NotifierConfiguration{{}}
+	cfg.ModifiedBy = &storage.SlimUser{Id: "user-1", Name: "User One"}
+	return cfg
+}
+
+// TestRunReportJob covers the report job: it generates a SCHEDULED report from datastore
+// state through the shared report machinery, skips configurations that cannot be reported,
+// and fails the snapshot on cluster-data errors.
+func TestRunReportJob(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("generates a scheduled report from datastore state", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+		cfg.Profiles = []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{{ProfileName: "ocp4"}}
+		cfg.Clusters = []*storage.ComplianceOperatorScanConfigurationV2_Cluster{{ClusterId: "cluster-1"}}
+
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").Return(cfg, true, nil)
+		// Report data conversion: no cluster statuses, no suites.
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil)
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+		var persisted *storage.ComplianceOperatorReportSnapshotV2
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				persisted = snapshot
+				return nil
+			}).Times(1)
+
+		mocks.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).
+			DoAndReturn(func(req *report.Request) error {
+				assert.Equal(t, "cfg1", req.ScanConfigID)
+				assert.Equal(t, "cfg-one", req.ScanConfigName)
+				assert.Equal(t, []string{"ocp4"}, req.Profiles)
+				assert.Equal(t, []string{"cluster-1"}, req.ClusterIDs)
+				assert.Equal(t, storage.ComplianceOperatorReportStatus_EMAIL, req.NotificationMethod)
+				assert.Equal(t, persisted.GetReportId(), req.SnapshotID)
+				assert.Len(t, req.Notifiers, 1)
+				assert.Equal(t, 0, req.NumFailedClusters)
+				return nil
+			}).Times(1)
+
+		m.runReportJob(ctx, &reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-one"})
+
+		require.NotNil(t, persisted)
+		assert.NotEmpty(t, persisted.GetReportId())
+		assert.Equal(t, "cfg1", persisted.GetScanConfigurationId())
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_PREPARING, persisted.GetReportStatus().GetRunState())
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_SCHEDULED, persisted.GetReportStatus().GetReportRequestType())
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_EMAIL, persisted.GetReportStatus().GetReportNotificationMethod())
+		assert.Equal(t, "user-1", persisted.GetUser().GetId())
+	})
+
+	t.Run("configuration not found is skipped", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg-gone").Return(nil, false, nil)
+		// No snapshot or generator expectations: gomock fails the test if they are called.
+
+		m.runReportJob(ctx, &reportJob{scanConfigID: "cfg-gone", scanConfigName: "cfg-gone"})
+	})
+
+	t.Run("configuration without notifiers is skipped", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		cfg := scanConfig("cfg1", "cfg-noemail", dailySchedule(0, 0))
+
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").Return(cfg, true, nil)
+		// No snapshot or generator expectations: nothing may be persisted or generated.
+
+		m.runReportJob(ctx, &reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-noemail"})
+	})
+
+	t.Run("cluster data error fails the snapshot", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").Return(cfg, true, nil)
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").
+			Return([]*storage.ComplianceOperatorClusterScanConfigStatus{{ClusterId: "cluster-1", ClusterName: "cluster-one"}}, nil)
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+		mocks.bindingsDS.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).Return(nil, nil)
+		// GetClusterData resolves the cluster's scans and fails.
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return(nil, errors.New("boom"))
+
+		var states []storage.ComplianceOperatorReportStatus_RunState
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+				states = append(states, snapshot.GetReportStatus().GetRunState())
+				return nil
+			}).Times(2)
+		// No ProcessReportRequest expectation: the report must not be generated.
+
+		m.runReportJob(ctx, &reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-one"})
+
+		require.Len(t, states, 2)
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_PREPARING, states[0])
+		assert.Equal(t, storage.ComplianceOperatorReportStatus_FAILURE, states[1])
 	})
 }

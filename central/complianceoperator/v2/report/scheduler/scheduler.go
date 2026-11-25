@@ -14,9 +14,10 @@
 // The scheduler is gated by ROX_COMPLIANCE_DECOUPLED_REPORTS and holds a PostgreSQL advisory
 // lock while running, so only one Central schedules reports in HA deployments.
 //
-// Waiting for scan completion is replaced by settling currently-running scans at report time
-// and auditing schedule expectations against the datastore; those steps land in later
-// iterations of the rollout, so for now the fired job is a no-op.
+// Report jobs generate and deliver reports from the current datastore state through the same
+// shared building blocks as the report manager (helpers.* and the report generator), so the
+// UI renders their snapshots like any other report. Settling scans that are still running at
+// report time and auditing schedule expectations land in later iterations of the rollout.
 package scheduler
 
 import (
@@ -24,7 +25,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
+	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
+	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dblock"
@@ -72,7 +78,12 @@ type Manager interface {
 }
 
 type managerImpl struct {
-	scanConfigDS scanConfigDS.DataStore
+	scanConfigDataStore scanConfigDS.DataStore
+	scanDataStore       scanDS.DataStore
+	snapshotDataStore   snapshotDS.DataStore
+	suiteDataStore      suiteDS.DataStore
+	bindingsDataStore   bindingsDS.DataStore
+	reportGenerator     reportGen.ComplianceReportGenerator
 
 	stopper   concurrency.Stopper
 	isStarted atomic.Bool
@@ -105,19 +116,27 @@ type managerImpl struct {
 
 	// advisoryLockRelease releases the report scheduler advisory lock, if held.
 	advisoryLockRelease func()
-
-	// runJob is the report job executed for submitted jobs; injectable for tests.
-	runJob func(ctx context.Context, job *reportJob)
 }
 
-// New returns a report scheduler backed by the given scan configuration datastore.
-func New(scanConfigDS scanConfigDS.DataStore) Manager {
+// New returns a report scheduler backed by the given scan configuration datastore and report
+// generation dependencies.
+func New(scanConfigDataStore scanConfigDS.DataStore,
+	scanDataStore scanDS.DataStore,
+	snapshotDataStore snapshotDS.DataStore,
+	suiteDataStore suiteDS.DataStore,
+	bindingsDataStore bindingsDS.DataStore,
+	reportGenerator reportGen.ComplianceReportGenerator) Manager {
 	stopper := concurrency.NewStopper()
 	stopCtx := concurrency.AsContext(stopper.LowLevel().GetStopRequestSignal())
-	return &managerImpl{
-		scanConfigDS: scanConfigDS,
-		stopper:      stopper,
-		stopCtx:      stopCtx,
+	m := &managerImpl{
+		scanConfigDataStore: scanConfigDataStore,
+		scanDataStore:       scanDataStore,
+		snapshotDataStore:   snapshotDataStore,
+		suiteDataStore:      suiteDataStore,
+		bindingsDataStore:   bindingsDataStore,
+		reportGenerator:     reportGenerator,
+		stopper:             stopper,
+		stopCtx:             stopCtx,
 		schedulerCtx: sac.WithGlobalAccessScopeChecker(
 			stopCtx,
 			sac.AllowFixedScopes(
@@ -131,8 +150,8 @@ func New(scanConfigDS scanConfigDS.DataStore) Manager {
 		jobQueue:        newJobQueue(),
 		readyForReports: concurrency.NewSignal(),
 		concurrencySem:  semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
-		runJob:          runReportJob,
 	}
+	return m
 }
 
 // enabled reports whether the decoupled report scheduler is active: the rollout flag requires
@@ -252,7 +271,7 @@ func (m *managerImpl) runSingleJob(job *reportJob) {
 	// running waits in the queue rather than colliding with it.
 	defer m.jobQueue.markDone(job.scanConfigID)
 
-	m.runJob(m.schedulerCtx, job)
+	m.runReportJob(m.schedulerCtx, job)
 }
 
 // submitJob enqueues a report job for the scan configuration and wakes the execution loop.
@@ -268,7 +287,7 @@ func (m *managerImpl) submitJob(scanConfigID, scanConfigName string) {
 // reconcile rebuilds the entry set from the stored scan configurations so that exactly the
 // configurations with an evaluable schedule have a cron entry.
 func (m *managerImpl) reconcile(ctx context.Context) {
-	configs, err := m.scanConfigDS.GetScanConfigurations(ctx, search.EmptyQuery())
+	configs, err := m.scanConfigDataStore.GetScanConfigurations(ctx, search.EmptyQuery())
 	if err != nil {
 		log.Errorf("Compliance report scheduler: unable to list scan configurations: %v", err)
 		return
@@ -314,7 +333,7 @@ func (m *managerImpl) ScheduleRescanReport(scanConfigID string) {
 	if !m.enabled() {
 		return
 	}
-	scanConfig, found, err := m.scanConfigDS.GetScanConfiguration(m.schedulerCtx, scanConfigID)
+	scanConfig, found, err := m.scanConfigDataStore.GetScanConfiguration(m.schedulerCtx, scanConfigID)
 	if err != nil {
 		log.Errorf("Compliance report scheduler: unable to retrieve scan configuration %q for the re-run report: %v", scanConfigID, err)
 		return

@@ -1,7 +1,12 @@
 package scheduler
 
 import (
+	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
+	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/generator"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
+	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -17,5 +22,10 @@ func Singleton() Manager {
 }
 
 func initialize() {
-	instance = New(scanConfigDS.Singleton())
+	instance = New(scanConfigDS.Singleton(),
+		scanDS.Singleton(),
+		snapshotDS.Singleton(),
+		suiteDS.Singleton(),
+		bindingsDS.Singleton(),
+		reportGen.Singleton())
 }
