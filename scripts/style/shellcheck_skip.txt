@@ -85,17 +85,12 @@ tests/roxctl/bats-tests/cluster/sensor-generate-image-overrides.bats
 tests/roxctl/bats-tests/local/central-generate-development.bats
 tests/roxctl/bats-tests/local/central-generate-interactive-flavors.bats
 tests/roxctl/bats-tests/local/central-generate-release.bats
-tests/roxctl/bats-tests/local/roxctl-helm-output-central-development.bats
-tests/roxctl/bats-tests/local/roxctl-helm-output-central-release.bats
-tests/roxctl/bats-tests/local/roxctl-helm-output-secured-cluster-services-development.bats
-tests/roxctl/bats-tests/local/roxctl-helm-output-secured-cluster-services-release.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-connectivity-diff-development.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-connectivity-diff-release.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-connectivity-map-development.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-connectivity-map-release.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-generate-development.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-generate-release.bats
-tests/roxctl/helm-chart-generation.sh
 tests/upgrade/downgrade.bats
 tests/upgrade/downgrade_versions.sh
 tests/upgrade/postgres_run.sh
