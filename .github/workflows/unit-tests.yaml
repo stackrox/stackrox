@@ -484,7 +484,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python3 -m venv "$RUNNER_TEMP/openshift-ci-venv"
-          "$RUNNER_TEMP/openshift-ci-venv/bin/pip" install -r .openshift-ci/dev-requirements.txt
+          "$RUNNER_TEMP/openshift-ci-venv/bin/pip" install --retries 5 -r .openshift-ci/dev-requirements.txt
           echo "$RUNNER_TEMP/openshift-ci-venv/bin" >> "$GITHUB_PATH"
 
       - name: OpenShift CI Wrapper Unit Tests
