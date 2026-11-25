@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 )
@@ -36,18 +38,22 @@ type sbomGenHttpHandler struct {
 	enricherV2       enricher.ImageEnricherV2
 	clusterSACHelper sachelper.ClusterSacHelper
 	riskManager      manager.Manager
+	// images is the image datastore mapper, which dispatches to the V1 or V2
+	// datastore depending on the FlattenImageData feature and the key format.
+	images imageDatastore.DataStore
 }
 
 var _ http.Handler = (*sbomGenHttpHandler)(nil)
 
 // SBOMHandler returns a handler for get sbom http request.
-func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager) http.Handler {
+func SBOMGenHandler(integration integration.Set, enricher enricher.ImageEnricher, enricherV2 enricher.ImageEnricherV2, clusterSACHelper sachelper.ClusterSacHelper, riskManager manager.Manager, images imageDatastore.DataStore) http.Handler {
 	return sbomGenHttpHandler{
 		integration:      integration,
 		enricher:         enricher,
 		enricherV2:       enricherV2,
 		clusterSACHelper: clusterSACHelper,
 		riskManager:      riskManager,
+		images:           images,
 	}
 }
 
@@ -121,36 +127,25 @@ func (h sbomGenHttpHandler) enrichWithModelSwitch(
 	return img, nil, nil
 }
 
-// enrichImage enriches the image with the given name and based on the given enrichment context.
-func (h sbomGenHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher.EnrichmentContext, ci *storage.ContainerImage) (*storage.Image, bool, error) {
-	// forcedEnrichment is set to true when enrichImage forces an enrichment.
-	forcedEnrichment := false
-
-	img, imgV2, err := h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
-	if err != nil {
-		return nil, forcedEnrichment, err
-	}
-
-	// SBOM generation requires an image to have been scanned by Scanner V4, if the existing image
-	// was scanned by a different scanner we force enrichment using Scanner V4.
-	scannedByV4 := h.scannedByScannerV4(img.GetScan())
-	if enrichmentCtx.FetchOpt != enricher.UseImageNamesRefetchCachedValues && !scannedByV4 {
-		// Force scan by Scanner V4.
-		addForceToEnrichmentContext(&enrichmentCtx)
-		forcedEnrichment = true
-
-		img, imgV2, err = h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
+func (h sbomGenHttpHandler) cachedImage(ctx context.Context, ci *storage.ContainerImage) (*storage.Image, bool, error) {
+	if features.FlattenImageData.Enabled() {
+		// Digest-based scoped search: finds rows for the digest regardless of the request's
+		// name form (tag, inline digest, or tagless repo@digest) and never interprets the
+		// value as a row ID, so a non-digest string in the request cannot fetch an
+		// unrelated image.
+		images, err := h.images.SearchRawImages(ctx, searchPkg.NewQueryBuilder().
+			AddExactMatches(searchPkg.ImageSHA, ci.GetId()).ProtoQuery())
 		if err != nil {
-			return nil, forcedEnrichment, err
+			return nil, false, err
 		}
+		for _, img := range images {
+			if h.scannedByScannerV4(img.GetScan()) {
+				return img, true, nil
+			}
+		}
+		return nil, false, nil
 	}
-
-	err = h.saveImage(img, imgV2)
-	if err != nil {
-		return nil, forcedEnrichment, err
-	}
-
-	return img, forcedEnrichment, nil
+	return h.images.GetImage(ctx, ci.GetId())
 }
 
 // errorOrNotScanned will return an error if err is populated or the enrichmentResult indicates a scan
@@ -160,7 +155,7 @@ func errorOrNotScanned(enrichmentResult enricher.EnrichmentResult, err error) er
 		return err
 	}
 
-	if !enrichmentResult.ScanResult.HasScanData() {
+	if enrichmentResult.ScanResult != enricher.ScanSucceeded {
 		return errors.New("scan could not be completed, please check that an applicable registry is integrated")
 	}
 
@@ -169,14 +164,11 @@ func errorOrNotScanned(enrichmentResult enricher.EnrichmentResult, err error) er
 
 // getSBOM generates an SBOM for the specified parameters.
 func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
+	// A scoped miss can mean access was denied. Do not retry via the enricher's privileged scan cache.
 	enrichmentCtx := enricher.EnrichmentContext{
 		Delegable:       true,
-		FetchOpt:        enricher.UseCachesIfPossible,
+		FetchOpt:        enricher.UseImageNamesRefetchCachedValues,
 		ScannerTypeHint: scannerTypes.ScannerV4,
-	}
-
-	if params.Force {
-		addForceToEnrichmentContext(&enrichmentCtx)
 	}
 
 	if params.Cluster != "" {
@@ -195,39 +187,47 @@ func (h sbomGenHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRe
 		return nil, err
 	}
 
-	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, ci)
-	if err != nil {
-		sendAdminEvent(err, params.ImageName)
-		return nil, err
-	}
-
-	// Verify the Index Report exists. If it doesn't, force image enrichment using Scanner V4.
 	scannerV4, err := h.getScannerV4SBOMIntegration()
 	if err != nil {
 		return nil, err
 	}
 
-	sbom, found, err := scannerV4.GetSBOM(img)
+	if !params.Force && ci.GetId() != "" {
+		img, found, err := h.cachedImage(ctx, ci)
+		if err != nil {
+			// A failed cache read must not block SBOM generation when fresh enrichment
+			// could still succeed. Fall through without using any data from the failed read.
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			log.Errorw("Reading cached image for SBOM generation", logging.ImageName(params.ImageName), logging.Err(err))
+		} else if found && h.scannedByScannerV4(img.GetScan()) {
+			// The SBOM is generated from the stored scan's index report, so stale pull
+			// metadata does not disqualify the cached image.
+			sbom, found, err := scannerV4.GetSBOM(ctx, img)
+			if err != nil || found {
+				return sbom, err
+			}
+		}
+	}
+	// Do not start expensive enrichment work for a request that is already gone.
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	img, imgV2, err := h.enrichWithModelSwitch(ctx, enrichmentCtx, ci)
 	if err != nil {
+		sendAdminEvent(err, params.ImageName)
 		return nil, err
 	}
-
-	if !found && !params.Force && !alreadyForcedEnrichment {
-		// Since the Index Report for image does not exist, force scan by Scanner V4.
-		addForceToEnrichmentContext(&enrichmentCtx)
-		img, _, err := h.enrichImage(ctx, enrichmentCtx, ci)
-		if err != nil {
-			sendAdminEvent(err, params.ImageName)
-			return nil, err
-		}
-
-		sbom, _, err = scannerV4.GetSBOM(img)
-		if err != nil {
-			return nil, err
-		}
+	// shortcut: enrichment resolves the image name at scan time, so a moved tag can return
+	// an image with a different digest than requested; a digest guard cannot distinguish
+	// this from legitimate multi-arch resolution (metadata carries the platform manifest
+	// digest, not the requested index digest), so the digest is not checked here.
+	if err := h.saveImage(img, imgV2); err != nil {
+		return nil, err
 	}
-
-	return sbom, nil
+	sbom, _, err := scannerV4.GetSBOM(ctx, img)
+	return sbom, err
 }
 
 // containerImage will return a populated container image with fields derived from params.
@@ -262,10 +262,6 @@ func sendAdminEvent(err error, imageName string) {
 			logging.Bool("ad_hoc", true),
 		)
 	}
-}
-
-func addForceToEnrichmentContext(enrichmentCtx *enricher.EnrichmentContext) {
-	enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 }
 
 // getScannerV4SBOMIntegration returns the SBOM interface of Scanner V4.

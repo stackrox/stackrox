@@ -30,7 +30,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "sbom",
 		Short: "Generate an SPDX 2.3 SBOM from an image scan",
-		Long:  "Generate an SPDX 2.3 SBOM from an image scan. You must have write permissions for the `Image` resource.",
+		Long:  "Generate an SPDX 2.3 SBOM from an image scan. You must have write permissions for the `Image` resource. Use a digest-pinned image reference (e.g. nginx@sha256:...) to reuse a stored scan when the registry is not reachable from Central; tag-only references always trigger a fresh scan.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageSBOMCmd.construct(c); err != nil {
 				return err

@@ -37,8 +37,9 @@ type Scanner interface {
 
 // SBOM is the interface that contains the StackRox SBOM methods
 type SBOMer interface {
-	// GetSBOM to get SBOM for an image.
-	GetSBOM(image *storage.Image) ([]byte, bool, error)
+	// GetSBOM to get SBOM for an image. The ctx bounds the lookup and should
+	// be the request context when serving a client request.
+	GetSBOM(ctx context.Context, image *storage.Image) ([]byte, bool, error)
 
 	// ScanSBOM to match vulnerabilities to components found in an SBOM.
 	ScanSBOM(ctx context.Context, reader io.Reader, mediatype string) (*v1.SBOMScanResponse, error)
