@@ -25,8 +25,9 @@ ACS_NS="stackrox"
 OPERATOR_NS="rhacs-operator-system"
 FAILED=0
 
-# TODO(ROX-34978): Temporary ML-KEM exceptions. Remove once PG supports ssl_ecdh_curve groups.
-MLKEM_EXCEPTIONS="central-db:5432|scanner-v4-db:5432"
+# TODO(ROX-34978): Temporary exceptions from the TLS key exchange groups check.
+# Remove once PostgreSQL honors the TLS profile's group list.
+TLS_GROUPS_EXCEPTIONS="central-db:5432|scanner-v4-db:5432"
 
 fail() {
     echo "FAIL: $*" >&2
@@ -234,7 +235,7 @@ check_pod_logs_for_tls_errors_in_ns() {
 }
 
 validate_scan_results() {
-    local central_db_status operator_metrics_status tls_version_failures mlkem_failures
+    local db_status operator_metrics_status tls_version_failures tls_groups_failures mlkem_supported_failures
 
     if [[ ! -f "$SCAN_RESULTS" ]]; then
         fail "Scan results not found at $SCAN_RESULTS"
@@ -252,21 +253,24 @@ validate_scan_results() {
         "\($name):\(.port) tls_versions=\(.tls_versions // [] | join(",")) ciphers=\(.tls_ciphers // [] | join(",")) groups=\(.tls_key_exchange.groups // [] | join(",")) mlkem=\(.mlkem_supported)"
     ' "$SCAN_RESULTS" | sort -u
 
-    # tls-scanner sanity check: central-db:5432 must be OK (STARTTLS probe worked).
+    # tls-scanner sanity check: the DBs' port 5432 must be OK, not NO_TLS.
     # (tls-scanner may report TLS disabled due to the STARTTLS protocol used by Postgres)
-    central_db_status=$(jq -r '
-        [.ip_results[]? |
-         select(.pod.Name | startswith("central-db-")) |
-         .port_results[]? |
-         select(.port == 5432) |
-         .status] | first // "MISSING"
-    ' "$SCAN_RESULTS")
+    local db
+    for db in central-db scanner-v4-db; do
+        db_status=$(jq -r --arg prefix "${db}-" '
+            [.ip_results[]? |
+             select(.pod.Name | startswith($prefix)) |
+             .port_results[]? |
+             select(.port == 5432) |
+             .status] | first // "MISSING"
+        ' "$SCAN_RESULTS")
 
-    if [[ "$central_db_status" != "OK" ]]; then
-        fail "central-db:5432 status is '${central_db_status}', expected 'OK'"
-    else
-        info "central-db:5432 TLS OK."
-    fi
+        if [[ "$db_status" != "OK" ]]; then
+            fail "${db}:5432 status is '${db_status}', expected 'OK'"
+        else
+            info "${db}:5432 TLS OK."
+        fi
+    done
 
     # The operator's only TLS endpoint is the metrics server; ensure it was actually scanned.
     operator_metrics_status=$(jq -r --arg ns "$OPERATOR_NS" '
@@ -295,7 +299,7 @@ validate_scan_results() {
             any(.tls_versions[]; . != "TLSv1.3")
         ) |
         "\($name):\(.port) versions=\(.tls_versions // [] | join(","))"
-    ' "$SCAN_RESULTS" | sort -u || true)
+    ' "$SCAN_RESULTS" | sort -u)
 
     if [[ -n "$tls_version_failures" ]]; then
         fail "Endpoints not offering only TLS 1.3: ${tls_version_failures}"
@@ -304,7 +308,8 @@ validate_scan_results() {
     fi
 
     # OK endpoints must offer only X25519MLKEM768 (profile groups list).
-    mlkem_failures=$(jq -r '
+    # The DBs currently offer X25519MLKEM768:prime256v1 until they honor the TLS profile.
+    tls_groups_failures=$(jq -r '
         .ip_results[]? |
         (.openshift_component.component // .pod.Name) as $name |
         .port_results[]? |
@@ -314,12 +319,28 @@ validate_scan_results() {
             .tls_key_exchange.groups != ["X25519MLKEM768"]
         ) |
         "\($name):\(.port) groups=\(.tls_key_exchange.groups // [] | join(","))"
-    ' "$SCAN_RESULTS" | grep -vE "^(${MLKEM_EXCEPTIONS}) " | sort -u || true)
+    ' "$SCAN_RESULTS" | grep -vE "^(${TLS_GROUPS_EXCEPTIONS}) " | sort -u || true)
 
-    if [[ -n "$mlkem_failures" ]]; then
-        fail "Endpoints not offering only X25519MLKEM768: ${mlkem_failures}"
+    if [[ -n "$tls_groups_failures" ]]; then
+        fail "Endpoints not offering only X25519MLKEM768: ${tls_groups_failures}"
     else
-        info "All endpoints offer only X25519MLKEM768 (exceptions: ${MLKEM_EXCEPTIONS})."
+        info "All endpoints offer only X25519MLKEM768 (exceptions: ${TLS_GROUPS_EXCEPTIONS})."
+    fi
+
+    # All OK endpoints must support ML-KEM, including the excepted ones.
+    mlkem_supported_failures=$(jq -r '
+        .ip_results[]? |
+        (.openshift_component.component // .pod.Name) as $name |
+        .port_results[]? |
+        select(.status == "OK") |
+        select(.mlkem_supported != true) |
+        "\($name):\(.port)"
+    ' "$SCAN_RESULTS" | sort -u)
+
+    if [[ -n "$mlkem_supported_failures" ]]; then
+        fail "Endpoints without ML-KEM: ${mlkem_supported_failures}"
+    else
+        info "All endpoints support ML-KEM."
     fi
 }
 
