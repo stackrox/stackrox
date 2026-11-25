@@ -17,14 +17,22 @@ given_binary_version() {
 }
 
 # given_initdb mocks initdb: it creates the --pgdata directory and stamps it
-# with the given major version, the way a real initialization would.
+# with the given major version, the way a real initialization would. It also
+# fails when --pwfile does not resolve to a readable, non-empty file, so that
+# tests catch a lost or mistyped password-file variable (ROX-39749).
 given_initdb() {
     local dir="$1" major="$2"
     mock_executable "${dir}/initdb" "datadir=
+pwfile=
 while [ \$# -gt 0 ]; do
     [ \"\$1\" = --pgdata ] && datadir=\"\$2\"
+    [ \"\$1\" = --pwfile ] && pwfile=\"\$2\"
     shift
 done
+if [ -z \"\$pwfile\" ] || [ ! -s \"\$pwfile\" ]; then
+    echo \"initdb: --pwfile '\$pwfile' is missing or empty\" >&2
+    exit 1
+fi
 mkdir -p \"\$datadir\"
 echo '${major}' > \"\$datadir/PG_VERSION\""
 }

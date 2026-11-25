@@ -14,8 +14,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-39409: Permission sets can now be constrained to read access and/or cluster- and namespace-scoped resources. New UI toggles remove incompatible grants; the API rejects conflicting grants.
 - ROX-30427: Added an EPSS policy criterion for image vulnerabilities. The Splunk TA vulnerability feed now includes `epssProbability` and `epssPercentile` on each CVE event, when available.
 - ROX-33524: New predefined User PKI auth provider, role, empty permission set and a Central cluster access scope for OpenShift Prometheus server access to custom metrics. Administrator action required: grant the permission set read access to the resources user by custom metrics you want to collect.
+- ROX-37580: Authenticated Prometheus clients can scrape Central custom metrics without View(Administration). Users must grant the OpenShift Prometheus permission set read access, which should be limited to the resources needed for the desired metrics. Metrics for global resources still require corresponding global read permissions.
 - ROX-37597: The compliance CSV report now includes a "Node Role" column showing which node role (for example `master`, `worker`, or a custom MachineConfigPool-derived role) a check result applies to. The column reads "N/A" for results that don't target a specific node role (platform scans, or node scans using the Compliance Operator's `@all` role selector).
 - ROX-34293: Policies can exclude all workloads of kind CronJob and Job.
 
@@ -23,6 +25,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-39954: The deprecated `roxctl sensor generate-certs` command has been removed. Use operator-based installation, which handles certificate lifecycle (including rotation) for secured clusters.
 - The Sensor auto-upgrader has been removed. Central no longer automatically upgrades secured-cluster components, and the in-cluster `sensor-upgrader` binary and privileged `sensor-upgrader` service account are no longer built or deployed. The deprecated `SensorUpgradeService` (`/v1/sensorupgrades/*`) and its config/trigger/cert-rotation endpoints have been removed; use operator-based installation, which handles sensor upgrades and certificate rotation. Manual sensor certificate rotation via the upgrader is no longer available. The `Upgradability` label on the cluster custom Prometheus metric has been removed. The `roxctl sensor generate|get-bundle --create-upgrader-sa` flag is now a hidden, deprecated no-op kept for backward compatibility.
+- ROX-39907: The deprecated `roxctl helm` command tree (`roxctl helm output`, `roxctl helm derive-local-values`) has been removed. Use the operator, which renders the Helm charts embedded in the operator image, for deployment management.
 - ROX-35079: The `app.k8s.io/v1beta1/Application` CR is no longer shipped.
 - ROX-36856: The Compliance 1.0 API has been removed. The `ComplianceService` and `ComplianceManagementService` gRPC services, their `/v1/compliance/*` REST equivalents, and the `/api/compliance/export/csv` export endpoint are no longer served. Use Compliance (v2), backed by the Compliance Operator, instead.
 - ROX-36856: The Splunk TA Compliance feed at `/api/splunk/ta/compliance` has been retired and now responds with HTTP 410 Gone rather than returning data, so that stale feed configurations fail loudly instead of silently reporting zero compliance findings. Remove the Compliance modular input from your Splunk TA configuration. **There is no Splunk replacement for this feed.** Note that this also affects Compliance Operator results: those were previously routed into Compliance 1.0 storage and surfaced through this feed, and they are no longer delivered to Splunk. Compliance Operator results remain available in the product through Compliance (v2).
@@ -47,6 +50,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-37861: Omitted `RELATED_IMAGE` entries in operator helm chart. Note that two consecutive upgrade runs are necessary to fix `manager.envOverrides` unless using server-side apply.
 - ROX-39442: Declarative configuration no longer rejects auth providers without a `uiEndpoint`. In 5.0.0, config validation required `uiEndpoint` for every auth provider type, breaking OpenShift, user PKI, and IAP providers that do not use a UI endpoint (these worked without one before 5.0). OIDC and SAML auth providers still require a UI endpoint.
 - ROX-37916: Auth provider UI endpoints given without a port are stored without one again, as before 5.0.0. In 5.0.0 they were stored with `:443`, so OIDC and SAML logins sent redirect and ACS URLs with `:443`, which identity providers that match redirect URIs exactly rejected. Auth providers saved with 5.0.0 keep the stored `:443`, and saving one unchanged keeps it: remove `:443` from each affected UI endpoint, then save. Declarative configuration that gives the endpoint without a port is updated on its next reconciliation.
+- ROX-37719: Increase Node.js requirement in ui folder from 22.13.0 EOL to 24 LTS
 
 ## [5.0.0]
 

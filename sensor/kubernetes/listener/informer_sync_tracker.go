@@ -32,6 +32,7 @@ const (
 	informerImageDigestMirrorSets         = "ImageDigestMirrorSets"
 	informerImageTagMirrorSets            = "ImageTagMirrorSets"
 	informerJobs                          = "Jobs"
+	informerMachineConfigPools            = "MachineConfigPools"
 	informerNamespaces                    = "Namespaces"
 	informerNetworkPolicies               = "NetworkPolicies"
 	informerNodes                         = "Nodes"

@@ -21,12 +21,18 @@ export type PermissionsTableProps = {
     resourceToAccess: PermissionsMap;
     setResourceValue: (resource: string, value: string) => void;
     isDisabled: boolean;
+    isReadAccessOnly: boolean;
+    isScopedOnly: boolean;
+    globalResources: readonly string[];
 };
 
 function PermissionsTable({
     resourceToAccess,
     setResourceValue,
     isDisabled,
+    isReadAccessOnly,
+    isScopedOnly,
+    globalResources,
 }: PermissionsTableProps): ReactElement {
     const resourceToAccessEntries = Object.entries(resourceToAccess);
 
@@ -107,10 +113,17 @@ function PermissionsTable({
                                 id={resource}
                                 value={accessLevel}
                                 handleSelect={setResourceValue}
-                                isDisabled={isDisabled}
+                                isDisabled={
+                                    isDisabled ||
+                                    (isScopedOnly && globalResources.includes(resource))
+                                }
                             >
                                 {Object.entries(accessTypeLabels).map(([id, name]) => (
-                                    <SelectOption key={id} value={id}>
+                                    <SelectOption
+                                        key={id}
+                                        value={id}
+                                        isDisabled={isReadAccessOnly && id === 'READ_WRITE_ACCESS'}
+                                    >
                                         {name}
                                     </SelectOption>
                                 ))}

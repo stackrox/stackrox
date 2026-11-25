@@ -107,6 +107,77 @@ func TestValidatePermissionSet(t *testing.T) {
 	}
 }
 
+func TestValidatePermissionSetConstraints(t *testing.T) {
+	for name, tc := range map[string]struct {
+		accessConstraint storage.AccessConstraint
+		scopeConstraint  storage.ScopeConstraint
+		access           map[string]storage.Access
+		wantError        string
+	}{
+		"read-access-only scoped grant": {
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:           map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
+		},
+		"read-access-only with global read": {
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			access:           map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+		},
+		"scoped-only with scoped write": {
+			scopeConstraint: storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:          map[string]storage.Access{"Deployment": storage.Access_READ_WRITE_ACCESS},
+		},
+		"scoped-only with denied global resource": {
+			scopeConstraint: storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:          map[string]storage.Access{"Administration": storage.Access_NO_ACCESS},
+		},
+		"read-access-only rejects write": {
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			access: map[string]storage.Access{
+				"Deployment": storage.Access_READ_WRITE_ACCESS,
+			},
+			wantError: "read-constrained permission set",
+		},
+		"read-access-only rejects unknown access": {
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			access:           map[string]storage.Access{"Deployment": storage.Access(99)},
+			wantError:        "read-constrained permission set",
+		},
+		"scoped-only rejects global read": {
+			scopeConstraint: storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:          map[string]storage.Access{"Administration": storage.Access_READ_ACCESS},
+			wantError:       "cluster-namespace-constrained permission set",
+		},
+		"both reject global write": {
+			accessConstraint: storage.AccessConstraint_ACCESS_CONSTRAINT_READ,
+			scopeConstraint:  storage.ScopeConstraint_SCOPE_CONSTRAINT_CLUSTER_NAMESPACE,
+			access:           map[string]storage.Access{"Administration": storage.Access_READ_WRITE_ACCESS},
+			wantError:        "read-constrained permission set",
+		},
+		"unknown access constraint rejects empty grants": {
+			accessConstraint: storage.AccessConstraint(99),
+			wantError:        "unknown access constraint",
+		},
+		"unknown scope constraint rejects empty grants": {
+			scopeConstraint: storage.ScopeConstraint(99),
+			wantError:       "unknown scope constraint",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ps := &storage.PermissionSet{
+				Id: uuid.NewDummy().String(), Name: "test", ResourceToAccess: tc.access,
+				AccessConstraint: tc.accessConstraint, ScopeConstraint: tc.scopeConstraint,
+			}
+			err := ValidatePermissionSet(ps)
+			if tc.wantError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tc.wantError)
+			}
+		})
+	}
+}
+
 func TestGeneratePermissionSetID(t *testing.T) {
 	generatedID := GeneratePermissionSetID()
 	_, err := uuid.FromString(generatedID)

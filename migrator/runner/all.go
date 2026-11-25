@@ -2,17 +2,6 @@
 package runner
 
 import (
-	_ "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2"
-	_ "github.com/stackrox/rox/migrator/migrations/m_210_to_m_211_post_upgrade"
-	_ "github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config"
-	_ "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators"
-	_ "github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_populate_deployment_containers_imageidv2"
-	_ "github.com/stackrox/rox/migrator/migrations/m_214_to_m_215_process_indicator_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_215_to_m_216_process_baseline_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_216_to_m_217_remove_compliance_benchmark_table"
-	_ "github.com/stackrox/rox/migrator/migrations/m_217_to_m_218_alert_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_218_to_m_219_plop_index_to_btree"
-	_ "github.com/stackrox/rox/migrator/migrations/m_219_to_m_220_network_flow_index_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_add_deployment_hash_column"
 	_ "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs"
 	_ "github.com/stackrox/rox/migrator/migrations/m_222_to_m_223_remove_component_risk_records"
@@ -21,4 +10,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_225_to_m_226_drop_unused_child_idx_indexes"
 	_ "github.com/stackrox/rox/migrator/migrations/m_226_to_m_227_backfill_report_type"
 	_ "github.com/stackrox/rox/migrator/migrations/m_227_to_m_228_remove_sensor_upgrade_configs_table"
+	_ "github.com/stackrox/rox/migrator/migrations/m_228_to_m_229_drop_compliance_v1_tables"
 )
