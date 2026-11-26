@@ -24,7 +24,8 @@ import (
 //
 // A second request for a configuration with a pending on-demand report is rejected, mirroring
 // the report manager. A request whose job never runs (the scheduler could not start on this
-// instance) leaves a pending snapshot that the snapshot store's startup purge removes, like
+// instance) leaves a pending snapshot that DeleteOrphanedReportSnapshots -- the snapshot
+// store's startup purge, which owns the lifecycle of interrupted reports -- removes, like
 // every other interrupted report.
 func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, method storage.ComplianceOperatorReportStatus_NotificationMethod) error {
 	if !m.enabled() {

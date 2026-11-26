@@ -34,8 +34,15 @@ func (d *datastoreImpl) DeleteSnapshot(ctx context.Context, id string) error {
 	return d.store.Delete(ctx, id)
 }
 
-// DeleteOrphanedReportSnapshots deletes all the snapshots that are not in a final state
-// This is only called on startup to make sure we do not have orphaned reports
+// DeleteOrphanedReportSnapshots deletes all the snapshots that are not in a final state.
+// This is only called on startup to make sure we do not have orphaned reports: reports
+// interrupted by a restart must not survive it, because nothing resumes them. Scheduled
+// reports are re-created by the next scheduled cycle and on-demand reports are
+// re-requestable, so nothing durable is lost.
+//
+// The decoupled report scheduler (central/complianceoperator/v2/report/scheduler) relies on
+// this purge as the lifecycle of its interrupted reports: do not remove it when the report
+// manager is retired.
 func DeleteOrphanedReportSnapshots(ctx context.Context, ds DataStore) error {
 	errList := errorhelpers.NewErrorList("delete orphaned reports")
 	searchQueryForEmails := search.NewQueryBuilder().

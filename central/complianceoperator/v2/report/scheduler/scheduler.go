@@ -16,8 +16,11 @@
 //
 // Report jobs generate and deliver reports from the current datastore state through the same
 // shared building blocks as the report manager (helpers.* and the report generator), so the
-// UI renders their snapshots like any other report. Settling scans that are still running at
-// report time and auditing schedule expectations land in later iterations of the rollout.
+// UI renders their snapshots like any other report. The expectation audit classifies every
+// scan of a configuration against its cycle and drives the PARTIAL/FAILURE labeling;
+// settling scans that are still running at report time lands in a later iteration of the
+// rollout. Interrupted reports never survive a restart: DeleteOrphanedReportSnapshots, the
+// snapshot store's startup purge, owns that lifecycle.
 package scheduler
 
 import (
