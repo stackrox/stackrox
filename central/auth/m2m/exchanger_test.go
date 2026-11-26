@@ -485,12 +485,13 @@ func TestExchangeToken(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		prepareVerifier   func(t *testing.T, verifier *MocktokenVerifier)
-		prepareRoleDS     func(t *testing.T, roleDS *roleMocks.MockDataStore)
-		prepareIssuer     func(t *testing.T, issuer *tokensMocks.MockIssuer)
-		expectedToken     string
-		expectedError     error
-		expectedErrorText string
+		prepareVerifier       func(t *testing.T, verifier *MocktokenVerifier)
+		prepareRoleDS         func(t *testing.T, roleDS *roleMocks.MockDataStore)
+		prepareIssuer         func(t *testing.T, issuer *tokensMocks.MockIssuer)
+		prepareClaimExtractor func(t *testing.T, ctrl *gomock.Controller) claimExtractor
+		expectedToken         string
+		expectedError         error
+		expectedErrorText     string
 	}{
 		"Valid ID token is exchanged for a Central token": {
 			prepareVerifier: func(t *testing.T, verifier *MocktokenVerifier) {
@@ -555,6 +556,41 @@ func TestExchangeToken(t *testing.T) {
 			expectedError:     errox.NoCredentials,
 			expectedErrorText: "issuing Central token",
 		},
+		"Claim extractor failure when extracting ID token claims is propagated": {
+			prepareVerifier: func(t *testing.T, verifier *MocktokenVerifier) {
+				verifier.EXPECT().VerifyIDToken(gomock.Any(), gomock.Any()).
+					Return(newIDToken("test-subject"), nil)
+				verifier.EXPECT().Audience().Return("")
+			},
+			prepareClaimExtractor: func(_ *testing.T, ctrl *gomock.Controller) claimExtractor {
+				claimExtractor := NewMockclaimExtractor(ctrl)
+				claimExtractor.EXPECT().ExtractClaims(gomock.Any()).Return(nil, assert.AnError)
+				return claimExtractor
+			},
+			expectedError:     errox.NoCredentials,
+			expectedErrorText: "extracting claims from ID token",
+		},
+		"Claim extractor failure when extracting Rox claims is propagated": {
+			prepareVerifier: func(t *testing.T, verifier *MocktokenVerifier) {
+				verifier.EXPECT().VerifyIDToken(gomock.Any(), gomock.Any()).
+					Return(newIDToken("test-subject"), nil)
+				verifier.EXPECT().Audience().Return("")
+			},
+			prepareRoleDS: func(t *testing.T, roleDS *roleMocks.MockDataStore) {
+				roleDS.EXPECT().GetAndResolveRole(gomock.Any(), "Admin").
+					Return(&testResolvedRole{name: "Admin"}, nil)
+			},
+			prepareClaimExtractor: func(_ *testing.T, ctrl *gomock.Controller) claimExtractor {
+				claimExtractor := NewMockclaimExtractor(ctrl)
+				claimExtractor.EXPECT().ExtractClaims(gomock.Any()).
+					Return(map[string][]string{"sub": {"test-subject"}}, nil)
+				claimExtractor.EXPECT().ExtractRoxClaims(gomock.Any()).
+					Return(tokens.RoxClaims{}, assert.AnError)
+				return claimExtractor
+			},
+			expectedError:     errox.NoCredentials,
+			expectedErrorText: "creating claims for Central token",
+		},
 	}
 
 	for name, c := range cases {
@@ -576,13 +612,19 @@ func TestExchangeToken(t *testing.T) {
 			config := newExchangerConfig()
 			mappings := parseMappings(config.GetMappings(), "")
 			providerRoleMapper := newRoleMapperFromParsedMappings(mappings, roleDS)
+			// Unless a case provides its own claim extractor (e.g. to simulate failures),
+			// the one derived from the config type is used.
+			roxClaimExtractor := newClaimExtractorForConfigType(config.GetType())
+			if c.prepareClaimExtractor != nil {
+				roxClaimExtractor = c.prepareClaimExtractor(it, ctrl)
+			}
 			exchanger := &machineToMachineTokenExchanger{
 				configs:           []*storage.AuthMachineToMachineConfig{config},
 				verifiers:         []tokenVerifier{verifier},
 				provider:          newProvider(config.GetId(), config.GetType().String(), providerRoleMapper),
 				issuer:            issuer,
 				roleDS:            roleDS,
-				roxClaimExtractor: newClaimExtractorForConfigType(config.GetType()),
+				roxClaimExtractor: roxClaimExtractor,
 				mappings:          mappings,
 			}
 
