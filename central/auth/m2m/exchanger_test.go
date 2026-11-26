@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/protoassert"
 	"go.uber.org/mock/gomock"
 
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
@@ -180,7 +181,7 @@ func TestNewTokenExchanger(t *testing.T) {
 			if !expectError {
 				assert.NoError(t, err)
 				assert.NotNil(t, exchanger)
-				assert.Equal(t, c.config, exchanger.Config())
+				protoassert.Equal(t, c.config, exchanger.Config())
 				assert.NotNil(t, exchanger.Provider())
 			}
 		})
@@ -226,7 +227,7 @@ func TestExchangeToken(t *testing.T) {
 		"Valid ID token is exchanged for a Central token": {
 			prepareVerifier: func(t *testing.T, verifier *MocktokenVerifier) {
 				verifier.EXPECT().VerifyIDToken(gomock.Any(), "test-raw-id-token").
-					Return(newIDToken("test-subject"), nil)
+					Return(newIDToken("test-subject"), nil) // #nosec G101 -- test data
 			},
 			prepareRoleDS: func(t *testing.T, roleDS *roleMocks.MockDataStore) {
 				roleDS.EXPECT().GetAndResolveRole(gomock.Any(), "Admin").
@@ -236,7 +237,7 @@ func TestExchangeToken(t *testing.T) {
 				issuer.EXPECT().Issue(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, claims tokens.RoxClaims, _ ...tokens.Option) (*tokens.TokenInfo, error) {
 						assert.Equal(t, "test-subject|sample@stackrox.io", claims.ExternalUser.UserID)
-						return &tokens.TokenInfo{Token: "test-rox-token"}, nil
+						return &tokens.TokenInfo{Token: "test-rox-token"}, nil // #nosec G101 -- test data
 					})
 			},
 			expectedToken: "test-rox-token",
