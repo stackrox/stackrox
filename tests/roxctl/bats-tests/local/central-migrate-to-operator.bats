@@ -2,87 +2,86 @@
 
 load "../helpers.bash"
 
-out_dir=""
 cr_out=""
+fixtures_dir="${BATS_TEST_DIRNAME}/../testdata/central-migrate-to-operator"
 
 setup_file() {
-  delete-outdated-binaries "$(roxctl-development version)"
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
 }
 
 setup() {
-  out_dir="$(mktemp -d -u)"
   cr_out="$(mktemp -u).yaml"
-  test_certs_dir="$(mktemp -d)"
-  openssl ecparam -genkey -name prime256v1 -out "$test_certs_dir/tls-key.pem" 2>/dev/null
-  openssl req -new -x509 -key "$test_certs_dir/tls-key.pem" -out "$test_certs_dir/tls-cert.pem" -days 1 -subj "/CN=test" 2>/dev/null
 }
 
 teardown() {
-  rm -rf "$out_dir" "$cr_out" "$test_certs_dir"
+  rm -f "$cr_out"
 }
 
-generate_and_migrate() {
-  run roxctl-development central generate "$@" --output-dir "$out_dir"
-  assert_success
-  run roxctl-development central migrate-to-operator --from-dir "$out_dir" -o "$cr_out"
+# migrate_fixture runs migrate-to-operator against a static manifest fixture
+# checked into testdata/central-migrate-to-operator/. The fixtures were
+# captured once from `roxctl central generate` output before that command
+# was removed (ROX-37647); they are frozen so this test no longer depends
+# on it.
+migrate_fixture() {
+  local fixture="$1"
+  run roxctl-development central migrate-to-operator --from-dir "${fixtures_dir}/${fixture}" -o "$cr_out"
   assert_success
 }
 
 # PVC storage
 
 @test "migrate-to-operator: k8s pvc default produces claimName central-db" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.central.db.persistence.persistentVolumeClaim.claimName' "$cr_out"
   assert_success
   assert_output "central-db"
 }
 
 @test "migrate-to-operator: k8s pvc --db-name=foo produces claimName foo" {
-  generate_and_migrate k8s pvc --db-name=foo
+  migrate_fixture pvc-db-name
   run yq e '.spec.central.db.persistence.persistentVolumeClaim.claimName' "$cr_out"
   assert_success
   assert_output "foo"
 }
 
 @test "migrate-to-operator: openshift pvc default produces claimName central-db" {
-  generate_and_migrate openshift pvc
+  migrate_fixture openshift-pvc-default
   run yq e '.spec.central.db.persistence.persistentVolumeClaim.claimName' "$cr_out"
   assert_success
   assert_output "central-db"
 }
 
 @test "migrate-to-operator: openshift pvc --db-name=custom-pvc produces claimName custom-pvc" {
-  generate_and_migrate openshift pvc --db-name=custom-pvc
+  migrate_fixture openshift-pvc-db-name
   run yq e '.spec.central.db.persistence.persistentVolumeClaim.claimName' "$cr_out"
   assert_success
   assert_output "custom-pvc"
 }
 
 @test "migrate-to-operator: pvc with --db-storage-class does not include storageClassName in CR" {
-  generate_and_migrate k8s pvc --db-storage-class=fast-ssd
+  migrate_fixture pvc-storage-class
   run yq e '.spec.central.db.persistence.persistentVolumeClaim.storageClassName' "$cr_out"
   assert_success
   assert_output "null"
 }
 
 @test "migrate-to-operator: pvc with --db-size=200 does not include size in CR" {
-  generate_and_migrate k8s pvc --db-size=200
+  migrate_fixture pvc-db-size
   run yq e '.spec.central.db.persistence.persistentVolumeClaim.size' "$cr_out"
   assert_success
   assert_output "null"
 }
 
 @test "migrate-to-operator: pvc mode does not produce hostPath" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.central.db.persistence.hostPath' "$cr_out"
   assert_success
   assert_output "null"
 }
 
 @test "migrate-to-operator: pvc mode does not produce nodeSelector" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.central.db.nodeSelector' "$cr_out"
   assert_success
   assert_output "null"
@@ -91,28 +90,28 @@ generate_and_migrate() {
 # Hostpath storage
 
 @test "migrate-to-operator: k8s hostpath default produces path /var/lib/stackrox-central" {
-  generate_and_migrate k8s hostpath
+  migrate_fixture hostpath-default
   run yq e '.spec.central.db.persistence.hostPath.path' "$cr_out"
   assert_success
   assert_output "/var/lib/stackrox-central"
 }
 
 @test "migrate-to-operator: k8s hostpath --db-hostpath=/data/db produces path /data/db" {
-  generate_and_migrate k8s hostpath --db-hostpath=/data/db
+  migrate_fixture hostpath-custom-path
   run yq e '.spec.central.db.persistence.hostPath.path' "$cr_out"
   assert_success
   assert_output "/data/db"
 }
 
 @test "migrate-to-operator: openshift hostpath default produces path /var/lib/stackrox-central" {
-  generate_and_migrate openshift hostpath
+  migrate_fixture openshift-hostpath-default
   run yq e '.spec.central.db.persistence.hostPath.path' "$cr_out"
   assert_success
   assert_output "/var/lib/stackrox-central"
 }
 
 @test "migrate-to-operator: hostpath mode does not produce persistentVolumeClaim" {
-  generate_and_migrate k8s hostpath
+  migrate_fixture hostpath-default
   run yq e '.spec.central.db.persistence.persistentVolumeClaim' "$cr_out"
   assert_success
   assert_output "null"
@@ -121,16 +120,14 @@ generate_and_migrate() {
 # Hostpath with nodeSelector
 
 @test "migrate-to-operator: hostpath with nodeSelector" {
-  generate_and_migrate k8s hostpath \
-    --db-node-selector-key=kubernetes.io/hostname \
-    --db-node-selector-value=worker-1
+  migrate_fixture hostpath-node-selector
   run yq e '.spec.central.db.nodeSelector["kubernetes.io/hostname"]' "$cr_out"
   assert_success
   assert_output "worker-1"
 }
 
 @test "migrate-to-operator: hostpath without nodeSelector produces no nodeSelector" {
-  generate_and_migrate k8s hostpath
+  migrate_fixture hostpath-default
   run yq e '.spec.central.db.nodeSelector' "$cr_out"
   assert_success
   assert_output "null"
@@ -139,7 +136,7 @@ generate_and_migrate() {
 # CR metadata
 
 @test "migrate-to-operator: produces correct apiVersion and kind" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.apiVersion' "$cr_out"
   assert_success
   assert_output "platform.stackrox.io/v1alpha1"
@@ -149,7 +146,7 @@ generate_and_migrate() {
 }
 
 @test "migrate-to-operator: produces name stackrox-central-services" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.metadata.name' "$cr_out"
   assert_success
   assert_output "stackrox-central-services"
@@ -158,35 +155,35 @@ generate_and_migrate() {
 # OpenShift monitoring
 
 @test "migrate-to-operator: openshift pvc default has no monitoring section" {
-  generate_and_migrate openshift pvc
+  migrate_fixture openshift-pvc-default
   run yq e '.spec.monitoring' "$cr_out"
   assert_success
   assert_output "null"
 }
 
 @test "migrate-to-operator: openshift pvc --openshift-monitoring=true has no monitoring section" {
-  generate_and_migrate openshift pvc --openshift-monitoring=true
+  migrate_fixture openshift-pvc-monitoring-true
   run yq e '.spec.monitoring' "$cr_out"
   assert_success
   assert_output "null"
 }
 
 @test "migrate-to-operator: openshift pvc --openshift-monitoring=false sets monitoring.openshift.enabled=false" {
-  generate_and_migrate openshift pvc --openshift-monitoring=false
+  migrate_fixture openshift-pvc-monitoring-false
   run yq e '.spec.monitoring.openshift.enabled' "$cr_out"
   assert_success
   assert_output "false"
 }
 
 @test "migrate-to-operator: openshift hostpath --openshift-monitoring=false sets monitoring.openshift.enabled=false" {
-  generate_and_migrate openshift hostpath --openshift-monitoring=false
+  migrate_fixture openshift-hostpath-monitoring-false
   run yq e '.spec.monitoring.openshift.enabled' "$cr_out"
   assert_success
   assert_output "false"
 }
 
 @test "migrate-to-operator: k8s pvc omits monitoring section entirely" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.monitoring' "$cr_out"
   assert_success
   assert_output "null"
@@ -195,28 +192,28 @@ generate_and_migrate() {
 # Exposure / lb-type
 
 @test "migrate-to-operator: default has no exposure section" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.central.exposure' "$cr_out"
   assert_success
   assert_output "null"
 }
 
 @test "migrate-to-operator: --lb-type=lb sets exposure.loadBalancer.enabled=true" {
-  generate_and_migrate k8s pvc --lb-type=lb
+  migrate_fixture pvc-lb-type-lb
   run yq e '.spec.central.exposure.loadBalancer.enabled' "$cr_out"
   assert_success
   assert_output "true"
 }
 
 @test "migrate-to-operator: --lb-type=np sets exposure.nodePort.enabled=true" {
-  generate_and_migrate k8s pvc --lb-type=np
+  migrate_fixture pvc-lb-type-np
   run yq e '.spec.central.exposure.nodePort.enabled' "$cr_out"
   assert_success
   assert_output "true"
 }
 
 @test "migrate-to-operator: --lb-type=route sets exposure.route.enabled=true" {
-  generate_and_migrate openshift pvc --lb-type=route
+  migrate_fixture openshift-pvc-lb-type-route
   run yq e '.spec.central.exposure.route.enabled' "$cr_out"
   assert_success
   assert_output "true"
@@ -225,7 +222,7 @@ generate_and_migrate() {
 # Plaintext endpoints
 
 @test "migrate-to-operator: --plaintext-endpoints=8080 sets customize.envVars" {
-  generate_and_migrate k8s pvc --plaintext-endpoints=8080
+  migrate_fixture pvc-plaintext-endpoints
   run yq e '.spec.customize.envVars[0].name' "$cr_out"
   assert_success
   assert_output "ROX_PLAINTEXT_ENDPOINTS"
@@ -235,7 +232,7 @@ generate_and_migrate() {
 }
 
 @test "migrate-to-operator: default has no customize section" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.customize' "$cr_out"
   assert_success
   assert_output "null"
@@ -244,21 +241,21 @@ generate_and_migrate() {
 # Declarative config
 
 @test "migrate-to-operator: --declarative-config-config-maps sets declarativeConfiguration.configMaps" {
-  generate_and_migrate k8s pvc --declarative-config-config-maps=my-config
+  migrate_fixture pvc-declarative-config-maps
   run yq e '.spec.central.declarativeConfiguration.configMaps[0].name' "$cr_out"
   assert_success
   assert_output "my-config"
 }
 
 @test "migrate-to-operator: --declarative-config-secrets sets declarativeConfiguration.secrets" {
-  generate_and_migrate k8s pvc --declarative-config-secrets=my-secret
+  migrate_fixture pvc-declarative-secrets
   run yq e '.spec.central.declarativeConfiguration.secrets[0].name' "$cr_out"
   assert_success
   assert_output "my-secret"
 }
 
 @test "migrate-to-operator: default has no declarativeConfiguration" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.central.declarativeConfiguration' "$cr_out"
   assert_success
   assert_output "null"
@@ -267,16 +264,14 @@ generate_and_migrate() {
 # Default TLS cert
 
 @test "migrate-to-operator: --default-tls-cert/key sets defaultTLSSecret" {
-  generate_and_migrate k8s pvc \
-    --default-tls-cert="$test_certs_dir/tls-cert.pem" \
-    --default-tls-key="$test_certs_dir/tls-key.pem"
+  migrate_fixture pvc-default-tls-cert
   run yq e '.spec.central.defaultTLSSecret.name' "$cr_out"
   assert_success
   assert_output "central-default-tls-cert"
 }
 
 @test "migrate-to-operator: default has no defaultTLSSecret" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.central.defaultTLSSecret' "$cr_out"
   assert_success
   assert_output "null"
@@ -285,7 +280,7 @@ generate_and_migrate() {
 # Telemetry
 
 @test "migrate-to-operator: --enable-telemetry=false sets central.telemetry.enabled=false" {
-  generate_and_migrate k8s pvc --enable-telemetry=false
+  migrate_fixture pvc-telemetry-disabled
   run yq e '.spec.central.telemetry.enabled' "$cr_out"
   assert_success
   assert_output "false"
@@ -294,14 +289,14 @@ generate_and_migrate() {
 # Offline mode
 
 @test "migrate-to-operator: --offline sets egress.connectivityPolicy=Offline" {
-  generate_and_migrate k8s pvc --offline
+  migrate_fixture pvc-offline
   run yq e '.spec.egress.connectivityPolicy' "$cr_out"
   assert_success
   assert_output "Offline"
 }
 
 @test "migrate-to-operator: default has no egress section" {
-  generate_and_migrate k8s pvc
+  migrate_fixture pvc-default
   run yq e '.spec.egress' "$cr_out"
   assert_success
   assert_output "null"
