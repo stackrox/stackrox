@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
@@ -662,4 +663,16 @@ func (s *stubTokenExchanger) Provider() authproviders.Provider {
 
 func (s *stubTokenExchanger) Config() *storage.AuthMachineToMachineConfig {
 	return s.config
+}
+
+func (s *stubTokenExchanger) Configs() []*storage.AuthMachineToMachineConfig {
+	return []*storage.AuthMachineToMachineConfig{s.config}
+}
+
+func (s *stubTokenExchanger) GetTokenExpirationDuration() time.Duration {
+	return time.Duration(0)
+}
+
+func (s *stubTokenExchanger) GetType() storage.AuthMachineToMachineConfig_Type {
+	return storage.AuthMachineToMachineConfig_GENERIC
 }
