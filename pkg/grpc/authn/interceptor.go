@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/pkg/auth"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
@@ -26,6 +28,9 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 		// Only service identities can have no roles assigned.
 		if len(id.Roles()) == 0 && id.Service() == nil {
 			return context.WithValue(ctx, identityErrorContextKey{}, auth.ErrNoValidRole), nil
+		}
+		if features.ACMAccessControlDelegation.Enabled() {
+			ctx = permissions.ContextWithResolvedRoles(ctx, id.Roles())
 		}
 		return context.WithValue(ctx, identityContextKey{}, id), nil
 	}
