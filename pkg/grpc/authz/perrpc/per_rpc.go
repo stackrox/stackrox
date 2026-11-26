@@ -12,6 +12,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
+var _ authz.Authorizer = (*perRPC)(nil)
+
 // perRPC allows the application of a default policy, with exceptions
 // for individual RPCs.
 type perRPC struct {

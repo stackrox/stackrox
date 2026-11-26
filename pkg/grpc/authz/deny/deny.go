@@ -21,6 +21,8 @@ func Everyone() authz.Authorizer {
 	return everyone{}
 }
 
+var _ authz.Authorizer = (*everyone)(nil)
+
 type everyone struct{}
 
 // Authorized denies all access, even if the client has been authenticated.

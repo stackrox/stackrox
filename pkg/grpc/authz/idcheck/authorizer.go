@@ -12,6 +12,8 @@ type IdentityBasedAuthorizer interface {
 	AuthorizeByIdentity(identity authn.Identity) error
 }
 
+var _ authz.Authorizer = (*identityBasedAuthorizerWrapper)(nil)
+
 type identityBasedAuthorizerWrapper struct {
 	idAuthorizer IdentityBasedAuthorizer
 }
