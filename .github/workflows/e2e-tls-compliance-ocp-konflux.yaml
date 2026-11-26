@@ -30,6 +30,7 @@ env:
   CLUSTER_NAME_PREFIX: "e2e-tls-compl"
   CLUSTER_NAME_PREFIX_MAX: "20"
   TLS_SCANNER_REF: "df6f8d462cd22d4a515946602936a4ac117e4c74"
+  TLS_SCANNER_DIR: ${{ github.workspace }}/tls-scanner
   # Pin OCP to 5.0 while TLSGroupPreferences / TLSAdherence are feature-gated.
   # After feature flag GA: switch to ocp/stable and drop the feature-gate setup in the e2e test.
   OPENSHIFT_VERSION: "ocp/stable-5.0"
@@ -73,6 +74,17 @@ jobs:
           lifespan: 5h
           args: openshift-version=${{ env.OPENSHIFT_VERSION }},master-node-type=e2-standard-4,master-node-count=3,worker-node-type=e2-standard-8,worker-node-count=3,ssd-storage-class=true
           wait: false
+
+      - name: Checkout tls-scanner
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        with:
+          repository: openshift/tls-scanner
+          ref: ${{ env.TLS_SCANNER_REF }}
+          path: tls-scanner
+          persist-credentials: false
+
+      - name: Build TLS scanner
+        run: tests/e2e/run-tls-compliance.sh build-scanner
 
       - name: Set up GCloud SDK
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
@@ -119,24 +131,18 @@ jobs:
       - name: Create artifact directory
         run: mkdir -p "$ARTIFACT_DIR"
 
-      - name: Checkout tls-scanner
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          repository: openshift/tls-scanner
-          ref: ${{ env.TLS_SCANNER_REF }}
-          path: tls-scanner
-          persist-credentials: false
+      - name: Push TLS scanner to cluster registry
+        run: tests/e2e/run-tls-compliance.sh push-scanner
 
       - name: Run TLS compliance tests
         env:
           USE_ROXIE_DEPLOY: "true"
-          TLS_SCANNER_DIR: ${{ github.workspace }}/tls-scanner
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         timeout-minutes: 120
-        run: tests/e2e/run-tls-compliance.sh
+        run: tests/e2e/run-tls-compliance.sh test
 
       - name: Run post-test
         if: always() && env.KUBECONFIG != ''

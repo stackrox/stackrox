@@ -9,6 +9,10 @@
 #   - OCP 5.0+ cluster with KUBECONFIG set
 #   - roxie, oc, jq, podman on PATH
 #   - tls-scanner checkout at $TLS_SCANNER_DIR
+#
+# With no arguments, build and push the scanner before running the test.
+# CI runs build-scanner, push-scanner, and test separately so the build
+# can run while the cluster is provisioning.
 
 set -euo pipefail
 
@@ -19,6 +23,7 @@ source "${ROOT}/scripts/ci/lib.sh"
 source "${ROOT}/tests/e2e/lib.sh"
 
 TLS_SCANNER_DIR="${TLS_SCANNER_DIR:?Set TLS_SCANNER_DIR to the openshift/tls-scanner checkout}"
+TLS_SCANNER_LOCAL_IMAGE="localhost/tls-scanner:latest"
 SCAN_RESULTS=""
 ACS_NS="stackrox"
 # Namespace used by roxie when Central and SecuredCluster share the same version.
@@ -34,7 +39,14 @@ fail() {
     FAILED=1
 }
 
-build_and_push_tls_scanner() {
+build_tls_scanner() (
+    cd "$TLS_SCANNER_DIR"
+    # deploy.sh otherwise queries the current OpenShift project, even for builds.
+    NAMESPACE="$ACS_NS" SCANNER_IMAGE="$TLS_SCANNER_LOCAL_IMAGE" \
+        DOCKERFILE=Dockerfile.local TARGET_PLATFORM=linux/amd64 ./deploy.sh build
+)
+
+push_tls_scanner() {
     local registry token
 
     info "Setting up image registry..."
@@ -50,19 +62,10 @@ build_and_push_tls_scanner() {
     token=$(oc create token builder -n "$ACS_NS" --duration=1h)
 
     info "Logging in to image registry at $registry..."
-    podman login "$registry" --username builder --password "$token" --tls-verify=false
+    podman login "$registry" --username builder --password-stdin --tls-verify=false <<< "$token"
 
-    pushd "$TLS_SCANNER_DIR" > /dev/null
-
-    export SCANNER_IMAGE="${registry}/${ACS_NS}/tls-scanner:latest"
-    export DOCKERFILE="Dockerfile.local"
-    export BUILD_PLATFORMS="linux/amd64"
-
-    info "Building and pushing tls-scanner..."
-    ./deploy.sh build
-    ./deploy.sh push
-
-    popd > /dev/null
+    info "Pushing tls-scanner..."
+    podman push --tls-verify=false "$TLS_SCANNER_LOCAL_IMAGE" "docker://${registry}/${ACS_NS}/tls-scanner:latest"
 }
 
 enable_tls_feature_gates_and_set_profile() {
@@ -372,7 +375,26 @@ on_exit() {
     exit "$exit_status"
 }
 
-build_and_push_tls_scanner
+case "${1:-all}" in
+    build-scanner)
+        build_tls_scanner
+        exit 0
+        ;;
+    push-scanner)
+        push_tls_scanner
+        exit 0
+        ;;
+    all)
+        build_tls_scanner
+        push_tls_scanner
+        ;;
+    test) ;;
+    *)
+        echo "Usage: $0 [build-scanner|push-scanner|test]" >&2
+        exit 1
+        ;;
+esac
+
 enable_tls_feature_gates_and_set_profile
 deploy_acs
 trap on_exit EXIT
