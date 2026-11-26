@@ -43,7 +43,9 @@ is terminal, triaging failures as they land instead of waiting for the full run 
 
 3. **React to each watcher notification immediately.** Read the background task's output
    file; it prints only the newly terminal check(s) and their pass/fail state. Then re-arm
-   the watcher (run the script again in the background) so later results keep arriving.
+   the watcher (run the script again in the background) so later results keep arriving —
+   UNLESS it also printed `=== ALL CHECKS TERMINAL ===`, which means the run is complete:
+   skip re-arming and go straight to the final summary.
    - **Pass** — report briefly and re-arm.
    - **Fail** — do NOT wait for the remaining checks; start triage right away and re-arm
      the watcher in parallel:

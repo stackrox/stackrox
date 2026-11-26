@@ -12,14 +12,16 @@
 #
 # A check going back to pending (e.g. a rerun of a failed check) updates the
 # baseline without exiting; when it reaches a terminal state again, that
-# result is reported.
+# result is reported. When no considered check is pending anymore, the
+# watcher prints "=== ALL CHECKS TERMINAL ===" (with any new results) and
+# exits so the caller can give a final summary.
 #
 # Poll failures (auth or network errors) are distinguished from empty results
 # and retried; the script gives up after 5 consecutive failed polls.
 #
-# Exits 0 when new terminal results were printed, 1 on timeout, 2 on usage
-# errors, 3 after repeated poll failures, 4 when the state file cannot be
-# written.
+# Exits 0 when new terminal results were printed or all checks are terminal,
+# 1 on timeout, 2 on usage errors, 3 after repeated poll failures, 4 when the
+# state file cannot be written.
 #
 # Usage:
 #   watch-checks.sh <PR-number> [--repo <owner/name>] [--only <substring>]
@@ -151,6 +153,20 @@ terminal_checks() {
     sort
 }
 
+# Whether any considered check is still pending. Requires a non-empty RAW (a
+# successful poll can also be an empty "no checks reported" result, which must
+# not be mistaken for a completed board).
+has_pending() {
+  printf '%s\n' "$RAW" |
+    awk -F'\t' '$2 == "pending" {print $1}' |
+    if [ -n "$ONLY" ]; then grep -- "$ONLY" || true; else cat; fi |
+    grep -q .
+}
+
+all_terminal() {
+  [ -n "$RAW" ] && ! has_pending
+}
+
 snapshot_lines() {
   if [ -n "$1" ]; then printf '%s\n' "$1"; fi
 }
@@ -210,6 +226,9 @@ while ((SECONDS < deadline)); do
     if [ -n "$fails" ]; then
       echo "=== ALREADY-TERMINAL FAILURE(S) AT WATCHER START ==="
       echo "$fails"
+      if all_terminal; then
+        echo "=== ALL CHECKS TERMINAL ==="
+      fi
       exit 0
     fi
   else
@@ -218,10 +237,21 @@ while ((SECONDS < deadline)); do
       echo "=== NEW TERMINAL CHECK RESULT(S) ==="
       echo "$added"
       save_state "$cur"
+      if all_terminal; then
+        echo "=== ALL CHECKS TERMINAL ==="
+      fi
       exit 0
     fi
     # No new terminal results: adopt the current snapshot (it may have lost
     # rows, e.g. a check going back to pending for a rerun) and keep waiting.
+  fi
+  # Signal completion when nothing is pending anymore, so the caller can give
+  # a final summary instead of waiting for the timeout (this also covers a
+  # fresh watcher starting against an already-complete board).
+  if all_terminal; then
+    echo "=== ALL CHECKS TERMINAL ==="
+    save_state "$cur"
+    exit 0
   fi
   prev="$cur"
   save_state "$prev"
