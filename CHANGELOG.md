@@ -31,7 +31,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Deprecated Features
 
-- ROX-39905: The `roxctl central migrate-to-operator` and `roxctl sensor migrate-to-operator` commands are now deprecated and will be removed in a future release. Use the StackRox operator for deployment management instead.
+- ROX-39905: The `roxctl central migrate-to-operator` and `roxctl sensor migrate-to-operator` commands are now deprecated and will be removed in a future release.
 
 ### Technical Changes
 

@@ -15,7 +15,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:        "migrate-to-operator",
 		Short:      "Generate a Central custom resource from existing roxctl-generated manifests",
-		Deprecated: common.DeprecatedInFavorOfOperator,
+		Deprecated: common.DeprecatedCommandNotice,
 		Long: `Inspects an existing StackRox Central deployment (from a directory of generated
 manifests or a live cluster) and produces a Central custom resource YAML that
 preserves the detected configuration, allowing the StackRox operator to

@@ -15,7 +15,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:        "migrate-to-operator",
 		Short:      "Generate a SecuredCluster custom resource from existing sensor manifests",
-		Deprecated: common.DeprecatedInFavorOfOperator,
+		Deprecated: common.DeprecatedCommandNotice,
 		Long: `Inspects an existing StackRox Sensor deployment (from a directory of manifests
 or a live cluster) and produces a SecuredCluster custom resource YAML that
 preserves the detected configuration, allowing the StackRox operator to
