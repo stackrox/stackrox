@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/scannerv4/cpecompat"
 )
 
 // hasIDAndCPE is the common interface offered by some proto definitions related
@@ -164,7 +164,7 @@ func validateCPE(s string) error {
 	if s == "" {
 		return nil
 	}
-	_, err := cpe.Unbind(s)
+	_, err := cpecompat.Unbind(s)
 	return err
 }
 

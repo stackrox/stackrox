@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
+	"github.com/stackrox/rox/pkg/scannerv4/cpecompat"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
@@ -45,10 +46,9 @@ const (
 
 	rhelRepositoryKey = "rhel-cpe-repository"
 
-	// unsetCPE is the bound form of an unset CPE. Every released StackRox
-	// component emits and accepts this form, so keep it on the wire instead of
-	// the empty string ClairCore now produces for unset CPEs.
-	unsetCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
+	// unsetCPE keeps the bound wildcard on the wire instead of the empty string
+	// ClairCore produces for unset CPEs.
+	unsetCPE = cpecompat.UnsetCPE
 )
 
 var (
@@ -852,7 +852,7 @@ func toClairCoreCPE(s string) (cpe.WFN, error) {
 	if s == "" {
 		return cpe.WFN{}, nil
 	}
-	c, err := cpe.Unbind(s)
+	c, err := cpecompat.Unbind(s)
 	if err != nil {
 		return c, fmt.Errorf("%q: %s", s, strings.TrimPrefix(err.Error(), "cpe: "))
 	}
