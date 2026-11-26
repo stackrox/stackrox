@@ -74,7 +74,67 @@ class BuiltinPoliciesTest extends BaseSpecification {
                     .setImage("non-existent:image"),
     ]
 
-    // Enabling disabled deploy-time policies re-evaluates every cluster workload.
+    // Single source of truth for the test cases: read by the feature's where: block and by setupSpec().
+    static final private List<List<String>> POLICY_CASES = [
+            // "30-Day Scan Age" <- Not covered
+            //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
+            //["ADD Command used instead of COPY", TRIGGER_MOST],
+            //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
+            //["Alpine Linux Package Manager (apk) in Image", TRIGGER_ALPINE],
+            ["Alpine Linux Package Manager Execution", TRIGGER_ALPINE],
+            // "CAP_SYS_ADMIN capability added" <- Not covered
+            ["chkconfig Execution", TRIGGER_MOST],
+            ["Container using read-write root filesystem", TRIGGER_MOST],
+            ["Compiler Tool Execution", TRIGGER_MOST],
+            ["crontab Execution", TRIGGER_MOST],
+            ["Cryptocurrency Mining Process Execution", TRIGGER_MOST],
+            //TODO(ROX-26897)Fix regex for Curl in Image policy. Until then this test is disabled
+            //["Curl in Image", TRIGGER_MOST],
+            ["Emergency Deployment Annotation", TRIGGER_MOST],
+            //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
+            //["Fixable CVSS >= 6 and Privileged", TRIGGER_MOST],
+            ["Images with no scans", TRIGGER_UNSCANNED],
+            // ["Improper Usage of Orchestrator Secrets Volume", TRIGGER_MOST], // ROX-5098 does not trigger
+            //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
+            //["Insecure specified in CMD", TRIGGER_MOST],
+            ["iptables Execution", TRIGGER_MOST],
+            ["Iptables or nftables Executed in Privileged Container", TRIGGER_MOST],
+            ["Linux Group Add Execution", TRIGGER_MOST],
+            ["Linux User Add Execution", TRIGGER_MOST],
+            ["Login Binaries", TRIGGER_MOST],
+            ["Mount Container Runtime Socket", TRIGGER_DOCKER_MOUNT],
+            ["Mount Container Runtime Socket", TRIGGER_CRIO_MOUNT],
+            ["Mounting Sensitive Host Directories", TRIGGER_MOST],
+            ["Netcat Execution Detected", TRIGGER_MOST],
+            ["Network Management Execution", TRIGGER_MOST],
+            ["nmap Execution", TRIGGER_MOST],
+            ["No CPU request or memory limit specified", TRIGGER_MOST],
+            ["Password Binaries", TRIGGER_MOST],
+            ["Process Targeting Cluster Kubelet Endpoint", TRIGGER_MOST],
+            ["Process Targeting Cluster Kubernetes Docker Stats Endpoint", TRIGGER_MOST],
+            ["Process Targeting Kubernetes Service Endpoint", TRIGGER_MOST],
+            ["Process with UID 0", TRIGGER_MOST],
+            ["Red Hat Package Manager Execution", TRIGGER_MOST],
+            ["Remote File Copy Binary Execution", TRIGGER_MOST],
+            ["Required Annotation: Email", TRIGGER_MOST],
+            ["Required Annotation: Owner/Team", TRIGGER_MOST],
+            //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
+            //["Required Image Label", TRIGGER_MOST],
+            ["Required Label: Owner/Team", TRIGGER_MOST],
+            ["Secret Mounted as Environment Variable", TRIGGER_MOST],
+            //["Secure Shell (ssh) Port Exposed in Image", TRIGGER_MOST],
+            ["Secure Shell Server (sshd) Execution", TRIGGER_MOST],
+            ["SetUID Processes", TRIGGER_MOST],
+            ["Shadow File Modification", TRIGGER_MOST],
+            ["Shell Spawned by Java Application", TRIGGER_MOST],
+            ["systemctl Execution", TRIGGER_MOST],
+            ["systemd Execution", TRIGGER_MOST],
+            ["Ubuntu Package Manager Execution", TRIGGER_MOST],
+            //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
+            //["Wget in Image", TRIGGER_MOST],
+    ]
+
+    // Enabling policies in setupSpec() makes Sensor re-evaluate every cluster workload.
     // OpenShift platform namespaces make that queue several minutes long.
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
             (isRaceBuild() || Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 450 : 120
@@ -84,9 +144,11 @@ class BuiltinPoliciesTest extends BaseSpecification {
 
     def setupSpec() {
         disabledPolicyIds = []
+        // Each enabled policy re-evaluates every cluster workload, so skip disabled policies no case covers.
+        Set<String> coveredPolicyNames = POLICY_CASES*.first().toSet()
         getPolicies().forEach {
             policy ->
-            if (policy.disabled) {
+            if (policy.disabled && coveredPolicyNames.contains(policy.name)) {
                 log.info "Temporarily enabling a disabled policy for testing: ${policy.name}"
                 PolicyService.patchPolicy(
                         PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
@@ -139,62 +201,6 @@ class BuiltinPoliciesTest extends BaseSpecification {
         where:
         "Data inputs are:"
 
-        policyName                                                   | deploymentName
-        // "30-Day Scan Age" <- Not covered
-        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
-        //"ADD Command used instead of COPY"                           | TRIGGER_MOST
-        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
-        //"Alpine Linux Package Manager (apk) in Image"                | TRIGGER_ALPINE
-        "Alpine Linux Package Manager Execution"                     | TRIGGER_ALPINE
-        // "CAP_SYS_ADMIN capability added" <- Not covered
-        "chkconfig Execution"                                        | TRIGGER_MOST
-        "Container using read-write root filesystem"                 | TRIGGER_MOST
-        "Compiler Tool Execution"                                    | TRIGGER_MOST
-        "crontab Execution"                                          | TRIGGER_MOST
-        "Cryptocurrency Mining Process Execution"                    | TRIGGER_MOST
-        //TODO(ROX-26897)Fix regex for Curl in Image policy. Until then this test is disabled
-        //"Curl in Image"                                              | TRIGGER_MOST
-        "Emergency Deployment Annotation"                            | TRIGGER_MOST
-        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
-        //"Fixable CVSS >= 6 and Privileged"                           | TRIGGER_MOST
-        "Images with no scans"                                       | TRIGGER_UNSCANNED
-        // "Improper Usage of Orchestrator Secrets Volume"          | TRIGGER_MOST  // ROX-5098 does not trigger
-        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
-        //"Insecure specified in CMD"                                  | TRIGGER_MOST
-        "iptables Execution"                                         | TRIGGER_MOST
-        "Iptables or nftables Executed in Privileged Container"      | TRIGGER_MOST
-        "Linux Group Add Execution"                                  | TRIGGER_MOST
-        "Linux User Add Execution"                                   | TRIGGER_MOST
-        "Login Binaries"                                             | TRIGGER_MOST
-        "Mount Container Runtime Socket"                             | TRIGGER_DOCKER_MOUNT
-        "Mount Container Runtime Socket"                             | TRIGGER_CRIO_MOUNT
-        "Mounting Sensitive Host Directories"                        | TRIGGER_MOST
-        "Netcat Execution Detected"                                  | TRIGGER_MOST
-        "Network Management Execution"                               | TRIGGER_MOST
-        "nmap Execution"                                             | TRIGGER_MOST
-        "No CPU request or memory limit specified"                   | TRIGGER_MOST
-        "Password Binaries"                                          | TRIGGER_MOST
-        "Process Targeting Cluster Kubelet Endpoint"                 | TRIGGER_MOST
-        "Process Targeting Cluster Kubernetes Docker Stats Endpoint" | TRIGGER_MOST
-        "Process Targeting Kubernetes Service Endpoint"              | TRIGGER_MOST
-        "Process with UID 0"                                         | TRIGGER_MOST
-        "Red Hat Package Manager Execution"                          | TRIGGER_MOST
-        "Remote File Copy Binary Execution"                          | TRIGGER_MOST
-        "Required Annotation: Email"                                 | TRIGGER_MOST
-        "Required Annotation: Owner/Team"                            | TRIGGER_MOST
-        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
-        //"Required Image Label"                                       | TRIGGER_MOST
-        "Required Label: Owner/Team"                                 | TRIGGER_MOST
-        "Secret Mounted as Environment Variable"                     | TRIGGER_MOST
-        //"Secure Shell (ssh) Port Exposed in Image"                 | TRIGGER_MOST
-        "Secure Shell Server (sshd) Execution"                       | TRIGGER_MOST
-        "SetUID Processes"                                           | TRIGGER_MOST
-        "Shadow File Modification"                                   | TRIGGER_MOST
-        "Shell Spawned by Java Application"                          | TRIGGER_MOST
-        "systemctl Execution"                                        | TRIGGER_MOST
-        "systemd Execution"                                          | TRIGGER_MOST
-        "Ubuntu Package Manager Execution"                           | TRIGGER_MOST
-        //TODO(ROX-29720) gcr.io sunset, tests need migrated to Artifacts Registry results.
-        //"Wget in Image"                                              | TRIGGER_MOST
+        [policyName, deploymentName] << POLICY_CASES
     }
 }
