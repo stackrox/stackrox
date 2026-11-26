@@ -314,11 +314,11 @@ class URL {
                           entityListType1: val,
                           entityId1: encodeURIComponent(val2),
                       }
-                    : (newParams = {
+                    : {
                           context: urlParams.context,
                           pageEntityType: val,
                           pageEntityId: encodeURIComponent(val2),
-                      });
+                      };
                 newQuery = null;
             }
         }

@@ -70,9 +70,7 @@ export const policyWorkloadKindLabels: Record<PolicyWorkloadKind, string> = {
 };
 
 export type PolicyExclusion =
-    | PolicyDeploymentExclusion
-    | PolicyImageExclusion
-    | PolicyExcludeByKindExclusion;
+    PolicyDeploymentExclusion | PolicyImageExclusion | PolicyExcludeByKindExclusion;
 
 export type PolicyDeploymentExclusion = {
     deployment: PolicyExcludedDeployment;

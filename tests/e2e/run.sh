@@ -145,15 +145,15 @@ prepare_for_endpoints_test() {
     local gencerts_dir
     gencerts_dir="$(mktemp -d)"
     setup_client_CA_auth_provider
-    setup_generated_certs_for_test "$gencerts_dir"
+    extract_sensor_certs_for_test "$gencerts_dir"
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
         info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-24688)"
     else
         patch_resources_for_test
     fi
     export SERVICE_CA_FILE="$gencerts_dir/ca.pem"
-    export SERVICE_CERT_FILE="$gencerts_dir/sensor-cert.pem"
-    export SERVICE_KEY_FILE="$gencerts_dir/sensor-key.pem"
+    export SERVICE_CERT_FILE="$gencerts_dir/cert.pem"
+    export SERVICE_KEY_FILE="$gencerts_dir/key.pem"
 }
 
 run_roxctl_bats_tests() {
@@ -180,10 +180,7 @@ run_roxctl_tests() {
     junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
         "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
 
-    junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
-        "$ROOT/tests/roxctl/helm-chart-generation.sh"
-
-    CA="$SERVICE_CA_FILE" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
+    CA="${ROX_CA_CERT_FILE:-}" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
         "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 

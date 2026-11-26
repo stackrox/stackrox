@@ -1127,9 +1127,11 @@ declarative-config:
           - use-current-k8s-context
     permission-set:
       LOCAL_FLAGS:
+        - access-constraint
         - description
         - name
         - resource-with-access
+        - scope-constraint
       INHERITED_FLAGS:
         - ca
         - config-map
@@ -1242,63 +1244,6 @@ deployment:
       - plaintext
       - server-name
       - timeout
-      - token-file
-      - use-current-k8s-context
-helm:
-  INHERITED_FLAGS:
-    - ca
-    - direct-grpc
-    - endpoint
-    - force-http1
-    - help
-    - insecure
-    - insecure-skip-tls-verify
-    - no-color
-    - password
-    - plaintext
-    - server-name
-    - token-file
-    - use-current-k8s-context
-  derive-local-values:
-    PERSISTENT_FLAGS:
-      - input
-      - output
-      - output-dir
-      - retry-timeout
-      - timeout
-    INHERITED_FLAGS:
-      - ca
-      - direct-grpc
-      - endpoint
-      - force-http1
-      - help
-      - insecure
-      - insecure-skip-tls-verify
-      - no-color
-      - password
-      - plaintext
-      - server-name
-      - token-file
-      - use-current-k8s-context
-  output:
-    PERSISTENT_FLAGS:
-      - enable-telemetry
-      - image-defaults
-      - output-dir
-      - remove
-      - rhacs
-    INHERITED_FLAGS:
-      - ca
-      - direct-grpc
-      - endpoint
-      - force-http1
-      - help
-      - insecure
-      - insecure-skip-tls-verify
-      - no-color
-      - password
-      - plaintext
-      - server-name
       - token-file
       - use-current-k8s-context
 image:
@@ -1681,25 +1626,6 @@ sensor:
     - server-name
     - token-file
     - use-current-k8s-context
-  generate-certs:
-    PERSISTENT_FLAGS:
-      - output-dir
-    INHERITED_FLAGS:
-      - ca
-      - direct-grpc
-      - endpoint
-      - force-http1
-      - help
-      - insecure
-      - insecure-skip-tls-verify
-      - no-color
-      - password
-      - plaintext
-      - retry-timeout
-      - server-name
-      - timeout
-      - token-file
-      - use-current-k8s-context
   migrate-to-operator:
     LOCAL_FLAGS:
       - from-dir

@@ -51,6 +51,7 @@ function PermissionSets(): ReactElement {
     const [alertPermissionSets, setAlertPermissionSets] = useState<ReactElement | null>(null);
 
     const [resources, setResources] = useState<string[]>([]);
+    const [globalResources, setGlobalResources] = useState<string[]>([]);
     const [alertResources, setAlertResources] = useState<ReactElement | null>(null);
 
     const [roles, setRoles] = useState<Role[]>([]);
@@ -85,12 +86,15 @@ function PermissionSets(): ReactElement {
         setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertResources(null);
         fetchResources()
-            .then((resourcesFetched) => {
+            .then(({ resources: resourcesFetched, globalResources: globalResourcesFetched }) => {
                 setResources(resourcesFetched);
+                setGlobalResources(globalResourcesFetched);
             })
             .catch((error) => {
-                const actionClose = <AlertActionCloseButton onClose={() => setAlertRoles(null)} />;
-                setAlertRoles(
+                const actionClose = (
+                    <AlertActionCloseButton onClose={() => setAlertResources(null)} />
+                );
+                setAlertResources(
                     <Alert
                         title="Fetch resources failed"
                         component="p"
@@ -240,6 +244,7 @@ function PermissionSets(): ReactElement {
                                 : getNewPermissionSet(resources)
                         }
                         permissionSets={permissionSets}
+                        globalResources={globalResources}
                         handleCancel={handleCancel}
                         handleEdit={handleEdit}
                         handleSubmit={handleSubmit}

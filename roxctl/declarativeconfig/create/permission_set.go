@@ -42,6 +42,10 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Name, "name", "", "Name of the permission set.")
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Description, "description", "",
 		"Description of the permission set.")
+	cmd.Flags().StringVar(&permSetCmd.accessConstraint, "access-constraint", "",
+		"Access constraint (ACCESS_CONSTRAINT_READ or ACCESS_CONSTRAINT_UNSPECIFIED).")
+	cmd.Flags().StringVar(&permSetCmd.scopeConstraint, "scope-constraint", "",
+		"Scope constraint (SCOPE_CONSTRAINT_CLUSTER_NAMESPACE or SCOPE_CONSTRAINT_UNSPECIFIED).")
 	cmd.Flags().StringToStringVar(&permSetCmd.resourceWithAccess, "resource-with-access", map[string]string{},
 		`List of resources with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Administration=READ_WRITE_ACCESS
 Note: Capitalization matters!`)
@@ -56,6 +60,8 @@ Note: Capitalization matters!`)
 type permissionSetCmd struct {
 	permissionSet      *declarativeconfig.PermissionSet
 	resourceWithAccess map[string]string
+	accessConstraint   string
+	scopeConstraint    string
 	env                environment.Environment
 
 	configMap string
@@ -99,6 +105,24 @@ func (p *permissionSetCmd) Validate() error {
 		})
 	}
 	p.permissionSet.Resources = resourceWithAccess
+	if p.accessConstraint != "" {
+		constraint, ok := storage.AccessConstraint_value[strings.ToUpper(p.accessConstraint)]
+		if !ok {
+			invalidAccessErrors = multierror.Append(invalidAccessErrors, errox.InvalidArgs.Newf(
+				"invalid access constraint %q", p.accessConstraint))
+		} else {
+			p.permissionSet.AccessConstraint = declarativeconfig.AccessConstraint(constraint)
+		}
+	}
+	if p.scopeConstraint != "" {
+		constraint, ok := storage.ScopeConstraint_value[strings.ToUpper(p.scopeConstraint)]
+		if !ok {
+			invalidAccessErrors = multierror.Append(invalidAccessErrors, errox.InvalidArgs.Newf(
+				"invalid scope constraint %q", p.scopeConstraint))
+		} else {
+			p.permissionSet.ScopeConstraint = declarativeconfig.ScopeConstraint(constraint)
+		}
+	}
 	return errors.Wrap(invalidAccessErrors.ErrorOrNil(), "validating permission set")
 }
 

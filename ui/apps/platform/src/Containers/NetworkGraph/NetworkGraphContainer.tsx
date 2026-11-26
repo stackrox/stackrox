@@ -253,14 +253,9 @@ function fadeOutUnconnectedNodes(
     }
     const modifiedNodes: CustomNodeModel[] = nodes.map((node) => {
         const { data } = node;
-        let isFadedOut = false;
-        if (node.children) {
-            isFadedOut = !node.children.some((childNodeId) =>
-                emphasizedNodeIds.includes(childNodeId)
-            );
-        } else {
-            isFadedOut = !emphasizedNodeIds.includes(node.id);
-        }
+        const isFadedOut = node.children
+            ? !node.children.some((childNodeId) => emphasizedNodeIds.includes(childNodeId))
+            : !emphasizedNodeIds.includes(node.id);
         return {
             ...node,
             data: {
@@ -338,10 +333,8 @@ function NetworkGraphContainer({
     const showSelectionIndicators = !!displayOptions.includes('selectionIndicator');
     const showObjectTypeLabels = !!displayOptions.includes('objectTypeLabel');
     // modified filtered nodes/edges based on selected displayOptions
-    let modifiedNodes = filteredNodes;
-    let modifiedEdges = filteredEdges;
     // update the display options visually for deployment nodes on the graph
-    modifiedNodes = getDisplayNodes(
+    let modifiedNodes = getDisplayNodes(
         filteredNodes,
         showPolicyState,
         showExternalState,
@@ -349,7 +342,7 @@ function NetworkGraphContainer({
         showObjectTypeLabels
     );
     // update the display options visually for edges on the graph
-    modifiedEdges = getDisplayEdges(filteredEdges, showEdgeLabels);
+    const modifiedEdges = getDisplayEdges(filteredEdges, showEdgeLabels);
 
     // fade out some nodes based on which nodes are connected to the selected node
     modifiedNodes = fadeOutUnconnectedNodes(modifiedNodes, modifiedEdges, selectedNode?.id);

@@ -41,7 +41,7 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
@@ -50,7 +50,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 	})
 
@@ -65,7 +65,7 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
@@ -74,7 +74,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner[0].Gather(ctx)
+			runner[0].Gather(ctx, "")
 		})
 	})
 }
@@ -149,8 +149,8 @@ func TestRunner_ServeHTTP(t *testing.T) {
 
 	runner := makeRunner(&runnerDatastores{deployments: dds, alerts: ads})
 	runner.initialize(cds)
-	runner[0].Gather(makeAdminContext(t))
-	runner[1].Gather(makeAdminContext(t))
+	runner[0].Gather(makeAdminContext(t), "")
+	runner[1].Gather(makeAdminContext(t), "")
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
 		metricName = "rox_central_" + metricName
@@ -196,21 +196,37 @@ func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
 
 	runner := makeRunner(&runnerDatastores{})
 	workflowIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
+	workflowIdentity.EXPECT().Roles().AnyTimes().Return(nil)
 	workflowIdentity.EXPECT().UID().AnyTimes().Return("workflow-authz-test")
 	workflowIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
 		"WorkflowAdministration": storage.Access_READ_ACCESS,
 	})
 	workflowCtx := authn.ContextWithIdentity(context.Background(), workflowIdentity, t)
 	t.Cleanup(func() { metrics.DeleteCustomRegistry("workflow-authz-test") })
+	scopedIdentity := identityMocks.NewMockIdentity(gomock.NewController(t))
+	scopedIdentity.EXPECT().Roles().AnyTimes().Return(nil)
+	scopedIdentity.EXPECT().UID().AnyTimes().Return("scoped-only-authz-test")
+	scopedIdentity.EXPECT().Permissions().AnyTimes().Return(map[string]storage.Access{
+		"Deployment": storage.Access_READ_ACCESS,
+	})
+	scopedCtx := authn.ContextWithIdentity(context.Background(), scopedIdentity, t)
+	scopedRegistry, err := metrics.GetCustomRegistry("scoped-only-authz-test")
+	require.NoError(t, err)
+	const scopedMetric = "image_vuln_scoped_authz_test"
+	require.NoError(t, scopedRegistry.RegisterMetric(scopedMetric, scopedMetric, nil))
+	scopedRegistry.SetTotal(scopedMetric, nil, 1)
+	t.Cleanup(func() { metrics.DeleteCustomRegistry("scoped-only-authz-test") })
 	for _, test := range []struct {
 		name          string
 		ctx           context.Context
 		allowedMetric string
+		allowScoped   bool
 	}{
-		{"admin", makeAdminContext(t), "all"},
-		{"workflow only", workflowCtx, "cfg_authz_test"},
-		{"no access after admin", basic.ContextWithNoAccessIdentity(t, nil), ""},
-		{"anonymous", context.Background(), ""},
+		{"admin", makeAdminContext(t), "all", false},
+		{"workflow only", workflowCtx, "cfg_authz_test", false},
+		{"scoped only", scopedCtx, "", true},
+		{"no access after admin", basic.ContextWithNoAccessIdentity(t, nil), "", false},
+		{"anonymous", context.Background(), "", false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
@@ -221,6 +237,7 @@ func TestRunner_GlobalMetricsCheckCurrentPermissions(t *testing.T) {
 					containsMetric(rec.Body.String(), metric), metric)
 			}
 			assert.False(t, containsMetric(rec.Body.String(), "unknown_authz_test"))
+			assert.Equal(t, test.allowScoped, containsMetric(rec.Body.String(), scopedMetric))
 		})
 	}
 }

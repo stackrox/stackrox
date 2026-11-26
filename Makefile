@@ -875,7 +875,7 @@ install-dev-tools: gotools-all
 	@echo "+ $@"
 
 .PHONY: roxvet
-roxvet: skip-dirs := operator/pkg/clientset /generated/ /mocks
+roxvet: skip-dirs := operator/pkg/clientset ui/apps/platform/node_modules /generated/ /mocks
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
