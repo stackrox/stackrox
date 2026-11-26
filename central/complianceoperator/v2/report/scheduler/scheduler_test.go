@@ -671,6 +671,8 @@ func TestScheduleRescanReport(t *testing.T) {
 		// Report data conversion for the generated report.
 		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil).AnyTimes()
 		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		// The settler reads the configuration's scans: none are running.
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 		generated := make(chan struct{}, 4)
 		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
@@ -736,6 +738,8 @@ func scheduledScanConfig(id, name string) *storage.ComplianceOperatorScanConfigu
 // and fails the snapshot on cluster-data errors.
 func TestRunReportJob(t *testing.T) {
 	ctx := context.Background()
+	// The report belongs to the cycle that started five minutes ago.
+	cycleStart := time.Now().Add(-5 * time.Minute)
 
 	t.Run("generates a scheduled report from datastore state", func(t *testing.T) {
 		m, mocks := newTestScheduler(t)
@@ -754,7 +758,8 @@ func TestRunReportJob(t *testing.T) {
 			Status:          &storage.ScanStatus{Phase: "DONE", Result: "COMPLIANT"},
 			LastStartedTime: protocompat.TimestampNow(),
 		}
-		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{freshScan}, nil)
+		// The settler and the audit both read the scans.
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{freshScan}, nil).AnyTimes()
 
 		var persisted *storage.ComplianceOperatorReportSnapshotV2
 		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
@@ -805,6 +810,69 @@ func TestRunReportJob(t *testing.T) {
 		m.runReportJob(ctx, &reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-noemail"})
 	})
 
+	t.Run("a scan finishing during the settle window is reported fresh", func(t *testing.T) {
+		t.Setenv(env.ComplianceReportSettleTimeout.EnvVar(), "250ms")
+		m, mocks := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+		cfg.Clusters = []*storage.ComplianceOperatorScanConfigurationV2_Cluster{{ClusterId: "cluster-1"}}
+
+		// The settler's first poll sees the cycle's scan running; every later read sees it
+		// finished.
+		polls := 0
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(context.Context, *v1.Query) ([]*storage.ComplianceOperatorScanV2, error) {
+				polls++
+				if polls == 1 {
+					return []*storage.ComplianceOperatorScanV2{auditScan("master", "cluster-1", "RUNNING", "", 0, cycleStart)}, nil
+				}
+				return []*storage.ComplianceOperatorScanV2{auditScan("master", "cluster-1", "DONE", "COMPLIANT", 0, cycleStart)}, nil
+			}).AnyTimes()
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").Return(cfg, true, nil)
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil)
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+		var numFailedClusters int
+		mocks.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).
+			DoAndReturn(func(req *report.Request) error {
+				numFailedClusters = req.NumFailedClusters
+				return nil
+			}).Times(1)
+
+		m.runReportJob(ctx, &reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-one", cycleStart: cycleStart})
+
+		assert.GreaterOrEqual(t, polls, 2, "the settler re-checked the running scan")
+		assert.Equal(t, 0, numFailedClusters, "the scan that finished during the settle window is fresh, not a failure")
+	})
+
+	t.Run("a scan still running at the settle bound is reported unfinished", func(t *testing.T) {
+		t.Setenv(env.ComplianceReportSettleTimeout.EnvVar(), "250ms")
+		m, mocks := newTestScheduler(t)
+		cfg := scheduledScanConfig("cfg1", "cfg-one")
+		cfg.Clusters = []*storage.ComplianceOperatorScanConfigurationV2_Cluster{{ClusterId: "cluster-1"}}
+
+		running := auditScan("master", "cluster-1", "RUNNING", "", 0, cycleStart)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).
+			Return([]*storage.ComplianceOperatorScanV2{running}, nil).AnyTimes()
+		mocks.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), "cfg1").Return(cfg, true, nil)
+		mocks.scanConfigDS.EXPECT().GetScanConfigClusterStatus(gomock.Any(), "cfg1").Return(nil, nil)
+		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
+		// The failed cluster's compliance operator is healthy: the failure is the scan itself.
+		healthyCO(mocks, "cluster-1")
+		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+		var numFailedClusters int
+		mocks.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).
+			DoAndReturn(func(req *report.Request) error {
+				numFailedClusters = req.NumFailedClusters
+				return nil
+			}).Times(1)
+
+		m.runReportJob(ctx, &reportJob{scanConfigID: "cfg1", scanConfigName: "cfg-one", cycleStart: cycleStart})
+
+		assert.Equal(t, 1, numFailedClusters, "a scan still running at the settle bound is an honest PARTIAL")
+	})
+
 	t.Run("cluster data error fails the snapshot", func(t *testing.T) {
 		m, mocks := newTestScheduler(t)
 		cfg := scheduledScanConfig("cfg1", "cfg-one")
@@ -814,8 +882,8 @@ func TestRunReportJob(t *testing.T) {
 			Return([]*storage.ComplianceOperatorClusterScanConfigStatus{{ClusterId: "cluster-1", ClusterName: "cluster-one"}}, nil)
 		mocks.suiteDS.EXPECT().GetSuites(gomock.Any(), gomock.Any()).Return(nil, nil)
 		mocks.bindingsDS.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).Return(nil, nil)
-		// GetClusterData resolves the cluster's scans and fails.
-		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return(nil, errors.New("boom"))
+		// Every scan read (settler, audit, cluster data) fails.
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return(nil, errors.New("boom")).AnyTimes()
 
 		var states []storage.ComplianceOperatorReportStatus_RunState
 		mocks.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
@@ -961,27 +1029,7 @@ func TestAuditExpectations(t *testing.T) {
 		assert.Empty(t, fc.FailedScans)
 	})
 
-	t.Run("a zero cycle start is derived from the schedule", func(t *testing.T) {
-		m, mocks := newTestScheduler(t)
-		// The schedule last ticked about six hours ago.
-		tick := time.Now().UTC().Add(-6 * time.Hour)
-		sched := dailySchedule(int32(tick.Hour()), int32(tick.Minute()))
-		// cluster-1's scan started one hour ago (after the tick: fresh); cluster-2's twelve
-		// hours ago (before the tick: overdue).
-		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Return([]*storage.ComplianceOperatorScanV2{
-			auditScan("master", "cluster-1", "DONE", "COMPLIANT", -1*time.Hour, time.Now().UTC()),
-			auditScan("worker", "cluster-2", "DONE", "COMPLIANT", -12*time.Hour, time.Now().UTC()),
-		}, nil)
-		healthyCO(mocks, "cluster-2")
-
-		failed := m.auditExpectations(ctx, auditConfig(sched), time.Time{})
-		require.Len(t, failed, 1)
-		fc := failed["cluster-2"]
-		require.NotNil(t, fc)
-		assert.Equal(t, []string{fmt.Sprintf(report.SCAN_NOT_STARTED_FMT, "worker")}, fc.Reasons)
-	})
-
-	t.Run("a zero cycle start without an evaluable schedule skips the audit", func(t *testing.T) {
+	t.Run("a zero cycle anchor skips the audit", func(t *testing.T) {
 		m, _ := newTestScheduler(t)
 		// No SearchScans expectation: the audit must not read anything.
 
@@ -1263,5 +1311,99 @@ func TestSubmitReportRequest(t *testing.T) {
 		require.Eventually(t, func() bool {
 			return m.SubmitReportRequest(userCtx, cfg, storage.ComplianceOperatorReportStatus_DOWNLOAD) == nil
 		}, 5*time.Second, 10*time.Millisecond, "the submission slot was not released after the report finished")
+	})
+}
+
+func TestResolveCycleStart(t *testing.T) {
+	t.Run("an explicit anchor is passed through", func(t *testing.T) {
+		anchor := time.Date(2026, time.November, 25, 1, 0, 0, 0, time.UTC)
+		got, ok := resolveCycleStart(scanConfig("cfg1", "cfg-one", dailySchedule(0, 0)), anchor)
+		require.True(t, ok)
+		assert.Equal(t, anchor, got)
+	})
+
+	t.Run("a zero anchor is derived from the schedule", func(t *testing.T) {
+		// The schedule last ticked about six hours ago.
+		tick := time.Now().UTC().Add(-6 * time.Hour)
+		sched := dailySchedule(int32(tick.Hour()), int32(tick.Minute()))
+
+		got, ok := resolveCycleStart(scanConfig("cfg1", "cfg-one", sched), time.Time{})
+		require.True(t, ok)
+		assert.InDelta(t, tick.Unix(), got.Unix(), 60, "the anchor is the schedule tick that most recently passed")
+	})
+
+	t.Run("a zero anchor without an evaluable schedule is not resolved", func(t *testing.T) {
+		got, ok := resolveCycleStart(scanConfig("cfg1", "cfg-one", nil), time.Time{})
+		require.False(t, ok)
+		assert.True(t, got.IsZero())
+	})
+}
+
+// TestSettleRunningScans covers the settler: it waits, bounded, for the current cycle's
+// running scans to finish, gives up when the bound expires, and does not wait for scans of
+// previous cycles (they are failures either way).
+func TestSettleRunningScans(t *testing.T) {
+	t.Setenv(env.ComplianceReportSettleTimeout.EnvVar(), "250ms")
+
+	ctx := context.Background()
+	cycleStart := time.Now().Add(-5 * time.Minute)
+	settleConfig := scanConfig("cfg1", "cfg-one", dailySchedule(0, 0))
+
+	countingSearchScans := func(mocks *schedulerMocks, result func(poll int) ([]*storage.ComplianceOperatorScanV2, error)) *int {
+		polls := new(int)
+		mocks.scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(context.Context, *v1.Query) ([]*storage.ComplianceOperatorScanV2, error) {
+				*polls++
+				return result(*polls)
+			}).AnyTimes()
+		return polls
+	}
+
+	t.Run("returns once the cycle's running scans finish", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		polls := countingSearchScans(mocks, func(poll int) ([]*storage.ComplianceOperatorScanV2, error) {
+			if poll == 1 {
+				return []*storage.ComplianceOperatorScanV2{auditScan("master", "cluster-1", "RUNNING", "", 0, cycleStart)}, nil
+			}
+			return []*storage.ComplianceOperatorScanV2{auditScan("master", "cluster-1", "DONE", "COMPLIANT", 0, cycleStart)}, nil
+		})
+
+		m.settleRunningScans(ctx, settleConfig, cycleStart)
+
+		assert.GreaterOrEqual(t, *polls, 2, "the settler re-checked the running scan")
+	})
+
+	t.Run("gives up when the settle window expires", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		polls := countingSearchScans(mocks, func(int) ([]*storage.ComplianceOperatorScanV2, error) {
+			return []*storage.ComplianceOperatorScanV2{auditScan("master", "cluster-1", "RUNNING", "", 0, cycleStart)}, nil
+		})
+
+		m.settleRunningScans(ctx, settleConfig, cycleStart)
+
+		assert.GreaterOrEqual(t, *polls, 2, "the settler polled until the bound expired")
+	})
+
+	t.Run("does not wait for scans of previous cycles", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		polls := countingSearchScans(mocks, func(int) ([]*storage.ComplianceOperatorScanV2, error) {
+			// Running, but started a day before the cycle began.
+			return []*storage.ComplianceOperatorScanV2{auditScan("stale", "cluster-1", "RUNNING", "", -24*time.Hour, cycleStart)}, nil
+		})
+
+		m.settleRunningScans(ctx, settleConfig, cycleStart)
+
+		assert.Equal(t, 1, *polls, "a previous-cycle scan is not waited for")
+	})
+
+	t.Run("a read error returns immediately", func(t *testing.T) {
+		m, mocks := newTestScheduler(t)
+		polls := countingSearchScans(mocks, func(int) ([]*storage.ComplianceOperatorScanV2, error) {
+			return nil, errors.New("boom")
+		})
+
+		m.settleRunningScans(ctx, settleConfig, cycleStart)
+
+		assert.Equal(t, 1, *polls)
 	})
 }

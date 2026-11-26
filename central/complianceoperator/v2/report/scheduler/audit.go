@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/central/complianceoperator/v2/freshness"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,8 +30,7 @@ const (
 // configuration, per cluster, is classified against the expected scan cycle:
 //
 //   - fresh: started within the current cycle and finished
-//   - unfinished: still running at report time (the settler, a later iteration, waits for
-//     these before the report is generated; until then they are reported as partial failures)
+//   - unfinished: still running at report time, after the settler's bounded wait
 //   - overdue: has not started within the current cycle
 //
 // Clusters of the configuration without any scans at all are overdue as a whole, which keeps
@@ -40,26 +38,19 @@ const (
 // non-empty map makes the report PARTIAL (or FAILURE when every cluster fails), never
 // DELIVERED with a dangling error.
 //
-// cycleStart anchors the current cycle: re-run reports pass the re-run time; a zero value
-// means "the cycle that most recently ticked", derived from the configuration's schedule.
+// cycleStart is the resolved cycle anchor (see resolveCycleStart); a zero value means no
+// anchor could be derived, and the report ships without failure accounting rather than with
+// a wrong one.
 func (m *managerImpl) auditExpectations(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, cycleStart time.Time) map[string]*report.FailedCluster {
 	clusters := scanConfig.GetClusters()
 	if len(clusters) == 0 {
 		return nil
 	}
-
-	cutoff := cycleStart
-	if cutoff.IsZero() {
-		var ok bool
-		cutoff, ok = freshness.PreviousScheduledStart(scanConfig.GetSchedule(), time.Now().UTC())
-		if !ok {
-			// No evaluable schedule (e.g. the configuration lost it after the entry fired):
-			// no accounting rather than a wrong one.
-			log.Debugf("Compliance report scheduler: no evaluable schedule for scan configuration %q, skipping the expectation audit", scanConfig.GetScanConfigName())
-			return nil
-		}
+	if cycleStart.IsZero() {
+		log.Debugf("Compliance report scheduler: no cycle anchor for scan configuration %q, skipping the expectation audit", scanConfig.GetScanConfigName())
+		return nil
 	}
-	cutoff = cutoff.Add(-auditFreshnessTolerance)
+	cutoff := cycleStart.Add(-auditFreshnessTolerance)
 
 	// The scan universe is the same one the report content is assembled from: every scan
 	// referencing the configuration, across its clusters.

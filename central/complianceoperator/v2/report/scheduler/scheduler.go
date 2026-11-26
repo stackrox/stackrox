@@ -16,11 +16,12 @@
 //
 // Report jobs generate and deliver reports from the current datastore state through the same
 // shared building blocks as the report manager (helpers.* and the report generator), so the
-// UI renders their snapshots like any other report. The expectation audit classifies every
-// scan of a configuration against its cycle and drives the PARTIAL/FAILURE labeling;
-// settling scans that are still running at report time lands in a later iteration of the
-// rollout. Interrupted reports never survive a restart: DeleteOrphanedReportSnapshots, the
-// snapshot store's startup purge, owns that lifecycle.
+// UI renders their snapshots like any other report. The settler gives the cycle's scans that
+// are still running when the report fires a bounded chance to finish
+// (ROX_COMPLIANCE_REPORT_SETTLE_TIMEOUT), and the expectation audit then classifies every
+// scan of a configuration against its cycle and drives the PARTIAL/FAILURE labeling.
+// Interrupted reports never survive a restart: DeleteOrphanedReportSnapshots, the snapshot
+// store's startup purge, owns that lifecycle.
 package scheduler
 
 import (

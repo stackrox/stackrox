@@ -13,9 +13,10 @@ type reportJob struct {
 	scanConfigID   string
 	scanConfigName string
 	// cycleStart anchors the scan cycle the report belongs to: the expectation audit classifies
-	// scans as fresh only if they started at or after it. Re-run and first-scan reports set it
-	// to the trigger time; a zero value means "the cycle that most recently ticked", derived
-	// from the configuration's schedule at audit time.
+	// scans as fresh only if they started at or after it, and the settler waits only for its
+	// running scans. Re-run and first-scan reports set it to the trigger time; scheduled fires
+	// leave it zero and the anchor is resolved to the schedule tick that most recently passed
+	// when the job runs.
 	cycleStart time.Time
 	// snapshotID is set for on-demand reports: the snapshot persisted at submission, which the
 	// job picks up at execution. It is empty for scheduled and one-shot reports, which build

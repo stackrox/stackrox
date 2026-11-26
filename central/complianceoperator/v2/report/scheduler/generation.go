@@ -45,17 +45,30 @@ func (m *managerImpl) runReportJob(ctx context.Context, job *reportJob) {
 		}
 		// On-demand requests were validated against the notifiers at submission; a
 		// configuration that lost its notifiers since is handled by the generator's delivery.
-	} else {
+	} else if len(scanConfig.GetNotifiers()) == 0 {
 		// A scheduled or one-shot report: notifiers are required, mirroring the report
 		// manager's automatic path -- configurations without notifiers get no scheduled
 		// reports, and no snapshot is persisted for them.
-		if len(scanConfig.GetNotifiers()) == 0 {
-			log.Debugf("Compliance report scheduler: scan configuration %q has no notifiers, no report generated", job.scanConfigName)
-			return
-		}
+		log.Debugf("Compliance report scheduler: scan configuration %q has no notifiers, no report generated", job.scanConfigName)
+		return
+	}
+
+	// Resolve the cycle anchor once, then settle: the cheap skip checks above must come first,
+	// so no report is settled that would not be generated anyway.
+	cycleStart, ok := resolveCycleStart(scanConfig, job.cycleStart)
+	if ok {
+		// The settler: the cycle's scans that are still running get a bounded chance to
+		// finish before the audit classifies them as unfinished.
+		m.settleRunningScans(ctx, scanConfig, cycleStart)
+	}
+	// An unresolvable cycle (the configuration lost its schedule after the entry fired) skips
+	// settling; the audit then reports without failure accounting.
+
+	if snapshot == nil {
+		// Built after settling, so the snapshot reflects the settled state.
 		snapshot = m.buildScheduledSnapshot(ctx, scanConfig)
 	}
-	m.generateReport(ctx, scanConfig, job.cycleStart, snapshot)
+	m.generateReport(ctx, scanConfig, cycleStart, snapshot)
 }
 
 // generateReport generates and delivers the report for the scan configuration from the current
