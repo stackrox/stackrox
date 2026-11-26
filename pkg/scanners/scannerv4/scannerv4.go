@@ -340,7 +340,7 @@ func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *
 		log.Errorf("Failed to parse digest from node %q: %v", node.GetName(), err)
 	}
 
-	vr, err := s.getVulnerabilityReport(nodeDigest, indexReport)
+	vr, err := s.getVulnerabilityReport(nodeDigest, normalizeNodeIndexCPEs(indexReport))
 	if err != nil {
 		return nil, errors.Wrap(err, "Scanner V4 client call to GetVulnerabilities")
 	}
