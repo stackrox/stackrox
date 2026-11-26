@@ -1,0 +1,27 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 5.1.x-353-g0fa6ce3715
+    helm.sh/chart: stackrox-central-services-500.1.0-353-g0fa6ce3715
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: central

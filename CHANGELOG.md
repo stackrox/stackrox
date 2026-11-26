@@ -23,6 +23,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Removed Features
 
+- ROX-37647: The deprecated `roxctl central generate`, `roxctl sensor generate`, and `roxctl sensor get-bundle`
+  commands, which produced Kubernetes files for manifest-based installation, have been removed.
+  Use operator-based deployment instead. See product documentation for migration instructions.
 - ROX-39954: The deprecated `roxctl sensor generate-certs` command has been removed. Use operator-based installation, which handles certificate lifecycle (including rotation) for secured clusters.
 - The Sensor auto-upgrader has been removed. Central no longer automatically upgrades secured-cluster components, and the in-cluster `sensor-upgrader` binary and privileged `sensor-upgrader` service account are no longer built or deployed. The deprecated `SensorUpgradeService` (`/v1/sensorupgrades/*`) and its config/trigger/cert-rotation endpoints have been removed; use operator-based installation, which handles sensor upgrades and certificate rotation. Manual sensor certificate rotation via the upgrader is no longer available. The `Upgradability` label on the cluster custom Prometheus metric has been removed. The `roxctl sensor generate|get-bundle --create-upgrader-sa` flag is now a hidden, deprecated no-op kept for backward compatibility.
 - ROX-39907: The deprecated `roxctl helm` command tree (`roxctl helm output`, `roxctl helm derive-local-values`) has been removed. Use the operator, which renders the Helm charts embedded in the operator image, for deployment management.

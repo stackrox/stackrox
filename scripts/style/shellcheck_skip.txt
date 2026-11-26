@@ -78,11 +78,6 @@ tests/performance/scale/utilities/start-central-and-scanner.sh
 tests/performance/scale/utilities/start-secured-cluster.sh
 tests/roxctl/authz-trace.sh
 tests/roxctl/bats-tests/cluster/central-init-bundles.bats
-tests/roxctl/bats-tests/cluster/deployment-bundles-psps.bats
-tests/roxctl/bats-tests/cluster/sensor-generate-image-overrides.bats
-tests/roxctl/bats-tests/local/central-generate-development.bats
-tests/roxctl/bats-tests/local/central-generate-interactive-flavors.bats
-tests/roxctl/bats-tests/local/central-generate-release.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-connectivity-diff-development.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-connectivity-diff-release.bats
 tests/roxctl/bats-tests/local/roxctl-netpol-connectivity-map-development.bats
