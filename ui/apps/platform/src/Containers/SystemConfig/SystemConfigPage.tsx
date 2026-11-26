@@ -75,7 +75,7 @@ const SystemConfigPage = (): ReactElement => {
         setIsEditing(false);
     }
 
-    let content: ReactNode = null;
+    let content: ReactNode;
 
     if (isLoading || defaultRedHatLayeredProductsRuleIsLoading) {
         content = (

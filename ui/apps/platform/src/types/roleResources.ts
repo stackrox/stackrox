@@ -7,8 +7,7 @@
  */
 
 // Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
-// prettier-ignore
-export type ResourceName =
+export /* prettier-ignore */ type ResourceName =
     | 'Access' // Access is the new resource grouping all access related resources.
     | 'Administration' // Administration is the new resource grouping all administration-like resources.
     | 'Alert'

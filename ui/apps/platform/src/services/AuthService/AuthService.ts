@@ -47,13 +47,7 @@ export class AuthHttpError extends Error {
 }
 
 export type AuthProviderType =
-    | 'auth0'
-    | 'oidc'
-    | 'saml'
-    | 'userpki'
-    | 'iap'
-    | 'openshift'
-    | 'openshift-with-acm-roles';
+    'auth0' | 'oidc' | 'saml' | 'userpki' | 'iap' | 'openshift' | 'openshift-with-acm-roles';
 
 export type AuthProviderConfig = Record<
     string,

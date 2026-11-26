@@ -85,10 +85,7 @@ export type CVSSV3 = {
 };
 
 export type AttackVectorV3 =
-    | 'ATTACK_LOCAL'
-    | 'ATTACK_ADJACENT'
-    | 'ATTACK_NETWORK'
-    | 'ATTACK_PHYSICAL';
+    'ATTACK_LOCAL' | 'ATTACK_ADJACENT' | 'ATTACK_NETWORK' | 'ATTACK_PHYSICAL';
 
 export type AttackComplexityV3 = 'COMPLEXITY_LOW' | 'COMPLEXITY_HIGH';
 

@@ -100,7 +100,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const newEntityContext = { ...entityContext, [splitCveType]: cve };
 
     const cveType = Object.keys(newEntityContext).shift();
-    let legacyTypeList = [];
+    let legacyTypeList;
     if (splitCveType === entityTypes.IMAGE_CVE || splitCveType === entityTypes.NODE_CVE) {
         legacyTypeList = [splitCveType];
     } else {
