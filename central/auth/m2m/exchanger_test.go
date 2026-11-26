@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	halfAnHour           = "30m"
 	oneMinute            = "1m"
 	thirtyMinutes        = "30m"
 	oneHour              = "1h"
@@ -27,7 +28,8 @@ const (
 	twoHours             = "2h"
 	notADuration         = "60"
 
-	configID = "test-config-id"
+	configID     = "test-config-id"
+	testConfigID = "test-config-id"
 )
 
 func TestValidateConfigConsistency(t *testing.T) {
@@ -109,17 +111,18 @@ func TestValidateConfigConsistency(t *testing.T) {
 	}
 }
 
-func TestNewTokenExchanger(t *testing.T) {
-	// Serve a minimal OIDC discovery document, so that creating the OIDC provider within
-	// tokenVerifierFromConfigData succeeds without reaching out to a real issuer.
-	var oidcDiscoveryServer *httptest.Server
-	oidcDiscoveryServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// newOIDCDiscoveryServer serves a minimal OIDC discovery document, so that creating the
+// OIDC provider within tokenVerifierFromConfigData succeeds without reaching out to a
+// real issuer. The server is automatically closed when the test finishes.
+func newOIDCDiscoveryServer(t *testing.T) *httptest.Server {
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/.well-known/openid-configuration":
 			_ = json.NewEncoder(w).Encode(map[string]string{
-				"issuer":   oidcDiscoveryServer.URL,
-				"jwks_uri": oidcDiscoveryServer.URL + "/keys",
+				"issuer":   server.URL,
+				"jwks_uri": server.URL + "/keys",
 			})
 		case "/keys":
 			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []any{}})
@@ -127,23 +130,37 @@ func TestNewTokenExchanger(t *testing.T) {
 			http.NotFound(w, r)
 		}
 	}))
-	t.Cleanup(oidcDiscoveryServer.Close)
+	t.Cleanup(server.Close)
+	return server
+}
 
-	newM2MConfig := func(
-		issuer string,
-		tokenExpirationDuration string,
-		configType storage.AuthMachineToMachineConfig_Type,
-	) *storage.AuthMachineToMachineConfig {
-		return &storage.AuthMachineToMachineConfig{
-			Id:                      configID,
-			Type:                    configType,
-			Issuer:                  issuer,
-			TokenExpirationDuration: tokenExpirationDuration,
-		}
+func newM2MConfig(
+	issuer string,
+	tokenExpirationDuration string,
+	configType storage.AuthMachineToMachineConfig_Type,
+	audience string,
+) *storage.AuthMachineToMachineConfig {
+	return &storage.AuthMachineToMachineConfig{
+		Id:                      testConfigID,
+		Type:                    configType,
+		Issuer:                  issuer,
+		TokenExpirationDuration: tokenExpirationDuration,
+		Audience:                audience,
 	}
+}
 
-	const oneHour = "1h"
-	const notADuration = "60"
+// expectSuccessfulIssuerCreation prepares the given issuer factory mock to successfully
+// create an issuer for the given issuer URL.
+func expectSuccessfulIssuerCreation(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory, issuerURL string) {
+	issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
+			assert.Equal(t, issuerURL, source.ID())
+			return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
+		})
+}
+
+func TestNewTokenExchanger(t *testing.T) {
+	oidcDiscoveryServer := newOIDCDiscoveryServer(t)
 
 	cases := map[string]struct {
 		config               *storage.AuthMachineToMachineConfig
@@ -152,13 +169,9 @@ func TestNewTokenExchanger(t *testing.T) {
 		expectedErrorText    string
 	}{
 		"Valid config (generic) successfully creates an exchanger": {
-			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC),
+			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, ""),
 			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
-				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
-						assert.Equal(t, oidcDiscoveryServer.URL, source.ID())
-						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
-					})
+				expectSuccessfulIssuerCreation(t, issuerFactory, oidcDiscoveryServer.URL)
 			},
 		},
 		"Valid config (k8s service account) successfully creates an exchanger": {
@@ -166,13 +179,10 @@ func TestNewTokenExchanger(t *testing.T) {
 				oidcDiscoveryServer.URL,
 				oneHour,
 				storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+				"",
 			),
 			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
-				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
-						assert.Equal(t, oidcDiscoveryServer.URL, source.ID())
-						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
-					})
+				expectSuccessfulIssuerCreation(t, issuerFactory, oidcDiscoveryServer.URL)
 			},
 		},
 		"Invalid token expiration duration is rejected": {
@@ -180,6 +190,7 @@ func TestNewTokenExchanger(t *testing.T) {
 				oidcDiscoveryServer.URL,
 				notADuration,
 				storage.AuthMachineToMachineConfig_GENERIC,
+				"",
 			),
 			expectedError:     errox.InvalidArgs,
 			expectedErrorText: "parsing token expiration duration",
@@ -189,11 +200,12 @@ func TestNewTokenExchanger(t *testing.T) {
 				oidcDiscoveryServer.URL+"/nonexistent",
 				oneHour,
 				storage.AuthMachineToMachineConfig_GENERIC,
+				"",
 			),
 			expectedErrorText: "creating OIDC provider for issuer",
 		},
 		"Issuer factory failure is propagated": {
-			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC),
+			config: newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, ""),
 			prepareIssuerFactory: func(_ *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
 				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
 					Return(nil, assert.AnError)
@@ -231,42 +243,7 @@ func TestNewTokenExchanger(t *testing.T) {
 }
 
 func TestNewMultiConfigTokenExchanger(t *testing.T) {
-	// Serve a minimal OIDC discovery document, so that creating the OIDC provider within
-	// tokenVerifierFromConfigData succeeds without reaching out to a real issuer.
-	var oidcDiscoveryServer *httptest.Server
-	oidcDiscoveryServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		switch r.URL.Path {
-		case "/.well-known/openid-configuration":
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"issuer":   oidcDiscoveryServer.URL,
-				"jwks_uri": oidcDiscoveryServer.URL + "/keys",
-			})
-		case "/keys":
-			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []any{}})
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	t.Cleanup(oidcDiscoveryServer.Close)
-
-	newM2MConfig := func(
-		issuer string,
-		tokenExpirationDuration string,
-		configType storage.AuthMachineToMachineConfig_Type,
-		audience string,
-	) *storage.AuthMachineToMachineConfig {
-		return &storage.AuthMachineToMachineConfig{
-			Id:                      configID,
-			Type:                    configType,
-			Issuer:                  issuer,
-			TokenExpirationDuration: tokenExpirationDuration,
-			Audience:                audience,
-		}
-	}
-
-	const oneHour = "1h"
-	const halfAnHour = "30m"
+	oidcDiscoveryServer := newOIDCDiscoveryServer(t)
 
 	cases := map[string]struct {
 		configs              []*storage.AuthMachineToMachineConfig
@@ -281,11 +258,7 @@ func TestNewMultiConfigTokenExchanger(t *testing.T) {
 				newM2MConfig(oidcDiscoveryServer.URL, halfAnHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-2"),
 			},
 			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
-				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
-						assert.Equal(t, oidcDiscoveryServer.URL, source.ID())
-						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
-					})
+				expectSuccessfulIssuerCreation(t, issuerFactory, oidcDiscoveryServer.URL)
 			},
 			// The exchanger is expected to use the smallest TTL across all configs.
 			expectedTTL: 30 * time.Minute,
@@ -295,11 +268,7 @@ func TestNewMultiConfigTokenExchanger(t *testing.T) {
 				newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-1"),
 			},
 			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
-				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
-						assert.Equal(t, oidcDiscoveryServer.URL, source.ID())
-						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
-					})
+				expectSuccessfulIssuerCreation(t, issuerFactory, oidcDiscoveryServer.URL)
 			},
 			expectedTTL: 1 * time.Hour,
 		},
@@ -433,7 +402,7 @@ func TestGetTTLFromConfigs(t *testing.T) {
 			expectedError: errox.InvalidArgs,
 		},
 	}
-
+	
 	for name, c := range cases {
 		t.Run(name, func(it *testing.T) {
 			ttl, err := getTTLFromConfigs(c.configs)
@@ -441,6 +410,50 @@ func TestGetTTLFromConfigs(t *testing.T) {
 			// In error cases, expectedTTL is unset and thus holds the zero value,
 			// which is what the function returns alongside the error.
 			assert.Equal(it, c.expectedTTL, ttl)
+		})
+	}
+}
+
+func TestConfig(t *testing.T) {
+	newConfig := func(id string) *storage.AuthMachineToMachineConfig {
+		return &storage.AuthMachineToMachineConfig{
+			Id:                      id,
+			Type:                    storage.AuthMachineToMachineConfig_GENERIC,
+			Issuer:                  "https://issuer.example.com",
+			TokenExpirationDuration: oneHour,
+		}
+	}
+
+	cases := map[string]struct {
+		configs        []*storage.AuthMachineToMachineConfig
+		expectedConfig *storage.AuthMachineToMachineConfig
+	}{
+		"No config returns nil": {
+			configs:        nil,
+			expectedConfig: nil,
+		},
+		"Single config returns that config": {
+			configs:        []*storage.AuthMachineToMachineConfig{newConfig("config-1")},
+			expectedConfig: newConfig("config-1"),
+		},
+		"Multiple configs return the first config": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newConfig("config-1"),
+				newConfig("config-2"),
+				newConfig("config-3"),
+			},
+			expectedConfig: newConfig("config-1"),
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			exchanger := &machineToMachineTokenExchanger{configs: c.configs}
+			if c.expectedConfig == nil {
+				assert.Nil(t, exchanger.Config())
+				return
+			}
+			protoassert.Equal(t, c.expectedConfig, exchanger.Config())
 		})
 	}
 }
