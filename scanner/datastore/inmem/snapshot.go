@@ -63,7 +63,7 @@ type snapshot struct {
 	updaterID  []int32
 	normSev    []uint8
 	archop     []uint8
-	invert     []bool
+	invert     []uint8 // 0 or 1 (portable 1-byte layout for mmap backing)
 	issued     []int64
 
 	// Sparse vulnerable-range storage (only ~7.7% of rows have a range).
@@ -94,6 +94,7 @@ type snapshot struct {
 	fixedEmptyID int32
 
 	display *displayStore
+	cols    *colsStore
 
 	nrows int
 }
@@ -105,8 +106,13 @@ func (s *snapshot) retain() {
 }
 
 func (s *snapshot) release() {
-	if s != nil && s.refs.Add(-1) == 0 && s.display != nil {
-		s.display.release()
+	if s != nil && s.refs.Add(-1) == 0 {
+		if s.display != nil {
+			s.display.release()
+		}
+		if s.cols != nil {
+			s.cols.release()
+		}
 	}
 }
 
@@ -132,7 +138,7 @@ func (s *snapshot) reconstruct(row int32, id string) *claircore.Vulnerability {
 		NormalizedSeverity: claircore.Severity(s.normSev[row]),
 		FixedInVersion:     s.fixedVers[s.fixedID[row]],
 		ArchOperation:      claircore.ArchOp(s.archop[row]),
-		Invert:             s.invert[row],
+		Invert:             s.invert[row] != 0,
 		Issued:             time.Unix(s.issued[row], 0).UTC(),
 		Package: &claircore.Package{
 			Name:    s.pkgNames[s.pkgNameID[row]],

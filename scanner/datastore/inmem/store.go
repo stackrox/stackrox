@@ -110,6 +110,7 @@ func NewMatcherStore(opts Options) (*Store, error) {
 type Stats struct {
 	Rows           int
 	Fragments      int
+	ColsOffHeap    int64
 	DisplayOffHeap int64
 	EnrichOffHeap  int64
 }
@@ -127,6 +128,7 @@ func (s *Store) Stats() Stats {
 	for _, f := range ls.vuln {
 		st.Rows += f.nrows
 		st.DisplayOffHeap += f.display.offHeapBytes()
+		st.ColsOffHeap += f.cols.offHeapBytes()
 	}
 	for _, e := range ls.enrich {
 		st.EnrichOffHeap += e.offHeapBytes()

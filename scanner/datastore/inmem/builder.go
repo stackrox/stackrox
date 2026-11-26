@@ -13,7 +13,8 @@ import (
 // vulnerability stream. Display strings are streamed directly to the off-heap
 // blob as rows arrive so the raw feed is never retained in memory.
 type snapshotBuilder struct {
-	s *snapshot
+	s   *snapshot
+	dir string
 
 	cve     *intern[string]
 	pkg     *intern[string]
@@ -45,6 +46,7 @@ func newSnapshotBuilder(dir string) (*snapshotBuilder, error) {
 		s: &snapshot{
 			aliasStart: []int32{0},
 		},
+		dir:        dir,
 		cve:        newIntern[string](),
 		pkg:        newIntern[string](),
 		pkgVer:     newIntern[string](),
@@ -141,7 +143,11 @@ func (b *snapshotBuilder) add(v *claircore.Vulnerability, updater string) error 
 	s.updaterID = append(s.updaterID, updID)
 	s.normSev = append(s.normSev, uint8(v.NormalizedSeverity))
 	s.archop = append(s.archop, uint8(v.ArchOperation))
-	s.invert = append(s.invert, v.Invert)
+	var inv uint8
+	if v.Invert {
+		inv = 1
+	}
+	s.invert = append(s.invert, inv)
 	s.issued = append(s.issued, v.Issued.Unix())
 	s.distID = append(s.distID, did)
 	s.verKindID = append(s.verKindID, int8(vkID))
@@ -231,6 +237,42 @@ func (b *snapshotBuilder) finish() (*snapshot, error) {
 		s.byNameSpan[name] = nameSpan{start: start, count: int32(len(rows))}
 	}
 	b.byName = nil
+	// Persist all primitive column arrays + flat CSR byNamePostings into a
+	// read-only mmap file so the Go heap retains only dictionaries and small
+	// query-time lookup maps.
+	cols, err := writeColsFile(b.dir, s)
+	if err != nil {
+		display.release()
+		return nil, err
+	}
+	s.cols = cols
+	s.cveID = cols.cveID
+	s.pkgNameID = cols.pkgNameID
+	s.pkgVerID = cols.pkgVerID
+	s.kind = cols.kind
+	s.moduleID = cols.moduleID
+	s.archID = cols.archID
+	s.distID = cols.distID
+	s.repoNameID = cols.repoNameID
+	s.repoKeyID = cols.repoKeyID
+	s.repoURIID = cols.repoURIID
+	s.fixedID = cols.fixedID
+	s.verKindID = cols.verKindID
+	s.updaterID = cols.updaterID
+	s.normSev = cols.normSev
+	s.archop = cols.archop
+	s.invert = cols.invert
+	s.issued = cols.issued
+	s.rangeIdx = cols.rangeIdx
+	s.rLower = cols.rLower
+	s.rUpper = cols.rUpper
+	s.aliasStart = cols.aliasStart
+	s.aliasPostings = cols.aliasPostings
+	s.selfID = cols.selfID
+	s.descI = cols.descI
+	s.linkI = cols.linkI
+	s.sevI = cols.sevI
+	s.byNamePostings = cols.byNamePostings
 
 	s.knownDists = make([]claircore.Distribution, 0, len(b.knownDists))
 	for d := range b.knownDists {

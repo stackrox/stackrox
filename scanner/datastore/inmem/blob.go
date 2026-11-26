@@ -40,7 +40,7 @@ func init() {
 // cleanStaleBlobs removes leftover display/enrichment blob files from dir (e.g.,
 // after an unclean process termination).
 func cleanStaleBlobs(dir string) {
-	for _, pattern := range []string{displayBlobPattern, enrichBlobPattern} {
+	for _, pattern := range []string{displayBlobPattern, enrichBlobPattern, colsFilePattern} {
 		matches, err := filepath.Glob(filepath.Join(dir, pattern))
 		if err != nil {
 			continue

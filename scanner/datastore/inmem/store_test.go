@@ -407,6 +407,10 @@ func TestPartialReupdateAndDeleteUpdateOperations(t *testing.T) {
 	blobs, err := filepath.Glob(filepath.Join(dir, "inmem-*.blob"))
 	require.NoError(t, err)
 	assert.Len(t, blobs, 2)
+	cols, err := filepath.Glob(filepath.Join(dir, "inmem-cols-*.col"))
+	require.NoError(t, err)
+	assert.Len(t, cols, 2)
+	assert.Positive(t, s.Stats().ColsOffHeap)
 
 	// Delete upd-b operation -> fragment and its blob must be pruned.
 	deleted, err := s.DeleteUpdateOperations(ctx, refB)
@@ -425,12 +429,17 @@ func TestPartialReupdateAndDeleteUpdateOperations(t *testing.T) {
 	blobs, err = filepath.Glob(filepath.Join(dir, "inmem-*.blob"))
 	require.NoError(t, err)
 	assert.Len(t, blobs, 1)
+	cols, err = filepath.Glob(filepath.Join(dir, "inmem-cols-*.col"))
+	require.NoError(t, err)
+	assert.Len(t, cols, 1)
 }
 
 func TestSkipNoPackageNameAndCleanBlobDir(t *testing.T) {
 	dir := t.TempDir()
 	stale := filepath.Join(dir, "inmem-display-stale.blob")
 	require.NoError(t, os.WriteFile(stale, []byte("junk"), 0o600))
+	staleCols := filepath.Join(dir, "inmem-cols-stale.col")
+	require.NoError(t, os.WriteFile(staleCols, []byte("junk"), 0o600))
 	unrelated := filepath.Join(dir, "keep-me.txt")
 	require.NoError(t, os.WriteFile(unrelated, []byte("keep"), 0o600))
 
@@ -440,6 +449,8 @@ func TestSkipNoPackageNameAndCleanBlobDir(t *testing.T) {
 
 	_, err = os.Stat(stale)
 	assert.True(t, os.IsNotExist(err), "stale blob should be cleaned on startup")
+	_, err = os.Stat(staleCols)
+	assert.True(t, os.IsNotExist(err), "stale cols file should be cleaned on startup")
 	_, err = os.Stat(unrelated)
 	assert.NoError(t, err, "unrelated files must not be removed")
 
@@ -545,4 +556,58 @@ func TestConcurrentGetAndUpdateNoRaceOrMunmapCrash(t *testing.T) {
 	blobs, err := filepath.Glob(filepath.Join(dir, "inmem-*.blob"))
 	require.NoError(t, err)
 	assert.Empty(t, blobs, "all blob files should be released after Close and reader drain")
+	cols, err := filepath.Glob(filepath.Join(dir, "inmem-cols-*.col"))
+	require.NoError(t, err)
+	assert.Empty(t, cols, "all cols files should be released after Close and reader drain")
+}
+
+func TestParseColsValidation(t *testing.T) {
+	validHeader := func() []byte {
+		buf := make([]byte, colsMetaSize+16)
+		copy(buf[0:8], colsMagic)
+		buf[8] = colsVersion
+		buf[12] = hostEndian()
+		buf[16] = byte(colSectionCount)
+		return buf
+	}
+
+	t.Run("truncated file", func(t *testing.T) {
+		_, err := parseCols(&mmapRegion{data: make([]byte, 16)}, 16)
+		assert.ErrorContains(t, err, "too short")
+	})
+	t.Run("bad magic", func(t *testing.T) {
+		buf := validHeader()
+		copy(buf[0:8], "BADMAGIC")
+		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		assert.ErrorContains(t, err, "invalid columns magic")
+	})
+	t.Run("bad version", func(t *testing.T) {
+		buf := validHeader()
+		buf[8] = 99
+		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		assert.ErrorContains(t, err, "unsupported columns version")
+	})
+	t.Run("foreign endianness", func(t *testing.T) {
+		buf := validHeader()
+		buf[12] = 1 - hostEndian()
+		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		assert.ErrorContains(t, err, "endianness mismatch")
+	})
+	t.Run("unaligned section offset", func(t *testing.T) {
+		buf := validHeader()
+		// Section 0: offset = colsMetaSize+3 (not 8-byte aligned), count = 1.
+		buf[colsHeaderSize] = byte((colsMetaSize + 3) & 0xff)
+		buf[colsHeaderSize+1] = byte((colsMetaSize + 3) >> 8)
+		buf[colsHeaderSize+8] = 1
+		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		assert.ErrorContains(t, err, "unaligned")
+	})
+	t.Run("out of bounds section", func(t *testing.T) {
+		buf := validHeader()
+		buf[colsHeaderSize] = byte(colsMetaSize & 0xff)
+		buf[colsHeaderSize+1] = byte(colsMetaSize >> 8)
+		buf[colsHeaderSize+8] = 100 // 100*4 > 16 bytes available
+		_, err := parseCols(&mmapRegion{data: buf}, int64(len(buf)))
+		assert.ErrorContains(t, err, "out of bounds")
+	})
 }
