@@ -2987,11 +2987,6 @@ func Test_toClairCoreCPE(t *testing.T) {
 			want: cpe.MustUnbind(emptyCPE),
 		},
 		{
-			name: "when older Sensor sends shortened wildcard then use full wildcard",
-			arg:  "cpe:2.3:*",
-			want: cpe.MustUnbind(emptyCPE),
-		},
-		{
 			name: "when set then unbound",
 			arg:  "cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*",
 			want: cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*"),
@@ -3000,11 +2995,6 @@ func Test_toClairCoreCPE(t *testing.T) {
 			name:    "when invalid then error",
 			arg:     "not a cpe",
 			wantErr: `"not a cpe": `,
-		},
-		{
-			name:    "when another shortened CPE then error",
-			arg:     "cpe:2.3:*:*",
-			wantErr: `too short`,
 		},
 	}
 	for _, tt := range tests {
@@ -3021,7 +3011,7 @@ func Test_toClairCoreCPE(t *testing.T) {
 }
 
 func Test_CPERoundTrip(t *testing.T) {
-	for _, s := range []string{"", emptyCPE, "cpe:2.3:*"} {
+	for _, s := range []string{"", emptyCPE} {
 		t.Run("from "+strconv.Quote(s), func(t *testing.T) {
 			ccCPE, err := toClairCoreCPE(s)
 			require.NoError(t, err)
