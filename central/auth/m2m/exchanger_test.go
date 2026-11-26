@@ -230,13 +230,152 @@ func TestNewTokenExchanger(t *testing.T) {
 	}
 }
 
+func TestNewMultiConfigTokenExchanger(t *testing.T) {
+	// Serve a minimal OIDC discovery document, so that creating the OIDC provider within
+	// tokenVerifierFromConfigData succeeds without reaching out to a real issuer.
+	var oidcDiscoveryServer *httptest.Server
+	oidcDiscoveryServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/.well-known/openid-configuration":
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"issuer":   oidcDiscoveryServer.URL,
+				"jwks_uri": oidcDiscoveryServer.URL + "/keys",
+			})
+		case "/keys":
+			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []any{}})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(oidcDiscoveryServer.Close)
+
+	newM2MConfig := func(
+		issuer string,
+		tokenExpirationDuration string,
+		configType storage.AuthMachineToMachineConfig_Type,
+		audience string,
+	) *storage.AuthMachineToMachineConfig {
+		return &storage.AuthMachineToMachineConfig{
+			Id:                      configID,
+			Type:                    configType,
+			Issuer:                  issuer,
+			TokenExpirationDuration: tokenExpirationDuration,
+			Audience:                audience,
+		}
+	}
+
+	const oneHour = "1h"
+	const halfAnHour = "30m"
+
+	cases := map[string]struct {
+		configs              []*storage.AuthMachineToMachineConfig
+		prepareIssuerFactory func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory)
+		expectedTTL          time.Duration
+		expectedError        error
+		expectedErrorTexts   []string
+	}{
+		"Multiple consistent configs successfully create an exchanger": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-1"),
+				newM2MConfig(oidcDiscoveryServer.URL, halfAnHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-2"),
+			},
+			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
+				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
+						assert.Equal(t, oidcDiscoveryServer.URL, source.ID())
+						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
+					})
+			},
+			// The exchanger is expected to use the smallest TTL across all configs.
+			expectedTTL: 30 * time.Minute,
+		},
+		"Single config list successfully creates an exchanger": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-1"),
+			},
+			prepareIssuerFactory: func(t *testing.T, issuerFactory *tokensMocks.MockIssuerFactory) {
+				issuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(source tokens.Source, _ ...tokens.Option) (tokens.Issuer, error) {
+						assert.Equal(t, oidcDiscoveryServer.URL, source.ID())
+						return tokensMocks.NewMockIssuer(gomock.NewController(t)), nil
+					})
+			},
+			expectedTTL: 1 * time.Hour,
+		},
+		"Empty config list is rejected": {
+			configs:            nil,
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"creating token exchanger", "no auth machine to machine configuration"},
+		},
+		"Issuer mismatch is rejected": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-1"),
+				newM2MConfig(oidcDiscoveryServer.URL+"/other", oneHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-2"),
+			},
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"creating token exchanger", "issuer mismatch"},
+		},
+		"Type mismatch is rejected": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-1"),
+				newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GITHUB_ACTIONS, "audience-2"),
+			},
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"creating token exchanger", "type mismatch"},
+		},
+		"Issuer and type mismatches are both rejected": {
+			configs: []*storage.AuthMachineToMachineConfig{
+				newM2MConfig(oidcDiscoveryServer.URL, oneHour, storage.AuthMachineToMachineConfig_GENERIC, "audience-1"),
+				newM2MConfig(oidcDiscoveryServer.URL+"/other", oneHour, storage.AuthMachineToMachineConfig_GITHUB_ACTIONS, "audience-2"),
+			},
+			expectedError:      errox.InvalidArgs,
+			expectedErrorTexts: []string{"creating token exchanger", "issuer mismatch", "type mismatch"},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(it *testing.T) {
+			ctrl := gomock.NewController(t)
+			issuerFactory := tokensMocks.NewMockIssuerFactory(ctrl)
+			if c.prepareIssuerFactory != nil {
+				c.prepareIssuerFactory(t, issuerFactory)
+			}
+			roleDS := roleMocks.NewMockDataStore(ctrl)
+
+			exchanger, err := newMultiConfigTokenExchanger(it.Context(), c.configs, roleDS, issuerFactory)
+
+			expectError := c.expectedError != nil || len(c.expectedErrorTexts) > 0
+			if c.expectedError != nil {
+				assert.ErrorIs(it, err, c.expectedError)
+			}
+			for _, expectedErrorText := range c.expectedErrorTexts {
+				assert.ErrorContains(it, err, expectedErrorText)
+			}
+			if !expectError {
+				assert.NoError(it, err)
+				assert.NotNil(it, exchanger)
+				assert.NotNil(it, exchanger.Provider())
+				assert.Equal(it, c.expectedTTL, exchanger.GetTokenExpirationDuration())
+				assert.Equal(it, c.configs[0].GetType(), exchanger.GetType())
+				assert.Len(it, exchanger.Configs(), len(c.configs))
+				for i, config := range c.configs {
+					protoassert.Equal(it, config, exchanger.Configs()[i])
+				}
+				protoassert.Equal(it, c.configs[0], exchanger.Config())
+			} else {
+				assert.Nil(it, exchanger)
+			}
+		})
+	}
+}
+
 func TestGetTTLFromConfigs(t *testing.T) {
 	newConfig := func(tokenExpirationDuration string) *storage.AuthMachineToMachineConfig {
 		return &storage.AuthMachineToMachineConfig{
 			TokenExpirationDuration: tokenExpirationDuration,
 		}
 	}
-
 	cases := map[string]struct {
 		configs       []*storage.AuthMachineToMachineConfig
 		expectedTTL   time.Duration
